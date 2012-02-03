@@ -644,6 +644,11 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
         message = e.what();
     }
 
+    // Don't try to write to a broken output
+    if ( !os.good() ) {
+        return -1;
+    }
+
     try {
         // HTTP header
         os << "Status: " << status_str << HTTP_EOL;
@@ -660,7 +665,6 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
                 os << descr->PrintUsage(ustr) << HTTP_EOL HTTP_EOL;
             }
         }
-
 
         // Check for problems in sending the response
         if ( !os.good() ) {
