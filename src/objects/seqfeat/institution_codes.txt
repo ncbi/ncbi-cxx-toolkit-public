@@ -5779,6 +5779,7 @@ UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection
 UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection
 UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria
+UAM<USA-AL>	s	University of Alabama, Malacology Collection
 UAM<USA-AR>	s	University of Arkansas at Monticello
 UAM<VEN>	s	Universidad de los Andes, Facultad de Ciencias
 UAMH	scb	University of Alberta Microfungus Collection and Herbarium
@@ -5885,7 +5886,7 @@ UF:Mammalogy	s	Florida Museum of Natural History, Mammalogy Collection
 UF:Ornithology	s	Florida Museum of Natural History, Ornithology Skins and Skeletons Collection
 UFA	s	Ufa Scientific Centre, Russian Academy of Sciences
 UFC	s	Universidade Federal do Ceara, Departamento de Biologia
-UFES	s	Departamento de Biologia, Colecao Entomologica
+UFES	s	Universidade Federal do Espirito Santo
 UFG	s	Universidade Federal de Goias, Unidade de Conservacao
 UFH	s	University of Fort Hare, Botany Department
 UFHNH	s	Utah Field House of Natural History State Park
