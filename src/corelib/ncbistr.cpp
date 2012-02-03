@@ -1791,7 +1791,7 @@ SIZE_TYPE NStr::DoubleToString_Ecvt( double val, unsigned int precision,
 // calculate exponent
     unsigned int exp=0;
     bool exp_positive = val >= 1.;
-    unsigned int first, second;
+    unsigned int first, second=0;
     long double mult = __NLG(1.);
     long double value = val;
 
