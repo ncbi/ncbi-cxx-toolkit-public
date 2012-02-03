@@ -18,7 +18,7 @@
 # the application listings in post_build/win/{make_win.py,ncbi-blast.nsi},
 # post_build/macosx/ncbi-blast.sh, and post_build/rpm/ncbi-blast.spec
 APP: blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn seedtop
-APP: makembindex segmasker dustmasker windowmasker
+APP: makembindex segmasker dustmasker windowmasker deltablast
 APP: makeblastdb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck
 APP: makeprofiledb blast_formatter
 
