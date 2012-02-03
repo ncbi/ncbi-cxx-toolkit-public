@@ -291,9 +291,11 @@ bool CVcfWriter::x_WriteFeatureChrom(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    string chrom = mf.GetLocationId().AsString();
+    CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
+                                               &mf.GetScope());
+    string chrom = idh.AsString();
     string db, id;
-    NStr::SplitInTwo( mf.GetLocationId().AsString(), "|", db, id );
+    NStr::SplitInTwo( idh.AsString(), "|", db, id );
     m_Os << id;
     return true;
 }

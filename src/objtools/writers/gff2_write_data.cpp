@@ -488,8 +488,11 @@ bool CGffWriteRecordFeature::x_AssignSource(
         }
     }
 
-    CWriteUtil::GetIdType(
-        mf.GetScope().GetBioseqHandle(mf.GetLocationId()), m_strSource);
+    CScope& scope = mf.GetScope();
+    CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
+                                               &mf.GetScope());
+    CWriteUtil::GetIdType(scope.GetBioseqHandle(idh),
+                          m_strSource);
     return true;
 }
 
