@@ -8,7 +8,6 @@ REQUIRES = objects algo
 LIB_PROJ = blast_app_util
 
 APP_PROJ = \
-rmblastn \
 blastp \
 blastn \
 blastx \
@@ -17,7 +16,6 @@ tblastx \
 psiblast \
 rpsblast \
 rpstblastn \
-seedtop \
 blast_formatter \
 deltablast
 
