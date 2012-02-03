@@ -177,6 +177,11 @@ public:
     void SetMappedLocation(CAnnotObject_Ref& ref, ELocationType loctype);
     void MakeDstMix(CSeq_loc_mix& dst, const CSeq_loc_mix& src) const;
 
+    const CSeq_id& GetId(void) const
+        {
+            return m_Dst_loc_Empty->GetEmpty();
+        }
+
 protected:
     friend class CAnnot_Collector;
 

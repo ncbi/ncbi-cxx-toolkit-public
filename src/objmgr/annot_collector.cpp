@@ -337,6 +337,8 @@ const CSeq_id* CAnnotMapping_Info::GetLocationId(void) const
         return GetMappedSeq_loc().GetId();
     case eMappedObjType_Seq_feat:
         return GetMappedSeq_feat().GetLocation().GetId();
+    case eMappedObjType_Seq_loc_Conv:
+        return &GetMappedSeq_loc_Conv().GetId();
     default:
         break;
     }
