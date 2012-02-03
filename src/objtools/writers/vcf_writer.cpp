@@ -239,8 +239,9 @@ bool CVcfWriter::x_WriteData(
     SAnnotSelector sel;
     sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
 
-    CGffFeatureContext fc(feature::CFeatTree(CFeat_CI(sah, sel)));
-    for ( CFeat_CI mf( sah, sel ); mf; ++mf ) {
+    CFeat_CI mf(sah, sel);
+    CGffFeatureContext fc(mf);
+    for ( ; mf; ++mf ) {
         if ( ! x_WriteFeature( fc, *mf ) ) {
             return false;
         }

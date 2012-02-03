@@ -32,6 +32,11 @@
 #ifndef OBJTOOLS_WRITERS___FEATURE_CONTEXT__HPP
 #define OBJTOOLS_WRITERS___FEATURE_CONTEXT__HPP
 
+#include <corelib/ncbistd.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/feat_ci.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
@@ -44,10 +49,10 @@ public:
     {};
 
     CGffFeatureContext(
-        feature::CFeatTree ft, 
+        const CFeat_CI& feat_iter,
         CBioseq_Handle bsh=CBioseq_Handle(), 
         CSeq_annot_Handle sah=CSeq_annot_Handle()) :
-        m_ft(ft), m_bsh(bsh), m_sah(sah)
+        m_ft(feat_iter), m_bsh(bsh), m_sah(sah)
     {};
     feature::CFeatTree& FeatTree() { return m_ft; };
     CBioseq_Handle BioseqHandle() const { return m_bsh; };
@@ -57,6 +62,10 @@ protected:
     feature::CFeatTree m_ft;
     CBioseq_Handle m_bsh;
     CSeq_annot_Handle m_sah;
+
+private:
+    CGffFeatureContext(const CGffFeatureContext&);
+    CGffFeatureContext& operator=(const CGffFeatureContext&);
 };
 
 

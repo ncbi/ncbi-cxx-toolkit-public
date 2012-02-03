@@ -389,8 +389,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
 
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
-    feature::CFeatTree feat_tree( feat_iter );
-    CGffFeatureContext fc(feature::CFeatTree(feat_iter), bsh);
+    CGffFeatureContext fc(feat_iter, bsh);
 
     if (!x_WriteSource(fc)) {
         return false;

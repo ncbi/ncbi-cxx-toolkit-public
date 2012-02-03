@@ -197,7 +197,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
 {
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
-    CGffFeatureContext fc(feature::CFeatTree(feat_iter), bsh);
+    CGffFeatureContext fc(feat_iter, bsh);
     for (;  feat_iter; ++feat_iter) {
         if (!x_WriteFeature(fc, *feat_iter)) {
             return false;
@@ -240,8 +240,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
 
     SAnnotSelector sel = GetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
-    feature::CFeatTree ft(feat_iter);
-    CGffFeatureContext fc(ft, CBioseq_Handle(), sah);
+    CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! x_WriteFeature( fc, *feat_iter ) ) {
             return false;
