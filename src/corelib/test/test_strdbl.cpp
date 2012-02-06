@@ -312,6 +312,9 @@ void CTestApp::Init(void)
 
     d->AddFlag("randomize",
                "Randomize test data (for precision and double-to-string tests)");
+    d->AddOptionalKey("seed", "Randomization",
+                             "Randomization seed value",
+                             CArgDescriptions::eInt8);
     d->AddDefaultKey("digits", "significantDigits",
                      "The number of significant digits in double-to-string conversion",
                      CArgDescriptions::eInteger, NStr::NumericToString(DBL_DIG));
@@ -335,7 +338,11 @@ int CTestApp::Run(void)
     m_VerboseLevel = args["verbose"].AsInteger();
 
     if (args["randomize"]) {
-        srand((unsigned int)time(0));
+        unsigned int seed = GetArgs()["seed"]
+            ? (unsigned int) GetArgs()["seed"].AsInt8()
+            : (unsigned int) time(NULL);
+        LOG_POST("Randomization seed value: " << seed);
+        srand(seed);
     }
     if (args["mode"].AsString() == "str2dbl" || args["mode"].AsString() == "both") {
 
