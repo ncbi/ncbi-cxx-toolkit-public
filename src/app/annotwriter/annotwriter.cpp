@@ -94,21 +94,47 @@ public:
     int Run();
 
 private:
-    CObjectIStream* x_OpenIStream(
+    CNcbiOstream* xInitOutputStream(
+        const CArgs& );
+    CObjectIStream* xInitInputStream(
         const CArgs& args );
+    CWriterBase* xInitWriter(
+        const CArgs&,
+        CNcbiOstream* );
 
-    CWriterBase* x_CreateWriter(
+    bool xTryProcessInputId(
+        const CArgs& );
+    bool xTryProcessInputFile(
+        const CArgs& );
+
+    bool xTryProcessSeqEntry(
+        const string&,
         CScope&,
-        CNcbiOstream&,
+        CObjectIStream&);
+    bool xTryProcessSeqAnnot(
+        const string&,
+        CScope&,
+        CObjectIStream&);
+    bool xTryProcessBioseq(
+        const string&,
+        CScope&,
+        CObjectIStream&);
+    bool xTryProcessBioseqSet(
+        const string&,
+        CScope&,
+        CObjectIStream&);
+    bool xTryProcessSeqAlign(
+        const string&,
+        CScope&,
+        CObjectIStream&);
+        
+    CGff2Writer::TFlags xGffFlags( 
         const CArgs& );
+    string xAssemblyName() const;
+    string xAssemblyAccession() const;
 
-    CGff2Writer::TFlags GffFlags( 
-        const CArgs& );
-
-    string AssemblyName() const;
-
-    string AssemblyAccession() const;
-
+    CRef<CObjectManager> m_pObjMngr;
+    CRef<CScope> m_pScope;
     CRef<CWriterBase> m_pWriter;
 };
 
@@ -126,6 +152,8 @@ void CAnnotWriterApp::Init()
     {{
         arg_desc->AddOptionalKey( "i", "InputFile", 
             "Input file name", CArgDescriptions::eInputFile );
+        arg_desc->AddOptionalKey( "id", "InputID",
+            "Input ID (accession or GI number)", CArgDescriptions::eString );
     }}
 
     // format
@@ -185,126 +213,241 @@ void CAnnotWriterApp::Init()
         "skip-exon-numbers",
         "GTF only: For exon features, do not emit exon numbers",
         true );
+    arg_desc->AddFlag(
+        "skip-headers",
+        "GFF dialects: Do not generate GFF headers",
+        true );
     }}
     
     SetupArgDescriptions(arg_desc.release());
 }
 
-
 //  ----------------------------------------------------------------------------
 int CAnnotWriterApp::Run()
 //  ----------------------------------------------------------------------------
 {
-    int retCode(0);         // final return code
-
-	CONNECT_Init(&GetConfig());
-//    __asm int 3;
-
     const CArgs& args = GetArgs();
 
-    CNcbiOstream* pOs = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
-    if ( pOs == 0 ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
-    }
-
-    auto_ptr<CObjectIStream> pIs;
-    pIs.reset( x_OpenIStream( args ) );
-    if ( pIs.get() == NULL ) {
-        string msg = args["i"] ? 
-            "Unable to open input file" + args["i"].AsString() :
-            "Unable to read data from stdin";
-        NCBI_THROW(CFlatException, eInternal, msg);
-    }
-
-    CRef< CObjectManager > pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager( *pObjMngr );
-    CRef< CScope > pScope( new CScope( *pObjMngr ) );
-    pScope->AddDefaults();
-
-    m_pWriter.Reset( x_CreateWriter( *pScope, *pOs, GetArgs() ) );
-    if ( ! m_pWriter ) {
-        cerr << "annotwriter: Cannot create suitable writer!" << endl;
-        string msg = "Cannot create suitable writer!";
-        NCBI_THROW(CFlatException, eInternal, msg);
-    }
+	CONNECT_Init(&GetConfig());
+    m_pObjMngr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*m_pObjMngr);
+    m_pScope.Reset(new CScope(*m_pObjMngr));
+    m_pScope->AddDefaults();
 
     try {
-        while (!pIs->EndOfData()) {
-            string objtype = pIs->ReadFileHeader();
+        CNcbiOstream* pOs = xInitOutputStream(args);
+        m_pWriter.Reset(xInitWriter(args,pOs));
 
-            if (objtype == "Seq-entry") {
-                CSeq_entry seq_entry;
-                pIs->Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
-                CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry( seq_entry );
-                m_pWriter->WriteHeader();
-                m_pWriter->WriteSeqEntryHandle(seh, AssemblyName(), AssemblyAccession());
-                m_pWriter->WriteFooter();
-                pScope->RemoveEntry(seq_entry);
-                continue;
-            }
-
-            if (objtype == "Seq-annot") {
-                CSeq_annot seq_annot;
-                pIs->Read(ObjectInfo(seq_annot), CObjectIStream::eNoFileHeader);
-                m_pWriter->WriteHeader();
-                m_pWriter->WriteAnnot( seq_annot, AssemblyName(), AssemblyAccession() );
-                m_pWriter->WriteFooter();
-                continue;
-            }
-
-            if (objtype == "Bioseq") {
-                CBioseq bioseq;
-                pIs->Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
-                m_pWriter->WriteHeader();
-                CTypeIterator<CSeq_annot> annot_iter(bioseq);
-                for ( ;  annot_iter;  ++annot_iter ) {
-                    CRef<CSeq_annot> annot(annot_iter.operator->());
-                    if (!m_pWriter->WriteAnnot( 
-                            *annot, AssemblyName(), AssemblyAccession())) {
-                        return false;
-                    }
-                }
-                m_pWriter->WriteFooter();
-                continue;
-            }
-
-            if (objtype == "Bioseq-set") {
-                CBioseq_set seq_set;
-                pIs->Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
-                CSeq_entry se;
-                se.SetSet( seq_set );
-                pScope->AddTopLevelSeqEntry( se );
-                m_pWriter->WriteHeader();
-                m_pWriter->WriteSeqEntryHandle( 
-                    pScope->GetSeq_entryHandle(se), AssemblyName(), AssemblyAccession());
-                m_pWriter->WriteFooter();
-                pScope->RemoveEntry( se );
-                continue;
-            }
-
-            if (objtype == "Seq-align") {
-                CSeq_align align;
-                pIs->Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
-                m_pWriter->WriteHeader();
-                m_pWriter->WriteAlign( align, AssemblyName(), AssemblyAccession());
-                m_pWriter->WriteFooter();
-                continue;
-            }
-            cerr << "Object type not supported!" << endl;
-            break;
+        if (xTryProcessInputId(args)) {
+            pOs->flush();
+            return 0;
+        }
+        if (xTryProcessInputFile(args)) {
+            pOs->flush();
+            return 0;
         }
     }
     catch(CObjWriterException& e) {
-        cerr << "Processing error: " << e.GetMsg() << endl;
-        retCode = 1;
+        cerr << e.GetMsg() << endl;
+        return 1;
     }
-    pOs->flush();
-    pIs.reset();
-    return retCode;
+    catch (CException& e) {
+        cerr << "Internal runtime error " << e.GetErrCodeString() << ": " 
+            << e.GetMsg() << " (" << e.GetFile() << ":" << e.GetLine() << ")";
+        return 1;
+    }
+    return 0;
 }
 
 //  -----------------------------------------------------------------------------
-CObjectIStream* CAnnotWriterApp::x_OpenIStream( 
+CNcbiOstream* CAnnotWriterApp::xInitOutputStream(
+    const CArgs& args)
+//  -----------------------------------------------------------------------------
+{
+    if (args["o"]) {
+        try {
+            return &args["o"].AsOutputFile();
+        }
+        catch(...) {
+            NCBI_THROW(CObjWriterException, eArgErr, 
+                "xInitOutputStream: Unable to create output file \"" +
+                args["o"].AsString() +
+                "\"");
+        }
+    }
+    return &cout;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessInputId(
+    const CArgs& args)
+//  -----------------------------------------------------------------------------
+{
+    if(!args["id"]) {
+        return false;
+    }
+    CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(args["id"].AsString());
+    CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
+    if (!args["skip-headers"]) {
+        m_pWriter->WriteHeader();
+    }
+    m_pWriter->WriteBioseqHandle(bsh);
+    m_pWriter->WriteFooter();
+    return true;
+}    
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessInputFile(
+    const CArgs& args)
+//  -----------------------------------------------------------------------------
+{
+    auto_ptr<CObjectIStream> pIs;
+
+    if(args["id"]) {
+        return false;
+    }
+
+    pIs.reset( xInitInputStream( args ) );
+
+    while (!pIs->EndOfData()) {
+        string objtype = pIs->ReadFileHeader();
+
+        if (xTryProcessSeqEntry(objtype, *m_pScope, *pIs)) {
+            continue;
+        }
+        if (xTryProcessSeqAnnot(objtype, *m_pScope, *pIs)) {
+            continue;
+        }
+        if (xTryProcessBioseq(objtype, *m_pScope, *pIs)) {
+            continue;
+        }
+        if (xTryProcessBioseqSet(objtype, *m_pScope, *pIs)) {
+            continue;
+        }
+        if (xTryProcessSeqAlign(objtype, *m_pScope, *pIs)) {
+            continue;
+        }
+        NCBI_THROW(CObjWriterException, eBadInput, 
+            "xTryProcessInputFile: Object type \"" +
+            objtype +
+            "\" not supported.");
+        break;
+    }
+    pIs.reset();
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessSeqEntry(
+    const string& objtype,
+    CScope& scope,
+    CObjectIStream& istr)
+//  -----------------------------------------------------------------------------
+{
+    if (objtype != "Seq-entry") {
+        return false;
+    }
+    CSeq_entry seq_entry;
+    istr.Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( seq_entry );
+    if (!GetArgs()["skip-headers"]) {
+        m_pWriter->WriteHeader();
+    }
+    m_pWriter->WriteSeqEntryHandle(seh, xAssemblyName(), xAssemblyAccession());
+    m_pWriter->WriteFooter();
+    scope.RemoveEntry(seq_entry);
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessSeqAnnot(
+    const string& objtype,
+    CScope& /*scope*/,
+    CObjectIStream& istr)
+//  -----------------------------------------------------------------------------
+{
+    if (objtype != "Seq-annot") {
+        return false;
+    }
+    CSeq_annot seq_annot;
+    istr.Read(ObjectInfo(seq_annot), CObjectIStream::eNoFileHeader);
+    if (!GetArgs()["skip-headers"]) {
+        m_pWriter->WriteHeader();
+    }
+    m_pWriter->WriteAnnot( seq_annot, xAssemblyName(), xAssemblyAccession() );
+    m_pWriter->WriteFooter();
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessBioseq(
+    const string& objtype,
+    CScope& scope,
+    CObjectIStream& istr)
+//  -----------------------------------------------------------------------------
+{
+    if (objtype != "Bioseq") {
+        return false;
+    }
+    CBioseq bioseq;
+    istr.Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+    CBioseq_Handle bsh = scope.AddBioseq(bioseq);
+    if (!GetArgs()["skip-headers"]) {
+        m_pWriter->WriteHeader();
+    }
+    m_pWriter->WriteBioseqHandle(bsh, xAssemblyName(), xAssemblyAccession() );
+    m_pWriter->WriteFooter();
+    scope.RemoveBioseq(bsh);
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessBioseqSet(
+    const string& objtype,
+    CScope& scope,
+    CObjectIStream& istr)
+//  -----------------------------------------------------------------------------
+{
+    if (objtype != "Bioseq-set") {
+        return false;
+    }
+    CBioseq_set seq_set;
+    istr.Read(ObjectInfo(seq_set), CObjectIStream::eNoFileHeader);
+    CSeq_entry se;
+    se.SetSet( seq_set );
+    scope.AddTopLevelSeqEntry( se );
+    if (!GetArgs()["skip-headers"]) {
+        m_pWriter->WriteHeader();
+    }
+    m_pWriter->WriteSeqEntryHandle( 
+        scope.GetSeq_entryHandle(se), xAssemblyName(), xAssemblyAccession());
+    m_pWriter->WriteFooter();
+    scope.RemoveEntry( se );
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessSeqAlign(
+    const string& objtype,
+    CScope& /*scope*/,
+    CObjectIStream& istr)
+//  -----------------------------------------------------------------------------
+{
+    if (objtype != "Seq-align") {
+        return false;
+    }
+    CSeq_align align;
+    istr.Read(ObjectInfo(align), CObjectIStream::eNoFileHeader);
+    if (!GetArgs()["skip-headers"]) {
+        m_pWriter->WriteHeader();
+    }
+    m_pWriter->WriteAlign( align, xAssemblyName(), xAssemblyAccession());
+    m_pWriter->WriteFooter();
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+CObjectIStream* CAnnotWriterApp::xInitInputStream( 
     const CArgs& args )
 //  -----------------------------------------------------------------------------
 {
@@ -312,18 +455,21 @@ CObjectIStream* CAnnotWriterApp::x_OpenIStream(
     CNcbiIstream* pInputStream = &NcbiCin;
     
     bool bDeleteOnClose = false;
-    if ( args["i"] ) {
-        pInputStream = new CNcbiIfstream( 
-            args["i"].AsString().c_str(), ios::binary  );
+    if (args["i"]) {
+        pInputStream = new CNcbiIfstream(args["i"].AsString().c_str(), ios::binary);
         bDeleteOnClose = true;
     }
     CObjectIStream* pI = CObjectIStream::Open( 
         serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
+    if (!pI) {
+        NCBI_THROW(CObjWriterException, eArgErr, 
+            "xInitInputStream: Unable to open input file");
+    }
     return pI;
 }
 
 //  -----------------------------------------------------------------------------
-CGff2Writer::TFlags CAnnotWriterApp::GffFlags(
+CGff2Writer::TFlags CAnnotWriterApp::xGffFlags(
     const CArgs& args )
 //  -----------------------------------------------------------------------------
 {
@@ -341,46 +487,67 @@ CGff2Writer::TFlags CAnnotWriterApp::GffFlags(
 }
 
 //  ----------------------------------------------------------------------------
-CWriterBase* CAnnotWriterApp::x_CreateWriter(
-    CScope& scope,
-    CNcbiOstream& ostr,
-    const CArgs& args )
+CWriterBase* CAnnotWriterApp::xInitWriter(
+    const CArgs& args,
+    CNcbiOstream* pOs )
 //  ----------------------------------------------------------------------------
 {
-    const string strFormat = args[ "format" ].AsString();
-    if ( strFormat == "gff"  ||  strFormat == "gff2" ) { 
-        return new CGff2Writer( scope, ostr, GffFlags( args ) );
+    if (!m_pScope  || !pOs) {
+        NCBI_THROW(CObjWriterException, eArgErr, 
+            "xInitWriter: Writer object needs valid scope and output stream");
     }
-    if ( strFormat == "gff3" ) { 
-        return new CGff3Writer( scope, ostr, GffFlags( args ) );
+
+    const string strFormat = args["format"].AsString();
+    if (strFormat == "gff"  ||  strFormat == "gff2") { 
+        CGff2Writer* pWriter = new CGff2Writer(*m_pScope, *pOs, xGffFlags(args));
+        if (args["id"]) {
+            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
+        }
+        return pWriter;
     }
-    if ( strFormat == "gtf" ) {
-        return new CGtfWriter( scope, ostr, GffFlags( args ) );
+    if (strFormat == "gff3") { 
+        CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args));
+        if (args["id"]) {
+            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
+        }
+        return pWriter;
     }
-    if ( strFormat == "gvf" ) { 
-        return new CGvfWriter( scope, ostr, GffFlags( args ) );
+    if (strFormat == "gtf") {
+        CGtfWriter* pWriter = new CGtfWriter(*m_pScope, *pOs, xGffFlags(args));
+        if (args["id"]) {
+            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
+        }
+        return pWriter;
     }
-    if ( strFormat == "wiggle"  ||  strFormat == "wig" ) {
-        return new CWiggleWriter( ostr, args["tracksize"].AsInteger() );
+    if (strFormat == "gvf") { 
+        CGvfWriter* pWriter = new CGvfWriter( *m_pScope, *pOs, xGffFlags(args));
+        if (args["id"]) {
+            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
+        }
+        return pWriter;
     }
-    if ( strFormat == "bed" ) {
-        return new CBedWriter( scope, ostr );
+    if (strFormat == "wiggle"  ||  strFormat == "wig") {
+        return new CWiggleWriter(*pOs, args["tracksize"].AsInteger());
     }
-    if ( strFormat == "vcf" ) {
-        return new CVcfWriter( scope, ostr );
+    if (strFormat == "bed") {
+        return new CBedWriter(*m_pScope, *pOs);
     }
-    return 0;
+    if (strFormat == "vcf") {
+        return new CVcfWriter(*m_pScope, *pOs);
+    }
+    NCBI_THROW(CObjWriterException, eArgErr, 
+        "xInitWriter: No suitable writer for format \"" + strFormat + "\"");
 }
 
 //  ----------------------------------------------------------------------------
-string CAnnotWriterApp::AssemblyName() const
+string CAnnotWriterApp::xAssemblyName() const
 //  ----------------------------------------------------------------------------
 {
     return GetArgs()["assembly-name"].AsString();
 }
 
 //  ----------------------------------------------------------------------------
-string CAnnotWriterApp::AssemblyAccession() const
+string CAnnotWriterApp::xAssemblyAccession() const
 //  ----------------------------------------------------------------------------
 {
     return GetArgs()["assembly-accn"].AsString();
