@@ -42,7 +42,9 @@ BEGIN_SCOPE(objects)
 
 enum ECompartOptions {
     fCompart_AllowIntersections = 0x01,
-	fCompart_SortByScore = 0x02,
+    fCompart_SortByScore = 0x02,
+    fCompart_SortByPctIdent = 0x04,
+    fCompart_FilterByDiffLen = 0x08,
 
     fCompart_Defaults = 0
 };
@@ -51,7 +53,8 @@ typedef int TCompartOptions;
 void NCBI_XALGOALIGN_EXPORT 
 FindCompartments(const list< CRef<CSeq_align> >& aligns,
                  list< CRef<CSeq_align_set> >& align_sets,
-                 TCompartOptions options = fCompart_Defaults);
+                 TCompartOptions options = fCompart_Defaults,
+                 float diff_len_filter=3.0f);
 
 // Join compartment, which is represented by Seq-align-set into
 // one or more disc Seq-aligns which is suitable for nice graphical
