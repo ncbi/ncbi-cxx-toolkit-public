@@ -5232,14 +5232,14 @@ case "$host_os:$compiler" in
       CXXFLAGS="-fno-permissive -fpascal-strings $CXXFLAGS"
       # -flat_namespace is necessary for proper handling of shared libraries
       # that don't themselves link against all their dependencies.
-      LDFLAGS="-flat_namespace $LD_FLAGS"
+      LDFLAGS="-flat_namespace $LDFLAGS"
 
       if test "$with_ncbi_public" = yes; then
          CC="$CC -mmacosx-version-min=10.5"
          CXX="$CXX -mmacosx-version-min=10.5"
       fi
    else
-      LDFLAGS="-Wl,-flat_namespace $LD_FLAGS"
+      LDFLAGS="-Wl,-flat_namespace $LDFLAGS"
    fi
    if test -f /usr/include/dlfcn.h; then
       # may be able to do without /sw, so ignore it by default
