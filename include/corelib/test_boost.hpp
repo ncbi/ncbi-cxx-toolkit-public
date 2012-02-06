@@ -194,6 +194,16 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
                             BOOST_PARAM_TEST_CASE(function, begin, end)) \
 /**/
 
+#define BOOST_TIMEOUT(M)                                        \
+    do {                                                        \
+        static string s(M);                                     \
+        throw boost::execution_exception(                       \
+                boost::execution_exception::timeout_error, s    \
+                NCBI_BOOST_LOCATION());                         \
+    } while (0)                                                 \
+/**/
+
+
 
 #define NCBITEST_CHECK_IMPL(P, check_descr, TL, CT)                          \
     BOOST_CHECK_NO_THROW_IMPL(BOOST_CHECK_IMPL(P, check_descr, TL, CT), TL)
