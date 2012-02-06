@@ -1118,8 +1118,12 @@ case "$host_os:$compiler" in
       LDFLAGS="-flat_namespace $LDFLAGS"
 
       if test "$with_ncbi_public" = yes; then
-         CC="$CC -mmacosx-version-min=10.5"
-         CXX="$CXX -mmacosx-version-min=10.5"
+         TARGET='-mmacosx-version-min=10.5'
+         if test -d /Developer/SDKs/MacOSX10.5.sdk; then
+             TARGET="-isysroot /Developer/SDKs/MacOSX10.5.sdk $TARGET"
+         fi
+         CC="$CC $TARGET"
+         CXX="$CXX $TARGET"
       fi
    else
       LDFLAGS="-Wl,-flat_namespace $LDFLAGS"

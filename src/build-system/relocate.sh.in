@@ -66,6 +66,7 @@ for f in $files ; do
       /WRAPPER *=.*ccache/s%CCACHE_PREFIX=%%;
       /WRAPPER *=/s%ccache%%;
       /LDFLAGS *=/s% *-dylib_file *[^ ]*%%g;
+      /CONF_C[CPX]* *=/s% *-isysroot *[^ ]*%%g;
       '"$extra_sed"'
    ' "$fff" > "$fff.tmp"
    if test $? -ne 0 ; then
