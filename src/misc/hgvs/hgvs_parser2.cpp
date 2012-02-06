@@ -1202,20 +1202,19 @@ CRef<CVariation> CHgvsParser::x_nuc_inv(TIterator const& i, const CContext& cont
     delta->SetSeq().SetLoc().FlipStrand();
     var_inst.SetDelta().push_back(delta);
 #else
-    //we used to explicitly put the inverted location, but now that we're using
-    //VariantPlacement(s) instead, a seq-loc is insufficient representation. Instead
-    //it is to be interpreted "the inversion applies to each placement, whatever they contain"
+    //don't put anything in the delta, as the inversion sequence is placement-specific, not variation-specific
     var_inst.SetDelta(); 
 #endif
 
     ++it;
-    if(it != i->children.end()) {
-        string len_str(it->value.begin(), it->value.end());
-        TSeqPos len = NStr::StringToUInt(len_str);
-        if(len != CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL)) {
-            HGVS_THROW(eSemantic, "Inversion length not equal to location length");
-        }
-    }
+
+     //capture asserted seq
+     if(it != i->children.end() && it->value.id() == SGrammar::eID_seq_ref) {
+         TDelta dup_seq = x_seq_ref(it, context);
+         if(dup_seq->GetSeq().IsLiteral()) {
+             SetFirstPlacement(*vr).SetSeq(dup_seq->SetSeq().SetLiteral());
+         }
+     }
 
     return vr;
 }

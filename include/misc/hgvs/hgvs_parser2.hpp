@@ -671,7 +671,7 @@ protected:
 
                 delins          = deletion >> insertion;
 
-                nuc_inv         = str_p("inv") >> !int_p;
+                nuc_inv         = str_p("inv") >> !seq_ref; //note: only int_p used to be allowed in older spec
 
                 ssr             = !raw_seq >> (  
                                     (int_fuzz - (ch_p('?')|int_p)) //don't want to interpret 'id:5_6?' as ssr

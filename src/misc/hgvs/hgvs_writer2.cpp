@@ -269,7 +269,7 @@ string CHgvsParser::x_AsHgvsExpression(
     if(variation.IsSetFrameshift()) {
         hgvs_data_str += "fs";
         if(variation.GetFrameshift().IsSetX_length()) {
-            hgvs_data_str += "*" + NStr::IntToString(variation.GetFrameshift().GetX_length());
+            hgvs_data_str += "*" + NStr::NumericToString(variation.GetFrameshift().GetX_length());
         }
     }
 
@@ -682,6 +682,11 @@ string CHgvsParser::x_AsHgvsInstExpression(
         if(placement && placement->IsSetSeq()) {
             asserted_seq.Reset(&placement->GetSeq());
         } else {
+#if 0
+        //don't automatically fetch asserted sequence, because want to allow explicit assertions, e.g.
+        //NC_000001.9:g.(2472747_?)_(?_2489105)inv16359, but don't compute 16359 automatically because
+        //this may not be applicable to fuzzy locs
+
             if(placement) {
                 //have placement but no sequence, see if we can fetch it
                 CRef<CVariantPlacement> p2(new CVariantPlacement);
@@ -691,6 +696,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
                     asserted_seq.Reset(&p2->GetSeq());
                 }
             }
+#endif
 
             if(!asserted_seq
                && explicit_asserted_seq
@@ -711,7 +717,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
     string asserted_seq_str =
            !asserted_seq                   ? ""
          : asserted_seq->GetLength() < 200 ? x_SeqLiteralToStr(*asserted_seq, is_prot)
-         :                                   NStr::IntToString(asserted_seq->GetLength());
+         :                                   NStr::NumericToString(asserted_seq->GetLength());
 
 
 
@@ -721,7 +727,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
     {
         inst_str = "=";
     } else if(inst.GetType() == CVariation_inst::eType_inv) {
-        inst_str = "inv";
+        inst_str = "inv" + asserted_seq_str;
     } else if(inst.GetType() == CVariation_inst::eType_snv) {
         inst_str = (asserted_seq ? asserted_seq_str : "N" )+ ">";
         append_delta = true;
