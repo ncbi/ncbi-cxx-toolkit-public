@@ -1739,10 +1739,7 @@ CNcbiTestsObserver::test_unit_finish(but::test_unit const& tu,
     if (timeout != 0  &&  timeout < elapsed / 1000000) {
         boost::execution_exception ex(
                boost::execution_exception::timeout_error, "Timeout exceeded"
-#if BOOST_VERSION >= 104200
-               , boost::execution_exception::location()
-#endif
-                                     );
+               NCBI_BOOST_LOCATION());
         but::framework::exception_caught(ex);
     }
 
