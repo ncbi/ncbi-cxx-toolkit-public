@@ -36,11 +36,14 @@
 #include <corelib/test_boost.hpp>
 
 #include <dbapi/simple/sdbapi.hpp>
+#include <dbapi/driver/exception.hpp>
 
 
 #define DBAPI_BOOST_FAIL(ex)                                                \
     do {                                                                    \
-        const CDB_TimeoutEx* to = dynamic_cast<const CDB_TimeoutEx*>(&ex);  \
+        const CDB_TimeoutEx* to = NULL;                                     \
+        if (ex.GetPredecessor())                                            \
+            to = dynamic_cast<const CDB_TimeoutEx*>(ex.GetPredecessor());   \
         if (to)                                                             \
             BOOST_TIMEOUT(ex.what());                                       \
         else                                                                \
