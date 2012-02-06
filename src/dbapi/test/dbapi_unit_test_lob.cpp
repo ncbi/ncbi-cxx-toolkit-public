@@ -1077,7 +1077,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
                 out << i << " ";
             }
 
-            data_len = out.pcount();
+            data_len = long(out.pcount());
             BOOST_CHECK(data_len > 0);
 
             // Clean table ...
@@ -1152,7 +1152,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
                                 BOOST_CHECK_EQUAL(strm.eof(), false);
                                 BOOST_CHECK_EQUAL(j, i);
                             }
-                            long read_data_len = strm.tellg();
+                            long read_data_len = long(strm.tellg());
                             // Calculate a trailing space.
                             BOOST_CHECK_EQUAL(data_len, read_data_len + 1);
                         }
