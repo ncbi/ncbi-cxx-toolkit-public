@@ -38,8 +38,15 @@
 #include <dbapi/simple/sdbapi.hpp>
 
 
-#define DBAPI_BOOST_FAIL(ex) \
-    BOOST_FAIL(ex.what())
+#define DBAPI_BOOST_FAIL(ex)                                                \
+    do {                                                                    \
+        const CDB_TimeoutEx* to = dynamic_cast<const CDB_TimeoutEx*>(&ex);  \
+        if (to)                                                             \
+            BOOST_TIMEOUT(ex.what());                                       \
+        else                                                                \
+            BOOST_FAIL(ex.what());                                          \
+    } while (0)                                                             \
+/**/
 
 #define CONN_OWNERSHIP  eTakeOwnership
 
