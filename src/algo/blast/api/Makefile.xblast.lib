@@ -80,11 +80,11 @@ LIB = xblast
 
 DLL_LIB = xalgodustmask xobjutil $(OBJMGR_LIBS)
 
-CFLAGS   = $(FAST_CFLAGS) -g
+CFLAGS   = $(FAST_CFLAGS)
 # Strict gcc flags
 #CFLAGS  = $(FAST_CFLAGS) -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
-CXXFLAGS = $(FAST_CXXFLAGS) -g
-LDFLAGS  = $(FAST_LDFLAGS) -g
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
 
 .core_%.c: # $(srcdir)/../core/%.c
 	echo '#include "$(srcdir)/../core/$*.c"' > $@
