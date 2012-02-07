@@ -40,6 +40,9 @@
 #  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
 #endif // NCBI_OS_MSWIN
+#ifdef NCBI_OS_UNIX
+#  include <signal.h>
+#endif // NCBI_OS_UNIX
 
 #include <common/test_assert.h>  // This header must go last
 
@@ -570,6 +573,9 @@ int CTarTest::Run(void)
 
 int main(int argc, const char* argv[])
 {
+#ifdef NCBI_OS_UNIX
+    signal(SIGPIPE, SIG_IGN);
+#endif // NCBI_OS_UNIX
     // Execute main application function
     return CTarTest().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }

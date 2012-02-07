@@ -1529,20 +1529,36 @@ const char* CTar::x_ReadArchive(size_t& n)
     if (!m_BufferPos) {
         nread = 0;
         do {
+            streamsize xread;
+            if (m_Stream->good()) {
 #ifdef NCBI_COMPILER_MIPSPRO
-            // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
-            istream* is = dynamic_cast<istream*>(m_Stream);
-            _ASSERT(is);
-            is->read(             m_Buffer     + nread,
-                     (streamsize)(m_BufferSize - nread));
-            streamsize xread = is->gcount();
-            is->clear();
+                try {
+                    // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
+                    istream* is = dynamic_cast<istream*>(m_Stream);
+                    _ASSERT(is);
+                    is->read(m_Buffer     + nread,
+                             (streamsize)(m_BufferSize - nread));
+                    xread = is->gcount();
+                    if (xread > 0) {
+                        is->clear();
+                    }
+                } catch (IOS_BASE::failure&) {
+                    xread = -1;
+                }
 #else
-            streamsize xread = m_Stream->rdbuf()
-                ->sgetn(             m_Buffer     + nread,
-                        (streamsize)(m_BufferSize - nread));
+                xread = m_Stream->rdbuf()
+                    ->sgetn (m_Buffer     + nread,
+                             (streamsize)(m_BufferSize - nread));
 #endif //NCBI_COMPILER_MIPSPRO
+            } else {
+                xread = -1;
+            }
             if (xread <= 0) {
+                try {
+                    m_Stream->setstate(xread < 0 ? NcbiBadbit : NcbiEofbit);
+                } catch (IOS_BASE::failure&) {
+                    ;
+                }
                 break;
             }
             nread += xread;
@@ -1591,11 +1607,23 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
         if (m_BufferPos == m_BufferSize) {
             size_t nwritten = 0;
             do {
-                streamsize xwritten = m_Stream->rdbuf()
-                    ->sputn(             m_Buffer     + nwritten,
-                            (streamsize)(m_BufferSize - nwritten));
+                int x_errno;
+                streamsize xwritten;
+                if (m_Stream->good()) {
+                    xwritten = m_Stream->rdbuf()
+                        ->sputn(m_Buffer + nwritten,
+                                (streamsize)(m_BufferSize - nwritten));
+                    x_errno = xwritten > 0 ? 0 : errno;
+                } else {
+                    xwritten = -1;
+                    x_errno = 0;
+                }
                 if (xwritten <= 0) {
-                    int x_errno = errno;
+                    try {
+                        m_Stream->setstate(NcbiBadbit);
+                    } catch (IOS_BASE::failure&) {
+                        ;
+                    }
                     m_Bad = true;
                     if (src != (const char*)(-1L)) {
                         TAR_THROW(this, eWrite,
@@ -1646,8 +1674,7 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
     Uint8 val;
     try {
         val = NStr::StringToUInt8(CTempString(str, (size_t)(p - str)));
-    }
-    catch (...) {
+    } catch (...) {
         return false;
     }
     if (*p == '.') {
@@ -1657,8 +1684,7 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
             len -= (size_t)(p - str);
             try {
                 (void) NStr::StringToUInt8(CTempString(p, len));
-            }
-            catch (...) {
+            } catch (...) {
                 return false;
             }
         }
@@ -2977,7 +3003,17 @@ bool CTar::x_ExtractEntry(Uint8& size,
                                   "Unexpected EOF");
                     }
                     // Write file to disk
-                    if (!ofs.write(xbuf, (streamsize) nread)) {
+                    bool okay;
+                    if (ofs.good()) {
+                        try {
+                            okay = ofs.write(xbuf, (streamsize) nread);
+                        } catch (IOS_BASE::failure&) {
+                            okay = false;
+                        }
+                    } else {
+                        okay = false;
+                    }
+                    if (!okay) {
                         int x_errno = errno;
                         TAR_THROW(this, eWrite,
                                   "Error writing file '" + dst->GetPath()+ '\''
@@ -3556,8 +3592,8 @@ void CTar::x_AppendStream(const string& name, istream& is)
     // Write entry header
     x_WriteEntryInfo(name);
 
-    Uint8 size = m_Current.GetSize();
     errno = 0;
+    Uint8 size = m_Current.GetSize();
     while (size) {
         // Write file contents
         size_t avail = m_BufferSize - m_BufferPos;
@@ -3565,16 +3601,31 @@ void CTar::x_AppendStream(const string& name, istream& is)
             avail = (size_t) size;
         }
         // Read file
-        if (!is.read(m_Buffer + m_BufferPos, (streamsize) avail)) {
+        int x_errno = 0;
+        streamsize xread;
+        if (is.good()) {
+            try {
+                if (!is.read(m_Buffer + m_BufferPos, (streamsize) avail)) {
+                    x_errno = errno;
+                    xread = -1;
+                } else {
+                    xread = is.gcount();
+                }
+            } catch (IOS_BASE::failure&) {
+                xread = -1;
+            }
+        } else {
+            xread = -1;
+        }
+        if (xread <= 0) {
             ifstream* ifs = dynamic_cast<ifstream*>(&is);
-            int x_errno = ifs ? errno : 0;
             TAR_THROW(this, eRead,
                       "Error reading "
                       + string(ifs ? "file" : "stream")
-                      + " '" + name + '\'' + s_OSReason(x_errno));
+                      + " '" + name + '\'' + s_OSReason(ifs ? x_errno : 0));
         }
-        avail = (size_t) is.gcount();
         // Write buffer to the archive
+        avail = (size_t) xread;
         x_WriteArchive(avail);
         size -= avail;
     }
