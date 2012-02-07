@@ -48,7 +48,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 /// Actual initialization of the internal table is left for derived classes to
 /// implement.
 ///
-class NCBI_XOBJREAD_EXPORT CIdMapper: public IIdMapper
+class NCBI_XOBJREAD_EXPORT CIdMapper: public IIdMapper, public CObject
 {
 
 public:

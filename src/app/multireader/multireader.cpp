@@ -140,6 +140,23 @@ private:
     virtual int  Run(void);
     virtual void Exit(void);
     
+    void xProcessWiggle(
+        const CArgs&,
+        CNcbiIstream&,
+        CNcbiOstream& );
+    void xProcessBed(
+        const CArgs&,
+        CNcbiIstream&,
+        CNcbiOstream& );
+    void xProcessGtf(
+        const CArgs&,
+        CNcbiIstream&,
+        CNcbiOstream& );
+
+    void xDumpAnnot(
+        const CSeq_annot&,
+        CNcbiOstream& );
+
     CFormatGuess::EFormat m_uFormat;
     CNcbiIstream* m_pInput;
     CNcbiOstream* m_pOutput;
@@ -149,6 +166,8 @@ private:
     int  m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
+
+    CRef<CIdMapper> m_pMapper;
 };
 
 //  ============================================================================
@@ -355,6 +374,12 @@ CMultiReaderApp::Run(void)
 {   
     AppInitialize();
     
+    m_pMapper.Reset(GetMapper());
+
+    const CArgs& args = GetArgs();
+    CNcbiIstream& istr = args["input"].AsInputFile();
+    CNcbiOstream& ostr = args["output"].AsOutputFile();
+
     CRef< CSerialObject> object;
     vector< CRef< CSeq_annot > > annots;
     switch( m_uFormat ) {
@@ -373,60 +398,78 @@ CMultiReaderApp::Run(void)
         break;
 
     case CFormatGuess::eWiggle:
-        try {
-            CIdMapper* pMapper = GetMapper();
-            CWiggleReader reader(m_iFlags);
-            CStreamLineReader lr(*m_pInput);
-            CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
-            while(pAnnot) {
-                if (pMapper) {
-                    pMapper->MapObject(*pAnnot);
-                }
-                *m_pOutput << MSerial_AsnText << *pAnnot;
-//                DumpMemory("! ");
-                pAnnot.Reset();
-                pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
-            }
-        }
-        catch ( CObjReaderLineException& /*err*/ ) {
-        }
+        xProcessWiggle(args, istr, ostr);
         break;
     case CFormatGuess::eBed:
-        try {
-            CIdMapper* pMapper = GetMapper();
-            CBedReader reader(m_iFlags);
-            CStreamLineReader lr(*m_pInput);
-            CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
-            while(pAnnot) {
-                if (pMapper) {
-                    pMapper->MapObject(*pAnnot);
-                }
-                *m_pOutput << MSerial_AsnText << *pAnnot;
-//                DumpMemory("! ");
-                pAnnot.Reset();
-                if (lr.AtEOF()) {
-                    break;
-                }
-                pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
-            }
-        }
-        catch ( CObjReaderLineException& /*err*/ ) {
-        }
+        xProcessBed(args, istr, ostr);
         break;
-
     case CFormatGuess::eGtf:
-        try {
-            ReadAnnots( annots );
-            MapAnnots( annots );
-            DumpAnnots( annots );       
-        }
-        catch ( CObjReaderLineException& /*err*/ ) {
-        }
+        xProcessGtf(args, istr, ostr);
         break;
     }
 
     DumpErrors( cerr );
     return 0;
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessWiggle(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    CWiggleReader reader(m_iFlags);
+    CStreamLineReader lr(istr);
+    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    while(pAnnot) {
+        if (m_pMapper) {
+            m_pMapper->MapObject(*pAnnot);
+        }
+        xDumpAnnot(*pAnnot, ostr);
+        pAnnot.Reset();
+        pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessBed(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    CBedReader reader(m_iFlags);
+    CStreamLineReader lr(istr);
+    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    while(pAnnot) {
+        if (m_pMapper) {
+            m_pMapper->MapObject(*pAnnot);
+        }
+        xDumpAnnot(*pAnnot, ostr);
+        pAnnot.Reset();
+        pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessGtf(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    
+    CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        if (m_pMapper) {
+            m_pMapper->MapObject(**cit);
+        }
+        xDumpAnnot(**cit, ostr);
+    }
 }
 
 //  ============================================================================
@@ -698,6 +741,18 @@ void CMultiReaderApp::DumpAnnots(
     }
 }
 
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xDumpAnnot(
+    const CSeq_annot& annot,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    if (m_bCheckOnly) {
+        return;
+    }
+    ostr << MSerial_AsnText << annot;
+}
+        
 //  ============================================================================
 void CMultiReaderApp::MapObject(
     CSerialObject& object )

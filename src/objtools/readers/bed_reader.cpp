@@ -119,8 +119,14 @@ CBedReader::ReadSeqAnnot(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
-    CRef< CSeq_annot > annot( new CSeq_annot );
-    CRef< CAnnot_descr > desc( new CAnnot_descr );
+    CRef< CSeq_annot > annot;
+    CRef< CAnnot_descr > desc;
+
+    if (lr.AtEOF()) {
+        return annot;
+    }
+    annot.Reset(new CSeq_annot);
+    desc.Reset(new CAnnot_descr);
     annot->SetDesc( *desc );
     annot->SetData().SetFtable();
 
