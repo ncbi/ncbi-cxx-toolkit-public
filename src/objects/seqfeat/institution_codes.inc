@@ -587,6 +587,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BREG	s	Vorarlberger Naturschau",
 "BREM	s	Uebersee-Museum",
 "BRFL	s	City of Birmingham Reference Library",
+"BRFM<FRA>	c	Banque de Ressources Fongiques de Marseille",
 "BRG	s	University of Guyana, Biology Department",
 "BRGE	s	Laboratoire de Genetique des Plantes Superieures",
 "BRH	s	Ministry of Natural Resources, Local Government, and the Environment",
