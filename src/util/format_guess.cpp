@@ -148,6 +148,7 @@ CFormatGuess::s_CheckOrder[] =
     eLzo,
     eSra,
     eRmo,
+    eVcf,
     eGtf,
     eGvf,
     eGff3,
@@ -209,7 +210,8 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "bzip2",
     "lzo",
     "SRA",
-    "BAM"
+    "BAM",
+    "VCF",
 };
 
 const char*
@@ -482,6 +484,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatSra( mode );
     case eBam:
         return TestFormatBam( mode );
+    case eVcf:
+        return TestFormatVcf( mode );
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
             "CFormatGuess::x_TestFormat(): Unsupported format ID." );
@@ -1513,6 +1517,26 @@ bool CFormatGuess::TestFormatBam(EMode mode)
             &&  (static_cast<unsigned char>(m_pTestBuffer[10]) >= 6
                  ||  m_pTestBuffer[11] != 0) // at least six bytes
             &&  m_pTestBuffer[12] == 'B'  &&  m_pTestBuffer[13] == 'C');
+}
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::TestFormatVcf(
+    EMode)
+//  ----------------------------------------------------------------------------
+{
+    // Currently, only look for the header line identifying the VCF version.
+    // Waive requirement this be the first line, but still expect it to by
+    // in the initial sample.
+    if ( ! EnsureStats() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    ITERATE( list<string>, it, m_TestLines ) {
+        if (NStr::StartsWith(*it, "##fileformat=VCFv")) {
+            return true;
+        }
+    }
+    return false;
 }
 
 //  ----------------------------------------------------------------------------

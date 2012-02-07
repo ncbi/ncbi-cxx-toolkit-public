@@ -87,6 +87,7 @@ public:
         eLzo                 = 29, ///< lzo compressed file
         eSra                 = 30, ///< INSDC Sequence Read Archive file
         eBam                 = 31, ///< Binary alignment/map file
+        eVcf                 = 32, ///< VCF, CVcfReader
         /// Max value of EFormat
         eFormat_max
     };
@@ -267,6 +268,8 @@ protected:
     bool TestFormatSra(
         EMode );
     bool TestFormatBam(
+        EMode mode );
+    bool TestFormatVcf(
         EMode mode );
 
     bool IsInputRepeatMaskerWithoutHeader();
