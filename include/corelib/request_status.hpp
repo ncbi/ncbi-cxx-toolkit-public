@@ -63,6 +63,10 @@ public:
         e205_ResetContent           = 205,
         e206_PartialContent         = 206,
 
+        /// Non-standard status code - used to indicate broken connection
+        /// while serving partial-content request.
+        e299_PartialContentBrokenConnection = 299,
+
         e300_MultipleChoices        = 300,
         e301_MovedPermanently       = 301,
         e302_Found                  = 302,
@@ -95,7 +99,11 @@ public:
         e502_BadGateway             = 502,
         e503_ServiceUnavailable     = 503,
         e504_GatewayTimeout         = 504,
-        e505_HTTPVerNotSupported    = 505
+        e505_HTTPVerNotSupported    = 505,
+
+        /// Non-standard status code - used to indicate broken connection
+        /// while serving normal request.
+        e599_BrokenConnection       = 599
     };
 };
 

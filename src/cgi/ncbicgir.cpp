@@ -407,10 +407,11 @@ void CCgiResponse::EndLastPart(CNcbiOstream& os)
 
 void CCgiResponse::Flush(void) const
 {
-    if ( !GetOutput() ) {
-        return; // Don't try to flush NULL output
+    CNcbiOstream* os = GetOutput();
+    if (!os  ||  !os->good()) {
+        return; // Don't try to flush NULL or broken output
     }
-    out() << NcbiFlush;
+    *os << NcbiFlush;
 }
 
 

@@ -618,7 +618,15 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     // Discriminate between different types of error
     string status_str = "500 Server Error";
     string message = "";
-    SetHTTPStatus(500);
+    // Don't change status from 206 if the output stream is broken.
+    // It will be replaced by 299 later.
+    ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
+    if (!fex  ||  os.good()  ||
+        GetDiagContext().GetRequestContext().GetRequestStatus() !=
+        CRequestStatus::e206_PartialContent) {
+        SetHTTPStatus(500);
+    }
+
     CException* ce = dynamic_cast<CException*> (&e);
     if ( ce ) {
         message = ce->GetMsg();
@@ -771,10 +779,22 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
         }
     case eEndRequest:
         {
+            CDiagContext& ctx = GetDiagContext();
+            CRequestContext& rctx = ctx.GetRequestContext();
+            // Log broken connection as 299/599 status
+            CNcbiOstream* os = m_Context->GetResponse().GetOutput();
+            if (os  &&  !os->good() ) {
+                if (rctx.GetRequestStatus() == CRequestStatus::e206_PartialContent) {
+                    rctx.SetRequestStatus(CRequestStatus::e299_PartialContentBrokenConnection);
+                }
+                else {
+                    rctx.SetRequestStatus(CRequestStatus::e599_BrokenConnection);
+                }
+            }
             if ( m_RequestStartPrinted  &&
                 !CDiagContext::IsSetOldPostFormat() ) {
                 // This will also reset request context
-                GetDiagContext().PrintRequestStop();
+                ctx.PrintRequestStop();
                 m_RequestStartPrinted = false;
             }
             break;

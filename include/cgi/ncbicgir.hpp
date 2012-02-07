@@ -116,7 +116,9 @@ public:
     const CCgiCookies& Cookies(void) const;
     CCgiCookies&       Cookies(void);
 
-    /// Set output stream (NULL here means "no output stream")
+    /// Set output stream (NULL here means "no output stream").
+    /// This does not flush the previous stream (if any), so some
+    /// data may be lost.
     void SetOutput(CNcbiOstream* os, int fd = -1);
 
     /// Get output stream (NULL here means "no output stream").
