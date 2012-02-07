@@ -187,24 +187,27 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Copy
  * a heap, which have been HEAP_Create()'d or HEAP_Attach[Fast]()'d).
  * The heap handle then will be destroyed only when the internal
  * reference counter reaches 0.  No internal locking is provided.
+ * Return the resultant value of the reference counter.
  */
-extern NCBI_XCONNECT_EXPORT void HEAP_AddRef(HEAP heap);
+extern NCBI_XCONNECT_EXPORT unsigned int HEAP_AddRef(HEAP heap);
 
 
 /* Detach heap (previously attached by HEAP_Attach[Fast]).
  * For copy heap, it decrements an internal ref. counter by one, and
  * destroys the heap handle if and only if the counter has reached 0.
  * No internal locking of the reference counter is provided.
- * For heaps that are results of HEAP_Copy() call,
+ * For heaps that are results of the HEAP_Copy() call,
  * both HEAP_Detach() and HEAP_Destroy() can be used interchangeably.
+ * Return the remaining value of the reference counter (0 if the heap is gone).
  */
-extern NCBI_XCONNECT_EXPORT void HEAP_Detach(HEAP heap);
+extern NCBI_XCONNECT_EXPORT unsigned int HEAP_Detach(HEAP heap);
 
 
 /* Destroy heap (previously created by HEAP_Create()).
  * For copy heaps -- see comments for HEAP_Detach() above.
+ * Return the remaining value of the reference counter (0 if the heap is gone).
  */
-extern NCBI_XCONNECT_EXPORT void HEAP_Destroy(HEAP heap);
+extern NCBI_XCONNECT_EXPORT unsigned int HEAP_Destroy(HEAP heap);
 
 
 /* Get base address of the heap.

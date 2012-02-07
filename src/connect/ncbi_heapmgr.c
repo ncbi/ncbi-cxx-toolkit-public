@@ -937,43 +937,45 @@ HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
 }
 
 
-void HEAP_AddRef(HEAP heap)
+unsigned int HEAP_AddRef(HEAP heap)
 {
     if (!heap)
-        return;
+        return 0;
     assert(!heap->base == !heap->size);
     if (heap->refcnt) {
         heap->refcnt++;
         assert(heap->refcnt);
     }
+    return heap->refcnt;
 }
 
 
-void HEAP_Detach(HEAP heap)
+unsigned int HEAP_Detach(HEAP heap)
 {
     if (!heap)
-        return;
+        return 0;
     assert(!heap->base == !heap->size);
-    if (!heap->refcnt  ||  !--heap->refcnt) {
-        memset(heap, 0, sizeof(*heap));
-        free(heap);
-    }
+    if (heap->refcnt  &&  --heap->refcnt)
+        return heap->refcnt;
+    memset(heap, 0, sizeof(*heap));
+    free(heap);
+    return 0;
 }
 
 
-void HEAP_Destroy(HEAP heap)
+unsigned int HEAP_Destroy(HEAP heap)
 {
     char _id[32];
 
     if (!heap)
-        return;
+        return 0;
     assert(!heap->base == !heap->size);
     if (!heap->chunk  &&  !heap->refcnt) {
         CORE_LOGF_X(33, eLOG_Error,
                     ("Heap Destroy%s: Heap read-only", s_HEAP_Id(_id, heap)));
     } else if (heap->resize/*NB: NULL for heap copies*/)
         verify(heap->resize(heap->base, 0, heap->auxarg) == 0);
-    HEAP_Detach(heap);
+    return HEAP_Detach(heap);
 }
 
 
