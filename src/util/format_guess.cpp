@@ -847,26 +847,25 @@ bool
 CFormatGuess::TestFormatNewick(
     EMode /* not used */ )
 {
-    if ( ! EnsureTestBuffer() ) {
-        return false;
-    }
-    // Maybe we get home early ...
-    if ( m_iTestDataSize > 0 && m_pTestBuffer[0] != '(' ) {
-        return false;
-    }
-    if ( ! EnsureSplitLines() ) {
-        if ( ! m_TestLines.empty() ) {
-            return false;
-        }
-        m_TestLines.push_back( string( m_pTestBuffer ) );
-    }
+//  -----------------------------------------------------------------------------
+    //  special newick consideration:
+    //  newick files may come with all data cramped into a single run-on line,
+    //  that single oversized line may not have a line terminator
 
-    string one_line;
-    ITERATE( list<string>, it, m_TestLines ) {
-        one_line += *it;
-    }
+    const size_t minSampleSize = 1024;
+    const size_t maxSampleSize = 16*1024-1;
+    char* testBuffer = new char[maxSampleSize+1];
+    auto_ptr<char> autoDelete(testBuffer);
 
-    if ( ! IsLineNewick( one_line ) ) {
+    size_t sampleSize = 0;
+    while (sampleSize < minSampleSize  &&  !m_Stream.eof()) {
+        m_Stream.getline(testBuffer+sampleSize, maxSampleSize);
+        sampleSize += m_Stream.gcount();
+    }
+    m_Stream.clear();  // in case we reached eof
+    CStreamUtils::Stepback(m_Stream, testBuffer, sampleSize);
+
+    if (!IsLineNewick(string(testBuffer))) {
         return false;
     }
     return true;
@@ -1646,7 +1645,7 @@ CFormatGuess::IsLineNewick(
     //  we are most likely only seeing the first part of a tree.
     //
     string line = NStr::TruncateSpaces( cline );
-    if ( line.empty() ) {
+    if ( line.empty()  ||  line[0] != '(') {
         return false;
     }
     {{
