@@ -337,6 +337,12 @@ export CHECK_EXEC
 export CHECK_EXEC_STDIN
 export CHECK_SIGNATURE
 
+# Use AppLog-style output format in the testsuite by default
+if test -z "\$DIAG_OLD_POST_FORMAT"; then
+    DIAG_OLD_POST_FORMAT=false
+    export DIAG_OLD_POST_FORMAT
+fi
+
 # Avoid possible hangs on Mac OS X.
 DYLD_BIND_AT_LAUNCH=1
 export DYLD_BIND_AT_LAUNCH

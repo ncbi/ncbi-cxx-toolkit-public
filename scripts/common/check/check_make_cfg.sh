@@ -280,6 +280,9 @@ export CHECK_SIGNATURE="\$signature"
 # Enable silent abort for NCBI applications on fatal errors
 export DIAG_SILENT_ABORT="Y"
 
+# Use AppLog-style output format in the testsuite by default
+test -z "\$DIAG_OLD_POST_FORMAT"  &&  export DIAG_OLD_POST_FORMAT=false
+
 # Path to test data, used by some scripts and applications
 if test -z "\$NCBI_TEST_DATA"; then
     case `uname -s` in
