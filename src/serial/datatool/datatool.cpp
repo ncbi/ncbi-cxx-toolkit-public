@@ -642,6 +642,7 @@ bool CDataTool::GenerateCode(void)
     if ( generator.GetOpt("pch", &opt) )
         CFileCode::SetPchHeader(opt);
     
+    cout << GetFullVersion().Print(GetProgramDisplayName(), CVersion::fVersionInfo);
     // generate code
     generator.GenerateCode();
 
