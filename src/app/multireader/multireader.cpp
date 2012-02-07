@@ -152,9 +152,13 @@ private:
         const CArgs&,
         CNcbiIstream&,
         CNcbiOstream& );
+    void xProcessVcf(
+        const CArgs&,
+        CNcbiIstream&,
+        CNcbiOstream& );
 
-    void xDumpAnnot(
-        const CSeq_annot&,
+    void xWriteAnnot(
+        CSeq_annot&,                // may be modified by mapping
         CNcbiOstream& );
 
     CFormatGuess::EFormat m_uFormat;
@@ -406,6 +410,9 @@ CMultiReaderApp::Run(void)
     case CFormatGuess::eGtf:
         xProcessGtf(args, istr, ostr);
         break;
+    case CFormatGuess::eVcf:
+        xProcessVcf(args, istr, ostr);
+        break;
     }
 
     DumpErrors( cerr );
@@ -423,10 +430,7 @@ void CMultiReaderApp::xProcessWiggle(
     CStreamLineReader lr(istr);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     while(pAnnot) {
-        if (m_pMapper) {
-            m_pMapper->MapObject(*pAnnot);
-        }
-        xDumpAnnot(*pAnnot, ostr);
+        xWriteAnnot(*pAnnot, ostr);
         pAnnot.Reset();
         pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     }
@@ -443,10 +447,7 @@ void CMultiReaderApp::xProcessBed(
     CStreamLineReader lr(istr);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     while(pAnnot) {
-        if (m_pMapper) {
-            m_pMapper->MapObject(*pAnnot);
-        }
-        xDumpAnnot(*pAnnot, ostr);
+        xWriteAnnot(*pAnnot, ostr);
         pAnnot.Reset();
         pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     }
@@ -465,10 +466,24 @@ void CMultiReaderApp::xProcessGtf(
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        if (m_pMapper) {
-            m_pMapper->MapObject(**cit);
-        }
-        xDumpAnnot(**cit, ostr);
+        xWriteAnnot(**cit, ostr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessVcf(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+
+    CVcfReader reader( m_iFlags );
+    reader.ReadSeqAnnots(annots, *m_pInput, m_pErrors);
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xWriteAnnot(**cit, ostr);
     }
 }
 
@@ -577,12 +592,6 @@ void CMultiReaderApp::SetFlags(
         break;
        
     case CFormatGuess::eGtf:
-//        if ( args["format"].AsString() == "gff3" ) {
-//            m_iFlags |= CGFFReader::fSetVersion3;
-//        }
-//        if ( ! args["old-code"] ) {
-//            m_iFlags |= CGff3Reader::fNewCode;
-//        }
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CGFFReader::fAllIdsAsLocal;
         }
@@ -603,13 +612,6 @@ void CMultiReaderApp::ReadObject(
 //  ============================================================================
 {
     string strFormat = GetArgs()[ "format" ].AsString();
-
-    if ( strFormat == "vcf" ) {
-        CStreamLineReader lr( *m_pInput );
-        CVcfReader reader( m_iFlags );
-        object = reader.ReadObject( lr, m_pErrors );
-        return;
-    }
 
     switch ( m_uFormat ) {
     
@@ -742,11 +744,14 @@ void CMultiReaderApp::DumpAnnots(
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReaderApp::xDumpAnnot(
-    const CSeq_annot& annot,
+void CMultiReaderApp::xWriteAnnot(
+    CSeq_annot& annot,
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
+    if (m_pMapper) {
+        m_pMapper->MapObject(annot);
+    }
     if (m_bCheckOnly) {
         return;
     }
