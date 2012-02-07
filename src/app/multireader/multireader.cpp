@@ -109,14 +109,8 @@ protected:
     void ReadAnnots(
         vector< CRef<CSeq_annot> >& );
         
-    void MapObject(
-        CSerialObject& );
-        
     void MapAnnots(
         vector< CRef<CSeq_annot> >& );
-        
-    void DumpObject(
-        CSerialObject& );
         
     void DumpAnnots(
         vector< CRef<CSeq_annot> >& );
@@ -156,9 +150,14 @@ private:
         const CArgs&,
         CNcbiIstream&,
         CNcbiOstream& );
+    void xProcessNewick(
+        const CArgs&,
+        CNcbiIstream&,
+        CNcbiOstream& );
 
-    void xWriteAnnot(
-        CSeq_annot&,                // may be modified by mapping
+    void xWriteObject(
+        CSerialObject&,                // may be modified by mapping
+//        CSeq_annot&,
         CNcbiOstream& );
 
     CFormatGuess::EFormat m_uFormat;
@@ -394,8 +393,7 @@ CMultiReaderApp::Run(void)
             if ( ! object ) {
                 break;
             }
-            MapObject( *object );
-            DumpObject( *object );       
+            xWriteObject(*object, ostr);
         }
         catch ( CObjReaderLineException& /*err*/ ) {
         }
@@ -412,6 +410,9 @@ CMultiReaderApp::Run(void)
         break;
     case CFormatGuess::eVcf:
         xProcessVcf(args, istr, ostr);
+        break;
+    case CFormatGuess::eNewick:
+        xProcessNewick(args, istr, ostr);
         break;
     }
 
@@ -430,7 +431,7 @@ void CMultiReaderApp::xProcessWiggle(
     CStreamLineReader lr(istr);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     while(pAnnot) {
-        xWriteAnnot(*pAnnot, ostr);
+        xWriteObject(*pAnnot, ostr);
         pAnnot.Reset();
         pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     }
@@ -447,7 +448,7 @@ void CMultiReaderApp::xProcessBed(
     CStreamLineReader lr(istr);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     while(pAnnot) {
-        xWriteAnnot(*pAnnot, ostr);
+        xWriteObject(*pAnnot, ostr);
         pAnnot.Reset();
         pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     }
@@ -466,7 +467,7 @@ void CMultiReaderApp::xProcessGtf(
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteAnnot(**cit, ostr);
+        xWriteObject(**cit, ostr);
     }
 }
 
@@ -483,8 +484,20 @@ void CMultiReaderApp::xProcessVcf(
     CVcfReader reader( m_iFlags );
     reader.ReadSeqAnnots(annots, *m_pInput, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteAnnot(**cit, ostr);
+        xWriteObject(**cit, ostr);
     }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessNewick(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    auto_ptr< TPhyTreeNode >  pTree( ReadNewickTree( *m_pInput ) );
+    CRef<CBioTreeContainer> btc = MakeBioTreeContainer( pTree.get() );
+    xWriteObject(*btc, ostr);
 }
 
 //  ============================================================================
@@ -649,15 +662,6 @@ void CMultiReaderApp::ReadObject(
             else {
             }
         }
-
-        case CFormatGuess::eNewick: {
-            //handle inline while we figure out how far we want to go
-            // writing a full reader_base compliant adapter...
-            auto_ptr< TPhyTreeNode >  pTree( ReadNewickTree( *m_pInput ) );
-            CRef<CBioTreeContainer> btc = MakeBioTreeContainer( pTree.get() );
-            object = btc;
-            break;
-        }
     }
 }
 
@@ -720,13 +724,9 @@ void CMultiReaderApp::MapAnnots(
     vector< CRef<CSeq_annot> >& annots )
 //  ============================================================================
 {
-    auto_ptr< CIdMapper > pMapper( GetMapper() );
-    if ( ! pMapper.get() ) {
-        return;
-    }
     for ( size_t u=0; u < annots.size(); ++u ) {
         CRef< CSeq_annot > pAnnot = annots[u];
-        pMapper->MapObject( *pAnnot );
+        m_pMapper->MapObject( *pAnnot );
     }
 }
 
@@ -744,43 +744,21 @@ void CMultiReaderApp::DumpAnnots(
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReaderApp::xWriteAnnot(
-    CSeq_annot& annot,
+void CMultiReaderApp::xWriteObject(
+    CSerialObject& object,
+//    CSeq_annot& annot,
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
     if (m_pMapper) {
-        m_pMapper->MapObject(annot);
+        m_pMapper->MapObject(object);
     }
     if (m_bCheckOnly) {
         return;
     }
-    ostr << MSerial_AsnText << annot;
+    ostr << MSerial_AsnText << object;
 }
         
-//  ============================================================================
-void CMultiReaderApp::MapObject(
-    CSerialObject& object )
-//  ============================================================================
-{
-    auto_ptr<CIdMapper> pMapper(GetMapper());
-    if ( !pMapper.get() ) {
-        return;
-    }
-    pMapper->MapObject( object );
-}
-    
-//  ============================================================================
-void CMultiReaderApp::DumpObject(
-    CSerialObject& object )
-//  ============================================================================
-{
-    if ( m_bCheckOnly ) {
-        return;
-    }
-    *m_pOutput << MSerial_AsnText << object << endl;
-}
-
 //  ============================================================================
 CIdMapper*
 CMultiReaderApp::GetMapper()
