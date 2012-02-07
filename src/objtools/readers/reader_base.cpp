@@ -88,6 +88,7 @@
 #include <objtools/readers/microarray_reader.hpp>
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
+#include <objtools/readers/gvf_reader.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -120,6 +121,8 @@ CReaderBase::GetReader(
         return new CGff3Reader( flags );
     case CFormatGuess::eGff3:
         return new CGff3Reader( flags );
+    case CFormatGuess::eGvf:
+        return new CGvfReader( flags );
     }
 }
 

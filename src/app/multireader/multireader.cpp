@@ -101,69 +101,30 @@ public:
     CMultiReaderApp(): m_pErrors( 0 ) {};
     
 protected:
-    void AppInitialize();
-    
-    void ReadObject(
-        CRef<CSerialObject>& );
-        
-    void ReadAnnots(
-        vector< CRef<CSeq_annot> >& );
-        
-    void MapAnnots(
-        vector< CRef<CSeq_annot> >& );
-        
-    void DumpAnnots(
-        vector< CRef<CSeq_annot> >& );
-        
-    void DumpErrors(
-        CNcbiOstream& );
-    
-    void SetFormat(
-        const CArgs& );
-        
-    void SetFlags(
-        const CArgs& );
-            
-    CIdMapper* GetMapper();
-    
-    void SetErrorContainer(
-        const CArgs& );
-            
+       
 private:
     virtual void Init(void);
     virtual int  Run(void);
-    virtual void Exit(void);
     
-    void xProcessWiggle(
-        const CArgs&,
-        CNcbiIstream&,
-        CNcbiOstream& );
-    void xProcessBed(
-        const CArgs&,
-        CNcbiIstream&,
-        CNcbiOstream& );
-    void xProcessGtf(
-        const CArgs&,
-        CNcbiIstream&,
-        CNcbiOstream& );
-    void xProcessVcf(
-        const CArgs&,
-        CNcbiIstream&,
-        CNcbiOstream& );
-    void xProcessNewick(
-        const CArgs&,
-        CNcbiIstream&,
-        CNcbiOstream& );
+    void xProcessDefault(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessWiggle(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessBed(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessGtf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessVcf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessNewick(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessGff3(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessGff2(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessGvf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
-    void xWriteObject(
-        CSerialObject&,                // may be modified by mapping
-//        CSeq_annot&,
-        CNcbiOstream& );
+    void xSetFormat(const CArgs&, CNcbiIstream&);
+    void xSetFlags(const CArgs&, CNcbiIstream&);
+    void xSetMapper(const CArgs&);
+    void xSetErrorContainer(const CArgs&);
+            
+    void xWriteObject(CSerialObject&, CNcbiOstream& );
+    void xDumpErrors(CNcbiOstream& );
 
     CFormatGuess::EFormat m_uFormat;
-    CNcbiIstream* m_pInput;
-    CNcbiOstream* m_pOutput;
-    CErrorContainerBase* m_pErrors;
     bool m_bCheckOnly;
     bool m_bDumpStats;
     int  m_iFlags;
@@ -171,6 +132,7 @@ private:
     string m_AnnotTitle;
 
     CRef<CIdMapper> m_pMapper;
+    CRef<CErrorContainerBase> m_pErrors;
 };
 
 //  ============================================================================
@@ -199,9 +161,9 @@ protected:
     int m_iMaxLevel;    
 };    
         
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 void CMultiReaderApp::Init(void)
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -370,54 +332,71 @@ void CMultiReaderApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 int 
 CMultiReaderApp::Run(void)
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 {   
-    AppInitialize();
-    
-    m_pMapper.Reset(GetMapper());
-
     const CArgs& args = GetArgs();
     CNcbiIstream& istr = args["input"].AsInputFile();
     CNcbiOstream& ostr = args["output"].AsOutputFile();
 
+    xSetFormat(args ,istr);    
+    xSetFlags(args, istr);
+    xSetMapper(args);
+    xSetErrorContainer(args);
+
     CRef< CSerialObject> object;
     vector< CRef< CSeq_annot > > annots;
     switch( m_uFormat ) {
-
-    default:    
-        try {
-            ReadObject( object );
-            if ( ! object ) {
-                break;
-            }
-            xWriteObject(*object, ostr);
-        }
-        catch ( CObjReaderLineException& /*err*/ ) {
-        }
-        break;
-
-    case CFormatGuess::eWiggle:
-        xProcessWiggle(args, istr, ostr);
-        break;
-    case CFormatGuess::eBed:
-        xProcessBed(args, istr, ostr);
-        break;
-    case CFormatGuess::eGtf:
-        xProcessGtf(args, istr, ostr);
-        break;
-    case CFormatGuess::eVcf:
-        xProcessVcf(args, istr, ostr);
-        break;
-    case CFormatGuess::eNewick:
-        xProcessNewick(args, istr, ostr);
-        break;
+        default: 
+            xProcessDefault(args, istr, ostr);   
+            break;
+        case CFormatGuess::eWiggle:
+            xProcessWiggle(args, istr, ostr);
+            break;
+        case CFormatGuess::eBed:
+            xProcessBed(args, istr, ostr);
+            break;
+        case CFormatGuess::eGtf:
+        case CFormatGuess::eGtf_POISENED:
+            xProcessGtf(args, istr, ostr);
+            break;
+        case CFormatGuess::eVcf:
+            xProcessVcf(args, istr, ostr);
+            break;
+        case CFormatGuess::eNewick:
+            xProcessNewick(args, istr, ostr);
+            break;
+        case CFormatGuess::eGff3:
+            xProcessGff3(args, istr, ostr);
+            break;
+        case CFormatGuess::eGff2:
+            xProcessGff2(args, istr, ostr);
+            break;
+        case CFormatGuess::eGvf:
+            xProcessGvf(args, istr, ostr);
+            break;
     }
 
-    DumpErrors( cerr );
+    xDumpErrors( cerr );
     return 0;
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessDefault(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    auto_ptr<CReaderBase> pReader(CReaderBase::GetReader(m_uFormat, m_iFlags));
+    if (!pReader.get()) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "File format not supported", 0);
+    }
+    CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors);
+    xWriteObject(*object, ostr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -464,7 +443,70 @@ void CMultiReaderApp::xProcessGtf(
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     
+    if (args["format"].AsString() == "gff2") { // process as plain GFF2
+        return xProcessGff2(args, istr, ostr);
+    }
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xWriteObject(**cit, ostr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessGff3(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    
+    if (args["format"].AsString() == "gff2") { // process as plain GFF2
+        return xProcessGff2(args, istr, ostr);
+    }
+    CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xWriteObject(**cit, ostr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessGff2(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    
+    CGff2Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xWriteObject(**cit, ostr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessGvf(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    
+    if (args["format"].AsString() == "gff2") { // process as plain GFF2
+        return xProcessGff2(args, istr, ostr);
+    }
+    if (args["format"].AsString() == "gff3") { // process as plain GFF2
+        return xProcessGff3(args, istr, ostr);
+    }
+    CGvfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(**cit, ostr);
@@ -482,7 +524,7 @@ void CMultiReaderApp::xProcessVcf(
     ANNOTS annots;
 
     CVcfReader reader( m_iFlags );
-    reader.ReadSeqAnnots(annots, *m_pInput, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(**cit, ostr);
     }
@@ -495,82 +537,56 @@ void CMultiReaderApp::xProcessNewick(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr< TPhyTreeNode >  pTree( ReadNewickTree( *m_pInput ) );
-    CRef<CBioTreeContainer> btc = MakeBioTreeContainer( pTree.get() );
+    auto_ptr<TPhyTreeNode>  pTree(ReadNewickTree(istr) );
+    CRef<CBioTreeContainer> btc = MakeBioTreeContainer(pTree.get());
     xWriteObject(*btc, ostr);
 }
 
-//  ============================================================================
-void CMultiReaderApp::Exit(void)
-//  ============================================================================
-{
-    delete m_pErrors;
-    
-    SetDiagStream(0);
-}
-
-//  ============================================================================
-void CMultiReaderApp::AppInitialize()
-//  ============================================================================
-{
-    const CArgs& args = GetArgs();
-    m_pInput = &args["input"].AsInputFile();
-    m_pOutput = &args["output"].AsOutputFile();
-    
-    SetFormat( args );    
-    SetFlags( args );
-    m_bCheckOnly = args["checkonly"];
-
-    SetErrorContainer( args );
-}
-
-//  ============================================================================
-void CMultiReaderApp::SetFormat(
-    const CArgs& args )
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xSetFormat(
+    const CArgs& args,
+    CNcbiIstream& istr )
+//  ----------------------------------------------------------------------------
 {
     m_uFormat = CFormatGuess::eUnknown;    
     string format = args["format"].AsString();
     const string& strProgramName = GetProgramDisplayName();
     
-    if ( NStr::StartsWith( strProgramName, "wig" ) || format == "wig" ||
-        format == "wiggle" ) {
+    if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
+        format == "wiggle") {
         m_uFormat = CFormatGuess::eWiggle;
     }
-    if ( NStr::StartsWith( strProgramName, "bed" ) || format == "bed" ) {
+    if (NStr::StartsWith(strProgramName, "bed") || format == "bed") {
         m_uFormat = CFormatGuess::eBed;
     }
-    if ( NStr::StartsWith( strProgramName, "b15" ) || format == "bed15" ||
-        format == "microarray" ) {
+    if (NStr::StartsWith(strProgramName, "b15") || format == "bed15" ||
+        format == "microarray") {
         m_uFormat = CFormatGuess::eBed15;
     }
-    if ( NStr::StartsWith( strProgramName, "gtf" ) || 
-        format == "gtf" || format == "gff3" || format == "gff2" ) {
+    if (NStr::StartsWith(strProgramName, "gtf") || 
+        format == "gtf" || format == "gff3" || format == "gff2") {
         m_uFormat = CFormatGuess::eGtf;
     }
-    if ( NStr::StartsWith( strProgramName, "newick" ) || 
-        format == "newick" || format == "tree" || format == "tre" ) {
+    if (NStr::StartsWith(strProgramName, "newick") || 
+        format == "newick" || format == "tree" || format == "tre") {
         m_uFormat = CFormatGuess::eNewick;
     }
-
-    //fl begin hack
-    if ( NStr::StartsWith( strProgramName, "gvf" ) || format == "gvf" ) {
+    if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
         m_uFormat = CFormatGuess::eGtf;
     }
-    //fl end hack
-
-    if ( m_uFormat == CFormatGuess::eUnknown ) {
-        m_uFormat = CFormatGuess::Format( *m_pInput );
+    if (m_uFormat == CFormatGuess::eUnknown) {
+        m_uFormat = CFormatGuess::Format(istr);
     }
 }
 
-//  ============================================================================
-void CMultiReaderApp::SetFlags(
-    const CArgs& args )
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xSetFlags(
+    const CArgs& args,
+    CNcbiIstream& istr)
+//  ----------------------------------------------------------------------------
 {
     if (m_uFormat == CFormatGuess::eUnknown) {
-        SetFormat( args );
+        xSetFormat(args, istr);
     }
     m_iFlags = NStr::StringToInt( 
         args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
@@ -617,136 +633,12 @@ void CMultiReaderApp::SetFlags(
     }
     m_AnnotName = args["name"].AsString();
     m_AnnotTitle = args["title"].AsString();
-}
-
-//  ============================================================================
-void CMultiReaderApp::ReadObject(
-    CRef<CSerialObject>& object )
-//  ============================================================================
-{
-    string strFormat = GetArgs()[ "format" ].AsString();
-
-    switch ( m_uFormat ) {
-    
-        default: {
-            CReaderBase* pReader = CReaderBase::GetReader( m_uFormat, m_iFlags );
-            if ( !pReader ) {
-                NCBI_THROW2( CObjReaderParseException, eFormat,
-                    "File format not supported", 0 );
-            }
-            object = pReader->ReadObject( *m_pInput, m_pErrors );
-            delete pReader;
-            break;
-        }
-
-        case CFormatGuess::eGtf: {
-            CStreamLineReader lr( *m_pInput );
-            if ( strFormat == "gtf" ) {
-                CGtfReader reader( 
-                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-                reader.ReadObject( lr, m_pErrors );
-                break;
-            }
-            if ( strFormat == "gff2" ) {
-                CGff2Reader reader( 
-                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-                reader.ReadObject( lr, m_pErrors );
-                break;
-            }
-            if ( strFormat == "gvf" ) {
-                CGvfReader reader( 
-                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-                reader.ReadObject( lr, m_pErrors );
-                break;
-            }
-            else {
-            }
-        }
-    }
-}
-
-//  ============================================================================
-void CMultiReaderApp::ReadAnnots(
-    vector< CRef<CSeq_annot> >& annots )
-//  ============================================================================
-{
-    string strFormat = GetArgs()[ "format" ].AsString();
-
-    if ( strFormat == "vcf" ) {
-        CVcfReader reader( m_iFlags );
-        return reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-    }
-
-    switch ( m_uFormat ) {
-   
-        default:
-            break;
- 
-        case CFormatGuess::eWiggle: {
-            CWiggleReader reader( m_iFlags );
-            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-            break;
-        }
-        case CFormatGuess::eBed: {
-            CBedReader reader( m_iFlags );
-            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-            break;
-        }    
-        case CFormatGuess::eGtf: {
-            if ( strFormat == "gtf" ) {
-                CGtfReader reader( 
-                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-                reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-                break;
-            }
-            if ( strFormat == "gff2" ) {
-                CGff2Reader reader( 
-                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-                reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-                break;
-            }
-            if ( strFormat == "gvf" ) {
-                CGvfReader reader( 
-                    (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-                reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-                break;
-            }
-            CGff3Reader reader( 
-                (unsigned int)m_iFlags, m_AnnotName, m_AnnotTitle );
-            reader.ReadSeqAnnots( annots, *m_pInput, m_pErrors );
-            break;
-        }
-    }
-}
-
-//  ============================================================================
-void CMultiReaderApp::MapAnnots(
-    vector< CRef<CSeq_annot> >& annots )
-//  ============================================================================
-{
-    for ( size_t u=0; u < annots.size(); ++u ) {
-        CRef< CSeq_annot > pAnnot = annots[u];
-        m_pMapper->MapObject( *pAnnot );
-    }
-}
-
-//  ============================================================================
-void CMultiReaderApp::DumpAnnots(
-    vector< CRef<CSeq_annot> >& annots )
-//  ============================================================================
-{
-    if ( m_bCheckOnly ) {
-        return;
-    }
-    for ( size_t u=0; u < annots.size(); ++u ) {
-        *m_pOutput << MSerial_AsnText << *(annots[u]);
-    }
+    m_bCheckOnly = args["checkonly"];
 }
 
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xWriteObject(
-    CSerialObject& object,
-//    CSeq_annot& annot,
+    CSerialObject& object,                  // potentially modified by mapper
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
@@ -759,35 +651,33 @@ void CMultiReaderApp::xWriteObject(
     ostr << MSerial_AsnText << object;
 }
         
-//  ============================================================================
-CIdMapper*
-CMultiReaderApp::GetMapper()
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+void
+CMultiReaderApp::xSetMapper(
+    const CArgs& args)
+//  ----------------------------------------------------------------------------
 {
-    const CArgs& args = GetArgs();
-    
     string strBuild = args["genome"].AsString();
     string strMapFile = args["mapfile"].AsString();
     
-    bool bNoMap = strBuild.empty() && strMapFile.empty();
-    if ( bNoMap ) {
-        return 0;
+    if (strBuild.empty() && strMapFile.empty()) {
+        return;
     }
-    if ( !strMapFile.empty() ) {
-        CNcbiIfstream* pMapFile = new CNcbiIfstream( strMapFile.c_str() );
-        CIdMapper* pMapper = new CIdMapperConfig( 
-            *pMapFile, strBuild, false, m_pErrors );
-        pMapFile->close();
-        return pMapper;
+    if (!strMapFile.empty()) {
+        CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile.c_str());
+        m_pMapper.Reset(
+            new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors));
     }
-    return new CIdMapperBuiltin( strBuild, false, m_pErrors );
+    else {
+        m_pMapper.Reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
+    }
 }        
 
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 void
-CMultiReaderApp::SetErrorContainer(
+CMultiReaderApp::xSetErrorContainer(
     const CArgs& args )
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 {
     //
     //  By default, allow all errors up to the level of "warning" but nothing
@@ -819,25 +709,25 @@ CMultiReaderApp::SetErrorContainer(
     }
     
     if ( iMaxErrorCount == -1 ) {
-        m_pErrors = new CErrorContainerLevel( iMaxErrorLevel );
+        m_pErrors.Reset(new CErrorContainerLevel(iMaxErrorLevel));
         return;
     }
-    m_pErrors = new CErrorContainerCustom( iMaxErrorCount, iMaxErrorLevel );
+    m_pErrors.Reset(new CErrorContainerCustom(iMaxErrorCount, iMaxErrorLevel));
 }
     
-//  ============================================================================
-void CMultiReaderApp::DumpErrors(
-    CNcbiOstream& out )
-//  ============================================================================
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xDumpErrors(
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
 {
-    if ( m_pErrors ) {
-        m_pErrors->Dump( out );
+    if (m_pErrors) {
+        m_pErrors->Dump(ostr);
     }
 }
 
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 int main(int argc, const char* argv[])
-//  ============================================================================
+//  ----------------------------------------------------------------------------
 {
     // Execute main application function
     return CMultiReaderApp().AppMain(argc, argv, 0, eDS_Default, 0);
