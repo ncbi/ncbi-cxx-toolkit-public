@@ -203,7 +203,7 @@ static int x_CheckLFS(const CArgs& args, const string& path)
         message += " `" + path + '\'';
     }
     if (verbose) {
-        LOG_POST(message);
+        NcbiCerr << message << NcbiEndl;
     }
     return nolfs;
 }
@@ -466,7 +466,7 @@ int CTarTest::Run(void)
         for (size_t i = 1;  i <= n;  ++i) {
             string name = args[i].AsString();
             auto_ptr<CTar::TEntries> add;
-            LOG_POST(what << name);
+            NcbiCerr << what << name << NcbiEndl;
             if (action == eUpdate) {
                 _ASSERT(n  &&  !io);
                 add = tar->Update(name);
@@ -479,7 +479,7 @@ int CTarTest::Run(void)
         }
         if (m_Flags & fVerbose) {
             ITERATE(CTar::TEntries, it, entries) {
-                LOG_POST(prefix << it->GetName() + x_Pos(*it));
+                NcbiCerr << prefix << it->GetName() + x_Pos(*it) << NcbiEndl;
             }
         }
         tar->Close();  // finalize TAR file before streams close (below)
@@ -489,7 +489,7 @@ int CTarTest::Run(void)
         }
         NcbiCerr << "Testing archive... " << flush;
         tar->Test();
-        NcbiCerr << "Done." << endl;
+        NcbiCerr << "Done." << NcbiEndl;
     } else if (action == eExtract  &&  stream  &&  n == 1) {
         _ASSERT(!tar.get());
         if (!io) {
@@ -523,12 +523,12 @@ int CTarTest::Run(void)
             if (stream) {
                 const CTarEntryInfo* info;
                 while ((info = tar->GetNextEntryInfo()) != 0) {
-                    LOG_POST(*info << x_Pos(*info));
+                    NcbiCerr << *info << x_Pos(*info) << NcbiEndl;
                 }
             } else {
                 auto_ptr<CTar::TEntries> entries = tar->List();
                 ITERATE(CTar::TEntries, it, *entries.get()) {
-                    LOG_POST(*it << x_Pos(*it));
+                    NcbiCerr << *it << x_Pos(*it) << NcbiEndl;
                 }
             }
         } else if (stream) {
@@ -541,7 +541,7 @@ int CTarTest::Run(void)
                 if (info->GetType() != CTarEntryInfo::eFile) {
                     continue;
                 }
-                LOG_POST("X " << info->GetName() + x_Pos(*info));
+                NcbiCerr << "X " << info->GetName() + x_Pos(*info) << NcbiEndl;
                 IReader* ir = tar->GetNextEntryData();
                 _ASSERT(ir);
                 CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
@@ -553,15 +553,16 @@ int CTarTest::Run(void)
             auto_ptr<CTar::TEntries> entries = tar->Extract();
             if (m_Flags & fVerbose) {
                 ITERATE(CTar::TEntries, it, *entries.get()) {
-                    LOG_POST("x " << it->GetName() + x_Pos(*it));
+                    NcbiCerr << "x " << it->GetName() + x_Pos(*it) << NcbiEndl;
                 }
             }
         }
     }
 
     zs.reset(0);       // make sure zip stream gets finalized...
-    if (ofs.is_open())
+    if (ofs.is_open()) {
         ofs.close();   // ...before the output file gets closed
+    }
     return 0;
 }
 
