@@ -1147,7 +1147,7 @@ case "$host_os:$compiler" in
          ;;
    esac
 
-   CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
+   # CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices $LIBS"
 
    OBJCXX_CXXFLAGS='-x objective-c++'
