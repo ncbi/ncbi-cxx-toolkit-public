@@ -852,23 +852,49 @@ CFormatGuess::TestFormatNewick(
     //  newick files may come with all data cramped into a single run-on line,
     //  that single oversized line may not have a line terminator
 
-    const size_t minSampleSize = 1024;
-    const size_t maxSampleSize = 16*1024-1;
-    char* testBuffer = new char[maxSampleSize+1];
-    auto_ptr<char> autoDelete(testBuffer);
+//>>rollback 2012-02-07
+//    const size_t minSampleSize = 1024;
+//    const size_t maxSampleSize = 16*1024-1;
+//    char* testBuffer = new char[maxSampleSize+1];
+//    auto_ptr<char> autoDelete(testBuffer);
 
-    size_t sampleSize = 0;
-    while (sampleSize < minSampleSize  &&  !m_Stream.eof()) {
-        m_Stream.getline(testBuffer+sampleSize, maxSampleSize);
-        sampleSize += m_Stream.gcount();
+//    size_t sampleSize = 0;
+//    while (sampleSize < minSampleSize  &&  !m_Stream.eof()) {
+//        m_Stream.getline(testBuffer+sampleSize, maxSampleSize);
+//        sampleSize += m_Stream.gcount();
+//    }
+//    m_Stream.clear();  // in case we reached eof
+//    CStreamUtils::Stepback(m_Stream, testBuffer, sampleSize);
+
+//    if (!IsLineNewick(string(testBuffer))) {
+//        return false;
+//    }
+//    return true;
+    if ( ! EnsureTestBuffer() ) {
+        return false;
     }
-    m_Stream.clear();  // in case we reached eof
-    CStreamUtils::Stepback(m_Stream, testBuffer, sampleSize);
+    // Maybe we get home early ...
+    if ( m_iTestDataSize > 0 && m_pTestBuffer[0] != '(' ) {
+        return false;
+    }
+    if ( ! EnsureSplitLines() ) {
+        if ( ! m_TestLines.empty() ) {
+            return false;
+        }
+        m_TestLines.push_back( string( m_pTestBuffer ) );
+    }
 
-    if (!IsLineNewick(string(testBuffer))) {
+    string one_line;
+    ITERATE( list<string>, it, m_TestLines ) {
+        one_line += *it;
+    }
+
+    if ( ! IsLineNewick( one_line ) ) {
         return false;
     }
     return true;
+
+//<<rollback 2012-02-07
 }
 
 //  -----------------------------------------------------------------------------
