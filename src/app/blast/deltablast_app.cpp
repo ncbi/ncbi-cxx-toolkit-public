@@ -255,6 +255,7 @@ int CDeltaBlastApp::Run(void)
             CRef<blast::CSearchResultSet> domain_results;
 
             CRef<CDeltaBlast> deltablast;
+            CRef<CPssmWithParameters> pssm;
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
 
@@ -265,6 +266,7 @@ int CDeltaBlastApp::Run(void)
                           m_CmdLineArgs->ProduceDebugRemoteOutput(),
                           m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
+                pssm = rmt_blast->GetPSSM();
             } else {
 
                 // Run locally
@@ -277,10 +279,9 @@ int CDeltaBlastApp::Run(void)
                                                  delta_opts));
                 deltablast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = deltablast->Run();
+                domain_results = deltablast->GetDomainResults();
+                pssm = deltablast->GetPssm();
             }
-
-            // get pssm
-            CRef<CPssmWithParameters> pssm = deltablast->GetPssm();
 
             // deltablast computed pssm does not have query title, so
             // it must be added if pssm is requested
@@ -297,9 +298,10 @@ int CDeltaBlastApp::Run(void)
 
                 SavePssmToFile(pssm);
 
-                domain_results = deltablast->GetDomainResults();
-                blast::CSearchResultSet::const_iterator domain_it =
-                    domain_results->begin();
+                blast::CSearchResultSet::const_iterator domain_it;
+                if (m_CmdLineArgs->GetShowDomainHits()) {
+                    domain_it = domain_results->begin();
+                }
 
                 if (fmt_args->ArchiveFormatRequested(args)) {
                     formatter.WriteArchive(*queries, *opts_hndl, *results);
@@ -324,9 +326,8 @@ int CDeltaBlastApp::Run(void)
             }
             else {
 
-
                 // if more than 1 iterations are requested, then
-                // do PSI-BLAST iterations
+                // do PSI-BLAST iterations, this is not allowed for remote blast
 
                 // print domain search results if requested
                 // query_batch_size == 1 if number of iteratins > 1
