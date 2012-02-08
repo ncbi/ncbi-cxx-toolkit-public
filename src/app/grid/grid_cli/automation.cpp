@@ -84,6 +84,9 @@ public:
     bool NextBoolean() {return GetBoolean(NextNode());}
     bool NextBoolean(bool default_value);
 
+    const CJsonNode::TArray& GetArray(const CJsonNode& node);
+    const CJsonNode::TArray& NextArray() {return GetArray(NextNode());}
+
     void UpdateLocation(const string& location);
 
 private:
@@ -152,6 +155,13 @@ inline bool CArgArray::NextBoolean(bool default_value)
     return next_node ? GetBoolean(next_node) : default_value;
 }
 
+inline const CJsonNode::TArray& CArgArray::GetArray(const CJsonNode& node)
+{
+    if (!node.IsArray())
+        Exception("invalid argument type (expected an array)");
+    return node.GetArray();
+}
+
 inline void CArgArray::UpdateLocation(const string& location)
 {
     if (m_Location.empty())
@@ -172,36 +182,126 @@ void CArgArray::Exception(const char* what)
     }
 }
 
+class CAutomationProc;
+
 struct SAutomationObject : public CObject
 {
-    size_t m_Id;
+    typedef Int8 TObjectID;
+
+    TObjectID m_Id;
+
     enum EObjectType {
         eNetCacheAPI,
         eNetScheduleAPI,
+        eNetScheduleServer,
     } m_Type;
-    SAutomationObject(size_t object_id, EObjectType object_type) :
-        m_Id(object_id), m_Type(object_type)
+
+    SAutomationObject(EObjectType object_type) :
+        m_Type(object_type)
     {
     }
-    virtual CJsonNode Call(const string& method, CArgArray& arg_array) = 0;
+
+    void SetID(TObjectID object_id) {m_Id = object_id;}
+
+    TObjectID GetID() const {return m_Id;}
+
+    virtual CJsonNode Call(const string& method, CArgArray& arg_array,
+            CAutomationProc* automation_proc) = 0;
 };
 
 struct SNetCacheAutomationObject : public SAutomationObject
 {
-    CNetCacheAPI m_NetCacheAPI;
-
-    SNetCacheAutomationObject(size_t object_id,
-            const string& service_name, const string& client_name) :
-        SAutomationObject(object_id, eNetCacheAPI),
+    SNetCacheAutomationObject(const string& service_name,
+            const string& client_name) :
+        SAutomationObject(eNetCacheAPI),
         m_NetCacheAPI(service_name, client_name)
     {
     }
 
-    virtual CJsonNode Call(const string& method, CArgArray& arg_array);
+    virtual CJsonNode Call(const string& method, CArgArray& arg_array,
+            CAutomationProc* automation_proc);
+
+    CNetCacheAPI m_NetCacheAPI;
 };
 
+struct SNetScheduleServerAutomationObject : public SAutomationObject
+{
+    SNetScheduleServerAutomationObject(CNetScheduleAPI::TInstance ns_api,
+            CNetServer::TInstance server) :
+        SAutomationObject(eNetScheduleServer),
+        m_NetScheduleAPI(ns_api),
+        m_NetScheduleServer(server)
+    {
+    }
+
+    virtual CJsonNode Call(const string& method, CArgArray& arg_array,
+            CAutomationProc* automation_proc);
+
+    CNetScheduleAPI m_NetScheduleAPI;
+    CNetServer m_NetScheduleServer;
+};
+
+struct SNetScheduleServiceAutomationObject : public SAutomationObject
+{
+    SNetScheduleServiceAutomationObject(const string& service_name,
+            const string& queue_name, const string& client_name) :
+        SAutomationObject(eNetScheduleAPI),
+        m_NetScheduleAPI(service_name, client_name, queue_name)
+    {
+    }
+
+    virtual CJsonNode Call(const string& method, CArgArray& arg_array,
+            CAutomationProc* automation_proc);
+
+    CNetScheduleAPI m_NetScheduleAPI;
+};
+
+typedef CRef<SAutomationObject> TAutomationObjectRef;
+
+class CAutomationProc
+{
+public:
+    CAutomationProc(CPipe& pipe, FILE* protocol_dump);
+
+    bool ProcessMessage(const CJsonNode& message);
+
+    void PrepareError(const CTempString& error_message);
+
+    void SendMessage();
+
+    void AddObject(TAutomationObjectRef new_object);
+
+private:
+    size_t ObjectIdToIndex(SAutomationObject::TObjectID object_id);
+
+    void PrepareReply(const string& reply);
+
+    char m_WriteBuf[1024];
+
+    Int8 m_Pid;
+
+    CPipe& m_Pipe;
+    CUTTPWriter m_Writer;
+    CJsonOverUTTPWriter m_JSONWriter;
+
+    FILE* m_ProtocolDumpFile;
+    string m_ProtocolDumpTimeFormat;
+    string m_DumpInputHeaderFormat;
+    string m_DumpOutputHeaderFormat;
+
+    vector<TAutomationObjectRef> m_Objects;
+
+    CJsonNode m_RootNode;
+};
+
+inline void CAutomationProc::AddObject(TAutomationObjectRef new_object)
+{
+    new_object->SetID(m_Pid + m_Objects.size());
+    m_Objects.push_back(new_object);
+}
+
 CJsonNode SNetCacheAutomationObject::Call(const string& method,
-        CArgArray& arg_array)
+        CArgArray& arg_array, CAutomationProc* automation_proc)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.PushBoolean(true);
@@ -209,23 +309,39 @@ CJsonNode SNetCacheAutomationObject::Call(const string& method,
     return reply;
 }
 
-struct SNetScheduleAutomationObject : public SAutomationObject
+static void ExtractVectorOfStrings(CArgArray& arg_array,
+        vector<string>& result)
 {
-    CNetScheduleAPI m_NetScheduleAPI;
+    CJsonNode arg(arg_array.NextNode());
+    if (!arg.IsNull())
+        ITERATE(CJsonNode::TArray, it, arg.GetArray()) {
+            result.push_back(arg_array.GetString(*it));
+        }
+}
 
-    SNetScheduleAutomationObject(size_t object_id,
-            const string& service_name, const string& queue_name,
-            const string& client_name) :
-        SAutomationObject(object_id, eNetScheduleAPI),
-        m_NetScheduleAPI(service_name, client_name, queue_name)
-    {
+CJsonNode SNetScheduleServerAutomationObject::Call(const string& method,
+        CArgArray& arg_array, CAutomationProc* automation_proc)
+{
+    CJsonNode reply(CJsonNode::NewArrayNode());
+    reply.PushBoolean(true);
+
+    if (method == "change_preferred_affinities") {
+        vector<string> affs_to_add;
+        ExtractVectorOfStrings(arg_array, affs_to_add);
+        vector<string> affs_to_del;
+        ExtractVectorOfStrings(arg_array, affs_to_del);
+        m_NetScheduleAPI.GetExecuter().ChangePreferredAffinities(
+                m_NetScheduleServer, affs_to_add, affs_to_del);
+    } else {
+        NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
+            "Unknown NetScheduleServer method '" << method << "'");
     }
 
-    virtual CJsonNode Call(const string& method, CArgArray& arg_array);
-};
+    return reply;
+}
 
-CJsonNode SNetScheduleAutomationObject::Call(const string& method,
-        CArgArray& arg_array)
+CJsonNode SNetScheduleServiceAutomationObject::Call(const string& method,
+        CArgArray& arg_array, CAutomationProc* automation_proc)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.PushBoolean(true);
@@ -253,6 +369,17 @@ CJsonNode SNetScheduleAutomationObject::Call(const string& method,
         string command(arg_array.NextString());
         reply.PushNode(ExecToJson(m_NetScheduleAPI.GetService(),
                 command, arg_array.NextBoolean(false)));
+    } else if (method == "get_servers") {
+        CJsonNode object_ids(CJsonNode::NewArrayNode());
+        for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate();
+                it; ++it) {
+            TAutomationObjectRef new_object(
+                    new SNetScheduleServerAutomationObject(
+                        m_NetScheduleAPI, *it));
+            automation_proc->AddObject(new_object);
+            object_ids.PushNumber(new_object->GetID());
+        }
+        reply.PushNode(object_ids);
     } else {
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                 "Unknown NetSchedule method '" << method << "'");
@@ -260,44 +387,6 @@ CJsonNode SNetScheduleAutomationObject::Call(const string& method,
 
     return reply;
 }
-
-typedef CRef<SAutomationObject> TAutomationObjectRef;
-
-class CAutomationProc
-{
-public:
-    CAutomationProc(CPipe& pipe, FILE* protocol_dump);
-
-    bool ProcessMessage(const CJsonNode& message);
-
-    void PrepareError(const CTempString& error_message);
-
-    void SendMessage();
-
-private:
-    typedef Int8 TObjectID;
-
-    size_t ObjectIdToIndex(TObjectID object_id);
-
-    void PrepareReply(const string& reply);
-
-    char m_WriteBuf[1024];
-
-    Int8 m_Pid;
-
-    CPipe& m_Pipe;
-    CUTTPWriter m_Writer;
-    CJsonOverUTTPWriter m_JSONWriter;
-
-    FILE* m_ProtocolDumpFile;
-    string m_ProtocolDumpTimeFormat;
-    string m_DumpInputHeaderFormat;
-    string m_DumpOutputHeaderFormat;
-
-    vector<TAutomationObjectRef> m_Objects;
-
-    CJsonNode m_RootNode;
-};
 
 CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
     m_Pipe(pipe),
@@ -349,38 +438,38 @@ bool CAutomationProc::ProcessMessage(const CJsonNode& message)
         return false;
 
     if (command == "call") {
-        TAutomationObjectRef callee(m_Objects[
-                ObjectIdToIndex((TObjectID) arg_array.NextNumber())]);
+        TAutomationObjectRef callee(m_Objects[ObjectIdToIndex(
+                (SAutomationObject::TObjectID) arg_array.NextNumber())]);
         string method(arg_array.NextString());
         arg_array.UpdateLocation(method);
-        m_RootNode = callee->Call(method, arg_array);
+        m_RootNode = callee->Call(method, arg_array, this);
     } else if (command == "new") {
         string class_name(arg_array.NextString());
         arg_array.UpdateLocation(class_name);
         TAutomationObjectRef new_object;
-        TObjectID new_object_id = m_Pid + m_Objects.size();
         if (class_name == "NetCache") {
             string service_name(arg_array.NextString());
             string client_name(arg_array.NextString());
-            new_object.Reset(new SNetCacheAutomationObject(new_object_id,
+            new_object.Reset(new SNetCacheAutomationObject(
                     service_name, client_name));
         } else if (class_name == "NetSchedule") {
             string service_name(arg_array.NextString());
             string queue_name(arg_array.NextString());
             string client_name(arg_array.NextString());
-            new_object.Reset(new SNetScheduleAutomationObject(new_object_id,
+            new_object.Reset(new SNetScheduleServiceAutomationObject(
                     service_name, queue_name, client_name));
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                     "Unknown class '" << class_name << "'");
         }
-        m_Objects.push_back(new_object);
+        AddObject(new_object);
 
         m_RootNode = CJsonNode::NewArrayNode();
         m_RootNode.PushBoolean(true);
-        m_RootNode.PushNumber(new_object_id);
+        m_RootNode.PushNumber(new_object->GetID());
     } else if (command == "del") {
-        m_Objects[ObjectIdToIndex((TObjectID) arg_array.NextNumber())] = NULL;
+        m_Objects[ObjectIdToIndex(
+                (SAutomationObject::TObjectID) arg_array.NextNumber())] = NULL;
         m_RootNode = CJsonNode::NewArrayNode();
         m_RootNode.PushBoolean(true);
     } else {
@@ -409,7 +498,7 @@ void CAutomationProc::SendMessage()
     m_JSONWriter.SendMessage(m_RootNode);
 }
 
-size_t CAutomationProc::ObjectIdToIndex(CAutomationProc::TObjectID object_id)
+size_t CAutomationProc::ObjectIdToIndex(SAutomationObject::TObjectID object_id)
 {
     size_t index = (size_t) (object_id - m_Pid);
 

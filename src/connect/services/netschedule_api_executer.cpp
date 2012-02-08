@@ -341,6 +341,30 @@ void CNetScheduleExecuter::UnRegisterClient()
     }
 }
 
+static void s_AppendAffinityTokens(string& cmd,
+        const char* sep, const vector<string>& affs)
+{
+    if (!affs.empty()) {
+        ITERATE(vector<string>, aff, affs) {
+            cmd.append(sep);
+            cmd.append(NStr::PrintableString(*aff));
+            sep = ",";
+        }
+        cmd.push_back('"');
+    }
+}
+
+void CNetScheduleExecuter::ChangePreferredAffinities(CNetServer server,
+    const vector<string>& affs_to_add, const vector<string>& affs_to_delete)
+{
+    string cmd("CHAFF");
+
+    s_AppendAffinityTokens(cmd, " add=\"", affs_to_add);
+    s_AppendAffinityTokens(cmd, " del=\"", affs_to_delete);
+
+    server.ExecWithRetry(cmd);
+}
+
 const string& CNetScheduleExecuter::GetQueueName()
 {
     return m_Impl->m_API.GetQueueName();

@@ -587,6 +587,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// maintain job affinity for the client.
     void UnRegisterClient();
 
+    void ChangePreferredAffinities(CNetServer server,
+        const vector<string>& affs_to_add,
+        const vector<string>& affs_to_delete);
+
     /// Return Queue name
     const string& GetQueueName();
     const string& GetClientName();
