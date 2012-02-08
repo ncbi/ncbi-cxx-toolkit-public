@@ -5264,6 +5264,7 @@ echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
          fi
          ;;
    esac
+   : ${with_x=${with_xpm-no}}
 
    # CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices $LIBS"
@@ -21356,13 +21357,50 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-if test "x$with_gnutls" != xno -a -x "$LIBGNUTLS_CONFIG"; then
-   if test -z "$GNUTLS_PATH"; then
-      p=`libgnutls-config --prefix`
-      test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
+
+if test "x$with_gnutls" != xno; then
+   if test -x "$LIBGNUTLS_CONFIG"; then
+      if test -z "$GNUTLS_PATH"; then
+         p=`libgnutls-config --prefix`
+         test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
+      fi
+   else
+      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls"
+      $LIBGNUTLS_CONFIG --exists  ||  LIBGNUTLS_CONFIG=no
    fi
    GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
-   if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+   case "$LIBGNUTLS_CONFIG" in
+       eval\ *)
+           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    GNUTLS_LIBPATH=`$LIBGNUTLS_CONFIG --libs-only-L | sed -e ""`
+ else
+    GNUTLS_LIBPATH=
+    ncbi_rp_L_sep=
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in `$LIBGNUTLS_CONFIG --libs-only-L | sed -e ""`; do
+       case "$x" in
+          -L*)
+             GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_L_sep}$x"
+             x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
+             ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+             ncbi_rp_R_sep=:
+             ;;
+          *)
+             GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_R_flags}${ncbi_rp_L_sep}$x"
+             ncbi_rp_R_flags=
+             ncbi_rp_R_sep=" $CONF_f_runpath"
+             ;;
+       esac
+       ncbi_rp_L_sep=" "
+    done
+    GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_R_flags}"
+ fi
+           ;;
+       no)
+           ;;
+       *)
+           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     GNUTLS_LIBPATH=`$LIBGNUTLS_CONFIG --exec-prefix | sed -e "s,^,-L,; s,$,/lib,;"`
  else
     GNUTLS_LIBPATH=
@@ -21387,6 +21425,9 @@ if test "x$with_gnutls" != xno -a -x "$LIBGNUTLS_CONFIG"; then
     done
     GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_R_flags}"
  fi
+           ;;
+   esac
+
    GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
 else
    $as_unset GNUTLS_CONFIG_LIBS || test "${GNUTLS_CONFIG_LIBS+set}" != set || { GNUTLS_CONFIG_LIBS=; export GNUTLS_CONFIG_LIBS; }

@@ -1146,6 +1146,7 @@ case "$host_os:$compiler" in
          fi
          ;;
    esac
+   : ${with_x=${with_xpm-no}}
 
    # CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices $LIBS"
@@ -3605,14 +3606,31 @@ if test -d "$GNUTLS_PATH"; then
    NCBI_FIX_DIR(GNUTLS_PATH)
 fi
 AC_PATH_PROG(LIBGNUTLS_CONFIG, libgnutls-config, [], [${GNUTLS_BIN-$GNUTLS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/bin}:$GNUTLS_PATH/bin${bit64_sfx}:$GNUTLS_PATH/bin:$PATH])
-if test "x$with_gnutls" != xno -a -x "$LIBGNUTLS_CONFIG"; then
-   if test -z "$GNUTLS_PATH"; then
-      p=`libgnutls-config --prefix`
-      test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
+
+if test "x$with_gnutls" != xno; then
+   if test -x "$LIBGNUTLS_CONFIG"; then
+      if test -z "$GNUTLS_PATH"; then
+         p=`libgnutls-config --prefix`
+         test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
+      fi
+   else
+      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls"
+      $LIBGNUTLS_CONFIG --exists  ||  LIBGNUTLS_CONFIG=no
    fi
    GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
-   NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH, [$LIBGNUTLS_CONFIG --exec-prefix],
-      [s,^,-L,; s,$,/lib,;])
+   case "$LIBGNUTLS_CONFIG" in
+       eval\ *)
+           NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH,
+             [$LIBGNUTLS_CONFIG --libs-only-L])
+           ;;
+       no)
+           ;;
+       *)
+           NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH,
+             [$LIBGNUTLS_CONFIG --exec-prefix], [s,^,-L,; s,$,/lib,;])
+           ;;
+   esac
+       
    GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
 else
    AS_UNSET(GNUTLS_CONFIG_LIBS)
