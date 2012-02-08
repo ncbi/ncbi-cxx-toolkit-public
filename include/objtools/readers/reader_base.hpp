@@ -47,6 +47,10 @@ class CObjReaderLineException;
 class CTrackData;
 
 //  ----------------------------------------------------------------------------
+/// Defines and provides stubs for a general interface to a variety of file
+/// readers. These readers are assumed to read information in some foreign
+/// format from an input stream, and render it as an NCBI Genbank object.
+///
 class NCBI_XOBJREAD_EXPORT CReaderBase
 //  ----------------------------------------------------------------------------
 {
@@ -71,54 +75,61 @@ protected:
 public:
     virtual ~CReaderBase();
 
-    //
-    //  Class interface:
-    //
+    /// Allocate a CReaderBase derived reader object based on the given
+    /// file format.
+    ///
     static CReaderBase* GetReader(
         CFormatGuess::EFormat,
         int =0 );
 
-    //
-    //  Object interface:
-    //
+    /// Read an object from a given input stream, render it as the most
+    /// appropriate Genbank object.
+    ///
     virtual CRef< CSerialObject >
     ReadObject(
         CNcbiIstream&,
         IErrorContainer* =0 );
                 
+    /// Read an object from a given line reader, render it as the most
+    /// appropriate Genbank object.
+    ///
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
         IErrorContainer* =0 ) =0;
-                
+    
+    /// Read an object from a given input stream, render it as a single
+    /// Seq-annot. Return empty Seq-annot otherwise.
+    ///  
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream&,
         IErrorContainer* =0 );
                 
+    /// Read an object from a given line reader, render it as a single
+    /// Seq-annot, if possible. Return empty Seq-annot otherwise.
+    ///  
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
         IErrorContainer* =0 );
-                
-    virtual CRef< CSeq_entry >
-    ReadSeqEntry(
-        CNcbiIstream&,
-        IErrorContainer* =0 );
-                
-    virtual CRef< CSeq_entry >
-    ReadSeqEntry(
-        ILineReader&,
-        IErrorContainer* =0 );
-                
-    //
-    //  class interface:
-    //
-    static void Tokenize(
-        const string&,
-        const string&,
-        vector< string >& );
 
+    /// Read an object from a given input stream, render it as a single
+    /// Seq-entry, if possible. Return empty Seq-entry otherwise.
+    ///                
+    virtual CRef< CSeq_entry >
+    ReadSeqEntry(
+        CNcbiIstream&,
+        IErrorContainer* =0 );
+                
+    /// Read an object from a given line reader, render it as a single
+    /// Seq-entry, if possible. Return empty Seq-entry otherwise.
+    ///                
+    virtual CRef< CSeq_entry >
+    ReadSeqEntry(
+        ILineReader&,
+        IErrorContainer* =0 );
+                
     //
     //  Class helper functions:
     //

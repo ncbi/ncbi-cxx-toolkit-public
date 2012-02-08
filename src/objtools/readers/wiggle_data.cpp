@@ -47,6 +47,7 @@
 #include <objects/seqtable/seqtable__.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -265,7 +266,7 @@ void CWiggleRecord::ParseDeclarationVarstep(
     vector<string>::const_iterator it = data.begin();
     for ( ++it; it != data.end(); ++it ) {
         vector<string> key_value_pair;
-        CWiggleReader::Tokenize( *it, "=", key_value_pair );
+        CReadUtil::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
             CLineError err( 
@@ -302,7 +303,7 @@ void CWiggleRecord::ParseDeclarationFixedstep(
     vector<string>::const_iterator it = data.begin();
     for ( ++it; it != data.end(); ++it ) {
         vector<string> key_value_pair;
-        CWiggleReader::Tokenize( *it, "=", key_value_pair );
+        CReadUtil::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
             CLineError err( 

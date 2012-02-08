@@ -79,6 +79,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -263,7 +264,7 @@ bool CWiggleReader::x_ReadLineData(
     }
     ++m_uLineNumber;
     linedata.clear();
-    Tokenize( *++lr, s_WiggleDelim, linedata );
+    CReadUtil::Tokenize( *++lr, s_WiggleDelim, linedata );
     return true;
 }
 

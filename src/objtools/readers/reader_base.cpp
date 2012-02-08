@@ -80,6 +80,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -89,6 +90,8 @@
 #include <objtools/readers/wiggle_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gvf_reader.hpp>
+#include <objtools/readers/vcf_reader.hpp>
+#include <objtools/readers/rm_reader.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -112,17 +115,22 @@ CReaderBase::GetReader(
     default:
         return 0;
     case CFormatGuess::eBed:
-        return new CBedReader( flags );
+        return new CBedReader(flags);
     case CFormatGuess::eBed15:
-        return new CMicroArrayReader( flags );
+        return new CMicroArrayReader(flags);
     case CFormatGuess::eWiggle:
-        return new CWiggleReader( flags );
+        return new CWiggleReader(flags);
     case CFormatGuess::eGtf:
-        return new CGff3Reader( flags );
+    case CFormatGuess::eGtf_POISENED:
+        return new CGff3Reader(flags);
     case CFormatGuess::eGff3:
-        return new CGff3Reader( flags );
+        return new CGff3Reader(flags);
     case CFormatGuess::eGvf:
-        return new CGvfReader( flags );
+        return new CGvfReader(flags);
+    case CFormatGuess::eVcf:
+        return new CVcfReader(flags);
+    case CFormatGuess::eRmo:
+        return new CRepeatMaskerReader(flags);
     }
 }
 
@@ -336,7 +344,7 @@ bool CReaderBase::x_ParseTrackLine(
 //  ----------------------------------------------------------------------------
 {
     vector<string> parts;
-    Tokenize( strLine, " \t", parts );
+    CReadUtil::Tokenize( strLine, " \t", parts );
     if ( !CTrackData::IsTrackData( parts ) ) {
         return false;
     }
@@ -401,50 +409,6 @@ CRef<CUser_object> CReaderBase::x_MakeAsnConversionInfo(
     conversioninfo->AddField( 
         "notes", int ( pErrorContainer->LevelCount( eDiag_Info ) ) );
     return conversioninfo;
-}
-
-//  ----------------------------------------------------------------------------
-void CReaderBase::Tokenize(
-    const string& str,
-    const string& delim,
-    vector< string >& parts )
-//  ----------------------------------------------------------------------------
-{
-    string temp;
-    bool in_quote( false );
-    const char joiner( '#' );
-
-    for ( size_t i=0; i < str.size(); ++i ) {
-        switch( str[i] ) {
-
-            default:
-                break;
-            case '\"':
-                in_quote = in_quote ^ true;
-                break;
-
-            case ' ':
-                if ( in_quote ) {
-                    if ( temp.empty() )
-                        temp = str;
-                    temp[i] = joiner;
-                }
-                break;
-        }
-    }
-    if ( temp.empty() ) {
-        NStr::Tokenize(str, delim, parts, NStr::eMergeDelims);
-    }
-    else {
-        NStr::Tokenize(temp, delim, parts, NStr::eMergeDelims);
-        for ( size_t j=0; j < parts.size(); ++j ) {
-            for ( size_t i=0; i < parts[j].size(); ++i ) {
-                if ( parts[j][i] == joiner ) {
-                    parts[j][i] = ' ';
-                }
-            }
-        }
-    }
 }
 
 //  ----------------------------------------------------------------------------
