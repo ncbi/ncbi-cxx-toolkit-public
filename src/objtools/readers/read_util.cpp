@@ -30,9 +30,11 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objtools/readers/read_util.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 void CReadUtil::Tokenize(
@@ -77,6 +79,6 @@ void CReadUtil::Tokenize(
         }
     }
 }
-
-    
+   
+END_objects_SCOPE
 END_NCBI_SCOPE

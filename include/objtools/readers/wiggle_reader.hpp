@@ -132,9 +132,6 @@ protected:
     virtual void x_AssignBrowserData(
         CRef<CSeq_annot>& );
                 
-    virtual void x_AssignTrackData(
-        CRef<CSeq_annot>& );
-                
     unsigned int x_GetLineType(
         const vector<string>& parts);
 

@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
 /// Common file reader utility functions.
@@ -51,6 +52,7 @@ public:
         vector< string >& tokens);
 };
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif  // OBJTOOLS_READERS___READ_UTIL__HPP

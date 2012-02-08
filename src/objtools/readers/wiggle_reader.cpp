@@ -427,34 +427,6 @@ unsigned int CWiggleReader::x_GetLineType(
 }
 
 //  ----------------------------------------------------------------------------
-void CWiggleReader::x_AssignTrackData(
-    CRef<CSeq_annot>& annot )
-//  ----------------------------------------------------------------------------
-{
-    if ( !m_pTrackDefaults->Description().empty() ) {
-        annot->SetTitleDesc(m_pTrackDefaults->Description());
-    }
-
-    if ( !m_pTrackDefaults->Name().empty() ) {
-        annot->SetNameDesc(m_pTrackDefaults->Name());
-    }
-
-    CRef<CUser_object> trackdata( new CUser_object() );
-    trackdata->SetType().SetStr( "Track Data" );   
-    map<string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
-    while ( cit != m_pTrackDefaults->Values().end() ) {
-        trackdata->AddField( cit->first, cit->second );
-        ++cit;
-    }
-    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
-        CAnnot_descr& desc = annot->SetDesc();
-        CRef<CAnnotdesc> user( new CAnnotdesc() );
-        user->SetUser( *trackdata );
-        desc.Set().push_back( user );
-    }
-}
-
-//  ----------------------------------------------------------------------------
 void CWiggleReader::x_AssignBrowserData(
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------

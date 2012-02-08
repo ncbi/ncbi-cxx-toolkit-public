@@ -101,7 +101,6 @@
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
@@ -314,16 +313,14 @@ void CReaderBase::x_AssignTrackData(
 //  ----------------------------------------------------------------------------
 {
     CAnnot_descr& desc = annot->SetDesc();
-
     CRef<CUser_object> trackdata( new CUser_object() );
-    trackdata->SetType().SetStr( "Track Data" );   
+    trackdata->SetType().SetStr( "Track Data" );
+   
     if ( !m_pTrackDefaults->Description().empty() ) {
-        trackdata->AddField( "description", m_pTrackDefaults->Description() );
         annot->SetTitleDesc(m_pTrackDefaults->Description());
     }
     if ( !m_pTrackDefaults->Name().empty() ) {
         annot->SetNameDesc(m_pTrackDefaults->Name());
-        trackdata->AddField( "name", m_pTrackDefaults->Name() );
     }
     map<string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
     while ( cit != m_pTrackDefaults->Values().end() ) {
@@ -410,50 +407,6 @@ CRef<CUser_object> CReaderBase::x_MakeAsnConversionInfo(
         "notes", int ( pErrorContainer->LevelCount( eDiag_Info ) ) );
     return conversioninfo;
 }
-
-//  ----------------------------------------------------------------------------
-void 
-CReaderBase::x_Warn(
-    const string& message, 
-    unsigned int line)
-//  ----------------------------------------------------------------------------
-{
-    if (line) {
-        ERR_POST_X(2, Warning << message << " [GFF input, line " << line << ']');
-    } else {
-        ERR_POST_X(3, Warning << message << " [GFF input]");
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void 
-CReaderBase::x_Error(
-    const string& message, 
-    unsigned int line)
-//  ----------------------------------------------------------------------------
-{
-    if (line) {
-        ERR_POST_X(2, Error << message << " [GFF input, line " << line << ']');
-    } else {
-        ERR_POST_X(3, Error << message << " [GFF input]");
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void 
-CReaderBase::x_Info(
-    const string& message, 
-    unsigned int line)
-//  ----------------------------------------------------------------------------
-{
-    if (line) {
-        ERR_POST_X(2, Info << message << " [GFF input, line " << line << ']');
-    } else {
-        ERR_POST_X(3, Info << message << " [GFF input]");
-    }
-}
-
-
 
 END_objects_SCOPE
 END_NCBI_SCOPE

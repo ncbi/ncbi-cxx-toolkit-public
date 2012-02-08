@@ -134,18 +134,6 @@ public:
     //  Class helper functions:
     //
 protected:
-    virtual void x_Info(
-        const string&,
-        unsigned int = 0);
-
-    virtual void x_Warn(
-        const string&,
-        unsigned int = 0);
-
-    virtual void x_Error(
-        const string&,
-        unsigned int = 0);
-
     virtual void x_AssignTrackData(
         CRef<CSeq_annot>& );
                 
