@@ -111,7 +111,8 @@ static bool s_DoParseGetJobResponse(
             }
         }
     }
-    catch (CStringException&) {
+    catch (CStringException& e) {
+        ERR_POST("Error while parsing GET/WGET response " << e);
         return false;
     }
 
@@ -153,27 +154,24 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, const string& affinity)
 }
 
 
+const char s_WGETNotification[] = "NCBI_JSQ_";
+
 struct SWaitQueuePred {
     SWaitQueuePred(const string& queue_name) : m_QueueName(queue_name)
     {
-        m_MinLen = queue_name.length() + 9;
     }
 
     bool operator()(const string& buf)
     {
-        static const char* sign = "NCBI_JSQ_";
-
-        if ((buf.size() < m_MinLen) ||
-            ((buf[0] ^ sign[0]) | (buf[1] ^ sign[1])))
-            return false;
-
-        return m_QueueName == buf.data() + 9;
+        return buf.size() >= sizeof(s_WGETNotification) - 1 +
+                m_QueueName.length() &&
+            buf[0] == s_WGETNotification[0] &&
+            buf[1] == s_WGETNotification[1] &&
+            m_QueueName == buf.data() + sizeof(s_WGETNotification) - 1;
     }
 
     string m_QueueName;
-    size_t m_MinLen;
 };
-
 
 bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
                                    unsigned short listening_port,
@@ -197,9 +195,9 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
     s_WaitNotification(wait_time, listening_port,
         SWaitQueuePred(m_Impl->m_API.GetQueueName()));
 
-    // no matter what WaitResult returned, re-try the request
-    // using reliable comm.level and notify server that
-    // we no longer on the UDP socket
+    // Regardless of what s_WaitNotification returned,
+    // retry the request using TCP and notify the NetSchedule
+    // servers that we no longer on the UDP socket.
 
     return GetJob(job, affinity);
 }
