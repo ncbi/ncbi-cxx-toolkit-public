@@ -376,20 +376,18 @@ void CNetScheduleSubmitter::ReadFail(const string& batch_id,
 }
 
 struct SWaitJobPred {
-    SWaitJobPred(unsigned int job_id) : m_JobId(job_id) {}
+    SWaitJobPred(const string& job_id) : m_JobId(job_id) {}
 
-    bool operator()(const string& buf)
+    bool operator()(const string& buf) const
     {
-        static const char* sign = "JNTF";
+        static const char prefix[] = "JNTF key=";
 
-        if ((buf.size() < 5) ||
-            ((buf[0] ^ sign[0]) | (buf[1] ^ sign[1])))
-            return false;
-
-        return m_JobId == (unsigned) ::atoi(buf.data() + 5);
+        return NStr::StartsWith(buf, prefix) &&
+            m_JobId == CTempString(buf.data() + sizeof(prefix) - 1,
+                buf.size() - sizeof(prefix) - 1);
     }
 
-    unsigned int m_JobId;
+    const string& m_JobId;
 };
 
 
@@ -403,14 +401,11 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
 
     m_Impl->SubmitJobImpl(job, udp_port, wait_time);
 
-    CNetScheduleKey key(job.job_id);
-
-    s_WaitNotification(wait_time, udp_port, SWaitJobPred(key.id));
+    s_WaitNotification(wait_time, udp_port, SWaitJobPred(job.job_id));
 
     CNetScheduleAPI::EJobStatus status = GetJobStatus(job.job_id);
 
-    if (status == CNetScheduleAPI::eDone ||
-        status == CNetScheduleAPI::eFailed)
+    if (status == CNetScheduleAPI::eDone || status == CNetScheduleAPI::eFailed)
         m_Impl->m_API.GetJobDetails(job);
 
     return status;
