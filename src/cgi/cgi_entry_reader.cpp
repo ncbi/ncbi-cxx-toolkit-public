@@ -374,10 +374,9 @@ static CTempString s_FindAttribute(const CTempString& str, const string& name,
     SIZE_TYPE att_pos = str.find("; " + name + "=\"");
     if (att_pos == NPOS) {
         if (required) {
-            NCBI_THROW2(CCgiParseException, eAttribute,
-                        CCER "part header lacks required attribute " + name
-                        + ": " + str,
-                        NcbiStreamposToInt8(input_pos));
+            NCBI_THROW2(CCgiParseException, eAttribute, CCER
+                    "part header lacks required attribute " + name + ": " + str,
+                    (std::string::size_type) NcbiStreamposToInt8(input_pos));
         } else {
             return kEmptyStr;
         }
@@ -386,9 +385,10 @@ static CTempString s_FindAttribute(const CTempString& str, const string& name,
     SIZE_TYPE att_end   = str.find('\"', att_start);
     if (att_end == NPOS) {
         NCBI_THROW2(CCgiParseException, eAttribute,
-                    CCER "part header contains unterminated attribute "
-                    + name + ": " + str.substr(att_pos),
-                    NcbiStreamposToInt8(input_pos) + att_start);
+                CCER "part header contains unterminated attribute " + name +
+                ": " + str.substr(att_pos),
+                (std::string::size_type) NcbiStreamposToInt8(input_pos) +
+                    att_start);
     }
     return str.substr(att_start, att_end - att_start);
 }
