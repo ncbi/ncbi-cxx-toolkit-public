@@ -161,7 +161,7 @@ struct SWaitQueuePred {
     {
     }
 
-    bool operator()(const string& buf)
+    bool operator()(const string& buf) const
     {
         return buf.size() >= sizeof(s_WGETNotification) - 1 +
                 m_QueueName.length() &&
