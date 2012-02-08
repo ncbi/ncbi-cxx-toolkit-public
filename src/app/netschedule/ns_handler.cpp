@@ -1105,13 +1105,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
 {
     // This functionality requires client name and the session
-    if (!m_ClientId.IsComplete()) {
-        ERR_POST(Warning << "The client did not provide the name and the "
-                            "session required by CHAFF");
-        WriteMessage("ERR:eInvalidParameter");
-        x_PrintRequestStop(eStatus_BadCmd);
-        return;
-    }
+    x_CheckNonAnonymousClient("use CHAFF command");
 
     if (m_CommandArguments.aff_to_add.empty() &&
         m_CommandArguments.aff_to_del.empty()) {
