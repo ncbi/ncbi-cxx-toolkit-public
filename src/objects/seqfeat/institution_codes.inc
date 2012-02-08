@@ -1920,6 +1920,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GHS	s	George Heriot's School, Biology Department",
 "GI	s	Justus-Liebig-Universitaet Giessen",
 "GI-SPS	s	Geological Institute, Section of Palaeontology and Stratigraphy",
+"GIFU<JPN>	s	Herbarium of Gifu Pharmaceutical University",
 "GIUV	s	Geological Institute, University of Vienna",
 "GJO	s	Steiermaerkisches Landesmuseum Joanneum, Botany Department",
 "GKAR	s	Karoo National Botanical Garden",
