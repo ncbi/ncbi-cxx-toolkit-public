@@ -40,7 +40,7 @@ if [ -f "$huge_tar" ]; then
     echo
     echo "`date` *** Checking compatibility with existing NCBI data"
     echo
-    
+
     test_tar -T -f "$huge_tar"  ||  exit 1
   else
     echo
@@ -210,7 +210,7 @@ if [ "`uname`" = "Linux" ]; then
   # added entries will always be "ustar".  I consider this as a bug.
 
   $tar --help 2>&1 | grep -q -- '-H'  &&  format="--format=gnu -"
-  
+
   prebs="`expr $$ % 10000 + 1`"
   spabs="`expr $$ % 1000  + 1`"
   posbs="`expr $$ % 10240 + 1`"

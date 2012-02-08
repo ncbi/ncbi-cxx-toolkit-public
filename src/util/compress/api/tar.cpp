@@ -1308,7 +1308,7 @@ CTar::~CTar()
               : string(message))
 
 #define TAR_POST(subcode, severity, message)                            \
-    ERR_POST_X(subcode, severity <<                                     \
+    ERR_POST_X(subcode, (severity) <<                                   \
                s_PositionAsString(m_FileName, m_StreamPos, m_BufferSize,\
                                   m_Current.GetName()) + (message))
 
@@ -1535,7 +1535,7 @@ const char* CTar::x_ReadArchive(size_t& n)
                     // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
                     istream* is = dynamic_cast<istream*>(m_Stream);
                     _ASSERT(is);
-                    is->read(m_Buffer     + nread,
+                    is->read(m_Buffer                  + nread,
                              (streamsize)(m_BufferSize - nread));
                     xread = is->gcount();
                     if (xread > 0) {
@@ -1546,13 +1546,18 @@ const char* CTar::x_ReadArchive(size_t& n)
                 }
 #else
                 xread = m_Stream->rdbuf()
-                    ->sgetn (m_Buffer     + nread,
+                    ->sgetn (m_Buffer                  + nread,
                              (streamsize)(m_BufferSize - nread));
 #endif //NCBI_COMPILER_MIPSPRO
             } else {
                 xread = -1;
             }
             if (xread <= 0) {
+                if (nread  &&  (m_Flags & fDumpEntryHeaders)) {
+                    TAR_POST(57, xread ? Error : Warning,
+                             "Short read (" + NStr::NumericToString(nread)
+                             + (xread ? ")" : "): EOF"));
+                }
                 try {
                     m_Stream->setstate(xread < 0 ? NcbiBadbit : NcbiEofbit);
                 } catch (IOS_BASE::failure&) {
@@ -1608,11 +1613,19 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
             do {
                 int x_errno;
                 streamsize xwritten;
-                if (m_Stream->good()) {
+                IOS_BASE::iostate iostate = m_Stream->rdstate();
+                if (!(iostate & ~NcbiEofbit)) { // good() OR eof()
                     xwritten = m_Stream->rdbuf()
-                        ->sputn(m_Buffer + nwritten,
+                        ->sputn(m_Buffer                  + nwritten,
                                 (streamsize)(m_BufferSize - nwritten));
-                    x_errno = xwritten > 0 ? 0 : errno;
+                    if (xwritten > 0) {
+                        if (iostate) {
+                            m_Stream->clear();
+                        }
+                        x_errno = 0;
+                    } else {
+                        x_errno = errno;
+                    }
                 } else {
                     xwritten = -1;
                     x_errno = 0;
@@ -1867,7 +1880,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             fmt = pax ? eTar_Posix : eTar_Ustar;
         }
     } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
-        // NB: Here, the magic protruded into the adjacent version field
+        // NB: Here the magic is protruded into the adjacent version field
         fmt = eTar_OldGNU;
     } else if (memcmp(h->magic, "\0\0\0\0\0", 6) == 0) {
         fmt = eTar_Legacy;
@@ -2165,7 +2178,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 // Skip all GNU sparse file headers
                 const char* extend = h->gnu.extend;
                 while (*extend) {
-                    nread = BLOCK_SIZE;
+                    _ASSERT(nread == BLOCK_SIZE);
                     if (!(block = (const TBlock*) x_ReadArchive(nread))
                         ||  nread != BLOCK_SIZE) {
                         TAR_THROW(this, eRead,
@@ -2527,7 +2540,7 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
         return;
     }
 
-    // Assertion:  there's data (perhaps 0's) in the file, backup is possible.
+    // Assertion:  there's data (perhaps 0's) in the file, backup is possible
     _ASSERT(!OFFSET_OF(m_StreamPos));
     Uint8 gap = SIZE_OF(blocks);
     m_StreamPos -= gap;
@@ -2540,9 +2553,10 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
         size_t temp  = 0;
         m_BufferPos  = 0;
         // Refetch the block
-        if (!m_FileStream->seekg(rec * m_BufferSize)  ||
-            !x_ReadArchive(temp = BLOCK_SIZE)) {
-            TAR_POST(85, Error,
+        if (!m_FileStream->seekg(rec * m_BufferSize)
+            ||  !x_ReadArchive(temp = BLOCK_SIZE)
+            ||  temp != BLOCK_SIZE) {
+            TAR_POST(65, Error,
                      "Archive backspace error in record reget"
                      + string(temp ? " (EOF)" : ""));
         }
@@ -2601,6 +2615,8 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         case eEOF:
             if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
                 TAR_POST(6, Error, "Orphaned extended information ignored");
+            } else if (zeroblock_count < 2) {
+                TAR_POST(58, Warning, "Unexpected EOF in archive");
             }
             x_Backspace(action, zeroblock_count);
             return done;
@@ -2755,8 +2771,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 
 
 struct CTmpDirEntryDeleter {
-    static void Delete(CDirEntry* entry)
-    { entry->Remove(); delete entry; }
+    static void Delete(CDirEntry* entry) { entry->Remove(); delete entry; }
 };
 
 
@@ -2999,7 +3014,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
                     const char* xbuf = x_ReadArchive(nread);
                     if (!xbuf) {
                         TAR_THROW(this, eRead,
-                                  "Unexpected EOF");
+                                  "Unexpected EOF in archive");
                     }
                     // Write file to disk
                     bool okay;
