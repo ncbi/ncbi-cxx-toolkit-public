@@ -84,6 +84,7 @@
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -92,7 +93,6 @@
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gvf_reader.hpp>
-//#include <objtools/readers/gvf_data.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
@@ -292,31 +292,7 @@ bool CGvfReader::x_FeatureSetLocation(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId;
-
-    const string& id_str = record.Id();
-    if (m_iFlags & fAllIdsAsLocal) {
-        pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
-    } else {
-        bool is_numeric =
-            id_str.find_first_not_of("0123456789") == string::npos;
-
-        if (is_numeric  &&  !!(m_iFlags & fNumericIdsAsLocal)) {
-            pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
-        }
-        else {
-            try {
-                pId.Reset( new CSeq_id(id_str));
-                if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
-                    pId = new CSeq_id(CSeq_id::e_Local, id_str);
-                }
-            }
-            catch (CException&) {
-                pId.Reset(new CSeq_id(CSeq_id::e_Local, id_str));
-            }
-        }
-    }
-
+    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
     pLocation->SetInt().SetFrom( record.SeqStart() );

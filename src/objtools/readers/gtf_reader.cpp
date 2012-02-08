@@ -81,6 +81,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -115,31 +116,6 @@ bool s_AnnotId(
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-CRef< CSeq_id > s_RecordIdToSeqId(
-    const string& strId,
-    bool bForceLocal = false )
-//  ----------------------------------------------------------------------------
-{
-    CRef< CSeq_id > pId;
-
-    if ( bForceLocal ) {
-        pId.Reset( new CSeq_id( CSeq_id::e_Local, strId ) );
-        return pId;
-    }
-
-    try {
-        pId.Reset( new CSeq_id( strId ) );
-        if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
-            pId = new CSeq_id(CSeq_id::e_Local, strId);
-        }
-    }
-    catch (CException&) {
-        pId.Reset(new CSeq_id( CSeq_id::e_Local, strId ) );
-    }
-    return pId;
-}
-        
 //  ----------------------------------------------------------------------------
 bool CGtfReadRecord::x_AssignAttributesFromGff(
     const string& strRawAttributes )
@@ -684,8 +660,8 @@ bool CGtfReader::x_CreateFeatureLocation(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId = 
-        s_RecordIdToSeqId( record.Id(), m_iFlags & fAllIdsAsLocal );
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(
+        record.Id(), m_iFlags & fAllIdsAsLocal);
 
     CSeq_interval& location = pFeature->SetLocation().SetInt();
     location.SetId( *pId );
@@ -737,8 +713,8 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId = 
-        s_RecordIdToSeqId( record.Id(), m_iFlags & fAllIdsAsLocal );
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(
+        record.Id(), m_iFlags & fAllIdsAsLocal);
 
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
@@ -962,7 +938,7 @@ bool CGtfReader::x_FeatureSetDataMRNA(
     }
     if ( record.GetAttribute( "transcript_id", strValue ) ) {
         pFeature->SetProduct().SetWhole(
-            * s_RecordIdToSeqId( strValue, m_iFlags & fAllIdsAsLocal ) );
+            *CReadUtil::AsSeqId(strValue, m_iFlags & fAllIdsAsLocal));
     }
 
     return true;
@@ -983,7 +959,7 @@ bool CGtfReader::x_FeatureSetDataCDS(
     string strValue;
     if ( record.GetAttribute( "protein_id", strValue ) ) {
         pFeature->SetProduct().SetWhole(
-            * s_RecordIdToSeqId( strValue, m_iFlags & fAllIdsAsLocal ) );
+            *CReadUtil::AsSeqId(strValue,m_iFlags));
     }
     if ( record.GetAttribute( "ribosomal_slippage", strValue ) ) {
         pFeature->SetExcept( true );

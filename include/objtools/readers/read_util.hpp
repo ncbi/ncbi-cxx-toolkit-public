@@ -50,6 +50,16 @@ public:
         const string& instr,
         const string& delim,
         vector< string >& tokens);
+
+    /// Convert a raw ID string to a Seq-id, based in given customization flags.
+    /// Recognized flags are:
+    ///   CReaderBase::fAllIdsAsLocal, CReaderBase::fNumericalIdsAsLocal
+    /// By default, numerical IDs below 500 are recognized as local IDs, and 500
+    /// and above are considered GI numbers.
+    ///
+    static CRef<CSeq_id> AsSeqId(
+        const string&,
+        unsigned int =0);
 };
 
 END_SCOPE(objects)

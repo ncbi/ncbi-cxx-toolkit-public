@@ -53,6 +53,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_data.hpp>
@@ -61,37 +62,6 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
-//  ----------------------------------------------------------------------------
-CRef<CSeq_id> s_StringToSeqId(
-    const string& str,
-    int flags )
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_id> pId;
-    if (flags  && CReaderBase::fAllIdsAsLocal) {
-        pId.Reset(new CSeq_id(CSeq_id::e_Local, str));
-    }
-    else {
-        bool is_numeric = str.find_first_not_of("0123456789") == string::npos;
-
-        if (is_numeric && (flags & CReaderBase::fNumericIdsAsLocal)) {
-            pId.Reset(new CSeq_id(CSeq_id::e_Local, str));
-        }
-        else {
-            try {
-                pId.Reset(new CSeq_id(str));
-                if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
-                    pId = new CSeq_id(CSeq_id::e_Local, str);
-                }
-            }
-            catch (CException&) {
-                pId.Reset(new CSeq_id(CSeq_id::e_Local, str));
-            }
-        }
-    }
-    return pId;
-}
 
 //  ----------------------------------------------------------------------------
 CRef<CCode_break> s_StringToCodeBreak(
@@ -291,7 +261,7 @@ CRef<CSeq_id> CGff2Record::GetSeqId(
     int flags ) const
 //  ----------------------------------------------------------------------------
 {
-    return s_StringToSeqId(Id(), flags);
+    return CReadUtil::AsSeqId(Id(), flags);
 }
 
 //  ----------------------------------------------------------------------------
@@ -666,7 +636,7 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("product");
     if (it != attrs_left.end()) {
         if (!pFeature->IsSetProduct()) {
-            CRef<CSeq_id> pId = s_StringToSeqId(it->second, flags);
+            CRef<CSeq_id> pId = CReadUtil::AsSeqId(it->second, flags);
             CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
             pLoc->SetId(*pId);
             pFeature->SetProduct(*pLoc);
@@ -676,7 +646,7 @@ bool CGff2Record::x_MigrateAttributes(
 
     it = attrs_left.find("protein_id");
     if (it != attrs_left.end()) {
-        CRef<CSeq_id> pId = s_StringToSeqId(it->second, flags);
+        CRef<CSeq_id> pId = CReadUtil::AsSeqId(it->second, flags);
         CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
         pLoc->SetId(*pId);
         pFeature->SetProduct(*pLoc);
@@ -692,7 +662,7 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("transcript_id");
     if (it != attrs_left.end()) {
         if (!pFeature->IsSetProduct()) {
-            CRef<CSeq_id> pId = s_StringToSeqId(it->second, flags);
+            CRef<CSeq_id> pId = CReadUtil::AsSeqId(it->second, flags);
             CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
             pLoc->SetId(*pId);
             pFeature->SetProduct(*pLoc);

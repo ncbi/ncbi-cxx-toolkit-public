@@ -80,6 +80,7 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -92,7 +93,6 @@
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
@@ -211,9 +211,6 @@ CBedReader::ReadSeqAnnots(
             x_ProcessError( err, pErrorContainer );
         }
         continue;
-    }
-    if ( m_iFlags & fDumpStats ) {
-        x_DumpStats( cerr );
     }
     x_AddConversionInfo( annot, &m_ErrorsPrivate );
 //    return annot;
@@ -335,7 +332,6 @@ bool CBedReader::x_ParseFeature(
             "Bad data line: General parsing error." );
         throw( err );    
     }
-    x_CountRecord( fields[0] );
     ftable.push_back( feature );
     return true;
 }
@@ -405,7 +401,7 @@ void CBedReader::x_SetFeatureLocation(
 {
     feature->ResetLocation();
     
-    CRef<CSeq_id> id = x_ResolvedId( fields[0] );
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0]);
 
     CRef<CSeq_loc> location( new CSeq_loc );
     int from, to;
@@ -461,37 +457,6 @@ void CBedReader::x_SetFeatureLocation(
     
     feature->SetLocation( *location );
 }
-
-//  ----------------------------------------------------------------------------
-CRef<CSeq_id> CBedReader::x_ResolvedId(
-    const string& strRawId )
-//  ----------------------------------------------------------------------------
-{
-    if (m_iFlags & fAllIdsAsLocal) {
-        if (NStr::StartsWith(strRawId, "lcl|")) {
-            return CRef<CSeq_id>(new CSeq_id( strRawId ) );
-        } else {
-            return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, strRawId ));
-        }
-    }
-
-    if (m_iFlags & fNumericIdsAsLocal) {
-        if ( strRawId.find_first_not_of("0123456789") == string::npos ) {
-            return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, strRawId));
-        }
-    }
-    try {
-        CRef< CSeq_id > pId( new CSeq_id( strRawId ) );
-        if (!pId || (pId->IsGi() && pId->GetGi() < 500) ) {
-            pId = new CSeq_id(CSeq_id::e_Local, strRawId);
-        }
-        return pId;
-    }
-    catch (CSeqIdException&) {
-        return CRef<CSeq_id>( new CSeq_id( CSeq_id::e_Local, strRawId ) );
-    }
-}    
-            
 //  ----------------------------------------------------------------------------
 void CBedReader::x_SetTrackData(
     CRef<CSeq_annot>& annot,
@@ -544,42 +509,5 @@ CBedReader::x_ProcessError(
         throw( err );
     }
 }
-
-//  ----------------------------------------------------------------------------
-void
-CBedReader::x_CountRecord(
-    const string& strRawId )
-//  ----------------------------------------------------------------------------
-{
-    if ( 0 == (m_iFlags & fDumpStats) ) {
-        return;
-    }
-     
-    map< string, unsigned int >::iterator it = m_RecordCounts.find( strRawId );
-    if ( it != m_RecordCounts.end() ) {
-        m_RecordCounts[ strRawId ] += 1;
-    }
-    else {
-        m_RecordCounts[ strRawId ] = 1;
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void
-CBedReader::x_DumpStats(
-    CNcbiOstream& out )
-//  ----------------------------------------------------------------------------
-{
-    out << "---------------------------------------------------------" << endl;
-    out << "Record Counts:" << endl;
-    out << "---------------------------------------------------------" << endl;
-    for ( map<string, unsigned int>::iterator it = m_RecordCounts.begin(); 
-        it != m_RecordCounts.end(); ++it ) 
-    {
-        out << it->first << " :    " << it->second << endl;
-    } 
-    out << endl;      
-}
-
 END_objects_SCOPE
 END_NCBI_SCOPE

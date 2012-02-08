@@ -56,22 +56,23 @@ class NCBI_XOBJREAD_EXPORT CReaderBase
 {
 public:
     enum EFlags {
+        fNormal = 0,
         ///< numeric identifiers are local IDs
         fNumericIdsAsLocal  = 0x40,
 
         ///< all identifiers are local IDs
         fAllIdsAsLocal      = 0x80,
-
-        fFlagDefaults = 0
     };
     enum ObjectType {
         OT_UNKNOWN,
         OT_SEQANNOT,
         OT_SEQENTRY
     };
+
 protected:
     CReaderBase(
         int =0);    //flags
+
 public:
     virtual ~CReaderBase();
 

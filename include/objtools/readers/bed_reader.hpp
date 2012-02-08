@@ -64,8 +64,6 @@ public:
         fDefaults = 0,
         fAllIdsAsLocal = 1<<0,
         fNumericIdsAsLocal = 1<<1,
-        // open slot
-        fDumpStats = 1<<3,
     };
     typedef int TFlags;
 
@@ -119,9 +117,6 @@ protected:
         const string&,
         const string& );
 
-    CRef<CSeq_id> x_ResolvedId(
-        const string& );
-
     CRef< CSeq_annot > x_AppendAnnot(
         vector< CRef< CSeq_annot > >& );
                     
@@ -130,12 +125,6 @@ protected:
         CObjReaderLineException&,
         IErrorContainer* );
 
-    void x_CountRecord(
-        const string& );
-
-    void x_DumpStats(
-        CNcbiOstream& );
-        
     //
     //  data:
     //
@@ -144,8 +133,6 @@ protected:
     
     vector<string>::size_type m_columncount;
     bool m_usescore;
-//    int m_iFlags;
-    map< string, unsigned int > m_RecordCounts;
 };
 
 END_SCOPE(objects)
