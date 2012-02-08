@@ -319,6 +319,10 @@ export top_srcdir
 FEATURES="$x_features"
 export FEATURES
 
+# Redirect output for C++ diagnostic framework to stderr
+NCBI_CONFIG_LOG_FILE="-"
+export NCBI_CONFIG_LOG_FILE
+
 # Add current, build and scripts directories to PATH
 PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\${PATH}"
 export PATH
