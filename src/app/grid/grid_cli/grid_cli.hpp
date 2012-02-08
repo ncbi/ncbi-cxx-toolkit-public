@@ -117,7 +117,6 @@ enum EOption {
     eExtendLifetime,
     eProgressMessage,
     eAllJobs,
-    eDropJobs,
     eWaitTimeout,
     eListeningPort,
     eFailJob,

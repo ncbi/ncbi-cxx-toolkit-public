@@ -224,11 +224,6 @@ struct SOptionDefinition {
     {CCommandLineParser::eSwitch, eAllJobs,
         "all-jobs", "Apply to all jobs in the queue."},
 
-    {CCommandLineParser::eSwitch, eDropJobs,
-        "drop-jobs", "Delete all job records from the queue, "
-            "but preserve the queue itself. This option is "
-            "required for static queues."},
-
 /*
     {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
         "register-wnode", "Generate and print a new GUID "
@@ -477,7 +472,7 @@ struct SCommandDefinition {
         "canceljob", "Cancel a NetSchedule job.",
         "Mark the job as canceled. This command also instructs the worker "
         "node that may be processing this job to stop the processing.",
-        {eID, eNetSchedule, eQueue, eAllJobs, eAuth,
+        {eOptionalID, eNetSchedule, eQueue, eAllJobs, eAuth,
             eClientNode, eClientSession, -1}},
 
 /*
@@ -582,15 +577,11 @@ struct SCommandDefinition {
         {eNetSchedule, eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
-        "deletequeue", "Delete a queue or all jobs from a queue.",
-        "Delete a dynamic NetSchedule queue or delete all jobs "
-        "from any kind of queue. Static queues cannot be deleted, "
-        "only their jobs can be deleted.\n\n"
-        "Information about all jobs and their lifecycle events "
-        "will be lost. "
-        WN_NOT_NOTIFIED_DISCLAIMER,
-        {eQueueArg, eNetSchedule, eDropJobs, eAuth,
-            eClientNode, eClientSession, -1}},
+        "deletequeue", "Delete a dynamic NetSchedule queue.",
+        WN_NOT_NOTIFIED_DISCLAIMER "\n\n"
+        "Static queues cannot be deleted, although it is "
+        "possible to cancel all jobs in a static queue.",
+        {eQueueArg, eNetSchedule, eAuth, eClientNode, eClientSession, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",

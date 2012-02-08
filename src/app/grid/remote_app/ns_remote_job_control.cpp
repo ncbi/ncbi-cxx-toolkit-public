@@ -141,7 +141,7 @@ void CNSRemoteJobControlApp::Init(void)
                              CArgDescriptions::eString);
     arg_desc->SetConstraint("cmd",
                             &(*new CArgAllow_Strings(NStr::eNocase),
-                              "shutdown_nodes", "kill_nodes", "drop_jobs")
+                              "shutdown_nodes", "kill_nodes")
                             );
 
 
@@ -353,9 +353,6 @@ int CNSRemoteJobControlApp::Run(void)
         if (NStr::CompareNocase(cmd, "kill_nodes") == 0) {
             CWNodeShutdownAction action(CNetScheduleAdmin::eDie);
             info_collector->TraverseNodes(action);
-        }
-        if (NStr::CompareNocase(cmd, "drop_jobs") == 0) {
-            info_collector->DropQueue();
         }
     }
 

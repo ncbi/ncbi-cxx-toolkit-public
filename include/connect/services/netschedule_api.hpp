@@ -669,10 +669,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///
     void CancelAllJobs();
 
-    /// Delete all jobs from the queue.
-    ///
-    void DropQueue();
-
     void DumpJob(CNcbiOstream& out, const string& job_key);
     CNetServerMultilineCmdOutput DumpJob(const string& job_key);
 

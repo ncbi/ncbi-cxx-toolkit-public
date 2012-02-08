@@ -101,7 +101,6 @@ public:
 
     void TraverseJobs(CNetScheduleAPI::EJobStatus, IAction<CNSJobInfo>&);
     void TraverseNodes(IAction<CNetScheduleAdmin::SWorkerNodeInfo>&);
-    void DropQueue();
     void CancelJob(const std::string& jid);
 
     void GetQueues(CNetScheduleAdmin::TQueueList& queues);

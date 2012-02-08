@@ -200,7 +200,6 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->AddFlag("qdelete","Delete queue");
 
-    arg_desc->AddFlag("drop", "Drop ALL jobs in the queue (no questions asked!)");
     arg_desc->AddOptionalKey("stat",
                              "type",
                              "Print queue statistics",
@@ -305,12 +304,6 @@ int CNetScheduleControl::Run(void)
         ctl = x_CreateNewClient(true);
         ctl.GetAdmin().DeleteQueue(ctl.GetQueueName());
         os << "Queue \"" << ctl.GetQueueName() << "\" has been deleted." << endl;
-    }
-    else if (args["drop"]) {
-        ctl = x_CreateNewClient(true);
-        ctl.GetAdmin().DropQueue();
-        os << "All jobs from the queue \"" << ctl.GetQueueName()
-           << "\" has been dropped." << endl;
     }
     else if (args["showparams"]) {
         ctl = x_CreateNewClient(true);

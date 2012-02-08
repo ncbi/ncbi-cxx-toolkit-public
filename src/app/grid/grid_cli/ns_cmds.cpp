@@ -996,10 +996,7 @@ int CGridCommandLineInterfaceApp::Cmd_DeleteQueue()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
-    if (IsOptionSet(eDropJobs))
-        m_NetScheduleAdmin.DropQueue();
-    else
-        m_NetScheduleAdmin.DeleteQueue(m_Opts.id);
+    m_NetScheduleAdmin.DeleteQueue(m_Opts.id);
 
     return 0;
 }

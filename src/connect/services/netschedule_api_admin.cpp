@@ -120,15 +120,6 @@ void CNetScheduleAdmin::CancelAllJobs()
         (*it).ExecWithRetry(cmd);
 }
 
-void CNetScheduleAdmin::DropQueue()
-{
-    string cmd = "DROPQ";
-
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it)
-        (*it).ExecWithRetry(cmd);
-}
-
 
 void CNetScheduleAdmin::PrintServerVersion(CNcbiOstream& output_stream)
 {

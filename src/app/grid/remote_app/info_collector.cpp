@@ -224,11 +224,6 @@ void CNSInfoCollector::TraverseNodes(
     }
 }
 
-void CNSInfoCollector::DropQueue()
-{
-    x_GetNetScheduleAPI().GetAdmin().DropQueue();
-}
-
 void CNSInfoCollector::CancelJob(const std::string& jid)
 {
     x_GetNetScheduleAPI().GetSubmitter().CancelJob(jid);
