@@ -472,6 +472,8 @@ RunTest()
                 regular  ) ;;
                 valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" 
                            NCBI_CHECK_TIMEOUT_MULT=10
+                           NCBI_RUN_UNDER_VALGRIND="yes"
+                           export NCBI_RUN_UNDER_VALGRIND
                            ;;
                 esac
                 export NCBI_CHECK_TOOL
