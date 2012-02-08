@@ -124,19 +124,19 @@ void CTarTest::Init(void)
     args->AddFlag("u", "Update archive");
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
-    args->AddFlag("T", "Test archive [non-standard]");
+    args->AddFlag("T", "Test archive by a walk-through [non-standard]");
     args->AddKey ("f", "archive_file_name",
                   "Archive file name;  use '-' for stdin/stdout",
                   CArgDescriptions::eString);
     args->AddOptionalKey("C", "directory",
                          "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey ("b", "blocking_factor",
-                         "Archive block size in 512-byte units"
-                         " (10K blocks in use by default)",
+                         "Archive block size in 512-byte units\n"
+                         "(10K blocks in use by default)",
                          CArgDescriptions::eInteger, "20");
     args->SetConstraint ("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddFlag("L", "Follow links");
+    args->AddFlag("h", "Follow links");
     args->AddFlag("p", "Preserve all permissions");
     args->AddFlag("m", "Don't extract modification times");
     args->AddFlag("O", "Don't extract file ownerships");
@@ -148,7 +148,7 @@ void CTarTest::Init(void)
     args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
     args->AddFlag("k", "Keep old files when extracting");
     args->AddFlag("v", "Turn on debugging information");
-    args->AddFlag("s", "Use stream operations with archive");
+    args->AddFlag("s", "Use stream operations with archive [non-standard]");
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
     args->AddFlag("lfs", "Large File Support check [non-standard]");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
@@ -405,7 +405,7 @@ int CTarTest::Run(void)
     if (args["i"].HasValue()) {
         m_Flags |=  CTar::fIgnoreZeroBlocks;
     }
-    if (args["L"].HasValue()) {
+    if (args["h"].HasValue()) {
         m_Flags |=  CTar::fFollowLinks;
     }
     if (args["p"].HasValue()) {

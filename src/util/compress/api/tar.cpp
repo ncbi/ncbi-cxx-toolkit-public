@@ -1450,13 +1450,12 @@ void CTar::x_Open(EAction action)
             if (!m_FileStream->good()) {
                 int x_errno = errno;
                 TAR_THROW(this, eOpen,
-                          "Cannot open archive '" + m_FileName + '\''
-                          + s_OSReason(x_errno));
+                          "Cannot open archive" + s_OSReason(x_errno));
             }
         } else if (m_Bad) {
             _ASSERT(m_OpenMode);
             TAR_THROW(this, eOpen,
-                      "Archive '" + m_FileName + "' is in bad state");
+                      "Archive is in bad state");
         }
         if (m_OpenMode) {
             _ASSERT(action != eCreate);
@@ -2912,8 +2911,8 @@ void CTar::x_Skip(Uint8 blocks)
             }
             if (m_FileStream) {
                 TAR_POST(2, Warning,
-                         "Cannot fast skip in file archive '" +
-                         m_FileName + "', reverting to slow skip");
+                         "Cannot fast skip in file archive,"
+                         " reverting to slow skip");
             }
             m_Flags |= fSlowSkipWithRead;
         }
