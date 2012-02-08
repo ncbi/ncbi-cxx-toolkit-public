@@ -97,7 +97,7 @@ struct {
     {"STAT AFFINITIES", "AFFINITY: ", "affinity_token"}
 };
 
-CJsonNode GenericStatToJson(CNetScheduleAPI ns_api,
+CJsonNode GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose)
 {
     string stat_cmd(s_StatTopics[topic].command);
@@ -107,111 +107,99 @@ CJsonNode GenericStatToJson(CNetScheduleAPI ns_api,
     if (verbose)
         stat_cmd.append(" VERBOSE");
 
-    CJsonNode result(CJsonNode::NewObjectNode());
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(stat_cmd));
 
-    for (CNetServiceIterator it = ns_api.GetService().Iterate(); it; ++it) {
-        CNetServerMultilineCmdOutput output((*it).ExecWithRetry(stat_cmd));
+    CJsonNode entities(CJsonNode::NewArrayNode());
+    CJsonNode entity_info;
+    CJsonNode array_value;
 
-        CJsonNode entities(CJsonNode::NewArrayNode());
-        CJsonNode entity_info;
-        CJsonNode array_value;
+    string line;
 
-        string line;
-
-        while (output.ReadLine(line)) {
-            if (NStr::StartsWith(line, prefix)) {
-                if (entity_info)
-                    entities.PushNode(entity_info);
-                entity_info = CJsonNode::NewObjectNode();
-                entity_info.SetString(entity_name, UnquoteIfQuoted(
-                        CTempString(line.data() + prefix.length(),
-                        line.length() - prefix.length())));
-            } else if (entity_info && NStr::StartsWith(line, "  ")) {
-                if (NStr::StartsWith(line, "    ") && array_value) {
-                    array_value.PushString(UnquoteIfQuoted(
-                            NStr::TruncateSpaces(line, NStr::eTrunc_Begin)));
-                } else {
-                    if (array_value)
-                        array_value = NULL;
-                    CTempString key, value;
-                    NStr::SplitInTwo(line, ":", key, value);
-                    NormalizeStatKeyName(key);
-                    string key_norm(key);
-                    value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
-                    if (value.empty())
-                        entity_info.SetNode(key_norm, array_value =
-                                CJsonNode::NewArrayNode());
-                    else if (IsInteger(value))
-                        entity_info.SetNumber(key_norm,
-                                NStr::StringToInt8(value));
-                    else if (NStr::CompareNocase(value, "FALSE") == 0)
-                        entity_info.SetBoolean(key_norm, false);
-                    else if (NStr::CompareNocase(value, "TRUE") == 0)
-                        entity_info.SetBoolean(key_norm, true);
-                    else if (NStr::CompareNocase(value, "NONE") == 0)
-                        entity_info.SetNull(key_norm);
-                    else
-                        entity_info.SetString(key_norm, UnquoteIfQuoted(value));
-                }
+    while (output.ReadLine(line)) {
+        if (NStr::StartsWith(line, prefix)) {
+            if (entity_info)
+                entities.PushNode(entity_info);
+            entity_info = CJsonNode::NewObjectNode();
+            entity_info.SetString(entity_name, UnquoteIfQuoted(
+                    CTempString(line.data() + prefix.length(),
+                    line.length() - prefix.length())));
+        } else if (entity_info && NStr::StartsWith(line, "  ")) {
+            if (NStr::StartsWith(line, "    ") && array_value) {
+                array_value.PushString(UnquoteIfQuoted(
+                        NStr::TruncateSpaces(line, NStr::eTrunc_Begin)));
+            } else {
+                if (array_value)
+                    array_value = NULL;
+                CTempString key, value;
+                NStr::SplitInTwo(line, ":", key, value);
+                NormalizeStatKeyName(key);
+                string key_norm(key);
+                value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
+                if (value.empty())
+                    entity_info.SetNode(key_norm, array_value =
+                            CJsonNode::NewArrayNode());
+                else if (IsInteger(value))
+                    entity_info.SetNumber(key_norm,
+                            NStr::StringToInt8(value));
+                else if (NStr::CompareNocase(value, "FALSE") == 0)
+                    entity_info.SetBoolean(key_norm, false);
+                else if (NStr::CompareNocase(value, "TRUE") == 0)
+                    entity_info.SetBoolean(key_norm, true);
+                else if (NStr::CompareNocase(value, "NONE") == 0)
+                    entity_info.SetNull(key_norm);
+                else
+                    entity_info.SetString(key_norm, UnquoteIfQuoted(value));
             }
         }
-        if (entity_info)
-            entities.PushNode(entity_info);
-
-        result.SetNode((*it).GetServerAddress(), entities);
     }
+    if (entity_info)
+        entities.PushNode(entity_info);
 
-    return result;
+    return entities;
 }
 
-CJsonNode LegacyStatToJson(CNetScheduleAPI ns_api, bool verbose)
+CJsonNode LegacyStatToJson(CNetServer server, bool verbose)
 {
     const string stat_cmd(verbose ? "STAT ALL" : "STAT");
 
-    CJsonNode result(CJsonNode::NewObjectNode());
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(stat_cmd));
 
-    for (CNetServiceIterator it = ns_api.GetService().Iterate(); it; ++it) {
-        CNetServerMultilineCmdOutput output((*it).ExecWithRetry(stat_cmd));
+    CJsonNode stat_info(CJsonNode::NewObjectNode());
+    CJsonNode jobs_by_status(CJsonNode::NewObjectNode());;
+    stat_info.SetNode("JobsByStatus", jobs_by_status);
+    CJsonNode section_entries;
 
-        CJsonNode stat_info(CJsonNode::NewObjectNode());
-        CJsonNode jobs_by_status(CJsonNode::NewObjectNode());;
-        stat_info.SetNode("JobsByStatus", jobs_by_status);
-        CJsonNode section_entries;
+    string line;
+    CTempString key, value;
 
-        string line;
-        CTempString key, value;
+    while (output.ReadLine(line)) {
+        if (line.empty() || isspace(line[0]))
+            continue;
 
-        while (output.ReadLine(line)) {
-            if (line.empty() || isspace(line[0]))
-                continue;
-
-            if (line[0] == '[') {
-                size_t section_name_len = line.length();
-                while (--section_name_len > 0 &&
-                        (line[section_name_len] == ':' ||
-                        line[section_name_len] == ']' ||
-                        isspace(line[section_name_len])))
-                    ;
-                line.erase(0, 1);
-                line.resize(section_name_len);
-                stat_info.SetNode(line,
-                        section_entries = CJsonNode::NewArrayNode());
-            } else if (section_entries)
-                section_entries.PushString(line);
-            else if (NStr::SplitInTwo(line, ":", key, value)) {
-                value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
-                if (CNetScheduleAPI::StringToStatus(key) ==
-                        CNetScheduleAPI::eJobNotFound)
-                    stat_info.SetString(key, value);
-                else
-                    jobs_by_status.SetNumber(key, NStr::StringToInt8(value));
-            }
+        if (line[0] == '[') {
+            size_t section_name_len = line.length();
+            while (--section_name_len > 0 &&
+                    (line[section_name_len] == ':' ||
+                    line[section_name_len] == ']' ||
+                    isspace(line[section_name_len])))
+                ;
+            line.erase(0, 1);
+            line.resize(section_name_len);
+            stat_info.SetNode(line,
+                    section_entries = CJsonNode::NewArrayNode());
+        } else if (section_entries)
+            section_entries.PushString(line);
+        else if (NStr::SplitInTwo(line, ":", key, value)) {
+            value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
+            if (CNetScheduleAPI::StringToStatus(key) ==
+                    CNetScheduleAPI::eJobNotFound)
+                stat_info.SetString(key, value);
+            else
+                jobs_by_status.SetNumber(key, NStr::StringToInt8(value));
         }
-
-        result.SetNode((*it).GetServerAddress(), stat_info);
     }
 
-    return result;
+    return stat_info;
 }
 
 void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
@@ -312,19 +300,32 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
             m_NetScheduleAdmin.PrintServerStatistics(NcbiCout,
                 IsOptionSet(eBrief) ? CNetScheduleAdmin::eStatisticsBrief :
                     CNetScheduleAdmin::eStatisticsAll);
-        else
-            PrintJSON(stdout, LegacyStatToJson(m_NetScheduleAPI,
-                    !IsOptionSet(eBrief)));
+        else {
+            CJsonNode result(CJsonNode::NewObjectNode());
+
+            for (CNetServiceIterator it =
+                    m_NetScheduleAPI.GetService().Iterate(); it; ++it)
+                result.SetNode((*it).GetServerAddress(),
+                        LegacyStatToJson(*it, !IsOptionSet(eBrief)));
+
+            PrintJSON(stdout, result);
+        }
     }
 }
 
 void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
         ENetScheduleStatTopic topic)
 {
-    if (m_Opts.output_format == eJSON)
-        PrintJSON(stdout, GenericStatToJson(m_NetScheduleAPI,
-                topic, IsOptionSet(eVerbose)));
-    else {
+    if (m_Opts.output_format == eJSON) {
+        CJsonNode result(CJsonNode::NewObjectNode());
+
+        for (CNetServiceIterator it =
+                m_NetScheduleAPI.GetService().Iterate(); it; ++it)
+            result.SetNode((*it).GetServerAddress(),
+                    GenericStatToJson(*it, topic, IsOptionSet(eVerbose)));
+
+        PrintJSON(stdout, result);
+    } else {
         string cmd(s_StatTopics[topic].command);
 
         if (IsOptionSet(eVerbose))

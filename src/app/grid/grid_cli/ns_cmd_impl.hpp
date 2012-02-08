@@ -36,14 +36,14 @@
 #include "json_over_uttp.hpp"
 #include "grid_cli.hpp"
 
-#include <connect/services/netschedule_api.hpp>
+#include <connect/services/netservice_api.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CJsonNode GenericStatToJson(CNetScheduleAPI ns_api,
+CJsonNode GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose);
 
-CJsonNode LegacyStatToJson(CNetScheduleAPI ns_api, bool verbose);
+CJsonNode LegacyStatToJson(CNetServer server, bool verbose);
 
 END_NCBI_SCOPE
 
