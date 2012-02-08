@@ -603,9 +603,6 @@ void CMultiReaderApp::xSetFlags(
         if ( args["as-graph"] ) {
             m_iFlags |= CWiggleReader::fAsGraph;
         }
-        if ( args["dumpstats"] ) {
-            m_iFlags |= CWiggleReader::fDumpStats;
-        }
         break;
     
     case CFormatGuess::eBed:
@@ -614,9 +611,6 @@ void CMultiReaderApp::xSetFlags(
         }
         if ( args["numeric-ids-as-local"] ) {
             m_iFlags |= CBedReader::fNumericIdsAsLocal;
-        }
-        if ( args["dumpstats"] ) {
-            m_iFlags |= CBedReader::fDumpStats;
         }
         break;
        
