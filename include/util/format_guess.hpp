@@ -277,7 +277,7 @@ protected:
 
     static bool IsLineFlatFileSequence(
         const std::string& );
-    static bool IsLineNewick(
+    static bool IsSampleNewick(
         const std::string& );
     static bool IsLabelNewick(
         const std::string& );

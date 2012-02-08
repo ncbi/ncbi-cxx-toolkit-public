@@ -851,50 +851,24 @@ CFormatGuess::TestFormatNewick(
     //  special newick consideration:
     //  newick files may come with all data cramped into a single run-on line,
     //  that single oversized line may not have a line terminator
+    const size_t maxSampleSize = 8*1024-1;
+    size_t sampleSize = 0;
+    char* pSample = new char[maxSampleSize+1];
+    auto_ptr<char> autoDelete(pSample);
 
-//>>rollback 2012-02-07
-//    const size_t minSampleSize = 1024;
-//    const size_t maxSampleSize = 16*1024-1;
-//    char* testBuffer = new char[maxSampleSize+1];
-//    auto_ptr<char> autoDelete(testBuffer);
-
-//    size_t sampleSize = 0;
-//    while (sampleSize < minSampleSize  &&  !m_Stream.eof()) {
-//        m_Stream.getline(testBuffer+sampleSize, maxSampleSize);
-//        sampleSize += m_Stream.gcount();
-//    }
-//    m_Stream.clear();  // in case we reached eof
-//    CStreamUtils::Stepback(m_Stream, testBuffer, sampleSize);
-
-//    if (!IsLineNewick(string(testBuffer))) {
-//        return false;
-//    }
-//    return true;
-    if ( ! EnsureTestBuffer() ) {
+    m_Stream.read(pSample, maxSampleSize);
+    sampleSize = m_Stream.gcount();
+    m_Stream.clear();  // in case we reached eof
+    CStreamUtils::Stepback(m_Stream, pSample, sampleSize);
+    if (0 == sampleSize) {
         return false;
     }
-    // Maybe we get home early ...
-    if ( m_iTestDataSize > 0 && m_pTestBuffer[0] != '(' ) {
-        return false;
-    }
-    if ( ! EnsureSplitLines() ) {
-        if ( ! m_TestLines.empty() ) {
-            return false;
-        }
-        m_TestLines.push_back( string( m_pTestBuffer ) );
-    }
 
-    string one_line;
-    ITERATE( list<string>, it, m_TestLines ) {
-        one_line += *it;
-    }
-
-    if ( ! IsLineNewick( one_line ) ) {
+    pSample[sampleSize] = 0;
+    if (!IsSampleNewick(pSample)) { // tolerant of embedded line breaks
         return false;
     }
     return true;
-
-//<<rollback 2012-02-07
 }
 
 //  -----------------------------------------------------------------------------
@@ -1661,7 +1635,7 @@ bool CFormatGuess::IsInputRepeatMaskerWithoutHeader()
 
 //  ----------------------------------------------------------------------------
 bool
-CFormatGuess::IsLineNewick(
+CFormatGuess::IsSampleNewick(
     const string& cline )
 {
     //
@@ -1745,13 +1719,9 @@ CFormatGuess::IsLineNewick(
     }}
     {{
         //  Rough lexical analysis of what's left. Bail immediately on fault:
-        if ( line.empty() ) {
+        if (line.empty()  ||  line[0] != '(') {
             return false;
         }
-        if ( line[0] != '(' ) {
-            return true;
-        }
-
         size_t paren_count = 1;
         for ( size_t ii=1; line[ii] != 0; ++ii ) {
             switch ( line[ii] ) {
