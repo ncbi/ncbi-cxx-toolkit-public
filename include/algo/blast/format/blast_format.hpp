@@ -66,16 +66,19 @@ public:
     /// @param opts BLAST options used in the search [in]
     /// @param db_adapter Adapter object representing a BLAST database or
     /// subject sequences [in]
-    /// @param format_type Integer indication the type of output [in]
-    /// @param believe_query true if sequence ID's of query sequences
+    /// @param format_type enumeration that specifies the requested type of output [in]
+    /// @param believe_query set to true if sequence IDs of query sequences
     ///                are to be parsed. If multiple queries are provieded,
-    ///                their sequence ID's must be distinct [in]
+    ///                their sequence ID's must be distinct. If you don't know
+    ///                what this means, set to false [in]
     /// @param outfile Stream that will receive formatted output
     /// @param num_summary The number of 1-line summaries at the top of
     ///                   the blast report (for output types that have
-    ///                   1-line summaries) [in]
+    ///                   1-line summaries). Default value for the BLAST
+    ///                   programs is align_format::kDfltArgNumDescriptions [in]
     /// @param num_alignments The number of alignments to display in the BLAST
-    ///                 report [in] 
+    ///                 report. Default value for the BLAST programs is
+    ///                 align_format::kDfltArgNumAlignments [in] 
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
     /// @param matrix_name Name of protein score matrix (BLOSUM62 if
@@ -124,15 +127,18 @@ public:
     /// @param opts BLAST options used in the search [in]
     /// @param dbinfo_list Database info list, provided directly [in]
     /// @param format_type Integer indication the type of output [in]
-    /// @param believe_query true if sequence ID's of query sequences
+    /// @param believe_query set to true if sequence IDs of query sequences
     ///                are to be parsed. If multiple queries are provieded,
-    ///                their sequence ID's must be distinct [in]
+    ///                their sequence ID's must be distinct. If you don't know
+    ///                what this means, set to false [in]
     /// @param outfile Stream that will receive formatted output
     /// @param num_summary The number of 1-line summaries at the top of
     ///                   the blast report (for output types that have
-    ///                   1-line summaries) [in]
+    ///                   1-line summaries). Default value for the BLAST
+    ///                   programs is align_format::kDfltArgNumDescriptions [in]
     /// @param num_alignments The number of alignments to display in the BLAST
-    ///                 report [in] 
+    ///                 report. Default value for the BLAST programs is
+    ///                 align_format::kDfltArgNumAlignments [in] 
     /// @param scope The scope to use for retrieving sequence data
     ///              (must contain query and database sequences) [in]
     /// @param show_gi When printing database sequence identifiers, 
