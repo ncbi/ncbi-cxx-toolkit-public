@@ -53,10 +53,9 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    Linux32    ) : ${BOOST_PATH=$NCBI/boost-1.41.0} ;;
+    Linux32    ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi3} ;;
     Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi1} ;;
-    SunOS*     ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi2} ;;
-    *          ) : ${BOOST_PATH=$NCBI/boost-1.35.0} ;;
+    *          ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi2} ;;
 esac
 
 case "$ncbi_platform" in

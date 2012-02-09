@@ -4392,7 +4392,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
    case "$with_boost_tag" in
       yes | "" )
          case "$host_os:$ncbi_compiler" in
-            darwin*:GCC) BOOST_TAG=""     ;;
+            darwin*:GCC) BOOST_TAG="-xgcc" ;;
             *:GCC)       BOOST_TAG="-gcc" ;;
             *:KCC)       BOOST_TAG="-kcc" ;;
             linux*:ICC)  BOOST_TAG="-il"  ;;
@@ -4403,8 +4403,8 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
             *:MSVC)      BOOST_TAG="-vc"  ;;
          esac
          case "$BOOST_TAG" in
-            -gcc|-il ) boost_comp_vers=`echo $compiler_version | cut -c1-2` ;;
-            *        ) boost_comp_vers='' ;;
+            -*gcc|-il ) boost_comp_vers=`echo $compiler_version | cut -c1-2` ;;
+            *         ) boost_comp_vers='' ;;
          esac
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
          test "$with_debug" = "yes"  &&  BOOST_D=-d
