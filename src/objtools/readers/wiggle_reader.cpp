@@ -158,9 +158,6 @@ CWiggleReader::ReadSeqAnnot(
         ProcessError( err, pErrorContainer );
     }
     x_AddConversionInfo( annot, pErrorContainer );
-    if ( m_iFlags & fDumpStats ) {
-        x_DumpStats( cerr, pTrack );
-    }
     delete pTrack;
     return annot;
 }

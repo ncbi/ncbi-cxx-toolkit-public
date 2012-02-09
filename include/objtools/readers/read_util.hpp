@@ -58,8 +58,8 @@ public:
     /// and above are considered GI numbers.
     ///
     static CRef<CSeq_id> AsSeqId(
-        const string&,
-        unsigned int =0);
+        const string& rawId,
+        unsigned int flags =0);
 };
 
 END_SCOPE(objects)

@@ -107,7 +107,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CReaderBase*
 CReaderBase::GetReader(
     CFormatGuess::EFormat format,
-    int flags )
+    unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
     switch ( format ) {
@@ -135,7 +135,7 @@ CReaderBase::GetReader(
 
 //  ----------------------------------------------------------------------------
 CReaderBase::CReaderBase(
-    int flags) :
+    unsigned int flags) :
 //  ----------------------------------------------------------------------------
     m_iFlags(flags)
 {

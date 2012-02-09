@@ -53,7 +53,7 @@ class NCBI_XOBJREAD_EXPORT CBedReader
     //
 public:
     CBedReader( 
-        int =fDefaults );
+        int =fNormal );
     virtual ~CBedReader();
     
     //
@@ -61,9 +61,7 @@ public:
     //
 public:
     enum EBedFlags {
-        fDefaults = 0,
-        fAllIdsAsLocal = 1<<0,
-        fNumericIdsAsLocal = 1<<1,
+        // currentry, only what's inherited from CReaderBase
     };
     typedef int TFlags;
 
