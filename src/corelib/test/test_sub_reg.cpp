@@ -93,5 +93,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, char** argv)
 {
-    return CTestSubRegApp().AppMain(argc, argv);
+    return CTestSubRegApp().AppMain(argc, argv, 0, eDS_ToStderr);
 }

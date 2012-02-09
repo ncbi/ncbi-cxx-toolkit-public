@@ -103,6 +103,13 @@ static void TestIostream(void)
 static void TestRegistry(void)
 {
     CNcbiRegistry reg;
+    CConstRef<IRegistry> env_reg
+        = reg.FindByName(CNcbiRegistry::sm_EnvRegName);
+    if (env_reg.Empty()) {
+        ERR_POST("Environment-based subregistry missing");
+    } else {
+        reg.Remove(*env_reg);
+    }
     assert( reg.Empty() );
 
     list<string> sections;

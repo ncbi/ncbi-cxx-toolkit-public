@@ -7,6 +7,11 @@ else
     flags=
 fi
 
+for x in `printenv | sed -ne 's/^\(NCBI_CONFIG_[^=]*\)=.*/\1/p'`; do
+    echo "Clearing $x setting."
+    unset $x
+done
+
 NCBI_CONFIG_PATH=`dirname $0`/test_sub_reg_data
 NCBI_CONFIG_OVERRIDES=$NCBI_CONFIG_PATH/indirect_env.ini
 NCBI_CONFIG_e__test=env

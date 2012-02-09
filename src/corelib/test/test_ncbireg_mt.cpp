@@ -284,6 +284,13 @@ bool CTestRegApp::TestApp_Init(void)
              << " threads..."
              << NcbiEndl;
 
+    CConstRef<IRegistry> env_reg
+        = m_Registry.FindByName(CNcbiRegistry::sm_EnvRegName);
+    if (env_reg.Empty()) {
+        ERR_POST("Environment-based subregistry missing");
+    } else {
+        m_Registry.Remove(*env_reg);
+    }
     assert( m_Registry.Empty() );
 
     list<string> sections;
