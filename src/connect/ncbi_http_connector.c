@@ -437,12 +437,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
     /* the re-try loop... */
     for (;;) {
-        TSOCK_Flags flags;
-
-        sock = 0;
+        TSOCK_Flags flags
+            = (uuu->net_info->debug_printout == eDebugPrintout_Data
+               ? fSOCK_LogOn : fSOCK_LogDefault);
         status = eIO_Success;
-        flags = (uuu->net_info->debug_printout == eDebugPrintout_Data
-                 ? fSOCK_LogOn : fSOCK_LogDefault);
+        sock = 0;
         if (uuu->net_info->scheme == eURL_Https) {
             flags |= fSOCK_Secure;
             if (uuu->net_info->req_method == eReqMethod_Connect) {
