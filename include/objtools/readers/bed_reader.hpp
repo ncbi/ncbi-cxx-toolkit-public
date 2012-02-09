@@ -44,6 +44,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+/// CReaderBase implementation that reads BED data files, either a single object
+/// or all objects found. For the purpose of CBedReader, an object consists of
+/// a run of records all with the same ID (BED comlumn 1), and all contained
+/// within a single track.
+///
 class NCBI_XOBJREAD_EXPORT CBedReader
 //  ----------------------------------------------------------------------------
     : public CReaderBase
@@ -53,7 +58,7 @@ class NCBI_XOBJREAD_EXPORT CBedReader
     //
 public:
     CBedReader( 
-        int =fNormal );
+        unsigned int =fNormal );
     virtual ~CBedReader();
     
     //
@@ -65,35 +70,63 @@ public:
     };
     typedef int TFlags;
 
+    /// Read object from line reader containing BED data, rendering it as a
+    /// Seq-annot
+    /// @param lr
+    ///   line reader to read from.
+    /// @param pErrors
+    ///   pointer to optional error container object. 
+    ///
     virtual CRef< CSerialObject >
     ReadObject(
-        ILineReader&,
-        IErrorContainer* =0 );
+        ILineReader& lr,
+        IErrorContainer* pErrors=0 );
                 
+    /// Read a single object from given line reader containing BED data. The
+    /// resulting Seq-annot will contain a feature table.
+    /// @param lr
+    ///   line reader to read from.
+    /// @param pErrors
+    ///   pointer to optional error container object. 
+    ///  
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
-        ILineReader&,
-        IErrorContainer* =0 );
+        ILineReader& lr,
+        IErrorContainer* pErrors=0 );
 
+    /// Read all objects from given insput stream, returning them as a vector of
+    /// Seq-annots, each containing a feature table.
+    /// @param annots
+    ///   (out) vector containing read Seq-annots
+    /// @param istr
+    ///   input stream to read from.
+    /// @param pErrors
+    ///   pointer to optional error container object. 
+    ///  
     virtual void
     ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >&,
-        CNcbiIstream&,
-        IErrorContainer* =0 );
+        vector< CRef<CSeq_annot> >& annots,
+        CNcbiIstream& istr,
+        IErrorContainer* pErrors=0 );
                         
+    /// Read all objects from given insput stream, returning them as a vector of
+    /// Seq-annots, each containing a feature table.
+    /// @param annots
+    ///   (out) vector containing read Seq-annots
+    /// @param lr
+    ///   line reader to read from.
+    /// @param pErrors
+    ///   pointer to optional error container object. 
+    ///  
     virtual void
     ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >&,
-        ILineReader&,
-        IErrorContainer* =0 );
+        vector< CRef<CSeq_annot> >& annots,
+        ILineReader& lr,
+        IErrorContainer* pErrors=0 );
                         
-    //
-    //  helpers:
-    //
 protected:
-    virtual bool x_ParseTrackLine(
+    virtual bool xParseTrackLine(
         const string&,
-        vector< CRef< CSeq_annot > >&,
         CRef< CSeq_annot >& );
         
     bool x_ParseFeature(
@@ -119,7 +152,7 @@ protected:
         vector< CRef< CSeq_annot > >& );
                     
     void
-    x_ProcessError(
+    xProcessError(
         CObjReaderLineException&,
         IErrorContainer* );
 
@@ -128,7 +161,8 @@ protected:
     //
 protected:
     CErrorContainerLenient m_ErrorsPrivate;
-    
+    string m_currentId;
+
     vector<string>::size_type m_columncount;
     bool m_usescore;
 };

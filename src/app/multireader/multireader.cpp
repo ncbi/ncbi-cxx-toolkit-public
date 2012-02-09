@@ -423,6 +423,7 @@ void CMultiReaderApp::xProcessBed(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
+    //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CBedReader reader(m_iFlags);
     CStreamLineReader lr(istr);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);

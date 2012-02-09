@@ -97,11 +97,12 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
 CBedReader::CBedReader(
-    int flags )
+    unsigned int flags ) :
 //  ----------------------------------------------------------------------------
-    : CReaderBase(flags)
-    , m_columncount( 0 )
-    , m_usescore( false )
+    CReaderBase(flags),
+    m_columncount(0),
+    m_usescore(false),
+    m_currentId("")
 {
 }
 
@@ -119,45 +120,52 @@ CBedReader::ReadSeqAnnot(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
-    CRef< CSeq_annot > annot;
-    CRef< CAnnot_descr > desc;
+    CRef<CSeq_annot> annot;
+    CRef<CAnnot_descr> desc;
 
-    if (lr.AtEOF()) {
-        return annot;
-    }
     annot.Reset(new CSeq_annot);
     desc.Reset(new CAnnot_descr);
-    annot->SetDesc( *desc );
+    annot->SetDesc(*desc);
     annot->SetData().SetFtable();
 
     string line;
-    int linecount = 0;
+    int lineCount = 0;
+    int featureCount = 0;
 
-    while ( ! lr.AtEOF() ) {
-        ++linecount;
+    while (!lr.AtEOF()) {
+        ++lineCount;
         line = *++lr;
-        if ( NStr::TruncateSpaces( line ).empty() ) {
+        if (NStr::TruncateSpaces(line).empty()) {
             continue;
         }
         try {
-            if ( x_ParseBrowserLine( line, annot ) ) {
+            if (x_ParseBrowserLine(line, annot)) {
                 continue;
             }
-            if ( CReaderBase::x_ParseTrackLine( line, annot ) ) {
+            if (x_ParseTrackLine(line, annot)) {
+                if (featureCount > 0) {
+                    lr.UngetLine();
+                    break;
+                }
                 continue;
             }
             if (!x_ParseFeature( line, annot )) {
                 lr.UngetLine();
-                return annot;
+                break;
             }
+            ++featureCount;
         }
         catch( CObjReaderLineException& err ) {
-            err.SetLineNumber( linecount );
-            x_ProcessError( err, pErrorContainer );
+            err.SetLineNumber( lineCount );
+            xProcessError( err, pErrorContainer );
         }
         continue;
     }
-    x_AddConversionInfo( annot, pErrorContainer );
+    //  Only return a valid object if there was at least one feature
+    if (0 == featureCount) {
+        return CRef<CSeq_annot>();
+    }
+    x_AddConversionInfo(annot, pErrorContainer);
     return annot;
 }
 
@@ -181,39 +189,11 @@ CBedReader::ReadSeqAnnots(
     IErrorContainer* pErrorContainer )
 //  ----------------------------------------------------------------------------
 {
-//    CRef< CSeq_annot > annot( new CSeq_annot );
-//    CRef< CAnnot_descr > desc( new CAnnot_descr );
-//    annot->SetDesc( *desc );
-//    annots.push_back( annot );
-
-    CRef< CSeq_annot > annot = x_AppendAnnot(annots);
-
-    string line;
-    int linecount = 0;
-
-    while ( ! lr.AtEOF() ) {
-        ++linecount;
-        line = *++lr;
-        if ( NStr::TruncateSpaces( line ).empty() ) {
-            continue;
-        }
-        try {
-            if ( x_ParseBrowserLine( line, annot ) ) {
-                continue;
-            }
-            if ( x_ParseTrackLine( line, annots, annot ) ) {
-                continue;
-            }
-            x_ParseFeature( line, annot );
-        }
-        catch( CObjReaderLineException& err ) {
-            err.SetLineNumber( linecount );
-            x_ProcessError( err, pErrorContainer );
-        }
-        continue;
+    CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pErrorContainer);
+    while (annot) {
+        annots.push_back(annot);
+        annot = ReadSeqAnnot(lr, pErrorContainer);
     }
-    x_AddConversionInfo( annot, &m_ErrorsPrivate );
-//    return annot;
 }
                         
 //  ----------------------------------------------------------------------------                
@@ -230,26 +210,20 @@ CBedReader::ReadObject(
 
 //  ----------------------------------------------------------------------------
 bool
-CBedReader::x_ParseTrackLine(
+CBedReader::xParseTrackLine(
     const string& strLine,
-    vector< CRef< CSeq_annot > >& annots,
     CRef< CSeq_annot >& current )
 //  ----------------------------------------------------------------------------
 {
-    static bool bFirstTimeThrough = true;
-
     if ( ! NStr::StartsWith( strLine, "track" ) ) {
         return false;
     }
 
-    if ( ! bFirstTimeThrough ) {
+    m_currentId.clear();
+    if ( !m_currentId.empty() ) {
         x_AddConversionInfo( current, &m_ErrorsPrivate );    
         m_columncount = 0;
         m_ErrorsPrivate.ClearAll();
-        current = x_AppendAnnot( annots );
-    }
-    else {
-        bFirstTimeThrough = false;
     }
     return CReaderBase::x_ParseTrackLine( strLine, current );
 }
@@ -274,7 +248,6 @@ bool CBedReader::x_ParseFeature(
 //  ----------------------------------------------------------------------------
 {
     const int MAX_RECORDS = 100000;
-    static string strc;
     static int count = 0;
     count++;
 
@@ -306,12 +279,12 @@ bool CBedReader::x_ParseFeature(
 
     //  if feature tables get too big we _will_ run out of memory. To guard against
     //  that, limit feature tables to a single id, and to MAX_RECORDS at the most.
-    if (strc != fields[0]  ||  count == MAX_RECORDS+1) {
-        if (strc == "") {
-            strc = fields[0];
+    if (m_currentId != fields[0]  ||  count == MAX_RECORDS+1) {
+        if (m_currentId.empty()) {
+            m_currentId = fields[0];
         }
         else {
-            strc = "";
+            m_currentId.clear();
             count = 0;
             return false; //indicate no data has been processed 
         }
@@ -493,21 +466,15 @@ void CBedReader::x_SetTrackData(
 
 //  ----------------------------------------------------------------------------
 void
-CBedReader::x_ProcessError(
+CBedReader::xProcessError(
     CObjReaderLineException& err,
-    IErrorContainer* pContainer )
+    IErrorContainer* pContainer)
 //  ----------------------------------------------------------------------------
 {
-    err.SetLineNumber( m_uLineNumber );
-    m_ErrorsPrivate.PutError( err );
-    
-    if ( 0 == pContainer ) {
-        throw( err );
-    }
-    if ( ! pContainer->PutError( err ) )
-    {
-        throw( err );
-    }
+    err.SetLineNumber(m_uLineNumber);
+    m_ErrorsPrivate.PutError(err);
+    ProcessError(err, pContainer);
 }
+
 END_objects_SCOPE
 END_NCBI_SCOPE

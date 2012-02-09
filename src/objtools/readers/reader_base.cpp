@@ -178,8 +178,7 @@ CReaderBase::ReadSeqAnnot(
     IErrorContainer* ) 
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_annot> object( new CSeq_annot() );
-    return object;
+    return CRef<CSeq_annot>();
 }
                 
 //  ----------------------------------------------------------------------------
@@ -200,10 +199,9 @@ CReaderBase::ReadSeqEntry(
     IErrorContainer* ) 
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_entry> object( new CSeq_entry() );
-    return object;
+    return CRef<CSeq_entry>();
 }
-                
+               
 //  ----------------------------------------------------------------------------
 void
 CReaderBase::ProcessError(
@@ -252,7 +250,7 @@ void CReaderBase::x_SetBrowserRegion(
         CObjReaderLineException err(
             eDiag_Error,
             0,
-            "Bad browser: cannot parse browser position" );
+            "Bad browser line: cannot parse browser position" );
         throw( err );
     }
     CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
@@ -264,7 +262,7 @@ void CReaderBase::x_SetBrowserRegion(
         CObjReaderLineException err(
             eDiag_Error,
             0,
-            "Bad browser: cannot parse browser position" );
+            "Bad browser line: cannot parse browser position" );
         throw( err );
     }    
     interval.SetFrom( NStr::StringToInt( strFrom ) - 1);
