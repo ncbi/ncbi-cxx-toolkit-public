@@ -181,113 +181,157 @@ bool CCgiUserAgent::IsBrowser(void) const
 }
 
 
-// Declare the parameter to get additional bots names.
-// Registry file:
-//     [CGI]
-//     Bots = ...
-// Environment variable:
-//     NCBI_CONFIG__CGI__Bots / NCBI_CONFIG__Bots
-//
-// The value should looks like: "Googlebot Scooter WebCrawler Slurp"
+// Declare the parameters to get additional bots names, or names that 
+// should be excluded from there.
+
 NCBI_PARAM_DECL(string, CGI, Bots); 
 NCBI_PARAM_DEF (string, CGI, Bots, kEmptyStr);
+NCBI_PARAM_DECL(string, CGI, NotBots); 
+NCBI_PARAM_DEF (string, CGI, NotBots, kEmptyStr);
 
-bool CCgiUserAgent::IsBot(TBotFlags flags, const string& param_patterns) const
+bool CCgiUserAgent::IsBot(TBotFlags flags,
+                          const string& include_patterns,
+                          const string& exclude_patterns) const
 {
     const char* kDelim = " ;\t|~";
+    bool is_bot = false;
 
     // Default check
     if (GetEngine() == eEngine_Bot) {
         if (flags == fBotAll) {
-            return true;
-        }
-        TBotFlags need_flag = 0;
-        switch ( GetBrowser() ) {
-            case eCrawler:
-                need_flag = fBotCrawler;
-                break;
-            case eOfflineBrowser:
-                need_flag = fBotOfflineBrowser;
-                break;
-            case eScript:
-                need_flag = fBotScript;
-                break;
-            case eLinkChecker:
-                need_flag = fBotLinkChecker;
-                break;
-            case eWebValidator:
-                need_flag = fBotWebValidator;
-                break;
-            default:
-                break;
-        }
-        if ( flags & need_flag ) {
-            return true;
+            is_bot = true;
+        } else {
+            TBotFlags need_flag = 0;
+            switch ( GetBrowser() ) {
+                case eCrawler:
+                    need_flag = fBotCrawler;
+                    break;
+                case eOfflineBrowser:
+                    need_flag = fBotOfflineBrowser;
+                    break;
+                case eScript:
+                    need_flag = fBotScript;
+                    break;
+                case eLinkChecker:
+                    need_flag = fBotLinkChecker;
+                    break;
+                case eWebValidator:
+                    need_flag = fBotWebValidator;
+                    break;
+                default:
+                    break;
+            }
+            if ( flags & need_flag ) {
+                is_bot = true;
+            }
         }
     }
 
-    // Get additional bots patterns
-    string bots = USTR(NCBI_PARAM_TYPE(CGI,Bots)::GetDefault());
-    // Split patterns strings
-    list<string> patterns;
-    if ( !bots.empty() ) {
-        NStr::Split(bots, kDelim, patterns);
-    }
-    if ( !param_patterns.empty() ) {
-        NStr::Split(USTR(param_patterns), kDelim, patterns);
-    }
-    // Search patterns
-    ITERATE(list<string>, i, patterns) {
-        if ( m_UserAgent.find(*i) !=  NPOS ) {
-            return true;
+    // Make additional checks
+
+    if (is_bot) {
+        // Get bots antipatterns
+        string str = USTR(NCBI_PARAM_TYPE(CGI,NotBots)::GetDefault());
+        // Split patterns string
+        list<string> patterns;
+        if ( !str.empty() ) {
+            NStr::Split(str, kDelim, patterns);
         }
+        if ( !exclude_patterns.empty() ) {
+            NStr::Split(USTR(exclude_patterns), kDelim, patterns);
+        }
+        // Search patterns
+        ITERATE(list<string>, i, patterns) {
+            if ( m_UserAgent.find(*i) !=  NPOS ) {
+                return false;
+            }
+        }
+    } else {
+        // Get bots patterns
+        string str = USTR(NCBI_PARAM_TYPE(CGI,Bots)::GetDefault());
+        // Split patterns string
+        list<string> patterns;
+        if ( !str.empty() ) {
+            NStr::Split(str, kDelim, patterns);
+        }
+        if ( !include_patterns.empty() ) {
+            NStr::Split(USTR(include_patterns), kDelim, patterns);
+        }
+        // Search patterns
+        ITERATE(list<string>, i, patterns) {
+            if ( m_UserAgent.find(*i) !=  NPOS ) {
+                return true;
+            }
+        }
+        return false;
     }
-    return false;
+    return is_bot;
 }
 
 
-// Declare the parameter to get additional mobile devices names.
-// Registry file:
-//     [CGI]
-//     MobileDevices = ...
-// Environment variable:
-//     NCBI_CONFIG__CGI__MobileDevices / NCBI_CONFIG__MobileDevices
-//
-// The value should looks like: "AvantGo DoCoMo Minimo"
+// Declare the parameter to get additional mobile devices names,
+// or names that should be excluded from there.
+
 NCBI_PARAM_DECL(string, CGI, MobileDevices); 
 NCBI_PARAM_DEF (string, CGI, MobileDevices, kEmptyStr);
+NCBI_PARAM_DECL(string, CGI, NotMobileDevices); 
+NCBI_PARAM_DEF (string, CGI, NotMobileDevices, kEmptyStr);
 
-bool CCgiUserAgent::IsMobileDevice(const string& param_patterns) const
+bool CCgiUserAgent::IsMobileDevice(const string& include_patterns,
+                                   const string& exclude_patterns) const
 {
+    bool is_mobile = false;
+
     // Default check
     switch ( GetPlatform() ) {
         case ePlatform_Palm:
         case ePlatform_Symbian:
         case ePlatform_WindowsCE:
         case ePlatform_MobileDevice:
-            return true;
+            is_mobile = true;
         default:
             break;
     }
     const char* kDelim = " ;\t|~";
 
-    // Get additional patterns
-    string str = USTR(NCBI_PARAM_TYPE(CGI,MobileDevices)::GetDefault());
-    // Split patterns strings
-    list<string> patterns;
-    if ( !str.empty() ) {
-        NStr::Split(str, kDelim, patterns);
-    }
-    if ( !param_patterns.empty() ) {
-        NStr::Split(USTR(param_patterns), kDelim, patterns);
-    }
-    // Search patterns
-    ITERATE(list<string>, i, patterns) {
-        if ( m_UserAgent.find(*i) !=  NPOS ) {
-            return true;
+    // Make additional checks
+
+    if (is_mobile) {
+        // Get antipatterns
+        string str = USTR(NCBI_PARAM_TYPE(CGI,NotMobileDevices)::GetDefault());
+        // Split patterns string
+        list<string> patterns;
+        if ( !str.empty() ) {
+            NStr::Split(str, kDelim, patterns);
+        }
+        if ( !exclude_patterns.empty() ) {
+            NStr::Split(USTR(exclude_patterns), kDelim, patterns);
+        }
+        // Search patterns
+        ITERATE(list<string>, i, patterns) {
+            if ( m_UserAgent.find(*i) !=  NPOS ) {
+                return false;
+            }
+        }
+    } else {
+        // Get patterns
+        string str = USTR(NCBI_PARAM_TYPE(CGI,MobileDevices)::GetDefault());
+        // Split patterns string
+        list<string> patterns;
+        if ( !str.empty() ) {
+            NStr::Split(str, kDelim, patterns);
+        }
+        if ( !include_patterns.empty() ) {
+            NStr::Split(USTR(include_patterns), kDelim, patterns);
+        }
+        // Search patterns
+        ITERATE(list<string>, i, patterns) {
+            if ( m_UserAgent.find(*i) !=  NPOS ) {
+                return true;
+            }
         }
     }
-    return false;
+    return is_mobile;
 }
 
 
@@ -964,7 +1008,6 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             m_Platform = ePlatform_Windows;
         }
     }
-
     return;
 }
 

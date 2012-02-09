@@ -1099,6 +1099,8 @@ void TestUserAgent(CCgiUserAgent::TFlags flags)
         assert(agent.IsBot());
         // Treat all as bots, except scripts
         assert(!agent.IsBot(CCgiUserAgent::fBotAll & ~CCgiUserAgent::fBotScript));
+        // Treat "libwww" as not bot
+        assert(!agent.IsBot(CCgiUserAgent::fBotAll, kEmptyStr, "libwww"));
 
         agent.Reset("Mozilla/4.75 (SomeNewBot/1.2.3)");
         assert(agent.GetBrowser() == CCgiUserAgent::eNetscape);
@@ -1123,6 +1125,7 @@ void TestUserAgent(CCgiUserAgent::TFlags flags)
         assert(agent.GetBrowser() == CCgiUserAgent::eNetscape);
         assert(agent.GetPlatform()== CCgiUserAgent::ePlatform_Palm);
         assert(agent.IsMobileDevice());
+        assert(!agent.IsMobileDevice(kEmptyStr, "somestr prmr someother"));
 
         agent.Reset("Mozilla/5.0 (SomeNewSmartphone/1.2.3)");
         assert(agent.GetBrowser() == CCgiUserAgent::eMozilla);

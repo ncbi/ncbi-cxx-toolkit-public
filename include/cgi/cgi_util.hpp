@@ -261,35 +261,74 @@ public:
 
     /// Check that this is known search robot/bot.
     ///
-    /// By default it use GetBrowser() value to check on known bots,
-    /// and only here 'flags' parameter can be used. If standard check fails,
-    /// additonal parsing parameters from string and/or registry/environment
-    /// parameter (section 'CGI', name 'Bots') will be used.
-    /// String value should have patterns for search in the user agent string,
-    /// and should looks like:
-    ///     "Googlebot Scooter WebCrawler Slurp"
-    /// You can use any delimeters from next list " ;|~\t".
-    /// All patterns are case sensitive.
-    /// For details how to define registry/environment parameter see CParam
-    /// description.
-    /// @sa GetBrowser, GetEngine, CParam
-    bool IsBot(TBotFlags flags = fBotAll, const string& patterns = kEmptyStr) const;
+    /// By default it use GetEngine() and GetBrowser() value to check on
+    /// known bots, and only here 'flags' parameter can be used. 
+    /// @include_patterns
+    ///   List of additional patterns that can treat current user agent
+    ///   as bot. If standard check fails, this string and/or 
+    ///   registry/environment parameters (section 'CGI', name 'Bots') 
+    ///   will be used. String value should have patterns for search in 
+    ///   the user agent string, and should looks like:
+    ///       "Googlebot Scooter WebCrawler Slurp"
+    ///   You can use any delimiters from next list " ;|~\t".
+    ///   All patterns are case sensitive. 
+    ///   For details how to define registry/environment parameter see
+    ///   CParam description.
+    /// @exclude_patterns
+    ///   This parameter and string from (section 'CGI', name 'NotBots') can be
+    ///   used to remove any user agent signature from list of bots, if you
+    ///   don't agree with parser's decision. IsBot() will return FALSE if 
+    ///   the user agent string contains one of these patters.
+    /// @note
+    ///   These parameters affect only IsBot() function, GetEngine() can still
+    ///   return eEngine_Bot, or any other value, as detected.
+    /// @note
+    ///   Registry file:
+    ///       [CGI]
+    ///       Bots = ...
+    ///       NotBots = ...
+    ///   Environment variables:
+    ///       NCBI_CONFIG__CGI__Bots  = ...
+    ///       NCBI_CONFIG__CGI__NotBots  = ...
+    /// @sa 
+    ///   GetBrowser, GetEngine, CParam
+    bool IsBot(TBotFlags flags = fBotAll,
+               const string& include_patterns = kEmptyStr,
+               const string& exclude_patterns = kEmptyStr) const;
 
     /// Check that this is known mobile device.
     ///
     /// By default it use GetPlatform() value to check on known mobile
-    /// platforms. If standard check fails, additonal parsing parameters
-    /// from string and/or registry/environment parameter
-    /// (section 'CGI', name 'MobileDevices') will be used.
-    /// String value should have patterns for search in the user agent string,
-    /// and should looks like:
-    ///     "AvantGo DoCoMo Minimo"
-    /// You can use any delimeters from next list " ;|~\t".
-    /// All patterns are case sensitive.
-    /// For details how to define registry/environment parameter see CParam
-    /// description.
-    /// @sa GetPlatform, EBrowserPlatform, CParam
-    bool IsMobileDevice(const string& patterns = kEmptyStr) const;
+    /// platforms. 
+    /// @include_patterns
+    ///   List of additional patterns that can treat current user agent
+    ///   as mobile device If standard check fails, this string and/or
+    ///   registry/environment parameter (section 'CGI', name 'MobileDevices')
+    ///   will be used. String value should have patterns for search in 
+    ///   the user agent string, and should looks like:
+    ///       "AvantGo DoCoMo Minimo"
+    ///   You can use any delimiters from next list " ;|~\t".
+    ///   All patterns are case sensitive.
+    /// @exclude_patterns
+    ///   This parameter and string from (section 'CGI', name 'NotMobileDevices')
+    ///   can be used to remove any user agent signature from list of mobile
+    ///   devices, if you don't agree with parser's decision. IsMobileDevice()
+    ///   will return FALSE if the user agent string contains one of these patters.
+    /// @note
+    ///   These parameters affect only IsBot() function, GetEngine() can still
+    ///   return eEngine_Bot, or any other value, as detected.
+    /// @note
+    ///   Registry file:
+    ///       [CGI]
+    ///       MobileDevices = ...
+    ///       NotMobileDevices = ...
+    ///   Environment variables:
+    ///       NCBI_CONFIG__CGI__MobileDevices = ...
+    ///       NCBI_CONFIG__CGI__NotMobileDevices = ...
+    /// @sa 
+    ///   GetPlatform, EBrowserPlatform, CParam
+    bool IsMobileDevice(const string& include_patterns = kEmptyStr,
+                        const string& exclude_patterns = kEmptyStr) const;
 
 protected:
     /// Init class members.
