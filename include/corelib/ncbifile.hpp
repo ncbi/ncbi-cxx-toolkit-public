@@ -2739,7 +2739,7 @@ TFindFunc FindFiles(TPathIterator path_begin,
                     TFindFunc&    find_func,
                     TFindFiles    flags = fFF_Default)
 {
-    CMask masks_empty;
+    CMaskFileName masks_empty;
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
         CDir dir(dir_name);
