@@ -543,7 +543,7 @@ void CObjectIStreamAsn::SkipAnyContent(void)
             m_Input.SkipChar();
             return;
         }
-        if (c == '\"' || c == '{') {
+        if (c == '\"' || (c == '{' && to != '\"')) {
             SkipAnyContent();
             continue;
         }
