@@ -3615,7 +3615,7 @@ if test "x$with_gnutls" != xno; then
       fi
    else
       LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls"
-      $LIBGNUTLS_CONFIG --exists  ||  LIBGNUTLS_CONFIG=no
+      $LIBGNUTLS_CONFIG --exists >/dev/null 2>&1 ||  LIBGNUTLS_CONFIG=no
    fi
    case "$LIBGNUTLS_CONFIG" in
        eval\ *)
@@ -4843,10 +4843,10 @@ else
          glew_config=pkg-config
       fi
       if pkg-config --version >/dev/null 2>&1; then
-         if $glew_config glewmx --exists \
+         if $glew_config glewmx --exists >/dev/null 2>&1 \
            && test -n "`$glew_config glewmx --libs 2>/dev/null`"; then
             glew_config="$glew_config glewmx"
-         elif $glew_config glew --exists \
+         elif $glew_config glew --exists >/dev/null 2>&1 \
            && test -n "`$glew_config glew --libs 2>/dev/null`"; then
             glew_config="$glew_config glew"
          else
