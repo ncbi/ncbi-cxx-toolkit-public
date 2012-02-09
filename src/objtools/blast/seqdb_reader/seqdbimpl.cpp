@@ -144,12 +144,10 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
             m_MaxLength   = x_GetMaxLength();
             m_MinLength   = x_GetMinLength();
            
-            // TODO future implementation should have shortest length 
-            // encoded in index file...
-            if ( m_MinLength <= 0) {
-                CSeqDBLockHold locked(m_Atlas);
-                x_ScanTotals(true, NULL, NULL, NULL, & m_MinLength, locked);
-            }
+            // Do not bother scanning the db... it would be slow
+            // FIXME: future implementation should probably have the 
+            // shortest length encoded in index file...
+            if ( m_MinLength <= 0)  m_MinLength = 10;
         }
         m_NumSeqsStats     = x_GetNumSeqsStats();
         m_TotalLengthStats = x_GetTotalLengthStats();
