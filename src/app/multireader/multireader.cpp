@@ -131,7 +131,7 @@ private:
     string m_AnnotName;
     string m_AnnotTitle;
 
-    CRef<CIdMapper> m_pMapper;
+    auto_ptr<CIdMapper> m_pMapper;
     CRef<CErrorContainerBase> m_pErrors;
 };
 
@@ -637,7 +637,7 @@ void CMultiReaderApp::xWriteObject(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    if (m_pMapper) {
+    if (m_pMapper.get()) {
         m_pMapper->MapObject(object);
     }
     if (m_bCheckOnly) {
@@ -660,11 +660,11 @@ CMultiReaderApp::xSetMapper(
     }
     if (!strMapFile.empty()) {
         CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile.c_str());
-        m_pMapper.Reset(
+        m_pMapper.reset(
             new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors));
     }
     else {
-        m_pMapper.Reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
+        m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
     }
 }        
 
