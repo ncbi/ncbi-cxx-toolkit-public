@@ -342,26 +342,33 @@ s_ExonToDenseg(const CSpliced_exon& exon,
 
     vector<TSeqPos> product_lens;
     vector<TSeqPos> genomic_lens;
-    ITERATE (CSpliced_exon::TParts, iter, exon.GetParts()) {
-        const CSpliced_exon_chunk& part = **iter;
-        if (part.IsMatch()) {
-            product_lens.push_back(part.GetMatch());
-            genomic_lens.push_back(part.GetMatch());
-        } else if (part.IsMismatch()) {
-            product_lens.push_back(part.GetMismatch());
-            genomic_lens.push_back(part.GetMismatch());
-        } else if (part.IsDiag()) {
-            product_lens.push_back(part.GetDiag());
-            genomic_lens.push_back(part.GetDiag());
-        } else if (part.IsProduct_ins()) {
-            product_lens.push_back(part.GetProduct_ins());
-            genomic_lens.push_back(0);
-        } else if (part.IsGenomic_ins()) {
-            product_lens.push_back(0);
-            genomic_lens.push_back(part.GetGenomic_ins());
-        } else {
-            throw runtime_error("unhandled part type in Spliced-enon");
+    if (exon.IsSetParts()  &&  !exon.GetParts().empty()) {
+        ITERATE (CSpliced_exon::TParts, iter, exon.GetParts()) {
+            const CSpliced_exon_chunk& part = **iter;
+            if (part.IsMatch()) {
+                product_lens.push_back(part.GetMatch());
+                genomic_lens.push_back(part.GetMatch());
+            } else if (part.IsMismatch()) {
+                product_lens.push_back(part.GetMismatch());
+                genomic_lens.push_back(part.GetMismatch());
+            } else if (part.IsDiag()) {
+                product_lens.push_back(part.GetDiag());
+                genomic_lens.push_back(part.GetDiag());
+            } else if (part.IsProduct_ins()) {
+                product_lens.push_back(part.GetProduct_ins());
+                genomic_lens.push_back(0);
+            } else if (part.IsGenomic_ins()) {
+                product_lens.push_back(0);
+                genomic_lens.push_back(part.GetGenomic_ins());
+            } else {
+                throw runtime_error("unhandled part type in Spliced-enon");
+            }
         }
+    }
+    else {
+        TSeqPos len = exon.GetGenomic_end() - exon.GetGenomic_start() + 1;
+        genomic_lens.push_back(len);
+        product_lens.push_back(len);
     }
 
     CDense_seg::TLens& lens = ds->SetLens();

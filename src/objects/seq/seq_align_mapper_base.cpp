@@ -1817,10 +1817,6 @@ x_GetDstExon(CSpliced_seg&              spliced,
         partial = true;
         return;
     }
-    // If there's just a single range match no need to use parts.
-    if (exon->GetParts().size() == 1  &&  exon->GetParts().front()->IsMatch()) {
-        exon->ResetParts();
-    }
     if ( ex_partial ) {
         exon->SetPartial(true);
     }
