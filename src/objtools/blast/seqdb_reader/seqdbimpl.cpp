@@ -41,6 +41,7 @@ static char const rcsid[] = "$Id$";
 #include <sstream>
 #include <algorithm>
 #include <serial/enumvalues.hpp>
+#include <algo/blast/core/blast_seqsrc.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -147,7 +148,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
             // Do not bother scanning the db... it would be slow
             // FIXME: future implementation should probably have the 
             // shortest length encoded in index file...
-            if ( m_MinLength <= 0)  m_MinLength = 10;
+            if ( m_MinLength <= 0)  m_MinLength = BLAST_SEQSRC_MINLENGTH;
         }
         m_NumSeqsStats     = x_GetNumSeqsStats();
         m_TotalLengthStats = x_GetTotalLengthStats();

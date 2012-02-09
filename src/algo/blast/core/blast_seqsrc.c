@@ -210,7 +210,8 @@ BlastSeqSrcGetMinSeqLen(const BlastSeqSrc* seq_src)
     ASSERT(seq_src);
     /* TODO this function may not be available for all seq_src */
     return (seq_src->GetMinSeqLen) ?
-        (*seq_src->GetMinSeqLen)(seq_src->DataStructure, NULL) : 10;
+        (*seq_src->GetMinSeqLen)(seq_src->DataStructure, NULL) 
+        : BLAST_SEQSRC_MINLENGTH;
 }
 
 Int4

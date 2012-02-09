@@ -202,6 +202,7 @@ BlastSeqSrcGetSupportsPartialFetching(const BlastSeqSrc* seq_src);
 
 #define BLAST_SEQSRC_MINGAP     1024  /**< Minimal gap allowed in range list */
 #define BLAST_SEQSRC_OVERHANG   1024  /**< Extension for each new range added */
+#define BLAST_SEQSRC_MINLENGTH  10    /**< Default minimal sequence length */
 
 /** Structure used as the argument to function SetRanges */
 typedef struct BlastSeqSrcSetRangesArg {
