@@ -25,7 +25,7 @@
  *
  * Authors:  Frank Ludwig
  *
- * File Description:  Stubs for various writer mdules
+ * File Description:  Stubs for various writer modules
  *
  */
 
@@ -41,6 +41,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
+/// Defines and provides stubs for a general interface to a variety of file
+/// formatters. These writers take Genbank object in raw or handle form, and 
+/// render them to an output stream in their respective formats.
+///
 class NCBI_XOBJWRITE_EXPORT CWriterBase:
     public CObject
 //  ============================================================================
@@ -52,22 +56,60 @@ public:
         m_Os( ostr ),
         m_uFlags( uFlags )
     {};
+public:
     virtual ~CWriterBase()
     {};
 
-    //  ------------------------------------------------------------------------
-    //  Supported object types:
-    //  ------------------------------------------------------------------------
+    /// Write a raw Seq-annot to the internal output stream.
+    /// This implementation will just generate an error and then exit. It should
+    /// be re-implemented in format specific subclasses.
+    /// @param annot
+    ///   the Seq-annot object to be written.
+    /// @param name
+    ///   parameter describing the object. Handling will be format specific
+    /// @param descr
+    ///   parameter describing the object. Handling will be format specific
+    ///
     virtual bool WriteAnnot( 
-        const CSeq_annot&,
-        const string& = "",
-        const string& = "" )
+        const CSeq_annot& annot,
+        const string& name="",
+        const string& descr="" )
     {
         cerr << "Object type not supported!" << endl;
         return false;
     };
+
+    /// Write a raw Seq-align to the internal output stream.
+    /// This implementation will just generate an error and then exit. It should
+    /// be re-implemented in format specific subclasses.
+    /// @param align
+    ///   the Seq-align object to be written.
+    /// @param name
+    ///   parameter describing the object. Handling will be format specific.
+    /// @param descr
+    ///   parameter describing the object. Handling will be format specific.
+    ///
     virtual bool WriteAlign( 
         const CSeq_align&,
+        const string& name="",
+        const string& descr="" ) 
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
+
+    /// Write a Seq-entry handle to the internal output stream.
+    /// This implementation will just generate an error and then exit. It should
+    /// be re-implemented in format specific subclasses.
+    /// @param seh
+    ///   the Seq-entry handle to be written.
+    /// @param name
+    ///   parameter describing the object. Handling will be format specific.
+    /// @param descr
+    ///   parameter describing the object. Handling will be format specific.
+    ///
+    virtual bool WriteSeqEntryHandle(
+        CSeq_entry_Handle seh,
         const string& = "",
         const string& = "" )
     {
@@ -75,36 +117,58 @@ public:
         return false;
     };
 
+    /// Write a Bioseq handle to the internal output stream.
+    /// This implementation will just generate an error and then exit. It should
+    /// be re-implemented in format specific subclasses.
+    /// @param bsh
+    ///   the Bioseq handle to be written.
+    /// @param name
+    ///   parameter describing the object. Handling will be format specific.
+    /// @param descr
+    ///   parameter describing the object. Handling will be format specific.
+    ///
+    virtual bool WriteBioseqHandle(
+        CBioseq_Handle bsh,
+        const string& = "",
+        const string& = "" )
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
+
+    /// Write a Seq-annot handle to the internal output stream.
+    /// This implementation will just generate an error and then exit. It should
+    /// be re-implemented in format specific subclasses.
+    /// @param sah
+    ///   the Seq-annot handle to be written.
+    /// @param name
+    ///   parameter describing the object. Handling will be format specific.
+    /// @param descr
+    ///   parameter describing the object. Handling will be format specific.
+    ///
+    virtual bool WriteSeqAnnotHandle(
+        CSeq_annot_Handle sah,
+        const string& = "",
+        const string& = "" )
+    {
+        cerr << "Object type not supported!" << endl;
+        return false;
+    };
+
+    /// Write a file header.
+    /// Header syntax and rules depend on the file format. This do-nothing
+    /// implementation should therefore be re-implemented in format specific
+    /// subclasses.
+    ///
     virtual bool WriteHeader() { return true; };
+
+    /// Write a file trailer.
+    /// Trailer syntax and rules depend on the file format. This do-nothing
+    /// implementation should therefore be re-implemented in format specific
+    /// subclasses.
+    ///
     virtual bool WriteFooter() { return true; };
 
-    //  ------------------------------------------------------------------------
-    //  Supported handle types:
-    //  ------------------------------------------------------------------------
-    virtual bool WriteSeqEntryHandle(
-        CSeq_entry_Handle,
-        const string& = "",
-        const string& = "" )
-    {
-        cerr << "Object type not supported!" << endl;
-        return false;
-    };
-    virtual bool WriteBioseqHandle(
-        CBioseq_Handle,
-        const string& = "",
-        const string& = "" )
-    {
-        cerr << "Object type not supported!" << endl;
-        return false;
-    };
-    virtual bool WriteSeqAnnotHandle(
-        CSeq_annot_Handle,
-        const string& = "",
-        const string& = "" )
-    {
-        cerr << "Object type not supported!" << endl;
-        return false;
-    };
 
 protected:
     CNcbiOstream& m_Os;

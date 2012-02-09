@@ -42,7 +42,8 @@ public:
     enum EErrCode {
         /// Argument validation failed
         eArgErr,
-        eBadInput, 
+        eBadInput,
+        eInternal,
     };
     
     virtual const char* GetErrCodeString() const
@@ -50,6 +51,10 @@ public:
         switch (GetErrCode()) {
         case eArgErr:
             return "eArgErr";
+        case eBadInput:
+            return "eBadInput";
+        case eInternal:
+            return "eInternal";
         default:
             return CException::GetErrCodeString();
         }
