@@ -3617,7 +3617,6 @@ if test "x$with_gnutls" != xno; then
       LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls"
       $LIBGNUTLS_CONFIG --exists  ||  LIBGNUTLS_CONFIG=no
    fi
-   GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
    case "$LIBGNUTLS_CONFIG" in
        eval\ *)
            NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH,
@@ -3630,8 +3629,11 @@ if test "x$with_gnutls" != xno; then
              [$LIBGNUTLS_CONFIG --exec-prefix], [s,^,-L,; s,$,/lib,;])
            ;;
    esac
-       
-   GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
+
+   if test "x$LIBGNUTLS_CONFIG" != xno; then
+      GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
+      GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
+   fi
 else
    AS_UNSET(GNUTLS_CONFIG_LIBS)
 fi

@@ -21368,7 +21368,6 @@ if test "x$with_gnutls" != xno; then
       LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls"
       $LIBGNUTLS_CONFIG --exists  ||  LIBGNUTLS_CONFIG=no
    fi
-   GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
    case "$LIBGNUTLS_CONFIG" in
        eval\ *)
            if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
@@ -21428,7 +21427,10 @@ if test "x$with_gnutls" != xno; then
            ;;
    esac
 
-   GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
+   if test "x$LIBGNUTLS_CONFIG" != xno; then
+      GNUTLS_INCLUDE=`$LIBGNUTLS_CONFIG --cflags`
+      GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
+   fi
 else
    $as_unset GNUTLS_CONFIG_LIBS || test "${GNUTLS_CONFIG_LIBS+set}" != set || { GNUTLS_CONFIG_LIBS=; export GNUTLS_CONFIG_LIBS; }
 fi
