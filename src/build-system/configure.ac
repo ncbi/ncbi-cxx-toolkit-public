@@ -946,6 +946,9 @@ case "$host_os:$compiler" in
              [ncbi_cv_prog_cc_wl_rpath=yes], [ncbi_cv_prog_cc_wl_rpath=no])
           LDFLAGS=$orig_LDFLAGS])
       ;;
+   cygwin*:GCC )
+      LDFLAGS="-Wl,--export-all-symbols $LDFLAGS"
+      ;;
    *:GCC | *:ICC )
       AC_CACHE_CHECK([whether $CC supports -Wl,-E], ncbi_cv_prog_cc_wl_e,
          [orig_LDFLAGS=$LDFLAGS
