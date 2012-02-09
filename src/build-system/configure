@@ -21512,10 +21512,19 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <gnutls/gnutls.h>
+                     #if defined(_MT) && !defined(NCBI_WITHOUT_MT)
+                     #  include <gcrypt.h>
+                     #  include <pthread.h>
+                     #  include <errno.h>
+                     GCRY_THREAD_OPTION_PTHREAD_IMPL;
+                     #endif
 int
 main ()
 {
-gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);
+#if defined(_MT) && !defined(NCBI_WITHOUT_MT)
+     gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+     #endif
+     gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);
   ;
   return 0;
 }

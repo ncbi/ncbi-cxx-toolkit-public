@@ -3641,8 +3641,17 @@ else
    AS_UNSET(GNUTLS_CONFIG_LIBS)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
- [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
-   [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
+ [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>
+                     #if defined(_MT) && !defined(NCBI_WITHOUT_MT)
+                     #  include <gcrypt.h>
+                     #  include <pthread.h>
+                     #  include <errno.h>
+                     GCRY_THREAD_OPTION_PTHREAD_IMPL;
+                     #endif]],
+   [[#if defined(_MT) && !defined(NCBI_WITHOUT_MT)
+     gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+     #endif
+     gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
  $GNUTLS_CONFIG_LIBS)
 if test -n "$GNUTLS_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS], [$no_usr_lib])
