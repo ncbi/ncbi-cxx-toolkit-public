@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e # exit immediately if any commands fail
 
-if diff --help 2>/dev/null | grep -e '--strip-trailing-cr'; then
+if diff --help 2>/dev/null | grep -e '--strip-trailing-cr' >/dev/null; then
     flags=--strip-trailing-cr
 else
     flags=
