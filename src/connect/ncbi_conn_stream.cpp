@@ -186,7 +186,7 @@ EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
     CConn_IOStream* io = reinterpret_cast<CConn_IOStream*>(data);
     if (/* io && */ io->m_Canceled.NotNull()  &&  io->m_Canceled->IsCanceled())
         return eIO_Interrupt;
-    int n = (int) type - (int) eIO_Read;
+    int n = (int) type - (int) eCONN_OnRead;
     _ASSERT(n >= 0  &&  (size_t) n < sizeof(io->m_CB) / sizeof(io->m_CB[0]));
     _ASSERT((n == 0  &&  type == eCONN_OnRead)   ||
             (n == 1  &&  type == eCONN_OnWrite)  ||
@@ -677,25 +677,6 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
 }
 
 
-char* CConn_MemoryStream::ToCStr(void)
-{
-    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
-    char* str = (char*) malloc(size + 1);
-    if (!str) {
-        NCBI_THROW(CIO_Exception, eUnknown,
-                   "CConn_MemoryStream::ToCStr():  Out of memory");
-    }
-    if (sb) {
-        streamsize s = sb->sgetn(str, size);
-        _ASSERT(size == s);
-        size = s;
-    }
-    str[size] = '\0';
-    return str;
-}
-
-
 CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
                                    CPipe::TCreateFlags   create_flags,
@@ -837,6 +818,21 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
 }
 
 
+const char* CIO_Exception::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eTimeout:       return "eIO_Timeout";
+    case eClosed:        return "eIO_Closed";
+    case eInterrupt:     return "eIO_Interrupt";
+    case eInvalidArg:    return "eIO_InvalidArg";
+    case eNotSupported:  return "eIO_NotSupported";
+    case eUnknown:       return "eIO_Unknown";
+    default:             break;
+    }
+    return  CException::GetErrCodeString();
+}
+
+
 /* non-public class */
 class CConn_FileStream : public CConn_IOStream
 {
@@ -856,21 +852,6 @@ private:
     CConn_FileStream(const CConn_FileStream&);
     CConn_FileStream& operator= (const CConn_FileStream&);
 };
-
-
-const char* CIO_Exception::GetErrCodeString(void) const
-{
-    switch (GetErrCode()) {
-    case eTimeout:       return "eIO_Timeout";
-    case eClosed:        return "eIO_Closed";
-    case eInterrupt:     return "eIO_Interrupt";
-    case eInvalidArg:    return "eIO_InvalidArg";
-    case eNotSupported:  return "eIO_NotSupported";
-    case eUnknown:       return "eIO_Unknown";
-    default:             break;
-    }
-    return  CException::GetErrCodeString();
-}
 
 
 extern CConn_IOStream* NcbiOpenURL(const string& url)

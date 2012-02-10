@@ -184,10 +184,13 @@ public:
     string          GetDescription(void) const;
 
     /// Set connection timeout for "direction"
+    /// @param
+    ///   Can accept a pointer to a finite timeout, or either of the special
+    ///   values: kInfiniteTimeout, kDefaultTimeout.
     /// @sa
     ///   CONN_SetTimeout, SetReadTimeout, SetWriteTimeout
     EIO_Status      SetTimeout(EIO_Event       direction,
-                               const STimeout* timeout= kDefaultTimeout) const;
+                               const STimeout* timeout) const;
 
     /// @return
     ///   Connection timeout for "direction"
@@ -196,7 +199,7 @@ public:
     const STimeout* GetTimeout(EIO_Event direction) const;
 
     /// @return
-    ///   Status of last performed I/O from the underlying CONN in
+    ///   Status of the last performed I/O in the underlying CONN in
     ///   the specified "direction" (either eIO_Read or eIO_Write);
     ///   if "direction" is not specified (eIO_Open), return status
     ///   of the last CONN I/O performed by the stream.
@@ -214,7 +217,7 @@ public:
 
     /// Cancellation support
     /// @note ICanceled implementation must be derived from CObject as its
-    /// first subclass.
+    /// first superclass.
     /// @sa
     ///   ICanceled
     EIO_Status      SetCanceledCallback(const ICanceled* canceled);
@@ -320,7 +323,7 @@ inline CConn_IOStream& operator<< (CConn_IOStream& os,
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data in a TCP channel, using socket interface.
-/// The endpoint is specified as "host:port" pair.  The maximal
+/// The endpoint is specified as a "host:port" pair.  The maximal
 /// number of connection attempts is given via "max_try".
 /// More details on that: <connect/ncbi_socket_connector.h>.
 ///
@@ -346,9 +349,9 @@ public:
     /// @sa
     ///  CConn_IOStream
     CConn_SocketStream
-    (const string&   host,         /* host to connect to  */
-     unsigned short  port,         /* ... and port number */
-     unsigned short  max_try,      /* number of attempts  */
+    (const string&   host,                        ///< host to connect to
+     unsigned short  port,                        ///< ... and port number
+     unsigned short  max_try,                     ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -377,7 +380,7 @@ public:
      const void*     data     = 0,                ///< initial data block
      size_t          size     = 0,                ///< size of the data block
      TSOCK_Flags     flags    = fSOCK_LogDefault, ///< see ncbi_socket.h
-     unsigned short  max_try  = 3,                ///< number of attempts
+     unsigned short  max_try  = DEF_CONN_MAX_TRY, ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefaultBufSize);
 
@@ -621,15 +624,12 @@ public:
     virtual ~CConn_MemoryStream();
 
     /// The CConnMemoryStream::To* methods allow to obtain unread portion of
-    /// the stream in a single container (a string, a vector, or a character
-    /// array) so that all data is kept in sequential memory locations.
+    /// the stream in a single container (as a string or a vector) so that all
+    /// data is kept in sequential memory locations.
     /// Note that the operation is considered an extraction, so it empties
     /// the stream.
-
-    void    ToString(string*); ///< fill in the data, NULL is not accepted
+    void    ToString(string*);      ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
-    NCBI_DEPRECATED
-    char*   ToCStr(void);      ///< '\0'-terminated; free() when done using it 
 
 protected:
     const void* m_Ptr;         ///< pointer to read memory area (if owned)
