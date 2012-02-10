@@ -181,9 +181,6 @@ bool CGff2Writer::WriteBioseqHandle(
     if ( ! x_WriteAssemblyInfo( strAssemblyName, strAssemblyAccession ) ) {
         return false;
     }
-    if ( ! x_WriteSequenceHeader(bsh) ) {
-        return false;
-    }
     if ( ! x_WriteBioseqHandle( bsh ) ) {
         return false;
     }
