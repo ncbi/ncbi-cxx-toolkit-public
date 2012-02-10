@@ -1103,6 +1103,10 @@ case "$host_os:$compiler" in
    ;;
 
  darwin*:GCC)
+   case `uname -m` in
+      *64 ) : ${with_64=yes} ;;
+      *   ) : ${with_64=no}  ;;
+   esac
    # Per <http://fink.sourceforge.net/doc/porting/shared.php>, it was
    # historically necessary to build plugins as Mach-O bundles rather than
    # dynamic libraries.  That's not such a big deal on modern Mac OS X
@@ -1122,7 +1126,8 @@ case "$host_os:$compiler" in
 
       if test "$with_ncbi_public" = yes; then
          TARGET='-mmacosx-version-min=10.5'
-         if test -d /Developer/SDKs/MacOSX10.5.sdk; then
+         if test "$with_64:${with_universal-no}" != "yes:no" \
+           -a -d /Developer/SDKs/MacOSX10.5.sdk; then
              TARGET="-isysroot /Developer/SDKs/MacOSX10.5.sdk $TARGET"
          fi
          CC="$CC $TARGET"
@@ -1156,11 +1161,6 @@ case "$host_os:$compiler" in
 
    OBJCXX_CXXFLAGS='-x objective-c++'
    OBJCXX_LIBS='-lobjc'
-
-   case `uname -m` in
-      *64 ) : ${with_64=yes} ;;
-      *   ) : ${with_64=no}  ;;
-   esac
    ;;
 esac
 
