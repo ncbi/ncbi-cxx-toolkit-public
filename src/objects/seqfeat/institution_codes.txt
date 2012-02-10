@@ -2532,6 +2532,7 @@ INIFAT	c	INIFAT Fungus Collection
 INIP	s	Instituto Nacional de Investigacao das Pescas
 INIR	s	Coleccion de Termitas Mexicanas
 INLA	s	INIA Subestacion Experimental Control Biologico La Cruz
+INM<JPN>	s	Ibaraki Nature Museum
 INMI	c	Institute of Microbiology, Russian Academy of Sciences
 INPA	s	Instituto Nacional de Pesquisas da Amazonia
 INPA:CR	s	Instituto Nacional de Pesquisas da Amazonia, Crustacea Collection
@@ -3467,6 +3468,7 @@ MFC	c	Matsushima Fungus Collection
 MFGC	c	Margot Forde Germplasm Centre, AgResearch GrasslandsWar
 MFLB	s	Marine Fisheries Laboratory
 MFLU<THA>	s	Mae Fah Laung University Herbarium
+MfN<DEU>	s	Museum fur Naturkunde
 MFNB	s	Museo Friulano di Storia Naturale
 MFP	s	Museo Felipe Poey
 MFRU	s	Malawi Fisheries Research Unit
@@ -3802,6 +3804,8 @@ MT<RUS>	s	Mus. Tinro, Vladyvostok
 MTA	s	Maden Tetkik ve Arama Enstituesue
 MTCC	c	Microbial Type Culture Collection & Gene Bank
 MTD	s	Museum fuer Tierkunde Dresden
+MTD:T	s	Museum fuer Tierkunde Dresden, Tissue collection
+MTD:TD	s	Museum fuer Tierkunde Dresden, Herpetological Tissue Collection
 MTEC	s	Montana State University
 MTJB	s	Jardin botanique de Montreal
 MTKD	s	Staatliches Museum fuer Tierkunde
