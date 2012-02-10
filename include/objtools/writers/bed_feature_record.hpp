@@ -35,46 +35,37 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-//  ----------------------------------------------------------------------------
+//  ============================================================================
+/// Encapsulation of the BED feature record. That's columnar data with at least
+/// three and at most twelve columns. Each column has a fixed, well defined 
+/// meaning, and all records of the same track must have the same number of
+/// columns.
+///
 class CBedFeatureRecord
-//  ----------------------------------------------------------------------------
+//  ============================================================================
 {
 public:
     CBedFeatureRecord();
 
     ~CBedFeatureRecord();
 
-    bool AssignLocation(
-        const CSeq_interval& );
+    bool AssignLocation(const CSeq_interval&);
+    bool AssignDisplayData(CMappedFeat, bool);
+    bool Write(CNcbiOstream&, unsigned int);
 
-    bool AssignDisplayData(
-        CMappedFeat,
-        bool );
-
-    string Chrom() const;
-
-    string ChromStart() const;
-
-    string ChromEnd() const;
-
-    string Name() const;
-        
-    string Score() const; 
-    
-    string Strand() const;   
-
-    string ThickStart() const;   
-
-    string ThickEnd() const;   
-
-    string ItemRgb() const;   
-
-    string BlockCount() const;   
-
-    string BlockSizes() const;   
-
-    string BlockStarts() const;   
-
+    string Chrom() const { return m_strChrom; };
+    string ChromStart() const { return m_strChromStart; };
+    string ChromEnd() const { return m_strChromEnd; };
+    string Name() const { return m_strName; };
+    string Score() const { return m_strScore; }; 
+    string Strand() const { return m_strStrand; };   
+    string ThickStart() const { return m_strThickStart; };   
+    string ThickEnd() const { return m_strThickEnd; };   
+    string ItemRgb() const { return m_strItemRgb; };   
+    string BlockCount() const { return m_strBlockCount; };   
+    string BlockSizes() const { return m_strBlockSizes; };   
+    string BlockStarts() const { return m_strBlockStarts; };
+   
     size_t ColumnCount() const { return m_uColumnCount; };
 
 protected:

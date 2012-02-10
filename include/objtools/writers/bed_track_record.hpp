@@ -32,32 +32,37 @@
 #ifndef OBJTOOLS_WRITERS___BED_TRACK_RECORD__HPP
 #define OBJTOOLS_WRITERS___BED_TRACK_RECORD__HPP
 
+#include <objects/general/User_object.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-//  ----------------------------------------------------------------------------
+//  ============================================================================
+/// Encapsulation of a track line in the BED file format. For the most part,
+/// BED track line consist of key value pairs. Some of the keys are part of the
+/// actual spec and have a defined meaning.
+///
 class CBedTrackRecord
-//  ----------------------------------------------------------------------------
+//  ============================================================================
 {
 public:
-    CBedTrackRecord();
-    ~CBedTrackRecord();
+    CBedTrackRecord() {};
+    ~CBedTrackRecord() {};
 
-    bool Assign( const CSeq_annot& );
+    bool Assign(const CSeq_annot&);
+    bool Write(CNcbiOstream&);
 
-    bool UseScore() const;
-
-    string Name() const;
-
-    string Title() const;
-
-    string Color() const;
-
-    string Visibility() const;
-
-    bool ItemRgb() const;
+    bool UseScore() const { return (m_strUseScore == "1"); };
+    string Name() const { return m_strName; };
+    string Title() const { return m_strTitle; };
+    string Color() const { return m_strColor; };
+    string Visibility() const { return m_strVisibility; };
+    bool ItemRgb() const { return (m_strItemRgb == "on"); };
 
 protected:
+    bool xImportTrackData(
+        const CUser_object&);
+
     string m_strUseScore;
     string m_strVisibility;
     string m_strColor;

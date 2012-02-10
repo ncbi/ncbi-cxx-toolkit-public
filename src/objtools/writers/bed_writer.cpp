@@ -38,6 +38,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 
+#include <objtools/writers/write_util.hpp>
 #include <objtools/writers/bed_track_record.hpp>
 #include <objtools/writers/bed_feature_record.hpp>
 #include <objtools/writers/bed_writer.hpp>
@@ -49,11 +50,17 @@ USING_SCOPE(objects);
 CBedWriter::CBedWriter(
     CScope& scope,
     CNcbiOstream& ostr,
+    unsigned int colCount,
     TFlags uFlags ) :
 //  ----------------------------------------------------------------------------
-    CWriterBase( ostr, uFlags ),
-    m_Scope( scope )
+    CWriterBase(ostr, uFlags),
+    m_Scope(scope),
+    m_colCount(colCount)
 {
+    // the first three columns are mandatory
+    if (m_colCount < 3) {
+        m_colCount = 3;
+    }
 };
 
 //  ----------------------------------------------------------------------------
@@ -69,134 +76,63 @@ bool CBedWriter::WriteAnnot(
     const string& )
 //  ----------------------------------------------------------------------------
 {
-    if ( annot.IsFtable() ) {
-        return x_WriteAnnotFTable( annot );
+    CBedTrackRecord track;
+    if ( ! track.Assign(annot) ) {
+        return false;
     }
-    cerr << "Unexpected!" << endl;
-    return false;
+    track.Write(m_Os);
+
+    SAnnotSelector sel = xGetAnnotSelector();
+    CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
+    for (CFeat_CI pMf(sah, sel); pMf; ++pMf ) {
+        if (!xWriteFeature(track, *pMf)) {
+            m_Scope.RemoveSeq_annot(sah);
+            return false;
+        }
+    }
+    m_Scope.RemoveSeq_annot(sah);
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedWriter::x_WriteAnnotFTable( 
-    const CSeq_annot& annot )
+bool CBedWriter::xWriteFeature(
+    const CBedTrackRecord& track,
+    CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
-    if ( ! annot.IsFtable() ) {
-        return false;
-    }
-
-    CBedTrackRecord track;
-    if ( ! track.Assign( annot ) ) {
-        return false;
-    }
-    x_WriteRecord( track );
-
-    SAnnotSelector sel = x_GetAnnotSelector();
-    CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
     CBedFeatureRecord record;
-    size_t uColumnCount = 0;
-    for ( CFeat_CI pMf( sah, sel ); pMf; ++pMf ) {
-        if ( ! record.AssignDisplayData( *pMf, track.UseScore() ) ) {
-            continue;
-        }
+    if (!record.AssignDisplayData( mf, track.UseScore())) {
+//          feature did not contain display data ---
+//          Is there any alternative way to populate some of the bed columns?
+//          For now, keep going, emit at least the locations ...
+    }
 
-        CRef< CSeq_loc > pPackedInt( new CSeq_loc( CSeq_loc::e_Mix ) );
-        pPackedInt->Add( pMf->GetLocation() );
-        pPackedInt->ChangeToPackedInt();
+    CRef<CSeq_loc> pPackedInt(new CSeq_loc(CSeq_loc::e_Mix));
+    pPackedInt->Add(mf.GetLocation());
+    CWriteUtil::ChangeToPackedInt(*pPackedInt);
 
-        if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
-            const list< CRef< CSeq_interval > >& sublocs 
-                = pPackedInt->GetPacked_int().Get();
-            list< CRef< CSeq_interval > >::const_iterator it;
-            for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-                if ( record.AssignLocation( **it ) ) {
-                    if ( 0 == uColumnCount ) {
-                        uColumnCount = record.ColumnCount();
-                        // per spec, same number of columns for each record
-                    }
-                    x_WriteRecord( record, uColumnCount );
-                }
-            }
+    if (!pPackedInt->IsPacked_int() || !pPackedInt->GetPacked_int().CanGet()) {
+        // nothing to do
+        return true;
+    }
+
+    const list<CRef<CSeq_interval> >& sublocs = pPackedInt->GetPacked_int().Get();
+    list<CRef<CSeq_interval> >::const_iterator it;
+    for (it = sublocs.begin(); it != sublocs.end(); ++it ) {
+        if (!record.AssignLocation(**it)  ||  !record.Write(m_Os, m_colCount)) {
+            return false;
         }
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-SAnnotSelector CBedWriter::x_GetAnnotSelector()
+SAnnotSelector CBedWriter::xGetAnnotSelector()
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel;
     sel.SetSortOrder( SAnnotSelector::eSortOrder_None );
     return sel;
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedWriter::x_WriteRecord(
-    const CBedTrackRecord& track )
-//  ----------------------------------------------------------------------------
-{
-    m_Os << "track";
-    if ( ! track.Name().empty() ) {
-        m_Os << " name=\"" << track.Name() << "\"";
-    }
-    if ( ! track.Title().empty() ) {
-        m_Os << " title=\"" << track.Title() << "\"";
-    }
-    if ( track.UseScore() ) {
-        m_Os << " useScore=1";
-    }
-    if ( track.ItemRgb() ) {
-        m_Os << " itemRgb=\"on\"";
-    }
-    if ( ! track.Color().empty() ) {
-        m_Os << " color=\"" << track.Color() << "\"";
-    }
-    if ( ! track.Visibility().empty() ) {
-        m_Os << " visibility=" << track.Visibility();
-    }
-    m_Os << endl;
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedWriter::x_WriteRecord( 
-    const CBedFeatureRecord& record,
-    size_t uColumnCount )
-//  ----------------------------------------------------------------------------
-{
-    m_Os << record.Chrom();
-    m_Os << "\t" << record.ChromStart();
-    m_Os << "\t" << record.ChromEnd();
-    if ( uColumnCount >= 4 ) {
-        m_Os << "\t" << record.Name();
-    }
-    if ( uColumnCount >= 5 ) {
-        m_Os << "\t" << record.Score();
-    }
-    if ( uColumnCount >= 6 ) {
-        m_Os << "\t" << record.Strand();
-    }
-    if ( uColumnCount >= 7 ) {
-        m_Os << "\t" << record.ThickStart();
-    }
-    if ( uColumnCount >= 8 ) {
-        m_Os << "\t" << record.ThickEnd();
-    }
-    if ( uColumnCount >= 9 ) {
-        m_Os << "\t" << record.ItemRgb();
-    }
-    if ( uColumnCount >= 10 ) {
-        m_Os << "\t" << record.BlockCount();
-    }
-    if ( uColumnCount >= 11 ) {
-        m_Os << record.BlockSizes();
-    }
-    if ( uColumnCount >= 12 ) {
-        m_Os << "\t" << record.BlockStarts();
-    }
-    m_Os << endl;
-    return true;
 }
 
 END_NCBI_SCOPE

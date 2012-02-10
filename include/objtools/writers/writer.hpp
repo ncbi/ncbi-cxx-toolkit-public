@@ -50,6 +50,13 @@ class NCBI_XOBJWRITE_EXPORT CWriterBase:
 //  ============================================================================
 {
 public:
+    /// Customization flags that are relevant to all CWriterBase derived writers.
+    ///
+    typedef enum {
+        fNormal = 0,
+    } TFlags;
+    
+protected:
     CWriterBase(
         CNcbiOstream& ostr,
         unsigned int uFlags=0 ) :

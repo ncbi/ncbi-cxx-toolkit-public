@@ -35,7 +35,6 @@
 
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
-#include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 
@@ -45,121 +44,112 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
-CBedTrackRecord::CBedTrackRecord()
-//  ----------------------------------------------------------------------------
-{
-}
-
-//  ----------------------------------------------------------------------------
-CBedTrackRecord::~CBedTrackRecord()
-//  ----------------------------------------------------------------------------
-{
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedTrackRecord::UseScore() const
-//  ----------------------------------------------------------------------------
-{ 
-    return ( m_strUseScore == "1" ); 
-}
-
-//  ----------------------------------------------------------------------------
-string CBedTrackRecord::Name() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strName; 
-}
-
-//  ----------------------------------------------------------------------------
-string CBedTrackRecord::Title() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strTitle; 
-}
-
-//  ----------------------------------------------------------------------------
-string CBedTrackRecord::Color() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strColor; 
-}
-
-//  ----------------------------------------------------------------------------
-string CBedTrackRecord::Visibility() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strVisibility; 
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedTrackRecord::ItemRgb() const
-//  ----------------------------------------------------------------------------
-{        
-    return ( m_strItemRgb == "on" ); 
-}
-
-//  ----------------------------------------------------------------------------
 bool CBedTrackRecord::Assign(
-    const CSeq_annot& annot ) 
+    const CSeq_annot& annot)
+//
+//  The only way there could be BED specific track data to a Seq-annot is that
+//  the Seq-annot started out its like as BED data, then got converted to a
+//  Genbank Seq-annot with the track line information preserved.
+//  If that's the case then the preserved information can be found in a user
+//  object "Track Data" among the Seq-annot's descriptors.
 //  ----------------------------------------------------------------------------
 {
-    if ( ! annot.IsSetDesc() ) {
+    if (!annot.IsSetDesc()) {
         return true; // results in a dummy track line without any directives
     }
     list< CRef< CAnnotdesc > > fields = annot.GetDesc().Get();
     list< CRef< CAnnotdesc > >::const_iterator it = fields.begin();
-    for ( ; it != fields.end(); ++it ) {
-        if ( (*it)->IsTitle() ) {
+    for ( ; it != fields.end(); ++it) {
+        if ((*it)->IsTitle()) {
             m_strTitle = (*it)->GetTitle();
             continue;
         }
-        if ( (*it)->IsName() ) {
+        if ((*it)->IsName()) {
             m_strName = (*it)->GetName();
             continue;
-        } 
+        }
         if ( (*it)->IsUser() ) {
             const CUser_object& uo = (*it)->GetUser();
-            if ( ! uo.IsSetType() || ! uo.GetType().IsStr() || 
-                uo.GetType().GetStr() != "Track Data" ) {
-                continue;
-            }
-            const vector< CRef< CUser_field > >& fields = uo.GetData();
-            vector< CRef< CUser_field > >::const_iterator it = fields.begin();
-            for ( ; it != fields.end(); ++it ) {
-                if ( ! (*it)->CanGetLabel() || ! (*it)->GetLabel().IsStr() ) {
-                    continue;
+            if (!uo.IsSetType() || !uo.GetType().IsStr() || 
+                    uo.GetType().GetStr() == "Track Data") {
+                if (!xImportTrackData(uo)) {
+                    return false;
                 }
-                string strLabel = (*it)->GetLabel().GetStr();
-                if ( strLabel == "useScore" ) {
-                    if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
-                        m_strUseScore = NStr::UIntToString( 
-                            (*it)->GetData().GetInt() );
-                    }
-                    continue;
-                }
-                if ( strLabel == "color" ) {
-                    if ( (*it)->IsSetData() && (*it)->GetData().IsStr() ) {
-                        m_strColor = (*it)->GetData().GetStr();
-                    }
-                    continue;
-                }   
-                if ( strLabel == "visibility" ) {
-                    if ( (*it)->IsSetData() && (*it)->GetData().IsInt() ) {
-                        m_strVisibility = NStr::UIntToString( 
-                            (*it)->GetData().GetInt() );
-                    }
-                    continue;
-                }
-                if ( strLabel == "itemRGB" ) {
-                    if ( (*it)->IsSetData() && (*it)->GetData().IsStr() ) {
-                        m_strColor = (*it)->GetData().GetStr();
-                    }
-                    continue;
-                }   
             }
         }
     }
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CBedTrackRecord::xImportTrackData(
+    const CUser_object& uo)
+//  ----------------------------------------------------------------------------
+{
+    const vector< CRef< CUser_field > >& fields = uo.GetData();
+    vector<CRef< CUser_field> >::const_iterator it = fields.begin();
+    for (; it != fields.end(); ++it) {
+        if (!(*it)->CanGetLabel() || ! (*it)->GetLabel().IsStr()) {
+            continue;
+        }
+        string strLabel = (*it)->GetLabel().GetStr();
+        if (strLabel == "useScore") {
+            if ((*it)->IsSetData() && (*it)->GetData().IsInt()) {
+                m_strUseScore = NStr::UIntToString( 
+                    (*it)->GetData().GetInt() );
+            }
+            continue;
+        }
+        if (strLabel == "color") {
+            if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
+                m_strColor = (*it)->GetData().GetStr();
+            }
+            continue;
+        }   
+        if (strLabel == "visibility") {
+            if ((*it)->IsSetData() && (*it)->GetData().IsInt()) {
+                m_strVisibility = NStr::UIntToString( 
+                    (*it)->GetData().GetInt());
+            }
+            continue;
+        }
+        if (strLabel == "itemRGB") {
+            if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
+                m_strColor = (*it)->GetData().GetStr();
+            }
+            continue;
+        } 
+    }  
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedTrackRecord::Write(
+    CNcbiOstream& ostr )
+//  ----------------------------------------------------------------------------
+{
+    ostr << "track";
+    if (!Name().empty()) {
+        ostr << " name=\"" << Name() << "\"";
+    }
+    if (!Title().empty()) {
+        ostr << " title=\"" << Title() << "\"";
+    }
+    if (UseScore()) {
+        ostr << " useScore=1";
+    }
+    if (ItemRgb()) {
+        ostr << " itemRgb=\"on\"";
+    }
+    if (!Color().empty()) {
+        ostr << " color=\"" << Color() << "\"";
+    }
+    if (!Visibility().empty()) {
+        ostr << " visibility=" << Visibility();
+    }
+    ostr << endl;
+    return true;
+}
+
 
 END_NCBI_SCOPE

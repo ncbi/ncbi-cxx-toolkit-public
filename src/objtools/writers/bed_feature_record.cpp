@@ -73,90 +73,6 @@ CBedFeatureRecord::~CBedFeatureRecord()
 }
 
 //  ----------------------------------------------------------------------------
-string CBedFeatureRecord::Chrom() const
-//  ----------------------------------------------------------------------------
- { 
-    return m_strChrom; 
-}
-
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::ChromStart() const
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strChromStart; 
-}
-
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::ChromEnd() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strChromEnd; 
-}
-
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::Name() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strName; 
-}
-        
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::Score() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strScore; 
-}
-     
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::Strand() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strStrand; 
-}
-   
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::ThickStart() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strThickStart; 
-}   
-
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::ThickEnd() const 
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strThickEnd; 
-}
-   
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::ItemRgb() const  
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strItemRgb; 
-}
-  
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::BlockCount() const   
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strBlockCount; 
-}
- 
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::BlockSizes() const
-//  ----------------------------------------------------------------------------
- { 
-    return m_strBlockSizes; 
-}
-   
-//  ----------------------------------------------------------------------------
-string CBedFeatureRecord::BlockStarts() const   
-//  ----------------------------------------------------------------------------
-{ 
-    return m_strBlockStarts; 
-}
-
-//  ----------------------------------------------------------------------------
 bool CBedFeatureRecord::AssignDisplayData(
     CMappedFeat mf,
     bool bUseScore )
@@ -247,7 +163,6 @@ bool CBedFeatureRecord::AssignDisplayData(
         }
     }
     return true;
-
 }
 
 //  ----------------------------------------------------------------------------
@@ -281,4 +196,43 @@ bool CBedFeatureRecord::AssignLocation(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CBedFeatureRecord::Write(
+    CNcbiOstream& ostr,
+    unsigned int columnCount)
+//  ----------------------------------------------------------------------------
+{
+    ostr << Chrom();
+    ostr << "\t" << ChromStart();
+    ostr << "\t" << ChromEnd();
+    if ( columnCount >= 4 ) {
+        ostr << "\t" << Name();
+    }
+    if ( columnCount >= 5 ) {
+        ostr << "\t" << Score();
+    }
+    if ( columnCount >= 6 ) {
+        ostr << "\t" << Strand();
+    }
+    if ( columnCount >= 7 ) {
+        ostr << "\t" << ThickStart();
+    }
+    if ( columnCount >= 8 ) {
+        ostr << "\t" << ThickEnd();
+    }
+    if ( columnCount >= 9 ) {
+        ostr << "\t" << ItemRgb();
+    }
+    if ( columnCount >= 10 ) {
+        ostr << "\t" << BlockCount();
+    }
+    if ( columnCount >= 11 ) {
+        ostr << "\t" << BlockSizes();
+    }
+    if ( columnCount >= 12 ) {
+        ostr << "\t" << BlockStarts();
+    }
+    ostr << endl;
+    return true;
+}
 END_NCBI_SCOPE
