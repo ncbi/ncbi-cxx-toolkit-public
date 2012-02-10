@@ -2764,13 +2764,13 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
                              python_date.GetMinute(),
                              python_date.GetSecond(),
                              python_date.GetMicroSecond() * 1000);
-        return CVariant( std_date );
+        return CVariant( std_date, eLong );
     } else if ( pythonpp::CDate::HasSameType(obj) ) {
         const pythonpp::CDate python_date(obj);
         const CTime std_date(python_date.GetYear(),
                              python_date.GetMonth(),
                              python_date.GetDay());
-        return CVariant( std_date );
+        return CVariant( std_date, eLong );
     } else if ( pythonpp::CTime::HasSameType(obj) ) {
         const pythonpp::CTime python_time(obj);
         CTime std_date(CTime::eCurrent);
@@ -2778,7 +2778,7 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
         std_date.SetMinute(python_time.GetMinute());
         std_date.SetSecond(python_time.GetSecond());
         std_date.SetMicroSecond(python_time.GetMicroSecond());
-        return CVariant( std_date );
+        return CVariant( std_date, eLong );
 #endif
     } else if (obj == CBinary::GetType()) {
         const string value = static_cast<CBinary*>(obj.Get())->GetValue();
