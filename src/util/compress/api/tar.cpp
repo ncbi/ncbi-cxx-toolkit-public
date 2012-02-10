@@ -1235,6 +1235,16 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 #undef _STR
 
 
+inline void s_SetStateSafe(CNcbiIos& ios, IOS_BASE::iostate state)
+{
+    try {
+        ios.setstate(state);
+    } catch (IOS_BASE::failure&) {
+        ;
+    }
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CTar
@@ -1244,7 +1254,7 @@ CTar::CTar(const string& filename, size_t blocking_factor)
     : m_FileName(filename),
       m_FileStream(new CNcbiFstream),
       m_OpenMode(eNone),
-      m_Stream(m_FileStream),
+      m_Stream(*m_FileStream),
       m_BufferSize(SIZE_OF(blocking_factor)),
       m_BufferPos(0),
       m_StreamPos(0),
@@ -1264,7 +1274,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
     : m_FileName(kEmptyStr),
       m_FileStream(0),
       m_OpenMode(eNone),
-      m_Stream(&stream),
+      m_Stream(stream),
       m_BufferSize(SIZE_OF(blocking_factor)),
       m_BufferPos(0),
       m_StreamPos(0),
@@ -1283,8 +1293,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
 CTar::~CTar()
 {
     // Close stream(s)
-    x_Flush(true/*no_throw*/);
-    x_Close();
+    x_Close(x_Flush(true/*nothrow*/));
     delete m_FileStream;
 
     // Delete owned file name masks
@@ -1329,35 +1338,36 @@ void CTar::x_Init(void)
 }
 
 
-void CTar::x_Flush(bool no_throw)
+bool CTar::x_Flush(bool nothrow)
 {
     m_Current.m_Name.erase();
     if (m_Bad  ||  !m_OpenMode  ||  !m_Modified) {
-        return;
+        return false;
     }
-    _ASSERT(m_Stream);
     _ASSERT(m_OpenMode == eRW);
     _ASSERT(m_BufferSize >= m_BufferPos);
     size_t pad = m_BufferSize - m_BufferPos;
     // Assure proper blocking factor and pad the archive as necessary
     memset(m_Buffer + m_BufferPos, 0, pad);
-    x_WriteArchive(pad, no_throw ? (const char*)(-1L) : 0);
+    x_WriteArchive(pad, nothrow ? (const char*)(-1L) : 0);
     _ASSERT(!(m_BufferPos % m_BufferSize)); // m_BufferSize if write error
     _ASSERT(!m_Bad == !m_BufferPos);
     if (!m_Bad
         &&  (pad < BLOCK_SIZE  ||  pad - OFFSET_OF(pad) < (BLOCK_SIZE << 1))) {
         // Write EOT (two zero blocks), if have not already done so by padding
         memset(m_Buffer, 0, m_BufferSize - pad);
-        x_WriteArchive(m_BufferSize, no_throw ? (const char*)(-1L) : 0);
+        x_WriteArchive(m_BufferSize, nothrow ? (const char*)(-1L) : 0);
         _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
         if (!m_Bad  &&  m_BufferSize == BLOCK_SIZE) {
-            x_WriteArchive(BLOCK_SIZE, no_throw ? (const char*)(-1L) : 0);
+            x_WriteArchive(BLOCK_SIZE, nothrow ? (const char*)(-1L) : 0);
             _ASSERT(!(m_BufferPos % m_BufferSize)  &&  !m_Bad == !m_BufferPos);
         }
     }
-    if (!m_Bad  &&  m_Stream->rdbuf()->PUBSYNC() != 0) {
+    if (!m_Bad  &&  m_Stream.rdbuf()->PUBSYNC() != 0) {
         int x_errno = errno;
-        if (!no_throw) {
+        m_Bad = true;
+        s_SetStateSafe(m_Stream, NcbiBadbit);
+        if (!nothrow) {
             TAR_THROW(this, eWrite,
                       "Archive flush failed" + s_OSReason(x_errno));
         }
@@ -1365,13 +1375,32 @@ void CTar::x_Flush(bool no_throw)
                  "Archive flush failed" + s_OSReason(x_errno));
     }
     m_Modified = false;
+    return true;
 }
 
 
-void CTar::x_Close(void)
+void CTar::x_Close(bool truncate)
 {
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
+        if (truncate  &&  !m_Bad  &&  ((int) m_OpenMode & eWO)) {
+#ifdef NCBI_OS_MSWIN
+            TXString filename(_T_XSTRING(m_FileName));
+            HANDLE handle = ::CreateFile(filename.c_str(), GENERIC_WRITE,
+                                         0/*sharing*/, NULL, OPEN_EXISTING,
+                                         FILE_ATTRIBUTE_NORMAL, NULL);
+            if (handle != INVALID_HANDLE_VALUE) {
+                LARGE_INTEGER filesize;
+                filesize.QuadPart = m_StreamPos;
+                if (::SetFilePointerEx(handle, filesize, NULL, FILE_BEGIN)) {
+                    ::SetEndOfFile(handle);
+                }
+                ::CloseHandle(handle);
+            }
+#else
+            ::truncate(m_FileName.c_str(), m_StreamPos);
+#endif //NCBI_OS_MSWIN
+        }
     }
     m_OpenMode  = eNone;
     m_BufferPos = 0;
@@ -1398,7 +1427,7 @@ void CTar::x_Open(EAction action)
             m_StreamPos = 0;
         }
         m_Current.m_Name.erase();
-        if (m_Bad || !m_Stream || !m_Stream->good() || !m_Stream->rdbuf()) {
+        if (m_Bad  ||  !m_Stream.good()  ||  !m_Stream.rdbuf()) {
             m_OpenMode = eNone;
             TAR_THROW(this, eOpen,
                       "Archive IO stream is in bad state");
@@ -1406,7 +1435,7 @@ void CTar::x_Open(EAction action)
             m_OpenMode = EOpenMode(int(action) & eRW);
         }
 #ifdef NCBI_OS_MSWIN
-        if (m_Stream == &cin) {
+        if (&m_Stream == &cin) {
             HANDLE handle = (HANDLE) _get_osfhandle(_fileno(stdin));
             if (GetFileType(handle) != FILE_TYPE_DISK) {
                 m_Flags |= fSlowSkipWithRead;
@@ -1414,7 +1443,7 @@ void CTar::x_Open(EAction action)
         }
 #endif //NCBI_OS_MSWIN
     } else {
-        _ASSERT(m_Stream == m_FileStream);
+        _ASSERT(&m_Stream == m_FileStream);
         EOpenMode mode = EOpenMode(int(action) & eRW);
         _ASSERT(mode != eNone);
         if (mode != eWO  &&  action != eAppend) {
@@ -1423,7 +1452,7 @@ void CTar::x_Open(EAction action)
             m_Current.m_Name.erase();
         }
         if (mode == eWO  ||  m_OpenMode < mode) {
-            x_Close();  // NB: m_OpenMode = eNone
+            x_Close(false);  // NB: m_OpenMode = eNone
             switch (mode) {
             case eWO:
                 // WO access
@@ -1475,9 +1504,8 @@ void CTar::x_Open(EAction action)
             }
         }
     }
-    _ASSERT(m_Stream);
-    _ASSERT(m_Stream->good());
-    _ASSERT(m_Stream->rdbuf());
+    _ASSERT(m_Stream.good());
+    _ASSERT(m_Stream.rdbuf());
 }
 
 
@@ -1529,11 +1557,11 @@ const char* CTar::x_ReadArchive(size_t& n)
         nread = 0;
         do {
             streamsize xread;
-            if (m_Stream->good()) {
+            if (m_Stream.good()) {
 #ifdef NCBI_COMPILER_MIPSPRO
                 try {
                     // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
-                    istream* is = dynamic_cast<istream*>(m_Stream);
+                    istream* is = dynamic_cast<istream*>(&m_Stream);
                     _ASSERT(is);
                     is->read(m_Buffer                  + nread,
                              (streamsize)(m_BufferSize - nread));
@@ -1545,7 +1573,7 @@ const char* CTar::x_ReadArchive(size_t& n)
                     xread = -1;
                 }
 #else
-                xread = m_Stream->rdbuf()
+                xread = m_Stream.rdbuf()
                     ->sgetn (m_Buffer                  + nread,
                              (streamsize)(m_BufferSize - nread));
 #endif //NCBI_COMPILER_MIPSPRO
@@ -1558,11 +1586,7 @@ const char* CTar::x_ReadArchive(size_t& n)
                              "Short read (" + NStr::NumericToString(nread)
                              + (xread ? ")" : "): EOF"));
                 }
-                try {
-                    m_Stream->setstate(xread < 0 ? NcbiBadbit : NcbiEofbit);
-                } catch (IOS_BASE::failure&) {
-                    ;
-                }
+                s_SetStateSafe(m_Stream, xread < 0 ? NcbiBadbit : NcbiEofbit);
                 break;
             }
             nread += xread;
@@ -1613,14 +1637,14 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
             do {
                 int x_errno;
                 streamsize xwritten;
-                IOS_BASE::iostate iostate = m_Stream->rdstate();
+                IOS_BASE::iostate iostate = m_Stream.rdstate();
                 if (!(iostate & ~NcbiEofbit)) { // good() OR eof()
-                    xwritten = m_Stream->rdbuf()
+                    xwritten = m_Stream.rdbuf()
                         ->sputn(m_Buffer                  + nwritten,
                                 (streamsize)(m_BufferSize - nwritten));
                     if (xwritten > 0) {
                         if (iostate) {
-                            m_Stream->clear();
+                            m_Stream.clear();
                         }
                         x_errno = 0;
                     } else {
@@ -1631,12 +1655,8 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
                     x_errno = 0;
                 }
                 if (xwritten <= 0) {
-                    try {
-                        m_Stream->setstate(NcbiBadbit);
-                    } catch (IOS_BASE::failure&) {
-                        ;
-                    }
                     m_Bad = true;
+                    s_SetStateSafe(m_Stream, NcbiBadbit);
                     if (src != (const char*)(-1L)) {
                         TAR_THROW(this, eWrite,
                                   "Archive write failed" +s_OSReason(x_errno));
@@ -2918,7 +2938,7 @@ void CTar::x_Skip(Uint8 blocks)
             CT_OFF_TYPE fskip =
                 (CT_OFF_TYPE)(blocks / BLOCK_OF(m_BufferSize) * m_BufferSize);
             _ASSERT(ALIGN_SIZE(fskip) == fskip);
-            if (m_Stream->rdbuf()->PUBSEEKOFF(fskip, IOS_BASE::cur)
+            if (m_Stream.rdbuf()->PUBSEEKOFF(fskip, IOS_BASE::cur)
                 != (CT_POS_TYPE)((CT_OFF_TYPE)(-1))) {
                 blocks      -= BLOCK_OF(fskip);
                 m_StreamPos +=          fskip;
@@ -3020,7 +3040,8 @@ bool CTar::x_ExtractEntry(Uint8& size,
                     bool okay;
                     if (ofs.good()) {
                         try {
-                            okay = ofs.write(xbuf, (streamsize) nread);
+                            okay = (ofs.write(xbuf, (streamsize) nread)
+                                    ? true : false);
                         } catch (IOS_BASE::failure&) {
                             okay = false;
                         }

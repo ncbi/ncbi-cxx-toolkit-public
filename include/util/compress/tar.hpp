@@ -594,10 +594,10 @@ private:
 
     // Open/close the archive.
     void x_Open(EAction action);
-    void x_Close(void);
+    void x_Close(bool truncate);  // NB: "truncate" effects file archives only
 
-    // Flush the archive (writing an appropriate EOT if necessary).
-    void x_Flush(bool no_throw = false);
+    // Flush the archive (adding EOT) if necessary;  return "true" if done
+    bool x_Flush(bool nothrow = false);
 
     // Backspace and skip the archive (in terms of blocks).
     void x_Backspace(EAction action, Uint8 blocks);
@@ -656,7 +656,7 @@ private:
     string        m_FileName;     ///< Tar archive file name.
     CNcbiFstream* m_FileStream;   ///< File stream of the archive.
     EOpenMode     m_OpenMode;     ///< What was it opened for.
-    CNcbiIos*     m_Stream;       ///< Archive stream (used for all I/O).
+    CNcbiIos&     m_Stream;       ///< Archive stream (used for all I/O).
     const size_t  m_BufferSize;   ///< Buffer(record) size for I/O operations.
     size_t        m_BufferPos;    ///< Position within the record.
     Uint8         m_StreamPos;    ///< Position in stream (0-based).
@@ -693,9 +693,7 @@ void CTar::Create(void)
 inline
 void CTar::Close(void)
 {
-    x_Flush();
-    x_Close();
-    m_Bad = false;
+    x_Close(x_Flush());
 }
 
 inline
