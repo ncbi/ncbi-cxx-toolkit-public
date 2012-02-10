@@ -4636,12 +4636,12 @@ void CMemoryFileMap::x_Open(void)
 #if defined(NCBI_OS_MSWIN)
         errmsg = ": ";
         TXString filename(_T_XSTRING(m_FileName));
-        
+
         // If failed to attach to an existing file-mapping object then
         // create a new one (based on the specified file)
         HANDLE hMap = OpenFileMapping(m_Attrs->map_access, false,
                                       filename.c_str());
-        if ( !hMap ) { 
+        if ( !hMap ) {
 
             // NOTE:
             //
@@ -4660,7 +4660,7 @@ void CMemoryFileMap::x_Open(void)
                  (m_Attrs->file_access != x_file_access) ) {
                 hFile = CreateFile(filename.c_str(), m_Attrs->file_access, 
                                    m_Attrs->file_share, NULL,
-                                   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,NULL);
+                                   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 x_map_protect = m_Attrs->map_protect;
             }
             if ( hFile == INVALID_HANDLE_VALUE ) {
