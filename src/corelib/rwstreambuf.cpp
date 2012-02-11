@@ -91,9 +91,9 @@
 BEGIN_NCBI_SCOPE
 
 
-const char* g_RW_ResultToString(ERW_Result res)
+const char* g_RW_ResultToString(ERW_Result result)
 {
-    static const char* const res_str[eRW_Eof - eRW_NotImplemented + 1] = {
+    static const char* const kResultStr[eRW_Eof - eRW_NotImplemented + 1] = {
         "eRW_NotImplemented",
         "eRW_Success",
         "eRW_Timeout",
@@ -101,8 +101,8 @@ const char* g_RW_ResultToString(ERW_Result res)
         "eRW_Eof"
     };
 
-    _ASSERT(eRW_NotImplemented <= res  &&  res <= eRW_Eof);
-    return res_str[res - eRW_NotImplemented];
+    _ASSERT(eRW_NotImplemented <= result  &&  result <= eRW_Eof);
+    return kResultStr[result - eRW_NotImplemented];
 }
 
 static const streamsize kDefaultBufSize = 4096;
@@ -260,21 +260,22 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
 
-    ERW_Result res = eRW_Error;
+    ERW_Result result = eRW_Error;
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
-        res = m_Writer->Flush(),
+        result = m_Writer->Flush(),
         7, "CRWStreambuf::overflow(): IWriter::Flush()",
         (void) 0);
-    switch (res) {
+    switch (result) {
     case eRW_Error:
     case eRW_Eof:
         x_Err    = true;
         x_ErrPos = x_GetPPos();
         return CT_EOF;
     default:
-        x_Err = false;
-        return CT_NOT_EOF(CT_EOF);
+        break;
     }
+    x_Err = false;
+    return CT_NOT_EOF(CT_EOF);
 }
 
 
@@ -479,8 +480,9 @@ streamsize CRWStreambuf::showmanyc(void)
     case eRW_Success:
         return count;
     default:
-        return -1;
+        break;
     }
+    return -1;
 }
 
 
