@@ -70,8 +70,8 @@ class IReader
 {
 public:
     /// Read as many as "count" bytes into a buffer pointed to by the "buf"
-    /// argument.  Store the number of bytes actually read (0 if read none)
-    /// via the pointer "bytes_read", if provided.
+    /// argument.  Always store the number of bytes actually read (0 if read
+    /// none) via the pointer "bytes_read", if provided non-NULL.
     /// Return non-eRW_Success code if EOF / error condition encountered
     /// during the operation (some data may have been read, nevertheless).
     /// Special case:  if "count" passed as 0, then the value of
@@ -81,7 +81,7 @@ public:
     /// @attention
     ///     It is implementation-specific whether the call blocks until
     ///     the entire buffer is read or the call returns when at least
-    ///     some bytes are available. In general, it is advised that this
+    ///     some data are available.  In general, it is advised that this
     ///     call is made within a loop that checks for EOF condition and
     ///     proceeds with the reading until the requested amount of data
     ///     has been retrieved.
@@ -94,9 +94,10 @@ public:
     /// device without blocking.  Return eRW_Success if the number of
     /// pending bytes has been stored at the location pointed to by "count".
     /// Return eRW_NotImplemented if the number cannot be determined.
-    /// Otherwise, return other eRW_... condition to reflect the problem.
+    /// Otherwise, return other eRW_... condition to reflect the problem
+    /// ("*count" does not need to be updated in the case of non-eRW_Success).
     /// Note that if reporting 0 bytes ready, the method may return either
-    /// both eRW_Success and zero *count, or return eRW_NotImplemented alone.
+    /// both eRW_Success and zero "*count", or return eRW_NotImplemented alone.
     virtual ERW_Result PendingCount(size_t* count) = 0;
 
     virtual ~IReader() { }
@@ -109,7 +110,7 @@ class IWriter
 {
 public:
     /// Write up to "count" bytes from the buffer pointed to by the "buf"
-    /// argument onto an output device.  Store the number of bytes
+    /// argument onto an output device.  Always store the number of bytes
     /// actually written, or 0 if "count" has been passed as 0
     /// ("buf" is ignored in this case), via the "bytes_written" pointer,
     /// if provided non-NULL.  Note that the method can return non-eRW_Success
