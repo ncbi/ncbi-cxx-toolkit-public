@@ -31,8 +31,10 @@
  *   2. Non-blocking read.
  *
  *   Reader-writer utilities:
- *   1. Append an IReader's contents into a string.
- *   2. Construct an IReader object from a string.
+ *   1. Construct an IReader object from an istream;
+ *   2. Construct an IWriter object from an ostream;
+ *   3. Construct an IReader object from a string;
+ *   4. Append entire IReader's contents to a string.
  *
  */
 
@@ -558,43 +560,77 @@ ERW_Result CStreamReader::Read(void*   buf,
                                size_t  count,
                                size_t* bytes_read)
 {
-    streamsize r = m_Stream->rdbuf()->sgetn(static_cast<char*>(buf), count);
+    streamsize r = m_Stream->good()
+        ? m_Stream->rdbuf()->sgetn(static_cast<char*>(buf), count) : 0;
     if ( bytes_read ) {
         *bytes_read = (size_t) r;
     }
-    return r ? eRW_Success : eRW_Eof;
+    if (!r) {
+        m_Stream->setstate(NcbiEofbit);
+        return eRW_Eof;
+    }
+    return eRW_Success;
 }
 
 
 ERW_Result CStreamReader::PendingCount(size_t* count)
 {
-    *count = m_Stream->rdbuf()->in_avail();
-    return eRW_Success;
+    IOS_BASE::iostate iostate = m_Stream->rdstate();
+    if (!((int) iostate & ~NcbiEofbit)) {  // good() OR eof()
+        if (iostate) {
+            return eRW_Eof;
+        }
+        *count = m_Stream->rdbuf()->in_avail();
+        return eRW_Success;
+    }
+    return eRW_Error;
 }
 
 
-void ExtractReaderContents(IReader& reader, string& s)
+ERW_Result CStreamWriter::Write(const void* buf,
+                                size_t      count,
+                                size_t*     bytes_written)
 {
-    size_t     n      = 0;
-    SIZE_TYPE  pos    = s.size();
-    ERW_Result status = eRW_Success;
+    streamsize w = m_Stream->good()
+        ? m_Stream->rdbuf()->sputn(static_cast<const char*>(buf), count) : 0;
+    if ( bytes_written ) {
+        *bytes_written = w;
+    }
+    if (!w) {
+        m_Stream->setstate(NcbiBadbit);
+        return eRW_Error;
+    }
+    return eRW_Success;
+}
+ 
 
-    if (s.size() < 4096) {
+ERW_Result CStreamWriter::Flush(void)
+{
+    return m_Stream->flush() ? eRW_Success : eRW_Error;
+}
+
+
+void g_ExtractReaderContents(IReader& reader, string& s)
+{
+    SIZE_TYPE pos = s.size();
+    if (pos < 4096) {
         s.resize(4096);
     }
 
-    while (status == eRW_Success) {
-        pos += n;
+    ERW_Result status;
+    do {
         // Grow exponentially to avoid possible quadratic runtime,
         // adjusting size rather than capacity as the latter would
         // require gratuitous double-buffering.
         if (s.size() <= pos + 1024) {
             s.resize(s.size() * 2);
         }
+        size_t n;
         status = reader.Read(&s[pos], s.size() - pos, &n);
-    }
+        pos += n;
+    } while (status == eRW_Success);
     // shrink back to the actual size
-    s.resize(pos + n);
+    s.resize(pos);
     // XXX - issue diagnostic message or exception if status != eRW_Eof?
 }
 
@@ -609,14 +645,10 @@ ERW_Result CStringReader::Read(void* buf, size_t count, size_t* bytes_read)
         m_String.erase(0, m_Position);
         m_Position = 0;
     }
-    if (bytes_read) {
+    if ( bytes_read ) {
         *bytes_read = n;
     }
-    if (n == 0  &&  count > 0) {
-        return eRW_Eof;
-    } else {
-        return eRW_Success;
-    }
+    return count  &&  !n ? eRW_Eof : eRW_Success;
 }
 
 

@@ -1059,7 +1059,7 @@ void CCgiEntry::x_ForceComplete() const
     _ASSERT(m_Data->m_Value.empty());
     SData& data = const_cast<SData&>(*m_Data);
     auto_ptr<IReader> reader(data.m_Reader.release());
-    ExtractReaderContents(*reader, data.m_Value);
+    g_ExtractReaderContents(*reader, data.m_Value);
 }
 
 

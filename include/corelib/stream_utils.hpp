@@ -36,8 +36,9 @@
  *
  *   Reader-writer utilities:
  *   1. Construct an IReader object from an istream;
- *   2. Append entire IReader's contents into a string;
- *   3. Construct an IReader object from a string.
+ *   2. Construct an IWriter object from an ostream;
+ *   3. Construct an IReader object from a string;
+ *   4. Append entire IReader's contents to a string.
  *
  */
 
@@ -133,6 +134,13 @@ private:
 
 
 /// istream-based IReader
+///
+/// Besides other uses, this class can help unite two uni-derectional streams
+/// into a single bi-directional one, e.g.:
+///     CRWStream rw(new CStreamReader(cin), new CStreamWriter(cout),
+///                  0, 0, CRWStreambuf::fOwnAll);
+/// @sa
+///   CStreamWriter
 class NCBI_XNCBI_EXPORT CStreamReader : public IReader
 {
 public:
@@ -143,18 +151,45 @@ public:
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
     virtual ERW_Result PendingCount(size_t* count);
 
-private:
+protected:
     AutoPtr<CNcbiIstream> m_Stream;
 
-private: // prevent copy
+private:
+    // prevent copy
     CStreamReader(const CStreamReader&);
     void operator=(const CStreamReader&);
 };
 
 
-/// Appends to the given string.
-void NCBI_XNCBI_EXPORT ExtractReaderContents(IReader& reader, string& s);
+/// ostream-based IWriter
+///
+/// Can help create single bi-directional stream from two uni-derectional ones:
+///     CRWStream rw(new CStreamReader(cin), new CStreamWriter(cout),
+///                  0, 0, CRWStreambuf::fOwnAll);
+/// @sa
+///   CStreamReader
+class NCBI_XNCBI_EXPORT CStreamWriter : public IWriter
+{
+public:
+    CStreamWriter(CNcbiOstream& os, EOwnership own = eNoOwnership)
+        : m_Stream(&os, own)
+    { }
 
+    virtual ERW_Result Write(const void* buf,
+                             size_t count, size_t* bytes_written);
+    virtual ERW_Result Flush(void);
+
+protected:
+    AutoPtr<CNcbiOstream> m_Stream;
+
+private:
+    // prevent copy
+    CStreamWriter(const CStreamWriter&);
+    void operator=(const CStreamWriter&);
+};
+
+
+/// string-based IReader
 class NCBI_XNCBI_EXPORT CStringReader : public IReader
 {
 public:
@@ -169,6 +204,10 @@ private:
     string    m_String;
     SIZE_TYPE m_Position;
 };
+
+
+/// Append all IReader contents to a given string.
+void NCBI_XNCBI_EXPORT g_ExtractReaderContents(IReader& reader, string& s);
 
 
 END_NCBI_SCOPE
