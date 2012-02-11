@@ -37,7 +37,7 @@
  *   multivolume / incremental archives, etc, but just regular files,
  *   devices (character or block), FIFOs, directories, and limited links:
  *   can extract both hard- and symlinks, but can store symlinks only.
- *   This version is minimally PAX (Partable Archive Interchange) aware
+ *   This version is minimally PAX(Partable Archive Interchange)-aware
  *   for file extractions (but cannot use PAX extensions to store files).
  *
  */
@@ -1374,7 +1374,8 @@ bool CTar::x_Flush(bool nothrow)
         TAR_POST(83, Error,
                  "Archive flush failed" + s_OSReason(x_errno));
     }
-    m_Modified = false;
+    if (!m_Bad)
+        m_Modified = false;
     return true;
 }
 
@@ -1383,8 +1384,8 @@ void CTar::x_Close(bool truncate)
 {
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
-        if (truncate  &&  !m_Bad  &&  ((int) m_OpenMode & eWO)) {
-#ifdef NCBI_OS_MSWIN
+        if (!(m_Flags & fNoTarfileTruncate)  &&  truncate  &&  !m_Bad) {
+#if   defined(NCBI_OS_MSWIN)
             TXString filename(_T_XSTRING(m_FileName));
             HANDLE handle = ::CreateFile(filename.c_str(), GENERIC_WRITE,
                                          0/*sharing*/, NULL, OPEN_EXISTING,
@@ -1397,11 +1398,12 @@ void CTar::x_Close(bool truncate)
                 }
                 ::CloseHandle(handle);
             }
-#else
+#elif defined(NCBI_OS_UNIX)
             ::truncate(m_FileName.c_str(), m_StreamPos);
-#endif //NCBI_OS_MSWIN
+#endif //NCBI_OS
         }
     }
+    m_Modified  = false;
     m_OpenMode  = eNone;
     m_BufferPos = 0;
     m_StreamPos = 0;
@@ -1416,6 +1418,14 @@ void CTar::x_Open(EAction action)
     // is being used as an archive, it must be explicitly repositioned by
     // user's code (outside of this class) before each archive operation.
     if (!m_FileStream) {
+        m_Current.m_Name.erase();
+        if (m_Bad  ||  !m_Stream.good()  ||  !m_Stream.rdbuf()) {
+            m_OpenMode = eNone;
+            TAR_THROW(this, eOpen,
+                      "Archive IO stream is in bad state");
+        } else {
+            m_OpenMode = EOpenMode(int(action) & eRW);
+        }
         if (action != eAppend  &&  m_Modified) {
             TAR_POST(1, Warning,
                      "Pending changes may be discarded"
@@ -1425,14 +1435,6 @@ void CTar::x_Open(EAction action)
         if (action != eAppend  &&  action != eInternal) {
             m_BufferPos = 0;
             m_StreamPos = 0;
-        }
-        m_Current.m_Name.erase();
-        if (m_Bad  ||  !m_Stream.good()  ||  !m_Stream.rdbuf()) {
-            m_OpenMode = eNone;
-            TAR_THROW(this, eOpen,
-                      "Archive IO stream is in bad state");
-        } else {
-            m_OpenMode = EOpenMode(int(action) & eRW);
         }
 #ifdef NCBI_OS_MSWIN
         if (&m_Stream == &cin) {
@@ -3430,7 +3432,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     }
 #endif //NCBI_OS_UNIX
 #ifdef NCBI_OS_MSWIN
-    /* these are fake but we don't want to leave plain 0 (root) in there */
+    // These are fake but we don't want to leave plain 0 (root) in there
     st.orig.st_uid = (uid_t) uid;
     st.orig.st_gid = (gid_t) gid;
 #endif //NCBI_OS_MSWIN
@@ -3736,28 +3738,18 @@ class CTarReader : public IReader
 {
 public:
     CTarReader(CTar* tar, EOwnership own = eNoOwnership)
-        : m_Read(0), m_Eof(false), m_Bad(false), m_Own(own), m_Tar(tar)
+        : m_Read(0), m_Eof(false), m_Bad(false), m_Tar(tar, own)
     { }
-    ~CTarReader();
 
     virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
     virtual ERW_Result PendingCount(size_t* count);
 
 private:
-    Uint8      m_Read;
-    bool       m_Eof;
-    bool       m_Bad;
-    EOwnership m_Own;
-    CTar*      m_Tar;
+    Uint8         m_Read;
+    bool          m_Eof;
+    bool          m_Bad;
+    AutoPtr<CTar> m_Tar;
 };
-
-
-CTarReader::~CTarReader()
-{
-    if (m_Own) {
-        delete m_Tar;
-    }
-}
 
 
 ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
@@ -3772,13 +3764,14 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
     }
 
     size_t read;
-    if (m_Read >= m_Tar->m_Current.GetSize()) {
+    _ASSERT(m_Tar->m_Current.GetSize() >= m_Read);
+    Uint8  left = m_Tar->m_Current.GetSize() - m_Read;
+    if (!left) {
         m_Eof = true;
         read = 0;
     } else {
-        size_t left = (size_t)(m_Tar->m_Current.GetSize() - m_Read);
         if (count > left) {
-            count = left;
+            count = (size_t) left;
         }
 
         size_t off = (size_t) OFFSET_OF(m_Read);
@@ -3811,16 +3804,19 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
             read   += count;
         } else {
             m_Bad = true;
+            _ASSERT(!m_Tar->m_Stream.good());
+            // If we don't throw here, it may look like an ordinary EOF
             TAR_THROW(m_Tar, eRead,
                       "Read error while streaming");
         }
     }
 
  out:
+    _ASSERT(!m_Bad);
     if (bytes_read) {
         *bytes_read = read;
     }
-    return m_Bad ? eRW_Error : m_Eof ? eRW_Eof : eRW_Success;
+    return m_Eof ? eRW_Eof : eRW_Success;
 }
 
 
@@ -3829,11 +3825,15 @@ ERW_Result CTarReader::PendingCount(size_t* count)
     if (m_Bad) {
         return eRW_Error;
     }
+    _ASSERT(m_Tar->m_Current.GetSize() >= m_Read);
     Uint8 left = m_Tar->m_Current.GetSize() - m_Read;
     if (!left  &&  m_Eof) {
         return eRW_Eof;
     }
-    *count = (size_t) left;
+    size_t avail = BLOCK_SIZE - (size_t) OFFSET_OF(m_Read);
+    if (m_Tar->m_BufferPos)
+        avail += m_Tar->m_BufferSize - m_Tar->m_BufferPos;
+    *count = avail > left ? (size_t) left : avail;
     return eRW_Success;
 }
 
@@ -3870,8 +3870,10 @@ IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
 
 IReader* CTar::GetNextEntryData(void)
 {
-    return
-        m_Current.GetType() != CTarEntryInfo::eFile ? 0 : new CTarReader(this);
+    CTarEntryInfo::EType type = m_Current.GetType();
+    return type != CTarEntryInfo::eFile  &&
+        (type != CTarEntryInfo::eUnknown  ||  (m_Flags & fSkipUnsupported))
+        ? 0 : new CTarReader(this);
 }
 
 

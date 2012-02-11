@@ -26,13 +26,14 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:  Test case for CTar API:
- *                    basically, a very limited verion of a tar utility.
+ *                    basically, a limited verion of the tar utility.
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/rwstream.hpp>
+#include <corelib/stream_utils.hpp>
 #include <util/compress/tar.hpp>
 #include <util/compress/stream_util.hpp>
 #include <errno.h>
@@ -329,18 +330,21 @@ int CTarTest::Run(void)
     ifstream ifs;
     ofstream ofs;
     CNcbiIos* io;
+    CRWStream stdio(new CStreamReader(NcbiCin), new CStreamWriter(NcbiCout),
+                    0, 0, CRWStreambuf::fOwnAll | CRWStreambuf::fUntie);
+#ifdef NCBI_OS_MSWIN
+    _setmode(_fileno(stdin),  _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif // NCBI_OS_MSWIN
 
     if (file.empty()  ||  zip) {
         if (action == eList ||  action == eExtract  ||  action == eTest) {
             istream* is;
-            if (file.empty()) {
-#ifdef NCBI_OS_MSWIN
-                _setmode(_fileno(stdin), _O_BINARY);
-#endif // NCBI_OS_MSWIN
-                is = &NcbiCin;
-            } else {
+            if (!file.empty()) {
                 ifs.open(file.c_str(),  IOS_BASE::in | IOS_BASE::binary);
                 is = &ifs;
+            } else {
+                is = &stdio;
             }
             if (!is->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
@@ -352,15 +356,12 @@ int CTarTest::Run(void)
             io = is;
         } else if (action == eCreate  ||  action == eAppend) {
             ostream* os;
-            if (file.empty()) {
-#ifdef NCBI_OS_MSWIN
-                _setmode(_fileno(stdout), _O_BINARY);
-#endif // NCBI_OS_MSWIN
-                os = &NcbiCout;
-            } else {
+            if (!file.empty()) {
                 ofs.open(file.c_str(),
                          IOS_BASE::trunc | IOS_BASE::out | IOS_BASE::binary);
                 os = &ofs;
+            } else {
+                os = &stdio;
             }
             if (!os->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
@@ -459,9 +460,6 @@ int CTarTest::Run(void)
         }
         CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                CRWStreambuf::fLogExceptions));
-#ifdef NCBI_OS_MSWIN
-        _setmode(_fileno(stdout), _O_BINARY);
-#endif // NCBI_OS_MSWIN
         NcbiStreamCopy(NcbiCout, rs);
     } else {
         tar->SetFlags(m_Flags);
@@ -521,9 +519,6 @@ int CTarTest::Run(void)
                     }
                 }
             } else if (stream) {
-#ifdef NCBI_OS_MSWIN
-                _setmode(_fileno(stdout), _O_BINARY);
-#endif // NCBI_OS_MSWIN
                 const CTarEntryInfo* info;
                 while ((info = tar->GetNextEntryInfo()) != 0) {
                     if (info->GetType() != CTarEntryInfo::eFile) {

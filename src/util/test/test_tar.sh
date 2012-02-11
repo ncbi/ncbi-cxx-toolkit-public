@@ -180,17 +180,20 @@ test_tar -x -s -v -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_exe      
 echo "`date` *** Checking multiple entry streaming feature"
 echo
 
-test_tar -x -s -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1   ||  exit 1
-head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                             ||  exit 1
-cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                        > $test_base.out.2   ||  exit 1
-cmp -l $test_base.out.1 $test_base.out.2                                                                   ||  exit 1
+test_tar -x -s -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1  ||  exit 1
+head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                            ||  exit 1
+cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                        > $test_base.out.2  ||  exit 1
+cmp -l $test_base.out.1 $test_base.out.2                                                                  ||  exit 1
 
 echo
 echo "`date` *** Checking in-stream append"
 echo
 
-touch $test_base.cat $test_base.dog
-test_tar -c -v -f - $test_base.cat $test_base.dog | tar tvf - | tee $test_base.lst      ||  exit 1
+ncat="`expr $$     % 512`"
+ndog="`expr $$ / 2 % 512`"
+dd if=/dev/zero bs=1 count="$ncat" >$test_base.cat 2>/dev/null
+dd if=/dev/zero bs=1 count="$ndog" >$test_base.dog 2>/dev/null
+test_tar -c -v -f - $test_base.cat $test_base.dog | $tar tvf - | tee $test_base.lst     ||  exit 1
 test `cat $test_base.lst | wc -l` = 2                                                   ||  exit 1
 
 echo

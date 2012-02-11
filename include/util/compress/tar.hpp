@@ -44,7 +44,7 @@
 ///  multivolume / incremental archives, etc, but just regular files,
 ///  devices (character or block), FIFOs, directories, and limited links:
 ///  can extract both hard- and symlinks, but can store symlinks only.
-///  This version is minimally PAX (Partable Archive Interchange) aware
+///  This version is minimally PAX(Partable Archive Interchange)-aware
 ///  for file extractions (but cannot use PAX extensions to store files).
 ///
 
@@ -63,28 +63,28 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// ETarMode --
+/// TTarMode --
 ///
 /// Permission bits as defined in tar
 ///
 
 enum ETarModeBits {
     // Special mode bits
-    fTarSetUID    = 04000,   // set UID on execution
-    fTarSetGID    = 02000,   // set GID on execution
-    fTarSticky    = 01000,   // reserved (sticky bit)
+    fTarSetUID   = 04000,       // set UID on execution
+    fTarSetGID   = 02000,       // set GID on execution
+    fTarSticky   = 01000,       // reserved (sticky bit)
     // File permissions
-    fTarURead     = 00400,   // read by owner
-    fTarUWrite    = 00200,   // write by owner
-    fTarUExecute  = 00100,   // execute/search by owner
-    fTarGRead     = 00040,   // read by group
-    fTarGWrite    = 00020,   // write by group
-    fTarGExecute  = 00010,   // execute/search by group
-    fTarORead     = 00004,   // read by other
-    fTarOWrite    = 00002,   // write by other
-    fTarOExecute  = 00001    // execute/search by other
+    fTarURead    = 00400,       // read by owner
+    fTarUWrite   = 00200,       // write by owner
+    fTarUExecute = 00100,       // execute/search by owner
+    fTarGRead    = 00040,       // read by group
+    fTarGWrite   = 00020,       // write by group
+    fTarGExecute = 00010,       // execute/search by group
+    fTarORead    = 00004,       // read by other
+    fTarOWrite   = 00002,       // write by other
+    fTarOExecute = 00001        // execute/search by other
 };
-typedef unsigned int TTarMode; // Bitwise OR of ETarModeBits
+typedef unsigned int TTarMode;  // Bitwise OR of ETarModeBits
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -252,13 +252,13 @@ struct SHeader;
 /// CTar class
 ///
 /// (Throws exceptions on most errors.)
-/// Note that if stream constructor is used, then CTar can only perform
-/// one pass over the archive.  This means that only one full action will
-/// succeed (and if the action was to update (e.g. append) the archive, it
-/// has to be explicitly followed by Close() if no more appends are expected).
-/// Before next read/update action, the stream position has to be explicitly
-/// reset to the beginning of the archive, or it also may remain at the end of
-/// the archive for a series of successive append operations.
+/// Note that if stream constructor is used, then CTar can only perform one
+/// pass over the archive.  This means that only one full action will succeed
+/// (and if the action was to update (e.g. append) the archive, it has to be
+/// explicitly followed by Close() if no more appends are expected).  Before
+/// next read/update action, the stream position has to be explicitly reset to
+/// the beginning of the archive, or it also may remain at the end of the
+/// archive for a series of successive append operations.
 
 class NCBI_XUTIL_EXPORT CTar
 {
@@ -303,6 +303,8 @@ public:
         fSlowSkipWithRead   = (1<<21),
 
         // --- Miscellaneous ---
+        /// Do not trim tar file size after append/update
+        fNoTarfileTruncate  = (1<<24),
         /// Suppress NCBI signatures in entry headers
         fStandardHeaderOnly = (1<<28),
 
@@ -369,6 +371,8 @@ public:
     /// have only forward slashes in the paths, and drive letter, if any on
     /// MS-Windows, stripped).  All entries will be added at the logical end
     /// (not always EOF) of the archive, when appending to a non-empty one.
+    /// @note Adding to a stream archive does not seek to the logical end of
+    /// the archive but begins at the current position right away.
     ///
     /// @return
     ///   A list of entries appended.
@@ -397,6 +401,9 @@ public:
     /// to update both existing entries (if newer files found), and also add
     /// new entries for any files/directories, which are currently not in.
     ///
+    /// @note Updating stream archive may (and most certainly will) cause
+    /// zero-filled gaps in the archive (can be read with "ignore zeroes").
+    ///
     /// @return
     ///   A list of entries that have been updated.
     /// @sa
@@ -406,7 +413,7 @@ public:
     /// Extract the entire archive (into either current directory or
     /// a directory otherwise specified by SetBaseDir()).
     ///
-    /// Extract all archive entries, whose names match pre-set mask.
+    /// Extract all archive entries, whose names match the pre-set mask.
     /// @sa
     ///   SetMask, SetBaseDir
     auto_ptr<TEntries> Extract(void);
@@ -414,8 +421,8 @@ public:
     /// Get information about all matching archive entries.
     ///
     /// @return
-    ///   An array containing information on those archive entries,
-    ///   whose names match pre-set mask.
+    ///   An array containing information on those archive entries, whose
+    ///   names match the pre-set mask.
     /// @sa
     ///   SetMask
     auto_ptr<TEntries> List(void);
@@ -442,12 +449,13 @@ public:
 
     /// Set name mask.
     ///
-    /// The set of masks is used to process existing entries in archive,
+    /// The set of masks is used to process existing entries in the archive,
     /// and apply to list and extract operations only.
     /// If masks are not defined then all archive entries will be processed.
     /// By default, the masks are used case sensitively.  To cancel this and
     /// use the masks case-insensitively, SetFlags() can be called with
     /// fMaskNocase flag set.
+    /// @note Unset mask means wildcard processing (all entries match).
     /// @param mask
     ///   Set of masks.
     /// @param own
@@ -459,7 +467,7 @@ public:
     /// Unset name mask.
     ///
     /// Upon mask reset, all entries become subject to archive processing in
-    /// list and extract operations.
+    /// the list and extract operations.
     /// @sa
     ///   SetMask
     void UnsetMask(void);
@@ -497,10 +505,10 @@ public:
 
     /// Iterate over the archive forward and return first (or next) entry.
     ///
-    /// When using this call (possibly along with GetNextEntryData), the tar
+    /// When using this method (possibly along with GetNextEntryData()), the
     /// archive stream (if any) must not be accessed outside the CTar API,
-    /// since otherwise, inconsistency in data may result.
-    /// An application may call GetNextEntryData() to stream some or all of
+    /// because otherwise inconsistency in data may result.
+    /// An application may call GetNextEntryData() to stream some or all of the
     /// data out of this entry, or it may call GetNextEntryInfo() again to skip
     /// to the next archive entry, etc.
     /// Note that the archive can contain multiple versions of the same entry
@@ -521,8 +529,8 @@ public:
     /// (even of size 0).  The ownership of the pointer is passed to the caller
     /// (so it has to be explicitly deleted when no longer needed).
     /// The IReader may be used to read all or part of data out of the entry
-    /// without affecting GetNextEntryInfo()'s ability to find the next entry
-    /// in the archive.
+    /// without affecting GetNextEntryInfo()'s ability to find any following
+    /// entry in the archive.
     /// See test suite (in test/test_tar.cpp) for a usage example.
     /// @return
     ///   Pointer to IReader, or 0 if the current entry is not a file.
@@ -531,7 +539,7 @@ public:
     IReader*             GetNextEntryData(void);
 
     /// Create and return an IReader, which can extract contents of one named
-    /// file (which can be requested by a name mask).
+    /// file (which can be requested by a name mask in the "name" parameter).
     ///
     /// The tar archive is deemed to be in the specified stream "is", properly
     /// positioned (either at the beginning of the archive, or at any
@@ -665,7 +673,7 @@ private:
     CMask*        m_Mask;         ///< Masks for list/test/extract.
     EOwnership    m_MaskOwned;    ///< Flag of m_Mask's ownership.
     bool          m_Modified;     ///< True after at least one write.
-    bool          m_Bad;          ///< True a fatal output error occurred.
+    bool          m_Bad;          ///< True if a fatal output error occurred.
     TFlags        m_Flags;        ///< Bitwise OR of flags.
     string        m_BaseDir;      ///< Base directory for relative paths.
     CTarEntryInfo m_Current;      ///< Current entry being processed.
