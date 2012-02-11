@@ -186,6 +186,16 @@ public:
         init(&m_Sb);
     }
 
+    CRWStream(IReader*             r,
+              IWriter*             w,
+              streamsize           buf_size = 0,
+              CT_CHAR_TYPE*        buf      = 0,
+              CRWStreambuf::TFlags flags    = 0)
+        : CNcbiIostream(0), m_Sb(r, w, buf_size, buf, flags)
+    {
+        init(&m_Sb);
+    }
+
 private:
     CRWStreambuf m_Sb;
 };
