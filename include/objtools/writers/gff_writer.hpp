@@ -46,33 +46,65 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
+/// CWriterBase implementation that formats Genbank objects as plain GFF files.
+/// GFF (or GFF2) is a predecessor of GTF, GFF3, GVF and probably half a dozen
+/// other dialects in use today. GFF files consist of feature records, with each
+/// feature record consisting of nine columns.
+/// There is some agreed upon meaning of the first eight columns and on the 
+/// general grammer of the column contents. Beyond that, there has never been
+/// a universally agreed upon defintion of the format (probably the prime reason
+/// the format is deprecated now).
+/// For the purpose of this implementation, GFF is taken to be the greatest 
+/// common denominator between GTF and GFF3 (and this GVF). Those other writers
+/// then derive from this one, adding their own bits and pieces to complete the
+/// format renderer.
+///
 class NCBI_XOBJWRITE_EXPORT CGff2Writer:
     public CWriterBase
 //  ============================================================================
 {
 public:
     typedef enum {
-        fNormal =       0,
         fSoQuirks =     1<<15,
     } TFlags;
     
 public:
+    /// Constructor.
+    /// @param scope
+    ///   scope to be used for ID reference resolution (it's OK to create one
+    ///   on the fly).
+    /// @param ostr
+    ///   stream objects should be written to.
+    /// @param flags
+    ///   any output customization flags.
+    ///
     CGff2Writer(
-        CScope&,
-        CNcbiOstream&,
-        unsigned int = fNormal );
+        CScope& scope,
+        CNcbiOstream& ostr,
+        unsigned int flags=fNormal );
 
+    /// Constructor.
+    /// Scopeless version. A scope will be allocated internally.
+    /// @param ostr
+    ///   stream objects should be written to.
+    /// @param flags
+    ///   any output customization flags.
+    ///
     CGff2Writer(
         CNcbiOstream&,
         unsigned int = fNormal );
 
     virtual ~CGff2Writer();
 
+    /// Write a file header identifying the file content as GFF version 2.
+    ///
     virtual bool WriteHeader();
 
     virtual bool WriteHeader(
         const CSeq_annot& ) { return WriteHeader(); };
 
+    /// Write a trailer marking the end of a parsing context.
+    ///
     virtual bool WriteFooter();
 
     virtual bool WriteFooter(

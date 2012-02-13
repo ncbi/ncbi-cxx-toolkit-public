@@ -575,7 +575,7 @@ bool CWriteUtil::NeedsQuoting(
 void CWriteUtil::ChangeToPackedInt(
     CSeq_loc& loc)
 //  Special mission:
-//  Filter out eNull intervals before submitting the lication to the "normal"
+//  Filter out eNull intervals before submitting the location to the "normal"
 //  ChangeToPackedInt() method.
 //  ----------------------------------------------------------------------------
 {

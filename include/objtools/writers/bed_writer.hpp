@@ -57,7 +57,7 @@ public:
     /// @param scope
     ///   scope to be used for ID reference resolution (it's OK to create one
     ///   on the fly).
-    /// @param istr
+    /// @param ostr
     ///   stream objects should be written to.
     /// @param colCount
     ///   number of columns per output record. Each record in a BED file must
@@ -68,9 +68,9 @@ public:
     ///
     CBedWriter(
         CScope& scope,
-        CNcbiOstream& istr,
+        CNcbiOstream& ostr,
         unsigned int colCount=12,
-        TFlags flags=fNormal );
+        unsigned int flags=fNormal );
 
     virtual ~CBedWriter();
 

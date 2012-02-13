@@ -52,6 +52,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <dbapi/driver/drivers.hpp>
 
@@ -128,7 +129,7 @@ private:
         CScope&,
         CObjectIStream&);
         
-    CGff2Writer::TFlags xGffFlags( 
+    unsigned int xGffFlags( 
         const CArgs& );
     string xAssemblyName() const;
     string xAssemblyAccession() const;
@@ -347,6 +348,7 @@ bool CAnnotWriterApp::xTryProcessSeqEntry(
     if (objtype != "Seq-entry") {
         return false;
     }
+
     CSeq_entry seq_entry;
     istr.Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( seq_entry );
@@ -469,11 +471,11 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
 }
 
 //  -----------------------------------------------------------------------------
-CGff2Writer::TFlags CAnnotWriterApp::xGffFlags(
+unsigned int CAnnotWriterApp::xGffFlags(
     const CArgs& args )
 //  -----------------------------------------------------------------------------
 {
-    CGff2Writer::TFlags eFlags = CGff2Writer::fNormal;
+   unsigned int eFlags = CGff2Writer::fNormal;
     if ( args["structibutes"] ) {
         eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fStructibutes );
     }
@@ -530,7 +532,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         return new CWiggleWriter(*pOs, args["tracksize"].AsInteger());
     }
     if (strFormat == "bed") {
-        return new CBedWriter(*m_pScope, *pOs);
+        return new CBedWriter(*m_pScope, *pOs, 12);
     }
     if (strFormat == "vcf") {
         return new CVcfWriter(*m_pScope, *pOs);
@@ -554,13 +556,11 @@ string CAnnotWriterApp::xAssemblyAccession() const
 }
 
 END_NCBI_SCOPE
-
 USING_NCBI_SCOPE;
 
-/////////////////////////////////////////////////////////////////////////////
-// Main
-
+//  ===========================================================================
 int main(int argc, const char** argv)
+//  ===========================================================================
 {
     return CAnnotWriterApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }

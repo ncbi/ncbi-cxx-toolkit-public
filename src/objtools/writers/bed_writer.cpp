@@ -51,7 +51,7 @@ CBedWriter::CBedWriter(
     CScope& scope,
     CNcbiOstream& ostr,
     unsigned int colCount,
-    TFlags uFlags ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
     CWriterBase(ostr, uFlags),
     m_Scope(scope),
