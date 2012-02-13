@@ -196,7 +196,7 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
                 /// insert the range
                 pairwise_aln.insert(CPairwiseAln::TAlnRng(
                     from_1, from_2, len, direct, first_direct));
-                last_to_1 = from_1 + len;
+                last_to_1 = first_direct ? from_1 + len : from_1;
             }
             else if (from_1 < 0  &&  from_2 >= 0) {
                 // Store gaps
@@ -205,7 +205,7 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
             }
             else if (from_1 >= 0) {
                 // Adjust next possible gap start
-                last_to_1 = from_1 + len;
+                last_to_1 = first_direct ? from_1 + len : from_1;
             }
         }
     }
@@ -277,7 +277,7 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                 /// insert the range
                 pairwise_aln.insert(CPairwiseAln::TAlnRng(
                     from_1, from_2, len, direct, first_direct));
-                last_to_1 = from_1 + len;
+                last_to_1 = first_direct ? from_1 + len : from_1;
             }
             else if (!present_1  &&  present_2) {
                 // Store gaps
@@ -286,7 +286,7 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
             }
             else if (present_1) {
                 // Adjust next possible gap start
-                last_to_1 = from_1 + len;
+                last_to_1 = first_direct ? from_1 + len : from_1;
             }
         }
     }
@@ -666,14 +666,14 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                         /// insert the range
                         pairwise_aln.insert(CPairwiseAln::TAlnRng(
                             ppos, ppos, product_len, true, first_direct));
-                        last_product_to = ppos + product_len;
+                        last_product_to = first_direct ? ppos + product_len : ppos;
                     }
                 } else if (row_1 == 1  &&  row_2 == 1) {
                     if (genomic_len != 0) {
                         /// insert the range
                         pairwise_aln.insert(CPairwiseAln::TAlnRng(
                             gpos, gpos, genomic_len, true, first_direct));
-                        last_genomic_to = gpos + genomic_len;
+                        last_genomic_to = first_direct ? gpos + genomic_len : gpos;
                     }
                 } else {
                     if (product_len != 0  &&  product_len == genomic_len  &&
@@ -685,12 +685,14 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                         if (row_1 == 0) {
                             pairwise_aln.insert(CPairwiseAln::TAlnRng(
                                 ppos, gpos, genomic_len, direct, first_direct));
+                            last_product_to = first_direct ? ppos + product_len : ppos;
+                            last_genomic_to = direct ? gpos + genomic_len : gpos;
                         } else {
                             pairwise_aln.insert(CPairwiseAln::TAlnRng(
                                 gpos, ppos, genomic_len, direct, first_direct));
+                            last_product_to = direct ? ppos + product_len : ppos;
+                            last_genomic_to = first_direct ? gpos + genomic_len : gpos;
                         }
-                        last_product_to = ppos + product_len;
-                        last_genomic_to = gpos + genomic_len;
                     }
                     else {
                         // Gap on the first row?
