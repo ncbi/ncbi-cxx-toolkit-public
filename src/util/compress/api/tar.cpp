@@ -1597,7 +1597,6 @@ const char* CTar::x_ReadArchive(size_t& n)
         if (gap < m_BufferSize) {
             memset(m_Buffer + nread, 0, gap);
         } else {
-            n = 0;
             return 0/*EOF*/;
         }
     } else {
