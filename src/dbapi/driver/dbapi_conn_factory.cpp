@@ -54,7 +54,8 @@ m_MaxNumOfValidationAttempts(1),
 m_MaxNumOfServerAlternatives(32),
 m_MaxNumOfDispatches(0),
 m_ConnectionTimeout(0),
-m_LoginTimeout(0)
+m_LoginTimeout(0),
+m_TryServerToo(false)
 {
     ConfigureFromRegistry(registry);
 }
@@ -90,6 +91,7 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
             registry->GetBool(section_name, "TRY_SERVER_AFTER_SERVICE", false);
     } else {
         m_MaxNumOfConnAttempts = 1;
+        m_MaxNumOfValidationAttempts = 1;
         m_MaxNumOfServerAlternatives = 32;
         m_MaxNumOfDispatches = 0;
         m_ConnectionTimeout = 0;
