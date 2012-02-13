@@ -1550,6 +1550,7 @@ const CTarEntryInfo* CTar::GetNextEntryInfo(void)
 
 // Return a pointer to buffer, which is always block-aligned,
 // and reflect the number of bytes available via the parameter.
+// Return NULL when unable to read (either EOF or other read error).
 const char* CTar::x_ReadArchive(size_t& n)
 {
     _ASSERT(!OFFSET_OF(m_BufferPos));
@@ -1589,16 +1590,14 @@ const char* CTar::x_ReadArchive(size_t& n)
                              + (xread ? ")" : "): EOF"));
                 }
                 s_SetStateSafe(m_Stream, xread < 0 ? NcbiBadbit : NcbiEofbit);
-                break;
+                if (nread) {
+                    break;
+                }
+                return 0;
             }
             nread += xread;
         } while (nread < m_BufferSize);
-        size_t gap = m_BufferSize - nread;
-        if (gap < m_BufferSize) {
-            memset(m_Buffer + nread, 0, gap);
-        } else {
-            return 0/*EOF*/;
-        }
+        memset(m_Buffer + nread, 0, m_BufferSize - nread);
     } else {
         nread = m_BufferSize - m_BufferPos;
     }
