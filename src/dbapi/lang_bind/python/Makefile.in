@@ -4,7 +4,7 @@ SUB_PROJ = tests
 
 LIB_PROJ = python_ncbi_dbapi
 
-REQUIRES = unix PYTHON -Cygwin
+REQUIRES = PYTHON -Cygwin
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
