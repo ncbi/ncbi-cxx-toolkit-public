@@ -3172,7 +3172,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     seqSetInfo->percent_coverage = 100*seqSetInfo->master_covered_length/queryLength;
 
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
-        int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, do_translation);
+        int align_length = (*iter)->GetAlignLength();
                                                         
         CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
                                    num_ident, use_this_gi);  
