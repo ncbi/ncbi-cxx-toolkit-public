@@ -143,8 +143,9 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         geogse           INTEGER,                 -- Gene Expression Omnibus Series Accession (GEO GSE) ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        geogsm           INTEGER                  -- Gene Expression Omnibus Sample Accession (GEO GSM) ID
+        geogsm           INTEGER,                 -- Gene Expression Omnibus Sample Accession (GEO GSM) ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
+        patent           VisibleString            -- Patent Identifier (e.g., USPTO, EPO, WPO, JPO, CPO)
 }
 
 
