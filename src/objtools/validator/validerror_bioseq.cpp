@@ -2644,7 +2644,7 @@ static int s_MaxNsInSeqLitForTech (CMolInfo::TTech tech)
             max_ns = 19;
             break;
         default:
-            max_ns = 100;
+            max_ns = 99;
             break;
     }
     return max_ns;
