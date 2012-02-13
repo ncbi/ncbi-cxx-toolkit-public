@@ -1597,6 +1597,7 @@ const char* CTar::x_ReadArchive(size_t& n)
         if (gap < m_BufferSize) {
             memset(m_Buffer + nread, 0, gap);
         } else {
+            n = 0;
             return 0/*EOF*/;
         }
     } else {
@@ -2571,16 +2572,19 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
     }
     CT_POS_TYPE rec  = (CT_OFF_TYPE)(m_StreamPos / m_BufferSize);
     size_t      off  = (size_t)     (m_StreamPos % m_BufferSize);
+    size_t     temp  = BLOCK_SIZE;
     if (gap > m_BufferPos) {
-        size_t temp  = 0;
         m_BufferPos  = 0;
-        // Refetch the block
+        // Re-fetch the entire record
         if (!m_FileStream->seekg(rec * m_BufferSize)
-            ||  !x_ReadArchive(temp = BLOCK_SIZE)
+            // NB: successful positioning guarantees the stream was !fail(),
+            // which means it might have only been either good() or eof()
+            ||  (m_FileStream->clear(), !x_ReadArchive(temp))
             ||  temp != BLOCK_SIZE) {
             TAR_POST(65, Error,
-                     "Archive backspace error in record reget"
-                     + string(temp ? " (EOF)" : ""));
+                     "Archive backspace error in record reget");
+            s_SetStateSafe(m_Stream, NcbiBadbit);
+            temp = 0;
         }
         m_BufferPos  = off;
     } else {
@@ -2588,7 +2592,7 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
     }
 
     // Always set put position here
-    if (!m_FileStream->seekp(rec * m_BufferSize)) {
+    if (!m_FileStream->seekp(rec * m_BufferSize)  &&  temp) {
         TAR_POST(80, Error,
                  "Archive backspace error in record reset");
     }
