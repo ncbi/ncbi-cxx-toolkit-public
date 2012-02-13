@@ -566,7 +566,7 @@ extern EIO_Status CONN_Wait
             level = eLOG_Error;
             break;
         }
-        CONN_LOG(event != eIO_Read ? 14 : 15, Wait, level,
+        CONN_LOG(event != eIO_Read ? 15 : 14, Wait, level,
                  kErrMsg[event != eIO_Read]);
     }
     return status;
