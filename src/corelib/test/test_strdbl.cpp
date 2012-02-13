@@ -1194,6 +1194,7 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
 
     bool first_iteration = true;
     double special[] = {
+//            5.8220349999999992744e-169,
 //            DBL_MIN, DBL_MAX,
                         1e-17, 1e-16, 1e-15, 1e-14, 1e-13, 1e-12, 1e-11, 1e-10,
             1e-9, 1e-8, 1e-7,  1e-6,   1e-5,  1e-4,  1e-3,  1e-2,  1e-1, 1.,
@@ -1266,10 +1267,12 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
         if (strcmp(buffer1,buffer2)==0) {
             if (!CompareSerialization(*d, DBL_DIG)) {
                 ++errors;
+                sprintf(buffer1, "%.20g", *d);
                 LOG_POST("ERROR: serialization with high precision: " << buffer1);
             }
             if (!CompareSerialization(*d, FLT_DIG)) {
-                ++errors;
+//                ++errors;
+                sprintf(buffer1, "%.20g", *d);
                 LOG_POST("ERROR: serialization with low precision: " << buffer1);
             }
             continue;
