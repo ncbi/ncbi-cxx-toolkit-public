@@ -201,6 +201,7 @@ NCBITEST_AUTO_INIT()
                             "')\n");
 
     ExecuteStr("import python_ncbi_dbapi as dbapi\n");
+    ExecuteStr("import datetime\n");
     ExecuteStr( connection_str.c_str() );
     ExecuteStr( conn_simple_str.c_str() );
 
@@ -436,6 +437,17 @@ BOOST_AUTO_TEST_CASE(TestParameters)
         ExecuteStr("record = cursor.fetchone() \n");
 //             ExecuteStr("print record \n");
         ExecuteStr("if len(record[0]) != 355 : raise StandardError('Invalid string length.') \n");
+    }
+
+    // Test for datetime
+    {
+        ExecuteStr("cursor.execute('select cast(? as datetime)', (datetime.datetime(2010,1,1,12,1,2,50000),)) \n");
+        ExecuteStr("dt = cursor.fetchone()[0] \n");
+        ExecuteStr("print dt \n");
+        ExecuteStr("if dt.year != 2010 or dt.month != 1 or dt.day != 1 "
+                   "or dt.hour != 12 or dt.minute != 1 or dt.second != 2 "
+                   "or dt.microsecond != 50000: "
+                   "raise StandardError('Invalid datetime returned: ' + str(dt)) \n");
     }
 }
 

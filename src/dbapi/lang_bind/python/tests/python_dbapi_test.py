@@ -31,6 +31,7 @@
 
 from __future__ import with_statement
 from python_ncbi_dbapi import *
+import datetime
 
 
 def check(cond, msg):
@@ -219,6 +220,11 @@ for row in cursor.execute("exec sp_spaceused"):
 cursor = conn.cursor()
 cursor.execute("select * from sysobjects")
 cursor.fetchall()
+
+cursor.execute('select cast(? as datetime)', (datetime.datetime(2010,1,1,12,1,2,50000),))
+dt = cursor.fetchone()[0]
+if dt.year != 2010 || dt.month != 1 || dt.day != 1 || dt.hour != 12 || dt.minute != 1 || dt.second != 2 || dt.microsecond != 50000:
+    raise Exception('Invalid datetime returned.')
 
 
 print 'All tests completed successfully'
