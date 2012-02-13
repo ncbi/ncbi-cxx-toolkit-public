@@ -79,8 +79,8 @@ extern "C" {
 /* Here are only error codes used in C sources. For error codes used in
  * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
  */
-NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  34);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     302,  23);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  35);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     302,  22);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,    304,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  12);

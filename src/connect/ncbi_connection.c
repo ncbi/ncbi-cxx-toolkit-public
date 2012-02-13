@@ -566,7 +566,8 @@ extern EIO_Status CONN_Wait
             level = eLOG_Error;
             break;
         }
-        CONN_LOG(14, Wait, level, kErrMsg[event != eIO_Read]);
+        CONN_LOG(event != eIO_Read ? 14 : 15, Wait, level,
+                 kErrMsg[event != eIO_Read]);
     }
     return status;
 }
@@ -981,7 +982,7 @@ extern EIO_Status CONN_ReadLine
             assert(done  ||  len >= size);
             if (!BUF_PushBack(&conn->buf, x_buf + i, x_read - i)) {
                 static const STimeout* timeout = 0/*dummy*/;
-                CONN_LOG_EX(15, ReadLine, eLOG_Critical,
+                CONN_LOG_EX(35, ReadLine, eLOG_Critical,
                             "Cannot pushback extra data", 0);
                 conn->state = eCONN_Bad;
                 status = eIO_Closed;
