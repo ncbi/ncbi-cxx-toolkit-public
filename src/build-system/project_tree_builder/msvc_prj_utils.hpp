@@ -103,15 +103,23 @@ void SaveToXmlFile  (const string&               file_path,
                      const CSerialObject& project);
 
 /// Save CVisualStudioProject class instance to file only if no such file 
-//  or contents of this file will be different from already present file.
+///  or contents of this file will be different from already present file.
 ///
 /// @param file_path
 ///   Path to file project will be saved to.
 /// @param project
 ///   Project to save.
-void SaveIfNewer    (const string&               file_path, 
+void SaveIfNewer    (const string&        file_path, 
                      const CSerialObject& project);
+
+/// Save object, ignoring certain tags
+void SaveIfNewer    (const string&        file_path, 
+                     const CSerialObject& project,
+                     const string& ignore);
 #endif //NCBI_COMPILER_MSVC
+bool PromoteIfDifferent(const string& present_path, 
+                        const string& candidate_path,
+                        const string& ignore);
 
 /// Consider promotion candidate to present 
 bool PromoteIfDifferent(const string& present_path, 

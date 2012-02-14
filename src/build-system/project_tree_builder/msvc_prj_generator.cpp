@@ -1522,7 +1522,7 @@ void CMsvcProjectGenerator::GenerateMsbuildFilters(
         project_path += ".filters";
 
         filters.SetProjectLevelTagExceptTargetOrImportType().SetProjectLevelTagExceptTargetOrImportType().push_back(filter_list);
-        SaveIfNewer(project_path, filters);
+        SaveIfNewer(project_path, filters, "<UniqueIdentifier>");
     }
 }
 

@@ -110,7 +110,69 @@ void SaveIfNewer(const string& file_path, const CSerialObject& project)
         PTB_TRACE("Left intact: " << file_path);
     }
 }
+
+void SaveIfNewer    (const string&        file_path, 
+                     const CSerialObject& project,
+                     const string& ignore)
+{
+    string candidate_file_path = file_path + ".candidate";
+    SaveToXmlFile(candidate_file_path, project);
+    if (!PromoteIfDifferent(file_path, candidate_file_path, ignore)) {
+        PTB_TRACE("Left intact: " << file_path);
+    }
+}
+
 #endif //NCBI_COMPILER_MSVC
+
+bool PromoteIfDifferent(const string& present_path, 
+                        const string& candidate_path,
+                        const string& ignore)
+{
+    CNcbiIfstream ifs_present(present_path.c_str(), 
+                              IOS_BASE::in | IOS_BASE::binary);
+    if (ifs_present.is_open()) {
+        CNcbiIfstream ifs_new (candidate_path.c_str(), 
+                                  IOS_BASE::in | IOS_BASE::binary);
+        if ( !ifs_new ) {
+            NCBI_THROW(CProjBulderAppException, eFileOpen, candidate_path);
+        }
+        string str_present, str_new;
+        bool eol_present=false, eol_new = false;
+        for (;;) {
+            for (;;) {
+                if (!NcbiGetlineEOL(ifs_present, str_present) ) {
+                    break;
+                }
+                NStr::TruncateSpacesInPlace(str_present);
+                if (!NStr::StartsWith(str_present, ignore)) {
+                    eol_present=true;
+                    break;
+                }
+            }
+            for (;;) {
+                if (!NcbiGetlineEOL(ifs_new, str_new) ) {
+                    break;
+                }
+                NStr::TruncateSpacesInPlace(str_new);
+                if (!NStr::StartsWith(str_new, ignore)) {
+                    eol_new=true;
+                    break;
+                }
+            }
+            if (eol_present && eol_new) {
+                return false;
+            }
+            if (NStr::CompareCase(str_present, str_new) != 0) {
+                break;
+            }
+        }
+    }
+    CDirEntry(present_path).Remove();
+    for (int a=0; a<2 && !CDirEntry(candidate_path).Rename(present_path); ++a)
+        SleepSec(1);
+    GetApp().RegisterGeneratedFile( present_path );
+    return true;
+}
 
 bool PromoteIfDifferent(const string& present_path, 
                         const string& candidate_path)
