@@ -869,12 +869,12 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 /// @param i Integer value of the score. [in]
 /// @return Resulting CScore object.
 static CRef<CScore> 
-s_MakeScore(const string& ident_string, double d, int i, bool is_integer)
+s_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 {
     CRef<CScore> retval(new CScore());
     retval->SetId().SetStr(ident_string);
 
-    if (is_integer)
+    if (i)
         retval->SetValue().SetInt(i);
     else
         retval->SetValue().SetReal(d);
@@ -909,7 +909,7 @@ s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
         retval++;
     }
 
-    if (hsp->num_ident >= 0) {
+    if (hsp->num_ident > 0) {
         retval++;
     }
 
@@ -943,50 +943,50 @@ s_BuildScoreList(const BlastHSP     * hsp,
 
     if (hsp->score) {
         static const string kScore("score");
-        scores.push_back(s_MakeScore(kScore, 0.0, hsp->score, true));
+        scores.push_back(s_MakeScore(kScore, 0.0, hsp->score));
     }
 
     if (hsp->num > 1) {
         static const string kSumN("sum_n");
-        scores.push_back(s_MakeScore(kSumN, 0.0, hsp->num, true));
+        scores.push_back(s_MakeScore(kSumN, 0.0, hsp->num));
     }
 
     // Set the E-Value
     double evalue = (hsp->evalue < SMALLEST_EVALUE) ? 0.0 : hsp->evalue;
     if (evalue >= 0.0) {
         static string score_type = (hsp->num <= 1) ? "e_value" : "sum_e";
-        scores.push_back(s_MakeScore(score_type, evalue, 0, false));
+        scores.push_back(s_MakeScore(score_type, evalue));
     }
 
     // Calculate the bit score from the raw score
 
     if (hsp->bit_score >= 0.0) {
         static const string kBitScore("bit_score");
-        scores.push_back(s_MakeScore(kBitScore, hsp->bit_score, 0, false));
+        scores.push_back(s_MakeScore(kBitScore, hsp->bit_score));
     }
 
     // Set the identity score
-    if (hsp->num_ident >= 0) {
+    if (hsp->num_ident > 0) {
         static const string kNumIdent("num_ident");
-        scores.push_back(s_MakeScore(kNumIdent, 0.0, hsp->num_ident, true));
+        scores.push_back(s_MakeScore(kNumIdent, 0.0, hsp->num_ident));
     }
 
     if (hsp->comp_adjustment_method > 0) {
         static const string kCompAdj("comp_adjustment_method");
         scores.push_back(s_MakeScore(kCompAdj, 0.0,
-                                     hsp->comp_adjustment_method, true));
+                                     hsp->comp_adjustment_method));
     }
     
     if ( !gi_list.empty() ) {
         static const string kUseThisGi("use_this_gi");
         ITERATE(vector<int>, gi, gi_list) {
-            scores.push_back(s_MakeScore(kUseThisGi, 0.0, *gi, true));
+            scores.push_back(s_MakeScore(kUseThisGi, 0.0, *gi));
         }
     }
     
     if (hsp->num_positives > 0) {
             static const string kNumPositives("num_positives");
-            scores.push_back(s_MakeScore(kNumPositives, 0.0, hsp->num_positives, true));
+            scores.push_back(s_MakeScore(kNumPositives, 0.0, hsp->num_positives));
     }
     return;
 }
@@ -1231,10 +1231,6 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
                                     query_length, subject_length);
         }
         
-        if(eBlastTypePsiBlast == program)
-        {
-        	hsp->num_ident = -1;
-        }
         s_AddScoresToSeqAlign(seqalign, hsp, gi_list);
         sa_vector.push_back(seqalign);
     }
