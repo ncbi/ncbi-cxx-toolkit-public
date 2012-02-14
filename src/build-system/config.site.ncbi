@@ -189,9 +189,9 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    FreeBSD32  ) ;;
-    SunOSSparc ) : ${WXWIDGETS_PATH=$NCBI/wxGTK-2.8.10} ;;
-    *          ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-2.9.3-ncbi1} ;;
+    FreeBSD32 ) ;;
+    *MAC      ) : ${WXWIDGETS_PATH=$NCBI/wxMac-2.8.10-ncbi2} ;;
+    *         ) : ${WXWIDGETS_PATH=$NCBI/wxGTK-2.8.10} ;;
 esac
 
 case "$ncbi_platform" in
