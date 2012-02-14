@@ -3700,10 +3700,10 @@ static bool s_IsValidRpt_typeQual (string val)
 
 void CValidError_feat::ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat)
 {
-    bool found = false, multiple_rpt_unit = true;  /* !!!!! */
+    bool /* found = false, */ multiple_rpt_unit = true;
     ITERATE(string, it, val) {
         if ( *it <= ' ' ) {
-            found = true;
+            /* found = true; */
         } else if ( *it == '('  ||  *it == ')'  ||
             *it == ','  ||  *it == '.'  ||
             isdigit((unsigned char)(*it)) ) {
@@ -3777,7 +3777,7 @@ void CValidError_feat::ValidateRptUnitSeqVal (const string& val, const string& k
 
 void CValidError_feat::ValidateRptUnitRangeVal (const string& val, const CSeq_feat& feat)
 {
-    TSeqPos from, to;  /* !!!!! */
+    TSeqPos from = kInvalidSeqPos, to = kInvalidSeqPos;
     if (!s_RptUnitIsBaseRange(val, from, to)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
                  "/rpt_unit_range is not a base range", feat);
@@ -4750,14 +4750,6 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 // and the gene on the mrna.
 void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
 {
-    bool is_interesting = false;  /* !!!!! */
-    if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
-        int id_num = feat.GetId().GetLocal().GetId();
-        if (id_num == 8) {
-          is_interesting = true;
-        }
-    }
-
     if (feat.IsSetProduct()) {
         // get gene ref for mRNA feature
         const CGene_ref* genomicgrp = feat.GetGeneXref();
@@ -4879,14 +4871,6 @@ void CValidError_feat::ValidateCommonCDSProduct
     }
     CBioseq_Handle nuc  = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
     if ( nuc ) {
-        bool is_interesting = false;  /* !!!!! */
-        if (feat.IsSetId() && feat.GetId().IsLocal() && feat.GetId().GetLocal().IsId()) {
-            int id_num = feat.GetId().GetLocal().GetId();
-            if (id_num == 12) {
-              is_interesting = true;
-            }
-        }
-
         bool is_nt = false;
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(nuc.GetBioseqCore())) {
             if ((*it)->IsOther() && (*it)->GetTextseq_Id()->IsSetAccession()
@@ -5984,7 +5968,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     }
 
     size_t num_mismatches = 0;
-    int num_total = 0;  /* !!!!! */
     size_t len = 0;
 
     show_stop = true;
@@ -6007,8 +5990,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                     "] is more than 120% of the " + farstr + "translation length [" + 
                     NStr::SizetToString(len) + "]", feat);
         }
-
-        num_total = len;
 
         if (got_stop  &&  (len == prot_len + 1)) { // ok, got stop
             --len;
@@ -6449,12 +6430,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     }
 
     const CGene_ref* gene_xref = feat.GetGeneXref();
-    TSeqPos circular_len = kInvalidSeqPos;  /* !!!!! */
-    if (bsh.IsSetInst_Topology()
-        && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular
-        && bsh.IsSetInst_Length()) {
-        circular_len = bsh.GetInst_Length();
-    }
 
     size_t num_genes = 0;
     size_t max = 0;
