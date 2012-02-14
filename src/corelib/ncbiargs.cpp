@@ -1743,14 +1743,14 @@ CArgDescriptions::CArgDescriptions(bool              auto_help,
     m_ArgGroups.push_back(kEmptyStr); // create default group #0
     if ( m_AutoHelp ) {
         AddFlag(s_AutoHelp,
-                "Print USAGE and DESCRIPTION;  ignore all other arguments");
+                "Print USAGE and DESCRIPTION;  ignore all other parameters");
     }
     AddFlag(s_AutoHelpFull,
             "Print USAGE, DESCRIPTION and ARGUMENTS;"
             " ignore all other parameters");
     AddFlag(s_AutoHelpXml,
             "Print USAGE, DESCRIPTION and ARGUMENTS in XML format;"
-            " ignore all other arguments");
+            " ignore all other parameters");
 }
 
 
