@@ -288,7 +288,7 @@ private:
     vector<string>& m_Strs;
 };
 
-static char _ToKey[256] = {
+static unsigned char _ToKey[256] = {
     0x00, 0x01, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 
     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -426,7 +426,7 @@ public:
 
     {
         for (int i = 0; i < journal.size(); i++) {
-            journal [i] = _ToKey [journal [i]];
+            journal [i] = _ToKey [(int) (unsigned char) journal [i]];
         }
 
         if (LooksLikeISSN (journal)) {
