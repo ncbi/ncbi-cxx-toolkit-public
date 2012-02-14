@@ -2344,6 +2344,17 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                     break;
             }
         } catch (CException& e) {
+            // special case: Job cancellation exceptions make us stop
+            // generating features.
+            if( NStr::EqualNocase(e.what(), "job cancelled") ||
+                NStr::EqualNocase(e.what(), "job canceled") )
+            {
+                LOG_POST_X(2, Error << "Job canceled while processing feature "
+                                << s_GetFeatDesc(it->GetSeq_feat_Handle())
+                                << " [" << e << "]; flatfile may be truncated");
+                return;
+            }
+
             // post to log, go on to next feature
             LOG_POST_X(2, Error << "Error processing feature "
                                 << s_GetFeatDesc(it->GetSeq_feat_Handle())
