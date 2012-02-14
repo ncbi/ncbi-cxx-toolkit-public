@@ -160,6 +160,7 @@ bool PromoteIfDifferent(const string& present_path,
                 }
             }
             if (eol_present && eol_new) {
+                CDirEntry(candidate_path).Remove();
                 return false;
             }
             if (NStr::CompareCase(str_present, str_new) != 0) {
