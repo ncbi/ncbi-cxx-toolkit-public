@@ -925,9 +925,17 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             string cfg_condition("'$(Configuration)|$(Platform)'=='");
             cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
 
+            string outputfile(msvc_tool.Linker()->OutputFile()), targetname, targetext;
+            bool customtargetname =  false;
+            if (!outputfile.empty()) {
+                targetname = CDirEntry(outputfile).GetBase();
+                targetext  = CDirEntry(outputfile).GetExt();
+                customtargetname =  !targetname.empty() && (targetname.find('$') == string::npos);
+            }
+
             __SET_PROPGROUP_ELEMENT(t, "OutDir",          msvc_tool.Configuration()->OutputDirectory(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "IntDir",          msvc_tool.Configuration()->IntermediateDirectory(), cfg_condition);
-            __SET_PROPGROUP_ELEMENT(t, "TargetName",      project_context.ProjectId(), cfg_condition);
+            __SET_PROPGROUP_ELEMENT(t, "TargetName",      customtargetname ? targetname : project_context.ProjectId(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "LinkIncremental", msvc_tool.Linker()->LinkIncremental(), cfg_condition);
             string prop = msvc_tool.Linker()->GenerateManifest();
 #if __USE_DISABLED_CFGS__
@@ -938,6 +946,9 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 #endif
             __SET_PROPGROUP_ELEMENT(t, "GenerateManifest", prop, cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "EmbedManifest", msvc_tool.Linker()->EmbedManifest(), cfg_condition);
+            if (customtargetname) {
+                __SET_PROPGROUP_ELEMENT(t, "TargetExt", targetext, cfg_condition);
+            }
         }
     }
 
