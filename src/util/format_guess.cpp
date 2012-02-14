@@ -854,7 +854,7 @@ CFormatGuess::TestFormatNewick(
     const size_t maxSampleSize = 8*1024-1;
     size_t sampleSize = 0;
     char* pSample = new char[maxSampleSize+1];
-    auto_ptr<char> autoDelete(pSample);
+    AutoArray<char> autoDelete(pSample);
 
     m_Stream.read(pSample, maxSampleSize);
     sampleSize = m_Stream.gcount();
@@ -2126,7 +2126,7 @@ bool CFormatGuess::IsLinePhrapId(
 bool CFormatGuess::IsLineRmo(
     const string& line )
 {
-    const size_t MIN_VALUES_PER_RECORD = 15;
+    const size_t MIN_VALUES_PER_RECORD = 14;
 
     //
     //  Make sure there is enough stuff on that line:
