@@ -136,8 +136,13 @@ void CTestNetScheduleCrash::Init(void)
 
     arg_desc->AddOptionalKey("notifport",
                              "notifport",
-                             "If given then ojbs are submitted with notif port"
+                             "If given then jobs are submitted with notif port"
                              " and 100 sec notif timeout",
+                             CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("batch",
+                             "batch",
+                             "Max number of jobs in a loop",
                              CArgDescriptions::eInteger);
 
     arg_desc->AddOptionalKey("nclients",
@@ -414,9 +419,9 @@ int CTestNetScheduleCrash::Run(void)
     const string &      service  = args["service"].AsString();
     const string &      queue = args["queue"].AsString();
 
-    unsigned            jcount = 10000;
+    unsigned            total_jobs = 10000;
     if (args["jobs"])
-        jcount = args["jobs"].AsInteger();
+        total_jobs = args["jobs"].AsInteger();
 
     unsigned int        delay = 10;
     if (args["delay"])
@@ -434,6 +439,13 @@ int CTestNetScheduleCrash::Run(void)
     if (args["nclients"])
         nclients = args["nclients"].AsInteger();
 
+    unsigned int        batch = 10000;
+    if (args["batch"]) {
+        batch = args["batch"].AsInteger();
+        if (batch == 0)
+            batch = 10000;
+    }
+
 
     CNetScheduleAPI                     cl(service, "crash_test", queue);
 
@@ -446,60 +458,68 @@ int CTestNetScheduleCrash::Run(void)
 
 
     if (args["main"]) {
-        this->MainLoop(submitter, executor, jcount, queue);
+        this->MainLoop(submitter, executor, total_jobs, queue);
         return 0;
     }
 
 
+    unsigned int    jcount;
+    while (total_jobs > 0) {
+        if (total_jobs < batch)
+            jcount = total_jobs;
+        else
+            jcount = batch;
+        total_jobs -= jcount;
 
-    /* ----- Submit jobs ----- */
-    vector<unsigned int>    jobs = this->Submit(cl, service, jcount, naff,
-                                                notif_port, nclients, queue);
-
-
-    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
-    SleepMilliSec(delay * 1000);
-    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
-
-
-    /* ----- Get status ----- */
-    this->GetStatus(executor, jobs);
+        /* ----- Submit jobs ----- */
+        vector<unsigned int>    jobs = this->Submit(cl, service, jcount, naff,
+                                                    notif_port, nclients, queue);
 
 
-    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
-    SleepMilliSec(delay * 1000);
-    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
+        NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+        SleepMilliSec(delay * 1000);
+        NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
-    /* ----- Get and return some jobs ----- */
-    this->GetReturn(executor, jcount/100);
+        /* ----- Get status ----- */
+        this->GetStatus(executor, jobs);
 
 
-    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
-    SleepMilliSec(delay * 1000);
-    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
+        NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+        SleepMilliSec(delay * 1000);
+        NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
-    /* ----- Get status ----- */
-    this->GetStatus(executor, jobs);
+        /* ----- Get and return some jobs ----- */
+        this->GetReturn(executor, jcount/100);
 
 
-    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
-    SleepMilliSec(delay * 1000);
-    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
+        NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+        SleepMilliSec(delay * 1000);
+        NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
-    /* ----- Get jobs and say they are done ----- */
-    vector<unsigned int> jobs_processed = this->GetDone(executor);
+        /* ----- Get status ----- */
+        this->GetStatus(executor, jobs);
 
 
-    NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
-    SleepMilliSec(delay * 1000);
-    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
+        NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+        SleepMilliSec(delay * 1000);
+        NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
 
-    /* ----- Get status ----- */
-    this->GetStatus(executor, jobs);
+        /* ----- Get jobs and say they are done ----- */
+        vector<unsigned int> jobs_processed = this->GetDone(executor);
+
+
+        NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
+        SleepMilliSec(delay * 1000);
+        NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
+
+
+        /* ----- Get status ----- */
+        this->GetStatus(executor, jobs);
+    }
 
     return 0;
 }
