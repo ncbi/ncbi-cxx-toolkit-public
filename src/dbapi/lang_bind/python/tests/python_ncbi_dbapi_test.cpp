@@ -441,7 +441,7 @@ BOOST_AUTO_TEST_CASE(TestParameters)
 
     // Test for datetime
     {
-        ExecuteStr("cursor.execute('select cast(? as datetime)', (datetime.datetime(2010,1,1,12,1,2,50000),)) \n");
+        ExecuteStr("cursor.execute('select cast(@dt as datetime)', (datetime.datetime(2010,1,1,12,1,2,50000),)) \n");
         ExecuteStr("dt = cursor.fetchone()[0] \n");
         ExecuteStr("print dt \n");
         ExecuteStr("if dt.year != 2010 or dt.month != 1 or dt.day != 1 "
