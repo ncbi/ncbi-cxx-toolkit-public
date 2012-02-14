@@ -619,19 +619,52 @@ bool CWriteUtil::GetBestId(
     if (!idh) {
         return false;
     }
-    CSeq_id_Handle best_idh = sequence::GetId( idh, scope, sequence::eGetId_Best );
-    if ( !best_idh ) {
+    CSeq_id_Handle best_idh = sequence::GetId(idh, scope, sequence::eGetId_Best);
+    if (!best_idh) {
         best_idh = idh;
     }
     string backup = best_id;
     try {
-        best_idh.GetSeqId()->GetLabel( &best_id, CSeq_id::eContent );
+        best_idh.GetSeqId()->GetLabel(&best_id, CSeq_id::eContent);
     }
     catch (...) {
         best_id = backup;
         return false;
     }
     return true;
+}
+    
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::IsNucProtSet(
+    CSeq_entry_Handle seh)
+//  ----------------------------------------------------------------------------
+{
+    return (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&  
+        seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetQualifier(
+    CMappedFeat mf,
+    const string& key,
+    string& value)
+//  ----------------------------------------------------------------------------
+{
+    if (!mf.IsSetQual()) {
+        return false;
+    }
+    const vector<CRef<CGb_qual> >& quals = mf.GetQual();
+    vector<CRef<CGb_qual> >::const_iterator it = quals.begin();
+    for (; it != quals.end(); ++it) {
+        if (!(*it)->CanGetQual() || !(*it)->CanGetVal()) {
+            continue;
+        }
+        if ((*it)->GetQual() == key) {
+            value = (*it)->GetVal();
+            return true;
+        }
+    }
+    return false;
 }
     
 END_NCBI_SCOPE

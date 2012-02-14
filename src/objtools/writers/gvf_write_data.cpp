@@ -258,7 +258,8 @@ bool CGvfWriteRecord::x_AssignAttributeID(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "id" ) ) {
-                SetAttribute("ID", ext.GetField("id").GetData().GetStr());
+                SetAttribute(
+                    "ID", ext.GetField("id").GetData().GetStr());
                 return true;
             }
         }
@@ -291,7 +292,8 @@ bool CGvfWriteRecord::x_AssignAttributeParent(
             ext.GetType().GetStr() == "GvfAttributes" ) 
         {
             if ( ext.HasField( "parent" ) ) {
-                SetAttribute("Parent", ext.GetField("parent").GetData().GetStr());
+                SetAttribute(
+                    "Parent", ext.GetField("parent").GetData().GetStr());
                 return true;
             }
         }
@@ -370,17 +372,20 @@ bool CGvfWriteRecord::x_AssignAttributeStartRange(
         case CInt_fuzz::e_Range: {
             int min = fuzz.GetRange().GetMin() + 1;
             int max = fuzz.GetRange().GetMax() + 1;
-            SetAttribute("Start_range", NStr::IntToString(min) + "," +
+            SetAttribute(
+                "Start_range", NStr::IntToString(min) + "," +
                 NStr::IntToString(max));
             return true;
         }
         case CInt_fuzz::e_Lim: {
             string min = NStr::IntToString( intv.GetFrom() + 1 );
             if ( fuzz.GetLim() == CInt_fuzz::eLim_gt ) {
-                SetAttribute("Start_range", min + string(",."));
+                SetAttribute(
+                    "Start_range", min + string(",."));
             }
             else if ( fuzz.GetLim() == CInt_fuzz::eLim_lt ) {
-                SetAttribute("Start_range", string(".,") + min);
+                SetAttribute(
+                    "Start_range", string(".,") + min);
             }
             return true;
         }
@@ -411,7 +416,8 @@ bool CGvfWriteRecord::x_AssignAttributeEndRange(
         case CInt_fuzz::e_Range: {
             int min = fuzz.GetRange().GetMin() + 1;
             int max = fuzz.GetRange().GetMax() + 1;
-            SetAttribute("End_range", NStr::IntToString( min ) + "," +
+            SetAttribute(
+                "End_range", NStr::IntToString( min ) + "," +
                 NStr::IntToString(max));
             return true;
         }

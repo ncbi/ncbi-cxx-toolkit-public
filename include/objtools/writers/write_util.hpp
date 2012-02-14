@@ -115,6 +115,9 @@ public:
     static bool IsSequenceCircular(
         CBioseq_Handle );
 
+    static bool IsNucProtSet(
+        CSeq_entry_Handle );
+
     static string UrlEncode(
         const string& );
 
@@ -123,6 +126,11 @@ public:
 
     static void ChangeToPackedInt(
         CSeq_loc& loc);
+
+    static bool GetQualifier(
+        CMappedFeat mf,
+        const string& key,
+        string& value);
 };
 
 END_objects_SCOPE

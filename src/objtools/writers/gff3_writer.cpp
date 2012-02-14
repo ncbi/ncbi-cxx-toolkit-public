@@ -333,16 +333,9 @@ bool CGff3Writer::x_WriteSequenceHeader(
     string id;
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if ( pId ) {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( *pId ); 
-        CSeq_id_Handle best_idh = 
-            sequence::GetId(idh, bsh.GetScope(), sequence::eGetId_Best); 
-        if ( !best_idh ) {
-            best_idh = idh;
+        if (!CWriteUtil::GetBestId(CSeq_id_Handle::GetHandle(*pId), bsh.GetScope(), id)) {
+            id = "<unknown>";
         }
-        best_idh.GetSeqId()->GetLabel(&id, CSeq_id::eContent);
-    }
-    if ( id.empty() ) {
-        id = "<unknown>";
     }
 
     string start = "1";

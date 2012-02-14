@@ -169,6 +169,35 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
         }
     }
     return true;
+
+    // disabled pending further review:
+    //if (CWriteUtil::IsNucProtSet(seh)) {
+    //    for (CBioseq_CI bci(seh); bci; ++bci) {
+    //        if (bci->IsSetInst_Mol() && (bci->GetInst_Mol() == CSeq_inst::eMol_aa)) {
+    //            continue;
+    //        }
+    //        if (!x_WriteBioseqHandle(*bci)) {
+    //            return false;
+    //        }
+    //    }
+    //    return true;
+    //}
+    //if (seh.IsSeq()) {
+    //    return x_WriteBioseqHandle(seh.GetSeq());
+    //}
+    //SAnnotSelector sel;
+    //sel.SetMaxSize(1);
+    //for (CAnnot_CI aci(seh, sel); aci; ++aci) {
+    //    if (!x_WriteSeqAnnotHandle(*aci)) {
+    //        return false;
+    //    }
+    //}
+    //for (CSeq_entry_CI eci(seh); eci; ++eci) {
+    //    if (!x_WriteSeqEntryHandle(*eci)) {
+    //        return false;
+    //    }
+    //}
+    //return true;
 }
 
 //  ----------------------------------------------------------------------------

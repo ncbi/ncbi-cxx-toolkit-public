@@ -110,37 +110,85 @@ public:
     virtual bool WriteFooter(
         const CSeq_annot& ) { return WriteFooter(); };
 
-    //  ------------------------------------------------------------------------
-    //  Supported object types:
-    //  ------------------------------------------------------------------------
+    /// Convenience function to render a "naked" Seq-annot. Makes use of the
+    /// internal scope.
+    /// @param annot
+    ///   Seq-annot object to be rendered
+    /// @param asmblyName
+    ///   optional assembly name to use for the file header
+    /// @param asmblyAccession
+    ///   optional assembly accession to use for the file header
+    ///
     bool WriteAnnot( 
-        const CSeq_annot&,
-        const string& = "",
-        const string& = "" );
+        const CSeq_annot& annot,
+        const string& asmblyName="",
+        const string& asmblyAccession="" );
 
+    /// Write a Seq-align object.
+    /// Calling this function on a general GFF2 writer (as opposed to GFF3 or
+    /// another more specialized format will fail because GFF2 at this general 
+    /// level does not address alignments; you will need at least a GFF3 writer 
+    /// for that.
+    /// @param align
+    ///   Seq-align object to be rendered
+    /// @param asmblyName
+    ///   optional assembly name to use for the file header
+    /// @param asmblyAccession
+    ///   optional assembly accession to use for the file header
+    ///
     bool WriteAlign( 
         const CSeq_align&,
-        const string& = "",
-        const string& = "" );
+        const string& asmblyName="",
+        const string& asmblyAccession="" );
 
-    //  ------------------------------------------------------------------------
-    //  Supported handle types:
-    //  ------------------------------------------------------------------------
+    /// Write Seq-entry contained in a given handle.
+    /// Essentially, will iterate through all contained Bioseq objects and process
+    /// those, with some special processing for nuc-prot sets.
+    /// @param seh
+    ///   Seq-entry handle to be processed
+    /// @param asmblyName
+    ///   optional assembly name to use for the file header
+    /// @param asmblyAccession
+    ///   optional assembly accession to use for the file header
+    ///
     virtual bool WriteSeqEntryHandle(
-        CSeq_entry_Handle,
-        const string& = "",
-        const string& = "" );
+        CSeq_entry_Handle seh,
+        const string& asmblyName="",
+        const string& asmblyAccession="" );
 
+    /// Write Bioseq contained in given handle
+    /// Essentially, will write all features that live on the given Bioseq.
+    /// @param bsh
+    ///   Bioseq handle to be processed
+    /// @param asmblyName
+    ///   optional assembly name to use for the file header
+    /// @param asmblyAccession
+    ///   optional assembly accession to use for the file header
+    ///
     virtual bool WriteBioseqHandle(
-        CBioseq_Handle,
-        const string& = "",
-        const string& = "" );
+        CBioseq_Handle bsh,
+        const string& asmblyName="",
+        const string& asmblyAccession="" );
 
+    /// Write Seq-annot contained in given handle
+    /// Essentially, write out embedded feature table. Other annotation
+    /// types are not supported in the generic GFF2 writer(i.e. there will be 
+    /// a header and nothing else.
+    /// @param sah
+    ///   Seq-annot handle to be processed
+    /// @param asmblyName
+    ///   optional assembly name to use for the file header
+    /// @param asmblyAccession
+    ///   optional assembly accession to use for the file header
+    ///
     virtual bool WriteSeqAnnotHandle(
-        CSeq_annot_Handle,
-        const string& = "",
-        const string& = "" );
+        CSeq_annot_Handle sah,
+        const string& asmblyName="",
+        const string& asmblyAccession="" );
 
+    /// Provide access to the selction criteria used when traversing 
+    /// containers for content to be rendered.
+    ///
     virtual SAnnotSelector& GetAnnotSelector();
 
 protected:
