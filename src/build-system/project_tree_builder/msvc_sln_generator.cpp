@@ -124,9 +124,11 @@ CUtilityProject::~CUtilityProject(void)
 {
 }
 
-bool CUtilityProject::IsIncluded(const CPrjContext& /*prj*/) const
+bool CUtilityProject::IsIncluded(const CPrjContext& prj) const
 {
-    return false;
+    return (
+        prj.m_Project.m_MakeType != eMakeType_Excluded &&
+        prj.m_Project.m_MakeType != eMakeType_ExcludedByReq);
 }
 
 //-----------------------------------------------------------------------------
@@ -150,6 +152,9 @@ public:
                            "Excluded due to unmet requirements");
             return false;
         }
+        if (prj.m_Project.m_ProjType == CProjKey::eDataSpec) {
+            return false;
+        }
         return true;
     }
 };
@@ -166,7 +171,8 @@ public:
     }
     virtual bool IsIncluded(const CPrjContext& prj) const
     {
-        return !prj.m_Project.m_DatatoolSources.empty();
+        return CUtilityProject::IsIncluded(prj) &&
+            !prj.m_Project.m_DatatoolSources.empty();
     }
 };
 
@@ -183,8 +189,9 @@ public:
     }
     virtual bool IsIncluded(const CPrjContext& prj) const
     {
-        return prj.m_Project.m_ProjType == CProjKey::eLib ||
-               prj.m_Project.m_ProjType == CProjKey::eDll;
+        return CUtilityProject::IsIncluded(prj) && (
+               prj.m_Project.m_ProjType == CProjKey::eLib ||
+               prj.m_Project.m_ProjType == CProjKey::eDll);
     }
 };
 
@@ -201,7 +208,8 @@ public:
     }
     virtual bool IsIncluded(const CPrjContext& prj) const
     {
-        return GetApp().IsAllowedProjectTag(prj.m_Project, &m_Tags);
+        return CUtilityProject::IsIncluded(prj) &&
+               GetApp().IsAllowedProjectTag(prj.m_Project, &m_Tags);
     }
 private:
     string m_Tags;

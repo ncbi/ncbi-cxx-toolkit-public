@@ -402,7 +402,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,7,1) );
+    SetVersion( CVersionInfo(3,7,2) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1089,6 +1089,10 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 // all sources --------------------------------------------------------------
     ofs << "all_dataspec =";
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+        if (p->second.m_MakeType == eMakeType_Excluded ||
+            p->second.m_MakeType == eMakeType_ExcludedByReq) {
+            continue;
+        }
         if (p->first.Type() == CProjKey::eMsvc ||
             p->first.Type() == CProjKey::eDataSpec) {
             continue;
@@ -1119,6 +1123,10 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             vector<string> matching;
 
             ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+                if (p->second.m_MakeType == eMakeType_Excluded ||
+                    p->second.m_MakeType == eMakeType_ExcludedByReq) {
+                    continue;
+                }
                 if (p->first.Type() == CProjKey::eMsvc ||
                     p->first.Type() == CProjKey::eDataSpec) {
                     continue;
