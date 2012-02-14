@@ -195,6 +195,9 @@ protected:
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle ) { return true; };
 
+    virtual bool x_WriteSequenceHeader(
+        CSeq_id_Handle ) { return true; };
+
     virtual bool x_WriteAnnot( 
         const CSeq_annot& );
 

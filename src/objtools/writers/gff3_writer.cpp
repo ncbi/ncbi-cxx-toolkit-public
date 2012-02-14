@@ -326,6 +326,19 @@ bool CGff3Writer::WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteSequenceHeader(
+    CSeq_id_Handle idh)
+//  ----------------------------------------------------------------------------
+{
+    string id;
+    if (!CWriteUtil::GetBestId(idh, *m_pScope, id)) {
+        id = "<unknown>";
+    }
+    m_Os << "##sequence-region " << id << endl;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteSequenceHeader(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {

@@ -149,23 +149,41 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
-    if (seh.IsSet()  &&  seh.GetSet().IsSetClass()  
-            &&  seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
-        for ( CBioseq_CI bci( seh ); bci; ++bci ) {
-            if ( bci->IsSetInst_Mol() 
-                    && (bci->GetInst_Mol() == CSeq_inst::eMol_aa) ) {
+    if (CWriteUtil::IsNucProtSet(seh)) {
+        for (CBioseq_CI bci(seh); bci; ++bci) {
+            if (bci->IsSetInst_Mol() && (bci->GetInst_Mol() == CSeq_inst::eMol_aa)) {
                 continue;
             }
-            if ( ! x_WriteBioseqHandle( *bci ) ) {
+            if (!x_WriteBioseqHandle(*bci)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    if (seh.IsSeq()) {
+        return x_WriteBioseqHandle(seh.GetSeq());
+    }
+    SAnnotSelector sel;
+    sel.SetMaxSize(1);
+    for (CAnnot_CI aci(seh, sel); aci; ++aci) {
+        CFeat_CI fit(*aci, GetAnnotSelector());
+        CGffFeatureContext fc(fit, CBioseq_Handle(), *aci);
+        CSeq_id_Handle lastId;
+        for ( /*0*/; fit; ++fit ) {
+            CSeq_id_Handle currentId =fit->GetLocationId();
+            if (currentId != lastId) {
+                x_WriteSequenceHeader(currentId);
+                lastId = currentId;
+            }
+            if ( ! x_WriteFeature( fc, *fit ) ) {
                 return false;
             }
         }
     }
-    else {
-        for ( CBioseq_CI bci( seh, CSeq_inst::eMol_dna ); bci; ++bci ) {
-            if ( ! x_WriteBioseqHandle( *bci ) ) {
-                return false;
-            }
+
+    for (CSeq_entry_CI eci(seh); eci; ++eci) {
+        if (!x_WriteSeqEntryHandle(*eci)) {
+            return false;
         }
     }
     return true;

@@ -85,6 +85,8 @@ protected:
 
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle );
+    virtual bool x_WriteSequenceHeader(
+        CSeq_id_Handle );
     virtual bool x_WriteSource(
         CGffFeatureContext& );
     virtual bool x_WriteFeature(
