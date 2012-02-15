@@ -160,6 +160,7 @@ bool PromoteIfDifferent(const string& present_path,
                 }
             }
             if (eol_present && eol_new) {
+                ifs_new.close();
                 CDirEntry(candidate_path).Remove();
                 return false;
             }
@@ -167,6 +168,7 @@ bool PromoteIfDifferent(const string& present_path,
                 break;
             }
         }
+        ifs_present.close();
     }
     CDirEntry(present_path).Remove();
     for (int a=0; a<2 && !CDirEntry(candidate_path).Rename(present_path); ++a)
