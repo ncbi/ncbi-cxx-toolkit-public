@@ -90,6 +90,7 @@ private:
     char m_GetBuf[1024 * 1024];
 
 public:
+    Uint8 m_ReqTime;
     vector<Uint8> m_CntWrites;
     vector<Uint8> m_CntErased;
     vector<Uint8> m_CntReads;
@@ -183,6 +184,7 @@ s_ToSizeStr(Uint8 size)
 static void
 s_PrintStats(int elapsed)
 {
+    Uint8 m_ReqTime = numeric_limits<Uint8>::max();
     vector<Uint8> m_CntWrites(100);
     vector<Uint8> m_CntErased(100);
     vector<Uint8> m_CntReads(100);
@@ -199,6 +201,7 @@ s_PrintStats(int elapsed)
     Uint8 tot_ws = 0, tot_ers = 0, tot_rs = 0;
     for (size_t i = 0; i < s_Threads.size(); ++i) {
         for (size_t j = 0; j < m_CntWrites.size(); ++j) {
+            m_ReqTime = min(m_ReqTime, s_Threads[i]->m_ReqTime);
             Uint8 cnt = s_Threads[i]->m_CntWrites[j];
             m_CntWrites[j] += cnt;
             tot_w += cnt;
@@ -235,7 +238,8 @@ s_PrintStats(int elapsed)
     LOG_POST("   ");
     LOG_POST("Time: " << CTime(CTime::eCurrent));
     LOG_POST("Elapsed: " << elapsed << " secs, processing " << s_InFile
-                         << " starting from " << s_StartTime);
+                         << " starting from " << s_StartTime
+                         << ", cur req_time " << (m_ReqTime / 1000));
     LOG_POST("Total: " << tot_w << " (w) " << s_ToSizeStr(tot_ws) << " (ws) "
                        << tot_er << " (er) " << s_ToSizeStr(tot_ers) << " (ers) "
                        << tot_r << " (r) " << s_ToSizeStr(tot_rs) << " (rs) "
@@ -492,7 +496,6 @@ CReplayThread::Main(void)
 
     CTempString line;
     while (x_ReadNextLine(line)) {
-        Uint8 req_time = 0;
         char cmd[10];
         Uint8 key_id = 0;
         int gen_key = 0;
@@ -501,18 +504,18 @@ CReplayThread::Main(void)
                               "%" NCBI_UINT8_FORMAT_SPEC
                               " %s %" NCBI_UINT8_FORMAT_SPEC
                               " %d %" NCBI_UINT8_FORMAT_SPEC,
-                              &req_time, cmd, &key_id, &gen_key, &size);
+                              &m_ReqTime, cmd, &key_id, &gen_key, &size);
         if (n_scaned != 5) {
             LOG_POST(Fatal << "Incorrect line format: " << line);
         }
-        if (req_time < s_StartTime)
+        if (m_ReqTime < s_StartTime)
             continue;
 
         CTime cur_ctime = GetFastLocalTime();
         Uint8 cur_time = Uint8(cur_ctime.GetTimeT()) * 1000 + cur_ctime.MilliSecond();
         cur_time -= start_time;
-        if (cur_time < req_time) {
-            SleepMilliSec((unsigned long)(req_time - cur_time));
+        if (cur_time < m_ReqTime) {
+            SleepMilliSec((unsigned long)(m_ReqTime - cur_time));
         }
 
         string str_cmd = cmd;
@@ -599,6 +602,9 @@ CLogsReplayApp::Run(void)
     for (int i = 0; i < n_files; ++i) {
         s_Threads[i]->Join();
     }
+
+    LOG_POST("All testing is finished. Final statistics.");
+    s_PrintStats(int(watch.Elapsed()));
 
     return 0;
 }
