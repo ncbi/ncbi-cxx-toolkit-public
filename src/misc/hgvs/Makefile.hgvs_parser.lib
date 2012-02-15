@@ -2,7 +2,7 @@
 
 
 LIB = hgvs
-SRC = hgvs_parser variation_util hgvs_parser2 hgvs_writer2 variation_util2 \
+SRC = hgvs_parser2 hgvs_writer2 variation_util2 \
       seq_id_resolver
 
 ASN_DEP = seq variation
