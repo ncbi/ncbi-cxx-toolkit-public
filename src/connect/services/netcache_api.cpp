@@ -221,7 +221,7 @@ string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const CNetCacheKey& key)
 class SNCMirrorIterationBeginner : public IIterationBeginner
 {
 public:
-    SNCMirrorIterationBeginner(CNetService& service,
+    SNCMirrorIterationBeginner(CNetService service,
             CNetServer::TInstance primary_server) :
         m_Service(service),
         m_PrimaryServer(primary_server)
@@ -230,7 +230,7 @@ public:
 
     virtual CNetServiceIterator BeginIteration();
 
-    CNetService& m_Service;
+    CNetService m_Service;
     CNetServer::TInstance m_PrimaryServer;
 };
 
@@ -267,8 +267,8 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     SNCMirrorIterationBeginner iteration_beginner(key.HasExtensions() &&
                 key.GetServiceName() != m_Service.GetServiceName() ?
-            FindOrCreateService(key.GetServiceName()) :
-            m_Service, primary_server);
+            FindOrCreateService(key.GetServiceName()) : m_Service,
+            primary_server);
 
     m_Service->IterateAndExec(cmd, exec_result, &iteration_beginner);
 
