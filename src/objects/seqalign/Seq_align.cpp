@@ -1701,7 +1701,7 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                         TSeqPos gap_end = j == 0
                             ? s_ProductPosAsSeqPos(higher_exon.GetProduct_start())
                             : higher_exon.GetGenomic_start();
-                        if ((gap_start - gap_end) % 3) {
+                        if ((gap_end - gap_start) % 3) {
                             ++retval;
                         }
                     }
