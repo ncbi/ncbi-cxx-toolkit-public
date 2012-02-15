@@ -187,35 +187,6 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
         }
     }
     return true;
-
-    // disabled pending further review:
-    //if (CWriteUtil::IsNucProtSet(seh)) {
-    //    for (CBioseq_CI bci(seh); bci; ++bci) {
-    //        if (bci->IsSetInst_Mol() && (bci->GetInst_Mol() == CSeq_inst::eMol_aa)) {
-    //            continue;
-    //        }
-    //        if (!x_WriteBioseqHandle(*bci)) {
-    //            return false;
-    //        }
-    //    }
-    //    return true;
-    //}
-    //if (seh.IsSeq()) {
-    //    return x_WriteBioseqHandle(seh.GetSeq());
-    //}
-    //SAnnotSelector sel;
-    //sel.SetMaxSize(1);
-    //for (CAnnot_CI aci(seh, sel); aci; ++aci) {
-    //    if (!x_WriteSeqAnnotHandle(*aci)) {
-    //        return false;
-    //    }
-    //}
-    //for (CSeq_entry_CI eci(seh); eci; ++eci) {
-    //    if (!x_WriteSeqEntryHandle(*eci)) {
-    //        return false;
-    //    }
-    //}
-    //return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -331,6 +302,15 @@ SAnnotSelector& CGff2Writer::GetAnnotSelector()
 {
     if ( !m_Selector.get() ) {
         m_Selector.reset(new SAnnotSelector);
+        if (m_uFlags & fSelectAnnotsSmart) {
+            m_Selector->SetResolveAll();
+            m_Selector->SetAdaptiveDepth();
+        }
+        else {
+            m_Selector->SetAdaptiveDepth(false);
+            m_Selector->SetExactDepth(true);
+            m_Selector->SetResolveDepth(0);
+        }
         m_Selector->SetSortOrder( SAnnotSelector::eSortOrder_Normal );
     }
     return *m_Selector;

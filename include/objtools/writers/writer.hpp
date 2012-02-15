@@ -54,6 +54,7 @@ public:
     ///
     typedef enum {
         fNormal = 0,
+        fWriterBaseLast = (1<<0),
     } TFlags;
     
 protected:

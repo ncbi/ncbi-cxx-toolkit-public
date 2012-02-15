@@ -65,7 +65,9 @@ class NCBI_XOBJWRITE_EXPORT CGff2Writer:
 {
 public:
     typedef enum {
-        fSoQuirks =     1<<15,
+        fSoQuirks = (fWriterBaseLast << 1),
+        fSelectAnnotsSmart = (fSoQuirks << 1),
+        fGff2WriterLast = fSelectAnnotsSmart,
     } TFlags;
     
 public:
@@ -186,8 +188,8 @@ public:
         const string& asmblyName="",
         const string& asmblyAccession="" );
 
-    /// Provide access to the selction criteria used when traversing 
-    /// containers for content to be rendered.
+    /// Provide access to the selction criteria used when traversing containers 
+    /// for content to be rendered.
     ///
     virtual SAnnotSelector& GetAnnotSelector();
 
