@@ -132,7 +132,7 @@ CRef<CSeq_loc> FindSSRLoc(const CSeq_loc& loc, const string& seq, CScope& scope)
     const TSeqPos ext_interval = 10000;
 
     CRef<CSeq_loc> loc1 = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CBioseq_Handle bsh = scope.GetBioseqHandle(sequence::GetId(loc, NULL));
     TSeqPos seq_len = bsh.GetInst_Length();
     loc1->SetInt().SetFrom() -= min(ext_interval, loc1->GetInt().GetFrom());
     loc1->SetInt().SetTo() += min(ext_interval, seq_len - 1 - loc1->GetInt().GetTo());

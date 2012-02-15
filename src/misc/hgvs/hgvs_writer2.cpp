@@ -504,7 +504,7 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
     TSeqPos first_pos = 0;
     TSeqPos cds_last_pos = 0;
     if(vp.GetMol() == CVariantPlacement::eMol_cdna) {
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(vp.GetLoc());
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(vp.GetLoc(), NULL));
         for(CFeat_CI ci(bsh); ci; ++ci) {
             const CMappedFeat& mf = *ci;
             if(mf.GetData().IsCdregion()) {
@@ -658,7 +658,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
     CBioseq_Handle bsh;
     if(placement) {
-        bsh = m_scope->GetBioseqHandle(placement->GetLoc());
+        bsh = m_scope->GetBioseqHandle(sequence::GetId(placement->GetLoc(), NULL));
     }
 
 
