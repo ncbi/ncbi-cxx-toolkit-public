@@ -107,9 +107,9 @@ void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
 
 TSeqPos CVariationUtil::s_GetLength(const CVariantPlacement& p, CScope* scope)
 {
-    return ncbi::sequence::GetLength(p.GetLoc(), scope)
-        + (p.IsSetStop_offset() ? p.GetStop_offset() : 0)
-        - (p.IsSetStart_offset() ? p.GetStart_offset() : 0);
+    int start_offset = p.IsSetStart_offset() ? p.GetStart_offset() : 0;
+    int stop_offset = p.IsSetStop_offset() ? p.GetStop_offset() : p.GetLoc().IsPnt() ? start_offset : 0;
+    return ncbi::sequence::GetLength(p.GetLoc(), scope) + stop_offset - start_offset;
 }
 
 
@@ -513,7 +513,7 @@ CVariationUtil::SFlankLocs CVariationUtil::CreateFlankLocs(const CSeq_loc& loc, 
     TSignedSeqPos start = sequence::GetStart(loc, m_scope, eExtreme_Positional);
     TSignedSeqPos stop = sequence::GetStop(loc, m_scope, eExtreme_Positional);
 
-    CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(loc, NULL));
     TSignedSeqPos max_pos = bsh.GetInst_Length() - 1;
 
     SFlankLocs flanks;
@@ -865,7 +865,7 @@ CRef<CSeq_literal> CVariationUtil::x_GetLiteralAtLoc(const CSeq_loc& loc)
                     //if loc extends by 1 past the end protein - we'll need to
                     //truncate the loc to the boundaries of prot, and then add "*" manually,
                     //as otherwise fetching seq will throw.
-                    CBioseq_Handle bsh = m_scope->GetBioseqHandle(loc);
+                    CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(loc, NULL));
                     if(bsh.GetInst_Length() == loc.GetStop(eExtreme_Positional)) {
                         CRef<CSeq_loc> range_loc = sequence::Seq_loc_Merge(loc, CSeq_loc::fMerge_SingleRange, NULL);
                         range_loc->SetInt().SetTo(bsh.GetInst_Length() - 1);
@@ -1815,7 +1815,7 @@ void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
 
     //for offset-style intronic locations (not genomic and have offset), can infer where we are based on offset
     if(!placement.IsSetMol() || placement.GetMol() != CVariantPlacement::eMol_genomic) {
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(placement.GetLoc());
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(placement.GetLoc(), NULL));
         if(placement.IsSetStart_offset() && placement.GetStart_offset() != 0) {
             x_SetVariantPropertiesForIntronic(placement, placement.GetStart_offset(), placement.GetLoc(), bsh);
         }
