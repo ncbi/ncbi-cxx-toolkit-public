@@ -350,7 +350,8 @@ void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
         cmd += '"';
     }
 
-    m_API->m_Service->GetServer(first_key.host, first_key.port).ExecWithRetry(cmd);
+    m_API->m_Service->m_ServerPool->GetServer(
+        first_key.host, first_key.port).ExecWithRetry(cmd);
 }
 
 void CNetScheduleSubmitter::ReadConfirm(const string& batch_id,

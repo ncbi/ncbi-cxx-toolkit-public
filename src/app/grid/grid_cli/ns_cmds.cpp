@@ -60,7 +60,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
         m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
             m_Opts.auth, queue);
-        m_NetScheduleAPI.GetService().StickToServer(host,
+        m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
             NStr::StringToInt(port));
     } else {
         CNetScheduleKey key(m_Opts.id);

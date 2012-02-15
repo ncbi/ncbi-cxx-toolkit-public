@@ -335,7 +335,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     CNetService GetService();
 
     void SetCommunicationTimeout(const STimeout& to)
-        {GetService().SetCommunicationTimeout(to);}
+        {GetService().GetServerPool().SetCommunicationTimeout(to);}
 };
 
 class NCBI_XCONNECT_EXPORT CNetCachePasswordGuard

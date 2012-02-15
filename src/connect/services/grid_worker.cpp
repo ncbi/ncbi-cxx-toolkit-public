@@ -1056,7 +1056,8 @@ int CGridWorkerNode::Run()
     m_ControlPort = control_thread->GetControlPort();
 
     if (m_NetScheduleAPI->m_ClientNode.empty()) {
-        string client_node(m_NetScheduleAPI->m_Service->m_ClientName);
+        string client_node(m_NetScheduleAPI->
+                m_Service->m_ServerPool->m_ClientName);
         client_node.append(2, ':');
         client_node.append(CSocketAPI::gethostname());
         client_node.append(1, ':');

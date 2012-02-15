@@ -235,7 +235,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     void GetProgressMsg(CNetScheduleJob& job);
 
     void SetCommunicationTimeout(const STimeout& to)
-        {GetService().SetCommunicationTimeout(to);}
+        {GetService().GetServerPool().SetCommunicationTimeout(to);}
 
     void SetClientNode(const string& client_node);
 
@@ -248,6 +248,12 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// This method is for use by the grid_cli utility only.
     /// @internal
     void UseOldStyleAuth();
+
+    /// Extract one of the servers comprising this service
+    /// as a separate NetSchedule API object.
+    /// This method is for use by the grid_cli utility only.
+    /// @internal
+    CNetScheduleAPI GetServer(CNetServer::TInstance server);
 };
 
 
@@ -587,8 +593,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     /// maintain job affinity for the client.
     void UnRegisterClient();
 
-    void ChangePreferredAffinities(CNetServer server,
-        const vector<string>& affs_to_add,
+    void ChangePreferredAffinities(const vector<string>& affs_to_add,
         const vector<string>& affs_to_delete);
 
     /// Return Queue name

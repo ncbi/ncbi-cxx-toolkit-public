@@ -49,8 +49,6 @@ typedef pair<SNetServerImpl*, double> TServerRate;
 typedef vector<TServerRate> TNetServerList;
 typedef set<SNetServerImpl*, SCompareServerAddress> TNetServerSet;
 
-struct SActualService;
-
 struct SDiscoveredServers : public CObject
 {
     SDiscoveredServers(unsigned discovery_iteration) :
@@ -84,12 +82,65 @@ struct SDiscoveredServers : public CObject
     // A smart pointer to the SNetServiceImpl object
     // that contains this object.
     CNetService m_Service;
-    // Actual LBSM service name that was used to
-    // discover this group of servers.
-    SActualService* m_ActualService;
 
     unsigned m_DiscoveryIteration;
 };
+
+struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
+{
+    // Construct a new object.
+    SNetServerPoolImpl(
+        const string& api_name,
+        const string& client_name,
+        INetServerConnectionListener* listener);
+
+    void Init(CObject* api_impl, CConfig* config, const string& section);
+
+    SNetServerImpl* FindOrCreateServerImpl(
+        const string& host, unsigned short port);
+    CNetServer ReturnServer(SNetServerImpl* server_impl);
+    CNetServer GetServer(const string& host, unsigned int port);
+    CNetServer GetServer(const SServerAddress& server_address);
+
+    virtual ~SNetServerPoolImpl();
+
+    string m_APIName;
+    string m_ClientName;
+
+    string m_EnforcedServerHost;
+    unsigned m_EnforcedServerPort;
+
+    // Connection event listening. This listener implements
+    // the authentication part of both NS and NC protocols.
+    CRef<INetServerConnectionListener> m_Listener;
+
+    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
+
+    string m_LBSMAffinityName;
+    const char* m_LBSMAffinityValue;
+
+    TNetServerSet m_Servers;
+    CFastMutex m_ServerMutex;
+
+    STimeout m_ConnTimeout;
+    STimeout m_CommTimeout;
+    ESwitch m_PermanentConnection;
+
+    int m_MaxConsecutiveIOFailures;
+    int m_IOFailureThresholdNumerator;
+    int m_IOFailureThresholdDenominator;
+    int m_ServerThrottlePeriod;
+    int m_MaxConnectionTime;
+    bool m_ThrottleUntilDiscoverable;
+
+    bool m_UseOldStyleAuth;
+};
+
+inline CNetServer SNetServerPoolImpl::GetServer(
+    const SServerAddress& server_address)
+{
+    return GetServer(server_address.host, server_address.port);
+}
 
 struct SNetServiceIteratorImpl : public CObject
 {
@@ -142,37 +193,6 @@ struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
     TRandomIterators::const_iterator m_RandomIterator;
 };
 
-enum EServiceType {
-    eServiceNotDefined,
-    eLoadBalancedService,
-    eSingleServerService
-};
-
-struct SActualService
-{
-    SActualService(const string& service_name) :
-        m_ServiceName(service_name),
-        m_ServiceType(eServiceNotDefined),
-        m_DiscoveredServers(NULL),
-        m_LatestDiscoveryIteration(0)
-    {
-    }
-
-    string m_ServiceName;
-    EServiceType m_ServiceType;
-    SDiscoveredServers* m_DiscoveredServers;
-    unsigned m_LatestDiscoveryIteration;
-};
-
-struct SCompareServiceName {
-    bool operator()(const SActualService* l, const SActualService* r) const
-    {
-        return l->m_ServiceName < r->m_ServiceName;
-    }
-};
-
-typedef set<SActualService*, SCompareServiceName> TActualServiceSet;
-
 class IIterationBeginner
 {
 public:
@@ -181,90 +201,74 @@ public:
     virtual ~IIterationBeginner() {}
 };
 
-struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
+enum EServiceType {
+    eServiceNotDefined,
+    eLoadBalancedService,
+    eSingleServerService
+};
+
+struct SNetServiceImpl : public CObject
 {
     // Construct a new object.
-    SNetServiceImpl(
-        const string& api_name,
-        const string& client_name,
-        INetServerConnectionListener* listener);
+    SNetServiceImpl(const string& api_name, const string& client_name,
+            INetServerConnectionListener* listener) :
+        m_ServerPool(new SNetServerPoolImpl(api_name, client_name, listener))
+    {
+    }
+
+    void Construct(SNetServerImpl* server);
+    void Construct();
+
+    // Constructors for 'spawning'.
+    SNetServiceImpl(SNetServerImpl* server, SNetServiceImpl* parent) :
+        m_ServerPool(parent->m_ServerPool)
+    {
+        Construct(server);
+    }
+    SNetServiceImpl(const string& service_name, SNetServiceImpl* parent) :
+        m_ServerPool(parent->m_ServerPool)
+    {
+        Construct();
+    }
 
     void Init(CObject* api_impl, const string& service_name,
         CConfig* config, const string& config_section,
         const char* const* default_config_sections);
 
-    SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
-    SActualService* FindOrCreateActualService(const string& service_name);
+    SNetServiceImpl(const string& service_name) : m_ServiceName(service_name)
+    {
+    }
 
     string MakeAuthString();
 
-    SNetServerImpl* FindOrCreateServerImpl(
-        const string& host, unsigned short port);
-    CNetServer ReturnServer(SNetServerImpl* server_impl);
-    CNetServer GetServer(const string& host, unsigned int port);
-    CNetServer GetServer(const SServerAddress& server_address);
-    CNetServer GetSingleServer(const string& cmd);
-
-    // Utility method for commands that require a single server (that is,
-    // a host:port pair) to be specified (not a load-balanced service name).
-    CNetServer RequireStandAloneServerSpec(const string& cmd);
-
-    void DiscoverServersIfNeeded(SActualService* actual_service);
-    void GetDiscoveredServers(const string* service_name,
-        CRef<SDiscoveredServers>& discovered_servers);
-
-    void Monitor(CNcbiOstream& out, const string& cmd);
+    void DiscoverServersIfNeeded();
+    void GetDiscoveredServers(CRef<SDiscoveredServers>& discovered_servers);
 
     void IterateAndExec(const string& cmd,
         CNetServer::SExecResult& exec_result,
         IIterationBeginner* iteration_beginner);
 
+    CNetServer GetSingleServer(const string& cmd);
+    // Utility method for commands that require a single server (that is,
+    // a host:port pair) to be specified (not a load-balanced service name).
+    CNetServer RequireStandAloneServerSpec(const string& cmd);
+
+    void Monitor(CNcbiOstream& out, const string& cmd);
+
+    SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
+
     virtual ~SNetServiceImpl();
 
-    string m_APIName;
-    string m_ClientName;
+    CNetServerPool m_ServerPool;
 
-    TActualServiceSet m_ActualServices;
-    SActualService* m_MainService;
+    string m_ServiceName;
+    EServiceType m_ServiceType;
 
-    string m_EnforcedServerHost;
-    unsigned m_EnforcedServerPort;
-
-    // Connection event listening. This listener implements
-    // the authentication part of both NS and NC protocols.
-    CRef<INetServerConnectionListener> m_Listener;
-
-    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
-
-    string m_LBSMAffinityName;
-    const char* m_LBSMAffinityValue;
-
-    SDiscoveredServers* m_ServerGroupPool;
     CFastMutex m_DiscoveryMutex;
-
-    TNetServerSet m_Servers;
-    CFastMutex m_ServerMutex;
-
-    STimeout m_ConnTimeout;
-    STimeout m_CommTimeout;
-    ESwitch m_PermanentConnection;
-
-    int m_MaxSubsequentConnectionFailures;
-    int m_ReconnectionFailureThresholdNumerator;
-    int m_ReconnectionFailureThresholdDenominator;
-    int m_ServerThrottlePeriod;
-    int m_MaxConnectionTime;
-    bool m_ThrottleUntilDiscoverable;
-    int m_ForceRebalanceAfterThrottleWithin;
-
-    bool m_UseOldStyleAuth;
+    SDiscoveredServers* m_DiscoveredServers;
+    SDiscoveredServers* m_ServerGroupPool;
+    unsigned m_LatestDiscoveryIteration;
 };
-
-inline CNetServer SNetServiceImpl::GetServer(
-    const SServerAddress& server_address)
-{
-    return GetServer(server_address.host, server_address.port);
-}
 
 END_NCBI_SCOPE
 

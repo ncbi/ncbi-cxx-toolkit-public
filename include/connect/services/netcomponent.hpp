@@ -74,22 +74,25 @@ public:
 };
 
 
-#define NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component_name) \
+#define NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component) \
     protected: \
-    CRef<S##component_name##Impl, \
-        CNetComponentCounterLocker<S##component_name##Impl> > m_Impl; \
+    CRef<S##component##Impl, \
+        CNetComponentCounterLocker<S##component##Impl> > m_Impl; \
     public: \
-    typedef S##component_name##Impl* TInstance; \
-    C##component_name(TInstance impl) : m_Impl(impl) {} \
-    C##component_name& operator =(TInstance impl) \
+    typedef S##component##Impl* TInstance; \
+    C##component(S##component##Impl* impl) : m_Impl(impl) {} \
+    C##component& operator =(S##component##Impl* impl) \
         {m_Impl = impl; return *this;} \
-    operator TInstance() {return m_Impl.GetPointer();} \
-    TInstance operator ->() {return m_Impl.GetPointer();} \
-    C##component_name(EVoid /* create_void */) {}
+    operator S##component##Impl*() {return m_Impl.GetPointer();} \
+    operator const S##component##Impl*() const {return m_Impl.GetPointer();} \
+    S##component##Impl* operator ->() {return m_Impl.GetPointer();} \
+    const S##component##Impl* operator ->() const \
+        {return m_Impl.GetPointer();} \
+    C##component(EVoid /* create_void */) {}
 
-#define NCBI_NET_COMPONENT(component_name) \
-    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component_name) \
-    C##component_name() {}
+#define NCBI_NET_COMPONENT(component) \
+    NCBI_NET_COMPONENT_WITH_DEFAULT_CTOR(component) \
+    C##component() {}
 
 END_NCBI_SCOPE
 

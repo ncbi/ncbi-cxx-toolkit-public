@@ -111,7 +111,7 @@ inline SNetServerConnectionImpl::SNetServerConnectionImpl(
 void SNetServerConnectionImpl::DeleteThis()
 {
     // Return this connection to the pool.
-    if (m_Server->m_Service->m_PermanentConnection != eOff &&
+    if (m_Server->m_ServerPool->m_PermanentConnection != eOff &&
             m_Socket.GetStatus(eIO_Open) == eIO_Success) {
         TFastMutexGuard guard(m_Server->m_FreeConnectionListLock);
 
@@ -177,7 +177,7 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
     } else if (NStr::StartsWith(result, "ERR:")) {
         result.erase(0, sizeof("ERR:") - 1);
         result = NStr::ParseEscapes(result);
-        m_Server->m_Service->m_Listener->OnError(result, m_Server);
+        m_Server->m_ServerPool->m_Listener->OnError(result, m_Server);
     }
 }
 
@@ -260,19 +260,21 @@ SNetServerImplReal::SNetServerImplReal(const string& host,
 
 void SNetServerImpl::DeleteThis()
 {
-    SNetServiceImpl* service_impl = m_Service;
+    CNetServerPool server_pool(m_ServerPool);
 
-    if (service_impl == NULL)
+    if (!server_pool)
         return;
 
     // Before resetting the m_Service pointer, verify that no other object
     // has acquired a reference to this server object yet (between
     // the time the reference counter went to zero, and the
     // current moment when m_Service is about to be reset).
-    CFastMutexGuard g(service_impl->m_ServerMutex);
+    CFastMutexGuard g(server_pool->m_ServerMutex);
+
+    server_pool = NULL;
 
     if (!Referenced())
-        m_Service = NULL;
+        m_ServerPool = NULL;
 }
 
 SNetServerImplReal::~SNetServerImplReal()
@@ -417,7 +419,7 @@ CNetServerConnection SNetServerImpl::Connect()
 
     EIO_Status io_st;
     STimeout internal_timeout = s_InternalConnectTimeout;
-    STimeout remaining_timeout = m_Service->m_ConnTimeout;
+    STimeout remaining_timeout = m_ServerPool->m_ConnTimeout;
 
     do {
         if (remaining_timeout.sec == s_InternalConnectTimeout.sec ?
@@ -449,14 +451,14 @@ CNetServerConnection SNetServerImpl::Connect()
         NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
     }
 
-    RegisterConnectionEvent(false);
+    AdjustThrottlingParameters(eCOR_Success);
 
     conn->m_Socket.SetDataLogging(eOff);
-    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_Service->m_CommTimeout);
+    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_ServerPool->m_CommTimeout);
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
 
-    m_Service->m_Listener->OnConnected(conn);
+    m_ServerPool->m_Listener->OnConnected(conn);
 
     return conn;
 }
@@ -479,7 +481,7 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
             if (err_code != CNetSrvConnException::eWriteFailure &&
                 err_code != CNetSrvConnException::eConnClosedByServer)
             {
-                RegisterConnectionEvent(true);
+                AdjustThrottlingParameters(eCOR_Failure);
                 throw;
             }
         }
@@ -490,123 +492,91 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
         exec_result.response = exec_result.conn.Exec(cmd);
     }
     catch (CNetSrvConnException&) {
-        RegisterConnectionEvent(true);
+        AdjustThrottlingParameters(eCOR_Failure);
         throw;
     }
 }
 
-void SNetServerImpl::RegisterConnectionEvent(bool failure)
+void SNetServerImpl::AdjustThrottlingParameters(EConnOpResult op_result)
 {
-    if (m_Service->m_ServerThrottlePeriod > 0) {
-        CFastMutexGuard guard(m_ThrottleLock);
+    if (m_ServerPool->m_ServerThrottlePeriod <= 0)
+        return;
 
-        if (m_Service->m_MaxSubsequentConnectionFailures > 0) {
-            if (failure)
-                ++m_NumberOfSuccessiveFailures;
-            else if (m_NumberOfSuccessiveFailures <
-                    m_Service->m_MaxSubsequentConnectionFailures)
-                m_NumberOfSuccessiveFailures = 0;
+    CFastMutexGuard guard(m_ThrottleLock);
+
+    if (m_ServerPool->m_MaxConsecutiveIOFailures > 0) {
+        if (op_result != eCOR_Success)
+            ++m_NumberOfConsecutiveIOFailures;
+        else if (m_NumberOfConsecutiveIOFailures <
+                m_ServerPool->m_MaxConsecutiveIOFailures)
+            m_NumberOfConsecutiveIOFailures = 0;
+    }
+
+    if (m_ServerPool->m_IOFailureThresholdNumerator > 0) {
+        if (m_IOFailureRegister[m_IOFailureRegisterIndex] != op_result) {
+            if ((m_IOFailureRegister[m_IOFailureRegisterIndex] =
+                    op_result) == eCOR_Success)
+                --m_IOFailureCounter;
+            else
+                ++m_IOFailureCounter;
         }
 
-        if (m_Service->m_ReconnectionFailureThresholdNumerator > 0) {
-            if (m_ConnectionFailureRegister[
-                    m_ConnectionFailureRegisterIndex] != failure) {
-                if ((m_ConnectionFailureRegister[
-                        m_ConnectionFailureRegisterIndex] = failure) == false)
-                    --m_ConnectionFailureCounter;
-                else
-                    ++m_ConnectionFailureCounter;
-            }
-
-            if (++m_ConnectionFailureRegisterIndex >=
-                    m_Service->m_ReconnectionFailureThresholdDenominator)
-                m_ConnectionFailureRegisterIndex = 0;
-        }
+        if (++m_IOFailureRegisterIndex >=
+                m_ServerPool->m_IOFailureThresholdDenominator)
+            m_IOFailureRegisterIndex = 0;
     }
 }
 
 void SNetServerImpl::CheckIfThrottled()
 {
-    if (m_Service->m_ServerThrottlePeriod > 0) {
-        CFastMutexGuard guard(m_ThrottleLock);
+    if (m_ServerPool->m_ServerThrottlePeriod <= 0)
+        return;
 
-        if (m_Throttled) {
-            CTime current_time(GetFastLocalTime());
-            if (current_time >= m_ThrottledUntil) {
-                if (!m_Service->m_ThrottleUntilDiscoverable) {
-                    ResetThrottlingParameters();
-                    return;
-                } else if (m_Service->m_ForceRebalanceAfterThrottleWithin > 0) {
-                    CTime discovery_validity_time(m_Service->
-                        m_RebalanceStrategy->GetLastRebalanceTime());
+    CFastMutexGuard guard(m_ThrottleLock);
 
-                    discovery_validity_time.AddSecond(m_Service->
-                        m_ForceRebalanceAfterThrottleWithin);
-
-                    if (discovery_validity_time < current_time) {
-                        // Force service discovery and rebalancing.
-                        CFastMutexGuard discovery_mutex_lock(
-                            m_Service->m_DiscoveryMutex);
-                        ITERATE(TActualServiceDiscoveryIteration, it,
-                                m_ActualServiceDiscoveryIteration) {
-                            // Force discovery:
-                            ++it->first->m_LatestDiscoveryIteration;
-                            m_Service->DiscoverServersIfNeeded(it->first);
-                            if (it->first->m_LatestDiscoveryIteration ==
-                                    it->second) {
-                                ResetThrottlingParameters();
-                                return;
-                            }
-                        }
-                    }
-                } else {
-                    CFastMutexGuard discovery_mutex_lock(
-                        m_Service->m_DiscoveryMutex);
-                    ITERATE(TActualServiceDiscoveryIteration, it,
-                            m_ActualServiceDiscoveryIteration) {
-                        if (it->first->m_LatestDiscoveryIteration ==
-                                it->second) {
-                            ResetThrottlingParameters();
-                            return;
-                        }
-                    }
-                }
-            }
-            NCBI_THROW(CNetSrvConnException, eServerThrottle,
-                m_ThrottleMessage);
+    if (m_Throttled) {
+        CTime current_time(GetFastLocalTime());
+        if (current_time >= m_ThrottledUntil &&
+                (!m_ServerPool->m_ThrottleUntilDiscoverable ||
+                        m_DiscoveredAfterThrottling)) {
+            ResetThrottlingParameters();
+            return;
         }
+        NCBI_THROW(CNetSrvConnException, eServerThrottle,
+            m_ThrottleMessage);
+    }
 
-        if (m_Service->m_MaxSubsequentConnectionFailures > 0 &&
-            m_NumberOfSuccessiveFailures >=
-                m_Service->m_MaxSubsequentConnectionFailures) {
-            m_Throttled = true;
-            m_ThrottleMessage = "Server " + m_Address.AsString();
-            m_ThrottleMessage += " has reached the maximum number "
-                "of connection failures in a row";
-        }
+    if (m_ServerPool->m_MaxConsecutiveIOFailures > 0 &&
+        m_NumberOfConsecutiveIOFailures >=
+            m_ServerPool->m_MaxConsecutiveIOFailures) {
+        m_Throttled = true;
+        m_DiscoveredAfterThrottling = false;
+        m_ThrottleMessage = "Server " + m_Address.AsString();
+        m_ThrottleMessage += " has reached the maximum number "
+            "of connection failures in a row";
+    }
 
-        if (m_Service->m_ReconnectionFailureThresholdNumerator > 0 &&
-            m_ConnectionFailureCounter >=
-                m_Service->m_ReconnectionFailureThresholdNumerator) {
-            m_Throttled = true;
-            m_ThrottleMessage = "Connection to server " + m_Address.AsString();
-            m_ThrottleMessage += " aborted as it is considered bad/overloaded";
-        }
+    if (m_ServerPool->m_IOFailureThresholdNumerator > 0 &&
+            m_IOFailureCounter >= m_ServerPool->m_IOFailureThresholdNumerator) {
+        m_Throttled = true;
+        m_DiscoveredAfterThrottling = false;
+        m_ThrottleMessage = "Connection to server " + m_Address.AsString();
+        m_ThrottleMessage += " aborted as it is considered bad/overloaded";
+    }
 
-        if (m_Throttled) {
-            m_ThrottledUntil.SetCurrent();
-            m_ThrottledUntil.AddSecond(m_Service->m_ServerThrottlePeriod);
-            NCBI_THROW(CNetSrvConnException, eServerThrottle,
-                m_ThrottleMessage);
-        }
+    if (m_Throttled) {
+        m_ThrottledUntil.SetCurrent();
+        m_ThrottledUntil.AddSecond(m_ServerPool->m_ServerThrottlePeriod);
+        NCBI_THROW(CNetSrvConnException, eServerThrottle,
+            m_ThrottleMessage);
     }
 }
 
 void SNetServerImpl::ResetThrottlingParameters()
 {
-    m_NumberOfSuccessiveFailures = 0;
-    memset(m_ConnectionFailureRegister, 0, sizeof(m_ConnectionFailureRegister));
-    m_ConnectionFailureCounter = m_ConnectionFailureRegisterIndex = 0;
+    m_NumberOfConsecutiveIOFailures = 0;
+    memset(m_IOFailureRegister, 0, sizeof(m_IOFailureRegister));
+    m_IOFailureCounter = m_IOFailureRegisterIndex = 0;
     m_Throttled = false;
 }
 
@@ -616,7 +586,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
 
     CTime max_connection_time(GetFastLocalTime());
     max_connection_time.AddNanoSecond(
-        m_Impl->m_Service->m_MaxConnectionTime * 1000000);
+        m_Impl->m_ServerPool->m_MaxConnectionTime * 1000000);
 
     unsigned attempt = 0;
 
@@ -630,10 +600,10 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
                     e.GetErrCode() == CNetSrvConnException::eServerThrottle)
                 throw;
 
-            if (m_Impl->m_Service->m_MaxConnectionTime > 0 &&
+            if (m_Impl->m_ServerPool->m_MaxConnectionTime > 0 &&
                     max_connection_time <= GetFastLocalTime()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_Impl->m_Service->m_MaxConnectionTime <<
+                    m_Impl->m_ServerPool->m_MaxConnectionTime <<
                     "); cmd=" << cmd <<
                     "; exception=" << e.GetMsg());
                 throw;
@@ -647,10 +617,10 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
                     e.GetErrCode() != CNetScheduleException::eTryAgain)
                 throw;
 
-            if (m_Impl->m_Service->m_MaxConnectionTime > 0 &&
+            if (m_Impl->m_ServerPool->m_MaxConnectionTime > 0 &&
                     max_connection_time <= GetFastLocalTime()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_Impl->m_Service->m_MaxConnectionTime <<
+                    m_Impl->m_ServerPool->m_MaxConnectionTime <<
                     "); cmd=" << cmd <<
                     "; exception=" << e.GetMsg());
                 throw;

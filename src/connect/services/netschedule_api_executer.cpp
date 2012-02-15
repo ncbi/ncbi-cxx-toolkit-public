@@ -352,10 +352,13 @@ static void s_AppendAffinityTokens(string& cmd,
     }
 }
 
-void CNetScheduleExecuter::ChangePreferredAffinities(CNetServer server,
+void CNetScheduleExecuter::ChangePreferredAffinities(
     const vector<string>& affs_to_add, const vector<string>& affs_to_delete)
 {
     string cmd("CHAFF");
+
+    CNetServer server(m_Impl->m_API->m_Service->
+            RequireStandAloneServerSpec(cmd));
 
     s_AppendAffinityTokens(cmd, " add=\"", affs_to_add);
     s_AppendAffinityTokens(cmd, " del=\"", affs_to_delete);
@@ -370,7 +373,7 @@ const string& CNetScheduleExecuter::GetQueueName()
 
 const string& CNetScheduleExecuter::GetClientName()
 {
-    return m_Impl->m_API->m_Service.GetClientName();
+    return m_Impl->m_API->m_Service->m_ServerPool.GetClientName();
 }
 
 const string& CNetScheduleExecuter::GetServiceName()

@@ -59,30 +59,13 @@ public:
     virtual ~INetServerFinder() {}
 };
 
-struct SNetServiceImpl;
+struct SNetServerPoolImpl;
 
-class NCBI_XCONNECT_EXPORT CNetService
+class NCBI_XCONNECT_EXPORT CNetServerPool
 {
-    NCBI_NET_COMPONENT(NetService);
+    NCBI_NET_COMPONENT(NetServerPool);
 
     const string& GetClientName() const;
-    const string& GetServiceName() const;
-
-    enum EIterationMode {
-        eSortByLoad,
-        eRandomize,
-        eIncludePenalized
-    };
-
-    CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad,
-        const string* service_name = NULL);
-    CNetServiceIterator Iterate(CNetServer::TInstance priority_server,
-        const string* service_name = NULL);
-
-    bool FindServer(INetServerFinder* finder,
-        EIterationMode mode = eSortByLoad);
-
-    bool IsLoadBalanced() const;
 
     void StickToServer(const string& host, unsigned port);
 
@@ -90,6 +73,31 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;
+};
+
+struct SNetServiceImpl;
+
+class NCBI_XCONNECT_EXPORT CNetService
+{
+    NCBI_NET_COMPONENT(NetService);
+
+    const string& GetServiceName() const;
+
+    CNetServerPool GetServerPool();
+
+    enum EIterationMode {
+        eSortByLoad,
+        eRandomize,
+        eIncludePenalized
+    };
+
+    CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad);
+    CNetServiceIterator Iterate(CNetServer::TInstance priority_server);
+
+    bool FindServer(INetServerFinder* finder,
+        EIterationMode mode = eSortByLoad);
+
+    bool IsLoadBalanced() const;
 
     CNetServer::SExecResult FindServerAndExec(const string& cmd);
 

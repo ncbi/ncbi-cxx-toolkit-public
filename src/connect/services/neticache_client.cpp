@@ -271,13 +271,13 @@ CNetICacheClient::CNetICacheClient(CConfig* config, const string& driver_name) :
 
 void CNetICacheClient::SetCommunicationTimeout(const STimeout& to)
 {
-    m_Impl->m_Service.SetCommunicationTimeout(to);
+    m_Impl->m_Service->m_ServerPool.SetCommunicationTimeout(to);
 }
 
 
 STimeout CNetICacheClient::GetCommunicationTimeout() const
 {
-    return m_Impl->m_Service.GetCommunicationTimeout();
+    return m_Impl->m_Service->m_ServerPool.GetCommunicationTimeout();
 }
 
 CNetServer::SExecResult

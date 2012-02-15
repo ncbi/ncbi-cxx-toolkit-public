@@ -51,7 +51,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
             string host, port;
 
             if (NStr::SplitInTwo(m_Opts.nc_service, ":", host, port))
-                m_NetCacheAPI.GetService().StickToServer(
+                m_NetCacheAPI.GetService().GetServerPool().StickToServer(
                     host, NStr::StringToInt(port));
             else {
                 NCBI_THROW(CArgException, eInvalidArg,

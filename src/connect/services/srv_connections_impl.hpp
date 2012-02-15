@@ -99,9 +99,7 @@ public:
     virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
 };
 
-struct SActualService;
-
-typedef map<SActualService*, unsigned> TActualServiceDiscoveryIteration;
+struct SNetServiceImpl;
 
 struct SNetServerImpl : public CObject
 {
@@ -124,27 +122,32 @@ struct SNetServerImpl : public CObject
     void ConnectAndExec(const string& cmd,
         CNetServer::SExecResult& exec_result);
 
-    void RegisterConnectionEvent(bool failure);
+    // Server throttling implementation.
+    enum EConnOpResult {
+        eCOR_Success,
+        eCOR_Failure
+    };
+
+    void AdjustThrottlingParameters(EConnOpResult op_result);
     void CheckIfThrottled();
     void ResetThrottlingParameters();
 
-    // A smart pointer to the NetService object
+    // A smart pointer to the server pool object
     // that contains this NetServer.
-    CNetService m_Service;
+    CNetServerPool m_ServerPool;
 
     SServerAddress m_Address;
-
-    TActualServiceDiscoveryIteration m_ActualServiceDiscoveryIteration;
 
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;
     CFastMutex m_FreeConnectionListLock;
 
-    int m_NumberOfSuccessiveFailures;
-    bool m_ConnectionFailureRegister[CONNECTION_ERROR_HISTORY_MAX];
-    int m_ConnectionFailureRegisterIndex;
-    int m_ConnectionFailureCounter;
+    int m_NumberOfConsecutiveIOFailures;
+    EConnOpResult m_IOFailureRegister[CONNECTION_ERROR_HISTORY_MAX];
+    int m_IOFailureRegisterIndex;
+    int m_IOFailureCounter;
     bool m_Throttled;
+    bool m_DiscoveredAfterThrottling;
     string m_ThrottleMessage;
     CTime m_ThrottledUntil;
     CFastMutex m_ThrottleLock;

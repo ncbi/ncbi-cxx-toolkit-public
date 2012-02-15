@@ -703,7 +703,7 @@ inline const string& CGridWorkerNode::GetQueueName() const
 
 inline const string& CGridWorkerNode::GetClientName() const
 {
-    return GetNetScheduleAPI().GetService().GetClientName();
+    return GetNetScheduleAPI().GetService().GetServerPool().GetClientName();
 }
 
 inline const string& CGridWorkerNode::GetServiceName() const

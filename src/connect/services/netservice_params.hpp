@@ -77,15 +77,6 @@
 // Whether to check with LBSMD before re-enabling the server.
 #define THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT false
 
-// When THROTTLE_HOLD_UNTIL_ACTIVE_IN_LB_DEFAULT is enabled,
-// the following parameter defines whether a forced LBSMD
-// rebalancing is required. If LBSMD has been queried less
-// than the specified number of seconds ago, no rebalancing
-// is required -- LBSMD information is considered up-to-date.
-// Otherwise, LBSMD is forcibly queried before the decision
-// whether to re-enable a throttled server is made.
-#define THROTTLE_FORCED_REBALANCE_DEFAULT 3
-
 // The size of an internal array, which is used for calculation
 // of the connection failure rate.
 #define CONNECTION_ERROR_HISTORY_MAX 128

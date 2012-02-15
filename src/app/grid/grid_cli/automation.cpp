@@ -226,19 +226,19 @@ struct SNetCacheAutomationObject : public SAutomationObject
 
 struct SNetScheduleServerAutomationObject : public SAutomationObject
 {
-    SNetScheduleServerAutomationObject(CNetScheduleAPI::TInstance ns_api,
+    SNetScheduleServerAutomationObject(CNetScheduleAPI ns_api,
             CNetServer::TInstance server) :
         SAutomationObject(eNetScheduleServer),
-        m_NetScheduleAPI(ns_api),
-        m_NetScheduleServer(server)
+        m_NetScheduleServer(ns_api.GetServer(server)),
+        m_NetServer(server)
     {
     }
 
     virtual CJsonNode Call(const string& method, CArgArray& arg_array,
             CAutomationProc* automation_proc);
 
-    CNetScheduleAPI m_NetScheduleAPI;
-    CNetServer m_NetScheduleServer;
+    CNetScheduleAPI m_NetScheduleServer;
+    CNetServer m_NetServer;
 };
 
 struct SNetScheduleServiceAutomationObject : public SAutomationObject
@@ -328,18 +328,18 @@ CJsonNode SNetScheduleServerAutomationObject::Call(const string& method,
     if (method == "get_address") {
         switch (arg_array.NextNumber(0)) {
         case 0:
-            reply.PushString(m_NetScheduleServer.GetServerAddress());
+            reply.PushString(m_NetServer.GetServerAddress());
             break;
         case 1:
-            reply.PushString(m_NetScheduleServer.GetHost());
+            reply.PushString(m_NetServer.GetHost());
             break;
         case 2:
-            reply.PushNumber(m_NetScheduleServer.GetPort());
+            reply.PushNumber(m_NetServer.GetPort());
         }
     } else if (method == "server_info") {
         CJsonNode server_info_node(CJsonNode::NewObjectNode());
 
-        CNetServerInfo server_info(m_NetScheduleServer.GetServerInfo());
+        CNetServerInfo server_info(m_NetServer.GetServerInfo());
 
         string attr_name, attr_value;
 
@@ -348,33 +348,32 @@ CJsonNode SNetScheduleServerAutomationObject::Call(const string& method,
 
         reply.PushNode(server_info_node);
     } else if (method == "server_status")
-        reply.PushNode(LegacyStatToJson(m_NetScheduleServer,
+        reply.PushNode(LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
     else if (method == "client_info")
-        reply.PushNode(GenericStatToJson(m_NetScheduleServer,
+        reply.PushNode(GenericStatToJson(m_NetServer,
                 eNetScheduleStatClients, arg_array.NextBoolean(false)));
     else if (method == "notification_info")
-        reply.PushNode(GenericStatToJson(m_NetScheduleServer,
+        reply.PushNode(GenericStatToJson(m_NetServer,
                 eNetScheduleStatNotifications, arg_array.NextBoolean(false)));
     else if (method == "affinity_info")
-        reply.PushNode(GenericStatToJson(m_NetScheduleServer,
+        reply.PushNode(GenericStatToJson(m_NetServer,
                 eNetScheduleStatAffinities, arg_array.NextBoolean(false)));
     else if (method == "change_preferred_affinities") {
         vector<string> affs_to_add;
         ExtractVectorOfStrings(arg_array, affs_to_add);
         vector<string> affs_to_del;
         ExtractVectorOfStrings(arg_array, affs_to_del);
-        m_NetScheduleAPI.GetExecuter().ChangePreferredAffinities(
-                m_NetScheduleServer, affs_to_add, affs_to_del);
+        m_NetScheduleServer.GetExecuter().ChangePreferredAffinities(
+                affs_to_add, affs_to_del);
     } else if (method == "exec") {
         string command(arg_array.NextString());
 
         if (!arg_array.NextBoolean(false))
-            reply.PushString(
-                m_NetScheduleServer.ExecWithRetry(command).response);
+            reply.PushString(m_NetServer.ExecWithRetry(command).response);
         else {
             CNetServerMultilineCmdOutput output(
-                m_NetScheduleServer.ExecWithRetry(command));
+                m_NetServer.ExecWithRetry(command));
 
             CJsonNode lines(CJsonNode::NewArrayNode());
             string line;

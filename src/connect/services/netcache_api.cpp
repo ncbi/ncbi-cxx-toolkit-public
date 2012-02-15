@@ -91,7 +91,7 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
 
     m_Auth = nc_impl->m_Service->MakeAuthString();
 
-    if (nc_impl->m_Service->m_ClientName.length() < 3) {
+    if (nc_impl->m_Service->m_ServerPool->m_ClientName.length() < 3) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "Client name is too short or empty");
     }
@@ -222,11 +222,9 @@ class SNCMirrorIterationBeginner : public IIterationBeginner
 {
 public:
     SNCMirrorIterationBeginner(CNetService& service,
-            CNetServer::TInstance primary_server,
-            const string* service_name) :
+            CNetServer::TInstance primary_server) :
         m_Service(service),
-        m_PrimaryServer(primary_server),
-        m_ServiceName(service_name)
+        m_PrimaryServer(primary_server)
     {
     }
 
@@ -234,12 +232,27 @@ public:
 
     CNetService& m_Service;
     CNetServer::TInstance m_PrimaryServer;
-    const string* m_ServiceName;
 };
 
 CNetServiceIterator SNCMirrorIterationBeginner::BeginIteration()
 {
-    return m_Service.Iterate(m_PrimaryServer, m_ServiceName);
+    return m_Service.Iterate(m_PrimaryServer);
+}
+
+CNetService SNetCacheAPIImpl::FindOrCreateService(const string& service_name)
+{
+    SNetServiceImpl search_image(NStr::TruncateSpaces(service_name));
+
+    TServiceSet::iterator it = m_ServicesFromKeys.find(&search_image);
+
+    if (it != m_ServicesFromKeys.end())
+        return *it;
+
+    CNetService new_service(new SNetServiceImpl(service_name, m_Service));
+
+    m_ServicesFromKeys.insert(new_service);
+
+    return new_service;
 }
 
 CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
@@ -252,9 +265,10 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     CNetServer::SExecResult exec_result;
 
-    SNCMirrorIterationBeginner iteration_beginner(m_Service, primary_server,
-        key.HasExtensions() && key.GetServiceName() !=
-            m_Service.GetServiceName() ? &key.GetServiceName() : NULL);
+    SNCMirrorIterationBeginner iteration_beginner(key.HasExtensions() &&
+                key.GetServiceName() != m_Service.GetServiceName() ?
+            FindOrCreateService(key.GetServiceName()) :
+            m_Service, primary_server);
 
     m_Service->IterateAndExec(cmd, exec_result, &iteration_beginner);
 
@@ -355,7 +369,8 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
                 m_Service.GetServiceName() << ":" << e.what() <<
                 ". Connecting to backup server " << backup->AsString() << ".");
 
-            exec_result = m_Service->GetServer(*backup).ExecWithRetry(cmd);
+            exec_result = m_Service->m_ServerPool->
+                    GetServer(*backup).ExecWithRetry(cmd);
         }
     }
 
@@ -461,7 +476,8 @@ void CNetCacheAPI::Remove(const string& blob_id)
 void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
 {
     string cmd("GETMETA " + blob_id);
-    cmd.append(m_Impl->m_Service->m_EnforcedServerHost.empty() ? " 0" : " 1");
+    cmd.append(m_Impl->m_Service->m_ServerPool->
+            m_EnforcedServerHost.empty() ? " 0" : " 1");
 
     CNetCacheKey key(blob_id);
 

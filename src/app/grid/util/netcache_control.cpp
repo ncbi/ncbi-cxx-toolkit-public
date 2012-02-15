@@ -233,7 +233,7 @@ int CNetCacheControl::Run()
             string host, port;
 
             if (NStr::SplitInTwo(service, ":", host, port))
-                nc_client.GetService().StickToServer(
+                nc_client.GetService().GetServerPool().StickToServer(
                     host, NStr::StringToInt(port));
             else {
                 NCBI_THROW(CArgException, eInvalidArg,

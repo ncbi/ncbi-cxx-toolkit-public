@@ -77,7 +77,7 @@ static string s_GenInput(int input_length)
 {
     string input;
     input.reserve(input_length);
-    s_Random.SetSeed(time(0));
+    s_Random.SetSeed(CRandom::TValue(time(0)));
     for (int n = 0; n < input_length; ++n) {
         input.append(1, s_Random.GetRand(0, 255));
     }
@@ -185,7 +185,7 @@ int CTestNetScheduleClient::Run(void)
     STimeout comm_timeout;
     comm_timeout.sec  = 1200;
     comm_timeout.usec = 0;
-    cl.GetService().SetCommunicationTimeout(comm_timeout);
+    cl.GetService().GetServerPool().SetCommunicationTimeout(comm_timeout);
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
 

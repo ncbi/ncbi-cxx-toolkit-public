@@ -163,11 +163,21 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         const string& queue_name) :
     m_Service(new SNetServiceImpl(s_NetScheduleAPIName,
         client_name, new CNetScheduleServerListener)),
-    m_Queue(queue_name),
-    m_ServerParamsAskCount(SERVER_PARAMS_ASK_MAX_COUNT)
+    m_Queue(queue_name)
 {
     m_Service->Init(this, service_name,
         config, section, s_NetScheduleConfigSections);
+}
+
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(
+        SNetServerImpl* server, SNetScheduleAPIImpl* parent) :
+    m_Service(new SNetServiceImpl(server, parent->m_Service)),
+    m_Queue(parent->m_Queue),
+    m_ProgramVersion(parent->m_ProgramVersion),
+    m_ClientNode(parent->m_ClientNode),
+    m_ClientSession(parent->m_ClientSession),
+    m_UseEmbeddedStorage(parent->m_UseEmbeddedStorage)
+{
 }
 
 CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
@@ -501,8 +511,8 @@ void CNetScheduleAPI::SetClientSession(const string& client_session)
 void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 {
     CNetScheduleServerListener* listener =
-        static_cast<CNetScheduleServerListener*>(
-            m_Impl->m_Service->m_Listener.GetPointer());
+        static_cast<CNetScheduleServerListener*>(m_Impl->
+            m_Service->m_ServerPool->m_Listener.GetPointer());
 
     listener->m_WorkerNodeCompatMode = true;
     listener->SetAuthString(m_Impl);
@@ -510,9 +520,14 @@ void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 
 void CNetScheduleAPI::UseOldStyleAuth()
 {
-    m_Impl->m_Service->m_UseOldStyleAuth = true;
+    m_Impl->m_Service->m_ServerPool->m_UseOldStyleAuth = true;
 
     m_Impl->UpdateAuthString();
+}
+
+CNetScheduleAPI CNetScheduleAPI::GetServer(CNetServer::TInstance server)
+{
+    return new SNetScheduleAPIImpl(server, m_Impl);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
