@@ -218,6 +218,10 @@ void CAnnotWriterApp::Init()
         "skip-headers",
         "GFF dialects: Do not generate GFF headers",
         true );
+    arg_desc->AddFlag(
+        "smart-annots",
+        "GFF dialects: Inherit annots from components, unless prohibited",
+        true );
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -348,7 +352,6 @@ bool CAnnotWriterApp::xTryProcessSeqEntry(
     if (objtype != "Seq-entry") {
         return false;
     }
-
     CSeq_entry seq_entry;
     istr.Read(ObjectInfo(seq_entry), CObjectIStream::eNoFileHeader);
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry( seq_entry );
@@ -485,6 +488,9 @@ unsigned int CAnnotWriterApp::xGffFlags(
     if ( args["skip-exon-numbers"] ) {
         eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fNoExonNumbers );
     }
+    if (args["smart-annots"]  ||  args["id"]) {
+        eFlags |= CGff2Writer::fSelectAnnotsSmart;
+    }
     return eFlags;
 }
 
@@ -502,30 +508,18 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     const string strFormat = args["format"].AsString();
     if (strFormat == "gff"  ||  strFormat == "gff2") { 
         CGff2Writer* pWriter = new CGff2Writer(*m_pScope, *pOs, xGffFlags(args));
-        if (args["id"]) {
-            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
-        }
         return pWriter;
     }
     if (strFormat == "gff3") { 
         CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args));
-        if (args["id"]) {
-            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
-        }
         return pWriter;
     }
     if (strFormat == "gtf") {
         CGtfWriter* pWriter = new CGtfWriter(*m_pScope, *pOs, xGffFlags(args));
-        if (args["id"]) {
-            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
-        }
         return pWriter;
     }
     if (strFormat == "gvf") { 
         CGvfWriter* pWriter = new CGvfWriter( *m_pScope, *pOs, xGffFlags(args));
-        if (args["id"]) {
-            pWriter->GetAnnotSelector().SetResolveAll().SetAdaptiveDepth(true);
-        }
         return pWriter;
     }
     if (strFormat == "wiggle"  ||  strFormat == "wig") {
