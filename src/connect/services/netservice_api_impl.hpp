@@ -207,7 +207,7 @@ enum EServiceType {
     eSingleServerService
 };
 
-struct SNetServiceImpl : public CObject
+struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& client_name,
