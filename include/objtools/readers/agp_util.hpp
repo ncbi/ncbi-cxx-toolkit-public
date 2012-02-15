@@ -607,7 +607,7 @@ public:
     }
 
     // Print any accumulated messages.
-    void LineDone(const string& s, int line_num, bool invalid_line=false);
+    virtual void LineDone(const string& s, int line_num, bool invalid_line=false);
 
     // No need to call this function when reading from STDIN,
     // or when reading only one file. For multiple files,
