@@ -1544,6 +1544,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ECM	s	Hubei College of Traditional Chinese Medicine, Department of Chinese Materia Medica",
 "ECNB	s	Escuela Nacional Ciencias",
 "ECOL	s	Collection du Laborataire d'Ecologie",
+"ECOMAR<FRA>	s	ECOMAR lab University of Reunion",
 "ECON	s	Harvard University",
 "ECOSUR	s	El Colegio de la Frontera Sur (Mexico)",
 "ECSC	s	East Central University, Biology Department",
