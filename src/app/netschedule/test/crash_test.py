@@ -58,7 +58,14 @@ def main():
                        default=9109,
                        help="Netschedule daemon port to be used for tests. " \
                             "Default: 9109" )
-
+    parser.add_option( "--affs", dest="affs",
+                       default=500,
+                       help="Number of affinities for each instance of " \
+                            "test_netschedule_crash. (Default: 500)" )
+    parser.add_option( "--clients", dest="clients",
+                       default=0,
+                       help="Number of clients for each instance of " \
+                            "test_netschedule_crash. (Default: 0)" )
 
     # parse the command line options
     options, args = parser.parse_args()
@@ -78,6 +85,12 @@ def main():
     port = int( options.port )
     if port < 1024 or port > 65535:
         raise Exception( "Invalid port number " + str( port ) )
+    affs = int( options.affs )
+    if affs < 0:
+        raise Exception( "Invalid number of affinities" )
+    clients = int( options.clients )
+    if clients < 0:
+        raise Exception( "Invalid number of clients" )
 
     baseDir = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + os.path.sep
 
@@ -131,13 +144,17 @@ def main():
             cmdLine = pathCrashTest + "test_netschedule_crash " + \
                       " -service localhost:" + str( port ) + \
                       " -queue " + qName + \
-                      " -jobs " + str( jobs )
+                      " -jobs " + str( jobs ) + \
+                      " -delay 1 " \
+                      " -naff " + str( affs ) + \
+                      " -nclients " + str( clients )
             if options.verbose:
                 print "Launching test_netschedule_crash #" + \
                       str( crash_index ) + " for queue " + qName
                 print cmdLine
+            DEVNULL = open( '/dev/null', 'w' )
             crashProcs.append( Popen( cmdLine, shell = True,
-                                      stdout = PIPE, stderr = PIPE ) )
+                                      stdout = DEVNULL, stderr = PIPE ) )
 
     if options.verbose:
         print "Waiting for crash tests finish"
@@ -168,7 +185,7 @@ def generateNSConfig( baseDir, numberOfQueues, port, pathDB ):
                    "[queue_CRASH" + str( index ) + "]\n" \
                    "failed_retries=3\n" \
                    "timeout=9000\n" \
-                   "notif_timeout=720\n" \
+                   "notif_timeout=1.0\n" \
                    "run_timeout=8000\n" \
                    "run_timeout_precision=30\n" \
                    "delete_done=false\n" \
