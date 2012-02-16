@@ -133,6 +133,9 @@ private:
         const CArgs& );
     string xAssemblyName() const;
     string xAssemblyAccession() const;
+    void xTweakAnnotSelector(
+        const CArgs&,
+        SAnnotSelector&);
 
     CRef<CObjectManager> m_pObjMngr;
     CRef<CScope> m_pScope;
@@ -219,7 +222,7 @@ void CAnnotWriterApp::Init()
         "GFF dialects: Do not generate GFF headers",
         true );
     arg_desc->AddFlag(
-        "smart-annots",
+        "full-annots",
         "GFF dialects: Inherit annots from components, unless prohibited",
         true );
     }}
@@ -479,17 +482,14 @@ unsigned int CAnnotWriterApp::xGffFlags(
 //  -----------------------------------------------------------------------------
 {
    unsigned int eFlags = CGff2Writer::fNormal;
-    if ( args["structibutes"] ) {
-        eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fStructibutes );
+    if (args["structibutes"]) {
+        eFlags |= CGtfWriter::fStructibutes;
     }
-    if ( args["skip-gene-features"] ) {
-        eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fNoGeneFeatures );
+    if (args["skip-gene-features"]) {
+        eFlags |= CGtfWriter::fNoGeneFeatures;
     }
     if ( args["skip-exon-numbers"] ) {
-        eFlags = CGtfWriter::TFlags( eFlags | CGtfWriter::fNoExonNumbers );
-    }
-    if (args["smart-annots"]  ||  args["id"]) {
-        eFlags |= CGff2Writer::fSelectAnnotsSmart;
+        eFlags |= CGtfWriter::fNoExonNumbers;
     }
     return eFlags;
 }
@@ -508,18 +508,22 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     const string strFormat = args["format"].AsString();
     if (strFormat == "gff"  ||  strFormat == "gff2") { 
         CGff2Writer* pWriter = new CGff2Writer(*m_pScope, *pOs, xGffFlags(args));
+        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         return pWriter;
     }
     if (strFormat == "gff3") { 
         CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args));
+        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         return pWriter;
     }
     if (strFormat == "gtf") {
         CGtfWriter* pWriter = new CGtfWriter(*m_pScope, *pOs, xGffFlags(args));
+        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         return pWriter;
     }
     if (strFormat == "gvf") { 
         CGvfWriter* pWriter = new CGvfWriter( *m_pScope, *pOs, xGffFlags(args));
+        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         return pWriter;
     }
     if (strFormat == "wiggle"  ||  strFormat == "wig") {
@@ -547,6 +551,23 @@ string CAnnotWriterApp::xAssemblyAccession() const
 //  ----------------------------------------------------------------------------
 {
     return GetArgs()["assembly-accn"].AsString();
+}
+
+//  ---------------------------------------------------------------------------
+void CAnnotWriterApp::xTweakAnnotSelector(
+    const CArgs& args,
+    SAnnotSelector& sel)
+//  ---------------------------------------------------------------------------
+{
+   if (args["full-annots"]) {
+        sel.SetResolveDepth(kMax_Int);
+        sel.SetResolveAll().SetAdaptiveDepth();
+    }
+    else {
+        sel.SetAdaptiveDepth(false);
+        sel.SetExactDepth(true);
+        sel.SetResolveDepth(0);
+    }
 }
 
 END_NCBI_SCOPE
