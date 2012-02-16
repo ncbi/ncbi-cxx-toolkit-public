@@ -104,7 +104,7 @@ inline CArgArray::CArgArray(const CJsonNode::TArray& args) : m_Args(args)
 
 inline CJsonNode CArgArray::NextNodeOrNull()
 {
-    return m_Position == m_Args.end() ? NULL : *m_Position++;
+    return m_Position == m_Args.end() ? CJsonNode() : *m_Position++;
 }
 
 inline CJsonNode CArgArray::NextNode()
