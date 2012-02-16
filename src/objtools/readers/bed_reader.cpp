@@ -129,11 +129,10 @@ CBedReader::ReadSeqAnnot(
     annot->SetData().SetFtable();
 
     string line;
-    int lineCount = 0;
     int featureCount = 0;
 
     while (!lr.AtEOF()) {
-        ++lineCount;
+        ++m_uLineNumber;
         line = *++lr;
         if (NStr::TruncateSpaces(line).empty()) {
             continue;
@@ -144,19 +143,20 @@ CBedReader::ReadSeqAnnot(
             }
             if (x_ParseTrackLine(line, annot)) {
                 if (featureCount > 0) {
+                    --m_uLineNumber;
                     lr.UngetLine();
                     break;
                 }
                 continue;
             }
             if (!x_ParseFeature( line, annot )) {
+                --m_uLineNumber;
                 lr.UngetLine();
                 break;
             }
             ++featureCount;
         }
         catch( CObjReaderLineException& err ) {
-            err.SetLineNumber( lineCount );
             xProcessError( err, pErrorContainer );
         }
         continue;
@@ -299,6 +299,7 @@ bool CBedReader::x_ParseFeature(
         x_SetFeatureDisplayData( feature, fields );
     }
     catch( ... ) {
+        m_currentId.clear();
         CObjReaderLineException err(
             eDiag_Error,
             0,

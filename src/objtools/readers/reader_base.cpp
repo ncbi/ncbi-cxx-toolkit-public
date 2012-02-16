@@ -137,6 +137,7 @@ CReaderBase::GetReader(
 CReaderBase::CReaderBase(
     unsigned int flags) :
 //  ----------------------------------------------------------------------------
+    m_uLineNumber(0),
     m_iFlags(flags)
 {
     m_pTrackDefaults = new CTrackData;
