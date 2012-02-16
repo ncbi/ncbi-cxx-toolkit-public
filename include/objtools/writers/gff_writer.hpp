@@ -66,8 +66,7 @@ class NCBI_XOBJWRITE_EXPORT CGff2Writer:
 public:
     typedef enum {
         fSoQuirks = (fWriterBaseLast << 1),
-        fSelectAnnotsSmart = (fSoQuirks << 1),
-        fGff2WriterLast = fSelectAnnotsSmart,
+        fGff2WriterLast = fSoQuirks,
     } TFlags;
     
 public:

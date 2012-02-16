@@ -72,6 +72,7 @@ CGff2Writer::CGff2Writer(
     m_bHeaderWritten(false)
 {
     m_pScope.Reset( &scope );
+    GetAnnotSelector();
 };
 
 //  ----------------------------------------------------------------------------
@@ -83,6 +84,7 @@ CGff2Writer::CGff2Writer(
 {
     m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
     m_pScope->AddDefaults();
+    GetAnnotSelector();
 };
 
 //  ----------------------------------------------------------------------------
@@ -302,16 +304,7 @@ SAnnotSelector& CGff2Writer::GetAnnotSelector()
 {
     if ( !m_Selector.get() ) {
         m_Selector.reset(new SAnnotSelector);
-        if (m_uFlags & fSelectAnnotsSmart) {
-            m_Selector->SetResolveAll();
-            m_Selector->SetAdaptiveDepth();
-        }
-        else {
-            m_Selector->SetAdaptiveDepth(false);
-            m_Selector->SetExactDepth(true);
-            m_Selector->SetResolveDepth(0);
-        }
-        m_Selector->SetSortOrder( SAnnotSelector::eSortOrder_Normal );
+        m_Selector->SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     }
     return *m_Selector;
 }
