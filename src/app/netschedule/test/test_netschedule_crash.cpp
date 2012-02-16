@@ -358,6 +358,9 @@ vector<unsigned int>  CTestNetScheduleCrash::GetDone( CNetScheduleExecuter &  ex
 
         job.output = "JOB DONE ";
         executor.PutResult(job);
+
+        if (cnt % 1000 == 0)
+            NcbiCout << "." << flush;
     }
     double      elapsed = sw.Elapsed();
 
@@ -382,7 +385,7 @@ void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
                                       const string &           queue)
 {
     NcbiCout << NcbiEndl << "Loop of SUBMIT->GET->PUT for "
-             << jcount << " jobs. Each dot denotes 10000 loops." << NcbiEndl;
+             << jcount << " jobs. Each dot denotes 1000 loops." << NcbiEndl;
 
     CNetScheduleJob         job( "SUBMIT->GET->PUT loop test input" );
     string                  job_key;
@@ -397,7 +400,7 @@ void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
         job.output = "JOB DONE";
         executor.PutResult( job );
 
-        if (k % 10000 == 0) {
+        if (k % 1000 == 0) {
             NcbiCout << "." << flush;
         }
     }
