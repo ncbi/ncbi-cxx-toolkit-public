@@ -286,7 +286,7 @@ CNSNotificationList::NotifyPeriodically(time_t                 current_time,
 
                 // We are at slow rate; might need to skip some
                 k->m_SlowRateCount += 1;
-                if (k->m_SlowRateCount == 1 || k->m_SlowRateCount > notif_lofreq_mult) {
+                if (k->m_SlowRateCount > notif_lofreq_mult) {
                     k->m_SlowRateCount = 0;
                     // Send the same packet twice: Denis wanted to increase
                     // the UDP delivery probability
