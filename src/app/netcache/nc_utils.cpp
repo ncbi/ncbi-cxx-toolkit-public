@@ -34,6 +34,13 @@
 
 #include "nc_utils.hpp"
 
+#ifdef NCBI_OS_LINUX
+# include <unistd.h>
+# include <sys/syscall.h>
+# include <errno.h>
+# include <linux/futex.h>
+#endif
+
 
 BEGIN_NCBI_SCOPE;
 
@@ -331,6 +338,54 @@ void
 CSpinRWLock::WriteUnlock(void)
 {
     _VERIFY(m_LockCount.Add(-kWriteLockValue) + kWriteLockValue >= kWriteLockValue);
+}
+
+
+CFutex::EWaitResult
+CFutex::WaitValueChange(int old_value)
+{
+#ifdef NCBI_OS_LINUX
+retry:
+    int res = syscall(SYS_futex, &m_Value, FUTEX_WAIT, old_value, NULL, NULL, 0);
+    if (res == EINTR)
+        goto retry;
+    return res == 0? eWaitWokenUp: eValueChanged;
+#else
+    return eValueChanged;
+#endif
+}
+
+int
+CFutex::WakeUpWaiters(int cnt_to_wake)
+{
+#ifdef NCBI_OS_LINUX
+    return syscall(SYS_futex, &m_Value, FUTEX_WAKE, cnt_to_wake, NULL, NULL, 0);
+#else
+    return 0;
+#endif
+}
+
+
+void
+CMiniMutex::Lock(void)
+{
+    int val = m_Futex.AddValue(1);
+    _ASSERT(val >= 1);
+    if (val != 1) {
+        while (m_Futex.WaitValueChange(val) == CFutex::eValueChanged)
+            val = m_Futex.GetValue();
+    }
+}
+
+void
+CMiniMutex::Unlock(void)
+{
+    int val = m_Futex.AddValue(-1);
+    _ASSERT(val >= 0);
+    if (val != 0) {
+        while (m_Futex.WakeUpWaiters(1) != 1)
+            NCBI_SCHED_YIELD();
+    }
 }
 
 END_NCBI_SCOPE;

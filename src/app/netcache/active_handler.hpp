@@ -340,6 +340,7 @@ private:
     Uint8 m_SizeToRead;
     Uint4 m_ChunkSize;
     Uint2 m_BlobSlot;
+    Uint2 m_TimeBucket;
     ESynActionType m_SyncAction;
     bool m_ReservedForBG;
     bool m_InCmdPipeline;

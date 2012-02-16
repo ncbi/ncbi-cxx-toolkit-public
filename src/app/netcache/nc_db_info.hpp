@@ -74,11 +74,26 @@ private:
 
 class CNCBlobVerManager;
 
+struct ATTR_PACKED SNCDataCoord
+{
+    Uint4   file_id;
+    Uint4   rec_num;
+
+
+    bool empty(void) const;
+    void clear(void);
+};
+
+const CNcbiDiag& operator<< (const CNcbiDiag& diag, SNCDataCoord coord);
+bool operator== (SNCDataCoord left, SNCDataCoord right);
+bool operator!= (SNCDataCoord left, SNCDataCoord right);
+
+
 /// Full information about NetCache blob (excluding key, subkey, version)
 struct SNCBlobVerData : public CObject
 {
 public:
-    Uint8   coord;
+    SNCDataCoord coord;
     Uint8   create_time;
     int     ttl;
     int     expire;
@@ -92,11 +107,10 @@ public:
     Uint4   create_id;
     Uint4   chunk_size;
     Uint2   map_size;
-    Uint2   slot;
     Uint1   map_depth;
     bool    need_write;
     bool    has_error;
-    Uint8   data_coord;
+    SNCDataCoord data_coord;
 
     CRef<CNCBlobBuffer> data;
     CNCBlobVerManager*  manager;
@@ -119,7 +133,7 @@ static const Uint1 kNCMaxBlobMapsDepth = 3;
 struct SNCChunkMapInfo
 {
     Uint2   map_idx;
-    Uint8   coords[1];
+    SNCDataCoord ATTR_ALIGNED_8 coords[1];
 };
 
 struct SNCBlobSummary
@@ -177,10 +191,28 @@ typedef map<string, SNCCacheData*>   TNCBlobSumList;
 enum ENCDBFileType {
     eDBFileMeta = 0x01,
     eDBFileData = 0x02,
+    eDBFileMaps = 0x03
     //fDBFileForMove = 0x80,
     //eDBFileMoveMeta = eDBFileMeta + fDBFileForMove,
-    //eDBFileMoveData = eDBFileData + fDBFileForMove
+    //eDBFileMoveData = eDBFileData + fDBFileForMove,
+    //eDBFileMoveMaps = eDBFileMaps + fDBFileForMove
 };
+
+static ENCDBFileType const s_AllFileTypes[]
+                    = {eDBFileMeta, eDBFileData, eDBFileMaps
+                       /*, eDBFileMoveMeta, eDBFileMoveData, eDBFileMoveMaps*/};
+static size_t const s_CntAllFiles = sizeof(s_AllFileTypes) / sizeof(s_AllFileTypes[0]);
+
+enum EDBFileIndex {
+    eFileIndexMeta = 0,
+    eFileIndexData = 1,
+    eFileIndexMaps = 2
+    //eFileIndexMoveShift = 3,
+    //eFileIndexMoveMeta = eFileIndexMeta + eFileIndexMoveShift,
+    //eFileIndexMoveData = eFileIndexData + eFileIndexMoveShift,
+    //eFileIndexMoveMaps = eFileIndexMaps + eFileIndexMoveShift
+};
+
 
 struct SFileIndexRec;
 
@@ -196,8 +228,9 @@ struct SNCDBFileInfo : public CObject
     CSpinLock    info_lock;
     TFileHandle  fd;
     int          create_time;
-    int          last_shrink_time;
+    int          next_shrink_time;
     ENCDBFileType file_type;
+    EDBFileIndex type_index;
     string       file_name;
 
 
@@ -231,6 +264,38 @@ inline void
 CNCBlobBuffer::Resize(size_t new_size)
 {
     m_Size = new_size;
+}
+
+
+inline bool
+SNCDataCoord::empty(void) const
+{
+    return file_id == 0  &&  rec_num == 0;
+}
+
+inline void
+SNCDataCoord::clear(void)
+{
+    file_id = rec_num = 0;
+}
+
+inline const CNcbiDiag&
+operator<< (const CNcbiDiag& diag, SNCDataCoord coord)
+{
+    diag << "(" << coord.file_id << ", " << coord.rec_num << ")";
+    return diag;
+}
+
+inline bool
+operator== (SNCDataCoord left, SNCDataCoord right)
+{
+    return left.file_id == right.file_id  &&  left.rec_num == right.rec_num;
+}
+
+inline bool
+operator!= (SNCDataCoord left, SNCDataCoord right)
+{
+    return !(left == right);
 }
 
 END_NCBI_SCOPE

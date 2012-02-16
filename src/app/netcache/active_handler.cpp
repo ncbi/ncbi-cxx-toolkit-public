@@ -329,7 +329,9 @@ CNCActiveHandler::CopyPut(CRequestContext* cmd_ctx,
 {
     m_CmdCtx = cmd_ctx;
     m_BlobKey = key;
-    m_BlobSlot = slot;
+    CNCDistributionConf::GetSlotByKey(key, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != slot)
+        abort();
     m_OrigRecNo = orig_rec_no;
     if (m_Client)
         m_Client->SetStatus(eNCHubCmdInProgress);
@@ -666,7 +668,9 @@ CNCActiveHandler::CopyProlong(const string& key,
                               const SNCBlobSummary& blob_sum)
 {
     m_BlobKey = key;
-    m_BlobSlot = slot;
+    CNCDistributionConf::GetSlotByKey(key, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != slot)
+        abort();
     m_OrigTime = orig_time;
     m_OrigRecNo = orig_rec_no;
     m_OrigServer = CNCDistributionConf::GetSelfID();
@@ -719,8 +723,10 @@ CNCActiveHandler::SyncSend(CNCActiveSyncControl* ctrl, SNCSyncEvent* event)
     m_SyncAction = eSynActionWrite;
     m_SyncCtrl = ctrl;
     m_CmdCtx = ctrl->GetDiagCtx();
-    m_BlobSlot = ctrl->GetSyncSlot();
     m_BlobKey = event->key;
+    CNCDistributionConf::GetSlotByKey(m_BlobKey, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != ctrl->GetSyncSlot())
+        abort();
     m_OrigRecNo = event->orig_rec_no;
     x_DoCopyPut();
 }
@@ -731,8 +737,10 @@ CNCActiveHandler::SyncSend(CNCActiveSyncControl* ctrl, const string& key)
     m_SyncAction = eSynActionWrite;
     m_SyncCtrl = ctrl;
     m_CmdCtx = ctrl->GetDiagCtx();
-    m_BlobSlot = ctrl->GetSyncSlot();
     m_BlobKey = key;
+    CNCDistributionConf::GetSlotByKey(key, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != ctrl->GetSyncSlot())
+        abort();
     m_OrigRecNo = 0;
     x_DoCopyPut();
 }
@@ -771,9 +779,12 @@ CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
     m_OrigTime = event->orig_time;
     m_OrigRecNo = event->orig_rec_no;
     m_OrigServer = event->orig_server;
+    CNCDistributionConf::GetSlotByKey(m_BlobKey, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != ctrl->GetSyncSlot())
+        abort();
     m_CurCmd = eSyncProlongPeer;
     m_BlobAccess = g_NCStorage->GetBlobAccess(eNCRead, m_BlobKey,
-                                              kEmptyStr, m_BlobSlot);
+                                              kEmptyStr, m_TimeBucket);
 
     x_SetStateAndAddToPool(eWaitForMetaInfo);
 }
@@ -787,7 +798,9 @@ CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
     m_CmdCtx = ctrl->GetDiagCtx();
     m_SyncAction = eSynActionProlong;
     m_BlobKey = key;
-    m_BlobSlot = ctrl->GetSyncSlot();
+    CNCDistributionConf::GetSlotByKey(key, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != ctrl->GetSyncSlot())
+        abort();
     m_OrigTime = 0;
     m_OrigRecNo = 0;
     m_OrigServer = 0;
@@ -800,9 +813,11 @@ CNCActiveHandler::SyncProlongOur(CNCActiveSyncControl* ctrl,
 {
     m_SyncCtrl = ctrl;
     m_CmdCtx = ctrl->GetDiagCtx();
-    m_BlobSlot = ctrl->GetSyncSlot();
     m_SyncAction = eSynActionProlong;
     m_BlobKey = event->key;
+    CNCDistributionConf::GetSlotByKey(m_BlobKey, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != ctrl->GetSyncSlot())
+        abort();
     m_OrigTime = event->orig_time;
     m_OrigRecNo = event->orig_rec_no;
     m_OrigServer = event->orig_server;
@@ -836,6 +851,9 @@ CNCActiveHandler::SyncProlongOur(CNCActiveSyncControl* ctrl,
     m_CmdCtx = ctrl->GetDiagCtx();
     m_SyncAction = eSynActionProlong;
     m_BlobKey = key;
+    CNCDistributionConf::GetSlotByKey(key, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != ctrl->GetSyncSlot())
+        abort();
     m_OrigTime = 0;
     m_OrigRecNo = 0;
     m_OrigServer = 0;
@@ -1036,7 +1054,7 @@ CNCActiveHandler::x_DoCopyPut(void)
 {
     m_CurCmd = eCopyPut;
     m_BlobAccess = g_NCStorage->GetBlobAccess(eNCReadData, m_BlobKey,
-                                              kEmptyStr, m_BlobSlot);
+                                              kEmptyStr, m_TimeBucket);
     x_SetStateAndAddToPool(eWaitForMetaInfo);
 }
 
@@ -1045,10 +1063,12 @@ CNCActiveHandler::x_DoSyncGet(void)
 {
     m_SyncAction = eSynActionRead;
     m_CmdCtx = m_SyncCtrl->GetDiagCtx();
-    m_BlobSlot = m_SyncCtrl->GetSyncSlot();
+    CNCDistributionConf::GetSlotByKey(m_BlobKey, m_BlobSlot, m_TimeBucket);
+    if (m_BlobSlot != m_SyncCtrl->GetSyncSlot())
+        abort();
     m_CurCmd = eSyncGet;
     m_BlobAccess = g_NCStorage->GetBlobAccess(eNCCopyCreate, m_BlobKey,
-                                              kEmptyStr, m_BlobSlot);
+                                              kEmptyStr, m_TimeBucket);
     x_SetStateAndAddToPool(eWaitForMetaInfo);
 }
 
@@ -1753,7 +1773,7 @@ CNCActiveHandler::x_ReadSyncGetAnswer(void)
             Uint8 create_server = NStr::StringToUInt8(*it_tok);
             ++it_tok;
             Uint4 create_id = NStr::StringToUInt(*it_tok);
-            m_BlobAccess->SetCreateServer(create_server, create_id, m_BlobSlot);
+            m_BlobAccess->SetCreateServer(create_server, create_id);
         }
         catch (CStringException&) {
             x_ProcessProtocolError();
@@ -1851,7 +1871,7 @@ void
 CNCActiveHandler::x_DoProlongOur(void)
 {
     m_BlobAccess = g_NCStorage->GetBlobAccess(eNCRead, m_BlobKey,
-                                              kEmptyStr, m_BlobSlot);
+                                              kEmptyStr, m_TimeBucket);
     x_SetStateAndAddToPool(eWaitForMetaInfo);
 }
 

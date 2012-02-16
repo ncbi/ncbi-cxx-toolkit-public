@@ -79,6 +79,7 @@ static const char* kNCReg_TTLUnit             = "ttl_unit";
 static const char* kNCReg_ProlongOnRead       = "prolong_on_read";
 static const char* kNCReg_SearchOnRead        = "search_on_read";
 static const char* kNCReg_Quorum              = "quorum";
+static const char* kNCReg_FastOnMain          = "fast_quorum_on_main";
 static const char* kNCReg_PassPolicy          = "blob_password_policy";
 static const char* kNCReg_AppSetupPrefix      = "app_setup_";
 static const char* kNCReg_AppSetupValue       = "setup";
@@ -158,7 +159,10 @@ CNetCacheServer::x_ReadSpecificParams(const IRegistry&   reg,
         params->srch_on_read = reg.GetBool(section, kNCReg_SearchOnRead, true);
     }
     if (reg.HasEntry(section, kNCReg_Quorum, IRegistry::fCountCleared)) {
-        params->quorum = reg.GetInt(section, kNCReg_Quorum, 1);
+        params->quorum = reg.GetInt(section, kNCReg_Quorum, 2);
+    }
+    if (reg.HasEntry(section, kNCReg_FastOnMain, IRegistry::fCountCleared)) {
+        params->fast_on_main = reg.GetBool(section, kNCReg_FastOnMain, true);
     }
     if (reg.HasEntry(section, kNCReg_PassPolicy, IRegistry::fCountCleared)) {
         string pass_policy = reg.GetString(section, kNCReg_PassPolicy, "any");
@@ -252,7 +256,8 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
     main_params->prolong_on_read = true;
     main_params->srch_on_read    = false;
     main_params->pass_policy     = eNCBlobPassAny;
-    main_params->quorum          = 1;
+    main_params->quorum          = 2;
+    main_params->fast_on_main    = true;
     x_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);
     m_DefConnTimeout = main_params->conn_timeout;
     m_DefBlobTTL = main_params->blob_ttl;

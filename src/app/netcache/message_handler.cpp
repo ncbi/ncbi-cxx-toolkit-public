@@ -1517,7 +1517,7 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             return false;
         }
         if (cmd_extra.storage_access == eWithAutoBlobKey  &&  m_RawKey.empty()) {
-            m_RawKey = CNCDistributionConf::GenerateBlobKey(m_LocalPort);
+            CNCDistributionConf::GenerateBlobKey(m_LocalPort, m_RawKey, m_BlobSlot, m_TimeBucket);
             g_NCStorage->PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
 
             if (diag_extra.get() != NULL) {
@@ -1525,17 +1525,19 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
                 diag_extra->Print("gen_key", "1");
             }
         }
-        else if (m_BlobKey[0] == '\1') {
-            try {
-                CNetCacheKey nc_key(m_RawKey);
-                m_RawKey = nc_key.StripKeyExtensions();
-                g_NCStorage->PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
-            }
-            catch (CNetCacheException& ex) {
-                ERR_POST(Critical << "Error parsing blob key: " << ex);
+        else {
+            CNCDistributionConf::GetSlotByKey(m_BlobKey, m_BlobSlot, m_TimeBucket);
+            if (m_BlobKey[0] == '\1') {
+                try {
+                    CNetCacheKey nc_key(m_RawKey);
+                    m_RawKey = nc_key.StripKeyExtensions();
+                    g_NCStorage->PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
+                }
+                catch (CNetCacheException& ex) {
+                    ERR_POST(Critical << "Error parsing blob key: " << ex);
+                }
             }
         }
-        m_BlobSlot = CNCDistributionConf::GetSlotByKey(m_BlobKey);
         m_BlobSize = 0;
         if (diag_extra.get() != NULL) {
             diag_extra->Print("slot", NStr::UIntToString(m_BlobSlot));
@@ -1586,7 +1588,7 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             }
             else {
                 m_BlobAccess = g_NCStorage->GetBlobAccess(cmd_extra.blob_access,
-                                            m_BlobKey, m_BlobPass, m_BlobSlot);
+                                            m_BlobKey, m_BlobPass, m_TimeBucket);
                 x_SetState(eWaitForBlobAccess);
             }
         }
@@ -1667,16 +1669,26 @@ void
 CNCMessageHandler::x_GetCurSlotServers(void)
 {
     m_CheckSrvs = CNCDistributionConf::GetServersForSlot(m_BlobSlot);
-    Uint8 main_srv_id = 0;
-    if (m_BlobKey[0] == '\1')
-        main_srv_id = CNCDistributionConf::GetMainSrvId(m_BlobKey);
-    if (main_srv_id != 0  &&  main_srv_id != CNCDistributionConf::GetSelfID()) {
-        TServersList::iterator it = find(m_CheckSrvs.begin(), m_CheckSrvs.end(),
-                                         main_srv_id);
-        if (it != m_CheckSrvs.end()) {
-            Uint8 srv_id = *it;
-            m_CheckSrvs.erase(it);
-            m_CheckSrvs.insert(m_CheckSrvs.begin(), srv_id);
+    Uint4 main_srv_ip = 0;
+    if (m_BlobKey[0] == '\1') {
+        string cache_name, key, subkey;
+        g_NCStorage->UnpackBlobKey(m_BlobKey, cache_name, key, subkey);
+        main_srv_ip = CNCDistributionConf::GetMainSrvIP(key);
+    }
+    if (main_srv_ip != 0) {
+        if (Uint4(CNCDistributionConf::GetSelfID() >> 32) == main_srv_ip) {
+            m_ThisServerIsMain = true;
+        }
+        else {
+            m_ThisServerIsMain = false;
+            for (size_t i = 0; i < m_CheckSrvs.size(); ++i) {
+                if (Uint4(m_CheckSrvs[i] >> 32) == main_srv_ip) {
+                    Uint8 srv_id = m_CheckSrvs[i];
+                    m_CheckSrvs.erase(m_CheckSrvs.begin() + i);
+                    m_CheckSrvs.insert(m_CheckSrvs.begin(), srv_id);
+                    break;
+                }
+            }
         }
     }
 }
@@ -1725,7 +1737,15 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
                 m_LatestBlobSum.ver_expire = m_BlobAccess->GetCurVerExpire();
             }
             x_GetCurSlotServers();
-            x_SetState(eReadMetaNextPeer);
+            if ((m_ThisServerIsMain  &&  m_AppSetup->fast_on_main
+                    &&  g_NetcacheServer->IsInitiallySynced())
+                ||  m_ForceLocal)
+            {
+                x_SetState(eCommandReceived);
+            }
+            else {
+                x_SetState(eReadMetaNextPeer);
+            }
         }
         else {
             x_SetState(eCommandReceived);
@@ -1953,7 +1973,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         write_event->orig_time = m_BlobAccess->GetNewBlobCreateTime();
         write_event->orig_server = m_BlobAccess->GetNewCreateServer();
         write_event->orig_rec_no = m_OrigRecNo;
-        m_BlobAccess->SetBlobSlot(m_BlobSlot);
     }
     else {
         Uint8 cur_time = CNetCacheServer::GetPreciseTime();
@@ -1963,7 +1982,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
             m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
         m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
         m_BlobAccess->SetCreateServer(CNCDistributionConf::GetSelfID(),
-                                      g_NCStorage->GetNewBlobId(), m_BlobSlot);
+                                      g_NCStorage->GetNewBlobId());
         write_event->orig_server = CNCDistributionConf::GetSelfID();
         write_event->orig_time = cur_time;
     }
@@ -1985,7 +2004,8 @@ CNCMessageHandler::x_FinishReadingBlob(void)
             if (m_Quorum != 0)
                 --m_Quorum;
             x_GetCurSlotServers();
-            x_SetState(ePutToNextPeer);
+            if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main)
+                x_SetState(ePutToNextPeer);
         }
     }
     else if (m_OrigRecNo != 0) {
@@ -2544,7 +2564,7 @@ CNCMessageHandler::x_SendPutToPeerCmd(void)
         x_SetState(ePutToNextPeer);
         return true;
     }
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
         abort();
 
     m_ActiveHub->GetHandler()->CopyPut(m_CmdCtx, m_BlobKey, m_BlobSlot, m_OrigRecNo);
@@ -3006,17 +3026,19 @@ CNCMessageHandler::x_DoCmd_GetSize(void)
 bool
 CNCMessageHandler::x_DoCmd_HasBlob(void)
 {
-    m_LatestExist = g_NCStorage->IsBlobExists(m_BlobSlot, m_BlobKey);
+    m_LatestExist = g_NCStorage->IsBlobExists(m_TimeBucket, m_BlobKey);
     if (!m_LatestExist  &&  m_Quorum != 1) {
         if (m_Quorum != 0)
             --m_Quorum;
         x_GetCurSlotServers();
-        m_CmdProcessor = &CNCMessageHandler::x_DoCmd_HasBlobImpl;
-        x_SetState(eReadMetaNextPeer);
-        return true;
+        if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main) {
+            m_CmdProcessor = &CNCMessageHandler::x_DoCmd_HasBlobImpl;
+            x_SetState(eReadMetaNextPeer);
+            return true;
+        }
     }
-    else
-        return x_DoCmd_HasBlobImpl();
+
+    return x_DoCmd_HasBlobImpl();
 }
 
 bool

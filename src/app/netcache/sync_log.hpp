@@ -198,6 +198,7 @@ public:
 
     // Provides the total number of records in the log
     static Uint8 GetLogSize(void);
+    static Uint8 GetLogSize(Uint2 slot);
 
     static bool IsOverLimit(Uint2 slot);
 };

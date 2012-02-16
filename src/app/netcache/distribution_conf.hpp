@@ -63,7 +63,7 @@ public:
     static void Finalize(void);
 
     // Provides the slot number for the given key
-    static Uint2 GetSlotByKey(const string& key);
+    static void GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bucket);
 
     // Provides server IDs which serve the given slot
     static TServersList GetServersForSlot(Uint2 slot);
@@ -75,17 +75,20 @@ public:
     // Get the current server ID
     static Uint8 GetSelfID(void);
 
-    static Uint8 GetMainSrvId(const string& key);
+    static Uint4 GetMainSrvIP(const string& key);
 
     // Get all partners "host:port" strings
     static const TNCPeerList& GetPeers(void);
 
     // Generates a blob key which is covered by the current server slots
-    static string GenerateBlobKey(Uint2 local_port);
+    static void GenerateBlobKey(Uint2 local_port,
+                                string& key, Uint2& slot, Uint2& time_bucket);
 
     // Tests if a slot is served by the local server
     static bool IsServedLocally(Uint2 slot);
 
+    static Uint2 GetCntSlotBuckets(void);
+    static Uint2 GetCntTimeBuckets(void);
     static const vector<Uint2>& GetSelfSlots(void);
     static Uint1 GetCntActiveSyncs(void);
     static Uint1 GetMaxSyncsOneServer(void);

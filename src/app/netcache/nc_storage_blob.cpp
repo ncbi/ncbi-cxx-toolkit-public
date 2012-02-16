@@ -91,11 +91,6 @@ s_IsCurVerOlder(const SNCBlobVerData* cur_ver, const SNCBlobVerData* new_ver)
 }
 
 
-///
-static CNCBlobVerManager* const kLockedManager
-                                = reinterpret_cast<CNCBlobVerManager*>(size_t(1));
-
-
 inline unsigned int
 CNCBlobVerManager::x_IncRef(void)
 {
@@ -137,13 +132,15 @@ CNCBlobVerManager::x_IsFlagSet(unsigned int flag)
 inline void
 CNCBlobVerManager::x_RestoreBlobKey(void)
 {
-    g_NCStorage->RestoreBlobKey(m_Slot, m_Key, m_CacheData);
+    g_NCStorage->RestoreBlobKey(m_TimeBucket, m_Key, m_CacheData);
 }
 
 void
 CNCBlobVerManager::x_DeleteCurVersion(void)
 {
-    g_NCStorage->ChangeCacheDeadTime(m_CacheData, 0, 0);
+    SNCDataCoord empty_coord;
+    empty_coord.clear();
+    g_NCStorage->ChangeCacheDeadTime(m_CacheData, empty_coord, 0);
     m_CacheData->expire = 0;
     m_CurVersion.Reset();
 }
@@ -159,11 +156,11 @@ CNCBlobVerManager::DeleteVersion(const SNCBlobVerData* ver_data)
 }
 
 inline
-CNCBlobVerManager::CNCBlobVerManager(Uint2         slot,
+CNCBlobVerManager::CNCBlobVerManager(Uint2         time_bucket,
                                      const string& key,
                                      SNCCacheData* cache_data)
     : m_State(0),
-      m_Slot(slot),
+      m_TimeBucket(time_bucket),
       m_CacheData(cache_data),
       m_Key(key)
 {}
@@ -172,7 +169,7 @@ CNCBlobVerManager::~CNCBlobVerManager(void)
 {}
 
 CNCBlobVerManager*
-CNCBlobVerManager::Get(Uint2         slot,
+CNCBlobVerManager::Get(Uint2         time_bucket,
                        const string& key,
                        SNCCacheData* cache_data,
                        bool          for_new_version)
@@ -185,7 +182,7 @@ CNCBlobVerManager::Get(Uint2         slot,
         _ASSERT(mgr->m_Key == key  &&  mgr->m_CacheData == cache_data);
     }
     else {
-        mgr = new CNCBlobVerManager(slot, key, cache_data);
+        mgr = new CNCBlobVerManager(time_bucket, key, cache_data);
         cache_data->ver_mgr = mgr;
     }
     mgr->x_IncRef();
@@ -193,15 +190,15 @@ CNCBlobVerManager::Get(Uint2         slot,
         if (mgr->x_IsFlagSet(fDeletingKey)) {
             mgr->x_SetFlag(fNeedRestoreKey, true);
         }
-        else if (cache_data->key_deleted) {
+        else if (cache_data->key_del_time != 0) {
             need_key_restore = true;
-            cache_data->key_deleted = false;
+            cache_data->key_del_time = 0;
         }
     }
     cache_data->lock.Unlock();
 
     if (need_key_restore) {
-        g_NCStorage->RestoreBlobKey(slot, key, cache_data);
+        g_NCStorage->RestoreBlobKey(time_bucket, key, cache_data);
     }
     return mgr;
 }
@@ -254,7 +251,7 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
             }
         }
         else if (m_CurVerTrigger.GetState() == eNCOpCompleted
-                 &&  !m_CacheData->key_deleted)
+                 &&  m_CacheData->key_del_time == 0)
         {
             action = eDeleteKey;
             x_SetFlag(fDeletingKey, true);
@@ -269,7 +266,7 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
                 g_NCStorage->WriteBlobInfo(m_Key, cur_ver, NULL, 0);
                 break;
             case eDeleteKey:
-                success = g_NCStorage->DeleteBlobKey(m_Slot, m_Key);
+                success = g_NCStorage->DeleteBlobKey(m_TimeBucket, m_Key);
                 break;
             case eDeleteCurVer:
                 DeleteVersion(cur_ver);
@@ -285,12 +282,9 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
                 if (x_IsFlagSet(fNeedRestoreKey)) {
                     x_SetFlag(fNeedRestoreKey, false);
                     m_CacheData->lock.Unlock();
-                    g_NCStorage->RestoreBlobKey(m_Slot, m_Key, m_CacheData);
+                    g_NCStorage->RestoreBlobKey(m_TimeBucket, m_Key, m_CacheData);
                     m_CacheData->lock.Lock();
                     _ASSERT(m_CacheData->ver_mgr == this);
-                }
-                else if (success) {
-                    m_CacheData->key_deleted = true;
                 }
             }
             else if (action == eUpdateVersion  &&  cur_ver == m_CurVersion) {
@@ -314,8 +308,7 @@ ENCBlockingOpResult
 CNCBlobVerManager::GetCurVersion(CRef<SNCBlobVerData>* ver_data,
                                  INCBlockedOpListener* listener)
 {
-    if (m_CurVerTrigger.GetState() == eNCOpNotDone
-        &&  m_CacheData->coord == 0)
+    if (m_CurVerTrigger.GetState() == eNCOpNotDone  &&  m_CacheData->coord.empty())
     {
         // We have to detect non-existent blobs asap to avoid segmentation
         // faults.
@@ -349,12 +342,14 @@ CNCBlobVerManager::GetCurVersion(CRef<SNCBlobVerData>* ver_data,
 void
 CNCBlobVerManager::x_ReadCurVersion(void)
 {
-    _ASSERT(m_CacheData->coord != 0);
+    _ASSERT(!m_CacheData->coord.empty());
     m_CurVersion.Reset(s_VerDataPool.Get());
     m_CurVersion->manager = this;
     m_CurVersion->coord = m_CacheData->coord;
     m_CurVersion->create_time = m_CacheData->create_time;
     m_CurVersion->size = m_CacheData->size;
+    m_CurVersion->chunk_size = m_CacheData->chunk_size;
+    m_CurVersion->map_size = m_CacheData->map_size;
     m_CurVersion->need_write = false;
     m_CurVersion->has_error  = false;
     if (!g_NCStorage->ReadBlobInfo(m_CurVersion)) {
@@ -368,18 +363,18 @@ CNCBlobVerManager::x_ReadCurVersion(void)
 CRef<SNCBlobVerData>
 CNCBlobVerManager::CreateNewVersion(void)
 {
-    if (m_CacheData->key_deleted)
+    if (m_CacheData->key_del_time != 0)
         x_RestoreBlobKey();
 
     SNCBlobVerData* data = s_VerDataPool.Get();
     data->manager       = this;
-    data->coord         = 0;
+    data->coord.clear();
     data->create_time   = 0;
     data->expire        = 0;
     data->dead_time     = 0;
     data->size          = 0;
     data->blob_ver      = 0;
-    data->data_coord    = 0;
+    data->data_coord.clear();
     data->chunk_size    = kNCMaxBlobChunkSize;
     data->map_size      = kNCMaxChunksInMap;
     data->need_write    = false;
@@ -406,11 +401,23 @@ CNCBlobVerManager::FinalizeWriting(SNCBlobVerData* ver_data)
             m_CacheData->expire = m_CurVersion->expire;
             m_CacheData->ver_expire = m_CurVersion->ver_expire;
             m_CacheData->size = m_CurVersion->size;
+            m_CacheData->chunk_size = m_CurVersion->chunk_size;
+            m_CacheData->map_size = m_CurVersion->map_size;
         }
         m_CacheData->lock.Unlock();
     }}
     old_ver.Reset();
     return true;
+}
+
+void
+CNCBlobVerManager::DeadTimeChanged(SNCBlobVerData* ver_data)
+{
+    m_CacheData->lock.Lock();
+    if (m_CurVersion == ver_data) {
+        g_NCStorage->ChangeCacheDeadTime(m_CacheData, ver_data->coord, ver_data->dead_time);
+    }
+    m_CacheData->lock.Unlock();
 }
 
 inline void
@@ -450,12 +457,12 @@ CNCBlobAccessor::CNCBlobAccessor(void)
 void
 CNCBlobAccessor::Prepare(const string& key,
                          const string& password,
-                         Uint2         slot,
+                         Uint2         time_bucket,
                          ENCAccessType access_type)
 {
     m_BlobKey       = key;
     m_Password      = password;
-    m_BlobSlot      = slot;
+    m_TimeBucket    = time_bucket;
     m_AccessType    = access_type;
     m_Initialized   = false;
     m_HasError      = false;
@@ -478,7 +485,7 @@ CNCBlobAccessor::Initialize(SNCCacheData* cache_data)
     if (cache_data) {
         bool new_version = m_AccessType == eNCCreate
                            ||  m_AccessType == eNCCopyCreate;
-        m_VerManager = CNCBlobVerManager::Get(m_BlobSlot, m_BlobKey,
+        m_VerManager = CNCBlobVerManager::Get(m_TimeBucket, m_BlobKey,
                                               cache_data, new_version);
     }
     m_Initialized = true;
@@ -503,7 +510,7 @@ CNCBlobAccessor::Deinitialize(void)
         if (m_NewData) {
             CNCStat::AddBlobWritten(m_NewData->size, m_NewData == m_CurData);
             if (m_NewData != m_CurData) {
-                if (m_NewData->coord != 0)
+                if (!m_NewData->coord.empty())
                     abort();
                 g_NCStorage->DeleteBlobInfo(m_NewData, m_ChunkMaps);
             }
@@ -725,7 +732,7 @@ CNCBlobAccessor::ReplaceBlobInfo(const SNCBlobVerData& new_info)
 }
 
 void
-CNCBlobAccessor::DeleteBlob(int dead_time)
+CNCBlobAccessor::DeleteBlob(void)
 {
     _ASSERT(m_AccessType == eNCGCDelete);
 
@@ -742,6 +749,15 @@ CNCBlobAccessor::GetCurPassword(void) const
         return m_CurData->password;
     else
         return g_NCStorage->PrintablePassword(m_CurData->password);
+}
+
+void
+CNCBlobAccessor::SetCurBlobExpire(int expire, int dead_time /* = 0 */)
+{
+    m_CurData->expire = expire;
+    m_CurData->dead_time = max(expire, max(m_CurData->dead_time, dead_time));
+    m_CurData->need_write = true;
+    m_VerManager->DeadTimeChanged(m_CurData);
 }
 
 END_NCBI_SCOPE

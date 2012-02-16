@@ -40,12 +40,22 @@
 #include <corelib/ncbithr.hpp>
 #include <util/thread_pool.hpp>
 
+
 #ifdef _DEBUG
 #  undef _ASSERT
 #  define _ASSERT(x)  if (x) ; else abort()
 #  undef _VERIFY
 #  define _VERIFY(x)  if (x) ; else abort()
 #endif
+
+#ifdef NCBI_COMPILER_GCC
+# define ATTR_PACKED    __attribute__ ((packed))
+# define ATTR_ALIGNED_8 __attribute__ ((aligned(8)))
+#else
+# define ATTR_PACKED
+# define ATTR_ALIGNED_8
+#endif
+
 
 
 BEGIN_NCBI_SCOPE
@@ -124,6 +134,59 @@ private:
     /// Number of read locks acquired or value of kWriteLockValue if write
     /// lock was acquired
     CAtomicCounter m_LockCount;
+};
+
+
+#ifdef NCBI_OS_LINUX
+typedef struct timespec TTimeSpec;
+#else
+typedef void* TTimeSpec;
+#endif
+
+
+class CFutex
+{
+public:
+    CFutex(void);
+
+    int GetValue(void);
+    int AddValue(int cnt_to_add);
+
+    void SetValueNonAtomic(int new_value);
+
+    enum EWaitResult {
+        eWaitWokenUp,
+        eValueChanged,
+        eTimedOut
+    };
+
+    EWaitResult WaitValueChange(int old_value);
+    int WakeUpWaiters(int cnt_to_wake);
+
+private:
+    CFutex(const CFutex&);
+    CFutex& operator= (const CFutex&);
+
+    volatile int m_Value;
+};
+
+
+class CMiniMutex
+{
+public:
+    CMiniMutex(void);
+    ~CMiniMutex(void);
+
+    void Lock(void);
+    void Unlock(void);
+
+private:
+    /// Prohibit copying of the object
+    CMiniMutex(const CMiniMutex&);
+    CMiniMutex& operator= (const CMiniMutex&);
+
+
+    CFutex m_Futex;
 };
 
 
@@ -781,6 +844,79 @@ inline
 CSpinRWLock::~CSpinRWLock(void)
 {
     _ASSERT(m_LockCount.Get() == 0);
+}
+
+
+template <class T>
+inline T
+AtomicAdd(T volatile& var, T add_value)
+{
+#ifdef NCBI_COMPILER_GCC
+    return __sync_add_and_fetch(&var, add_value);
+#else
+    return var;
+#endif
+}
+
+template <class T1, class T2>
+inline T1
+AtomicAdd(T1 volatile& var, T2 add_value)
+{
+    return AtomicAdd(var, (T1)add_value);
+}
+
+template <class T>
+inline T
+AtomicSub(T volatile& var, T sub_value)
+{
+#ifdef NCBI_COMPILER_GCC
+    return __sync_sub_and_fetch(&var, sub_value);
+#else
+    return var;
+#endif
+}
+
+template <class T1, class T2>
+inline T1
+AtomicSub(T1 volatile& var, T2 sub_value)
+{
+    return AtomicSub(var, (T1)sub_value);
+}
+
+
+inline
+CFutex::CFutex(void)
+{}
+
+inline int
+CFutex::GetValue(void)
+{
+    return m_Value;
+}
+
+inline int
+CFutex::AddValue(int cnt_to_add)
+{
+    return AtomicAdd(m_Value, cnt_to_add);
+}
+
+inline void
+CFutex::SetValueNonAtomic(int new_value)
+{
+    m_Value = new_value;
+}
+
+
+inline
+CMiniMutex::CMiniMutex(void)
+{
+    m_Futex.SetValueNonAtomic(0);
+}
+
+inline
+CMiniMutex::~CMiniMutex(void)
+{
+    _ASSERT(m_Futex.GetValue() == 0);
 }
 
 

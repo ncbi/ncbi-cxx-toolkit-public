@@ -348,7 +348,7 @@ CNCPeriodicSync::Initiate(Uint8  server_id,
                                                        remote_start_rec_no,
                                                        events);
     if (records_available
-        ||  (CNCSyncLog::GetLogSize() == 0  &&  slot_srv->was_blobs_sync))
+        ||  (CNCSyncLog::GetLogSize(slot) == 0  &&  slot_srv->was_blobs_sync))
     {
         slot_srv->is_by_blobs = false;
         return eProceedWithEvents;
@@ -745,7 +745,7 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
                                       &m_Events2Send,
                                       &m_LocalSyncedRecNo,
                                       &m_RemoteSyncedRecNo)
-        ||  (CNCSyncLog::GetLogSize() == 0  &&  m_SlotSrv->was_blobs_sync))
+        ||  (CNCSyncLog::GetLogSize(m_Slot) == 0  &&  m_SlotSrv->was_blobs_sync))
     {
         m_CurGetEvent = m_Events2Get.begin();
         m_CurSendEvent = m_Events2Send.begin();
@@ -1062,6 +1062,9 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action, CNCAct
 
     if (--m_StartedCmds == 0) {
         if (m_NextTask == eSynNeedFinalize) {
+            // This is to avoid finishing loop in x_DoPeriodicSync() while
+            // mutex is unlocked.
+            m_StartedCmds = 1;
             m_Lock.Unlock();
             if (m_Result == eSynNetworkError
                 ||  !m_SlotSrv->peer->FinishSync(this))
@@ -1073,7 +1076,9 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action, CNCAct
                 m_WaitCond.SignalAll();
             }
             else {
-                return;
+                m_Lock.Lock();
+                if (--m_StartedCmds == 0)
+                    m_WaitCond.SignalAll();
             }
         }
         else if (m_NextTask == eSynNoTask) {

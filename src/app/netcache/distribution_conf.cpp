@@ -67,7 +67,10 @@ static TSlot2SrvMap s_RawSlot2Servers;
 static TSrv2SlotMap s_CommonSlots;
 static vector<Uint2> s_SelfSlots;
 static Uint2    s_MaxSlotNumber = 0;
+static Uint2    s_CntSlotBuckets = 0;
+static Uint2    s_CntTimeBuckets = 0;
 static Uint4    s_SlotRndShare  = numeric_limits<Uint4>::max();
+static Uint4    s_TimeRndShare  = numeric_limits<Uint4>::max();
 static Uint8    s_SelfID        = 0;
 static string   s_SelfGroup;
 static CSpinLock s_KeyRndLock;
@@ -97,7 +100,7 @@ static Uint8    s_MinForcedCleanPeriod;
 static Uint4    s_CleanAttemptInterval;
 static Uint8    s_PeriodicSyncInterval;
 //static Uint8    s_PeriodicSyncHeadTime;
-static Uint8    s_PeriodicSyncTailTime;
+//static Uint8    s_PeriodicSyncTailTime;
 static Uint8    s_PeriodicSyncTimeout;
 static Uint8    s_FailedSyncRetryDelay;
 static Uint8    s_NetworkErrorTimeout;
@@ -224,6 +227,15 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     s_CopyDelayLog = fopen(reg.Get(kNCReg_NCPoolSection, "copy_delay_log_file").c_str(), "a");
 
     try {
+        s_CntSlotBuckets = reg.GetInt(kNCReg_NCPoolSection, "cnt_slot_buckets", 10);
+        if (numeric_limits<Uint2>::max() / s_CntSlotBuckets < s_MaxSlotNumber) {
+            ERR_POST(Critical << "Bad configuration: too many buckets per slot ("
+                     << s_CntSlotBuckets << ") with given number of slots ("
+                     << s_MaxSlotNumber << ").");
+            return false;
+        }
+        s_CntTimeBuckets = s_CntSlotBuckets * s_MaxSlotNumber;
+        s_TimeRndShare = s_SlotRndShare / s_CntSlotBuckets + 1;
         s_CntActiveSyncs = reg.GetInt(kNCReg_NCPoolSection, "max_active_syncs", 4);
         s_MaxSyncsOneServer = reg.GetInt(kNCReg_NCPoolSection, "max_syncs_one_server", 2);
         s_MaxWorkerTimePct = reg.GetInt(kNCReg_NCPoolSection, "max_deferred_time_pct", 10);
@@ -253,8 +265,8 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_PeriodicSyncInterval *= kNCTimeTicksInSec;
         //s_PeriodicSyncHeadTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_head_time", 1);
         //s_PeriodicSyncHeadTime *= kNCTimeTicksInSec;
-        s_PeriodicSyncTailTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_tail_time", 10);
-        s_PeriodicSyncTailTime *= kNCTimeTicksInSec;
+        //s_PeriodicSyncTailTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_tail_time", 10);
+        //s_PeriodicSyncTailTime *= kNCTimeTicksInSec;
         s_PeriodicSyncTimeout = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_timeout", 10);
         s_PeriodicSyncTimeout *= kNCTimeTicksInSec;
         s_FailedSyncRetryDelay = reg.GetInt(kNCReg_NCPoolSection, "failed_sync_retry_delay", 1);
@@ -274,32 +286,6 @@ CNCDistributionConf::Finalize(void)
 {
     if (s_CopyDelayLog)
         fclose(s_CopyDelayLog);
-}
-
-Uint2
-CNCDistributionConf::GetSlotByKey(const string& key)
-{
-    Uint4 key_rnd;
-    if (key[0] == '\1') {
-        // NetCache-generated key
-        size_t ind = key.find('_', 0);  // version
-        ind = key.find('_', ind + 1);   // id
-        ind = key.find('_', ind + 1);   // host
-        ind = key.find('_', ind + 1);   // port
-        ind = key.find('_', ind + 1);   // time
-        ind = key.find('_', ind + 1);   // random
-        ++ind;
-        key_rnd = NStr::StringToUInt(CTempString(&key[ind], key.size() - ind),
-                                     NStr::fAllowTrailingSymbols);
-    }
-    else {
-        // ICache key provided by client
-        CChecksum crc32(CChecksum::eCRC32);
-        crc32.AddChars(key.data(), key.size());
-        key_rnd = crc32.GetChecksum();
-    }
-    // Slot numbers are 1-based
-    return Uint2(key_rnd / s_SlotRndShare) + 1;
 }
 
 TServersList
@@ -344,8 +330,9 @@ CNCDistributionConf::GetPeers(void)
 }
 
 
-string
-CNCDistributionConf::GenerateBlobKey(Uint2 local_port)
+void
+CNCDistributionConf::GenerateBlobKey(Uint2 local_port,
+                                     string& key, Uint2& slot, Uint2& time_bucket)
 {
     s_KeyRndLock.Lock();
     Uint4 rnd_num = s_KeyRnd.GetRand();
@@ -355,30 +342,57 @@ CNCDistributionConf::GenerateBlobKey(Uint2 local_port)
     Uint4 piece_share = (CRandom::GetMax() + 1) / cnt_pieces + 1;
     Uint2 index = rnd_num / piece_share;
     rnd_num -= index * piece_share;
-    Uint2 slot = s_SelfSlots[index];
-    Uint4 key_rnd = (slot - 1) * s_SlotRndShare + rnd_num % s_SlotRndShare;
-    string key;
+    slot = s_SelfSlots[index];
+    Uint4 remain = rnd_num % s_SlotRndShare;
+    Uint4 key_rnd = (slot - 1) * s_SlotRndShare + remain;
+    time_bucket = Uint2((slot - 1) * s_CntSlotBuckets + remain / s_TimeRndShare) + 1;
     CNetCacheKey::GenerateBlobKey(&key,
                                   static_cast<Uint4>(s_BlobId.Add(1)),
                                   s_SelfHostIP, local_port, 1, key_rnd);
-    return key;
 }
 
-Uint8
-CNCDistributionConf::GetMainSrvId(const string& key)
+void
+CNCDistributionConf::GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bucket)
+{
+    Uint4 key_rnd;
+    if (key[0] == '\1') {
+        // NetCache-generated key
+        size_t ind = key.find('_', 0);  // version
+        ind = key.find('_', ind + 1);   // id
+        ind = key.find('_', ind + 1);   // host
+        ind = key.find('_', ind + 1);   // port
+        ind = key.find('_', ind + 1);   // time
+        ind = key.find('_', ind + 1);   // random
+        ++ind;
+        key_rnd = NStr::StringToUInt(CTempString(&key[ind], key.size() - ind),
+                                     NStr::fAllowTrailingSymbols);
+    }
+    else {
+        // ICache key provided by client
+        CChecksum crc32(CChecksum::eCRC32);
+        crc32.AddChars(key.data(), key.size());
+        key_rnd = crc32.GetChecksum();
+    }
+    // Slot numbers are 1-based
+    slot = Uint2(key_rnd / s_SlotRndShare) + 1;
+    time_bucket = Uint2((slot - 1) * s_CntSlotBuckets
+                        + key_rnd % s_SlotRndShare / s_TimeRndShare) + 1;
+}
+
+Uint4
+CNCDistributionConf::GetMainSrvIP(const string& key)
 {
     try {
         CNetCacheKey nc_key(key);
         Uint4 host;
         Uint2 port;
         CSocketAPI::StringToHostPort(nc_key.GetHost(), &host, &port);
-        return (Uint8(host) << 32) + nc_key.GetPort();
+        return host;
     }
     catch (CNetCacheException&) {
         return 0;
     }
 }
-
 
 bool
 CNCDistributionConf::IsServedLocally(Uint2 slot)
@@ -386,6 +400,17 @@ CNCDistributionConf::IsServedLocally(Uint2 slot)
     return find(s_SelfSlots.begin(), s_SelfSlots.end(), slot) != s_SelfSlots.end();
 }
 
+Uint2
+CNCDistributionConf::GetCntSlotBuckets(void)
+{
+    return s_CntSlotBuckets;
+}
+
+Uint2
+CNCDistributionConf::GetCntTimeBuckets(void)
+{
+    return s_CntTimeBuckets;
+}
 
 const vector<Uint2>&
 CNCDistributionConf::GetSelfSlots(void)
@@ -523,7 +548,8 @@ CNCDistributionConf::GetPeriodicSyncHeadTime(void)
 Uint8
 CNCDistributionConf::GetPeriodicSyncTailTime(void)
 {
-    return s_PeriodicSyncTailTime;
+    //return s_PeriodicSyncTailTime;
+    return 0;
 }
 
 Uint8

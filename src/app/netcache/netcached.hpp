@@ -57,11 +57,11 @@ static const char* const kNCPeerClientName = "nc_peer";
 
 
 /// Policy for accepting passwords for reading and writing blobs
-enum ENCBlobPassPolicy NCBI_PACKED_ENUM_TYPE(Uint1) {
+enum ENCBlobPassPolicy {
     eNCBlobPassAny,     ///< Both blobs with password and without are accepted
     eNCOnlyWithPass,    ///< Only blobs with password are accepted
     eNCOnlyWithoutPass  ///< Only blobs without password are accepted
-} NCBI_PACKED_ENUM_END();
+};
 
 
 struct SNCSpecificParams : public CObject
@@ -69,6 +69,7 @@ struct SNCSpecificParams : public CObject
     bool  disable;
     bool  prolong_on_read;
     bool  srch_on_read;
+    bool  fast_on_main;
     ENCBlobPassPolicy pass_policy;
     Uint4 conn_timeout;
     Uint4 cmd_timeout;

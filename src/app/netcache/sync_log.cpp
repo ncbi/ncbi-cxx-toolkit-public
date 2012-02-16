@@ -757,6 +757,13 @@ CNCSyncLog::GetLogSize(void)
     return s_TotalRecords.Get();
 }
 
+Uint8
+CNCSyncLog::GetLogSize(Uint2 slot)
+{
+    SSlotData& data = s_GetSlotData(slot);
+    return data.rec_number;
+}
+
 bool
 CNCSyncLog::IsOverLimit(Uint2 slot)
 {
