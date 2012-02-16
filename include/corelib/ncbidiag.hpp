@@ -1412,6 +1412,10 @@ extern void SetDiagFixedPostLevel(EDiagSev post_sev);
 NCBI_XNCBI_EXPORT
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
+/// Get the "die" (abort) level for the program.
+NCBI_XNCBI_EXPORT
+extern EDiagSev GetDiagDieLevel(void);
+
 /// Ignore the die level settings.  Return previous setting.
 ///
 /// WARNING!!! -- not recommended for use unless you are real desperate:

@@ -88,6 +88,8 @@ class CDiagBuffer
     NCBI_XNCBI_EXPORT
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     NCBI_XNCBI_EXPORT
+    friend EDiagSev GetDiagDieLevel(void);
+    NCBI_XNCBI_EXPORT
     friend bool IgnoreDiagDieLevel(bool ignore);
 
     // Others

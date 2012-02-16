@@ -4640,6 +4640,12 @@ extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
 }
 
 
+extern EDiagSev GetDiagDieLevel(void)
+{
+    return CDiagBuffer::sm_DieSeverity;
+}
+
+
 extern bool IgnoreDiagDieLevel(bool ignore)
 {
     CDiagLock lock(CDiagLock::eWrite);
@@ -5460,6 +5466,7 @@ public:
     {}
 
     virtual void* Main(void);
+    void Stop(void);
 
 
     bool m_NeedStop;
@@ -5508,19 +5515,7 @@ CAsyncDiagHandler::RemoveFromDiag(void)
 
     _ASSERT(GetDiagHandler(false) == this);
     SetDiagHandler(m_AsyncThread->m_SubHandler);
-    m_AsyncThread->m_NeedStop = true;
-    try {
-#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
-        m_AsyncThread->m_QueueCond.SignalAll();
-#else
-        m_AsyncThread->m_QueueSem.Post(10);
-#endif
-        m_AsyncThread->Join();
-    }
-    catch (CException& ex) {
-        ERR_POST_X(24, Critical
-                       << "Error while removing AsyncDiagHandler: " << ex);
-    }
+    m_AsyncThread->Stop();
     m_AsyncThread->RemoveReference();
     m_AsyncThread = NULL;
 }
@@ -5543,14 +5538,20 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
     CAsyncDiagThread* thr = m_AsyncThread;
     SDiagMessage* save_msg = new SDiagMessage(mess);
 
-    CFastMutexGuard guard(thr->m_QueueLock);
-    thr->m_MsgQueue.push_back(save_msg);
-    if (thr->m_MsgQueue.size() == 1) {
+    if (save_msg->m_Severity < GetDiagDieLevel()) {
+        CFastMutexGuard guard(thr->m_QueueLock);
+        thr->m_MsgQueue.push_back(save_msg);
+        if (thr->m_MsgQueue.size() == 1) {
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
-        thr->m_QueueCond.SignalSome();
+            thr->m_QueueCond.SignalSome();
 #else
-        thr->m_QueueSem.Post();
+            thr->m_QueueSem.Post();
 #endif
+        }
+    }
+    else {
+        thr->Stop();
+        thr->m_SubHandler->Post(*save_msg);
     }
 }
 
@@ -5587,6 +5588,24 @@ drain_messages:
         goto drain_messages;
     }
     return NULL;
+}
+
+void
+CAsyncDiagThread::Stop(void)
+{
+    m_NeedStop = true;
+    try {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+        m_QueueCond.SignalAll();
+#else
+        m_QueueSem.Post(10);
+#endif
+        Join();
+    }
+    catch (CException& ex) {
+        ERR_POST_X(24, Critical
+                   << "Error while stopping thread for AsyncDiagHandler: " << ex);
+    }
 }
 
 
