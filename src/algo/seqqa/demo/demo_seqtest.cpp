@@ -41,6 +41,11 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seq/Bioseq.hpp>
 
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
+#include <serial/iterator.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -60,14 +65,15 @@ void CDemoSeqQaApp::Init()
     arg_descr->SetUsageContext(GetArguments().GetProgramName(),
                                "Demo application testing xalgoseqqa library");
 
-    arg_descr->AddOptionalKey("id", "Accession", "Accession to test",
-                              CArgDescriptions::eString);
+    arg_descr->AddDefaultKey("i", "Input_file", "Input file to test",
+                              CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
-    arg_descr->AddOptionalKey("infile", "Input_file", "Input file to test",
-                              CArgDescriptions::eInputFile);
+    arg_descr->AddDefaultKey("o", "OutputFile", "Output File",
+                             CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
 
-    arg_descr->AddDefaultKey("out", "OutputFile", "Output File",
-                             CArgDescriptions::eOutputFile, "-");
+    arg_descr->AddFlag("ids", "Input is seq-ids");
+    arg_descr->AddFlag("b", "Output is binary asn");
+    arg_descr->AddFlag("add_named_scores", "If input is alignments, add numeric results as named-scores; otherwise append as user-object");
 
     arg_descr->AddExtra(0, 100, "key/value pairs for context",
                         CArgDescriptions::eString);
@@ -80,7 +86,8 @@ int CDemoSeqQaApp::Run()
 {
     CArgs args = GetArgs();
 
-    CNcbiOstream& ostr = args["out"].AsOutputFile();
+    CNcbiIstream& istr = args["i"].AsInputFile();
+    CNcbiOstream& ostr = args["o"].AsOutputFile();
 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);
@@ -100,43 +107,59 @@ int CDemoSeqQaApp::Run()
         ctx[key] = value;
     }
 
-    if (args["id"] && args["infile"]) {
-        NcbiCerr << "Only one of -id and -infile must be specified" << NcbiEndl;
-        return 1;
-    }
-
-    if (args["id"]) {
-        string id_str = args["id"].AsString();
-        list<string> id_list;
-        NStr::Split(id_str, " ", id_list);
-    
-        ITERATE (list<string>, it, id_list) {
-            CRef<CSeq_id> id;
-            try {
-                id.Reset(new CSeq_id(*it));
-            } catch (CSeqIdException& e) {
-                LOG_POST(Fatal << "can't interpret accession: " << *it << ": "
-                         << e.what());
+    if(args["ids"]) {
+        string line("");
+        while(!NcbiGetlineEOL(istr, line).eof()) {
+            if(line == "" || line[0] == '#') {
+                continue;
             }
-
+            CRef<CSeq_id> id(new CSeq_id(line));
             CBioseq_Handle handle = scope->GetBioseqHandle(*id);
-            if ( !handle ) {
-                LOG_POST(Fatal << "can't retrieve sequence for " << *it);
-            }
-        
             CRef<CSeq_test_result_set> results = test_mgr.RunTests(*id, &ctx);
 
-            ostr << MSerial_AsnText << *results;
+            CRef<CSeqTestResults> results_container(new CSeqTestResults);
+            results_container->SetSource().SetSeq_id(*id);
+            results_container->SetResults(*results);
+
+            ostr << (args["b"] ? MSerial_AsnBinary: MSerial_AsnText) << *results_container;
         }
-    } else if (args["infile"]) {
-        CNcbiIstream& istr = args["infile"].AsInputFile();
-        CSeq_align aln;
-        istr >> MSerial_AsnText >> aln;
-        CRef<CSeq_test_result_set> results = test_mgr.RunTests(aln, &ctx);
-        ostr << MSerial_AsnText << *results;
     } else {
-        NcbiCerr << "Either -id or -infile must be specified" << NcbiEndl;
-        return 1;
+        while(true) {
+            CSeq_align aln;
+            try {
+                istr >> MSerial_AsnBinary >> aln;
+            } catch (CEofException& e) {
+                break;
+            }
+            CRef<CSeq_test_result_set> results = test_mgr.RunTests(aln, &ctx);
+
+            if(args["add_named_scores"]) {            
+                for(CTypeConstIterator<CUser_field> it(Begin(*results)); it; ++it) {
+                    const CUser_field& uf = *it;
+                    if(uf.GetData().IsInt()) {
+                        aln.SetNamedScore("qa_" + uf.GetLabel().GetStr(), uf.GetData().GetInt());
+                    } else if(uf.GetData().IsReal()) {
+                        aln.SetNamedScore("qa_ " + uf.GetLabel().GetStr(), uf.GetData().GetReal());
+                    } else if(uf.GetData().IsBool()) {
+                        aln.SetNamedScore("qa_" + uf.GetLabel().GetStr(), uf.GetData().GetBool());
+                    }
+                }
+            } else {
+                CRef<CUser_object> uo(new CUser_object);
+                uo->SetClass("seqqa");
+                uo->SetType().SetStr("QA-result-set");
+                vector<CRef<CUser_object > > results_vector;
+                NON_CONST_ITERATE(CSeq_test_result_set::Tdata, it, results->Set()) {
+                    CSeq_test_result& result = **it;
+                    CRef<CUser_object> result_uo(&result.SetOutput_data());
+                    results_vector.push_back(result_uo);
+                }
+                uo->AddField("results", results_vector);
+                aln.SetExt().push_back(uo);
+            }
+            
+            ostr <<  (args["b"] ? MSerial_AsnBinary : MSerial_AsnText) << aln;
+        }
     }
 
     return 0;

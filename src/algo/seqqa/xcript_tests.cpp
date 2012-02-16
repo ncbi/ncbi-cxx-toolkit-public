@@ -709,14 +709,79 @@ CTestTranscript_PolyA::RunTest(const CSerialObject& obj,
     CSeqVector vec = xcript_hand.GetSeqVector();
     vec.SetIupacCoding();
 
-    int pos;
-    for (pos = vec.size() - 1;  pos > 0;  --pos) {
-        if (vec[pos] != 'A') {
-            break;
+    //compute trailing a-count
+    {{
+        int pos(0);
+        for(pos = vec.size() - 1;  pos > 0;  --pos) {
+            if (vec[pos] != 'A') {
+                break;
+            }
         }
-    }
-    result->SetOutput_data().AddField("trailing_a_count",
-                                      int(vec.size() - pos - 1));
+        result->SetOutput_data().AddField("trailing_a_count",
+                                          int(vec.size() - pos - 1));
+    }}
+
+
+    int tail_length(0);
+    //compute tail length allowing for mismatches. 
+    //Note: there's similar logic for computing genomic polya priming in alignment tests
+    {{
+        static const int w_match = 1;
+        static const int w_mismatch = -4;
+        static const int x_dropoff = 15;
+
+        int best_pos = NPOS;
+        int best_score = 0;
+        int curr_score = 0;
+
+        for(int curr_pos = vec.size() - 1; 
+            curr_pos > 0 && curr_score + x_dropoff > best_score; 
+            --curr_pos) 
+        {
+            curr_score += vec[curr_pos] == 'A' ? w_match : w_mismatch;
+            if(curr_score >= best_score) {
+                best_score = curr_score;
+                best_pos = curr_pos;
+            }
+        }
+        tail_length = (best_pos == NPOS) ? 0 : vec.size() - best_pos; 
+        result->SetOutput_data().AddField("tail_length", tail_length);
+    }}
+
+    
+    //find signal
+    {{
+        static string patterns[] = { 
+            "AATAAA",
+            "ATTAAA",   
+            "AGTAAA",
+            "TATAAA",   
+            "CATAAA",   
+            "GATAAA",   
+            "AATATA",   
+            "AATACA",   
+            "AATAGA",   
+            "ACTAAA",   
+            "AAGAAA",   
+            "AATGAA"
+        };  
+
+        size_t window = 50; //serch within 50 bases upstream of polya-site
+        size_t end_pos = vec.size() - 1 - tail_length;
+        size_t begin_pos = end_pos > window ? end_pos - window : 0;
+ 
+        string seq;
+        vec.GetSeqData(begin_pos, end_pos, seq);
+
+        for(int ii = 0; ii < 12; ii++) {    
+            size_t pos = NStr::Find(seq, patterns[ii], 0, NPOS, NStr::eLast);
+            if(pos != NPOS) {
+                result->SetOutput_data().AddField("signal_pos", static_cast<int>(pos + begin_pos));
+                break;
+            }   
+        }   
+    }}
+
     return ref;
 }
 

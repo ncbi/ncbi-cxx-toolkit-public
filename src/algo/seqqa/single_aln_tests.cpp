@@ -98,21 +98,92 @@ static ENa_strand s_GetSeqStrand(const CSeq_align& aln, CSeq_align::TDim row)
 
 static CRef<CSeq_align> s_SplicedToDisc(const CSeq_align& spliced_seg_aln);
 
+
+//if neighborhood < 0 - search upstream of cleavage; otherwise downstream.
+static size_t s_GetPolyA_genomic_priming(const CSeq_align& aln, CScope& scope, int neighborhood)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(aln.GetSeq_id(1));
+
+    CRef<CSeq_loc> loc(new CSeq_loc); //upstream or downstream neighborhood loc
+    {{
+        ENa_strand strand = s_GetSeqStrand(aln, 1);
+
+        //cleavage position
+        TSeqPos pos = strand == eNa_strand_minus ? aln.GetSeqStart(1) : aln.GetSeqStop(1);
+
+        //if searching downstream of cleavage, start with first pos past end of alignment
+        if(neighborhood > 0 && pos > 0 && pos < bsh.GetInst_Length() - 1) {
+            pos += strand == eNa_strand_minus ? -1 : +1;
+        }
+
+        loc->SetInt().SetId().Assign(aln.GetSeq_id(1));
+        loc->SetInt().SetFrom(pos);
+        loc->SetInt().SetTo(pos);
+        loc->SetInt().SetStrand(strand);
+
+        if(   (neighborhood >= 0 && strand != eNa_strand_minus)
+           || (neighborhood < 0  && strand == eNa_strand_minus)) 
+        {
+            loc->SetInt().SetTo(min(bsh.GetInst_Length() - 1, pos + abs(neighborhood)));
+        } else {
+            loc->SetInt().SetFrom(pos < abs(neighborhood) ? 0 : pos - abs(neighborhood));
+        }
+    }}
+
+    CSeqVector vec(*loc, scope, CBioseq_Handle::eCoding_Iupac);
+    string seq("");
+
+    vec.GetSeqData(vec.begin(), vec.end(), seq);
+    if(neighborhood < 0) {
+        reverse(seq.begin(), seq.end());
+    }
+
+    size_t best_pos(NPOS);
+    {{
+        static const int w_match = 1;
+        static const int w_mismatch = -4;
+        static const int x_dropoff = 15;
+
+        int best_score = 0;
+        int curr_score = 0;
+
+        for(size_t curr_pos = 0; 
+            curr_pos < seq.size() && curr_score + x_dropoff > best_score; 
+            ++curr_pos) 
+        {
+            curr_score += seq[curr_pos] == 'A' ? w_match : w_mismatch;
+            if(curr_score >= best_score) {
+                best_score = curr_score;
+                best_pos = curr_pos;
+            }
+        }
+    }}
+    size_t priming_length = best_pos == NPOS ? 0 : best_pos + 1;
+
+    //string label;
+    //loc->GetLabel(&label);
+    //LOG_POST(aln.GetSeq_id(0).AsFastaString() << "\t" << label << "\t" << neighborhood << "\t" << seq << "\t" << priming_length);
+
+    return priming_length;
+}
+
+
+
 CRef<CSeq_test_result_set>
 CTestSingleAln_All::RunTest(const CSerialObject& obj,
                             const CSeqTestContext* ctx)
 {
     CRef<CSeq_test_result_set> ref;
-    const CSeq_align* aln = dynamic_cast<const CSeq_align*>(&obj);
-    if ( !aln  ||  !ctx ) {
+    CConstRef<CSeq_align> aln(dynamic_cast<const CSeq_align*>(&obj));
+    if ( !aln  ||  !ctx) {
         return ref;
     }
 
     // Handle a Spliced-seg by converting it to a disc
-    CRef<CSeq_align> disc_from_spliced_seg;
-    if (!aln->GetSegs().IsDisc()) {
-        disc_from_spliced_seg = s_SplicedToDisc(*aln);
-        aln = disc_from_spliced_seg;
+    if (aln->GetSegs().IsSpliced()) {
+        aln = s_SplicedToDisc(*aln);
+    } else if(!aln->GetSegs().IsDisc()) {
+        NCBI_THROW(CException, eUnknown, "Expected spliced or disc alignment");
     }
 
     ref.Reset(new CSeq_test_result_set());
@@ -552,6 +623,13 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         .AddField("genomic_cds_ambiguity_count", int(gcac));
 
 
+    result->SetOutput_data()
+        .AddField("upstream_polya_priming", 
+                  static_cast<int>(s_GetPolyA_genomic_priming(*aln, scope, -200)));
+    result->SetOutput_data()
+        .AddField("downstream_polya_priming", 
+                  static_cast<int>(s_GetPolyA_genomic_priming(*aln, scope, 200)));
+    
     // Some tests involving the genomic sequence
 
     const CSeq_align& first_exon = *disc.front();
