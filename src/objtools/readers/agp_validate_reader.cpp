@@ -547,7 +547,99 @@ void CAgpValidateReader::OnObjectChange()
 }
 
 #define ALIGN_W(x) setw(w) << resetiosflags(IOS_BASE::left) << (x)
-void CAgpValidateReader::x_PrintTotals() // without comment counts
+#define ALIGN_M_W(x) setw(m_w) << resetiosflags(IOS_BASE::left) << (x)
+
+/** Output the count as text or as xml.
+ *  The text label could be transformed into XML tag as follows:
+ *  - uppercase first letter of each word;
+ *  - strip all spaces and non-alphabetic chars;
+ *  - if the first character of the label was non-alphanum:
+ *      prefix the tag with last_tag,
+ *    else: save the tag to last_tag (for possible future use).
+ */
+class XPrintTotalsItem
+{
+public:
+  CNcbiOstream& m_out;
+  bool m_use_xml;
+  int m_w;
+  string last_tag;
+  string m_eol_text; // usually "\n", but could be gap or comp types, e.g. "(w)", "(W:35, D:8)"
+
+  XPrintTotalsItem(CNcbiOstream& out, bool use_xml, int w) : m_out(out), m_use_xml(use_xml), m_w(w)
+  {
+    m_eol_text="\n";
+  }
+
+  // print a value line
+  void line(const string& label, const string& value, string xml_tag=NcbiEmptyString)
+  {
+    if(!m_use_xml) {
+      m_out << label;
+      if( label.find("***")==NPOS ) {
+        m_out << ALIGN_M_W(value);
+      }
+      else {
+        // no aligning for: ***single component + gap(s), ***no components, gaps only
+        m_out << value;
+      }
+
+      m_out << m_eol_text;
+      m_eol_text="\n"; // reset to default (AFTER printing whatever was there)
+    }
+    else {
+      if(xml_tag.size()==0) {
+        // false = add as a suffix
+        bool add_label_as_attribute = ( last_tag.size() && last_tag[last_tag.size()-1]=='=' );
+        bool uc = !add_label_as_attribute;
+
+        for(string::const_iterator it = label.begin();  it != label.end(); ++it) {
+          if(isalpha(*it)) {
+            xml_tag+= uc ? toupper(*it): tolower(*it);
+            uc = false;
+          }
+          else {
+            if(*it==',') break; // "***no components, gaps only: " -> "NoComponents"
+            uc = !add_label_as_attribute;
+          }
+        }
+
+        if( add_label_as_attribute ) {
+          xml_tag = last_tag + "\""+ xml_tag + "\"";
+        }
+        else if(isalpha(label[0])) {
+          // may use as a prefix later
+          last_tag = xml_tag;
+        }
+        else {
+          // use the prior tag as a prefix, e.g. 'Objects' + 'WithSingleComponent'
+          xml_tag = last_tag + xml_tag;
+        }
+      }
+
+      m_out << " <" << xml_tag << ">" << NStr::XmlEncode(value);
+
+      // strip any attributes from the closing tag
+      int pos=xml_tag.find(" ");
+      if(pos!=NPOS) xml_tag.resize(pos);
+
+      m_out << "</" << xml_tag << ">\n";
+    }
+  }
+
+  void line(const string& label, int value, const string& xml_tag=NcbiEmptyString)
+  {
+    line(label, NStr::NumericToString(value), xml_tag);
+  }
+
+  // print an empty line or static text; no-op in XML
+  void line(const string& s=NcbiEmptyString)
+  {
+    if( !m_use_xml ) m_out << s << "\n";
+  }
+};
+
+void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // without comment counts
 {
   //// Counts of errors and warnings
   int e_count=m_AgpErr->CountTotals(CAgpErrEx::E_Last);
@@ -559,38 +651,44 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
         e_count==m_AgpErr->CountTotals(CAgpErrEx::E_NoValidLines)
     ) return; // all files are empty, no need to say it again
 
-    cout << "\n";
-    m_AgpErr->PrintTotals(cout, e_count, w_count, m_AgpErr->m_msg_skipped);
-    if(m_AgpErr->m_MaxRepeatTopped) {
-      cout << " (to print all: -limit 0; to skip some: -skip CODE)";
-    }
-    cout << ".";
-    if(m_AgpErr->m_MaxRepeat && (e_count+w_count) ) {
-      cout << "\n";
-      CAgpErrEx::TMapCcodeToString hints;
-      if(!m_CheckCompNames && (
-        m_AgpErr->CountTotals(CAgpErrEx::W_CompIsWgsTypeIsNot) ||
-        m_AgpErr->CountTotals(CAgpErrEx::W_CompIsNotWgsTypeIs)
-      ) ) {
-          // W_CompIsNotWgsTypeIs is the last numerically, so the hint whiil get printed
-          // after one or both of the above warnings
-          hints[CAgpErrEx::W_CompIsNotWgsTypeIs] =
-              "(Use -g to print lines with WGS component_id/component_type mismatch.)";
+    // to do: print error counts in xml
+    if(!use_xml) {
+      out << "\n";
+      m_AgpErr->PrintTotals(out, e_count, w_count, m_AgpErr->m_msg_skipped);
+      if(m_AgpErr->m_MaxRepeatTopped) {
+        out << " (to print all: -limit 0; to skip some: -skip CODE)";
       }
-      if(m_AgpErr->CountTotals(CAgpErrEx::W_ShortGap)) {
-          hints[CAgpErrEx::W_ShortGap] = "(Use -show "+
-              CAgpErrEx::GetPrintableCode(CAgpErrEx::W_ShortGap)+
-              " to print lines with short gaps.)";
+      out << ".";
+      if(m_AgpErr->m_MaxRepeat && (e_count+w_count) ) {
+        out << "\n";
+        CAgpErrEx::TMapCcodeToString hints;
+        if(!m_CheckCompNames && (
+          m_AgpErr->CountTotals(CAgpErrEx::W_CompIsWgsTypeIsNot) ||
+          m_AgpErr->CountTotals(CAgpErrEx::W_CompIsNotWgsTypeIs)
+        ) ) {
+            // W_CompIsNotWgsTypeIs is the last numerically, so the hint whiil get printed
+            // after one or both of the above warnings
+            hints[CAgpErrEx::W_CompIsNotWgsTypeIs] =
+                "(Use -g to print lines with WGS component_id/component_type mismatch.)";
+        }
+        if(m_AgpErr->CountTotals(CAgpErrEx::W_ShortGap)) {
+            hints[CAgpErrEx::W_ShortGap] = "(Use -show "+
+                CAgpErrEx::GetPrintableCode(CAgpErrEx::W_ShortGap)+
+                " to print lines with short gaps.)";
+        }
+        m_AgpErr->PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true, &hints);
       }
-      m_AgpErr->PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true, &hints);
     }
   }
   if(m_ObjCount==0) {
-    // cout << "No valid AGP lines.\n";
+    // out << "No valid AGP lines.\n";
     return;
   }
 
-  cout << "\n";
+  // w: width for right alignment
+  int w = NStr::IntToString((unsigned)(m_CompId2Spans.size())).size(); // +1;
+  XPrintTotalsItem xprint(out, use_xml, w);
+  xprint.line();
 
   //// Prepare component/gap types and counts for later printing
   string s_comp, s_gap;
@@ -613,69 +711,73 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
 
   //// Various counts of AGP elements
 
-  // w: width for right alignment
-  int w = NStr::IntToString((unsigned)(m_CompId2Spans.size())).size(); // +1;
-
-  cout << "\n"
-    "Objects                : "<<ALIGN_W(m_ObjCount           )<<"\n"
-    "- with single component: "<<ALIGN_W(m_SingleCompObjects  )<<"\n";
+  xprint.line();
+  xprint.line( "Objects                : ", m_ObjCount);
+  xprint.line( "- with single component: ", m_SingleCompObjects);
   if(m_SingleCompObjects_withGaps) {
-    cout << "  *** single component + gap(s): " << m_SingleCompObjects_withGaps<< "\n";
+    // to do: skip ALIGN_W
+    xprint.line( "  *** single component + gap(s): ", m_SingleCompObjects_withGaps);
   }
-  cout << "\n"
-    "Scaffolds              : "<<ALIGN_W(m_ScaffoldCount      )<<"\n"
-    "- with single component: "<<ALIGN_W(m_SingleCompScaffolds)<<"\n";
+
+  xprint.line();
+  xprint.line( "Scaffolds              : ", m_ScaffoldCount);
+  xprint.line( "- with single component: ", m_SingleCompScaffolds);
   if(m_SingleCompScaffolds_withGaps) {
-    cout << "  ***single component + gap(s): " << m_SingleCompScaffolds_withGaps<< "\n";
+    // note: skipping ALIGN_W
+    xprint.line("  ***single component + gap(s): ", m_SingleCompScaffolds_withGaps);
   }
   if(m_NoCompScaffolds) {
-    cout << "***no components, gaps only: " << m_NoCompScaffolds << "\n";
+    // note: skipping ALIGN_W
+    xprint.line("***no components, gaps only: ", m_NoCompScaffolds);
   }
-  cout << "\n";
+  xprint.line();
 
 
-  cout<<
-    "Components                   : "<< ALIGN_W(m_CompCount);
-  if(m_CompCount) {
-    if( s_comp.size() ) {
-      if( NStr::Find(s_comp, ",")!=NPOS ) {
-        // (W: 1234, D: 5678)
-        cout << " (" << s_comp << ")";
-      }
-      else {
-        // One type of components: (W) or (invalid type)
-        cout << " (" << s_comp.substr( 0, NStr::Find(s_comp, ":") ) << ")";
-      }
+
+  if( s_comp.size() ) {
+    if( NStr::Find(s_comp, ",")!=NPOS ) {
+      // (W: 1234, D: 5678)
+      xprint.m_eol_text = " (" + s_comp + ")\n";
     }
-    cout << "\n"
-      "  orientation +              : " << ALIGN_W(m_CompOri[CCompVal::ORI_plus ]) << "\n"
-      "  orientation -              : " << ALIGN_W(m_CompOri[CCompVal::ORI_minus]) << "\n"
-      "  orientation ? (formerly 0) : " << ALIGN_W(m_CompOri[CCompVal::ORI_zero ]) << "\n"
-      "  orientation na             : " << ALIGN_W(m_CompOri[CCompVal::ORI_na   ]) << "\n";
+    else {
+      // One type of components: (W) or (invalid type)
+      xprint.m_eol_text = " (" + s_comp.substr( 0, NStr::Find(s_comp, ":") ) + ")\n";
+    }
+  }
+  xprint.line("Components                   : ", m_CompCount);
+
+  if(m_CompCount) {
+    xprint.line("  orientation +              : ", m_CompOri[CCompVal::ORI_plus ], "CompOri val=\"+\"");
+    xprint.line("  orientation -              : ", m_CompOri[CCompVal::ORI_minus], "CompOri val=\"-\"");
+    xprint.line("  orientation ? (formerly 0) : ", m_CompOri[CCompVal::ORI_zero ], "CompOri val=\"? (formerly 0)\"");
+    xprint.line("  orientation na             : ", m_CompOri[CCompVal::ORI_na   ], "CompOri val=\"na\"");
   }
   if( m_comp2range_coll->size() &&
       m_AgpErr->CountTotals(CAgpErrEx::G_NsWithinCompSpan)==0 &&
       m_CompCount > m_AgpErr->CountTotals(CAgpErrEx::G_InvalidCompId)
   ) {
-    cout << "Component spans in AGP are consistent with FASTA\n(i.e. do not include or intersect runs of Ns longer than 10 bp)." << endl;
+    xprint.line("Component spans in AGP are consistent with FASTA\n(i.e. do not include or intersect runs of Ns longer than 10 bp).");
   }
 
 
-  cout << "\n" << "Gaps                   : " << ALIGN_W(m_GapCount);
+  xprint.line();
   if(m_GapCount) {
     // Print (N) if all components are of one type,
     //        or (N: 1234, U: 5678)
     if( s_gap.size() ) {
       if( NStr::Find(s_gap, ",")!=NPOS ) {
         // (N: 1234, U: 5678)
-        cout << " (" << s_gap << ")";
+        xprint.m_eol_text =  " (" + s_gap + ")\n";
       }
       else {
         // One type of gaps: (N)
-        cout << " (" << s_gap.substr( 0, NStr::Find(s_gap, ":") ) << ")";
+        xprint.m_eol_text =  " (" + s_gap.substr( 0, NStr::Find(s_gap, ":") ) + ")\n";
       }
     }
+  }
+  xprint.line("Gaps                   : ", m_GapCount);
 
+  if(m_GapCount) {
     int linkageYesCnt =
       m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]+
       m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]+
@@ -686,97 +788,114 @@ void CAgpValidateReader::x_PrintTotals() // without comment counts
     int doNotBreakCnt= linkageYesCnt + m_GapTypeCnt[CAgpRow::eGapFragment];
     int breakCnt     = linkageNoCnt  - m_GapTypeCnt[CAgpRow::eGapFragment];
 
-    cout<< "\n- do not break scaffold: "<<ALIGN_W(doNotBreakCnt);
+    xprint.line("- do not break scaffold: ", doNotBreakCnt, "GapsWithinScaf");
     if(doNotBreakCnt) {
+      xprint.last_tag="GapsWithinScaf_byType linkage=\"yes\" type=";
       if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ])
-        cout<< "\n  clone   , linkage yes: "<<
-              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]);
+        xprint.line("  clone   , linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]);
       if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment])
-        cout<< "\n  fragment, linkage yes: "<<
-              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]);
+        xprint.line("  fragment, linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]);
+
       if(m_GapTypeCnt[                   CAgpRow::eGapFragment])
-        cout<< "\n  fragment, linkage no : "<<
-              ALIGN_W(m_GapTypeCnt[                   CAgpRow::eGapFragment]);
+        xprint.line("  fragment, linkage no : ", m_GapTypeCnt[                   CAgpRow::eGapFragment],
+        "GapsWithinScaf_byType linkage=\"no\" type=\"fragment\""
+        );
+
       if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ])
-        cout<< "\n  repeat  , linkage yes: "<<
-              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
+        xprint.line("  repeat  , linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
       if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold  ])
-        cout<< "\n  repeat  , linkage yes: "<<
-              ALIGN_W(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
+        xprint.line("  repeat  , linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
     }
 
-    cout<< "\n- break it, linkage no : "<<ALIGN_W(breakCnt);
+    xprint.line("- break it, linkage no : ", breakCnt, "GapsBreakScaf");
     if(breakCnt) {
+      xprint.last_tag="GapsBreakScaf_byType linkage=\"no\" type=";
       for(int i=0; i<CAgpRow::eGapCount; i++) {
         if(i==CAgpRow::eGapFragment) continue;
         if(m_GapTypeCnt[i])
-          cout<< "\n\t"
+          /*
+          out<< "\n\t"
               << setw(15) << setiosflags(IOS_BASE::left) << CAgpRow::GapTypeToString(i)
               << ": " << ALIGN_W( m_GapTypeCnt[i] );
+          */
+          xprint.line(
+            string("\t") + CAgpRow::GapTypeToString(i) +
+            string("               ").substr(0, 15-strlen(CAgpRow::GapTypeToString(i)) ) + ": ",
+            m_GapTypeCnt[i]
+          );
       }
     }
-
-  }
-  cout << "\n";
-
-  if(m_ObjCount) {
-    x_PrintPatterns(m_objNamePatterns, "Object names",
-      m_CheckObjLen ? m_comp2len->m_count : 0
-    );
   }
 
-  if(m_CompId2Spans.size()) {
-    CAccPatternCounter compNamePatterns;
-    for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
-      it != m_CompId2Spans.end(); ++it)
-    {
-      compNamePatterns.AddName(it->first);
-    }
-    bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names",
-      m_CheckObjLen ? 0 : m_comp2len->m_count,
-      m_comp2len == &m_scaf2len ? " Scaffold from component AGP" : NULL
-    );
-    if(!m_CheckCompNames && hasSuspicious ) {
-      cout<< "Use -g or -a to print lines with suspicious accessions.\n";
+  // to do: print patterns in XML
+  if(!use_xml) {
+    if(m_ObjCount) {
+      x_PrintPatterns(m_objNamePatterns, "Object names",
+        m_CheckObjLen ? m_comp2len->m_count : 0, NULL,
+        out, use_xml
+      );
     }
 
-    const int MAX_objname_eq_comp=3;
-    int cnt_objname_eq_comp=0;
-    string str_objname_eq_comp;
-    for(TObjSet::iterator it = m_ObjIdSet.begin();  it != m_ObjIdSet.end(); ++it) {
-      if(m_CompId2Spans.find(*it)!=m_CompId2Spans.end()) {
-        cnt_objname_eq_comp++;
-        if(cnt_objname_eq_comp<=MAX_objname_eq_comp) {
-          if(cnt_objname_eq_comp>1) str_objname_eq_comp+=", ";
-          str_objname_eq_comp+=*it;
+    if(m_CompId2Spans.size()) {
+      CAccPatternCounter compNamePatterns;
+      for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
+        it != m_CompId2Spans.end(); ++it)
+      {
+        compNamePatterns.AddName(it->first);
+      }
+      bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names",
+        m_CheckObjLen ? 0 : m_comp2len->m_count,
+        m_comp2len == &m_scaf2len ? " Scaffold from component AGP" : NULL,
+        out, use_xml
+      );
+      if(!m_CheckCompNames && hasSuspicious ) {
+        out<< "Use -g or -a to print lines with suspicious accessions.\n";
+      }
+
+      const int MAX_objname_eq_comp=3;
+      int cnt_objname_eq_comp=0;
+      string str_objname_eq_comp;
+      for(TObjSet::iterator it = m_ObjIdSet.begin();  it != m_ObjIdSet.end(); ++it) {
+        if(m_CompId2Spans.find(*it)!=m_CompId2Spans.end()) {
+          cnt_objname_eq_comp++;
+          if(cnt_objname_eq_comp<=MAX_objname_eq_comp) {
+            if(cnt_objname_eq_comp>1) str_objname_eq_comp+=", ";
+            str_objname_eq_comp+=*it;
+          }
         }
       }
-    }
-    if(cnt_objname_eq_comp) {
-      cout<< "\n" << cnt_objname_eq_comp << " name"
-          << (cnt_objname_eq_comp==1?" is":"s are")
-          << " used both as object and as component_id:\n";
-      cout<< "  " << str_objname_eq_comp;
-      if(cnt_objname_eq_comp>MAX_objname_eq_comp) cout << ", ...";
-      cout << "\n";
+      if(cnt_objname_eq_comp) {
+        out<< "\n" << cnt_objname_eq_comp << " name"
+            << (cnt_objname_eq_comp==1?" is":"s are")
+            << " used both as object and as component_id:\n";
+        out<< "  " << str_objname_eq_comp;
+        if(cnt_objname_eq_comp>MAX_objname_eq_comp) out << ", ...";
+        out << "\n";
+      }
     }
   }
 }
 
-void CAgpValidateReader::PrintTotals()
+void CAgpValidateReader::PrintTotals(CNcbiOstream& out, bool use_xml)
 {
-  x_PrintTotals();
+  x_PrintTotals(out, use_xml);
 
   if(m_comp2len->size()) {
-    x_PrintIdsNotInAgp();
+    x_PrintIdsNotInAgp(out, use_xml);
   }
 
-  if(m_CommentLineCount || m_EolComments) cout << "\n";
-  if(m_CommentLineCount) {
-    cout << "#Comment line count    : " << m_CommentLineCount << "\n";
+  if(use_xml) {
+    if(m_CommentLineCount) out << " <CommentLineCount>" << m_CommentLineCount << "</CommentLineCount>\n";
+    if(m_EolComments)      out << " <EolComments>"      << m_EolComments      << "</EolComments>\n";
   }
-  if(m_EolComments) {
-    cout << "End of line #comments  : " << m_EolComments << "\n";
+  else {
+    if(m_CommentLineCount || m_EolComments) out << "\n";
+    if(m_CommentLineCount) {
+      out << "#Comment line count    : " << m_CommentLineCount << "\n";
+    }
+    if(m_EolComments) {
+      out << "End of line #comments  : " << m_EolComments << "\n";
+    }
   }
 }
 
@@ -914,7 +1033,8 @@ static int GetNameCategory(const string& s)
 
 // Sort by accession count, print not more than MaxPatterns or 2*MaxPatterns
 bool CAgpValidateReader::x_PrintPatterns(
-  CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label)
+  CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label,
+  CNcbiOstream& out, bool use_xml)
 {
   const int MaxPatterns=10;
 
@@ -923,7 +1043,7 @@ bool CAgpValidateReader::x_PrintPatterns(
   namePatterns.GetSortedPatterns(cnt_pat);
   SIZE_TYPE cnt_pat_size=cnt_pat.size();
 
-  cout << "\n";
+  out << "\n";
 
   // Calculate width of columns 1 (wPattern) and 2 (w, count)
   int w = NStr::IntToString(
@@ -959,12 +1079,12 @@ bool CAgpValidateReader::x_PrintPatterns(
   if(mixedCategories && wPattern<20) wPattern=20;
   // Print the total
   if(strHeader.size()) {
-    cout<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
+    out<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
         << strHeader << ": " << ALIGN_W(totalCount);
     if(fasta_count && fasta_count!=totalCount) {
-      cout << " != " << fasta_count << " in the " << (count_label ? count_label : "FASTA");
+      out << " != " << fasta_count << " in the " << (count_label ? count_label : "FASTA");
     }
-    cout<< "\n";
+    out<< "\n";
   }
 
   bool printNuc=(nucCount>0);
@@ -972,9 +1092,9 @@ bool CAgpValidateReader::x_PrintPatterns(
   for(;;) {
     if(mixedCategories) {
       // Could be an error - print extra sub-headings to get attention
-      cout<< string("------------------------").substr(0, wPattern-20);
-      if     (printNuc) cout << " Nucleotide accessions: " << ALIGN_W(nucCount  ) << "\n";
-      else              cout << " OTHER identifiers    : " << ALIGN_W(otherCount) << "\n";
+      out<< string("------------------------").substr(0, wPattern-20);
+      if     (printNuc) out << " Nucleotide accessions: " << ALIGN_W(nucCount  ) << "\n";
+      else              out << " OTHER identifiers    : " << ALIGN_W(otherCount) << "\n";
     }
 
     // Print the patterns
@@ -992,26 +1112,26 @@ bool CAgpValidateReader::x_PrintPatterns(
       if( ++patternsPrinted<=MaxPatterns ||
           cnt_pat_size<=2*MaxPatterns
       ) {
-        cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
+        out << "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
             << it->second                    // pattern
             << ": " << ALIGN_W( it->first ); // : count
         if(!printNuc) {
-          //if(code & fSome) cout << " - some";
+          //if(code & fSome) out << " - some";
           //switch(code & f_category_mask)
           switch(code)
           {
             case fUnknownFormat|fSome:
             case fOneAccManyVer|fSome:
-              cout << " (some local or misspelled)"; break;
+              out << " (some local or misspelled)"; break;
             case fProtein|fSome:
-              cout << " (some look like protein accessions)"; break;
+              out << " (some look like protein accessions)"; break;
 
             case fUnknownFormat: if(!(mixedCategories || mixedPattern)) break;
-            case fOneAccManyVer: cout << " (local or misspelled)"; break;
-            case fProtein      : cout << " (looks like protein accession)"; break;
+            case fOneAccManyVer: out << " (local or misspelled)"; break;
+            case fProtein      : out << " (looks like protein accession)"; break;
           }
         }
-        cout << "\n";
+        out << "\n";
       }
       else {
         // accessionsSkipped += CAccPatternCounter::GetCount(*it);
@@ -1024,7 +1144,7 @@ bool CAgpValidateReader::x_PrintPatterns(
       string s = "other ";
       s+=NStr::IntToString(patternsSkipped);
       s+=" patterns";
-      cout<< "  " << setw(wPattern) << setiosflags(IOS_BASE::left) << s
+      out << "  " << setw(wPattern) << setiosflags(IOS_BASE::left) << s
           << ": " << ALIGN_W( accessionsSkipped )
           << "\n";
     }
@@ -1037,7 +1157,7 @@ bool CAgpValidateReader::x_PrintPatterns(
 
 // label = "component(s) from FASTA not found in AGP"
 // label = "scaffold(s) not found in Chromosome from scaffold AGP"
-void CAgpValidateReader::x_PrintIdsNotInAgp()
+void CAgpValidateReader::x_PrintIdsNotInAgp(CNcbiOstream& out, bool use_xml)
 {
   CAccPatternCounter patterns;
   set<string> ids;
@@ -1075,19 +1195,19 @@ void CAgpValidateReader::x_PrintIdsNotInAgp()
       "component name(s) in FASTA not found in AGP";
     string tmp;
     NStr::Replace(label, "(s)", cnt==1 ? "" : "s", tmp);
-    cout << "\n" << cnt << " " << tmp << ": ";
+    out << "\n" << cnt << " " << tmp << ": ";
 
     if(cnt==1) {
-      cout << *(ids.begin()) << "\n";
+      out << *(ids.begin()) << "\n";
     }
     else if(cnt<m_AgpErr->m_MaxRepeat||m_AgpErr->m_MaxRepeat==0) {
-      cout << "\n";
+      out << "\n";
       for(set<string>::iterator it = ids.begin();  it != ids.end(); ++it) {
-        cout << "  " << *it << "\n";
+        out << "  " << *it << "\n";
       }
     }
     else {
-      x_PrintPatterns(patterns, NcbiEmptyString, 0);
+      x_PrintPatterns(patterns, NcbiEmptyString, 0, NULL, out, use_xml);
     }
   }
 }

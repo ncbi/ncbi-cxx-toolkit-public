@@ -161,7 +161,7 @@ public:
 
   CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len, TMapStrRangeColl& comp2range_coll); // , bool checkCompNames=false);
   virtual ~CAgpValidateReader();
-  void PrintTotals();
+  void PrintTotals(CNcbiOstream& out=cout, bool use_xml=false);
 
   bool m_CheckCompNames;
   bool m_CheckObjLen; // false: check component lengths
@@ -177,11 +177,11 @@ public:
   void SetRowOutput(IAgpRowOutput* row_output);
 
 protected:
-  void x_PrintTotals(); // without comment counts or ids not in AGP
-  void x_PrintIdsNotInAgp();
+  void x_PrintTotals(CNcbiOstream& out=cout, bool use_xml=false); // without comment counts or ids not in AGP
+  void x_PrintIdsNotInAgp(CNcbiOstream& out=cout, bool use_xml=false);
 
   // true: a suspicious mix of ids - some look like GenBank accessions, some do not.
-  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label=NULL);
+  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label=NULL, CNcbiOstream& out=cout, bool use_xml=false);
 
   CAgpErrEx* m_AgpErr;
   int m_CommentLineCount;
