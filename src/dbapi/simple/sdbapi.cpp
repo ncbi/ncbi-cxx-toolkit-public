@@ -1243,6 +1243,9 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                                "it isn't mirrored");
                 }
             }
+            else if (success  &&  server_name == mir_info.master) {
+                has_master = true;
+            }
         }
     }
     while (need_reread_servers  &&  !servers_reread);
