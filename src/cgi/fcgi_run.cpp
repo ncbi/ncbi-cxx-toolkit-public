@@ -412,6 +412,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         restart_delay = 0;
     }
 
+    bool channel_errors = reg.GetBool("FastCGI", "ChannelErrors", false, 0,
+                                      CNcbiRegistry::eReturn);
+
     // Diag.prefix related preparations
     const string prefix_pid(NStr::NumericToString(CProcess::GetCurrentPid()) + "-");
 
@@ -507,7 +510,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 # else
         accept_errcode = FCGX_Accept(&pfin, &pfout, &pferr, &penv);
 # endif
-        auto_request.SetErrorStream(pferr);
+        if (channel_errors) {
+            auto_request.SetErrorStream(pferr);
+        }
         if (accept_errcode != 0) {
             _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
             break;
