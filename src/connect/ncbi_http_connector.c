@@ -227,13 +227,22 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                            EExtractMode    extract)
 {
     EIO_Status status;
+    const char* msg;
 
     assert(!uuu->sock  &&  uuu->can_connect != eCC_None);
 
-    if (retry  &&  retry->mode  &&  ++uuu->minor_fault < 3) {
+    if (!retry  ||  !retry->mode  ||  uuu->minor_fault > 5) {
+        uuu->minor_fault = 0;
+        uuu->major_fault++;
+    } else
+        uuu->minor_fault++;
+
+    if (uuu->major_fault >= uuu->net_info->max_try) {
+        msg = extract != eEM_Drop  &&  uuu->major_fault > 1
+            ? "[HTTP%s%s]  Too many failed attempts (%d), giving up" : "";
+    } else if (retry  &&  retry->mode) {
         char* url  = ConnNetInfo_URL(uuu->net_info);
         int   fail = 0;
-        /* adjust info before yet another connection attempt */
         switch (retry->mode) {
         case eRetry_Redirect:
             if (uuu->net_info->req_method == eReqMethod_Connect)
@@ -325,42 +334,30 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
         }
         if (url)
             free(url);
-        if (status != eIO_Success) {
+        if (status != eIO_Success)
             uuu->can_connect = eCC_None;
-            return status;
-        }
-    } else {
-        const char* msg;
-        uuu->minor_fault = 0;
-        /* we're here because something is going wrong */
-        if (++uuu->major_fault >= uuu->net_info->max_try) {
-            msg = extract != eEM_Drop  &&  uuu->major_fault > 1
-                ? "[HTTP%s%s]  Too many failed attempts (%d), giving up" : "";
-        } else if (!uuu->adjust
-                   ||  !uuu->adjust(uuu->net_info,
-                                    uuu->user_data,
-                                    uuu->major_fault)) {
-            msg = extract != eEM_Drop  &&  uuu->major_fault > 1
-                ? "[HTTP%s%s]  Retry attempts (%d) exhausted, giving up" : "";
-        } else
-            msg = 0;
-        if (msg) {
-            if (*msg) {
-                char* url = ConnNetInfo_URL(uuu->net_info);
-                CORE_LOGF_X(1, eLOG_Error,
-                            (msg,
-                             url  &&  *url ? "; " : "",
-                             url           ? url  : "",
-                             uuu->major_fault));
-                if (url)
-                    free(url);
-            }
-            uuu->can_connect = eCC_None;
-            return eIO_Closed;
-        }
-    }
+        return status;
+    } else if (!uuu->adjust
+               ||  !uuu->adjust(uuu->net_info,
+                                uuu->user_data,
+                                uuu->major_fault)) {
+        msg = extract != eEM_Drop  &&  uuu->major_fault > 1
+            ? "[HTTP%s%s]  Retry attempts (%d) exhausted, giving up" : "";
+    } else
+        return eIO_Success;
 
-    return eIO_Success;
+    if (*msg) {
+        char* url = ConnNetInfo_URL(uuu->net_info);
+        CORE_LOGF_X(1, eLOG_Error,
+                    (msg,
+                     url  &&  *url ? "; " : "",
+                     url           ? url  : "",
+                     uuu->major_fault));
+        if (url)
+            free(url);
+    }
+    uuu->can_connect = eCC_None;
+    return eIO_Closed;
 }
 
 
@@ -1031,8 +1028,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             size_t n = BUF_Read(buf, body, size);
             if (n != size) {
                 CORE_LOGF_X(13, eLOG_Error,
-                            ("[HTTP%s%s]  Cannot read server error"
-                             " body from buffer (%lu out of %lu)",
+                            ("[HTTP%s%s]  Cannot read server error body"
+                             " from buffer (%lu out of %lu)",
                              url  &&  *url ? "; " : "",
                              url           ? url  : "",
                              (unsigned long) n, (unsigned long) size));
@@ -1293,9 +1290,9 @@ static void s_OpenHttpConnector(SHttpConnector* uuu,
         uuu->w_timeout  = timeout;
     }
 
-    /* reset the auto-reconnect feature */
-    uuu->can_connect = (uuu->flags & fHTTP_AutoReconnect
-                        ? eCC_Unlimited : eCC_Once);
+    /* reset the auto-reconnect/re-try/auth features */
+    uuu->can_connect     = (uuu->flags & fHTTP_AutoReconnect
+                            ? eCC_Unlimited : eCC_Once);
     uuu->major_fault     = 0;
     uuu->minor_fault     = 0;
     uuu->auth_done       = 0;
@@ -1671,14 +1668,14 @@ static EIO_Status s_CreateHttpConnector
 
     uuu->flags        = flags;
     uuu->reserved     = 0;
-    uuu->can_connect  = eCC_None;         /* will be properly set at open*/
+    uuu->can_connect  = eCC_None;         /* will be properly set at open */
 
     ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", val, sizeof(val), "");
     uuu->error_header = ConnNetInfo_Boolean(val);
 
     uuu->sock         = 0;
-    uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values --  */
-    uuu->w_timeout    = kDefaultTimeout;  /* must be reset prior to use  */
+    uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values..    */
+    uuu->w_timeout    = kDefaultTimeout;  /* ..must be reset prior to use */
     uuu->http         = 0;
     uuu->r_buf        = 0;
     uuu->w_buf        = 0;
