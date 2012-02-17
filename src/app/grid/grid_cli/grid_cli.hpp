@@ -49,6 +49,7 @@
 #define QUEUE_OPTION "queue"
 #define BATCH_OPTION "batch"
 #define AFFINITY_OPTION "affinity"
+#define ANY_AFFINITY_OPTION "any-affinity"
 #define JOB_OUTPUT_OPTION "job-output"
 #define GET_NEXT_JOB_OPTION "get-next-job"
 #define LIMIT_OPTION "limit"
@@ -89,6 +90,9 @@ enum EOption {
     eWorkerNode,
     eBatch,
     eAffinity,
+    eAffinityList,
+    eUsePreferredAffinities,
+    eAnyAffinity,
     eExclusiveJob,
     eJobOutput,
     eReturnCode,
@@ -132,6 +136,7 @@ enum EOption {
     eCommand,
     eMultiline,
     eProtocolDump,
+    eDumpNSNotifications,
     eNumberOfOptions
 };
 

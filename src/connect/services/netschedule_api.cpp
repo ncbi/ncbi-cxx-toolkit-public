@@ -46,6 +46,58 @@
 
 BEGIN_NCBI_SCOPE
 
+IWaitNotificationListener::~IWaitNotificationListener()
+{
+}
+
+bool g_WaitNotification(unsigned wait_time, unsigned short udp_port,
+        IWaitNotificationListener* listener)
+{
+    _ASSERT(wait_time);
+
+    EIO_Status status;
+
+    STimeout to;
+    to.sec = wait_time;
+    to.usec = 0;
+
+    CDatagramSocket  udp_socket;
+    udp_socket.SetReuseAddress(eOn);
+    STimeout rto;
+    rto.sec = rto.usec = 0;
+    udp_socket.SetTimeout(eIO_Read, &rto);
+
+    status = udp_socket.Bind(udp_port);
+    if (eIO_Success != status) {
+        return false;
+    }
+    time_t curr_time, start_time, end_time;
+
+    start_time = time(0);
+    end_time = start_time + wait_time;
+
+    for (;;) {
+        curr_time = time(0);
+        if (curr_time >= end_time)
+            break;
+        to.sec = (unsigned int) (end_time - curr_time);
+
+        status = udp_socket.Wait(&to);
+        if (eIO_Success != status) {
+            continue;
+        }
+        size_t msg_len;
+        string   buf(1024/sizeof(int),0);
+        status = udp_socket.Recv(&buf[0], buf.size(), &msg_len, NULL);
+        _ASSERT(status != eIO_Timeout); // because we Wait()-ed
+        if (eIO_Success == status) {
+            buf.resize(msg_len);
+            if (listener->OnNotification(buf))
+                return true;
+        }
+    } // for
+    return false;
+}
 
 /**********************************************************************/
 

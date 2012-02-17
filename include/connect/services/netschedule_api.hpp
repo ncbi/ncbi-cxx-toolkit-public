@@ -736,13 +736,30 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 NCBI_DECLARE_INTERFACE_VERSION(SNetScheduleAPIImpl, "xnetschedule_api", 1,0, 0);
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
 /// @internal
 extern NCBI_XCONNECT_EXPORT const char* const kNetScheduleAPIDriverName;
 
 
+/// @internal
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::TDriverInfoList&   info_list,
      CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method);
+
+/// @internal
+class NCBI_XCONNECT_EXPORT IWaitNotificationListener
+{
+public:
+    virtual bool OnNotification(const string& buf) const = 0;
+
+    virtual ~IWaitNotificationListener();
+};
+
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+bool g_WaitNotification(unsigned wait_time, unsigned short udp_port,
+        IWaitNotificationListener* listener);
 
 
 /* @} */

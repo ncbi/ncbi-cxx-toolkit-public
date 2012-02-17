@@ -156,22 +156,27 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, const string& affinity)
 
 const char s_WGETNotification[] = "NCBI_JSQ_";
 
-struct SWaitQueuePred {
-    SWaitQueuePred(const string& queue_name) : m_QueueName(queue_name)
+class CWaitQueuePred : public IWaitNotificationListener
+{
+public:
+    CWaitQueuePred(const string& queue_name) : m_QueueName(queue_name)
     {
     }
 
-    bool operator()(const string& buf) const
-    {
-        return buf.size() >= sizeof(s_WGETNotification) - 1 +
-                m_QueueName.length() &&
-            buf[0] == s_WGETNotification[0] &&
-            buf[1] == s_WGETNotification[1] &&
-            m_QueueName == buf.data() + sizeof(s_WGETNotification) - 1;
-    }
+    virtual bool OnNotification(const string& buf) const;
 
+private:
     string m_QueueName;
 };
+
+bool CWaitQueuePred::OnNotification(const string& buf) const
+{
+    return buf.size() >= sizeof(s_WGETNotification) - 1 +
+            m_QueueName.length() &&
+        buf[0] == s_WGETNotification[0] &&
+        buf[1] == s_WGETNotification[1] &&
+        m_QueueName == buf.data() + sizeof(s_WGETNotification) - 1;
+}
 
 bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
                                    unsigned short listening_port,
@@ -192,10 +197,11 @@ bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
     if (m_Impl->GetJobImpl(cmd, job))
         return true;
 
-    s_WaitNotification(wait_time, listening_port,
-        SWaitQueuePred(m_Impl->m_API.GetQueueName()));
+    CWaitQueuePred pred(m_Impl->m_API.GetQueueName());
 
-    // Regardless of what s_WaitNotification returned,
+    g_WaitNotification(wait_time, listening_port, &pred);
+
+    // Regardless of what g_WaitNotification returned,
     // retry the request using TCP and notify the NetSchedule
     // servers that we no longer on the UDP socket.
 

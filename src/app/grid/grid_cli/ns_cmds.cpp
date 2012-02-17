@@ -816,6 +816,22 @@ int CGridCommandLineInterfaceApp::Cmd_RegWNode()
 }
 */
 
+class CNotificationDumper : public IWaitNotificationListener
+{
+public:
+    virtual bool OnNotification(const string& buf) const;
+};
+
+static const string s_TimestampFormat("Y/M/D h:m:s.l");
+
+bool CNotificationDumper::OnNotification(const string& buf) const
+{
+    printf("%s %s\n", GetFastLocalTime().AsString(s_TimestampFormat).c_str(),
+            buf.c_str());
+
+    return false;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
@@ -832,9 +848,37 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
                 LISTENING_PORT_OPTION "' to be specified as well\n");
             return 2;
         }
-        if (m_NetScheduleExecutor.WaitJob(job, m_Opts.listening_port,
-                m_Opts.timeout, m_Opts.affinity))
-            return PrintJobAttrsAndDumpInput(job);
+        if (!IsOptionSet(eDumpNSNotifications)) {
+            if (m_NetScheduleExecutor.WaitJob(job, m_Opts.listening_port,
+                    m_Opts.timeout, m_Opts.affinity))
+                return PrintJobAttrsAndDumpInput(job);
+        } else {
+            string cmd = "GET2";
+
+            cmd += IsOptionSet(eUsePreferredAffinities) ?
+                " wnode_aff=1" : " wnode_aff=0";
+
+            cmd += IsOptionSet(eAnyAffinity) ? " any_aff=1" : " any_aff=0";
+
+            if (IsOptionSet(eAffinityList)) {
+                cmd += " aff=\"";
+                cmd += NStr::PrintableString(m_Opts.affinity);
+                cmd += '"';
+            }
+
+            cmd += " port=";
+            cmd += NStr::UIntToString(m_Opts.listening_port);
+            cmd += " timeout=";
+            cmd += NStr::UIntToString(m_Opts.timeout);
+
+            for (CNetServiceIterator it = m_NetScheduleAPI.GetService().
+                    Iterate(CNetService::eIncludePenalized); it; ++it)
+                (*it).ExecWithRetry(cmd);
+
+            CNotificationDumper dumper;
+
+            g_WaitNotification(m_Opts.timeout, m_Opts.listening_port, &dumper);
+        }
     }
 
     return 0;

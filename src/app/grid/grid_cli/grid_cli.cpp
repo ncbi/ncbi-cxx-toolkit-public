@@ -123,6 +123,16 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eAffinity,
         AFFINITY_OPTION, "Affinity token."},
 
+    {CCommandLineParser::eOptionWithParameter, eAffinityList,
+        "affinity-list", "Comma-separated list of affinity tokens."},
+
+    {CCommandLineParser::eSwitch, eUsePreferredAffinities,
+        "use-preferred-affinities", "Accept job with any of "
+            "the affinities registered earlier as preferred."},
+
+    {CCommandLineParser::eSwitch, eAnyAffinity,
+        ANY_AFFINITY_OPTION, "Accept job with any available affinity."},
+
     {CCommandLineParser::eSwitch, eExclusiveJob,
         "exclusive-job", "Create an exclusive job."},
 
@@ -280,6 +290,12 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eProtocolDump,
         "protocol-dump", "Dump input and output messages of "
             "the automation protocol to the specified file."},
+
+    {CCommandLineParser::eSwitch, eDumpNSNotifications,
+        "dump-ns-notifications", "Suppress normal processing "
+            "of this command, but print notifications received "
+            "from the NetSchedule servers over UDP within "
+            "the specified timeout."},
 
 };
 
@@ -490,6 +506,10 @@ struct SCommandDefinition {
         "from \"Pending\" to \"Running\" before the job is returned. "
         "This command makes it possible for " PROGRAM_NAME " to emulate a "
         "worker node.\n\n"
+        "The affinity-related options affect how the job is selected. "
+        "Unless the '--" ANY_AFFINITY_OPTION "' option is given, a job "
+        "is returned only if its affinity matches one of the specified "
+        "affinities.\n\n"
         "If a job is acquired, its ID and attributes are printed to the "
         "standard output stream on the first and the second lines "
         "respectively, followed by the input data of the job unless the '--"
@@ -500,9 +520,10 @@ struct SCommandDefinition {
         "If none of the NetSchedule servers has pending jobs in the "
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
-        {eNetSchedule, eQueue, eAffinity,
-            eOutputFile, eWaitTimeout, eListeningPort, eAuth,
-            eClientNode, eClientSession, -1}},
+        {eNetSchedule, eQueue, eAffinityList, eUsePreferredAffinities,
+            eAnyAffinity, eOutputFile, eWaitTimeout, eListeningPort,
+            eAuth, eClientNode, eClientSession,
+            eDumpNSNotifications, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",
@@ -812,6 +833,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.queue = opt_value;
                 break;
             case eAffinity:
+            case eAffinityList:
                 m_Opts.affinity = opt_value;
                 break;
             case eJobOutput:
