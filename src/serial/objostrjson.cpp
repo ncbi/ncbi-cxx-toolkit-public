@@ -98,6 +98,25 @@ void CObjectOStreamJson::SetBinaryDataFormat(CObjectOStreamJson::EBinaryDataForm
     m_BinaryFormat = fmt;
 }
 
+void CObjectOStreamJson::SetJsonpMode(const string& function_name)
+{
+    m_JsonpPrefix = function_name + "(";
+    m_JsonpSuffix = ")";
+}
+
+void CObjectOStreamJson::SetJsonpMode(const string& prefix, const string& suffix)
+{
+    m_JsonpPrefix = prefix;
+    m_JsonpSuffix = suffix;
+}
+
+bool CObjectOStreamJson::GetJsonpPadding(string& prefix, string& suffix)
+{
+    prefix = m_JsonpPrefix;
+    suffix = m_JsonpSuffix;
+    return !prefix.empty() || !suffix.empty();
+}
+
 string CObjectOStreamJson::GetPosition(void) const
 {
     return "line "+NStr::SizetToString(m_Output.GetLine());
@@ -105,17 +124,25 @@ string CObjectOStreamJson::GetPosition(void) const
 
 void CObjectOStreamJson::WriteFileHeader(TTypeInfo type)
 {
-    StartBlock();
-    if (!type->GetName().empty()) {
-        m_Output.PutEol();
-        WriteKey(type->GetName());
+    if (!m_JsonpPrefix.empty() || !m_JsonpSuffix.empty()) {
+        m_Output.PutString(m_JsonpPrefix);
+    } else {
+        StartBlock();
+        if (!type->GetName().empty()) {
+            m_Output.PutEol();
+            WriteKey(type->GetName());
+        }
     }
 }
 
 void CObjectOStreamJson::EndOfWrite(void)
 {
-    EndBlock();
-    m_Output.PutEol();
+    if (!m_JsonpPrefix.empty() || !m_JsonpSuffix.empty()) {
+        m_Output.PutString(m_JsonpSuffix);
+    } else {
+        EndBlock();
+        m_Output.PutEol();
+    }
     CObjectOStream::EndOfWrite();
 }
 

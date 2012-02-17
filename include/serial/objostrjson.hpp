@@ -108,6 +108,24 @@ public:
     ///   string
     virtual string GetPosition(void) const;
 
+    /// Set JSONP mode
+    /// JSONP prefix will become "function_name("
+    /// JSONP suffix will become ")"
+    void SetJsonpMode(const string& function_name);
+
+    /// Set JSONP mode - prefix and suffix
+    void SetJsonpMode(const string& prefix, const string& suffix);
+
+    /// Get JSONP padding (prefix and suffix)
+    ///
+    /// @param prefix
+    ///   Receives JSONP prefix
+    /// @param suffix
+    ///   Receives JSONP suffix
+    /// @return
+    ///   true when either prefix or suffix is not empty
+    bool GetJsonpPadding(string& prefix, string& suffix);
+
     virtual void WriteFileHeader(TTypeInfo type);
     virtual void EndOfWrite(void);
 
@@ -214,6 +232,8 @@ private:
     string m_SkippedMemberId;
     EEncoding m_StringEncoding;
     EBinaryDataFormat m_BinaryFormat;
+    string m_JsonpPrefix;
+    string m_JsonpSuffix;
 };
 
 
