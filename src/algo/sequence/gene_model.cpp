@@ -449,13 +449,12 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             s_TransformToNucpos((*exon_it)->SetProduct_end());
         }
 
-        if (!fake_transcript_align->GetSegs().GetSpliced().CanGetProduct_length()) {
-            NCBI_THROW(CException, eUnknown, "Can't get protein length");
-        }
-        TSeqPos prot_length =
-            fake_transcript_align->GetSegs().GetSpliced().GetProduct_length();
         CRef<CSeq_id> prot_id(new CSeq_id);
         prot_id->Assign(fake_transcript_align->GetSeq_id(0));
+        TSeqPos prot_length =
+            fake_transcript_align->GetSegs().GetSpliced().CanGetProduct_length()
+            ? fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()
+            : m_scope->GetBioseqHandle(*prot_id).GetBioseqLength();
         CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(*prot_id, 0, prot_length*3-1));
 
         cd_feat.Reset(new CSeq_feat);
