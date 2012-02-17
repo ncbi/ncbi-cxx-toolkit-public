@@ -202,3 +202,11 @@ Added support for Xcode build system version 4.
 December 07, 2011
 version 3.7.1
 Changed to always use absolute paths when referencing 3rd party libraries.
+
+February 16, 2012
+version 3.7.2
+Corrected MSVC2010 project generation to correctly pick up target name and extension from customization file.
+Enhanced MSVC2010 file filter comparison to avoid re-generating them too often.
+In UNIX flat makefile, added help and project lists targets.
+
+
