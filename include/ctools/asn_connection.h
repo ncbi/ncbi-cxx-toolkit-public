@@ -1,7 +1,7 @@
 #ifndef CTOOLS___ASN_CONNECTION__H
 #define CTOOLS___ASN_CONNECTION__H
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -29,7 +29,7 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Build C Toolkit ASN.1 streams on top of CONN (connection).
+ *    Build C Toolkit ASN.1 streams on top of CONN (connection).
  *
  */
 
@@ -61,14 +61,13 @@ typedef enum {
 } EAsnConn_Format;
 
 
-/* Build ASN stream on top of CONN (connection) handle.
- * According to arguments, the stream is created for
- * either reading or writing, and is capable to handle
- * either binary or text ASN.
- * Return ASN stream pointer on success, or 0 on error.
- * NOTE: Returned stream is valid while the underlying conn exists. After call
+/* Build a ASN.1 stream on top of a CONN (connection) handle.
+ * According to arguments, the stream is created for either reading or writing,
+ * and is capable to handle either binary or text ASN.1.
+ * Return ASN.1 stream pointer on success, or 0 on error.
+ * NOTE: Returned stream is valid while the underlying conn exists.  After call
  *       to CONN_Close() the stream becomes invalid, and should not be used.
- *       Don't destroy the ASN stream explicitly using AsnIoClose or AsnIoFree!
+ *       Don't destroy the ASN.1 stream explicitly using AsnIoFree()!
  */
 AsnIoPtr CreateAsnConn
 (CONN               conn,
@@ -77,18 +76,17 @@ AsnIoPtr CreateAsnConn
  );
 
 
-/* Create service connection using the service name,
- * type and connection parameters, info (use default connection
- * parameters if info is passed NULL).
- * Create two ASN.1 streams based on the created connection: one stream is for
- * input and one is for output.  Return the pointers to the streams 
- * via the 'input' and 'output' parameters, respectively.
- * No corresponding stream is created if either pointer is passed NULL.
- * On success, return created CONN handle; otherwise, return 0.
- * NOTE: Returned ASN stream pointers are valid as long as the connection
- *       handle CONN exists; that is, after the connection handle is passed to
- *       CONN_Close(), both pointers become invalid, and must not be used.
- *       Don't destroy the ASN streams explicitly using AsnIoClose / AsnIoFree!
+/* Create a service connection using the service name, type, and connection
+ * parameters (use default connection parameters if 'net_info' is passed NULL).
+ * Create two ASN.1 streams based on the connection:  one stream for input, and
+ * another one for output.  Return pointers to the streams via the 'input' and
+ * 'output' arguments.  No corresponding stream is created if either pointer is
+ * passed NULL.
+ * On success, return the created CONN handle; otherwise, return 0.
+ * NOTE: Both returned ASN.1 streams are valid as long as the connection handle
+ *       exists; that is, after the connection handle is passed to CONN_Close()
+ *       either pointer becomes invalid, and should not be used.
+ *       Don't destroy the ASN.1 streams explicitly using AsnIoFree()!
  */
 CONN CreateAsnConn_ServiceEx
 (const char*           service,
@@ -119,5 +117,6 @@ CONN CreateAsnConn_Service
 
 
 /* @} */
+
 
 #endif /* CTOOLS___ASN_CONNECTION__H */
