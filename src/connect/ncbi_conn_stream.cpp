@@ -779,15 +779,21 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
                                                  const STimeout*      timeout)
     : CConn_FtpStream(host, user, pass, path, port, flag, cmcb, timeout)
 {
+    // Use '\n' here instead of NcbiFlush to avoid (and thus make silent)
+    // flush errors on inexistent files or non-files (e.g. directories)..
     if (!file.empty()) {
         EIO_Status status;
         if (offset) {
-            write("REST ", 5) << NStr::UInt8ToString(offset) << NcbiFlush;
-            status = Status(eIO_Write);
+            write("REST ", 5) << NStr::UInt8ToString(offset) << '\n';
+            status  = Status(eIO_Write);
         } else
-            status = eIO_Success;
+            status  = eIO_Success;
         if (good()  &&  status == eIO_Success) {
-            write("RETR ", 5) << file << NcbiFlush;
+            write("RETR ", 5) << file << '\n';
+            status  = Status(eIO_Write);
+        }
+        if (status != eIO_Success) {
+            setstate(NcbiBadbit);
         }
     }
 }
