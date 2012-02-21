@@ -25,6 +25,7 @@ internal/blast
 internal/blast/DistribDbSupport
 internal/eutils
 internal/sra
+internal/snp
 internal/gnomon
 internal/gpipe
 internal/ID/utils$
