@@ -128,7 +128,7 @@ int CDemoSeqQaApp::Run()
             CSeq_align aln;
             try {
                 istr >> MSerial_AsnBinary >> aln;
-            } catch (CEofException& e) {
+            } catch (CEofException&) {
                 break;
             }
             CRef<CSeq_test_result_set> results = test_mgr.RunTests(aln, &ctx);

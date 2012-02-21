@@ -730,11 +730,11 @@ CTestTranscript_PolyA::RunTest(const CSerialObject& obj,
         static const int w_mismatch = -4;
         static const int x_dropoff = 15;
 
-        int best_pos = NPOS;
+        size_t best_pos = NPOS;
         int best_score = 0;
         int curr_score = 0;
 
-        for(int curr_pos = vec.size() - 1; 
+        for(size_t curr_pos = vec.size() - 1; 
             curr_pos > 0 && curr_score + x_dropoff > best_score; 
             --curr_pos) 
         {
