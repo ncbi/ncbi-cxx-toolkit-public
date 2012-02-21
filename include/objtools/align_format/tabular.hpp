@@ -475,16 +475,16 @@ public:
         x_ResetIgFields();
     };
 
-    virtual void PrintHeader(const string& program, 
+    void PrintHeader(const string& program, 
                      const objects::CBioseq& bioseq, 
                      const string& dbname, 
+                     const string& domain_sys,
                      const string& rid = kEmptyStr,
                      unsigned int iteration = 
                                 numeric_limits<unsigned int>::max(),
                      const objects::CSeq_align_set* align_set=0,
                      CConstRef<objects::CBioseq> subj_bioseq
-                                = CConstRef<objects::CBioseq>(),
-                     const string& domain_sys = "Kabat"); 
+                                = CConstRef<objects::CBioseq>());
 
     /// Set fields for master alignment
     int SetMasterFields(const objects::CSeq_align& align, 
@@ -493,7 +493,7 @@ public:
                         CNcbiMatrix<int>*          matrix=0);
 
     /// Set fields for all other alignments
-    virtual int SetFields(const objects::CSeq_align& align,
+    int SetFields(const objects::CSeq_align& align,
                   objects::CScope&           scope,
                   const string&              chain_type,
                   CNcbiMatrix<int>*          matrix=0);

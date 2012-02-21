@@ -609,10 +609,11 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
         tabinfo.SetIgAnnotation(annots, m_IgOptions->m_IsProtein);
 
         tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
-                                m_DbName, results.GetRID(), 
+                                m_DbName, 
+                                m_IgOptions->m_DomainSystem,
+                                results.GetRID(), 
                                 numeric_limits<unsigned int>::max(),
-                                aln_set, subject_bioseq, 
-                                m_IgOptions->m_DomainSystem);
+                                aln_set, subject_bioseq);
  
         int j = 1;
         for (; itr != aln_set->Get().end(); ++itr) {
@@ -623,10 +624,11 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
         }
     } else {
         tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
-                                m_DbName, results.GetRID(), 
+                                m_DbName, 
+                                m_IgOptions->m_DomainSystem,
+                                results.GetRID(), 
                                 numeric_limits<unsigned int>::max(),
-                                0, subject_bioseq, 
-                                m_IgOptions->m_DomainSystem);
+                                0, subject_bioseq);
     }
     if (m_IsHTML) {
         m_Outfile << "\n</pre></body></html>\n";

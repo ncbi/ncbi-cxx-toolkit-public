@@ -917,11 +917,11 @@ void
 CIgBlastTabularInfo::PrintHeader(const string& program_version, 
        const CBioseq& bioseq, 
        const string& dbname, 
+       const string& domain_sys,
        const string& rid /* = kEmptyStr */,
        unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
        const CSeq_align_set* align_set /* = 0 */,
-       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */,
-       const string& domain_sys)
+       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
 {
     x_PrintQueryAndDbNames(program_version, bioseq, dbname, rid, iteration, subj_bioseq);
     m_Ostream << "# Domain classification requested: " << domain_sys << endl;
