@@ -114,7 +114,7 @@ public:
         }
     }
 
-    unsigned ErrCodeToHTTPStatusCode();
+    unsigned ErrCodeToHTTPStatusCode() const;
 
     NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
 };

@@ -69,7 +69,7 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
     return it->second;
 }
 
-unsigned CNetScheduleException::ErrCodeToHTTPStatusCode()
+unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
 {
     switch (GetErrCode()) {
     default: /* Including eInternalError */     return 500;
