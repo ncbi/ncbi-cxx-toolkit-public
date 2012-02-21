@@ -52,7 +52,6 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eInvalidClient"]       = CNetScheduleException::eInvalidClient;
     m_Map["eAccessDenied"]        = CNetScheduleException::eAccessDenied;
     m_Map["eDuplicateName"]       = CNetScheduleException::eDuplicateName;
-    m_Map["eQuerySyntaxError"]    = CNetScheduleException::eQuerySyntaxError;
     m_Map["eCommandIsNotAllowed"] = CNetScheduleException::eCommandIsNotAllowed;
     m_Map["eObsoleteCommand"]     = CNetScheduleException::eObsoleteCommand;
     m_Map["eInvalidParameter"]    = CNetScheduleException::eInvalidParameter;
@@ -68,6 +67,31 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
     if (it == m_Map.end())
         return CException::eInvalid;
     return it->second;
+}
+
+unsigned CNetScheduleException::ErrCodeToHTTPStatusCode(
+        CNetScheduleException::EErrCode err_code)
+{
+    switch (err_code) {
+    default: /* Including eInternalError */     return 500;
+    case eProtocolSyntaxError:                  return 400;
+    case eAuthenticationError:                  return 401;
+    case eKeyFormatError:                       return 400;
+    case eJobNotFound:                          return 404;
+    case eInvalidJobStatus:                     return 409;
+    case eUnknownQueue:                         return 404;
+    case eUnknownQueueClass:                    return 404;
+    case eTooManyPendingJobs:                   return 503;
+    case eDataTooLong:                          return 413;
+    case eInvalidClient:                        return 400;
+    case eAccessDenied:                         return 401;
+    case eDuplicateName:                        return 409;
+    case eObsoleteCommand:                      return 501;
+    case eInvalidParameter:                     return 400;
+    case eInvalidAuthToken:                     return 401;
+    case eTooManyPreferredAffinities:           return 503;
+    case eTryAgain:                             return 503;
+    }
 }
 
 END_NCBI_SCOPE

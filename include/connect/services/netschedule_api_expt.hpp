@@ -62,7 +62,7 @@ private:
 
 /// NetSchedule internal exception
 ///
-class CNetScheduleException : public CNetServiceException
+class NCBI_XCONNECT_EXPORT CNetScheduleException : public CNetServiceException
 {
 public:
     // NB: if you update this enum, update constructor for
@@ -81,7 +81,6 @@ public:
         eInvalidClient,
         eAccessDenied,
         eDuplicateName,
-        eQuerySyntaxError,
         eObsoleteCommand,
         eInvalidParameter,
         eInvalidAuthToken,
@@ -105,7 +104,6 @@ public:
         case eInvalidClient:       return "eInvalidClient";
         case eAccessDenied:        return "eAccessDenied";
         case eDuplicateName:       return "eDuplicateName";
-        case eQuerySyntaxError:    return "eQuerySyntaxError";
         case eObsoleteCommand:     return "eObsoleteCommand";
         case eInvalidParameter:    return "eInvalidParameter";
         case eInvalidAuthToken:    return "eInvalidAuthToken";
@@ -116,10 +114,10 @@ public:
         }
     }
 
+    static unsigned ErrCodeToHTTPStatusCode(EErrCode exception_code);
+
     NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
 };
-
-
 
 /* @} */
 
