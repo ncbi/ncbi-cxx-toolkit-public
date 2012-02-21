@@ -590,6 +590,28 @@ static bool x_IsBadBioSampleFormat (
     return false;
 }
 
+static bool x_IsBadAltBioSampleFormat (
+    const string& str
+)
+
+{
+    char  ch;
+    int   i;
+
+    if (str.length() < 9) return true;
+
+    if (str [0] != 'S') return true;
+    if (str [1] != 'R') return true;
+    if (str [2] != 'S') return true;
+
+    for (i = 3; i < str.length(); i++) {
+        ch = str [i];
+        if (! isdigit (ch)) return true;
+    }
+
+    return false;
+}
+
 static bool x_IsBadSRAFormat (
     const string& str
 )
@@ -668,7 +690,7 @@ bool CValidError_desc::ValidateDblink
                     strs = fld.GetData().GetStrs();
                     FOR_EACH_STRING_IN_VECTOR(st_itr, strs) {
                         const string& str = *st_itr;
-                        if (x_IsBadBioSampleFormat (str)) {
+                        if (x_IsBadBioSampleFormat (str) && x_IsBadAltBioSampleFormat (str)) {
                             PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkProblem,
                                 "Bad BioSample format", *m_Ctx, desc);
                         }
