@@ -8196,7 +8196,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("AS");
     ambig.push_back("RM");
     ambig.push_back("MBM");
-    ambig.push_back("BM");
     ambig.push_back("UPM");
     ambig.push_back("CCM");
     ambig.push_back("MSU");
