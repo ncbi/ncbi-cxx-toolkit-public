@@ -110,11 +110,10 @@ void CObjectOStreamJson::SetJsonpMode(const string& prefix, const string& suffix
     m_JsonpSuffix = suffix;
 }
 
-bool CObjectOStreamJson::GetJsonpPadding(string& prefix, string& suffix)
+void CObjectOStreamJson::GetJsonpPadding(string* prefix, string* suffix) const
 {
-    prefix = m_JsonpPrefix;
-    suffix = m_JsonpSuffix;
-    return !prefix.empty() || !suffix.empty();
+    if (prefix) {*prefix = m_JsonpPrefix;}
+    if (suffix) {*suffix = m_JsonpSuffix;}
 }
 
 string CObjectOStreamJson::GetPosition(void) const

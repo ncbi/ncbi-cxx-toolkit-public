@@ -122,9 +122,7 @@ public:
     ///   Receives JSONP prefix
     /// @param suffix
     ///   Receives JSONP suffix
-    /// @return
-    ///   true when either prefix or suffix is not empty
-    bool GetJsonpPadding(string& prefix, string& suffix);
+    void GetJsonpPadding(string* prefix, string* suffix) const;
 
     virtual void WriteFileHeader(TTypeInfo type);
     virtual void EndOfWrite(void);
