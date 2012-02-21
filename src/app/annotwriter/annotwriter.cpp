@@ -45,6 +45,8 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/submit/Seq_submit.hpp>
@@ -125,6 +127,10 @@ private:
         CScope&,
         CObjectIStream&);
     bool xTryProcessSeqAlign(
+        const string&,
+        CScope&,
+        CObjectIStream&);
+    bool xTryProcessSeqAlignSet(
         const string&,
         CScope&,
         CObjectIStream&);
@@ -335,6 +341,10 @@ bool CAnnotWriterApp::xTryProcessInputFile(
         if (xTryProcessSeqAlign(objtype, *m_pScope, *pIs)) {
             continue;
         }
+        if (xTryProcessSeqAlignSet(objtype, *m_pScope, *pIs)) {
+            continue;
+        }
+
         NCBI_THROW(CObjWriterException, eBadInput, 
             "xTryProcessInputFile: Object type \"" +
             objtype +
@@ -450,6 +460,34 @@ bool CAnnotWriterApp::xTryProcessSeqAlign(
         m_pWriter->WriteHeader();
     }
     m_pWriter->WriteAlign( align, xAssemblyName(), xAssemblyAccession());
+    m_pWriter->WriteFooter();
+    return true;
+}
+
+//  -----------------------------------------------------------------------------
+bool CAnnotWriterApp::xTryProcessSeqAlignSet(
+    const string& objtype,
+    CScope& /*scope*/,
+    CObjectIStream& istr)
+//  -----------------------------------------------------------------------------
+{
+    if (objtype != "Seq-align-set") {
+        return false;
+    }
+    CSeq_align_set align_set;
+    istr.Read(ObjectInfo(align_set), CObjectIStream::eNoFileHeader);
+    if(!GetArgs()["skip-headers"]) {
+        m_pWriter->WriteHeader();
+    }
+    bool first = true;
+    ITERATE(CSeq_align_set::Tdata, align_iter, align_set.Get()) {
+        if(first && !GetArgs()["skip-headers"]) {
+            m_pWriter->WriteAlign( **align_iter, xAssemblyName(), xAssemblyAccession());
+            first = false;
+        } else {
+            m_pWriter->WriteAlign( **align_iter);
+        }
+    }
     m_pWriter->WriteFooter();
     return true;
 }
@@ -577,5 +615,5 @@ USING_NCBI_SCOPE;
 int main(int argc, const char** argv)
 //  ===========================================================================
 {
-    return CAnnotWriterApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+	return CAnnotWriterApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
