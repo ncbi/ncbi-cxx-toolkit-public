@@ -69,10 +69,9 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
     return it->second;
 }
 
-unsigned CNetScheduleException::ErrCodeToHTTPStatusCode(
-        CNetScheduleException::EErrCode err_code)
+unsigned CNetScheduleException::ErrCodeToHTTPStatusCode()
 {
-    switch (err_code) {
+    switch (GetErrCode()) {
     default: /* Including eInternalError */     return 500;
     case eProtocolSyntaxError:                  return 400;
     case eAuthenticationError:                  return 401;
