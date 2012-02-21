@@ -155,6 +155,8 @@ AC_ARG_WITH(hard-runpath,
    [ --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH])
 AC_ARG_WITH(lfs,
    [ --with-lfs              enable large file support to the extent possible])
+AC_ARG_WITH(limited-linker,
+   [ --with-limited-linker   don't attempt to build especially large projects])
 
 ## Scripts, make features, and directory naming
 AC_ARG_WITH(extra-action,
@@ -453,7 +455,7 @@ debug symbols optimization profiling tcheck dll static static-exe bundles \
 plugin-auto-load bin-release mt 64 universal exe runpath hard-runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
-check ncbi-public strip pch caution ccache distcc \
+check ncbi-public strip pch caution ccache distcc limited-linker \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
@@ -6292,6 +6294,10 @@ case "$host_os" in
       fi
       ;;
 esac
+
+if test "${with_limited_linker}" = "yes"; then
+   NCBI_FEATURE(LimitedLinker)
+fi
 
 FEATURES="$WithFeatures $WithPackages $WithProjects"
 

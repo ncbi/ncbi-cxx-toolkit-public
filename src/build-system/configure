@@ -893,6 +893,7 @@ Optional Packages:
  --with-relative-runpath=P specify an executable-relative DLL search path
  --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH
  --with-lfs              enable large file support to the extent possible
+ --with-limited-linker   don't attempt to build especially large projects
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
  --with-build-root=DIR   specify a non-default build directory name
@@ -1960,6 +1961,12 @@ if test "${with_lfs+set}" = set; then
 
 fi;
 
+# Check whether --with-limited-linker or --without-limited-linker was given.
+if test "${with_limited_linker+set}" = set; then
+  withval="$with_limited_linker"
+
+fi;
+
 ## Scripts, make features, and directory naming
 
 # Check whether --with-extra-action or --without-extra-action was given.
@@ -2816,7 +2823,7 @@ debug symbols optimization profiling tcheck dll static static-exe bundles \
 plugin-auto-load bin-release mt 64 universal exe runpath hard-runpath lfs \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
-check ncbi-public strip pch caution ccache distcc \
+check ncbi-public strip pch caution ccache distcc limited-linker \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
@@ -32761,11 +32768,15 @@ case "$host_os" in
       ;;
 esac
 
+if test "${with_limited_linker}" = "yes"; then
+             WithFeatures="$WithFeatures${WithFeaturesSep}LimitedLinker"; WithFeaturesSep=" "
+fi
+
 FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
