@@ -363,8 +363,22 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             }
             break;
         case CSeq_id::e_General:
-            if (id.GetGeneral().IsSetDb() && id.GetGeneral().GetDb().length() > 20) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, "Database name longer than 20 characters", ctx);
+            if (id.GetGeneral().IsSetDb()) {
+                int dblen = id.GetGeneral().GetDb().length();
+                if (dblen > 20) {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, "Database name longer than 20 characters", ctx);
+                }
+                if (id.GetGeneral().IsSetTag() && id.GetGeneral().GetTag().IsStr()) {
+                    int idlen = id.GetGeneral().GetTag().GetStr().length();
+                    if (dblen + idlen > 64) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than 64 characters", ctx);
+                    }
+                }
+             }
+           break;
+        case CSeq_id::e_Local:
+            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
             }
             break;
         default:
