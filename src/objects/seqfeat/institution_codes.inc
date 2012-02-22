@@ -204,6 +204,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AMSA	s	Albany Museum",
 "AMUZ	s	Aligarh Muslim University",
 "ANA	s	Orange County Department of Agriculture",
+"ANACC<AUS>	c	Australian National Algae Culture Collection",
 "ANC	s	Universita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali",
 "ANCB	s	Museo Nacional de Historia Natural, La Paz",
 "AND	s	Slezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department",
