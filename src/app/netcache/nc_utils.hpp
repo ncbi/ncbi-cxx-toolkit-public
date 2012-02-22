@@ -90,7 +90,7 @@ enum ENCAccessType {
 };
 
 
-
+/*
 class CSpinRWLock;
 
 typedef CGuard< CSpinRWLock,
@@ -135,7 +135,7 @@ private:
     /// lock was acquired
     CAtomicCounter m_LockCount;
 };
-
+*/
 
 #ifdef NCBI_OS_LINUX
 typedef struct timespec TTimeSpec;
@@ -188,6 +188,73 @@ private:
 
     CFutex m_Futex;
 };
+
+
+template <class C, class Locker = typename CLockerTraits<C>::TLockerType>
+class CNCRef : public CRef<C, Locker>
+{
+    typedef CNCRef<C, Locker> TThisType;
+    typedef CRef<C, Locker> TParent;
+    typedef typename TParent::TObjectType TObjectType;
+    typedef typename TParent::locker_type locker_type;
+
+public:
+    CNCRef(void)
+    {}
+    CNCRef(ENull /*null*/)
+    {}
+    explicit
+    CNCRef(TObjectType* ptr)
+        : TParent(ptr)
+    {}
+    CNCRef(TObjectType* ptr, const locker_type& locker_value)
+        : TParent(ptr, locker_value)
+    {}
+    CNCRef(const TThisType& ref)
+        : TParent(ref)
+    {}
+
+    TThisType& operator= (const TThisType& ref)
+    {
+        TParent::operator= (ref);
+        return *this;
+    }
+    TThisType& operator= (TObjectType* ptr)
+    {
+        TParent::operator= (ptr);
+        return *this;
+    }
+    TThisType& operator= (ENull /*null*/)
+    {
+        TParent::operator= (null);
+        return *this;
+    }
+
+    TObjectType& operator* (void)
+    {
+        return *TParent::GetPointerOrNull();
+    }
+    TObjectType* operator-> (void)
+    {
+        return TParent::GetPointerOrNull();
+    }
+    const TObjectType& operator* (void) const
+    {
+        return *TParent::GetPointerOrNull();
+    }
+    const TObjectType* operator-> (void) const
+    {
+        return TParent::GetPointerOrNull();
+    }
+};
+
+
+template<class C>
+inline
+CNCRef<C> NCRef(C* object)
+{
+    return CNCRef<C>(object);
+}
 
 
 /// Stream-like class to accumulate all in one string without actual
@@ -284,7 +351,7 @@ private:
     /// Stream to direct the output to
     CNcbiIostream*        m_PrintStream;
     /// Diagnostics context that was set before this object was created
-    CRef<CRequestContext> m_OldContext;
+    CNCRef<CRequestContext> m_OldContext;
     /// Accumulator of the current output line
     CQuickStrStream       m_LineStream;
 };
@@ -833,7 +900,7 @@ g_GetBitsCnt(size_t value)
 //////////////////////////////////////////////////////////////////////////
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
-
+/*
 inline
 CSpinRWLock::CSpinRWLock(void)
 {
@@ -845,7 +912,7 @@ CSpinRWLock::~CSpinRWLock(void)
 {
     _ASSERT(m_LockCount.Get() == 0);
 }
-
+*/
 
 template <class T>
 inline T

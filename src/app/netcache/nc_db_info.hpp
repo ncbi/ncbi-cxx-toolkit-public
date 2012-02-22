@@ -112,7 +112,7 @@ public:
     bool    has_error;
     SNCDataCoord data_coord;
 
-    CRef<CNCBlobBuffer> data;
+    CNCRef<CNCBlobBuffer> data;
     CNCBlobVerManager*  manager;
     CNCLongOpTrigger    data_trigger;
 
@@ -238,7 +238,7 @@ struct SNCDBFileInfo : public CObject
     virtual ~SNCDBFileInfo(void);
 };
 /// Information about all database parts in NetCache storage
-typedef map<Uint4, CRef<SNCDBFileInfo> >  TNCDBFilesMap;
+typedef map<Uint4, CNCRef<SNCDBFileInfo> >  TNCDBFilesMap;
 
 
 

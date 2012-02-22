@@ -1055,7 +1055,7 @@ CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
     if (x_IsFlagSet(fConnStartPrinted)) {
         CDiagContext::SetRequestContext(m_ConnCtx);
         CDiagContext_Extra extra = GetDiagContext().Extra();
-        extra.Print("cmds_cnt", NStr::UInt8ToString(m_CntCmds));
+        extra.Print("cmds_cnt", m_CntCmds);
         extra.Flush();
         //LOG_POST(StackTrace);
         m_ConnCtx->SetBytesRd(m_Socket->GetCount(eIO_Read));
@@ -1540,7 +1540,7 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
         }
         m_BlobSize = 0;
         if (diag_extra.get() != NULL) {
-            diag_extra->Print("slot", NStr::UIntToString(m_BlobSlot));
+            diag_extra->Print("slot", m_BlobSlot);
             diag_extra->Flush();
         }
         // PrintRequestStart() resets status value, so setting default status
@@ -1652,7 +1652,7 @@ CNCMessageHandler::x_ReadCommand(void)
             Uint8 now = CNetCacheServer::GetPreciseTime();
             m_ThrottleTime = now + to_wait;
             if (g_NetcacheServer->IsLogCmds()) {
-                GetDiagContext().Extra().Print("throt", NStr::UIntToString(to_wait));
+                GetDiagContext().Extra().Print("throt", to_wait);
             }
             m_WaitForThrottle = true;
             g_NetcacheServer->DeferConnectionProcessing(m_Socket);
@@ -1903,7 +1903,7 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
                  ||  (cmd_status == eStatus_BadCmd  &&  m_BlobSize != 0)))
         {
             CDiagContext_Extra diag_extra = GetDiagContext().Extra();
-            diag_extra.Print("size", NStr::UInt8ToString(m_BlobSize));
+            diag_extra.Print("size", m_BlobSize);
             diag_extra.Flush();
         }
         GetDiagContext().PrintRequestStop();

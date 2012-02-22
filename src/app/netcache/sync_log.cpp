@@ -552,6 +552,12 @@ CNCSyncLog::Finalize(void)
 Uint8
 CNCSyncLog::AddEvent(Uint2 slot, SNCSyncEvent* event)
 {
+    Uint2 real_slot = 0;
+    Uint2 time_bucket = 0;
+    CNCDistributionConf::GetSlotByKey(event->key, real_slot, time_bucket);
+    if (real_slot != slot)
+        abort();
+
     SSlotData& data = s_GetSlotData(slot);
     CFastMutexGuard guard(data.lock);
 
@@ -647,20 +653,21 @@ CNCSyncLog::GetEventsList(Uint8  server,
                         // all the blobs will be exchanged
     }
 
-    Uint8 time_limit = 0;
-    bool  time_limit_set = false;
+    //Uint8 time_limit = 0;
+    //bool  time_limit_set = false;
     // Walk the container from the end with copying all the records which
     // matched: rec_no > local_rec_no or timestamp within 10 sec
     NON_CONST_REVERSE_ITERATE(TSyncEvents, record, data.events) {
         SNCSyncEvent* evt = *record;
         // local_time is used here because the records are ordered by
         // local_time but not the origin time
-        if (time_limit_set  &&  evt->local_time < time_limit)
+        //if (time_limit_set  &&  evt->local_time < time_limit)
+        //    break;
+        if (/*!time_limit_set  &&  */evt->rec_no < *local_start_rec_no) {
+            //time_limit_set = true;
+            //time_limit = evt->local_time
+            //             - CNCDistributionConf::GetPeriodicSyncTailTime();
             break;
-        if (!time_limit_set  &&  evt->rec_no < *local_start_rec_no) {
-            time_limit_set = true;
-            time_limit = evt->local_time
-                         - CNCDistributionConf::GetPeriodicSyncTailTime();
         }
 
         // Now make the decision if the record should be memorized

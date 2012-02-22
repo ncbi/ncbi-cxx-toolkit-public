@@ -52,9 +52,9 @@ public:
                                   bool          for_new_version);
     void Release(void);
 
-    ENCBlockingOpResult  GetCurVersion(CRef<SNCBlobVerData>* ver_data,
+    ENCBlockingOpResult  GetCurVersion(CNCRef<SNCBlobVerData>* ver_data,
                                        INCBlockedOpListener* listener);
-    CRef<SNCBlobVerData> CreateNewVersion(void);
+    CNCRef<SNCBlobVerData> CreateNewVersion(void);
 
     bool FinalizeWriting(SNCBlobVerData* ver_data);
     void DeadTimeChanged(SNCBlobVerData* ver_data);
@@ -100,7 +100,7 @@ private:
     Uint2                   m_TimeBucket;
     SNCCacheData*           m_CacheData;
     string                  m_Key;
-    CRef<SNCBlobVerData>    m_CurVersion;
+    CNCRef<SNCBlobVerData>  m_CurVersion;
     CNCLongOpTrigger        m_CurVerTrigger;
 };
 
@@ -253,9 +253,9 @@ private:
     ///
     CNCBlobVerManager*      m_VerManager;
     /// 
-    CRef<SNCBlobVerData>    m_CurData;
+    CNCRef<SNCBlobVerData>  m_CurData;
     /// 
-    CRef<SNCBlobVerData>    m_NewData;
+    CNCRef<SNCBlobVerData>  m_NewData;
     ///
     bool                    m_Initialized;
     bool                    m_HasError;
@@ -268,7 +268,7 @@ private:
     ///
     Uint8                   m_SizeRead;
     ///
-    CRef<CNCBlobBuffer>     m_Buffer;
+    CNCRef<CNCBlobBuffer>   m_Buffer;
     SNCChunkMapInfo*        m_ChunkMaps[kNCMaxBlobMapsDepth + 1];
     size_t                  m_CurMapsSize;
     Uint2                   m_CurChunksInMap;

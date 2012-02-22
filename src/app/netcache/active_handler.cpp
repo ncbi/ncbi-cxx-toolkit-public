@@ -2092,7 +2092,7 @@ CNCActiveHandler::x_ManageCmdPipeline(void)
             Uint8 now = CNetCacheServer::GetPreciseTime();
             m_ThrottleTime = now + to_wait;
             if (g_NetcacheServer->IsLogCmds()) {
-                GetDiagContext().Extra().Print("throt", NStr::UIntToString(to_wait));
+                GetDiagContext().Extra().Print("throt", to_wait);
             }
             m_WaitForThrottle = true;
             x_DeferConnection();

@@ -246,11 +246,11 @@ private:
 
     SSyncSlotData*  m_SlotData;
     SSyncSlotSrv*   m_SlotSrv;
-    CRef<CRequestContext> m_DiagCtx;
+    CNCRef<CRequestContext> m_DiagCtx;
     Uint8       m_SrvId;
     Uint2       m_Slot;
     ESyncResult m_Result;
-    CFastMutex  m_Lock;
+    CMutex      m_Lock;
     CConditionVariable m_WaitCond;
     Uint4       m_StartedCmds;
 

@@ -144,7 +144,7 @@ private:
     ///
     struct SSpecParamsEntry {
         string        key;
-        CRef<CObject> value;
+        CNCRef<CObject> value;
 
         SSpecParamsEntry(const string& key, CObject* value);
     };
@@ -197,9 +197,9 @@ private:
     ///
     TSpecKeysList                  m_SpecPriority;
     ///
-    CRef<SSpecParamsSet>           m_SpecParams;
+    CNCRef<SSpecParamsSet>         m_SpecParams;
     ///
-    CRef<SSpecParamsSet>           m_OldSpecParams;
+    CNCRef<SSpecParamsSet>         m_OldSpecParams;
     ///
     unsigned int                   m_DefConnTimeout;
     int                            m_DefBlobTTL;

@@ -292,7 +292,7 @@ CNCLongOpTrigger::OperationCompleted(void)
     }
 }
 
-
+/*
 void
 CSpinRWLock::ReadLock(void)
 {
@@ -339,7 +339,7 @@ CSpinRWLock::WriteUnlock(void)
 {
     _VERIFY(m_LockCount.Add(-kWriteLockValue) + kWriteLockValue >= kWriteLockValue);
 }
-
+*/
 
 CFutex::EWaitResult
 CFutex::WaitValueChange(int old_value)

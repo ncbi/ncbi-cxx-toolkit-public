@@ -239,7 +239,7 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
             return;
         }
         EAsyncAction action = eNoAction;
-        CRef<SNCBlobVerData> cur_ver;
+        CNCRef<SNCBlobVerData> cur_ver;
         if (m_CurVersion) {
             if (m_CurVersion->need_write) {
                 action = eUpdateVersion;
@@ -305,7 +305,7 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
 }
 
 ENCBlockingOpResult
-CNCBlobVerManager::GetCurVersion(CRef<SNCBlobVerData>* ver_data,
+CNCBlobVerManager::GetCurVersion(CNCRef<SNCBlobVerData>* ver_data,
                                  INCBlockedOpListener* listener)
 {
     if (m_CurVerTrigger.GetState() == eNCOpNotDone  &&  m_CacheData->coord.empty())
@@ -325,7 +325,7 @@ CNCBlobVerManager::GetCurVersion(CRef<SNCBlobVerData>* ver_data,
     }}
 
     {{
-        CRef<SNCBlobVerData> cur_ver;
+        CNCRef<SNCBlobVerData> cur_ver;
         m_CacheData->lock.Lock();
         _ASSERT(m_CacheData->ver_mgr == this);
         if (m_CurVersion  &&  m_CurVersion->dead_time <= int(time(NULL))) {
@@ -355,12 +355,12 @@ CNCBlobVerManager::x_ReadCurVersion(void)
     if (!g_NCStorage->ReadBlobInfo(m_CurVersion)) {
         ERR_POST(Critical << "Problem reading meta-information about blob "
                           << g_NCStorage->UnpackKeyForLogs(m_Key));
-        CRef<SNCBlobVerData> cur_ver(m_CurVersion);
+        CNCRef<SNCBlobVerData> cur_ver(m_CurVersion);
         DeleteVersion(cur_ver);
     }
 }
 
-CRef<SNCBlobVerData>
+CNCRef<SNCBlobVerData>
 CNCBlobVerManager::CreateNewVersion(void)
 {
     if (m_CacheData->key_del_time != 0)
@@ -380,13 +380,13 @@ CNCBlobVerManager::CreateNewVersion(void)
     data->need_write    = false;
     data->has_error     = false;
     data->data_trigger.SetState(eNCOpCompleted);
-    return Ref(data);
+    return NCRef(data);
 }
 
 bool
 CNCBlobVerManager::FinalizeWriting(SNCBlobVerData* ver_data)
 {
-    CRef<SNCBlobVerData> old_ver(ver_data);
+    CNCRef<SNCBlobVerData> old_ver(ver_data);
     {{
         m_CacheData->lock.Lock();
         _ASSERT(m_CacheData->ver_mgr == this);

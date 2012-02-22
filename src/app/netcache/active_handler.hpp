@@ -324,8 +324,8 @@ private:
     CNCActiveSyncControl* m_SyncCtrl;
     CNCActiveHandler_Proxy* m_Proxy;
     CBufferedSockReaderWriter m_SockBuffer;
-    CRef<CRequestContext> m_CmdCtx;
-    CRef<CRequestContext> m_ConnCtx;
+    CNCRef<CRequestContext> m_CmdCtx;
+    CNCRef<CRequestContext> m_ConnCtx;
     string m_ConnReqId;
     Uint8  m_CntCmds;
     string m_BlobKey;

@@ -188,8 +188,8 @@ struct SCacheKeyCompare
 
 struct SWritingInfo
 {
-    CRef<SNCDBFileInfo> cur_file;
-    CRef<SNCDBFileInfo> next_file;
+    CNCRef<SNCDBFileInfo> cur_file;
+    CNCRef<SNCDBFileInfo> next_file;
     Uint4 next_rec_num;
     Uint4 next_offset;
     Uint4 left_file_size;
@@ -396,7 +396,7 @@ private:
     /// Do set of procedures creating and initializing new database part and
     /// switching storage to using new database part as current one.
     bool x_CreateNewFile(size_t type_idx);
-    void x_DeleteDBFile(CRef<SNCDBFileInfo> file_info);
+    void x_DeleteDBFile(const CNCRef<SNCDBFileInfo>& file_info);
     bool x_SaveOneMapImpl(SNCChunkMapInfo* save_map,
                           SNCChunkMapInfo* up_map,
                           Uint2 cnt_downs,
@@ -408,12 +408,14 @@ private:
                         Uint2 cnt_downs,
                         bool save_all_deps);
     virtual void OnBlockedOpFinish(void);
+    bool x_IsIndexDeleted(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec);
+    SFileIndexRec* x_GetIndOrDeleted(SNCDBFileInfo* file_info, Uint4 rec_num);
     SFileIndexRec* x_GetIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num);
     void x_SwitchToNextFile(SWritingInfo& w_info);
     bool x_GetNextWriteCoord(EDBFileIndex file_index,
                              Uint4 rec_size,
                              SNCDataCoord& coord,
-                             CRef<SNCDBFileInfo>& file_info,
+                             CNCRef<SNCDBFileInfo>& file_info,
                              SFileIndexRec*& ind_rec);
     Uint1 x_CalcMapDepthImpl(Uint8 size, Uint4 chunk_size, Uint2 map_size);
     Uint1 x_CalcMapDepth(Uint8 size, Uint4 chunk_size, Uint2 map_size);
@@ -426,7 +428,7 @@ private:
     SFileMetaRec* x_CalcMetaAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec);
     SFileChunkMapRec* x_CalcMapAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec);
     SFileChunkDataRec* x_CalcChunkAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec);
-    CRef<SNCDBFileInfo> x_GetDBFile(Uint4 file_id);
+    CNCRef<SNCDBFileInfo> x_GetDBFile(Uint4 file_id);
     void x_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec);
     void x_DeleteIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num);
     void x_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec);
@@ -503,10 +505,10 @@ private:
     CFastMutex         m_StopLock;
     CConditionVariable m_StopCond;
     /// Background thread running GC and caching
-    CRef<CThread>      m_BGThread;
-    CRef<CThread>      m_GCThread;
-    CRef<CThread>      m_NewFileThread;
-    CRef<CThread>      m_FlushThread;
+    CNCRef<CThread>    m_BGThread;
+    CNCRef<CThread>    m_GCThread;
+    CNCRef<CThread>    m_NewFileThread;
+    CNCRef<CThread>    m_FlushThread;
 
     CFastMutex               m_IndexLock;
     /// Index database file

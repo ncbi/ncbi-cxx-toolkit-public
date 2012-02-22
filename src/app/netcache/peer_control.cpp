@@ -172,6 +172,8 @@ CNCPeerControl::RegisterConnSuccess(void)
 bool
 CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
 {
+    if (g_NetcacheServer->ShutdownRequested())
+        return false;
     if (m_InThrottle) {
         CFastMutexGuard guard(m_ObjLock);
         if (m_InThrottle) {
@@ -209,7 +211,7 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
 CNCActiveHandler*
 CNCPeerControl::x_GetPooledConnImpl(void)
 {
-    if (m_PooledConns.empty())
+    if (m_PooledConns.empty()  ||  g_NetcacheServer->ShutdownRequested())
         return NULL;
     CNCActiveHandler* conn = m_PooledConns.back();
     m_PooledConns.pop_back();
@@ -417,10 +419,10 @@ retry:
                 TNCActiveSyncListIt cur_it = m_NextTaskSync;
                 ++m_NextTaskSync;
                 m_SyncList.erase(cur_it);
-                if (m_NextTaskSync == m_SyncList.end())
-                    m_NextTaskSync = m_SyncList.begin();
             }
-            else if (++m_NextTaskSync == m_SyncList.end())
+            else 
+                ++m_NextTaskSync;
+            if (m_NextTaskSync == m_SyncList.end())
                 m_NextTaskSync = m_SyncList.begin();
             x_UpdateHasTasks();
             m_ObjLock.Unlock();

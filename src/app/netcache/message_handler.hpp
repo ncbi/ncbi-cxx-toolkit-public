@@ -494,9 +494,9 @@ private:
     /// Processor for the currently executed NetCache command
     TProcessor                m_CmdProcessor;
     /// Diagnostics context for the currently executed command
-    CRef<CRequestContext>     m_CmdCtx;
+    CNCRef<CRequestContext>   m_CmdCtx;
     ///
-    CRef<CRequestContext>     m_ConnCtx;
+    CNCRef<CRequestContext>   m_ConnCtx;
     ///
     string                    m_ConnReqId;
     ///
@@ -601,7 +601,7 @@ private:
     THandlerPool     m_Pool;
 };
 
-typedef CRef<CNCMsgHandler_Factory>  TNCMsgHandlerFactoryRef;
+typedef CNCRef<CNCMsgHandler_Factory>  TNCMsgHandlerFactoryRef;
 
 
 /// Special proxy for handler factory.
