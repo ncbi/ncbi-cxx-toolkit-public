@@ -33,6 +33,7 @@ Field-set ::= SET OF Field-rule
 Dependent-field-rule ::= SEQUENCE {
     match-name VisibleString ,
     value-constraint VisibleString OPTIONAL ,
+    invert-match BOOLEAN DEFAULT FALSE ,
     other-fields Field-set OPTIONAL ,
     disallowed-fields Field-set OPTIONAL
 }
