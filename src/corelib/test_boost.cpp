@@ -99,6 +99,7 @@ BEGIN_NCBI_SCOPE
 
 const char* kTestsDisableSectionName = "UNITTESTS_DISABLE";
 const char* kTestsToFixSectionName = "UNITTESTS_TOFIX";
+const char* kTestsTimeoutSectionName = "UNITTESTS_TIMEOUT_MULT";
 const char* kTestConfigGlobalValue = "GLOBAL";
 
 #define DUMMY_TEST_FUNCTION_NAME  DummyTestFunction
@@ -1332,7 +1333,42 @@ CNcbiTestApplication::x_ReadConfiguration(void)
             }
         }
         else {
-            ERR_POST_X(2, Warning << "Invalid test case name: '"
+            ERR_POST_X(4, Warning << "Invalid test case name: '"
+                                  << test_name << "'");
+        }
+    }
+
+    reg_entries.clear();
+    registry.EnumerateEntries(kTestsTimeoutSectionName, &reg_entries);
+    // Adjust timeouts of test units
+    ITERATE(list<string>, it, reg_entries) {
+        const string& test_name = *it;
+        string reg_value = registry.Get(kTestsTimeoutSectionName, test_name);
+
+        but::test_unit* tu = GetTestUnit(test_name);
+        if (tu) {
+            list<CTempString> koef_lst;
+            NStr::Split(reg_value, ";", koef_lst);
+            ITERATE(list<CTempString>, it_koef, koef_lst) {
+                CTempString koef_str, koef_cond;
+                if (NStr::SplitInTwo(*it_koef, ":", koef_str, koef_cond)) {
+                    if (x_CalcConfigValue(koef_cond)) {
+                        double koef = NStr::StringToDouble(koef_str,
+                                                NStr::fAllowLeadingSpaces
+                                                | NStr::fAllowTrailingSpaces);
+                        tu->p_timeout.set(Uint4(tu->p_timeout.get() * koef));
+                        break;
+                    }
+                }
+                else {
+                    ERR_POST_X(6, "Bad format of TIMEOUT_MULT string: '"
+                                  << reg_value << "'");
+                    break;
+                }
+            }
+        }
+        else {
+            ERR_POST_X(5, Warning << "Invalid test case name: '"
                                   << test_name << "'");
         }
     }
@@ -1423,7 +1459,7 @@ CNcbiTestApplication::SetTestErrored(but::test_case* tc)
         m_HasTestErrors = true;
 }
 
-inline void
+void
 CNcbiTestApplication::AdjustTestTimeout(but::test_unit* tu)
 {
     m_CurUnitTimeout = tu->p_timeout.get();
@@ -1444,7 +1480,7 @@ CNcbiTestApplication::AdjustTestTimeout(but::test_unit* tu)
     }
 }
 
-inline string
+string
 CNcbiTestApplication::GetTestResultString(but::test_unit* tu)
 {
     string result;
