@@ -103,6 +103,11 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
         }
     } else if (p == "tblastx") {
         found = true;
+    } else if (p == "blastx") {
+        if (s == "rpsblast") {
+            p = "rpstblastn";
+            found = true;
+        }
     }
     
     if (s != "plain" && (! found)) {
