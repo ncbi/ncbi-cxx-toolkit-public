@@ -567,16 +567,17 @@ void CServer::CreateRequest(IServer_ConnectionBase* conn_base,
             m_ThreadPool->AcceptRequest(request);
         } catch (CBlockingQueueException&) {
             // The size of thread pool queue is set to kMax_UInt, so
-            // this is impossible event, but we handle it gently
-            ERR_POST_X(1, Critical << "Thread pool queue full");
-            CServer_Request* req = dynamic_cast<CServer_Request*>(
+            // this is impossible event
+            ERR_POST_X(1, Fatal << "Thread pool queue full");
+            /*CServer_Request* req = dynamic_cast<CServer_Request*>(
                                                         request.GetPointer());
             _ASSERT(req);
             // Queue is full, drop request, indirectly dropping incoming
             // connection (see also CAcceptRequest::Cancel)
             // ??? What should we do if conn_base is CServerConnection?
             // Should we close it? (see also CServerConnectionRequest::Cancel)
-            req->Cancel();
+            req->Cancel();*/
+            abort();
         }
     }
     else {
