@@ -80,9 +80,6 @@ public:
     ///
     void SetJobAffinity(const string& affinity);
 
-    /// Set the initial progress message.
-    void SetProgressMessage(const string& progress_message);
-
     /// Submit a job to the queue
     ///
     /// @return a job key
@@ -131,9 +128,6 @@ public:
     /// Set a job affinity
     ///
     void SetJobAffinity(const string& affinity);
-
-    /// Set the initial progress message.
-    void SetProgressMessage(const string& progress_message);
 
     void PrepareNextJob();
 

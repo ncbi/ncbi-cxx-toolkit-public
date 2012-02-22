@@ -49,29 +49,21 @@ BEGIN_NCBI_SCOPE
 static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
     unsigned short udp_port, unsigned wait_time)
 {
-    cmd.append("\"");
-    string ps_input = NStr::PrintableString(job.input);
-
-    cmd.append(ps_input);
-    cmd.append("\"");
-
-    if (!job.progress_msg.empty()) {
-        cmd.append(" \"");
-        cmd.append(job.progress_msg);
-        cmd.append("\"");
-    }
+    cmd.push_back('"');
+    cmd.append(NStr::PrintableString(job.input));
+    cmd.push_back('"');
 
     if (udp_port != 0) {
-        cmd.append(" ");
+        cmd.append(" port=");
         cmd.append(NStr::UIntToString(udp_port));
-        cmd.append(" ");
+        cmd.append(" timeout=");
         cmd.append(NStr::UIntToString(wait_time));
     }
 
     if (!job.affinity.empty()) {
         cmd.append(" aff=\"");
         cmd.append(NStr::PrintableString(job.affinity));
-        cmd.append("\"");
+        cmd.push_back('"');
     }
 
     if (job.mask != CNetScheduleAPI::eEmptyMask) {
