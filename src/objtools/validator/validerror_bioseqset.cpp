@@ -325,10 +325,20 @@ void CValidError_bioseqset::ValidateNucProtSet
                 // look for instantiated protein titles that don't match
 
                 if (!NStr::IsBlank(instantiated)) {
-                    const string & generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
+                    string generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
                     if (!NStr::EqualNocase(instantiated, generated)) {
-                        const string & generated = defline_generator.GenerateDefline(seq, *m_Scope,
+                        string generated = defline_generator.GenerateDefline(seq, *m_Scope,
                             sequence::CDeflineGenerator::fIgnoreExisting | sequence::CDeflineGenerator::fAllProteinNames);
+                        if (NStr::StartsWith (instantiated, "PREDICTED: ", NStr::eNocase)) {
+                            instantiated.erase (0, 11);
+                        } else if (NStr::StartsWith (instantiated, "UNVERIFIED: ", NStr::eNocase)) {
+                            instantiated.erase (0, 12);
+                        }
+                        if (NStr::StartsWith (generated, "PREDICTED: ", NStr::eNocase)) {
+                            generated.erase (0, 11);
+                        } else if (NStr::StartsWith (generated, "UNVERIFIED: ", NStr::eNocase)) {
+                            generated.erase (0, 12);
+                        }
                         if (!NStr::EqualNocase(instantiated, generated)) {
                             PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
                                 "Instantiated protein title does not match automatically "
@@ -746,9 +756,8 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
     for (; fi; ++fi) {
         if ( fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA ) {
             if ( fi->IsSetProduct() ) {
-                CBioseq_Handle cdna = 
-                    m_Scope->GetBioseqHandle(fi->GetProduct());
-                if ( !cdna ) {
+                CBioseq_Handle cdna = BioseqHandleFromLocation(m_Scope, fi->GetProduct());
+                 if ( !cdna ) {
                     try {
                         const CSeq_id& id = GetId(fi->GetProduct(), m_Scope);
                         id_type = id.Which();
