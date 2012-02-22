@@ -563,12 +563,15 @@ public:
   CNcbiOstream& m_out;
   bool m_use_xml;
   int m_w;
+
+  bool m_strip_attrs;
   string last_tag;
   string m_eol_text; // usually "\n", but could be gap or comp types, e.g. "(w)", "(W:35, D:8)"
 
   XPrintTotalsItem(CNcbiOstream& out, bool use_xml, int w) : m_out(out), m_use_xml(use_xml), m_w(w)
   {
     m_eol_text="\n";
+    m_strip_attrs=true; // "  clone   , linkage yes" => attribute type="clone"
   }
 
   // print a value line
@@ -591,18 +594,30 @@ public:
       if(xml_tag.size()==0) {
         // false = add as a suffix
         bool add_label_as_attribute = ( last_tag.size() && last_tag[last_tag.size()-1]=='=' );
-        bool uc = !add_label_as_attribute;
 
-        for(string::const_iterator it = label.begin();  it != label.end(); ++it) {
-          if(isalpha(*it)) {
-            xml_tag+= uc ? toupper(*it): tolower(*it);
-            uc = false;
-          }
-          else {
-            if(*it==',') break; // "***no components, gaps only: " -> "NoComponents"
-            uc = !add_label_as_attribute;
+        if(!add_label_as_attribute || m_strip_attrs) {
+          bool uc = !add_label_as_attribute;
+
+          for(string::const_iterator it = label.begin();  it != label.end(); ++it) {
+            if(isalpha(*it)) {
+              xml_tag+= uc ? toupper(*it): tolower(*it);
+              uc = false;
+            }
+            else {
+              if(*it==',') break; // "***no components, gaps only: " -> "NoComponents"
+              uc = !add_label_as_attribute;
+            }
           }
         }
+        else {
+          // attribute pattern="AADB[02037555..02037659].1"
+          xml_tag = NStr::XmlEncode( NStr::TruncateSpaces(label));
+          if(xml_tag.size() && xml_tag[xml_tag.size()-1]==':') {
+            xml_tag.resize( xml_tag.size()-1 );
+            NStr::TruncateSpacesInPlace(xml_tag);
+          }
+        }
+        m_strip_attrs=true; // reset to default
 
         if( add_label_as_attribute ) {
           xml_tag = last_tag + "\""+ xml_tag + "\"";
@@ -635,7 +650,8 @@ public:
   // print an empty line or static text; no-op in XML
   void line(const string& s=NcbiEmptyString)
   {
-    if( !m_use_xml ) m_out << s << "\n";
+    if( !m_use_xml ) m_out << s << m_eol_text;
+    m_eol_text="\n"; // reset to default (AFTER printing whatever was there)
   }
 };
 
@@ -828,50 +844,50 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   }
 
   // to do: print patterns in XML
-  if(!use_xml) {
-    if(m_ObjCount) {
-      x_PrintPatterns(m_objNamePatterns, "Object names",
-        m_CheckObjLen ? m_comp2len->m_count : 0, NULL,
-        out, use_xml
-      );
+  if(m_ObjCount) {
+    x_PrintPatterns(m_objNamePatterns, "Object names",
+      m_CheckObjLen ? m_comp2len->m_count : 0, NULL,
+      out, use_xml
+    );
+  }
+
+  if(m_CompId2Spans.size()) {
+    CAccPatternCounter compNamePatterns;
+    for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
+      it != m_CompId2Spans.end(); ++it)
+    {
+      compNamePatterns.AddName(it->first);
+    }
+    bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names",
+      m_CheckObjLen ? 0 : m_comp2len->m_count,
+      m_comp2len == &m_scaf2len ? " Scaffold from component AGP" : NULL,
+      out, use_xml
+    );
+    if(!m_CheckCompNames && hasSuspicious ) {
+      xprint.line("Use -g or -a to print lines with suspicious accessions.");
     }
 
-    if(m_CompId2Spans.size()) {
-      CAccPatternCounter compNamePatterns;
-      for(TCompId2Spans::iterator it = m_CompId2Spans.begin();
-        it != m_CompId2Spans.end(); ++it)
-      {
-        compNamePatterns.AddName(it->first);
-      }
-      bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names",
-        m_CheckObjLen ? 0 : m_comp2len->m_count,
-        m_comp2len == &m_scaf2len ? " Scaffold from component AGP" : NULL,
-        out, use_xml
-      );
-      if(!m_CheckCompNames && hasSuspicious ) {
-        out<< "Use -g or -a to print lines with suspicious accessions.\n";
-      }
-
-      const int MAX_objname_eq_comp=3;
-      int cnt_objname_eq_comp=0;
-      string str_objname_eq_comp;
-      for(TObjSet::iterator it = m_ObjIdSet.begin();  it != m_ObjIdSet.end(); ++it) {
-        if(m_CompId2Spans.find(*it)!=m_CompId2Spans.end()) {
-          cnt_objname_eq_comp++;
-          if(cnt_objname_eq_comp<=MAX_objname_eq_comp) {
-            if(cnt_objname_eq_comp>1) str_objname_eq_comp+=", ";
-            str_objname_eq_comp+=*it;
-          }
+    const int MAX_objname_eq_comp=3;
+    int cnt_objname_eq_comp=0;
+    string str_objname_eq_comp;
+    for(TObjSet::iterator it = m_ObjIdSet.begin();  it != m_ObjIdSet.end(); ++it) {
+      if(m_CompId2Spans.find(*it)!=m_CompId2Spans.end()) {
+        cnt_objname_eq_comp++;
+        if(cnt_objname_eq_comp<=MAX_objname_eq_comp) {
+          if(cnt_objname_eq_comp>1) str_objname_eq_comp+=", ";
+          str_objname_eq_comp+=*it;
         }
       }
-      if(cnt_objname_eq_comp) {
-        out<< "\n" << cnt_objname_eq_comp << " name"
-            << (cnt_objname_eq_comp==1?" is":"s are")
-            << " used both as object and as component_id:\n";
-        out<< "  " << str_objname_eq_comp;
-        if(cnt_objname_eq_comp>MAX_objname_eq_comp) out << ", ...";
-        out << "\n";
-      }
+    }
+
+    // to do: output to XML
+    if(cnt_objname_eq_comp && !use_xml) {
+      out<< "\n" << cnt_objname_eq_comp << " name"
+          << (cnt_objname_eq_comp==1?" is":"s are")
+          << " used both as object and as component_id:\n";
+      out<< "  " << str_objname_eq_comp;
+      if(cnt_objname_eq_comp>MAX_objname_eq_comp) out << ", ...";
+      out << "\n";
     }
   }
 }
@@ -1037,18 +1053,22 @@ bool CAgpValidateReader::x_PrintPatterns(
   CNcbiOstream& out, bool use_xml)
 {
   const int MaxPatterns=10;
+  //const int MaxPatterns=2;
+  static const string SPACES="                                        ";
 
   // Sorted by count to print most frequent first
   CAccPatternCounter::TMapCountToString cnt_pat; // multimap<int,string>
   namePatterns.GetSortedPatterns(cnt_pat);
   SIZE_TYPE cnt_pat_size=cnt_pat.size();
 
-  out << "\n";
+  //out << "\n";
 
-  // Calculate width of columns 1 (wPattern) and 2 (w, count)
+  // Calculate widths of columns 1 (wPattern) and 2 (w)
   int w = NStr::IntToString(
       cnt_pat.rbegin()->first // the biggest count
     ).size()+1;
+  XPrintTotalsItem xprint(out, use_xml, w);
+  xprint.line();
 
   int wPattern=strHeader.size()-2;
   int totalCount=0;
@@ -1078,13 +1098,21 @@ bool CAgpValidateReader::x_PrintPatterns(
   bool mixedCategories=(nucCount && otherCount);
   if(mixedCategories && wPattern<20) wPattern=20;
   // Print the total
+  string xml_tag_for_pattern_and_count = "";
   if(strHeader.size()) {
-    out<< setw(wPattern+2) << setiosflags(IOS_BASE::left)
-        << strHeader << ": " << ALIGN_W(totalCount);
     if(fasta_count && fasta_count!=totalCount) {
-      out << " != " << fasta_count << " in the " << (count_label ? count_label : "FASTA");
+      // this is not needed in XML since there is no FASTA to compare to yet...
+      xprint.m_eol_text = string(" != ") +
+        NStr::NumericToString(fasta_count) + " in the " +
+        (count_label ? count_label : "FASTA")+"\n";
     }
-    out<< "\n";
+    xprint.line(
+        strHeader+SPACES.substr(
+          0, wPattern+2>strHeader.size() ? wPattern+2-strHeader.size() : 0
+        ) + ": ",
+        totalCount
+      );
+    xml_tag_for_pattern_and_count = xprint.last_tag;
   }
 
   bool printNuc=(nucCount>0);
@@ -1092,9 +1120,11 @@ bool CAgpValidateReader::x_PrintPatterns(
   for(;;) {
     if(mixedCategories) {
       // Could be an error - print extra sub-headings to get attention
-      out<< string("------------------------").substr(0, wPattern-20);
-      if     (printNuc) out << " Nucleotide accessions: " << ALIGN_W(nucCount  ) << "\n";
-      else              out << " OTHER identifiers    : " << ALIGN_W(otherCount) << "\n";
+      xprint.m_eol_text=NcbiEmptyString; // no "\n" for the next line()
+      xprint.line(string("------------------------").substr(0, wPattern-20)+" ");
+
+      if     (printNuc) xprint.line("Nucleotide accessions: ", nucCount);
+      else              xprint.line("OTHER identifiers    : ", otherCount);
     }
 
     // Print the patterns
@@ -1112,26 +1142,42 @@ bool CAgpValidateReader::x_PrintPatterns(
       if( ++patternsPrinted<=MaxPatterns ||
           cnt_pat_size<=2*MaxPatterns
       ) {
-        out << "  " << setw(wPattern) << setiosflags(IOS_BASE::left)
-            << it->second                    // pattern
-            << ": " << ALIGN_W( it->first ); // : count
+
+        string acc_warning;
         if(!printNuc) {
-          //if(code & fSome) out << " - some";
-          //switch(code & f_category_mask)
           switch(code)
           {
             case fUnknownFormat|fSome:
             case fOneAccManyVer|fSome:
-              out << " (some local or misspelled)"; break;
+              acc_warning ="some local or misspelled"; break;
             case fProtein|fSome:
-              out << " (some look like protein accessions)"; break;
+              acc_warning ="some look like protein accessions"; break;
 
             case fUnknownFormat: if(!(mixedCategories || mixedPattern)) break;
-            case fOneAccManyVer: out << " (local or misspelled)"; break;
-            case fProtein      : out << " (looks like protein accession)"; break;
+            case fOneAccManyVer: acc_warning ="local or misspelled"; break;
+            case fProtein      : acc_warning ="looks like protein accession"; break;
           }
         }
-        out << "\n";
+        string xml_tag = "";
+        if( acc_warning.size() ) {
+          xprint.m_eol_text = string(" (") + acc_warning + ")\n";
+        }
+
+        // output pattern as an attribute
+        xprint.last_tag =
+          xml_tag_for_pattern_and_count +
+          ( acc_warning.size() ? string(" warn=\"")+acc_warning+"\"" : "" )+
+          " pattern=";
+        xprint.m_strip_attrs=false;
+
+        xprint.line(
+          // pattern
+          string("  ") + it->second +
+          SPACES.substr(0, wPattern - it->second.size()) + ": ",
+          // count
+          it->first
+        );
+        xprint.last_tag = NcbiEmptyString;
       }
       else {
         // accessionsSkipped += CAccPatternCounter::GetCount(*it);
@@ -1144,9 +1190,10 @@ bool CAgpValidateReader::x_PrintPatterns(
       string s = "other ";
       s+=NStr::IntToString(patternsSkipped);
       s+=" patterns";
-      out << "  " << setw(wPattern) << setiosflags(IOS_BASE::left) << s
-          << ": " << ALIGN_W( accessionsSkipped )
-          << "\n";
+      xprint.line( "  " + s + SPACES.substr(0, wPattern - s.size()) + ": ",
+          accessionsSkipped,
+          xml_tag_for_pattern_and_count + " patterns=\"other\""
+      );
     }
 
     if(!mixedCategories || !printNuc) break;
@@ -1157,6 +1204,7 @@ bool CAgpValidateReader::x_PrintPatterns(
 
 // label = "component(s) from FASTA not found in AGP"
 // label = "scaffold(s) not found in Chromosome from scaffold AGP"
+// 2012/02/21: xml mode not tested since the current CGI has no info to provide this kind of validation
 void CAgpValidateReader::x_PrintIdsNotInAgp(CNcbiOstream& out, bool use_xml)
 {
   CAccPatternCounter patterns;
@@ -1193,14 +1241,25 @@ void CAgpValidateReader::x_PrintIdsNotInAgp(CNcbiOstream& out, bool use_xml)
       m_CheckObjLen ? "object name(s) in FASTA not found in AGP" :
       m_comp2len == &m_scaf2len ? "scaffold(s) not found in Chromosome from scaffold AGP":
       "component name(s) in FASTA not found in AGP";
-    string tmp;
-    NStr::Replace(label, "(s)", cnt==1 ? "" : "s", tmp);
-    out << "\n" << cnt << " " << tmp << ": ";
 
-    if(cnt==1) {
+    if(use_xml) {
+      // print both patterns and ALL missing names
+      label = label.substr(0, label.find(' '));
+      out << "<MissingSeqNames level=\""+label+"\">\n";
+      for(set<string>::iterator it = ids.begin();  it != ids.end(); ++it) {
+        out << " <name>" << NStr::XmlEncode(*it) << "</name>\n";
+      }
+    }
+    else {
+      string tmp;
+      NStr::Replace(label, "(s)", cnt==1 ? "" : "s", tmp);
+      out << "\n" << cnt << " " << tmp << ": ";
+    }
+
+    if(!use_xml && cnt==1) {
       out << *(ids.begin()) << "\n";
     }
-    else if(cnt<m_AgpErr->m_MaxRepeat||m_AgpErr->m_MaxRepeat==0) {
+    else if(!use_xml && (cnt<m_AgpErr->m_MaxRepeat||m_AgpErr->m_MaxRepeat==0)) {
       out << "\n";
       for(set<string>::iterator it = ids.begin();  it != ids.end(); ++it) {
         out << "  " << *it << "\n";
@@ -1208,6 +1267,9 @@ void CAgpValidateReader::x_PrintIdsNotInAgp(CNcbiOstream& out, bool use_xml)
     }
     else {
       x_PrintPatterns(patterns, NcbiEmptyString, 0, NULL, out, use_xml);
+    }
+    if(use_xml) {
+      out << "</MissingSeqNames>\n";
     }
   }
 }
