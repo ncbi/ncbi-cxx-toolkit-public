@@ -237,7 +237,7 @@ void CFileModules::BeginXMLSchema(CNcbiOstream& out) const
             if (!ns.empty()) {
                 nsName = ns;
             }
-            if (!defs.front().second->IsNsQualified()) {
+            if (defs.front().second->IsNsQualified() == eNSUnqualified) {
                 elementForm = "unqualified";
             }
         }
