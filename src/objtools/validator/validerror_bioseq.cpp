@@ -898,6 +898,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         bool is_refseq = false;
         bool is_gibbmt = false;
         bool is_gibbsq = false;
+        bool is_patent = false;
         FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
             switch ((*id_it)->Which()) {
                 case CSeq_id::e_Genbank:
@@ -918,12 +919,15 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                 case CSeq_id::e_Gibbsq:
                     is_gibbsq = true;
                     break;
+                case CSeq_id::e_Patent:
+                    is_patent = true;
+                    break;
                 default:
                     break;
             }
         }
         if ((is_genbank || is_embl || is_ddbj || is_refseq)
-            && !is_gibbmt && !is_gibbsq) {
+            && !is_gibbmt && !is_gibbsq && !is_patent) {
             PostErr(eDiag_Error, eErr_SEQ_PKG_OrphanedProtein,
                     "Orphaned stand-alone protein", seq);
         }
