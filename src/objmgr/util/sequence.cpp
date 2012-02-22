@@ -2514,6 +2514,128 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
     }
 }
 
+void CFastaOstream::x_WriteModifiers ( const CBioseq& bioseq )
+{
+    // handle modifiers retrieved from Biosource.Org-ref
+    // [organism=...], etc.
+
+    // collect relevant objects into this as we go
+    vector< CConstRef<CBioSource> > arrBiosourcesToCheck;
+    vector< CConstRef<CMolInfo> >   arrMolInfosToCheck;
+
+    if( bioseq.IsSetDescr() && bioseq.GetDescr().IsSet() ) {
+        ITERATE( CSeq_descr::Tdata, descr_iter, bioseq.GetDescr().Get() ) {
+            const CSeqdesc & seqdesc = **descr_iter;
+            if( seqdesc.IsSource() ) {
+                arrBiosourcesToCheck.push_back( 
+                    CConstRef<CBioSource>( &seqdesc.GetSource() ) );
+            }
+            if( seqdesc.IsMolinfo() ) {
+                arrMolInfosToCheck.push_back( 
+                    CConstRef<CMolInfo>( &seqdesc.GetMolinfo() ) );
+            }
+        }
+    }
+    if( bioseq.IsSetAnnot() ) {
+        ITERATE( CBioseq::TAnnot, bioseq_iter, bioseq.GetAnnot() ) {
+            const CSeq_annot & annot = **bioseq_iter;
+            if( annot.IsFtable() ) {
+                ITERATE( CSeq_annot::C_Data::TFtable, feat_iter, annot.GetData().GetFtable() ) {
+                    const CSeq_feat & feat = **feat_iter;
+                    if( feat.IsSetData() ) {
+                        const CSeqFeatData & feat_data = feat.GetData();
+                        if( feat_data.IsBiosrc() ) {
+                            arrBiosourcesToCheck.push_back( 
+                                CConstRef<CBioSource>( &feat_data.GetBiosrc() ) );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    bool organism_seen = false;
+    bool strain_seen = false;
+    bool gcode_seen = false;
+    ITERATE( vector< CConstRef<CBioSource> >, bsrc_iter, arrBiosourcesToCheck ) {
+        const CBioSource & bsrc = **bsrc_iter;
+        if( bsrc.IsSetOrg() ) {
+            const COrg_ref & org = bsrc.GetOrg();
+            if( org.IsSetTaxname() ) {
+                x_PrintStringModIfNotDup( &organism_seen, "organism", org.GetTaxname() );
+            }
+            if( org.IsSetOrgname() ) {
+                const COrg_ref::TOrgname & orgname = org.GetOrgname();
+                if( orgname.IsSetMod() ) {
+                    ITERATE( COrgName::TMod, mod_iter, orgname.GetMod() ) {
+                        const COrgMod & mod = **mod_iter;
+                        if( mod.IsSetSubtype() ) {
+                            switch( mod.GetSubtype() ) {
+                            case COrgMod::eSubtype_strain:
+                                if( mod.IsSetSubname() ) {
+                                    x_PrintStringModIfNotDup( &strain_seen, "strain", mod.GetSubname() );
+                                }
+                                break;
+                            default:
+                                // ignore; do nothing
+                                break;
+                            }
+                        }
+                    }
+                }
+                if( orgname.IsSetGcode() ) {
+                    x_PrintIntModIfNotDup( &gcode_seen, "gcode", orgname.GetGcode() );
+                }
+            }
+        }
+    }
+
+    typedef pair<CMolInfo::TTech, const char*> TTechMapEntry;
+    static const TTechMapEntry sc_TechArray[] = {
+        // note that the text values do *NOT* precisely correspond with
+        // the names in the ASN.1 schema files
+        TTechMapEntry(CMolInfo::eTech_unknown,            "?"),
+        TTechMapEntry(CMolInfo::eTech_standard,           "standard"),
+        TTechMapEntry(CMolInfo::eTech_est,                "EST"),
+        TTechMapEntry(CMolInfo::eTech_sts,                "STS"),
+        TTechMapEntry(CMolInfo::eTech_survey,             "survey"),
+        TTechMapEntry(CMolInfo::eTech_genemap,            "genetic map"),
+        TTechMapEntry(CMolInfo::eTech_physmap,            "physical map"),
+        TTechMapEntry(CMolInfo::eTech_derived,            "derived"),
+        TTechMapEntry(CMolInfo::eTech_concept_trans,      "concept-trans"),
+        TTechMapEntry(CMolInfo::eTech_seq_pept,           "seq-pept"),
+        TTechMapEntry(CMolInfo::eTech_both,               "both"),
+        TTechMapEntry(CMolInfo::eTech_seq_pept_overlap,   "seq-pept-overlap"),
+        TTechMapEntry(CMolInfo::eTech_seq_pept_homol,     "seq-pept-homol"),
+        TTechMapEntry(CMolInfo::eTech_concept_trans_a,    "concept-trans-a"),
+        TTechMapEntry(CMolInfo::eTech_htgs_1,             "htgs 1"),
+        TTechMapEntry(CMolInfo::eTech_htgs_2,             "htgs 2"),
+        TTechMapEntry(CMolInfo::eTech_htgs_3,             "htgs 3"),
+        TTechMapEntry(CMolInfo::eTech_fli_cdna,           "fli cDNA"),
+        TTechMapEntry(CMolInfo::eTech_htgs_0,             "htgs 0"),
+        TTechMapEntry(CMolInfo::eTech_htc,                "htc"),
+        TTechMapEntry(CMolInfo::eTech_wgs,                "wgs"),
+        TTechMapEntry(CMolInfo::eTech_barcode,            "barcode"),
+        TTechMapEntry(CMolInfo::eTech_composite_wgs_htgs, "composite-wgs-htgs"),
+        TTechMapEntry(CMolInfo::eTech_tsa,                "tsa")
+    };
+    typedef CStaticArrayMap<CMolInfo::TTech, const char*>  TTechMap;
+    DEFINE_STATIC_ARRAY_MAP(TTechMap, sc_TechMap, sc_TechArray);
+
+    // print some key-value pairs
+    bool tech_seen = false;
+    ITERATE( vector< CConstRef<CMolInfo> >, molinfo_iter, arrMolInfosToCheck) {
+        const CMolInfo & molinfo = **molinfo_iter;
+        if( molinfo.IsSetTech() ) {
+            TTechMap::const_iterator find_iter = sc_TechMap.find(molinfo.GetTech());
+            if( find_iter != sc_TechMap.end() ) {
+                x_PrintStringModIfNotDup( &tech_seen, "tech", 
+                    find_iter->second );
+            }
+        }
+    }
+}
+
 void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
                                     CScope* scope,
                                     const string& custom_title)
@@ -2547,6 +2669,34 @@ void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
     }
 }
 
+void CFastaOstream::x_PrintStringModIfNotDup(
+    bool *seen, const CTempString & key, const CTempString & value )
+{
+    _ASSERT( NULL != seen );
+    _ASSERT( ! key.empty() );
+    if( *seen ) {
+        ERR_POST_X(9, Warning << "CFastaOstream::x_PrintStringModIfNotDup: "
+            << "key " << key << " would appear multiple times, but only using the first." );
+        return;
+    }
+
+    if( value.empty() ) {
+        return;
+    }
+
+    m_Out << " [" << key << '=' << value << ']';
+    *seen = true;
+}
+
+void CFastaOstream::x_PrintIntModIfNotDup(
+    bool *seen, const CTempString & key, const int value )
+{
+    CNcbiOstrstream strm;
+    strm << value;
+    x_PrintStringModIfNotDup( seen, key, 
+        (string)CNcbiOstrstreamToString(strm) );
+}
+
 
 void CFastaOstream::WriteTitle(const CBioseq& bioseq,
                                const CSeq_loc* location,
@@ -2555,6 +2705,9 @@ void CFastaOstream::WriteTitle(const CBioseq& bioseq,
 {
     if ( no_scope && ! location ) {
         x_WriteSeqIds(bioseq, NULL);
+        if( (m_Flags & fShowModifiers) != 0 ) {
+            x_WriteModifiers(bioseq);
+        }
         x_WriteSeqTitle(bioseq, NULL, custom_title);
     }
     else {
@@ -2569,6 +2722,9 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
                                const string& custom_title)
 {
     x_WriteSeqIds(*handle.GetBioseqCore(), location);
+    if( (m_Flags & fShowModifiers) != 0 ) {
+        x_WriteModifiers(*handle.GetBioseqCore());
+    }
 
     string safe_title = (custom_title.empty() ? m_Gen->GenerateDefline(handle)
                          : custom_title);
@@ -3863,7 +4019,7 @@ CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
                            << start
                            << " exceeds length (?\?\?) of parent location "
                            << label);
-            }            
+            }
         }
     }
     // clean up output

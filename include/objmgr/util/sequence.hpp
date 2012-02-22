@@ -722,14 +722,15 @@ END_SCOPE(sequence)
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
-        fAssembleParts   = 0x01, ///< assemble FAR delta sequences
-        fInstantiateGaps = 0x02, ///< with Ns or Xs as appropriate, vs. one -
-        fSuppressRange   = 0x04, ///< never include location details in defline
-        fReverseStrand   = 0x08, ///< flip the (implicit) location
-        fKeepGTSigns     = 0x10, ///< don't convert '>' to '_' in title
-        fMapMasksUp      = 0x20, ///< honor masks specified at a lower level
-        fMapMasksDown    = 0x40, ///< honor masks specified at a higher level
-        fNoExpensiveOps  = 0x80, ///< don't try too hard to find titles
+        fAssembleParts   = 0x001, ///< assemble FAR delta sequences
+        fInstantiateGaps = 0x002, ///< with Ns or Xs as appropriate, vs. one -
+        fSuppressRange   = 0x004, ///< never include location details in defline
+        fReverseStrand   = 0x008, ///< flip the (implicit) location
+        fKeepGTSigns     = 0x010, ///< don't convert '>' to '_' in title
+        fMapMasksUp      = 0x020, ///< honor masks specified at a lower level
+        fMapMasksDown    = 0x040, ///< honor masks specified at a higher level
+        fNoExpensiveOps  = 0x080, ///< don't try too hard to find titles
+        fShowModifiers   = 0x100, ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
@@ -794,11 +795,17 @@ private:
     TSeqPos             m_Width;
     TFlags              m_Flags;
 
-    void x_WriteSeqIds  (const CBioseq& bioseq,
-                         const CSeq_loc* location);
-    void x_WriteSeqTitle(const CBioseq& bioseq,
-                         CScope* scope,
-                         const string& custom_title);
+    void x_WriteSeqIds    ( const CBioseq& bioseq,
+                            const CSeq_loc* location);
+    void x_WriteModifiers ( const CBioseq& bioseq );
+    void x_WriteSeqTitle  ( const CBioseq& bioseq,
+                            CScope* scope,
+                            const string& custom_title);
+
+    void x_PrintStringModIfNotDup(
+        bool *seen, const CTempString & key, const CTempString & value );
+    void x_PrintIntModIfNotDup(
+        bool *seen, const CTempString & key, const int value );
 
     CConstRef<CSeq_loc> x_MapMask(CSeq_loc_Mapper& mapper, const CSeq_loc& mask,
                                   const CSeq_id* base_seq_id, CScope* scope);
