@@ -5455,30 +5455,35 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
 class CAsyncDiagThread : public CThread
 {
 public:
-    CAsyncDiagThread(void)
-        : m_NeedStop(false),
-          m_SubHandler(NULL)
-#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
-        , m_QueueSem(0, 100)
-#endif
-    {}
-    virtual ~CAsyncDiagThread(void)
-    {}
+    CAsyncDiagThread(void);
+    virtual ~CAsyncDiagThread(void);
 
     virtual void* Main(void);
     void Stop(void);
 
 
     bool m_NeedStop;
+    Uint2 m_CntWaiters;
+    CAtomicCounter m_MsgsInQueue;
     CDiagHandler* m_SubHandler;
     CFastMutex m_QueueLock;
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
     CConditionVariable m_QueueCond;
+    CConditionVariable m_DequeueCond;
 #else
     CSemaphore m_QueueSem;
+    CSemaphore m_DequeueSem;
 #endif
     deque<SDiagMessage*> m_MsgQueue;
 };
+
+
+/// Maximum number of messages that allowed to be in the queue for
+/// asynchronous processing.
+NCBI_PARAM_DECL(Uint4, Diag, Max_Async_Queue_Size);
+NCBI_PARAM_DEF_EX(Uint4, Diag, Max_Async_Queue_Size, 10000, eParam_NoThread,
+                  DIAG_MAX_ASYNC_QUEUE_SIZE);
+typedef NCBI_PARAM_TYPE(Diag, Max_Async_Queue_Size) TMaxAsyncQueueSizeParam;
 
 
 CAsyncDiagHandler::CAsyncDiagHandler(void)
@@ -5540,8 +5545,20 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 
     if (save_msg->m_Severity < GetDiagDieLevel()) {
         CFastMutexGuard guard(thr->m_QueueLock);
+        while (Uint4(thr->m_MsgsInQueue.Get()) >= TMaxAsyncQueueSizeParam::GetDefault())
+        {
+            ++thr->m_CntWaiters;
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+            thr->m_DequeueCond.WaitForSignal(thr->m_QueueLock);
+#else
+            guard.Release();
+            thr->m_QueueSem.Wait();
+            guard.Guard(thr->m_QueueLock);
+#endif
+            --thr->m_CntWaiters;
+        }
         thr->m_MsgQueue.push_back(save_msg);
-        if (thr->m_MsgQueue.size() == 1) {
+        if (thr->m_MsgsInQueue.Add(1) == 1) {
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
             thr->m_QueueCond.SignalSome();
 #else
@@ -5556,6 +5573,21 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 }
 
 
+CAsyncDiagThread::CAsyncDiagThread(void)
+    : m_NeedStop(false),
+      m_CntWaiters(0),
+      m_SubHandler(NULL)
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
+    , m_QueueSem(0, 100)
+    , m_DequeueSem(0, 10000000)
+#endif
+{
+    m_MsgsInQueue.Set(0);
+}
+
+CAsyncDiagThread::~CAsyncDiagThread(void)
+{}
+
 void*
 CAsyncDiagThread::Main(void)
 {
@@ -5564,6 +5596,8 @@ CAsyncDiagThread::Main(void)
         {{
             CFastMutexGuard guard(m_QueueLock);
             while (m_MsgQueue.size() == 0  &&  !m_NeedStop) {
+                if (m_MsgsInQueue.Get() != 0)
+                    abort();
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
                 m_QueueCond.WaitForSignal(m_QueueLock);
 #else
@@ -5581,6 +5615,14 @@ drain_messages:
             save_msgs.pop_front();
             m_SubHandler->Post(*msg);
             delete msg;
+            m_MsgsInQueue.Add(-1);
+            if (m_CntWaiters != 0) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+                m_DequeueCond.SignalSome();
+#else
+                m_DequeueSem.Post();
+#endif
+            }
         }
     }
     if (m_MsgQueue.size() != 0) {
