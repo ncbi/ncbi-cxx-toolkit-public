@@ -44,6 +44,7 @@ static char const rcsid[] =
 
 // Objtools includes
 #include <objtools/readers/aln_reader.hpp>  // for CAlnReader
+#include <objtools/readers/reader_exception.hpp>    // for CObjReaderParseException
 
 // Object includes
 #include <objects/seq/Bioseq.hpp>
@@ -124,7 +125,19 @@ CPsiBlastInputClustalW::x_ReadAsciiMsa(CNcbiIstream& input_file)
     _ASSERT(m_AsciiMsa.empty());
     CAlnReader reader(input_file);
     reader.SetClustal(CAlnReader::eAlpha_Protein);
-    reader.Read();
+    try {
+        reader.Read();
+    } catch (const CObjReaderParseException& e) {
+        // Workaround to provide a more useful error message when repeated
+        // Seq-IDs are encountered
+        if ((e.GetErrCode() == CObjReaderParseException::eFormat) &&
+            (NStr::Find(e.GetMsg(), "Not all sequences have same length") != NPOS)) {
+            string msg("Repeated Seq-IDs detected in multiple sequence ");
+            msg += "alignment file, please ensure all Seq-IDs are unique ";
+            msg += "before proceeding.";
+            NCBI_THROW(CBlastException, eInvalidOptions, msg);
+        }
+    }
     m_AsciiMsa = reader.GetSeqs();
     m_SeqEntry = reader.GetSeqEntry();
     // Test our post-condition
