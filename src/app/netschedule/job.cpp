@@ -234,7 +234,7 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_SubmNotifTimeout(request.timeout),
     m_RunCount(0),
     m_ReadCount(0),
-    m_ProgressMsg(request.progress_msg),
+    m_ProgressMsg(""),
     m_AffinityId(0),
     m_Mask(request.job_mask),
     m_ClientIP(request.ip),

@@ -163,7 +163,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "SUBMIT",   { &CNetScheduleHandler::x_ProcessSubmit,
                     eNSCR_Submitter },
         { { "input",        eNSPT_Str, eNSPA_Required },        // input
-          { "progress_msg", eNSPT_Str, eNSPA_Optional },
           { "port",         eNSPT_Int, eNSPA_Optional },
           { "timeout",      eNSPT_Int, eNSPA_Optional },
           { "aff",          eNSPT_Str, eNSPA_Optional, "" },    // affinity_token
