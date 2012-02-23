@@ -294,10 +294,15 @@ void CTSE_Info_Object::x_SetNeedUpdate(TNeedUpdateFlags flags)
 
 void CTSE_Info_Object::x_Update(TNeedUpdateFlags flags) const
 {
-    if ( m_NeedUpdateFlags & flags ) {
+    int retry_count = 3;
+    while ( m_NeedUpdateFlags & flags ) {
+        if ( --retry_count < 0 ) {
+            ERR_POST("CTSE_Info_Object::x_Update("<<flags<<"): "
+                     "Failed to update "<<m_NeedUpdateFlags);
+            break;
+        }
         const_cast<CTSE_Info_Object*>(this)->
             x_DoUpdate(flags&m_NeedUpdateFlags);
-        _ASSERT(!(m_NeedUpdateFlags & flags));
     }
 }
 
@@ -310,7 +315,7 @@ void CTSE_Info_Object::x_UpdateCore(void) const
 
 void CTSE_Info_Object::x_UpdateComplete(void) const
 {
-    x_Update(m_NeedUpdateFlags);
+    x_Update(~0);
 }
 
 
