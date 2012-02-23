@@ -216,7 +216,7 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
         traversal_output_file << endl;
         traversal_output_file << "  try {" << endl;
         traversal_output_file << "    // Try to use an edit handle so we can update the object manager" << endl;
-        traversal_output_file << "    efh = CSeq_feat_EditHandle( m_NewCleanup.m_Scope->GetSeq_featHandle( arg0_raw ) );" << endl;
+        traversal_output_file << "    efh = CSeq_feat_EditHandle( m_Scope.GetSeq_featHandle( arg0_raw ) );" << endl;
         traversal_output_file << "    new_feat.Reset( new CSeq_feat );" << endl;
         traversal_output_file << "    new_feat->Assign( arg0_raw );" << endl;
         traversal_output_file << "  } catch(...) {" << endl;

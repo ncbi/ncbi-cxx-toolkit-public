@@ -340,10 +340,10 @@ CTraversalCodeGenerator::CTraversalCodeGenerator(
     }
 
     // Finally, generate the files
-    x_GenerateHeaderFile( spec_file_parser.GetOutputClassName(), headerFileName, traversal_header_file, 
+    x_GenerateHeaderFile( spec_file_parser.GetNamespace(), spec_file_parser.GetOutputClassName(), headerFileName, traversal_header_file, 
         rootTraversalNodes, spec_file_parser.GetMembers(), spec_file_parser.GetHeaderIncludes(),
         spec_file_parser.GetHeaderForwardDeclarations() );
-    x_GenerateSourceFile( spec_file_parser.GetOutputClassName(), headerFileName, traversal_source_file, 
+    x_GenerateSourceFile( spec_file_parser.GetNamespace(), spec_file_parser.GetOutputClassName(), headerFileName, traversal_source_file, 
         rootTraversalNodes, spec_file_parser.GetSourceIncludes() );
 }
 
@@ -381,6 +381,7 @@ void CTraversalCodeGenerator::x_PruneEmptyNodes(
 }
 
 void CTraversalCodeGenerator::x_GenerateHeaderFile( 
+    const std::vector<std::string> & output_class_namespace,
     const string &output_class_name,
     const string &headerFileName,
     CNcbiOstream& traversal_header_file, 
@@ -421,8 +422,16 @@ void CTraversalCodeGenerator::x_GenerateHeaderFile(
     }
 
     traversal_header_file << endl;
-    traversal_header_file << "BEGIN_NCBI_SCOPE" << endl;
-    traversal_header_file << "BEGIN_SCOPE(objects)" << endl;
+
+    // open namespaces that output class is in
+    ITERATE( vector<string>, namespace_iter, output_class_namespace ) {
+        if( namespace_iter->empty() ) {
+            continue;
+        }
+        traversal_header_file << "BEGIN_SCOPE("
+                              << *namespace_iter << ")" << endl;
+    }
+
     traversal_header_file << endl;
 
     traversal_header_file << "class " << output_class_name << " { " <<endl;
@@ -500,8 +509,16 @@ void CTraversalCodeGenerator::x_GenerateHeaderFile(
 
     traversal_header_file << "}; // end of " << output_class_name << endl;
     traversal_header_file << endl;
-    traversal_header_file << "END_SCOPE(objects)" << endl;
-    traversal_header_file << "END_NCBI_SCOPE" << endl;
+
+    // close namespaces that output class is in
+    REVERSE_ITERATE( vector<string>, namespace_iter, output_class_namespace ) {
+        if( namespace_iter->empty() ) {
+            continue;
+        }
+        traversal_header_file << "END_SCOPE("
+                              << *namespace_iter << ")" << endl;
+    }
+
     traversal_header_file << endl;
 
     // end include guard
@@ -539,6 +556,7 @@ void CTraversalCodeGenerator::x_GetIncludeGuard( string& include_guard_define, c
 }
 
 void CTraversalCodeGenerator::x_GenerateSourceFile(
+    const std::vector<std::string> & output_class_namespace,
     const string &output_class_name,
     const string &headerFileName,
     CNcbiOstream& traversal_source_file,
@@ -561,8 +579,16 @@ void CTraversalCodeGenerator::x_GenerateSourceFile(
     }
 
     traversal_source_file << endl;
-    traversal_source_file << "BEGIN_NCBI_SCOPE" << endl;
-    traversal_source_file << "BEGIN_SCOPE(objects)" << endl;
+
+    // open namespaces that output class is in
+    ITERATE( vector<string>, namespace_iter, output_class_namespace ) {
+        if( namespace_iter->empty() ) {
+            continue;
+        }
+        traversal_source_file << "BEGIN_SCOPE("
+                              << *namespace_iter << ")" << endl;
+    }
+
     traversal_source_file << endl;
 
     // generate main body of functions
@@ -573,8 +599,16 @@ void CTraversalCodeGenerator::x_GenerateSourceFile(
     }
 
     traversal_source_file << endl;
-    traversal_source_file << "END_SCOPE(objects)" << endl;
-    traversal_source_file << "END_NCBI_SCOPE" << endl;
+
+    // close namespaces that output class is in
+    REVERSE_ITERATE( vector<string>, namespace_iter, output_class_namespace ) {
+        if( namespace_iter->empty() ) {
+            continue;
+        }
+        traversal_source_file << "END_SCOPE("
+                              << *namespace_iter << ")" << endl;
+    }
+
     traversal_source_file << endl;
 }
 

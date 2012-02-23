@@ -68,6 +68,7 @@ private:
 
     // write out the header file
     void x_GenerateHeaderFile( 
+        const std::vector<std::string> & output_class_namespace,
         const std::string &output_class_name,
         const std::string &headerFileName,
         CNcbiOstream& traversal_header_file, 
@@ -81,6 +82,7 @@ private:
 
     // write out the source file
     void x_GenerateSourceFile(
+        const std::vector<std::string> & output_class_namespace,
         const std::string &output_class_name,
         const std::string &headerFileName,
         CNcbiOstream& traversal_source_file,

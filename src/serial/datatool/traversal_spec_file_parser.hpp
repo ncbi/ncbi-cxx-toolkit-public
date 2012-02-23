@@ -122,6 +122,7 @@ public:
     const TMemberRefVec &GetMembers(void) const { return m_Members; }
     const std::vector<std::string> &GetHeaderForwardDeclarations(void) const { return m_HeaderForwardDeclarations; }
     const TPatternVec & GetDeprecatedPatterns(void) { return m_DeprecatedPatterns; }
+    const std::vector<std::string> &GetNamespace(void) const { return m_Namespace; }
 
     bool IsPruningAllowed(void) const { return m_IsPruningAllowed; }
     bool IsMergingAllowed(void) const { return m_IsMergingAllowed; }
@@ -205,6 +206,7 @@ private:
     TMemberRefVec m_Members;
     std::vector< std::string > m_HeaderForwardDeclarations;
     TPatternVec m_DeprecatedPatterns;
+    std::vector< std::string > m_Namespace;
 
     bool m_IsPruningAllowed;
     bool m_IsMergingAllowed;
