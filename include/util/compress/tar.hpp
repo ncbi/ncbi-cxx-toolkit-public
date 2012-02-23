@@ -303,8 +303,10 @@ public:
         fSlowSkipWithRead   = (1<<21),
 
         // --- Miscellaneous ---
+        /// Stream pipes tar data through
+        fStreamPipeThrough  = (1<<24),
         /// Do not trim tar file size after append/update
-        fNoTarfileTruncate  = (1<<24),
+        fTarfileNoTruncate  = (1<<26),
         /// Suppress NCBI signatures in entry headers
         fStandardHeaderOnly = (1<<28),
 

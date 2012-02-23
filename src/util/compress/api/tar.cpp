@@ -143,14 +143,14 @@ static bool s_NumToBase256(Uint8 val, char* ptr, size_t len)
 // conventional octal representation (perhaps, with terminating '\0'
 // sacrificed), or -1 if the value converted using base-256.
 static int s_EncodeUint8(Uint8 val, char* ptr, size_t len)
-{                                          // Max file size (for len == 12):
-    if (s_NumToOctal  (val, ptr,   len)) { //   8GiB-1
+{                                           // Max file size (for len == 12):
+    if (s_NumToOctal  (val, ptr,   len)) {  //   8GiB-1
         return  1/*okay*/;
     }
-    if (s_NumToOctal  (val, ptr, ++len)) { //   64GiB-1
+    if (s_NumToOctal  (val, ptr, ++len)) {  //   64GiB-1
         return  1/*okay*/;
     }
-    if (s_NumToBase256(val, ptr,   len)) { //   up to 2^94-1
+    if (s_NumToBase256(val, ptr,   len)) {  //   up to 2^94-1
         return -1/*okay, base-256*/;
     }
     return 0/*failure*/;
@@ -161,7 +161,7 @@ static int s_EncodeUint8(Uint8 val, char* ptr, size_t len)
 static bool s_Base256ToNum(Uint8& val, const char* ptr, size_t len)
 {
     const Uint8 lim = kMax_UI8 >> 8;
-    if (*ptr & '\x40') { /*negative base-256?*/
+    if (*ptr & '\x40') {  // negative base-256?
         return false;
     }
     val = *ptr++ & '\x3F';
@@ -1235,7 +1235,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
 #undef _STR
 
 
-inline void s_SetStateSafe(CNcbiIos& ios, IOS_BASE::iostate state)
+inline void s_SetStateSafe(CNcbiIos& ios, IOS_BASE::iostate state) throw()
 {
     try {
         ios.setstate(state);
@@ -1326,7 +1326,7 @@ void CTar::x_Init(void)
 {
     size_t pagesize = (size_t) GetVirtualMemoryPageSize();
     if (!pagesize) {
-        pagesize = 4096; // reasonable default
+        pagesize = 4096;  // reasonable default
     }
     size_t pagemask = pagesize - 1;
     // Assume that the page size is a power of 2
@@ -1341,16 +1341,17 @@ void CTar::x_Init(void)
 bool CTar::x_Flush(bool nothrow)
 {
     m_Current.m_Name.erase();
-    if (m_Bad  ||  !m_OpenMode  ||  !m_Modified) {
+    if ((m_Bad         ||  !m_OpenMode                      ||  !m_Modified) &&
+        (m_FileStream  ||  !(m_Flags & fStreamPipeThrough)  ||  !m_BufferPos)){
         return false;
     }
-    _ASSERT(m_OpenMode == eRW);
+
     _ASSERT(m_BufferSize >= m_BufferPos);
     size_t pad = m_BufferSize - m_BufferPos;
     // Assure proper blocking factor and pad the archive as necessary
     memset(m_Buffer + m_BufferPos, 0, pad);
     x_WriteArchive(pad, nothrow ? (const char*)(-1L) : 0);
-    _ASSERT(!(m_BufferPos % m_BufferSize)); // m_BufferSize if write error
+    _ASSERT(!(m_BufferPos % m_BufferSize));  // m_BufferSize if write error
     _ASSERT(!m_Bad == !m_BufferPos);
     if (!m_Bad
         &&  (pad < BLOCK_SIZE  ||  pad - OFFSET_OF(pad) < (BLOCK_SIZE << 1))) {
@@ -1374,8 +1375,9 @@ bool CTar::x_Flush(bool nothrow)
         TAR_POST(83, Error,
                  "Archive flush failed" + s_OSReason(x_errno));
     }
-    if (!m_Bad)
+    if (!m_Bad) {
         m_Modified = false;
+    }
     return true;
 }
 
@@ -1384,7 +1386,7 @@ void CTar::x_Close(bool truncate)
 {
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
-        if (!(m_Flags & fNoTarfileTruncate)  &&  truncate  &&  !m_Bad) {
+        if (!(m_Flags & fTarfileNoTruncate)  &&  truncate  &&  !m_Bad) {
 #if   defined(NCBI_OS_MSWIN)
             TXString filename(_T_XSTRING(m_FileName));
             HANDLE handle = ::CreateFile(filename.c_str(), GENERIC_WRITE,
@@ -1414,23 +1416,36 @@ void CTar::x_Close(bool truncate)
 void CTar::x_Open(EAction action)
 {
     _ASSERT(action);
+    bool toend = false;
     // We can only open a named file here, and if an external stream
     // is being used as an archive, it must be explicitly repositioned by
     // user's code (outside of this class) before each archive operation.
     if (!m_FileStream) {
+        if (!m_Modified) {
+            if (action == eAppend  &&  (m_Flags & fStreamPipeThrough)) {
+                toend = true;
+            }
+        } else if (action != eAppend) {
+            if (m_Flags & fStreamPipeThrough) {
+                x_Flush();  // NB: can reset m_Modified to false
+            }
+            if (m_Modified) {
+                if (!m_Bad) {
+                    TAR_POST(1, Warning,
+                             "Pending changes may be discarded"
+                             " upon reopen of in-stream archive");
+                }
+                m_Modified = false;
+            }
+        }
         m_Current.m_Name.erase();
-        if (m_Bad  ||  !m_Stream.good()  ||  !m_Stream.rdbuf()) {
+        if (m_Bad || (m_Stream.rdstate() & ~NcbiEofbit) || !m_Stream.rdbuf()) {
             m_OpenMode = eNone;
             TAR_THROW(this, eOpen,
                       "Archive IO stream is in bad state");
         } else {
             m_OpenMode = EOpenMode(int(action) & eRW);
-        }
-        if (action != eAppend  &&  m_Modified) {
-            TAR_POST(1, Warning,
-                     "Pending changes may be discarded"
-                     " upon reopen of in-stream archive");
-            m_Modified = false;
+            _ASSERT(m_OpenMode != eNone);
         }
         if (action != eAppend  &&  action != eInternal) {
             m_BufferPos = 0;
@@ -1446,18 +1461,20 @@ void CTar::x_Open(EAction action)
 #endif //NCBI_OS_MSWIN
     } else {
         _ASSERT(&m_Stream == m_FileStream);
-        EOpenMode mode = EOpenMode(int(action) & eRW);
+        EOpenMode xmode = m_OpenMode;
+        EOpenMode mode  =  EOpenMode(int(action) & eRW);
         _ASSERT(mode != eNone);
-        if (mode != eWO  &&  action != eAppend) {
+        if (action != eAppend  &&  action != eCreate) {
             x_Flush();
         } else {
             m_Current.m_Name.erase();
         }
-        if (mode == eWO  ||  m_OpenMode < mode) {
+        if (mode == eWO  ||  xmode < mode) {
             x_Close(false);  // NB: m_OpenMode = eNone
             switch (mode) {
             case eWO:
                 // WO access
+                _ASSERT(action == eCreate);
                 m_FileStream->open(m_FileName.c_str(),
                                    IOS_BASE::out    |
                                    IOS_BASE::binary | IOS_BASE::trunc);
@@ -1484,7 +1501,7 @@ void CTar::x_Open(EAction action)
                           "Cannot open archive" + s_OSReason(x_errno));
             }
         } else if (m_Bad) {
-            _ASSERT(m_OpenMode);
+            m_OpenMode = eNone;
             TAR_THROW(this, eOpen,
                       "Archive is in bad state");
         }
@@ -1497,16 +1514,20 @@ void CTar::x_Open(EAction action)
             }
         } else {
             m_OpenMode = mode;
-            if (action == eAppend  &&  !m_Modified) {
-                // There may be an extra and unnecessary archive scanning
-                // if Append() follows Update() that caused no modifications;
-                // but there is no way to distinguish this, currently :-/
-                // Also, this sequence should be a real rarity in practice.
-                x_ReadAndProcess(eAppend);  // to position at logical EOF
+            if (!m_Modified  &&  action == eAppend  &&  xmode != eWO) {
+                toend = true;
             }
         }
     }
-    _ASSERT(m_Stream.good());
+    if (toend) {
+        _ASSERT(!m_Modified  &&  action == eAppend);
+        // There may be an extra and unnecessary archive file scanning
+        // if Append() follows Update() that caused no modifications;
+        // but there is no way to distinguish this, currently :-/
+        // Also, this sequence should be a real rarity in practice.
+        x_ReadAndProcess(eAppend);  // to position at logical EOF
+    }
+    _ASSERT(!(m_Stream.rdstate() & ~NcbiEofbit));
     _ASSERT(m_Stream.rdbuf());
 }
 
@@ -1531,6 +1552,9 @@ auto_ptr<CTar::TEntries> CTar::Extract(void)
 
 const CTarEntryInfo* CTar::GetNextEntryInfo(void)
 {
+    if (m_Bad) {
+        return 0;
+    }
     if (m_OpenMode) {
         x_Skip(BLOCK_OF(m_Current.GetPosition(CTarEntryInfo::ePos_Data)
                         + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos));
@@ -1560,7 +1584,8 @@ const char* CTar::x_ReadArchive(size_t& n)
         nread = 0;
         do {
             streamsize xread;
-            if (m_Stream.good()) {
+            IOS_BASE::iostate iostate = m_Stream.rdstate();
+            if (!iostate) {  // NB: good()
 #ifdef NCBI_COMPILER_MIPSPRO
                 try {
                     // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
@@ -1573,15 +1598,20 @@ const char* CTar::x_ReadArchive(size_t& n)
                         is->clear();
                     }
                 } catch (IOS_BASE::failure&) {
-                    xread = -1;
+                    xread = m_Stream.rdstate() == NcbiEofbit ? 0 : -1;
                 }
 #else
                 xread = m_Stream.rdbuf()
                     ->sgetn (m_Buffer                  + nread,
                              (streamsize)(m_BufferSize - nread));
+#  ifdef NCBI_COMPILER_WORKSHOP
+                if (xread < 0) {
+                    xread = 0;  // NB: WS6 is known to return -1 :-/
+                }
+#  endif //NCBI_COMPILER_WORKSHOP
 #endif //NCBI_COMPILER_MIPSPRO
             } else {
-                xread = -1;
+                xread = iostate == NcbiEofbit ? 0 : -1;
             }
             if (xread <= 0) {
                 if (nread  &&  (m_Flags & fDumpEntryHeaders)) {
@@ -1607,6 +1637,14 @@ const char* CTar::x_ReadArchive(size_t& n)
     size_t xpos = m_BufferPos;
     m_BufferPos += ALIGN_SIZE(n);
     m_BufferPos %= m_BufferSize;
+    if (m_BufferPos < xpos) {
+        _ASSERT(m_BufferPos == 0);
+        if (!m_FileStream  &&  (m_Flags & fStreamPipeThrough)) {
+            x_WriteArchive(m_BufferSize);
+            m_StreamPos -= m_BufferSize;
+            _ASSERT(m_BufferPos == 0);
+        }
+    }
     return m_Buffer + xpos;
 }
 
@@ -1639,7 +1677,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
                 int x_errno;
                 streamsize xwritten;
                 IOS_BASE::iostate iostate = m_Stream.rdstate();
-                if (!(iostate & ~NcbiEofbit)) { // good() OR eof()
+                if (!(iostate & ~NcbiEofbit)) {  // NB: good() OR eof()
                     xwritten = m_Stream.rdbuf()
                         ->sputn(m_Buffer                  + nwritten,
                                 (streamsize)(m_BufferSize - nwritten));
@@ -1721,7 +1759,7 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
                 return false;
             }
         }
-    } // NB: else (*p == '\n')
+    }  // else (*p == '\n')
     *valp = val;
     return true;
 }
@@ -1901,7 +1939,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             fmt = pax ? eTar_Posix : eTar_Ustar;
         }
     } else if (memcmp(h->magic, "ustar  ", 8) == 0) {
-        // NB: Here the magic is protruded into the adjacent version field
+        // Here the magic is protruded into the adjacent version field
         fmt = eTar_OldGNU;
     } else if (memcmp(h->magic, "\0\0\0\0\0", 6) == 0) {
         fmt = eTar_Legacy;
@@ -2041,7 +2079,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     }
 
     if (fmt == eTar_OldGNU  ||  fmt == eTar_Star) {
-        // NB: GNU times may not be valid so checks are relaxed
+        // GNU times may not be valid so checks are relaxed
         const char* time;
         size_t      tlen;
         time = fmt == eTar_Star ?        h->star.atime  :        h->gnu.atime;
@@ -2109,7 +2147,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device minor number", h, fmt);
         }
-        usum = (unsigned int) val; // set aside
+        usum = (unsigned int) val;  // set aside
         if (!s_OctalToNum(val, h->devmajor, sizeof(h->devmajor))) {
             TAR_THROW_EX(this, eUnsupportedTarFormat,
                          "Bad device major number", h, fmt);            
@@ -2289,7 +2327,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         /*FALLTHRU*/
     case 'I':
         if (h->typeflag[0] == 'I') {
-            // safety for no data to actually follow
+            // Safety for no data to actually follow
             m_Current.m_Stat.st_size = 0;
         }
         /*FALLTHRU*/
@@ -2383,7 +2421,7 @@ void CTar::x_WriteEntryInfo(const string& name)
     }
 
     if (fmt != eTar_Ustar  &&  h->prefix[0]) {
-        // cannot downgrade to reflect encoding
+        // Cannot downgrade to reflect encoding
         fmt  = eTar_Ustar;
     }
 
@@ -2456,7 +2494,7 @@ void CTar::x_WriteEntryInfo(const string& name)
         memcpy(h->version, "00", 2);
     } else {
         // NB: Old GNU magic protrudes into adjacent version field
-        memcpy(h->magic,   "ustar  ", 8); // 2 spaces and '\0'-terminated
+        memcpy(h->magic,   "ustar  ", 8);  // 2 spaces and '\0'-terminated
     }
 
     // NCBI signature if allowed
@@ -2517,7 +2555,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     h = &block->header;
 
     // See above for comments about header filling
-    len++; // write terminating '\0' as it can always be made to fit in
+    len++;  // write terminating '\0' as it can always be made to fit in
     strcpy(h->name, "././@LongLink");
     s_NumToOctal(0,         h->mode,  sizeof(h->mode) - 1);
     s_NumToOctal(0,         h->uid,   sizeof(h->uid)  - 1);
@@ -2528,8 +2566,8 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     s_NumToOctal(0,         h->mtime, sizeof(h->mtime)- 1);
     h->typeflag[0] = link ? 'K' : 'L';
 
-    // NB: Old GNU magic protrudes into adjacent version field
-    memcpy(h->magic, "ustar  ", 8); // 2 spaces and '\0'-terminated
+    // Old GNU magic protrudes into adjacent version field
+    memcpy(h->magic, "ustar  ", 8);  // 2 spaces and '\0'-terminated
 
     s_TarChecksum(block, true);
 
@@ -2551,19 +2589,27 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 void CTar::x_Backspace(EAction action, Uint8 blocks)
 {
     _ASSERT(SIZE_OF(blocks) <= m_StreamPos);
+    _ASSERT(!OFFSET_OF(m_StreamPos));
     m_Current.m_Name.erase();
-    if (!blocks  ||  (action != eAppend  &&  action != eUpdate)) {
+    if (!blocks) {
         return;
     }
+
+    Uint8 gap = SIZE_OF(blocks);
     if (!m_FileStream) {
-        TAR_POST(4, Warning,
-                 "In-stream update may result in gapped tar archive");
+        if (gap > m_BufferPos) {
+            if (action & eAppend) {
+                TAR_POST(4, Warning,
+                         "In-stream update may result in gapped tar archive");
+            }
+            gap = m_BufferPos;
+        }
+        m_BufferPos -= gap;
+        m_StreamPos -= gap;
         return;
     }
 
     // Assertion:  there's data (perhaps 0's) in the file, backup is possible
-    _ASSERT(!OFFSET_OF(m_StreamPos));
-    Uint8 gap = SIZE_OF(blocks);
     m_StreamPos -= gap;
     if (m_BufferPos == 0) {
         m_BufferPos += m_BufferSize;
@@ -2593,6 +2639,7 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
     if (!m_FileStream->seekp(rec * m_BufferSize)  &&  temp) {
         TAR_POST(80, Error,
                  "Archive backspace error in record reset");
+        s_SetStateSafe(m_Stream, NcbiBadbit);
     }
 }
 
@@ -2639,7 +2686,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         case eEOF:
             if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
                 TAR_POST(6, Error, "Orphaned extended information ignored");
-            } else if (zeroblock_count < 2) {
+            } else if (zeroblock_count < 2  &&  action != eAppend  &&  m_StreamPos) {
                 TAR_POST(58, Warning, "Unexpected EOF in archive");
             }
             x_Backspace(action, zeroblock_count);
@@ -2937,7 +2984,7 @@ void CTar::x_Skip(Uint8 blocks)
 #ifndef NCBI_COMPILER_WORKSHOP
         // RogueWave RTL is buggy in seeking pipes -- it clobbers
         // (discards) streambuf data instead of leaving it alone..
-        if (!(m_Flags & fSlowSkipWithRead)
+        if (!(m_Flags & (fSlowSkipWithRead | fStreamPipeThrough))
             &&  !m_BufferPos  &&  blocks >= BLOCK_OF(m_BufferSize)) {
             CT_OFF_TYPE fskip =
                 (CT_OFF_TYPE)(blocks / BLOCK_OF(m_BufferSize) * m_BufferSize);
@@ -3477,7 +3524,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                 }
                 if (m_Current.GetModificationTime() <=
                     e->GetModificationTime()) {
-                    update = false; // same(or older), no update
+                    update = false;  // same(or older), no update
                 }
                 break;
             }
@@ -3725,7 +3772,7 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files,
         }
     }
     if (result) {
-        result += BLOCK_SIZE << 1; // EOT
+        result += BLOCK_SIZE << 1;  // EOT
         Uint8 incomplete = result % buffer_size;
         if (incomplete) {
             result += buffer_size - incomplete;

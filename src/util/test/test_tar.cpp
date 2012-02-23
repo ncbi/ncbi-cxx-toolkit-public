@@ -140,17 +140,19 @@ void CTarTest::Init(void)
     args->AddFlag("h", "Follow links");
     args->AddFlag("p", "Preserve all permissions");
     args->AddFlag("m", "Don't extract modification times");
-    args->AddFlag("O", "Don't extract file ownerships");
+    args->AddFlag("o", "Don't extract file ownerships");
     args->AddFlag("M", "Don't extract permission masks");
+    args->AddFlag("O", "Extract to stdout (rather than files when streaming)");
     args->AddFlag("U", "Only existing files/entries in update/extract");
     args->AddFlag("B", "Create backup copies of destinations when extracting");
-    args->AddFlag("E", "Maintain equal types of files and archive entries");
-    args->AddFlag("S", "Skip unsupported entries instead of extracting them");
-    args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
     args->AddFlag("k", "Keep old files when extracting");
-    args->AddFlag("v", "Turn on debugging information");
-    args->AddFlag("s", "Use stream operations with archive [non-standard]");
+    args->AddFlag("E", "Maintain equal types of files and archive entries");
+    args->AddFlag("I", "Ignore unsupported entries (w/o extracting them)");
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
+    args->AddFlag("s", "Use stream operations with archive [non-standard]");
+    args->AddFlag("S", "Stream archive through [non-standard]");
+    args->AddFlag("Z", "No NCBI signature in headers [non-standard]");
+    args->AddFlag("v", "Turn on debugging information");
     args->AddFlag("lfs", "Large File Support check [non-standard]");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of files to process", CArgDescriptions::eString);
@@ -322,6 +324,7 @@ int CTarTest::Run(void)
                    "Sorry, -z is not supported with either -r or -u");
     }
     bool stream = args["s"].HasValue();
+    bool pipethru = false;
 
     size_t blocking_factor = args["b"].AsInteger();
 
@@ -338,30 +341,19 @@ int CTarTest::Run(void)
 #endif // NCBI_OS_MSWIN
 
     if (file.empty()  ||  zip) {
-        if (action == eList ||  action == eExtract  ||  action == eTest) {
-            istream* is;
-            if (!file.empty()) {
-                ifs.open(file.c_str(),  IOS_BASE::in | IOS_BASE::binary);
-                is = &ifs;
-            } else {
-                is = &stdio;
-            }
-            if (!is->good()) {
-                NCBI_THROW(CTarException, eOpen, "Archive not found");
-            }
-            if (zip) {
-                is = new CDecompressIStream(*is, CCompressStream::eGZipFile);
-                zs.reset(is);
-            }
-            io = is;
-        } else if (action == eCreate  ||  action == eAppend) {
+        if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
             ostream* os;
             if (!file.empty()) {
                 ofs.open(file.c_str(),
                          IOS_BASE::trunc | IOS_BASE::out | IOS_BASE::binary);
                 os = &ofs;
-            } else {
+            } else if (action != eUpdate  ||  n < 2) {
                 os = &stdio;
+                if (args["S"].HasValue()) {
+                    pipethru = true;
+                }
+            } else {
+                NCBI_THROW(CArgException, eInvalidArg, "2+fold pipe update");
             }
             if (!os->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
@@ -384,16 +376,38 @@ int CTarTest::Run(void)
                      (zc, CCompressionStreamProcessor::eDelete),
                      CCompressionStream::fOwnProcessor);
                 zs.reset(os);
+                return 0;
             }
             io = os;
         } else {
-            NCBI_THROW(CArgException, eInvalidArg, "Cannot update pipe");
+            _ASSERT(action == eList || action == eExtract || action == eTest);
+            istream* is;
+            if (!file.empty()) {
+                ifs.open(file.c_str(),  IOS_BASE::in | IOS_BASE::binary);
+                is = &ifs;
+            } else {
+                is = &stdio;
+                if (args["S"].HasValue()) {
+                    pipethru = true;
+                }
+            }
+            if (!is->good()) {
+                NCBI_THROW(CTarException, eOpen, "Archive not found");
+            }
+            if (zip) {
+                is = new CDecompressIStream(*is, CCompressStream::eGZipFile);
+                zs.reset(is);
+            }
+            io = is;
         }
     } else {
         io = 0;
     }
     if (action != eExtract  ||  !stream  ||  n != 1) {
         if (io) {
+            if (zip  &&  pipethru) {
+                NCBI_THROW(CArgException, eInvalidArg, "Write-thru zip pipe");
+            }
             tar.reset(new CTar(*io,  blocking_factor));
         } else {
             tar.reset(new CTar(file, blocking_factor));
@@ -403,6 +417,9 @@ int CTarTest::Run(void)
         m_Flags = 0;
     }
 
+    if (args["v"].HasValue()) {
+        m_Flags |=  fVerbose;
+    }
     if (args["i"].HasValue()) {
         m_Flags |=  CTar::fIgnoreZeroBlocks;
     }
@@ -415,7 +432,7 @@ int CTarTest::Run(void)
     if (args["m"].HasValue()) {
         m_Flags &= ~CTar::fPreserveTime;
     }
-    if (args["O"].HasValue()) {
+    if (args["o"].HasValue()) {
         m_Flags &= ~CTar::fPreserveOwner;
     }
     if (args["M"].HasValue()) {
@@ -427,20 +444,20 @@ int CTarTest::Run(void)
     if (args["B"].HasValue()) {
         m_Flags |=  CTar::fBackup;
     }
-    if (args["E"].HasValue()) {
-        m_Flags |=  CTar::fEqualTypes;
-    }
     if (args["k"].HasValue()) {
         m_Flags &= ~CTar::fOverwrite;
     }
-    if (args["S"].HasValue()) {
+    if (args["E"].HasValue()) {
+        m_Flags |=  CTar::fEqualTypes;
+    }
+    if (args["I"].HasValue()) {
         m_Flags |=  CTar::fSkipUnsupported;
     }
     if (args["Z"].HasValue()) {
         m_Flags |=  CTar::fStandardHeaderOnly;
     }
-    if (args["v"].HasValue()) {
-        m_Flags |=  fVerbose;
+    if (pipethru) {
+        m_Flags |=  CTar::fStreamPipeThrough;
     }
 
     if (!tar.get()) {
@@ -460,7 +477,13 @@ int CTarTest::Run(void)
         }
         CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                CRWStreambuf::fLogExceptions));
-        NcbiStreamCopy(NcbiCout, rs);
+        bool tocout = args["O"].HasValue();
+        ofstream of;
+        if (!tocout) {
+            of.open(args[1].AsString().c_str(),
+                    IOS_BASE::out | IOS_BASE::binary);
+        }
+        NcbiStreamCopy(tocout ? NcbiCout : of, rs);
     } else {
         tar->SetFlags(m_Flags);
         if (args["C"].HasValue()) {
@@ -532,7 +555,13 @@ int CTarTest::Run(void)
                     _ASSERT(ir);
                     CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                            CRWStreambuf::fLogExceptions));
-                    NcbiStreamCopy(NcbiCout, rs);
+                    bool tocout = args["O"].HasValue();
+                    ofstream of;
+                    if (!tocout) {
+                        of.open(info->GetName().c_str(),
+                                IOS_BASE::out | IOS_BASE::binary);
+                    }
+                    NcbiStreamCopy(tocout ? NcbiCout : of, rs);
                 }
             } else {
                 auto_ptr<CTar::TEntries> entries = tar->Extract();
@@ -543,6 +572,9 @@ int CTarTest::Run(void)
                     }
                 }
             }
+            if (pipethru) {
+                tar->Close();
+            }
         } else {
             _ASSERT(action == eTest);
             if (n) {
@@ -551,6 +583,9 @@ int CTarTest::Run(void)
             NcbiCerr << "Testing archive... " << NcbiFlush;
             tar->Test();
             NcbiCerr << "Done." << NcbiEndl;
+            if (pipethru) {
+                tar->Close();
+            }
         }
     }
 
