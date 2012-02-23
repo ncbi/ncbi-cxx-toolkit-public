@@ -219,6 +219,8 @@ void CNSClientId::CheckAccess(TNSClientRole   role,
     if (deny)
         NCBI_THROW(CNetScheduleException, eAccessDenied,
                    "Access denied:" + x_AccessViolationMessage(deficit));
+        // No space required above: the violation message will have a leading
+        // space.
 
     return;
 }

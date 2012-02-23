@@ -400,19 +400,15 @@ bool x_AddQueueToMap(TDbQueuesMap& db_queues_map,
         // check that queue info matches
         SQueueInfo &    qi = it->second;
         if (qi.qclass != qclass) {
-            LOG_POST(Error << "Class mismatch for queue '"
-                           << qname << "', expected '"
-                           << qi.qclass << "', registered '"
-                           << qclass << "'.");
+            ERR_POST("Class mismatch for queue '" << qname << "', expected '"
+                     << qi.qclass << "', registered '" << qclass << "'.");
             res = false;
         }
         // Definite positions must match, if one of positions is indefinite,
         // i.e. < 0, they are incomparable so it is not an error.
         if (qi.pos != pos  &&  qi.pos >= 0  &&  pos >= 0) {
-            LOG_POST(Error << "Position mismatch for queue '"
-                           << qname << "', expected "
-                           << qi.pos << ", registered "
-                           << pos << ".");
+            ERR_POST("Position mismatch for queue '" << qname << "', expected "
+                     << qi.pos << ", registered " << pos << ".");
             res = false;
         }
     } else {
@@ -470,11 +466,10 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
             continue;
         }
         if (m_QueueParamMap.find(qclass) != m_QueueParamMap.end()) {
-            LOG_POST(Error << tmp << " section " << sname
-                           << " conflicts with previous "
-                           << (NStr::CompareNocase(tmp, "queue") == 0 ?
-                                 "qclass_" : "queue_") << qclass
-                           << " section. Ignored.");
+            ERR_POST(tmp << " section " << sname << " conflicts with previous "
+                     << (NStr::CompareNocase(tmp, "queue") == 0 ?
+                                 "qclass_" : "queue_")
+                     << qclass << " section. Ignored.");
             continue;
         }
 
@@ -526,14 +521,14 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
                 pos = x_AllocateQueue(qname, qi.qclass, qi.kind, "");
                 if (pos < 0) {
                     qi.remove = true;
-                    LOG_POST(Error << "Queue '" << qname << "' can not "
-                                      "be allocated: max_queues limit");
+                    ERR_POST("Queue '" << qname << "' can not "
+                             "be allocated: max_queues limit");
                 }
             } else {
                 if (!qexists  &&  !m_QueueDbBlockArray.Allocate(pos)) {
                     qi.remove = true;
-                    LOG_POST(Error << "Queue '" << qname
-                                   << "' position conflict at block #" << pos);
+                    ERR_POST("Queue '" << qname <<
+                             "' position conflict at block #" << pos);
                 }
             }
             qi.pos = pos;
@@ -563,7 +558,7 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
         TQueueParamMap::iterator    it1 = m_QueueParamMap.find(qclass);
 
         if (it1 == m_QueueParamMap.end()) {
-            LOG_POST(Error << "Can not find class " << qclass << " for queue " << qname);
+            ERR_POST("Can not find class " << qclass << " for queue " << qname);
             // NB: Class (defined in config file) does not exist anymore for the already
             // loaded queue. I do not know how intelligently handle it, postpone it.
             // ??? Mark queue as dynamic, so we can delete it
@@ -783,9 +778,8 @@ void CQueueDataBase::Close()
                              << "' environment still in use.");
     }
     catch (exception& ex) {
-        LOG_POST(Error << "JS: '" << m_Name
-                       << "' Exception in Close() " << ex.what()
-                       << " (ignored.)");
+        ERR_POST("JS: '" << m_Name << "' Exception in Close() " <<
+                 ex.what() << " (ignored.)");
     }
 
     delete m_Env; m_Env = 0;

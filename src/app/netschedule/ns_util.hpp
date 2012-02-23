@@ -40,15 +40,8 @@ BEGIN_NCBI_SCOPE
 class CQueue;
 
 
-string          NS_EncodeBitVector(const TNSBitVector& bv);
-string          NS_EncodeBitVector(const CQueue *        queue,
-                                   const TNSBitVector &  bv);
-TNSBitVector    NS_DecodeBitVector(const string& s);
 void            NS_FormatIPAddress(unsigned int ipaddr, string& str_addr);
 string          NS_FormatIPAddress(unsigned int ipaddr);
-
-list<string>    BitVectorToJobKeys(const CQueue *        queue,
-                                   const TNSBitVector &  bv);
 
 
 END_NCBI_SCOPE

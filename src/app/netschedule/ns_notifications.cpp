@@ -504,7 +504,7 @@ void CGetJobNotificationThread::x_DoJob(void)
                  " notification thread has been stopped.");
         if (is_logging)
             ctx->SetRequestStatus(
-                        CNetScheduleHandler::eStatus_JobNotifierError);
+                        CNetScheduleHandler::eStatus_ServerError);
     }
     catch (...) {
         RequestStop();
@@ -512,7 +512,7 @@ void CGetJobNotificationThread::x_DoJob(void)
                  "Notification thread has been stopped.");
         if (is_logging)
             ctx->SetRequestStatus(
-                        CNetScheduleHandler::eStatus_JobNotifierError);
+                        CNetScheduleHandler::eStatus_ServerError);
     }
 
     if (is_logging) {

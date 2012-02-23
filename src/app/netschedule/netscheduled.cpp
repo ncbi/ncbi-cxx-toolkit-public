@@ -161,7 +161,7 @@ int CNetScheduleDApp::Run(void)
         SNSDBEnvironmentParams bdb_params;
 
         if (!bdb_params.Read(reg, "bdb")) {
-            ERR_POST("Failed to read BDB initialization section");
+            ERR_POST("Failed to read BDB initialization section. Exiting.");
             return 1;
         }
 
@@ -183,7 +183,7 @@ int CNetScheduleDApp::Run(void)
 
         if (params.node_id.empty()) {
             ERR_POST("Cannot read the [server]/node_id parameter."
-                     " The value must be provided.");
+                     " The value must be provided. Exiting.");
             return 1;
         }
 
@@ -227,7 +227,7 @@ int CNetScheduleDApp::Run(void)
             return 1;
 
         if (!args["nodaemon"]) {
-            LOG_POST("Entering UNIX daemon mode...");
+            LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
             // Here's workaround for SQLite3 bug: if stdin is closed in forked
             // process then 0 file descriptor is returned to SQLite after open().
             // But there's assert there which prevents fd to be equal to 0. So
@@ -238,7 +238,7 @@ int CNetScheduleDApp::Run(void)
                                                   CProcess::fKeepStdin  |
                                                   CProcess::fKeepStdout);
             if (!is_good) {
-                ERR_POST(Critical << "Error during daemonization");
+                ERR_POST(Critical << "Error during daemonization. Exiting.");
                 return 0;
             }
         }
@@ -284,6 +284,11 @@ int CNetScheduleDApp::Run(void)
     catch (exception& ex)
     {
         ERR_POST("Error: STD exception:" << ex.what());
+        return 1;
+    }
+    catch (...)
+    {
+        ERR_POST("Unknown exception");
         return 1;
     }
 

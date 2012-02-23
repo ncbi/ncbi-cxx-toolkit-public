@@ -133,7 +133,7 @@ void CJobQueueCleanerThread::x_DoJob(void)
         }
         if (is_log)
             ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_QueueCleanerError);
+                            CNetScheduleHandler::eStatus_ServerError);
     }
     catch(exception &  ex) {
         RequestStop();
@@ -141,7 +141,7 @@ void CJobQueueCleanerThread::x_DoJob(void)
                  " Cleaning thread has been stopped.");
         if (is_log)
             ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_QueueCleanerError);
+                            CNetScheduleHandler::eStatus_ServerError);
     }
     catch (...) {
         RequestStop();
@@ -149,7 +149,7 @@ void CJobQueueCleanerThread::x_DoJob(void)
                  "Cleaning thread has been stopped.");
         if (is_log)
             ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_QueueCleanerError);
+                            CNetScheduleHandler::eStatus_ServerError);
     }
 
     if (is_log) {
@@ -207,7 +207,7 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
         }
         if (is_log)
             ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_JobExecWatcherError);
+                            CNetScheduleHandler::eStatus_ServerError);
     }
     catch (exception &  ex) {
         RequestStop();
@@ -215,7 +215,7 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
                  " watcher thread has been stopped.");
         if (is_log)
             ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_JobExecWatcherError);
+                            CNetScheduleHandler::eStatus_ServerError);
     }
     catch (...) {
         RequestStop();
@@ -223,7 +223,7 @@ void CJobQueueExecutionWatcherThread::DoJob(void)
                  "Watched thread has been stopped.");
         if (is_log)
             ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_JobExecWatcherError);
+                            CNetScheduleHandler::eStatus_ServerError);
     }
 
     if (is_log) {

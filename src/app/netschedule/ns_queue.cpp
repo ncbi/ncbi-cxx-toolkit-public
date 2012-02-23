@@ -157,11 +157,9 @@ public:
         CStopWatch      sw(CStopWatch::eStart);
         m_QueueDbBlock->Truncate();
         m_QueueDbBlock->allocated = false;
-        LOG_POST(Info << "Clean up of db block "
-                      << m_QueueDbBlock->pos
-                      << " complete, "
-                      << sw.Elapsed()
-                      << " elapsed");
+        LOG_POST(Message << Warning << "Clean up of db block "
+                         << m_QueueDbBlock->pos << " complete, "
+                         << sw.Elapsed() << " elapsed");
     }
 private:
     SQueueDbBlock* m_QueueDbBlock;
@@ -707,7 +705,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
 
         if (aff_id == 0) {
             // The affinity is not known for NS at all
-            ERR_POST(Warning << "Client '" << client.GetNode()
+            LOG_POST(Message << Warning << "Client '" << client.GetNode()
                              << "' deletes unknown affinity '"
                              << *k << "'. Ignored.");
             if (!msg.empty())
@@ -719,7 +717,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
         if (current_affinities[aff_id] == false) {
             // This a try to delete something which has not been added or
             // deleted before.
-            ERR_POST(Warning << "Client '" << client.GetNode()
+            LOG_POST(Message << Warning << "Client '" << client.GetNode()
                              << "' deletes affinity '" << *k
                              << "' which is not in the list of the "
                                 "preferred client affinities. Ignored.");
@@ -782,7 +780,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
     for (vector<string>::const_iterator  j(already_added_affinities.begin());
          j != already_added_affinities.end(); ++j) {
         // That was a try to add something which has already been added
-        ERR_POST(Warning << "Client '" << client.GetNode()
+        LOG_POST(Message << Warning << "Client '" << client.GetNode()
                          << "' adds affinity '" << *j
                          << "' which is already in the list of the "
                             "preferred client affinities. Ignored.");
@@ -904,7 +902,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
             if (token_compare_result == CJob::ePassportOnlyMatch) {
                 // That means the job has been given to another worker node
                 // by whatever reason (expired/failed/returned before)
-                ERR_POST(Message << Warning << "Received RETURN2 with only "
+                LOG_POST(Message << Warning << "Received RETURN2 with only "
                                                "passport matched.");
                 warning = "Only job passport matched. Command is ignored.";
                 return old_status;
@@ -1192,11 +1190,11 @@ bool CQueue::IsExpired()
             if (m_BecameEmpty != -1 &&
                 m_BecameEmpty + empty_lifetime < time(0))
             {
-                LOG_POST(Info << "Queue " << m_QueueName << " expired."
-                              << " Became empty: "
-                              << CTime(m_BecameEmpty).ToLocalTime().AsString()
-                              << " Empty lifetime: " << empty_lifetime
-                              << " sec." );
+                LOG_POST(Message << Warning << "Queue " << m_QueueName
+                                 << " expired. Became empty: "
+                                 << CTime(m_BecameEmpty).ToLocalTime().AsString()
+                                 << " Empty lifetime: " << empty_lifetime
+                                 << " sec." );
                 return true;
             }
             if (m_BecameEmpty == -1)
@@ -1510,8 +1508,8 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
                             m_ClientsRegistry.GetPreferredAffinities(client);
 
         if (!client_aff.any())
-            ERR_POST(Warning << "The client '" << client.GetNode()
-                             << "' requests jobs considering the node "
+            LOG_POST(Message << Warning << "The client '" << client.GetNode()
+                             << "' requests a job considering the node "
                                 "preferred affinities while the node "
                                 "preferred affinities list is empty.");
 
@@ -1638,7 +1636,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                 if (token_compare_result == CJob::ePassportOnlyMatch) {
                     // That means the job has been given to another worker node
                     // by whatever reason (expired/failed/returned before)
-                    ERR_POST(Message << Warning << "Received FPUT2 with only "
+                    LOG_POST(Message << Warning << "Received FPUT2 with only "
                                                    "passport matched.");
                     warning = "Only job passport matched. Command is ignored.";
                     return old_status;
@@ -2671,7 +2669,7 @@ void CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
         if (token_compare_result == CJob::ePassportOnlyMatch) {
             // That means that the job has been executing by another worker
             // node at the moment, but we can accept the results anyway
-            ERR_POST(Message << Warning << "Received PUT2 with only "
+            LOG_POST(Message << Warning << "Received PUT2 with only "
                                            "passport matched.");
         }
         // Here: the authorization token is OK, we can continue

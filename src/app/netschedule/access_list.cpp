@@ -81,8 +81,7 @@ void CNetSchedule_AccessList::SetHosts(const string& host_names)
         if (ha != 0)
             m_Hosts.set(ha);
         else
-            LOG_POST(Error << "'" << *it << "'"
-                           << " is not a valid host name. Ignored.");
+            ERR_POST("'" << *it << "' is not a valid host name. Ignored.");
     }
 }
 

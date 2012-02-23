@@ -93,8 +93,11 @@ public:
                 x_AddClientInfo_NoLock(program_info);
             }
             catch (CStringException&) {
-                LOG_POST(Error << "Program string '" << vstr << "'"
-                               << " cannot be parsed and ignored.");
+                LOG_POST(Message << Warning << "Error while parsing program "
+                                               "name '" << program_name <<
+                                               "'. Program string '" << vstr <<
+                                               "'" << " cannot be parsed "
+                                               "and will be ignored.");
             }
         }
     }

@@ -156,8 +156,9 @@ void CJobStatusTracker::SetStatus(unsigned    job_id,
 
         if (bv[job_id]) {
             if (old_status != CNetScheduleAPI::eJobNotFound)
-                ERR_POST("State matrix was damaged, "
-                         "more than one status active for job " << job_id);
+                NCBI_THROW(CNetScheduleException, eInternalError,
+                           "State matrix was damaged, more than one status "
+                           "active for job " + NStr::UIntToString(job_id));
             old_status = g_ValidJobStatuses[k];
 
             if (status != g_ValidJobStatuses[k])

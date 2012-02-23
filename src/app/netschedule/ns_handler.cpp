@@ -421,8 +421,8 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         break;
     case IServer_ConnectionHandler::eClientClose:
         if (m_DiagContext.NotNull()) {
-            m_DiagContext->SetRequestStatus(eStatus_BadCmd);
-            m_ConnContext->SetRequestStatus(eStatus_BadCmd);
+            m_DiagContext->SetRequestStatus(eStatus_SocketIOError);
+            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
         }
         break;
     }
@@ -444,13 +444,8 @@ void CNetScheduleHandler::OnTimeout()
 {
     CDiagnosticsGuard       guard(this);
 
-    if (m_Server->IsLog()) {
-        LOG_POST(Info << "Inactivity timeout expired, closing connection");
-        if (m_DiagContext)
-            m_ConnContext->SetRequestStatus(eStatus_CmdTimeout);
-        else
-            m_ConnContext->SetRequestStatus(eStatus_Inactive);
-    }
+    if (m_Server->IsLog())
+        m_ConnContext->SetRequestStatus(eStatus_Inactive);
 }
 
 
@@ -478,8 +473,8 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     CDiagnosticsGuard   guard(this);
 
     if (m_Server->ShutdownRequested()) {
-        x_WriteMessageNoThrow("ERR:", "NetSchedule server is shutting down. "
-                                      "Session aborted.");
+        x_WriteMessageNoThrow("ERR:NetSchedule server is shutting down. "
+                              "Session aborted.");
         return;
     }
 
@@ -490,20 +485,23 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     catch (const CNetScheduleException &  ex) {
         x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
                                       ":" + ex.GetMsg());
-        ERR_POST("Server error: " << ex);
-        x_PrintRequestStop(eStatus_ServerError);
+        ERR_POST("NetSchedule exception: " << ex);
+        x_PrintRequestStop(ex.ErrCodeToHTTPStatusCode());
     }
     catch (const CNSProtoParserException &  ex) {
         x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
                                       ":" + ex.GetMsg());
         ERR_POST("Command parser error: " << ex);
-        x_PrintRequestStop(eStatus_ServerError);
+        x_PrintRequestStop(eStatus_BadRequest);
     }
     catch (const CNetServiceException &  ex) {
         x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
                                       ":" + ex.GetMsg());
-        ERR_POST("Server error: " << ex);
-        x_PrintRequestStop(eStatus_ServerError);
+        ERR_POST("NetService exception: " << ex);
+        if (ex.GetErrCode() == CNetServiceException::eCommunicationError)
+            x_PrintRequestStop(eStatus_SocketIOError);
+        else
+            x_PrintRequestStop(eStatus_ServerError);
     }
     catch (const CBDB_ErrnoException &  ex) {
         string  error;
@@ -536,6 +534,11 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
                                               "error - " + string(ex.what()));
         x_WriteMessageNoThrow("ERR:", error);
         ERR_POST("STL exception: " << ex.what());
+        x_PrintRequestStop(eStatus_ServerError);
+    }
+    catch (...) {
+        x_WriteMessageNoThrow("ERR:Unknown server exception.");
+        ERR_POST("ERR:Unknown server exception.");
         x_PrintRequestStop(eStatus_ServerError);
     }
 }
@@ -610,15 +613,37 @@ void CNetScheduleHandler::WriteMessage(CTempString msg)
 }
 
 
-void CNetScheduleHandler::x_WriteMessageNoThrow(CTempString  prefix,
-                                                CTempString  msg)
+unsigned int  CNetScheduleHandler::x_WriteMessageNoThrow(CTempString  prefix,
+                                                         CTempString  msg)
 {
     try {
         WriteMessage(prefix, msg);
     }
     catch (CNetServiceException&  ex) {
         ERR_POST(ex);
+        return eStatus_SocketIOError;
     }
+    catch (...) {
+        ERR_POST("Unknown exception while writing into a socket.");
+        return eStatus_ServerError;
+    }
+    return eStatus_OK;
+}
+
+unsigned int  CNetScheduleHandler::x_WriteMessageNoThrow(CTempString  msg)
+{
+    try {
+        WriteMessage(msg);
+    }
+    catch (CNetServiceException&  ex) {
+        ERR_POST(ex);
+        return eStatus_SocketIOError;
+    }
+    catch (...) {
+        ERR_POST("Unknown exception while writing into a socket.");
+        return eStatus_ServerError;
+    }
+    return eStatus_OK;
 }
 
 
@@ -665,9 +690,8 @@ void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
     if (strncmp(m_RawAuthString.c_str(), "GET / HTTP/1.", 13) == 0) {
         // That was systems probing ports
 
-        if (m_ConnContext.NotNull()) {
+        if (m_ConnContext.NotNull())
             m_ConnContext->SetRequestStatus(eStatus_HTTPProbe);
-        }
 
         x_CloseConnection();
         return;
@@ -707,7 +731,8 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
                                           ":" + ex.GetMsg());
             ERR_POST("Server error: " << ex);
             if (m_Server->IsLog()) {
-                CDiagContext::GetRequestContext().SetRequestStatus(eStatus_BadAuth);
+                CDiagContext::GetRequestContext().SetRequestStatus(
+                                                ex.ErrCodeToHTTPStatusCode());
                 GetDiagContext().PrintRequestStop();
                 m_ConnContext.Reset();
             }
@@ -750,7 +775,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
                                               ":" + ex.GetMsg());
                 ERR_POST("Server error: " << ex);
                 if (m_Server->IsLog()) {
-                    CDiagContext::GetRequestContext().SetRequestStatus(eStatus_BadQueue);
+                    CDiagContext::GetRequestContext().SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
                     GetDiagContext().PrintRequestStop();
                     m_ConnContext.Reset();
                 }
@@ -800,7 +825,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         // not created here - create it just to provide an error output
         x_PrintRequestStart("Invalid command");
         ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
                                       ex.GetMsg().substr(0, 128));
         return;
@@ -890,7 +915,16 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
                                       ex.GetMsg().substr(0, 128) +
                                       ", BTCH or ENDS expected");
         ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
+
+        m_BatchJobs.clear();
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+    }
+    catch (const CNetScheduleException &  ex) {
+        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
+                                      ":" + ex.GetMsg());
+        ERR_POST("Server error: " << ex);
+        x_PrintRequestStop(ex.ErrCodeToHTTPStatusCode());
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -899,7 +933,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                                       "Error processing BTCH or ENDS.");
         ERR_POST("Error processing command: " << ex);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -918,6 +952,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     TNSProtoParams  params;
     try {
         m_BatchEndParser.ParseArguments(msg, s_BatchArgs, &params);
+        m_CommandArguments.AssignValues(params);
     }
     catch (const CNSProtoParserException &  ex) {
         // Rewrite error in usual terms
@@ -927,7 +962,17 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
                                       ex.GetMsg().substr(0, 128));
         ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
+
+        m_BatchJobs.clear();
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        return;
+    }
+    catch (const CNetScheduleException &  ex) {
+        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
+                                      ":" + ex.GetMsg());
+        ERR_POST(ex.GetMsg());
+        x_PrintRequestStop(ex.ErrCodeToHTTPStatusCode());
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -937,31 +982,18 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                                       "Invalid batch submission, syntax error");
         ERR_POST("Error processing command: " << ex);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
 
-        m_BatchJobs.clear();
-        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
-        return;
-    }
-
-
-    try {
-        m_CommandArguments.AssignValues(params);
-    }
-    catch (const CNetScheduleException &  ex) {
-        ERR_POST(ex.GetMsg());
-        x_PrintRequestStop(eStatus_BadCmd);
-        x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
-                                      ":" + ex.GetMsg());
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
         return;
     }
     catch (...) {
-        ERR_POST("Arguments parsing unknown exception. Batch submit is rejected.");
-        x_PrintRequestStop(eStatus_BadCmd);
-        x_WriteMessageNoThrow("ERR:", "eInternalError:"
+        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                                       "Arguments parsing unknown exception");
+        ERR_POST("Arguments parsing unknown exception. Batch submit is rejected.");
+        x_PrintRequestStop(eStatus_BadRequest);
+
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
         return;
@@ -998,7 +1030,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
                                       ex.GetMsg().substr(0, 128));
         ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1009,7 +1041,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                               "Batch submit error - unexpected end of batch");
         ERR_POST("Error processing command: " << ex);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
 
         m_BatchJobs.clear();
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
@@ -1048,7 +1080,18 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
                             m_Server->GetHost().c_str() + " " +
                             NStr::UIntToString(unsigned(m_Server->GetPort())));
 
-    } catch (...) {
+    }
+    catch (const CNetScheduleException &  ex) {
+        if (m_Server->IsLog()) {
+            CDiagContext::GetRequestContext().SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
+            GetDiagContext().PrintRequestStop();
+            GetDiagContext().SetRequestContext(current_context);
+        }
+        m_BatchJobs.clear();
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        throw;
+    }
+    catch (...) {
         if (m_Server->IsLog()) {
             CDiagContext::GetRequestContext().SetRequestStatus(eStatus_ServerError);
             GetDiagContext().PrintRequestStop();
@@ -1110,8 +1153,8 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     if (m_CommandArguments.aff_to_add.empty() &&
         m_CommandArguments.aff_to_del.empty()) {
         ERR_POST(Warning << "CHAFF with neither add list nor del list");
-        WriteMessage("ERR:eInvalidParameter");
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_WriteMessageNoThrow("ERR:eInvalidParameter");
+        x_PrintRequestStop(eStatus_BadRequest);
         return;
     }
 
@@ -1196,8 +1239,8 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 {
     switch (q->Cancel(m_ClientId, m_CommandArguments.job_id)) {
         case CNetScheduleAPI::eJobNotFound:
-            WriteMessage("OK:WARNING:Job not found;");
-            LOG_POST(Warning << "CANCEL for unknown job: "
+            x_WriteMessageNoThrow("OK:WARNING:Job not found;");
+            ERR_POST(Warning << "CANCEL for unknown job: "
                              << m_CommandArguments.job_key);
             x_PrintRequestStop(eStatus_NotFound);
             break;
@@ -1219,7 +1262,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
 
     if (job_id == 0) {
         // Here: there is no such a job
-        WriteMessage("OK:",
+        x_WriteMessageNoThrow("OK:",
                      NStr::IntToString((int) CNetScheduleAPI::eJobNotFound));
         ERR_POST(Warning << "STATUS for unknown job: "
                          << m_CommandArguments.job_key);
@@ -1305,14 +1348,14 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     }
     if (old_status == CNetScheduleAPI::eDone) {
         WriteMessage("OK:WARNING:Already done;");
-        LOG_POST(Warning << "Cannot accept job "
+        ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
         x_PrintRequestStop(eStatus_OK);
         return;
     }
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound");
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job is unknown");
@@ -1321,12 +1364,13 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     }
 
     // Here: invalid job status, nothing will be done
-    WriteMessage("ERR:eInvalidJobStatus:"
-                 "Cannot accept job results; job status is " +
-                 CNetScheduleAPI::StatusToString(old_status));
+    x_WriteMessageNoThrow("ERR:eInvalidJobStatus:"
+                          "Cannot accept job results; job status is " +
+                          CNetScheduleAPI::StatusToString(old_status));
     ERR_POST(Warning << "Cannot accept job "
                      << m_CommandArguments.job_key
-                     << " results. The job has already been done.");
+                     << " results. The job status is "
+                     << CNetScheduleAPI::StatusToString(old_status));
     x_PrintRequestStop(eStatus_InvalidJobStatus);
 }
 
@@ -1406,7 +1450,7 @@ void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
         x_PrintRequestStop(eStatus_OK);
     }
     else {
-        WriteMessage("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound");
         ERR_POST(Warning << "MPUT for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1422,7 +1466,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
         WriteMessage("OK:", job.GetProgressMsg());
         x_PrintRequestStop(eStatus_OK);
     } else {
-        WriteMessage("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound");
         ERR_POST(Warning << "MGET for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1450,7 +1494,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                                 warning);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound");
         ERR_POST(Warning << "FPUT for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1459,14 +1503,14 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
 
     if (old_status == CNetScheduleAPI::eFailed) {
         WriteMessage("OK:WARNING:Already failed;");
-        LOG_POST(Warning << "FPUT for already failed job "
+        ERR_POST(Warning << "FPUT for already failed job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_OK);
         return;
     }
 
     if (old_status != CNetScheduleAPI::eRunning) {
-        WriteMessage("ERR:eInvalidJobStatus");
+        x_WriteMessageNoThrow("ERR:eInvalidJobStatus");
         ERR_POST(Warning << "Cannot fail job "
                          << m_CommandArguments.job_key
                          << " in status "
@@ -1517,15 +1561,15 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
     }
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound");
         ERR_POST(Warning << "RETURN for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
 
-    WriteMessage("ERR:eInvalidJobStatus:" +
-                 CNetScheduleAPI::StatusToString(old_status));
+    x_WriteMessageNoThrow("ERR:eInvalidJobStatus:" +
+                          CNetScheduleAPI::StatusToString(old_status));
     ERR_POST(Warning << "Cannot return job "
                      << m_CommandArguments.job_key
                      << " in status "
@@ -1538,12 +1582,12 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 {
     if (m_CommandArguments.timeout <= 0) {
-        WriteMessage("ERR:eInvalidParameter");
+        x_WriteMessageNoThrow("ERR:eInvalidParameter");
         ERR_POST(Warning << "Invalid timeout "
                          << m_CommandArguments.timeout
                          << " in JDEX for job "
                          << m_CommandArguments.job_key);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_PrintRequestStop(eStatus_BadRequest);
         return;
     }
 
@@ -1551,15 +1595,15 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
                                                    m_CommandArguments.timeout);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound");
         ERR_POST(Warning << "JDEX for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
     if (status != CNetScheduleAPI::eRunning) {
-        WriteMessage("ERR:eInvalidJobStatus:" +
-                     CNetScheduleAPI::StatusToString(status));
+        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:" +
+                              CNetScheduleAPI::StatusToString(status));
         ERR_POST(Warning << "Cannot change expiration for job "
                          << m_CommandArguments.job_key
                          << " in status "
@@ -1713,9 +1757,9 @@ void CNetScheduleHandler::x_ProcessStatusSnapshot(CQueue* q)
                                 NStr::ParseEscapes(m_CommandArguments.affinity_token));
 
     if (!aff_exists) {
-        WriteMessage("ERR:", "eProtocolSyntaxError:"
-                             "Unknown affinity token \"" +
-                             m_CommandArguments.affinity_token + "\"");
+        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
+                              "Unknown affinity token \"" +
+                              m_CommandArguments.affinity_token + "\"");
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
@@ -1779,7 +1823,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
     // Certain job dump
     if (q->PrintJobDbStat(*this, m_CommandArguments.job_id) == 0) {
         // Nothing was printed because there is no such a job
-        WriteMessage("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound");
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
@@ -1793,8 +1837,9 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
 void CNetScheduleHandler::x_ProcessPrintQueue(CQueue* q)
 {
     if (m_CommandArguments.job_status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:Status unknown: ", m_CommandArguments.job_status_string);
-        x_PrintRequestStop(eStatus_BadCmd);
+        x_WriteMessageNoThrow("ERR:Status unknown: ",
+                              m_CommandArguments.job_status_string);
+        x_PrintRequestStop(eStatus_BadRequest);
         return;
     }
 
@@ -1993,8 +2038,8 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
         return;
     }
     if (status != CNetScheduleAPI::eReading) {
-        WriteMessage("ERR:eInvalidJobStatus:" +
-                     CNetScheduleAPI::StatusToString(status));
+        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:" +
+                              CNetScheduleAPI::StatusToString(status));
         ERR_POST(Warning << "Cannot " << description << " read job "
                          << m_CommandArguments.job_key
                          << " in status "
@@ -2034,15 +2079,15 @@ void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 
 void CNetScheduleHandler::x_CmdNotImplemented(CQueue *)
 {
-    WriteMessage("ERR:Not implemented");
-    x_PrintRequestStop(eStatus_NoImpl);
+    x_WriteMessageNoThrow("ERR:Not implemented");
+    x_PrintRequestStop(eStatus_NotImplemented);
 }
 
 
 void CNetScheduleHandler::x_CmdObsolete(CQueue*)
 {
-    WriteMessage("OK:WARNING:Obsolete;");
-    x_PrintRequestStop(eStatus_OK);
+    x_WriteMessageNoThrow("OK:WARNING:Obsolete;");
+    x_PrintRequestStop(eStatus_NotImplemented);
 }
 
 
@@ -2126,7 +2171,7 @@ void CNetScheduleHandler::x_PrintRequestStart(CTempString  msg)
 }
 
 
-void CNetScheduleHandler::x_PrintRequestStop(EHTTPStatus  status)
+void CNetScheduleHandler::x_PrintRequestStop(unsigned int  status)
 {
     if (m_Server->IsLog()) {
         CDiagContext::GetRequestContext().SetRequestStatus(status);

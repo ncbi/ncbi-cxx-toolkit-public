@@ -93,7 +93,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
             key != "output")
         {
             NCBI_THROW(CNetScheduleException, eDataTooLong,
-                       "User input exceeds the limit.");
+                       "User input/output exceeds the DB max limit.");
         }
 
         switch (key[0]) {

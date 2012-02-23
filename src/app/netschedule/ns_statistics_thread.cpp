@@ -518,10 +518,13 @@ void CStatisticsThread::DoJob(void)
     // Prepare the logging context
     ctx.Reset(new CRequestContext());
     ctx->SetRequestID();
-    GetDiagContext().SetRequestContext(ctx);
-    GetDiagContext().PrintRequestStart()
-                    .Print("_type", "statistics_thread");
-    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+
+
+    CDiagContext &      diag_context = GetDiagContext();
+
+    diag_context.SetRequestContext(ctx);
+    diag_context.PrintRequestStart()
+                .Print("_type", "statistics_thread");
 
     // Print statistics for all the queues
     size_t      aff_count = 0;
@@ -529,9 +532,10 @@ void CStatisticsThread::DoJob(void)
     CStatisticsCounters::PrintTotal(aff_count);
 
     // Close the logging context
-    GetDiagContext().PrintRequestStop();
+    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    diag_context.PrintRequestStop();
     ctx.Reset();
-    GetDiagContext().SetRequestContext(NULL);
+    diag_context.SetRequestContext(NULL);
     return;
 }
 

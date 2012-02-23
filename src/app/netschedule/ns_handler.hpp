@@ -91,20 +91,17 @@ public:
     /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
     enum EHTTPStatus {
         eStatus_OK                  = 200, ///< Command is ok and execution is good
-        eStatus_Inactive            = 204, ///< Connection was closed due to inactivity
-                                           ///< timeout
-        eStatus_BadCmd              = 400, ///< Command is incorrect
-        eStatus_BadAuth             = 401, ///< Operation is not permitted
-        eStatus_HTTPProbe           = 402, ///< Routine test from systems
+
+        eStatus_BadRequest          = 400, ///< Command is incorrect
         eStatus_NotFound            = 404, ///< Job is not found
-        eStatus_BadQueue            = 405, ///< Queue not found
-        eStatus_CmdTimeout          = 408, ///< Command timeout is exceeded
+        eStatus_Inactive            = 408, ///< Connection was closed due to inactivity
+                                           ///< timeout
         eStatus_InvalidJobStatus    = 409, ///< Invalid job status
+        eStatus_HTTPProbe           = 444, ///< Routine test from systems
+        eStatus_SocketIOError       = 499, ///< Error writing to socket
+
         eStatus_ServerError         = 500, ///< Internal server error
-        eStatus_NoImpl              = 501, ///< Command is not implemented
-        eStatus_JobNotifierError    = 502, ///< Job noticication thread failed
-        eStatus_JobExecWatcherError = 503, ///< Job execution watcher thread failed
-        eStatus_QueueCleanerError   = 504  ///< Queue cleaner thread failed
+        eStatus_NotImplemented      = 501  ///< Command is not implemented
     };
 
 
@@ -120,7 +117,8 @@ private:
     void x_ProcessMsgBatchSubmit(BUF buffer);
 
     void x_SetQuickAcknowledge(void);
-    void x_WriteMessageNoThrow(CTempString  prefix, CTempString msg);
+    unsigned int x_WriteMessageNoThrow(CTempString  prefix, CTempString msg);
+    unsigned int x_WriteMessageNoThrow(CTempString  msg);
 
 public:
 
@@ -202,7 +200,7 @@ private:
 
     void x_PrintRequestStart(const SParsedCmd& cmd);
     void x_PrintRequestStart(CTempString  msg);
-    void x_PrintRequestStop(EHTTPStatus  status);
+    void x_PrintRequestStop(unsigned int  status);
     void x_CloseConnection(void);
 
     void x_PrintGetJobResponse(const CQueue * q,
