@@ -404,10 +404,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///    Time in seconds function waits for the job to finish.
     ///    If job does not finish in the output parameter will hold the empty
     ///    string.
-    /// @param udp_port
-    ///    UDP port to listen for queue notifications. Try to avoid many
-    ///    client programs (or threads) listening on the same port. Message
-    ///    is going to be delivered to just only one listener.
     ///
     /// @return job status
     ///
@@ -415,8 +411,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///    if the job is finished during specified time.
     ///
     CNetScheduleAPI:: EJobStatus SubmitJobAndWait(CNetScheduleJob& job,
-                                                  unsigned       wait_time,
-                                                  unsigned short udp_port);
+                                                  unsigned       wait_time);
 
     /// Cancel job
     ///
@@ -497,8 +492,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @param job
     ///     NetSchedule job description structure
-    /// @param listening_port
-    ///    UDP port to listen for the server response.
     /// @param wait_time
     ///    Time in seconds function waits for new jobs to come.
     ///    If there are no jobs in the period of time,
@@ -509,7 +502,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
     ///
     /// @sa GetJob, WaitNotification
     ///
-    bool WaitJob(CNetScheduleJob& job, unsigned short listening_port,
+    bool WaitJob(CNetScheduleJob& job,
         unsigned wait_time, const string& affinity = kEmptyStr);
 
 
@@ -748,19 +741,83 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method);
 
 /// @internal
-class NCBI_XCONNECT_EXPORT IWaitNotificationListener
+class NCBI_XCONNECT_EXPORT IWaitNotificationHandler
 {
 public:
-    virtual bool OnNotification(const string& buf) const = 0;
+    virtual bool OnBind(unsigned short port) = 0;
+    virtual bool OnNotification(const string& buf,
+            const string& server_host, unsigned short server_port) = 0;
 
-    virtual ~IWaitNotificationListener();
+    virtual ~IWaitNotificationHandler();
+};
+
+/// @internal
+class NCBI_XCONNECT_EXPORT CWaitNotificationHandler_Base :
+        public IWaitNotificationHandler
+{
+public:
+    CWaitNotificationHandler_Base(CNetScheduleJob& job, unsigned wait_time) :
+        m_Job(job), m_WaitTime(wait_time)
+    {
+    }
+
+    unsigned GetWaitTime() const {return m_WaitTime;}
+
+    static bool ParseNotification(
+            const string& buf,
+            const CTempString& expected_prefix,
+            const string& attr_name,
+            string* attr_value);
+
+protected:
+    CNetScheduleJob& m_Job;
+    unsigned m_WaitTime;
 };
 
 /// @internal
 extern NCBI_XCONNECT_EXPORT
-bool g_WaitNotification(unsigned wait_time, unsigned short udp_port,
-        IWaitNotificationListener* listener);
+bool g_WaitNotification(CWaitNotificationHandler_Base* handler);
 
+/// @internal
+class NCBI_XCONNECT_EXPORT CJobStatusNotificationHandler :
+        public CWaitNotificationHandler_Base
+{
+public:
+    CJobStatusNotificationHandler(CNetScheduleJob& job, unsigned wait_time,
+            SNetScheduleSubmitterImpl* submitter) :
+        CWaitNotificationHandler_Base(job, wait_time),
+        m_Submitter(submitter)
+    {
+    }
+
+    virtual bool OnBind(unsigned short port);
+    virtual bool OnNotification(const string& buf,
+            const string& server_host, unsigned short server_port);
+
+protected:
+    CNetScheduleSubmitter m_Submitter;
+};
+
+class NCBI_XCONNECT_EXPORT CWaitForJobNotificationHandler :
+        public CWaitNotificationHandler_Base
+{
+public:
+    CWaitForJobNotificationHandler(CNetScheduleJob& job, unsigned wait_time,
+            SNetScheduleExecuterImpl* executor, const string& affinity) :
+        CWaitNotificationHandler_Base(job, wait_time),
+        m_Executor(executor),
+        m_Affinity(affinity)
+    {
+    }
+
+    virtual bool OnBind(unsigned short port);
+    virtual bool OnNotification(const string& buf,
+            const string& server_host, unsigned short server_port);
+
+private:
+    CNetScheduleExecuter m_Executor;
+    const string& m_Affinity;
+};
 
 /* @} */
 

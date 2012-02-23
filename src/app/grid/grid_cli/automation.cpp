@@ -301,7 +301,7 @@ inline void CAutomationProc::AddObject(TAutomationObjectRef new_object)
 }
 
 CJsonNode SNetCacheAutomationObject::Call(const string& method,
-        CArgArray& arg_array, CAutomationProc* automation_proc)
+        CArgArray& /*arg_array*/, CAutomationProc* /*automation_proc*/)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.PushBoolean(true);
@@ -320,7 +320,7 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
 }
 
 CJsonNode SNetScheduleServerAutomationObject::Call(const string& method,
-        CArgArray& arg_array, CAutomationProc* automation_proc)
+        CArgArray& arg_array, CAutomationProc* /*automation_proc*/)
 {
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.PushBoolean(true);

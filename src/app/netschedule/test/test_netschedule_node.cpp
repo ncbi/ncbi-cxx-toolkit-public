@@ -105,9 +105,6 @@ void CTestNetScheduleNode::Init(void)
     arg_desc->AddPositional("queue", "NetSchedule queue name (like: noname).",
         CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("udp_port", "udp_port",
-        "Incoming UDP port", CArgDescriptions::eInteger);
-
     arg_desc->AddFlag("verbose", "Log progress.");
 
     // Setup arg.descriptions for this application
@@ -126,18 +123,12 @@ int CTestNetScheduleNode::Run(void)
     string service = args["service"].AsString();
     string queue_name = args["queue"].AsString();
 
-    unsigned short udp_port = 9111;
-
-    if (args["udp_port"])
-        udp_port = args["udp_port"].AsInteger();
-
     bool verbose = args["verbose"];
 
     string program_name = GetProgramDisplayName();
 
     if (verbose) {
         LOG_POST(Info << program_name << " started");
-        LOG_POST(Info << "UDP port: " << udp_port);
         LOG_POST(Info << "Failure rate: " << TParam_FailureRate::GetDefault());
     }
 
@@ -177,7 +168,7 @@ int CTestNetScheduleNode::Run(void)
     bool done = false;
 
     while (!done) {
-        if (ns_exec.WaitJob(job, udp_port, 180)) {
+        if (ns_exec.WaitJob(job, 180)) {
             if (job.input == "DIE") {
                 LOG_POST(Info << "Got poison pill, exiting.");
                 done = true;

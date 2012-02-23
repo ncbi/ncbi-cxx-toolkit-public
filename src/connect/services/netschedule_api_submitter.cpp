@@ -368,39 +368,32 @@ void CNetScheduleSubmitter::ReadFail(const string& batch_id,
         batch_id, job_ids, error_message);
 }
 
-class CWaitJobPred : public IWaitNotificationListener
+bool CJobStatusNotificationHandler::OnBind(unsigned short port)
 {
-public:
-    CWaitJobPred(const string& job_id) : m_JobId(job_id) {}
+    m_Submitter->SubmitJobImpl(m_Job, port, m_WaitTime);
 
-    virtual bool OnNotification(const string& buf) const;
+    return false;
+}
 
-private:
-    const string& m_JobId;
-};
-
-bool CWaitJobPred::OnNotification(const string& buf) const
+bool CJobStatusNotificationHandler::OnNotification(const string& buf,
+        const string& server_host, unsigned short server_port)
 {
-    static const char prefix[] = "JNTF key=";
+    static const CTempString s_JNTFPrefix("JNTF");
+    static const string s_KeyAttrName("key");
 
-    return NStr::StartsWith(buf, prefix) &&
-        m_JobId == CTempString(buf.data() + sizeof(prefix) - 1,
-            buf.size() - sizeof(prefix) - 1);
+    string job_key;
+
+    return ParseNotification(buf, s_JNTFPrefix, s_KeyAttrName, &job_key) &&
+        m_Job.job_id == job_key;
 }
 
 CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
-                                        unsigned       wait_time,
-                                        unsigned short udp_port)
+                                        unsigned       wait_time)
 {
-    _ASSERT(wait_time);
-    _ASSERT(udp_port);
+    CJobStatusNotificationHandler wait_job_handler(job, wait_time, m_Impl);
 
-    m_Impl->SubmitJobImpl(job, udp_port, wait_time);
-
-    CWaitJobPred pred(job.job_id);
-
-    g_WaitNotification(wait_time, udp_port, &pred);
+    g_WaitNotification(&wait_job_handler);
 
     CNetScheduleAPI::EJobStatus status = GetJobStatus(job.job_id);
 

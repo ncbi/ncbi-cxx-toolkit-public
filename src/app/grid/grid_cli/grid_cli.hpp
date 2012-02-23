@@ -58,7 +58,6 @@
 #define ROLLBACK_READ_OPTION "rollback-read"
 #define FAIL_READ_OPTION "fail-read"
 #define JOB_ID_OPTION "job-id"
-#define LISTENING_PORT_OPTION "listening-port"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
 #define NOW_OPTION "now"
@@ -122,7 +121,6 @@ enum EOption {
     eProgressMessage,
     eAllJobs,
     eWaitTimeout,
-    eListeningPort,
     eFailJob,
     eQueueArg,
     eModelQueue,
@@ -168,6 +166,8 @@ public:
 
     virtual ~CGridCommandLineInterfaceApp();
 
+    static void PrintLine(const string& line);
+
 private:
     int m_ArgC;
     const char** m_ArgV;
@@ -196,7 +196,6 @@ private:
         size_t job_count;
         CNetScheduleAPI::EJobStatus job_status;
         time_t extend_lifetime_by;
-        unsigned short listening_port;
         string client_node;
         string client_session;
         string progress_message;
@@ -220,7 +219,7 @@ private:
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), job_count(0),
-            extend_lifetime_by(0), listening_port(0),
+            extend_lifetime_by(0),
             input_stream(NULL), output_stream(NULL), protocol_dump(NULL)
         {
             memset(option_flags, 0, eNumberOfOptions);
@@ -292,7 +291,6 @@ public:
 
 // Implementation details.
 private:
-    static void PrintLine(const string& line);
     enum EAPIClass {
         eUnknownAPI,
         eNetCacheAPI,

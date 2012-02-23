@@ -646,9 +646,6 @@ private:
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleExecuter m_NSExecuter;
 
-    // Control port that the worker node will be listening to.
-    unsigned short m_ControlPort;
-
     unsigned int                 m_MaxThreads;
     unsigned int                 m_NSTimeout;
     mutable CFastMutex           m_JobFactoryMutex;

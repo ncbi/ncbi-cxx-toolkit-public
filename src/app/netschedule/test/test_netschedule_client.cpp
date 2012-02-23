@@ -204,7 +204,7 @@ int CTestNetScheduleClient::Run(void)
     NcbiCout << "SubmitAndWait..." << NcbiEndl;
     unsigned wait_time = 30;
     CNetScheduleJob j1(input);
-    status = submitter.SubmitJobAndWait(j1, wait_time, 9112);
+    status = submitter.SubmitJobAndWait(j1, wait_time);
     if (status == CNetScheduleAPI::eDone) {
         NcbiCout << j1.job_id << " done." << NcbiEndl;
     } else {

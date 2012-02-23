@@ -249,10 +249,6 @@ struct SOptionDefinition {
         WAIT_TIMEOUT_OPTION, "Wait up to the specified "
             "number of seconds for a response."},
 
-    {CCommandLineParser::eOptionWithParameter, eListeningPort,
-        LISTENING_PORT_OPTION, "UDP port to listen for "
-            "the response."},
-
     {CCommandLineParser::eOptionWithParameter, eFailJob,
         FAIL_JOB_OPTION, "Report the job as failed "
             "and specify an error message."},
@@ -412,18 +408,27 @@ struct SCommandDefinition {
         "doesn't contain spaces. The \"input\" attribute is required.\n\n"
         "Example:\n\n"
         "  input=\"db, 8548@394.701\" exclusive\n\n"
+        "In batch mode, the IDs of the created jobs are printed to the "
+        "standard output stream (or the specified output file) one job "
+        "ID per line.\n\n"
         "In single job submission mode, unless the '--" INPUT_FILE_OPTION
         "' or '--" INPUT_OPTION "' options are given, job input is read "
         "from the standard input stream, and the rest of attributes are "
         "taken from their respective command line options.\n\n"
-        "A NetCache server is required for saving job input if it exceeds "
-        "the capability of the NetSchedule internal storage.\n\n"
-        "In both modes, the IDs of the created jobs are printed to the "
-        "standard output stream (or the specified output file) one job "
-        "ID per line.",
+        "If the '--" WAIT_TIMEOUT_OPTION "' option is given in single "
+        "job submission mode, " PROGRAM_NAME " will wait for the job "
+        "to terminate, and if the job terminates within the specified "
+        "number of seconds, its final status will be printed right after "
+        "the job ID. In case the status is 'Done', job output will be "
+        "printed on the next line (unless the '--" OUTPUT_FILE_OPTION "' "
+        "is given, in which case the output goes to the specified file)."
+        "\n\n"
+        "A NetCache server is required for saving job input if it "
+        "exceeds the capability of the NetSchedule internal storage.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
-            eAffinity, eExclusiveJob,
-            eOutputFile, eAuth, eClientNode, eClientSession, -1}},
+            eAffinity, eExclusiveJob, eOutputFile,
+            eWaitTimeout, eAuth, eClientNode, eClientSession,
+            eDumpNSNotifications, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobInput,
         "getjobinput", "Read job input.",
@@ -520,7 +525,7 @@ struct SCommandDefinition {
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
         {eNetSchedule, eQueue, eAffinityList, eUsePreferredAffinities,
-            eAnyAffinity, eOutputFile, eWaitTimeout, eListeningPort,
+            eAnyAffinity, eOutputFile, eWaitTimeout,
             eAuth, eClientNode, eClientSession,
             eDumpNSNotifications, -1}},
 
@@ -855,10 +860,6 @@ int CGridCommandLineInterfaceApp::Run()
             case eTimeout:
             case eWaitTimeout:
                 m_Opts.timeout = NStr::StringToUInt(opt_value);
-                break;
-            case eListeningPort:
-                m_Opts.listening_port =
-                    (unsigned short) NStr::StringToUInt(opt_value);
                 break;
             case eConfirmRead:
             case eRollbackRead:

@@ -1053,15 +1053,14 @@ int CGridWorkerNode::Run()
             "the port(s).");
     }
 
-    m_ControlPort = control_thread->GetControlPort();
-
     if (m_NetScheduleAPI->m_ClientNode.empty()) {
         string client_node(m_NetScheduleAPI->
                 m_Service->m_ServerPool->m_ClientName);
         client_node.append(2, ':');
         client_node.append(CSocketAPI::gethostname());
         client_node.append(1, ':');
-        client_node.append(NStr::NumericToString(m_ControlPort));
+        client_node.append(NStr::NumericToString(
+            control_thread->GetControlPort()));
         m_NetScheduleAPI.SetClientNode(client_node);
 
         m_NetScheduleAPI.SetClientSession(GetDiagContext().GetStringUID());
@@ -1298,7 +1297,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         if (!WaitForExclusiveJobToFinish())
             return false;
 
-        job_exists = GetNSExecuter().WaitJob(job, m_ControlPort, m_NSTimeout);
+        job_exists = GetNSExecuter().WaitJob(job, m_NSTimeout);
 
         if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob)
             job_exists = EnterExclusiveModeOrReturnJob(job);

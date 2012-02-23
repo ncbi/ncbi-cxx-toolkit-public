@@ -156,50 +156,45 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, const string& affinity)
 
 const char s_WGETNotification[] = "NCBI_JSQ_";
 
-class CWaitQueuePred : public IWaitNotificationListener
-{
-public:
-    CWaitQueuePred(const string& queue_name) : m_QueueName(queue_name)
-    {
-    }
-
-    virtual bool OnNotification(const string& buf) const;
-
-private:
-    string m_QueueName;
-};
-
-bool CWaitQueuePred::OnNotification(const string& buf) const
-{
-    return buf.size() >= sizeof(s_WGETNotification) - 1 +
-            m_QueueName.length() &&
-        buf[0] == s_WGETNotification[0] &&
-        buf[1] == s_WGETNotification[1] &&
-        m_QueueName == buf.data() + sizeof(s_WGETNotification) - 1;
-}
-
-bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
-                                   unsigned short listening_port,
-                                   unsigned wait_time,
-                                   const string& affinity)
+bool CWaitForJobNotificationHandler::OnBind(unsigned short port)
 {
     string cmd = "WGET ";
 
-    cmd += NStr::UIntToString(listening_port);
-    cmd += ' ';
-    cmd += NStr::UIntToString(wait_time);
+    cmd += " port=";
+    cmd += NStr::UIntToString(port);
+    cmd += " timeout=";
+    cmd += NStr::UIntToString(m_WaitTime);
 
-    if (!affinity.empty()) {
-        cmd += ' ';
-        cmd += NStr::PrintableString(affinity);
+    if (!m_Affinity.empty()) {
+        cmd += " aff=";
+        cmd += NStr::PrintableString(m_Affinity);
     }
 
-    if (m_Impl->GetJobImpl(cmd, job))
+    if (m_Executor->GetJobImpl(cmd, m_Job))
         return true;
 
-    CWaitQueuePred pred(m_Impl->m_API.GetQueueName());
+    return false;
+}
 
-    g_WaitNotification(wait_time, listening_port, &pred);
+bool CWaitForJobNotificationHandler::OnNotification(const string& buf,
+        const string& server_host, unsigned short server_port)
+{
+    const string& queue_name(m_Executor->m_API.GetQueueName());
+
+    return buf.size() >= sizeof(s_WGETNotification) - 1 +
+            queue_name.length() &&
+        buf[0] == s_WGETNotification[0] &&
+        buf[1] == s_WGETNotification[1] &&
+        queue_name == buf.data() + sizeof(s_WGETNotification) - 1;
+}
+
+bool CNetScheduleExecuter::WaitJob(CNetScheduleJob& job,
+                                   unsigned wait_time,
+                                   const string& affinity)
+{
+    CWaitForJobNotificationHandler handler(job, wait_time, m_Impl, affinity);
+
+    g_WaitNotification(&handler);
 
     // Regardless of what g_WaitNotification returned,
     // retry the request using TCP and notify the NetSchedule

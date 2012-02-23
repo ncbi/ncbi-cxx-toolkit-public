@@ -40,26 +40,53 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/request_control.hpp>
 
+#include <util/ncbi_url.hpp>
+
 #include <memory>
 #include <stdio.h>
 
 
 BEGIN_NCBI_SCOPE
 
-IWaitNotificationListener::~IWaitNotificationListener()
+IWaitNotificationHandler::~IWaitNotificationHandler()
 {
 }
 
-bool g_WaitNotification(unsigned wait_time, unsigned short udp_port,
-        IWaitNotificationListener* listener)
+bool CWaitNotificationHandler_Base::ParseNotification(
+        const string& buf,
+        const CTempString& expected_prefix,
+        const string& attr_name,
+        string* attr_value)
 {
-    _ASSERT(wait_time);
+    CTempString prefix;
+    CTempString attrs;
 
+    if (NStr::SplitInTwo(buf, " ", prefix, attrs, NStr::eMergeDelims) &&
+            prefix == expected_prefix)
+        try {
+            CUrlArgs attr_parser(attrs);
+            const CUrlArgs::TArgs& attr_list = attr_parser.GetArgs();
+            CUrlArgs::const_iterator attr_it = attr_parser.FindFirst(attr_name);
+            if (attr_it != attr_list.end()) {
+                *attr_value = attr_it->value;
+                return true;
+            }
+        }
+        catch (CUrlParserException&) {
+        }
+
+    return false;
+}
+
+bool g_WaitNotification(CWaitNotificationHandler_Base* handler)
+{
     EIO_Status status;
 
     STimeout to;
-    to.sec = wait_time;
+    to.sec = handler->GetWaitTime();
     to.usec = 0;
+
+    _ASSERT(to.sec);
 
     CDatagramSocket  udp_socket;
     udp_socket.SetReuseAddress(eOn);
@@ -67,14 +94,18 @@ bool g_WaitNotification(unsigned wait_time, unsigned short udp_port,
     rto.sec = rto.usec = 0;
     udp_socket.SetTimeout(eIO_Read, &rto);
 
-    status = udp_socket.Bind(udp_port);
-    if (eIO_Success != status) {
-        return false;
+    status = udp_socket.Bind(0);
+    if (status != eIO_Success) {
+        NCBI_THROW_FMT(CException, eUnknown,
+            "Could not bind a UDP socket: " << IO_StatusStr(status));
     }
+    if (handler->OnBind(udp_socket.GetLocalPort(eNH_HostByteOrder)))
+        return true;
+
     time_t curr_time, start_time, end_time;
 
     start_time = time(0);
-    end_time = start_time + wait_time;
+    end_time = start_time + to.sec;
 
     for (;;) {
         curr_time = time(0);
@@ -87,12 +118,15 @@ bool g_WaitNotification(unsigned wait_time, unsigned short udp_port,
             continue;
         }
         size_t msg_len;
-        string   buf(1024/sizeof(int),0);
-        status = udp_socket.Recv(&buf[0], buf.size(), &msg_len, NULL);
+        string buf(1024/sizeof(int),0);
+        string server_host;
+        unsigned short server_port;
+        status = udp_socket.Recv(&buf[0], buf.size(), &msg_len,
+            &server_host, &server_port);
         _ASSERT(status != eIO_Timeout); // because we Wait()-ed
         if (eIO_Success == status) {
             buf.resize(msg_len);
-            if (listener->OnNotification(buf))
+            if (handler->OnNotification(buf, server_host, server_port))
                 return true;
         }
     } // for

@@ -48,8 +48,6 @@ USING_NCBI_SCOPE;
 
 ///////////////////////////////////////////////////////////////////////
 
-#define WORKER_NODE_PORT 9595
-
 /// Test application
 ///
 /// @internal
@@ -323,7 +321,7 @@ int CTestNetScheduleStress::Run(void)
     unsigned cnt = 0;
     for (; cnt < jcount/2; ++cnt) {
         CNetScheduleJob job;
-        bool job_exists = executer.WaitJob(job, WORKER_NODE_PORT, 60);
+        bool job_exists = executer.WaitJob(job, 60);
 //        bool job_exists = cl.GetJob(&job_key, &input);
         if (!job_exists)
             break;

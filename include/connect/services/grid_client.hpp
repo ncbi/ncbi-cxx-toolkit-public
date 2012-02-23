@@ -65,27 +65,31 @@ public:
     /// To send a large data use GetOStream method. Don't call this
     /// method after GetOStream method is called.
     ///
-    void SetJobInput(const string& input);
+    void SetJobInput(const string& input) {m_Job.input = input;}
 
     /// Get a stream where a client can write an input
     /// data for the remote job
     ///
     CNcbiOstream& GetOStream();
 
+    void CloseStream();
+
     /// Set a job mask
     ///
-    void SetJobMask(CNetScheduleAPI::TJobMask mask);
+    void SetJobMask(CNetScheduleAPI::TJobMask mask) {m_Job.mask = mask;}
 
     /// Set a job affinity
     ///
-    void SetJobAffinity(const string& affinity);
+    void SetJobAffinity(const string& affinity) {m_Job.affinity = affinity;}
 
     /// Submit a job to the queue
     ///
     /// @return a job key
-    string Submit(const string& affinity = "");
+    string Submit(const string& affinity = kEmptyStr);
 
-    CGridJobSubmitter(CGridClient& grid_client);
+    CGridJobSubmitter(CGridClient& grid_client) : m_GridClient(grid_client) {}
+
+    CNetScheduleJob& GetJob() {return m_Job;}
 
 private:
     CGridClient& m_GridClient;

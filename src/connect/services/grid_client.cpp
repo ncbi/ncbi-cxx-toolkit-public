@@ -105,24 +105,6 @@ size_t CGridClient::GetMaxServerInputSize()
 
 //////////////////////////////////////////////////////////////////////////////
 //
-CGridJobSubmitter::CGridJobSubmitter(CGridClient& grid_client)
-    : m_GridClient(grid_client)
-{
-}
-
-void CGridJobSubmitter::SetJobInput(const string& input)
-{
-    m_Job.input = input;
-}
-void CGridJobSubmitter::SetJobMask(CNetScheduleAPI::TJobMask mask)
-{
-    m_Job.mask = mask;
-}
-void CGridJobSubmitter::SetJobAffinity(const string& affinity)
-{
-    m_Job.affinity = affinity;
-}
-
 CNcbiOstream& CGridJobSubmitter::GetOStream()
 {
     m_Writer.reset(new CStringOrBlobStorageWriter(
@@ -138,7 +120,7 @@ CNcbiOstream& CGridJobSubmitter::GetOStream()
     return *m_WStream;
 }
 
-string CGridJobSubmitter::Submit(const string& affinity)
+void CGridJobSubmitter::CloseStream()
 {
     if (m_Writer.get() != NULL) {
         if (m_WStream.get() != NULL) {
@@ -149,6 +131,11 @@ string CGridJobSubmitter::Submit(const string& affinity)
         m_Writer->Close();
         m_Writer.reset();
     }
+}
+
+string CGridJobSubmitter::Submit(const string& affinity)
+{
+    CloseStream();
 
     if (!affinity.empty() && m_Job.affinity.empty())
         m_Job.affinity = affinity;

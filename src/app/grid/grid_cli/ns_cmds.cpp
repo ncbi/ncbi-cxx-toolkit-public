@@ -104,9 +104,9 @@ void CGridCommandLineInterfaceApp::SetUp_GridClient()
 {
     SetUp_NetScheduleCmd(eNetScheduleAPI);
     SetUp_NetCacheCmd(eNetCacheAPI);
-    m_GridClient.reset(new CGridClient(m_NetScheduleAPI.GetSubmitter(),
-        m_NetCacheAPI, CGridClient::eManualCleanup,
-            CGridClient::eProgressMsgOn));
+    m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
+    m_GridClient.reset(new CGridClient(m_NetScheduleSubmitter, m_NetCacheAPI,
+            CGridClient::eManualCleanup, CGridClient::eProgressMsgOn));
 }
 
 void CGridCommandLineInterfaceApp::PrintJobMeta(const CNetScheduleKey& key)
@@ -181,13 +181,24 @@ public:
         eNoMoreAttributes
     };
 
-    void Reset(const char* position) {m_Position = position;}
+    void Reset(const char* position, const char* eol)
+    {
+        m_Position = position;
+        m_EOL = eol;
+    }
+
+    void Reset(const string& line)
+    {
+        const char* line_buf = line.c_str();
+        Reset(line_buf, line_buf + line.size());
+    }
 
     ENextAttributeType NextAttribute(CTempString& attr_name,
         string& attr_value);
 
 private:
     const char* m_Position;
+    const char* m_EOL;
 };
 
 CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
@@ -223,7 +234,6 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
         ;
 
     start_pos = m_Position;
-    char quotation_mark;
 
     switch (*m_Position) {
     case '\0':
@@ -232,18 +242,12 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
                 attr_name << "=\"\"");
     case '\'':
     case '"':
-        quotation_mark = *start_pos++;
-        do {
-            if (*++m_Position == '\\' && *++m_Position != '\0')
-                ++m_Position;
-            if (*m_Position == '\0') {
-                NCBI_THROW(CArgException, eInvalidArg, PROGRAM_NAME
-                    ": unterminated attribute value");
-            }
-        } while (*m_Position != quotation_mark);
-        attr_value = NStr::ParseEscapes(
-            CTempString(start_pos, m_Position - start_pos));
-        ++m_Position;
+        {
+            size_t n_read;
+            attr_value = NStr::ParseQuoted(CTempString(start_pos,
+                m_EOL - start_pos), &n_read);
+            m_Position += n_read;
+        }
         break;
     default:
         while (*++m_Position != '\0' && !isspace(*m_Position))
@@ -275,9 +279,11 @@ bool CGridCommandLineInterfaceApp::ParseAndPrintJobEvents(const string& line)
         return false;
     ++event_info;
 
+    const char* eol = event_info + line.size();
+
     try {
         CAttrListParser attr_parser;
-        attr_parser.Reset(event_info);
+        attr_parser.Reset(event_info, eol);
         CTempString attr_name;
         string attr_value;
         CAttrListParser::ENextAttributeType next_attr_type;
@@ -321,7 +327,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         job.job_id = m_Opts.id;
         m_NetScheduleAPI.GetProgressMsg(job);
         if (!job.progress_msg.empty())
-            printf("%s\n", job.progress_msg.c_str());
+            PrintLine(job.progress_msg);
         return 0;
     }
 
@@ -427,7 +433,7 @@ bool CBatchSubmitAttrParser::NextLine()
                 m_Line.append(buffer, bytes_read);
             else {
                 m_Line.append(buffer, bytes_read - 1);
-                m_AttrParser.Reset(m_Line.c_str());
+                m_AttrParser.Reset(m_Line);
                 return true;
             }
         }
@@ -437,7 +443,7 @@ bool CBatchSubmitAttrParser::NextLine()
     if (m_Line.empty())
         return false;
     else {
-        m_AttrParser.Reset(m_Line.c_str());
+        m_AttrParser.Reset(m_Line);
         return true;
     }
 }
@@ -493,6 +499,76 @@ bool CBatchSubmitAttrParser::NextAttribute()
     }
 
     return true;
+}
+
+static const string s_NotificationTimestampFormat("Y/M/D h:m:s.l");
+
+class CJobStatusNotificationDumper : public CJobStatusNotificationHandler
+{
+public:
+    CJobStatusNotificationDumper(CNetScheduleJob& job, unsigned wait_time,
+            SNetScheduleSubmitterImpl* submitter) :
+        CJobStatusNotificationHandler(job, wait_time, submitter)
+    {
+    }
+
+    virtual bool OnBind(unsigned short port);
+    virtual bool OnNotification(const string& buf,
+            const string& server_host, unsigned short server_port);
+};
+
+bool CJobStatusNotificationDumper::OnBind(unsigned short port)
+{
+    CJobStatusNotificationHandler::OnBind(port);
+
+    printf("Using UDP port %u\nJob key: %s\n",
+            (unsigned) port, m_Job.job_id.c_str());
+
+    return false;
+}
+
+bool CJobStatusNotificationDumper::OnNotification(const string& buf,
+        const string& server_host, unsigned short server_port)
+{
+    CNetScheduleAPI::EJobStatus job_status = CNetScheduleAPI::eJobNotFound;
+
+    bool valid = CJobStatusNotificationHandler::OnNotification(
+            buf, server_host, server_port);
+
+    const char* format = "%s \"%s\" %s:%u [invalid]\n";
+
+    if (valid) {
+        job_status = m_Submitter.GetJobStatus(m_Job.job_id);
+        format = "%s \"%s\" %s:%u [valid, status=%s]\n";
+    }
+
+    printf(format,
+        GetFastLocalTime().AsString(s_NotificationTimestampFormat).c_str(),
+        buf.c_str(), server_host.c_str(), (unsigned) server_port,
+        CNetScheduleAPI::StatusToString(job_status));
+
+    return true;
+}
+
+class CCLISubmitJobNotificationHandler : public CJobStatusNotificationHandler
+{
+public:
+    CCLISubmitJobNotificationHandler(CNetScheduleJob& job, unsigned wait_time,
+            SNetScheduleSubmitterImpl* submitter) :
+        CJobStatusNotificationHandler(job, wait_time, submitter)
+    {
+    }
+
+    virtual bool OnBind(unsigned short port);
+};
+
+bool CCLISubmitJobNotificationHandler::OnBind(unsigned short port)
+{
+    CJobStatusNotificationHandler::OnBind(port);
+
+    CGridCommandLineInterfaceApp::PrintLine(m_Job.job_id);
+
+    return false;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
@@ -595,8 +671,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                 const vector<CNetScheduleJob>& jobs =
                     batch_submitter.GetBatch();
                 ITERATE(vector<CNetScheduleJob>, it, jobs)
-                    fprintf(m_Opts.output_stream,
-                    "%s\n", it->job_id.c_str());
+                    fprintf(m_Opts.output_stream, "%s\n", it->job_id.c_str());
                 batch_submitter.Reset();
             }
         }
@@ -623,11 +698,40 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             }
         }
 
+        submitter.SetJobAffinity(m_Opts.affinity);
+
         if (IsOptionSet(eExclusiveJob))
             submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
 
-        fprintf(m_Opts.output_stream,
-            "%s\n", submitter.Submit(m_Opts.affinity).c_str());
+        if (!IsOptionSet(eWaitTimeout))
+            PrintLine(submitter.Submit());
+        else {
+            submitter.CloseStream();
+
+            CNetScheduleJob& job = submitter.GetJob();
+
+            if (!IsOptionSet(eDumpNSNotifications)) {
+                CCLISubmitJobNotificationHandler wait_job_handler(job,
+                        m_Opts.timeout, m_NetScheduleSubmitter);
+
+                if (g_WaitNotification(&wait_job_handler)) {
+                    CNetScheduleAPI::EJobStatus status =
+                            m_NetScheduleSubmitter.GetJobStatus(job.job_id);
+
+                    PrintLine(CNetScheduleAPI::StatusToString(status));
+
+                    if (status == CNetScheduleAPI::eDone) {
+                        m_NetScheduleAPI.GetJobDetails(job);
+                        DumpJobInputOutput(job.output);
+                    }
+                }
+            } else {
+                CJobStatusNotificationDumper wait_job_handler(job,
+                        m_Opts.timeout, m_NetScheduleSubmitter);
+
+                g_WaitNotification(&wait_job_handler);
+            }
+        }
     }
 
     return 0;
@@ -669,7 +773,7 @@ Error:
 int CGridCommandLineInterfaceApp::PrintJobAttrsAndDumpInput(
     const CNetScheduleJob& job)
 {
-    printf("%s\n", job.job_id.c_str());
+    PrintLine(job.job_id);
     if (!job.affinity.empty()) {
         string affinity(NStr::PrintableString(job.affinity));
         printf(job.mask & CNetScheduleAPI::eExclusiveJob ?
@@ -737,7 +841,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJobs()
 
         if (m_NetScheduleSubmitter.Read(batch_id,
                 m_Opts.job_ids, m_Opts.limit, m_Opts.timeout)) {
-            printf("%s\n", batch_id.c_str());
+            PrintLine(batch_id);
 
             ITERATE(std::vector<std::string>, job_id, m_Opts.job_ids) {
                 fprintf(m_Opts.output_stream, "%s\n", job_id->c_str());
@@ -804,18 +908,40 @@ int CGridCommandLineInterfaceApp::Cmd_RegWNode()
 }
 */
 
-class CNotificationDumper : public IWaitNotificationListener
+class CWaitForJobNotificationDumper : public CWaitForJobNotificationHandler
 {
 public:
-    virtual bool OnNotification(const string& buf) const;
+    CWaitForJobNotificationDumper(CNetScheduleJob& job, unsigned wait_time,
+            SNetScheduleExecuterImpl* executor, const string& affinity) :
+        CWaitForJobNotificationHandler(job, wait_time, executor, affinity)
+    {
+    }
+    virtual bool OnBind(unsigned short port);
+    virtual bool OnNotification(const string& buf,
+            const string& server_host, unsigned short server_port);
 };
 
-static const string s_TimestampFormat("Y/M/D h:m:s.l");
-
-bool CNotificationDumper::OnNotification(const string& buf) const
+bool CWaitForJobNotificationDumper::OnBind(unsigned short port)
 {
-    printf("%s %s\n", GetFastLocalTime().AsString(s_TimestampFormat).c_str(),
-            buf.c_str());
+    printf("Using UDP port %u\n", (unsigned) port);
+
+    if (CWaitForJobNotificationHandler::OnBind(port)) {
+        printf("%s\nA job has been returned; won't wait.\n",
+                m_Job.job_id.c_str());
+        return true;
+    }
+
+    return false;
+}
+
+bool CWaitForJobNotificationDumper::OnNotification(const string& buf,
+        const string& server_host, unsigned short server_port)
+{
+    printf("%s \"%s\" %s:%u [%s]\n",
+            GetFastLocalTime().AsString(s_NotificationTimestampFormat).c_str(),
+            buf.c_str(), server_host.c_str(), (unsigned) server_port,
+            CWaitForJobNotificationHandler::OnNotification(buf,
+                    server_host, server_port) ? "valid" : "invalid");
 
     return false;
 }
@@ -830,42 +956,17 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         if (m_NetScheduleExecutor.GetJob(job, m_Opts.affinity))
             return PrintJobAttrsAndDumpInput(job);
     } else {
-        if (!IsOptionSet(eListeningPort)) {
-            fprintf(stderr, PROGRAM_NAME " " REQUESTJOB_COMMAND
-                ": option '--" WAIT_TIMEOUT_OPTION "' requires '--"
-                LISTENING_PORT_OPTION "' to be specified as well\n");
-            return 2;
-        }
         if (!IsOptionSet(eDumpNSNotifications)) {
-            if (m_NetScheduleExecutor.WaitJob(job, m_Opts.listening_port,
+            if (m_NetScheduleExecutor.WaitJob(job,
                     m_Opts.timeout, m_Opts.affinity))
                 return PrintJobAttrsAndDumpInput(job);
         } else {
-            string cmd = "GET2";
+            CNetScheduleJob job;
 
-            cmd += IsOptionSet(eUsePreferredAffinities) ?
-                " wnode_aff=1" : " wnode_aff=0";
+            CWaitForJobNotificationDumper dumper(job, m_Opts.timeout,
+                m_NetScheduleExecutor, m_Opts.affinity);
 
-            cmd += IsOptionSet(eAnyAffinity) ? " any_aff=1" : " any_aff=0";
-
-            if (IsOptionSet(eAffinityList)) {
-                cmd += " aff=\"";
-                cmd += NStr::PrintableString(m_Opts.affinity);
-                cmd += '"';
-            }
-
-            cmd += " port=";
-            cmd += NStr::UIntToString(m_Opts.listening_port);
-            cmd += " timeout=";
-            cmd += NStr::UIntToString(m_Opts.timeout);
-
-            for (CNetServiceIterator it = m_NetScheduleAPI.GetService().
-                    Iterate(CNetService::eIncludePenalized); it; ++it)
-                (*it).ExecWithRetry(cmd);
-
-            CNotificationDumper dumper;
-
-            g_WaitNotification(m_Opts.timeout, m_Opts.listening_port, &dumper);
+            g_WaitNotification(&dumper);
         }
     }
 
