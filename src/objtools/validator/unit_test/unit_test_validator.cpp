@@ -9129,6 +9129,29 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // should complain about missing required field for specific values of sequencing technology
+    prefix_field->SetData().SetStr("##Assembly-Data-START##");
+    desc->SetUser().ResetData();
+    desc->SetUser().SetData().push_back(prefix_field);
+
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr("Sequencing Technology");
+    field->SetData().SetStr("Sanger");
+    desc->SetUser().SetData().push_back(field);
+
+    //no error because Sequencing Technology is Sanger
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    field->SetData().SetStr("something else");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",
+                                  "Required field Assembly Method is missing when Sequencing Technology has value 'something else'"));
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 

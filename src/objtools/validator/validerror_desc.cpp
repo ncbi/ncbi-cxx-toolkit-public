@@ -451,7 +451,8 @@ bool CValidError_desc::ValidateStructuredComment
             } else if (depend_field.GetData().IsInt()) {
                 value = NStr::IntToString(depend_field.GetData().GetInt());
             }
-            if ((*depend_rule)->DoesStringMatchRuleExpression(value)) {
+            if (((!(*depend_rule)->IsSetInvert_match() || !(*depend_rule)->GetInvert_match()) && (*depend_rule)->DoesStringMatchRuleExpression(value))
+                || ((*depend_rule)->IsSetInvert_match() && (*depend_rule)->GetInvert_match() && !(*depend_rule)->DoesStringMatchRuleExpression(value))) {
                 // other rules apply
                 ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetOther_fields().Get()) {
                     try {
