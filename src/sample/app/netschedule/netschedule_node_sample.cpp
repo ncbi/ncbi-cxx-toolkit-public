@@ -83,11 +83,6 @@ void CSampleNetScheduleNode::Init(void)
                             "NetSchedule queue name (like: noname).",
                             CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("udp_port", 
-                             "udp_port",
-                             "Incoming UDP port",
-                             CArgDescriptions::eInteger);
-    
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -98,13 +93,6 @@ int CSampleNetScheduleNode::Run(void)
     CArgs args = GetArgs();
     const string&  service  = args["service"].AsString();
     const string&  queue_name = args["queue"].AsString();  
-
-    unsigned short udp_port = 9111;
-    if (args["udp_port"]) {
-        udp_port = args["udp_port"].AsInteger();
-    }
-    NcbiCout << "Incoming UDP port:" << udp_port << NcbiEndl;
-
 
     CNetScheduleAPI cl("node_sample", service, queue_name);
 
@@ -140,7 +128,7 @@ int CSampleNetScheduleNode::Run(void)
     CNetScheduleJob job;
 
     for (;;) {
-        job_exists = executor.WaitJob(job, udp_port, 560);
+        job_exists = executor.WaitJob(job, 560);
         if (job_exists) {
             if (first_try) {
                 NcbiCout << "\nProcessing." << NcbiEndl;
