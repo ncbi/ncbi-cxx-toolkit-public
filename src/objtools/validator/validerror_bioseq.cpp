@@ -196,6 +196,22 @@ void CValidError_bioseq::ValidateBioseq (const CBioseq& seq)
 }
 
 
+static bool s_IsSkippableDbtag (const CDbtag& dbt) 
+{
+    if (!dbt.IsSetDb()) {
+        return false;
+    }
+    const string& db = dbt.GetDb();
+    if (NStr::EqualNocase(db, "TMSMART")
+        || NStr::EqualNocase(db, "BankIt")
+        || NStr::EqualNocase (db, "NCBIFILE")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 // validation for individual Seq-id
 void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
 {
@@ -364,20 +380,21 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             break;
         case CSeq_id::e_General:
             if (id.GetGeneral().IsSetDb()) {
-                int dblen = id.GetGeneral().GetDb().length();
+                const CDbtag& dbt = id.GetGeneral();
+                int dblen = dbt.GetDb().length();
                 if (dblen > 20) {
                     PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, "Database name longer than 20 characters", ctx);
                 }
-                if (id.GetGeneral().IsSetTag() && id.GetGeneral().GetTag().IsStr()) {
-                    int idlen = id.GetGeneral().GetTag().GetStr().length();
-                    if (dblen + idlen > 64) {
+                if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
+                    int idlen = dbt.GetTag().GetStr().length();
+                    if (dblen + idlen > 64 && (! m_Imp.IsIndexerVersion()) && (! s_IsSkippableDbtag(dbt))) {
                         PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than 64 characters", ctx);
                     }
                 }
              }
            break;
         case CSeq_id::e_Local:
-            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64) {
+            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64 && (! m_Imp.IsIndexerVersion())) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
             }
             break;
@@ -4649,22 +4666,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         }
     }
 
-}
-
-
-static bool s_IsSkippableDbtag (const CDbtag& dbt) 
-{
-    if (!dbt.IsSetDb()) {
-        return false;
-    }
-    const string& db = dbt.GetDb();
-    if (NStr::EqualNocase(db, "TMSMART")
-        || NStr::EqualNocase(db, "BankIt")
-        || NStr::EqualNocase (db, "NCBIFILE")) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 
