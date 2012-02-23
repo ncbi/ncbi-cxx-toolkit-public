@@ -93,7 +93,7 @@ protected:
     // See comments in "connect/ncbi_conn_streambuf.hpp"
     virtual streamsize  _Xsgetn_s(CT_CHAR_TYPE* buf, size_t, streamsize n)
     { return xsgetn(buf, n); }
-#endif /*NCBI_OS_MSWIN*/
+#endif //NCBI_OS_MSWIN
 
 private:
     void                 x_FillBuffer(streamsize max_size);
@@ -546,12 +546,12 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
         dynamic_cast<CMIPSPRO_ReadsomeTolerantStreambuf*> (is.rdbuf());
     if (sb)
         sb->MIPSPRO_ReadsomeBegin();
-#  endif /*NCBI_COMPILER_MIPSPRO*/
+#  endif //NCBI_COMPILER_MIPSPRO
     streamsize result = s_DoReadsome(is, buf, buf_size);
 #  ifdef NCBI_COMPILER_MIPSPRO
     if (sb)
         sb->MIPSPRO_ReadsomeEnd();
-#  endif /*NCBI_COMPILER_MIPSPRO*/
+#  endif //NCBI_COMPILER_MIPSPRO
     return result;
 }
 
@@ -562,6 +562,11 @@ ERW_Result CStreamReader::Read(void*   buf,
 {
     streamsize r = m_Stream->good()
         ? m_Stream->rdbuf()->sgetn(static_cast<char*>(buf), count) : 0;
+#ifdef NCBI_COMPILER_WORKSHOP
+    if (r < 0) {
+        r = 0; // NB: WS6 is known to return -1 from sgetn() :-/
+    }
+#endif //NCBI_COMPILER_WORKSHOP
     if ( bytes_read ) {
         *bytes_read = (size_t) r;
     }
@@ -576,7 +581,7 @@ ERW_Result CStreamReader::Read(void*   buf,
 ERW_Result CStreamReader::PendingCount(size_t* count)
 {
     IOS_BASE::iostate iostate = m_Stream->rdstate();
-    if (!((int) iostate & ~NcbiEofbit)) {  // good() OR eof()
+    if (!(iostate & ~NcbiEofbit)) {  // NB: good() OR eof()
         if (iostate) {
             return eRW_Eof;
         }

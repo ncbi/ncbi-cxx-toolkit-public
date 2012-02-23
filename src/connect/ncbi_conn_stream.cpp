@@ -654,8 +654,13 @@ void CConn_MemoryStream::ToString(string* str)
     str->resize(size);
     if (sb) {
         streamsize s = sb->sgetn(&(*str)[0], size);
-        _ASSERT(size == s);
-        str->resize(s);  // NB: this is essentially a NOOP when size == s
+        _ASSERT(s == size);
+#ifdef NCBI_COMPILER_WORKSHOP
+        if (s < 0) {
+            s = 0; // WS6 weirdness to sometimes return -1 from sgetn() :-/
+        }
+#endif //NCBI_COMPILER_WORKSHOP
+        str->resize(s);  // NB: just in case, essentially NOOP when s == size
     }
 }
 
@@ -671,8 +676,13 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
     vec->resize(size);
     if (sb) {
         streamsize s = sb->sgetn(&(*vec)[0], size);
-        _ASSERT(size == s);
-        vec->resize(s);  // NB: this is essentially a NOOP when size == s
+        _ASSERT(s == size);
+#ifdef NCBI_COMPILER_WORKSHOP
+        if (s < 0) {
+            s = 0; // WS6 weirdness to sometimes return -1 from sgetn() :-/
+        }
+#endif //NCBI_COMPILER_WORKSHOP
+        vec->resize(s);  // NB: just in case, essentially NOOP when s == size
     }
 }
 

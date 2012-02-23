@@ -371,6 +371,11 @@ bool CCompressionStreambuf::ProcessStreamRead()
             if ( m_Reader->m_Begin == m_Reader->m_End ) {
                 n_read = m_Stream->rdbuf()->sgetn(m_Reader->m_InBuf,
                                                   m_Reader->m_InBufSize);
+#ifdef NCBI_COMPILER_WORKSHOP
+                if (n_read < 0) {
+                    n_read = 0; // WS6 is known to return -1 from sgetn() :-/
+                }
+#endif //NCBI_COMPILER_WORKSHOP
                 if ( !n_read ) {
                     // We can't read more of data.
                     // Automaticaly 'finalize' (de)compressor.
