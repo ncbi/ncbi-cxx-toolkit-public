@@ -1846,7 +1846,7 @@ NetworkProgram2BlastProgramType(const string& program, const string& service)
 
         if (program == "blastp") {
             retval = eBlastTypeRpsBlast;
-        } else if (program == "tblastn") {
+        } else if (program == "tblastn" || program == "blastx") {
             retval = eBlastTypeRpsTblastn;
         } else {
             abort();
