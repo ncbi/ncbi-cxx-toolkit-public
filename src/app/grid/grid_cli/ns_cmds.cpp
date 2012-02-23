@@ -545,7 +545,7 @@ bool CJobStatusNotificationDumper::OnNotification(const string& buf,
     printf(format,
         GetFastLocalTime().AsString(s_NotificationTimestampFormat).c_str(),
         buf.c_str(), server_host.c_str(), (unsigned) server_port,
-        CNetScheduleAPI::StatusToString(job_status));
+        CNetScheduleAPI::StatusToString(job_status).c_str());
 
     return true;
 }
