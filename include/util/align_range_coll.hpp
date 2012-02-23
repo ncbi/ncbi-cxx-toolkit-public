@@ -90,6 +90,7 @@ public:
         fAllowAbutting  = 0x0008, /// allows segments not separated by gaps
 
         fDefaultPolicy  = fKeepNormalized,
+        fDefaultPoicy   = fDefaultPolicy, /// Keep compatible with SC-8.0
 
         fPolicyMask     = 0x000f,
 
