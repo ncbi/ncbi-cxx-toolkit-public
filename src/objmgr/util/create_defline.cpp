@@ -225,9 +225,8 @@ void CDeflineGenerator::x_SetFlags (
     m_IsAA = bsh.IsAa();
 
     if (bsh.IsSetInst()) {
-        const CSeq_inst& inst = bsh.GetInst();
-        if (inst.IsSetRepr()) {
-            TSEQ_REPR repr = inst.GetRepr();
+        if (bsh.IsSetInst_Repr()) {
+            TSEQ_REPR repr = bsh.GetInst_Repr();
             m_IsSeg = (repr == CSeq_inst::eRepr_seg);
             m_IsDelta = (repr == CSeq_inst::eRepr_delta);
         }
@@ -1013,9 +1012,8 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
     CScope& scope = bsh.GetScope();
 
     if (bsh.IsSetInst ()) {
-        const CSeq_inst& inst = bsh.GetInst ();
-        if (inst.IsSetLength ()) {
-            seq_len = inst.GetLength ();
+        if (bsh.IsSetInst_Length ()) {
+            seq_len = bsh.GetInst_Length ();
         }
     }
 
