@@ -181,12 +181,6 @@ int CNetScheduleDApp::Run(void)
         SNS_Parameters      params;
         params.Read(reg, "server");
 
-        if (params.node_id.empty()) {
-            ERR_POST("Cannot read the [server]/node_id parameter."
-                     " The value must be provided. Exiting.");
-            return 1;
-        }
-
 
         {{
             string      str_params;
@@ -224,6 +218,8 @@ int CNetScheduleDApp::Run(void)
         LOG_POST(Message << Warning
                          << "Mounting database at " << bdb_params.db_path);
         if (qdb->Open(bdb_params, reinit) == false)
+            return 1;
+        if (server->InitNodeID(bdb_params.db_path) == false)
             return 1;
 
         if (!args["nodaemon"]) {

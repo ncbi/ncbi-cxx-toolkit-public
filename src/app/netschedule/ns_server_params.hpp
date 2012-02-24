@@ -64,7 +64,6 @@ struct SNS_Parameters : SServer_Parameters
                                         // Purge() calls
     unsigned int    max_affinities;     // Max number of affinities a client
                                         // can report as preferred.
-    std::string     node_id;            // The server identifier
 
     std::string     admin_hosts;
     std::string     admin_client_names;

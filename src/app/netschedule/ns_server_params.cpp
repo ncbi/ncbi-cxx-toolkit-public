@@ -138,7 +138,6 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
         max_affinities = default_max_affinities;
     }
 
-    node_id            = reg.GetString(sname, "node_id", kEmptyStr);
     admin_hosts        = reg.GetString(sname, "admin_host", kEmptyStr);
     admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
 
@@ -214,12 +213,11 @@ static string s_NSParameters[] =
     "scan_batch_size",                  // 16
     "purge_timeout",                    // 17
     "max_affinities",                   // 18
-    "node_id",                          // 19
-    "affinity_high_mark_percentage",    // 20
-    "affinity_low_mark_percentage",     // 21
-    "affinity_high_removal",            // 22
-    "affinity_low_removal",             // 23
-    "affinity_dirt_percentage"          // 24
+    "affinity_high_mark_percentage",    // 19
+    "affinity_low_mark_percentage",     // 20
+    "affinity_high_removal",            // 21
+    "affinity_low_removal",             // 22
+    "affinity_dirt_percentage"          // 23
 };
 static unsigned s_NumNSParameters = sizeof(s_NSParameters) / sizeof(string);
 
@@ -260,12 +258,11 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     case 16: return NStr::UIntToString(scan_batch_size);
     case 17: return NStr::DoubleToString(purge_timeout);
     case 18: return NStr::UIntToString(max_affinities);
-    case 19: return node_id;
-    case 20: return NStr::UIntToString(affinity_high_mark_percentage);
-    case 21: return NStr::UIntToString(affinity_low_mark_percentage);
-    case 22: return NStr::UIntToString(affinity_high_removal);
-    case 23: return NStr::UIntToString(affinity_low_removal);
-    case 24: return NStr::UIntToString(affinity_dirt_percentage);
+    case 19: return NStr::UIntToString(affinity_high_mark_percentage);
+    case 20: return NStr::UIntToString(affinity_low_mark_percentage);
+    case 21: return NStr::UIntToString(affinity_high_removal);
+    case 22: return NStr::UIntToString(affinity_low_removal);
+    case 23: return NStr::UIntToString(affinity_dirt_percentage);
     default: return kEmptyStr;
     }
 }

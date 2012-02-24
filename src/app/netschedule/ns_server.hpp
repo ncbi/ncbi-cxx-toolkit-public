@@ -114,6 +114,8 @@ public:
     bool AdminHostValid(unsigned host) const;
     bool IsAdminClientName(const string &  name) const;
 
+    bool InitNodeID(const string &  db_path);
+
     static CNetScheduleServer*  GetInstance(void);
 
 protected:
