@@ -271,8 +271,9 @@ BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
         BOOST_REQUIRE_EQUAL(kQueryLengthFinal[index], 
                              tmp_hsp->query.end - tmp_hsp->query.offset);
         BOOST_REQUIRE_EQUAL(kScoreFinal[index], tmp_hsp->score);
-        BOOST_REQUIRE(fabs((kEvalueFinal[index]-tmp_hsp->evalue) /
-                            kEvalueFinal[index]) < 0.001);
+        BOOST_REQUIRE(fabs(kEvalueFinal[index]-tmp_hsp->evalue) < 1.0e-10 ||
+                      fabs((kEvalueFinal[index]-tmp_hsp->evalue) /
+                            kEvalueFinal[index]) < 0.01);
    }
    BlastSeqSrcFree(seq_src);
 }
