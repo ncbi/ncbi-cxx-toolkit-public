@@ -85,7 +85,8 @@ const size_t        k_MessageBufferSize = 512;
 class CNSNotificationList
 {
     public:
-        CNSNotificationList(const string &  qname);
+        CNSNotificationList(const string &  ns_node,
+                            const string &  qname);
 
         void RegisterListener(const CNSClientId &   client,
                               unsigned short        port,
@@ -138,8 +139,8 @@ class CNSNotificationList
         size_t                  m_GetMsgLength;
 
         CDatagramSocket         m_StatusNotificationSocket;
-        char                    m_JobStateMsgBuffer[k_MessageBufferSize];
-        CFastMutex              m_JobStatusLock;
+        char                    m_JobStateConstPart[k_MessageBufferSize];
+        size_t                  m_JobStateConstPartLength;
 
     private:
         CNSNotificationList(const CNSNotificationList &);

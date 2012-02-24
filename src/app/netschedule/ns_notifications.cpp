@@ -46,11 +46,6 @@
 BEGIN_NCBI_SCOPE
 
 
-// Non-obvious choice of prefixes is made by original NS authors.
-// I don't know why they were chosen and why they are not uniform.
-const char *    k_JobStateMsgPrefix = "JNTF ";
-
-
 string  SNSNotificationAttributes::Print(
                        const CNSClientsRegistry &   clients_registry,
                        const CNSAffinityRegistry &  aff_registry,
@@ -143,12 +138,17 @@ string  SNSNotificationAttributes::Print(
 }
 
 
-CNSNotificationList::CNSNotificationList(const string &  qname)
+CNSNotificationList::CNSNotificationList(const string &  ns_node,
+                                         const string &  qname)
 {
-    strcpy(m_JobStateMsgBuffer, k_JobStateMsgPrefix);
+    m_JobStateConstPartLength = snprintf(m_JobStateConstPart,
+                                         k_MessageBufferSize,
+                                         "ns_node=%s&job_key=",
+                                         ns_node.c_str());
 
     m_GetMsgLength = snprintf(m_GetMsgBuffer, k_MessageBufferSize,
-                              "NCBI_JSQ_%s", qname.c_str()) + 1;
+                              "ns_node=%s&queue=%s",
+                              ns_node.c_str(), qname.c_str()) + 1;
 }
 
 
@@ -229,15 +229,16 @@ void CNSNotificationList::NotifyJobStatus(unsigned int    address,
                                           unsigned short  port,
                                           const string &  job_key)
 {
-    CFastMutexGuard     guard(m_JobStatusLock);
+    char    buffer[k_MessageBufferSize];
 
-    snprintf(m_JobStateMsgBuffer + sizeof(k_JobStateMsgPrefix),
-             k_MessageBufferSize - sizeof(k_JobStateMsgPrefix),
-             "key=%s", job_key.c_str());
-    m_StatusNotificationSocket.Send(m_JobStateMsgBuffer,
-                                    // '+4' is for 'key='
-                                    sizeof(k_JobStateMsgPrefix) + 4 + job_key.size() + 1,
-                                    CSocketAPI::ntoa(address), port);
+    memcpy(buffer, m_JobStateConstPart, m_JobStateConstPartLength);
+    strncpy(buffer + m_JobStateConstPartLength,
+            job_key.c_str(), k_MessageBufferSize - m_JobStateConstPartLength);
+
+    m_StatusNotificationSocket.Send(
+                                buffer,
+                                m_JobStateConstPartLength + job_key.size() + 1,
+                                CSocketAPI::ntoa(address), port);
     return;
 }
 
