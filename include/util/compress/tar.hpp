@@ -665,7 +665,6 @@ private:
 private:
     string        m_FileName;     ///< Tar archive file name.
     CNcbiFstream* m_FileStream;   ///< File stream of the archive.
-    EOpenMode     m_OpenMode;     ///< What was it opened for.
     CNcbiIos&     m_Stream;       ///< Archive stream (used for all I/O).
     const size_t  m_BufferSize;   ///< Buffer(record) size for I/O operations.
     size_t        m_BufferPos;    ///< Position within the record.
@@ -674,6 +673,7 @@ private:
     char*         m_Buffer;       ///< I/O buffer (page-aligned).
     CMask*        m_Mask;         ///< Masks for list/test/extract.
     EOwnership    m_MaskOwned;    ///< Flag of m_Mask's ownership.
+    EOpenMode     m_OpenMode;     ///< What was it opened for.
     bool          m_Modified;     ///< True after at least one write.
     bool          m_Bad;          ///< True if a fatal output error occurred.
     TFlags        m_Flags;        ///< Bitwise OR of flags.

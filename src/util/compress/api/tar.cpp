@@ -1253,7 +1253,6 @@ inline void s_SetStateSafe(CNcbiIos& ios, IOS_BASE::iostate state) throw()
 CTar::CTar(const string& filename, size_t blocking_factor)
     : m_FileName(filename),
       m_FileStream(new CNcbiFstream),
-      m_OpenMode(eNone),
       m_Stream(*m_FileStream),
       m_BufferSize(SIZE_OF(blocking_factor)),
       m_BufferPos(0),
@@ -1262,6 +1261,7 @@ CTar::CTar(const string& filename, size_t blocking_factor)
       m_Buffer(0),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
+      m_OpenMode(eNone),
       m_Modified(false),
       m_Bad(false),
       m_Flags(fDefault)
@@ -1273,7 +1273,6 @@ CTar::CTar(const string& filename, size_t blocking_factor)
 CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
     : m_FileName(kEmptyStr),
       m_FileStream(0),
-      m_OpenMode(eNone),
       m_Stream(stream),
       m_BufferSize(SIZE_OF(blocking_factor)),
       m_BufferPos(0),
@@ -1282,6 +1281,7 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
       m_Buffer(0),
       m_Mask(0),
       m_MaskOwned(eNoOwnership),
+      m_OpenMode(eNone),
       m_Modified(false),
       m_Bad(false),
       m_Flags(fDefault)
@@ -1365,8 +1365,8 @@ bool CTar::x_Flush(bool nothrow)
         }
     }
     if (!m_Bad  &&  m_Stream.rdbuf()->PUBSYNC() != 0) {
-        int x_errno = errno;
         m_Bad = true;
+        int x_errno = errno;
         s_SetStateSafe(m_Stream, NcbiBadbit);
         if (!nothrow) {
             TAR_THROW(this, eWrite,
@@ -1386,7 +1386,7 @@ void CTar::x_Close(bool truncate)
 {
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
-        if (!(m_Flags & fTarfileNoTruncate)  &&  truncate  &&  !m_Bad) {
+        if (!m_Bad  &&  !(m_Flags & fTarfileNoTruncate)  &&  truncate) {
 #if   defined(NCBI_OS_MSWIN)
             TXString filename(_T_XSTRING(m_FileName));
             HANDLE handle = ::CreateFile(filename.c_str(), GENERIC_WRITE,
@@ -1405,8 +1405,8 @@ void CTar::x_Close(bool truncate)
 #endif //NCBI_OS
         }
     }
-    m_Modified  = false;
     m_OpenMode  = eNone;
+    m_Modified  = false;
     m_BufferPos = 0;
     m_StreamPos = 0;
     m_Bad = false;
@@ -1417,17 +1417,20 @@ void CTar::x_Open(EAction action)
 {
     _ASSERT(action);
     bool toend = false;
-    // We can only open a named file here, and if an external stream
-    // is being used as an archive, it must be explicitly repositioned by
-    // user's code (outside of this class) before each archive operation.
+    // We can only open a named file here, and if an external stream is being
+    // used as an archive, it must be explicitly repositioned by user's code
+    // (outside of this class) before each archive operation.
     if (!m_FileStream) {
         if (!m_Modified) {
-            if (action == eAppend  &&  (m_Flags & fStreamPipeThrough)) {
+            // Check if Create() is followed by Append()
+            if (m_OpenMode != eWO  &&  action == eAppend
+                &&  (m_Flags & fStreamPipeThrough)) {
                 toend = true;
             }
         } else if (action != eAppend) {
+            _ASSERT(m_OpenMode != eWO);  // NB: Prev action != eCreate
             if (m_Flags & fStreamPipeThrough) {
-                x_Flush();  // NB: can reset m_Modified to false
+                x_Flush();  // NB: resets m_Modified to false if successful
             }
             if (m_Modified) {
                 if (!m_Bad) {
@@ -1440,7 +1443,6 @@ void CTar::x_Open(EAction action)
         }
         m_Current.m_Name.erase();
         if (m_Bad || (m_Stream.rdstate() & ~NcbiEofbit) || !m_Stream.rdbuf()) {
-            m_OpenMode = eNone;
             TAR_THROW(this, eOpen,
                       "Archive IO stream is in bad state");
         } else {
@@ -1461,32 +1463,38 @@ void CTar::x_Open(EAction action)
 #endif //NCBI_OS_MSWIN
     } else {
         _ASSERT(&m_Stream == m_FileStream);
-        EOpenMode xmode = m_OpenMode;
-        EOpenMode mode  =  EOpenMode(int(action) & eRW);
+        EOpenMode mode = EOpenMode(int(action) & eRW);
         _ASSERT(mode != eNone);
-        if (action != eAppend  &&  action != eCreate) {
+        if (action != eAppend  &&  action != eCreate/*mode == eWO*/) {
             x_Flush();
         } else {
             m_Current.m_Name.erase();
         }
-        if (mode == eWO  ||  xmode < mode) {
-            x_Close(false);  // NB: m_OpenMode = eNone
+        if (mode == eWO  ||  m_OpenMode < mode) {
+            // Need to (re-)open the archive file
+            if (m_OpenMode != eWO  &&  action == eAppend) {
+                toend = true;
+            }
+            x_Close(false);  // NB: m_OpenMode = eNone; m_Modified = false
             switch (mode) {
             case eWO:
                 // WO access
                 _ASSERT(action == eCreate);
+                // Note that m_Modified is left alone
                 m_FileStream->open(m_FileName.c_str(),
                                    IOS_BASE::out    |
                                    IOS_BASE::binary | IOS_BASE::trunc);
                 break;
             case eRO:
                 // RO access
+                _ASSERT(action != eCreate);
                 m_FileStream->open(m_FileName.c_str(),
                                    IOS_BASE::in     |
                                    IOS_BASE::binary);
                 break;
             case eRW:
                 // RW access
+                _ASSERT(action != eCreate);
                 m_FileStream->open(m_FileName.c_str(),
                                    IOS_BASE::in     | IOS_BASE::out |
                                    IOS_BASE::binary);
@@ -1495,27 +1503,24 @@ void CTar::x_Open(EAction action)
                 _TROUBLE;
                 break;
             }
-            if (!m_FileStream->good()) {
+            if (!m_FileStream->is_open()  ||  !m_FileStream->good()) {
+                mode = eNone;
                 int x_errno = errno;
                 TAR_THROW(this, eOpen,
                           "Cannot open archive" + s_OSReason(x_errno));
             }
-        } else if (m_Bad) {
-            m_OpenMode = eNone;
-            TAR_THROW(this, eOpen,
-                      "Archive is in bad state");
-        }
-        if (m_OpenMode) {
-            _ASSERT(action != eCreate);
+            m_OpenMode = mode;
+        } else {
+            // No need to reopen the archive file
+            _ASSERT(m_OpenMode > eWO  &&  action != eCreate);
+            if (m_Bad) {
+                TAR_THROW(this, eOpen,
+                          "Archive is in bad state");
+            }
             if (action != eAppend  &&  action != eInternal) {
                 m_BufferPos = 0;
                 m_StreamPos = 0;
                 m_FileStream->seekg(0, IOS_BASE::beg);
-            }
-        } else {
-            m_OpenMode = mode;
-            if (!m_Modified  &&  action == eAppend  &&  xmode != eWO) {
-                toend = true;
             }
         }
     }
