@@ -142,7 +142,7 @@ void CTarTest::Init(void)
     args->AddFlag("m", "Don't extract modification times");
     args->AddFlag("o", "Don't extract file ownerships");
     args->AddFlag("M", "Don't extract permission masks");
-    args->AddFlag("O", "Extract to stdout (rather than files when streaming)");
+    args->AddFlag("O", "Extract to stdout (rather than files) when streaming");
     args->AddFlag("U", "Only existing files/entries in update/extract");
     args->AddFlag("B", "Create backup copies of destinations when extracting");
     args->AddFlag("k", "Keep old files when extracting");

@@ -175,15 +175,15 @@ echo
 echo "`date` *** Checking single entry streaming feature"
 echo
 
-test_tar -x -s -v -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_exe              ||  exit 1
+test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_exe           ||  exit 1
 
 echo "`date` *** Checking multiple entry streaming feature"
 echo
 
-test_tar -x -s -v -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1  ||  exit 1
-head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                            ||  exit 1
-cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                        > $test_base.out.2  ||  exit 1
-cmp -l $test_base.out.1 $test_base.out.2                                                                  ||  exit 1
+test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1  ||  exit 1
+head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                               ||  exit 1
+cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                           > $test_base.out.2  ||  exit 1
+cmp -l $test_base.out.1 $test_base.out.2                                                                     ||  exit 1
 
 echo
 echo "`date` *** Checking in-stream append"
