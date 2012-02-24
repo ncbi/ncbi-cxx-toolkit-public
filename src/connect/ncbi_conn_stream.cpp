@@ -32,6 +32,9 @@
  *
  */
 
+/* To pick up MS-Win DLL linkage as appropriate */
+#define NCBI_CONN_STREAM_EXPERIMENTAL_API 1
+
 #include <ncbi_pch.hpp>
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/error_codes.hpp>
