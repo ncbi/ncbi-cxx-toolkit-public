@@ -280,6 +280,7 @@ private:
     void x_StartWritingBlob(void);
     void x_FinishWritingBlob(void);
     void x_FakeWritingBlob(void);
+    void x_FinishSyncCmd(ESyncResult result);
     void x_FinishCommand(bool success);
     void x_ProcessPeerError(void);
     void x_ProcessProtocolError(void);

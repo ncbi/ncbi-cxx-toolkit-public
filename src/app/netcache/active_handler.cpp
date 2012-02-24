@@ -1124,6 +1124,15 @@ CNCActiveHandler::x_SendCmdToExecute(void)
     g_NetcacheServer->WakeUpPollCycle();
 }
 
+inline void
+CNCActiveHandler::x_FinishSyncCmd(ESyncResult result)
+{
+    if (m_SyncCtrl) {
+        m_SyncCtrl->CmdFinished(result, m_SyncAction, this);
+        m_SyncCtrl = NULL;
+    }
+}
+
 void
 CNCActiveHandler::x_FinishCommand(bool success)
 {
@@ -1139,11 +1148,10 @@ CNCActiveHandler::x_FinishCommand(bool success)
             x_SetState(eWaitClientRelease);
     }
     else {
-        if (m_SyncCtrl) {
-            if (!success)
-                m_SyncCtrl->CmdFinished(eSynNetworkError, m_SyncAction, this);
-            m_SyncCtrl = NULL;
-        }
+        if (!success)
+            x_FinishSyncCmd(eSynNetworkError);
+        else if (m_SyncCtrl)
+            abort();
         if (x_GetState() != eConnClosed)
             x_SetState(eReadyForPool);
     }
@@ -1243,8 +1251,7 @@ CNCActiveHandler::x_SendCopyPutCmd(void)
     if (!m_BlobAccess->IsBlobExists()
         ||  m_BlobAccess->GetCurBlobDeadTime() < int(time(NULL)))
     {
-        if (m_SyncCtrl)
-            m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
         return true;
     }
@@ -1309,15 +1316,14 @@ bool
 CNCActiveHandler::x_ReadCopyPut(void)
 {
     if (NStr::FindNoCase(m_Response, "NEED_ABORT") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynAborted, m_SyncAction, this);
+        x_FinishSyncCmd(eSynAborted);
         if (NStr::FindNoCase(m_Response, "NEED_ABORT1") != NPOS)
             x_FinishCommand(true);
         else
             x_FakeWritingBlob();
     }
     else if (NStr::FindNoCase(m_Response, "HAVE_NEWER") != NPOS) {
-        if (m_SyncCtrl)
-            m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         if (NStr::FindNoCase(m_Response, "HAVE_NEWER1") != NPOS)
             x_FinishCommand(true);
         else
@@ -1338,7 +1344,7 @@ CNCActiveHandler::x_PrepareSyncProlongCmd(void)
         return true;
     }
     if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired()) {
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
         return true;
     }
@@ -1410,12 +1416,11 @@ CNCActiveHandler::x_ReadCopyProlong(void)
         CopyPut(m_CmdCtx, m_BlobKey, m_BlobSlot, 0);
     }
     else if (NStr::FindNoCase(m_Response, "NEED_ABORT") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynAborted, m_SyncAction, this);
+        x_FinishSyncCmd(eSynAborted);
         x_FinishCommand(true);
     }
     else {
-        if (m_SyncCtrl)
-            m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
     }
     return true;
@@ -1425,8 +1430,7 @@ bool
 CNCActiveHandler::x_ReadConfirm(void)
 {
     m_ErrMsg = m_Response;
-    if (m_SyncCtrl)
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+    x_FinishSyncCmd(eSynOK);
     x_FinishCommand(true);
     return true;
 }
@@ -1530,15 +1534,15 @@ bool
 CNCActiveHandler::x_ReadSyncStartAnswer(void)
 {
     if (NStr::FindNoCase(m_Response, "CROSS_SYNC") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynCrossSynced, eSynActionNone, this);
+        x_FinishSyncCmd(eSynCrossSynced);
         x_FinishCommand(true);
     }
     else if (NStr::FindNoCase(m_Response, "IN_PROGRESS") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynServerBusy, eSynActionNone, this);
+        x_FinishSyncCmd(eSynServerBusy);
         x_FinishCommand(true);
     }
     else if (NStr::FindNoCase(m_Response, "NEED_ABORT") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynAborted, eSynActionNone, this);
+        x_FinishSyncCmd(eSynAborted);
         x_FinishCommand(true);
     }
     else {
@@ -1621,7 +1625,7 @@ CNCActiveHandler::x_ReadEventsList(void)
         m_SyncCtrl->AddStartEvent(evt);
     }
 
-    m_SyncCtrl->CmdFinished(eSynOK, eSynActionNone, this);
+    x_FinishSyncCmd(eSynOK);
     x_FinishCommand(true);
     return true;
 }
@@ -1678,7 +1682,7 @@ CNCActiveHandler::x_ReadBlobsList(void)
         m_SyncCtrl->AddStartBlob(key, blob_sum);
     }
 
-    m_SyncCtrl->CmdFinished(eSynOK, eSynActionNone, this);
+    x_FinishSyncCmd(eSynOK);
     x_FinishCommand(true);
     return true;
 }
@@ -1693,7 +1697,7 @@ CNCActiveHandler::x_SendSyncGetCmd(void)
     if (m_BlobAccess->IsBlobExists()
         &&  m_BlobAccess->GetCurBlobCreateTime() > m_OrigTime)
     {
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
         return true;
     }
@@ -1729,15 +1733,15 @@ bool
 CNCActiveHandler::x_ReadSyncGetAnswer(void)
 {
     if (NStr::FindNoCase(m_Response, "BLOB not found") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
     }
     else if (NStr::FindNoCase(m_Response, "NEED_ABORT") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynAborted, m_SyncAction, this);
+        x_FinishSyncCmd(eSynAborted);
         x_FinishCommand(true);
     }
     else if (NStr::FindNoCase(m_Response, "HAVE_NEWER") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
     }
     else {
@@ -1813,7 +1817,7 @@ CNCActiveHandler::x_ReadBlobData(void)
             event->orig_rec_no = m_OrigRecNo;
             CNCSyncLog::AddEvent(m_BlobSlot, event);
         }
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
     }
     return true;
@@ -1823,15 +1827,15 @@ bool
 CNCActiveHandler::x_ReadSyncProInfoAnswer(void)
 {
     if (NStr::FindNoCase(m_Response, "BLOB not found") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
     }
     else if (NStr::FindNoCase(m_Response, "NEED_ABORT") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynAborted, m_SyncAction, this);
+        x_FinishSyncCmd(eSynAborted);
         x_FinishCommand(true);
     }
     else if (NStr::FindNoCase(m_Response, "HAVE_NEWER") != NPOS) {
-        m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+        x_FinishSyncCmd(eSynOK);
         x_FinishCommand(true);
     }
     else {
@@ -1913,7 +1917,7 @@ CNCActiveHandler::x_ExecuteProInfoCmd(void)
         event->orig_rec_no = m_OrigRecNo;
         CNCSyncLog::AddEvent(m_BlobSlot, event);
     }
-    m_SyncCtrl->CmdFinished(eSynOK, m_SyncAction, this);
+    x_FinishSyncCmd(eSynOK);
     x_FinishCommand(true);
     return true;
 }
