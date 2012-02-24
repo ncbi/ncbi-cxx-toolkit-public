@@ -226,7 +226,7 @@ static void RemoveDbxref (CBioSource& src, string db, size_t id)
     if (src.IsSetOrg()) {
         EDIT_EACH_DBXREF_ON_ORGREF(it, src.SetOrg()) {            
             if (NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) {
-                if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id)) {
+                if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (size_t)(*it)->GetTag().GetId() == id)) {
                     ERASE_DBXREF_ON_ORGREF(it, src.SetOrg());
                 }
             }
@@ -329,7 +329,7 @@ static void RemoveDbxref (CRef<CSeq_feat> feat, string db, size_t id)
     }
     EDIT_EACH_DBXREF_ON_SEQFEAT(it, *feat) {            
         if (NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) {
-            if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id)) {
+            if (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (size_t)(*it)->GetTag().GetId() == id)) {
                 ERASE_DBXREF_ON_SEQFEAT(it, *feat);
             }
         }
@@ -770,20 +770,22 @@ static void SetSubSource (CRef<CSeq_entry> entry, CSubSource::TSubtype subtype, 
     }
 }
 
+// Not currently used, but I'll leave it here in case
+// it's useful in the future.
 
-static void SetCountryOnSrc (CBioSource& src, string country) 
-{
-    if (NStr::IsBlank(country)) {
-        EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, src) {
-            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_country) {
-                ERASE_SUBSOURCE_ON_BIOSOURCE (it, src);
-            }
-        }
-    } else {
-        CRef<CSubSource> sub(new CSubSource(CSubSource::eSubtype_country, country));
-        src.SetSubtype().push_back(sub);
-    }
-}
+//static void SetCountryOnSrc (CBioSource& src, string country) 
+//{
+//    if (NStr::IsBlank(country)) {
+//        EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, src) {
+//            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_country) {
+//                ERASE_SUBSOURCE_ON_BIOSOURCE (it, src);
+//            }
+//        }
+//    } else {
+//        CRef<CSubSource> sub(new CSubSource(CSubSource::eSubtype_country, country));
+//        src.SetSubtype().push_back(sub);
+//    }
+//}
 
 
 static void SetChromosome (CBioSource& src, string chromosome) 

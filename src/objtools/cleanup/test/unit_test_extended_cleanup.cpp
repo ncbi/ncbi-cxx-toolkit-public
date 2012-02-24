@@ -162,16 +162,6 @@ static void SetDbxref (CBioSource& src, string db, size_t id)
     src.SetOrg().SetDb().push_back(dbtag);
 }
 
-
-static void SetDbxref (CBioSource& src, string db, string id)
-{
-    CRef<CDbtag> dbtag(new CDbtag());
-    dbtag->SetDb(db);
-    dbtag->SetTag().SetStr(id);
-    src.SetOrg().SetDb().push_back(dbtag);
-}
-
-
 static void RemoveDbxref (CBioSource& src, string db, size_t id)
 {
     if (src.IsSetOrg()) {
