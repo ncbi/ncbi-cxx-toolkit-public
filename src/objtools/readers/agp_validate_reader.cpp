@@ -732,7 +732,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   xprint.line( "- with single component: ", m_SingleCompObjects);
   if(m_SingleCompObjects_withGaps) {
     // to do: skip ALIGN_W
-    xprint.line( "  *** single component + gap(s): ", m_SingleCompObjects_withGaps);
+    xprint.line( "  *** single component + gap(s): ", m_SingleCompObjects_withGaps, "SingleCompObjects_withGaps");
   }
 
   xprint.line();
@@ -740,7 +740,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   xprint.line( "- with single component: ", m_SingleCompScaffolds);
   if(m_SingleCompScaffolds_withGaps) {
     // note: skipping ALIGN_W
-    xprint.line("  ***single component + gap(s): ", m_SingleCompScaffolds_withGaps);
+    xprint.line("  ***single component + gap(s): ", m_SingleCompScaffolds_withGaps, "SingleCompScaffolds_withGaps");
   }
   if(m_NoCompScaffolds) {
     // note: skipping ALIGN_W
@@ -843,7 +843,6 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     }
   }
 
-  // to do: print patterns in XML
   if(m_ObjCount) {
     x_PrintPatterns(m_objNamePatterns, "Object names",
       m_CheckObjLen ? m_comp2len->m_count : 0, NULL,
@@ -1098,8 +1097,13 @@ bool CAgpValidateReader::x_PrintPatterns(
   bool mixedCategories=(nucCount && otherCount);
   if(mixedCategories && wPattern<20) wPattern=20;
   // Print the total
-  string xml_tag_for_pattern_and_count = "";
+  //string xml_tag_for_pattern_and_count = "";
+  string xml_outer_tag;
   if(strHeader.size()) {
+    if(use_xml) {
+      xml_outer_tag = strHeader.substr(0, strHeader.find(' ')) + "Names";
+      out << "<" << xml_outer_tag << ">\n";
+    }
     if(fasta_count && fasta_count!=totalCount) {
       // this is not needed in XML since there is no FASTA to compare to yet...
       xprint.m_eol_text = string(" != ") +
@@ -1110,9 +1114,10 @@ bool CAgpValidateReader::x_PrintPatterns(
         strHeader+SPACES.substr(
           0, wPattern+2>strHeader.size() ? wPattern+2-strHeader.size() : 0
         ) + ": ",
-        totalCount
+        totalCount,
+        "count"
       );
-    xml_tag_for_pattern_and_count = xprint.last_tag;
+    //xml_tag_for_pattern_and_count = xprint.last_tag;
   }
 
   bool printNuc=(nucCount>0);
@@ -1165,7 +1170,8 @@ bool CAgpValidateReader::x_PrintPatterns(
 
         // output pattern as an attribute
         xprint.last_tag =
-          xml_tag_for_pattern_and_count +
+          //xml_tag_for_pattern_and_count +
+          "names"+
           ( acc_warning.size() ? string(" warn=\"")+acc_warning+"\"" : "" )+
           " pattern=";
         xprint.m_strip_attrs=false;
@@ -1192,13 +1198,20 @@ bool CAgpValidateReader::x_PrintPatterns(
       s+=" patterns";
       xprint.line( "  " + s + SPACES.substr(0, wPattern - s.size()) + ": ",
           accessionsSkipped,
-          xml_tag_for_pattern_and_count + " patterns=\"other\""
+          //xml_tag_for_pattern_and_count +
+          "names"
+          " patterns=\"other\""
       );
     }
 
     if(!mixedCategories || !printNuc) break;
     printNuc=false;
   }
+
+  if(use_xml && xml_outer_tag.size()) {
+    out << "</" << xml_outer_tag << ">\n";
+  }
+
   return mixedCategories||mixedPattern;
 }
 
