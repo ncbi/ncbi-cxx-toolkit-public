@@ -96,6 +96,7 @@ public:
     vector<Uint8> m_CntReads;
     vector<Uint8> m_CntErrWrites;
     vector<Uint8> m_CntErrReads;
+    vector<Uint8> m_CntBadReads;
     vector<Uint8> m_CntNotFound;
     vector<Uint8> m_SumWrites;
     vector<Uint8> m_SumReads;
@@ -190,6 +191,7 @@ s_PrintStats(int elapsed)
     vector<Uint8> m_CntReads(100);
     vector<Uint8> m_CntErrWrites(100);
     vector<Uint8> m_CntErrReads(100);
+    vector<Uint8> m_CntBadReads(100);
     vector<Uint8> m_CntNotFound(100);
     vector<Uint8> m_SumWrites(100);
     vector<Uint8> m_SumReads(100);
@@ -197,7 +199,7 @@ s_PrintStats(int elapsed)
     vector<Uint8> m_SizeErased(100);
     vector<Uint8> m_SizeReads(100);
 
-    Uint8 tot_w = 0, tot_er = 0, tot_r = 0, tot_err = 0, tot_nf = 0;
+    Uint8 tot_w = 0, tot_er = 0, tot_r = 0, tot_err = 0, tot_bad = 0, tot_nf = 0;
     Uint8 tot_ws = 0, tot_ers = 0, tot_rs = 0;
     for (size_t i = 0; i < s_Threads.size(); ++i) {
         for (size_t j = 0; j < m_CntWrites.size(); ++j) {
@@ -217,6 +219,9 @@ s_PrintStats(int elapsed)
             cnt = s_Threads[i]->m_CntErrReads[j];
             m_CntErrReads[j] += cnt;
             tot_err += cnt;
+            cnt = s_Threads[i]->m_CntBadReads[j];
+            m_CntBadReads[j] += cnt;
+            tot_bad += cnt;
             cnt = s_Threads[i]->m_CntNotFound[j];
             m_CntNotFound[j] += cnt;
             tot_nf += cnt;
@@ -243,7 +248,8 @@ s_PrintStats(int elapsed)
     LOG_POST("Total: " << tot_w << " (w) " << s_ToSizeStr(tot_ws) << " (ws) "
                        << tot_er << " (er) " << s_ToSizeStr(tot_ers) << " (ers) "
                        << tot_r << " (r) " << s_ToSizeStr(tot_rs) << " (rs) "
-                       << tot_err << " (err), " << tot_nf << " (nf)");
+                       << tot_err << " (err), " << tot_bad << " (bad), "
+                       << tot_nf << " (nf)");
     LOG_POST("   ");
     Uint8 prev_size = 0, size = 2;
     for (size_t i = 0; i < m_CntWrites.size(); ++i, prev_size = size + 1, size <<= 1)
@@ -262,6 +268,8 @@ s_PrintStats(int elapsed)
                  << s_SafeDiv(m_SumReads[i], m_CntReads[i] - m_CntErrReads[i]) << " (rt) "
                  << m_CntErrWrites[i] << " (we) "
                  << m_CntErrReads[i] << " (re) "
+                 << m_CntBadReads[i] << " (bad) "
+                 << m_CntNotFound[i] << " (nf) "
                 );
     }
     LOG_POST("   ");
@@ -278,6 +286,7 @@ CReplayThread::CReplayThread(const string& file_prefix, int file_num)
       m_CntReads(100),
       m_CntErrWrites(100),
       m_CntErrReads(100),
+      m_CntBadReads(100),
       m_CntNotFound(100),
       m_SumWrites(100),
       m_SumReads(100),
@@ -431,7 +440,7 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         if (key_info->size != Uint8(-1)  &&  blob_size != key_info->size) {
             ERR_POST("Blob " << key_info->key << " has incorrect size "
                      << blob_size << " (expected " << key_info->size << ")");
-            ++m_CntErrReads[size_index];
+            ++m_CntBadReads[size_index];
             return;
         }
         CMD5 md5;
@@ -451,7 +460,7 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         string hash = md5.GetHexSum();
         if (key_info->size != Uint8(-1)  &&  hash != key_info->md5) {
             ERR_POST("Blob " << key_info->key << " has wrong md5 hash");
-            ++m_CntErrReads[size_index];
+            ++m_CntBadReads[size_index];
         }
         else {
 #ifdef NCBI_OS_LINUX
@@ -514,6 +523,7 @@ CReplayThread::Main(void)
         CTime cur_ctime = GetFastLocalTime();
         Uint8 cur_time = Uint8(cur_ctime.GetTimeT()) * 1000 + cur_ctime.MilliSecond();
         cur_time -= start_time;
+        cur_time += s_StartTime;
         if (cur_time < m_ReqTime) {
             SleepMilliSec((unsigned long)(m_ReqTime - cur_time));
         }
