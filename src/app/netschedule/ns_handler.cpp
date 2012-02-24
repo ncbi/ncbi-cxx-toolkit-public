@@ -132,7 +132,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "DUMP",     { &CNetScheduleHandler::x_ProcessDump,
                     eNSCR_Queue },
         { { "job_key",     eNSPT_Id,  eNSPA_Optional      },
-          { "start_after", eNSPT_Str, eNSPA_Optional,     },
+          { "status",      eNSPT_Id,  eNSPA_Optional      },
+          { "start_after", eNSPT_Id,  eNSPA_Optional      },
           { "count",       eNSPT_Int, eNSPA_Optional, "0" } } },
     // QPRT status : id
     { "QPRT",     { &CNetScheduleHandler::x_ProcessPrintQueue,
@@ -1810,8 +1811,19 @@ void CNetScheduleHandler::x_ProcessActiveCount(CQueue* q)
 void CNetScheduleHandler::x_ProcessDump(CQueue* q)
 {
     if (m_CommandArguments.job_id == 0) {
-        // The whole queue dump
-        q->PrintAllJobDbStat(*this, m_CommandArguments.start_after_job_id,
+        // The whole queue dump, may be restricted by one state
+        if (m_CommandArguments.job_status == CNetScheduleAPI::eJobNotFound &&
+            !m_CommandArguments.job_status_string.empty()) {
+            // The state parameter was provided but it was not possible to
+            // convert it into a valid job state
+            x_WriteMessageNoThrow("ERR:Status unknown: ",
+                                  m_CommandArguments.job_status_string);
+            x_PrintRequestStop(eStatus_BadRequest);
+            return;
+        }
+
+        q->PrintAllJobDbStat(*this, m_CommandArguments.job_status,
+                                    m_CommandArguments.start_after_job_id,
                                     m_CommandArguments.count);
         WriteMessage("OK:END");
         x_PrintRequestStop(eStatus_OK);

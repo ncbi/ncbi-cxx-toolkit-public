@@ -309,6 +309,7 @@ public:
                           unsigned                job_id);
     /// Dump all job records
     void PrintAllJobDbStat(CNetScheduleHandler &   handler,
+                           TJobStatus              job_status,
                            unsigned int            start_after_job_id,
                            unsigned int            count);
 

@@ -109,7 +109,7 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_AffinityHighRemoval(server->GetAffinityHighRemoval()),
     m_AffinityLowRemoval(server->GetAffinityLowRemoval()),
     m_AffinityDirtPercentage(server->GetAffinityDirtPercentage()),
-    m_NotificationsList(queue_name),
+    m_NotificationsList(server->GetNodeID(), queue_name),
     m_NotifHifreqInterval(0.1),
     m_NotifHifreqPeriod(5),
     m_NotifLofreqMult(50),
@@ -2282,6 +2282,7 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
 
 
 void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
+                               TJobStatus              job_status,
                                unsigned int            start_after_job_id,
                                unsigned int            count)
 {
@@ -2289,15 +2290,22 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
     vector<CNetScheduleAPI::EJobStatus>     statuses;
     TNSBitVector                            jobs_to_dump;
 
-    // All statuses
-    statuses.push_back(CNetScheduleAPI::ePending);
-    statuses.push_back(CNetScheduleAPI::eRunning);
-    statuses.push_back(CNetScheduleAPI::eCanceled);
-    statuses.push_back(CNetScheduleAPI::eFailed);
-    statuses.push_back(CNetScheduleAPI::eDone);
-    statuses.push_back(CNetScheduleAPI::eReading);
-    statuses.push_back(CNetScheduleAPI::eConfirmed);
-    statuses.push_back(CNetScheduleAPI::eReadFailed);
+    if (job_status == CNetScheduleAPI::eJobNotFound) {
+        // All statuses
+        statuses.push_back(CNetScheduleAPI::ePending);
+        statuses.push_back(CNetScheduleAPI::eRunning);
+        statuses.push_back(CNetScheduleAPI::eCanceled);
+        statuses.push_back(CNetScheduleAPI::eFailed);
+        statuses.push_back(CNetScheduleAPI::eDone);
+        statuses.push_back(CNetScheduleAPI::eReading);
+        statuses.push_back(CNetScheduleAPI::eConfirmed);
+        statuses.push_back(CNetScheduleAPI::eReadFailed);
+    }
+    else {
+        // The user specified one state explicitly
+        statuses.push_back(job_status);
+    }
+
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
