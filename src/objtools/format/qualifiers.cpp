@@ -587,11 +587,20 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
             return;
         }
 
-        // Example accession where we have to iterate due to multiple pieces:
-        // NW_001468136
-        CSeq_loc_CI loc_ci( (*it)->GetLoc() );
-        for( ; loc_ci; ++loc_ci ) {
-            string pos = CFlatSeqLoc( *loc_ci.GetRangeAsSeq_loc(), ctx).GetString();
+        if( ctx.Config().IsModeRelease() ) {
+            // in release mode multi-interval code-breaks are broken up,
+            // pending end of quarantine
+
+            // Example accession where we have to iterate due to multiple pieces:
+            // NW_001468136
+            CSeq_loc_CI loc_ci( (*it)->GetLoc() );
+            for( ; loc_ci; ++loc_ci ) {
+                string pos = CFlatSeqLoc( *loc_ci.GetRangeAsSeq_loc(), ctx).GetString();
+                x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
+                    CFormatQual::eUnquoted);
+            }
+        } else {
+            string pos = CFlatSeqLoc( (*it)->GetLoc(), ctx).GetString();
             x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
                 CFormatQual::eUnquoted);
         }
