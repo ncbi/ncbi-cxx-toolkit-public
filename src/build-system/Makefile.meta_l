@@ -74,7 +74,12 @@ endef
 MAKE_USR = $(MAKE) -f "$$x_mfile" builddir="$(builddir)" \
            srcdir="$(abs_srcdir)" $(MFLAGS_NR)
 ANY_USR_PROJ = $(USR_PROJ)$(XUNIX_USR_PROJ)$(EXPENDABLE_USR_PROJ)
-ifneq "$(ANY_USR_PROJ)" ""
+ANY_UNIX_PROJ = $(UNIX_PROJ)$(EXPENDABLE_UNIX_PROJ)
+ifneq "$(ANY_USR_PROJ)$(ANY_UNIX_PROJ)" ""
+  ALL_USR_PROJ=$(filter-out $(UNIX_PROJ),$(USR_PROJ) $(XUNIX_USR_PROJ)) \
+               $(UNIX_PROJ)
+  ALL_XUSR_PROJ=$(filter-out $(EXPENDABLE_UNIX_PROJ),$(EXPENDABLE_USR_PROJ)) \
+                $(EXPENDABLE_UNIX_PROJ)
   # 1: proj_name, 2: target, 3: is_expendable
   define make_one_usr_proj
 +@x_mfile=$(if $(wildcard Makefile.$(1)),,$(srcdir)/)Makefile.$(1) ; \
@@ -83,8 +88,8 @@ $(call make_one_leaf_proj,$(1),,$(MAKE_USR),$(2),,:,1,$(3))
   # 1: target
   define make_each_usr_proj
 @test -f requirements  ||  $(TOUCH) -t 197607040000 requirements
-$(foreach p,$(USR_PROJ) $(XUNIX_USR_PROJ),$(ign)$(call make_one_usr_proj,$(p),$(1),))
-$(foreach p,$(EXPENDABLE_USR_PROJ),-$(call make_one_usr_proj,$(p),$(1),1))
+$(foreach p,$(ALL_USR_PROJ),$(ign)$(call make_one_usr_proj,$(p),$(1),))
+$(foreach p,$(ALL_XUSR_PROJ),-$(call make_one_usr_proj,$(p),$(1),1))
 @test -s requirements  ||  $(RM) -f requirements
   endef
 endif

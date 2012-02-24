@@ -3,10 +3,15 @@
 # Example meta-makefile; uncomment and fill out whichever of these
 # apply.  (Built in the following order.)
 
-## User projects (totally custom makefiles).
+## User projects (totally custom makefiles).  *USR_PROJ settings are for
+## internal tasks such as source generation, whereas *UNIX_PROJ are for
+## targets that are interesting enough in their own right to warrant
+## explicit coverage in Makefile.flat.
 # USR_PROJ =
 # UNIX_USR_PROJ =
+# UNIX_PROJ =
 # EXPENDABLE_USR_PROJ =
+# EXPENDABLE_UNIX_PROJ =
 
 ## Libraries to be built as usual.
 # ASN_PROJ =
