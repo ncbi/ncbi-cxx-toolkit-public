@@ -927,6 +927,10 @@ AECRParse-action ::= SEQUENCE {
 Remove-action ::= SEQUENCE {
     field Field-type }
 
+Remove-outside-action ::= SEQUENCE {
+    portion Text-portion ,
+    field Field-type }
+
 Action-choice ::= CHOICE {
     apply Apply-action ,
     edit Edit-action ,
@@ -934,7 +938,8 @@ Action-choice ::= CHOICE {
     copy Copy-action ,
     swap Swap-action ,
     remove Remove-action ,
-    parse AECRParse-action }
+    parse AECRParse-action ,
+    remove-outside Remove-outside-action }
 
 AECR-action ::= SEQUENCE {
     action Action-choice ,
