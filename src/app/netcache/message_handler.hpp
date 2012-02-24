@@ -315,6 +315,7 @@ public:
         eStatus_CmdTimeout  = 408,  ///< Command timeout is exceeded
         eStatus_CondFailed  = 412,  ///< Precondition stated in command has
                                     ///< failed
+        eStatus_ConnClosed  = 499,
         eStatus_ServerError = 500,  ///< Internal server error
         eStatus_NoImpl      = 501,  ///< Command is not implemented
         eStatus_StaleSync   = 502,

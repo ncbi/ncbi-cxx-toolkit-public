@@ -1018,14 +1018,16 @@ CNCMessageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         if (m_CmdCtx) {
             m_ConnCtx->SetRequestStatus(m_CmdCtx->GetRequestStatus());
         }
-        else if (m_ConnCtx->GetRequestStatus() == eStatus_OK) {
+        else if (m_ConnCtx->GetRequestStatus() == eStatus_OK
+                 &&  !m_SockBuffer.HasError())
+        {
             m_ConnCtx->SetRequestStatus(eStatus_Inactive);
         }
         break;
     case IServer_ConnectionHandler::eClientClose:
         if (m_CmdCtx) {
-            m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
-            m_ConnCtx->SetRequestStatus(eStatus_BadCmd);
+            m_CmdCtx->SetRequestStatus(eStatus_ConnClosed);
+            m_ConnCtx->SetRequestStatus(eStatus_ConnClosed);
         }
         break;
     }
@@ -1875,6 +1877,7 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
 
     if (x_IsFlagSet(fNeedSyncFinish)) {
         if (m_CmdCtx->GetRequestStatus() == eStatus_BadCmd
+            ||  m_CmdCtx->GetRequestStatus() == eStatus_ConnClosed
             ||  m_CmdCtx->GetRequestStatus() == eStatus_ServerError)
         {
             CNCPeriodicSync::Cancel(m_SrvId, m_Slot, m_SyncId);
@@ -1900,7 +1903,9 @@ CNCMessageHandler::x_FinishCommand(bool do_sock_write)
     if (x_IsFlagSet(fCommandPrinted)) {
         if (was_blob_access
             &&  (cmd_status == eStatus_OK
-                 ||  (cmd_status == eStatus_BadCmd  &&  m_BlobSize != 0)))
+                 ||  ((cmd_status == eStatus_BadCmd
+                        ||  cmd_status == eStatus_ConnClosed)
+                      &&  m_BlobSize != 0)))
         {
             CDiagContext_Extra diag_extra = GetDiagContext().Extra();
             diag_extra.Print("size", m_BlobSize);
@@ -2176,8 +2181,7 @@ CNCMessageHandler::x_ReadChunkToActive(void)
         m_ChunkLen -= Uint4(n_read);
         m_BlobSize += n_read;
         if (m_SockBuffer.HasError()) {
-            m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
-            x_CloseConnection();
+            // Error is handled in x_ManageCmdPipeline
             return true;
         }
         if (active_buf.HasError()) {
@@ -2704,11 +2708,11 @@ CNCMessageHandler::x_ManageCmdPipeline(void)
 
     if (m_SockBuffer.HasError()  &&  x_GetState() != eSocketClosed) {
         if (m_CmdCtx) {
-            m_CmdCtx->SetRequestStatus(eStatus_BadCmd);
+            m_CmdCtx->SetRequestStatus(eStatus_ConnClosed);
         }
-        else {
+        /*else {
             m_ConnCtx->SetRequestStatus(eStatus_ServerError);
-        }
+        }*/
         x_CloseConnection();
     }
 #ifdef NCBI_OS_LINUX
