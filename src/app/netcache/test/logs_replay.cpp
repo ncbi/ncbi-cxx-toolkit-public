@@ -326,8 +326,12 @@ retry:
         m_InPos = 0;
         Uint4 n_read = Uint4(m_InFile.Read(m_InBuf + m_InReadSize,
                                            sizeof(m_InBuf) - m_InReadSize));
-        if (n_read == 0)
+        if (n_read == 0) {
+            LOG_POST("Cannot read file " << m_InFile.GetPathname()
+                     << " (attempted to read "
+                     << (sizeof(m_InBuf) - m_InReadSize) << ")");
             return false;
+        }
         m_InReadSize += n_read;
         goto retry;
     }
