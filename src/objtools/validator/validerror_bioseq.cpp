@@ -838,8 +838,54 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
             ValidateCollidingGenes(seq);
         }
 
+        m_dblink_count = 0;
+        m_taa_count = 0;
+        m_bs_count = 0;
+        m_pdb_count = 0;
+        m_sra_count = 0;
+        m_bp_count = 0;
+        m_unknown_count = 0;
+
         // Validate descriptors that affect this bioseq
         ValidateSeqDescContext(seq);
+
+        if (m_dblink_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                NStr::IntToString(m_dblink_count) + " DBLink user objects apply to a Bioseq", seq);
+        }
+
+        if (m_taa_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "Trace Assembly Archive entries appear in " + NStr::IntToString(m_taa_count) + " DBLink user objects", seq);
+        }
+
+        if (m_bs_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "BioSample entries appear in " + NStr::IntToString(m_bs_count) + " DBLink user objects", seq);
+        }
+
+        if (m_pdb_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "ProbeDB entries appear in " + NStr::IntToString(m_pdb_count) + " DBLink user objects", seq);
+        }
+
+        if (m_sra_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "Sequence Read Archive entries appear in " + NStr::IntToString(m_sra_count) + " DBLink user objects", seq);
+        }
+
+        if (m_bp_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "BioProject entries appear in " + NStr::IntToString(m_bp_count) + " DBLink user objects", seq);
+        }
+
+        if (m_unknown_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "Unrecognized entries appear in " + NStr::IntToString(m_unknown_count) + " DBLink user objects", seq);
+        } else if (m_unknown_count > 0) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "Unrecognized entries appear in " + NStr::IntToString(m_unknown_count) + " DBLink user object", seq);
+        }
 
         // make sure that there is a pub on this bioseq
         if ( !m_Imp.IsNoPubs() ) {  
@@ -6990,23 +7036,23 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     }
                     x_ValidateStructuredCommentContext(desc, seq);
                 } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
-                    m_Imp.m_dblink_count++;
+                    m_dblink_count++;
                     FOR_EACH_USERFIELD_ON_USEROBJECT (ufd_it, usr) {
                         const CUser_field& fld = **ufd_it;
                         if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
                             const string &label_str = GET_FIELD(fld.GetLabel(), Str);
                             if (NStr::EqualNocase(label_str, "Trace Assembly Archive")) {
-                                m_Imp.m_taa_count++;
+                                m_taa_count++;
                             } else if (NStr::EqualNocase(label_str, "BioSample")) {
-                                m_Imp.m_bs_count++;
+                                m_bs_count++;
                             } else if (NStr::EqualNocase(label_str, "ProbeDB")) {
-                                m_Imp.m_pdb_count++;
+                                m_pdb_count++;
                             } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {
-                                m_Imp.m_sra_count++;
+                                m_sra_count++;
                             } else if (NStr::EqualNocase(label_str, "BioProject")) {
-                                m_Imp.m_bp_count++;
+                                m_bp_count++;
                             } else {
-                                m_Imp.m_unknown_count++;
+                                m_unknown_count++;
                             }
                         }
                     }

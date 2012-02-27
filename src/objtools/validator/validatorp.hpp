@@ -529,15 +529,6 @@ public:
 
     CRef<CComment_set> GetStructuredCommentRules(void);
 
-    // DBLink user object counters
-    int m_dblink_count;
-    int m_taa_count;
-    int m_bs_count;
-    int m_pdb_count;
-    int m_sra_count;
-    int m_bp_count;
-    int m_unknown_count;
-
 private:
 
     // This is so we can temporarily set m_Scope in a function
@@ -1102,6 +1093,15 @@ public:
     void ValidateInst(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);
+
+    // DBLink user object counters
+    int m_dblink_count;
+    int m_taa_count;
+    int m_bs_count;
+    int m_pdb_count;
+    int m_sra_count;
+    int m_bp_count;
+    int m_unknown_count;
 
 private:
     typedef multimap<string, const CSeq_feat*, PNocase> TStrFeatMap;
