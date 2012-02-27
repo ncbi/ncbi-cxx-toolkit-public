@@ -36,7 +36,6 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_assert.h"
 #include <connect/ncbi_socket_connector.h>
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 

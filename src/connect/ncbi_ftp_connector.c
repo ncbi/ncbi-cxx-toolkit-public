@@ -48,7 +48,6 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_ftp_connector.h>
-#include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <time.h>
@@ -554,7 +553,7 @@ static EIO_Status x_FTPLogin(SFTPConnector* xxx)
         return status;
     if (code != 230) {
         if (code != 331)
-            return eIO_Unknown;
+            return code == 332 ? eIO_NotSupported : eIO_Unknown;
         status = s_FTPCommandEx(xxx, "PASS", xxx->info->pass, 1);
         if (status != eIO_Success)
             return status;
@@ -564,7 +563,7 @@ static EIO_Status x_FTPLogin(SFTPConnector* xxx)
         if (code == 503)
             return eIO_Closed;
         if (code != 230  &&  code != 202)
-            return eIO_Unknown;
+            return code == 332 ? eIO_NotSupported : eIO_Unknown;
     }
     status = x_FTPFeatures(xxx);
     if (status != eIO_Success)
@@ -1688,14 +1687,17 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
         if (size == 3  ||  size == 4) {
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
             if         (size == 3  &&   strncasecmp(s, "REN",  3) == 0) {
-                /* special-cased non-standard command */
+                /* a special-case, non-standard command */
                 status = s_FTPRename(xxx, c + strspn(c, " \t"));
             } else if ((size == 3  ||  toupper((unsigned char) c[-4]) == 'X')
                        &&          (strncasecmp(c - 3, "CWD",  3) == 0  ||
                                     strncasecmp(c - 3, "PWD",  3) == 0  ||
                                     strncasecmp(c - 3, "MKD",  3) == 0  ||
                                     strncasecmp(c - 3, "RMD",  3) == 0)) {
-                status = s_FTPDir (xxx, s, *c ? c + 1 : c);
+                status = s_FTPDir(xxx, s, *c ? c + 1 : c);
+            } else if  (size == 4  &&  (strncasecmp(s, "CDUP", 4) == 0  ||
+                                        strncasecmp(s, "XCUP", 4) == 0)) {
+                status = s_FTPDir(xxx, s, *c ? c + 1 : c);
             } else if  (size == 4  &&   strncasecmp(s, "SYST", 4) == 0) {
                 status = s_FTPSyst(xxx, s);
             } else if  (size == 4  &&   strncasecmp(s, "STAT", 4) == 0) {
@@ -1715,17 +1717,14 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
             } else if  (size == 4  &&  (strncasecmp(s, "STOR", 4) == 0  ||
                                         strncasecmp(s, "APPE", 4) == 0)) {
                 status = s_FTPStore   (xxx, s, timeout);
-            } else if  (size == 4  &&  (strncasecmp(s, "CDUP", 4) == 0  ||
-                                        strncasecmp(s, "XCUP", 4) == 0)) {
-                status = s_FTPDir (xxx, s, *c ? c + 1 : c);
             } else if  (size == 4  &&  (strncasecmp(s, "MLSD", 4) == 0  ||
                                         strncasecmp(s, "MLST", 4) == 0)) {
-                status = s_FTPMlsx(xxx, s, timeout);
+                status = s_FTPMlsx    (xxx, s, timeout);
             } else if  (size == 4  &&  (strncasecmp(s, "FEAT", 4) == 0  ||
                                         strncasecmp(s, "OPTS", 4) == 0)) {
                 status = s_FTPNegotiate(xxx, s);
             } else if  (size == 4  &&   strncasecmp(s, "NOOP", 4) == 0 && !*c){
-                /* Special means to stop the current command and reach EOF */
+                /* Special, means to stop the current command and reach EOF */
                 *s = '\0';
                 xxx->what = 0;
                 status = x_FTPNoop(xxx);

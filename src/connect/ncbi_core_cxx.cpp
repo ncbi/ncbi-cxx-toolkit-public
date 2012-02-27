@@ -38,12 +38,10 @@
 #include "ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <corelib/ncbistr.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <stdlib.h>
-#include <time.h>
 
 
 #define NCBI_USE_ERRCODE_X   Connect_Core
