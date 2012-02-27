@@ -98,7 +98,7 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
 
     CFastMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started) {
-        if (!is_passive  ||  !slot_srv->is_passive)
+        if (!is_passive  ||  !slot_srv->is_passive  ||  slot_srv->started_cmds != 0)
             return eCrossSynced;
         slot_srv->sync_started = false;
         --slot_data->cnt_sync_started;
