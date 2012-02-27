@@ -1433,7 +1433,6 @@ Seq-annot ::= {
         syn {
           "EDR",
           "HB-1",
-          "KIAA1051",
           "Mar2",
           "Mart2",
           "MEF3L",
@@ -5686,6 +5685,10 @@ Seq-annot ::= {
         }
       },
       dbxref {
+        {
+          db "BGD",
+          tag str "BT13105"
+        },
         {
           db "GeneID",
           tag id 404089
