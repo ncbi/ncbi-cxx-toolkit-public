@@ -57,11 +57,11 @@ typedef const SSERV_Info* (*FSERVICE_GetNextInfo)(void* data, SERV_ITER iter);
 
 
 typedef struct {
-    void*                data;
-    FSERVICE_ResetData   reset;         /* called at each close (before iter)*/
-    FSERVICE_CleanupData cleanup;       /* called at destruction             */
-    FSERVICE_GetNextInfo get_next_info; /* called to get conn point          */
-    FHTTP_ParseHeader    parse_header;  /* called if data source is HTTP     */
+    void*                data;          /* User-supplied callback data       */
+    FSERVICE_ResetData   reset;         /* Called prior to each iter reset   */
+    FSERVICE_CleanupData cleanup;       /* Called prior to connector close   */
+    FSERVICE_GetNextInfo get_next_info; /* Called to get conn point          */
+    FHTTP_ParseHeader    parse_header;  /* Called if data source is HTTP     */
     THTTP_Flags          flags;         /* fHTTP_Flushable|fHTTP_NoAutoRetry */
 } SSERVICE_Extra;
 

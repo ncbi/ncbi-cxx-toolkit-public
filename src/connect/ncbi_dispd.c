@@ -36,11 +36,9 @@
 #include "ncbi_dispd.h"
 #include "ncbi_lb.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Dispd
