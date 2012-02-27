@@ -396,6 +396,7 @@ retry:
                 event = m_BigMirror.back();
                 m_BigMirror.pop_back();
             }
+            s_MirrorQueueSize.Add(-1);
             x_UpdateHasTasks();
             m_ObjLock.Unlock();
 
@@ -672,6 +673,7 @@ bool
 CNCPeerControl::AddSyncControl(CNCActiveSyncControl* sync_ctrl)
 {
     bool has_more = true;
+    bool task_added = false;
     SSyncTaskInfo task_info;
 
     m_ObjLock.Lock();
@@ -680,10 +682,14 @@ CNCPeerControl::AddSyncControl(CNCActiveSyncControl* sync_ctrl)
         CNCActiveHandler* conn = x_GetBGConnImpl();
         if (!conn) {
             x_UnreserveBGConn();
-            return false;
+            if (!task_added)
+                return false;
+            m_ObjLock.Lock();
+            break;
         }
         has_more = sync_ctrl->GetNextTask(task_info);
         sync_ctrl->ExecuteSyncTask(task_info, conn);
+        task_added = true;
         m_ObjLock.Lock();
     }
     if (has_more) {
