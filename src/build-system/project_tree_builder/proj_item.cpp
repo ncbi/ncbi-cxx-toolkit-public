@@ -230,7 +230,9 @@ string CProjItem::GetPath(void) const
         path += ".dll";
         break;
     case CProjKey::eMsvc:
-        path += ".msvc";
+        if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+            path += ".msvc";
+        }
         break;
     case CProjKey::eDataSpec:
         path += ".dataspec";

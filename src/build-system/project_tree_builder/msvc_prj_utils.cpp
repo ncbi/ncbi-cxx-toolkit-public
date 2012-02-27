@@ -1389,6 +1389,9 @@ string CreateProjectName(const CProjKey& project_id)
     case CProjKey::eDll:
         return project_id.Id() + ".dll";
     case CProjKey::eMsvc:
+        if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+            return project_id.Id() + ".unix";
+        }
         return project_id.Id();// + ".vcproj";
     case CProjKey::eDataSpec:
         return project_id.Id() + ".dataspec";

@@ -282,9 +282,7 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
         string makefile_name = 
             SMakeProjectT::CreateMakeAppLibFileName(lib.m_SourcesBaseDir,
                                                     lib.m_Name);
-        CSimpleMakeFileContents makefile(
-            CDirEntry::ConcatPath(lib.m_SourcesBaseDir,makefile_name),
-            eMakeType_Undefined);
+        CSimpleMakeFileContents makefile(makefile_name,eMakeType_Undefined);
         CSimpleMakeFileContents::TContents::const_iterator p = 
             makefile.m_Contents.find("NCBI_C_LIBS");
 

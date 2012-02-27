@@ -402,7 +402,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,7,2) );
+    SetVersion( CVersionInfo(3,7,3) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1020,8 +1020,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 // all dirs -----------------------------------------------------------------
     list<string> all_dirs;
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-        if (p->first.Type() == CProjKey::eMsvc ||
-            p->first.Type() == CProjKey::eDataSpec) {
+        if (p->first.Type() == CProjKey::eDataSpec) {
             continue;
         }
         all_dirs.push_back(
@@ -1051,8 +1050,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             LOG_POST(Info << "For reference only: " << CreateProjectName(p->first));
             continue;
         }
-        if (p->first.Type() == CProjKey::eMsvc ||
-            p->first.Type() == CProjKey::eDataSpec) {
+        if (p->first.Type() == CProjKey::eDataSpec) {
             continue;
         }
         ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
@@ -1094,8 +1092,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             p->second.m_MakeType == eMakeType_ExcludedByReq) {
             continue;
         }
-        if (p->first.Type() == CProjKey::eMsvc ||
-            p->first.Type() == CProjKey::eDataSpec) {
+        if (p->first.Type() == CProjKey::eDataSpec) {
             continue;
         }
         if (p->second.m_DatatoolSources.empty()) {
@@ -1124,11 +1121,23 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     }
     ofs << endl << endl;
 
+// all Unix -------------------------------------------------------------
+    ofs << "all_unix =";
+    ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+        if (p->second.m_MakeType == eMakeType_Excluded ||
+            p->second.m_MakeType == eMakeType_ExcludedByReq) {
+            continue;
+        }
+        if (p->first.Type() == CProjKey::eMsvc) {
+            ofs << " \\" <<endl << "    " << CreateProjectName(p->first);
+        }
+    }
+    ofs << endl << endl;
+
 // all excluded -------------------------------------------------------------
     ofs << "all_excluded =";
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
-        if (p->first.Type() == CProjKey::eMsvc ||
-            p->first.Type() == CProjKey::eDataSpec) {
+        if (p->first.Type() == CProjKey::eDataSpec) {
             continue;
         }
         if (p->second.m_MakeType == eMakeType_Excluded ||
@@ -1156,8 +1165,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                     p->second.m_MakeType == eMakeType_ExcludedByReq) {
                     continue;
                 }
-                if (p->first.Type() == CProjKey::eMsvc ||
-                    p->first.Type() == CProjKey::eDataSpec) {
+                if (p->first.Type() == CProjKey::eDataSpec) {
                     continue;
                 }
                 if (IsAllowedProjectTag(p->second, &composite_filter)) {
@@ -1199,6 +1207,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         << endl << "\t@echo \"    list-all         - list all targets\""
         << endl << "\t@echo \"    list-apps        - list all applications\""
         << endl << "\t@echo \"    list-libs        - list all libraries\""
+        << endl << "\t@echo \"    list-unix        - list all native Unix projects\""
         << endl << "\t@echo \"    list-excluded    - list 'excluded' targets\""
         << endl << "\t@echo \"    list-tags        - list composite targets\""
         << endl << "\t@echo \"    list-tag-TagName - list all targets in a composite target TagName\"";
@@ -1243,6 +1252,9 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     ofs << "list-libs :"
         << endl << "\t@for i in $(all_libraries); do echo $$i; done";
     ofs << endl << endl;
+    ofs << "list-unix :"
+        << endl << "\t@for i in $(all_unix); do echo $$i; done";
+    ofs << endl << endl;
     ofs << "list-excluded :"
         << endl << "\t@for i in $(all_excluded); do echo $$i; done";
     ofs << endl << endl;
@@ -1273,22 +1285,22 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
     
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
 
-        // exclude MSVC projects
-        if (p->first.Type() == CProjKey::eMsvc ||
-            p->first.Type() == CProjKey::eDataSpec) {
+        if (p->first.Type() == CProjKey::eDataSpec) {
             continue;
         }
 
         bool isLibrary = p->first.Type() == CProjKey::eLib;
         bool hasDataspec = !p->second.m_DatatoolSources.empty();
-        string target, target_app, target_lib;
+        string target, target_app, target_lib, target_user;
         list<string> dependencies;
         CProjectItemsTree::TProjects::const_iterator n;
 
         target = CreateProjectName(p->first);
-        target_app = target_lib = "\"\"";
+        target_app = target_lib = target_user = "\"\"";
         if (p->first.Type() == CProjKey::eApp) {
             target_app = p->second.m_Name;
+        } else if (p->first.Type() == CProjKey::eMsvc) {
+            target_user = p->second.m_Name;
         } else if (p->first.Type() == CProjKey::eLib) {
             target_lib = p->second.m_Name;
         } else {
@@ -1376,8 +1388,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         }
 
 // collect paths ------------------------------------------------------------
-        if (p->first.Type() != CProjKey::eMsvc &&
-            p->first.Type() != CProjKey::eDataSpec) {
+        if (p->first.Type() != CProjKey::eDataSpec) {
 
             path_to_target[rel_path].push_back(target);
             if (p->second.m_MakeType != eMakeType_Excluded &&
@@ -1465,6 +1476,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         ofs << " $(MAKE) $(MFLAGS)"
             << " APP_PROJ=" << target_app
             << " LIB_PROJ=" << target_lib
+            << " UNIX_PROJ=" << target_user
             << " $(MTARGET) $(SKIP_PRELIMINARIES)" << endl << endl;
  #endif
         if (hasDataspec) {
@@ -2029,9 +2041,14 @@ void CProjBulderApp::VerifyArguments(void)
         NStr::ToLower(m_Root);
     }
 
-    m_IncDir = GetProjectTreeInfo().m_Compilers;
-    m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
-    m_IncDir = CDirEntry::ConcatPath(m_IncDir, GetBuildType().GetTypeStr());
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        m_IncDir = CDirEntry(m_Solution).GetDir();
+        m_IncDir = CDirEntry::ConcatPath(m_IncDir,"..");
+    } else {
+        m_IncDir = GetProjectTreeInfo().m_Compilers;
+        m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
+        m_IncDir = CDirEntry::ConcatPath(m_IncDir, GetBuildType().GetTypeStr());
+    }
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, "inc");
     m_IncDir = CDirEntry::ConcatPath(m_IncDir, CMsvc7RegSettings::GetConfigNameKeyword());
 }

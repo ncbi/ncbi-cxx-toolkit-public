@@ -134,9 +134,8 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                 }
         
                 string applib_mfilepath = 
-                    CDirEntry::ConcatPath(source_base_dir,
                     SMakeProjectT::CreateMakeAppLibFileName(source_base_dir, 
-                                                            proj_name, info.m_Type));
+                                                            proj_name, info.m_Type);
                 if ( applib_mfilepath.empty() )
                     continue;
             

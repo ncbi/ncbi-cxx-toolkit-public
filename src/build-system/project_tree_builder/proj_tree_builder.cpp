@@ -77,7 +77,13 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
     string fname_app = CDirEntry::ConcatPath(base_dir, fname + ".app");
     string fname_lib = CDirEntry::ConcatPath(base_dir, fname + ".lib");
     string fname_dll = CDirEntry::ConcatPath(base_dir, fname + ".dll");
-    string fname_msvc = CDirEntry::ConcatPath(base_dir, fname + ".msvcproj");
+    string fname_msvc= CDirEntry::ConcatPath(base_dir, fname);
+    string fname_msvc2(fname_msvc);
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+        fname_msvc += ".msvcproj";
+    } else {
+        fname_msvc2 += ".in";
+    }
 
     switch (type) {
     case SMakeInInfo::eApp:
@@ -96,7 +102,7 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
         }
         break;
     case SMakeInInfo::eMsvc:
-        if ( CDirEntry(fname_msvc).Exists()) {
+        if ( CDirEntry(fname_msvc).Exists() || CDirEntry(fname_msvc2).Exists()) {
             return CProjKey::eMsvc;
         }
         break;
@@ -111,7 +117,7 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
         return CProjKey::eDll;
     else if (CDirEntry(fname_app).Exists() )
         return CProjKey::eApp;
-    else if (CDirEntry(fname_msvc).Exists() )
+    else if (CDirEntry(fname_msvc).Exists() || CDirEntry(fname_msvc2).Exists() )
         return CProjKey::eMsvc;
 
 
@@ -562,14 +568,25 @@ void SMakeProjectT::AnalyzeMakeIn
             makein_contents.GetMakeType())); 
     }
 
-    p = makein_contents.m_Contents.find("MSVC_PROJ");
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        p = makein_contents.m_Contents.find("UNIX_PROJ");
+    } else {
+        p = makein_contents.m_Contents.find("MSVC_PROJ");
+    }
     if (p != makein_contents.m_Contents.end()) {
 
         info->push_back(SMakeInInfo(SMakeInInfo::eMsvc, p->second,
             makein_contents.GetMakeType())); 
     }
 
-    //TODO - DLL_PROJ
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        p = makein_contents.m_Contents.find("EXPENDABLE_UNIX_PROJ");
+        if (p != makein_contents.m_Contents.end()) {
+
+            info->push_back(SMakeInInfo(SMakeInInfo::eMsvc, p->second,
+                max(makein_contents.GetMakeType(),eMakeType_Expendable))); 
+        }
+    }
 }
 
 
@@ -582,20 +599,22 @@ string SMakeProjectT::CreateMakeAppLibFileName
             SMakeProjectT::GetProjType(base_dir, projname, type);
 
     string fname = "Makefile." + projname;
-    
-    if (proj_type==CProjKey::eLib)
-        return fname + ".lib";
-
-    if (proj_type==CProjKey::eDll)
-        return fname + ".dll";
-
-    if (proj_type==CProjKey::eApp)
-        return fname + ".app";
-
-    if (proj_type==CProjKey::eMsvc)
-        return fname + ".msvcproj";
-
-    return "";
+    switch (proj_type) {
+    case CProjKey::eLib:  fname += ".lib"; break;
+    case CProjKey::eDll:  fname += ".dll"; break;
+    case CProjKey::eApp:  fname += ".app"; break;
+    case CProjKey::eMsvc:
+        if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+            if (!CDirEntry( CDirEntry::ConcatPath(base_dir,fname)).Exists()) {
+                fname += ".in";
+            }
+        } else {
+            fname += ".msvcproj";
+        }
+        break;
+    default: break;
+    }
+    return CDirEntry::ConcatPath(base_dir, fname);
 }
 
 
@@ -848,6 +867,15 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 
     list<CProjKey> depends_ids;
     SMakeProjectT::ConvertLibDepends(adj_depends, &depends_ids);
+
+    list<CProjKey> unconditional_depends_ids;
+    k = m->second.m_Contents.find("USR_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> depends = k->second;
+        SMakeProjectT::ConvertLibDepends(depends, &unconditional_depends_ids);
+        copy(unconditional_depends_ids.begin(),
+             unconditional_depends_ids.end(), back_inserter(depends_ids));
+    }
     ///////////////////////////////////
 
     //requires
@@ -1779,21 +1807,26 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     TFiles::const_iterator m = makemsvc.find(applib_mfilepath);
     if (m == makemsvc.end()) {
 
-        LOG_POST(Info << "MsvcProject Makefile not found: " << applib_mfilepath);
+        LOG_POST(Info << "Native Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
 
     CSimpleMakeFileContents::TContents::const_iterator k;
     //project id
-    k = m->second.m_Contents.find("MSVC_PROJ");
-    if (k == m->second.m_Contents.end()  ||  
-                                           k->second.empty()) {
+    string proj_id;
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        proj_id = proj_name;
+    } else {
+        k = m->second.m_Contents.find("MSVC_PROJ");
+        if (k == m->second.m_Contents.end()  ||  
+                                               k->second.empty()) {
 
-        LOG_POST(Info << "No MSVC_PROJ specified in Makefile: project " << proj_name
-                      << "  at " << applib_mfilepath);
-        return CProjKey();
+            LOG_POST(Info << "No MSVC_PROJ specified in Makefile: project " << proj_name
+                          << "  at " << applib_mfilepath);
+            return CProjKey();
+        }
+        proj_id = k->second.front();
     }
-    string proj_id = k->second.front();
     {{
         CProjKey proj_key(CProjKey::eMsvc, proj_id);
         CProjectItemsTree::TProjects::const_iterator z = tree->m_Projects.find(proj_key);
@@ -1801,7 +1834,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
             if (z->second.m_MakeType < eMakeType_Excluded) {
                 string full_makefile_path = applib_mfilepath;
                 PTB_WARNING_EX(full_makefile_path, ePTB_ConfigurationError,
-                            "MSVC project " << proj_id << " already defined at "
+                            "Native project \'" << proj_id << "\' already defined at "
                             << tree->m_Projects[proj_key].m_SourcesBaseDir);
                 if (maketype == eMakeType_Excluded || GetApp().IsScanningWholeTree()) {
                     return CProjKey();
@@ -1814,28 +1847,30 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
         }
     }}
 
-    // VCPROJ - will map to src
-    string vcproj_key("VCPROJ");
-    if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
-        vcproj_key = "VCXPROJ";
-    }
-    k = m->second.m_Contents.find(vcproj_key);
-    if (k == m->second.m_Contents.end()) {
-
-        LOG_POST(Info << "No " << vcproj_key <<" specified in Makefile: project " << proj_name
-                      << "  at " << applib_mfilepath);
-        return CProjKey();
-    }
     string vcproj_file;
     list<string> sources;
-    ITERATE(list<string>, s, k->second) {
-        string d = GetApp().ProcessLocationMacros( *s );
-        vcproj_file = d;
-        if (CDirEntry::IsAbsolutePath(d)) {
-            d = CDirEntry::CreateRelativePath( source_base_dir, d);
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+        // VCPROJ - will map to src
+        string vcproj_key("VCPROJ");
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
+            vcproj_key = "VCXPROJ";
         }
-        sources.push_back( d );
-        break;
+        k = m->second.m_Contents.find(vcproj_key);
+        if (k == m->second.m_Contents.end()) {
+
+            LOG_POST(Info << "No " << vcproj_key <<" specified in Makefile: project " << proj_name
+                          << "  at " << applib_mfilepath);
+            return CProjKey();
+        }
+        ITERATE(list<string>, s, k->second) {
+            string d = GetApp().ProcessLocationMacros( *s );
+            vcproj_file = d;
+            if (CDirEntry::IsAbsolutePath(d)) {
+                d = CDirEntry::CreateRelativePath( source_base_dir, d);
+            }
+            sources.push_back( d );
+            break;
+        }
     }
 
     // depends - 
@@ -1868,6 +1903,13 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
             depends_ids.push_back(CProjKey(CProjKey::eMsvc, *p));
         }
     }
+    k = m->second.m_Contents.find("USR_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> deps = k->second;
+        list<CProjKey> depends_ids;
+        SMakeProjectT::ConvertLibDepends(deps, &depends_ids);
+        copy(depends_ids.begin(), depends_ids.end(), back_inserter(depends_ids));
+    }
 
     //requires
     list<string> requires;
@@ -1888,21 +1930,29 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                            CreateMsvcProjectMakefileName(proj_name, 
                                                          CProjKey::eMsvc))));
     CProjKey proj_key(CProjKey::eMsvc, proj_id);
-    tree->m_Projects[proj_key] = CProjItem(CProjKey::eMsvc,
-                                           proj_name, 
-                                           proj_id,
-                                           source_base_dir,
-                                           sources, 
-                                           depends_ids,
-                                           requires,
-                                           libs_3_party,
-                                           include_dirs,
-                                           defines,
-                                           maketype,
+    CProjItem project(CProjKey::eMsvc,
+                       proj_name, 
+                       proj_id,
+                       source_base_dir,
+                       sources, 
+                       depends_ids,
+                       requires,
+                       libs_3_party,
+                       include_dirs,
+                       defines,
+                       maketype,
         IdentifySlnGUID(vcproj_file, proj_key));
 
-    m->second.CollectValues("PROJ_TAG", tree->m_Projects[proj_key].m_ProjTags,
+    m->second.CollectValues("PROJ_TAG", project.m_ProjTags,
         CSimpleMakeFileContents::eMergePlusMinus);
+
+    list<string> watchers;
+    if (m->second.CollectValues("WATCHERS", watchers,
+        CSimpleMakeFileContents::eSortUnique)) {
+        project.m_Watchers = NStr::Join(watchers, " ");
+    }
+    tree->m_Projects[proj_key] = project;
+
     return proj_key;
 }
 //-----------------------------------------------------------------------------
@@ -2084,6 +2134,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     map<string, EMakeFileType> appprojects;
     map<string, EMakeFileType> libprojects;
     map<string, EMakeFileType> dllprojects;
+    map<string, EMakeFileType> userprojects;
 
     if ( process_projects || weak ) {
         ProcessMakeInFile(node_path, makefiles, maketype, parent);
@@ -2164,6 +2215,29 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 }
             }
         }
+        string userproj[] = {"UNIX_PROJ","EXPENDABLE_UNIX_PROJ", ""};
+        if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+            userproj[0] = "MSVC_PROJ";
+            userproj[1] = "";
+        }
+        EMakeFileType usertype[] = {eMakeType_Undefined,eMakeType_Expendable};
+        for (j=0; !userproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(userproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
+                    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+                        userprojects["Makefile." + *i] = max(maketype, usertype[j]);
+                        userprojects["Makefile." + *i + ".in"] = max(maketype, usertype[j]);
+                    } else {
+                        userprojects["Makefile." + *i + ".msvcproj"] = max(maketype, usertype[j]);
+                    }
+                }
+            }
+        }
         }
         }
     }
@@ -2208,18 +2282,24 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         }
     }
     // Process Makefile.*.msvcproj
-    if ( process_projects ) {
+    if ( process_projects && !userprojects.empty() ) {
         CDir dir(dir_name);
-        CDir::TEntries contents = dir.GetEntries("Makefile.*.msvcproj");
+//        CDir::TEntries contents = dir.GetEntries("Makefile.*.msvcproj");
+        CDir::TEntries contents = dir.GetEntries("Makefile.*");
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
-            if ( SMakeProjectT::IsUserProjFile(dir_entry->GetName()) )
-	            ProcessUserProjFile(dir_entry->GetPath(), makefiles, maketype, mkin);
+            const string name = dir_entry->GetName();
+            if (userprojects.find(name) != userprojects.end() /*&&
+                SMakeProjectT::IsUserProjFile(name)*/ )
+	            ProcessUserProjFile(dir_entry->GetPath(), makefiles, userprojects[name], mkin);
 
         }
+    }
 
+    if ( process_projects) {
         /*if (!GetApp().IsScanningWholeTree())*/ {
-            contents = dir.GetEntries(GetApp().GetProjectTreeInfo().m_CustomMetaData);
+            CDir dir(dir_name);
+            CDir::TEntries contents = dir.GetEntries(GetApp().GetProjectTreeInfo().m_CustomMetaData);
             ITERATE(CDir::TEntries, p, contents) {
                 GetApp().AddCustomMetaData( (*p)->GetPath());
             }
@@ -2238,7 +2318,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
             string name  = dir_entry->GetName();
-            if ( name == "."  ||  name == ".." ||  name == "CVS" ||  name == ".svn" ||
+//            if ( name == "."  ||  name == ".." ||  name == "CVS" ||  name == ".svn" ||
+            if ( name[0] == '.'  ||  name == "CVS" ||
                  name == string(1,CDir::GetPathSeparator()) ) {
                 continue;
             }
@@ -2355,9 +2436,10 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
                                              EMakeFileType type,
                                              const CSimpleMakeFileContents* parent)
 {
+    bool allow_empty = CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix;
     CSimpleMakeFileContents fc(file_name, type);
     fc.SetParent(parent);
-    if ( !fc.m_Contents.empty() ) {
+    if ( allow_empty || !fc.m_Contents.empty() ) {
 	    makefiles->m_User[file_name] = fc;
         PTB_TRACE_EX(file_name, 0, MakeFileTypeAsString(type));
 	} else {
