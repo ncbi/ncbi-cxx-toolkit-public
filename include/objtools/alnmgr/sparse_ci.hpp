@@ -50,6 +50,17 @@ public:
     virtual const TSignedRange& GetAlnRange(void) const;
     virtual const TSignedRange& GetRange(void) const;
 
+    void Init(TSignedSeqPos aln_from,
+              TSignedSeqPos aln_to,
+              TSignedSeqPos from,
+              TSignedSeqPos to,
+              TSegTypeFlags type)
+    {
+        m_AlnRange.Set(aln_from, aln_to);
+        m_RowRange.Set(from, to);
+        m_Type = type;
+    }
+
 private:
     friend class CSparse_CI;
 
