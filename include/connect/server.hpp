@@ -173,9 +173,7 @@ protected:
     virtual bool ShutdownRequested(void) { return false; }
 
 private:
-    void CreateRequest(IServer_ConnectionBase* conn_base,
-                       EServIO_Event event,
-                       const STimeout* timeout);
+    void x_AddRequests(const vector<CRef<CStdRequest> >& reqs);
     void x_DoRun(void);
 
     friend class CNetCacheServer;

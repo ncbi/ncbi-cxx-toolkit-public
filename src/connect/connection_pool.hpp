@@ -88,6 +88,8 @@ public:
     /// pulling eActiveSocket's from poll vector
     /// Resets the expiration time as a bonus.
     void SetConnType(TConnBase* conn, EConnType type, bool must_exist = true);
+    void SetAllActive(const vector<CSocketAPI::SPoll>& polls);
+    void SetAllActive(const vector<IServer_ConnectionBase*>& conns);
 
     /// Close connection as if it was initiated by server (not by client).
     void CloseConnection(TConnBase* conn);

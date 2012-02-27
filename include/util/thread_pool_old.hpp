@@ -51,6 +51,7 @@
 #include <util/error_codes.hpp>
 
 #include <set>
+#include <vector>
 
 
 /** @addtogroup ThreadedPools
@@ -160,6 +161,7 @@ public:
     TItemHandle  Put(const TRequest& request, TUserPriority priority = 0,
                      unsigned int timeout_sec = 0,
                      unsigned int timeout_nsec = 0);
+    void Put(const vector<TRequest>& vdat, TUserPriority priority = 0);
 
     /// Wait for room in the queue for up to
     /// timeout_sec + timeout_nsec/1E9 seconds.
@@ -426,6 +428,7 @@ public:
                               TUserPriority priority = 0,
                               unsigned int timeout_sec = 0,
                               unsigned int timeout_nsec = 0);
+    void AcceptMany(const vector<TRequest>& vreq, TUserPriority priority = 0);
 
     /// Puts a request in the queue with the highest priority
     /// It will run a new thread even if the maximum of allowed threads 
@@ -713,6 +716,45 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
         m_PutSem.TryWait();
     }
     return handle;
+}
+
+
+template <typename TRequest>
+void
+CBlockingQueue<TRequest>::Put(const vector<TRequest>& vdat, TUserPriority priority)
+{
+    CMutexGuard guard(m_Mutex);
+    // Having the mutex, we can safely drop "volatile"
+    TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
+    if (q.size() > m_MaxSize - vdat.size()) {
+        NCBI_THROW(CBlockingQueueException, eFull,
+                   "CBlockingQueue<>::Put: "
+                   "attempt to insert into a full queue");
+    }
+    if (q.empty()) {
+        m_GetSem.TryWait(); // is this still needed?
+        m_GetSem.Post();
+    }
+    if (m_RequestCounter < vdat.size()) {
+        m_RequestCounter = 0xFFFFFF;
+        NON_CONST_ITERATE (typename TRealQueue, it, q) {
+            CQueueItem& val = const_cast<CQueueItem&>(**it);
+            val.m_Priority = (val.m_Priority & 0xFF000000) | m_RequestCounter--;
+        }
+    }
+    ITERATE(typename vector<TRequest>, it_dat, vdat) {
+        /// Structure of the internal priority:
+        /// The highest byte is a user specified priority;
+        /// the other three bytes are a counter which ensures that 
+        /// requests with the same user-specified priority are processed 
+        /// in FIFO order
+        TPriority real_priority = (priority << 24) | m_RequestCounter--;
+        TItemHandle handle(new CQueueItem(real_priority, *it_dat));
+        q.insert(handle);
+    }
+    if (q.size() == m_MaxSize) {
+        m_PutSem.TryWait();
+    }
 }
 
 
@@ -1149,6 +1191,44 @@ CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
     }
 
     return handle;
+}
+
+template <typename TRequest>
+inline void
+CPoolOfThreads<TRequest>::AcceptMany(const vector<TRequest>& vreq,
+                                     TUserPriority priority)
+{
+    bool new_thread = false;
+    {{
+        CMutexGuard guard(m_Mutex);
+        // we reserved 0xFF priority for urgent requests
+        if (priority == 0xFF) 
+            --priority;
+        if (m_QueuingForbidden  &&  !HasImmediateRoom(false) ) {
+            NCBI_THROW(CBlockingQueueException, eFull,
+                       "CPoolOfThreads<>::x_AcceptRequest: "
+                       "attempt to insert into a full queue");
+        }
+        m_Queue.Put(vreq, priority);
+        if (m_Delta.Add(int(vreq.size())) >= m_Threshold
+            &&  m_ThreadCount.Get() < m_MaxThreads)
+        {
+            // Add another thread to the pool because they're all busy.
+            m_ThreadCount.Add(1);
+            new_thread = true;
+        }
+    }}
+
+    if (new_thread) {
+        try {
+            NewThread(TThread::eNormal)->Run();
+        }
+        catch (CThreadException& ex) {
+            ERR_POST_XX(Util_Thread, 13,
+                        Critical << "Ignoring error while starting new thread: "
+                        << ex);
+        }
+    }
 }
 
 template <typename TRequest>

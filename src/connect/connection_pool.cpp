@@ -277,7 +277,7 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         else if (info.type == eDeferredSocket
                  &&  conn_base->IsReadyToProcess())
         {
-            info.type = eInactiveSocket;
+            info.type = eActiveSocket;
             revived_conns.push_back(conn_base);
         }
     }
@@ -307,6 +307,42 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         return true;
     }
     return false;
+}
+
+void CServer_ConnectionPool::SetAllActive(const vector<CSocketAPI::SPoll>& polls)
+{
+    CMutexGuard guard(m_Mutex);
+    TData& data = const_cast<TData&>(m_Data);
+    ITERATE(vector<CSocketAPI::SPoll>, it, polls) {
+        if (!it->m_REvent) continue;
+        IServer_ConnectionBase* conn_base =
+                        dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
+        if (conn_base == &m_ControlSocketForPoll)
+            continue;
+
+        TData::iterator it_data = data.find(conn_base);
+        if (it_data == data.end())
+            abort();
+        SPerConnInfo& info = it_data->second;
+        if (info.type != eListener) {
+            info.type = eActiveSocket;
+            info.UpdateExpiration(conn_base);
+        }
+    }
+}
+
+void CServer_ConnectionPool::SetAllActive(const vector<IServer_ConnectionBase*>& conns)
+{
+    CMutexGuard guard(m_Mutex);
+    TData& data = const_cast<TData&>(m_Data);
+    ITERATE(vector<IServer_ConnectionBase*>, it, conns) {
+        TData::iterator it_data = data.find(*it);
+        if (it_data == data.end())
+            abort();
+        SPerConnInfo& info = it_data->second;
+        info.type = eActiveSocket;
+        info.UpdateExpiration(*it);
+    }
 }
 
 

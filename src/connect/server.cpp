@@ -291,8 +291,6 @@ CServer_Connection::CreateRequest(EServIO_Event           event,
     // Pull out socket from poll vector
     // See CServerConnectionRequest::Process and
     // CServer_ConnectionPool::GetPollAndTimerVec
-    conn_pool.SetConnType(this, CServer_ConnectionPool::eActiveSocket,
-                          (event != eServIO_Delete  &&  event != eServIO_Inactivity));
     return new CServerConnectionRequest(event, conn_pool, timeout, this);
 }
 
@@ -412,11 +410,13 @@ void CServer::x_DoRun(void)
     vector<CSocketAPI::SPoll> polls;
     size_t     count;
     typedef vector<IServer_ConnectionBase*> TConnsList;
+    typedef vector<CRef<CStdRequest> > TReqsList;
     TConnsList timer_requests;
     TConnsList revived_conns;
     TConnsList to_close_conns;
     TConnsList to_delete_conns;
-    STimeout   timer_timeout;
+    TReqsList to_add_reqs;
+    STimeout timer_timeout;
     const STimeout* timeout;
 
     while (!ShutdownRequested()) {
@@ -426,15 +426,29 @@ void CServer::x_DoRun(void)
                                            to_delete_conns);
 
         ITERATE(TConnsList, it, revived_conns) {
-            EIO_Event evt = (*it)->GetEventsToPollFor(NULL);
-            CreateRequest(*it, IOEventToServIOEvent(evt), m_Parameters->idle_timeout);
+            IServer_ConnectionBase* conn_base = *it;
+            EServIO_Event evt = IOEventToServIOEvent(conn_base->GetEventsToPollFor(NULL));
+            CRef<CStdRequest> req(conn_base->CreateRequest(
+                                                evt, *m_ConnectionPool,
+                                                m_Parameters->idle_timeout));
+            to_add_reqs.push_back(req);
         }
         ITERATE(TConnsList, it, to_close_conns) {
-            CreateRequest(*it, eServIO_Inactivity, m_Parameters->idle_timeout);
+            IServer_ConnectionBase* conn_base = *it;
+            CRef<CStdRequest> req(conn_base->CreateRequest(
+                                                eServIO_Inactivity, *m_ConnectionPool,
+                                                m_Parameters->idle_timeout));
+            to_add_reqs.push_back(req);
         }
         ITERATE(TConnsList, it, to_delete_conns) {
-            CreateRequest(*it, eServIO_Delete, m_Parameters->idle_timeout);
+            IServer_ConnectionBase* conn_base = *it;
+            CRef<CStdRequest> req(conn_base->CreateRequest(
+                                                eServIO_Delete, *m_ConnectionPool,
+                                                m_Parameters->idle_timeout));
+            to_add_reqs.push_back(req);
         }
+        x_AddRequests(to_add_reqs);
+        to_add_reqs.clear();
 
         timeout = m_Parameters->accept_timeout;
 
@@ -472,23 +486,35 @@ void CServer::x_DoRun(void)
                 ProcessTimeout();
             }
             else {
+                m_ConnectionPool->SetAllActive(timer_requests);
                 ITERATE (vector<IServer_ConnectionBase*>, it, timer_requests)
                 {
-                    CreateRequest(*it, (EServIO_Event) -1, timeout);
+                    IServer_ConnectionBase* conn_base = *it;
+                    CRef<CStdRequest> req(conn_base->CreateRequest(
+                                          (EServIO_Event)-1, *m_ConnectionPool, timeout));
+                    to_add_reqs.push_back(req);
                 }
+                x_AddRequests(to_add_reqs);
+                to_add_reqs.clear();
             }
             continue;
         }
 
+        m_ConnectionPool->SetAllActive(polls);
         ITERATE (vector<CSocketAPI::SPoll>, it, polls) {
             if (!it->m_REvent) continue;
             IServer_ConnectionBase* conn_base =
                 dynamic_cast<IServer_ConnectionBase*>(it->m_Pollable);
             _ASSERT(conn_base);
-            CreateRequest(conn_base,
-                          IOEventToServIOEvent(it->m_REvent),
-                          m_Parameters->idle_timeout);
+            CRef<CStdRequest> req(conn_base->CreateRequest(
+                                                IOEventToServIOEvent(it->m_REvent),
+                                                *m_ConnectionPool,
+                                                m_Parameters->idle_timeout));
+            if (req)
+                to_add_reqs.push_back(req);
         }
+        x_AddRequests(to_add_reqs);
+        to_add_reqs.clear();
     }
 }
 
@@ -555,33 +581,23 @@ void CServer::Exit()
 }
 
 
-void CServer::CreateRequest(IServer_ConnectionBase* conn_base,
-                            EServIO_Event event,
-                            const STimeout* timeout)
+void CServer::x_AddRequests(const vector<CRef<CStdRequest> >& reqs)
 {
-    CRef<CStdRequest> request(conn_base->CreateRequest(
-                                         event, *m_ConnectionPool, timeout));
-
-    if (request) {
-        try {
-            m_ThreadPool->AcceptRequest(request);
-        } catch (CBlockingQueueException&) {
-            // The size of thread pool queue is set to kMax_UInt, so
-            // this is impossible event
-            ERR_POST_X(1, Fatal << "Thread pool queue full");
-            /*CServer_Request* req = dynamic_cast<CServer_Request*>(
-                                                        request.GetPointer());
-            _ASSERT(req);
-            // Queue is full, drop request, indirectly dropping incoming
-            // connection (see also CAcceptRequest::Cancel)
-            // ??? What should we do if conn_base is CServerConnection?
-            // Should we close it? (see also CServerConnectionRequest::Cancel)
-            req->Cancel();*/
-            abort();
-        }
-    }
-    else {
-        _ASSERT(event == eServIO_Read);
+    try {
+        m_ThreadPool->AcceptMany(reqs);
+    } catch (CBlockingQueueException&) {
+        // The size of thread pool queue is set to kMax_UInt, so
+        // this is impossible event
+        ERR_POST_X(1, Fatal << "Thread pool queue full");
+        /*CServer_Request* req = dynamic_cast<CServer_Request*>(
+                                                    request.GetPointer());
+        _ASSERT(req);
+        // Queue is full, drop request, indirectly dropping incoming
+        // connection (see also CAcceptRequest::Cancel)
+        // ??? What should we do if conn_base is CServerConnection?
+        // Should we close it? (see also CServerConnectionRequest::Cancel)
+        req->Cancel();*/
+        abort();
     }
 }
 
