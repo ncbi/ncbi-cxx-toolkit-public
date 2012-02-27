@@ -991,15 +991,25 @@ CNCActiveHandler::IsReadyToProcess(void)
     else if (m_WaitForThrottle)
         return CNetCacheServer::GetPreciseTime() >= m_ThrottleTime;
     else if (x_IsFlagSet(fWaitForClient)) {
-        CMutexGuard guard(m_ObjLock);
+        if (!m_ObjLock.TryLock())
+            return false;
+        bool result = true;
         if (!m_Client)
-            return true;
-        if (x_GetState() == eReadDataForClient)
-            return m_Client->GetClient()->IsBufferFlushed();
-        else if (x_GetState() == eWriteDataForClient)
-            return m_NeedFlushBuff;
+            goto unlock_and_return;
+        if (x_GetState() == eReadDataForClient) {
+            result = m_Client->GetClient()->IsBufferFlushed();
+            goto unlock_and_return;
+        }
+        else if (x_GetState() == eWriteDataForClient) {
+            result = m_NeedFlushBuff;
+            goto unlock_and_return;
+        }
         else if (x_IsFlagSet(fWaitForClient))
             abort();
+
+unlock_and_return:
+        m_ObjLock.Unlock();
+        return result;
     }
     else if (x_IsFlagSet(fWaitForBlockedOp))
         return false;
