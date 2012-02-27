@@ -1298,6 +1298,9 @@ Create-TSA-ids-action ::= SEQUENCE {
   suffix VisibleString OPTIONAL ,
   id-text-portion Text-portion OPTIONAL }  
 
+Autofix-action ::= SEQUENCE {
+  test-name VisibleString }
+
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
   parse Parse-action ,
@@ -1329,7 +1332,8 @@ Macro-action-choice ::= CHOICE {
   update-sequences Update-sequences-action ,
   add-trans-splicing NULL ,
   remove-invalid-ecnumbers NULL ,
-  create-tsa-ids Create-TSA-ids-action }
+  create-tsa-ids Create-TSA-ids-action ,
+  perform-autofix Autofix-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
