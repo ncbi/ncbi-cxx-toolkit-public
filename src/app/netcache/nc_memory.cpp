@@ -360,7 +360,7 @@ CNCMMStats::SysMemFreed(size_t alloced_size, size_t asked_size)
     m_ObjLock.Lock();
     ++m_SysFrees;
     m_SystemMem -= alloced_size;
-    m_LostMem   -= alloced_size -= asked_size;
+    m_LostMem   -= alloced_size - asked_size;
     m_ObjLock.Unlock();
 }
 
@@ -2539,7 +2539,7 @@ static sqlite3_mem_methods s_NCMallocMethods = {
 bool
 CNCMemManager::InitializeApp(void)
 {
-    try {
+    /*try {
         CSQLITE_Global::SetCustomMallocFuncs(&s_NCMallocMethods);
     }
     catch (CSQLITE_Exception& ex) {
@@ -2547,13 +2547,15 @@ CNCMemManager::InitializeApp(void)
         return false;
     }
 
-    return CNCMMCentral::RunLateInit();
+    return CNCMMCentral::RunLateInit();*/
+    g_InitNCThreadIndexes();
+    return true;
 }
 
 void
 CNCMemManager::FinalizeApp(void)
 {
-    CNCMMCentral::PrepareToStop();
+    //CNCMMCentral::PrepareToStop();
 }
 
 void
@@ -2571,28 +2573,29 @@ CNCMemManager::IsOnAlert(void)
 void
 CNCMemManager::PrintStats(CPrintTextProxy& proxy)
 {
-    CNCMMStats stats_sum;
+    /*CNCMMStats stats_sum;
     CNCMMStats::CollectAllStats(&stats_sum);
-    stats_sum.Print(proxy);
+    stats_sum.Print(proxy);*/
 }
 
 size_t
 CNCMemManager::GetMemoryLimit(void)
 {
-    return CNCMMCentral::GetMemLimit();
+    return 0;//CNCMMCentral::GetMemLimit();
 }
 
 size_t
 CNCMemManager::GetMemoryUsed(void)
 {
-    CNCMMStats stat;
+    /*CNCMMStats stat;
     CNCMMStats::CollectAllStats(&stat);
-    return stat.GetSystemMem();
+    return stat.GetSystemMem();*/
+    return 0;
 }
 
 END_NCBI_SCOPE
 
-
+/*
 void*
 operator new (size_t size)
 #ifndef NCBI_COMPILER_MSVC
@@ -2626,13 +2629,13 @@ operator delete[] (void* ptr) throw ()
 {
     NCBI_NS_NCBI::CNCMMCentral::DeallocMemory(ptr);
 }
-
+*/
 #ifdef __GLIBC__
 // glibc has special method of overriding C library allocation functions.
 
 #include <malloc.h>
 
-
+/*
 void* s_NCMallocHook(size_t size, const void* caller)
 {
     return NCBI_NS_NCBI::CNCMMCentral::AllocMemory(size);
@@ -2656,7 +2659,7 @@ void s_NCInitMallocHook(void)
 }
 
 void (*__malloc_initialize_hook) (void) = s_NCInitMallocHook;
-
+*/
 #elif !defined(NCBI_OS_MSWIN)
 // Changing of C library allocation functions on Windows is very tricky (if
 // possible at all) and NetCache will never run in production on Windows. So
