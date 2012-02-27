@@ -28,7 +28,7 @@ status_dir = @status_dir@
 
 @make_shell@
 RM    = /bin/rm
-TOUCH = /usr/bin/touch
+TOUCH = @TOUCH@
 MKDIR = /bin/mkdir
 
 signature      = @signature@

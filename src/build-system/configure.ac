@@ -1970,6 +1970,7 @@ else
    AC_MSG_RESULT(no)
 fi
 
+AC_PATH_PROG(TOUCH, touch, [], /bin:/usr/bin:$PATH)
 AC_PROG_EGREP
 AC_MSG_CHECKING([how to run $EGREP quietly])
 if test -z "`echo foo | $EGREP -q fo+ 2>>config.log || echo $?`"; then

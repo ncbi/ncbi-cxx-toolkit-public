@@ -8,3 +8,5 @@ reconfigure after minor changes.
 2011-05-17: new @ncbi_java@ variable for --with-jni builds.
 
 2011-10-05: new @FEATURES@ variable for the unit test framework.
+
+2012-02-27: new @TOUCH@ variable to avoid hard-coded paths.
