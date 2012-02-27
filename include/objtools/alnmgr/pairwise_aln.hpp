@@ -93,6 +93,103 @@ private:
 };
 
 
+/// CPairwiseAln iterator. Iterates over aligned ranges and gaps.
+class NCBI_XALNMGR_EXPORT CPairwise_CI
+{
+public:
+    typedef CRange<TSignedSeqPos> TSignedRange;
+    typedef CPairwiseAln::TAlnRng TAlnRange;
+
+    CPairwise_CI(void)
+        : m_Unaligned(false)
+    {
+    }
+
+    /// Iterate the whole pairwise alignment.
+    CPairwise_CI(const CPairwiseAln& pairwise)
+        : m_Aln(&pairwise),
+          m_Range(TSignedRange::GetWhole()),
+          m_Unaligned(false)
+    {
+        x_Init();
+    }
+
+    /// Iterate the selected range on the first sequence.
+    CPairwise_CI(const CPairwiseAln& pairwise,
+                 const TSignedRange& range)
+        : m_Aln(&pairwise),
+          m_Range(range),
+          m_Unaligned(false)
+    {
+        x_Init();
+    }
+
+    operator bool(void) const
+    {
+        return m_Aln  &&
+            m_It != m_Aln->end()  &&
+            m_GapIt != m_Aln->end()  &&
+            m_GapIt->GetFirstFrom() < m_Range.GetToOpen();
+    }
+
+    CPairwise_CI& operator++(void);
+
+    enum ESegType {
+        eAligned, ///< Aligned range
+        eGap      ///< Gap or unaligned range
+    };
+
+    /// Get current segment type.
+    ESegType GetSegType(void) const
+    {
+        _ASSERT(*this);
+        return m_It == m_GapIt ? eAligned : eGap;
+    }
+
+    /// Current range on the first sequence.
+    const TSignedRange& GetFirstRange(void) const
+    {
+        _ASSERT(*this);
+        return m_FirstRg;
+    }
+
+    /// Current range on the second sequence. May be empty when in a gap.
+    const TSignedRange& GetSecondRange(void) const
+    {
+        _ASSERT(*this);
+        return m_SecondRg;
+    }
+
+    /// Direction of the second sequence relative to the first one.
+    bool IsDirect(void) const
+    {
+        _ASSERT(*this);
+        return m_It->IsDirect();
+    }
+
+    bool IsFirstDirect(void) const
+    {
+        _ASSERT(*this);
+        return m_It->IsFirstDirect();
+    }
+
+private:
+    typedef CPairwiseAln::const_iterator TIterator;
+    typedef pair<TIterator, bool> TCheckedIterator;
+
+    void x_Init(void);
+    void x_InitSegment(void);
+
+    CConstRef<CPairwiseAln> m_Aln;
+    TSignedRange m_Range;     // Total selected range on the first sequence
+    TIterator    m_It;        // Next non-gap segment
+    TIterator    m_GapIt;     // Last non-gap segment when in a gap
+    TSignedRange m_FirstRg;   // Current range on the first sequence
+    TSignedRange m_SecondRg;  // Current range on the second sequence
+    bool         m_Unaligned; // Next segment is unaligned
+};
+
+
 /// Query-anchored alignment can be 2 or multi-dimentional
 class NCBI_XALNMGR_EXPORT CAnchoredAln : public CObject
 {

@@ -349,13 +349,11 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
                                const CPairwiseAln& tr) ///< translating (aln segments) pairwise
 {
     // Shift between the old anchor and the alignment.
-    CPairwiseAln::TPos anchor_shift = 0;
     const CPairwiseAln::TAlignRangeVector& gaps = pw.GetInsertions();
     CPairwiseAln::TAlignRangeVector::const_iterator gap_it = gaps.begin();
     ITERATE (CPairwiseAln, it, pw) {
         CPairwiseAln::TAlnRng ar = *it;
         CPairwiseAln::TPos pos = tr.GetFirstPosBySecondPos(ar.GetFirstFrom());
-        anchor_shift = ar.GetFirstFrom() - pos;
         ar.SetFirstFrom(pos);
         out_pw.insert(ar);
         if (gap_it != gaps.end()) {
@@ -368,7 +366,8 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
                     // Need to specify direction since the source point is out of
                     // anchor ranges and will produce -1.
                     CPairwiseAln::TPos new_gap_pos =
-                        tr.GetFirstPosBySecondPos(gap_rg.GetFirstFrom(), CPairwiseAln::eForward);
+                        tr.GetFirstPosBySecondPos(gap_rg.GetFirstFrom(),
+                        CPairwiseAln::eForward);
                     gap_rg.SetFirstFrom(new_gap_pos);
                     out_pw.AddInsertion(gap_rg);
                     gap_it++;
@@ -378,7 +377,15 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
     }
     while (gap_it != gaps.end()) {
         CPairwiseAln::TAlnRng gap_rg = *gap_it;
-        gap_rg.SetFirstFrom(gap_rg.GetFirstFrom() - anchor_shift);
+        CPairwiseAln::TPos new_gap_pos =
+            tr.GetFirstPosBySecondPos(gap_rg.GetFirstFrom(),
+            CPairwiseAln::eForward);
+        // If there are no ranges ahead, try to find the last one before the gap.
+        if (new_gap_pos == -1) {
+            new_gap_pos = tr.GetFirstPosBySecondPos(gap_rg.GetFirstFrom(),
+                CPairwiseAln::eBackwards) + 1;
+        }
+        gap_rg.SetFirstFrom(new_gap_pos);
         out_pw.AddInsertion(gap_rg);
         gap_it++;
     }

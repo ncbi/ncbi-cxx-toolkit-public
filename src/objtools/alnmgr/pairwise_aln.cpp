@@ -41,6 +41,105 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+CPairwise_CI& CPairwise_CI::operator++(void)
+{
+    if (m_It == m_GapIt) {
+        // Advance to the next gap.
+        ++m_It;
+    }
+    // Advance to the next non-gap segment if there's no unaligned range
+    // to show.
+    else if ( !m_Unaligned ) {
+        // Advance to the next segment.
+        ++m_GapIt;
+        _ASSERT(m_It == m_GapIt);
+    }
+    x_InitSegment();
+    return *this;
+}
+
+
+void CPairwise_CI::x_Init(void)
+{
+    TCheckedIterator it = m_Aln->find_2(m_Range.GetFrom());
+    m_It = it.first;
+    m_GapIt = it.first;
+    if ( !it.second ) {
+        if (m_It != m_Aln->begin()) {
+            --m_GapIt;
+        }
+    }
+    x_InitSegment();
+}
+
+
+void CPairwise_CI::x_InitSegment(void)
+{
+    if ( !*this ) {
+        m_FirstRg = TSignedRange::GetEmpty();
+        m_SecondRg = TSignedRange::GetEmpty();
+        return;
+    }
+    _ASSERT(m_It != m_Aln->end()  &&  m_GapIt != m_Aln->end());
+    if (m_It == m_GapIt) {
+        // Normal segment
+        m_FirstRg = m_It->GetFirstRange();
+        m_SecondRg = m_It->GetSecondRange();
+    }
+    else {
+        // Gap
+        _ASSERT(m_It->IsDirect() == m_GapIt->IsDirect());
+        m_FirstRg.SetOpen(m_GapIt->GetFirstToOpen(),
+            m_It->GetFirstFrom());
+        if ( m_It->IsDirect() ) {
+            m_SecondRg.SetOpen(m_GapIt->GetSecondToOpen(),
+                m_It->GetSecondFrom());
+        }
+        else {
+            m_SecondRg.SetOpen(m_It->GetSecondToOpen(),
+                m_GapIt->GetSecondFrom());
+        }
+        if ( !m_Unaligned ) {
+            if (!m_FirstRg.Empty()  &&  !m_SecondRg.Empty()) {
+                // Show gap first, then unaligned segment.
+                m_SecondRg.SetToOpen(m_SecondRg.GetFrom());
+                m_Unaligned = true;
+            }
+        }
+        else {
+            // Show unaligned segment after gap.
+            m_FirstRg.SetFrom(m_FirstRg.GetToOpen());
+            m_Unaligned = false;
+            // Don't clip unaligned segments.
+            return;
+        }
+    }
+    if ( m_Range.IsWhole() ) {
+        return;
+    }
+    // Take both direction into account, adjust ranges if clipped.
+    TSignedSeqPos left_shift = 0;
+    TSignedSeqPos right_shift = 0;
+    if (m_FirstRg.GetFrom() < m_Range.GetFrom()) {
+        left_shift = m_Range.GetFrom() - m_FirstRg.GetFrom();
+    }
+    if (m_FirstRg.GetToOpen() > m_Range.GetToOpen()) {
+        right_shift = m_FirstRg.GetToOpen() - m_Range.GetToOpen();
+    }
+    m_FirstRg.IntersectWith(m_Range);
+    if (left_shift != 0  ||  right_shift != 0) {
+        if ( m_It->IsReversed() ) {
+            swap(left_shift, right_shift);
+        }
+        m_SecondRg.SetOpen(m_SecondRg.GetFrom() + left_shift,
+            m_SecondRg.GetToOpen() - right_shift);
+        if (m_SecondRg.GetToOpen() < m_SecondRg.GetFrom()) {
+            m_SecondRg.SetToOpen(m_SecondRg.GetFrom());
+        }
+    }
+}
+
+
 /// Split rows with mixed dir into separate rows
 /// returns true if the operation was performed
 bool CAnchoredAln::SplitStrands()

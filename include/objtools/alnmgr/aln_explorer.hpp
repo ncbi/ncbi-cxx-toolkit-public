@@ -85,10 +85,14 @@ public:
 
     typedef unsigned TSegTypeFlags; // binary OR of ESegTypeFlags
     enum ESegTypeFlags  {
-        fAligned  = 0x01,
-        fGap      = 0x02,
-        fReversed = 0x04,
-        fInvalid  = (TSegTypeFlags) 0x80000000
+        fAligned   = 1 << 0,
+        fGap       = 1 << 1,
+        fReversed  = 1 << 2,
+        fIndel     = 1 << 3,
+        fUnaligned = 1 << 4,
+        fInvalid   = (TSegTypeFlags) 0x80000000,
+
+        fSegTypeMask = fAligned | fGap | fIndel | fUnaligned
     };
 
     virtual ~IAlnSegment()  {}

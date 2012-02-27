@@ -520,7 +520,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
         size_t prev_to_open = (pairwise_aln.GetFirstFrom() > aln_range.GetFrom()) ? string::npos : 0;
 
         string s;
-        CSparse_CI it(pairwise_aln, IAlnSegmentIterator::eSkipGaps, aln_range);
+        CSparse_CI it(*this, row, IAlnSegmentIterator::eSkipGaps, aln_range);
 
         //LOG_POST_X(1, "GetAlnSeqString(" << row << ") ==========================================" );
         while (it)   {
@@ -603,7 +603,7 @@ CSparseAln::CreateSegmentIterator(TNumrow row,
             GetSeqId(row).AsFastaString() + "\".";
         NCBI_THROW(CAlnException, eInvalidRequest, errstr);
     }
-    return new CSparse_CI(*m_Aln->GetPairwiseAlns()[row], flag, range);
+    return new CSparse_CI(*this, row, flag, range);
 }
 
 

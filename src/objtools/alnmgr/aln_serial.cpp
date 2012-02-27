@@ -66,6 +66,8 @@ ostream& operator<<(ostream& out, const IAlnSegment::ESegTypeFlags& flags)
     return out
         << (flags & IAlnSegment::fAligned ? "fAligned " : "")
         << (flags & IAlnSegment::fGap ? "fGap " : "")
+        << (flags & IAlnSegment::fIndel ? "fIndel " : "")
+        << (flags & IAlnSegment::fUnaligned ? "fUnaligned " : "")
         << (flags & IAlnSegment::fReversed ? "fReversed " : "")
         << (flags & IAlnSegment::fInvalid ? "fInvalid " : "");
 }
@@ -197,5 +199,3 @@ ostream& operator<<(ostream& out, const TAlnStats& aln_stats)
 
 
 END_NCBI_SCOPE
-
-

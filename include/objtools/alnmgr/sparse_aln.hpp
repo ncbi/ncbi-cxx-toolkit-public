@@ -62,7 +62,6 @@ public:
     /// Destructor
     virtual ~CSparseAln();
 
-
     /// Gap character modifier
     void SetGapChar(TResidue gap_char);
 
@@ -156,14 +155,14 @@ public:
     // Static utilities:
     static void TranslateNAToAA(const string& na, string& aa,
                                 int gen_code = kDefaultGenCode); //< per http://www.ncbi.nlm.nih.gov/collab/FT/#7.5.5
-protected:
-    void x_Build(const CAnchoredAln& src_align);
 
+protected:
+    friend class CSparse_CI;
+
+    void x_Build(const CAnchoredAln& src_align);
     CSeqVector& x_GetSeqVector(TNumrow row) const;
 
-
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
-
 
     CRef<CAnchoredAln> m_Aln;
     mutable CRef<objects::CScope> m_Scope;
@@ -174,10 +173,6 @@ protected:
     mutable vector<CRef<CSeqVector> > m_SeqVectors;
 
 };
-
-
-
-
 
 
 END_NCBI_SCOPE

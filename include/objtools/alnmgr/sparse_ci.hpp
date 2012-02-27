@@ -43,25 +43,19 @@ BEGIN_NCBI_SCOPE
 
 class NCBI_XALNMGR_EXPORT CSparseSegment : public  IAlnSegment
 {
-    friend class CSparseIterator;
 public:
-    typedef CSparseAln::TAlnRng     TAlignRange;
-    typedef CSparseAln::TAlnRngColl TAlnRngColl;
+    CSparseSegment(void);
+    virtual operator bool(void) const;
+    virtual TSegTypeFlags GetType(void) const;
+    virtual const TSignedRange& GetAlnRange(void) const;
+    virtual const TSignedRange& GetRange(void) const;
 
-    CSparseSegment();
-    void    Init(TSignedSeqPos aln_from, TSignedSeqPos aln_to,
-                 TSignedSeqPos from, TSignedSeqPos to, TSegTypeFlags type);
-    virtual operator bool() const;
+private:
+    friend class CSparse_CI;
 
-    virtual TSegTypeFlags GetType() const;
-    virtual const TSignedRange&    GetAlnRange() const;
-    virtual const TSignedRange&    GetRange() const;
-
-protected:
-    TSignedRange  m_AlnRange;
-    TSignedRange  m_Range;
-    bool          m_Reversed;
     TSegTypeFlags m_Type;
+    TSignedRange  m_AlnRange;
+    TSignedRange  m_RowRange;
 };
 
 
@@ -71,67 +65,55 @@ protected:
 class NCBI_XALNMGR_EXPORT CSparse_CI : public IAlnSegmentIterator
 {
 public:
-    typedef CSparseAln::TAlnRng     TAlignRange;
-    typedef CSparseAln::TAlnRngColl TAlignColl;
-    typedef CRange<TSignedSeqPos>   TSignedRange;
+    typedef CPairwise_CI::TSignedRange TSignedRange;
+    typedef CSparseAln::TDim           TDim;
 
-    CSparse_CI();
-    CSparse_CI(const TAlignColl& coll, EFlags flag);
-    CSparse_CI(const TAlignColl& coll, EFlags flag,
+    CSparse_CI(void);
+    CSparse_CI(const CSparseAln&   anchored,
+               TDim                row,
+               EFlags              flags);
+    CSparse_CI(const CSparseAln&   anchored,
+               TDim                row,
+               EFlags              flags,
                const TSignedRange& range);
     CSparse_CI(const CSparse_CI& orig);
 
     virtual ~CSparse_CI();
 
-public:
-    virtual IAlnSegmentIterator*    Clone() const;
+    virtual IAlnSegmentIterator* Clone(void) const;
 
     // returns true if iterator points to a valid segment
-    virtual operator bool() const;
+    virtual operator bool(void) const;
 
     /// postfix operators are not defined to avoid performance overhead
-    virtual IAlnSegmentIterator& operator++();
+    virtual IAlnSegmentIterator& operator++(void);
 
-    virtual bool    operator==(const IAlnSegmentIterator& it) const;
-    virtual bool    operator!=(const IAlnSegmentIterator& it) const;
+    virtual bool operator==(const IAlnSegmentIterator& it) const;
+    virtual bool operator!=(const IAlnSegmentIterator& it) const;
 
-    virtual const value_type&  operator*() const;
-    virtual const value_type* operator->() const;
+    virtual const value_type& operator*(void) const;
+    virtual const value_type* operator->(void) const;
 
-protected:
-    inline bool x_Equals(const CSparse_CI& it) const
-    {
-        return  m_Coll == it.m_Coll  &&  m_Flag == it.m_Flag  &&
-                m_It_1 == it.m_It_1  &&  m_It_2 == m_It_2;
-    }
-    inline void x_InitSegment();
+    bool IsAnchorDirect(void) const { return m_AnchorDirect; }
 
-    void x_InitIterator();
+private:
+    void x_InitIterator(void);
+    void x_InitSegment(void);
+    void x_CheckSegment(void);
+    void x_NextSegment(void);
+    bool x_Equals(const CSparse_CI& other) const;
 
-    inline bool x_IsInsert() const  {
-        return (m_It_1 != m_It_2)  &&  (m_It_1->GetFirstFrom() == m_It_2->GetFirstToOpen());
-    }
-protected:
-    struct  SClip
-    {
-        typedef TAlignColl::const_iterator const_iterator;
-
-        TSignedSeqPos m_From;
-        TSignedSeqPos m_ToOpen;
-
-        const_iterator m_First_It;
-        const_iterator m_Last_It_1, m_Last_It_2; // designate last segment to iterate
-    };
-
-    const TAlignColl*  m_Coll;
-    EFlags  m_Flag;     /// iterating mode
-
-    SClip*  m_Clip; // not NULL if clip is set
-
-    TAlignColl::const_iterator m_It_1, m_It_2;
-    /// if m_It1 != m_It2 then the iterator points to a gap between m_It1 and m_It2
-
-    CSparseSegment    m_Segment;
+    EFlags         m_Flags;        // iterating mode
+    CSparseSegment m_Segment;
+    CConstRef<CAnchoredAln> m_Aln;
+    TDim           m_Row;          // Selected row
+    TSignedRange   m_TotalRange;   // Total requested range
+    CPairwise_CI   m_AnchorIt;     // Anchor iterator
+    CPairwise_CI   m_RowIt;        // Selected row iterator
+    TSignedRange   m_NextAnchorRg; // Next alignment range on the anchor
+    TSignedRange   m_NextRowRg;    // Next alignment range on the selected row
+    bool           m_AnchorDirect; // Anchor row direction.
+    bool           m_RowDirect;    // Row direction relative to the anchor
 };
 
 

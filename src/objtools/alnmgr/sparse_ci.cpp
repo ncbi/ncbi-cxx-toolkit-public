@@ -39,286 +39,328 @@ USING_SCOPE(ncbi::objects);
 ////////////////////////////////////////////////////////////////////////////////
 /// CSparseSegment - IAlnSegment implementation for CAlnMap::CAlnChunk
 
-CSparseSegment::CSparseSegment()
+CSparseSegment::CSparseSegment(void)
+    : m_Type(fInvalid),
+      m_AlnRange(TSignedRange::GetEmpty()),
+      m_RowRange(TSignedRange::GetEmpty())
 {
 }
 
 
-void CSparseSegment::Init(TSignedSeqPos aln_from, TSignedSeqPos aln_to,
-                          TSignedSeqPos from, TSignedSeqPos to, TSegTypeFlags type)
+CSparseSegment::operator bool(void) const
 {
-    m_AlnRange.Set(aln_from, aln_to);
-    m_Range.Set(from, to);
-    m_Type = type;
+    return !IsInvalidType();
 }
 
 
-CSparseSegment::operator bool() const
-{
-    return ! IsInvalidType();
-}
-
-
-CSparseSegment::TSegTypeFlags CSparseSegment::GetType() const
+CSparseSegment::TSegTypeFlags CSparseSegment::GetType(void) const
 {
     return m_Type;
 }
 
 
-const CSparseSegment::TSignedRange& CSparseSegment::GetAlnRange() const
+const CSparseSegment::TSignedRange& CSparseSegment::GetAlnRange(void) const
 {
     return m_AlnRange;
 }
 
 
-const CSparseSegment::TSignedRange& CSparseSegment::GetRange() const
+const CSparseSegment::TSignedRange& CSparseSegment::GetRange(void) const
 {
-    return m_Range;
+    return m_RowRange;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 /// CSparse_CI
 
-inline void CSparse_CI::x_InitSegment()
+void CSparse_CI::x_InitSegment(void)
 {
-    if( ! (bool)*this)   {
-        m_Segment.Init(-1, -1, -1, -1, IAlnSegment::fInvalid); // invalid
-    } else {
-        IAlnSegment::TSegTypeFlags dir_flag = m_It_1->IsDirect() ? 0 : IAlnSegment::fReversed;
+    bool anchor_gap = !m_AnchorIt  ||
+        m_AnchorIt.GetSegType() == CPairwise_CI::eGap;
+    bool row_gap = !m_RowIt  ||
+        m_RowIt.GetSegType() == CPairwise_CI::eGap;
 
-        if(m_It_1 == m_It_2)  {   // aligned segment
-            if(m_Clip  &&  (m_It_1 == m_Clip->m_First_It  ||  m_It_1 == m_Clip->m_Last_It_1))  {
-                // we need to clip the current segment
-                TAlignRange r = *m_It_1;
-                CRange<TSignedSeqPos> clip(m_Clip->m_From, m_Clip->m_ToOpen - 1);
-                r.IntersectWith(clip);
+    TSignedRange& aln_rg = m_Segment.m_AlnRange;
+    TSignedRange& row_rg = m_Segment.m_RowRange;
 
-                m_Segment.Init(r.GetFirstFrom(), r.GetFirstTo(),
-                               r.GetSecondFrom(), r.GetSecondTo(),
-                               IAlnSegment::fAligned | dir_flag);
-            } else {
-                const TAlignRange& r = *m_It_1;
-                m_Segment.Init(r.GetFirstFrom(), r.GetFirstTo(),
-                               r.GetSecondFrom(), r.GetSecondTo(),
-                               IAlnSegment::fAligned | dir_flag);
-            }
-        } else {  // gap
-            _ASSERT(m_It_1->IsDirect() == m_It_2->IsDirect());
-            TSignedSeqPos from, to;
-            if (m_It_1->IsDirect()) {
-                from = m_It_2->GetSecondToOpen();
-                to = m_It_1->GetSecondFrom() - 1;
-            } else {
-                from = m_It_1->GetSecondToOpen();
-                to = m_It_2->GetSecondFrom() - 1;
-            }
+    TSignedSeqPos from = 0;
+    TSignedSeqPos to = 0;
+    TSignedSeqPos left_offset = 0;
+    TSignedSeqPos right_offset = 0;
 
-            if(m_Clip  &&  (m_It_1 == m_Clip->m_First_It  ||  m_It_1 == m_Clip->m_Last_It_1))  {
-                TSignedRange r(m_It_2->GetFirstToOpen(), m_It_1->GetFirstFrom() - 1);
-                TSignedRange clip(m_Clip->m_From, m_Clip->m_ToOpen - 1);
-                r.IntersectWith(clip);
-
-                m_Segment.Init(r.GetFrom(), r.GetTo(), from, to, IAlnSegment::fGap);
-            } else {
-                m_Segment.Init(m_It_2->GetFirstToOpen(), m_It_1->GetFirstFrom() - 1,
-                               from, to, IAlnSegment::fGap);
-            }
+    if ( !m_AnchorIt ) {
+        if ( !m_RowIt ) {
+            // End of the iterator
+            m_Aln.Reset();
+            aln_rg = TSignedRange::GetEmpty();
+            row_rg = TSignedRange::GetEmpty();
+            m_Segment.m_Type = IAlnSegment::fInvalid;
+            return;
         }
+        // Only row iterator is valid. Gap or indel. Use the whole remaining
+        // range of the row segment.
+        aln_rg = m_NextRowRg;
+        row_rg = m_RowIt.GetSecondRange();
+        from = m_NextRowRg.GetFrom();
+        to = m_NextRowRg.GetToOpen();
+        left_offset = m_NextRowRg.GetFrom() - m_RowIt.GetFirstRange().GetFrom();
+        right_offset = 0;
+    }
+    else if ( !m_RowIt ) {
+        from = m_NextAnchorRg.GetFrom();
+        to = m_NextAnchorRg.GetToOpen();
+        // Row sequence is missing - set offsets to make the range empty
+        // at the last range end.
+        left_offset = row_rg.GetLength();
+        right_offset = 0;
+    }
+    else {
+        // Both iterators are valid - select nearest segment start.
+        from = min(m_NextAnchorRg.GetFrom(), m_NextRowRg.GetFrom());
+        // Calculate offset from the pairwise row segment start (to skip it).
+        left_offset = from - m_RowIt.GetFirstRange().GetFrom();
+        if (m_NextAnchorRg.GetFrom() > from) {
+            // Use part of row range up to the anchor segment start
+            // or the whole row segment if the anchor starts later.
+            to = min(m_NextAnchorRg.GetFrom(), m_NextRowRg.GetToOpen());
+            right_offset = m_NextRowRg.GetToOpen() - to;
+        }
+        else if (m_NextRowRg.GetFrom() > from) {
+            // Use part of anchor range up the the row segment start
+            // or the whole anchor segment if the row starts later.
+            to = min(m_NextRowRg.GetFrom(), m_NextAnchorRg.GetToOpen());
+            // Row range will become empty starting at the nearest row
+            // segment from/to depending on the strand.
+            left_offset = 0;
+            right_offset = m_RowIt.GetSecondRange().GetLength();
+        }
+        else {
+            // Both ranges start at the same point - find the nearest end.
+            to = min(m_NextAnchorRg.GetToOpen(), m_NextRowRg.GetToOpen());
+            right_offset = m_NextRowRg.GetToOpen() - to;
+        }
+
+        // Adjust gap flags if one of the pariwise segments starts past
+        // the sparse segment end.
+        anchor_gap = anchor_gap  ||
+            m_AnchorIt.GetFirstRange().GetFrom() >= to;
+        row_gap = row_gap  ||
+            m_RowIt.GetFirstRange().GetFrom() >= to;
+    }
+
+    aln_rg.SetOpen(from, to);
+
+    // Trim ranges to leave only unused range
+    if (m_NextAnchorRg.GetFrom() < to) {
+        m_NextAnchorRg.SetFrom(to);
+    }
+    if (m_NextRowRg.GetFrom() < to) {
+        m_NextRowRg.SetFrom(to);
+    }
+
+    // Adjust row range according to the alignment range.
+    _ASSERT(left_offset >= 0);
+    _ASSERT(right_offset >= 0);
+    if ( !m_RowDirect ) {
+        swap(left_offset, right_offset);
+    }
+    if ( m_RowIt ) {
+        row_rg = m_RowIt.GetSecondRange();
+    }
+    // Adjust offsets so that the range length is never negative.
+    if (left_offset > row_rg.GetLength()) {
+        left_offset = row_rg.GetLength();
+    }
+    if (right_offset > row_rg.GetLength() - left_offset) {
+        right_offset = row_rg.GetLength() - left_offset;
+    }
+    row_rg.SetOpen(row_rg.GetFrom() + left_offset,
+        row_rg.GetToOpen() - right_offset);
+
+    // Set segment type.
+    if ( row_gap ) {
+        if ( aln_rg.Empty() ) {
+            m_Segment.m_Type = IAlnSegment::fUnaligned;
+        }
+        else {
+            m_Segment.m_Type = anchor_gap ?
+                IAlnSegment::fGap : IAlnSegment::fIndel;
+        }
+    }
+    else {
+        m_Segment.m_Type = anchor_gap ?
+            IAlnSegment::fIndel : IAlnSegment::fAligned;
+    }
+
+    // The flag shows relative row direction.
+    if ( !m_RowDirect ) {
+        m_Segment.m_Type |= IAlnSegment::fReversed;
     }
 }
 
 // assuming clipping range
-void CSparse_CI::x_InitIterator()
+void CSparse_CI::x_InitIterator(void)
 {
-    _ASSERT(m_Coll);
-    _ASSERT( !m_Coll->empty() );
+    if (m_Row >= TDim(m_Aln->GetPairwiseAlns().size())) {
+        // Invalid row selected - nothing to iterate.
+        m_Aln.Reset();
+        return;
+    }
+    const CPairwiseAln& anchor_pw =
+        *m_Aln->GetPairwiseAlns()[m_Aln->GetAnchorRow()];
+    const CPairwiseAln& pw = *m_Aln->GetPairwiseAlns()[m_Row];
+    m_AnchorIt = CPairwise_CI(anchor_pw, m_TotalRange);
+    m_RowIt = CPairwise_CI(pw, m_TotalRange);
+    // Pairwise alignments in CSparseAln can not have mixed directions.
+    // Remember the first one and use for all segments.
+    m_AnchorDirect = m_AnchorIt ? m_AnchorIt.IsFirstDirect() : true;
+    m_RowDirect = m_RowIt ? m_RowIt.IsDirect() : true;
+    if ( m_AnchorIt ) {
+        m_NextAnchorRg = m_AnchorIt.GetFirstRange();
+    }
+    else {
+        m_NextAnchorRg = TSignedRange::GetEmpty();
+    }
+    if ( m_RowIt ) {
+        m_NextRowRg = m_RowIt.GetFirstRange();
+    }
+    else {
+        m_NextRowRg = TSignedRange::GetEmpty();
+    }
+    m_Segment.m_AlnRange = TSignedRange::GetEmpty();
+    x_InitSegment();
+    x_CheckSegment();
+}
 
-    bool first_gap = false, last_gap = false;
-    if(m_Clip)   {
-        // adjsut starting position
-        TSignedSeqPos from = m_Clip->m_From;
 
-        pair<TAlignColl::const_iterator, bool> res = m_Coll->find_2(from);
-
-        // set start position
-        if(res.second)  {
-            _ASSERT(res.first->FirstContains(from)); // pos inside a segment
-            m_Clip->m_First_It = res.first;
-        } else {    // pos is in the gap
-            m_Clip->m_First_It = res.first;
-            if(res.first != m_Coll->begin())    {
-                first_gap = true;
+void CSparse_CI::x_CheckSegment(void)
+{
+    if (m_Flags == eAllSegments) {
+        return;
+    }
+    while ( *this ) {
+        if (m_Flags == eSkipGaps) {
+            if ( m_Segment.IsAligned() ) {
+                break;
             }
         }
-
-        // set end condition
-        TSignedSeqPos to = m_Clip->m_ToOpen - 1;
-        res = m_Coll->find_2(to);
-
-        if(res.second)  {
-            _ASSERT(res.first->FirstContains(to)); // pos inside a segment
-            m_Clip->m_Last_It_1 = m_Clip->m_Last_It_2 = res.first;
-        } else {
-            // pos is in the gap
-            if(res.first == m_Coll->end())   {
-                _ASSERT(res.first != m_Coll->begin());
-                m_Clip->m_Last_It_1 = m_Clip->m_Last_It_2 = res.first - 1;
-            } else {
-                m_Clip->m_Last_It_1 = m_Clip->m_Last_It_2 = res.first;
-                if (res.first != m_Coll->begin()) {
-                    --m_Clip->m_Last_It_2;
-                    last_gap = true;
-                }
+        else {
+            // Distinguish between insertions and deletions.
+            bool ins = (m_Segment.m_Type & IAlnSegment::fIndel) != 0  &&
+                m_Segment.m_RowRange.Empty();
+            if ((m_Flags == eInsertsOnly  &&  ins)  ||
+                (m_Flags == eSkipInserts  &&  !ins)) {
+                break;
             }
         }
-        // initialize iterators
-        m_It_2 = m_It_1 = m_Clip->m_First_It;
-    } else { // no clip
-        m_It_1 = m_It_2 = m_Coll->begin();
+        x_NextSegment();
     }
+}
 
-    // adjsut iterators
-    switch(m_Flag)  {
-    case eAllSegments:
-        if(first_gap)   {
-            --m_It_2;
+
+void CSparse_CI::x_NextSegment(void)
+{
+    if ( !*this ) return;
+    if (m_AnchorIt  &&  m_NextAnchorRg.Empty()) {
+        // Advance anchor iterator, skip unaligned segments if any.
+        do {
+            ++m_AnchorIt;
         }
-        break;
-    case eSkipGaps:
-        if(last_gap)    {
-            --m_Clip->m_Last_It_1;
-        }
-        break;
-    case eInsertsOnly:
-        if(first_gap)   {
-            --m_It_2;
-        } else {
-            ++m_It_1;
-        }
-        if((bool)*this  &&  ! x_IsInsert()) {
-            ++(*this);
-        }
-        break;
-    case eSkipInserts:
-        if(first_gap  &&  x_IsInsert()) {
-            ++(*this);
+        while (m_AnchorIt  &&  m_AnchorIt.GetFirstRange().Empty());
+        if ( m_AnchorIt ) {
+            m_NextAnchorRg = m_AnchorIt.GetFirstRange();
         }
     }
-
+    if (m_RowIt  &&  m_NextRowRg.Empty()) {
+        ++m_RowIt;
+        if ( m_RowIt ) {
+            m_NextRowRg = m_RowIt.GetFirstRange();
+        }
+    }
     x_InitSegment();
 }
 
 
-CSparse_CI::CSparse_CI()
-:   m_Coll(NULL),
-    m_Clip(NULL)
+bool CSparse_CI::x_Equals(const CSparse_CI& other) const
 {
-    x_InitSegment();
+    return m_Aln == other.m_Aln  &&
+        m_Flags == other.m_Flags  &&
+        m_Row == other.m_Row  &&
+        m_TotalRange == other.m_TotalRange  &&
+        m_AnchorIt == other.m_AnchorIt  &&
+        m_RowIt == other.m_RowIt  &&
+        m_NextAnchorRg == other.m_NextAnchorRg  &&
+        m_NextRowRg == other.m_NextRowRg  &&
+        m_Segment == other.m_Segment;
 }
 
 
-CSparse_CI::CSparse_CI(const TAlignColl& coll, EFlags flag)
-:   m_Coll(&coll),
-    m_Flag(flag),
-    m_Clip(NULL)
+CSparse_CI::CSparse_CI(void)
+:   m_Flags(eAllSegments),
+    m_Aln(NULL),
+    m_Row(0),
+    m_AnchorDirect(true),
+    m_RowDirect(true)
+{
+    m_Segment.m_AlnRange = TSignedRange::GetEmpty();
+    m_Segment.m_RowRange = TSignedRange::GetEmpty();
+    m_Segment.m_Type = IAlnSegment::fInvalid;
+}
+
+
+CSparse_CI::CSparse_CI(const CSparseAln&   aln,
+                       TDim                row,
+                       EFlags              flags)
+    : m_Flags(flags),
+      m_Aln(aln.m_Aln),
+      m_Row(row),
+      m_TotalRange(TSignedRange::GetWhole())
 {
     x_InitIterator();
 }
 
 
-CSparse_CI::CSparse_CI(const TAlignColl& coll, EFlags flag,
+CSparse_CI::CSparse_CI(const CSparseAln&   aln,
+                       TDim                row,
+                       EFlags              flags,
                        const TSignedRange& range)
-:   m_Coll(&coll),
-    m_Flag(flag),
-    m_Clip(NULL)
+    : m_Flags(flags),
+      m_Aln(aln.m_Aln),
+      m_Row(row),
+      m_TotalRange(range)
 {
-    if(m_Coll)  {
-        m_Clip = new SClip;
-        m_Clip->m_From = range.GetFrom();
-        m_Clip->m_ToOpen = range.GetToOpen();
-    }
-
     x_InitIterator();
 }
 
 
 CSparse_CI::CSparse_CI(const CSparse_CI& orig)
-:   m_Coll(orig.m_Coll),
-    m_Flag(orig.m_Flag),
-    m_It_1(orig.m_It_1),
-    m_It_2(orig.m_It_2)
 {
-    if(orig.m_Clip)  {
-        m_Clip = new SClip(*orig.m_Clip);
-    }
-    x_InitSegment();
+    *this = orig;
 }
 
 
-CSparse_CI::~CSparse_CI()
+CSparse_CI::~CSparse_CI(void)
 {
-    delete m_Clip;
 }
 
 
-IAlnSegmentIterator*    CSparse_CI::Clone() const
+IAlnSegmentIterator* CSparse_CI::Clone(void) const
 {
     return new CSparse_CI(*this);
 }
 
 
-CSparse_CI::operator bool() const
+CSparse_CI::operator bool(void) const
 {
-    if(m_Coll  &&  m_It_1 >= m_Coll->begin())  {
-        if(m_Clip)  {
-            return  (m_It_1 <= m_Clip->m_Last_It_1)  &&   (m_It_2 <= m_Clip->m_Last_It_2);
-        }
-        else {
-            return m_It_1 != m_Coll->end();
-        }
-    }
-    return false;
+    return m_Aln  &&  (m_AnchorIt || m_RowIt);
 }
 
 
-IAlnSegmentIterator& CSparse_CI::operator++()
+IAlnSegmentIterator& CSparse_CI::operator++(void)
 {
-    _ASSERT(m_Coll);
-
-    switch(m_Flag)  {
-    case eAllSegments:
-        if(m_It_1 == m_It_2)   {  // aligned segment - move to gap
-            ++m_It_1;
-        } else {    // gap - move to the next segment
-            ++m_It_2;
-        }
-        break;
-    case eSkipGaps:
-        ++m_It_1;
-        ++m_It_2;
-        break;
-    case eInsertsOnly:
-        do {
-            ++m_It_1;
-            ++m_It_2;
-        } while( (bool)*this && m_It_1->GetFirstFrom() != m_It_2->GetFirstToOpen() );
-        break;
-    case eSkipInserts:
-        if( m_It_1 == m_It_2 ){  // aligned segment - move to gap
-            ++m_It_1;
-            if( (bool)*this && m_It_1->GetFirstFrom() == m_It_2->GetFirstToOpen() ){ // insert - skip
-                ++m_It_2;
-            }
-        } else {    // gap - move to the next segment
-            ++m_It_2;
-        }
-        break;
-    default:
-        _ASSERT(false); // not implemented
-    }
-
-    x_InitSegment();
+    x_NextSegment();
+    x_CheckSegment();
     return *this;
 }
 
@@ -326,8 +368,7 @@ IAlnSegmentIterator& CSparse_CI::operator++()
 bool CSparse_CI::operator==(const IAlnSegmentIterator& it) const
 {
     if(typeid(*this) == typeid(it)) {
-        const CSparse_CI* sparse_it =
-            dynamic_cast<const CSparse_CI*>(&it);
+        const CSparse_CI* sparse_it = dynamic_cast<const CSparse_CI*>(&it);
         return x_Equals(*sparse_it);
     }
     return false;
@@ -337,22 +378,21 @@ bool CSparse_CI::operator==(const IAlnSegmentIterator& it) const
 bool CSparse_CI::operator!=(const IAlnSegmentIterator& it) const
 {
     if(typeid(*this) == typeid(it)) {
-        const CSparse_CI* sparse_it =
-            dynamic_cast<const CSparse_CI*>(&it);
-        return ! x_Equals(*sparse_it);
+        const CSparse_CI* sparse_it = dynamic_cast<const CSparse_CI*>(&it);
+        return !x_Equals(*sparse_it);
     }
     return true;
 }
 
 
-const CSparse_CI::value_type& CSparse_CI::operator*() const
+const CSparse_CI::value_type& CSparse_CI::operator*(void) const
 {
     _ASSERT(*this);
     return m_Segment;
 }
 
 
-const CSparse_CI::value_type* CSparse_CI::operator->() const
+const CSparse_CI::value_type* CSparse_CI::operator->(void) const
 {
     _ASSERT(*this);
     return &m_Segment;
