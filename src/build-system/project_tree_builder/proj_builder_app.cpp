@@ -2041,11 +2041,11 @@ void CProjBulderApp::VerifyArguments(void)
         NStr::ToLower(m_Root);
     }
 
+    m_IncDir = GetProjectTreeInfo().m_Compilers;
     if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         m_IncDir = CDirEntry(m_Solution).GetDir();
         m_IncDir = CDirEntry::ConcatPath(m_IncDir,"..");
     } else {
-        m_IncDir = GetProjectTreeInfo().m_Compilers;
         m_IncDir = CDirEntry::ConcatPath(m_IncDir,GetRegSettings().m_CompilersSubdir);
         m_IncDir = CDirEntry::ConcatPath(m_IncDir, GetBuildType().GetTypeStr());
     }
