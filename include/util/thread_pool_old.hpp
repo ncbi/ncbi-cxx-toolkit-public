@@ -141,7 +141,11 @@ public:
     /// @param max_size
     ///   The maximum size of the queue (may not be zero!)
     CBlockingQueue(size_t max_size = kMax_UInt)
-        : m_GetSem(0,1), m_PutSem(1,1), m_HungerSem(0,1), m_HungerCnt(0),
+        :
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
+          m_GetSem(0,1), m_PutSem(1,1), m_HungerSem(0,1),
+#endif
+          m_HungerCnt(0),
           m_MaxSize(min(max_size, size_t(0xFFFFFF))),
           m_RequestCounter(0xFFFFFF)
         { _ASSERT(max_size > 0); }
@@ -267,9 +271,15 @@ protected:
 
     // Derived classes should take care to use these members properly.
     volatile TRealQueue m_Queue;     ///< The queue
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+    CConditionVariable  m_GetCond;
+    mutable CConditionVariable  m_PutCond;
+    mutable CConditionVariable  m_HungerCond;
+#else
     CSemaphore          m_GetSem;    ///< Raised if the queue contains data
     mutable CSemaphore  m_PutSem;    ///< Raised if the queue has room
     mutable CSemaphore  m_HungerSem; ///< Raised if Get[Handle] has to wait
+#endif
     mutable CMutex      m_Mutex;     ///< Guards access to queue
     size_t              m_HungerCnt; ///< Number of threads waiting for data
 
@@ -286,7 +296,12 @@ private:
     bool x_HungerSemPred(const TRealQueue& q) const
         { return m_HungerCnt > q.size(); }
 
-    bool x_WaitForPredicate(TQueuePredicate pred, CSemaphore& sem,
+    bool x_WaitForPredicate(TQueuePredicate pred,
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+                            CConditionVariable& cond,
+#else
+                            CSemaphore& sem,
+#endif
                             CMutexGuard& guard, unsigned int timeout_sec,
                             unsigned int timeout_nsec) const;
 
@@ -687,15 +702,24 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
-    if ( !x_WaitForPredicate(&CBlockingQueue::x_PutSemPred, m_PutSem, guard,
-                             timeout_sec, timeout_nsec) ) {
+    if ( !x_WaitForPredicate(&CBlockingQueue::x_PutSemPred,
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+                             m_PutCond,
+#else
+                             m_PutSem,
+#endif
+                             guard, timeout_sec, timeout_nsec) ) {
         NCBI_THROW(CBlockingQueueException, eFull,
                    "CBlockingQueue<>::Put: "
                    "attempt to insert into a full queue");
     }
     if (q.empty()) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+        m_GetCond.SignalAll();
+#else
         m_GetSem.TryWait(); // is this still needed?
         m_GetSem.Post();
+#endif
     }
     if (m_RequestCounter == 0) {
         m_RequestCounter = 0xFFFFFF;
@@ -712,9 +736,11 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
     TPriority real_priority = (priority << 24) | m_RequestCounter--;
     TItemHandle handle(new CQueueItem(real_priority, data));
     q.insert(handle);
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
     }
+#endif
     return handle;
 }
 
@@ -732,8 +758,12 @@ CBlockingQueue<TRequest>::Put(const vector<TRequest>& vdat, TUserPriority priori
                    "attempt to insert into a full queue");
     }
     if (q.empty()) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+        m_GetCond.SignalAll();
+#else
         m_GetSem.TryWait(); // is this still needed?
         m_GetSem.Post();
+#endif
     }
     if (m_RequestCounter < vdat.size()) {
         m_RequestCounter = 0xFFFFFF;
@@ -752,9 +782,11 @@ CBlockingQueue<TRequest>::Put(const vector<TRequest>& vdat, TUserPriority priori
         TItemHandle handle(new CQueueItem(real_priority, *it_dat));
         q.insert(handle);
     }
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
     }
+#endif
 }
 
 
@@ -764,10 +796,17 @@ void CBlockingQueue<TRequest>::WaitForRoom(unsigned int timeout_sec,
 {
     // Make sure there's room, but don't actually change any state
     CMutexGuard guard(m_Mutex);
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+    if (!x_WaitForPredicate(&CBlockingQueue::x_PutSemPred, m_PutCond, guard,
+                            timeout_sec, timeout_nsec))
+#else
     if (x_WaitForPredicate(&CBlockingQueue::x_PutSemPred, m_PutSem, guard,
                            timeout_sec, timeout_nsec)) {
         m_PutSem.Post(); // signal that the room still exists
-    } else {
+    }
+    else
+#endif
+    {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
                    "CBlockingQueue<>::WaitForRoom: timed out");
     }
@@ -778,10 +817,17 @@ void CBlockingQueue<TRequest>::WaitForHunger(unsigned int timeout_sec,
                                              unsigned int timeout_nsec) const
 {
     CMutexGuard guard(m_Mutex);
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+    if (x_WaitForPredicate(&CBlockingQueue::x_HungerSemPred, m_HungerCond, guard,
+                           timeout_sec, timeout_nsec))
+#else
     if (x_WaitForPredicate(&CBlockingQueue::x_HungerSemPred, m_HungerSem, guard,
                            timeout_sec, timeout_nsec)) {
         m_HungerSem.Post();
-    } else {
+    }
+    else
+#endif
+    {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
                    "CBlockingQueue<>::WaitForHunger: timed out");
     }
@@ -799,6 +845,14 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
 
     if (q.empty()) {
         _VERIFY(++m_HungerCnt);
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+        m_HungerCond.SignalAll();
+
+        bool ok = x_WaitForPredicate(&CBlockingQueue::x_GetSemPred, m_GetCond,
+                                     guard, timeout_sec, timeout_nsec);
+
+        --m_HungerCnt;
+#else
         m_HungerSem.TryWait();
         m_HungerSem.Post();
 
@@ -808,6 +862,7 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
         if (--m_HungerCnt <= q.size()) {
             m_HungerSem.TryWait();
         }
+#endif
 
         if ( !ok ) {
             NCBI_THROW(CBlockingQueueException, eTimedOut,
@@ -818,15 +873,23 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
     TItemHandle handle(*q.begin());
     q.erase(q.begin());
     if ( ! q.empty() ) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+        m_GetCond.SignalAll();
+#else
         m_GetSem.TryWait();
         m_GetSem.Post();
+#endif
     }
 
     // Get the attention of WaitForRoom() or the like; do this
     // regardless of queue size because derived classes may want
     // to insert multiple objects atomically.
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+    m_PutCond.SignalAll();
+#else
     m_PutSem.TryWait();
     m_PutSem.Post();
+#endif
 
     guard.Release(); // avoid possible deadlocks from x_SetStatus
     handle->x_SetStatus(CQueueItem::eActive);
@@ -890,10 +953,12 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
         if (it != q.end()  &&  *it == handle) {
             q.erase(it);   
             
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
             if(q.empty())   {
                 // m_GetSem may be signaled - clear it
                 m_GetSem.TryWait();
             }
+#endif
         } else {
             return;
         }
@@ -904,8 +969,13 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
 
 template <typename TRequest>
 bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+                                                  CConditionVariable& cond,
+                                                  CMutexGuard&,
+#else
                                                   CSemaphore& sem,
                                                   CMutexGuard& guard,
+#endif
                                                   unsigned int timeout_sec,
                                                   unsigned int timeout_nsec)
     const
@@ -928,15 +998,21 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
         CTimeSpan span(timeout_sec, timeout_nsec);
         while (span.GetSign() == ePositive  &&  !(this->*pred)(q) ) {
             CTime start(CTime::eCurrent, CTime::eGmt);
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+            cond.WaitForSignal(m_Mutex, CTimeout(span));
+#else
             // Temporarily release the mutex while waiting, to avoid deadlock.
             guard.Release();
             sem.TryWait(span.GetCompleteSeconds(),
                         span.GetNanoSecondsAfterSecond());
             guard.Guard(m_Mutex);
+#endif
             span -= CurrentTime(CTime::eGmt) - start;
         }
     }
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
     sem.TryWait();
+#endif
     return (this->*pred)(q);
 }
 
@@ -1199,25 +1275,22 @@ CPoolOfThreads<TRequest>::AcceptMany(const vector<TRequest>& vreq,
                                      TUserPriority priority)
 {
     bool new_thread = false;
-    {{
-        CMutexGuard guard(m_Mutex);
+    /*{{
+        CMutexGuard guard(m_Mutex);*/
         // we reserved 0xFF priority for urgent requests
         if (priority == 0xFF) 
             --priority;
-        if (m_QueuingForbidden  &&  !HasImmediateRoom(false) ) {
-            NCBI_THROW(CBlockingQueueException, eFull,
-                       "CPoolOfThreads<>::x_AcceptRequest: "
-                       "attempt to insert into a full queue");
-        }
         m_Queue.Put(vreq, priority);
         if (m_Delta.Add(int(vreq.size())) >= m_Threshold
             &&  m_ThreadCount.Get() < m_MaxThreads)
         {
             // Add another thread to the pool because they're all busy.
-            m_ThreadCount.Add(1);
-            new_thread = true;
+            if (m_ThreadCount.Add(1) > m_MaxThreads)
+                m_ThreadCount.Add(-1);
+            else
+                new_thread = true;
         }
-    }}
+    //}}
 
     if (new_thread) {
         try {
