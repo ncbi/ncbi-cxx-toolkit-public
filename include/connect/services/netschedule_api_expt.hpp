@@ -73,6 +73,7 @@ public:
         eAuthenticationError,
         eKeyFormatError,
         eJobNotFound,
+        eBatchNotFound,
         eInvalidJobStatus,
         eUnknownQueue,
         eUnknownQueueClass,
@@ -96,6 +97,7 @@ public:
         case eAuthenticationError: return "eAuthenticationError";
         case eKeyFormatError:      return "eKeyFormatError";
         case eJobNotFound:         return "eJobNotFound";
+        case eBatchNotFound:       return "eBatchNotFound";
         case eInvalidJobStatus:    return "eInvalidJobStatus";
         case eUnknownQueue:        return "eUnknownQueue";
         case eUnknownQueueClass:   return "eUnknownQueueClass";
