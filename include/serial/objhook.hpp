@@ -32,8 +32,7 @@
 *   Read and write hooks
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <util/util_exception.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/impl/objecttype.hpp>
 #include <serial/impl/objstack.hpp>
@@ -610,7 +609,6 @@ private:
 NCBI_XSERIAL_EXPORT
 void Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype);
 
-class CEofException;
 /// Scan input stream, finding objects of requested type (TObject) only
 template<typename TRoot, typename TObject>
 void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>* hook,
