@@ -2257,13 +2257,13 @@ case "$compiler" in
               [Define to 1 if building plugins as bundles, as Mac OS X
                traditionally required.])
         fi
-        if $CXX -v 2>&1 | grep -q Apple; then
+        if $CXX -v 2>&1 | egrep -q 'Apple|clang'; then
            LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
            LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -o"
            ALLOW_UNDEF='-undefined suppress'
            FORBID_UNDEF='-undefined error'
         else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-dylib -Wl,-install_name,${pure_runpath%%:*}/\$(XDLL) -o"
            LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-read_only_relocs,warning -lbundle1.o -o"
            ALLOW_UNDEF='-Wl,-undefined,suppress'
            FORBID_UNDEF='-Wl,-undefined,error'
@@ -3206,8 +3206,8 @@ AC_LANG_PUSH(C)
 AC_CACHE_CHECK([how to force inlining],
    ncbi_cv_c_forceinline,
    [ncbi_cv_c_forceinline=no
-    for fi in forceinline __forceinline__ __forceinline __always_inline \
-      "inline __attribute__((always_inline))" inline __inline__; do
+    for fi in __always_inline "inline __attribute__((always_inline))" \
+       forceinline __forceinline__ __forceinline inline __inline__; do
        test "$ncbi_cv_c_forceinline" = "no" || break
        AC_COMPILE_IFELSE([AC_LANG_SOURCE([$fi int f(void) { return 0; }])],
           [ncbi_cv_c_forceinline=$fi], [])

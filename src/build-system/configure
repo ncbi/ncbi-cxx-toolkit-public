@@ -8078,13 +8078,13 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
         fi
-        if $CXX -v 2>&1 | grep -q Apple; then
+        if $CXX -v 2>&1 | egrep -q 'Apple|clang'; then
            LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
            LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -o"
            ALLOW_UNDEF='-undefined suppress'
            FORBID_UNDEF='-undefined error'
         else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-dylib -Wl,-install_name,${pure_runpath%%:*}/\$(XDLL) -o"
            LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-read_only_relocs,warning -lbundle1.o -o"
            ALLOW_UNDEF='-Wl,-undefined,suppress'
            FORBID_UNDEF='-Wl,-undefined,error'
@@ -17966,8 +17966,8 @@ if test "${ncbi_cv_c_forceinline+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ncbi_cv_c_forceinline=no
-    for fi in forceinline __forceinline__ __forceinline __always_inline \
-      "inline __attribute__((always_inline))" inline __inline__; do
+    for fi in __always_inline "inline __attribute__((always_inline))" \
+       forceinline __forceinline__ __forceinline inline __inline__; do
        test "$ncbi_cv_c_forceinline" = "no" || break
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
