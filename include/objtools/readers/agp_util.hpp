@@ -562,11 +562,12 @@ public:
     // either because of m_MaxRepeat or MustSkip().
     int m_msg_skipped;
     int m_lines_skipped;
-
+    bool m_use_xml;
 
     // Print the source line along with filename and line number.
     static void PrintLine   (CNcbiOstream& ostr,
         const string& filename, int linenum, const string& content);
+    static void PrintLineXml(CNcbiOstream& ostr, const string& filename, int linenum, const string& content, bool two_lines_involved);
 
     /// Print the message by code, preceded by "ERROR" or "WARNING".
     /// See also: CAgpErr::FormatMessage().
@@ -574,11 +575,12 @@ public:
     /// you cannot override GetMsgEx().
     virtual void PrintMessage(CNcbiOstream& ostr, int code,
         const string& details=NcbiEmptyString);
+    virtual void PrintMessageXml(CNcbiOstream& ostr, int code, const string& details, int appliesTo);
 
     // Construct a readable message on total error & warning counts
     static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
 
-    CAgpErrEx(CNcbiOstream* out=&cerr);
+    CAgpErrEx(CNcbiOstream* out=&cerr, bool use_xml=false);
 
     // Can skip unwanted messages, record a message for printing (CAgpErr::fAtThisLine),
     // print it immediately if it applies to the previous line (CAgpErr::fAtPrevLine),

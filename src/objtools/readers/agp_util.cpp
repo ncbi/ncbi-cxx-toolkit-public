@@ -33,6 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <objtools/readers/agp_util.hpp>
 
+#ifndef i2s
+#define i2s(x) NStr::NumericToString(x)
+#define s2i(x) NStr::StringToNumeric(x)
+#endif
+
 BEGIN_NCBI_SCOPE
 
 //// class CAgpErr
@@ -196,7 +201,7 @@ int CAgpErr::AppliesTo(int mask)
 // (unless they follow a previous error message).
 void CAgpErr::Msg(int code, const string& details, int appliesTo)
 {
-    // Append warnings to preexisting errors.
+     // Append warnings to the previously reported errors.
     // To collect all warnings, override Msg() in the derived class.
     if(code<E_Last || m_apply_to) {
         m_apply_to |= appliesTo;
@@ -1188,6 +1193,18 @@ void CAgpErrEx::PrintLine(CNcbiOstream& ostr,
     ostr<< linenum  << ":" << line << "\n";
 }
 
+void CAgpErrEx::PrintLineXml(CNcbiOstream& ostr,
+    const string& filename, int linenum, const string& content,
+    bool two_lines_involved)
+{
+    string attr="num=\""+i2s(linenum)+"\"";
+    if(filename.size()) attr+=" filename=\"" + NStr::XmlEncode(filename) + "\"";
+    if(two_lines_involved) attr+=" two_lines=\"true\"";
+
+    ostr << " <line " << attr << ">" << NStr::XmlEncode(content) << "</line>\n";
+
+}
+
 void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
         const string& details)
 {
@@ -1197,9 +1214,26 @@ void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
     << ": " << FormatMessage( GetMsg(code), details ) << "\n";
 }
 
+void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& details, int appliesTo)
+{
+    ostr<< " <message severity=\"" << (
+        (code>=W_First && code<W_Last) ? "WARNING" : "ERROR"
+        ) << "\"";
+    if(code <=E_LastToSkipLine) ostr << " line_skipped=\"1\"";
+    ostr<<">\n";
+
+    ostr << " <code>"     << GetPrintableCode(code) << "</code>\n";
+    if(appliesTo & CAgpErr::fAtPpLine  ) ostr << " <line_num>" << m_line_num_pp    << "</line_num>\n";
+    if(appliesTo & CAgpErr::fAtPrevLine) ostr << " <line_num>" << m_line_num_prev  << "</line_num>\n";
+    if(appliesTo & CAgpErr::fAtThisLine) ostr << " <line_num>current</line_num>\n";
+    ostr << " <text>" << NStr::XmlEncode( FormatMessage( GetMsg(code), details ) ) << "</text>\n";
+
+    ostr << "</message>\n";
+}
+
 
 //// class CAgpErrEx - constructor
-CAgpErrEx::CAgpErrEx(CNcbiOstream* out) : m_out(out)
+CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml) : m_out(out), m_use_xml(use_xml)
 {
     m_messages = new CNcbiOstrstream();
     m_MaxRepeat = 0; // no limit
@@ -1253,10 +1287,6 @@ void CAgpErrEx::ResetTotals()
 
 void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
 {
-    // Ignore a possibly spurious errors generated after
-    // an unacceptable line (e.g. a line with wrong # of columns)
-    //if(m_invalid_prev && (appliesTo&CAgpErrEx::fAtSkipAfterBad) ) return;
-
     // Suppress some messages while still counting them
     m_MsgCount[code]++;
     if( m_MustSkip[code]) {
@@ -1272,11 +1302,17 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
     if(appliesTo & CAgpErr::fAtPpLine) {
         // Print the line before previous if it was not printed
         if( !m_pp_printed && m_line_pp.size() ) {
-            // if( !m_two_lines_involved ) ??
-            *m_out << "\n";
-            PrintLine(*m_out,
-                m_filenum_pp>=0 ? m_InputFiles[m_filenum_pp] : NcbiEmptyString,
-                m_line_num_pp, m_line_pp);
+            if(m_use_xml) {
+                PrintLineXml(*m_out,
+                    m_filenum_pp>=0 ? m_InputFiles[m_filenum_pp] : NcbiEmptyString,
+                    m_line_num_pp, m_line_pp, m_two_lines_involved);
+            }
+            else {
+                *m_out << "\n";
+                PrintLine(*m_out,
+                    m_filenum_pp>=0 ? m_InputFiles[m_filenum_pp] : NcbiEmptyString,
+                    m_line_num_pp, m_line_pp);
+            }
         }
         m_pp_printed=true;
     }
@@ -1284,24 +1320,39 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
     if(appliesTo & CAgpErr::fAtPrevLine) {
         // Print the previous line if it was not printed
         if( !m_prev_printed && m_line_prev.size() ) {
-            if( !m_two_lines_involved ) *m_out << "\n";
-            PrintLine(*m_out,
-                m_filenum_prev>=0 ? m_InputFiles[m_filenum_prev] : NcbiEmptyString,
-                m_line_num_prev, m_line_prev);
+            if(m_use_xml) {
+                PrintLineXml(*m_out,
+                    m_filenum_prev>=0 ? m_InputFiles[m_filenum_prev] : NcbiEmptyString,
+                    m_line_num_prev, m_line_prev, m_two_lines_involved);
+            }
+            else {
+                if( !m_two_lines_involved ) *m_out << "\n";
+                PrintLine(*m_out,
+                    m_filenum_prev>=0 ? m_InputFiles[m_filenum_prev] : NcbiEmptyString,
+                    m_line_num_prev, m_line_prev);
+            }
         }
         m_prev_printed=true;
     }
     if(appliesTo & CAgpErr::fAtThisLine) {
         // Accumulate messages
-        PrintMessage(*m_messages, code, details);
+        if(m_use_xml) {
+            PrintMessageXml(*m_messages, code, details, appliesTo);
+        }
+        else {
+            PrintMessage(*m_messages, code, details);
+        }
     }
     else {
         // Print it now (useful for appliesTo==CAgpErr::fAtPrevLine)
-
-        // E_NoValidLines
-        if(appliesTo==fAtNone && m_InputFiles.size() ) *m_out << m_InputFiles.back() << ":\n";
-
-        PrintMessage(*m_out, code, details);
+        if(m_use_xml) {
+            PrintMessageXml(*m_out, code, details, appliesTo);
+        }
+        else {
+            // E_NoValidLines
+            if(appliesTo==fAtNone && m_InputFiles.size() ) *m_out << m_InputFiles.back() << ":\n";
+            PrintMessage(*m_out, code, details);
+        }
     }
 
     if( (appliesTo&CAgpErr::fAtPrevLine) && (appliesTo&CAgpErr::fAtThisLine) ) m_two_lines_involved=true;
@@ -1310,10 +1361,24 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
 void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
 {
     if( m_messages->pcount() ) {
-        if( !m_two_lines_involved ) *m_out << "\n";
+        if(m_use_xml) {
+            PrintLineXml(*m_out, m_filename, line_num, s, m_two_lines_involved);
+        }
+        else {
+            if( !m_two_lines_involved ) *m_out << "\n";
+            PrintLine(*m_out, m_filename, line_num, s);
+        }
 
-        PrintLine(*m_out, m_filename, line_num, s);
-        *m_out << (string)CNcbiOstrstreamToString(*m_messages);
+        if(m_use_xml) {
+            string m;
+            NStr::Replace((string)CNcbiOstrstreamToString(*m_messages),
+              "<line_num>current</line_num>",
+              "<line_num>"+i2s(line_num)+"</line_num>", m);
+            *m_out << m;
+        }
+        else {
+            *m_out << (string)CNcbiOstrstreamToString(*m_messages);
+        }
         delete m_messages;
         m_messages = new CNcbiOstrstream;
 
@@ -1428,22 +1493,36 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
             ostr << "Internal error in CAgpErrEx::PrintMessageCounts().";
         }
     }
-    if(from<to) ostr<< setw(7) << "Count" << " Code  Description\n"; // code?
-    for(int i=from; i<to; i++) {
-        if( m_MsgCount[i] ) {
-            ostr<< setw(7) << m_MsgCount[i] << "  "
-                    << GetPrintableCode(i) << "  "
-                    << GetMsg(i) << "\n";
-        }
-        // ouside of previous "if" because one hint may apply to one or more of several consequitive warnings
-        // (such as W_CompIsWgsTypeIsNot and W_CompIsNotWgsTypeIs)
-        if(hints && (*hints).find(i)!=(*hints).end() ) {
-            ostr << "         " << (*hints)[i] << "\n";
+
+    if(m_use_xml) {
+        for(int i=from; i<to; i++) {
+            if( m_MsgCount[i] ) {
+                ostr << "<msg_summary>\n";
+                ostr << " <code>" << GetPrintableCode(i)            << "</code>\n";
+                ostr << " <text>" << NStr::XmlEncode(GetMsg(i))     << "</text>\n";
+                ostr << " <cnt>"  << m_MsgCount[i]                  << "</cnt>\n";
+                ostr << "</msg_summary>\n";
+            }
         }
     }
-    if(m_lines_skipped && report_lines_skipped) {
-      ostr << "\nNOTE: " << m_lines_skipped <<
-        " invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).\n";
+    else {
+        if(from<to) ostr<< setw(7) << "Count" << " Code  Description\n"; // code?
+        for(int i=from; i<to; i++) {
+            if( m_MsgCount[i] ) {
+                ostr<< setw(7) << m_MsgCount[i] << "  "
+                        << GetPrintableCode(i) << "  "
+                        << GetMsg(i) << "\n";
+            }
+            // ouside of previous "if" because one hint may apply to one or more of several consequitive warnings
+            // (such as W_CompIsWgsTypeIsNot and W_CompIsNotWgsTypeIs)
+            if(hints && (*hints).find(i)!=(*hints).end() ) {
+                ostr << "         " << (*hints)[i] << "\n";
+            }
+        }
+        if(m_lines_skipped && report_lines_skipped) {
+          ostr << "\nNOTE: " << m_lines_skipped <<
+            " invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).\n";
+        }
     }
 }
 
