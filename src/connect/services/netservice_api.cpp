@@ -545,8 +545,9 @@ CNetServer SNetServerPoolImpl::GetServer(const string& host, unsigned int port)
 
     CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
-    SNetServerImpl* server = m_EnforcedServer ? m_EnforcedServer :
-            FindOrCreateServerImpl(host, port);
+    SNetServerImpl* server = m_EnforcedServer ?
+            (SNetServerImpl*) m_EnforcedServer :
+                FindOrCreateServerImpl(host, port);
 
     server->m_ServerPool = this;
     return server;

@@ -680,7 +680,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
                 printf(format, GetFastLocalTime().
                         AsString(s_NotificationTimestampFormat).c_str(),
-                        submit_job_handler.GetMessage().size(),
+                        (int) submit_job_handler.GetMessage().size(),
                         submit_job_handler.GetMessage().data(),
                         submit_job_handler.GetServerHost().c_str(),
                         submit_job_handler.GetServerPort(),
@@ -894,7 +894,7 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
                     printf("%s \"%.*s\" %s:%u [%s]\n",
                             GetFastLocalTime().AsString(
                                 s_NotificationTimestampFormat).c_str(),
-                            wait_job_handler.GetMessage().size(),
+                            (int) wait_job_handler.GetMessage().size(),
                             wait_job_handler.GetMessage().data(),
                             wait_job_handler.GetServerHost().c_str(),
                             wait_job_handler.GetServerPort(),
