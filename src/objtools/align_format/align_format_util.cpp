@@ -1363,13 +1363,14 @@ SplitSeqalignByMolecularType(vector< CRef<CSeq_align_set> >&
 {
     CConstRef<CSeq_id> prevSubjectId;
     int count = 0;
+    int linkoutPrev = 0;
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         
         const CSeq_id& id = (*iter)->GetSeq_id(1);        
         try {
             const CBioseq_Handle& handle = scope.GetBioseqHandle(id);            
             if (handle) {
-                int linkout,linkoutPrev = 0;
+                int linkout;
                 if(prevSubjectId.Empty() || !id.Match(*prevSubjectId)){
                     prevSubjectId = &id;
                     linkout = linkoutdb ? linkoutdb->GetLinkout(id, mv_build_name): 0;
@@ -1445,6 +1446,42 @@ CAlignFormatUtil::HitListToHspList(list< CRef<CSeq_align_set> >& source)
         } 
     }
     return align_set;
+}
+
+map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector <string> seqIdList,
+                                       const CSeq_align_set& source) 
+{
+    CConstRef<CSeq_id> previous_id;
+    CRef<CSeq_align_set> temp;
+
+    map < string, CRef<CSeq_align_set>  > hitsMap;
+    
+    for(size_t i = 0; i < seqIdList.size();i++) {
+        CRef<CSeq_align_set> new_aln(new CSeq_align_set);        
+        hitsMap.insert(map<string, CRef<CSeq_align_set> >::value_type(seqIdList[i],new_aln));
+    }
+
+    ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
+        const CSeq_id& cur_id = (*iter)->GetSeq_id(1);
+        if(previous_id.Empty() || !cur_id.Match(*previous_id)) {
+            string idString = cur_id.GetSeqIdString();
+            if(hitsMap.find(idString) != hitsMap.end()) {                        
+                temp =  new CSeq_align_set;
+                temp->Set().push_back(*iter);
+                hitsMap[idString] = temp;
+            }
+            else {
+                temp.Reset();
+            }
+        } 
+        else if (cur_id.Match(*previous_id)){
+            if(!temp.Empty()) {
+                temp->Set().push_back(*iter);           
+            }
+        } 
+        previous_id = &cur_id;
+    }    
+    return hitsMap;
 }
 
 
@@ -3172,7 +3209,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     seqSetInfo->percent_coverage = 100*seqSetInfo->master_covered_length/queryLength;
 
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
-        int align_length = (*iter)->GetAlignLength();
+        int align_length = (*iter)->GetAlignLength();        
                                                         
         CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
                                    num_ident, use_this_gi);  
@@ -3202,6 +3239,103 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
 
     return seqSetInfo;
 }
+
+template<class container> bool
+s_GetBlastScore(const container&  scoreList, 
+                double& evalue,
+                double& bitScore, 
+                double& totalBitScore,                                     
+                int& percentCoverage,
+                int& percentIdent,
+                int& hspNum,
+                int &rawScore,
+                int& sum_n,                
+                list<int>& use_this_gi)
+{
+    bool hasScore = false;
+    ITERATE (typename container, iter, scoreList) {
+        const CObject_id& id=(*iter)->GetId();
+        if (id.IsStr()) {
+            hasScore = true;
+            if (id.GetStr()=="seq_evalue") {
+                evalue = (*iter)->GetValue().GetReal();
+            } else if (id.GetStr()=="seq_bit_score"){
+                bitScore = (*iter)->GetValue().GetReal();                            
+            } else if (id.GetStr()=="seq_total_bit_score"){
+                totalBitScore = (*iter)->GetValue().GetReal();                
+            } else if (id.GetStr()=="seq_percent_coverage"){
+                percentCoverage = (*iter)->GetValue().GetInt();          
+            } else if (id.GetStr()=="seq_percent_identity"){
+                percentIdent = (*iter)->GetValue().GetInt();                      
+            } else if (id.GetStr()=="seq_hspnum"){
+                hspNum = (*iter)->GetValue().GetInt();          
+            } else if (id.GetStr()=="score"){
+                rawScore = (*iter)->GetValue().GetInt();
+            } else if (id.GetStr()=="use_this_gi"){
+                use_this_gi.push_back((*iter)->GetValue().GetInt());
+            } else if (id.GetStr()=="sum_n"){
+                sum_n = (*iter)->GetValue().GetInt();          
+            }
+        }
+    }
+    return hasScore;
+}
+
+
+
+
+CAlignFormatUtil::SSeqAlignSetCalcParams* 
+CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
+{
+    bool hasScore = false;
+
+    double evalue = -1;
+    double bitScore = -1;
+    double totalBitScore = -1;
+    int percentCoverage = -1;
+    int percentIdent = -1;
+    int hspNum = 0;
+    int rawScore = -1;
+    int sum_n = -1;
+    list<int> use_this_gi;
+    
+    const CSeq_align& aln = *(alnSet.Get().front()); 
+
+    hasScore = s_GetBlastScore(aln.GetScore(),evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+        
+        
+    if(!hasScore){
+        const CSeq_align::TSegs& seg = aln.GetSegs();
+        if(seg.Which() == CSeq_align::C_Segs::e_Std){
+            s_GetBlastScore(seg.GetStd().front()->GetScores(),  
+                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+        } else if (seg.Which() == CSeq_align::C_Segs::e_Dendiag){
+            s_GetBlastScore(seg.GetDendiag().front()->GetScores(), 
+                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+        }  else if (seg.Which() == CSeq_align::C_Segs::e_Denseg){
+            s_GetBlastScore(seg.GetDenseg().GetScores(),  
+                            evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,rawScore,sum_n,use_this_gi);
+        }
+    }
+    auto_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
+    seqSetInfo->evalue = evalue;    
+    seqSetInfo->bit_score = bitScore;    
+    seqSetInfo->total_bit_score = totalBitScore;
+    seqSetInfo->percent_coverage = percentCoverage;
+    seqSetInfo->percent_identity = percentIdent;    
+    seqSetInfo->hspNum = hspNum;	
+
+    seqSetInfo->sum_n = sum_n == -1 ? 1:sum_n ;
+    seqSetInfo->id = &(aln.GetSeq_id(1));
+    seqSetInfo->use_this_gi = use_this_gi;
+    seqSetInfo->raw_score = rawScore;//not used
+
+    seqSetInfo->subjRange = CRange<TSeqPos>(0,0);	
+    seqSetInfo->flip = false;
+
+    return seqSetInfo.release();
+}
+
 
 
 END_SCOPE(align_format)
