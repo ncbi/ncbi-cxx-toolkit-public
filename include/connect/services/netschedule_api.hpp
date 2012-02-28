@@ -762,6 +762,15 @@ public:
 
     const CTempString& GetMessage() const {return m_Message;}
 
+// Utility methods.
+public:
+    void SubmitJob(CNetScheduleSubmitter::TInstance submitter);
+    bool CheckSubmitJobNotification();
+
+    bool RequestJob(CNetScheduleExecuter::TInstance executor,
+        const string& affinity);
+    bool CheckRequestJobNotification(CNetScheduleExecuter::TInstance executor);
+
 protected:
     CNetScheduleJob& m_Job;
     STimeout m_Timeout;
@@ -773,28 +782,6 @@ protected:
     char m_Buffer[1024];
     CTempString m_Message;
 };
-
-/// @internal
-extern NCBI_XCONNECT_EXPORT
-void SubmitJobWithNotification(CNetScheduleSubmitter::TInstance submitter,
-        CNetScheduleNotificationHandler& notification_handler);
-
-/// @internal
-extern NCBI_XCONNECT_EXPORT
-bool CheckSubmitJobNotification(
-        CNetScheduleNotificationHandler& notification_handler);
-
-/// @internal
-extern NCBI_XCONNECT_EXPORT
-bool RequestJobWithNotification(const string& affinity,
-        CNetScheduleExecuter::TInstance executor,
-        CNetScheduleNotificationHandler& notification_handler);
-
-/// @internal
-extern NCBI_XCONNECT_EXPORT
-bool CheckRequestJobNotification(
-        CNetScheduleExecuter::TInstance executor,
-        CNetScheduleNotificationHandler& notification_handler);
 
 /* @} */
 

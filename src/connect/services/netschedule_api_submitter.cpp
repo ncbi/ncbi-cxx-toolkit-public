@@ -368,24 +368,21 @@ void CNetScheduleSubmitter::ReadFail(const string& batch_id,
         batch_id, job_ids, error_message);
 }
 
-void SubmitJobWithNotification(CNetScheduleSubmitter::TInstance submitter,
-        CNetScheduleNotificationHandler& notification_handler)
+void CNetScheduleNotificationHandler::SubmitJob(
+        CNetScheduleSubmitter::TInstance submitter)
 {
-    submitter->SubmitJobImpl(notification_handler.GetJobRef(),
-        notification_handler.GetPort(), notification_handler.GetTimeout());
+    submitter->SubmitJobImpl(GetJobRef(), GetPort(), GetTimeout());
 }
 
-bool CheckSubmitJobNotification(
-        CNetScheduleNotificationHandler& notification_handler)
+bool CNetScheduleNotificationHandler::CheckSubmitJobNotification()
 {
     static const CTempString s_JNTFPrefix("JNTF");
     static const string s_KeyAttrName("key");
 
     string job_key;
 
-    return notification_handler.ParseNotification(s_JNTFPrefix,
-                s_KeyAttrName, &job_key) &&
-            notification_handler.GetJobRef().job_id == job_key;
+    return ParseNotification(s_JNTFPrefix, s_KeyAttrName, &job_key) &&
+            GetJobRef().job_id == job_key;
 }
 
 CNetScheduleAPI::EJobStatus
@@ -394,12 +391,12 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
 {
     CNetScheduleNotificationHandler submit_job_handler(job, wait_time);
 
-    SubmitJobWithNotification(m_Impl, submit_job_handler);
+    submit_job_handler.SubmitJob(m_Impl);
 
     CNetScheduleAPI::EJobStatus status;
 
     if (submit_job_handler.WaitForNotification() &&
-            CheckSubmitJobNotification(submit_job_handler)) {
+            submit_job_handler.CheckSubmitJobNotification()) {
         status = CNetScheduleAPI::eDone;
         m_Impl->m_API.GetJobDetails(job);
     } else {

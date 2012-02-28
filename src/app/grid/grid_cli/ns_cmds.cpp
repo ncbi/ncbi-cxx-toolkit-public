@@ -645,14 +645,13 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             CNetScheduleNotificationHandler submit_job_handler(job,
                 m_Opts.timeout);
 
-            SubmitJobWithNotification(m_NetScheduleSubmitter,
-                submit_job_handler);
+            submit_job_handler.SubmitJob(m_NetScheduleSubmitter);
 
             PrintLine(submit_job_handler.GetJobRef().job_id);
 
             if (!IsOptionSet(eDumpNSNotifications)) {
                 if (submit_job_handler.WaitForNotification() &&
-                        CheckSubmitJobNotification(submit_job_handler)) {
+                        submit_job_handler.CheckSubmitJobNotification()) {
                     CNetScheduleAPI::EJobStatus status =
                             m_NetScheduleSubmitter.GetJobStatus(job.job_id);
 
@@ -673,7 +672,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
                 const char* format = "%s \"%.*s\" %s:%u [invalid]\n";
 
-                if (CheckSubmitJobNotification(submit_job_handler)) {
+                if (submit_job_handler.CheckSubmitJobNotification()) {
                     job_status = m_NetScheduleSubmitter.GetJobStatus(
                             submit_job_handler.GetJobRef().job_id);
                     format = "%s \"%.*s\" %s:%u [valid, status=%s]\n";
@@ -886,8 +885,8 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 
             printf("Using UDP port %u\n", wait_job_handler.GetPort());
 
-            if (RequestJobWithNotification(m_Opts.affinity,
-                    m_NetScheduleExecutor, wait_job_handler))
+            if (wait_job_handler.RequestJob(m_NetScheduleExecutor,
+                    m_Opts.affinity))
                 printf("%s\nA job has been returned; won't wait.\n",
                     wait_job_handler.GetJobRef().job_id.c_str());
             else
@@ -899,8 +898,8 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
                             wait_job_handler.GetMessage().data(),
                             wait_job_handler.GetServerHost().c_str(),
                             wait_job_handler.GetServerPort(),
-                            CheckRequestJobNotification(m_NetScheduleExecutor,
-                                    wait_job_handler) ? "valid" : "invalid");
+                            wait_job_handler.CheckRequestJobNotification(
+                                m_NetScheduleExecutor) ? "valid" : "invalid");
         }
     }
 
