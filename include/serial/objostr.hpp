@@ -209,6 +209,19 @@ public:
     /// @return
     ///   TRUE or FALSE
     bool GetUseIndentation(void) const;
+
+    /// Set up end-of-line symbol usage in text streams.
+    /// 
+    /// @param set
+    ///   When TRUE, the writer puts end-of-line symbol where needed,
+    ///   otherwise, the output is a single line.
+    void SetUseEol(bool set);
+
+    /// Get end-of-line symbol usage in text streams.
+    /// 
+    /// @return
+    ///   TRUE or FALSE
+    bool GetUseEol(void) const;
     
     /// Set up writing named integers (in ANS.1 sense) by value only.
     ///

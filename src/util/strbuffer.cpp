@@ -727,7 +727,7 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
       m_CurrentPos(m_Buffer),
       m_BufferEnd(m_Buffer + KInitialBufferSize),
       m_Line(1), m_LineLength(0),
-      m_BackLimit(0), m_UseIndentation(true),
+      m_BackLimit(0), m_UseIndentation(true), m_UseEol(true),
       m_CanceledCallback(0)
 {
 }
@@ -985,6 +985,9 @@ void COStreamBuffer::PutUint8(Uint8 v)
 void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
     THROWS1((CIOException, bad_alloc))
 {
+    if (!GetUseEol()) {
+        return;
+    }
     Reserve(1);
     size_t linePos = m_LineLength;
     char* pos = m_CurrentPos;

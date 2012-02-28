@@ -372,6 +372,9 @@ inline
 void COStreamBuffer::PutEol(bool indent)
     THROWS1((CIOException, bad_alloc))
 {
+    if (!GetUseEol()) {
+        return;
+    }
     char* pos = Reserve(1);
     *pos = '\n';
     m_CurrentPos = pos + 1;
@@ -423,6 +426,17 @@ inline
 bool COStreamBuffer::GetUseIndentation(void) const
 {
     return m_UseIndentation;
+}
+inline
+void COStreamBuffer::SetUseEol(bool set)
+{
+    m_UseEol = set;
+}
+
+inline
+bool COStreamBuffer::GetUseEol(void) const
+{
+    return m_UseEol;
 }
 
 

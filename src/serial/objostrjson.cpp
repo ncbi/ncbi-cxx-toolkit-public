@@ -772,7 +772,9 @@ void CObjectOStreamJson::EndArray(void)
 void CObjectOStreamJson::NameSeparator(void)
 {
     m_Output.PutChar(':');
-    m_Output.PutChar(' ');
+    if (m_Output.GetUseIndentation()) {
+        m_Output.PutChar(' ');
+    }
     m_ExpectValue = true;
 }
 

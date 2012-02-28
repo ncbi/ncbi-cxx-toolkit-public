@@ -250,6 +250,8 @@ public:
 
     void SetUseIndentation(bool set);
     bool GetUseIndentation(void) const;
+    void SetUseEol(bool set);
+    bool GetUseEol(void) const;
 
 protected:
     // flush contents of buffer to underlying stream
@@ -329,6 +331,7 @@ private:
     size_t m_LineLength;
     size_t m_BackLimit;
     bool m_UseIndentation;
+    bool m_UseEol;
 
     CConstIRef<ICanceled> m_CanceledCallback;
 };

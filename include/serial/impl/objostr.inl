@@ -407,6 +407,18 @@ bool CObjectOStream::GetUseIndentation(void) const
 }
 
 inline
+void CObjectOStream::SetUseEol(bool set)
+{
+    m_Output.SetUseEol(set);
+}
+
+inline
+bool CObjectOStream::GetUseEol(void) const
+{
+    return m_Output.GetUseEol();
+}
+
+inline
 void CObjectOStream::SetWriteNamedIntegersByValue(bool set)
 {
     m_WriteNamedIntegersByValue = set;
