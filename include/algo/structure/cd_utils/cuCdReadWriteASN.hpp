@@ -213,7 +213,7 @@ public:
     {
         inStream.reset(CObjectIStream::Open((isBinary ? eSerial_AsnBinary : eSerial_AsnText), filename));
         if (!inStream->InGoodState())
-            throw CException(__FILE__, __LINE__, NULL, CException::eUnknown, "input stream not InGoodState()");
+            NCBI_USER_THROW("input stream not InGoodState()");
         inStream->SkipFileHeader(ASNContainerClass::GetTypeInfo());
     }
 
