@@ -62,6 +62,7 @@
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gtf_reader.hpp>
 #include <objtools/readers/gvf_reader.hpp>
+#include <objtools/readers/aln_reader.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
@@ -115,6 +116,7 @@ private:
     void xProcessGff3(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGff2(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGvf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessAlignment(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
@@ -202,6 +204,7 @@ void CMultiReaderApp::Init(void)
             "gvf", 
             "newick", "tree", "tre",
             "vcf",
+            "aln", "align",
             "guess") );
 
     arg_desc->AddDefaultKey(
@@ -329,6 +332,29 @@ void CMultiReaderApp::Init(void)
         "old-code",
         "use old gff3 reader implementation",
         true );    
+
+    //
+    //  alignment reader specific arguments:
+    //
+    arg_desc->AddDefaultKey(
+        "aln-gapchar", 
+        "STRING",
+        "Alignment gap character",
+        CArgDescriptions::eString, 
+        "-");
+
+    arg_desc->AddDefaultKey(
+        "aln-alphabet", 
+        "STRING",
+        "Alignment alphabet",
+        CArgDescriptions::eString, 
+        "nuc");
+    arg_desc->SetConstraint(
+        "aln-alphabet", 
+        &(*new CArgAllow_Strings, 
+            "nuc", 
+            "prot") );    
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -376,6 +402,9 @@ CMultiReaderApp::Run(void)
             break;
         case CFormatGuess::eGvf:
             xProcessGvf(args, istr, ostr);
+            break;
+        case CFormatGuess::eAlignment:
+            xProcessAlignment(args, istr, ostr);
             break;
     }
 
@@ -544,6 +573,23 @@ void CMultiReaderApp::xProcessNewick(
 }
 
 //  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessAlignment(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    CAlnReader reader(istr);
+    reader.SetAllGap(args["aln-gapchar"].AsString());
+    if (args["aln-alphabet"].AsString() == "prot") {
+        reader.SetAlphabet(CAlnReader::eAlpha_Protein);
+    }
+    reader.Read();
+    CRef<CSeq_align> pAlign = reader.GetSeqAlign();
+    xWriteObject(*pAlign, ostr);
+}
+
+//  ----------------------------------------------------------------------------
 void CMultiReaderApp::xSetFormat(
     const CArgs& args,
     CNcbiIstream& istr )
@@ -574,6 +620,10 @@ void CMultiReaderApp::xSetFormat(
     }
     if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
         m_uFormat = CFormatGuess::eGtf;
+    }
+    if (NStr::StartsWith(strProgramName, "aln") || format == "align" ||
+        format == "aln") {
+        m_uFormat = CFormatGuess::eAlignment;
     }
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);
