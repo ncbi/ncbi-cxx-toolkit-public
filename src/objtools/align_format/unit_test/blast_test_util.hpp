@@ -69,7 +69,7 @@ namespace ncbi {
 namespace TestUtil {
 
 // Random integer generator for use with std::generate
-#if defined(__ICC) || defined(NCBI_OS_IRIX)
+#if defined(__ICC) || defined(NCBI_OS_IRIX) || defined(__clang__)
 template <int lowest_value = 0, int highest_value = INT_MAX>
 #else
 template <int lowest_value = 0, int highest_value = ncbi::CRandom::GetMax()>
