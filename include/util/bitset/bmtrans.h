@@ -501,7 +501,7 @@ void bit_iblock_reduce(
     const unsigned char* BMRESTRICT pc_vector_end,
     unsigned  tmatrix_out[bm::set_block_plain_cnt][bm::set_block_plain_size])
 {
-    ::memset(tmatrix_out, 0, sizeof(tmatrix_out));
+    ::memset(tmatrix_out, 0, bm::set_block_plain_cnt * sizeof(*tmatrix_out));
     
     unsigned row = 0;
     do 
