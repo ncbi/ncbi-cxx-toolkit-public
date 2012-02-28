@@ -38,6 +38,7 @@ Contents:
 
 #include <corelib/ncbistl.hpp>
 #include <float.h>
+#include <math.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -69,15 +70,15 @@ BEGIN_SCOPE(Approx)
 
       // Approximation
 
-      template <typename T> bool approx (T x_, T y_, T eps_) {return fabs (x_ - y_) <= fabs (eps_);}
+      template <typename T> bool approx (T x_, T y_, T eps_) {return ::fabs (x_ - y_) <= ::fabs (eps_);}
       template <typename T> bool relApprox (T x_, T y_, T eps_) {return approx <T> (x_, y_, eps_ * y_);}
       template <typename T> bool absRelApprox (T x_, T y_, T tol_, T rtol_) {return approx <T> (x_, y_, tol_) || relApprox <T> (x_, y_, rtol_);}
 
       // Rounding
 
       template <typename T> bool eq (T x_, T y_, T round_) {return relApprox <T> (x_, y_, round_);}
-      template <typename T> bool ge (T x_, T y_, T round_) {return (x_ - y_) >= -(fabs (y_)) * round_;}
-      template <typename T> bool gt (T x_, T y_, T round_) {return (x_ - y_) >   (fabs (y_)) * round_;}
+      template <typename T> bool ge (T x_, T y_, T round_) {return (x_ - y_) >= -(::fabs (y_)) * round_;}
+      template <typename T> bool gt (T x_, T y_, T round_) {return (x_ - y_) >   (::fabs (y_)) * round_;}
       template <typename T> bool ne (T x_, T y_, T round_) {return ! eq (x_, y_, round_);}
       template <typename T> bool lt (T x_, T y_, T round_) {return ! ge (x_, y_, round_);}
       template <typename T> bool le (T x_, T y_, T round_) {return ! gt (x_, y_, round_);}
