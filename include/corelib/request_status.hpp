@@ -94,16 +94,16 @@ public:
         e416_RangeNotSatisfiable    = 416,
         e417_ExpectationFailed      = 417,
 
+        /// Non-standard status code - used to indicate broken connection
+        /// while serving normal request.
+        e499_BrokenConnection       = 499,
+
         e500_InternalServerError    = 500,
         e501_NotImplemented         = 501,
         e502_BadGateway             = 502,
         e503_ServiceUnavailable     = 503,
         e504_GatewayTimeout         = 504,
-        e505_HTTPVerNotSupported    = 505,
-
-        /// Non-standard status code - used to indicate broken connection
-        /// while serving normal request.
-        e599_BrokenConnection       = 599
+        e505_HTTPVerNotSupported    = 505
     };
 };
 

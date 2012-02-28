@@ -65,6 +65,8 @@ const string CCgiResponse::sm_HTTPStatusName     = "Status";
 const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
 const string CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
 const string CCgiResponse::sm_CacheControl       = "Cache-Control";
+const string CCgiResponse::sm_AcceptRanges       = "Accept-Ranges";
+const string CCgiResponse::sm_AcceptRangesBytes  = "bytes";
 
 NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
 
@@ -171,7 +173,7 @@ void CCgiResponse::SetStatus(unsigned int code, const string& reason)
                      "CCgiResponse::SetStatus() -- text contains CR or LF");
     }
     SetHeaderValue(sm_HTTPStatusName, NStr::UIntToString(code) + ' ' + reason);
-    GetDiagContext().GetRequestContext().SetRequestStatus(code);
+    CDiagContext::GetRequestContext().SetRequestStatus(code);
 }
 
 
@@ -204,8 +206,9 @@ CNcbiOstream* CCgiResponse::GetOutput(void) const
     if (m_Output  &&
         (m_Output->rdstate()  &  (IOS_BASE::badbit | IOS_BASE::failbit))
         != 0  &&
-        m_ThrowOnBadOutput.Get()) {
-        ERR_POST_X(1, Critical <<
+        m_ThrowOnBadOutput.Get()  &&
+        !TClientConnIntOk::GetDefault()) {
+        ERR_POST_X(1, Severity(TClientConnIntSeverity::GetDefault()) <<
                    "CCgiResponse::GetOutput() -- output stream is in bad state");
         const_cast<CCgiResponse*>(this)->SetThrowOnBadOutput(false);
     }
@@ -445,6 +448,13 @@ void CCgiResponse::SetThrowOnBadOutput(bool throw_on_bad_output)
         m_OutputExpt = m_Output->exceptions();
         m_Output->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     }
+}
+
+
+bool CCgiResponse::AcceptRangesBytes(void) const
+{
+    string accept_ranges = NStr::TruncateSpaces(GetHeaderValue(sm_AcceptRanges));
+    return NStr::EqualNocase(accept_ranges, sm_AcceptRangesBytes);
 }
 
 

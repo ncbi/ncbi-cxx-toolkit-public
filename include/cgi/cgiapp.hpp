@@ -338,6 +338,8 @@ private:
     /// without request-start.
     bool m_RequestStartPrinted;
 
+    bool m_ErrorStatus; // True if HTTP status was set to a value >=400
+
     // forbidden
     CCgiApplication(const CCgiApplication&);
     CCgiApplication& operator=(const CCgiApplication&);
@@ -404,6 +406,12 @@ NCBI_PARAM_DECL(string, CGI, TrackingCookieDomain);
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookieDomain) TCGI_TrackingCookieDomain;
 NCBI_PARAM_DECL(string, CGI, TrackingCookiePath); 
 typedef NCBI_PARAM_TYPE(CGI, TrackingCookiePath) TCGI_TrackingCookiePath;
+NCBI_PARAM_DECL(bool, CGI, Client_Connection_Interruption_Okay);
+typedef NCBI_PARAM_TYPE(CGI, Client_Connection_Interruption_Okay)
+    TClientConnIntOk;
+NCBI_PARAM_ENUM_DECL(EDiagSev, CGI, Client_Connection_Interruption_Severity);
+typedef NCBI_PARAM_TYPE(CGI, Client_Connection_Interruption_Severity)
+    TClientConnIntSeverity;
 
 END_NCBI_SCOPE
 

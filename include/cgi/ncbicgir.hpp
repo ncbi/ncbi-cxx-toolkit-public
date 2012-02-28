@@ -155,6 +155,9 @@ public:
     /// @sa GetOutput()
     void SetThrowOnBadOutput(bool throw_on_bad_output);
 
+    /// Check if 'Accept-Ranges' header is set to 'bytes'.
+    bool AcceptRangesBytes(void) const;
+
 public:
     void x_SetSession(const CCgiSession& session);
 
@@ -171,6 +174,8 @@ protected:
     static const string sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
     static const string sm_BoundaryPrefix;      // Start of multipart boundary
     static const string sm_CacheControl;        // Cache-Control
+    static const string sm_AcceptRanges;        // Accept-Ranges
+    static const string sm_AcceptRangesBytes;   // bytes
 
     typedef map<string, string, PNocase> TMap;
 

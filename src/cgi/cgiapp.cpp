@@ -82,6 +82,25 @@ NCBI_PARAM_DEF_EX(bool, CGI, Allow_Sigpipe, false, eParam_NoThread,
                   CGI_ALLOW_SIGPIPE);
 typedef NCBI_PARAM_TYPE(CGI, Allow_Sigpipe) TParamAllowSigpipe;
 
+// Log any broken connection with status 299 rather than 499.
+NCBI_PARAM_DEF_EX(bool, CGI, Client_Connection_Interruption_Okay, false,
+                  eParam_NoThread,
+                  CGI_CLIENT_CONNECTION_INTERRUPTION_OKAY);
+
+// Severity for logging broken connection errors.
+NCBI_PARAM_ENUM_ARRAY(EDiagSev, CGI, Client_Connection_Interruption_Severity)
+{
+    {"Info", eDiag_Info},
+    {"Warning", eDiag_Warning},
+    {"Error", eDiag_Error},
+    {"Critical", eDiag_Critical},
+    {"Fatal", eDiag_Fatal},
+    {"Trace", eDiag_Trace}
+};
+NCBI_PARAM_ENUM_DEF_EX(EDiagSev, CGI, Client_Connection_Interruption_Severity,
+                       eDiag_Critical, eParam_NoThread,
+                       CGI_CLIENT_CONNECTION_INTERRUPTION_SEVERITY);
+
 
 ///////////////////////////////////////////////////////
 // IO streams with byte counting for CGI applications
@@ -266,6 +285,7 @@ int CCgiApplication::Run(void)
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                 if (result != 0) {
                     SetHTTPStatus(500);
+                    m_ErrorStatus = true;
                 } else {
                     if (m_Cache.get()) {
                         m_Context->GetResponse().Flush();
@@ -321,8 +341,18 @@ int CCgiApplication::Run(void)
             }
         }}
 
-        // Exception reporting
-        NCBI_REPORT_EXCEPTION_X(13, "(CGI) CCgiApplication::Run", e);
+        // Exception reporting. Use different severity for broken connection.
+        ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
+        CNcbiOstream* os = m_Context->GetResponse().GetOutput();
+        if (fex  &&  os  &&  !os->good()) {
+            if ( !TClientConnIntOk::GetDefault() ) {
+                ERR_POST_X(13, Severity(TClientConnIntSeverity::GetDefault()) <<
+                    "Connection interrupted");
+            }
+        }
+        else {
+            NCBI_REPORT_EXCEPTION_X(13, "(CGI) CCgiApplication::Run", e);
+        }
     }
 
     // Logging
@@ -584,7 +614,8 @@ CCgiApplication::CCgiApplication(void)
    m_ArgContextSync(false),
    m_IsResultReady(true),
    m_ShouldExit(false),
-   m_RequestStartPrinted(false)
+   m_RequestStartPrinted(false),
+   m_ErrorStatus(false)
 {
     // CGI applications should use /log for logging by default
     CDiagContext::SetUseRootLog();
@@ -618,14 +649,11 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     // Discriminate between different types of error
     string status_str = "500 Server Error";
     string message = "";
-    // Don't change status from 206 if the output stream is broken.
-    // It will be replaced by 299 later.
-    ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
-    if (!fex  ||  os.good()  ||
-        GetDiagContext().GetRequestContext().GetRequestStatus() !=
-        CRequestStatus::e206_PartialContent) {
-        SetHTTPStatus(500);
-    }
+
+    // Save current HTTP status. Later it may be changed to 299 or 499
+    // depending on this value.
+    m_ErrorStatus = CDiagContext::GetRequestContext().GetRequestStatus() >= 400;
+    SetHTTPStatus(500);
 
     CException* ce = dynamic_cast<CException*> (&e);
     if ( ce ) {
@@ -731,6 +759,7 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
 
             // Set default HTTP status code (reset above by PrintRequestStart())
             SetHTTPStatus(200);
+            m_ErrorStatus = false;
 
             const string& phid = CDiagContext::GetRequestContext().GetHitID();
             // Check if ncbi_st cookie is set
@@ -781,14 +810,21 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
         {
             CDiagContext& ctx = GetDiagContext();
             CRequestContext& rctx = ctx.GetRequestContext();
-            // Log broken connection as 299/599 status
-            CNcbiOstream* os = m_Context->GetResponse().GetOutput();
-            if (os  &&  !os->good() ) {
-                if (rctx.GetRequestStatus() == CRequestStatus::e206_PartialContent) {
-                    rctx.SetRequestStatus(CRequestStatus::e299_PartialContentBrokenConnection);
-                }
-                else {
-                    rctx.SetRequestStatus(CRequestStatus::e599_BrokenConnection);
+            // If an error status has been set by ProcessRequest, don't try
+            // to check the output stream and change the status to 299/499.
+            if ( !m_ErrorStatus ) {
+                // Log broken connection as 299/499 status
+                CNcbiOstream* os = m_Context->GetResponse().GetOutput();
+                if (os  &&  !os->good()) {
+                    if (TClientConnIntOk::GetDefault()  ||
+                        m_Context->GetResponse().AcceptRangesBytes()) {
+                        rctx.SetRequestStatus(
+                            CRequestStatus::e299_PartialContentBrokenConnection);
+                    }
+                    else {
+                        rctx.SetRequestStatus(
+                            CRequestStatus::e499_BrokenConnection);
+                    }
                 }
             }
             if ( m_RequestStartPrinted  &&
