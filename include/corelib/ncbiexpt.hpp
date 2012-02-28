@@ -852,7 +852,7 @@ const TTo* UppermostCast(const TFrom& from)
     exception_class(const exception_class& other) \
        : base_class(other) \
     { \
-        x_Assign(other); \
+        this->x_Assign(other); \
     } \
 public: \
     virtual ~exception_class(void) throw() {} \
@@ -1172,7 +1172,7 @@ public:
         : TBase( other)
     {
         m_Errno = other.m_Errno;
-        x_Assign(other);
+        this->x_Assign(other);
     }
 
     /// Destructor.

@@ -578,7 +578,7 @@ public:
             // get level
 
             // insert element
-            TSelectMapI selectIter = insertLevel(selectKey);
+            TSelectMapI selectIter = this->insertLevel(selectKey);
             pair<TLevelMapI, bool> levelIns = selectIter->second.insert(value);
             
             pair<iterator, bool> ret;
@@ -640,7 +640,7 @@ public:
             // insert element
             iterator ret;
             ret.m_Range = range_type::GetWhole();
-            ret.m_SelectIter = insertLevel(selectKey);
+            ret.m_SelectIter = this->insertLevel(selectKey);
             ret.m_SelectIterEnd = this->m_SelectMap.end();
             ret.m_LevelIter = ret.m_SelectIter->second.insert(value);
             return ret;

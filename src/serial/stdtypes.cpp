@@ -720,7 +720,7 @@ public:
             if ( IsSigned() ) {
                 // signed -> unsigned
                 // check for negative value
-                if ( IsNegative(value) )
+                if ( CParent::IsNegative(value) )
                     ThrowIntegerOverflow();
             }
             if ( sizeof(value) > sizeof(result) ) {
@@ -751,7 +751,7 @@ public:
                 // unsigned -> signed
                 if ( sizeof(value) == sizeof(result) ) {
                     // same size - check for sign change only
-                    if ( IsNegative(result) )
+                    if ( CParent::IsNegative(result) )
                         ThrowIntegerOverflow();
                 }
             }
@@ -786,7 +786,7 @@ public:
             if ( IsSigned() ) {
                 // signed -> unsigned
                 // check for negative value
-                if ( IsNegative(value) )
+                if ( CParent::IsNegative(value) )
                     ThrowIntegerOverflow();
             }
             if ( sizeof(value) > sizeof(result) ) {
@@ -817,7 +817,7 @@ public:
                 // unsigned -> signed
                 if ( sizeof(value) == sizeof(result) ) {
                     // same size - check for sign change only
-                    if ( IsNegative(result) )
+                    if ( CParent::IsNegative(result) )
                         ThrowIntegerOverflow();
                 }
             }

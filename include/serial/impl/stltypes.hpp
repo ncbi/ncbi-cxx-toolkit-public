@@ -412,6 +412,7 @@ public:
     typedef StlIterator TStlIterator;
     typedef TypeInfoIterator TTypeInfoIterator;
     typedef typename TTypeInfoIterator::TObjectPtr TObjectPtr;
+    typedef CStlClassInfoFunctions<Container> CParent;
 
     static TStlIterator& It(TTypeInfoIterator& iter)
         {
@@ -437,7 +438,8 @@ public:
         }
     static bool InitIterator(TTypeInfoIterator& iter)
         {
-            TStlIterator stl_iter = Get(iter.GetContainerPtr()).begin();
+            TStlIterator stl_iter
+                = CParent::Get(iter.GetContainerPtr()).begin();
             if ( sizeof(TStlIterator) <= sizeof(iter.m_IteratorData) ) {
                 void* data = &iter.m_IteratorData;
                 new (data) TStlIterator(stl_iter);
@@ -445,7 +447,7 @@ public:
             else {
                 iter.m_IteratorData = new TStlIterator(stl_iter);
             }
-            return stl_iter != Get(iter.GetContainerPtr()).end();
+            return stl_iter != CParent::Get(iter.GetContainerPtr()).end();
         }
     static void ReleaseIterator(TTypeInfoIterator& iter)
         {
@@ -466,7 +468,7 @@ public:
 
     static bool NextElement(TTypeInfoIterator& iter)
         {
-            return ++It(iter) != Get(iter.GetContainerPtr()).end();
+            return ++It(iter) != CParent::Get(iter.GetContainerPtr()).end();
         }
     static TObjectPtr GetElementPtr(const TTypeInfoIterator& iter)
         {
@@ -503,7 +505,7 @@ public:
     
     static bool EraseElement(TTypeInfoIterator& iter)
         {
-            TStlIterator& it = It(iter);
+            TStlIterator& it = CParent::It(iter);
             Container* c = static_cast<Container*>(iter.GetContainerPtr());
             it = c->erase(it);
             return it != c->end();
@@ -511,7 +513,7 @@ public:
     static void EraseAllElements(TTypeInfoIterator& iter)
         {
             Container* c = static_cast<Container*>(iter.GetContainerPtr());
-            c->erase(It(iter), c->end());
+            c->erase(CParent::It(iter), c->end());
         }
 
     static void SetIteratorFunctions(CStlOneArgTemplate* info)
@@ -542,7 +544,7 @@ public:
         }
     static bool EraseElement(TTypeInfoIterator& iter)
         {
-            TStlIterator& it = It(iter);
+            TStlIterator& it = CParent::It(iter);
             Container* c = static_cast<Container*>(iter.GetContainerPtr());
             TStlIterator erase = it++;
             c->erase(erase);
@@ -551,7 +553,7 @@ public:
     static void EraseAllElements(TTypeInfoIterator& iter)
         {
             Container* c = static_cast<Container*>(iter.GetContainerPtr());
-            c->erase(It(iter), c->end());
+            c->erase(CParent::It(iter), c->end());
         }
 
     static void SetIteratorFunctions(CStlOneArgTemplate* info)

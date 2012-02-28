@@ -268,10 +268,10 @@ public:
             pair<iterator, bool> ins = m_Container.insert(value);
             if ( ins.second ) {
                 if ( ins.first == begin() )
-                    insertToStart(*ins.first);
+                    this->insertToStart(*ins.first);
                 else {
                     iterator prev = ins.first;
-                    insertAfter(*--prev, *ins.first);
+                    this->insertAfter(*--prev, *ins.first);
                 }
             }
             return ins;
@@ -280,10 +280,10 @@ public:
     void erase(iterator iter)
         {
             if ( iter == begin() )
-                removeFromStart(*iter);
+                this->removeFromStart(*iter);
             else {
                 iterator prev = iter;
-                removeAfter(*--prev, *iter);
+                this->removeAfter(*--prev, *iter);
             }
             m_Container.erase(iter);
         }
@@ -422,10 +422,10 @@ public:
         {
             iterator iter = m_Container.insert(value);
             if ( iter == begin() )
-                insertToStart(get(iter));
+                this->insertToStart(get(iter));
             else {
                 iterator prev = iter;
-                insertAfter(get(--prev), get(iter));
+                this->insertAfter(get(--prev), get(iter));
             }
             return iter;
         }
@@ -433,10 +433,10 @@ public:
     void erase(iterator iter)
         {
             if ( iter == begin() )
-                removeFromStart(get(iter));
+                this->removeFromStart(get(iter));
             else {
                 iterator prev = iter;
-                removeAfter(get(--prev), get(iter));
+                this->removeAfter(get(--prev), get(iter));
             }
             m_Container.erase(iter);
         }

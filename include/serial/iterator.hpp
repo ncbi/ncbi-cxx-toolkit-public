@@ -520,13 +520,13 @@ protected:
     CTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo)
         : m_NeedType(needType)
         {
-            Init(beginInfo);
+            this->Init(beginInfo);
         }
     CTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo,
                       const string& filter)
         : m_NeedType(needType)
         {
-            Init(beginInfo, filter);
+            this->Init(beginInfo, filter);
         }
 
     virtual bool CanSelect(const CConstObjectInfo& object)
@@ -628,7 +628,7 @@ public:
 
     CTypesIteratorBase<Parent>& operator=(const TBeginInfo& beginInfo)
         {
-            Init(beginInfo);
+            this->Init(beginInfo);
             return *this;
         }
 

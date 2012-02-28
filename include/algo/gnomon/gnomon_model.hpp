@@ -652,11 +652,11 @@ public:
     CModelCluster(TSignedSeqRange limits) : m_limits(limits) {}
     void Insert(const Model& a) {
         m_limits.CombineWith(a.Limits());
-        push_back(a);
+        this->push_back(a);
     }
     void Splice(CModelCluster& c) { // elements removed from c and inserted into *this
         m_limits.CombineWith(c.Limits());
-        splice(list<Model>::end(),c);
+        this->splice(list<Model>::end(),c);
     }
     TSignedSeqRange Limits() const { return m_limits; }
     bool operator<(const CModelCluster& c) const { return Precede(m_limits, c.m_limits); }
@@ -688,9 +688,9 @@ class NCBI_XALGOGNOMON_EXPORT CModelClusterSet : public set<Cluster> {
         pair<Titerator,Titerator> lim = set<Cluster>::equal_range(clust);
         for(Titerator it = lim.first; it != lim.second;) {
             clust.Splice(const_cast<Cluster&>(*it));
-            erase(it++);
+            this->erase(it++);
         }
-        const_cast<Cluster&>(*insert(lim.second,Cluster(clust.Limits()))).Splice(clust);
+        const_cast<Cluster&>(*this->insert(lim.second,Cluster(clust.Limits()))).Splice(clust);
     }
 };
 

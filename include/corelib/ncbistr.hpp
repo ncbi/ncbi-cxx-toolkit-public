@@ -3104,7 +3104,7 @@ public:
         : TBase(other)
     {
         m_Pos = other.m_Pos;
-        x_Assign(other);
+        this->x_Assign(other);
     }
 
     /// Destructor.

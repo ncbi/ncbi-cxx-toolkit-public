@@ -1381,7 +1381,7 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
     case set_block_arrgap: 
     case set_block_arrgap_egamma:
         {
-        	unsigned arr_len = read_id_list(dec, btype, this->id_array_);
+            unsigned arr_len = this->read_id_list(dec, btype, this->id_array_);
             gap_len = gap_set_array(gap_temp_block_, this->id_array_, arr_len);
             break;
         }
@@ -1390,7 +1390,7 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
             (sizeof(gap_word_t) == 2 ? dec.get_16() : dec.get_32());
     case set_block_arrgap_egamma_inv:
     case set_block_arrgap_inv:
-        gap_len = read_gap_block(dec, btype, gap_temp_block_, gap_head);
+        gap_len = this->read_gap_block(dec, btype, gap_temp_block_, gap_head);
         break;
     default:
         BM_ASSERT(0);
