@@ -304,19 +304,6 @@ bool CPreOrderedOffsetIterator::More()
 //-------------------------------------------------------------------------
 template< typename iterator_t >
 COffsetData< iterator_t >::COffsetData( 
-        CNcbiIstream & is, unsigned long hkey_width, 
-        unsigned long stride, unsigned long ws_hint )
-    : TBase( is, hkey_width, stride, ws_hint ), offsets_( this->total_, 0 )
-{
-    is.read( 
-            (char *)(&offsets_[0]), 
-            sizeof( TWord )*(std::streamsize)(this->total_) );
-    data_start_ = &offsets_[0];
-}
-
-//-------------------------------------------------------------------------
-template< typename iterator_t >
-COffsetData< iterator_t >::COffsetData( 
         TWord ** map, unsigned long hkey_width, 
         unsigned long stride, unsigned long ws_hint )
     : TBase( map, hkey_width, stride, ws_hint )
@@ -418,15 +405,6 @@ class CDbIndex_Impl : public CDbIndex
         */
         const Uint1 * GetSeqStoreBase() const 
         { return subject_map_->GetSeqStoreBase(); }
-
-        /** Decode offset.
-
-            @param offset The offset value.
-
-            @return Corresponding position in the subject sequence.
-        */
-        TSeqPos DecodeOffset( TWord offset ) const
-        { return subject_map_->DecodeOffset( offset ); }
 
         /** Get the length of the subject sequence.
             

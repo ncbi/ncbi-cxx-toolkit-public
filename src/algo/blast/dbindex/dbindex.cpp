@@ -345,7 +345,7 @@ COffsetData_Base::COffsetData_Base(
     : total_( 0 ), hkey_width_( hkey_width ), stride_( stride ),
       ws_hint_( ws_hint ), min_offset_( GetMinOffset( stride ) )
 {
-    if( *map ) {
+    if( map && *map ) {
         total_ = *(*map)++;
         TWord hash_table_size = ((TWord)1)<<(2*hkey_width_);
         hash_table_.SetPtr( 
