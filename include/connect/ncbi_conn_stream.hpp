@@ -262,7 +262,7 @@ private:
 class CConn_IOStreamSetReadTimeout : protected CConn_IOStreamSetTimeout
 {
 public:
-    CConn_IOStreamSetTimeout::GetTimeout;
+    using CConn_IOStreamSetTimeout::GetTimeout;
 
 protected:
     CConn_IOStreamSetReadTimeout(const STimeout* timeout)
@@ -292,7 +292,7 @@ inline CConn_IOStream& operator>> (CConn_IOStream& is,
 class CConn_IOStreamSetWriteTimeout : protected CConn_IOStreamSetTimeout
 {
 public:
-    CConn_IOStreamSetTimeout::GetTimeout;
+    using CConn_IOStreamSetTimeout::GetTimeout;
 
 protected:
     CConn_IOStreamSetWriteTimeout(const STimeout* timeout)
