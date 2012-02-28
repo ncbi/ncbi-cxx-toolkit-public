@@ -39,6 +39,13 @@ For more information please visit:  http://bmagic.sourceforge.net
 namespace bm
 {
 
+bm::id_t bit_block_any_range(const bm::word_t* block,
+                             bm::word_t left,
+                             bm::word_t right);
+
+bm::id_t bit_block_calc_count_range(const bm::word_t* block,
+                                    bm::word_t left,
+                                    bm::word_t right);
 
 /*!
     @brief Structure with statistical information about bitset's memory 
