@@ -476,8 +476,7 @@ void CNetCacheAPI::Remove(const string& blob_id)
 void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
 {
     string cmd("GETMETA " + blob_id);
-    cmd.append(m_Impl->m_Service->m_ServerPool->
-            m_EnforcedServerHost.empty() ? " 0" : " 1");
+    cmd.append(m_Impl->m_Service->m_ServerPool->m_EnforcedServer ? " 1" : " 0");
 
     CNetCacheKey key(blob_id);
 

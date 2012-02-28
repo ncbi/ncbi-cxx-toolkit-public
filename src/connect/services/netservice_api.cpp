@@ -477,8 +477,8 @@ bool CNetService::IsLoadBalanced() const
 
 void CNetServerPool::StickToServer(const string& host, unsigned port)
 {
-    m_Impl->m_EnforcedServerHost = g_NetService_gethostip(host);
-    m_Impl->m_EnforcedServerPort = port;
+    m_Impl->m_EnforcedServer = m_Impl->FindOrCreateServerImpl(
+            g_NetService_gethostip(host), port);
 }
 
 void CNetService::PrintCmdOutput(const string& cmd,
@@ -545,9 +545,8 @@ CNetServer SNetServerPoolImpl::GetServer(const string& host, unsigned int port)
 
     CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
-    SNetServerImpl* server = m_EnforcedServerHost.empty() ?
-        FindOrCreateServerImpl(host, port) :
-            FindOrCreateServerImpl(m_EnforcedServerHost, m_EnforcedServerPort);
+    SNetServerImpl* server = m_EnforcedServer ? m_EnforcedServer :
+            FindOrCreateServerImpl(host, port);
 
     server->m_ServerPool = this;
     return server;

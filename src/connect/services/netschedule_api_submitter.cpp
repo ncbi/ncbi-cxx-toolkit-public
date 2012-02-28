@@ -368,37 +368,45 @@ void CNetScheduleSubmitter::ReadFail(const string& batch_id,
         batch_id, job_ids, error_message);
 }
 
-bool CJobStatusNotificationHandler::OnBind(unsigned short port)
+void SubmitJobWithNotification(CNetScheduleSubmitter::TInstance submitter,
+        CNetScheduleNotificationHandler& notification_handler)
 {
-    m_Submitter->SubmitJobImpl(m_Job, port, m_WaitTime);
-
-    return false;
+    submitter->SubmitJobImpl(notification_handler.GetJobRef(),
+        notification_handler.GetPort(), notification_handler.GetTimeout());
 }
 
-bool CJobStatusNotificationHandler::OnNotification(const string& buf,
-        const string& server_host, unsigned short server_port)
+bool CheckSubmitJobNotification(
+        CNetScheduleNotificationHandler& notification_handler)
 {
     static const CTempString s_JNTFPrefix("JNTF");
     static const string s_KeyAttrName("key");
 
     string job_key;
 
-    return ParseNotification(buf, s_JNTFPrefix, s_KeyAttrName, &job_key) &&
-        m_Job.job_id == job_key;
+    return notification_handler.ParseNotification(s_JNTFPrefix,
+                s_KeyAttrName, &job_key) &&
+            notification_handler.GetJobRef().job_id == job_key;
 }
 
 CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
                                         unsigned       wait_time)
 {
-    CJobStatusNotificationHandler wait_job_handler(job, wait_time, m_Impl);
+    CNetScheduleNotificationHandler submit_job_handler(job, wait_time);
 
-    g_WaitNotification(&wait_job_handler);
+    SubmitJobWithNotification(m_Impl, submit_job_handler);
 
-    CNetScheduleAPI::EJobStatus status = GetJobStatus(job.job_id);
+    CNetScheduleAPI::EJobStatus status;
 
-    if (status == CNetScheduleAPI::eDone || status == CNetScheduleAPI::eFailed)
+    if (submit_job_handler.WaitForNotification() &&
+            CheckSubmitJobNotification(submit_job_handler)) {
+        status = CNetScheduleAPI::eDone;
         m_Impl->m_API.GetJobDetails(job);
+    } else {
+        status = GetJobStatus(job.job_id);
+        if (status == CNetScheduleAPI::eFailed)
+            m_Impl->m_API.GetJobDetails(job);
+    }
 
     return status;
 }

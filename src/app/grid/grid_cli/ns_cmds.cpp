@@ -503,74 +503,6 @@ bool CBatchSubmitAttrParser::NextAttribute()
 
 static const string s_NotificationTimestampFormat("Y/M/D h:m:s.l");
 
-class CJobStatusNotificationDumper : public CJobStatusNotificationHandler
-{
-public:
-    CJobStatusNotificationDumper(CNetScheduleJob& job, unsigned wait_time,
-            SNetScheduleSubmitterImpl* submitter) :
-        CJobStatusNotificationHandler(job, wait_time, submitter)
-    {
-    }
-
-    virtual bool OnBind(unsigned short port);
-    virtual bool OnNotification(const string& buf,
-            const string& server_host, unsigned short server_port);
-};
-
-bool CJobStatusNotificationDumper::OnBind(unsigned short port)
-{
-    CJobStatusNotificationHandler::OnBind(port);
-
-    printf("Using UDP port %u\nJob key: %s\n",
-            (unsigned) port, m_Job.job_id.c_str());
-
-    return false;
-}
-
-bool CJobStatusNotificationDumper::OnNotification(const string& buf,
-        const string& server_host, unsigned short server_port)
-{
-    CNetScheduleAPI::EJobStatus job_status = CNetScheduleAPI::eJobNotFound;
-
-    bool valid = CJobStatusNotificationHandler::OnNotification(
-            buf, server_host, server_port);
-
-    const char* format = "%s \"%s\" %s:%u [invalid]\n";
-
-    if (valid) {
-        job_status = m_Submitter.GetJobStatus(m_Job.job_id);
-        format = "%s \"%s\" %s:%u [valid, status=%s]\n";
-    }
-
-    printf(format,
-        GetFastLocalTime().AsString(s_NotificationTimestampFormat).c_str(),
-        buf.c_str(), server_host.c_str(), (unsigned) server_port,
-        CNetScheduleAPI::StatusToString(job_status).c_str());
-
-    return true;
-}
-
-class CCLISubmitJobNotificationHandler : public CJobStatusNotificationHandler
-{
-public:
-    CCLISubmitJobNotificationHandler(CNetScheduleJob& job, unsigned wait_time,
-            SNetScheduleSubmitterImpl* submitter) :
-        CJobStatusNotificationHandler(job, wait_time, submitter)
-    {
-    }
-
-    virtual bool OnBind(unsigned short port);
-};
-
-bool CCLISubmitJobNotificationHandler::OnBind(unsigned short port)
-{
-    CJobStatusNotificationHandler::OnBind(port);
-
-    CGridCommandLineInterfaceApp::PrintLine(m_Job.job_id);
-
-    return false;
-}
-
 int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 {
     SetUp_GridClient();
@@ -710,11 +642,17 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
             CNetScheduleJob& job = submitter.GetJob();
 
-            if (!IsOptionSet(eDumpNSNotifications)) {
-                CCLISubmitJobNotificationHandler wait_job_handler(job,
-                        m_Opts.timeout, m_NetScheduleSubmitter);
+            CNetScheduleNotificationHandler submit_job_handler(job,
+                m_Opts.timeout);
 
-                if (g_WaitNotification(&wait_job_handler)) {
+            SubmitJobWithNotification(m_NetScheduleSubmitter,
+                submit_job_handler);
+
+            PrintLine(submit_job_handler.GetJobRef().job_id);
+
+            if (!IsOptionSet(eDumpNSNotifications)) {
+                if (submit_job_handler.WaitForNotification() &&
+                        CheckSubmitJobNotification(submit_job_handler)) {
                     CNetScheduleAPI::EJobStatus status =
                             m_NetScheduleSubmitter.GetJobStatus(job.job_id);
 
@@ -726,10 +664,28 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     }
                 }
             } else {
-                CJobStatusNotificationDumper wait_job_handler(job,
-                        m_Opts.timeout, m_NetScheduleSubmitter);
+                printf("Using UDP port %u\n", submit_job_handler.GetPort());
 
-                g_WaitNotification(&wait_job_handler);
+                submit_job_handler.WaitForNotification();
+
+                CNetScheduleAPI::EJobStatus job_status =
+                        CNetScheduleAPI::eJobNotFound;
+
+                const char* format = "%s \"%.*s\" %s:%u [invalid]\n";
+
+                if (CheckSubmitJobNotification(submit_job_handler)) {
+                    job_status = m_NetScheduleSubmitter.GetJobStatus(
+                            submit_job_handler.GetJobRef().job_id);
+                    format = "%s \"%.*s\" %s:%u [valid, status=%s]\n";
+                }
+
+                printf(format, GetFastLocalTime().
+                        AsString(s_NotificationTimestampFormat).c_str(),
+                        submit_job_handler.GetMessage().size(),
+                        submit_job_handler.GetMessage().data(),
+                        submit_job_handler.GetServerHost().c_str(),
+                        submit_job_handler.GetServerPort(),
+                    CNetScheduleAPI::StatusToString(job_status).c_str());
             }
         }
     }
@@ -908,44 +864,6 @@ int CGridCommandLineInterfaceApp::Cmd_RegWNode()
 }
 */
 
-class CWaitForJobNotificationDumper : public CWaitForJobNotificationHandler
-{
-public:
-    CWaitForJobNotificationDumper(CNetScheduleJob& job, unsigned wait_time,
-            SNetScheduleExecuterImpl* executor, const string& affinity) :
-        CWaitForJobNotificationHandler(job, wait_time, executor, affinity)
-    {
-    }
-    virtual bool OnBind(unsigned short port);
-    virtual bool OnNotification(const string& buf,
-            const string& server_host, unsigned short server_port);
-};
-
-bool CWaitForJobNotificationDumper::OnBind(unsigned short port)
-{
-    printf("Using UDP port %u\n", (unsigned) port);
-
-    if (CWaitForJobNotificationHandler::OnBind(port)) {
-        printf("%s\nA job has been returned; won't wait.\n",
-                m_Job.job_id.c_str());
-        return true;
-    }
-
-    return false;
-}
-
-bool CWaitForJobNotificationDumper::OnNotification(const string& buf,
-        const string& server_host, unsigned short server_port)
-{
-    printf("%s \"%s\" %s:%u [%s]\n",
-            GetFastLocalTime().AsString(s_NotificationTimestampFormat).c_str(),
-            buf.c_str(), server_host.c_str(), (unsigned) server_port,
-            CWaitForJobNotificationHandler::OnNotification(buf,
-                    server_host, server_port) ? "valid" : "invalid");
-
-    return false;
-}
-
 int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
@@ -963,10 +881,26 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         } else {
             CNetScheduleJob job;
 
-            CWaitForJobNotificationDumper dumper(job, m_Opts.timeout,
-                m_NetScheduleExecutor, m_Opts.affinity);
+            CNetScheduleNotificationHandler wait_job_handler(job,
+                    m_Opts.timeout);
 
-            g_WaitNotification(&dumper);
+            printf("Using UDP port %u\n", wait_job_handler.GetPort());
+
+            if (RequestJobWithNotification(m_Opts.affinity,
+                    m_NetScheduleExecutor, wait_job_handler))
+                printf("%s\nA job has been returned; won't wait.\n",
+                    wait_job_handler.GetJobRef().job_id.c_str());
+            else
+                while (wait_job_handler.WaitForNotification())
+                    printf("%s \"%.*s\" %s:%u [%s]\n",
+                            GetFastLocalTime().AsString(
+                                s_NotificationTimestampFormat).c_str(),
+                            wait_job_handler.GetMessage().size(),
+                            wait_job_handler.GetMessage().data(),
+                            wait_job_handler.GetServerHost().c_str(),
+                            wait_job_handler.GetServerPort(),
+                            CheckRequestJobNotification(m_NetScheduleExecutor,
+                                    wait_job_handler) ? "valid" : "invalid");
         }
     }
 

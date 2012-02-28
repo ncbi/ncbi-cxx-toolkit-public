@@ -48,12 +48,31 @@
 
 BEGIN_NCBI_SCOPE
 
-IWaitNotificationHandler::~IWaitNotificationHandler()
+CNetScheduleNotificationHandler::CNetScheduleNotificationHandler(
+        CNetScheduleJob& job, unsigned wait_time) :
+    m_Job(job)
 {
+    _ASSERT(wait_time);
+
+    m_Timeout.sec = wait_time;
+    m_Timeout.usec = 0;
+
+    m_UDPSocket.SetReuseAddress(eOn);
+
+    STimeout rto;
+    rto.sec = rto.usec = 0;
+    m_UDPSocket.SetTimeout(eIO_Read, &rto);
+
+    EIO_Status status = m_UDPSocket.Bind(0);
+    if (status != eIO_Success) {
+        NCBI_THROW_FMT(CException, eUnknown,
+            "Could not bind a UDP socket: " << IO_StatusStr(status));
+    }
+
+    m_UDPPort = m_UDPSocket.GetLocalPort(eNH_HostByteOrder);
 }
 
-bool CWaitNotificationHandler_Base::ParseNotification(
-        const string& buf,
+bool CNetScheduleNotificationHandler::ParseNotification(
         const CTempString& expected_prefix,
         const string& attr_name,
         string* attr_value)
@@ -61,7 +80,7 @@ bool CWaitNotificationHandler_Base::ParseNotification(
     CTempString prefix;
     CTempString attrs;
 
-    if (NStr::SplitInTwo(buf, " ", prefix, attrs, NStr::eMergeDelims) &&
+    if (NStr::SplitInTwo(m_Message, " ", prefix, attrs, NStr::eMergeDelims) &&
             prefix == expected_prefix)
         try {
             CUrlArgs attr_parser(attrs);
@@ -78,59 +97,28 @@ bool CWaitNotificationHandler_Base::ParseNotification(
     return false;
 }
 
-bool g_WaitNotification(CWaitNotificationHandler_Base* handler)
+bool CNetScheduleNotificationHandler::WaitForNotification()
 {
-    EIO_Status status;
+    time_t start_time = time(0);
+    time_t end_time = start_time + m_Timeout.sec;
 
-    STimeout to;
-    to.sec = handler->GetWaitTime();
-    to.usec = 0;
-
-    _ASSERT(to.sec);
-
-    CDatagramSocket  udp_socket;
-    udp_socket.SetReuseAddress(eOn);
-    STimeout rto;
-    rto.sec = rto.usec = 0;
-    udp_socket.SetTimeout(eIO_Read, &rto);
-
-    status = udp_socket.Bind(0);
-    if (status != eIO_Success) {
-        NCBI_THROW_FMT(CException, eUnknown,
-            "Could not bind a UDP socket: " << IO_StatusStr(status));
-    }
-    if (handler->OnBind(udp_socket.GetLocalPort(eNH_HostByteOrder)))
-        return true;
-
-    time_t curr_time, start_time, end_time;
-
-    start_time = time(0);
-    end_time = start_time + to.sec;
-
-    for (;;) {
-        curr_time = time(0);
+    do {
+        time_t curr_time = time(0);
         if (curr_time >= end_time)
-            break;
-        to.sec = (unsigned int) (end_time - curr_time);
+            return false;
+        m_Timeout.sec = (unsigned int) (end_time - curr_time);
 
-        status = udp_socket.Wait(&to);
-        if (eIO_Success != status) {
-            continue;
-        }
-        size_t msg_len;
-        string buf(1024/sizeof(int),0);
-        string server_host;
-        unsigned short server_port;
-        status = udp_socket.Recv(&buf[0], buf.size(), &msg_len,
-            &server_host, &server_port);
-        _ASSERT(status != eIO_Timeout); // because we Wait()-ed
-        if (eIO_Success == status) {
-            buf.resize(msg_len);
-            if (handler->OnNotification(buf, server_host, server_port))
-                return true;
-        }
-    } // for
-    return false;
+    } while (m_UDPSocket.Wait(&m_Timeout) != eIO_Success);
+
+    size_t msg_len;
+
+    if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
+            &m_ServerHost, &m_ServerPort) != eIO_Success)
+        return false;
+
+    m_Message.assign(m_Buffer, msg_len);
+
+    return true;
 }
 
 /**********************************************************************/

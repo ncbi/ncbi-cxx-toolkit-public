@@ -741,83 +741,60 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
      CPluginManager<SNetScheduleAPIImpl>::EEntryPointRequest method);
 
 /// @internal
-class NCBI_XCONNECT_EXPORT IWaitNotificationHandler
+class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 {
 public:
-    virtual bool OnBind(unsigned short port) = 0;
-    virtual bool OnNotification(const string& buf,
-            const string& server_host, unsigned short server_port) = 0;
+    CNetScheduleNotificationHandler(CNetScheduleJob& job, unsigned wait_time);
 
-    virtual ~IWaitNotificationHandler();
-};
-
-/// @internal
-class NCBI_XCONNECT_EXPORT CWaitNotificationHandler_Base :
-        public IWaitNotificationHandler
-{
-public:
-    CWaitNotificationHandler_Base(CNetScheduleJob& job, unsigned wait_time) :
-        m_Job(job), m_WaitTime(wait_time)
-    {
-    }
-
-    unsigned GetWaitTime() const {return m_WaitTime;}
-
-    static bool ParseNotification(
-            const string& buf,
+    bool ParseNotification(
             const CTempString& expected_prefix,
             const string& attr_name,
             string* attr_value);
 
+    bool WaitForNotification();
+
+    CNetScheduleJob& GetJobRef() {return m_Job;}
+    unsigned GetTimeout() const {return m_Timeout.sec;}
+    unsigned GetPort() const {return m_UDPPort;}
+
+    const string& GetServerHost() const {return m_ServerHost;}
+    unsigned GetServerPort() const {return m_ServerPort;}
+
+    const CTempString& GetMessage() const {return m_Message;}
+
 protected:
     CNetScheduleJob& m_Job;
-    unsigned m_WaitTime;
+    STimeout m_Timeout;
+    CDatagramSocket m_UDPSocket;
+    unsigned short m_UDPPort;
+    string m_ServerHost;
+    unsigned short m_ServerPort;
+
+    char m_Buffer[1024];
+    CTempString m_Message;
 };
 
 /// @internal
 extern NCBI_XCONNECT_EXPORT
-bool g_WaitNotification(CWaitNotificationHandler_Base* handler);
+void SubmitJobWithNotification(CNetScheduleSubmitter::TInstance submitter,
+        CNetScheduleNotificationHandler& notification_handler);
 
 /// @internal
-class NCBI_XCONNECT_EXPORT CJobStatusNotificationHandler :
-        public CWaitNotificationHandler_Base
-{
-public:
-    CJobStatusNotificationHandler(CNetScheduleJob& job, unsigned wait_time,
-            SNetScheduleSubmitterImpl* submitter) :
-        CWaitNotificationHandler_Base(job, wait_time),
-        m_Submitter(submitter)
-    {
-    }
+extern NCBI_XCONNECT_EXPORT
+bool CheckSubmitJobNotification(
+        CNetScheduleNotificationHandler& notification_handler);
 
-    virtual bool OnBind(unsigned short port);
-    virtual bool OnNotification(const string& buf,
-            const string& server_host, unsigned short server_port);
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+bool RequestJobWithNotification(const string& affinity,
+        CNetScheduleExecuter::TInstance executor,
+        CNetScheduleNotificationHandler& notification_handler);
 
-protected:
-    CNetScheduleSubmitter m_Submitter;
-};
-
-class NCBI_XCONNECT_EXPORT CWaitForJobNotificationHandler :
-        public CWaitNotificationHandler_Base
-{
-public:
-    CWaitForJobNotificationHandler(CNetScheduleJob& job, unsigned wait_time,
-            SNetScheduleExecuterImpl* executor, const string& affinity) :
-        CWaitNotificationHandler_Base(job, wait_time),
-        m_Executor(executor),
-        m_Affinity(affinity)
-    {
-    }
-
-    virtual bool OnBind(unsigned short port);
-    virtual bool OnNotification(const string& buf,
-            const string& server_host, unsigned short server_port);
-
-private:
-    CNetScheduleExecuter m_Executor;
-    const string& m_Affinity;
-};
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+bool CheckRequestJobNotification(
+        CNetScheduleExecuter::TInstance executor,
+        CNetScheduleNotificationHandler& notification_handler);
 
 /* @} */
 

@@ -107,8 +107,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     string m_APIName;
     string m_ClientName;
 
-    string m_EnforcedServerHost;
-    unsigned m_EnforcedServerPort;
+    CNetServer m_EnforcedServer;
 
     // Connection event listening. This listener implements
     // the authentication part of both NS and NC protocols.
