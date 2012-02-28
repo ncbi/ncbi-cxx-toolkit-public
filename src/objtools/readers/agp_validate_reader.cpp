@@ -635,7 +635,7 @@ public:
       m_out << " <" << xml_tag << ">" << NStr::XmlEncode(value);
 
       // strip any attributes from the closing tag
-      int pos=xml_tag.find(" ");
+      SIZE_TYPE pos=xml_tag.find(" ");
       if(pos!=NPOS) xml_tag.resize(pos);
 
       m_out << "</" << xml_tag << ">\n";
@@ -751,16 +751,27 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
 
 
   if( s_comp.size() ) {
-    if( NStr::Find(s_comp, ",")!=NPOS ) {
-      // (W: 1234, D: 5678)
-      xprint.m_eol_text = " (" + s_comp + ")\n";
+    if(use_xml) {
+      string comp_by_type = ", " + s_comp;
+      // ", W: 1234, D: 5678" => <Comp type="W">1234</Comp>\n<Comp type="D">5678</Comp>
+      NStr::ReplaceInPlace(comp_by_type, ", ", "</Comp>\n <Comp type=\"");
+      NStr::ReplaceInPlace(comp_by_type, ":", "\">");
+      // move "</Comp>\n" from start to end of string
+      comp_by_type = comp_by_type.substr(8) + comp_by_type.substr(0, 8);
+      out << comp_by_type;
     }
     else {
-      // One type of components: (W) or (invalid type)
-      xprint.m_eol_text = " (" + s_comp.substr( 0, NStr::Find(s_comp, ":") ) + ")\n";
+      if( NStr::Find(s_comp, ",")!=NPOS ) {
+        // (W: 1234, D: 5678)
+        xprint.m_eol_text = " (" + s_comp + ")\n";
+      }
+      else {
+        // One type of components: (W) or (invalid type)
+        xprint.m_eol_text = " (" + s_comp.substr( 0, NStr::Find(s_comp, ":") ) + ")\n";
+      }
     }
   }
-  xprint.line("Components                   : ", m_CompCount);
+  xprint.line("Components                   : ", m_CompCount, string("Components type_counts=\"")+s_comp+"\"");
 
   if(m_CompCount) {
     xprint.line("  orientation +              : ", m_CompOri[CCompVal::ORI_plus ], "CompOri val=\"+\"");
@@ -781,17 +792,28 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     // Print (N) if all components are of one type,
     //        or (N: 1234, U: 5678)
     if( s_gap.size() ) {
-      if( NStr::Find(s_gap, ",")!=NPOS ) {
-        // (N: 1234, U: 5678)
-        xprint.m_eol_text =  " (" + s_gap + ")\n";
+      if(use_xml) {
+        string gap_u_n = ", " + s_gap;
+        // ", U: 1234, N: 5678" => <Gap u_n="U">1234</Gap>\n<Gap u_n="N">5678</Gap>
+        NStr::ReplaceInPlace(gap_u_n, ", ", "</Gap>\n <Gap u_n=\"");
+        NStr::ReplaceInPlace(gap_u_n, ":", "\">");
+        // move "</Gap>\n" from start to end of string
+        gap_u_n = gap_u_n.substr(7) + gap_u_n.substr(0, 7);
+        out << gap_u_n;
       }
       else {
-        // One type of gaps: (N)
-        xprint.m_eol_text =  " (" + s_gap.substr( 0, NStr::Find(s_gap, ":") ) + ")\n";
+        if( NStr::Find(s_gap, ",")!=NPOS ) {
+          // (N: 1234, U: 5678)
+          xprint.m_eol_text =  " (" + s_gap + ")\n";
+        }
+        else {
+          // One type of gaps: (N)
+          xprint.m_eol_text =  " (" + s_gap.substr( 0, NStr::Find(s_gap, ":") ) + ")\n";
+        }
       }
     }
   }
-  xprint.line("Gaps                   : ", m_GapCount);
+  xprint.line("Gaps                   : ", m_GapCount, string("Gaps u_n_counts=\"")+s_gap+"\"");
 
   if(m_GapCount) {
     int linkageYesCnt =
@@ -1112,7 +1134,7 @@ bool CAgpValidateReader::x_PrintPatterns(
     }
     xprint.line(
         strHeader+SPACES.substr(
-          0, wPattern+2>strHeader.size() ? wPattern+2-strHeader.size() : 0
+          0, wPattern+2>(int)strHeader.size() ? wPattern+2-strHeader.size() : 0
         ) + ": ",
         totalCount,
         "count"
