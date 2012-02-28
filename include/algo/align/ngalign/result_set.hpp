@@ -38,6 +38,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/genomecoll/GC_Assembly.hpp>
 #include <objmgr/scope.hpp>
 
 #include <algo/align/util/align_filter.hpp>
@@ -50,8 +51,6 @@ BEGIN_SCOPE(objects)
     class CScope;
     class CSeq_align;
     class CSeq_align_set;
-    class CSeq_id;
-    class CGC_Assembly;
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
