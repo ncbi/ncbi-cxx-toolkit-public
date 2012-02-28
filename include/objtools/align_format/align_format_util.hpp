@@ -1104,6 +1104,10 @@ public:
 
     static CAlignFormatUtil::SSeqAlignSetCalcParams* GetSeqAlignSetCalcParams(const objects::CSeq_align_set& aln,int queryLength,bool do_translation);
 
+    static CAlignFormatUtil::SSeqAlignSetCalcParams* GetSeqAlignSetCalcParamsFromASN(const objects::CSeq_align_set& alnSet);
+
+    static map < string, CRef<objects::CSeq_align_set>  >  HspListToHitMap(vector <string> seqIdList, const objects::CSeq_align_set& source);
+
     ///Get Gene symobol for gi
     ///@param  giForGeneLookup: gi
     ///@return: string gene symbol
