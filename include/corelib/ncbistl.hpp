@@ -172,6 +172,9 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 #endif
 
 #if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP)
+#  if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 400
+#    include <algorithm>
+#  endif
 // This template is used by some stl algorithms (sort, reverse...)
 // We need to have our own implementation because some C++ Compiler vendors 
 // implemented it by using a temporary variable and an assignment operator 
