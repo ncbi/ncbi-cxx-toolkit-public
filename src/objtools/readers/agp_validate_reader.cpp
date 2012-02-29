@@ -667,8 +667,11 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
         e_count==m_AgpErr->CountTotals(CAgpErrEx::E_NoValidLines)
     ) return; // all files are empty, no need to say it again
 
-    // to do: print error counts in xml
-    if(!use_xml) {
+    CAgpErrEx::TMapCcodeToString hints;
+    if(use_xml) {
+      m_AgpErr->PrintTotalsXml(out, e_count, w_count, m_AgpErr->m_msg_skipped);
+    }
+    else {
       out << "\n";
       m_AgpErr->PrintTotals(out, e_count, w_count, m_AgpErr->m_msg_skipped);
       if(m_AgpErr->m_MaxRepeatTopped) {
@@ -677,7 +680,6 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
       out << ".";
       if(m_AgpErr->m_MaxRepeat && (e_count+w_count) ) {
         out << "\n";
-        CAgpErrEx::TMapCcodeToString hints;
         if(!m_CheckCompNames && (
           m_AgpErr->CountTotals(CAgpErrEx::W_CompIsWgsTypeIsNot) ||
           m_AgpErr->CountTotals(CAgpErrEx::W_CompIsNotWgsTypeIs)
@@ -692,9 +694,10 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
                 CAgpErrEx::GetPrintableCode(CAgpErrEx::W_ShortGap)+
                 " to print lines with short gaps.)";
         }
-        m_AgpErr->PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true, &hints);
       }
     }
+    if(use_xml || (m_AgpErr->m_MaxRepeat && (e_count+w_count)) )
+      m_AgpErr->PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true, &hints);
   }
   if(m_ObjCount==0) {
     // out << "No valid AGP lines.\n";
@@ -727,11 +730,11 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
 
   //// Various counts of AGP elements
 
+  if(use_xml) out << "<stats>\n";
   xprint.line();
   xprint.line( "Objects                : ", m_ObjCount);
   xprint.line( "- with single component: ", m_SingleCompObjects);
   if(m_SingleCompObjects_withGaps) {
-    // to do: skip ALIGN_W
     xprint.line( "  *** single component + gap(s): ", m_SingleCompObjects_withGaps, "SingleCompObjects_withGaps");
   }
 
@@ -911,6 +914,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
       out << "\n";
     }
   }
+  if(use_xml) out << "</stats>\n";
 }
 
 void CAgpValidateReader::PrintTotals(CNcbiOstream& out, bool use_xml)

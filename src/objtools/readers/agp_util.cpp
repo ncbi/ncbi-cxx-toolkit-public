@@ -1233,7 +1233,7 @@ void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& deta
 
 
 //// class CAgpErrEx - constructor
-CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml) : m_out(out), m_use_xml(use_xml)
+CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml) : m_use_xml(use_xml), m_out(out)
 {
     m_messages = new CNcbiOstrstream();
     m_MaxRepeat = 0; // no limit
@@ -1524,6 +1524,13 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
             " invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).\n";
         }
     }
+}
+
+void CAgpErrEx::PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count)
+{
+    ostr << " <warnings>" << w_count << "</warnings>\n";
+    ostr << " <errors>"   << e_count << "</errors>\n";
+    ostr << " <skipped>"  << skipped_count  << "</skipped>\n";
 }
 
 void CAgpErrEx::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count)
