@@ -325,6 +325,8 @@ update_blastdb.pl [options] blastdb ...
 Downloads, decompresses the archives in the current working directory, and
 deletes the downloaded archive to save disk space, while preserving the
 archive checksum files (default: false).
+B<Note>: Using this option may require more computing resources than using
+your system's native decompression tool(s).
 
 =item B<--showall>
 
