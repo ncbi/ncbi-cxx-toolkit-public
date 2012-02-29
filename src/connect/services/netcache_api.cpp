@@ -168,7 +168,7 @@ static const string s_NetCacheAPIName("NetCacheAPI");
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name) :
-    m_Service(new SNetServiceImpl(s_NetCacheAPIName, client_name,
+    m_Service(new SNetServiceImpl_Real(s_NetCacheAPIName, client_name,
         new CNetCacheServerListener))
 {
     m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
@@ -241,14 +241,14 @@ CNetServiceIterator SNCMirrorIterationBeginner::BeginIteration()
 
 CNetService SNetCacheAPIImpl::FindOrCreateService(const string& service_name)
 {
-    SNetServiceImpl search_image(NStr::TruncateSpaces(service_name));
+    SNetServiceImpl search_image(service_name);
 
     TServiceSet::iterator it = m_ServicesFromKeys.find(&search_image);
 
     if (it != m_ServicesFromKeys.end())
         return *it;
 
-    CNetService new_service(new SNetServiceImpl(service_name, m_Service));
+    CNetService new_service(new SNetServiceImpl_Real(service_name, m_Service));
 
     m_ServicesFromKeys.insert(new_service);
 

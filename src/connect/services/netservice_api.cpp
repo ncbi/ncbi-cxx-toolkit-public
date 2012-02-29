@@ -876,7 +876,7 @@ SNetServerPoolImpl::~SNetServerPoolImpl()
         free((void*) m_LBSMAffinityValue);
 }
 
-SNetServiceImpl::~SNetServiceImpl()
+SNetServiceImpl_Real::~SNetServiceImpl_Real()
 {
     // Delete fake server "groups" in single-server "services".
     // See SNetServiceImpl::Construct().

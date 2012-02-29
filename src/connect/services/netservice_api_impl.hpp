@@ -208,32 +208,18 @@ enum EServiceType {
 
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
-    // Construct a new object.
-    SNetServiceImpl(const string& api_name, const string& client_name,
-            INetServerConnectionListener* listener) :
-        m_ServerPool(new SNetServerPoolImpl(api_name, client_name, listener))
-    {
-    }
+    // Default constructor - used by SNetServiceImpl_Real.
+    SNetServiceImpl() {}
 
     void Construct(SNetServerImpl* server);
     void Construct();
-
-    // Constructors for 'spawning'.
-    SNetServiceImpl(SNetServerImpl* server, SNetServiceImpl* parent) :
-        m_ServerPool(parent->m_ServerPool)
-    {
-        Construct(server);
-    }
-    SNetServiceImpl(const string& service_name, SNetServiceImpl* parent) :
-        m_ServerPool(parent->m_ServerPool)
-    {
-        Construct();
-    }
 
     void Init(CObject* api_impl, const string& service_name,
         CConfig* config, const string& config_section,
         const char* const* default_config_sections);
 
+    // Constructor for making a prototype for searching
+    // in sets of CNetService objects.
     SNetServiceImpl(const string& service_name) : m_ServiceName(service_name)
     {
     }
@@ -256,8 +242,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
 
-    virtual ~SNetServiceImpl();
-
     CNetServerPool m_ServerPool;
 
     string m_ServiceName;
@@ -267,6 +251,35 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SDiscoveredServers* m_DiscoveredServers;
     SDiscoveredServers* m_ServerGroupPool;
     unsigned m_LatestDiscoveryIteration;
+};
+
+struct SNetServiceImpl_Real : public SNetServiceImpl
+{
+public:
+    // Construct a new object.
+    SNetServiceImpl_Real(const string& api_name, const string& client_name,
+            INetServerConnectionListener* listener)
+    {
+        m_ServerPool = new SNetServerPoolImpl(api_name, client_name, listener);
+    }
+
+    // Constructors for 'spawning'.
+    SNetServiceImpl_Real(SNetServerImpl* server, SNetServiceImpl* parent)
+    {
+        m_ServerPool = parent->m_ServerPool;
+        m_ServiceName = server->m_Address.AsString();
+
+        Construct(server);
+    }
+    SNetServiceImpl_Real(const string& service_name, SNetServiceImpl* parent)
+    {
+        m_ServerPool = parent->m_ServerPool;
+        m_ServiceName = service_name;
+
+        Construct();
+    }
+
+    virtual ~SNetServiceImpl_Real();
 };
 
 END_NCBI_SCOPE

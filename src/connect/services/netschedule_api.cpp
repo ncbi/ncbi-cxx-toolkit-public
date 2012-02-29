@@ -235,7 +235,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         CConfig* config, const string& section,
         const string& service_name, const string& client_name,
         const string& queue_name) :
-    m_Service(new SNetServiceImpl(s_NetScheduleAPIName,
+    m_Service(new SNetServiceImpl_Real(s_NetScheduleAPIName,
         client_name, new CNetScheduleServerListener)),
     m_Queue(queue_name)
 {
@@ -245,7 +245,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         SNetServerImpl* server, SNetScheduleAPIImpl* parent) :
-    m_Service(new SNetServiceImpl(server, parent->m_Service)),
+    m_Service(new SNetServiceImpl_Real(server, parent->m_Service)),
     m_Queue(parent->m_Queue),
     m_ProgramVersion(parent->m_ProgramVersion),
     m_ClientNode(parent->m_ClientNode),
