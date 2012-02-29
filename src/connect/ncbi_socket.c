@@ -5603,7 +5603,7 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
             return status;
         if (poll.revent == eIO_Close)
             return eIO_Unknown;
-        assert(poll.revent == event);
+        assert(poll.revent & event);
         return status/*success*/;
     }}
 }
