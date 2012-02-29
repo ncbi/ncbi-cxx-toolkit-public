@@ -990,8 +990,13 @@ void xml::node::node_to_string (std::string &xml,
     doc->compression = compression_level;
 
     int libxml2_options = convert_to_libxml2_save_options(flags);
+
+    const char *  enc = NULL;
+    if (pimpl_->xmlnode_->doc)
+        enc = (const char *)(pimpl_->xmlnode_->doc->encoding);
+
     xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_string_cb, NULL, &xml,
-                                       NULL, libxml2_options);
+                                       enc, libxml2_options);
 
     if (ctxt) {
         xmlSaveDoc(ctxt, doc);
@@ -1006,8 +1011,13 @@ namespace xml {
         xmlDocPtr doc = n2d.get_doc();
 
         int libxml2_options = convert_to_libxml2_save_options(save_op_default);
+
+        const char *  enc = NULL;
+        if (n.pimpl_->xmlnode_->doc)
+            enc = (const char *)(n.pimpl_->xmlnode_->doc->encoding);
+
         xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_stream_cb, NULL, &stream,
-                                           NULL, libxml2_options);
+                                           enc, libxml2_options);
 
         if (ctxt) {
             xmlSaveDoc(ctxt, doc);
