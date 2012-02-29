@@ -1492,7 +1492,8 @@ void CGnomonEngine::GetScore(CGeneModel& model) const
     } else if(best_start<0 && starts[frame].size() > 1) {
         int new_start = starts[frame][1];
         int newlen = best_stop-new_start;
-        if(newlen >= 6 || cds_info.ConfirmedStart()) {
+        int oldlen = best_stop-best_start;
+        if(newlen >= max(6,oldlen/2) || cds_info.ConfirmedStart()) {
             is_open = !cds_info.ConfirmedStart();
             best_start = new_start;
         }
