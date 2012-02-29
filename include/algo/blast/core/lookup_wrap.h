@@ -50,6 +50,8 @@ typedef struct LookupTableWrap {
    void* lut; /**< Pointer to the actual lookup table structure */
    void* read_indexed_db; /**< function used to retrieve hits
                               from an indexed database */
+   void* check_index_oid; /**< function used to check if seeds
+                               for a given oid are present */
    void* lookup_callback;    /**< function used to look up an
                                   index->q_off pair */
 } LookupTableWrap;

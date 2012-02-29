@@ -286,12 +286,10 @@ public:
                       ESubjectMaskingType mask_type = eNoSubjMasking);
 
     /// Initialize a megablast BLAST database index
-    /// @param seqsrc The source of subject sequence data [in]
     /// @param options BLAST options (will be modified to record the fact that
     /// the database index has been initialized [in|out]
     static void
-    InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
-                               CRef<CBlastOptions> options);
+    InitializeMegablastDbIndex(CRef<CBlastOptions> options);
     
 };
 

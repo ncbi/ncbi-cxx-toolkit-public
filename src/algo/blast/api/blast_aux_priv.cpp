@@ -145,7 +145,7 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
 
     // 0. Initialize the megablast database index.
     if (options->GetUseIndex()) {
-        CSetupFactory::InitializeMegablastDbIndex(seqsrc, options);
+        CSetupFactory::InitializeMegablastDbIndex(options);
     }
 
     // 1. Initialize the query data (borrow it from the factory)

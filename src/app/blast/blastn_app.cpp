@@ -130,7 +130,7 @@ int CBlastnApp::Run(void)
         if (opt.GetUseIndex() && !m_CmdLineArgs->ExecuteRemotely()) {
             BlastSeqSrc* seqsrc = db_adapter->MakeSeqSrc();
             CRef<CBlastOptions> my_options(&(opts_hndl->SetOptions()));
-            CSetupFactory::InitializeMegablastDbIndex(seqsrc, my_options);
+            CSetupFactory::InitializeMegablastDbIndex(my_options);
         }
 
         /*** Get the formatting options ***/

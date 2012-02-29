@@ -46,6 +46,9 @@ extern "C" {
 typedef unsigned long (*T_MB_IdbGetResults)(void * idb, Int4 oid, Int4 chunk,
                                    BlastInitHitList * init_hitlist);
 
+/** Function pointer type to check index seeds availability for oid. */
+typedef int (*T_MB_IdbCheckOid)( Int4 oid );
+
 /** Finds all runs of a specified number of exact matches between 
  * two nucleotide sequences. Assumes the subject sequence is part
  * of a previously indexed database

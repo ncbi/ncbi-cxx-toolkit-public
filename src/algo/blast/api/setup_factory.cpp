@@ -245,7 +245,7 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
     }
 
     if (seqsrc) {
-        GetDbIndexSetQueryInfoFn()( seqsrc, retval, lookup_segments_wrap);
+        GetDbIndexSetQueryInfoFn()( retval, lookup_segments_wrap);
     }
 
     return retval;
@@ -385,18 +385,15 @@ CSetupFactory::CreateBlastSeqSrc(CSeqDB * db, int filt_algo,
 }
 
 void
-CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
-                                          CRef<CBlastOptions> options)
+CSetupFactory::InitializeMegablastDbIndex(CRef<CBlastOptions> options)
 {
     _ASSERT(options->GetUseIndex());
-    _ASSERT(seqsrc);
 
     if (options->GetMBIndexLoaded()) {
         return;
     }
 
     string errstr = "";
-    BlastSeqSrc * ind_seqsrc = 0;
 
     if( options->GetProgramType() != eBlastTypeBlastn ) {
         errstr = "Database indexing is available for blastn only.";
@@ -411,24 +408,7 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
         errstr += ".";
     }
     else {
-        BlastSeqSrc * new_seqsrc = CloneSeqSrcInit( seqsrc );
-
-        if( new_seqsrc == 0 ) {
-            errstr = "Allocation of new BlastSeqSrc structure failed.";
-        }
-        else {
-            ind_seqsrc = DbIndexSeqSrcInit(
-            options->GetIndexName(), new_seqsrc );
-            char* error_str = BlastSeqSrcGetInitError(ind_seqsrc);
-
-            if( error_str != 0 ) {
-                errstr = "Allocation of BlastSeqSrc structure for index ";
-                errstr += "failed: " + string(error_str);
-                sfree(error_str);
-                ind_seqsrc = BlastSeqSrcFree(ind_seqsrc);
-                free( new_seqsrc );
-            }
-        }
+        errstr = DbIndexInit( options->GetIndexName() );
     }
 
     if( errstr != "" ) {
@@ -442,8 +422,6 @@ CSetupFactory::InitializeMegablastDbIndex(BlastSeqSrc* seqsrc,
         }
     }
 
-    CloneSeqSrc( seqsrc, ind_seqsrc );
-    free( ind_seqsrc );
     options->SetMBIndexLoaded();
     options->SetLookupTableType( eIndexedMBLookupTable );
 }

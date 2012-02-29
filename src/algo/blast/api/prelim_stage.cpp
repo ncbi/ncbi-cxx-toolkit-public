@@ -207,8 +207,6 @@ CBlastPrelimSearch::Run()
     LookupTableOptions * lut_options = opts_memento->m_LutOpts;
     BlastInitialWordOptions * word_options = opts_memento->m_InitWordOpts;
 
-    GetDbIndexSetNumThreadsFn()( seqsrc, GetNumberOfThreads() );
-
     // Query splitting data structure (used only if applicable)
     CRef<SBlastSetupData> setup_data(new SBlastSetupData(m_QueryFactory, m_Options));
     CRef<CQuerySplitter> query_splitter = setup_data->m_QuerySplitter;
@@ -232,7 +230,7 @@ CBlastPrelimSearch::Run()
                 BLAST_SequenceBlk * chunk_queries = 
                     query_data->GetSequenceBlk();
                 GetDbIndexRunSearchFn()( 
-                        seqsrc, chunk_queries, lut_options, word_options );
+                        chunk_queries, lut_options, word_options );
 
                 if (IsMultiThreaded()) {
                      x_LaunchMultiThreadedSearch(*chunk_data);
@@ -284,8 +282,7 @@ CBlastPrelimSearch::Run()
         }
     } else {
 
-        GetDbIndexRunSearchFn()( 
-                seqsrc, queries, lut_options, word_options );
+        GetDbIndexRunSearchFn()( queries, lut_options, word_options );
 
         if (IsMultiThreaded()) {
              x_LaunchMultiThreadedSearch(*m_InternalData);

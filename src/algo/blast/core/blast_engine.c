@@ -1099,6 +1099,9 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
     const Boolean kNucleotide = (program_number == eBlastTypeBlastn ||
                                 program_number == eBlastTypePhiBlastn);
 
+    T_MB_IdbCheckOid check_index_oid = 
+        (T_MB_IdbCheckOid)lookup_wrap->check_index_oid;
+
     BlastInitialWordParametersNew(program_number, word_options, 
       hit_params, lookup_wrap, sbp, query_info, 
       BlastSeqSrcGetAvgSeqLen(seq_src), &word_params);
@@ -1144,6 +1147,11 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
        Int4 stat_length;
        if (seq_arg.oid == BLAST_SEQSRC_ERROR)
            break;
+
+       if( check_index_oid != 0 && check_index_oid( seq_arg.oid ) == 0 ) {
+           continue;
+       }
+
        if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0)
            continue;
        if (db_length == 0) {
