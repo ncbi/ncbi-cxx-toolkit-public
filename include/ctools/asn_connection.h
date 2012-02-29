@@ -33,7 +33,6 @@
  *
  */
 
-#include <connect/ncbi_connection.h>
 #include <connect/ncbi_service_connector.h>
 #include <asn.h>
 

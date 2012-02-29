@@ -31,7 +31,6 @@
  */
 
 #include <ctools/asn_connection.h>
-#include "../connect/ncbi_priv.h"
 #include "error_codes.h"
 
 
