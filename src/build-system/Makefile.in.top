@@ -12,6 +12,7 @@ libdir 	     = @libdir@
 includedir   = @includedir@
 pincludedir  = $(includedir)/$(PACKAGE_NAME)
 INSTALL      = @INSTALL@
+LN_S         = @LN_S@
 
 lbindir      = $(build_root)/bin
 llibdir      = $(build_root)/lib
@@ -39,6 +40,9 @@ install-toolkit:
 	$(INSTALL) -d $(bindir) $(libdir) $(pincludedir)
 	$(INSTALL) $(lbindir)/* $(bindir)
 	$(INSTALL) -m 644 $(llibdir)/* $(libdir)
+	-rm -f $(libdir)/lib*-static.a
+	cd $(libdir)  && \
+	    for x in *.a; do ln -s "$$x" "`basename \"$$x\" .a`-static.a"; done
 	cd $(includedir0) && find * -name CVS -prune -o -print |\
             cpio -pd $(pincludedir)
 	$(INSTALL) -m 644 $(incdir)/* $(pincludedir)
