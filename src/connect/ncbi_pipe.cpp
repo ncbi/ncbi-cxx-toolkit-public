@@ -41,7 +41,6 @@
 #include <connect/ncbi_util.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
-#include <memory>
 
 #ifdef NCBI_OS_MSWIN
 

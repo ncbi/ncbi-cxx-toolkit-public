@@ -35,7 +35,6 @@
 #include <connect/ncbi_namedpipe.hpp>
 #include <connect/ncbi_util.h>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbi_system.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 

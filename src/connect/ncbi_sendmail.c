@@ -34,7 +34,6 @@
 #include "ncbi_priv.h"
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_sendmail.h>
-#include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>

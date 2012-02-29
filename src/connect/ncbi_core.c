@@ -31,7 +31,6 @@
  */
 
 #include "ncbi_ansi_ext.h"
-#include "ncbi_assert.h"
 #include "ncbi_priv.h"
 #include <stdlib.h>
 

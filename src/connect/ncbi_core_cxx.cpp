@@ -37,7 +37,6 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>

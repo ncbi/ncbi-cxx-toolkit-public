@@ -34,7 +34,6 @@
  */
 
 #include <connect/ncbi_host_info.h>
-#include <stddef.h>
 
 
 #ifdef __cplusplus

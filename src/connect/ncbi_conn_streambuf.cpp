@@ -35,7 +35,6 @@
 #include <corelib/ncbidbg.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/error_codes.hpp>
-#include <memory>
 #include <stdlib.h>  // free()
 
 #define NCBI_USE_ERRCODE_X   Connect_Stream

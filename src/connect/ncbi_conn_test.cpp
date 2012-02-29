@@ -38,7 +38,6 @@
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
-#include <algorithm>
 #include <iterator>
 
 #define __STR(x)  #x
