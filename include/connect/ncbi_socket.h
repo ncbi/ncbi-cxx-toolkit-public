@@ -232,14 +232,14 @@ typedef struct TRIGGER_tag* TRIGGER;  /* trigger: handle, opaque             */
  */
 
 /** Initialize all internal/system data & resources to be used by the SOCK API.
- * @li <b>NOTE:</b>
+ * @note
  *  You can safely call it more than once; just, all calls after the first
  *  one will have no result.
- * @li <b>NOTE:</b>
+ * @note
  *  Usually, SOCK API does not require an explicit initialization -- as it is
  *  guaranteed to initialize itself automagically, in one of API functions,
  *  when necessary.  Yet, see the "Multi Thread safety" remark above.
- * @li <b>NOTE:</b>
+ * @note
  *  This call, when used for the very first time in the application, enqueues
  *  SOCK_ShutdownAPI() to be called upon application exit on plaftorms that
  *  provide this functionality. In any case, the application can opt for
@@ -252,7 +252,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
 
 /** Cleanup; destroy all internal/system data & resources used by the SOCK API.
  * ATTENTION:  no function from the SOCK API should be called after this call!
- * @li <b>NOTE:</b>
+ * @note
  *  You can safely call it more than once; just, all calls after the first
  *  one will have no result.
  * @sa
@@ -263,14 +263,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 
 /** By default (on UNIX platforms) the SOCK API functions automagically call
  * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature,
- * you must call SOCK_AllowSigPipeAPI() before you call any other
+ * you must call SOCK_AllowSigPipeAPI() before you call any other.
  * function from the SOCK API.
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
 
 
-/**
- * Get size of OS-dependent native socket handle
+/** Get size of OS-dependent native socket handle.
  * @return
  *  OS-dependent handle size or 0 in case of an error
  * @sa
@@ -428,8 +427,8 @@ typedef unsigned int TSOCK_Flags;  /** Bitwise "OR" of ESOCK_Flags */
  *  [in]  the port to listen at (0 to select first available)
  * @param backlog
  *  [in]  maximal # of pending connections
- *  <b>NOTE:</b> on some systems, "backlog" can be silently limited
- *  down to 128 (or 5), or completely ignored whatsoever.
+ *  @note  On some systems, "backlog" may be silently limited down to 128
+           (or even 5), or completely ignored whatsoever.
  * @param lsock
  *  [out] handle of the created listening socket
  * @param flags
@@ -452,8 +451,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
  *  [in]  the port to listen at
  * @param backlog
  *  [in]  maximal # of pending connections
- *  <b>NOTE:</b> on some systems, "backlog" can be silently limited
- *  down to 128 (or 5), or completely ignored whatsoever.
+ *  @note  On some systems, "backlog" can be silently limited down to 128
+ *         (or even 5), or completely ignored whatsoever.
  * @param lsock
  *  [out] handle of the created listening socket
  * @sa
@@ -471,13 +470,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
  *  [in]  handle of a listening socket
  * @param timeout
  *  [in]  timeout (infinite if NULL)
- *  <b>NOTE:</b> the provided "timeout" is for this accept() only.
- *  To set I/O timeout on the resulted socket use SOCK_SetTimeout();
- *  all I/O timeouts are infinite by default.
  * @param sock
  *  [out] handle of the accepted socket
  * @param flags
  *  [in]  properties for the accepted socket to have
+ * @note
+ *  The provided "timeout" is for this Accept() only.  To set I/O timeout on
+ *  the resulted socket use SOCK_SetTimeout();
+ *  all I/O timeouts are infinite by default.
  * @sa
  *  SOCK_Create, SOCK_Close, TSOCK_Flags
  */
@@ -672,12 +672,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
  * HINT:  if "host" is NULL then connect to the same host address as before;
  *        if "port" is zero then connect to the same port # as before.
  *
- * @li <b>NOTE 1:</b> "new" socket inherits old I/O timeouts;
- * @li <b>NOTE 2:</b> the call is only applicable to stream [not datagram]
-          sockets.
- * @li <b>NOTE 3:</b> "timeout"==NULL is infinite; "timeout"=={0,0} causes
- *        no wait for connection to be established and to return immediately.
- * @li <b>NOTE 4:</b> UNIX sockets can only be reconnected to the same file
+ * @note  The "new" socket inherits old I/O timeouts;
+ * @note  The call is only applicable to stream [not datagram] sockets.
+ * @note  "timeout"==NULL is infinite (also as kInfiniteTimeout);
+ *        "timeout"=={0,0} causes no wait for connection to be established,
+ *        and to return immediately.
+ * @note  UNIX sockets can only be reconnected to the same file,
  *        thus both host and port have to be passed as 0s.
  * @param sock
  *  [in]  handle of the socket to reconnect
@@ -770,8 +770,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  * successfully, eIO_Closed if the handle has been passed already closed,
  * eIO_InvalidArg if passed arguments are not valid, eIO_Unknow if the
  * handle cannot be closed (per an error returned by the system).
- * NOTE using this call on a handle that belongs to an active [LD]SOCK object
- * is undefined.
+ * @note  Using this call on a handle that belongs to an active [LD]SOCK object
+ *        is undefined.
  * @sa
  *  SOCK_GetOSHandle
  */
@@ -806,9 +806,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseOSHandle
  *  eIO_Interrupt  -- if the call had been interrupted by a signal before
  *                    any other verifiable status was available;
  *  eIO_InvalidArg -- if the "event" is not one of those mentioned above.
- * @note It is allowed to use a non-NULL zeroed STimeout to poll
- *       on the socket for the immediately available event and
- *       return it (or eIO_Timeout, otherwise) without blocking.
+ * @note  It is allowed to use a non-NULL zeroed STimeout to poll
+ *        on the socket for the immediately available event and
+ *        return it (or eIO_Timeout, otherwise) without blocking.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
 (SOCK            sock,
@@ -832,29 +832,29 @@ typedef struct {
  * or until timeout expires (wait indefinitely if timeout is passed as NULL).
  * Return eIO_Success if at least one socket was found ready;  eIO_Timeout
  * if timeout expired;  eIO_Unknown if underlying system call(s) failed.
- * @li <b>NOTE 1:</b> NULL sockets (w/o any verification for the contents of
+ * @note  NULL sockets (w/o any verification for the contents of
  *        the "event" field) as well as non-NULL sockets with eIO_Open
  *        requested in their "event" do not get polled (yet corresponding
  *        "revent" updated to reflect eIO_Open -- for no I/O event ready);
- * @li <b>NOTE 2:</b> For a socket found not ready for an operation, eIO_Open
+ * @note  For a socket found not ready for an operation, eIO_Open
  *        get returned in its "revent";  for a failing / closed socket,
  *        eIO_Close gets returned;
- * @li <b>NOTE 3:</b> This call may return eIO_InvalidArg if:
+ * @note  This call may return eIO_InvalidArg if:
  *        - parameters to the call are incomplete / inconsistent;
  *        - a non-NULL socket polled with a bad "event" (e.g. eIO_Close).
  *        With this return code, the calling code cannot rely on "revent"
  *        fields in the "polls" array as they might not be properly updated.
- * @li <b>NOTE 4:</b> If either both "n" and "polls" are NULL, or all sockets
+ * @note  If either both "n" and "polls" are NULL, or all sockets
  *        in "polls" are either NULL or without any events requested
  *        (eIO_Open), then the returned status is either:
  *        - eIO_Timeout (after the specified amount of time was spent idle), or
  *        - eIO_Interrupt (if a signal came while the waiting was in progress).
- * @li <b>NOTE 5:</b> For datagram sockets, the readiness for reading is
+ * @note  For datagram sockets, the readiness for reading is
  *        determined by the message data latched since last message receive
  *        call, DSOCK_RecvMsg.
- * @li <b>NOTE 6:</b> This call allows intermixture of stream, datagram and
+ * @note  This call allows the intermixture of stream, datagram and
  *        listening sockets, as well as triggers.
- * @li <b>NOTE 7:</b> This call may cause some socket I/O in those sockets
+ * @note  This call may cause some socket I/O in those sockets
  *        marked for read-on-write and those with pending connection or
  *        output data.
  * @param n
@@ -876,7 +876,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
 
 /** Specify timeout for the connection i/o (see SOCK_[Read|Write|Close] funcs).
  * If "timeout" is NULL then set the timeout to be infinite;
- * @note The default timeout is infinite (to wait indefinitely).
+ * @note  The default timeout is infinite (to wait indefinitely).
  * @param sock
  *  [in]  socket handle
  * @param event
@@ -892,11 +892,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
 
 
 /** Get the connection's i/o timeout (or NULL, if the timeout is infinite).
- * @li <b>NOTE 1:</b>  the returned timeout is guaranteed to be pointing to
- *         a valid structure in memory at least until the SOCK is closed
- *         or SOCK_SetTimeout is called for this "sock".
- * @li <b>NOTE 2:</b>  eIO_ReadWrite timeout is the least of
- *         eIO_Read and eIO_Write ones.
+ * @note  The returned timeout is guaranteed to be pointing to
+ *        a valid structure in memory at least until the SOCK is closed
+ *        or SOCK_SetTimeout is called for this "sock".
+ * @note  eIO_ReadWrite timeout is the least of eIO_Read and eIO_Write ones.
  * @param sock
  *  [in]  socket handle
  * @param event
@@ -941,14 +940,14 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  *   eIO_Read[Persist] -- discard up to "size" bytes from internal buffer
  *                        and socket (check "*n_read" to know how many).
  *
- * @li <b>NOTE 1:</b> "Read" and "peek" methods differ:  if "read" is
+ * @note  "Read" and "peek" methods differ:  if "read" is
  *        performed and not enough but only some data available immediately
  *        from the internal buffer, then the call still completes with
  *        eIO_Success status.  For "peek", if not all requested data were
  *        available, the real I/O occurs to pick up additional data (if any)
  *        from the system.  Keep this difference in mind when programming
  *        loops that heavily use "peek"s without "read"s.
- * @li <b>NOTE 2:</b> If on input "size" == 0, then "*n_read" is set to 0,
+ * @note  If on input "size" == 0, then "*n_read" is set to 0,
  *        and the return value can be either of eIO_Success, eIO_Closed or
  *        eIO_Unknown depending on connection status of the socket.
  * @param sock
@@ -1021,30 +1020,33 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
 
 
 /** Return low-level socket I/O status of *last* socket operation.
- * This call does not perform any I/O or socket related system calls.
+ * This call does not perform any I/O or socket-related system calls.
  * @param sock
  *  [in]  socket handle
  * @param direction
  *  [in]  one of:  eIO_Open, eIO_Read, eIO_Write
  * @return
- *   eIO_Closed     -- if connection has either been shut down / closed
- *                     (in corresponding direction for eIO_Read or eIO_Write),
- *                     or not yet been attempted (for eIO_Open);
- *   eIO_Timeout    -- if connection request has been submitted but not
- *                     completed (i.e. it was still pending during last I/O);
- *   eIO_Interrupt  -- if last data I/O was interrupted by a signal
- *                     (applicable only to eIO_Read or eIO_Write);
- *   eIO_Unknown    -- if an error has been detected during last data I/O
- *                     (applicable only to eIO_Read or eIO_Write);
- *   eIO_InvalidArg -- if "direction" is not one of the allowed above;
- *   eIO_Success    -- otherwise (also covers eIO_Timeout in last data I/O).
+ *   - eIO_Closed     - if connection has either been shut down / closed
+ *                      (in corresponding direction for eIO_Read or eIO_Write),
+ *                       or not yet been attempted (for eIO_Open);
+ *   - eIO_Timeout    - if connection request has been submitted but not
+ *                      completed (i.e. it was still pending during last I/O);
+ *   - eIO_Interrupt  - if last data I/O was interrupted by a signal
+ *                      (applicable only to eIO_Read or eIO_Write);
+ *   - eIO_Unknown    - if an error has been detected during last data I/O
+ *                      (applicable only to eIO_Read or eIO_Write);
+ *   - eIO_InvalidArg - if "direction" is not one of the allowed above;
+ *   - eIO_Success    - otherwise (also covers eIO_Timeout in last data I/O).
  *
- * @note SOCK_Read(eIO_ReadPeek) and SOCK_Wait(eIO_Read) will not
- *       return any error as long as there is unread buffered
- *       data left.  Thus, when you are "peeking" data (instead of
- *       reading it out), then the only "non-destructive" way to
- *       check whether an EOF or an error has actually occurred,
- *       it is to use this call.
+ * @note  eIO_Open merely checks whether the socket still exists (i.e. as
+ *        a system object) and that SOCK_CloseEx() has not been called on it.
+ *
+ * @note  SOCK_Read(eIO_ReadPeek) and SOCK_Wait(eIO_Read) will not
+ *        return any error as long as there is unread buffered
+ *        data left.  Thus, when you are "peeking" data (instead of
+ *        reading it out), then the only "non-destructive" way to
+ *        check whether an EOF or an error has actually occurred,
+ *        it is to use this call.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
 (SOCK      sock,
@@ -1076,15 +1078,15 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
  *                other code denotes an error, but some bytes might have
  *                been sent nevertheless (always check *n_written to know).
  *
- * @li <b>NOTE 1:</b> With eIO_WritePlain the call returns eIO_Success iff
+ * @note  With eIO_WritePlain the call returns eIO_Success if and only if
  *        some data were actually written to the socket.  If no data could
  *        be written (and perhaps timeout expired) this call always returns
  *        an error.
- * @li <b>NOTE 2:</b> eIO_WritePlain and eIO_WritePersist differ that
+ * @note  eIO_WritePlain and eIO_WritePersist differ that
  *        the latter can flag an error condition even if some data were
  *        actually written
  *        (see "the rule of thumb" in the comments for SOCK_Read() above).
- * @li <b>NOTE 3:</b> if "size"==0, return value can be eIO_Success if no
+ * @note  If "size"==0, return value can be eIO_Success if no
  *        pending data left in the socket, or eIO_Timeout if there are still
  *        data pending.  In either case, "*n_written" is set to 0 on return.
  */
@@ -1102,11 +1104,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
  * Break actual connection if any was established.
  * Do not attempt to send anything upon SOCK_Close().
  * This call is available for stream sockets only.
- * NB:  Even though the underlying OS socket handle may have been marked for
- *      preservation via fSOCK_KeepOnClose, this call always and unconditially
- *      closes and destroys the actual OS handle.
+ * @note  Even though the underlying OS socket handle may have been marked for
+ *        preservation via fSOCK_KeepOnClose, this call always and
+ *        unconditially closes and destroys the actual OS handle.
  * @param sock
- * Socket handle
+ *  [in] socket handle
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Abort
 (SOCK sock
@@ -1697,7 +1699,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
 /******************************************************************************
  *  Error & Data Logging
  *
- * @note Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
+ * @note  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
  *
  * @sa
  *  CORE_SetLOG
@@ -1906,7 +1908,7 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  *  (or local host, if hostname is passed as NULL), which can be either
  *  domain name or an IP address in the dotted notation
  *  (e.g. "123.45.67.89\0").  Return 0 on error.
- *  @note "0.0.0.0" and "255.255.255.255" are both considered invalid.
+ *  @note  "0.0.0.0" and "255.255.255.255" are both considered invalid.
  * @sa
  *  SOCK_gethostbyname, SOCK_gethostname
  */
@@ -1995,8 +1997,8 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
  *  If no host/port detected, return 'str'.  On format error, return 0.
  *  If host and/or port fragments are missing, then the corresponding 'host'/
  *  'port' parameters get a value of 0.
- * @note that 'host' returned is in network byte order, unlike 'port', which
- *  always comes out in host (native) byte order.
+ * @note  'host' gets returned in network byte order, unlike 'port', which
+ *        always comes out in host (native) byte order.
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
 (const char*     str,
