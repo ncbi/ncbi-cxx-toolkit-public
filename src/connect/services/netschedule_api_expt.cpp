@@ -44,7 +44,7 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eAuthenticationError"] = CNetScheduleException::eAuthenticationError;
     m_Map["eKeyFormatError"]      = CNetScheduleException::eKeyFormatError;
     m_Map["eJobNotFound"]         = CNetScheduleException::eJobNotFound;
-    m_Map["eBatchNotFound"]       = CNetScheduleException::eBatchNotFound;
+    m_Map["eGroupNotFound"]       = CNetScheduleException::eGroupNotFound;
     m_Map["eInvalidJobStatus"]    = CNetScheduleException::eInvalidJobStatus;
     m_Map["eUnknownQueue"]        = CNetScheduleException::eUnknownQueue;
     m_Map["eUnknownQueueClass"]   = CNetScheduleException::eUnknownQueueClass;
@@ -78,7 +78,7 @@ unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
     case eAuthenticationError:                  return 401;
     case eKeyFormatError:                       return 400;
     case eJobNotFound:                          return 404;
-    case eBatchNotFound:                        return 404;
+    case eGroupNotFound:                        return 404;
     case eInvalidJobStatus:                     return 409;
     case eUnknownQueue:                         return 404;
     case eUnknownQueueClass:                    return 404;
