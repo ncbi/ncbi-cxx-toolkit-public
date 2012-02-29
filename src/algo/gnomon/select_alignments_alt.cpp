@@ -156,7 +156,9 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
     }
 
     //check for models with partial retained introns
-    if(a.Exons().size() > 1) {
+    if(a.Exons().size() == 1) {
+        return false;
+    } else {
         ITERATE(CAltSplice, it, *this) {
             const CGeneModel& b = *it;
             if(CModelCompare::CountCommonSplices(a,b) == 2*(a.Exons().size()-1)) {  //all a-splices are common with b
@@ -332,15 +334,15 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
             return true;
         else if(bs > as)
             return false;
-        else if(a.Support().size() > b.Support().size())       // more alignments is better
+        else if(a.Weight() > b.Weight())       // more alignments is better
             return true;
-        else if(a.Support().size() < b.Support().size()) 
+        else if(a.Weight() < b.Weight()) 
             return false;
         else 
             return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
     } else {                       // both noncoding
-        double asize = a.Support().size();
-        double bsize = b.Support().size();
+        double asize = a.Weight();
+        double bsize = b.Weight();
         double ds = 0.025*(asize+bsize);
         
         if((a.Status()&CGeneModel::ePolyA) != 0)
@@ -406,8 +408,8 @@ void  CModelFilters::FilterOutLowSupportModels(TGeneModelList& cls, int minsuppo
 bool CModelCompare::BadOverlapTest(const CGeneModel& a, const CGeneModel& b) {     // returns true for bad overlap
     if((!a.TrustedmRNA().empty() || !a.TrustedProt().empty()) && (!b.TrustedmRNA().empty() || !b.TrustedProt().empty()))
         return false;
-    else if(a.Limits().IntersectingWith(b.Limits()) && (a.Exons().size() == 1 || b.Exons().size() == 1)) 
-        return true;
+    //    else if(a.Limits().IntersectingWith(b.Limits()) && (a.Exons().size() == 1 || b.Exons().size() == 1)) 
+    //        return true;
     else 
         return CountCommonSplices(a,b) > 0;
 }
