@@ -5243,7 +5243,8 @@ case "$host_os:$compiler" in
    fi
    if $CXX -v 2>&1 | grep -q Apple; then
       CFLAGS="-fpascal-strings $CFLAGS"
-      CXXFLAGS="-fno-permissive -fpascal-strings $CXXFLAGS"
+      CXXFLAGS="-fpascal-strings $CXXFLAGS"
+      $CXX -v 2>&1 | grep -q clang  ||  CXXFLAGS="-fno-permissive $CXXFLAGS"
       # -flat_namespace is necessary for proper handling of shared libraries
       # that don't themselves link against all their dependencies.
       LDFLAGS="-flat_namespace $LDFLAGS"
