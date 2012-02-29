@@ -141,6 +141,7 @@ public:
     Predicate* ConnectsParalogs(TAlignModelList& alignments);
     TransformFunction* ProjectCDS(objects::CScope& scope);
     TransformFunction* DoNotBelieveFrameShiftsWithoutCdsEvidence();
+    void SetConfirmedStartStopForProteinAlignments(TAlignModelList& alignments);
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
     void FilterOutChimeras(TGeneModelList& clust);
     void ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust);
