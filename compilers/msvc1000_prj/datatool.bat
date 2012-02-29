@@ -64,6 +64,7 @@ if not exist "%dest_spec%" set dest_spec=.
 set copied_asn=0
 for /f %%a in ('xcopy "%input_asn_path%" "%dest_spec%" /q /d /y') do (set copied_asn=%%a)
 set copied_def=0
+if not exist "%input_def_path%" echo [-] > "%input_def_path%"
 if exist "%input_def_path%" for /f %%a in ('xcopy "%input_def_path%" "%dest_spec%" /q /d /y') do (set copied_def=%%a)
 if not %copied_asn%==0 goto DOGENERATE
 if not %copied_def%==0 goto DOGENERATE
