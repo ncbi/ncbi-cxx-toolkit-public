@@ -844,7 +844,7 @@ CAnnot_Collector::GetAnnotSet(void) const
 inline
 CScope& CAnnot_Collector::GetScope(void) const
 {
-    return m_Scope;
+    return m_Scope.GetScope();
 }
 
 
