@@ -65,7 +65,8 @@ NCBI_XNCBI_EXPORT const char* g_RW_ResultToString(ERW_Result res);
 
 
 /// A very basic data-read interface.
-
+/// @sa
+///  IWriter, IReaderWriter, CRStream
 class IReader
 {
 public:
@@ -76,7 +77,7 @@ public:
     /// during the operation (some data may have been read, nevertheless).
     /// Special case:  if "count" passed as 0, then the value of
     /// "buf" is ignored, and no change should be made to the state
-    /// of input device (but may return non-eRW_Success to indicate
+    /// of the input device (but may return non-eRW_Success to indicate
     /// that the input device has already been in an error condition).
     /// @attention
     ///     It is implementation-specific whether the call blocks until
@@ -105,12 +106,13 @@ public:
 
 
 /// A very basic data-write interface.
-
+/// @sa
+///  IReader, IReaderWriter, CWStream
 class IWriter
 {
 public:
     /// Write up to "count" bytes from the buffer pointed to by the "buf"
-    /// argument onto an output device.  Always store the number of bytes
+    /// argument onto the output device.  Always store the number of bytes
     /// actually written, or 0 if "count" has been passed as 0
     /// ("buf" is ignored in this case), via the "bytes_written" pointer,
     /// if provided non-NULL.  Note that the method can return non-eRW_Success
@@ -128,7 +130,8 @@ public:
 
 
 /// A very basic data-read/write interface.
-
+/// @sa
+///  IReader, IWriter, CRWStream
 class IReaderWriter : public virtual IReader,
                       public virtual IWriter
 {

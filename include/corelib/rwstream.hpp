@@ -82,7 +82,8 @@ BEGIN_NCBI_SCOPE
 /// respective IReader/IWriter API explicitly.
 
 
-/// Reader-based stream; @sa IReader
+/// Reader-based stream.
+/// @sa IReader
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used
@@ -118,7 +119,8 @@ private:
 };
 
 
-/// Writer-based stream; @sa IWriter
+/// Writer-based stream.
+/// @sa IWriter
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer, entirely used
@@ -154,7 +156,8 @@ private:
 };
 
 
-/// Reader-writer based stream; @sa IReaderWriter
+/// Reader-writer based stream.
+/// @sa IReaderWriter, IReader, IWriter
 ///
 /// @param buf_size
 ///     specifies the number of bytes for internal I/O buffer,
