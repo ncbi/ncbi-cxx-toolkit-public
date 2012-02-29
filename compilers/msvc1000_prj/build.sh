@@ -30,17 +30,17 @@ error()
     exit 1
 }
 
-generate_msvc8_error_check_file() {
+generate_msvc10_error_check_file() {
     cat <<-EOF >$1
 	/.*--* (Reb|B)uild( All | )started: Project:/ {
 	  expendable = ""
 	}
 
-	/^EXPENDABLE project/ {
+	/EXPENDABLE project/ {
 	  expendable = \$0
 	}
 
-	/(^| : |^The source )([fatal error]* [CDULNKPRJVT]*[0-9]*: |The .* are both configured to produce |Error executing )/ {
+	/(| : |The source )([fatal ]*error [A-Z]*[0-9]* *: |The .* are both configured to produce|.*: error [0-9]*:|: general error |Error executing |ERROR: This project depends)/ {
 	if (!expendable) {
 	  print \$0
 	  exit
@@ -122,7 +122,7 @@ done
 # Generate errors check script
 
 check_awk=$build_dir/build_check.awk
-generate_msvc8_error_check_file $check_awk
+generate_msvc10_error_check_file $check_awk
 
 
 # Build
