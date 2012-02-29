@@ -39,7 +39,6 @@
  *
  */
 
-#include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 
 
