@@ -53,6 +53,7 @@ CAlignModel::CAlignModel(const CGeneModel& g, const CAlignMap& a)
     : CGeneModel(g), m_alignmap(a)
 {
     FrameShifts() = m_alignmap.GetInDels(true);
+    RemoveExtraFShifts();
     SetTargetId(*CIdHandler::GnomonMRNA(ID()));
 }
 
@@ -353,11 +354,11 @@ bool CGeneModel::CdsInvariant(bool check_start_stop) const
 
     if (check_start_stop && Score() != BadScore()) {
         if (Strand()==ePlus) {
-            _ASSERT( mrnamap.FShiftedLen(TSignedSeqRange(Limits().GetFrom(),ReadingFrame().GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) < 4 ^ HasStart() );
-            _ASSERT( mrnamap.FShiftedLen(TSignedSeqRange(ReadingFrame().GetTo(),Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) < 4 ^ HasStop() );
+            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(Limits().GetFrom(),ReadingFrame().GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) < 4) ^ HasStart() );
+            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(ReadingFrame().GetTo(),Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) < 4) ^ HasStop() );
         } else {
-            _ASSERT( mrnamap.FShiftedLen(TSignedSeqRange(ReadingFrame().GetTo(),Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) < 4 ^ HasStart() );
-            _ASSERT( mrnamap.FShiftedLen(TSignedSeqRange(Limits().GetFrom(),ReadingFrame().GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) < 4 ^ HasStop() );
+            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(ReadingFrame().GetTo(),Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) < 4) ^ HasStart() );
+            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(Limits().GetFrom(),ReadingFrame().GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) < 4) ^ HasStop() );
         }
     }
 
