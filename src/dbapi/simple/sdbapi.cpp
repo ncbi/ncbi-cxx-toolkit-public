@@ -1811,6 +1811,7 @@ CQueryImpl::~CQueryImpl(void)
         x_Close();
     }
     STD_CATCH_ALL_X(6, "Error destroying CQuery");
+    x_ClearAllParams();
     delete m_Stmt;
 }
 
@@ -1915,17 +1916,22 @@ CQueryImpl::ClearParameter(CTempString name)
     }
 }
 
-inline void
-CQueryImpl::ClearParameters(void)
+void
+CQueryImpl::x_ClearAllParams(void)
 {
-    x_CheckCanWork();
-
     ITERATE(TParamsMap, it, m_Params) {
         const SQueryParamInfo& info = it->second;
         delete info.field;
         delete info.value;
     }
     m_Params.clear();
+}
+
+inline void
+CQueryImpl::ClearParameters(void)
+{
+    x_CheckCanWork();
+    x_ClearAllParams();
 }
 
 inline void

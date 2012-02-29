@@ -155,6 +155,7 @@ public:
 private:
     void x_CheckCanWork(bool need_rs = false) const;
     void x_SetOutParameter(const string& name, const CVariant& value);
+    void x_ClearAllParams(void);
     bool x_Fetch(void);
     void x_InitBeforeExec(void);
     void x_InitRSFields(void);
