@@ -469,8 +469,7 @@ CCgiCookies::x_CheckField(const string&          str,
 
 
 NCBI_PARAM_DECL(string, CGI, Cookie_Name_Banned_Symbols);
-// The old default was " ,;=".
-NCBI_PARAM_DEF_EX(string, CGI, Cookie_Name_Banned_Symbols, " ()<>@,;:\\\"/[]?={}",
+NCBI_PARAM_DEF_EX(string, CGI, Cookie_Name_Banned_Symbols, " ,;=",
                   eParam_NoThread, CGI_COOKIE_NAME_BANNED_SYMBOLS);
 typedef NCBI_PARAM_TYPE(CGI, Cookie_Name_Banned_Symbols) TCookieNameBannedSymbols;
 
@@ -488,8 +487,7 @@ const char* s_GetCookieNameBannedSymbols(void)
 
 void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 {
-    bool need_decode = (m_EncodeFlag != NStr::eUrlEnc_None) &&
-        (TCookieEncoding::GetDefault() == CCgiCookie::eCookieEnc_Url);
+    bool need_decode = true;
     NStr::EUrlDecode dec_flag = m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
         NStr::eUrlDec_Percent : NStr::eUrlDec_All;
     const char* banned_symbols = s_GetCookieNameBannedSymbols();
@@ -506,8 +504,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             switch ( x_CheckField(name, CCgiCookie::eField_Name,
                 banned_symbols, on_bad_cookie) ) {
             case eCheck_Valid:
-                Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
-                    kEmptyStr, on_bad_cookie);
+                Add(NStr::URLDecode(name, dec_flag), kEmptyStr, on_bad_cookie);
                 break;
             case eCheck_StoreInvalid:
                 {
@@ -527,8 +524,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             switch ( x_CheckField(name, CCgiCookie::eField_Name,
                 banned_symbols, on_bad_cookie) ) {
             case eCheck_Valid:
-                Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
-                    kEmptyStr, on_bad_cookie);
+                Add(NStr::URLDecode(name, dec_flag), kEmptyStr, on_bad_cookie);
                 break;
             case eCheck_StoreInvalid:
                 {
@@ -584,7 +580,11 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
                     name + "): " +
                     NStr::PrintableString(str.substr(pos_mid + 1));
             }
-            if (!valid_quotes) {
+            if ( valid_quotes ) {
+                need_decode = false;
+            }
+            else {
+                quoted_value = false;
                 // Error - missing closing quote
                 switch ( on_bad_cookie ) {
                 case eOnBadCookie_ThrowException:
@@ -629,7 +629,7 @@ void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
             x_CheckField(val, CCgiCookie::eField_Value, ";,",
             on_bad_cookie, &name);
         if ( valid_name == eCheck_Valid  &&  valid_value == eCheck_Valid ) {
-            Add(need_decode ? NStr::URLDecode(name, dec_flag) : name,
+            Add(NStr::URLDecode(name, dec_flag),
                 need_decode ? NStr::URLDecode(val, dec_flag) : val,
                 on_bad_cookie);
         }
@@ -1069,7 +1069,7 @@ NCBI_PARAM_ENUM_ARRAY(CCgiCookies::EOnBadCookie, CGI, On_Bad_Cookie)
     {"Store",         CCgiCookies::eOnBadCookie_Store}
 };
 NCBI_PARAM_ENUM_DEF_EX(CCgiCookies::EOnBadCookie, CGI, On_Bad_Cookie,
-                       CCgiCookies::eOnBadCookie_SkipAndError,
+                       CCgiCookies::eOnBadCookie_Store,
                        eParam_NoThread, CGI_ON_BAD_COOKIE);
 typedef NCBI_PARAM_TYPE(CGI, On_Bad_Cookie) TOnBadCookieParam;
 
