@@ -98,7 +98,10 @@ typedef CVectorSet<CSupportInfo> CSupportInfoSet;
 class NCBI_XALGOGNOMON_EXPORT CInDelInfo
 {
 public:
-    CInDelInfo(TSignedSeqPos l = 0, int len = 0, bool is_i = true, const string& d_v = kEmptyStr) : m_loc(l), m_len(len), m_is_insert(is_i) {}
+    CInDelInfo(TSignedSeqPos l = 0, int len = 0, bool is_i = true, const string& v = kEmptyStr) : m_loc(l), m_len(len), m_is_insert(is_i), m_indelv(v) 
+    {
+        _ASSERT(m_indelv.empty() || (int)m_indelv.length() == len);
+    }
     TSignedSeqPos Loc() const { return m_loc; }
     int Len() const { return m_len; }
     bool IsInsertion() const { return m_is_insert; }
@@ -109,17 +112,28 @@ public:
             (IsInsertion() && Loc() <= b && a <= Loc()+Len()-1);
     }
     bool operator<(const CInDelInfo& fsi) const
-    { return ((m_loc == fsi.m_loc && IsDeletion() != fsi.IsDeletion()) ? IsDeletion() : m_loc < fsi.m_loc); } // if location is same deletion first
-    bool operator==(const CInDelInfo& fsi) const 
-    { return (m_loc == fsi.m_loc) && (m_len == fsi.m_len) && (m_is_insert == fsi.m_is_insert); }
-    bool operator!=(const CInDelInfo& fsi) const
-    { return !(*this == fsi); }
+    {
+        if(m_loc != fsi.m_loc)
+            return m_loc < fsi.m_loc;
+        else if(IsDeletion() != fsi.IsDeletion())
+            return IsDeletion();  // if location is same deletion first
+        else if(m_len != fsi.m_len)
+            return m_len < fsi.m_len;
+        else
+            return m_indelv < fsi.m_indelv;
+ 
+        return ((m_loc == fsi.m_loc && IsDeletion() != fsi.IsDeletion()) ? IsDeletion() : m_loc < fsi.m_loc); 
+    }
+    bool operator!=(const CInDelInfo& fsi) const { return (*this < fsi || fsi < *this); }
+    bool operator==(const CInDelInfo& fsi) const { return !(*this != fsi); }
+    string GetInDelV() const { return m_indelv; }
 
 private:
     TSignedSeqPos m_loc;  // left location for insertion, deletion is before m_loc
                           // insertion - when there are extra bases in the genome
     int m_len;
     bool m_is_insert;
+    string m_indelv;
 };
 
 typedef vector<CInDelInfo> TInDels;
@@ -306,7 +320,7 @@ public:
         eUnknownOrientation = 1024 
     };
 
-    CGeneModel(EStrand s = ePlus, int id = 0, int type = 0) :
+    CGeneModel(EStrand s = ePlus, Int8 id = 0, int type = 0) :
         m_type(type), m_id(id), m_status(0), m_ident(0), m_weight(1), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0) {}
     virtual ~CGeneModel() {}
 
