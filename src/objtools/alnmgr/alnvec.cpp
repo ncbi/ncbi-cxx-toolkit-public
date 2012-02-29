@@ -60,7 +60,9 @@ CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope)
     : CAlnMap(ds),
       m_Scope(&scope),
       m_set_GapChar(false),
-      m_set_EndChar(false)
+      m_set_EndChar(false),
+      m_NaCoding(CSeq_data::e_not_set),
+      m_AaCoding(CSeq_data::e_not_set)
 {
 }
 
@@ -69,7 +71,9 @@ CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor, CScope& scope)
     : CAlnMap(ds, anchor),
       m_Scope(&scope),
       m_set_GapChar(false),
-      m_set_EndChar(false)
+      m_set_EndChar(false),
+      m_NaCoding(CSeq_data::e_not_set),
+      m_AaCoding(CSeq_data::e_not_set)
 {
 }
 
@@ -104,17 +108,37 @@ const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
 CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
 {
     TSeqVectorCache::iterator iter = m_SeqVectorCache.find(row);
+    CRef<CSeqVector> seq_vec;
     if (iter != m_SeqVectorCache.end()) {
-        return *(iter->second);
-    } else {
-        CSeqVector vec = GetBioseqHandle(row).GetSeqVector
+        seq_vec = iter->second;
+    }
+    else {
+        CBioseq_Handle h = GetBioseqHandle(row);
+        CSeqVector vec = h.GetSeqVector
             (CBioseq_Handle::eCoding_Iupac,
              IsPositiveStrand(row) ? 
              CBioseq_Handle::eStrand_Plus :
              CBioseq_Handle::eStrand_Minus);
-        CRef<CSeqVector> seq_vec(new CSeqVector(vec));
-        return *(m_SeqVectorCache[row] = seq_vec);
+        seq_vec.Reset(new CSeqVector(vec));
+        m_SeqVectorCache[row] = seq_vec;
     }
+    if ( seq_vec->IsNucleotide() ) {
+        if (m_NaCoding != CSeq_data::e_not_set) {
+            seq_vec->SetCoding(m_NaCoding);
+        }
+        else {
+            seq_vec->SetIupacCoding();
+        }
+    }
+    else if ( seq_vec->IsProtein() ) {
+        if (m_AaCoding != CSeq_data::e_not_set) {
+            seq_vec->SetCoding(m_AaCoding);
+        }
+        else {
+            seq_vec->SetIupacCoding();
+        }
+    }
+    return *seq_vec;
 }
 
 

@@ -50,7 +50,9 @@ USING_SCOPE(ncbi::objects);
 CSparseAln::CSparseAln(const CAnchoredAln& anchored_aln,
                        objects::CScope& scope)
     : m_Scope(&scope),
-      m_GapChar('-')
+      m_GapChar('-'),
+      m_NaCoding(CSeq_data::e_not_set),
+      m_AaCoding(CSeq_data::e_not_set)
 {
     x_Build(anchored_aln);
 }
@@ -404,7 +406,26 @@ CSeqVector& CSparseAln::x_GetSeqVector(TNumrow row) const
              CBioseq_Handle::eStrand_Minus);
         m_SeqVectors[row].Reset(new CSeqVector(vec));
     }
-    return *m_SeqVectors[row];
+
+    CSeqVector& seq_vec = *m_SeqVectors[row];
+    if ( seq_vec.IsNucleotide() ) {
+        if (m_NaCoding != CSeq_data::e_not_set) {
+            seq_vec.SetCoding(m_NaCoding);
+        }
+        else {
+            seq_vec.SetIupacCoding();
+        }
+    }
+    else if ( seq_vec.IsProtein() ) {
+        if (m_AaCoding != CSeq_data::e_not_set) {
+            seq_vec.SetCoding(m_AaCoding);
+        }
+        else {
+            seq_vec.SetIupacCoding();
+        }
+    }
+
+    return seq_vec;
 }
 
 

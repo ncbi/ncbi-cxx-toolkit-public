@@ -65,10 +65,8 @@ public:
     /// Gap character modifier
     void SetGapChar(TResidue gap_char);
 
-
     /// Scope accessor
     CRef<objects::CScope> GetScope() const;
-
 
     /// Alignment dimension (number of sequence rows in the alignment)
     TDim GetDim() const;
@@ -76,7 +74,6 @@ public:
     TNumrow GetNumRows() const {
         return GetDim();
     }
-
 
     /// Seq ids
     const objects::CSeq_id&  GetSeqId(TNumrow row) const;
@@ -117,6 +114,13 @@ public:
                                       ESearchDirection dir = eNone,
                                       bool try_reverse_dir = true) const;
 
+    // Sequence coding. If not set (default), Iupac[na/aa] coding is used.
+    // If set to a value conflicting with the sequence type
+    typedef CSeq_data::E_Choice TCoding;
+    TCoding GetNaCoding(void) const { return m_NaCoding; }
+    TCoding GetAaCoding(void) const { return m_AaCoding; }
+    void SetNaCoding(TCoding coding) { m_NaCoding = coding; }
+    void SetAaCoding(TCoding coding) { m_AaCoding = coding; }
 
     /// Fetch sequence
     string& GetSeqString   (TNumrow row,                           //< which row
@@ -133,7 +137,6 @@ public:
                             string &buffer,                        //< an empty buffer for the output
                             const TSignedRange &aln_rng,           //< what range (in aln coords)
                             bool force_translation = false) const; //< optional na2aa translation (na only!)
-
 
     /// Bioseq handle accessor
     const objects::CBioseq_Handle&  GetBioseqHandle(TNumrow row) const;
@@ -172,6 +175,8 @@ protected:
     mutable vector<objects::CBioseq_Handle> m_BioseqHandles;
     mutable vector<CRef<CSeqVector> > m_SeqVectors;
 
+    TCoding m_NaCoding;
+    TCoding m_AaCoding;
 };
 
 

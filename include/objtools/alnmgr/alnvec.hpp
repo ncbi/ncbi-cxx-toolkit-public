@@ -105,6 +105,13 @@ public:
     const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
     TResidue              GetResidue     (TNumrow row, TSeqPos aln_pos) const;
 
+    // Sequence coding. If not set (default), Iupac[na/aa] coding is used.
+    // If set to a value conflicting with the sequence type
+    typedef CSeq_data::E_Choice TCoding;
+    TCoding GetNaCoding(void) const { return m_NaCoding; }
+    TCoding GetAaCoding(void) const { return m_AaCoding; }
+    void SetNaCoding(TCoding coding) { m_NaCoding = coding; }
+    void SetAaCoding(TCoding coding) { m_AaCoding = coding; }
 
     // gap character could be explicitely set otherwise taken from seqvector
     void     SetGapChar(TResidue gap_char);
@@ -180,6 +187,8 @@ private:
     TResidue    m_EndChar;
     bool        m_set_EndChar;
     vector<int> m_GenCodes;
+    TCoding     m_NaCoding;
+    TCoding     m_AaCoding;
 };
 
 
