@@ -185,7 +185,7 @@ public:
 
     CReverseAndComplement(void) {
 
-        m_Table.resize(0xFF);
+        m_Table.resize(256);
 
         for(Uint1 i(1); i < 0xFF; ++i) {
             m_Table[i] = ReverseAndComplement(i);
