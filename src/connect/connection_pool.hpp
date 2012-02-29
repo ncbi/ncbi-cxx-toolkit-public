@@ -66,28 +66,18 @@ public:
     typedef CServer_Connection     TConnection;
     typedef CServer_Listener       TListener;
 
-    enum EConnType {
-        eInactiveSocket,
-        eActiveSocket,
-        eListener,
-        ePreDeferredSocket,
-        eDeferredSocket,
-        ePreClosedSocket,
-        eClosedSocket
-    };
-
     void SetMaxConnections(unsigned max_connections) {
         m_MaxConnections = max_connections;
     }
 
-    bool Add(TConnBase* conn, EConnType type);
+    bool Add(TConnBase* conn, EServerConnType type);
     void Remove(TConnBase* conn);
     void PingControlConnection(void);
 
     /// Guard connection from out-of-order packet processing by
     /// pulling eActiveSocket's from poll vector
     /// Resets the expiration time as a bonus.
-    void SetConnType(TConnBase* conn, EConnType type, bool must_exist = true);
+    void SetConnType(TConnBase* conn, EServerConnType type);
     void SetAllActive(const vector<CSocketAPI::SPoll>& polls);
     void SetAllActive(const vector<IServer_ConnectionBase*>& conns);
 
@@ -102,25 +92,23 @@ public:
                             STimeout* timer_timeout,
                             vector<IServer_ConnectionBase*>& revived_conns,
                             vector<IServer_ConnectionBase*>& to_close_conns,
-                            vector<IServer_ConnectionBase*>& to_delete_conns) const;
+                            vector<IServer_ConnectionBase*>& to_delete_conns);
 
     void StartListening(void);
     void StopListening(void);
 
-    struct SPerConnInfo {
-        void UpdateExpiration(const TConnBase* conn);
-
-        CTime     expiration;
-        EConnType type;
-    };
-
 private:
-    typedef map<TConnBase*, SPerConnInfo> TData;
-    TData                                 m_Data;
-    mutable CMutex                        m_Mutex;
-    unsigned int                          m_MaxConnections;
-    CSocket                               m_ControlSocket;
-    mutable CServer_ControlConnection     m_ControlSocketForPoll;
+    void x_UpdateExpiration(TConnBase* conn);
+
+
+    typedef set<TConnBase*> TData;
+
+    TData           m_Data;
+    mutable CMutex  m_Mutex;
+    unsigned int    m_MaxConnections;
+    CSocket         m_ControlSocket;
+    mutable CServer_ControlConnection m_ControlSocketForPoll;
+    CFastMutex      m_ControlMutex;
 };
 
 

@@ -34,7 +34,7 @@
 /// Framework to create multithreaded network servers with thread-per-request
 /// scheduling.
 
-#include <util/thread_pool.hpp>
+#include <connect/impl/thread_pool_for_server.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -54,7 +54,6 @@ class  IServer_ConnectionBase;
 struct SServer_Parameters;
 class  CServer_ConnectionPool;
 class  CServer_Connection;
-class  CStdPoolOfThreads;
 
 
 /// Extended copy of the type EIO_Event allowing to distinguish between
@@ -177,9 +176,9 @@ private:
     void x_DoRun(void);
 
     friend class CNetCacheServer;
-    CStdPoolOfThreads* GetThreadPool(void) { return m_ThreadPool.get(); }
+    CPoolOfThreads_ForServer* GetThreadPool(void) { return m_ThreadPool.get(); }
 
-    auto_ptr<CStdPoolOfThreads> m_ThreadPool;
+    auto_ptr<CPoolOfThreads_ForServer> m_ThreadPool;
     SServer_Parameters*         m_Parameters;
     CServer_ConnectionPool*     m_ConnectionPool;
 };

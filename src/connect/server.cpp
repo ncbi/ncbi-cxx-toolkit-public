@@ -112,6 +112,225 @@ int Server_CheckLineMessage(BUF* buffer, const void *data, size_t size,
 }
 
 
+CBlockingQueue_ForServer::TItemHandle
+CBlockingQueue_ForServer::Put(const TRequest& data)
+{
+    CMutexGuard guard(m_Mutex);
+    if (m_Queue.empty()) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+        m_GetCond.SignalAll();
+#else
+        m_GetSem.TryWait(); // is this still needed?
+        m_GetSem.Post();
+#endif
+    }
+    TItemHandle handle(new CQueueItem(data));
+    m_Queue.push_back(handle);
+    return handle;
+}
+
+CBlockingQueue_ForServer::TItemHandle
+CBlockingQueue_ForServer::GetHandle(void)
+{
+    CMutexGuard guard(m_Mutex);
+
+    while (m_Queue.empty()) {
+#ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
+        m_GetCond.WaitForSignal(m_Mutex);
+#else
+        m_GetSem.TryWait();
+        m_GetSem.Post();
+#endif
+    }
+
+    TItemHandle handle(m_Queue.front());
+    m_Queue.pop_front();
+#ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
+    if (!m_Queue.empty()) {
+        m_GetSem.TryWait();
+        m_GetSem.Post();
+    }
+#endif
+
+    guard.Release(); // avoid possible deadlocks from x_SetStatus
+    handle->x_SetStatus(CQueueItemBase::eActive);
+    return handle;
+}
+
+
+CThreadInPool_ForServer::CAutoUnregGuard::CAutoUnregGuard(TThread* thr)
+    : m_Thread(thr)
+{}
+
+CThreadInPool_ForServer::CAutoUnregGuard::~CAutoUnregGuard(void)
+{
+    m_Thread->x_UnregisterThread();
+}
+
+void
+CThreadInPool_ForServer::x_UnregisterThread(void)
+{
+    m_Pool->UnRegister(*this);
+}
+
+void
+CThreadInPool_ForServer::x_HandleOneRequest(bool catch_all)
+{
+    TItemHandle handle(m_Pool->GetHandle());
+    if (catch_all) {
+        try {
+            ProcessRequest(handle);
+        } catch (std::exception& e) {
+            handle->MarkAsForciblyCaught();
+            NCBI_REPORT_EXCEPTION_X(9, "Exception from thread in pool: ", e);
+            // throw;
+        } catch (...) {
+            handle->MarkAsForciblyCaught();
+            // silently propagate non-standard exceptions because they're
+            // likely to be CExitThreadException.
+            throw;
+        }
+    }
+    else {
+        ProcessRequest(handle);
+    }
+}
+
+void*
+CThreadInPool_ForServer::Main(void)
+{
+    m_Pool->Register(*this);
+    CAutoUnregGuard guard(this);
+
+    bool catch_all = TParamThreadPoolCatchExceptions::GetDefault();
+    for (;;) {
+        x_HandleOneRequest(catch_all);
+    }
+
+    return NULL;
+}
+
+void
+CThreadInPool_ForServer::OnExit(void)
+{
+    m_Pool->m_ThreadCount.Add(-1);
+}
+
+void
+CThreadInPool_ForServer::ProcessRequest(TItemHandle handle)
+{
+    TCompletingHandle completer = handle;
+    ProcessRequest(completer->GetRequest());
+}
+
+
+CPoolOfThreads_ForServer::CPoolOfThreads_ForServer(unsigned int max_threads)
+    : m_MaxThreads(max_threads),
+      m_KilledAll(false)
+{
+    m_ThreadCount.Set(0);
+    m_PutQueueNum.Set(0);
+    m_GetQueueNum.Set(0);
+
+    m_Queues = (TQueue**)malloc(m_MaxThreads * sizeof(m_Queues[0]));
+    for (TACValue i = 0; i < m_MaxThreads; ++i) {
+        m_Queues[i] = new TQueue();
+    }
+}
+
+CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer(void)
+{
+    try {
+        KillAllThreads(false);
+    } catch(...) {}    // Just to be sure that we will not throw from the destructor.
+
+    CAtomicCounter::TValue n = m_ThreadCount.Get();
+    if (n) {
+        ERR_POST_X(10, Warning << "CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer: "
+                               << n << " thread(s) still active");
+    }
+
+    // Just in case let's deliberately not destroy all queues.
+}
+
+void
+CPoolOfThreads_ForServer::Spawn(unsigned int num_threads)
+{
+    for (unsigned int i = 0; i < num_threads; i++)
+    {
+        m_ThreadCount.Add(1);
+        NewThread()->Run();
+    }
+}
+
+void
+CPoolOfThreads_ForServer::AcceptRequest(const TRequest& req)
+{
+    Uint4 q_num = Uint4(m_PutQueueNum.Add(1)) % m_MaxThreads;
+    m_Queues[q_num]->Put(req);
+}
+
+CPoolOfThreads_ForServer::TItemHandle
+CPoolOfThreads_ForServer::GetHandle(void)
+{
+    Uint4 q_num = Uint4(m_GetQueueNum.Add(1)) % m_MaxThreads;
+    return m_Queues[q_num]->GetHandle();
+}
+
+
+class CFatalRequest_ForServer : public CStdRequest
+{
+protected:
+    void Process(void) { CThread::Exit(0); } // Kill the current thread
+};
+
+
+void
+CPoolOfThreads_ForServer::KillAllThreads(bool wait)
+{
+    m_KilledAll = true;
+
+    CRef<CStdRequest> poison(new CFatalRequest_ForServer);
+
+    for (TACValue i = 0;  i < m_MaxThreads; ++i) {
+        AcceptRequest(poison);
+    }
+    NON_CONST_ITERATE(TThreads, it, m_Threads) {
+        if (wait) {
+            (*it)->Join();
+        } else {
+            (*it)->Detach();
+        }
+    }
+    m_Threads.clear();
+}
+
+
+void
+CPoolOfThreads_ForServer::Register(TThread& thread)
+{
+    CMutexGuard guard(m_Mutex);
+    if (!m_KilledAll) {
+        m_Threads.push_back(CRef<TThread>(&thread));
+    }
+}
+
+void
+CPoolOfThreads_ForServer::UnRegister(TThread& thread)
+{
+    CMutexGuard guard(m_Mutex);
+    if (!m_KilledAll) {
+        TThreads::iterator it = find(m_Threads.begin(), m_Threads.end(),
+                                     CRef<TThread>(&thread));
+        if (it != m_Threads.end()) {
+            (*it)->Detach();
+            m_Threads.erase(it);
+        }
+    }
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Abstract class for CAcceptRequest and CServerConnectionRequest
 class CServer_Request : public CStdRequest
@@ -184,12 +403,9 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
 
 void CAcceptRequest::x_DoProcess(void)
 {
-    if (m_ConnPool.Add(m_Connection,
-                       CServer_ConnectionPool::eActiveSocket))
-    {
+    if (m_ConnPool.Add(m_Connection, eActiveSocket)) {
         m_Connection->OnSocketEvent(eServIO_Open);
-        m_ConnPool.SetConnType(m_Connection,
-                               CServer_ConnectionPool::eInactiveSocket);
+        m_ConnPool.SetConnType(m_Connection, eInactiveSocket);
     }
     else {
         // The connection pool is full
@@ -254,8 +470,10 @@ void CServerConnectionRequest::Process(void)
     else {
         m_Connection->OnSocketEvent(m_Event);
     }
-    // Return socket to poll vector
-    m_ConnPool.SetConnType(m_Connection, CServer_ConnectionPool::eInactiveSocket, false);
+    if (m_Event != eServIO_Inactivity  &&  m_Event != eServIO_Delete) {
+        // Return socket to poll vector
+        m_ConnPool.SetConnType(m_Connection, eInactiveSocket);
+    }
 }
 
 
@@ -265,8 +483,7 @@ void CServerConnectionRequest::Cancel(void)
     // See comment at CServer::CreateRequest
     m_Connection->OnOverflow(eOR_RequestQueueFull);
     // Return socket to poll vector
-    m_ConnPool.SetConnType(m_Connection,
-                           CServer_ConnectionPool::eInactiveSocket);
+    m_ConnPool.SetConnType(m_Connection, eInactiveSocket);
 }
 
 
@@ -288,9 +505,6 @@ CServer_Connection::CreateRequest(EServIO_Event           event,
                                   CServer_ConnectionPool& conn_pool,
                                   const STimeout*         timeout)
 {
-    // Pull out socket from poll vector
-    // See CServerConnectionRequest::Process and
-    // CServer_ConnectionPool::GetPollAndTimerVec
     return new CServerConnectionRequest(event, conn_pool, timeout, this);
 }
 
@@ -323,7 +537,8 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
         //m_Open = false;
         // fall through
     case eServIO_Delete:
-        Abort();
+        if (GetStatus(eIO_Open) == eIO_Success)
+            Abort();
         delete this;
         break;
     default:
@@ -358,8 +573,7 @@ CServer::~CServer()
 void CServer::AddListener(IServer_ConnectionFactory* factory,
                           unsigned short port)
 {
-    m_ConnectionPool->Add(new CServer_Listener(factory, port),
-                          CServer_ConnectionPool::eListener);
+    m_ConnectionPool->Add(new CServer_Listener(factory, port), eListener);
 }
 
 
@@ -403,7 +617,7 @@ static inline bool operator <(const STimeout& to1, const STimeout& to2)
 
 void CServer::x_DoRun(void)
 {
-    m_ThreadPool->Spawn(m_Parameters->init_threads);
+    m_ThreadPool->Spawn(m_Parameters->max_threads);
 
     Init();
 
@@ -522,9 +736,7 @@ void CServer::Run(void)
 {
     StartListening(); // detect unavailable ports ASAP
 
-    m_ThreadPool.reset(new CStdPoolOfThreads(m_Parameters->max_threads,
-                                             kMax_UInt,
-                                             m_Parameters->spawn_threshold));
+    m_ThreadPool.reset(new CPoolOfThreads_ForServer(m_Parameters->max_threads));
     if (TParamServerCatchExceptions::GetDefault()) {
         try {
             x_DoRun();
@@ -561,7 +773,7 @@ void CServer::SubmitRequest(const CRef<CStdRequest>& request)
 
 void CServer::DeferConnectionProcessing(IServer_ConnectionBase* conn)
 {
-    m_ConnectionPool->SetConnType(conn, CServer_ConnectionPool::ePreDeferredSocket);
+    m_ConnectionPool->SetConnType(conn, ePreDeferredSocket);
 }
 
 
@@ -583,27 +795,14 @@ void CServer::Exit()
 
 void CServer::x_AddRequests(const vector<CRef<CStdRequest> >& reqs)
 {
-    try {
-        m_ThreadPool->AcceptMany(reqs);
-    } catch (CBlockingQueueException&) {
-        // The size of thread pool queue is set to kMax_UInt, so
-        // this is impossible event
-        ERR_POST_X(1, Fatal << "Thread pool queue full");
-        /*CServer_Request* req = dynamic_cast<CServer_Request*>(
-                                                    request.GetPointer());
-        _ASSERT(req);
-        // Queue is full, drop request, indirectly dropping incoming
-        // connection (see also CAcceptRequest::Cancel)
-        // ??? What should we do if conn_base is CServerConnection?
-        // Should we close it? (see also CServerConnectionRequest::Cancel)
-        req->Cancel();*/
-        abort();
+    ITERATE(vector<CRef<CStdRequest> >, it, reqs) {
+        m_ThreadPool->AcceptRequest(*it);
     }
 }
 
 void CServer::AddConnectionToPool(CServer_Connection* conn)
 {
-    if (!m_ConnectionPool->Add(conn, CServer_ConnectionPool::eInactiveSocket)) {
+    if (!m_ConnectionPool->Add(conn, eInactiveSocket)) {
         NCBI_THROW(CServer_Exception, ePoolOverflow,
                    "Cannot add connection, pool has overflowed.");
     }

@@ -43,8 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 // SPerConnInfo
-void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
-    const TConnBase* conn)
+void CServer_ConnectionPool::x_UpdateExpiration(TConnBase* conn)
 {
     const STimeout* timeout = kDefaultTimeout;
     const CSocket*  socket  = dynamic_cast<const CSocket*>(conn);
@@ -53,11 +52,11 @@ void CServer_ConnectionPool::SPerConnInfo::UpdateExpiration(
         timeout = socket->GetTimeout(eIO_ReadWrite);
     }
     if (timeout != kDefaultTimeout  &&  timeout != kInfiniteTimeout) {
-        expiration = GetFastLocalTime();
-        expiration.AddSecond(timeout->sec, CTime::eIgnoreDaylight);
-        expiration.AddNanoSecond(timeout->usec * 1000);
+        conn->expiration = GetFastLocalTime();
+        conn->expiration.AddSecond(timeout->sec, CTime::eIgnoreDaylight);
+        conn->expiration.AddNanoSecond(timeout->usec * 1000);
     } else {
-        expiration.Clear();
+        conn->expiration.Clear();
     }
 }
 
@@ -108,31 +107,34 @@ CServer_ConnectionPool::~CServer_ConnectionPool()
 void CServer_ConnectionPool::Erase(void)
 {
     CMutexGuard guard(m_Mutex);
-    TData& data = const_cast<TData&>(m_Data);
-    NON_CONST_ITERATE(TData, it, data) {
-        CServer_Connection* conn = dynamic_cast<CServer_Connection*>(it->first);
+    NON_CONST_ITERATE(TData, it, m_Data) {
+        CServer_Connection* conn = dynamic_cast<CServer_Connection*>(*it);
         if (conn)
             conn->OnSocketEvent(eServIO_OurClose);
         else
-            it->first->OnTimeout();
+            (*it)->OnTimeout();
 
-        delete it->first;
+        delete *it;
     }
-    data.clear();
+    m_Data.clear();
 }
 
-bool CServer_ConnectionPool::Add(TConnBase* conn, EConnType type)
+bool CServer_ConnectionPool::Add(TConnBase* conn, EServerConnType type)
 {
-    CMutexGuard guard(m_Mutex);
-    TData& data = const_cast<TData&>(m_Data);
-    if (data.size() >= m_MaxConnections)
-        return false;
+    conn->type_lock.Lock();
+    x_UpdateExpiration(conn);
+    conn->type = type;
+    conn->type_lock.Unlock();
 
-    if (data.find(conn) != data.end())
-        abort();
-    SPerConnInfo& info = data[conn];
-    info.type = type;
-    info.UpdateExpiration(conn);
+    {{
+        CMutexGuard guard(m_Mutex);
+        if (m_Data.size() >= m_MaxConnections)
+            return false;
+
+        if (m_Data.find(conn) != m_Data.end())
+            abort();
+        m_Data.insert(conn);
+    }}
 
     PingControlConnection();
     return true;
@@ -145,30 +147,23 @@ void CServer_ConnectionPool::Remove(TConnBase* conn)
 }
 
 
-void CServer_ConnectionPool::SetConnType(TConnBase* conn,
-                                         EConnType  type,
-                                         bool       must_exist /* = true */)
+void CServer_ConnectionPool::SetConnType(TConnBase* conn, EServerConnType type)
 {
-    CMutexGuard guard(m_Mutex);
-    TData& data = const_cast<TData&>(m_Data);
-    TData::iterator it = data.find(conn);
-    if (it == data.end()) {
-        if (must_exist)
-            abort();
-        return;
-    }
-    SPerConnInfo& info = it->second;
-    if (info.type != eClosedSocket) {
-        EConnType new_type = type;
+    conn->type_lock.Lock();
+    if (conn->type != eClosedSocket) {
+        EServerConnType new_type = type;
         if (type == eInactiveSocket) {
-            if (info.type == ePreDeferredSocket)
+            if (conn->type == ePreDeferredSocket)
                 new_type = eDeferredSocket;
-            else if (info.type == ePreClosedSocket)
+            else if (conn->type == ePreClosedSocket)
                 new_type = eClosedSocket;
+            else
+                x_UpdateExpiration(conn);
         }
-        info.type = new_type;
-        info.UpdateExpiration(conn);
+        conn->type = new_type;
     }
+    conn->type_lock.Unlock();
+
     // Signal poll cycle to re-read poll vector by sending
     // byte to control socket
     if (type == eInactiveSocket)
@@ -177,7 +172,7 @@ void CServer_ConnectionPool::SetConnType(TConnBase* conn,
 
 void CServer_ConnectionPool::PingControlConnection(void)
 {
-    CMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(m_ControlMutex);
     EIO_Status status = m_ControlSocket.Write("", 1, NULL, eIO_WritePlain);
     if (status != eIO_Success) {
         ERR_POST_X(4, Warning
@@ -189,14 +184,11 @@ void CServer_ConnectionPool::PingControlConnection(void)
 
 void CServer_ConnectionPool::CloseConnection(TConnBase* conn)
 {
-    {{
-        CMutexGuard guard(m_Mutex);
-        TData& data = const_cast<TData&>(m_Data);
-        TData::iterator it = data.find(conn);
-        if (it == data.end())
-            abort();
-        it->second.type = ePreClosedSocket;
-    }}
+    conn->type_lock.Lock();
+    if (conn->type != eActiveSocket)
+        abort();
+    conn->type = ePreClosedSocket;
+    conn->type_lock.Unlock();
     dynamic_cast<CServer_Connection*>(conn)->OnSocketEvent(eServIO_OurClose);
 }
 
@@ -206,7 +198,7 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
                              STimeout* timer_timeout,
                              vector<IServer_ConnectionBase*>& revived_conns,
                              vector<IServer_ConnectionBase*>& to_close_conns,
-                             vector<IServer_ConnectionBase*>& to_delete_conns) const
+                             vector<IServer_ConnectionBase*>& to_delete_conns)
 {
     CTime now = GetFastLocalTime();
     polls.clear();
@@ -215,25 +207,25 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
     to_delete_conns.clear();
 
     CMutexGuard guard(m_Mutex);
-    TData& data = const_cast<TData&>(m_Data);
     // Control socket goes here as well
-    polls.reserve(data.size()+1);
+    polls.reserve(m_Data.size()+1);
     polls.push_back(CSocketAPI::SPoll(
                     dynamic_cast<CPollable*>(&m_ControlSocketForPoll), eIO_Read));
     CTime current_time(CTime::eEmpty);
     const CTime* alarm_time = NULL;
     const CTime* min_alarm_time = NULL;
     bool alarm_time_defined = false;
-    NON_CONST_ITERATE(TData, it, data) {
+    ERASE_ITERATE(TData, it, m_Data) {
         // Check that socket is not processing packet - safeguards against
         // out-of-order packet processing by effectively pulling socket from
         // poll vector until it is done with previous packet. See comments in
         // server.cpp: CServer_Connection::CreateRequest() and
         // CServerConnectionRequest::Process()
-        TConnBase* conn_base = it->first;
-        SPerConnInfo& info = it->second;
-        if (info.type == eClosedSocket
-            ||  (info.type == eInactiveSocket  &&  !conn_base->IsOpen()))
+        TConnBase* conn_base = *it;
+        conn_base->type_lock.Lock();
+        EServerConnType conn_type = conn_base->type;
+        if (conn_type == eClosedSocket
+            ||  (conn_type == eInactiveSocket  &&  !conn_base->IsOpen()))
         {
             // If it's not eClosedSocket then This connection was closed
             // by the client earlier in CServer::Run after Poll returned
@@ -241,12 +233,14 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
             // Then during OnSocketEvent(eServIO_ClientClose) it was marked
             // as closed. Here we just clean it up from the connection pool.
             to_delete_conns.push_back(conn_base);
+            m_Data.erase(it);
         }
-        else if (info.type == eInactiveSocket  &&  info.expiration <= now)
+        else if (conn_type == eInactiveSocket  &&  conn_base->expiration <= now)
         {
             to_close_conns.push_back(conn_base);
+            m_Data.erase(it);
         }
-        else if ((info.type == eInactiveSocket  ||  info.type == eListener)
+        else if ((conn_type == eInactiveSocket  ||  conn_type == eListener)
                  &&  conn_base->IsOpen())
         {
             CPollable* pollable = dynamic_cast<CPollable*>(conn_base);
@@ -274,18 +268,12 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
                 alarm_time = NULL;
             }
         }
-        else if (info.type == eDeferredSocket
-                 &&  conn_base->IsReadyToProcess())
+        else if (conn_type == eDeferredSocket  &&  conn_base->IsReadyToProcess())
         {
-            info.type = eActiveSocket;
+            conn_base->type = eActiveSocket;
             revived_conns.push_back(conn_base);
         }
-    }
-    for (size_t i = 0; i < to_delete_conns.size(); ++i) {
-        data.erase(to_delete_conns[i]);
-    }
-    for (size_t i = 0; i < to_close_conns.size(); ++i) {
-        data.erase(to_close_conns[i]);
+        conn_base->type_lock.Unlock();
     }
     guard.Release();
 
@@ -311,8 +299,6 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
 
 void CServer_ConnectionPool::SetAllActive(const vector<CSocketAPI::SPoll>& polls)
 {
-    CMutexGuard guard(m_Mutex);
-    TData& data = const_cast<TData&>(m_Data);
     ITERATE(vector<CSocketAPI::SPoll>, it, polls) {
         if (!it->m_REvent) continue;
         IServer_ConnectionBase* conn_base =
@@ -320,28 +306,24 @@ void CServer_ConnectionPool::SetAllActive(const vector<CSocketAPI::SPoll>& polls
         if (conn_base == &m_ControlSocketForPoll)
             continue;
 
-        TData::iterator it_data = data.find(conn_base);
-        if (it_data == data.end())
+        conn_base->type_lock.Lock();
+        if (conn_base->type == eInactiveSocket)
+            conn_base->type = eActiveSocket;
+        else if (conn_base->type != eListener)
             abort();
-        SPerConnInfo& info = it_data->second;
-        if (info.type != eListener) {
-            info.type = eActiveSocket;
-            info.UpdateExpiration(conn_base);
-        }
+        conn_base->type_lock.Unlock();
     }
 }
 
 void CServer_ConnectionPool::SetAllActive(const vector<IServer_ConnectionBase*>& conns)
 {
-    CMutexGuard guard(m_Mutex);
-    TData& data = const_cast<TData&>(m_Data);
     ITERATE(vector<IServer_ConnectionBase*>, it, conns) {
-        TData::iterator it_data = data.find(*it);
-        if (it_data == data.end())
+        IServer_ConnectionBase* conn_base = *it;
+        conn_base->type_lock.Lock();
+        if (conn_base->type != eInactiveSocket)
             abort();
-        SPerConnInfo& info = it_data->second;
-        info.type = eActiveSocket;
-        info.UpdateExpiration(*it);
+        conn_base->type = eActiveSocket;
+        conn_base->type_lock.Unlock();
     }
 }
 
@@ -349,9 +331,8 @@ void CServer_ConnectionPool::SetAllActive(const vector<IServer_ConnectionBase*>&
 void CServer_ConnectionPool::StartListening(void)
 {
     CMutexGuard guard(m_Mutex);
-    const TData& data = const_cast<const TData&>(m_Data);
-    ITERATE (TData, it, data) {
-        it->first->Activate();
+    ITERATE (TData, it, m_Data) {
+        (*it)->Activate();
     }
 }
 
@@ -359,9 +340,8 @@ void CServer_ConnectionPool::StartListening(void)
 void CServer_ConnectionPool::StopListening(void)
 {
     CMutexGuard guard(m_Mutex);
-    const TData& data = const_cast<const TData&>(m_Data);
-    ITERATE (TData, it, data) {
-        it->first->Passivate();
+    ITERATE (TData, it, m_Data) {
+        (*it)->Passivate();
     }
 }
 

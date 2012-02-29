@@ -108,7 +108,7 @@ static const unsigned int     kListenStubsCnt = 1000;
 ///
 static const unsigned int     kMinListenStubsCnt = 50;
 ///
-static CStdPoolOfThreads*     s_NotifyThreadPool = NULL;
+static CPoolOfThreads_ForServer* s_NotifyThreadPool = NULL;
 ///
 static SNCBlockedOpListeners  s_ListenStubs   [kListenStubsCnt];
 ///
@@ -158,7 +158,7 @@ private:
 
 
 void
-INCBlockedOpListener::BindToThreadPool(CStdPoolOfThreads* pool)
+INCBlockedOpListener::BindToThreadPool(CPoolOfThreads_ForServer* pool)
 {
     s_NotifyThreadPool = pool;
 }

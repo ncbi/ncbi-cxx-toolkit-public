@@ -33,8 +33,6 @@
 /// @file server_connection.hpp
 /// Internal header for threaded server connections.
 
-#include <util/thread_pool.hpp>
-
 #include <connect/server.hpp>
 
 
@@ -45,6 +43,20 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+enum EServerConnType {
+    eInactiveSocket,
+    eActiveSocket,
+    eListener,
+    ePreDeferredSocket,
+    eDeferredSocket,
+    ePreClosedSocket,
+    eClosedSocket
+};
+
+
+class CServer_ConnectionPool;
 
 class IServer_ConnectionBase
 {
@@ -62,6 +74,13 @@ public:
     virtual void OnOverflow(EOverflowReason) { }
     virtual void Activate(void) { }
     virtual void Passivate(void) { }
+
+private:
+    friend class CServer_ConnectionPool;
+
+    CTime expiration;
+    CFastMutex type_lock;
+    volatile EServerConnType type;
 };
 
 class NCBI_XCONNECT_EXPORT CServer_Connection : public IServer_ConnectionBase,

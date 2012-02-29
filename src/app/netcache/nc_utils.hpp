@@ -38,7 +38,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
-#include <util/thread_pool.hpp>
+#include <connect/impl/thread_pool_for_server.hpp>
 
 
 #ifdef _DEBUG
@@ -661,7 +661,7 @@ class CStdPoolOfThreads;
 struct INCBlockedOpListener
 {
     ///
-    static void BindToThreadPool(CStdPoolOfThreads* pool);
+    static void BindToThreadPool(CPoolOfThreads_ForServer* pool);
 
     ///
     virtual void OnBlockedOpFinish(void) = 0;
