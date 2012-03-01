@@ -36,7 +36,7 @@
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#define NCBI_CONN_STREAM_EXPERIMENTAL_API 1 // pick up MS-Win DLL linkage
+#define NCBI_CONN_STREAM_EXPERIMENTAL_API 1  // Pick up MS-Win DLL linkage
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_file_connector.h>
 #include <connect/ncbi_socket.hpp>
@@ -871,7 +871,9 @@ private:
 };
 
 
-extern CConn_IOStream* NcbiOpenURL(const string& url)
+extern
+NCBI_XCONNEXT_EXPORT  // FIXME: To remove once the API is fully official
+CConn_IOStream* NcbiOpenURL(const string& url)
 {
     class CPrivateIniter : public CConnIniter {
     public:
