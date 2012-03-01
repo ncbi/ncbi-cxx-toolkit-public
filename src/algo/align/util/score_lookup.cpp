@@ -963,7 +963,20 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        CRef<CPairwiseAln> aln = CreatePairwiseAlnFromSeqAlign(align);
+        // check assumptions:
+        //
+        if ( !align.GetSegs().IsSpliced() ) {
+            NCBI_THROW(CException, eUnknown,
+                       "CScore_TblastnScore: "
+                       "valid only for spliced-seg alignments");
+        }
+
+        if ( align.GetSegs().GetSpliced().GetProduct_type() !=
+             CSpliced_seg::eProduct_type_protein) {
+            NCBI_THROW(CException, eUnknown,
+                       "CScore_TblastnScore: "
+                       "valid only for protein spliced-seg alignments");
+        }
 
         CSeq_id_Handle prot_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
         CSeq_id_Handle genomic_idh =
@@ -997,119 +1010,108 @@ public:
         SNCBIFullScoreMatrix full_matrix;
         NCBISM_Unpack(packed_mtx, &full_matrix);
 
-        // mark intron ranges
-        set<TSeqRange> introns;
-        if (align.GetSegs().IsSpliced()) {
-            CSpliced_seg::TExons::const_iterator curr =
-                align.GetSegs().GetSpliced().GetExons().begin();
-            CSpliced_seg::TExons::const_iterator prev = curr;
-            for (++curr;
-                 curr != align.GetSegs().GetSpliced().GetExons().end();
-                 ++curr, ++prev) {
-                const CSpliced_exon& prev_exon = **prev;
-                const CSpliced_exon& curr_exon = **curr;
-                TSeqRange r(prev_exon.GetGenomic_end() + 1,
-                            curr_exon.GetGenomic_start() - 1);
-                introns.insert(r);
-            }
-        }
-
         //LOG_POST(Error << "align: " << prot_idh << " x " << genomic_idh);
 
-        CPairwiseAln::const_iterator prev = aln->end();
+        CSeq_align sub_align;
+        sub_align.Assign(align);
+
         int gap_count = 0;
         int gap_bases = 0;
-        ITERATE (CPairwiseAln, range_it, *aln) {
+        int num_positives = 0;
+        int num_negatives = 0;
+        int num_match = 0;
+        int num_mismatch = 0;
+        ITERATE (CSpliced_seg::TExons, it,
+                 align.GetSegs().GetSpliced().GetExons()) {
+            CRef<CSpliced_exon> exon = *it;
+            sub_align.SetSegs().SetSpliced().SetExons().clear();
+            sub_align.SetSegs().SetSpliced().SetExons().push_back(exon);
 
-            // handle gaps
-            if (prev != aln->end()) {
-                int q_gap = range_it->GetFirstFrom() - prev->GetFirstTo() - 1;
-                int s_gap =
-                    (strand == eNa_strand_minus ?
-                     prev->GetSecondFrom() - range_it->GetSecondTo() - 1 :
-                     range_it->GetSecondFrom() - prev->GetSecondTo() - 1);
+            CRef<CPairwiseAln> aln = CreatePairwiseAlnFromSeqAlign(sub_align);
 
-                // check if this range is in the list of known introns
-                TSeqRange s_range;
-                if (strand == eNa_strand_minus) {
-                    s_range.SetFrom(range_it->GetSecondTo() + 1);
-                    s_range.SetTo(prev->GetSecondFrom() - 1);
-                }
-                else {
-                    s_range.SetFrom(prev->GetSecondTo() + 1);
-                    s_range.SetTo(range_it->GetSecondFrom() - 1);
-                }
+            CPairwiseAln::const_iterator prev = aln->end();
+            ITERATE (CPairwiseAln, range_it, *aln) {
 
-                set<TSeqRange>::const_iterator intron_it =
-                    introns.find(s_range);
-                if (intron_it == introns.end()) {
+                // handle gaps
+                if (prev != aln->end()) {
+                    int q_gap = range_it->GetFirstFrom() - prev->GetFirstTo() - 1;
+                    int s_gap =
+                        (strand == eNa_strand_minus ?
+                         prev->GetSecondFrom() - range_it->GetSecondTo() - 1 :
+                         range_it->GetSecondFrom() - prev->GetSecondTo() - 1);
+
+                    // check if this range is in the list of known introns
                     ++gap_count;
                     gap_bases += abs(q_gap - s_gap);
+
+                    /**
+                    LOG_POST(Error
+                             << "  q_gap=" << q_gap
+                             << "  s_gap=" << s_gap);
+                             **/
                 }
+                prev = range_it;
 
-                /**
-                LOG_POST(Error
-                         << "  q_gap=" << q_gap
-                         << "  s_gap=" << s_gap);
-                         **/
+                CRange<int> q_range = range_it->GetFirstRange();
+                CRange<int> s_range = range_it->GetSecondRange();
 
-                int q_pos = range_it->GetFirstFrom();
+                int s_start = s_range.GetFrom();
+                int s_end   = s_range.GetTo();
+                int q_pos   = q_range.GetFrom();
+
                 int new_offs = q_pos % 3;
                 for ( ;  offs != new_offs;  offs = (offs + 1) % 3) {
                     state = tbl.NextCodonState(state, 'N');
                 }
-            }
-            prev = range_it;
 
-            /**
-            // first range is in nucleotide coordinates...
-            LOG_POST(Error << "  range: "
-                     << range_it->GetFirstFrom() << ".."
-                     << range_it->GetFirstTo() << " x "
-                     << range_it->GetSecondFrom() << ".."
-                     << range_it->GetSecondTo() << " ("
-                     << (range_it->IsReversed() ? "-" : "+") << ")"
+                // first range is in nucleotide coordinates...
+                /**
+                LOG_POST(Error << "  range: "
+                         << range_it->GetFirstFrom() << ".."
+                         << range_it->GetFirstTo() << " x "
+                         << range_it->GetSecondFrom() << ".."
+                         << range_it->GetSecondTo() << " ("
+                         << (range_it->IsReversed() ? "-" : "+") << ")"
 
-                     << "  qspan=" << (int)(range_it->GetLength() / 3)
-                     << " / " << range_it->GetLength() % 3
-                     );
-                     **/
+                         << "  qspan=" << (int)(range_it->GetLength() / 3)
+                         << " / " << range_it->GetLength() % 3
+                        );
+                        **/
 
-            CRange<int> q_range = range_it->GetFirstRange();
-            CRange<int> s_range = range_it->GetSecondRange();
+                CRef<CSeq_loc> loc =
+                    genomic_bsh.GetRangeSeq_loc(s_start, s_end, strand);
+                CSeqVector genomic_vec(*loc, *scope, CBioseq_Handle::eCoding_Iupac);
+                CSeqVector_CI vec_it(genomic_vec);
 
-            int s_start = s_range.GetFrom();
-            int s_end   = s_range.GetTo();
-            int q_pos   = q_range.GetFrom();
+                for ( ;  s_start <= s_end;  ++s_start, ++q_pos, ++vec_it) {
+                    state = tbl.NextCodonState(state, *vec_it);
+                    if (offs % 3 == 2) {
+                        unsigned char prot = prot_vec[(int)(q_pos / 3)];
+                        unsigned char xlate = tbl.GetCodonResidue(state);
 
-            CRef<CSeq_loc> loc =
-                genomic_bsh.GetRangeSeq_loc(s_start, s_end, strand);
-            CSeqVector genomic_vec(*loc, *scope, CBioseq_Handle::eCoding_Iupac);
-            CSeqVector_CI vec_it(genomic_vec);
+                        int this_score = full_matrix.s[prot][xlate];
 
-            for ( ;  s_start <= s_end;  ++s_start, ++q_pos, ++vec_it) {
-                state = tbl.NextCodonState(state, *vec_it);
-                if (offs % 3 == 2) {
-                    unsigned char prot = prot_vec[(int)(q_pos / 3)];
-                    unsigned char xlate = tbl.GetCodonResidue(state);
+                        num_match += (prot == xlate);
+                        num_mismatch += (prot != xlate);
+                        num_positives += (this_score > 0);
+                        num_negatives += (this_score <= 0);
+                        score += this_score;
 
-                    int this_score = full_matrix.s[prot][xlate];
-                    score += this_score;
+                        /**
+                        LOG_POST(Error
+                                 << "  q_pos=" << q_pos
+                                 << "  s_pos=" << s_start
+                                 << "  prot_idx=" << (int)(q_pos / 3)
+                                 << "  prot=" << prot
+                                 << "  xlate=" << xlate
+                                 << "  score=" << score
+                                 << (this_score < 0 ? "  negative" : "")
+                                 << (prot != xlate ? "  mismatch" : ""));
+                                 **/
+                    }
 
-                    /**
-                    LOG_POST(Error
-                             << "  q_pos=" << q_pos
-                             << "  s_pos=" << s_start
-                             << "  prot_idx=" << (int)(q_pos / 3)
-                             << "  prot=" << prot
-                             << "  xlate=" << xlate
-                             << "  score=" << score
-                             << (this_score < 0 ? "  negative" : "")
-                             << (prot != xlate ? "  mismatch" : ""));
-                             **/
+                    offs = (offs + 1) % 3;
                 }
-
-                offs = (offs + 1) % 3;
             }
         }
 
@@ -1122,9 +1124,15 @@ public:
                  << "  raw score = " << score
                  << "  gap openings = " << gap_count
                  << "  gap bases = " << gap_bases
+                 << "  positives = " << num_positives << '(' << num_positives*3 << ')'
+                 << "  negatives = " << num_negatives << '(' << num_negatives*3 << ')'
+                 << "  match = " << num_match << '(' << num_match*3 << ')'
+                 << "  mismatch = " << num_mismatch << '(' << num_mismatch*3 << ')'
+                 << "  gap bases = " << gap_bases
                  << "  score = "
                  << score - (int)(gap_count * 11 + gap_bases * 0.33));
                  **/
+
         score -=
             gap_count * 11 /* gap open cost */
             + gap_bases * 0.33 /* gap extend cost */;
@@ -1372,7 +1380,7 @@ void CScoreLookup::x_Init()
     m_Scores.insert
         (TScoreDictionary::value_type
          ("prosplign_tblastn_score",
-          CIRef<IScore>(new CScore_TblastnScore("BLOSUM80" /* HACK: no user choice */))));
+          CIRef<IScore>(new CScore_TblastnScore("BLOSUM62" /* HACK: no user choice */))));
 
     m_Scores.insert
         (TScoreDictionary::value_type
