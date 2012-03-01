@@ -253,7 +253,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     unsigned m_LatestDiscoveryIteration;
 };
 
-struct SNetServiceImpl_Real : public SNetServiceImpl
+struct NCBI_XCONNECT_EXPORT SNetServiceImpl_Real : public SNetServiceImpl
 {
 public:
     // Construct a new object.
