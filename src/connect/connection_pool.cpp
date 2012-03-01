@@ -42,32 +42,13 @@
 BEGIN_NCBI_SCOPE
 
 
-// SPerConnInfo
-void CServer_ConnectionPool::x_UpdateExpiration(TConnBase* conn)
-{
-    const STimeout* timeout = kDefaultTimeout;
-    const CSocket*  socket  = dynamic_cast<const CSocket*>(conn);
-
-    if (socket) {
-        timeout = socket->GetTimeout(eIO_ReadWrite);
-    }
-    if (timeout != kDefaultTimeout  &&  timeout != kInfiniteTimeout) {
-        conn->expiration = GetFastLocalTime();
-        conn->expiration.AddSecond(timeout->sec, CTime::eIgnoreDaylight);
-        conn->expiration.AddNanoSecond(timeout->usec * 1000);
-    } else {
-        conn->expiration.Clear();
-    }
-}
-
-
 // CServer_ControlConnection
 CStdRequest* CServer_ControlConnection::CreateRequest(
                                             EServIO_Event event,
                                             CServer_ConnectionPool& connPool,
                                             const STimeout* timeout)
 {
-    char buf[64];
+    char buf[4096];
     Read(buf, sizeof(buf));
     return NULL;
 }
@@ -117,6 +98,23 @@ void CServer_ConnectionPool::Erase(void)
         delete *it;
     }
     m_Data.clear();
+}
+
+void CServer_ConnectionPool::x_UpdateExpiration(TConnBase* conn)
+{
+    const STimeout* timeout = kDefaultTimeout;
+    const CSocket*  socket  = dynamic_cast<const CSocket*>(conn);
+
+    if (socket) {
+        timeout = socket->GetTimeout(eIO_ReadWrite);
+    }
+    if (timeout != kDefaultTimeout  &&  timeout != kInfiniteTimeout) {
+        conn->expiration = GetFastLocalTime();
+        conn->expiration.AddSecond(timeout->sec, CTime::eIgnoreDaylight);
+        conn->expiration.AddNanoSecond(timeout->usec * 1000);
+    } else {
+        conn->expiration.Clear();
+    }
 }
 
 bool CServer_ConnectionPool::Add(TConnBase* conn, EServerConnType type)
