@@ -34,8 +34,8 @@ base += '/c++'
 # no svn executable.  Other servers will also fall back on this table
 # in the absence of /usr/bin/svn, but shouldn't need to in practice.
 path_map = (
-    ('include/gui', 'gbench/branches/c++-toolkit-2.4/include/gui'),
-    ('src/gui',     'gbench/branches/c++-toolkit-2.4/src/gui')
+    ('include/gui', 'gbench/branches/c++-toolkit-2.5/include/gui'),
+    ('src/gui',     'gbench/branches/c++-toolkit-2.5/src/gui')
     )
 
 def resolve_via_map(base, path):
