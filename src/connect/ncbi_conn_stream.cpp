@@ -872,7 +872,7 @@ private:
 
 
 extern
-NCBI_XCONNEXT_EXPORT  // FIXME: To remove once the API is fully official
+NCBI_XCONNECT_EXPORT  // FIXME: To remove once the API is fully official
 CConn_IOStream* NcbiOpenURL(const string& url)
 {
     class CPrivateIniter : public CConnIniter {
