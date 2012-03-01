@@ -8,7 +8,7 @@ SRC = netcached message_handler sync_log distribution_conf \
       periodic_sync active_handler peer_control
 
 #REQUIRES = MT SQLITE3 Boost.Test.Included
-REQUIRES = MT SQLITE3 Boost.Test.Included Linux
+REQUIRES = MT SQLITE3 Boost.Test.Included Linux GCC
 
 
 LIB = xconnserv xthrserv xconnect xutil xncbi sqlitewrapp
