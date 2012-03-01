@@ -35,6 +35,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef _MSC_VER
+#define strdup _strdup
+#endif
+
 static const int kMaxPrintedIntLen = 10;
 #define MAX_PRINTED_INT_LEN_PLUS_ONE 11
 
@@ -2481,7 +2485,7 @@ static EBool s_SkippableString (char * str)
         return eTrue;
     } else {
         return eFalse;
-    }
+    } 
 }
 
 
