@@ -344,7 +344,7 @@ cd %script_dir%
 set PTB_PLATFORM=%use_arch%
 set PTB_FLAGS=%use_flags%
 set PTB_PATH=./static/bin/ReleaseDLL
-set SLN_PATH=%script_dir%/%build_results%/build/%sln_name%.sln
+set SLN_PATH=%script_dir%\%build_results%\build\%sln_name%.sln
 set TREE_ROOT=%srcroot%
 set BUILD_TREE_ROOT=.
 set PTB_PROJECT_REQ=%use_projectlst%
