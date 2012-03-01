@@ -51,8 +51,8 @@ void CNetCacheAdmin::ReloadServerConfig()
 {
     string cmd(m_Impl->m_API->MakeCmd("RECONF"));
 
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
-        ExecWithRetry(cmd);
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(); it; ++it)
+        (*it).ExecWithRetry(cmd);
 }
 
 void CNetCacheAdmin::Reinitialize(const string& cache_name)

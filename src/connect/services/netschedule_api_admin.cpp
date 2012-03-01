@@ -64,8 +64,8 @@ void CNetScheduleAdmin::ReloadServerConfig()
 {
     string cmd("RECO");
 
-    m_Impl->m_API->m_Service->
-        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd);
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(); it; ++it)
+        (*it).ExecWithRetry(cmd);
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
