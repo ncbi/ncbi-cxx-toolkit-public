@@ -206,7 +206,7 @@ private:
 
 
     /// Main locking mutex for object
-    CSpinLock                       m_ObjLock;
+    CMiniMutex                      m_ObjLock;
 
     /// Number of connections opened
     Uint8                           m_OpenedConns;

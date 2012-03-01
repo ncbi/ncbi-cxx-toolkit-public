@@ -52,7 +52,7 @@ static CFastMutex       s_MainLock;
 static CConditionVariable s_CleanerCond;
 static CConditionVariable s_MainsCond;
 static bool             s_NeedFinish = false;
-static CSpinLock        s_RndLock;
+static CMiniMutex       s_RndLock;
 static CRandom          s_Rnd(CRandom::TValue(time(NULL)));
 
 typedef vector< CNCRef<CNCActiveSyncControl> > TSyncControls;

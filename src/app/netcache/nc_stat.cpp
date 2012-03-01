@@ -400,7 +400,7 @@ CNCStat::AddChunkWritten(size_t size)
 void
 CNCStat::x_CollectTo(CNCStat* dest)
 {
-    CSpinGuard guard(m_ObjLock);
+    m_ObjLock.Lock();
 
     int cur_time = int(time(NULL));
     if (cur_time != m_HistoryTimes[0])
@@ -485,6 +485,8 @@ CNCStat::x_CollectTo(CNCStat* dest)
     for (size_t i = 0; i < m_ChunksWCntBySize.size(); ++i) {
         dest->m_ChunksWCntBySize[i] += m_ChunksWCntBySize[i];
     }
+
+    m_ObjLock.Unlock();
 }
 
 void

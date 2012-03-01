@@ -73,7 +73,7 @@ static Uint4    s_SlotRndShare  = numeric_limits<Uint4>::max();
 static Uint4    s_TimeRndShare  = numeric_limits<Uint4>::max();
 static Uint8    s_SelfID        = 0;
 static string   s_SelfGroup;
-static CSpinLock s_KeyRndLock;
+static CMiniMutex s_KeyRndLock;
 static CRandom  s_KeyRnd(CRandom::TValue(time(NULL)));
 static string   s_SelfHostIP;
 static CAtomicCounter s_BlobId;

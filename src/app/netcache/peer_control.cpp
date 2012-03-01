@@ -54,7 +54,7 @@ CAtomicCounter CNCPeerControl::sm_CopyReqsRejected;
 
 
 
-static CSpinLock s_RndLock;
+static CMiniMutex s_RndLock;
 static CRandom s_Rnd(CRandom::TValue(time(NULL)));
 
 static void

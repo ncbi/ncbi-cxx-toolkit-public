@@ -707,7 +707,7 @@ private:
     CNCLongOpTrigger& operator= (const CNCLongOpTrigger&);
 
     ///
-    CSpinLock               m_ObjLock;
+    CMiniMutex              m_ObjLock;
     ///
     ENCLongOpState volatile m_State;
     ///
@@ -786,7 +786,7 @@ private:
 
         ElemType                    m_Elems[kElemsPerStorage];
         CAtomicCounter              m_CurIdx;
-        CSpinLock                   m_ObjLock;
+        CMiniMutex                  m_ObjLock;
         CStorageForDelete* volatile m_Next;
     };
 
@@ -1633,12 +1633,12 @@ CNCDeferredDeleter<ElemType, FinalDeleter, DeleteDelay, ElemsPerStorage>
         while (storage->m_Next) {
             storage = storage->m_Next;
         }
-        {{
-            CSpinGuard guard(storage->m_ObjLock);
-            if (!storage->m_Next)
-                storage->m_Next = new CStorageForDelete();
-            storage = storage->m_Next;
-        }}
+        storage->m_ObjLock.Lock();
+        if (!storage->m_Next)
+            storage->m_Next = new CStorageForDelete();
+        storage = storage->m_Next;
+        storage->m_ObjLock.Unlock();
+
         index = static_cast<unsigned int>(storage->m_CurIdx.Add(1)) - 1;
     }
     while (index >= kElemsPerStorage);
