@@ -145,7 +145,7 @@
             var usage_str;
             //usage_str  = "Usage:\n";
             //usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
-            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-dll] [-v] [-ams yes|no]\n";
+            usage_str  = "USAGE: cscript new_project.wsf <name> <type> [builddir] [-msvc nn] [-dll] [-b] [-v] [-noopen] [-ams yes|no]\n";
             usage_str += "SYNOPSIS:\n";
             usage_str += "    Create new MSVC application project from sample template:\n";
             usage_str += "      Create local build tree structure. Fill-in the local tree.\n";
@@ -203,6 +203,7 @@
             var toolkit_path;
             var oArgs = WScript.Arguments;
             SetMsvcVer(oArgs, "-msvc");
+            SetOpenSolution(oArgs, "-noopen", false);
             var run_interactive = GetFlagValue(oArgs, "-i", false);
             if ( !run_interactive && VerifyArguments(oArgs) ) {
                 SetVerbose(oArgs, "-v", false);
@@ -711,76 +712,6 @@
                 WScript.Echo("ERROR: project_tree_builder failed");
                 WScript.Quit(1);
             }
-
-/*
-            var ptb;
-            if ((typeof(oTask.RemotePtb) == "undefined") || oTask.RemotePtb.length == 0) {
-                var conf = GetConfigs(oTask)[0];
-                var target_path;
-                if (oTask.DllBuild) {
-                    target_path = oTree.BinPathDll;
-                } else {
-                    target_path = oTree.BinPathStatic;
-                }
-                target_path += "\\" + conf;
-                ptb = target_path + "\\project_tree_builder.exe";
-            } else {
-                ptb = oTask.RemotePtb;
-            }
-            var oFso = new ActiveXObject("Scripting.FileSystemObject");
-            if (!oFso.FileExists(ptb)) {
-                WScript.Echo("ERROR: File not found: " + ptb);
-                WScript.Quit(1);    
-            }
-            var ptb_command_line;
-            ptb_command_line  = "\"" + ptb + "\"";
-            ptb_command_line += GetPtbTargetSolutionArgs(oShell, ptb);
-            if ( oTask.DllBuild ) {
-                ptb_command_line += " -dll";
-            }
-            if (GetVerbose()) {
-                ptb_command_line += " -cfg";
-            }
-            ptb_command_line += " -nobuildptb";
-            ptb_command_line += " -ext -nws -extroot \"";
-            var lib_dir = oTask.ToolkitPath + "\\lib\\";
-            if ( oTask.DllBuild ) {
-                lib_dir += "dll";
-            } else {
-                lib_dir += "static";
-            }
-            if (!oFso.FolderExists(lib_dir)) {
-                lib_dir = oTask.ToolkitPath + "\\";
-                if ( oTask.DllBuild ) {
-                    lib_dir += "dll";
-                } else {
-                    lib_dir += "static";
-                }
-                lib_dir += "\\lib";
-            }
-            ptb_command_line += lib_dir;
-            ptb_command_line += "\" -logfile \"" + oTree.TreeRoot + "\\" + oTask.ProjectName + "_log.txt\"";
-            var ptbini;
-            ptbini = oTree.SrcBuildSystemBranch + "\\project_tree_builder.ini";
-            if (!oFso.FileExists(ptbini)) {
-                ptbini = oTree.CompilersBranch + "\\project_tree_builder.ini";
-            }
-            ptb_command_line += " -conffile \"" + ptbini + "\"";
-            ptb_command_line += " \"" + oTree.TreeRoot;
-            ptb_command_line += "\" src\\";
-            if ( oTask.DllBuild ) {
-                ptb_command_line += " \"" + oTree.CompilersBranchDll   + "\\build\\" + oTask.ProjectName + ".sln\"";
-            } else {
-                ptb_command_line += " \"" + oTree.CompilersBranchStatic + "\\build\\" + oTask.ProjectName + ".sln\"";
-            }
-            if (!GetVerbose()) {
-                WScript.Echo(ptb_command_line);
-            }
-            if ( execute(oShell, ptb_command_line) != 0) {
-                WScript.Echo("ERROR: project_tree_builder failed");
-                WScript.Quit(1);
-            }
-*/
         }
         function AutoMountS(oTask)
         {
@@ -830,7 +761,9 @@
             sln_path += "\\build\\" + oTask.ProjectName + ".sln\"";
 
             WScript.Echo("Generated solution: " + sln_path);
-            execute(oShell, "start \"\" " + sln_path);
+            if (GetOpenSolution()) {
+                execute(oShell, "start \"\" " + sln_path);
+            }
         }
         
         </script>

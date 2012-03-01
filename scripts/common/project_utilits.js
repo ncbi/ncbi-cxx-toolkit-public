@@ -5,6 +5,7 @@
 var g_verbose       = false;
 var g_usefilecopy   = true;
 var g_make_solution = true;
+var g_open_solution = true;
 
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
@@ -261,7 +262,9 @@ function FillTreeStructure(oShell, oTree)
         "lock_ptb_config.bat",
         "ptb.bat",
         "datatool.bat",
-        "msvcvars.bat"
+        "msvcvars.bat",
+        "configure.bat",
+        "make.bat"
         );
     GetFilesFromTree(oShell, oTree, oTask,
         "/compilers/" + GetMsvcFolder(), compiler_files, oTree.CompilersBranch, false);
@@ -312,23 +315,23 @@ function RemoveFolder(oShell, oFso, folder)
 // copy project_tree_builder app to appropriate places of the local tree
 function CopyPtb(oShell, oTree, oTask)
 {
-    var remote_ptb_found = false;
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
-    var configs = GetConfigs(oTask);
+    var release = GetDefaultPtbRelease(oFso);
+    var release_found = oFso.FileExists(release);
 
-// look for prebuilt PTB
     var sysenv = oShell.Environment("PROCESS");
-    var ptbexe = sysenv("PREBUILT_PTB_EXE");
-    if (ptbexe.length != 0) {
-        if (oFso.FileExists(ptbexe)) {
-            oTask.RemotePtb = ptbexe;
-            remote_ptb_found = true;
-            WScript.Echo("Using PREBUILT_PTB_EXE: " + ptbexe);
+    var prebuilt = sysenv("PREBUILT_PTB_EXE");
+    if (prebuilt.length != 0) {
+        if (oFso.FileExists(prebuilt)) {
+            release = prebuilt;
+            release_found = true;
+            WScript.Echo("Using PREBUILT_PTB_EXE: " + prebuilt);
         } else {
-            WScript.Echo("WARNING: PREBUILT_PTB_EXE not found: " + ptbexe);
+            WScript.Echo("WARNING: PREBUILT_PTB_EXE not found: " + prebuilt);
         }
     }
 
+    var configs = GetConfigs(oTask);
     for(var config_i = 0; config_i < configs.length; config_i++) {
         var conf = configs[config_i];
         var target_path;
@@ -337,12 +340,11 @@ function CopyPtb(oShell, oTree, oTask)
         } else {
             target_path = oTree.BinPathStatic;
         }
-        target_path += "\\" + conf;
-        target_path += "\\project_tree_builder.exe";
-//        var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
-        var source_file = GetDefaultPtbRelease(oFso);
-        if (!oFso.FileExists(source_file)) {
-            WScript.Echo("WARNING: File not found: " + source_file);
+        target_path += "\\" + conf + "\\";
+        var target_file = target_path + "project_tree_builder.exe";
+
+        var source_file = release;
+        if (!release_found) {
             source_file = oTask.ToolkitPath;
             if (oTask.DllBuild) {
                 source_file += "\\dll";
@@ -355,18 +357,12 @@ function CopyPtb(oShell, oTree, oTask)
                 continue;
             }
         }
-        if (!remote_ptb_found) {
-            oTask.RemotePtb = source_file;
-            remote_ptb_found = true;
-        }
-        execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
+        execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_file + "\"");
         if (oTask.DllBuild) {
             source_file = oFso.GetParentFolderName( source_file) + "\\ncbi_core.dll";
-            if (!oFso.FileExists(source_file)) {
-                WScript.Echo("WARNING: File not found: " + source_file);
-                continue;
+            if (oFso.FileExists(source_file)) {
+                execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
             }
-            execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
         }
     }
 }
@@ -374,8 +370,22 @@ function CopyPtb(oShell, oTree, oTask)
 function CopyDatatool(oShell, oTree, oTask)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    var release = GetDefaultDatatoolRelease(oFso);
+    var release_found = oFso.FileExists(release);
+
+    var sysenv = oShell.Environment("PROCESS");
+    var prebuilt = sysenv("PREBUILT_DATATOOL_EXE");
+    if (prebuilt.length != 0) {
+        if (oFso.FileExists(prebuilt)) {
+            release = prebuilt;
+            release_found = true;
+            WScript.Echo("Using PREBUILT_DATATOOL_EXE: " + prebuilt);
+        } else {
+            WScript.Echo("WARNING: PREBUILT_DATATOOL_EXE not found: " + prebuilt);
+        }
+    }
+
     var configs = GetConfigs(oTask);
-    var dtfound = false;
     for(var config_i = 0; config_i < configs.length; config_i++) {
         var conf = configs[config_i];
         var target_path;
@@ -384,10 +394,11 @@ function CopyDatatool(oShell, oTree, oTask)
         } else {
             target_path = oTree.BinPathStatic;
         }
-        target_path += "\\" + conf;
-        var source_file = oTask.ToolkitPath + "\\bin" + "\\datatool.exe";
-        if (!oFso.FileExists(source_file)) {
-            WScript.Echo("WARNING: File not found: " + source_file);
+        target_path += "\\" + conf + "\\";
+        var target_file = target_path + "datatool.exe";
+
+        var source_file = release;
+        if (!release_found) {
             source_file = oTask.ToolkitPath;
             if (oTask.DllBuild) {
                 source_file += "\\dll";
@@ -400,18 +411,12 @@ function CopyDatatool(oShell, oTree, oTask)
                 continue;
             }
         }
-        if (!dtfound) {
-            oTask.Datatool = source_file;
-            dtfound = true;
-        }
-        execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
+        execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_file + "\"");
         if (oTask.DllBuild) {
             source_file = oFso.GetParentFolderName( source_file) + "\\ncbi_core.dll";
-            if (!oFso.FileExists(source_file)) {
-                WScript.Echo("WARNING: File not found: " + source_file);
-                continue;
+            if (oFso.FileExists(source_file)) {
+                execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
             }
-            execute(oShell, "copy /Y \"" + source_file + "\" \"" + target_path + "\"");
         }
     }
 }
@@ -439,6 +444,16 @@ function SetMakeSolution(oArgs, flag, default_val)
 function GetMakeSolution()
 {
     return g_make_solution;
+}
+
+function SetOpenSolution(oArgs, flag, default_val)
+{
+    g_open_solution = !GetFlagValue(oArgs, flag, default_val);
+}
+
+function GetOpenSolution()
+{
+    return g_open_solution;
 }
 
 function SetBranch(oArgs, flag)
@@ -479,11 +494,15 @@ function GetDefaultMsvcVer()
 
 function SetMsvcVer(oArgs, flag)
 {
-    g_msvcver = GetFlaggedValue(oArgs, flag, g_msvcver);
-    if (g_msvcver != "71" && g_msvcver != "80" && g_msvcver != "80x64"
-                          && g_msvcver != "90" && g_msvcver != "90x64"
-                          && g_msvcver != "100" && g_msvcver != "100x64") {
-        g_msvcver = GetDefaultMsvcVer();
+    var msvcver = GetFlaggedValue(oArgs, flag, "");
+    if (msvcver.length  != 0) {
+        if (msvcver != "71" && msvcver != "80" &&  msvcver != "80x64"
+                            && msvcver != "90" &&  msvcver != "90x64"
+                            && msvcver != "100" && msvcver != "100x64") {
+            WScript.Echo("ERROR: Unknown version of MSVC requested: " + msvcver);
+            WScript.Quit(1);    
+        }
+        g_msvcver = msvcver;
     }
 }
 
@@ -626,6 +645,11 @@ function GetDefaultPtbRelease(oFso)
     }
     return root + GetDefaultSuffix() + "\\project_tree_builder.RELEASE";
 }
+function GetDefaultDatatoolRelease(oFso)
+{
+    var root = "\\\\snowman\\win-coremake\\App\\Ncbi\\cppcore\\datatool\\msvc"
+    return root + "\\datatool.RELEASE";
+}
 function GetDefaultLibFolder()
 {
     return "\\\\snowman\\win-coremake\\Lib";
@@ -647,7 +671,7 @@ function CopyDlls(oShell, oTree, oTask)
             if (!oFso.FolderExists(dlls_bin_path)) {
                 dlls_bin_path  = oTask.ToolkitPath + "\\" + config;
             }
-            var local_bin_path = oTree.BinPathDll  + "\\" + config;
+            var local_bin_path = oTree.BinPathDll  + "\\" + config + "\\";
 
 //            execute(oShell, "copy /Y \"" + dlls_bin_path + "\\*.dll\" \"" + local_bin_path + "\"");
             execute(oShell, "xcopy /Y /Q /C /K \"" + dlls_bin_path + "\\*.dll\" \"" + local_bin_path + "\"");
