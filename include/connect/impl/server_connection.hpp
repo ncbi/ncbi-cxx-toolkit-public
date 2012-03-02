@@ -77,6 +77,7 @@ public:
 
 private:
     friend class CServer_ConnectionPool;
+    friend class IServer_MessageHandler;
 
     CTime expiration;
     CFastMutex type_lock;

@@ -187,7 +187,10 @@ void CServer_ConnectionPool::CloseConnection(TConnBase* conn)
         abort();
     conn->type = ePreClosedSocket;
     conn->type_lock.Unlock();
-    dynamic_cast<CServer_Connection*>(conn)->OnSocketEvent(eServIO_OurClose);
+
+    CServer_Connection* srv_conn = static_cast<CServer_Connection*>(conn);
+    srv_conn->Abort();
+    srv_conn->OnSocketEvent(eServIO_OurClose);
 }
 
 bool CServer_ConnectionPool::GetPollAndTimerVec(

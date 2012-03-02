@@ -55,6 +55,7 @@ typedef NCBI_PARAM_TYPE(server, Catch_Unhandled_Exceptions) TParamServerCatchExc
 void IServer_MessageHandler::OnRead(void)
 {
     CSocket &socket = GetSocket();
+    CServer_Connection* conn = static_cast<CServer_Connection*>(&socket);
     char read_buf[4096];
     size_t n_read;
     EIO_Status status = socket.Read(read_buf, sizeof(read_buf), &n_read);
@@ -73,7 +74,7 @@ void IServer_MessageHandler::OnRead(void)
     }
     int message_tail;
     char *buf_ptr = read_buf;
-    for ( ;n_read > 0; ) {
+    for ( ;n_read > 0  &&  conn->type == eActiveSocket; ) {
         message_tail = this->CheckMessage(&m_Buffer, buf_ptr, n_read);
         // TODO: what should we do if message_tail > n_read?
         if (message_tail < 0) {
