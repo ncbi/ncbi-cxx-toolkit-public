@@ -138,6 +138,9 @@ CBedReader::ReadSeqAnnot(
             continue;
         }
         try {
+            if (xParseComment(line, annot)) {
+                continue;
+            }
             if (x_ParseBrowserLine(line, annot)) {
                 continue;
             }
@@ -149,7 +152,7 @@ CBedReader::ReadSeqAnnot(
                 }
                 continue;
             }
-            if (!x_ParseFeature( line, annot )) {
+            if (!xParseFeature( line, annot )) {
                 --m_uLineNumber;
                 lr.UngetLine();
                 break;
@@ -242,7 +245,7 @@ CBedReader::x_AppendAnnot(
 }    
     
 //  ----------------------------------------------------------------------------
-bool CBedReader::x_ParseFeature(
+bool CBedReader::xParseFeature(
     const string& record,
     CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
 //  ----------------------------------------------------------------------------
@@ -310,6 +313,18 @@ bool CBedReader::x_ParseFeature(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CBedReader::xParseComment(
+    const string& record,
+    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::StartsWith(record, "#")) {
+        return true;
+    }
+    return false;
+}
+ 
 //  ----------------------------------------------------------------------------
 void CBedReader::x_SetFeatureDisplayData(
     CRef<CSeq_feat>& feature,

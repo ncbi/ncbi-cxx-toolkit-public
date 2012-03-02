@@ -129,10 +129,14 @@ protected:
         const string&,
         CRef< CSeq_annot >& );
         
-    bool x_ParseFeature(
+    bool xParseFeature(
         const string&,
-        CRef<CSeq_annot>& );
+        CRef<CSeq_annot>&);
     /* throws CObjReaderLineException */
+
+    bool xParseComment(
+        const string&,
+        CRef<CSeq_annot>&);
 
     void x_SetFeatureLocation(
         CRef<CSeq_feat>&,
