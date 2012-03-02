@@ -4317,6 +4317,7 @@ NU<THA>	c	Department of Microbiology, Faculty of Science
 NU<ZAF>	s	University of Natal, School of Botany and Zoology
 NUA	c	Department of Microbiology, National University of Athens
 NUM	s	Nagoya University
+NUOL	s	National University of Laos
 NUSDM	c	Department of Microbiology, National University of Singapore
 NUSMBS	s	Niigata University, Sado Marine Biological Station
 NUV	s	Norwich University, Biology and Life Sciences Department
