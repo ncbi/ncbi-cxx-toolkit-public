@@ -140,6 +140,18 @@ if test -n "$NCBI_AUTOMATED_BUILD"; then
    fi
 fi
 
+
+# Check timeout multiplier (increase default check timeout in x times)
+x_check_mult=1
+if test $x_compiler == "MSVC" ; then
+    case "$x_cfg" in
+       Debug* )
+           x_check_mult=2
+           ;;        
+    esac
+fi
+
+
 # Clean up check directory
 (cd "$x_check_dir"  &&  find "$x_check_dir" -maxdepth 1 -mindepth 1 -type d -print | xargs rm -rf)
 
@@ -283,6 +295,11 @@ export DIAG_SILENT_ABORT="Y"
 # Use AppLog-style output format in the testsuite by default
 test -z "\$DIAG_OLD_POST_FORMAT"  &&  export DIAG_OLD_POST_FORMAT=false
 
+# Check timeout multiplier (increase default check timeout in x times)
+if test -z "\$NCBI_CHECK_TIMEOUT_MULT"; then
+    NCBI_CHECK_TIMEOUT_MULT=$x_check_mult
+fi
+
 # Path to test data, used by some scripts and applications
 if test -z "\$NCBI_TEST_DATA"; then
     case `uname -s` in
@@ -300,7 +317,7 @@ configurations="$x_confs"
 
 if \$is_db_load; then
     echo "--------------------------------------------------" >> "\$build_dir/test_stat_load.log" 2>&1
-    echo "Loading tests from: \$check_dir"                     >> "\$build_dir/test_stat_load.log" 2>&1
+    echo "Loading tests from: \$check_dir"                    >> "\$build_dir/test_stat_load.log" 2>&1
     echo "--------------------------------------------------" >> "\$build_dir/test_stat_load.log" 2>&1
 else
     rm -f "\$res_journal"
@@ -400,7 +417,8 @@ RunTest() {
    x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
 
    # Run check
-   export CHECK_TIMEOUT="\$x_timeout"
+   CHECK_TIMEOUT=\`expr \$x_timeout \* \$NCBI_CHECK_TIMEOUT_MULT\`
+   export CHECK_TIMEOUT
    start_time="\`date +'$x_date_format'\`"
    check_exec="\$root_dir/scripts/common/check/check_exec.sh"
    \$check_exec $x_time \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
