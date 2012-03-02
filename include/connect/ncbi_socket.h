@@ -1026,9 +1026,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  * @param direction
  *  [in]  one of:  eIO_Open, eIO_Read, eIO_Write
  * @return
- *   - eIO_Closed     - if connection has either been shut down / closed
+ *   - eIO_Closed     - if either the connection has been closed / shut down
  *                      (in corresponding direction for eIO_Read or eIO_Write),
- *                       or not yet been attempted (for eIO_Open);
+ *                      or the socket does not exist (for eIO_Open);
  *   - eIO_Timeout    - if connection request has been submitted but not
  *                      completed (i.e. it was still pending during last I/O);
  *   - eIO_Interrupt  - if last data I/O was interrupted by a signal
@@ -1038,8 +1038,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  *   - eIO_InvalidArg - if "direction" is not one of the allowed above;
  *   - eIO_Success    - otherwise (also covers eIO_Timeout in last data I/O).
  *
- * @note  eIO_Open merely checks whether the socket still exists (i.e. as
- *        a system object) and that SOCK_CloseEx() has not been called on it.
+ * @note  eIO_Open merely checks whether the socket still exists (i.e. open as
+ *        a system object), and that SOCK_CloseEx() has not been called on it.
  *
  * @note  SOCK_Read(eIO_ReadPeek) and SOCK_Wait(eIO_Read) will not
  *        return any error as long as there is unread buffered
