@@ -1728,9 +1728,11 @@ public:
     }
     static void InitializeConditionVariable(PCONDITION_VARIABLE ConditionVariable)
     {
-        static pInitializeConditionVariable p = 
-            (pInitializeConditionVariable)GetProcAddress(
+        static pInitializeConditionVariable p = 0;
+        if (!p) {
+            p = (pInitializeConditionVariable)GetProcAddress(
                 GetModuleHandleA("KERNEL32.DLL"),"InitializeConditionVariable");
+        }
         if (!p) {
             unsupported();
         }
@@ -1738,21 +1740,25 @@ public:
     }
     static void WakeConditionVariable(PCONDITION_VARIABLE ConditionVariable)
     {
-        static pWakeConditionVariable p = 
-            (pWakeConditionVariable)GetProcAddress(
-                GetModuleHandleA("KERNEL32.DLL"),"WakeConditionVariable");
+        static pWakeConditionVariable p = 0;
         if (!p) {
-            unsupported();
+            p = (pWakeConditionVariable)GetProcAddress(
+                GetModuleHandleA("KERNEL32.DLL"),"WakeConditionVariable");
+            if (!p) {
+                unsupported();
+            }
         }
         p(ConditionVariable);
     }
     static void WakeAllConditionVariable(PCONDITION_VARIABLE ConditionVariable)
     {
-        static pWakeAllConditionVariable p = 
-            (pWakeAllConditionVariable)GetProcAddress(
-                GetModuleHandleA("KERNEL32.DLL"),"WakeAllConditionVariable");
+        static pWakeAllConditionVariable p = 0;
         if (!p) {
-            unsupported();
+            p = (pWakeAllConditionVariable)GetProcAddress(
+                GetModuleHandleA("KERNEL32.DLL"),"WakeAllConditionVariable");
+            if (!p) {
+                unsupported();
+            }
         }
         p(ConditionVariable);
     }
@@ -1760,11 +1766,13 @@ public:
                                               PCRITICAL_SECTION CriticalSection,
                                               DWORD dwMilliseconds)
     {
-        static pSleepConditionVariableCS p = 
-            (pSleepConditionVariableCS)GetProcAddress(
-                GetModuleHandleA("KERNEL32.DLL"),"SleepConditionVariableCS");
+        static pSleepConditionVariableCS p = 0;
         if (!p) {
-            unsupported();
+            p = (pSleepConditionVariableCS)GetProcAddress(
+                GetModuleHandleA("KERNEL32.DLL"),"SleepConditionVariableCS");
+            if (!p) {
+                unsupported();
+            }
         }
         return p(ConditionVariable,CriticalSection,dwMilliseconds) != FALSE;
     }
