@@ -428,6 +428,7 @@ public:
     bool IsLocusTagGeneralMatch(void) const { return m_LocusTagGeneralMatch; }
     bool DoRubiscoTest(void)          const { return m_DoRubiscoText; }
     bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
+    bool IsGenomeSubmission(void)     const { return m_genomeSubmission; }
     bool UseEntrez(void)              const { return m_UseEntrez; }
     bool ValidateInferenceAccessions(void) const { return m_ValidateInferenceAccessions; }
     bool IgnoreExceptions(void) const { return m_IgnoreExceptions; }
@@ -614,7 +615,8 @@ private:
     bool m_LocusTagGeneralMatch;
     bool m_DoRubiscoText;
     bool m_IndexerVersion;
-      bool m_UseEntrez;
+    bool m_genomeSubmission;
+    bool m_UseEntrez;
     bool m_IgnoreExceptions;             // ignore exceptions when validating translation
     bool m_ValidateInferenceAccessions;  // check that accessions in inferences are valid
     bool m_ReportSpliceAsError;

@@ -118,6 +118,7 @@
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
 #include <util/util_misc.hpp>
+#include <util/static_set.hpp>
 
 #include <algorithm>
 
@@ -189,6 +190,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_ReportSpliceAsError = (options & CValidator::eVal_report_splice_as_error) != 0;
     m_LatLonCheckState = (options & CValidator::eVal_latlon_check_state) != 0;
     m_LatLonIgnoreWater = (options & CValidator::eVal_latlon_ignore_water) != 0;
+    m_genomeSubmission = (options & CValidator::eVal_genome_submission) != 0;
 }
 
 
@@ -571,12 +573,187 @@ static string s_GetFeatureContentLabel (const CSeq_feat& feat, CRef<CScope> scop
 }
 
 
+static const EErrType sc_ValidGenomeRaise[] = {
+    eErr_SEQ_INST_ShortSeq,
+    eErr_SEQ_INST_ConflictingBiomolTech,
+    eErr_SEQ_INST_DuplicateSegmentReferences,
+    eErr_SEQ_INST_TrailingX,
+    eErr_SEQ_INST_BadSeqIdFormat,
+    eErr_SEQ_INST_UnexpectedIdentifierChange,
+    eErr_SEQ_INST_TpaAssmeblyProblem,
+    eErr_SEQ_INST_SeqLocLength,
+    eErr_SEQ_INST_CompleteTitleProblem,
+    eErr_SEQ_INST_CompleteCircleProblem,
+    eErr_SEQ_INST_BadHTGSeq,
+    eErr_SEQ_INST_OverlappingDeltaRange,
+    eErr_SEQ_INST_LeadingX,
+    eErr_SEQ_INST_InternalNsInSeqRaw,
+    eErr_SEQ_INST_FarFetchFailure,
+    eErr_SEQ_INST_InternalGapsInSeqRaw,
+    eErr_SEQ_INST_HighNContentStretch,
+    eErr_SEQ_INST_HighNContentPercent,
+    eErr_SEQ_INST_SeqLitGapFuzzNot100,
+    eErr_SEQ_DESCR_BioSourceMissing,
+    eErr_SEQ_DESCR_InvalidForType,
+    eErr_SEQ_DESCR_InconsistentBioSources,
+    eErr_SEQ_DESCR_BadOrganelle,
+    eErr_SEQ_DESCR_MultipleChromosomes,
+    eErr_SEQ_DESCR_BadOrgMod,
+    eErr_SEQ_DESCR_Inconsistent,
+    eErr_SEQ_DESCR_ObsoleteSourceLocation,
+    eErr_SEQ_DESCR_ObsoleteSourceQual,
+    eErr_SEQ_DESCR_StructuredSourceNote,
+    eErr_SEQ_DESCR_CollidingPublications,
+    eErr_SEQ_DESCR_TransgenicProblem,
+    eErr_SEQ_DESCR_BioSourceInconsistency,
+    eErr_SEQ_DESCR_BadCollectionDate,
+    eErr_SEQ_DESCR_BadPCRPrimerSequence,
+    eErr_SEQ_DESCR_BioSourceOnProtein,
+    eErr_SEQ_DESCR_BioSourceDbTagConflict,
+    eErr_SEQ_DESCR_DuplicatePCRPrimerSequence,
+    eErr_SEQ_DESCR_MultipleNames,
+    eErr_SEQ_DESCR_LatLonProblem,
+    eErr_SEQ_DESCR_LatLonRange,
+    eErr_SEQ_DESCR_LatLonValue,
+    eErr_SEQ_DESCR_BadInstitutionCode,
+    eErr_SEQ_DESCR_BadCollectionCode,
+    eErr_SEQ_DESCR_BadVoucherID,
+    eErr_SEQ_DESCR_MultipleSourceQualifiers,
+    eErr_SEQ_DESCR_MultipleSourceVouchers,
+    eErr_SEQ_DESCR_WrongVoucherType,
+    eErr_SEQ_DESCR_UserObjectProblem,
+    eErr_SEQ_DESCR_BadKeyword,
+    eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
+    eErr_GENERIC_MissingPubInfo,
+    eErr_GENERIC_UnnecessaryPubEquiv,
+    eErr_GENERIC_CollidingSerialNumbers,
+    eErr_GENERIC_PublicationInconsistency,
+    eErr_GENERIC_SgmlPresentInText,
+    eErr_SEQ_PKG_EmptySet,
+    eErr_SEQ_PKG_FeaturePackagingProblem,
+    eErr_SEQ_PKG_GenomicProductPackagingProblem,
+    eErr_SEQ_PKG_InconsistentMolInfoBiomols,
+    eErr_SEQ_PKG_ArchaicFeatureLocation,
+    eErr_SEQ_PKG_ArchaicFeatureProduct,
+    eErr_SEQ_PKG_InternalGenBankSet,
+    eErr_SEQ_PKG_BioseqSetClassNotSet,
+    eErr_SEQ_PKG_MissingSetTitle,
+    eErr_SEQ_PKG_NucProtSetHasTitle,
+    eErr_SEQ_PKG_ComponentMissingTitle,
+    eErr_SEQ_PKG_SingleItemSet,
+    eErr_SEQ_PKG_MisplacedMolInfo,
+    eErr_SEQ_PKG_ImproperlyNestedSets,
+    eErr_SEQ_FEAT_Range,
+    eErr_SEQ_FEAT_MixedStrand,
+    eErr_SEQ_FEAT_SeqLocOrder,
+    eErr_SEQ_FEAT_TransLen,
+    eErr_SEQ_FEAT_TranslExcept,
+    eErr_SEQ_FEAT_OrfCdsHasProduct,
+    eErr_SEQ_FEAT_GeneRefHasNoData,
+    eErr_SEQ_FEAT_ProtRefHasNoData,
+    eErr_SEQ_FEAT_RNAtype0,
+    eErr_SEQ_FEAT_UnknownImpFeatKey,
+    eErr_SEQ_FEAT_UnknownImpFeatQual,
+    eErr_SEQ_FEAT_WrongQualOnImpFeat,
+    eErr_SEQ_FEAT_MissingQualOnImpFeat,
+    eErr_SEQ_FEAT_IllegalDbXref,
+    eErr_SEQ_FEAT_FarLocation,
+    eErr_SEQ_FEAT_TranslExceptPhase,
+    eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+    eErr_SEQ_FEAT_InvalidQualifierValue,
+    eErr_SEQ_FEAT_CDSproductPackagingProblem,
+    eErr_SEQ_FEAT_DuplicateInterval,
+    eErr_SEQ_FEAT_AbuttingIntervals,
+    eErr_SEQ_FEAT_MissingCDSproduct,
+    eErr_SEQ_FEAT_OnlyGeneXrefs,
+    eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+    eErr_SEQ_FEAT_ConflictFlagSet,
+    eErr_SEQ_FEAT_LocusTagProblem,
+    eErr_SEQ_FEAT_GenesInconsistent,
+    eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
+    eErr_SEQ_FEAT_NoNameForProtein,
+    eErr_SEQ_FEAT_MissingGeneXref,
+    eErr_SEQ_FEAT_FeatureCitationProblem,
+    eErr_SEQ_FEAT_WrongQualOnFeature,
+    eErr_SEQ_FEAT_UnknownFeatureQual,
+    eErr_SEQ_FEAT_BadCharInAuthorName,
+    eErr_SEQ_FEAT_CDSwithMultipleMRNAs,
+    eErr_SEQ_FEAT_MultipleEquivBioSources,
+    eErr_SEQ_FEAT_MultipleEquivPublications,
+    eErr_SEQ_FEAT_BadFullLengthFeature,
+    eErr_SEQ_FEAT_RedundantFields,
+    eErr_SEQ_FEAT_CDSwithNoMRNAOverlap,
+    eErr_SEQ_FEAT_FeatureProductInconsistency,
+    eErr_SEQ_FEAT_ImproperBondLocation,
+    eErr_SEQ_FEAT_GeneXrefWithoutGene,
+    eErr_SEQ_FEAT_MissingTrnaAA,
+    eErr_SEQ_FEAT_OldLocusTagMismtach,
+    eErr_SEQ_FEAT_InvalidInferenceValue,
+    eErr_SEQ_FEAT_HpotheticalProteinMismatch,
+    eErr_SEQ_FEAT_WholeLocation,
+    eErr_SEQ_FEAT_BadEcNumberFormat,
+    eErr_SEQ_FEAT_EcNumberProblem,
+    eErr_SEQ_FEAT_VectorContamination,
+    eErr_SEQ_FEAT_MinusStrandProtein,
+    eErr_SEQ_FEAT_BadProteinName,
+    eErr_SEQ_FEAT_GeneXrefWithoutLocus,
+    eErr_SEQ_FEAT_CDShasTooManyXs,
+    eErr_SEQ_FEAT_TerminalXDiscrepancy,
+    eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+    eErr_SEQ_FEAT_FeatureInsideGap,
+    eErr_SEQ_FEAT_BadAnticodonAA,
+    eErr_SEQ_FEAT_BadAnticodonCodon,
+    eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap,
+    eErr_SEQ_FEAT_GeneOntologyTermMissingGOID,
+    eErr_SEQ_FEAT_PseudoRnaHasProduct,
+    eErr_SEQ_FEAT_PseudoRnaViaGeneHasProduct,
+    eErr_SEQ_FEAT_BadRRNAcomponentOrder,
+    eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
+    eErr_SEQ_FEAT_MultipleProtRefs,
+    eErr_SEQ_FEAT_BadInternalCharacter,
+    eErr_SEQ_FEAT_BadTrailingCharacter,
+    eErr_SEQ_FEAT_BadTrailingHyphen,
+    eErr_SEQ_FEAT_BadCharInAuthorLastName,
+    eErr_SEQ_FEAT_GeneXrefNeeded,
+    eErr_SEQ_FEAT_ProteinNameHasPMID,
+    eErr_SEQ_FEAT_BadGeneOntologyFormat,
+    eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId,
+    eErr_SEQ_FEAT_GeneXrefStrandProblem,
+    eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem,
+    eErr_SEQ_FEAT_LocusCollidesWithLocusTag,
+    eErr_SEQ_FEAT_NeedsNote,
+    eErr_SEQ_FEAT_RptUnitRangeProblem,
+    eErr_SEQ_FEAT_InconsistentRRNAstrands,
+    eErr_SEQ_GRAPH_GraphAbove,
+    eErr_SEQ_GRAPH_GraphOutOfOrder,
+    eErr_SEQ_GRAPH_GraphSeqLocLen,
+    eErr_SEQ_GRAPH_GraphBioseqId
+};
+
+DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<EErrType>, sc_GenomeRaiseArray, sc_ValidGenomeRaise);
+
+static bool RaiseGenomeSeverity (
+    EErrType et
+)
+
+{
+    if (sc_GenomeRaiseArray.find (et) != sc_GenomeRaiseArray.end()) {
+        return true;
+    }
+    return false;
+}
+
 void CValidError_imp::PostErr
 (EDiagSev       sv,
  EErrType       et,
  const string&  msg,
  TFeat          ft)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Add feature part of label
     string desc = "FEATURE: ";
     string content_label = s_GetFeatureContentLabel(ft, m_Scope);
@@ -673,13 +850,17 @@ void CValidError_imp::PostErr
     }
 }
 
-
 void CValidError_imp::PostErr
 (EDiagSev       sv,
  EErrType       et,
  const string&  msg,
  TBioseq        sq)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Append bioseq label
     string desc;
     AppendBioseqLabel(desc, sq, m_SuppressContext);
@@ -736,6 +917,11 @@ void CValidError_imp::PostErr
  const string& msg,
  TSet          st)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Append Bioseq_set label
     string desc = "";
     s_AppendSetLabel(desc, st, m_SuppressContext);
@@ -820,6 +1006,11 @@ void CValidError_imp::PostErr
  TEntry         ctx,
  TDesc          ds)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Append Descriptor label
     string desc("DESCRIPTOR: ");
 
@@ -878,6 +1069,11 @@ void CValidError_imp::PostErr
  const string&  msg,
  TAnnot         an)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Append Annotation label
     string desc = "ANNOTATION: ";
 
@@ -895,6 +1091,11 @@ void CValidError_imp::PostErr
  const string&  msg,
  TGraph         graph)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Append Graph label
     string desc = "GRAPH: ";
     if (graph.IsSetTitle()) {
@@ -918,6 +1119,11 @@ void CValidError_imp::PostErr
  TBioseq        sq,
  TGraph         graph)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Append Graph label
     string desc("GRAPH: ");
     if ( graph.IsSetTitle() ) {
@@ -940,6 +1146,11 @@ void CValidError_imp::PostErr
  const string& msg,
  TAlign        align)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     // Append Alignment label
     string desc = "ALIGNMENT: ";
     if (align.IsSetType()) {
@@ -969,6 +1180,11 @@ void CValidError_imp::PostErr
  const string& msg,
  TEntry        entry)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     if (entry.IsSeq()) {
         PostErr(sv, et, msg, entry.GetSeq());
     } else if (entry.IsSet()) {
@@ -990,6 +1206,11 @@ void CValidError_imp::PostErr
  const string& msg,
  const CBioSource& src)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     string desc = "BioSource: ";
     
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, src, "", 0);
@@ -1002,6 +1223,11 @@ void CValidError_imp::PostErr
  const string& msg,
  const COrg_ref& org)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     string desc = "Org-ref: ";
     
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, org, "", 0);
@@ -1014,6 +1240,11 @@ void CValidError_imp::PostErr
  const string& msg,
  const CPubdesc& pd)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     string desc = "Pubdesc: ";
     
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, pd, "", 0);
@@ -1026,6 +1257,11 @@ void CValidError_imp::PostErr
  const string& msg,
  const CSeq_submit& ss)
 {
+    // Adjust severity
+    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+        sv = eDiag_Error;
+    }
+
     string desc = "Seq-submit: ";
     
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ss, "", 0);

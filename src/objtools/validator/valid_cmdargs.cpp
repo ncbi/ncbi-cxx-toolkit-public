@@ -54,6 +54,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("e", "Ignore Transcription/Translation Exceptions");
     argdescr->AddFlag("r", "Remote Fetching from ID");
     argdescr->AddFlag("y", "Special Indexer Tests");
+    argdescr->AddFlag("U", "Genome Center Submission");
     argdescr->AddFlag("T", "Validate Taxonomy");
     argdescr->AddFlag("ovl_pep", "Overlapping peptide features produce error instead of warning");
     argdescr->AddFlag("rubisco", "Look for rubisco abbreviations");
@@ -99,6 +100,9 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
     }
     if (args["y"]) {
         options |= CValidator::eVal_indexer_version;
+    }
+    if (args["U"]) {
+        options |= CValidator::eVal_genome_submission;
     }
     if (args["T"]) {
         options |= CValidator::eVal_use_entrez;
