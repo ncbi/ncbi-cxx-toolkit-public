@@ -518,14 +518,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
          static const char* sc_Expected = 
-">lcl|test-seq [organism=Sarcophilus harrisii] [strain=some strain] [gcode=1] [tech=physical map] test sequence\n"
+">lcl|test-seq [organism=Sarcophilus harrisii] [strain=some strain] [gcode=1] [tech=physical map]\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n";
          BOOST_CHECK_EQUAL(s, string(sc_Expected));
      }}
-
 }
 
 #if 0

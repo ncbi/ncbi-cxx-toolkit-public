@@ -2634,6 +2634,8 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq& bioseq )
             }
         }
     }
+
+    m_Out << '\n';
 }
 
 void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
@@ -2707,8 +2709,9 @@ void CFastaOstream::WriteTitle(const CBioseq& bioseq,
         x_WriteSeqIds(bioseq, NULL);
         if( (m_Flags & fShowModifiers) != 0 ) {
             x_WriteModifiers(bioseq);
+        } else {
+            x_WriteSeqTitle(bioseq, NULL, custom_title);
         }
-        x_WriteSeqTitle(bioseq, NULL, custom_title);
     }
     else {
         CScope scope(*CObjectManager::GetInstance());
@@ -2724,14 +2727,14 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
     x_WriteSeqIds(*handle.GetBioseqCore(), location);
     if( (m_Flags & fShowModifiers) != 0 ) {
         x_WriteModifiers(*handle.GetBioseqCore());
+    } else {
+        string safe_title = (custom_title.empty() ? m_Gen->GenerateDefline(handle)
+            : custom_title);
+        if ((m_Flags & fKeepGTSigns) == 0) {
+            safe_title = NStr::Replace(safe_title, ">", "_");
+        }
+        m_Out << ' ' << safe_title << '\n';
     }
-
-    string safe_title = (custom_title.empty() ? m_Gen->GenerateDefline(handle)
-                         : custom_title);
-    if ((m_Flags & fKeepGTSigns) == 0) {
-        safe_title = NStr::Replace(safe_title, ">", "_");
-    }
-    m_Out << ' ' << safe_title << '\n';
 }
 
 
