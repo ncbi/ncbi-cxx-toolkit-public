@@ -86,7 +86,8 @@ public:
         eVal_ignore_exceptions       = 0x10000,
         eVal_report_splice_as_error  = 0x20000,
         eVal_latlon_check_state      = 0x40000,
-        eVal_latlon_ignore_water     = 0x80000
+        eVal_latlon_ignore_water     = 0x80000,
+        eVal_genome_submission       = 0x100000,
     };
 
     // Construtor / Destructor
