@@ -1305,7 +1305,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     if (!m_IsProtein) {
         arg_desc.AddOptionalKey(kArgGLChainType, "filename",
-                            "File containing chain type of each sequence in germline database and coding frame start position for V and J sequence",
+                            "File containing chain type of each sequence in germline database and coding frame start position for J sequence",
                             CArgDescriptions::eString);
     }
 
