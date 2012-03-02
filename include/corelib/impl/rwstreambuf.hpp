@@ -35,7 +35,7 @@
 
 /// @file rwstreambuf.hpp
 /// Reader-writer based stream buffer
-/// @sa IReader, IWriter, IReaderWriter
+/// @sa IReader, IWriter, IReaderWriter, CRStream, CWStream, CRWStream
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/reader_writer.hpp>
@@ -60,18 +60,17 @@ class NCBI_XNCBI_EXPORT CRWStreambuf : public CRWStreambufBase
 {
 public:
     /// Which of the objects (passed in the constructor) should be
-    /// deleted on this object's destruction.
-    /// NOTE:  if the reader and writer are in fact the same object,
-    ///        it will _not_ be deleted twice.
+    /// deleted on this object's destruction, whether to tie I/O,
+    /// and how to process exceptions thrown at lower levels...
     enum EFlags {
-        fOwnReader      = 1 << 1,    // own the underlying reader
-        fOwnWriter      = 1 << 2,    // own the underlying writer
+        fOwnReader      = 1 << 1,    ///< Own the underlying reader
+        fOwnWriter      = 1 << 2,    ///< Own the underlying writer
         fOwnAll         = fOwnReader + fOwnWriter,
-        fUntie          = 1 << 5,    // do not flush before reading
-        fLogExceptions  = 1 << 8,
-        fLeakExceptions = 1 << 9
+        fUntie          = 1 << 5,    ///< Do not flush before reading
+        fLogExceptions  = 1 << 8,    ///< Exceptions logged only
+        fLeakExceptions = 1 << 9     ///< Exceptions leaked out
     };
-    typedef int TFlags;             // bitwise OR of EFlags
+    typedef int TFlags;              ///< Bitwise OR of EFlags
 
 
     CRWStreambuf(IReaderWriter* rw       = 0,
@@ -79,6 +78,8 @@ public:
                  CT_CHAR_TYPE*  buf      = 0,
                  TFlags         flags    = 0);
 
+    /// NOTE:  if the reader and writer have actually happened to be
+    ///        the same object, it will _not_ be deleted twice.
     CRWStreambuf(IReader*       r,
                  IWriter*       w,
                  streamsize     buf_size = 0,
