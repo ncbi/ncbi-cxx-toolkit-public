@@ -1046,6 +1046,28 @@ CRef<CSeq_literal> CHgvsParser::x_raw_seq(TIterator const& i, const CContext& co
 }
 
 
+int GetDeltaLength(const CDelta_item& delta, int loc_len)
+{
+    int len = !delta.IsSetSeq()          ? 0 
+            : delta.GetSeq().IsLiteral() ? delta.GetSeq().GetLiteral().GetLength()
+            : delta.GetSeq().IsLoc()     ? sequence::GetLength(delta.GetSeq().GetLoc(), NULL)
+            : delta.GetSeq().IsThis()    ? loc_len
+            : 0;
+   if(delta.IsSetMultiplier()) {
+        len *= delta.GetMultiplier();
+   }
+   return len; 
+}
+
+CVariation_inst::EType GetDelInsSubtype(int del_len, int ins_len)
+{
+    return del_len > 0 && ins_len == 0        ? CVariation_inst::eType_del
+         : del_len == 0 && ins_len > 0        ? CVariation_inst::eType_ins
+         : del_len == ins_len && del_len != 1 ? CVariation_inst::eType_mnp
+         : del_len == ins_len && del_len == 1 ? CVariation_inst::eType_snv
+         :                                      CVariation_inst::eType_delins;
+}
+
 CRef<CVariation> CHgvsParser::x_delins(TIterator const& i, const CContext& context)
 {
     HGVS_ASSERT_RULE(i, eID_delins);
@@ -1059,7 +1081,11 @@ CRef<CVariation> CHgvsParser::x_delins(TIterator const& i, const CContext& conte
     //and insertion's inst, except action type is "replace" (default) rather than "ins-before",
     //so we reset action
 
-    del_vr->SetData().SetInstance().SetType(CVariation_inst::eType_delins);
+    int placement_len = CVariationUtil::s_GetLength(SetFirstPlacement(*del_vr), NULL);
+    int del_len = GetDeltaLength(*del_vr->GetData().GetInstance().GetDelta().front(), placement_len);
+    int ins_len = GetDeltaLength(*ins_vr->GetData().GetInstance().GetDelta().front(), placement_len);
+    del_vr->SetData().SetInstance().SetType(GetDelInsSubtype(del_len, ins_len));
+
     del_vr->SetData().SetInstance().SetDelta() = ins_vr->SetData().SetInstance().SetDelta();
     del_vr->SetData().SetInstance().SetDelta().front()->ResetAction();
 
@@ -1173,13 +1199,7 @@ CRef<CVariation> CHgvsParser::x_nuc_subst(TIterator const& i, const CContext& co
     delta->SetSeq().SetLiteral(*seq_to);
     var_inst.SetDelta().push_back(delta);
 
-    if(seq_to->GetLength() == 1 && CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL) == 1) {
-        var_inst.SetType(CVariation_inst::eType_snv);
-    } else if(seq_to->GetLength() == CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL)) {
-        var_inst.SetType(CVariation_inst::eType_mnp);
-    } else {
-        var_inst.SetType(CVariation_inst::eType_delins);
-    }
+    var_inst.SetType(GetDelInsSubtype(CVariationUtil::s_GetLength(SetFirstPlacement(*vr), NULL), seq_to->GetLength()));
 
     return vr;
 }
