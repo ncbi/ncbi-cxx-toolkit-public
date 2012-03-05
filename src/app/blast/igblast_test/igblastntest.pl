@@ -7,7 +7,7 @@ use strict;
 my $new_program = "./igblastn";
 my $old_program = "/export/home/jianye/igblast/trunk/c++/src/app/blast/igblastn";
 my $testcasefile = "igblastntestcase";
-my $base_parameters = " -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -show_translation  -auxilary_data optional_file/human_gl.aux -outfmt "; 
+my $base_parameters = " -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile -show_translation  -auxilary_data optional_file/human_gl.aux -outfmt "; 
 my @format = ("3", "4", "7");
 
 
@@ -27,7 +27,7 @@ foreach my $fmt (@format){
 
 #test gi igseqnt
 $testcasefile = "igblastntestcase.giigseqnt";
-$base_parameters = " -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile  -auxilary_data optional_file/human_gl.aux -show_translation -db database/igSeqNt -num_threads 4 -outfmt ";
+$base_parameters = " -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile  -auxilary_data optional_file/human_gl.aux -show_translation -db IG_DB/igseq -num_threads 4 -outfmt ";
 
 
 
@@ -44,7 +44,7 @@ foreach my $fmt (@format){
 
 #test gi
 $testcasefile = "igblastntestcase.gi";
-$base_parameters = "  -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -show_translation -auxilary_data optional_file/human_gl.aux -num_alignments 60  -outfmt "; 
+$base_parameters = "  -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile -show_translation -auxilary_data optional_file/human_gl.aux -num_alignments 60  -outfmt "; 
 
 
 
@@ -62,7 +62,7 @@ foreach my $fmt (@format){
 
 #mouse
 $testcasefile = "igblastntestcase.mouse";
-$base_parameters = " -germline_db_V database/mouse_gl_V -germline_db_J database/mouse_gl_J -germline_db_D database/mouse_gl_D -query $testcasefile -auxilary_data optional_file/mouse_gl.aux -show_translation -organism mouse -outfmt "; 
+$base_parameters = " -germline_db_V IG_DB/mouse_gl_V -germline_db_J IG_DB/mouse_gl_J -germline_db_D IG_DB/mouse_gl_D -query $testcasefile -auxilary_data optional_file/mouse_gl.aux -show_translation -organism mouse -outfmt "; 
 
 
 
@@ -79,7 +79,7 @@ foreach my $fmt (@format){
 
 #test seqid list
 $testcasefile = "igblastntestcase.idlist";
-$base_parameters = " -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation  -germline_db_V_seqidlist seqid.v  -germline_db_D_seqidlist seqid.dlist -germline_db_J_seqidlist seqid.j -outfmt "; 
+$base_parameters = " -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation  -germline_db_V_seqidlist seqid.v  -germline_db_D_seqidlist seqid.dlist -germline_db_J_seqidlist seqid.j -outfmt "; 
 
 
 
@@ -97,7 +97,7 @@ foreach my $fmt (@format){
 
 #test v focus nt db 
 $testcasefile = "igblastntestcase.vfocusnt";
-$base_parameters = "  -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation -db nt -remote -focus_on_V_segment -num_alignments 60  -outfmt "; 
+$base_parameters = "  -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation -db nt -remote -focus_on_V_segment -num_alignments 60  -outfmt "; 
 
 
 
@@ -114,7 +114,7 @@ foreach my $fmt (@format){
 
 #test nt
 $testcasefile = "igblastntestcase.nt";
-$base_parameters = "  -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation -db nt -remote  -num_alignments 60  -outfmt "; 
+$base_parameters = "  -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation -db nt -remote  -num_alignments 60  -outfmt "; 
 
 
 
@@ -130,7 +130,7 @@ foreach my $fmt (@format){
 }
 #test gi nt
 $testcasefile = "igblastntestcase.gint";
-$base_parameters = "  -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile  -auxilary_data optional_file/mouse_gl.aux -show_translation -db nt -remote  -num_alignments 60  -outfmt "; 
+$base_parameters = "  -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile  -auxilary_data optional_file/mouse_gl.aux -show_translation -db nt -remote  -num_alignments 60  -outfmt "; 
 
 
 
@@ -150,7 +150,7 @@ foreach my $fmt (@format){
 
 #test v focus igSeqNT db 
 $testcasefile = "igblastntestcase.vfocusigseqnt";
-$base_parameters = "   -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation -db database/igSeqNt -focus_on_V_segment -num_alignments 60 -num_threads 4  -outfmt "; 
+$base_parameters = "   -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation -db IG_DB/igseq -focus_on_V_segment -num_alignments 60 -num_threads 4  -outfmt "; 
 
 
 
@@ -167,7 +167,7 @@ foreach my $fmt (@format){
 
 #test igSeqNT db 
 $testcasefile = "igblastntestcase.igseqnt";
-$base_parameters = "   -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile  -auxilary_data optional_file/human_gl.aux -show_translation -db database/igSeqNt -num_alignments 60 -num_threads 4  -outfmt "; 
+$base_parameters = "   -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile  -auxilary_data optional_file/human_gl.aux -show_translation -db IG_DB/igseq -num_alignments 60 -num_threads 4  -outfmt "; 
 
 
 
@@ -184,7 +184,7 @@ foreach my $fmt (@format){
 
 #test imgt domain
 $testcasefile = "igblastntestcase.imgt";
-$base_parameters = " -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation  -domain_system imgt -outfmt "; 
+$base_parameters = " -germline_db_V IG_DB/human_gl_V -germline_db_J IG_DB/human_gl_J -germline_db_D IG_DB/human_gl_D -query $testcasefile -auxilary_data optional_file/human_gl.aux -show_translation  -domain_system imgt -outfmt "; 
 
 
 
@@ -201,7 +201,7 @@ foreach my $fmt (@format){
 
 #custom db
 $testcasefile = "igblastntestcase.customdb";
-$base_parameters = "  -germline_db_V database/UNSWIgVRepertoire_fasta.txt -germline_db_J database/UNSWIgJRepertoire_fasta.txt -germline_db_D database/UNSWIgDRepertoire_fasta.txt  -auxilary_data optional_file/human_gl.aux.testonly -show_translation -query $testcasefile  -outfmt  "; 
+$base_parameters = "  -germline_db_V IG_DB/UNSWIgVRepertoire_fasta.txt -germline_db_J IG_DB/UNSWIgJRepertoire_fasta.txt -germline_db_D IG_DB/UNSWIgDRepertoire_fasta.txt  -auxilary_data optional_file/human_gl.aux.testonly -show_translation -query $testcasefile  -outfmt  "; 
 foreach my $fmt (@format){
   my $parameters = $base_parameters." ".$fmt;
   print ("$parameters\n");
