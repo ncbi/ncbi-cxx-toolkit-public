@@ -735,7 +735,9 @@ bool operator==(const SDriverInfo& i1, const SDriverInfo& i2)
 inline
 bool operator<(const SDriverInfo& i1, const SDriverInfo& i2)
 {
-    return i1.name == i2.name && i1.version < i2.version;
+    return (i1.name < i2.name ||
+            (i1.name == i2.name &&
+             (i1.version < i2.version)));
 }
 
 
@@ -920,11 +922,11 @@ bool CPluginManager<TClass>::WillExtendCapabilities
 
         typename TClassFactory::TDriverList drv_list;
         cf->GetDriverVersions(drv_list);
+        drv_list.sort();
         full_drv_list.merge(drv_list);
+        // Remove duplicates.
+        full_drv_list.unique();
     }
-
-    // Remove duplicates.
-    full_drv_list.unique();
 
     ITERATE(typename TClassFactory::TDriverList, it2, full_drv_list) {
         const typename TClassFactory::SDriverInfo& drv_info = *it2;

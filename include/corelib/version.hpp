@@ -291,18 +291,19 @@ bool NCBI_XNCBI_EXPORT IsBetterVersion(const CVersionInfo& info,
 inline
 bool operator==(const CVersionInfo& v1, const CVersionInfo& v2)
 {
-    
-    return v1.Match(v2) == CVersionInfo::eFullyCompatible;
+    return (v1.GetMajor() == v2.GetMajor() &&
+            v1.GetMinor() == v2.GetMinor() &&
+            v1.GetPatchLevel() == v2.GetPatchLevel());
 }
 
 inline
 bool operator<(const CVersionInfo& v1, const CVersionInfo& v2)
 {
-    int best_major = -1;
-    int best_minor = -1;
-    int best_patch_level = -1;
-    
-    return IsBetterVersion(v1, v2, best_major, best_minor, best_patch_level);
+    return (v1.GetMajor() < v2.GetMajor() ||
+            (v1.GetMajor() == v2.GetMajor() &&
+             (v1.GetMinor() < v2.GetMinor() ||
+              (v1.GetMinor() == v2.GetMinor() &&
+               (v1.GetPatchLevel() < v2.GetPatchLevel())))));
 }
 
 inline
