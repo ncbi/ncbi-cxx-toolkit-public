@@ -473,6 +473,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         alnVec.Reset(new CAlnVec(ds, scope));
     }    
 
+    alnVec->SetAaCoding(CSeq_data::e_Ncbieaa);
 
     int align_length = 0, num_gaps = 0, num_gap_opens = 0;
     if (x_IsFieldRequested(eAlignmentLength) ||

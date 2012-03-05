@@ -1201,6 +1201,7 @@ double CAlignFormatUtil::GetPercentIdentity(const CSeq_align& aln,
     CAlnVec alnvec(ds, scope);
     string query, subject;
 
+    alnvec.SetAaCoding(CSeq_data::e_Ncbieaa);
     alnvec.GetWholeAlnSeqString(0, query);
     alnvec.GetWholeAlnSeqString(1, subject);
 

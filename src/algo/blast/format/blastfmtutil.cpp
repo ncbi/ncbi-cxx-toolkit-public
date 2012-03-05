@@ -500,7 +500,7 @@ CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
 								 	   int slave_gen_code)
 {
 	CAlnVec aln_vec(ds, scope);
-
+	aln_vec.SetAaCoding(CSeq_data::e_Ncbieaa);
 	s_GetQueryAndSubjectStrings(aln_vec, query, subject, master_gen_code, slave_gen_code);
 }
 
@@ -517,6 +517,7 @@ CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
 						   	   	   	   	int query_frame)
 {
 	CAlnVec aln_vec(ds, scope);
+	aln_vec.SetAaCoding(CSeq_data::e_Ncbieaa);
 
 	s_GetQueryAndSubjectStrings(aln_vec, query, subject, master_gen_code, slave_gen_code);
 

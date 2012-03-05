@@ -1891,6 +1891,8 @@ CRef<CAlnVec> CDisplaySeqalign::x_GetAlnVecForSeqalign(const CSeq_align& align)
         avRef = new CAlnVec(*ds, m_Scope);
     }    
     
+    avRef->SetAaCoding(CSeq_data::e_Ncbieaa);
+
     return avRef;
 }
 
@@ -2134,6 +2136,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
             try{
                 CRef<CAlnVec> avRef (new CAlnVec (mix[i]->GetDenseg(), 
                                                   m_Scope));
+                avRef->SetAaCoding(CSeq_data::e_Ncbieaa);
                 avRef->SetGenCode(m_SlaveGeneticCode);
                 avRef->SetGenCode(m_MasterGeneticCode, 0);
                 m_AV = avRef;

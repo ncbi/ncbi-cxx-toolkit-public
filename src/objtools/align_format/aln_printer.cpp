@@ -105,6 +105,7 @@ CMultiAlnPrinter::CMultiAlnPrinter(const CSeq_align& seqalign,
 {
     m_AlnVec->SetGapChar('-');
     m_AlnVec->SetEndChar('-');
+    m_AlnVec->SetAaCoding(CSeq_data::e_Ncbieaa);
 }
 
 
