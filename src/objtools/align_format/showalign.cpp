@@ -3162,6 +3162,42 @@ CDisplaySeqalign::PrepareBlastUngappedSeqalign(const CSeq_align_set& alnset)
 }
 
 
+CRef<CSeq_align_set> 
+CDisplaySeqalign::PrepareBlastUngappedSeqalignEx(const CSeq_align_set& alnset) 
+{
+    CRef<CSeq_align_set> alnSetRef(new CSeq_align_set);
+
+    ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()){
+        const CSeq_align::TSegs& seg = (*iter)->GetSegs();
+        if(seg.Which() == CSeq_align::C_Segs::e_Std){
+            ITERATE (CSeq_align::C_Segs::TStd, iterStdseg, seg.GetStd()){
+                CRef<CSeq_align> aln(new CSeq_align);
+                if((*iterStdseg)->IsSetScores()){
+                    aln->SetScore() = (*iterStdseg)->GetScores();
+                }
+                aln->SetSegs().SetStd().push_back(*iterStdseg);
+                alnSetRef->Set().push_back(aln);
+            }
+        } else if(seg.Which() == CSeq_align::C_Segs::e_Dendiag){
+            ITERATE (CSeq_align::C_Segs::TDendiag, iterDendiag,
+                     seg.GetDendiag()){
+                CRef<CSeq_align> aln(new CSeq_align);
+                if((*iterDendiag)->IsSetScores()){
+                    aln->SetScore() = (*iterDendiag)->GetScores();
+                }
+                aln->SetSegs().SetDendiag().push_back(*iterDendiag);
+                alnSetRef->Set().push_back(aln);
+            }
+        } else { //Denseg, doing nothing.
+            
+            alnSetRef->Set().push_back(*iter);
+        }
+    }
+    
+    return alnSetRef;
+}
+
+
 bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
 {
     const CBioseq_Handle& bsp_handle =
