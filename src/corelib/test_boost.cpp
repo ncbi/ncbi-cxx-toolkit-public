@@ -2087,5 +2087,6 @@ main(int argc, char* argv[])
 
     results_reporter::make_report();
 
+    NCBI_NS_NCBI::GetDiagContext().SetExitCode(result);
     return result;
 }
