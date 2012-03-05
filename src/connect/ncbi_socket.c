@@ -1230,13 +1230,15 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 
 /* Switch the specified socket I/O between blocking and non-blocking mode
  */
-static int/*bool*/ s_SetNonblock(TSOCK_Handle sock)
+static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 {
 #if defined(NCBI_OS_MSWIN)
-    unsigned long arg = 1;
+    unsigned long arg = nonblock ? 1 : 0;
     return ioctlsocket(sock, FIONBIO, &arg) == 0;
 #elif defined(NCBI_OS_UNIX)
-    return fcntl(sock, F_SETFL, fcntl(sock, F_GETFL, 0) | O_NONBLOCK) == 0;
+    return fcntl(sock, F_SETFL, nonblock
+                 ? fcntl(sock, F_GETFL, 0) |        O_NONBLOCK
+                 : fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) == 0;
 #else
 #   error "Unsupported platform"
 #endif /*NCBI_OS*/
@@ -3404,6 +3406,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
         sock->r_len = 0;
         BUF_Erase(sock->w_buf);
     } else if (abort  ||  !sock->keep) {
+        int/*bool*/ linger = 0/*false*/;
 #if (defined(NCBI_OS_UNIX) && !defined(NCBI_OS_BEOS)) || defined(NCBI_OS_MSWIN)
         /* setsockopt() is not implemented for MAC (MIT socket emulation lib)*/
         if (sock->w_status != eIO_Closed
@@ -3418,12 +3421,14 @@ static EIO_Status s_Close(SOCK sock, int abort)
                 lgr.l_linger = 0;   /* RFC 793, Abort */
                 lgr.l_onoff  = 1;
             } else if (!sock->c_tv_set) {
+                linger = 1/*true*/;
                 lgr.l_linger = 120; /* this is standard TCP TTL, 2 minutes */
                 lgr.l_onoff  = 1;
             } else if (sock->c_tv.tv_sec | sock->c_tv.tv_usec) {
                 unsigned int seconds = sock->c_tv.tv_sec
                     + (sock->c_tv.tv_usec + 500000) / 1000000;
                 if (seconds) {
+                    linger = 1/*true*/;
                     lgr.l_linger = seconds;
                     lgr.l_onoff  = 1;
                 } else
@@ -3475,6 +3480,18 @@ static EIO_Status s_Close(SOCK sock, int abort)
 #ifdef NCBI_OS_MSWIN
         WSAEventSelect(sock->sock, sock->event/*ignored*/, 0/*cancel*/);
 #endif /*NCBI_OS_MSWIN*/
+        /* set the socket back to blocking mode */
+        if (s_Initialized > 0
+            &&  linger  &&  !s_SetNonblock(sock->sock, 0/*false*/)) {
+            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            assert(!abort);
+            CORE_LOGF_ERRNO_EXX(19, eLOG_Trace,
+                                x_error, strerr,
+                                ("%s[SOCK::Close] "
+                                 " Cannot set socket back to blocking mode",
+                                 s_ID(sock, _id)));
+            UTIL_ReleaseBuffer(strerr);
+        }
     } else
         status = s_Shutdown(sock, eIO_Open, SOCK_GET_TIMEOUT(sock, c));
     sock->w_len = 0;
@@ -3705,7 +3722,7 @@ static EIO_Status s_Connect(SOCK            sock,
     }
 #else
     /* set non-blocking mode */
-    if (!s_SetNonblock(x_sock)) {
+    if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(24, eLOG_Error,
                             x_error, strerr,
@@ -3958,7 +3975,8 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
         }
 #    endif /*FD_SETSIZE*/
 
-        if (!s_SetNonblock(fd[0])  ||  !s_SetNonblock(fd[1])) {
+        if (!s_SetNonblock(fd[0], 1/*true*/)  ||
+            !s_SetNonblock(fd[1], 1/*true*/)) {
             CORE_LOGF_ERRNO_X(29, eLOG_Warning, errno,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set non-blocking mode", x_id));
@@ -4422,7 +4440,7 @@ static EIO_Status s_CreateListening(const char*    path,
     }
 #else
     /* set non-blocking mode */
-    if (!s_SetNonblock(x_lsock)) {
+    if (!s_SetNonblock(x_lsock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
         if (!path) {
             sprintf(_id, ":%hu", port);
@@ -4699,7 +4717,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     }
 #else
     /* man accept(2) notes that non-blocking state may not be inherited */
-    if (!s_SetNonblock(x_sock)) {
+    if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(41, eLOG_Error,
                             x_error, strerr,
@@ -5147,7 +5165,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     }
 #else
     /* set to non-blocking mode */
-    if (!s_SetNonblock(fd)) {
+    if (!s_SetNonblock(fd, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(50, eLOG_Error,
                             x_error, strerr,
@@ -5294,7 +5312,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     memset(&lgr, 0, sizeof(lgr));
     if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*) &lgr, sizeof(lgr)) != 0){
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
-        CORE_LOGF_ERRNO_EXX(125, eLOG_Warning,
+        CORE_LOGF_ERRNO_EXX(163, eLOG_Warning,
                             x_error, strerr,
                             ("%s[SOCK::CreateOnTop] "
                              " Failed setsockopt(SO_NOLINGER)",
@@ -5865,7 +5883,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
 {
     if (sock->sock == SOCK_INVALID) {
         char _id[MAXIDLEN];
-        CORE_LOGF_X(19, eLOG_Error,
+        CORE_LOGF_X(125, eLOG_Error,
                     ("%s[SOCK::ReadLine] "
                      " Invalid socket",
                      s_ID(sock, _id)));
@@ -6314,7 +6332,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     }
 #else
     /* set to non-blocking mode */
-    if (!s_SetNonblock(x_sock)) {
+    if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(77, eLOG_Error,
                             x_error, strerr,
