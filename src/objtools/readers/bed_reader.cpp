@@ -144,7 +144,7 @@ CBedReader::ReadSeqAnnot(
             if (x_ParseBrowserLine(line, annot)) {
                 continue;
             }
-            if (x_ParseTrackLine(line, annot)) {
+            if (xParseTrackLine(line, annot)) {
                 if (featureCount > 0) {
                     --m_uLineNumber;
                     lr.UngetLine();
@@ -221,14 +221,32 @@ CBedReader::xParseTrackLine(
     if ( ! NStr::StartsWith( strLine, "track" ) ) {
         return false;
     }
-
-    m_currentId.clear();
+    vector<string> parts;
+    CReadUtil::Tokenize( strLine, " \t", parts );
+    if (parts.size() >= 3) {
+        try {
+            NStr::StringToInt(parts[1]);
+            NStr::StringToInt(parts[2]);
+            return false;
+        }
+        catch(...) {
+        }
+    }
     if ( !m_currentId.empty() ) {
-        x_AddConversionInfo( current, &m_ErrorsPrivate );    
+//        x_AddConversionInfo( current, &m_ErrorsPrivate );    
         m_columncount = 0;
         m_ErrorsPrivate.ClearAll();
     }
-    return CReaderBase::x_ParseTrackLine( strLine, current );
+    m_currentId.clear();
+    if (!CReaderBase::x_ParseTrackLine( strLine, current )) {
+        CObjReaderLineException err(
+            eDiag_Warning,
+            0,
+            "Bad track line: Expected \"track key1=value1 key2=value2 ...\". Ignored.",
+            ILineError::eProblem_BadTrackLine);
+        throw( err );    
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -388,13 +406,8 @@ void CBedReader::x_SetFeatureLocation(
     const vector<string>& fields )
 //  ----------------------------------------------------------------------------
 {
-    feature->ResetLocation();
-    
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0]);
-
     CRef<CSeq_loc> location( new CSeq_loc );
     int from, to;
-    CSeq_interval& interval = location->SetInt();
     try {
 		string cleaned_from;
 		NStr::Replace(fields[1], ",", "", cleaned_from);
@@ -439,12 +452,13 @@ void CBedReader::x_SetFeatureLocation(
         strand_field = 4;
     }
     if (strand_field < fields.size()) {
-        interval.SetStrand(( fields[strand_field] == "+" ) ?
+        location->SetStrand(( fields[strand_field] == "+" ) ?
                            eNa_strand_plus : eNa_strand_minus );
     }
-    location->SetId( *id );
     
-    feature->SetLocation( *location );
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0]);
+    location->SetId(*id);
+    feature->SetLocation(*location);
 }
 //  ----------------------------------------------------------------------------
 void CBedReader::x_SetTrackData(

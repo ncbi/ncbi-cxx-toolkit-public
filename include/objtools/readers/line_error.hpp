@@ -64,6 +64,7 @@ public:
         eProblem_QualifierBadValue,
         eProblem_BadScoreValue,
         eProblem_MissingContext,
+        eProblem_BadTrackLine,
 
         eProblem_GeneralParsingError
     };
@@ -161,6 +162,8 @@ public:
             return "Invalid score value";
         case eProblem_MissingContext:
             return "Value ignored due to missing context";
+        case eProblem_BadTrackLine:
+            return "Bad track line: Expected \"track key1=value1 key2=value2 ...\"";
         default:
             return "Unknown problem";
         }
@@ -265,7 +268,8 @@ public:
     : CObjReaderParseException( DIAG_COMPILE_INFO, 0, eFormat, strMessage, uLine,
         eDiag_Info ), m_strSeqId(strSeqId), m_uLineNumber(uLine), 
         m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
-        m_strQualifierValue(strQualifierValue)
+        m_strQualifierValue(strQualifierValue),
+        m_eProblem(eProblem)
     {
         SetSeverity( eSeverity );
     };
