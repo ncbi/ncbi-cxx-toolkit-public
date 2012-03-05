@@ -71,142 +71,142 @@ using namespace std;
 
 
 CFormatGuessEx::CFormatGuessEx() 
-	: m_Guesser(new CFormatGuess) 
+    : m_Guesser(new CFormatGuess) 
 {
-	;
+    ;
 }
 
 
 CFormatGuessEx::CFormatGuessEx(const string& FileName)
-	: m_Guesser(new CFormatGuess(FileName))
+    : m_Guesser(new CFormatGuess(FileName))
 {
-	CNcbiIfstream FileIn(FileName.c_str());
-	x_FillLocalBuffer(FileIn);
+    CNcbiIfstream FileIn(FileName.c_str());
+    x_FillLocalBuffer(FileIn);
 }
 
 
 CFormatGuessEx::CFormatGuessEx(CNcbiIstream& In)
-	: m_Guesser(new CFormatGuess(In))
+    : m_Guesser(new CFormatGuess(In))
 {
-	x_FillLocalBuffer(In);
+    x_FillLocalBuffer(In);
 }
 
 
 CFormatGuessEx::~CFormatGuessEx()
 {
-	;
+    ;
 }
 
 
 CFormatGuess::EFormat CFormatGuessEx::GuessFormat()
 {
-	CFormatGuess::EFormat Guess;
-	Guess = m_Guesser->GuessFormat();
+    CFormatGuess::EFormat Guess;
+    Guess = m_Guesser->GuessFormat();
 	
-	ERR_POST(Info << " CFormatGuessEx:: Initial CFormatGuess: " << (int)Guess);
+    ERR_POST(Info << " CFormatGuessEx:: Initial CFormatGuess: " << (int)Guess);
 	
-	if(Guess != CFormatGuess::eUnknown) {
-		return Guess;
-	}
-	else {
-		CFormatGuess::EFormat CheckOrder[] = {
-			//CFormatGuess::eRmo
-			CFormatGuess::eAgp,
-			//case CFormatGuess::eXml:
-			CFormatGuess::eWiggle,
-			CFormatGuess::eBed,
-			CFormatGuess::eBed15,
-			CFormatGuess::eFasta,
-			//case CFormatGuess::eTextAsn:
-			CFormatGuess::eGtf,
-			CFormatGuess::eGff3,
-			CFormatGuess::eGff2//,
-			//CFormatGuess::eHgvs
-		};
+    if(Guess != CFormatGuess::eUnknown) {
+        return Guess;
+    }
+    else {
+        CFormatGuess::EFormat CheckOrder[] = {
+            //CFormatGuess::eRmo
+            CFormatGuess::eAgp,
+            //case CFormatGuess::eXml:
+            CFormatGuess::eWiggle,
+            CFormatGuess::eBed,
+            CFormatGuess::eBed15,
+            CFormatGuess::eFasta,
+            //case CFormatGuess::eTextAsn:
+            CFormatGuess::eGtf,
+            CFormatGuess::eGff3,
+            CFormatGuess::eGff2//,
+            //CFormatGuess::eHgvs
+        };
 
-		for(int Loop = 0; Loop < 8; Loop++ ) {
-			bool Found = x_TryFormat(CheckOrder[Loop]);
-			if(Found)
-				return CheckOrder[Loop];
-		}
-		return CFormatGuess::eUnknown;
-	}
+        for(int Loop = 0; Loop < 8; Loop++ ) {
+            bool Found = x_TryFormat(CheckOrder[Loop]);
+            if(Found)
+                return CheckOrder[Loop];
+        }
+        return CFormatGuess::eUnknown;
+    }
 }
 
 
 bool CFormatGuessEx::TestFormat(CFormatGuess::EFormat Format)
 {
-	bool TestResult = m_Guesser->TestFormat(Format);
+    bool TestResult = m_Guesser->TestFormat(Format);
 
-	if(TestResult) {
-		return true;
-	}
-	else {
-		return x_TryFormat(Format);
-	}
+    if(TestResult) {
+        return true;
+    }
+    else {
+        return x_TryFormat(Format);
+    }
 }
 
 
 
 bool CFormatGuessEx::x_FillLocalBuffer(CNcbiIstream& In) 
 {
-	m_LocalBuffer.str().clear();
-	m_LocalBuffer.clear();
+    m_LocalBuffer.str().clear();
+    m_LocalBuffer.clear();
 	
-	streamsize Total = 0;
-	while(!In.eof()) {
-		char buff[4096];
-		In.read(buff, sizeof(buff));
-		streamsize count = In.gcount();
-		if(count == 0)
-			break;
-		m_LocalBuffer.write(buff, count);
-		Total += count;
-		if(Total >= (1024*1024))
-			break;
-	}
+    streamsize Total = 0;
+    while(!In.eof()) {
+        char buff[4096];
+        In.read(buff, sizeof(buff));
+        streamsize count = In.gcount();
+        if(count == 0)
+            break;
+        m_LocalBuffer.write(buff, count);
+        Total += count;
+        if(Total >= (1024*1024))
+            break;
+    }
 
-	CStreamUtils::Pushback(In, m_LocalBuffer.str().c_str(), Total);
-	In.clear();
+    CStreamUtils::Pushback(In, m_LocalBuffer.str().c_str(), Total);
+    In.clear();
 
-	return true;
+    return true;
 }
 
 
 bool CFormatGuessEx::x_TryFormat(CFormatGuess::EFormat Format)
 {
-	switch(Format) {
+    switch(Format) {
 	
 	//case CFormatGuess::eBinaryAsn:
 	//	return x_TryBinaryAsn();
 	case CFormatGuess::eRmo:
-		return x_TryRmo();
+            return x_TryRmo();
 	case CFormatGuess::eAgp:
-		return x_TryAgp();
-	//case CFormatGuess::eXml:
-	//	return x_TryXml();
+            return x_TryAgp();
+            //case CFormatGuess::eXml:
+            //	return x_TryXml();
 	case CFormatGuess::eWiggle:
-		return x_TryWiggle();
+            return x_TryWiggle();
 	case CFormatGuess::eBed:
-		return x_TryBed();
+            return x_TryBed();
 	case CFormatGuess::eBed15:
-		return x_TryBed15();
+            return x_TryBed15();
 	case CFormatGuess::eFasta:
-		return x_TryFasta();
-	//case CFormatGuess::eTextAsn:
-	//	return x_TryTextAsn();
+            return x_TryFasta();
+            //case CFormatGuess::eTextAsn:
+            //	return x_TryTextAsn();
 	case CFormatGuess::eGtf:
-		return x_TryGtf();
+            return x_TryGtf();
 	case CFormatGuess::eGff3:
-		return x_TryGff3();
+            return x_TryGff3();
 	case CFormatGuess::eGff2:
-		return x_TryGff2();
-	//case CFormatGuess::eHgvs:
-	//	return x_TryHgvs();
+            return x_TryGff2();
+            //case CFormatGuess::eHgvs:
+            //	return x_TryHgvs();
 
 	default:
-		return false;
-	};
+            return false;
+    };
 }
 
 
@@ -214,243 +214,249 @@ bool CFormatGuessEx::x_TryFormat(CFormatGuess::EFormat Format)
 
 bool CFormatGuessEx::x_TryRmo()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
     CRmReader::TFlags Flags =
         CRmReader::fIncludeRepeatClass |
         CRmReader::fIncludeRepeatName;
     CRef<CSeq_annot> Result;
     
-	try {
-		CRmReader* Reader;
+    try {
+        CRmReader* Reader;
     	Reader = CRmReader::OpenReader(m_LocalBuffer);
     	Reader->Read(Result, Flags);
     	CRmReader::CloseReader(Reader);
-   	} catch(...) {
-		;
-	}
+    } catch(CException&) {
+    } catch(...) {
+    }
 	
-	return (bool)(Result);
+    return (bool)(Result);
 }
 
 bool CFormatGuessEx::x_TryAgp()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 	
-	vector<CRef<CBioseq> > Bioseqs;
-	try {
-		AgpRead(m_LocalBuffer, Bioseqs);
-	} catch(...) {
-		;
-	}
+    vector<CRef<CBioseq> > Bioseqs;
+    try {
+        AgpRead(m_LocalBuffer, Bioseqs);
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (!Bioseqs.empty());
+    return (!Bioseqs.empty());
 }
 
 //	bool x_TryXml();
 
 bool CFormatGuessEx::x_TryWiggle()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
-	int WiggleCount = 0;
+    int WiggleCount = 0;
 	
-	CWiggleReader Reader;
-	CStreamLineReader LineReader(m_LocalBuffer);
+    CWiggleReader Reader;
+    CStreamLineReader LineReader(m_LocalBuffer);
 		
-	CRef<CSeq_annot> Annot;
-	try {
-		Annot = Reader.ReadSeqAnnot(LineReader);
-	} catch(CException&) {
-		;
-	}
-	if (!Annot.IsNull() &&
-		Annot->CanGetData() && 
-		Annot->GetData().IsFtable())
-			WiggleCount++;
+    CRef<CSeq_annot> Annot;
+    try {
+        Annot = Reader.ReadSeqAnnot(LineReader);
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (WiggleCount > 0);
+    if (!Annot.IsNull() &&
+        Annot->CanGetData() && 
+        Annot->GetData().IsFtable())
+        WiggleCount++;
+
+    return (WiggleCount > 0);
 }
 
 bool CFormatGuessEx::x_TryBed()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
-	int BedCount = 0;
+    int BedCount = 0;
 	
-	CBedReader Reader;
-	CStreamLineReader LineReader(m_LocalBuffer);
+    CBedReader Reader;
+    CStreamLineReader LineReader(m_LocalBuffer);
 	
-	vector<CRef<CSeq_annot> > LocalAnnots;
-	try {
-		Reader.ReadSeqAnnots(LocalAnnots, LineReader);
-	} catch(CException&) {
-		;
-	}
-	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-		if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
-			(*AnnotIter)->GetData().IsFtable())
-			BedCount++;
-	}
+    vector<CRef<CSeq_annot> > LocalAnnots;
+    try {
+        Reader.ReadSeqAnnots(LocalAnnots, LineReader);
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (BedCount > 0);
+    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
+        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
+           (*AnnotIter)->GetData().IsFtable())
+            BedCount++;
+    }
+
+    return (BedCount > 0);
 }
 
 bool CFormatGuessEx::x_TryBed15()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
-	int Bed15Count = 0;
+    int Bed15Count = 0;
 	
-	CMicroArrayReader Reader;
-	CStreamLineReader LineReader(m_LocalBuffer);
+    CMicroArrayReader Reader;
+    CStreamLineReader LineReader(m_LocalBuffer);
 		
-	CRef<CSeq_annot> Annot;
-	try {
-		Annot = Reader.ReadSeqAnnot(LineReader);
-	} catch(CException&) {
-		;
-	}
-	if (!Annot.IsNull() &&
-		Annot->CanGetData() && 
-		Annot->GetData().IsFtable())
-			Bed15Count++;
+    CRef<CSeq_annot> Annot;
+    try {
+        Annot = Reader.ReadSeqAnnot(LineReader);
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (Bed15Count > 0);
+    if (!Annot.IsNull() &&
+        Annot->CanGetData() && 
+        Annot->GetData().IsFtable())
+        Bed15Count++;
+
+    return (Bed15Count > 0);
 }
 
 bool CFormatGuessEx::x_TryFasta()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
-	CRef<CSeq_entry> Result;
-	try {
-		CFastaReader Reader(m_LocalBuffer);
+    CRef<CSeq_entry> Result;
+    try {
+        CFastaReader Reader(m_LocalBuffer);
      	Result = Reader.ReadSet();
-	} catch(...) {
-		;
-	}
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (bool)(Result);
+    return (bool)(Result);
 }
 
 //	bool x_TryTextAsn();
 
 bool CFormatGuessEx::x_TryGtf()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
-	int GtfCount = 0;
+    int GtfCount = 0;
 	
-	CGtfReader Reader(CGtfReader::fNewCode);
-	CStreamLineReader LineReader(m_LocalBuffer);
+    CGtfReader Reader(CGtfReader::fNewCode);
+    CStreamLineReader LineReader(m_LocalBuffer);
 		
-	vector<CRef<CSeq_annot> > LocalAnnots;
-	try {
-		Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
-	} catch(CException&) {
-		;
-	}
-	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-		if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
-			(*AnnotIter)->GetData().IsFtable())
-			GtfCount++;
-	}
+    vector<CRef<CSeq_annot> > LocalAnnots;
+    try {
+        Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (GtfCount > 0);
+    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
+        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
+           (*AnnotIter)->GetData().IsFtable())
+            GtfCount++;
+    }
+
+    return (GtfCount > 0);
 }
 
 bool CFormatGuessEx::x_TryGff3()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
-	int Gff3Count = 0;
+    int Gff3Count = 0;
 	
-	CGff3Reader Reader(CGff3Reader::fNewCode);
-	CStreamLineReader LineReader(m_LocalBuffer);
+    CGff3Reader Reader(CGff3Reader::fNewCode);
+    CStreamLineReader LineReader(m_LocalBuffer);
 		
-	vector<CRef<CSeq_annot> > LocalAnnots;
-	try {
-		Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
-	} catch(CException&) {
-		;
-	}
-	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-		if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
-			(*AnnotIter)->GetData().IsFtable())
-			Gff3Count++;
-	}
+    vector<CRef<CSeq_annot> > LocalAnnots;
+    try {
+        Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (Gff3Count > 0);
+    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
+        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
+           (*AnnotIter)->GetData().IsFtable())
+            Gff3Count++;
+    }
+
+    return (Gff3Count > 0);
 }
 
 bool CFormatGuessEx::x_TryGff2()
 {
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
 
-	int Gff2Count = 0;
+    int Gff2Count = 0;
 	
-	CGff2Reader Reader(CGff2Reader::fNewCode);
-	CStreamLineReader LineReader(m_LocalBuffer);
+    CGff2Reader Reader(CGff2Reader::fNewCode);
+    CStreamLineReader LineReader(m_LocalBuffer);
 		
-	vector<CRef<CSeq_annot> > LocalAnnots;
-	try {
-		Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
-	} catch(CException&) {
-		;
-	}
-	ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-		if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
-			(*AnnotIter)->GetData().IsFtable())
-			Gff2Count++;
-	}
+    vector<CRef<CSeq_annot> > LocalAnnots;
+    try {
+        Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
+    } catch(CException&) {
+    } catch(...) {
+    }
 
-	return (Gff2Count > 0);
+    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
+        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
+           (*AnnotIter)->GetData().IsFtable())
+            Gff2Count++;
+    }
+
+    return (Gff2Count > 0);
 }
 
 /*
-bool CFormatGuessEx::x_TryHgvs()
-{
-	m_LocalBuffer.clear();
-	m_LocalBuffer.seekg(0);
+  bool CFormatGuessEx::x_TryHgvs()
+  {
+  m_LocalBuffer.clear();
+  m_LocalBuffer.seekg(0);
 
-	CScope* Dummy = NULL;	
-	CHgvsParser Parser(*Dummy);
+  CScope* Dummy = NULL;	
+  CHgvsParser Parser(*Dummy);
 
-	int HgvsCount = 0;
-	while(m_LocalBuffer) {
-		string Line;
-		NcbiGetlineEOL(m_LocalBuffer, Line);
+  int HgvsCount = 0;
+  while(m_LocalBuffer) {
+  string Line;
+  NcbiGetlineEOL(m_LocalBuffer, Line);
 
-		if(m_LocalBuffer.eof() || Line.empty() || Line[0] == '#')
-			continue;
+  if(m_LocalBuffer.eof() || Line.empty() || Line[0] == '#')
+  continue;
 
-		NStr::ReplaceInPlace(Line, "\r", "");
-		NStr::ReplaceInPlace(Line, "\n", "");
+  NStr::ReplaceInPlace(Line, "\r", "");
+  NStr::ReplaceInPlace(Line, "\n", "");
 
-		bool Parsed;
-		try {
-			Parsed = Parser.CanParseHgvsExpression(Line);
-			//Feat = Parser.AsVariationFeat(Line);
-		} catch(CException&) {
-			break;
-		}
+  bool Parsed;
+  try {
+  Parsed = Parser.CanParseHgvsExpression(Line);
+  //Feat = Parser.AsVariationFeat(Line);
+  } catch(CException&) {
+  } catch(...) {
+  }
 
-		if(Parsed) 
-			HgvsCount++;
-	}
+  if(Parsed) 
+  HgvsCount++;
+  }
 
-	return (HgvsCount > 0);
-}
+  return (HgvsCount > 0);
+  }
 */
 
 
