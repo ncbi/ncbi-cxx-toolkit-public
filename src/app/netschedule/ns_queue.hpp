@@ -57,6 +57,7 @@
 #include "ns_notifications.hpp"
 #include "queue_clean_thread.hpp"
 #include "ns_statistics_thread.hpp"
+#include "ns_group.hpp"
 
 #include <deque>
 #include <map>
@@ -144,12 +145,14 @@ public:
     // Submit job, return numeric job id
     unsigned int  Submit(const CNSClientId &  client,
                          CJob &               job,
-                         const string &       aff_token);
+                         const string &       aff_token,
+                         const string &       group);
 
     /// Submit job batch
     /// @return ID of the first job, second is first_id+1 etc.
     unsigned SubmitBatch(const CNSClientId &             client,
-                         vector< pair<CJob, string> > &  batch);
+                         vector< pair<CJob, string> > &  batch,
+                         const string &                  group);
 
     TJobStatus  PutResult(const CNSClientId &  client,
                           time_t               curr,
@@ -198,6 +201,8 @@ public:
                        unsigned int         job_id);
 
     void CancelAllJobs(const CNSClientId &  client);
+    void CancelGroup(const CNSClientId &  client,
+                     const string &       group);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
@@ -212,12 +217,13 @@ public:
     /// get next job id (counter increment)
     unsigned int GetNextId();
     /// Returns first id for the batch
-    unsigned int GetNextIdBatch(unsigned count);
+    unsigned int GetNextJobIdForBatch(unsigned count);
 
     // Read-Confirm stage
     /// Request done jobs for reading with timeout
     void GetJobForReading(const CNSClientId &   client,
                           unsigned int          read_timeout,
+                          const string &        group,
                           CJob *                job);
     /// Confirm reading of these jobs
     TJobStatus  ConfirmReadingJob(const CNSClientId &   client,
@@ -273,6 +279,8 @@ public:
                                 bool                   verbose) const;
     void PrintAffinitiesList(CNetScheduleHandler &  handler,
                              bool                   verbose) const;
+    void PrintGroupsList(CNetScheduleHandler &  handler,
+                         bool                   verbose) const;
 
     /// Check execution timeout. Now checks reading timeout as well.
     /// All jobs failed to execute, go back to pending
@@ -295,6 +303,7 @@ public:
 
     unsigned int  DeleteBatch(void);
     unsigned int  PurgeAffinities(void);
+    unsigned int  PurgeGroups(void);
 
     CBDB_FileCursor& GetEventsCursor();
 
@@ -309,6 +318,7 @@ public:
                           unsigned                job_id);
     /// Dump all job records
     void PrintAllJobDbStat(CNetScheduleHandler &   handler,
+                           const string &          group,
                            TJobStatus              job_status,
                            unsigned int            start_after_job_id,
                            unsigned int            count);
@@ -320,6 +330,9 @@ public:
 
     string MakeKey(unsigned job_id) const
     { return m_KeyGenerator.GenerateV1(job_id); }
+    string MakeBatchKey(unsigned int  batch_id) const
+//    { return m_BatchKeyGenerator.GenerateV1(batch_id); }
+    { return "bla"; }
 
     void TouchClientsRegistry(CNSClientId &  client);
     void ResetRunningDueToClear(const CNSClientId &   client,
@@ -333,6 +346,9 @@ public:
 
     void PrintStatistics(size_t &  aff_count);
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
+    void PrintGroupStat(CNetScheduleHandler &  handler,
+                        const string &         group);
+    void PrintQueueStat(CNetScheduleHandler &  handler);
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
@@ -400,6 +416,13 @@ private:
     /// Erase jobs from all structures, request delayed db deletion
     void x_Erase(const TNSBitVector& job_ids);
 
+    void x_DumpJobs(CNetScheduleHandler &  handler,
+                    const TNSBitVector &   jobs_to_dump,
+                    unsigned int           start_after_job_id,
+                    unsigned int           count);
+    void x_CancelJobs(const CNSClientId &   client,
+                      const TNSBitVector &  jobs_to_cancel);
+
 private:
     friend class CJob;
     friend class CQueueEnumCursor;
@@ -440,7 +463,7 @@ private:
     unsigned int                m_LastId;      // Last used job ID
     unsigned int                m_SavedId;     // The ID we will start next time
                                                // the netschedule is loaded
-    CFastMutex                  m_lastIdLock;
+    CFastMutex                  m_LastIdLock;
 
     /// Lock for deleted jobs vectors
     CFastMutex                   m_JobsToDeleteLock;
@@ -471,7 +494,8 @@ private:
     /// Host access list for job execution (workers)
     CNetSchedule_AccessList      m_WnodeHosts;
 
-    CNetScheduleKeyGenerator     m_KeyGenerator;
+    CNetScheduleKeyGenerator        m_KeyGenerator;
+
     const bool &                 m_Log;
     const bool &                 m_LogBatchEachJob;
 
@@ -492,6 +516,9 @@ private:
     unsigned int                 m_NotifLofreqMult;
 
     unsigned int                 m_DumpBufferSize;
+
+    // Group registry
+    CNSGroupsRegistry            m_GroupRegistry;
 };
 
 
@@ -576,6 +603,9 @@ public:
 
         if (what_tables & eAffinityTable)
             queue->m_QueueDbBlock->aff_dict_db.SetTransaction(this);
+
+        if (what_tables & eGroupTable)
+            queue->m_QueueDbBlock->group_dict_db.SetTransaction(this);
     }
 };
 

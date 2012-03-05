@@ -58,6 +58,7 @@ struct SQueueDbBlock
     SJobInfoDB              job_info_db;
     SEventsDB               events_db;
     SAffinityDictDB         aff_dict_db;
+    SGroupDictDB            group_dict_db;
     SStartCounterDB         start_from_db;
 
 private:

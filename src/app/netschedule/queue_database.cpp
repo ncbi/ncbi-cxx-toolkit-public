@@ -1107,6 +1107,17 @@ void CQueueDataBase::PurgeAffinities(void)
 }
 
 
+void CQueueDataBase::PurgeGroups(void)
+{
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        (*it).PurgeGroups();
+        if (x_CheckStopPurge())
+            return;
+    }
+    return;
+}
+
+
 void CQueueDataBase::RunNotifThread(void)
 {
     // 10 times per second

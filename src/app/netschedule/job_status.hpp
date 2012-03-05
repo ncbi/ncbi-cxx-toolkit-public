@@ -114,9 +114,11 @@ public:
     /// Provides a job id (or 0 if none) which is in the given state and is not
     /// in the unwanted jobs list
     unsigned int  GetJobByStatus(TJobStatus            status,
-                                 const TNSBitVector &  unwanted_jobs) const;
+                                 const TNSBitVector &  unwanted_jobs,
+                                 const TNSBitVector &  group_jobs) const;
 
     TNSBitVector  GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
+    TNSBitVector  GetJobs(CNetScheduleAPI::EJobStatus  status) const;
 
     /// Logical AND of candidates and pending jobs
     /// (candidate_set &= pending_set)

@@ -109,6 +109,7 @@ void CJobQueueCleanerThread::x_DoJob(void)
     try {
         m_QueueDB.Purge();
         m_QueueDB.PurgeAffinities();
+        m_QueueDB.PurgeGroups();
     }
     catch (CBDB_ErrnoException &  ex) {
         if (ex.IsNoMem()) {

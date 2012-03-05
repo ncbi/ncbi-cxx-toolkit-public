@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 class CQueue;
 class CNetScheduleHandler;
 class CNSAffinityRegistry;
+class CNSGroupsRegistry;
 
 
 // Used to specify what to fetch and what to include into a transaction
@@ -55,8 +56,10 @@ enum EQueueJobTable {
     eJobInfoTable   = 2,
     eJobEventsTable = 4,
     eAffinityTable  = 8,
+    eGroupTable     = 16,
     eAllTables      = eJobTable | eJobInfoTable |
-                      eJobEventsTable | eAffinityTable
+                      eJobEventsTable | eAffinityTable |
+                      eGroupTable
 };
 
 
@@ -209,6 +212,8 @@ public:
 
     unsigned       GetMask() const
     { return m_Mask; }
+    unsigned       GetGroupId() const
+    { return m_GroupId; }
     const string&  GetClientIP() const
     { return m_ClientIP; }
     const string&  GetClientSID() const
@@ -266,6 +271,9 @@ public:
       m_Dirty |= fJobPart; }
     void           SetMask(unsigned mask)
     { m_Mask = mask;
+      m_Dirty |= fJobPart; }
+    void           SetGroupId(unsigned id)
+    { m_GroupId = id;
       m_Dirty |= fJobPart; }
 
     void           SetClientIP(const string& client_ip)
@@ -346,7 +354,8 @@ public:
 
     void Print(CNetScheduleHandler &        handler,
                const CQueue &               queue,
-               const CNSAffinityRegistry &  aff_registry) const;
+               const CNSAffinityRegistry &  aff_registry,
+               const CNSGroupsRegistry &    group_registry) const;
 
 private:
     // Service flags
@@ -371,6 +380,7 @@ private:
     string              m_ProgressMsg;
     unsigned            m_AffinityId;
     unsigned            m_Mask;
+    unsigned            m_GroupId;
 
     string              m_ClientIP;
     string              m_ClientSID;

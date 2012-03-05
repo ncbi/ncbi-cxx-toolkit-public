@@ -131,6 +131,7 @@ void CQueue::Attach(SQueueDbBlock* block)
     Detach();
     m_QueueDbBlock = block;
     m_AffinityRegistry.Attach(&m_QueueDbBlock->aff_dict_db);
+    m_GroupRegistry.Attach(&m_QueueDbBlock->group_dict_db);
 
     // Here we have a db, so we can read the counter value we should start from
     m_LastId = x_ReadStartFromCounter();
@@ -254,8 +255,9 @@ void CQueue::GetMaxIOSizes(unsigned int &  max_input_size,
 
 unsigned CQueue::LoadStatusMatrix()
 {
-    // Load the known affinities
+    // Load the known affinities and groups
     m_AffinityRegistry.LoadAffinityDictionary();
+    m_GroupRegistry.LoadGroupDictionary();
 
     // scan the queue, load the state machine from DB
     CBDB_FileCursor     cur(m_QueueDbBlock->job_db);
@@ -264,12 +266,13 @@ unsigned CQueue::LoadStatusMatrix()
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
 
-    unsigned    recs = 0;
+    unsigned int    recs = 0;
 
     for (; cur.Fetch() == eBDB_Ok; ) {
         unsigned int    job_id = m_QueueDbBlock->job_db.id;
+        unsigned int    group_id = m_QueueDbBlock->job_db.group_id;
+        unsigned int    aff_id = m_QueueDbBlock->job_db.aff_id;
         TJobStatus      status = TJobStatus(static_cast<int>(m_QueueDbBlock->job_db.status));
-
 
         m_StatusTracker.SetExactStatusNoLock(job_id, status, true);
 
@@ -286,9 +289,12 @@ unsigned CQueue::LoadStatusMatrix()
         }
 
         // Register the job for the affinity if so
-        if (m_QueueDbBlock->job_db.aff_id != 0)
-            m_AffinityRegistry.AddJobToAffinity(job_id,
-                                                m_QueueDbBlock->job_db.aff_id);
+        if (aff_id != 0)
+            m_AffinityRegistry.AddJobToAffinity(job_id, aff_id);
+
+        // Register the job in the group registry
+        if (group_id != 0)
+            m_GroupRegistry.AddJob(group_id, job_id);
 
         ++recs;
     }
@@ -296,6 +302,10 @@ unsigned CQueue::LoadStatusMatrix()
     // Make sure that there are no affinity IDs in the registry for which there
     // are no jobs and initialize the next affinity ID counter.
     m_AffinityRegistry.FinalizeAffinityDictionaryLoading();
+
+    // Make sure that there are no group IDs in the registry for which there
+    // are no jobs and initialize the next group ID counter.
+    m_GroupRegistry.FinalizeGroupDictionaryLoading();
 
     return recs;
 }
@@ -354,7 +364,8 @@ void CQueue::x_LogSubmit(const CJob &   job,
 
 unsigned int  CQueue::Submit(const CNSClientId &  client,
                              CJob &               job,
-                             const string &       aff_token)
+                             const string &       aff_token,
+                             const string &       group)
 {
     // the only config parameter used here is the max input size so there is no
     // need to have a safe parameters accessor.
@@ -363,6 +374,7 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
         NCBI_THROW(CNetScheduleException, eDataTooLong, "Input is too long");
 
     unsigned int    aff_id = 0;
+    unsigned int    group_id = 0;
     unsigned int    job_id = GetNextId();
     CJobEvent &     event = job.AppendEvent();
 
@@ -393,9 +405,12 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
         {{
             CNSTransaction      transaction(this);
 
+            if (!group.empty())
+                group_id = m_GroupRegistry.AddJob(group, job_id);
             aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token,
                                                              job_id, 0);
             job.SetAffinityId(aff_id);
+            job.SetGroupId(group_id);
             job.Flush(this);
 
             transaction.Commit();
@@ -420,20 +435,25 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
 
 
 unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
-                                  vector< pair<CJob, string> > &  batch)
+                                  vector< pair<CJob, string> > &  batch,
+                                  const string &                  group)
 {
     unsigned int    batch_size = batch.size();
-    unsigned int    job_id = GetNextIdBatch(batch_size);
+    unsigned int    job_id = GetNextJobIdForBatch(batch_size);
     TNSBitVector    affinities;
 
     {{
         unsigned int        job_id_cnt = job_id;
         time_t              curr_time = time(0);
+        unsigned int        group_id = 0;
 
         CFastMutexGuard     guard(m_OperationLock);
 
         {{
             CNSTransaction      transaction(this);
+
+            // This might create a new record in the DB
+            group_id = m_GroupRegistry.ResolveGroup(group);
 
             for (size_t  k = 0; k < batch_size; ++k) {
 
@@ -443,6 +463,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
 
                 job.SetId(job_id_cnt);
                 job.SetPassport(rand());
+                job.SetGroupId(group_id);
 
                 event.SetNodeAddr(client.GetAddress());
                 event.SetStatus(CNetScheduleAPI::ePending);
@@ -467,6 +488,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
             transaction.Commit();
         }}
 
+        m_GroupRegistry.AddJobs(group_id, job_id, batch_size);
         m_StatusTracker.AddPendingBatch(job_id, job_id + batch_size - 1);
         m_ClientsRegistry.AddToSubmitted(client, batch_size);
 
@@ -1014,6 +1036,7 @@ void CQueue::Truncate(void)
 
         m_StatusTracker.ClearAll(&bv);
         m_AffinityRegistry.ClearMemoryAndDatabase();
+        m_GroupRegistry.ClearMemoryAndDatabase();
 
         CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
         m_RunTimeLine->ReInit(0);
@@ -1088,10 +1111,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 
 void  CQueue::CancelAllJobs(const CNSClientId &  client)
 {
-    CJob                                job;
-    TNSBitVector                        jobs_to_cancel;
     vector<CNetScheduleAPI::EJobStatus> statuses;
-    time_t                              current_time = time(0);
 
     // All except cancelled
     statuses.push_back(CNetScheduleAPI::ePending);
@@ -1103,9 +1123,16 @@ void  CQueue::CancelAllJobs(const CNSClientId &  client)
     statuses.push_back(CNetScheduleAPI::eReadFailed);
 
     CFastMutexGuard     guard(m_OperationLock);
+    x_CancelJobs(client, m_StatusTracker.GetJobs(statuses));
+    return;
+}
 
-    jobs_to_cancel = m_StatusTracker.GetJobs(statuses);
 
+void CQueue::x_CancelJobs(const CNSClientId &   client,
+                          const TNSBitVector &  jobs_to_cancel)
+{
+    CJob                        job;
+    time_t                      current_time = time(0);
     TNSBitVector::enumerator    en(jobs_to_cancel.first());
     for (; en.valid(); ++en) {
         unsigned int    job_id = *en;
@@ -1115,7 +1142,7 @@ void  CQueue::CancelAllJobs(const CNSClientId &  client)
             CNSTransaction              transaction(this);
             if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
                 ERR_POST("Cannot fetch job " << MakeKey(job_id) <<
-                         " while cancelling all jobs in the queue");
+                         " while cancelling jobs");
                 continue;
             }
 
@@ -1149,6 +1176,15 @@ void  CQueue::CancelAllJobs(const CNSClientId &  client)
                                                 MakeKey(job_id));
     }
 
+    return;
+}
+
+
+void  CQueue::CancelGroup(const CNSClientId &  client,
+                          const string &       group)
+{
+    CFastMutexGuard     guard(m_OperationLock);
+    x_CancelJobs(client, m_GroupRegistry.GetJobs(group));
     return;
 }
 
@@ -1207,7 +1243,7 @@ bool CQueue::IsExpired()
 
 unsigned int CQueue::GetNextId()
 {
-    CFastMutexGuard     guard(m_lastIdLock);
+    CFastMutexGuard     guard(m_LastIdLock);
 
     // Job indexes are expected to start from 1,
     // the m_LastId is 0 at the very beginning
@@ -1225,9 +1261,10 @@ unsigned int CQueue::GetNextId()
 }
 
 
-unsigned int CQueue::GetNextIdBatch(unsigned int  count)
+// Reserves the given number of the job IDs
+unsigned int CQueue::GetNextJobIdForBatch(unsigned int  count)
 {
-    CFastMutexGuard     guard(m_lastIdLock);
+    CFastMutexGuard     guard(m_LastIdLock);
 
     // Job indexes are expected to start from 1 and be monotonously growing
     unsigned int    start_index = m_LastId;
@@ -1283,6 +1320,7 @@ unsigned int  CQueue::x_ReadStartFromCounter(void)
 
 void CQueue::GetJobForReading(const CNSClientId &   client,
                               unsigned int          read_timeout,
+                              const string &        group,
                               CJob *                job)
 {
     time_t              curr(time(0));
@@ -1290,9 +1328,15 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
     CFastMutexGuard     guard(m_OperationLock);
 
     TNSBitVector        unwanted_jobs = m_ClientsRegistry.GetBlacklistedJobs(client);
+    TNSBitVector        group_jobs;
+
+    if (!group.empty())
+        group_jobs = m_GroupRegistry.GetJobs(group);
+
     unsigned int        job_id = m_StatusTracker.GetJobByStatus(
                                                 CNetScheduleAPI::eDone,
-                                                unwanted_jobs);
+                                                unwanted_jobs,
+                                                group_jobs);
 
     if (!job_id)
         return;
@@ -1523,7 +1567,8 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
     if (any_affinity || (!aff_ids.any() && !wnode_affinity))
         return m_StatusTracker.GetJobByStatus(
                                     CNetScheduleAPI::ePending,
-                                    blacklisted_jobs);
+                                    blacklisted_jobs,
+                                    TNSBitVector());
 
     return 0;
 }
@@ -1808,6 +1853,13 @@ void CQueue::PrintAffinitiesList(CNetScheduleHandler &  handler,
 }
 
 
+void CQueue::PrintGroupsList(CNetScheduleHandler &  handler,
+                             bool                   verbose) const
+{
+    m_GroupRegistry.Print(this, handler, verbose);
+}
+
+
 void CQueue::CheckExecutionTimeout(bool  logging)
 {
     if (!m_RunTimeLine)
@@ -2033,6 +2085,10 @@ SPurgeAttributes  CQueue::CheckJobsExpiry(time_t             current_time,
                                                     result.job_id,
                                                     job.GetAffinityId());
 
+                // Check if the group registry should also be updated
+                if (job.GetGroupId() != 0)
+                    m_GroupRegistry.RemoveJob(job.GetGroupId(), result.job_id);
+
                 if (result.deleted >= attributes.deleted)
                     break;
             }
@@ -2176,6 +2232,18 @@ unsigned int  CQueue::PurgeAffinities(void)
 }
 
 
+unsigned int  CQueue::PurgeGroups(void)
+{
+    CFastMutexGuard     guard(m_OperationLock);
+    CNSTransaction      transaction(this);
+
+    unsigned int        del_count = m_GroupRegistry.CollectGarbage(100);
+    transaction.Commit();
+
+    return del_count;
+}
+
+
 void CQueue::x_DeleteJobEvents(unsigned int  job_id)
 {
     try {
@@ -2276,12 +2344,13 @@ size_t CQueue::PrintJobDbStat(CNetScheduleHandler &     handler,
             return 0;
     }}
 
-    job.Print(handler, *this, m_AffinityRegistry);
+    job.Print(handler, *this, m_AffinityRegistry, m_GroupRegistry);
     return 1;
 }
 
 
 void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
+                               const string &          group,
                                TJobStatus              job_status,
                                unsigned int            start_after_job_id,
                                unsigned int            count)
@@ -2313,6 +2382,20 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
         jobs_to_dump = m_StatusTracker.GetJobs(statuses);
     }}
 
+    // Check if a certain group has been specified
+    if (!group.empty())
+        jobs_to_dump &= m_GroupRegistry.GetJobs(group);
+
+    x_DumpJobs(handler, jobs_to_dump, start_after_job_id, count);
+    return;
+}
+
+
+void CQueue::x_DumpJobs(CNetScheduleHandler &   handler,
+                        const TNSBitVector &    jobs_to_dump,
+                        unsigned int            start_after_job_id,
+                        unsigned int            count)
+{
     // Skip the jobs which should not be dumped
     TNSBitVector::enumerator    en(jobs_to_dump.first());
     while (en.valid() && *en <= start_after_job_id)
@@ -2350,7 +2433,8 @@ void CQueue::PrintAllJobDbStat(CNetScheduleHandler &   handler,
             // Print what was read
             for (size_t  index = 0; index < read_jobs; ++index) {
                 handler.WriteMessage("");
-                buffer[index].Print(handler, *this, m_AffinityRegistry);
+                buffer[index].Print(handler, *this,
+                                    m_AffinityRegistry, m_GroupRegistry);
             }
 
             if (count != 0)
@@ -2652,6 +2736,56 @@ void CQueue::PrintTransitionCounters(CNetScheduleHandler &  handler)
 }
 
 
+void CQueue::PrintGroupStat(CNetScheduleHandler &  handler,
+                            const string &         group)
+{
+    size_t              jobs_per_state[g_ValidJobStatusesSize];
+
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+        TNSBitVector        group_jobs(m_GroupRegistry.GetJobs(group));
+
+        for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+            jobs_per_state[index] = (m_StatusTracker.GetJobs(g_ValidJobStatuses[index]) & group_jobs).count();
+        }
+    }}
+
+    size_t              total = 0;
+    for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+        handler.WriteMessage("OK:" + CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
+                             ": " + NStr::SizetToString(jobs_per_state[index]));
+        total += jobs_per_state[index];
+    }
+    handler.WriteMessage("OK:Total: " +
+                         NStr::SizetToString(total));
+    return;
+}
+
+
+void CQueue::PrintQueueStat(CNetScheduleHandler &  handler)
+{
+    size_t              jobs_per_state[g_ValidJobStatusesSize];
+
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+
+        for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+            jobs_per_state[index] = (m_StatusTracker.GetJobs(g_ValidJobStatuses[index])).count();
+        }
+    }}
+
+    size_t              total = 0;
+    for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+        handler.WriteMessage("OK:" + CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
+                             ": " + NStr::SizetToString(jobs_per_state[index]));
+        total += jobs_per_state[index];
+    }
+    handler.WriteMessage("OK:Total: " +
+                         NStr::SizetToString(total));
+    return;
+}
+
+
 void CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
                                         const string &       auth_token,
                                         time_t               curr,
@@ -2728,6 +2862,9 @@ bool  CQueue::x_UpdateDB_GetJobNoLock(const CNSClientId &  client,
         if (job.GetAffinityId() != 0)
             m_AffinityRegistry.RemoveJobFromAffinity(
                                     job_id, job.GetAffinityId());
+        if (job.GetGroupId() != 0)
+            m_GroupRegistry.RemoveJob(job.GetGroupId(), job_id);
+
         return false;
     }
 

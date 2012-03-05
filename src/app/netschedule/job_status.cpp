@@ -386,7 +386,8 @@ CJobStatusTracker::GetPendingJobFromSet(const TNSBitVector &  candidate_set)
 
 unsigned int
 CJobStatusTracker::GetJobByStatus(TJobStatus            status,
-                                  const TNSBitVector &  unwanted_jobs) const
+                                  const TNSBitVector &  unwanted_jobs,
+                                  const TNSBitVector &  group_jobs) const
 {
     CReadLockGuard      guard(m_Lock);
     TNSBitVector &      bv = *m_StatusStor[(int)status];
@@ -394,14 +395,17 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
     if (!bv.any())
         return 0;
 
-    TNSBitVector        bv_pending(bv);
+    TNSBitVector        candidates(bv);
 
-    bv_pending -= unwanted_jobs;
+    candidates -= unwanted_jobs;
+    if (group_jobs.any())
+        // Group restriction is provided
+        candidates &= group_jobs;
 
-    TNSBitVector::enumerator    en(bv_pending.first());
-    if (!en.valid())
+    if (!candidates.any())
         return 0;
-    return *en;
+
+    return *candidates.first();
 }
 
 
@@ -416,6 +420,14 @@ CJobStatusTracker::GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses
         jobs |= *m_StatusStor[(int)(*k)];
 
     return jobs;
+}
+
+
+TNSBitVector
+CJobStatusTracker::GetJobs(CNetScheduleAPI::EJobStatus  status) const
+{
+    CReadLockGuard      guard(m_Lock);
+    return *m_StatusStor[(int)status];
 }
 
 

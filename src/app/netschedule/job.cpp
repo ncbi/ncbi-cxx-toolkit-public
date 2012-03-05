@@ -37,6 +37,8 @@
 #include "ns_handler.hpp"
 #include "ns_command_arguments.hpp"
 #include "ns_affinity.hpp"
+#include "ns_group.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -219,7 +221,8 @@ CJob::CJob() :
     m_RunCount(0),
     m_ReadCount(0),
     m_AffinityId(0),
-    m_Mask(0)
+    m_Mask(0),
+    m_GroupId(0)
 {}
 
 
@@ -237,6 +240,7 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_ProgressMsg(""),
     m_AffinityId(0),
     m_Mask(request.job_mask),
+    m_GroupId(0),
     m_ClientIP(request.ip),
     m_ClientSID(request.sid),
     m_Output("")
@@ -311,6 +315,7 @@ static string  s_JobFieldNames[] = {
     "run_count",
     "read_count",
     "mask",
+    "group_id",
     "client_ip",
     "client_sid",
     "events",
@@ -352,17 +357,19 @@ string CJob::GetField(int index) const
         return NStr::IntToString(m_ReadCount);
     case 9:  // mask
         return NStr::IntToString(m_Mask);
-    case 10: // client_ip
+    case 10: // group id
+        return NStr::IntToString(m_GroupId);
+    case 11: // client_ip
         return m_ClientIP;
-    case 11: // client_sid
+    case 12: // client_sid
         return m_ClientSID;
-    case 12: // events
+    case 13: // events
         return NStr::SizetToString(m_Events.size());
-    case 13: // input
+    case 14: // input
         return m_Input;
-    case 14: // output
+    case 15: // output
         return m_Output;
-    case 15: // progress_msg
+    case 16: // progress_msg
         return m_ProgressMsg;
     }
     return "NULL";
@@ -443,6 +450,7 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     m_ReadCount     = job_db.read_counter;
     m_AffinityId    = job_db.aff_id;
     m_Mask          = job_db.mask;
+    m_GroupId       = job_db.group_id;
 
     m_ClientIP      = job_db.client_ip;
     m_ClientSID     = job_db.client_sid;
@@ -558,6 +566,7 @@ CJob::EJobFetchResult  CJob::FetchToTestExpiration(CQueue *      queue,
     m_Timeout    = job_db.timeout;
     m_RunTimeout = job_db.run_timeout;
     m_AffinityId = job_db.aff_id;
+    m_GroupId    = job_db.group_id;
 
     // EventsDB
     m_Events.clear();
@@ -616,6 +625,7 @@ bool CJob::Flush(CQueue* queue)
         job_db.read_counter   = m_ReadCount;
         job_db.aff_id         = m_AffinityId;
         job_db.mask           = m_Mask;
+        job_db.group_id       = m_GroupId;
 
         job_db.client_ip      = m_ClientIP;
         job_db.client_sid     = m_ClientSID;
@@ -702,7 +712,8 @@ bool CJob::ShouldNotify(time_t curr)
 // Used to DUMP a job
 void CJob::Print(CNetScheduleHandler &        handler,
                  const CQueue &               queue,
-                 const CNSAffinityRegistry &  aff_registry) const
+                 const CNSAffinityRegistry &  aff_registry,
+                 const CNSGroupsRegistry &    group_registry) const
 {
     time_t      timeout = m_Timeout;
     time_t      run_timeout = m_RunTimeout;
@@ -823,6 +834,14 @@ void CJob::Print(CNetScheduleHandler &        handler,
             "')");
     else
         handler.WriteMessage("OK:affinity: n/a");
+
+    if (m_GroupId != 0)
+        handler.WriteMessage("OK:", "group: " +
+            NStr::IntToString(m_GroupId) + " ('" +
+            NStr::PrintableString(group_registry.ResolveGroup(m_GroupId)) +
+            "')");
+    else
+        handler.WriteMessage("OK:group: n/a");
 
     handler.WriteMessage("OK:", "mask: " + NStr::IntToString(m_Mask));
     handler.WriteMessage("OK:", "input: '" + NStr::PrintableString(m_Input) + "'");

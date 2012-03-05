@@ -70,6 +70,7 @@ struct SNSCommandArguments
     string          aff_to_add;
     string          aff_to_del;
     string          start_after;
+    string          group;
 
     bool            any_affinity;
     bool            wnode_affinity;

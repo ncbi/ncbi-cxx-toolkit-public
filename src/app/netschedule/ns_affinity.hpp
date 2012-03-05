@@ -108,7 +108,6 @@ class CNSAffinityRegistry
 
         void  Attach(SAffinityDictDB *  aff_dict_db);
         void  Detach(void);
-        void  InitLastAffinityID(unsigned int  value);
 
         size_t        size(void) const;
         unsigned int  GetIDByToken(const string &  aff_token) const;
@@ -177,6 +176,7 @@ class CNSAffinityRegistry
         unsigned int            m_LastAffinityID;
         CFastMutex              m_LastAffinityIDLock;
         unsigned int            x_GetNextAffinityID(void);
+        void                    x_InitLastAffinityID(unsigned int  value);
 
         TNSBitVector            m_RegisteredAffinities;
                                                 // The identifiers of all the

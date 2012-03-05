@@ -63,7 +63,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_PurgeTimeout(0.1),
       m_MaxAffinities(10000),
       m_NodeID("not_initialized"),
-      m_SessionID(x_GenerateGUID())
+      m_SessionID("s" + x_GenerateGUID())
 {
     m_AtomicCommandNumber.Set(1);
     sm_netschedule_server = this;
@@ -280,7 +280,7 @@ bool CNetScheduleServer::InitNodeID(const string &  db_path)
             f.Close();
         } else {
             // No file, need to be created
-            m_NodeID = "ns_node_id_" + x_GenerateGUID();
+            m_NodeID = "n" + x_GenerateGUID();
 
             CFileIO     f;
             f.Open(node_id_file.GetPath(), CFileIO_Base::eCreate,

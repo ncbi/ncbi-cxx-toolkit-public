@@ -84,6 +84,9 @@ struct SJobDB : public CBDB_File
     CBDB_FieldUint4        aff_id;
     CBDB_FieldUint4        mask;
 
+    // Jobs group support
+    CBDB_FieldUint4        group_id;        ///< group ID. If 0 => not in a group.
+
     CBDB_FieldChar         input_overflow;  ///< Is input in JobInfo table
     CBDB_FieldChar         output_overflow; ///< Is output in JobInfo table
     CBDB_FieldLString      input;           ///< Input data
@@ -112,6 +115,8 @@ struct SJobDB : public CBDB_File
 
         BindData("aff_id",             &aff_id);
         BindData("mask",               &mask);
+
+        BindData("group_id",           &group_id);
 
 
         BindData("input_overflow",     &input_overflow);
@@ -197,6 +202,25 @@ struct SAffinityDictDB : public CBDB_File
         BindData("token", &token, kNetScheduleMaxDBDataSize);
     }
 };
+
+
+/// BDB table to store groups
+///
+/// @internal
+///
+struct SGroupDictDB : public CBDB_File
+{
+    CBDB_FieldUint4   group_id;      ///< Group token id
+    CBDB_FieldLString token;         ///< Group token
+
+    SGroupDictDB()
+    {
+        DisableNull();
+        BindKey("group_id", &group_id);
+        BindData("token", &token, kNetScheduleMaxDBDataSize);
+    }
+};
+
 
 /// BDB table for storing queue descriptions
 ///

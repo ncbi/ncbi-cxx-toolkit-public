@@ -117,8 +117,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     // STAT [ option : id ] -- "ALL"
     { "STAT",     { &CNetScheduleHandler::x_ProcessStatistics,
                     eNSCR_Any },
-        { { "option",  eNSPT_Id, eNSPA_Optional },
-          { "comment", eNSPT_Id, eNSPA_Optional } } },
+        { { "option",  eNSPT_Id,  eNSPA_Optional },
+          { "comment", eNSPT_Id,  eNSPA_Optional },
+          { "group",   eNSPT_Str, eNSPA_Optional } } },
     // MPUT job_key : id  progress_msg : str
     { "MPUT",     { &CNetScheduleHandler::x_ProcessPutMessage,
                     eNSCR_Queue },
@@ -134,7 +135,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "job_key",     eNSPT_Id,  eNSPA_Optional      },
           { "status",      eNSPT_Id,  eNSPA_Optional      },
           { "start_after", eNSPT_Id,  eNSPA_Optional      },
-          { "count",       eNSPT_Int, eNSPA_Optional, "0" } } },
+          { "count",       eNSPT_Int, eNSPA_Optional, "0" },
+          { "group",       eNSPT_Str, eNSPA_Optional } } },
     // QPRT status : id
     { "QPRT",     { &CNetScheduleHandler::x_ProcessPrintQueue,
                     eNSCR_Queue },
@@ -169,11 +171,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",          eNSPT_Str, eNSPA_Optional, "" },    // affinity_token
           { "msk",          eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",           eNSPT_Str, eNSPA_Optional, "" },
-          { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },
+          { "sid",          eNSPT_Str, eNSPA_Optional, "" },
+          { "group",        eNSPT_Str, eNSPA_Optional, "" } } },
     // CANCEL job_key : id
     { "CANCEL",   { &CNetScheduleHandler::x_ProcessCancel,
                     eNSCR_Submitter },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
+        { { "job_key", eNSPT_Id,  eNSPA_Optional },
+          { "group",   eNSPT_Str, eNSPA_Optional } } },
     // DROJ job_key : id
     { "DROJ",     { &CNetScheduleHandler::x_ProcessDropJob,
                     eNSCR_Submitter },
@@ -183,11 +187,13 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "port",         eNSPT_Int, eNSPA_Optional },
           { "timeout",      eNSPT_Int, eNSPA_Optional },
           { "ip",           eNSPT_Str, eNSPA_Optional, "" },
-          { "sid",          eNSPT_Str, eNSPA_Optional, "" } } },
+          { "sid",          eNSPT_Str, eNSPA_Optional, "" },
+          { "group",        eNSPT_Str, eNSPA_Optional, "" } } },
     // READ [ timeout : int ] -> job key
     { "READ",     { &CNetScheduleHandler::x_ProcessReading,
                     eNSCR_Submitter },
-        { { "timeout", eNSPT_Int, eNSPA_Optional, "0" } } },
+        { { "timeout", eNSPT_Int, eNSPA_Optional, "0" },
+          { "group",   eNSPT_Str, eNSPA_Optional, "" } } },
     // CFRM group : int jobs : str
     { "CFRM",     { &CNetScheduleHandler::x_ProcessConfirm,
                     eNSCR_Submitter },
@@ -354,6 +360,8 @@ CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
     : m_MsgBufferSize(kInitialMessageBufferSize),
       m_MsgBuffer(new char[kInitialMessageBufferSize]),
       m_Server(server),
+      m_BatchSize(0),
+      m_BatchPos(0),
       m_SingleCmdParser(sm_CommandMap),
       m_BatchHeaderParser(sm_BatchHeaderMap),
       m_BatchEndParser(sm_BatchEndMap)
@@ -685,6 +693,7 @@ void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
     // This is done to avoid copying parsed parameters and to have exactly one
     // diagnostics extra with both auth parameters and queue name.
     s_ReadBufToString(buffer, m_RawAuthString);
+ERR_POST("x_ProcessMsgAuth: " + m_RawAuthString);
 
     // Check if it was systems probe...
     if (strncmp(m_RawAuthString.c_str(), "GET / HTTP/1.", 13) == 0) {
@@ -705,6 +714,7 @@ void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
 void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
 {
     s_ReadBufToString(buffer, m_QueueName);
+ERR_POST("x_ProcessMsgQueue: " + m_QueueName);
 
     // Parse saved raw authorization string and produce log output
     TNSProtoParams      params;
@@ -812,6 +822,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     string          msg;
     try {
         s_ReadBufToString(buffer, msg);
+ERR_POST("x_ProcessMsgRequest: " + msg);
         cmd = m_SingleCmdParser.ParseCommand(msg);
         x_PrintRequestStart(cmd);
     }
@@ -1066,7 +1077,9 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
 
         // we have our batch now
         CStopWatch  sw(CStopWatch::eStart);
-        unsigned    job_id = GetQueue()->SubmitBatch(m_ClientId, m_BatchJobs);
+        unsigned    job_id = GetQueue()->SubmitBatch(m_ClientId,
+                                                     m_BatchJobs,
+                                                     m_BatchGroup);
         double      db_elapsed = sw.Elapsed();
 
         if (m_Server->IsLog())
@@ -1189,7 +1202,8 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
     }
 
     WriteMessage("OK:", q->MakeKey(q->Submit(m_ClientId, job,
-                                             m_CommandArguments.affinity_token)));
+                                             m_CommandArguments.affinity_token,
+                                             m_CommandArguments.group)));
 
     // There is no need to log the job key, it is logged at lower level
     // together with all the submitted job parameters
@@ -1206,6 +1220,7 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
     else
         NS_FormatIPAddress(m_ClientId.GetAddress(), m_BatchClientIP);
     m_BatchClientSID   = m_CommandArguments.sid;
+    m_BatchGroup       = m_CommandArguments.group;
     WriteMessage("OK:Batch submit ready");
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgBatchHeader;
 }
@@ -1237,6 +1252,35 @@ void CNetScheduleHandler::x_ProcessBatchSequenceEnd(CQueue*)
 
 void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 {
+    // Job key or a group must be given
+    if (m_CommandArguments.job_id == 0 && m_CommandArguments.group.empty()) {
+        x_WriteMessageNoThrow("ERR:eInvalidParameter:"
+                              "Job key or group must be given");
+        LOG_POST(Message << Warning << "CANCEL must have a job key or a group");
+        x_PrintRequestStop(eStatus_BadRequest);
+        return;
+    }
+
+    if (m_CommandArguments.job_id != 0 && !m_CommandArguments.group.empty()) {
+        x_WriteMessageNoThrow("ERR:eInvalidParameter:"
+                              "CANCEL can accept a job key or "
+                              "a group but not both");
+        LOG_POST(Message << Warning << "CANCEL must have only one "
+                                       "argument - a job key or a group");
+        x_PrintRequestStop(eStatus_BadRequest);
+        return;
+    }
+
+    // Here: one argument is given - a job key or a group
+    if (!m_CommandArguments.group.empty()) {
+        // CANCEL for a group
+        q->CancelGroup(m_ClientId, m_CommandArguments.group);
+        WriteMessage("OK:");
+        x_PrintRequestStop(eStatus_OK);
+        return;
+    }
+
+    // Here: CANCEL for a job
     switch (q->Cancel(m_ClientId, m_CommandArguments.job_id)) {
         case CNetScheduleAPI::eJobNotFound:
             x_WriteMessageNoThrow("OK:WARNING:Job not found;");
@@ -1822,7 +1866,8 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
             return;
         }
 
-        q->PrintAllJobDbStat(*this, m_CommandArguments.job_status,
+        q->PrintAllJobDbStat(*this, m_CommandArguments.group,
+                                    m_CommandArguments.job_status,
                                     m_CommandArguments.start_after_job_id,
                                     m_CommandArguments.count);
         WriteMessage("OK:END");
@@ -1975,7 +2020,9 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 
     CJob            job;
 
-    q->GetJobForReading(m_ClientId, m_CommandArguments.timeout, &job);
+    q->GetJobForReading(m_ClientId, m_CommandArguments.timeout,
+                                    m_CommandArguments.group,
+                                    &job);
 
     unsigned int    job_id = job.GetId();
     string          job_key;
@@ -2257,17 +2304,16 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
     else if (what == "AFFINITIES")
         q->PrintAffinitiesList(*this,
                                m_CommandArguments.comment == "VERBOSE");
+    else if (what == "GROUPS")
+        q->PrintGroupsList(*this,
+                           m_CommandArguments.comment == "VERBOSE");
     else if (what == "JOBS") {
-        size_t      total = 0;
-        for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
-                TJobStatus      st = g_ValidJobStatuses[k];
-                size_t          count = q->CountStatus(st);
-
-                total += count;
-                WriteMessage("OK:", CNetScheduleAPI::StatusToString(st) +
-                                    ": " + NStr::SizetToString(count));
-        } // for
-        WriteMessage("OK:Total: ", NStr::SizetToString(total));
+        if (!m_CommandArguments.group.empty())
+            // STAT JOBS for a group
+            q->PrintGroupStat(*this, m_CommandArguments.group);
+        else
+            // STAT JOBS for the queue
+            q->PrintQueueStat(*this);
     }
     else if (what == "WNODE") {
         WriteMessage("OK:WARNING:Obsolete, use STAT CLIENTS instead;");

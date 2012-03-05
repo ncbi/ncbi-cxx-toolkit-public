@@ -228,6 +228,7 @@ private:
     unsigned                        m_BatchPos;
     CStopWatch                      m_BatchStopWatch;
     vector< pair<CJob, string> >    m_BatchJobs;    // Job + aff_token
+    string                          m_BatchGroup;
     unsigned                        m_BatchSubmPort;
     unsigned                        m_BatchSubmTimeout;
     std::string                     m_BatchClientIP;

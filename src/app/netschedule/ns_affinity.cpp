@@ -83,7 +83,7 @@ void CNSAffinityRegistry::Detach(void)
 }
 
 
-void  CNSAffinityRegistry::InitLastAffinityID(unsigned int  value)
+void  CNSAffinityRegistry::x_InitLastAffinityID(unsigned int  value)
 {
     CFastMutexGuard     guard(m_LastAffinityIDLock);
     m_LastAffinityID = value;
@@ -590,6 +590,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
 // FinalizeAffinityDictionaryLoading() call.
 void  CNSAffinityRegistry::LoadAffinityDictionary(void)
 {
+    CWriteLockGuard     guard(m_Lock);
     CBDB_FileCursor     cur(*m_AffDictDB);
 
     cur.InitMultiFetch(1024*1024);
@@ -621,9 +622,13 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
     map< unsigned int,
          SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
 
-    if (found == m_JobsAffinity.end())
+    if (found == m_JobsAffinity.end()) {
         // It is likely an internal error
+        ERR_POST("Internal error while loading affinity registry. "
+                 "The affinity with id " + NStr::UIntToString(aff_id) +
+                 " is not found in the loaded dictionary.");
         return;
+    }
 
     found->second.m_Jobs.set(job_id, true);
     return;
@@ -637,41 +642,25 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
 // those which survived.
 void  CNSAffinityRegistry::FinalizeAffinityDictionaryLoading(void)
 {
-    vector< unsigned int >              to_delete;
     unsigned int                        max_aff_id = 0;
     CWriteLockGuard                     guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::iterator    candidate = m_JobsAffinity.begin();
     for ( ; candidate != m_JobsAffinity.end(); ++candidate ) {
-        if (!candidate->second.m_Jobs.any())
-            to_delete.push_back(candidate->first);
-        else {
-            if (candidate->first > max_aff_id)
-                max_aff_id = candidate->first;
+        if (candidate->first > max_aff_id)
+            // It is safer to have next id advanced regardless whether the
+            // record is deleted or not
+            max_aff_id = candidate->first;
+
+        if (candidate->second.CanBeDeleted()) {
+            // Garbage collector will pick it up
+            m_RegisteredAffinities.set(candidate->first, false);
+            m_RemoveCandidates.set(candidate->first, true);
         }
     }
 
-    // Delete those records for which there are no jobs
-    map< const string *,
-         unsigned int,
-         SNSTokenCompare >::iterator        aff_tok;
-    for (vector< unsigned int >::const_iterator  aff_id = to_delete.begin();
-         aff_id != to_delete.end(); ++aff_id) {
-        candidate = m_JobsAffinity.find(*aff_id);
-        if (candidate == m_JobsAffinity.end())
-            // Though it is likely an internal error
-            continue;
-        aff_tok = m_AffinityIDs.find(candidate->second.m_AffToken);
-        if (aff_tok != m_AffinityIDs.end())
-            m_AffinityIDs.erase(aff_tok);
-        delete candidate->second.m_AffToken;
-        m_JobsAffinity.erase(candidate);
-
-        m_RegisteredAffinities.set(*aff_id, false);
-    }
-
     // Update the affinity id
-    InitLastAffinityID(max_aff_id);
+    x_InitLastAffinityID(max_aff_id);
     return;
 }
 
@@ -696,18 +685,17 @@ unsigned int  CNSAffinityRegistry::CollectGarbage(unsigned int  max_to_del)
     CWriteLockGuard             guard(m_Lock);
     TNSBitVector::enumerator    en(m_RemoveCandidates.first());
     for ( ; en.valid(); ++en) {
-        unsigned int                        aff_id = *en;
+        unsigned int        aff_id = *en;
+
+        m_RemoveCandidates.set(aff_id, false);
+
         map< unsigned int,
              SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
-
-        if (found == m_JobsAffinity.end()) {
-            m_RemoveCandidates.set(aff_id, false);
+        if (found == m_JobsAffinity.end())
             continue;
-        }
 
         if (found->second.CanBeDeleted()) {
             x_DeleteAffinity(aff_id, found);
-            m_RemoveCandidates.set(aff_id, false);
             ++del_count;
             if (del_count >= max_to_del)
                 break;

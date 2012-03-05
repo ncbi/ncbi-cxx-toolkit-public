@@ -86,6 +86,13 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
         aff_dict_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
 
         if (group_tables_for_queue)
+            tname = "groupdict";
+        else
+            fname = prefix + "_groupdict.db";
+        group_dict_db.SetEnv(env);
+        group_dict_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
+
+        if (group_tables_for_queue)
             tname = "start_from";
         else
             fname = prefix + "_start_from.idx";
@@ -115,6 +122,7 @@ void SQueueDbBlock::x_InitStartCounter(void)
 void SQueueDbBlock::Close()
 {
     start_from_db.Close();
+    group_dict_db.Close();
     aff_dict_db.Close();
     events_db.Close();
     job_info_db.Close();
@@ -125,6 +133,7 @@ void SQueueDbBlock::Close()
 void SQueueDbBlock::Truncate()
 {
     start_from_db.SafeTruncate();
+    group_dict_db.SafeTruncate();
     aff_dict_db.SafeTruncate();
     events_db.SafeTruncate();
     job_info_db.SafeTruncate();

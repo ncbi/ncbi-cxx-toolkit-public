@@ -67,6 +67,7 @@ void SNSCommandArguments::x_Reset()
     aff_to_add.erase();
     aff_to_del.erase();
     start_after.erase();
+    group.erase();
 
     any_affinity = false;
     wnode_affinity = false;
@@ -126,6 +127,10 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
             if (key == "err_msg")
                 err_msg = val;
             break;
+        case 'g':
+            if (key == "group")
+                group = val;
+            break;
         case 'i':
             if (key == "input")
                 input = val;
@@ -139,7 +144,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
                     job_id = CNetScheduleKey(val).id;
                 if (job_id == 0)
                     NCBI_THROW(CNetScheduleException,
-                               eInvalidParameter, "Invalid job ID");
+                               eInvalidParameter, "Invalid job key");
             }
             else if (key == "job_return_code")
                 job_return_code = NStr::StringToInt(val, NStr::fConvErr_NoThrow);
