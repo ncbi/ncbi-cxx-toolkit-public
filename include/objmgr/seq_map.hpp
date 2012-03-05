@@ -259,9 +259,6 @@ protected:
         bool                 m_RefMinusStrand;
         TSeqPos              m_RefPosition;
         CConstRef<CObject>   m_RefObject; // CSeq_data, CSeqMap, CSeq_id
-
-        typedef list<TSeqPos>::iterator TList0_I;
-        TList0_I m_Iterator;
     };
 
     class SPosLessSegment
