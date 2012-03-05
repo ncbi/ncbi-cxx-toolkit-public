@@ -403,6 +403,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     void SetPreComputedResID(string preComputedResID) {
         m_PreComputedResID = preComputedResID;
     }
+
     /// static functions
     ///Need to call this if the seqalign is stdseg or dendiag for ungapped
     ///blast alignment display as each stdseg ro dendiag is a distinct
@@ -412,6 +413,14 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     ///
     static CRef < objects::CSeq_align_set >
     PrepareBlastUngappedSeqalign(const objects::CSeq_align_set & alnset);
+
+    /// static functions
+    /// same as PrepareBlastUngappedSeqalign, but process seg scores uniformly even if there is only a single seg.
+    ///@param alnset: input alnset
+    ///@return processed alnset
+    ///
+    static CRef < objects::CSeq_align_set >
+    PrepareBlastUngappedSeqalignEx(const objects::CSeq_align_set & alnset);
 
     void SetAlignTemplates(SAlignTemplates *alignTemplates) {m_AlignTemplates = alignTemplates;}    
     
