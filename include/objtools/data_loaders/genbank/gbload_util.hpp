@@ -272,7 +272,7 @@ public:
         }
 #else
         pair<TIndexIter, bool> ins =
-            m_Index.insert(TIndexValue(key, TQueueIter()));
+            m_Index.insert(TIndexValue(key, m_Queue.end()));
         _ASSERT(ins.first->first == key);
         if ( ins.second ) {
             // new slot
