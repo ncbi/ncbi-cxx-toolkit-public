@@ -183,8 +183,11 @@ void CServer_ConnectionPool::PingControlConnection(void)
 void CServer_ConnectionPool::CloseConnection(TConnBase* conn)
 {
     conn->type_lock.Lock();
-    if (conn->type != eActiveSocket)
+    if (conn->type != eActiveSocket  &&  conn->type != ePreDeferredSocket
+        &&  conn->type != ePreClosedSocket)
+    {
         abort();
+    }
     conn->type = ePreClosedSocket;
     conn->type_lock.Unlock();
 
