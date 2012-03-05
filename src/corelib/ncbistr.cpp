@@ -4091,7 +4091,6 @@ string NStr::URLEncode(const CTempString& str, EUrlEncode flag)
         if (encode_table[cstr[pos]][0] == '%')
             dst_len += 2;
     }
-    dst.reserve(dst_len + 1);
     dst.resize(dst_len);
 
     SIZE_TYPE p = 0;
@@ -4106,7 +4105,6 @@ string NStr::URLEncode(const CTempString& str, EUrlEncode flag)
         }
     }
     _ASSERT( p == dst_len );
-    dst[dst_len] = '\0';
     return dst;
 }
 
@@ -4172,7 +4170,6 @@ void s_URLDecode(const CTempString& src, string& dst, NStr::EUrlDecode flag)
         }
     }
     if (pdst < len) {
-        dst[pdst] = '\0';
         dst.resize(pdst);
     }
 }
