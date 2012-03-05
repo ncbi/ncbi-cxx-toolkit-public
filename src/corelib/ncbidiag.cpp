@@ -3783,11 +3783,13 @@ bool SDiagMessage::ParseMessage(const string& message)
         if (pos < sep_pos) {
             // Class:: Class::Function() ::Function()
             if (message.find("::", pos) != NPOS) {
-                tmp = s_ParseStr(message, pos, ' ');
+                size_t tmp_pos = pos;
+                tmp = s_ParseStr(message, tmp_pos, ' ');
                 size_t dcol = tmp.find("::");
                 if (dcol == NPOS) {
-                    return false;
+                    goto parse_unk_func;
                 }
+                pos = tmp_pos;
                 if (dcol > 0) {
                     m_Data->m_Class = tmp.substr(0, dcol);
                     m_Class = m_Data->m_Class.empty() ?
@@ -3806,6 +3808,7 @@ bool SDiagMessage::ParseMessage(const string& message)
                 }
             }
             else {
+parse_unk_func:
                 size_t unkf = message.find("UNK_FUNC", pos);
                 if (unkf == pos) {
                     pos += 9;
