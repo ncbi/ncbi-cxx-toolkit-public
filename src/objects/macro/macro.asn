@@ -1301,6 +1301,12 @@ Create-TSA-ids-action ::= SEQUENCE {
 Autofix-action ::= SEQUENCE {
   test-name VisibleString }
 
+Fix-sets-action ::= CHOICE {
+  remove-single-item-set NULL ,
+  renormalize-nuc-prot-sets NULL ,
+  fix-pop-to-phy NULL
+}
+
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
   parse Parse-action ,
@@ -1333,7 +1339,8 @@ Macro-action-choice ::= CHOICE {
   add-trans-splicing NULL ,
   remove-invalid-ecnumbers NULL ,
   create-tsa-ids Create-TSA-ids-action ,
-  perform-autofix Autofix-action }
+  perform-autofix Autofix-action ,
+  fix-sets Fix-sets-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
