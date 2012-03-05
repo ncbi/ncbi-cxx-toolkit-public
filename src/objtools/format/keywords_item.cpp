@@ -263,7 +263,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
-    if( ctx.GetUnverifiedType() != CBioseqContext::eUnverified_None ) {
+    if( ctx.GetUnverifiedType() != CBioseqContext::fUnverified_None ) {
         x_AddKeyword("UNVERIFIED");
     }
 

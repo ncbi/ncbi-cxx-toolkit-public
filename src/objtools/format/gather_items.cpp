@@ -814,27 +814,45 @@ bool s_HasRefTrackStatus(const CBioseq_Handle& bsh) {
 
 void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
 {
-    static const string kUnverifiedSequenceOrAnnotationNote = 
-        "GenBank staff is unable to verify sequence and/or annotation provided by the submitter.";
-    static const string kUnverifiedOrganism = 
-        "GenBank staff is unable to verify source organism provided by the submitter.";
-    static const string kUnverifiedUnknown = 
-        "GenBank staff is unable to verify something [ERROR:what?] provided by the submitter.";
-
-    switch( ctx.GetUnverifiedType() ) {
-        case CBioseqContext::eUnverified_None:
-            // nothing to do
-            break;
-        case CBioseqContext::eUnverified_SequenceOrAnnotation:
-            x_AddComment( new CCommentItem(kUnverifiedSequenceOrAnnotationNote, ctx) );
-            break;
-        case CBioseqContext::eUnverified_Organism:
-            x_AddComment( new CCommentItem(kUnverifiedOrganism, ctx) );
-            break;
-        default:
-            x_AddComment( new CCommentItem(kUnverifiedUnknown, ctx) );
-            break;
+    if( ctx.GetUnverifiedType() == CBioseqContext::fUnverified_None ) {
+        return;
     }
+
+    static const string kUnverifiedPrefix = "GenBank staff is unable to verify ";
+    static const string kUnverifiedSuffix = " provided by the submitter.";
+
+    typedef pair<CBioseqContext::TUnverified, const string>  TUnverifiedElem;
+    static const TUnverifiedElem sc_unverified_map[] = {
+        TUnverifiedElem(CBioseqContext::fUnverified_Organism,              "source organism"),
+        TUnverifiedElem(CBioseqContext::fUnverified_SequenceOrAnnotation,  "sequence and/or annotation")
+    };
+    typedef CStaticArrayMap<CBioseqContext::TUnverified, const string> TUnverifiedMap;
+    DEFINE_STATIC_ARRAY_MAP(TUnverifiedMap, sc_UnverifiedMap, sc_unverified_map);
+
+    vector<string> arr_type_string;
+    ITERATE( TUnverifiedMap, map_iter, sc_UnverifiedMap ) {
+        if( (ctx.GetUnverifiedType() & map_iter->first) != 0 ) {
+            arr_type_string.push_back(map_iter->second);
+        }
+    }
+
+    string type_string;
+    for( size_t ii = 0; ii < arr_type_string.size(); ++ii ) {
+        if( ii == 0 ) {
+            // do nothing; no prefix
+        } else if( ii == (arr_type_string.size() - 1) ) {
+            type_string += " and ";
+        } else {
+            type_string += ", ";
+        }
+        type_string += arr_type_string[ii];
+    }
+
+    if( type_string.empty() ) {
+        type_string = "[ERROR:what?]";
+    }
+
+    x_AddComment( new CCommentItem(kUnverifiedPrefix + type_string + kUnverifiedSuffix, ctx) );
 }
 
 void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const

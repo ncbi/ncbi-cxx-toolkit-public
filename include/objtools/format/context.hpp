@@ -192,12 +192,16 @@ public:
     bool IsGenomeAssembly(void) const;
 
     NCBI_DEPRECATED bool IsUnverified(void) const;
-    enum EUnverified {
-        eUnverified_None = 1,
-        eUnverified_SequenceOrAnnotation,
-        eUnverified_Organism
+    enum FUnverified {
+        fUnverified_None = 0, // for convenience
+
+        fUnverified_Organism              = 1 << 0,
+        fUnverified_SequenceOrAnnotation  = 1 << 1
+        // if you add more here, make sure 
+        // to update CFlatGatherer::x_UnverifiedComment
     };
-    EUnverified GetUnverifiedType(void) const;
+    typedef Int8 TUnverified;
+    TUnverified GetUnverifiedType(void) const;
 
 
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
@@ -291,7 +295,7 @@ private:
     bool m_HasOperon;
     bool m_HasMultiIntervalGenes;
     bool m_IsGenomeAssembly;
-    EUnverified m_eUnverified;
+    TUnverified m_fUnverified;
 
     CConstRef<CUser_object> m_Encode;
     
@@ -529,13 +533,13 @@ bool CBioseqContext::IsGenomeAssembly(void) const
 inline
 bool CBioseqContext::IsUnverified(void) const
 {
-    return ( m_eUnverified != eUnverified_None );
+    return ( m_fUnverified != fUnverified_None );
 }
 
 inline
-CBioseqContext::EUnverified CBioseqContext::GetUnverifiedType(void) const
+CBioseqContext::TUnverified CBioseqContext::GetUnverifiedType(void) const
 {
-    return m_eUnverified;
+    return m_fUnverified;
 }
 
 inline

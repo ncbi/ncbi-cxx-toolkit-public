@@ -108,7 +108,7 @@ CBioseqContext::CBioseqContext
     m_HasOperon(false),
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
-    m_eUnverified(eUnverified_None),
+    m_fUnverified(fUnverified_None),
     m_FFCtx(ffctx),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
@@ -159,7 +159,7 @@ CBioseqContext::CBioseqContext
     m_HasOperon(false),
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
-    m_eUnverified(eUnverified_None),
+    m_fUnverified(fUnverified_None),
     m_FFCtx(ffctx),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
@@ -402,8 +402,6 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                     }
                 }
             } else if(NStr::EqualNocase(uo.GetType().GetStr(), "Unverified")) {
-                m_eUnverified = eUnverified_SequenceOrAnnotation;
-                // see if it's an alternate kind of unverified
                 if( uo.IsSetData() ) {
                     ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
                         const CUser_field &field = **field_iter;
@@ -417,9 +415,15 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                             continue;
                         }
                         if( NStr::EqualNocase( field.GetData().GetStr(), "Organism") ) {
-                            m_eUnverified = eUnverified_Organism;
+                            m_fUnverified |= fUnverified_Organism;
+                        } else if( NStr::EqualNocase( field.GetData().GetStr(), "Features") ) {
+                            m_fUnverified |= fUnverified_SequenceOrAnnotation;
                         }
                     }
+                }
+                // default in the past was to use feature
+                if( m_fUnverified == fUnverified_None ) {
+                    m_fUnverified = fUnverified_SequenceOrAnnotation;
                 }
             }
         }
