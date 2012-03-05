@@ -123,9 +123,56 @@ class CAlnMixMatch : public CObject
 {
 public:
     CAlnMixMatch(void)
-        : m_Score(0), m_ChainScore(0), m_Start1(0), m_Start2(0),
+        : m_Score(0), m_ChainScore(0),
+          m_AlnSeq1(0), m_AlnSeq2(0),
+          m_Start1(0), m_Start2(0),
           m_Len(0), m_StrandsDiffer(false), m_DsIdx(0)
-    {};
+    {}
+    CAlnMixMatch(const CAlnMixMatch& match)
+        : m_Score(0), m_ChainScore(0),
+          m_AlnSeq1(0), m_AlnSeq2(0),
+          m_Start1(0), m_Start2(0),
+          m_Len(0), m_StrandsDiffer(false), m_DsIdx(0)
+    {
+        *this = match;
+    }
+    CAlnMixMatch& operator=(const CAlnMixMatch& match)
+    {
+        if ( this != &match ) {
+            m_Score = match.m_Score;
+            m_ChainScore = match.m_ChainScore;
+            m_AlnSeq1 = match.m_AlnSeq1;
+            m_AlnSeq2 = match.m_AlnSeq2;
+            m_Start1 = match.m_Start1;
+            m_Start2 = match.m_Start2;
+            m_Len = match.m_Len;
+            m_StrandsDiffer = match.m_StrandsDiffer;
+            m_DsIdx = match.m_DsIdx;
+            if ( m_AlnSeq1 )
+                m_MatchIter1 = match.m_MatchIter1;
+            if ( m_AlnSeq2 )
+                m_MatchIter2 = match.m_MatchIter2;
+        }
+        return *this;
+    }
+
+    bool IsGood(const CAlnMixSeq::TMatchList& list,
+                CAlnMixSeq::TMatchList::const_iterator iter) const
+    {
+        ITERATE ( CAlnMixSeq::TMatchList, it, list ) {
+            if ( iter == it )
+                return true;
+        }
+        return iter == list.end();
+    }
+    bool IsGood(void) const
+    {
+        if ( m_AlnSeq1 && !IsGood(m_AlnSeq1->m_MatchList, m_MatchIter1) )
+            return false;
+        if ( m_AlnSeq2 && !IsGood(m_AlnSeq2->m_MatchList, m_MatchIter2) )
+            return false;
+        return true;
+    }
         
     int                              m_Score, m_ChainScore;
     CAlnMixSeq                       * m_AlnSeq1, * m_AlnSeq2;

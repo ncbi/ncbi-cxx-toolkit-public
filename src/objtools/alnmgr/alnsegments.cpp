@@ -320,10 +320,10 @@ CAlnMixSegments::FillUnalignedRegions()
                     row->SetStarts()[new_start] = seg;
                     CAlnMixStarts::iterator start_i =
                         start_its_i->second;
-                    seg->m_StartIts[row] = 
-                        row->m_PositiveStrand ?
-                        --start_i :
-                        ++start_i;
+                    seg->SetStartIterator(row,
+                                          row->m_PositiveStrand ?
+                                          --start_i :
+                                          ++start_i);
                             
                     seg_i = m_Segments.insert(seg_i, seg);
                     seg_i++;
@@ -416,7 +416,7 @@ CAlnMixSegments::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
             // consolidate the ones so far
             
             // add the new row
-            seg1->m_StartIts[seq2] = seg2->m_StartIts.begin()->second;
+            seg1->SetStartIterator(seq2, seg2->m_StartIts.begin()->second);
             
             // point the row's start position to the beginning seg
             seg2->m_StartIts.begin()->second->second = seg1;
@@ -521,7 +521,7 @@ CAlnMixSegments::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
 
                         // create the bindings:
                         seq->SetStarts()[this_start] = seg;
-                        seg->m_StartIts[seq] = seq->SetStarts().find(this_start);
+                        seg->SetStartIterator(seq, seq->SetStarts().find(this_start));
                         len_i++;
                         len_so_far += seg->m_Len;
                     }

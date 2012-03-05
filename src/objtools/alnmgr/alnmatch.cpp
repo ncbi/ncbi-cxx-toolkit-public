@@ -211,11 +211,11 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
 
                         if (row1 == first_non_gapped_row_found) {
                             CRef<CAlnMixMatch> match(new CAlnMixMatch);
-                            m_Matches.push_back(match);
-
                             match->m_AlnSeq1 = ds_seq[row1];
+                            match->m_MatchIter1 = match->m_AlnSeq1->m_MatchList.end();
                             match->m_Start1 = start1;
                             match->m_AlnSeq2 = ds_seq[row2];
+                            match->m_MatchIter2 = match->m_AlnSeq2->m_MatchList.end();
                             match->m_Start2 = start2;
                             match->m_Len = len;
                             match->m_DsIdx = m_DsCnt;
@@ -230,8 +230,10 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                                 }
                             }
                             match->m_Score = score;
+                            _ASSERT(match->IsGood());
+                            m_Matches.push_back(match);
+                            _ASSERT(match->IsGood());
                         }
-
                     }
                 }
                 if (single_chunk) {
@@ -239,12 +241,14 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
                     CRef<CAlnMixMatch> match(new CAlnMixMatch);
                     match->m_Score = 0;
                     match->m_AlnSeq1 = ds_seq[row1];
+                    match->m_MatchIter1 = match->m_AlnSeq1->m_MatchList.end();
                     match->m_Start1 = start1;
                     match->m_AlnSeq2 = 0;
                     match->m_Start2 = 0;
                     match->m_Len = len;
                     match->m_StrandsDiffer = false;
                     match->m_DsIdx = m_DsCnt;
+                    _ASSERT(match->IsGood());
                     m_Matches.push_back(match);
                 }
             }
@@ -258,6 +262,7 @@ CAlnMixMatches::Add(const CDense_seg& ds, TAddFlags flags)
         // iterate through the newly added matches to set the m_ChainScore
         size_t new_maches_size = m_Matches.size() - prev_matches_size;
         NON_CONST_REVERSE_ITERATE(TMatches, match_i, m_Matches) {
+            _ASSERT((*match_i)->IsGood());
             (*match_i)-> m_ChainScore = total_aln_score;
             if ( !(--new_maches_size) ) {
                 break;

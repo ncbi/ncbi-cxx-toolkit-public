@@ -244,28 +244,34 @@ CAlnMixMerger::x_Merge()
         if (match->m_AlnSeq1 == refseq) {
             seq1 = match->m_AlnSeq1;
             start1 = match->m_Start1;
+            _ASSERT(seq1);
             match_list_iter1 = match->m_MatchIter1;
             seq2 = match->m_AlnSeq2;
             start2 = match->m_Start2;
-            match_list_iter2 = match->m_MatchIter2;
+            if ( seq2 )
+                match_list_iter2 = match->m_MatchIter2;
         } else if (match->m_AlnSeq2 == refseq) {
             seq1 = match->m_AlnSeq2;
             start1 = match->m_Start2;
+            _ASSERT(seq1);
             match_list_iter1 = match->m_MatchIter2;
             seq2 = match->m_AlnSeq1;
             start2 = match->m_Start1;
-            match_list_iter2 = match->m_MatchIter1;
+            if ( seq2 )
+                match_list_iter2 = match->m_MatchIter1;
         } else {
             seq1 = match->m_AlnSeq1;
             seq2 = match->m_AlnSeq2;
 
             // mark the two refseqs, they are candidates for next refseq(s)
-            seq1->m_MatchList.push_back(match);
-            (match->m_MatchIter1 = seq1->m_MatchList.end())--;
+            _ASSERT(seq1);
+            match->m_MatchIter1 =
+                seq1->m_MatchList.insert(seq1->m_MatchList.end(), match);
             if (seq2) {
-                seq2->m_MatchList.push_back(match);
-                (match->m_MatchIter2 = seq2->m_MatchList.end())--;
+                match->m_MatchIter2 =
+                    seq2->m_MatchList.insert(seq2->m_MatchList.end(), match);
             }
+            _ASSERT(match->IsGood());
 
             // mark that there's no match with this refseq
             seq1 = 0;
@@ -279,6 +285,7 @@ CAlnMixMerger::x_Merge()
             if ( !first_refseq ) {
                 if ( !seq1->m_MatchList.empty() ) {
                     seq1->m_MatchList.erase(match_list_iter1);
+                    match_list_iter1 = seq1->m_MatchList.end();
                 }
             }
 
@@ -287,6 +294,9 @@ CAlnMixMerger::x_Merge()
             match->m_Start1 = start1;
             match->m_AlnSeq2 = seq2;
             match->m_Start2 = start2;
+            match->m_MatchIter1 = match_list_iter1;
+            if ( seq2 )
+                match->m_MatchIter2 = match_list_iter2;
 
             if (m_MergeFlags & fTruncateOverlaps  &&  seq2) {
                 CDiagRangeCollection::TAlnRng rng(match->m_Start1,
@@ -336,7 +346,8 @@ CAlnMixMerger::x_Merge()
                     match_list_iter1 = match->m_MatchIter1;
                     seq2 = match->m_AlnSeq2;
                     start2 = match->m_Start2;
-                    match_list_iter2 = match->m_MatchIter2;
+                    if ( seq2 )
+                        match_list_iter2 = match->m_MatchIter2;
                     curr_len = len = match->m_Len;
                 }}
             }
@@ -374,6 +385,8 @@ CAlnMixMerger::x_Merge()
                 if ( !first_refseq ) {
                     if ( !seq2->m_MatchList.empty() ) {
                         seq2->m_MatchList.erase(match_list_iter2);
+                        match_list_iter2 = seq2->m_MatchList.end();
+                        match->m_MatchIter2 = match_list_iter2;
                     }
                 }
             }
@@ -411,7 +424,8 @@ CAlnMixMerger::x_Merge()
                     match_list_iter1 = match->m_MatchIter1;
                     seq2 = match->m_AlnSeq2;
                     start2 = match->m_Start2;
-                    match_list_iter2 = match->m_MatchIter2;
+                    if ( seq2 )
+                        match_list_iter2 = match->m_MatchIter2;
                     curr_len = len = match->m_Len;
                 }}
                 while (second_row_fits == eTranslocation) {
@@ -443,7 +457,8 @@ CAlnMixMerger::x_Merge()
                         match_list_iter1 = match->m_MatchIter1;
                         seq2 = match->m_AlnSeq2;
                         start2 = match->m_Start2;
-                        match_list_iter2 = match->m_MatchIter2;
+                        if ( seq2 )
+                            match_list_iter2 = match->m_MatchIter2;
                         curr_len = len = match->m_Len;
                     }}
                 }
@@ -478,8 +493,8 @@ CAlnMixMerger::x_Merge()
                 seg->m_Len = len;
                 seg->m_DsIdx = match->m_DsIdx;
                 starts[start1] = seg;
-                seg->m_StartIts[seq1] = 
-                    lo_start_i = hi_start_i = starts.begin();
+                seg->SetStartIterator
+                    (seq1, lo_start_i = hi_start_i = starts.begin());
 
                 if (m_MergeFlags & fQuerySeqMergeOnly) {
                     seq2->m_DsIdx = match->m_DsIdx;
@@ -526,7 +541,7 @@ CAlnMixMerger::x_Merge()
                                     [tmp_start_i->first + len1 * seq->m_Width]
                                     = seg;
                                 if (tmp_start_i != seq->SetStarts().end()) {
-                                    seg->m_StartIts[seq] = ++tmp_start_i;
+                                    seg->SetStartIterator(seq, ++tmp_start_i);
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
                                                "CAlnMixMerger::x_Merge(): "
@@ -537,9 +552,9 @@ CAlnMixMerger::x_Merge()
                                     [tmp_start_i->first + len2 * seq->m_Width]
                                     = prev_seg;
                                 seq->SetStarts()[tmp_start_i->first] = seg;
-                                seg->m_StartIts[seq] = tmp_start_i;
+                                seg->SetStartIterator(seq, tmp_start_i);
                                 if (tmp_start_i != seq->SetStarts().end()) {
-                                    prev_seg->m_StartIts[seq] = ++tmp_start_i;
+                                    prev_seg->SetStartIterator(seq, ++tmp_start_i);
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
                                                "CAlnMixMerger::x_Merge(): "
@@ -590,7 +605,7 @@ CAlnMixMerger::x_Merge()
                                              curr_len * seq->m_Width]
                                     = seg;
                                 if (tmp_start_i != seq->SetStarts().end()) {
-                                    seg->m_StartIts[seq] = ++tmp_start_i;
+                                    seg->SetStartIterator(seq, ++tmp_start_i);
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
                                                "CAlnMixMerger::x_Merge(): "
@@ -601,9 +616,9 @@ CAlnMixMerger::x_Merge()
                                              len1 * seq->m_Width]
                                     = prev_seg;
                                 seq->SetStarts()[tmp_start_i->first] = seg;
-                                seg->m_StartIts[seq] = tmp_start_i;
+                                seg->SetStartIterator(seq, tmp_start_i);
                                 if (tmp_start_i != seq->SetStarts().end()) {
-                                    prev_seg->m_StartIts[seq] = ++tmp_start_i;
+                                    prev_seg->SetStartIterator(seq, ++tmp_start_i);
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
                                                "CAlnMixMerger::x_Merge(): "
@@ -642,7 +657,7 @@ CAlnMixMerger::x_Merge()
                     if (tmp_start_i != starts.begin()) {
                         tmp_start_i--;
                     }
-                    seg->m_StartIts[seq1] = tmp_start_i;
+                    seg->SetStartIterator(seq1, tmp_start_i);
                     if (start_i != starts.end()  &&
                         start + curr_len * width1 > start_i->first) {
                         //       x--..
@@ -702,7 +717,8 @@ CAlnMixMerger::x_Merge()
                         match_list_iter1 = match->m_MatchIter1;
                         seq2 = match->m_AlnSeq2;
                         start2 = match->m_Start2;
-                        match_list_iter2 = match->m_MatchIter2;
+                        if ( seq2 )
+                            match_list_iter2 = match->m_MatchIter2;
                         curr_len = len = match->m_Len;
                     }}
                 }
@@ -751,8 +767,7 @@ CAlnMixMerger::x_Merge()
                                 CAlnMixSeq * tmp_seq = it->first;
                                 tmp_start_i = it->second;
                                 tmp_start_i->second = start_i->second;
-                                start_i->second->m_StartIts[tmp_seq] =
-                                    tmp_start_i;
+                                start_i->second->SetStartIterator(tmp_seq, tmp_start_i);
                             }
 #if _DEBUG && _ALNMGR_DEBUG                        
                             start_i->second->StartItsConsistencyCheck(*seq2,
@@ -777,7 +792,7 @@ CAlnMixMerger::x_Merge()
                                        "Internal error: "
                                        "Start iterator already exists for seq2.");
                         }
-                        start_i->second->m_StartIts[seq2] = start2_i;
+                        start_i->second->SetStartIterator(seq2, start2_i);
 #if _DEBUG && _ALNMGR_DEBUG                        
                         start_i->second->StartItsConsistencyCheck(*seq2,
                                                                   start,

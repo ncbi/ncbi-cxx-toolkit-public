@@ -109,6 +109,12 @@ public:
                                   const TSeqPos&    start,
                                   size_t            match_idx) const;
 
+    void SetStartIterator(CAlnMixSeq* seq, CAlnMixStarts::iterator iter)
+    {
+        m_StartIts.insert(TStartIterators::value_type(seq, iter))
+            .first->second = iter;
+    }
+
     TSeqPos         m_Len;
     TStartIterators m_StartIts;
     int             m_DsIdx; // used by the truncate algorithm
