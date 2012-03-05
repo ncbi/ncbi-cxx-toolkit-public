@@ -192,6 +192,11 @@ void iter_swap( Iter it1, Iter it2 )
 
 END_STD_SCOPE
 
+#if defined(_GLIBCXX_DEBUG)
+/* STL iterators are non-POD types */
+# define NCBI_NON_POD_TYPE_STL_ITERATORS  1
+#endif
+
 #endif
 
 /* @} */
