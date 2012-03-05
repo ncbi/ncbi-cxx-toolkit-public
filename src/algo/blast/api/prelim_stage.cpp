@@ -202,7 +202,6 @@ CBlastPrelimSearch::Run()
 
     auto_ptr<const CBlastOptionsMemento> opts_memento
         (m_Options->CreateSnapshot());
-    BlastSeqSrc * seqsrc = m_InternalData->m_SeqSrc->GetPointer();
     BLAST_SequenceBlk* queries = m_InternalData->m_Queries;
     LookupTableOptions * lut_options = opts_memento->m_LutOpts;
     BlastInitialWordOptions * word_options = opts_memento->m_InitWordOpts;
