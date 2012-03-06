@@ -28,7 +28,7 @@ PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
 Detect64BitPortabilityProblems=false
 
 [Compiler.1000]
-PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 
 
@@ -69,7 +69,7 @@ PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
 AdditionalOptions=/MP
 
 [Compiler.1000.release]
-PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;
+PreprocessorDefinitions=_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 
 
