@@ -63,6 +63,7 @@ struct PssmMakerOptions
     bool requestResidueFrequencies;            /**< request observed residue frequencies */
     bool requestWeightedResidueFrequencies;   /**< request observed weighted residue frequencies */
     bool requestFrequencyRatios;               /**< request frequency ratios */
+    bool requestNumIndepObs;               /**< request number of independent observations per position */
     bool gaplessColumnWeights;
 
 	int unalignedSegThreshold;  // -1 : do not skip unaligned segment

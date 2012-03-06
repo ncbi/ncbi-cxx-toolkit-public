@@ -83,6 +83,7 @@ PssmMakerOptions::PssmMakerOptions()
     requestResidueFrequencies(false),            
     requestWeightedResidueFrequencies(false),   
     requestFrequencyRatios(false),
+    requestNumIndepObs(false),
     gaplessColumnWeights(false),
 	unalignedSegThreshold(-1),
 	inclusionThreshold(0.5),
@@ -141,6 +142,7 @@ CdPssmInput::CdPssmInput(ResidueProfiles& profiles, PssmMakerOptions& config, bo
 	m_diagRequest.information_content = config.requestInformationContent;
 	m_diagRequest.residue_frequencies = config.requestResidueFrequencies;
 	m_diagRequest.weighted_residue_frequencies = config.requestWeightedResidueFrequencies;
+    m_diagRequest.independent_observations = config.requestNumIndepObs;
 	m_matrixName = config.matrixName;
 	m_options->impala_scaling_factor = config.scalingFactor;
 }
