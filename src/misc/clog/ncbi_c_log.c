@@ -419,7 +419,7 @@ static char* s_StrDup(const char* str)
  *  The order is: cached hostname, cached host IP, uname or COMPUTERNAME,
  *  SERVER_ADDR, empty string.
  */
-static const char* s_GetHostName(void)
+const char* NcbiLogP_GetHostName(void)
 {
     static char* host = NULL;
 #if defined(NCBI_OS_UNIX)
@@ -487,7 +487,7 @@ static TNcbiLog_Int8 s_GetGUID(void)
 {
     TNcbiLog_PID   pid = s_GetPID();
     time_t         t = time(0);
-    const char*    host = s_GetHostName();
+    const char*    host = NcbiLogP_GetHostName();
     const char*    s;
     TNcbiLog_Int8  h = 212;
 
@@ -936,7 +936,7 @@ static TNcbiLog_Context s_GetContext(void)
         /* Create context */
         ctx = s_CreateContext();
         is_attached = s_AttachContext(ctx);
-        assert(is_attached);
+        verify(is_attached);
     }
     assert(ctx);
     return ctx;
@@ -1398,7 +1398,7 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
     /* Define properties */
 
     if (!sx_Info->host[0]) {
-        s_SetHost(s_GetHostName());
+        s_SetHost(NcbiLogP_GetHostName());
     }
     x_pid     = sx_Info->pid        ? sx_Info->pid            : s_GetPID();
     x_rid     = ctx->rid            ? ctx->rid                : sx_Info->rid;

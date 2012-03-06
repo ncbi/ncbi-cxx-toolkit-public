@@ -190,6 +190,12 @@ extern void NcbiLogP_ExtraStr(const char* params);
 extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);
 
 
+/** Get host name.
+ *  The order is: cached hostname, cached host IP, uname or COMPUTERNAME,
+ *  SERVER_ADDR, empty string.
+ */
+extern const char* NcbiLogP_GetHostName(void);
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

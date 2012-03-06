@@ -31,8 +31,8 @@
  *      1) No MT support. This utility assume that it can be called from 
  *         single-thread scripts or application only.
  *      2) This utility tries to log locally (to /log). If it can't do that
- *         then it'll hit a CGI that does the logging (on other machine) 
- *         -- not implemented yest.
+ *         then it can call a CGI that does the logging (on other machine).
+ *         CGI can be specified in the .ini file.
  *
  */
 
@@ -52,7 +52,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
-
+#include <connect/ncbi_conn_stream.hpp>
 #include "../ncbi_c_log_p.h"
 
 USING_NCBI_SCOPE;
@@ -66,6 +66,8 @@ class CNcbiApplogApp : public CNcbiApplication
 public:
     virtual void Init(void);
     virtual int  Run(void);
+    /// Redirect logging request to to another machine via CGI
+    int Redirect(void);
 };
 
 
@@ -83,11 +85,15 @@ void CNcbiApplogApp::Init(void)
     // Describe the expected command-line arguments
 
     arg_desc->AddPositional
-        ("command", "Session token", CArgDescriptions::eString);
+        ("command", "Logging command", CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("command", &(*new CArgAllow_Strings, "start_app", "stop_app", "start_request", "stop_request", "post", "extra", "perf"));
     arg_desc->AddDefaultPositional
         ("token", "Session token, obtained from stdout after <start_app> command", CArgDescriptions::eString, kEmptyStr);
+    arg_desc->AddDefaultKey
+        ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", CArgDescriptions::eString, "local");
+    arg_desc->SetConstraint
+        ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
 
     // start_app (mandatory)
 
@@ -109,9 +115,10 @@ void CNcbiApplogApp::Init(void)
         ("time", "TIMESPAN", "Timespan parameter for performance logging", CArgDescriptions::eDouble, "0.0");
 
     // post
-    // We do not provide "fatal" severity level here, because in this case
-    // ncbi_applog should not be executed at all (use "critical" as highest
-    // available severity level).
+    //
+    // We do not provide "fatal" severity level here, because ncbi_applog
+    // should not be executed at all in this case 
+    // (use "critical" as highest available severity level).
 
     arg_desc->AddDefaultKey
         ("severity", "SEVERITY", "Posting severity level", CArgDescriptions::eString, "error");
@@ -141,8 +148,9 @@ void CNcbiApplogApp::Init(void)
 
 
 typedef struct {
+    bool              redirect;                           ///< Use redirect to external CGI for logging
     TNcbiLog_PID      pid;                                ///< Process ID
-    TNcbiLog_Counter  rid;                                ///< Request ID (e.g. iteration number in case of a CGI)
+    TNcbiLog_Counter  rid;                                ///< Request ID
     ENcbiLog_AppState state;                              ///< Application state
     TNcbiLog_Int8     guid;                               ///< Globally unique process ID
     TNcbiLog_Counter  psn;                                ///< Serial number of the posting within the process
@@ -156,25 +164,86 @@ typedef struct {
 } TInfo;
 
 
+int CNcbiApplogApp::Redirect(void) 
+{
+    const CNcbiRegistry& reg = GetConfig();
+
+    string url = reg.Get("config", "CGI", IRegistry::fTruncate);
+    if (url.empty()) {
+        throw "Cannot use redirect mode, external CGI is not specified in the configuration file";
+    }
+    string s_args;
+    bool need_hostname = true;
+    CNcbiArguments raw_args = GetArguments();
+    for (size_t i = 1; i < raw_args.Size(); ++i) {
+        if (!NStr::StartsWith(raw_args[i], "-mode")) {
+            s_args += " \"" + raw_args[i] + "\"";
+        }
+        if (NStr::StartsWith(raw_args[i], "-host")) {
+            need_hostname = false;
+        }
+    }
+    // Add current host name into command line (before positional arguments)
+    if (need_hostname) {
+        const char* hostname = NcbiLogP_GetHostName();
+        if (hostname) {
+            s_args = string(" \"-host=") + hostname + "\"" + s_args;
+        }
+    }
+    // Send request to another machine via CGI
+    CConn_HttpStream cgi(url);
+    cgi << s_args << endl;
+    if (!cgi.good()) {
+        throw "Fails to redirect request to CGI";
+    }
+    // Read response from CGI (until EOF)
+    string output;
+    getline(cgi, output, '\0');
+    if (!cgi.eof()) {
+        throw "Failed to read CGI output";
+    }
+    // Printout CGI's output
+    if (!output.empty()) {
+        cout << output << endl;
+    }
+    // Check on errors
+    if (output.find("Error:") != NPOS) {
+        return 2;
+    }
+    return 0;
+}
+
+
 int CNcbiApplogApp::Run(void)
 {
     CFileIO fio;
-    string  s;
+    string  s;  
     string  token_file_name;
     bool    remove_token = false;
+    bool    is_api_init  = false;
 
     try {
 
-    // Read configuration file
+    CArgs args = GetArgs();
     const CNcbiRegistry& reg = GetConfig();
-    string working_dir_name = reg.Get("config", "Path", IRegistry::fTruncate);
+
+    // Get mode
+
+    string mode = args["mode"].AsString();
+    if (mode == "redirect") {
+        return Redirect();
+    }
+
+    // Get working directory from configuration file
+
+    string working_dir_name = reg.Get("Config", "WorkingDir", IRegistry::fTruncate);
     if (working_dir_name.empty()) {
         working_dir_name = CDir::MakePath(CDir::GetTmpDir(), "ncbi_applog");
     }
     CDir working_dir(working_dir_name);
     if (!working_dir.Exists()) {
         if (!working_dir.Create()) {
-            throw "Cannot create working path";
+            throw "Cannot create working directory";
         }
     }
 
@@ -184,7 +253,6 @@ int CNcbiApplogApp::Run(void)
 
     // Get common arguments
 
-    CArgs  args  = GetArgs();
     string cmd = args["command"].AsString();
     string token = args["token"].AsString();
     TNcbiLog_Counter rid = args["rid"].AsInteger();
@@ -240,9 +308,10 @@ int CNcbiApplogApp::Run(void)
         token = NStr::PrintableString(NStr::Replace(info.appname," ","")) + "." + 
                 NStr::NumericToString(info.pid);
         token_file_name = CDir::MakePath(working_dir_name, token);
-        fio.Open(token_file_name, CFileIO::eCreate, CFileIO::eWrite);
+        fio.Open(token_file_name, CFileIO::eCreate, CFileIO::eReadWrite);
 
-    } else {
+    } else {  // cmd != "start_app"
+
         // Initialize session from file
         if (token.empty()) {
             // Try to get token from env.variable
@@ -260,17 +329,51 @@ int CNcbiApplogApp::Run(void)
         }
     }
 
-    // Initialize logging API
-    NcbiLog_InitST(info.appname);
-    TNcbiLog_Info*   g_info = NcbiLogP_GetInfoPtr();
-    TNcbiLog_Context g_ctx  = NcbiLogP_GetContextPtr();
+    // Try to set local logging
 
-    // Set output to files in current directory
-    NcbiLogP_SetDestination(eNcbiLog_Default);
-    if (g_info->destination != eNcbiLog_Default) {
-        // The /log is not writable
-        throw "/log is not writable";
+    TNcbiLog_Info*   g_info = NULL;
+    TNcbiLog_Context g_ctx  = NULL;
+
+    if ( !info.redirect ) {
+        // Initialize logging API
+        NcbiLog_InitST(info.appname);
+        is_api_init = true;
+        g_info = NcbiLogP_GetInfoPtr();
+        g_ctx  = NcbiLogP_GetContextPtr();
+        // Try to set output to /log (forced)
+        NcbiLogP_SetDestination(eNcbiLog_Default);
+        if (g_info->destination != eNcbiLog_Default) {
+            // The /log is not writable, use external CGI for logging
+            info.redirect = 1;
+            is_api_init = false;
+            NcbiLog_Destroy();
+        }
     }
+
+    if ( info.redirect ) {
+        // Recursive redirection is not allowed
+        if (mode == "cgi") {
+            throw "/log is not writable for CGI logger";
+        }
+        if (cmd == "stop_app") {
+            // We don't need local token file anymore
+            fio.Close();
+            CFile(token_file_name).Remove();
+        } else {
+            // Update redirection status in the token file -- info.redirect = 1
+            fio.SetFilePos(0);
+            if (fio.Write(&info, sizeof(info)) != sizeof(info)) {
+                throw "Cannot update token data";
+            }
+            fio.Close();
+        }
+        return Redirect();
+    }
+
+
+    // -----------------------------------------------------------------------
+    // LOCAL logging
+    // -----------------------------------------------------------------------
 
     // Set/restore logging parameters
     g_info->pid   = info.pid;
@@ -281,6 +384,7 @@ int CNcbiApplogApp::Run(void)
     g_info->psn   = info.psn;
     g_info->app_start_time = info.app_start_time;
     g_ctx->req_start_time  = info.req_start_time;
+
     if (info.host[0]) {
         NcbiLog_SetHost(info.host);
     }
@@ -297,7 +401,8 @@ int CNcbiApplogApp::Run(void)
     if (cmd == "start_app") {
         NcbiLog_AppStart(NULL);
         info.state = eNcbiLog_AppRun;
-        // Return token to called program via stdout
+        // Just return token's name.
+        // All errors can be checked by exit code.
         cout << token << endl;
     } else 
 
@@ -307,7 +412,7 @@ int CNcbiApplogApp::Run(void)
     if (cmd == "stop_app") {
         int status = args["status"].AsInteger();
         NcbiLog_AppStop(status);
-        // Saved token's data will be removed below, after the API deinitialization.
+        // Saved token's data will be removed below, after the API destroying.
         remove_token = true;
     } else 
 
@@ -414,17 +519,34 @@ int CNcbiApplogApp::Run(void)
         fio.Close();
     }
 
-
     // Cleanup
     }
     catch (char* e) {
         ERR_POST(e);
-        NcbiLog_Destroy();
+        if (is_api_init) {
+            NcbiLog_Destroy();
+        }
+        return 1;
+    }
+    catch (const char* e) {
+        ERR_POST(e);
+        if (is_api_init) {
+            NcbiLog_Destroy();
+        }
+        return 1;
+    }
+    catch (string e) {
+        ERR_POST(e);
+        if (is_api_init) {
+            NcbiLog_Destroy();
+        }
         return 1;
     }
     catch (exception& e) {
         ERR_POST(e.what());
-        NcbiLog_Destroy();
+        if (is_api_init) {
+            NcbiLog_Destroy();
+        }
         return 1;
     }
     return 0;
