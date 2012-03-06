@@ -102,12 +102,20 @@ bool SNetServiceIterator_OmitPenalized::Next()
     return ++m_Position != m_ServerGroup->m_SuppressedBegin;
 }
 
+static CFastMutex s_RndLock;
 static CRandom s_RandomIteratorGen((CRandom::TValue) time(NULL));
+
+static CRandom::TValue
+s_GetRand(CRandom::TValue max_value)
+{
+    CFastMutexGuard guard(s_RndLock);
+    return s_RandomIteratorGen.GetRand(0, max_value);
+}
 
 SNetServiceIterator_RandomPivot::SNetServiceIterator_RandomPivot(
         SDiscoveredServers* server_group_impl) :
     SNetServiceIteratorImpl(server_group_impl,
-        server_group_impl->m_Servers.begin() + s_RandomIteratorGen.GetRand(0,
+        server_group_impl->m_Servers.begin() + s_GetRand(
             CRandom::TValue((server_group_impl->m_SuppressedBegin -
                 server_group_impl->m_Servers.begin()) - 1)))
 {
