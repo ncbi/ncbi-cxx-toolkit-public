@@ -2028,7 +2028,9 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 
     if (job_id) {
         job_key = q->MakeKey(job_id);
-        WriteMessage("OK:", job_key + " " + job.GetAuthToken());
+        WriteMessage("OK:job_key=" + job_key +
+                     "&auth_token=" + job.GetAuthToken() +
+                     "&status=" + CNetScheduleAPI::StatusToString(job.GetStatus()));
     }
     else
         WriteMessage("OK:");

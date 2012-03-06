@@ -1325,20 +1325,23 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
                               const string &        group,
                               CJob *                job)
 {
-    time_t              curr(time(0));
+    time_t                                  curr(time(0));
+    vector<CNetScheduleAPI::EJobStatus>     from_state;
+
+    from_state.push_back(CNetScheduleAPI::eDone);
+    from_state.push_back(CNetScheduleAPI::eFailed);
 
     CFastMutexGuard     guard(m_OperationLock);
+    TNSBitVector        candidates = m_StatusTracker.GetJobs(from_state);
 
-    TNSBitVector        unwanted_jobs = m_ClientsRegistry.GetBlacklistedJobs(client);
-    TNSBitVector        group_jobs;
+    // Exclude blacklisted jobs
+    candidates -= m_ClientsRegistry.GetBlacklistedJobs(client);
 
     if (!group.empty())
-        group_jobs = m_GroupRegistry.GetJobs(group);
+        // Apply restrictions on the group jobs if so
+        candidates &= m_GroupRegistry.GetJobs(group);
 
-    unsigned int        job_id = m_StatusTracker.GetJobByStatus(
-                                                CNetScheduleAPI::eDone,
-                                                unwanted_jobs,
-                                                group_jobs);
+    unsigned int        job_id = *candidates.first();
 
     if (!job_id)
         return;

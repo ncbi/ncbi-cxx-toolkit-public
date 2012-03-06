@@ -28,6 +28,7 @@ digraph NetScheduleNew {
     Timeout     -> Pending;
     Timeout     -> Failed;
 
+    Failed      -> Reading          [ label = "READ" ];
     Failed      -> Canceled         [ label = "CANCEL" ];
     Failed      -> Failed           [ label = "FPUT", style = "dashed" ];
 
