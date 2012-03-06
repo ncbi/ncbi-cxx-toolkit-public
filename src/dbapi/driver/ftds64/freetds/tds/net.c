@@ -420,7 +420,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 		got += len;
 
 		now = GetTimeMark();
-		if (tds->query_timeout > 0 && (int)now - start >= tds->query_timeout) {
+		if (tds->query_timeout > 0 && now - start >= tds->query_timeout) {
 
 			int timeout_action = TDS_INT_CONTINUE;
 
