@@ -413,15 +413,18 @@ unsigned int  CNSGroupsRegistry::x_CreateGroup(const string &  group)
         group_id = x_GetNextGroupID();
     }
 
-    string *            new_token = new string(group);
-    SNSGroupJobs *      new_attr = new SNSGroupJobs;
+    auto_ptr<string>        new_token(new string(group));
+    auto_ptr<SNSGroupJobs>  new_attr(new SNSGroupJobs);
 
-    new_attr->m_GroupToken = new_token;
+    new_attr->m_GroupToken = new_token.get();
     new_attr->m_GroupId = group_id;
 
     // Add to containers
-    m_TokenToAttr[new_token] = new_attr;
-    m_IDToAttr[group_id] = new_attr;
+    m_TokenToAttr[new_token.get()] = new_attr.get();
+    m_IDToAttr[group_id] = new_attr.get();
+
+    new_token.release();
+    new_attr.release();
 
     // Add to the registered groups list
     m_RegisteredGroups.set_bit(group_id);
