@@ -2551,7 +2551,7 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, const TXChar* argv[])
 {
     // Execute main application function
     CDiagContext::SetLogTruncate(true);
