@@ -759,9 +759,9 @@ SourceFile::EType CDataTool::LoadDefinitions(
 
 END_NCBI_SCOPE
 
-int main(int argc, const char* argv[])
+int NcbiSys_main(int argc, const ncbi::TXChar* argv[])
 {
     USING_NCBI_SCOPE;
     CException::EnableBackgroundReporting(false);
-    return CDataTool().AppMain(argc, argv, 0, eDS_Default, 0, "datatool");
+    return CDataTool().AppMain(argc, argv, 0, eDS_Default, 0, _T_XSTRING("datatool"));
 }
