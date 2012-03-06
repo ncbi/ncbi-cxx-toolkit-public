@@ -106,10 +106,11 @@ public:
     virtual bool IsOpen(void);
     // connection-specific methods
     void OnSocketEvent(EServIO_Event event);
+    virtual ~CServer_Connection();
 private:
     auto_ptr<IServer_ConnectionHandler> m_Handler;
     bool m_Open;
-} ;
+};
 
 class CServer_Listener : public IServer_ConnectionBase,
                          public CListeningSocket // CPollable

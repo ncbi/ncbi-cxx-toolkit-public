@@ -411,9 +411,6 @@ void CAcceptRequest::x_DoProcess(void)
         // The connection pool is full
         // This place is the only one which can call OnOverflow now
         m_Connection->OnOverflow(eOR_ConnectionPoolFull);
-        // Abort connection here to prevent it sitting in TIME_WAIT state
-        // on the server.
-        m_Connection->Abort();
         delete m_Connection;
     }
 }
@@ -537,8 +534,6 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
         //m_Open = false;
         // fall through
     case eServIO_Delete:
-        if (GetStatus(eIO_Open) == eIO_Success)
-            Abort();
         delete this;
         break;
     default:
@@ -550,6 +545,14 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
     }
 }
 
+CServer_Connection::~CServer_Connection()
+{
+    static const STimeout zero_timeout = {0, 0};
+
+    // Set zero timeout to prevent the socket from sitting in
+    // TIME_WAIT state on the server.
+    SetTimeout(eIO_Close, &zero_timeout);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CServer implementation
