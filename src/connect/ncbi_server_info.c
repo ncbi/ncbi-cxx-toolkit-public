@@ -48,10 +48,10 @@
 /* Table of virtual functions
  */
 typedef struct {
-    char*       (*Write )(size_t reserve, const USERV_Info* u);
     SSERV_Info* (*Read  )(const char** str, size_t add);
-    size_t      (*SizeOf)(const USERV_Info *u);
+    char*       (*Write )(size_t reserve, const USERV_Info* u);
     int/*bool*/ (*Equal )(const USERV_Info *u1, const USERV_Info *u2);
+    size_t      (*SizeOf)(const USERV_Info *u);
 } SSERV_Info_VTable;
 
 
@@ -87,10 +87,10 @@ int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff)
 /* Attributes' lookup (by either type or tag)
  */
 static const SSERV_Attr* s_GetAttrByType(ESERV_Type type);
-static const SSERV_Attr* s_GetAttrByTag(const char* tag);
+static const SSERV_Attr* s_GetAttrByTag (const char* tag);
 
 
-const char* SERV_TypeStr(ESERV_Type type)
+extern const char* SERV_TypeStr(ESERV_Type type)
 {
     const SSERV_Attr* attr = s_GetAttrByType(type);
     if (attr)
@@ -99,7 +99,8 @@ const char* SERV_TypeStr(ESERV_Type type)
 }
 
 
-const char* SERV_ReadType(const char* str, ESERV_Type* type)
+extern const char* SERV_ReadType(const char* str,
+                                 ESERV_Type* type)
 {
     const SSERV_Attr* attr = s_GetAttrByTag(str);
     if (!attr)
@@ -114,7 +115,7 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type)
  *  Generic methods based on the server info's virtual functions
  */
 
-char* SERV_WriteInfo(const SSERV_Info* info)
+extern char* SERV_WriteInfo(const SSERV_Info* info)
 {
     char c_t[MAX_CONTENT_TYPE_LEN];    
     const SSERV_Attr* attr;
@@ -177,16 +178,17 @@ char* SERV_WriteInfo(const SSERV_Info* info)
 }
 
 
-SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
+SSERV_Info* SERV_ReadInfoEx(const char* str,
+                            const char* name)
 {
-    /* detect server type */
-    ESERV_Type     type;
-    const char*    str = SERV_ReadType(info_str, &type);
     int/*bool*/    coef, mime, locl, priv, quorum, rate, sful, time;
+    ESERV_Type     type;
     unsigned int   host;                /* network byte order       */
     unsigned short port;                /* host (native) byte order */
     SSERV_Info*    info;
 
+    /* detect server type */
+    str = SERV_ReadType(str, &type);
     if (!str || (*str && !isspace((unsigned char)(*str))))
         return 0;
     /* NB: "str" guarantees there is non-NULL attr */
@@ -226,14 +228,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
             switch (toupper((unsigned char)(*str++))) {
             case 'B':
                 if (!coef && sscanf(str, "=%lf%n", &d, &n) >= 1) {
-                    if (d < -100.0)
-                        d = -100.0;
-                    else if (d < 0.0)
-                        d = (d < -0.1 ? d : -0.1);
-                    else if (d < 0.01)
+                    if (fabs(d) < SERV_MINIMAL_BONUS)
                         d = 0.0;
-                    else if (d > 1000.0)
-                        d = 1000.0;
+                    else if (fabs(d) > SERV_MAXIMAL_BONUS)
+                        d = d < 0.0 ? -SERV_MAXIMAL_BONUS : SERV_MAXIMAL_BONUS;
                     info->coef = d;
                     str += n;
                     coef = 1;
@@ -295,10 +293,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
                 break;
             case 'R':
                 if (!rate && sscanf(str, "=%lf%n", &d, &n) >= 1) {
-                    if (fabs(d) < 0.001)
+                    if (fabs(d) < SERV_MINIMAL_RATE)
                         d = 0.0;
-                    else if (fabs(d) > 100000.0)
-                        d = d < 0.0 ? -100000.0 : 100000.0;
+                    else if (fabs(d) > SERV_MAXIMAL_RATE)
+                        d = d < 0.0 ? -SERV_MAXIMAL_RATE : SERV_MAXIMAL_RATE;
                     info->rate = d;
                     str += n;
                     rate = 1;
@@ -359,13 +357,14 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
 }
 
 
-SSERV_Info* SERV_ReadInfo(const char* info_str)
+extern SSERV_Info* SERV_ReadInfo(const char* str)
 {
-    return SERV_ReadInfoEx(info_str, 0);
+    return SERV_ReadInfoEx(str, 0);
 }
 
 
-SSERV_Info* SERV_CopyInfoEx(const SSERV_Info* orig, const char* name)
+SSERV_Info* SERV_CopyInfoEx(const SSERV_Info* orig,
+                            const char*       name)
 {
     size_t      size = SERV_SizeOfInfo(orig);
     SSERV_Info* info;
@@ -385,7 +384,7 @@ SSERV_Info* SERV_CopyInfoEx(const SSERV_Info* orig, const char* name)
 }
 
 
-SSERV_Info* SERV_CopyInfo(const SSERV_Info* orig)
+extern SSERV_Info* SERV_CopyInfo(const SSERV_Info* orig)
 {
     return SERV_CopyInfoEx(orig, 0);
 }
@@ -400,7 +399,7 @@ const char* SERV_NameOfInfo(const SSERV_Info* info)
 }
 
 
-size_t SERV_SizeOfInfo(const SSERV_Info *info)
+extern size_t SERV_SizeOfInfo(const SSERV_Info *info)
 {
     const SSERV_Attr* attr = info ? s_GetAttrByType(info->type) : 0;
     return attr
@@ -408,7 +407,8 @@ size_t SERV_SizeOfInfo(const SSERV_Info *info)
 }
 
 
-int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1, const SSERV_Info *i2)
+extern int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1,
+                                  const SSERV_Info *i2)
 {
     const SSERV_Attr* attr;
     if (i1->type != i2->type || i1->host != i2->host || i1->port != i2->port)
@@ -471,11 +471,10 @@ static int/*bool*/ s_Ncbid_Equal(const USERV_Info* u1, const USERV_Info* u2)
 }
 
 
-SSERV_Info* SERV_CreateNcbidInfoEx
-(unsigned int   host,
- unsigned short port,
- const char*    args,
- size_t         add)
+SSERV_Info* SERV_CreateNcbidInfoEx(unsigned int   host,
+                                   unsigned short port,
+                                   const char*    args,
+                                   size_t         add)
 {
     SSERV_Info* info;
 
@@ -504,10 +503,9 @@ SSERV_Info* SERV_CreateNcbidInfoEx
 }
 
 
-SSERV_Info* SERV_CreateNcbidInfo
-(unsigned int   host,
- unsigned short port,
- const char*    args)
+extern SSERV_Info* SERV_CreateNcbidInfo(unsigned int   host,
+                                        unsigned short port,
+                                        const char*    args)
 {
     return SERV_CreateNcbidInfoEx(host, port, args, 0);
 }
@@ -541,10 +539,9 @@ static size_t s_Standalone_SizeOf(const USERV_Info* u)
 }
 
 
-SSERV_Info* SERV_CreateStandaloneInfoEx
-(unsigned int   host,
- unsigned short port,
- size_t         add)
+SSERV_Info* SERV_CreateStandaloneInfoEx(unsigned int   host,
+                                        unsigned short port,
+                                        size_t         add)
 {
     SSERV_Info *info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add);
 
@@ -569,7 +566,8 @@ SSERV_Info* SERV_CreateStandaloneInfoEx
 }
 
 
-SSERV_Info* SERV_CreateStandaloneInfo(unsigned int host, unsigned short port)
+extern SSERV_Info* SERV_CreateStandaloneInfo(unsigned int   host,
+                                             unsigned short port)
 {
     return SERV_CreateStandaloneInfoEx(host, port, 0);
 }
@@ -594,9 +592,7 @@ static char* s_Http_Write(size_t reserve, const USERV_Info* u)
 }
 
 
-static SSERV_Info* s_HttpAny_Read(ESERV_Type   type,
-                                  const char** str,
-                                  size_t       add)
+static SSERV_Info* s_HttpAny_Read(ESERV_Type type,const char** str, size_t add)
 {
     SSERV_Info* info;
     char       *path, *args, *c;
@@ -653,13 +649,12 @@ static int/*bool*/ s_Http_Equal(const USERV_Info* u1, const USERV_Info* u2)
 }
 
 
-SSERV_Info* SERV_CreateHttpInfoEx
-(ESERV_Type     type,
- unsigned int   host,
- unsigned short port,
- const char*    path,
- const char*    args,
- size_t         add)
+SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
+                                  unsigned int   host,
+                                  unsigned short port,
+                                  const char*    path,
+                                  const char*    args,
+                                  size_t         add)
 {
     SSERV_Info* info;
 
@@ -691,12 +686,11 @@ SSERV_Info* SERV_CreateHttpInfoEx
 }
 
 
-SSERV_Info* SERV_CreateHttpInfo
-(ESERV_Type     type,
- unsigned int   host,
- unsigned short port,
- const char*    path,
- const char*    args)
+extern SSERV_Info* SERV_CreateHttpInfo(ESERV_Type     type,
+                                       unsigned int   host,
+                                       unsigned short port,
+                                       const char*    path,
+                                       const char*    args)
 {
     return SERV_CreateHttpInfoEx(type, host, port, path, args, 0);
 }
@@ -742,8 +736,10 @@ static int/*bool*/ s_Firewall_Equal(const USERV_Info* u1, const USERV_Info* u2)
 }
 
 
-SSERV_Info* SERV_CreateFirewallInfoEx(unsigned int host, unsigned short port,
-                                      ESERV_Type type, size_t add)
+SSERV_Info* SERV_CreateFirewallInfoEx(unsigned int   host,
+                                      unsigned short port,
+                                      ESERV_Type     type,
+                                      size_t         add)
 {
     SSERV_Info* info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add);
 
@@ -768,8 +764,9 @@ SSERV_Info* SERV_CreateFirewallInfoEx(unsigned int host, unsigned short port,
 }
 
 
-SSERV_Info* SERV_CreateFirewallInfo(unsigned int host, unsigned short port,
-                                    ESERV_Type type)
+SSERV_Info* SERV_CreateFirewallInfo(unsigned int   host,
+                                    unsigned short port,
+                                    ESERV_Type     type)
 {
     return SERV_CreateFirewallInfoEx(host, port, type, 0);
 }
@@ -850,38 +847,38 @@ static const char kDNS       [] = "DNS";
 static const SSERV_Attr s_SERV_Attr[] = {
     { fSERV_Ncbid,
       kNCBID,      sizeof(kNCBID) - 1,
-      {s_Ncbid_Write,       s_Ncbid_Read,
-       s_Ncbid_SizeOf,      s_Ncbid_Equal} },
+      {s_Ncbid_Read,      s_Ncbid_Write,
+       s_Ncbid_Equal,     s_Ncbid_SizeOf} },
 
     { fSERV_Standalone,
       kSTANDALONE, sizeof(kSTANDALONE) - 1,
-      {s_Standalone_Write,  s_Standalone_Read,
-       s_Standalone_SizeOf, 0} },
+      {s_Standalone_Read, s_Standalone_Write,
+       0,                 s_Standalone_SizeOf} },
 
     { fSERV_HttpGet,
       kHTTP_GET,   sizeof(kHTTP_GET) - 1,
-      {s_Http_Write,        s_HttpGet_Read,
-       s_Http_SizeOf,       s_Http_Equal} },
+      {s_HttpGet_Read,    s_Http_Write,
+       s_Http_Equal,      s_Http_SizeOf} },
 
     { fSERV_HttpPost,
       kHTTP_POST,  sizeof(kHTTP_POST) - 1,
-      {s_Http_Write,        s_HttpPost_Read,
-       s_Http_SizeOf,       s_Http_Equal} },
+      {s_HttpPost_Read,   s_Http_Write,
+       s_Http_Equal,      s_Http_SizeOf} },
 
     { fSERV_Http,
       kHTTP,       sizeof(kHTTP) - 1,
-      {s_Http_Write,        s_Http_Read,
-       s_Http_SizeOf,       s_Http_Equal} },
+      {s_Http_Read,       s_Http_Write,
+       s_Http_Equal,      s_Http_SizeOf} },
 
     { fSERV_Firewall,
       kFIREWALL,   sizeof(kFIREWALL) - 1,
-      {s_Firewall_Write,    s_Firewall_Read,
-       s_Firewall_SizeOf,   s_Firewall_Equal} },
+      {s_Firewall_Read,   s_Firewall_Write,
+       s_Firewall_Equal,  s_Firewall_SizeOf} },
 
     { fSERV_Dns,
       kDNS,        sizeof(kDNS) - 1,
-      {s_Dns_Write,         s_Dns_Read,
-       s_Dns_SizeOf,        0} }
+      {s_Dns_Read,       s_Dns_Write,
+       0,                s_Dns_SizeOf} }
 };
 
 
