@@ -2844,6 +2844,9 @@ public:
 
     /// Give Encoding name as string
     ///
+    /// NOTE: 
+    ///   Function throws CStringException on attempt to get name of eEncoding_Unknown
+    ///
     /// @param encoding
     ///   EEncoding enum
     /// @return
