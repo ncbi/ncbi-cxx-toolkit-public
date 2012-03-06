@@ -2162,6 +2162,12 @@ BOOST_AUTO_TEST_CASE(s_StringUTF8)
     BOOST_CHECK_EQUAL(127u, CStringUTF8::GetValidBytesCount((const char*)s_ExtAscii));
     BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(str.data(), str.length()));
     BOOST_CHECK_EQUAL(38u,  CStringUTF8::GetValidBytesCount(str));
+
+    BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("UtF-8"),        eEncoding_UTF8);
+    BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("Windows-1252"), eEncoding_Windows_1252);
+    BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("cp367"),        eEncoding_Ascii);
+    BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("csISOLatin1"),  eEncoding_ISO8859_1);
+    BOOST_CHECK_EQUAL( CStringUTF8::StringToEncoding("ISO-2022-CN-EXT"), eEncoding_Unknown);
 }
 
 BOOST_AUTO_TEST_CASE(s_TruncateSpaces)

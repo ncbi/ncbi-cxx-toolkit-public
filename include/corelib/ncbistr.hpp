@@ -2841,6 +2841,26 @@ public:
     /// @return
     ///   Boolean result: encoding is same or compatible
     static bool MatchEncoding( const CTempString& src, EEncoding encoding);
+
+    /// Give Encoding name as string
+    ///
+    /// @param encoding
+    ///   EEncoding enum
+    /// @return
+    ///   Encoding name
+    static string EncodingToString(EEncoding encoding);
+    
+    /// Convert encoding name into EEncoding enum, taking into account synonyms
+    /// as per  http://www.iana.org/assignments/character-sets
+    ///
+    /// NOTE: 
+    ///   Function returns eEncoding_Unknown for unsupported encodings
+    ///
+    /// @param str
+    ///   Encoding name
+    /// @return
+    ///   EEncoding enum
+    static EEncoding StringToEncoding(const CTempString& str);
     
     /// Convert encoded character into UTF16
     ///
@@ -2946,6 +2966,8 @@ public:
     static string AsSingleByteString(const CStringUTF8& self, EEncoding encoding, const char* substitute_on_error);
     static EEncoding GuessEncoding( const CTempString& src);
     static bool MatchEncoding( const CTempString& src, EEncoding encoding);
+    static string EncodingToString(EEncoding encoding);
+    static EEncoding StringToEncoding(const CTempString& str);
     static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
     static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
     static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
@@ -3000,6 +3022,17 @@ bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
 {
     return CStringUTF8_Helper::MatchEncoding(src,encoding);
 }
+inline
+string CStringUTF8::EncodingToString(EEncoding encoding)
+{
+    return CStringUTF8_Helper::EncodingToString(encoding);
+}
+inline
+EEncoding CStringUTF8::StringToEncoding(const CTempString& str)
+{
+    return CStringUTF8_Helper::StringToEncoding(str);
+}
+
 inline
 TUnicodeSymbol CStringUTF8::CharToSymbol(char ch, EEncoding encoding)
 {

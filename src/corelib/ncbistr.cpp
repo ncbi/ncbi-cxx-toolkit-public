@@ -4652,6 +4652,50 @@ bool CStringUTF8_Helper::MatchEncoding( const CTempString& src, EEncoding encodi
     return matches;
 }
 
+string  CStringUTF8_Helper::EncodingToString(EEncoding encoding)
+{
+    switch (encoding) {
+    case eEncoding_UTF8:         break;
+    case eEncoding_Ascii:        return "US-ASCII";
+    case eEncoding_ISO8859_1:    return "ISO-8859-1";
+    case eEncoding_Windows_1252: return "windows-1252";
+    default:
+        NCBI_THROW2(CStringException, eBadArgs,
+            "Cannot convert encoding to string", 0);
+        break;
+    }
+    return "UTF-8";
+}
+
+// see http://www.iana.org/assignments/character-sets
+EEncoding CStringUTF8_Helper::StringToEncoding(const CTempString& str)
+{
+    if (NStr::CompareNocase(str,"UTF-8")==0) {
+        return eEncoding_UTF8;
+    }
+    if (NStr::CompareNocase(str,"windows-1252")==0) {
+        return eEncoding_Windows_1252;
+    }
+    int i;
+    const char* ascii[] = {
+    "ANSI_X3.4-1968","iso-ir-6","ANSI_X3.4-1986","ISO_646.irv:1991",
+    "ASCII","ISO646-US","US-ASCII","us","IBM367","cp367","csASCII", NULL};
+    for (i=0; ascii[i]; ++i) {
+        if (NStr::CompareNocase(str,ascii[i])==0) {
+            return eEncoding_Ascii;
+        }
+    }
+    const char* iso8859_1[] = {
+    "ISO_8859-1:1987","iso-ir-100","ISO_8859-1","ISO-8859-1",
+    "latin1","l1","IBM819","CP819","csISOLatin1", NULL};
+    for (i=0; iso8859_1[i]; ++i) {
+        if (NStr::CompareNocase(str,iso8859_1[i])==0) {
+            return eEncoding_ISO8859_1;
+        }
+    }
+    return eEncoding_Unknown;
+}
+
 
 // cp1252, codepoints for chars 0x80 to 0x9F
 static const TUnicodeSymbol s_cp1252_table[] = {
