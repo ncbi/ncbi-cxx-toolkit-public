@@ -3783,8 +3783,10 @@ bool SDiagMessage::ParseMessage(const string& message)
         if (pos < sep_pos) {
             // Class:: Class::Function() ::Function()
             if (message.find("::", pos) != NPOS) {
-                size_t tmp_pos = pos;
-                tmp = s_ParseStr(message, tmp_pos, ' ');
+                size_t tmp_pos = sep_pos;
+                while (tmp_pos > pos  &&  message[tmp_pos - 1] == ' ')
+                    --tmp_pos;
+                tmp.assign(message.data() + pos, tmp_pos - pos);
                 size_t dcol = tmp.find("::");
                 if (dcol == NPOS) {
                     goto parse_unk_func;
