@@ -5790,8 +5790,8 @@ UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection
 UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection
 UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria
-UAM<USA-AL>	s	University of Alabama, Malacology Collection
 UAM<USA-AR>	s	University of Arkansas at Monticello
+UAM<USA:AL>	s	University of Alabama, Malacology Collection
 UAM<VEN>	s	Universidad de los Andes, Facultad de Ciencias
 UAMH	scb	University of Alberta Microfungus Collection and Herbarium
 UAMI	s	Universidad Autonoma Metropolitana, Unidad Iztapalapa (Mexico)
