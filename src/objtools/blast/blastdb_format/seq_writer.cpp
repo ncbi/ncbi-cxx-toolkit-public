@@ -203,6 +203,9 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
     CRef<CBioseq> bioseq;
     for (int i=0; blastdb.CheckOrFindOID(i); i++) {
          bioseq.Reset(blastdb.GetBioseq(i));
+         if (bioseq.Empty()) {
+             continue;
+         }
          if (config.m_UseCtrlA) {
              s_ReplaceCtrlAsInTitle(bioseq);
          }
