@@ -56,9 +56,14 @@ struct PssmMakerOptions
 {
 	PssmMakerOptions();
 
+    //  Return true if any of the IntermediateData flags is true.
+    bool IsRequestingIntermediateData();
+
 	short pseudoCount;
 	double scalingFactor;
 	string matrixName;
+
+    //  These flags control what appears in Pssm's IntermediateData
 	bool requestInformationContent;            /**< request information content */
     bool requestResidueFrequencies;            /**< request observed residue frequencies */
     bool requestWeightedResidueFrequencies;   /**< request observed weighted residue frequencies */

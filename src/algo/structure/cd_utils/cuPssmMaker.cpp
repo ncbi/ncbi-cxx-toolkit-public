@@ -91,6 +91,12 @@ PssmMakerOptions::PssmMakerOptions()
 {
 };
 
+bool PssmMakerOptions::IsRequestingIntermediateData()
+{
+    return (requestInformationContent || requestResidueFrequencies || requestWeightedResidueFrequencies ||
+            requestFrequencyRatios || requestNumIndepObs || gaplessColumnWeights);
+}
+
 //consensus is not in profiles
 //row 0 if profiles is the master
 CdPssmInput::CdPssmInput(ResidueProfiles& profiles, PssmMakerOptions& config, bool useConsensus)
