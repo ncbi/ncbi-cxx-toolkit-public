@@ -42,6 +42,19 @@
 static const int kMaxPrintedIntLen = 10;
 #define MAX_PRINTED_INT_LEN_PLUS_ONE 11
 
+/*  ---------------------------------------------------------------------- */
+enum EAlignFormat{
+    ALNFMT_UNKNOWN,
+    ALNFMT_NEXUS,
+    ALNFMT_PHYLIP,
+    ALNFMT_CLUSTAL,
+    ALNFMT_FASTAGAP,
+};
+
+static enum EAlignFormat eFormat = ALNFMT_UNKNOWN;
+
+/*  ---------------------------------------------------------------------- */
+
 typedef enum {
     eTrue = -1,
     eFalse = 0
@@ -125,6 +138,13 @@ typedef struct SAlignFileRaw {
     char                 align_format_found;
 } SAlignRawFileData, * SAlignRawFilePtr;
 
+/* Function declarations
+ */
+static EBool s_AfrpInitLineData( 
+    SAlignRawFilePtr afrp, FReadLineFunction readfunc, void* pfile);
+static void s_AfrpProcessFastaGap(
+    SAlignRawFilePtr afrp, SLengthListPtr patterns, char* plinestr, int overall_line_count);
+
 /* These functions are used for storing and transmitting information
  * about errors encountered while reading the alignment data.
  */
@@ -156,7 +176,6 @@ extern TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list)
     }
     return eip;
 }
-
 
 /* This function recursively frees the memory associated with a list of
  * error structures as well as the member variables of the error structures.
@@ -3446,18 +3465,146 @@ s_FindInterleavedBlocks
     
 }
 
-static void s_TrimEndSpace (char *linestring)
+static void s_TrimSpace(char** ppline)
 {
-    int len;
-    char *cp;
-  
-    if (linestring == NULL) return;
-    len = strlen (linestring);
-    cp = linestring + len - 1;
-    while (cp > linestring && (*cp == ' ' || *cp == '\t' || *cp == '\r' || *cp == '\n'))
+    int len = 0;
+    char* ptmp = 0;
+
+    if (ppline == NULL  ||  *ppline == NULL) {
+        return;
+    }
+    len = strlen (*ppline);
+    ptmp = *ppline + len - 1;
+    while (ptmp > *ppline  &&  (*ptmp == ' ' || *ptmp == '\t' || *ptmp == '\r' || *ptmp == '\n'))
     {
-  	    *cp = 0;
-  	    cp--;
+  	    *ptmp = 0;
+  	    ptmp--;
+    }
+    len = strspn (*ppline, " \t\r\n");
+    if (len > 0) {
+        ptmp = *ppline;
+        *ppline = strdup(*ppline + len);
+        free(ptmp);
+    }
+}
+
+static EBool
+s_AfrpInitLineData(
+    SAlignRawFilePtr afrp,
+    FReadLineFunction readfunc,
+    void* pfile)
+{
+    int overall_line_count = 0;
+    EBool found_stop = eFalse;
+    EBool in_taxa_comment = eFalse;
+    char* linestring = readfunc (pfile);
+    TLineInfoPtr last_line = NULL, next_line = NULL;
+
+    if (s_IsASN1 (linestring)) {
+        s_ReportASN1Error (afrp->report_error, afrp->report_error_userdata);
+        s_AlignFileRawFree (afrp);
+        return eFalse;
+    }
+
+    while (linestring != NULL  &&  linestring [0] != EOF) {
+        s_TrimSpace (&linestring);
+        if (!in_taxa_comment  &&  s_FoundStopLine(linestring)) {
+            free(linestring);
+            break;
+        }
+        if (in_taxa_comment) {
+            if (strncmp (linestring, "end;", 4) == 0) {
+                in_taxa_comment = eFalse;
+            } 
+            linestring [0] = 0;
+        } else if (strncmp (linestring, "begin taxa;", 11) == 0) {
+            linestring [0] = 0;
+            in_taxa_comment = eTrue;
+            afrp->align_format_found = eTrue;
+        }
+        next_line = s_LineInfoNew (linestring, overall_line_count, 0);
+        if (last_line == NULL) {
+            afrp->line_list = next_line;
+        } else {
+            last_line->next = next_line;
+        }
+        last_line = next_line;
+
+        free (linestring);
+        linestring = readfunc (pfile);
+        overall_line_count ++;
+    }
+    return eTrue;
+}
+
+static void
+s_AfrpProcessFastaGap(
+    SAlignRawFilePtr afrp,
+    SLengthListPtr patterns,
+    char* linestr,
+    int overall_line_count)
+{
+    static EBool last_line_was_marked_id = eFalse;
+    static SLengthListPtr last_pattern = NULL;
+
+    TIntLinkPtr new_offset = NULL;
+    SLengthListPtr this_pattern = NULL;
+    int len = 0;
+    char* cp;
+
+    /*  ID line
+     */
+    if (linestr [0] == '>') {
+        /* this could be a block of organism lines in a
+            * NEXUS file.  If there is no sequence data between
+            * the lines, don't process this file for marked IDs.
+            */
+        if (last_line_was_marked_id)
+        {
+            afrp->marked_ids = eFalse;
+            eFormat = ALNFMT_UNKNOWN;
+        }
+        else
+        {
+            afrp->marked_ids = eTrue;
+            eFormat = ALNFMT_FASTAGAP;
+        }
+        new_offset = s_IntLinkNew (overall_line_count + 1,
+                                    afrp->offset_list);
+        if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
+        last_line_was_marked_id = eTrue;
+        return;
+    }
+
+    /*  Data line
+     */
+    last_line_was_marked_id = eFalse;
+    /* add to length list for interleaved block search */
+    len = strcspn (linestr, " \t\r");
+    if (len > 0) {
+        cp = linestr + len;
+        len = strspn (cp, " \t\r");
+        if (len > 0) {
+            cp = cp + len;
+        }
+        if (*cp == 0) {
+            this_pattern = s_GetBlockPattern (linestr);
+        } else {
+            this_pattern = s_GetBlockPattern (cp);
+        }                    
+    } else {
+        this_pattern = s_GetBlockPattern (linestr);
+    }
+            
+    if (last_pattern == NULL) {
+        patterns = this_pattern;
+        last_pattern = this_pattern;
+    } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
+        last_pattern->num_appearances ++;
+        s_LengthListFree (this_pattern);
+    } else {
+        last_pattern->next = this_pattern;
+        last_pattern = this_pattern;
     }
 }
 
@@ -3472,8 +3619,6 @@ s_ReadAlignFileRaw
 {
     char *                   linestring;
     SAlignRawFilePtr         afrp;
-    char *                   tmp;
-    EBool                    found_stop;
     int                      overall_line_count;
     EBool                    found_expected_ntax = eFalse;
     EBool                    found_expected_nchar = eFalse;
@@ -3483,7 +3628,6 @@ s_ReadAlignFileRaw
     char *                   cp;
     int                      len;
     TIntLinkPtr              new_offset;
-    EBool                    in_taxa_comment;
     EBool                    in_bracketed_comment = eFalse;
     TBracketedCommentListPtr comment_list = NULL, last_comment = NULL;
     EBool                    last_line_was_marked_id = eFalse;
@@ -3502,163 +3646,152 @@ s_ReadAlignFileRaw
     afrp->report_error = errfunc;
     afrp->report_error_userdata = errdata;
 
-    overall_line_count = 0;
-    found_stop = eFalse;
-    in_taxa_comment = eFalse;
-    linestring = readfunc (userdata);
-    if (s_IsASN1 (linestring)) {
-        s_ReportASN1Error (afrp->report_error, afrp->report_error_userdata);
+    if (eFalse == s_AfrpInitLineData(afrp, readfunc, userdata)) {
         s_AlignFileRawFree (afrp);
         return NULL;
     }
+        
+    for (next_line = afrp->line_list; next_line != NULL; next_line = next_line->next) {
+        linestring = next_line->data;
+        overall_line_count = next_line->line_num-1;
 
-    while (linestring != NULL  &&  linestring [0] != EOF) {
-        s_TrimEndSpace (linestring);
+        if (eFormat == ALNFMT_FASTAGAP) {
+            s_AfrpProcessFastaGap(afrp, pattern_list, linestring, overall_line_count);
+            continue;
+        }
         s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
         /* we want to remove the comment from the line for the purpose 
          * of looking for blank lines and skipping,
          * but save comments for storing in array if line is not skippable or
          * blank
          */ 
-        len = strspn (linestring, " \t\r\n");
-        tmp = strdup (linestring + len);
-        if (tmp == NULL) {
-            return NULL;
-        }
  
-        if (! found_stop && ! in_taxa_comment) {
-            found_stop = s_FoundStopLine (tmp);
+        if (! found_expected_ntax  ||  ! found_expected_nchar) {
+            if (s_IsTwoNumbersSeparatedBySpace (linestring)) {
+                s_GetFASTAExpectedNumbers (linestring, afrp);
+                found_expected_ntax = eTrue;
+                found_expected_nchar = eTrue;
+                afrp->align_format_found = eTrue;
+           } else {
+                s_GetNexusSizeComments (linestring, &found_expected_ntax,
+                                        &found_expected_nchar, afrp);
+            }
         }
-        if (! found_stop) {
-            if (! found_expected_ntax  ||  ! found_expected_nchar) {
-                if (s_IsTwoNumbersSeparatedBySpace (tmp)) {
-                    s_GetFASTAExpectedNumbers (tmp, afrp);
-                    found_expected_ntax = eTrue;
-                    found_expected_nchar = eTrue;
-                    afrp->align_format_found = eTrue;
-               } else {
-                    s_GetNexusSizeComments (tmp, &found_expected_ntax,
-                                            &found_expected_nchar, afrp);
-                }
-            }
-            if (! found_char_comment) {
-              if (use_nexus_file_info) {
-                found_char_comment = s_UpdateNexusCharInfo (tmp, sequence_info);
-              } else {
-                found_char_comment = s_CheckNexusCharInfo (tmp, sequence_info, 
-                                                           afrp->report_error,
-                                                           afrp->report_error_userdata);
-              }
-            }
-            if (in_taxa_comment) {
-                if (strncmp (tmp, "end;", 4) == 0) {
-                    in_taxa_comment = eFalse;
-                } 
-                tmp [0] = 0;
-            } else if (strncmp (tmp, "begin taxa;", 11) == 0) {
-                tmp [0] = 0;
-                in_taxa_comment = eTrue;
-                afrp->align_format_found = eTrue;
-            }
+        if (! found_char_comment) {
+          if (use_nexus_file_info) {
+            found_char_comment = s_UpdateNexusCharInfo (linestring, sequence_info);
+          } else {
+            found_char_comment = s_CheckNexusCharInfo (linestring, sequence_info, 
+                                                       afrp->report_error,
+                                                       afrp->report_error_userdata);
+          }
+        }
 
-            /* remove complete single-line bracketed comments from line 
-             *before checking for multiline bracketed comments */
-            s_RemoveCommentFromLine (tmp);
+        /* remove complete single-line bracketed comments from line 
+         *before checking for multiline bracketed comments */
+        s_RemoveCommentFromLine (linestring);
 
-            if (in_bracketed_comment) {
-   	            len = strspn (linestring, " \t\r\n");
-                if (last_comment != NULL) 
-                {
-                	s_BracketedCommentListAddLine (last_comment, linestring + len,
-                	                               overall_line_count, len);
-                }
-                if (strchr (tmp, ']') != NULL) {
-                    in_bracketed_comment = eFalse;
-                }
-                tmp [0] = 0;
-            } else if (tmp [0] == '[' && strchr (tmp, ']') == NULL) {
-                in_bracketed_comment = eTrue;
-   	            len = strspn (linestring, " \t\r\n");
-   	            last_comment = s_BracketedCommentListNew (comment_list,
-                                                          linestring + len,
-                                                          overall_line_count, len);
-                if (comment_list == NULL) 
-                {
-                	comment_list = last_comment;
-                }
-                tmp [0] = 0;
-            }
-
-            if (!afrp->align_format_found  && s_IsAlnFormatString (tmp)) {
-                afrp->align_format_found = eTrue;
-            }                  
-
-            if (s_SkippableString (tmp)) {
-                tmp [0] = 0;
-            }
-            if (tmp [0] == '>'  &&  ! found_stop) {
-                /* this could be a block of organism lines in a
-                 * NEXUS file.  If there is no sequence data between
-                 * the lines, don't process this file for marked IDs.
-                 */
-                if (last_line_was_marked_id)
-                {
-                    afrp->marked_ids = eFalse;
-                }
-                else
-                {
-                    afrp->marked_ids = eTrue;
-                }
-                new_offset = s_IntLinkNew (overall_line_count + 1,
-                                          afrp->offset_list);
-                if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
-                last_line_was_marked_id = eTrue;
-            } else {
-                last_line_was_marked_id = eFalse;
-                /* add to length list for interleaved block search */
-                len = strcspn (tmp, " \t\r");
-                if (len > 0) {
-                    cp = tmp + len;
-                    len = strspn (cp, " \t\r");
-                    if (len > 0) {
-                        cp = cp + len;
-                    }
-                    if (*cp == 0) {
-                        this_pattern = s_GetBlockPattern (tmp);
-                    } else {
-                        this_pattern = s_GetBlockPattern (cp);
-                    }                    
-                } else {
-                    this_pattern = s_GetBlockPattern (tmp);
-                }
-                
-                if (last_pattern == NULL) {
-                    pattern_list = this_pattern;
-                    last_pattern = this_pattern;
-                } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
-                    last_pattern->num_appearances ++;
-                    s_LengthListFree (this_pattern);
-                } else {
-                    last_pattern->next = this_pattern;
-                    last_pattern = this_pattern;
-                }
-            }
-
+        if (in_bracketed_comment) {
             len = strspn (linestring, " \t\r\n");
-
-            next_line = s_LineInfoNew (linestring + len, overall_line_count, len);
-
-            if (last_line == NULL) {
-                afrp->line_list = next_line;
-            } else {
-                last_line->next = next_line;
+            if (last_comment != NULL) 
+            {
+            	s_BracketedCommentListAddLine (last_comment, linestring + len,
+            	                               overall_line_count, len);
             }
-            last_line = next_line;
+            if (strchr (linestring, ']') != NULL) {
+                in_bracketed_comment = eFalse;
+            }
+            linestring [0] = 0;
+        } else if (linestring [0] == '[' && strchr (linestring, ']') == NULL) {
+            in_bracketed_comment = eTrue;
+            len = strspn (linestring, " \t\r\n");
+            last_comment = s_BracketedCommentListNew (comment_list,
+                                                      linestring + len,
+                                                      overall_line_count, len);
+            if (comment_list == NULL) 
+            {
+            	comment_list = last_comment;
+            }
+            linestring [0] = 0;
         }
-        free (linestring);
-        free (tmp);
-        linestring = readfunc (userdata);
-        overall_line_count ++;
+
+        if (!afrp->align_format_found) {
+            afrp->align_format_found = s_IsAlnFormatString (linestring);
+        }                  
+        if (s_SkippableString (linestring)) {
+            linestring[0] = 0;
+        }
+
+        /*  "junk" line: Just record the empty pattern to keep line counts in sync.
+         */
+        if (linestring[0] == 0) {
+            last_line_was_marked_id = eFalse;
+            this_pattern = s_GetBlockPattern ("");
+            if (pattern_list == NULL) {
+                pattern_list = this_pattern;
+                last_pattern = this_pattern;
+            } else {
+                last_pattern->next = this_pattern;
+                last_pattern = this_pattern;
+            }
+            continue;
+        }
+
+        /* Presumably fasta ID:
+         */
+        if (linestring [0] == '>') {
+            /* this could be a block of organism lines in a
+             * NEXUS file.  If there is no sequence data between
+             * the lines, don't process this file for marked IDs.
+             */
+            if (last_line_was_marked_id)
+            {
+                afrp->marked_ids = eFalse;
+                eFormat = ALNFMT_UNKNOWN;
+            }
+            else
+            {
+                eFormat = ALNFMT_FASTAGAP;
+                s_AfrpProcessFastaGap(afrp, pattern_list, linestring, overall_line_count);
+                continue;
+            }
+            new_offset = s_IntLinkNew (overall_line_count + 1,
+                                      afrp->offset_list);
+            if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
+            last_line_was_marked_id = eTrue;
+            continue;
+        }
+
+        /* default case: some real data at last ...
+         */
+        last_line_was_marked_id = eFalse;
+        /* add to length list for interleaved block search */
+        len = strcspn (linestring, " \t\r");
+        if (len > 0) {
+            cp = linestring + len;
+            len = strspn (cp, " \t\r");
+            if (len > 0) {
+                cp = cp + len;
+            }
+            if (*cp == 0) {
+                this_pattern = s_GetBlockPattern (linestring);
+            } else {
+                this_pattern = s_GetBlockPattern (cp);
+            }                    
+        } else {
+            this_pattern = s_GetBlockPattern (linestring);
+        }
+        
+        if (pattern_list == NULL) {
+            pattern_list = this_pattern;
+            last_pattern = this_pattern;
+        } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
+            last_pattern->num_appearances ++;
+            s_LengthListFree (this_pattern);
+        } else {
+            last_pattern->next = this_pattern;
+            last_pattern = this_pattern;
+        }
     }
     afrp->num_segments = s_GetNumSegmentsInAlignment (comment_list, errfunc, errdata);
     if (afrp->num_segments > 1) 
@@ -5925,7 +6058,6 @@ ReadAlignmentFileEx
   
     return afp;
 }
-
 
 extern TAlignmentFilePtr 
 ReadAlignmentFile 
