@@ -32,30 +32,18 @@
 
 
 #include <ncbi_pch.hpp>
-
-#include <ncbiconf.h>
-
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbimtx.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_process.hpp>
-#include <corelib/ncbi_param.hpp>
-#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/request_control.hpp>
-#include <corelib/ncbi_system.hpp>
 #include "ncbidiag_p.hpp"
 #include "ncbisys.hpp"
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <stack>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <stack>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>

@@ -68,7 +68,6 @@
  *      and file lists from remote FTP servers, and upload files as well.
  */
 
-#include <corelib/ncbistd.hpp>
 #include <connect/ncbi_ftp_connector.h>
 #include <connect/ncbi_namedpipe_connector.hpp>
 #include <connect/ncbi_memory_connector.h>

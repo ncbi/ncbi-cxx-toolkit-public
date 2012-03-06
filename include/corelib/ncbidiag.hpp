@@ -40,13 +40,10 @@
 ///            programming_manual/diag.html
 
 
-#include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_stack.hpp>
-#include <list>
 #include <deque>
 #include <vector>
 #include <map>
-#include <memory>
 #include <stdexcept>
 
 

@@ -42,14 +42,9 @@
 
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbimtx.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/error_codes.hpp>
-#include <assert.h>
 #ifdef NCBI_POSIX_THREADS
 #  include <sys/time.h> // for gettimeofday()
 #endif
