@@ -1307,6 +1307,10 @@ Fix-sets-action ::= CHOICE {
   fix-pop-to-phy NULL
 }
 
+Apply-table-action ::= SEQUENCE {
+  filename VisibleString 
+}
+
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
   parse Parse-action ,
@@ -1340,7 +1344,8 @@ Macro-action-choice ::= CHOICE {
   remove-invalid-ecnumbers NULL ,
   create-tsa-ids Create-TSA-ids-action ,
   perform-autofix Autofix-action ,
-  fix-sets Fix-sets-action }
+  fix-sets Fix-sets-action ,
+  apply-table Apply-table-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
