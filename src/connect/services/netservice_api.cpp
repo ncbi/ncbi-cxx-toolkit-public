@@ -102,7 +102,7 @@ bool SNetServiceIterator_OmitPenalized::Next()
     return ++m_Position != m_ServerGroup->m_SuppressedBegin;
 }
 
-static CFastMutex s_RndLock;
+DEFINE_STATIC_FAST_MUTEX(s_RndLock);
 static CRandom s_RandomIteratorGen((CRandom::TValue) time(NULL));
 
 static CRandom::TValue
