@@ -149,6 +149,10 @@ CNSNotificationList::CNSNotificationList(const string &  ns_node,
     m_GetMsgLength = snprintf(m_GetMsgBuffer, k_MessageBufferSize,
                               "ns_node=%s&queue=%s",
                               ns_node.c_str(), qname.c_str()) + 1;
+    m_GetMsgLengthObsoleteVersion =
+                     snprintf(m_GetMsgBufferObsoleteVersion,
+                              k_MessageBufferSize,
+                              "NCBI_JSQ_%s", qname.c_str()) + 1;
 }
 
 
@@ -156,7 +160,8 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
                                            unsigned short        port,
                                            unsigned int          timeout,
                                            bool                  wnode_aff,
-                                           bool                  any_job)
+                                           bool                  any_job,
+                                           bool                  new_format)
 {
     unsigned int                address = client.GetAddress();
     CFastMutexGuard             guard(m_ListenersLock);
@@ -168,6 +173,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
             k->m_ClientNode = client.GetNode();
             k->m_WnodeAff = wnode_aff;
             k->m_AnyJob = any_job;
+            k->m_NewFormat = new_format;
             k->m_ShouldNotify = false;
             k->m_HifreqNotifyLifetime = 0;
             k->m_SlowRate = false;
@@ -192,6 +198,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
     attributes.m_ClientNode = client.GetNode();
     attributes.m_WnodeAff = wnode_aff;
     attributes.m_AnyJob = any_job;
+    attributes.m_NewFormat = new_format;
     attributes.m_ShouldNotify = false;
     attributes.m_HifreqNotifyLifetime = 0;
     attributes.m_SlowRate = false;
@@ -291,12 +298,12 @@ CNSNotificationList::NotifyPeriodically(time_t                 current_time,
                     k->m_SlowRateCount = 0;
                     // Send the same packet twice: Denis wanted to increase
                     // the UDP delivery probability
-                    x_SendNotificationPacket(k->m_Address, k->m_Port);
-                    x_SendNotificationPacket(k->m_Address, k->m_Port);
+                    x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
+                    x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
                 }
             } else {
                 // We are at fast rate
-                x_SendNotificationPacket(k->m_Address, k->m_Port);
+                x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
             }
         }
         ++k;
@@ -355,7 +362,7 @@ CNSNotificationList::Notify(const TNSBitVector &   affinities,
         if (should_send) {
             k->m_ShouldNotify = true;
             k->m_HifreqNotifyLifetime = current_time + notif_highfreq_period;
-            x_SendNotificationPacket(k->m_Address, k->m_Port);
+            x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
         }
 
         ++k;
@@ -410,10 +417,16 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
 
 void
 CNSNotificationList::x_SendNotificationPacket(unsigned int    address,
-                                              unsigned short  port)
+                                              unsigned short  port,
+                                              bool            new_format)
 {
-    m_GetNotificationSocket.Send(m_GetMsgBuffer, m_GetMsgLength,
-                                 CSocketAPI::ntoa(address), port);
+    if (new_format)
+        m_GetNotificationSocket.Send(m_GetMsgBuffer, m_GetMsgLength,
+                                     CSocketAPI::ntoa(address), port);
+    else
+        m_GetNotificationSocket.Send(m_GetMsgBufferObsoleteVersion,
+                                     m_GetMsgLengthObsoleteVersion,
+                                     CSocketAPI::ntoa(address), port);
     return;
 }
 

@@ -598,6 +598,7 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                            const list<string> *    aff_list,
                            bool                    wnode_affinity,
                            bool                    any_affinity,
+                           bool                    new_format,
                            CJob *                  new_job)
 {
     // We need exactly 1 parameter - m_RunTimeout, so we can access it without
@@ -639,7 +640,8 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                         // in the waiting list
                         if (port > 0)
                             x_RegisterGetListener(client, port, timeout, aff_ids,
-                                                  wnode_affinity, any_affinity);
+                                                  wnode_affinity, any_affinity,
+                                                  new_format);
                     }
                     return;
                 }
@@ -2672,11 +2674,12 @@ void CQueue::x_RegisterGetListener(const CNSClientId &   client,
                                    unsigned int          timeout,
                                    const TNSBitVector &  aff_ids,
                                    bool                  wnode_aff,
-                                   bool                  any_aff)
+                                   bool                  any_aff,
+                                   bool                  new_format)
 {
     // Add to the notification list and save the wait port
     m_NotificationsList.RegisterListener(client, port, timeout,
-                                         wnode_aff, any_aff);
+                                         wnode_aff, any_aff, new_format);
     if (client.IsComplete())
         m_ClientsRegistry.SetWaiting(client, port, aff_ids, m_AffinityRegistry);
     return;

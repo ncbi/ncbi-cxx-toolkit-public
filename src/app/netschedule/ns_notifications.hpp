@@ -62,6 +62,11 @@ struct SNSNotificationAttributes
                                     // preferred affinities.
     bool            m_AnyJob;       // true if any job is suitable.
 
+    bool            m_NewFormat;    // If true, then a new format of
+                                    // notifications will be used. New format
+                                    // is for clients used GET2 command.
+                                    // Old format is for clients used WGET.
+
     // Support for two stage (different frequency) notifications
     // First stage is frequent (fast) within configured timeout from the moment
     // when a job is available.
@@ -92,7 +97,8 @@ class CNSNotificationList
                               unsigned short        port,
                               unsigned int          timeout,
                               bool                  wnode_aff,
-                              bool                  any_job);
+                              bool                  any_job,
+                              bool                  new_format);
         void UnregisterListener(const CNSClientId &  client,
                                 unsigned short       port);
 
@@ -121,7 +127,8 @@ class CNSNotificationList
 
     private:
         void x_SendNotificationPacket(unsigned int    address,
-                                      unsigned short  port);
+                                      unsigned short  port,
+                                      bool            new_format);
         bool x_TestTimeout(time_t                       current_time,
                            CNSClientsRegistry &         clients_registry,
                            CNSAffinityRegistry &        aff_registry,
@@ -137,6 +144,8 @@ class CNSNotificationList
         CDatagramSocket         m_GetNotificationSocket;
         char                    m_GetMsgBuffer[k_MessageBufferSize];
         size_t                  m_GetMsgLength;
+        char                    m_GetMsgBufferObsoleteVersion[k_MessageBufferSize];
+        size_t                  m_GetMsgLengthObsoleteVersion;
 
         CDatagramSocket         m_StatusNotificationSocket;
         char                    m_JobStateConstPart[k_MessageBufferSize];

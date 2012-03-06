@@ -693,7 +693,6 @@ void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
     // This is done to avoid copying parsed parameters and to have exactly one
     // diagnostics extra with both auth parameters and queue name.
     s_ReadBufToString(buffer, m_RawAuthString);
-ERR_POST("x_ProcessMsgAuth: " + m_RawAuthString);
 
     // Check if it was systems probe...
     if (strncmp(m_RawAuthString.c_str(), "GET / HTTP/1.", 13) == 0) {
@@ -714,7 +713,6 @@ ERR_POST("x_ProcessMsgAuth: " + m_RawAuthString);
 void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
 {
     s_ReadBufToString(buffer, m_QueueName);
-ERR_POST("x_ProcessMsgQueue: " + m_QueueName);
 
     // Parse saved raw authorization string and produce log output
     TNSProtoParams      params;
@@ -822,7 +820,6 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     string          msg;
     try {
         s_ReadBufToString(buffer, msg);
-ERR_POST("x_ProcessMsgRequest: " + msg);
         cmd = m_SingleCmdParser.ParseCommand(msg);
         x_PrintRequestStart(cmd);
     }
@@ -1352,6 +1349,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                     time(0), &aff_list,
                     m_CommandArguments.wnode_affinity,
                     m_CommandArguments.any_affinity,
+                    cmdv2,
                     &job);
 
     x_PrintGetJobResponse(q, job, cmdv2);
@@ -1478,6 +1476,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                     curr, &aff_list,
                     m_CommandArguments.wnode_affinity,
                     m_CommandArguments.any_affinity,
+                    cmdv2,
                     &job);
 
     x_PrintGetJobResponse(q, job, cmdv2);

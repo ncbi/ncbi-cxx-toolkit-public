@@ -169,6 +169,7 @@ public:
                       const list<string> *    aff_list,
                       bool                    wnode_affinity,
                       bool                    any_affinity,
+                      bool                    new_format,
                       CJob *                  new_job);
 
     void CancelWaitGet(const CNSClientId &  client);
@@ -409,7 +410,8 @@ private:
                                unsigned int          timeout,
                                const TNSBitVector &  aff_ids,
                                bool                  wnode_aff,
-                               bool                  any_aff);
+                               bool                  any_aff,
+                               bool                  new_format);
     bool x_UnregisterGetListener(const CNSClientId &  client,
                                  unsigned short       port);
 
