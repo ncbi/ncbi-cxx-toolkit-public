@@ -37,10 +37,6 @@
 #include <connect/connect_export.h>
 #include <connect/ncbi_connutil.h>
 
-#include <util/bitset/ncbi_bitset.hpp>
-#include <util/bitset/bmserial.h>
-#include <util/bitset/bmfwd.h>
-
 #include <corelib/ncbistl.hpp>
 
 #include <string>
@@ -106,107 +102,6 @@ inline string CNetScheduleKeyGenerator::GenerateV2(unsigned id,
     GenerateV2(&key, id, queue, run);
     return key;
 }
-
-/////////////////////////////////////////////////////////////////////////////////////
-////
-class CNetScheduleAdmin;
-
-class CNetScheduleKeys
-{
-public:
-    typedef bm::bvector<> TBVector;
-    typedef map<pair<string,unsigned int>, TBVector> TKeysMap;
-
-    CNetScheduleKeys() {}
-
-    class const_iterator
-    {
-    public:
-        const_iterator() : m_Keys(NULL) {}
-        const_iterator(const CNetScheduleKeys::TKeysMap& keys, bool end) :
-            m_Keys(&keys)
-        {
-            if (end)
-                m_SrvIter = m_Keys->end();
-            else {
-                for (m_SrvIter = m_Keys->begin();
-                        m_SrvIter != m_Keys->end(); ++m_SrvIter) {
-                    m_BVEnum = m_SrvIter->second.first();
-                    if (m_BVEnum != m_SrvIter->second.end())
-                        break;
-                }
-                if (m_SrvIter == m_Keys->end())
-                    m_BVEnum = TBVector::enumerator();
-            }
-        }
-        bool operator == (const const_iterator& other) const
-        {
-            return m_Keys == other.m_Keys && m_SrvIter == other.m_SrvIter
-                && m_BVEnum == other.m_BVEnum;
-        }
-        bool operator != (const const_iterator& other) const
-        {
-            return ! operator==(other);
-        }
-
-        string operator*() const
-        {
-            _ASSERT(m_Keys != NULL);
-            return CNetScheduleKeyGenerator(m_SrvIter->first.first,
-                m_SrvIter->first.second).GenerateV1((unsigned) *m_BVEnum);
-        }
-
-        const_iterator& operator++()
-        {
-            if (m_SrvIter != m_Keys->end()) {
-                if(++m_BVEnum == m_SrvIter->second.end()) {
-                    if (++m_SrvIter == m_Keys->end())
-                        m_BVEnum = TBVector::enumerator();
-                    else
-                        m_BVEnum = m_SrvIter->second.first();
-                }
-            }
-            return *this;
-        }
-        const_iterator operator++(int)
-        {
-            const_iterator tmp(*this);
-            ++*this;
-            return tmp;
-        }
-    private:
-        const CNetScheduleKeys::TKeysMap* m_Keys;
-        CNetScheduleKeys::TKeysMap::const_iterator m_SrvIter;
-        TBVector::enumerator m_BVEnum;
-    };
-
-    const_iterator begin() const { return const_iterator(m_Keys, false); }
-    const_iterator end() const { return const_iterator(m_Keys, true); }
-
-private:
-    friend class CNetScheduleAdmin;
-
-    TKeysMap m_Keys;
-
-    void x_Clear()
-    {
-        m_Keys.clear();
-    }
-    void x_Add(const pair<string,unsigned int>& host, const string& base64_enc_bv)
-    {
-        size_t src_read, dst_written;
-        size_t dst_size =  base64_enc_bv.size();
-        vector<unsigned char> dst_buf(dst_size, 0);
-        BASE64_Decode(base64_enc_bv.data(),  base64_enc_bv.size(), &src_read,
-                      &dst_buf[0], dst_size, &dst_written);
-        TBVector& bv = m_Keys[host];
-        bv.clear();
-        bm::deserialize(bv, &dst_buf[0]);
-    }
-
-    CNetScheduleKeys(const CNetScheduleKeys&);
-    CNetScheduleKeys& operator=(const CNetScheduleKeys&);
-};
 
 /* @} */
 

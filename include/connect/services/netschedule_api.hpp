@@ -328,68 +328,69 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///
     void SubmitJobBatch(vector<CNetScheduleJob>& jobs);
 
-    /// Initiate bulk retrieval of job results.
-    /// The command retrieves ids of jobs marked as done.
+    /// Incremental retrieval of jobs that are done or failed.
     ///
-    /// @param batch_id
-    ///    A string reference to store the identifier of the batch,
-    ///    to be passed to ReadConfirm() or ReadRollback().
-    /// @param job_ids
-    ///    Array for storing job ids.
-    /// @param max_jobs
-    ///    Maximum number of jobs returned.
+    /// @param job_id
+    ///    Placeholder for storing the identifier of the job that's
+    ///    done or failed.
+    /// @param auth_token
+    ///    Placeholder for storing a reading reservation token, which
+    ///    guarantees that no other caller will be given the same
+    ///    job for reading.
+    /// @param job_status
+    ///    Placeholder for storing the status of the job,
+    ///    either eDone or eFailed.
     /// @param timeout
-    ///    Number of seconds to wait before the status of jobs
-    ///    is automatically reverted to 'done'.  If zero,
-    ///    status will not be reverted automatically.
+    ///    Number of seconds to wait before the status of jobs is
+    ///    automatically reverted to the original one ('Done' or
+    ///    'Failed').  If zero, the default timeout of the NetSchedule
+    ///    queue will be used instead.
+    /// @param job_group
+    ///    Only consider jobs belonging to the specified group.
     /// @return
-    ///    True if a batch was successfully retrieved from a NetSchedule
-    ///    server.  False if no servers reported jobs marked as done.
-    bool Read(string& batch_id,
-        vector<string>& job_ids,
-        unsigned max_jobs,
-        unsigned timeout = 0);
+    ///    True if a job that's done or failed has been returned
+    ///    via the job_id references. False if no servers reported
+    ///    jobs marked as either done or failed.
+    bool Read(string* job_id,
+        string* auth_token,
+        CNetScheduleAPI::EJobStatus* job_status,
+        unsigned timeout = 0,
+        const string& job_group = kEmptyStr);
 
-    /// Mark the specified jobs as successfully processed.
-    /// The jobs will change their status to 'confirmed' after
+    /// Mark the specified job as successfully retrieved.
+    /// The job will change its status to 'Confirmed' after
     /// this operation.
     ///
-    /// @param batch_id
-    ///    Batch number returned by Read().
-    /// @param job_ids
-    ///    Array of job ids, which results were successfully
-    ///    retrieved and processed.
-    void ReadConfirm(const string& batch_id,
-        const vector<string>& job_ids);
+    /// @param job_id
+    ///    Job key returned by Read().
+    /// @param auth_token
+    ///    Reservation token returned by Read().
+    void ReadConfirm(const string& job_id, const string& auth_token);
 
-    /// Refuse from processing the results of the specified jobs.
-    /// The jobs will change their status back to 'done' after
-    /// this operation.
+    /// Refuse from processing the results of the specified job.
+    /// The job will change its status back to the original one
+    /// ('Done' or 'Failed') after this operation.
     ///
-    /// @param batch_id
-    ///    Batch number returned by Read().
-    /// @param job_ids
-    ///    Array of job ids, for which status needs to be reverted
-    ///    back to 'done'.
-    void ReadRollback(const string& batch_id,
-        const vector<string>& job_ids);
+    /// @param job_id
+    ///    Job key returned by Read().
+    /// @param auth_token
+    ///    Reservation token returned by Read().
+    void ReadRollback(const string& job_id, const string& auth_token);
 
-    /// Refuse from processing the results of the specified jobs
-    /// and increase the counter of failed job result retrievals.
-    /// If for a particular job this counter exceeds the
-    /// failed_read_retries parameter specified in the configuration
-    /// file, the job will change its state to ReadFailed.
+    /// Refuse from processing the results of the specified job
+    /// and increase its counter of failed job result retrievals.
+    /// If this counter exceeds the failed_read_retries parameter
+    /// specified in the configuration file, the job will permanently
+    /// change its status to 'ReadFailed'.
     ///
-    /// @param batch_id
-    ///    Batch number returned by Read().
-    /// @param job_ids
-    ///    Array of job ids, for which status needs to be reverted
-    ///    back to 'done'.
+    /// @param job_id
+    ///    Job key returned by Read().
+    /// @param auth_token
+    ///    Reservation token returned by Read().
     /// @param error_message
     ///    This message can be used to describe the cause why the
     ///    job results could not be read.
-    void ReadFail(const string& batch_id,
-        const vector<string>& job_ids,
+    void ReadFail(const string& job_id, const string& auth_token,
         const string& error_message = kEmptyStr);
 
     /// Submit job to server and wait for the result.

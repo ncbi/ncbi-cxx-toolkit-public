@@ -238,9 +238,14 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
 class CReadCmdExecutor : public INetServerFinder
 {
 public:
-    CReadCmdExecutor(const string& cmd, string& batch_id,
-            vector<string>& job_ids) :
-        m_Cmd(cmd), m_BatchId(batch_id), m_JobIds(job_ids)
+    CReadCmdExecutor(const string& cmd,
+            string& job_id,
+            string& auth_token,
+            CNetScheduleAPI::EJobStatus& job_status) :
+        m_Cmd(cmd),
+        m_JobId(job_id),
+        m_AuthToken(auth_token),
+        m_JobStatus(job_status)
     {
     }
 
@@ -248,124 +253,104 @@ public:
 
 private:
     string m_Cmd;
-    string& m_BatchId;
-    vector<string>& m_JobIds;
+    string& m_JobId;
+    string& m_AuthToken;
+    CNetScheduleAPI::EJobStatus& m_JobStatus;
 };
 
 bool CReadCmdExecutor::Consider(CNetServer server)
 {
     string response = server.ExecWithRetry(m_Cmd).response;
 
-    if (response.empty() || response == "0 " || response == "0")
+    if (response.empty() || response[0] == '0')
         return false;
 
-    string encoded_bitvector;
+    m_JobId.erase();
+    m_AuthToken.erase();
+    m_JobStatus = CNetScheduleAPI::eDone;
 
-    NStr::SplitInTwo(response, " ", m_BatchId, encoded_bitvector);
+    CUrlArgs read_response_parser(response);
 
-    CBitVectorDecoder bvdec(encoded_bitvector);
-
-    string host = server.GetHost();
-    unsigned port = server.GetPort();
-
-    unsigned from, to;
-
-    CNetScheduleKeyGenerator key_gen(host, port);
-
-    while (bvdec.GetNextRange(from, to))
-        while (from <= to)
-            m_JobIds.push_back(key_gen.GenerateV1(from++));
+    ITERATE(CUrlArgs::TArgs, it, read_response_parser.GetArgs()) {
+        switch (it->name[0]) {
+        case 'j':
+            if (it->name == "job_key")
+                m_JobId = it->value;
+            break;
+        case 'a':
+            if (it->name == "auth_token")
+                m_AuthToken = it->value;
+            break;
+        case 's':
+            if (it->name == "status")
+                m_JobStatus = CNetScheduleAPI::StringToStatus(it->value);
+            break;
+        }
+    }
 
     return true;
 }
 
-bool CNetScheduleSubmitter::Read(string& batch_id,
-    vector<string>& job_ids,
-    unsigned max_jobs, unsigned timeout)
+bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
+        CNetScheduleAPI::EJobStatus* job_status, unsigned timeout,
+        const string& job_group)
 {
-    job_ids.clear();
-
     string cmd("READ ");
 
-    cmd.append(NStr::UIntToString(max_jobs));
-
     if (timeout > 0) {
-        cmd += ' ';
+        cmd += " timeout=";
         cmd += NStr::UIntToString(timeout);
     }
+    if (!job_group.empty()) {
+        cmd += " group=";
+        cmd += job_group;
+    }
 
-    CReadCmdExecutor read_executor(cmd, batch_id, job_ids);
+    CReadCmdExecutor read_executor(cmd, *job_id, *auth_token, *job_status);
 
     return m_Impl->m_API->m_Service.FindServer(&read_executor,
         CNetService::eRandomize);
 }
 
-void SNetScheduleSubmitterImpl::ExecReadCommand(const char* cmd_start,
+void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
     const char* cmd_name,
-    const string& batch_id,
-    const vector<string>& job_ids,
+    const string& job_id,
+    const string& auth_token,
     const string& error_message)
 {
-    if (job_ids.empty()) {
-        NCBI_THROW_FMT(CNetScheduleException, eInvalidParameter,
-            cmd_name << ": no job keys specified");
-    }
+    string cmd = cmd_start + job_id;
 
-    CBitVectorEncoder bvenc;
-
-    vector<string>::const_iterator job_id = job_ids.begin();
-
-    CNetScheduleKey first_key(*job_id);
-
-    bvenc.AppendInteger(first_key.id);
-
-    while (++job_id != job_ids.end()) {
-        CNetScheduleKey key(*job_id);
-
-        if (key.host != first_key.host || key.port != first_key.port) {
-            NCBI_THROW_FMT(CNetScheduleException, eInvalidParameter,
-                cmd_name << ": all jobs must belong to a single NS");
-        }
-
-        bvenc.AppendInteger(key.id);
-    }
-
-    string cmd = cmd_start + batch_id;
-
-    cmd += " \"";
-    cmd += bvenc.Encode();
-    cmd += '"';
+    cmd += " auth_token=";
+    cmd += auth_token;
 
     if (!error_message.empty()) {
-        cmd += " \"";
+        cmd += " err_msg=\"";
         cmd += NStr::PrintableString(error_message);
         cmd += '"';
     }
 
-    m_API->m_Service->m_ServerPool->GetServer(
-        first_key.host, first_key.port).ExecWithRetry(cmd);
+    m_API->GetServer(job_id).ExecWithRetry(cmd);
 }
 
-void CNetScheduleSubmitter::ReadConfirm(const string& batch_id,
-    const vector<string>& job_ids)
+void CNetScheduleSubmitter::ReadConfirm(const string& job_id,
+        const string& auth_token)
 {
-    m_Impl->ExecReadCommand("CFRM ", "ReadConfirm",
-        batch_id, job_ids, kEmptyStr);
+    m_Impl->FinalizeRead("CFRM job_key=", "ReadConfirm",
+            job_id, auth_token, kEmptyStr);
 }
 
-void CNetScheduleSubmitter::ReadRollback(const string& batch_id,
-    const vector<string>& job_ids)
+void CNetScheduleSubmitter::ReadRollback(const string& job_id,
+        const string& auth_token)
 {
-    m_Impl->ExecReadCommand("RDRB ", "ReadRollback",
-        batch_id, job_ids, kEmptyStr);
+    m_Impl->FinalizeRead("RDRB job_key=", "ReadRollback",
+            job_id, auth_token, kEmptyStr);
 }
 
-void CNetScheduleSubmitter::ReadFail(const string& batch_id,
-    const vector<string>& job_ids,
-    const string& error_message)
+void CNetScheduleSubmitter::ReadFail(const string& job_id,
+        const string& auth_token, const string& error_message)
 {
-    m_Impl->ExecReadCommand("FRED ", "ReadFail",
-        batch_id, job_ids, error_message);
+    m_Impl->FinalizeRead("FRED job_key=", "ReadFail",
+            job_id, auth_token, error_message);
 }
 
 void CNetScheduleNotificationHandler::SubmitJob(

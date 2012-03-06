@@ -54,6 +54,7 @@
 #define GET_NEXT_JOB_OPTION "get-next-job"
 #define LIMIT_OPTION "limit"
 #define TIMEOUT_OPTION "timeout"
+#define RELIABLE_READ_OPTION "reliable-read"
 #define CONFIRM_READ_OPTION "confirm-read"
 #define ROLLBACK_READ_OPTION "rollback-read"
 #define FAIL_READ_OPTION "fail-read"
@@ -63,7 +64,7 @@
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
 
-#define READJOBS_COMMAND "readjobs"
+#define READJOB_COMMAND "readjob"
 #define REQUESTJOB_COMMAND "requestjob"
 
 BEGIN_NCBI_SCOPE
@@ -98,6 +99,7 @@ enum EOption {
     eGetNextJob,
     eLimit,
     eTimeout,
+    eReliableRead,
     eConfirmRead,
     eRollbackRead,
     eFailRead,
@@ -119,6 +121,7 @@ enum EOption {
     eDeferExpiration,
     eExtendLifetime,
     eProgressMessage,
+    eJobGroup,
     eAllJobs,
     eWaitTimeout,
     eFailJob,
@@ -190,8 +193,7 @@ private:
         unsigned batch_size;
         unsigned limit;
         unsigned timeout;
-        string reservation_token;
-        std::vector<std::string> job_ids;
+        string auth_token;
         string start_after_job;
         size_t job_count;
         CNetScheduleAPI::EJobStatus job_status;
@@ -199,6 +201,7 @@ private:
         string client_node;
         string client_session;
         string progress_message;
+        string job_group;
         string queue_description;
         string error_message;
         string input;
@@ -265,7 +268,7 @@ public:
     int Cmd_SubmitJob();
     int Cmd_GetJobInput();
     int Cmd_GetJobOutput();
-    int Cmd_ReadJobs();
+    int Cmd_ReadJob();
     int Cmd_CancelJob();
     int Cmd_RequestJob();
     int Cmd_CommitJob();

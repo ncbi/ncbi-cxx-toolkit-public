@@ -56,51 +56,6 @@ class NCBI_XCONNECT_EXPORT CCmdLineArgList
     static const string& GetDelimiterString();
 };
 
-class NCBI_XCONNECT_EXPORT CBitVectorEncoder
-{
-public:
-    CBitVectorEncoder() : m_RangeFrom(1), m_RangeTo(0) {}
-
-    void AppendInteger(unsigned number);
-    void AppendRange(unsigned from, unsigned to);
-
-    string Encode();
-
-private:
-    void FlushRange();
-
-    unsigned m_RangeFrom;
-    unsigned m_RangeTo;
-    string m_String;
-    string m_Buffer;
-};
-
-inline string CBitVectorEncoder::Encode()
-{
-    if (m_RangeFrom <= m_RangeTo)
-        FlushRange();
-
-    return m_String;
-}
-
-class NCBI_XCONNECT_EXPORT CBitVectorDecoder
-{
-public:
-    CBitVectorDecoder(const string source);
-
-    bool GetNextRange(unsigned& from, unsigned& to);
-
-private:
-    string m_Source;
-    const char* m_Ptr;
-};
-
-
-inline CBitVectorDecoder::CBitVectorDecoder(const string source) :
-    m_Source(source), m_Ptr(m_Source.c_str())
-{
-}
-
 
 extern NCBI_XCONNECT_EXPORT
 unsigned g_NetService_gethostbyname(const string& hostname);

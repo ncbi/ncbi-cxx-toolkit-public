@@ -780,45 +780,48 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
     return DumpJobInputOutput(job.output);
 }
 
-int CGridCommandLineInterfaceApp::Cmd_ReadJobs()
+int CGridCommandLineInterfaceApp::Cmd_ReadJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
     if (!IsOptionSet(eConfirmRead) && !IsOptionSet(eFailRead) &&
             !IsOptionSet(eRollbackRead)) {
-        if (!IsOptionSet(eLimit)) {
-            fprintf(stderr, PROGRAM_NAME " " READJOBS_COMMAND
-                ": option '--" LIMIT_OPTION "' is required.\n");
-            return 2;
-        }
+        string job_id, auth_token;
+        CNetScheduleAPI::EJobStatus job_status;
 
-        std::string batch_id;
+        if (m_NetScheduleSubmitter.Read(&job_id, &auth_token, &job_status,
+                m_Opts.timeout, m_Opts.job_group)) {
+            PrintLine(job_id);
+            PrintLine(CNetScheduleAPI::StatusToString(job_status));
 
-        if (m_NetScheduleSubmitter.Read(batch_id,
-                m_Opts.job_ids, m_Opts.limit, m_Opts.timeout)) {
-            PrintLine(batch_id);
-
-            ITERATE(std::vector<std::string>, job_id, m_Opts.job_ids) {
-                fprintf(m_Opts.output_stream, "%s\n", job_id->c_str());
+            if (IsOptionSet(eReliableRead))
+                PrintLine(auth_token);
+            else {
+                if (job_status == CNetScheduleAPI::eDone) {
+                    CNetScheduleJob job;
+                    job.job_id = job_id;
+                    m_NetScheduleSubmitter.GetJobDetails(job);
+                    int ret_code = DumpJobInputOutput(job.output);
+                    if (ret_code != 0)
+                        return ret_code;
+                }
+                m_NetScheduleSubmitter.ReadConfirm(job_id, auth_token);
             }
         }
     } else {
         if (!IsOptionSet(eJobId)) {
-            char job_id[1024];
-
-            while (fgets(job_id, sizeof(job_id), m_Opts.input_stream) != NULL)
-                m_Opts.job_ids.push_back(job_id);
+            fprintf(stderr, PROGRAM_NAME " " READJOB_COMMAND
+                ": option '--" JOB_ID_OPTION "' is required.\n");
+            return 2;
         }
 
         if (IsOptionSet(eConfirmRead))
-            m_NetScheduleSubmitter.ReadConfirm(
-                m_Opts.reservation_token, m_Opts.job_ids);
+            m_NetScheduleSubmitter.ReadConfirm(m_Opts.id, m_Opts.auth_token);
         else if (IsOptionSet(eFailRead))
-            m_NetScheduleSubmitter.ReadFail(
-                m_Opts.reservation_token, m_Opts.job_ids, m_Opts.error_message);
+            m_NetScheduleSubmitter.ReadFail(m_Opts.id, m_Opts.auth_token,
+                    m_Opts.error_message);
         else
-            m_NetScheduleSubmitter.ReadRollback(
-                m_Opts.reservation_token, m_Opts.job_ids);
+            m_NetScheduleSubmitter.ReadRollback(m_Opts.id, m_Opts.auth_token);
     }
 
     return 0;

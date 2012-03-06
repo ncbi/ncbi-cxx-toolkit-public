@@ -255,14 +255,13 @@ int CTestNetScheduleClient::Run(void)
     NcbiCout << "Waiting for " << jcount << " jobs..." << NcbiEndl;
 
     for (;;) {
-        string batch_id;
-        vector<string> read_job_ids;
+        string job_id;
+        string auth_token;
+        CNetScheduleAPI::EJobStatus job_status;
 
-        while (submitter.Read(batch_id, read_job_ids, 1)) {
-            ITERATE(vector<string>, job_id, read_job_ids) {
-                submitted_job_ids.erase(*job_id);
-            }
-            submitter.ReadConfirm(batch_id, read_job_ids);
+        while (submitter.Read(&job_id, &auth_token, &job_status)) {
+            submitted_job_ids.erase(job_id);
+            submitter.ReadConfirm(job_id, auth_token);
         }
 
         if (submitted_job_ids.empty())

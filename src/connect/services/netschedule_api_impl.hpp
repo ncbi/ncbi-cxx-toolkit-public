@@ -168,10 +168,10 @@ struct SNetScheduleSubmitterImpl : public CObject
     string SubmitJobImpl(CNetScheduleJob& job,
         unsigned short udp_port, unsigned wait_time);
 
-    void ExecReadCommand(const char* cmd_start,
+    void FinalizeRead(const char* cmd_start,
         const char* cmd_name,
-        const string& batch_id,
-        const vector<string>& job_ids,
+        const string& job_id,
+        const string& auth_token,
         const string& error_message);
 
     CNetScheduleAPI m_API;

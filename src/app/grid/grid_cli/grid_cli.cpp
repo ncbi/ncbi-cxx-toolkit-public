@@ -153,24 +153,27 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eTimeout,
         TIMEOUT_OPTION, "Timeout in seconds."},
 
+    {CCommandLineParser::eSwitch, eReliableRead,
+        RELIABLE_READ_OPTION, "Enable reading confirmation mode."},
+
     {CCommandLineParser::eOptionWithParameter, eConfirmRead,
-        CONFIRM_READ_OPTION, "For the specified reading reservation, "
-            "mark some or all of the jobs as successfully retrieved."},
+        CONFIRM_READ_OPTION, "For the reading reservation specified as "
+            "the argument to this option, mark the job identified by "
+            "'--" JOB_ID_OPTION "' as successfully retrieved."},
 
     {CCommandLineParser::eOptionWithParameter, eRollbackRead,
-        ROLLBACK_READ_OPTION, "Release the specified reading reservation "
-            "for some or all of the jobs."},
+        ROLLBACK_READ_OPTION, "Release the specified reading "
+            "reservation of the specified job."},
 
     {CCommandLineParser::eOptionWithParameter, eFailRead,
-        FAIL_READ_OPTION, "For the specified reading reservation, "
-            "mark some or all of the jobs as failed to be read."},
+        FAIL_READ_OPTION, "Use the specified reading reservation "
+            "to mark the job as impossible to read."},
 
     {CCommandLineParser::eOptionWithParameter, eErrorMessage,
         "error-message", "Provide an optional error message."},
 
     {CCommandLineParser::eOptionWithParameter, eJobId,
-        JOB_ID_OPTION, "Specify one or more job IDs directly "
-            "on the command line."},
+        JOB_ID_OPTION, "Job ID to operate on."},
 
     {CCommandLineParser::eSwitch, eClientInfo,
         "client-info", "Print information on the recently "
@@ -230,6 +233,9 @@ struct SOptionDefinition {
 
     {CCommandLineParser::eOptionWithParameter, eProgressMessage,
         "progress-message", "Set job progress message."},
+
+    {CCommandLineParser::eOptionWithParameter, eJobGroup,
+        "job-group", "Only consider jobs belonging to the specified group."},
 
     {CCommandLineParser::eSwitch, eAllJobs,
         "all-jobs", "Apply to all jobs in the queue."},
@@ -421,8 +427,8 @@ struct SCommandDefinition {
         "number of seconds, its final status will be printed right after "
         "the job ID. In case the status is 'Done', job output will be "
         "printed on the next line (unless the '--" OUTPUT_FILE_OPTION "' "
-        "is given, in which case the output goes to the specified file)."
-        "\n\n"
+        "option is given, in which case the output goes to the specified "
+        "file).\n\n"
         "A NetCache server is required for saving job input if it "
         "exceeds the capability of the NetSchedule internal storage.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
@@ -447,46 +453,60 @@ struct SCommandDefinition {
         {eID, eNetSchedule, eQueue, eOutputFile, eAuth,
             eClientNode, eClientSession, -1}},
 
-    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_ReadJobs,
-        READJOBS_COMMAND, "Bulk retrieval of completed jobs.",
-        "Incrementally harvest IDs of completed jobs. This command "
-        "has two modes of operation: reading of job IDs and "
-        "finalization of reading.\n\n"
-        "The first mode is engaged when neither of the finalization "
-        "options, '--" CONFIRM_READ_OPTION "' or '--" ROLLBACK_READ_OPTION
-        "', is given. In this mode, " PROGRAM_NAME " acquires a reading "
-        "reservation for a batch of completed jobs. The maximum batch "
-        "size must be defined with the '--" LIMIT_OPTION "' option. "
-        "Upon success, if there are completed jobs in the queue, a "
-        "reservation token is printed to the standard output stream "
-        "and is followed by a newline-separated list of completed job "
-        "IDs (unless the '--" OUTPUT_FILE_OPTION "' option is given, "
-        "in which case the list of job IDs is sent to that file). "
-        "If there are no completed jobs in the queue, nothing is "
-        "printed and the exit code will be zero. This command "
-        "changes the status of the returned jobs from Done to Reading. "
-        "The reading reservation is valid for the number of seconds "
-        "specified by the '--" TIMEOUT_OPTION "' option. If the server "
-        "does not receive a reading confirmation within this time frame "
-        "(see below), the jobs will change their status back to Done.\n\n"
-        "In finalization mode, " PROGRAM_NAME " accepts IDs of jobs that "
-        "must be in the Reading state and, depending on the option given, "
-        "changes their state as follows:\n\n"
-        "    Option              Resulting state\n"
+    {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_ReadJob,
+        READJOB_COMMAND, "Return the next job that's done or failed.",
+        "Incrementally harvest IDs of completed and failed jobs. This "
+        "command has two modes of operation: simple mode (without "
+        "acknowledgment) and reliable mode (with acknowledgment). "
+        "The former is the default; the latter is triggered by the "
+        "'--" RELIABLE_READ_OPTION "' option.\n\n"
+        "In simple mode, if any of the specified NetSchedule servers "
+        "has a job that's done or failed, the ID of that job will be "
+        "printed on the first line, and its status - 'Done' or 'Failed' "
+        "- on the second line. Also, if the job is 'Done', its entire "
+        "output will be printed as well, starting from the third line "
+        "(unless the '--" OUTPUT_FILE_OPTION "' option is given, in "
+        "which case the output goes to the specified file).\n\n"
+        "After the job output has been successfully printed, the status "
+        "of the job is immediately changed to 'Confirmed', which means "
+        "that the job won't be available for reading anymore.\n\n"
+        "In reliable mode, job reading is a two-step process. The first "
+        "step, which is triggered by the '--" RELIABLE_READ_OPTION "' "
+        "option, acquires a reading reservation. If there's a job that's "
+        "done or failed, its ID is printed on the first line along "
+        "with its final status ('Done' or 'Failed') on the next line "
+        "and a unique reservation token on the third line. This first "
+        "step changes the status of the returned job from 'Done' to "
+        "'Reading'. The reading reservation is valid only for the "
+        "number of seconds defined by the '--" TIMEOUT_OPTION "' option. "
+        "If the server does not receive a reading confirmation (see "
+        "below) within this time frame, the job will change its status "
+        "back to the original status (either 'Done' or 'Failed').\n\n"
+        "The second step is activated by one of the following "
+        "finalization options: '--" CONFIRM_READ_OPTION "', '--"
+        ROLLBACK_READ_OPTION "', or '--" FAIL_READ_OPTION "'. Each of "
+        "these options requires the reservation token that was issued "
+        "by NetSchedule during the first step to be specified as the "
+        "argument for the option. The corresponding job ID must be "
+        "provided with the '--" JOB_ID_OPTION "' option. The job must "
+        "still be in the 'Reading' status. After the finalization "
+        "step, the status of the job will change depending on the "
+        "option given as per the following table:\n\n"
+        "    Option              Resulting status\n"
         "    ================    ================\n"
         "    --" CONFIRM_READ_OPTION "      Confirmed\n"
         "    --" FAIL_READ_OPTION "         ReadFailed\n"
-        "    --" ROLLBACK_READ_OPTION "     Done\n\n"
-        "Job IDs are read from the standard input stream or the specified "
-        "input file. Alternatively, they can be specified as a series of "
-        "'--" JOB_ID_OPTION "' command line options. The Confirmed and "
-        "ReadFailed states are final and cannot be changed, while '--"
-        ROLLBACK_READ_OPTION "' makes the jobs available for another "
-        "run of '" READJOBS_COMMAND "'.",
-        {eNetSchedule, eQueue, eLimit, eTimeout, eOutputFile,
-            eConfirmRead, eRollbackRead, eFailRead, eErrorMessage,
-            eJobId, eInputFile, eAuth,
-            eClientNode, eClientSession, -1}},
+        "    --" ROLLBACK_READ_OPTION "     Done or Failed\n\n"
+        "The 'Confirmed' status and the 'ReadFailed' status are final and "
+        "cannot be changed, while '--" ROLLBACK_READ_OPTION "' makes the "
+        "jobs available for subsequent '" READJOB_COMMAND "' commands.\n\n"
+        "In either mode, if there are no completed or failed jobs "
+        "in the queue, nothing will be printed and the exit code "
+        "will be zero.",
+        {eNetSchedule, eQueue, eOutputFile, eJobGroup,
+            eReliableRead, eTimeout, eJobId, eConfirmRead,
+            eRollbackRead, eFailRead, eErrorMessage,
+            eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel a NetSchedule job.",
@@ -791,6 +811,7 @@ int CGridCommandLineInterfaceApp::Run()
                 /* FALL THROUGH */
             case eID:
             case eQueueArg:
+            case eJobId:
                 m_Opts.id = opt_value;
                 break;
             case eAuth:
@@ -864,10 +885,7 @@ int CGridCommandLineInterfaceApp::Run()
             case eConfirmRead:
             case eRollbackRead:
             case eFailRead:
-                m_Opts.reservation_token = opt_value;
-                break;
-            case eJobId:
-                m_Opts.job_ids.push_back(opt_value);
+                m_Opts.auth_token = opt_value;
                 break;
             case eStartAfterJob:
                 m_Opts.start_after_job = opt_value;
@@ -894,6 +912,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eProgressMessage:
                 m_Opts.progress_message = opt_value;
+                break;
+            case eJobGroup:
+                m_Opts.job_group = opt_value;
                 break;
             case eErrorMessage:
             case eFailJob:
