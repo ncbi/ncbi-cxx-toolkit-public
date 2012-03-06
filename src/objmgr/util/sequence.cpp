@@ -2520,12 +2520,40 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq& bioseq )
     // [organism=...], etc.
 
     // collect relevant objects into this as we go
+    vector< CConstRef<CSeq_descr> > arrSeqDescrsToCheck;
+    vector< CConstRef<CSeq_annot> > arrAnnotsToCheck;
+
+    if( bioseq.IsSetDescr() ) {
+        arrSeqDescrsToCheck.push_back( CConstRef<CSeq_descr>(&bioseq.GetDescr()) );
+        if( bioseq.IsSetAnnot() ) {
+            copy( bioseq.GetAnnot().begin(), bioseq.GetAnnot().end(),
+                back_inserter(arrAnnotsToCheck) );
+        }
+    }
+
+    // climb up the hierarchy to find all descrs and annots
+    // It's important that lower levels are first so that those are
+    // the ones we use first
+    CConstRef< CBioseq_set > bioseq_set = bioseq.GetParentSet();
+    for( ; ! bioseq_set.IsNull(); bioseq_set = bioseq_set->GetParentSet() ) {
+        if( bioseq_set->IsSetDescr() ) {
+            arrSeqDescrsToCheck.push_back( CConstRef<CSeq_descr>(&bioseq_set->GetDescr()) );
+        }
+        if( bioseq_set->IsSetAnnot() ) {
+            copy( bioseq_set->GetAnnot().begin(), bioseq_set->GetAnnot().end(),
+                back_inserter(arrAnnotsToCheck) );
+        }
+    }
+
     vector< CConstRef<CBioSource> > arrBiosourcesToCheck;
     vector< CConstRef<CMolInfo> >   arrMolInfosToCheck;
 
-    if( bioseq.IsSetDescr() && bioseq.GetDescr().IsSet() ) {
-        ITERATE( CSeq_descr::Tdata, descr_iter, bioseq.GetDescr().Get() ) {
-            const CSeqdesc & seqdesc = **descr_iter;
+    ITERATE( vector< CConstRef<CSeq_descr> >, descr_iter, arrSeqDescrsToCheck ) {
+        if ( ! (*descr_iter)->IsSet() ) {
+            continue;
+        }
+        ITERATE( CSeq_descr::Tdata, desc_iter, (*descr_iter)->Get() ) {
+            const CSeqdesc & seqdesc = **desc_iter;
             if( seqdesc.IsSource() ) {
                 arrBiosourcesToCheck.push_back( 
                     CConstRef<CBioSource>( &seqdesc.GetSource() ) );
@@ -2536,18 +2564,16 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq& bioseq )
             }
         }
     }
-    if( bioseq.IsSetAnnot() ) {
-        ITERATE( CBioseq::TAnnot, bioseq_iter, bioseq.GetAnnot() ) {
-            const CSeq_annot & annot = **bioseq_iter;
-            if( annot.IsFtable() ) {
-                ITERATE( CSeq_annot::C_Data::TFtable, feat_iter, annot.GetData().GetFtable() ) {
-                    const CSeq_feat & feat = **feat_iter;
-                    if( feat.IsSetData() ) {
-                        const CSeqFeatData & feat_data = feat.GetData();
-                        if( feat_data.IsBiosrc() ) {
-                            arrBiosourcesToCheck.push_back( 
-                                CConstRef<CBioSource>( &feat_data.GetBiosrc() ) );
-                        }
+    ITERATE( vector< CConstRef<CSeq_annot> >, annot_iter, arrAnnotsToCheck ) {
+        const CSeq_annot & annot = **annot_iter;
+        if( annot.IsFtable() ) {
+            ITERATE( CSeq_annot::C_Data::TFtable, feat_iter, annot.GetData().GetFtable() ) {
+                const CSeq_feat & feat = **feat_iter;
+                if( feat.IsSetData() ) {
+                    const CSeqFeatData & feat_data = feat.GetData();
+                    if( feat_data.IsBiosrc() ) {
+                        arrBiosourcesToCheck.push_back( 
+                            CConstRef<CBioSource>( &feat_data.GetBiosrc() ) );
                     }
                 }
             }
