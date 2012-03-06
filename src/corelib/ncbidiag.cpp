@@ -3791,7 +3791,7 @@ bool SDiagMessage::ParseMessage(const string& message)
                 if (dcol == NPOS) {
                     goto parse_unk_func;
                 }
-                pos = tmp_pos;
+                pos = sep_pos + 1;
                 if (dcol > 0) {
                     m_Data->m_Class = tmp.substr(0, dcol);
                     m_Class = m_Data->m_Class.empty() ?
