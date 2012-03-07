@@ -468,7 +468,7 @@ string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp)
     } else if(vp.GetMol() == CVariantPlacement::eMol_protein) {
         moltype = "p.";
     } else if(vp.GetMol() == CVariantPlacement::eMol_mitochondrion) {
-        moltype = "mt.";
+        moltype = "m.";
     } else {
         moltype = "u.";
     }
