@@ -1,0 +1,8 @@
+#define TAGS connect_daemons_mod
+corelib$
+common$
+connect$
+connect/ext$
+connect/daemons$
+connect/daemons/mod$
+internal/webenv2$

@@ -1,0 +1,14 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Alexey Rafanovich
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+LIB: libconnect.a libconnext.a liblbsmdapi.a
+
+Linux64-Centos  : gcc : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
