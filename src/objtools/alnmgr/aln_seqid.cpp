@@ -64,7 +64,11 @@ string CAlnSeqId::AsString(void) const {
 
 void CAlnSeqId::SetBioseqHandle(const CBioseq_Handle& handle) {
     m_BioseqHandle = handle;
+    if ( !handle ) {
+        return;
+    }
     m_Mol = handle.GetSequenceType();
+    m_BaseWidth = CSeq_inst::IsAa(m_Mol) ? 3 : 1;
 }
 
 

@@ -80,10 +80,7 @@ public:
     TAlnSeqId* operator() (const CSeq_id& id) const {
         CRef<CAlnSeqId> aln_id(new TAlnSeqId(id));
         if (m_Scope) {
-            CBioseq_Handle h = m_Scope->GetBioseqHandle(id);
-            if (h.IsAa()) {
-                aln_id->SetBaseWidth(3);
-            }
+            aln_id->SetBioseqHandle(m_Scope->GetBioseqHandle(id));
         }
         return aln_id.Release();
     }

@@ -303,6 +303,21 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
 {
     _ALNMGR_ASSERT(row_1 >=0  &&  row_2 >= 0);
 
+    TSeqPos last_to_1 = 0;
+
+    int guessed_width_1 = 0;
+    int guessed_width_2 = 0;
+
+    // Check global strand of the first row - we'll need it for gaps.
+    bool global_first_direct = true;
+    ITERATE (CSeq_align::TSegs::TStd, std_it, stds) {
+        const CStd_seg::TLoc& loc = (*std_it)->GetLoc();
+        if ( !loc[row_1]->GetTotalRange().Empty() ) {
+            global_first_direct = !loc[row_1]->IsReverseStrand();
+            break;
+        }
+    }
+
     ITERATE (CSeq_align::TSegs::TStd, std_it, stds) {
 
         const CStd_seg::TLoc& loc = (*std_it)->GetLoc();
@@ -314,11 +329,12 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
 
         TSeqPos len_1 = rng_1.GetLength();
         TSeqPos len_2 = rng_2.GetLength();
+        bool first_direct = !loc[row_1]->IsReverseStrand();
+        bool direct = first_direct != loc[row_2]->IsReverseStrand();
 
         if (len_1 > 0  &&  len_2 > 0) {
 
-            bool first_direct = loc[row_1]->IsReverseStrand();
-            bool direct = first_direct == loc[row_2]->IsReverseStrand();
+            last_to_1 = first_direct ? rng_1.GetFrom() + len_1 : rng_1.GetFrom();
             if (direction == CAlnUserOptions::eBothDirections  ||
                 (direct ?
                  direction == CAlnUserOptions::eDirect :
@@ -332,6 +348,9 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                     abs((TSignedSeqPos)len_1 - (TSignedSeqPos)len_2*3);
                 bool row_1_is_protein = prot_to_nuc_diff < nuc_to_nuc_diff;
                 bool row_2_is_protein = nuc_to_prot_diff < nuc_to_nuc_diff;
+
+                guessed_width_1 = row_1_is_protein ? 3 : 1;
+                guessed_width_2 = row_2_is_protein ? 3 : 1;
 
                 CPairwiseAln::TAlnRng aln_rng;
                 aln_rng.SetDirect(direct);
@@ -392,6 +411,30 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                     }
                 }
             }
+        }
+        else if (len_2 > 0) {
+            // Gap in the second row - add insertion
+            TSignedSeqPos from_1 = last_to_1;
+            TSignedSeqPos from_2 = rng_2.GetFrom();
+            TSignedSeqPos len = len_2;
+            // If we've seen a normal segment, widths should be set (but may be
+            // different from base widths from the pairwise_aln). Otherwise we
+            // have to use pairwise alignment.
+            if (guessed_width_1 == 0) {
+                guessed_width_1 = pairwise_aln.GetFirstBaseWidth();
+            }
+            if (guessed_width_2 == 0) {
+                guessed_width_2 = pairwise_aln.GetSecondBaseWidth();
+            }
+            from_1 *= guessed_width_1;
+            from_2 *= guessed_width_2;
+            len *= guessed_width_2;
+            bool gap_direct = global_first_direct != loc[row_2]->IsReverseStrand();
+            pairwise_aln.AddInsertion(CPairwiseAln::TAlnRng(
+                from_1, from_2, len, gap_direct, global_first_direct));
+        }
+        else if (len_1 > 0) {
+            last_to_1 = first_direct ? rng_1.GetFrom() + len_1 : rng_1.GetFrom();
         }
     }
 }

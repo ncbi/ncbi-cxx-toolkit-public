@@ -54,13 +54,6 @@ MergePairwiseAlns(CPairwiseAln& existing,
     SubtractAlnRngCollections(addition, // minuend
                               existing, // subtrahend
                               difference);
-    int gap_flags = CPairwiseAln::TAlnRngColl::fAllowAbutting |
-        CPairwiseAln::TAlnRngColl::fAllowMixedDir |
-        CPairwiseAln::TAlnRngColl::fAllowOverlap;
-    CPairwiseAln::TAlnRngColl gaps_coll(addition.GetInsertions(),
-        gap_flags);
-    CPairwiseAln::TAlnRngColl gaps_truncated(gap_flags);
-    SubtractAlnRngCollections(gaps_coll, existing, gaps_truncated);
 #ifdef _TRACE_MergeAlnRngColl
     cerr << endl;
     cerr << "existing:" << endl << existing << endl;
@@ -70,7 +63,16 @@ MergePairwiseAlns(CPairwiseAln& existing,
     ITERATE(CPairwiseAln, rng_it, difference) {
         existing.insert(*rng_it);
     }
-    existing.AddInsertions(gaps_truncated);
+    if ((flags & CAlnUserOptions::fIgnoreInsertions) == 0) {
+        int gap_flags = CPairwiseAln::TAlnRngColl::fAllowAbutting |
+            CPairwiseAln::TAlnRngColl::fAllowMixedDir |
+            CPairwiseAln::TAlnRngColl::fAllowOverlap;
+        CPairwiseAln::TAlnRngColl gaps_coll(addition.GetInsertions(),
+            gap_flags);
+        CPairwiseAln::TAlnRngColl gaps_truncated(gap_flags);
+        SubtractAlnRngCollections(gaps_coll, existing, gaps_truncated);
+        existing.AddInsertions(gaps_truncated);
+    }
 #ifdef _TRACE_MergeAlnRngColl
     cerr << "result = existing + difference:" << endl << existing << endl;
 #endif
@@ -125,13 +127,6 @@ private:
             SubtractAlnRngCollections(*addition,  // minuend
                                       existing,   // subtrahend
                                       *truncated);// difference
-            int gap_flags = CPairwiseAln::TAlnRngColl::fAllowAbutting |
-                CPairwiseAln::TAlnRngColl::fAllowMixedDir |
-                CPairwiseAln::TAlnRngColl::fAllowOverlap;
-            CPairwiseAln::TAlnRngColl gaps_coll(addition->GetInsertions(),
-                gap_flags);
-            CPairwiseAln::TAlnRngColl gaps_truncated(gap_flags);
-            SubtractAlnRngCollections(gaps_coll, existing, gaps_truncated);
 
 #ifdef _TRACE_MergeAlnRngColl
             cerr << endl;
@@ -139,8 +134,21 @@ private:
             cerr << "addition:" << endl << *addition << endl;
             cerr << "truncated = addition - existing:" << endl << *truncated << endl;
 #endif
-            addition = truncated;
-            addition->AddInsertions(gaps_truncated);
+
+            if ((m_MergeFlags & CAlnUserOptions::fIgnoreInsertions) == 0) {
+                int gap_flags = CPairwiseAln::TAlnRngColl::fAllowAbutting |
+                    CPairwiseAln::TAlnRngColl::fAllowMixedDir |
+                    CPairwiseAln::TAlnRngColl::fAllowOverlap;
+                CPairwiseAln::TAlnRngColl gaps_coll(addition->GetInsertions(),
+                    gap_flags);
+                CPairwiseAln::TAlnRngColl gaps_truncated(gap_flags);
+                SubtractAlnRngCollections(gaps_coll, existing, gaps_truncated);
+                addition = truncated;
+                addition->AddInsertions(gaps_truncated);
+            }
+            else {
+                addition = truncated;
+            }
         }
     }
 
@@ -263,11 +271,13 @@ private:
             if (next_rng_it != addition.end()) {
                 next_rng_pos = next_rng_it->GetFirstFrom();
             }
-            // Add all gaps up to the next non-gap range
-            while (gap_it != gaps.end()  &&
-                (gap_it->GetFirstFrom() <= next_rng_pos  ||  next_rng_pos < 0)) {
-                (*aln_it)->AddInsertion(*gap_it);
-                gap_it++;
+            if ((m_MergeFlags & CAlnUserOptions::fIgnoreInsertions) == 0) {
+                // Add all gaps up to the next non-gap range
+                while (gap_it != gaps.end()  &&
+                    (gap_it->GetFirstFrom() <= next_rng_pos  ||  next_rng_pos < 0)) {
+                    (*aln_it)->AddInsertion(*gap_it);
+                    gap_it++;
+                }
             }
         }
     }

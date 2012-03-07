@@ -109,10 +109,11 @@ public:
                                       ///  methods incosistent with
                                       ///  CAlnVec::*AlnPos*.
 
-        fAnchorRowFirst     = 1 << 5  ///< Anchor row is stored in the first
+        fAnchorRowFirst     = 1 << 5, ///< Anchor row is stored in the first
                                       ///  pairwise alignment, not the last
                                       ///  one.
 
+        fIgnoreInsertions   = 1 << 6  ///< Do not store insertions
     };
     typedef int TMergeFlags;
     TMergeFlags  m_MergeFlags;

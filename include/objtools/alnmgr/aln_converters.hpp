@@ -200,6 +200,18 @@ CreateAnchoredAlnFromAln(const _TAlnStats& aln_stats,      ///< input
     }
     _ALNMGR_ASSERT(anchor_row >= 0  &&  anchor_row < dim);
 
+    // If there are different sequence types involved, force genomic coordinates.
+    // No need to explicitly check this if the anchor is a nucleotide.
+    bool force_widths = false;
+    if ( aln_stats.GetIdVec()[anchor_row]->IsProtein() ) {
+        for (size_t i = 0; i < aln_stats.GetIdVec().size(); ++i) {
+            if ( aln_stats.GetIdVec()[i]->IsNucleotide() ) {
+                force_widths = true;
+                break;
+            }
+        }
+    }
+
     /// Flags
     int anchor_flags =
         CPairwiseAln::fKeepNormalized;
@@ -208,6 +220,10 @@ CreateAnchoredAlnFromAln(const _TAlnStats& aln_stats,      ///< input
         CPairwiseAln::fKeepNormalized | 
         CPairwiseAln::fAllowMixedDir;
 
+    if ((options.m_MergeFlags & CAlnUserOptions::fIgnoreInsertions) != 0) {
+        anchor_flags |= CPairwiseAln::fIgnoreInsertions;
+        flags |= CPairwiseAln::fIgnoreInsertions;
+    }
 
     /// Create pairwises
     typedef typename _TAlnStats::TIdVec TIdVec;
@@ -229,6 +245,11 @@ CreateAnchoredAlnFromAln(const _TAlnStats& aln_stats,      ///< input
              row,
              row == anchor_row ? CAlnUserOptions::eDirect : options.m_Direction,
              &aln_stats.GetIdVec());
+
+        if (force_widths) {
+            // Need to convert coordinates to genomic.
+            pairwise_aln->ForceGenomicCoords();
+        }
 
         if (pairwise_aln->empty()) {
             ++empty_rows;

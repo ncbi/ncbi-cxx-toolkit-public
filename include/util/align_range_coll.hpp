@@ -88,11 +88,12 @@ public:
         fAllowMixedDir  = 0x0002, /// allow segments with different orientation
         fAllowOverlap   = 0x0004, /// allow segments overlapping on the first sequence
         fAllowAbutting  = 0x0008, /// allows segments not separated by gaps
+        fIgnoreInsertions = 0x0010, /// do not store insertions
 
         fDefaultPolicy  = fKeepNormalized,
         fDefaultPoicy   = fDefaultPolicy, /// Keep compatible with SC-8.0
 
-        fPolicyMask     = 0x000f,
+        fPolicyMask     = 0x001f,
 
         /// State flags:
         fNotValidated   = 0x0100, /// collection was modified and not validated
@@ -578,11 +579,17 @@ public:
 
     void AddInsertion(const TAlignRange& r)
     {
+        if ( IsSet(fIgnoreInsertions) ) {
+            return;
+        }
         m_Insertions.push_back(r);
     }
 
     void AddInsertions(const TAlignRangeVector& insertions)
     {
+        if ( IsSet(fIgnoreInsertions) ) {
+            return;
+        }
         ITERATE(typename TAlignRangeVector, it, insertions) {
             m_Insertions.push_back(*it);
         }
@@ -591,6 +598,9 @@ public:
 
     void AddInsertions(const TThisType& collection)
     {
+        if ( IsSet(fIgnoreInsertions) ) {
+            return;
+        }
         ITERATE(typename TAlignRangeVector, it, collection) {
             m_Insertions.push_back(*it);
         }

@@ -111,6 +111,7 @@ public:
     CAlnSeqId(const CSeq_id& id) :
         CSeq_id_Handle(CSeq_id_Handle::GetHandle(id)),
         m_Seq_id(&id),
+        m_Mol(CSeq_inst::eMol_not_set),
         m_BaseWidth(1)
     {};
 

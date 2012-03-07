@@ -87,6 +87,23 @@ public:
         return m_SecondId;
     }
 
+    // If both sequences are proteins, convert coordinates to genomic anyway.
+    void ForceGenomicCoords(void) {
+        if (!m_FirstId->IsProtein()  ||  !m_SecondId->IsProtein()) {
+            return; // already genomic
+        }
+        NON_CONST_ITERATE(TAlignRangeVector, rg, m_Ranges) {
+            rg->SetFirstFrom(rg->GetFirstFrom()*3);
+            rg->SetSecondFrom(rg->GetSecondFrom()*3);
+            rg->SetLength(rg->GetLength()*3);
+        }
+        NON_CONST_ITERATE(TAlignRangeVector, rg, m_Insertions) {
+            rg->SetFirstFrom(rg->GetFirstFrom()*3);
+            rg->SetSecondFrom(rg->GetSecondFrom()*3);
+            rg->SetLength(rg->GetLength()*3);
+        }
+    }
+
 private:
     TAlnSeqIdIRef m_FirstId;
     TAlnSeqIdIRef m_SecondId;

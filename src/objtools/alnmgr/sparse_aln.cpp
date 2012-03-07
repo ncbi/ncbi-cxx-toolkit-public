@@ -39,7 +39,6 @@
 #include <objects/seqalign/Sparse_align.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 
-
 #define NCBI_USE_ERRCODE_X   Objtools_Aln_Sparse
 
 
@@ -473,6 +472,7 @@ string& CSparseAln::GetSeqString(TNumrow row,
     if (width > 1) {
         seq_from /= 3;
         seq_to /= 3;
+        force_translation = false; // do not translate AAs.
     }
     if (seq_to >= seq_from) {
         CSeqVector& seq_vector = x_GetSeqVector(row);
@@ -485,6 +485,10 @@ string& CSparseAln::GetSeqString(TNumrow row,
         } else {
             TSeqPos vec_size = seq_vector.size();
             seq_vector.GetSeqData(vec_size - seq_to - 1, vec_size - seq_from, buffer);
+        }
+
+        if ( force_translation ) {
+            TranslateNAToAA(buffer, buffer);
         }
     }
     return buffer;
@@ -516,7 +520,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
 
     buffer.erase();
 
-    if(aln_range.GetLength() > 0)   {
+    if (aln_range.GetLength() > 0)   {
         const CPairwiseAln& pairwise_aln = *m_Aln->GetPairwiseAlns()[row];
         _ASSERT( !pairwise_aln.empty() );
         if (pairwise_aln.empty()) {
@@ -566,7 +570,8 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
                 if (translate) {
                     off /= 3;
                 }
-            } else {
+            }
+            else {
                 _ASSERT(base_width == 3);
                 IAlnSegment::TSignedRange prot_r = r;
                 prot_r.SetFrom(r.GetFrom() / 3);
@@ -584,10 +589,11 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
                 std::reverse(s.begin(), s.end());
             }*/
 
-            if(prev_to_open == string::npos) {
+            if (prev_to_open == string::npos) {
                 // we have a gap at the start position
                 buffer.replace(0, off, off, m_GapChar);
-            } else {   // this is not the first segement
+            }
+            else {   // this is not the first segement
                 off = max(prev_to_open, off);
                 int gap_size = off - prev_to_open;
                 buffer.replace(prev_to_open, gap_size, gap_size, m_GapChar);
@@ -602,7 +608,8 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
             ++it;
         }
         int fill_len = size - prev_to_open;
-        if(prev_to_open != string::npos  &&  fill_len > 0  &&  pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
+        if (prev_to_open != string::npos  &&  fill_len > 0  &&
+            pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
             // there is gap on the right
             buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
         }
