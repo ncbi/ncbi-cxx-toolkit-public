@@ -434,6 +434,8 @@ void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand
 
 void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
 {
+    if (models.empty() && int(m_gnomon->GetSeq().size()) < mincontig)
+        return;
     Predict(models, bad_aligns, 0, TSignedSeqPos(m_gnomon->GetSeq().size())-1);
 }
 
