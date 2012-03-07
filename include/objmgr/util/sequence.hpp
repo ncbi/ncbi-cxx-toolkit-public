@@ -797,7 +797,7 @@ private:
 
     void x_WriteSeqIds    ( const CBioseq& bioseq,
                             const CSeq_loc* location);
-    void x_WriteModifiers ( const CBioseq& bioseq );
+    void x_WriteModifiers ( const CBioseq_Handle & handle );
     void x_WriteSeqTitle  ( const CBioseq& bioseq,
                             CScope* scope,
                             const string& custom_title);

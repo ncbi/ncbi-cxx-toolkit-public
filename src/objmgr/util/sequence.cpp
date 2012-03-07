@@ -2514,89 +2514,27 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
     }
 }
 
-void CFastaOstream::x_WriteModifiers ( const CBioseq& bioseq )
+void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
 {
     // handle modifiers retrieved from Biosource.Org-ref
     // [organism=...], etc.
 
-    // collect relevant objects into this as we go
-    vector< CConstRef<CSeq_descr> > arrSeqDescrsToCheck;
-    vector< CConstRef<CSeq_annot> > arrAnnotsToCheck;
-
-    if( bioseq.IsSetDescr() ) {
-        arrSeqDescrsToCheck.push_back( CConstRef<CSeq_descr>(&bioseq.GetDescr()) );
-        if( bioseq.IsSetAnnot() ) {
-            copy( bioseq.GetAnnot().begin(), bioseq.GetAnnot().end(),
-                back_inserter(arrAnnotsToCheck) );
-        }
-    }
-
-    // climb up the hierarchy to find all descrs and annots
-    // It's important that lower levels are first so that those are
-    // the ones we use first
-    CConstRef< CBioseq_set > bioseq_set = bioseq.GetParentSet();
-    for( ; ! bioseq_set.IsNull(); bioseq_set = bioseq_set->GetParentSet() ) {
-        if( bioseq_set->IsSetDescr() ) {
-            arrSeqDescrsToCheck.push_back( CConstRef<CSeq_descr>(&bioseq_set->GetDescr()) );
-        }
-        if( bioseq_set->IsSetAnnot() ) {
-            copy( bioseq_set->GetAnnot().begin(), bioseq_set->GetAnnot().end(),
-                back_inserter(arrAnnotsToCheck) );
-        }
-    }
-
-    vector< CConstRef<CBioSource> > arrBiosourcesToCheck;
-    vector< CConstRef<CMolInfo> >   arrMolInfosToCheck;
-
-    ITERATE( vector< CConstRef<CSeq_descr> >, descr_iter, arrSeqDescrsToCheck ) {
-        if ( ! (*descr_iter)->IsSet() ) {
-            continue;
-        }
-        ITERATE( CSeq_descr::Tdata, desc_iter, (*descr_iter)->Get() ) {
-            const CSeqdesc & seqdesc = **desc_iter;
-            if( seqdesc.IsSource() ) {
-                arrBiosourcesToCheck.push_back( 
-                    CConstRef<CBioSource>( &seqdesc.GetSource() ) );
-            }
-            if( seqdesc.IsMolinfo() ) {
-                arrMolInfosToCheck.push_back( 
-                    CConstRef<CMolInfo>( &seqdesc.GetMolinfo() ) );
-            }
-        }
-    }
-    ITERATE( vector< CConstRef<CSeq_annot> >, annot_iter, arrAnnotsToCheck ) {
-        const CSeq_annot & annot = **annot_iter;
-        if( annot.IsFtable() ) {
-            ITERATE( CSeq_annot::C_Data::TFtable, feat_iter, annot.GetData().GetFtable() ) {
-                const CSeq_feat & feat = **feat_iter;
-                if( feat.IsSetData() ) {
-                    const CSeqFeatData & feat_data = feat.GetData();
-                    if( feat_data.IsBiosrc() ) {
-                        arrBiosourcesToCheck.push_back( 
-                            CConstRef<CBioSource>( &feat_data.GetBiosrc() ) );
-                    }
-                }
-            }
-        }
-    }
-
     bool organism_seen = false;
     bool strain_seen = false;
     bool gcode_seen = false;
-    ITERATE( vector< CConstRef<CBioSource> >, bsrc_iter, arrBiosourcesToCheck ) {
-        const CBioSource & bsrc = **bsrc_iter;
-        if( bsrc.IsSetOrg() ) {
-            const COrg_ref & org = bsrc.GetOrg();
-            if( org.IsSetTaxname() ) {
-                x_PrintStringModIfNotDup( &organism_seen, "organism", org.GetTaxname() );
-            }
-            if( org.IsSetOrgname() ) {
-                const COrg_ref::TOrgname & orgname = org.GetOrgname();
-                if( orgname.IsSetMod() ) {
-                    ITERATE( COrgName::TMod, mod_iter, orgname.GetMod() ) {
-                        const COrgMod & mod = **mod_iter;
-                        if( mod.IsSetSubtype() ) {
-                            switch( mod.GetSubtype() ) {
+    
+    try {
+        const COrg_ref & org = sequence::GetOrg_ref(handle);
+        if( org.IsSetTaxname() ) {
+            x_PrintStringModIfNotDup( &organism_seen, "organism", org.GetTaxname() );
+        }
+        if( org.IsSetOrgname() ) {
+            const COrg_ref::TOrgname & orgname = org.GetOrgname();
+            if( orgname.IsSetMod() ) {
+                ITERATE( COrgName::TMod, mod_iter, orgname.GetMod() ) {
+                    const COrgMod & mod = **mod_iter;
+                    if( mod.IsSetSubtype() ) {
+                        switch( mod.GetSubtype() ) {
                             case COrgMod::eSubtype_strain:
                                 if( mod.IsSetSubname() ) {
                                     x_PrintStringModIfNotDup( &strain_seen, "strain", mod.GetSubname() );
@@ -2605,15 +2543,16 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq& bioseq )
                             default:
                                 // ignore; do nothing
                                 break;
-                            }
                         }
                     }
                 }
-                if( orgname.IsSetGcode() ) {
-                    x_PrintIntModIfNotDup( &gcode_seen, "gcode", orgname.GetGcode() );
-                }
+            }
+            if( orgname.IsSetGcode() ) {
+                x_PrintIntModIfNotDup( &gcode_seen, "gcode", orgname.GetGcode() );
             }
         }
+    } catch( CException & ) {
+        // ignore exception; it probably just means there's no org-ref
     }
 
     typedef pair<CMolInfo::TTech, const char*> TTechMapEntry;
@@ -2650,8 +2589,9 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq& bioseq )
 
     // print some key-value pairs
     bool tech_seen = false;
-    ITERATE( vector< CConstRef<CMolInfo> >, molinfo_iter, arrMolInfosToCheck) {
-        const CMolInfo & molinfo = **molinfo_iter;
+    const CMolInfo * pMolInfo = sequence::GetMolInfo(handle);
+    if( pMolInfo != NULL ) {
+        const CMolInfo & molinfo = *pMolInfo;
         if( molinfo.IsSetTech() ) {
             TTechMap::const_iterator find_iter = sc_TechMap.find(molinfo.GetTech());
             if( find_iter != sc_TechMap.end() ) {
@@ -2734,7 +2674,9 @@ void CFastaOstream::WriteTitle(const CBioseq& bioseq,
     if ( no_scope && ! location ) {
         x_WriteSeqIds(bioseq, NULL);
         if( (m_Flags & fShowModifiers) != 0 ) {
-            x_WriteModifiers(bioseq);
+            CScope scope(*CObjectManager::GetInstance());
+            CBioseq_Handle bioseq_handle = scope.AddBioseq(bioseq);
+            x_WriteModifiers(bioseq_handle);
         } else {
             x_WriteSeqTitle(bioseq, NULL, custom_title);
         }
@@ -2752,7 +2694,7 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
 {
     x_WriteSeqIds(*handle.GetBioseqCore(), location);
     if( (m_Flags & fShowModifiers) != 0 ) {
-        x_WriteModifiers(*handle.GetBioseqCore());
+        x_WriteModifiers(handle);
     } else {
         string safe_title = (custom_title.empty() ? m_Gen->GenerateDefline(handle)
             : custom_title);
