@@ -874,6 +874,7 @@ Optional Packages:
 ===============================================================================
 =============== NCBI C++ Toolkit specific configuration flags =================
  --without-debug         build non-debug versions of libs and apps
+ --with-max-debug,       enable extra runtime checks (esp. of STL usage)
  --with-symbols          retain debugging symbols in non-debug mode
  --without-optimization  turn off optimization flags in non-debug mode
  --with-profiling        build profiled versions of libs and apps
@@ -1844,6 +1845,12 @@ fi;
 # Check whether --with-debug or --without-debug was given.
 if test "${with_debug+set}" = set; then
   withval="$with_debug"
+
+fi;
+
+# Check whether --with-max-debug or --without-max-debug was given.
+if test "${with_max_debug+set}" = set; then
+  withval="$with_max_debug"
 
 fi;
 
@@ -2819,11 +2826,12 @@ fi;
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug symbols optimization profiling tcheck dll static static-exe bundles \
-plugin-auto-load bin-release mt 64 universal exe runpath hard-runpath lfs \
+debug max-debug symbols optimization profiling tcheck dll static static-exe \
+plugin-auto-load bundles bin-release mt 64 universal exe runpath hard-runpath \
+lfs limited-linker \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
-check ncbi-public strip pch caution ccache distcc limited-linker \
+check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
@@ -2992,6 +3000,11 @@ fi
 if test "$with_debug" = no; then
     : ${with_symbols=no}
     : ${with_optimization=yes}
+    if test "$with_max_debug" = yes; then
+       { { echo "$as_me:$LINENO: error: incompatible options: --without-debug but --with-max-debug" >&5
+echo "$as_me: error: incompatible options: --without-debug but --with-max-debug" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
 else
     : ${with_symbols=yes}
     : ${with_optimization=no}
@@ -8747,7 +8760,7 @@ else
 fi
 
 
-#### Manage the debug-vs.-optimization flags ("--with(out)-debug",
+#### Manage the debug-vs.-optimization flags ("--with(out)-(max-)debug",
 #### "--with(out)-symbols", "--with(out)-optimization")
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" -o "$with_tcheck" != "no"; then
@@ -8756,6 +8769,25 @@ if test "$compiler" != "MSVC" ; then
       CPPFLAGS="-D_DEBUG $CPPFLAGS"
    fi
 
+   if test "$with_max_debug" = "yes"; then
+      case "$compiler" in
+         GCC )
+            CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
+            CFLAGS="-fstack-check $CFLAGS"
+            CXXFLAGS="-fstack-check $CXXFLAGS"
+            ;;
+         ICC )
+            CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
+            CFLAGS="-debug all -fstack-security-check -ftrapuv $CFLAGS"
+            CXXFLAGS="-debug all -fstack-security-check -ftrapuv $CXXFLAGS"
+            ;;
+         WorkShop* )
+            CFLAGS="-xcheck=%all $CFLAGS"
+            CXXFLAGS="-xcheck=%all $CXXFLAGS"
+            ;;
+      esac
+                WithFeatures="$WithFeatures${WithFeaturesSep}MaxDebug"; WithFeaturesSep=" "
+   fi
    if test "$with_symbols" = "no" ; then
       CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
       CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
@@ -32817,7 +32849,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

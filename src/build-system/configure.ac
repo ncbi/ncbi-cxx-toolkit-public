@@ -117,6 +117,8 @@ AC_ARG_WITH(title2,
 ## Code generation
 AC_ARG_WITH(debug,
    [ --without-debug         build non-debug versions of libs and apps])
+AC_ARG_WITH(max-debug,
+   [ --with-max-debug,       enable extra runtime checks (esp. of STL usage)])
 AC_ARG_WITH(symbols,
    [ --with-symbols          retain debugging symbols in non-debug mode])
 AC_ARG_WITH(optimization,
@@ -451,11 +453,12 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug symbols optimization profiling tcheck dll static static-exe bundles \
-plugin-auto-load bin-release mt 64 universal exe runpath hard-runpath lfs \
+debug max-debug symbols optimization profiling tcheck dll static static-exe \
+plugin-auto-load bundles bin-release mt 64 universal exe runpath hard-runpath \
+lfs limited-linker \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
-check ncbi-public strip pch caution ccache distcc limited-linker \
+check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
@@ -561,6 +564,9 @@ fi
 if test "$with_debug" = no; then
     : ${with_symbols=no}
     : ${with_optimization=yes}
+    if test "$with_max_debug" = yes; then
+       AC_MSG_ERROR([incompatible options: --without-debug but --with-max-debug])
+    fi
 else
     : ${with_symbols=yes}
     : ${with_optimization=no}
@@ -2505,9 +2511,8 @@ else
 fi
 
 
-#### Manage the debug-vs.-optimization flags ("--with(out)-debug",
+#### Manage the debug-vs.-optimization flags ("--with(out)-(max-)debug",
 #### "--with(out)-symbols", "--with(out)-optimization")
-changequote(, )dnl
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" -o "$with_tcheck" != "no"; then
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
@@ -2515,6 +2520,26 @@ if test "$compiler" != "MSVC" ; then
       CPPFLAGS="-D_DEBUG $CPPFLAGS"
    fi
 
+   if test "$with_max_debug" = "yes"; then
+      case "$compiler" in
+         GCC )
+            CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
+            CFLAGS="-fstack-check $CFLAGS"
+            CXXFLAGS="-fstack-check $CXXFLAGS"
+            ;;
+         ICC ) 
+            CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
+            CFLAGS="-debug all -fstack-security-check -ftrapuv $CFLAGS"
+            CXXFLAGS="-debug all -fstack-security-check -ftrapuv $CXXFLAGS"
+            ;;
+         WorkShop* )
+            CFLAGS="-xcheck=%all $CFLAGS"
+            CXXFLAGS="-xcheck=%all $CXXFLAGS"
+            ;;
+      esac
+      NCBI_FEATURE(MaxDebug)
+   fi
+changequote(, )dnl
    if test "$with_symbols" = "no" ; then
       CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
       CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
@@ -2556,8 +2581,8 @@ if test "$compiler" != "MSVC" ; then
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
       FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
    fi
-fi
 changequote([, ])dnl
+fi
 
 
 

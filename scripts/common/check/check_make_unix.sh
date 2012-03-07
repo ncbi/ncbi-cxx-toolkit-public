@@ -351,6 +351,17 @@ fi
 DYLD_BIND_AT_LAUNCH=1
 export DYLD_BIND_AT_LAUNCH
 
+case " \$FEATURES " in
+    *\ MaxDebug\ * )
+         case "\$signature" in
+	     *-linux* ) MALLOC_DEBUG_=2; export MALLOC_DEBUG_ ;;
+         esac
+         case "\$signature" in
+             GCC* | ICC* ) NCBI_CHECK_TIMEOUT_MULT=20 ;;
+         esac
+         ;;
+esac
+
 EOF
 
 if test -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib";  then
