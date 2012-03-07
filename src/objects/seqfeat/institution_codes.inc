@@ -3875,6 +3875,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MULU	s	Museum Ludovicae Ulricae, Zoology Institute of the University of Uppsala",
 "MUM	c	Micoteca da Universidade do Minho",
 "MUMF	s	Department of Life Sciences",
+"MUMH<JPN>	s	Mie University Mycological Herbarium",
 "MUMZ	s	University of Missouri, Museum of Zoology",
 "MUNC	s	St. John's, Memorial University of Newfoundland",
 "MUNZ	s	Massey University",
