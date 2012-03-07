@@ -48,9 +48,10 @@
 #include <objects/scoremat/PssmWithParameters.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cd_utils)
+
 USING_SCOPE(objects);
 USING_SCOPE(blast);
-BEGIN_SCOPE(cd_utils)
 
 struct PssmMakerOptions
 {
