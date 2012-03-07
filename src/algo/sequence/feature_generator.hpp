@@ -64,6 +64,7 @@ struct CFeatureGenerator::SImplementation {
     TFeatureGeneratorFlags m_flags;
     TSeqPos m_min_intron;
     TSeqPos m_allowed_unaligned;
+    bool m_is_gnomon;
 
     typedef map<int,CRef<CSeq_feat> > TGeneMap;
     TGeneMap genes;

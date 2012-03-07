@@ -130,6 +130,7 @@ CFeatureGenerator::SImplementation::SImplementation(CScope& scope)
     , m_flags(fDefaults)
     , m_min_intron(kDefaultMinIntron)
     , m_allowed_unaligned(kDefaultAllowedUnaligned)
+    , m_is_gnomon(false)
 {
 }
 
@@ -419,6 +420,16 @@ static void s_TransformToNucpos(CProduct_pos &pos)
     pos.SetNucpos(nucpos);
 }
 
+string ExtractGnomonModelNum(const CSeq_id& seq_id)
+{
+    string model_num;
+    if (seq_id.IsGeneral() && seq_id.GetGeneral().CanGetDb() && seq_id.GetGeneral().GetDb() == "GNOMON") {
+        model_num = seq_id.GetGeneral().GetTag().GetStr();
+        model_num.erase(model_num.size()-2, 2);
+    }
+    return model_num;
+}
+
 CRef<CSeq_feat>
 CFeatureGenerator::
 SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
@@ -479,6 +490,9 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     CTime time(CTime::eCurrent);
 
     const CSeq_id& rna_id = align->GetSeq_id(mapper.GetRnaRow());
+
+    m_is_gnomon = !ExtractGnomonModelNum(rna_id).empty();
+
 
     /// we always need the mRNA location as a reference
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -584,7 +598,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         _ASSERT((*it)->GetData().Which() != CSeqFeatData::e_not_set);
         annot.SetData().SetFtable().push_back(*it);
         
-        if (gene_id) {  // create xrefs for gnomon models
+        if (m_is_gnomon) {  // create xrefs for gnomon models
             CRef< CSeqFeatXref > propagatedxref( new CSeqFeatXref() );
             propagatedxref->SetId(*(*it)->SetIds().front());
         
@@ -607,7 +621,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         x_CopyAdditionalFeatures(handle, mapper, annot);
     }
 
-    if (gene_id) {
+    if (m_is_gnomon) {
         tr.Commit();
     } else {
         tr.RollBack();
@@ -1057,16 +1071,6 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 #endif
     
     seqs.SetSeq_set().push_back(entry);
-}
-
-string ExtractGnomonModelNum(const CSeq_id& seq_id)
-{
-    string model_num;
-    if (seq_id.IsGeneral() && seq_id.GetGeneral().CanGetDb() && seq_id.GetGeneral().GetDb() == "GNOMON") {
-        model_num = seq_id.GetGeneral().GetTag().GetStr();
-        model_num.erase(model_num.size()-2, 2);
-    }
-    return model_num;
 }
 
 CRef<CSeq_feat>
