@@ -1307,8 +1307,26 @@ Fix-sets-action ::= CHOICE {
   fix-pop-to-phy NULL
 }
 
+Table-match-type ::= CHOICE {
+  feature-id NULL ,
+  gene-locus-tag NULL ,
+  protein-id NULL,
+  dbxref NULL ,
+  nuc-id NULL ,
+  src-qual Source-qual-choice ,
+  protein-name NULL ,
+  any NULL
+}
+
+Table-match ::= SEQUENCE {
+  match-type Table-match-type ,
+  match-location String-location DEFAULT equals
+}
+
+
 Apply-table-action ::= SEQUENCE {
-  filename VisibleString 
+  filename VisibleString ,
+  match-type Table-match
 }
 
 Macro-action-choice ::= CHOICE {
