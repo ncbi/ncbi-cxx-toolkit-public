@@ -42,6 +42,7 @@
 #include <objtools/align_format/format_flags.hpp>
 #include <util/math/matrix.hpp>
 #include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
+#include <algo/blast/core/blast_stat.h>
 
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
@@ -475,14 +476,13 @@ public:
     ///@param lambda
     ///@param k
     ///@param h
-    ///@param line_len: length of each line desired
-    ///@param out: stream to ouput
-    ///@param gapped: gapped alignment?
-    ///@param c
-    ///
+    ///@param line_len length of each line desired
+    ///@param out stream to ouput
+    ///@param gapped gapped alignment?
+    ///@param gbp Gumbel parameters
     static void PrintKAParameters(double lambda, double k, double h,
                                   size_t line_len, CNcbiOstream& out, 
-                                  bool gapped, float c = 0.0);
+                                  bool gapped, const Blast_GumbelBlk *gbp=NULL);
 
     /// Returns a full '|'-delimited Seq-id string for a Bioseq.
     /// @param cbs Bioseq object [in]

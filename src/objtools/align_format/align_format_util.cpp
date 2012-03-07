@@ -395,17 +395,20 @@ void CAlignFormatUtil::PrintDbReport(const vector<SDbInfo>& dbinfo_list,
 void CAlignFormatUtil::PrintKAParameters(double lambda, double k, double h, 
                                          size_t line_len, 
                                          CNcbiOstream& out, bool gapped, 
-                                         float c) 
+                                         const Blast_GumbelBlk *gbp)
 {
 
     char buffer[256];
     if (gapped) { 
         out << "Gapped" << "\n";
     }
-    if (c == 0.0) {
-        out << "Lambda     K      H";
-    } else {
-        out << "Lambda     K      H      C";
+    out << "Lambda      K        H";
+    if (gbp) {
+        if (gapped) {
+            out << "        a         alpha    sigma";
+        } else {
+            out << "        a         alpha";
+        }
     }
     out << "\n";
     sprintf(buffer, "%#8.3g ", lambda);
@@ -414,9 +417,21 @@ void CAlignFormatUtil::PrintKAParameters(double lambda, double k, double h,
     out << buffer;
     sprintf(buffer, "%#8.3g ", h);
     out << buffer;
-    if (c != 0.0) {
-        sprintf(buffer, "%#8.3g ", c);
-        x_WrapOutputLine(buffer, line_len, out);
+    if (gbp) {
+        if (gapped) {
+            sprintf(buffer, "%#8.3g ", gbp->a);
+            out << buffer;
+            sprintf(buffer, "%#8.3g ", gbp->Alpha);
+            out << buffer;
+            sprintf(buffer, "%#8.3g ", gbp->Sigma);
+            out << buffer;
+        } else {
+            sprintf(buffer, "%#8.3g ", gbp->a_un);
+            out << buffer;
+            sprintf(buffer, "%#8.3g ", gbp->Alpha_un);
+            out << buffer;
+        }
+        //x_WrapOutputLine(buffer, line_len, out);
     }
     out << "\n";
 }

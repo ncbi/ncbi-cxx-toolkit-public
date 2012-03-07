@@ -294,12 +294,13 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
         (m_Program == "psiblast" || m_Program == "deltablast")
         ? summary.GetPsiUngappedKarlinBlk() 
         : summary.GetUngappedKarlinBlk();
+    const Blast_GumbelBlk *gbp = summary.GetGumbelBlk();
     m_Outfile << "\n";
     if (kbp_ungap) {
         CBlastFormatUtil::PrintKAParameters(kbp_ungap->Lambda, 
                                             kbp_ungap->K, kbp_ungap->H,
                                             kFormatLineLength, m_Outfile,
-                                            false);
+                                            false, gbp);
     }
 
     const Blast_KarlinBlk *kbp_gap = 
@@ -311,7 +312,7 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
         CBlastFormatUtil::PrintKAParameters(kbp_gap->Lambda, 
                                             kbp_gap->K, kbp_gap->H,
                                             kFormatLineLength, m_Outfile,
-                                            true);
+                                            true, gbp);
     }
 
     m_Outfile << "\n";

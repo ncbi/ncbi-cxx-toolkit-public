@@ -93,6 +93,11 @@ public:
         return *this;
     }
 
+    /// Retrieve gumbel parameters
+    const Blast_GumbelBlk * GetGumbelBlk() const {
+        return m_GumbelBlk;
+    }
+
     /// Retrieve ungapped Karlin parameters
     const Blast_KarlinBlk * GetUngappedKarlinBlk() const { 
         return m_UngappedKarlinBlk; 
@@ -123,6 +128,9 @@ public:
         return m_LengthAdjustment; 
     }
 private:
+    /// Gumbel parameters for one query
+    Blast_GumbelBlk *m_GumbelBlk;
+
     /// Ungapped Karlin parameters for one query
     Blast_KarlinBlk *m_UngappedKarlinBlk;
 

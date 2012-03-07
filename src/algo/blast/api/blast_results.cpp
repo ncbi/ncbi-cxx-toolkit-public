@@ -63,12 +63,22 @@ s_InitializeKarlinBlk(Blast_KarlinBlk* src, Blast_KarlinBlk** dest)
     }
 }
 
+static void
+s_InitializeGumbelBlk(Blast_GumbelBlk* src, Blast_GumbelBlk** dest)
+{
+    _ASSERT(dest);
+
+    if (src) {
+        *dest = (Blast_GumbelBlk*) calloc(1, sizeof(Blast_GumbelBlk));
+        memcpy((void*) (*dest), (void*) src, sizeof(Blast_GumbelBlk));
+    }
+}
 
 CBlastAncillaryData::CBlastAncillaryData(EBlastProgramType program_type,
                     int query_number,
                     const BlastScoreBlk *sbp,
                     const BlastQueryInfo *query_info)
-: m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
+: m_GumbelBlk(0), m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
   m_PsiGappedKarlinBlk(0), m_SearchSpace(0), m_LengthAdjustment(0)
 {
     int i;
@@ -104,6 +114,9 @@ CBlastAncillaryData::CBlastAncillaryData(EBlastProgramType program_type,
         s_InitializeKarlinBlk(sbp->kbp_gap_psi[ctx_index], 
                               &m_PsiGappedKarlinBlk);
     }
+    if (sbp->gbp) {
+        s_InitializeGumbelBlk(sbp->gbp, &m_GumbelBlk);
+    }
 }
 
 CBlastAncillaryData::CBlastAncillaryData(pair<double, double> lambda,
@@ -111,7 +124,7 @@ CBlastAncillaryData::CBlastAncillaryData(pair<double, double> lambda,
                                          pair<double, double> h,
                                          Int8 effective_search_space,
                                          bool is_psiblast /* = false */)
-: m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
+: m_GumbelBlk(0), m_UngappedKarlinBlk(0), m_GappedKarlinBlk(0), m_PsiUngappedKarlinBlk(0),
   m_PsiGappedKarlinBlk(0), m_SearchSpace(0), m_LengthAdjustment(0)
 {
     if (is_psiblast) {
@@ -145,6 +158,7 @@ CBlastAncillaryData::~CBlastAncillaryData()
     Blast_KarlinBlkFree(m_GappedKarlinBlk);
     Blast_KarlinBlkFree(m_PsiUngappedKarlinBlk);
     Blast_KarlinBlkFree(m_PsiGappedKarlinBlk);
+    if (m_GumbelBlk) sfree(m_GumbelBlk);
 }
 
 void 
@@ -172,6 +186,9 @@ CBlastAncillaryData::do_copy(const CBlastAncillaryData& other)
             m_PsiGappedKarlinBlk = Blast_KarlinBlkNew();
             Blast_KarlinBlkCopy(m_PsiGappedKarlinBlk, 
                                 other.m_PsiGappedKarlinBlk);
+        }
+        if (other.m_GumbelBlk) {
+            s_InitializeGumbelBlk(other.m_GumbelBlk, &m_GumbelBlk);
         }
     }
 }
