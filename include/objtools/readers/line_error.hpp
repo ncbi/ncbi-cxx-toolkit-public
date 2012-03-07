@@ -266,10 +266,10 @@ public:
         const std::string & strQualifierName = string(""),
         const std::string & strQualifierValue = string("") )
     : CObjReaderParseException( DIAG_COMPILE_INFO, 0, eFormat, strMessage, uLine,
-        eDiag_Info ), m_strSeqId(strSeqId), m_uLineNumber(uLine), 
+        eDiag_Info ), 
+        m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine), 
         m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
-        m_strQualifierValue(strQualifierValue),
-        m_eProblem(eProblem)
+        m_strQualifierValue(strQualifierValue)
     {
         SetSeverity( eSeverity );
     };
