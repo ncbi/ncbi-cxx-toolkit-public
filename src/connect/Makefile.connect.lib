@@ -11,7 +11,7 @@ SRC      = $(SRC_C)
 UNIX_SRC = $(LOCAL_LBSM)
 
 LIB      = connect
-PROJ_TAG = core connect_daemons_mod
+PROJ_TAG = core connect_daemons_mod_loadinfo
 
 LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)
 

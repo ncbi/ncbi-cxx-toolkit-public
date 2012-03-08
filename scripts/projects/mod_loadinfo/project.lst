@@ -1,4 +1,4 @@
-#define TAGS connect_daemons_mod
+#define TAGS connect_daemons_mod_loadinfo
 corelib$
 common$
 connect$
