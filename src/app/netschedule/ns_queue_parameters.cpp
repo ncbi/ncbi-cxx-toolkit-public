@@ -66,7 +66,6 @@ SQueueParameters::SQueueParameters() :
     max_input_size(kNetScheduleMaxDBDataSize),
     max_output_size(kNetScheduleMaxDBDataSize),
     deny_access_violations(false),
-    log_access_violations(true),
     run_timeout_precision(default_run_timeout_precision)
 {}
 
@@ -139,8 +138,6 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
 
     deny_access_violations = reg.GetBool(sname, "deny_access_violations", false,
-                                         0, IRegistry::eReturn);
-    log_access_violations  = reg.GetBool(sname, "log_access_violations", true,
                                          0, IRegistry::eReturn);
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);

@@ -59,7 +59,6 @@ struct SQueueParameters
     unsigned        max_input_size;
     unsigned        max_output_size;
     bool            deny_access_violations;
-    bool            log_access_violations;
     string          subm_hosts;
     string          wnode_hosts;
 
