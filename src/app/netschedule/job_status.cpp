@@ -303,7 +303,8 @@ TJobStatus CJobStatusTracker::ChangeStatus(CQueue *      queue,
 
     case CNetScheduleAPI::eReading:
         old_status = x_GetStatusNoLock(job_id);
-        if (old_status == CNetScheduleAPI::eDone) {
+        if (old_status == CNetScheduleAPI::eDone ||
+            old_status == CNetScheduleAPI::eFailed) {
             x_SetClearStatusNoLock(job_id, status, old_status);
             status_updated = true;
             break;
