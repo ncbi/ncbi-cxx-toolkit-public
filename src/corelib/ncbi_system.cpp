@@ -484,29 +484,17 @@ bool GetCurrentProcessTimes(double* user_time, double* system_time)
 {
 #if defined(NCBI_OS_MSWIN)
     // Each FILETIME structure contains the number of 100-nanosecond time units.
-    union TFileTime {
-        FILETIME ft;
-        __int64  int64;
-    };
-    TFileTime ft_creation, ft_exit, ft_kernel, ft_user;
-    
+    FILETIME ft_creation, ft_exit, ft_kernel, ft_user;
     if (! ::GetProcessTimes(GetCurrentProcess(),
-                            &ft_creation.ft, &ft_exit.ft,
-                            &ft_kernel.ft, &ft_user.ft) ) {
+                            &ft_creation, &ft_exit,
+                            &ft_kernel, &ft_user) ) {
             return false;
     }
-/*    
-    if (real_time) {
-        TFileTime ft_system;
-        ::GetSystemTimeAsFileTime(&ft_system.ft);
-        *real_time = (ft_system.int64 - ft_creation.int64)* 1.0e-7;
-    }
-*/    
     if (system_time) {
-        *system_time = ft_kernel.int64 * 1.0e-7;
+        *system_time = (ft_kernel.dwLowDateTime + ((Uint8)ft_kernel.dwHighDateTime<<32)) * 1.0e-7;
     }
     if (user_time) {
-        *user_time = ft_user.int64 * 1.0e-7;
+        *user_time = (ft_user.dwLowDateTime + ((Uint8)ft_user.dwHighDateTime<<32)) * 1.0e-7;
     }
 
 #elif defined(NCBI_OS_UNIX)
