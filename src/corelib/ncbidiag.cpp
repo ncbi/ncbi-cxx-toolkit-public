@@ -1762,7 +1762,7 @@ void CDiagContext_Extra::Flush(void)
         *ostr << m_PerfStatus << " " <<
             NStr::DoubleToString(m_PerfTime, -1, NStr::fDoubleFixed);
         buf = ostr->str();
-        buflen = ostr->pcount();
+        buflen = size_t(ostr->pcount());
     }
 
     SDiagMessage mess(eDiag_Info,
@@ -2235,7 +2235,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         ostr << message;
     }
     SDiagMessage mess(eDiag_Info,
-                      ostr.str(), ostr.pcount(),
+                      ostr.str(), size_t(ostr.pcount()),
                       0, 0, // file, line
                       CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
                       NULL,
@@ -2976,7 +2976,7 @@ void CDiagBuffer::Flush(void)
     }
 
     const char* message = m_Stream->str();
-    size_t size = m_Stream->pcount();
+    size_t size = size_t(m_Stream->pcount());
     m_Stream->rdbuf()->freeze(false);
 
     TDiagPostFlags flags = m_Diag->GetPostFlags();

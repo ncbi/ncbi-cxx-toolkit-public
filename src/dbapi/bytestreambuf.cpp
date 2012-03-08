@@ -45,7 +45,7 @@ enum { DEF_BUFSIZE = 2048 };
 
 CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
     : m_buf(0), 
-    m_size(bufsize > 0 ? bufsize : DEF_BUFSIZE), 
+    m_size(bufsize > 0 ? size_t(bufsize) : DEF_BUFSIZE), 
     /* m_len(0),*/ m_rs(0), m_cmd(0) //, m_column(-1)
 { 
     m_buf = new CT_CHAR_TYPE[m_size * 2]; // read and write buffer in one

@@ -2610,7 +2610,7 @@ ct_cmd_props(CS_COMMAND * cmd, CS_INT action, CS_INT property, CS_VOID * buffer,
             }
             if (property == CS_CUR_NAME) {
                 size_t len = strlen(cursor->cursor_name);
-                if (len >= buflen)
+                if ((CS_INT)len >= buflen)
                     return CS_FAIL;
                 strcpy(buffer, cursor->cursor_name);
                 if (outlen) *outlen = len;
@@ -2667,7 +2667,7 @@ ct_compute_info(CS_COMMAND * cmd, CS_INT type, CS_INT colnum, CS_VOID * buffer, 
             *outlen = sizeof(CS_INT);
         break;
     case CS_COMP_BYLIST:
-        if (buflen < (resinfo->by_cols * sizeof(CS_SMALLINT))) {
+        if (buflen < (CS_INT)(resinfo->by_cols * sizeof(CS_SMALLINT))) {
             return CS_FAIL;
         } else {
             dest_by_col_ptr = (CS_SMALLINT *) buffer;
@@ -4329,7 +4329,7 @@ paramrowalloc(TDSPARAMINFO * params, TDSCOLUMN * curcol, int param_num, void *va
             size = curcol->column_size;
 
         if (is_blob_type(curcol->column_type)) {
-            TDSBLOB *blob = &params->current_row[curcol->column_offset];
+            TDSBLOB *blob = (TDSBLOB*)&params->current_row[curcol->column_offset];
             blob->textvalue = (TDS_CHAR *) malloc(size);
             memcpy(blob->textvalue, value, size);
         }
