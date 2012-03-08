@@ -612,7 +612,7 @@ CRef<CSpliced_exon_chunk> CreateSplicedExonChunk(char cur, size_t count)
     default:
         NCBI_THROW(CAlgoAlignException,
                    eInternal,
-                   g_msg_UnknownTranscriptSymbol + cur);
+                   string(g_msg_UnknownTranscriptSymbol) + cur);
     }
     return chunk;
 }
