@@ -1202,12 +1202,12 @@ int CGridWorkerNode::Run()
         // if server does not understand this new command just ignore the error
         if (ex.GetErrCode() != CNetServiceException::eCommunicationError
             || NStr::Find(ex.what(),"Server error:Unknown request") == NPOS) {
-            ERR_POST_X(35, "Could not unregister from NetScehdule services: "
+            ERR_POST_X(35, "Could not unregister from NetSchedule services: "
                        << ex.what());
         }
     }
     catch (exception& ex) {
-        ERR_POST_X(36, "Could not unregister from NetScehdule services: "
+        ERR_POST_X(36, "Could not unregister from NetSchedule services: "
                    << ex.what());
     }
 
