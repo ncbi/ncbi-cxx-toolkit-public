@@ -261,9 +261,9 @@ public:
     {
         TEntryPoint ptr = GetEntryPoint(name);
         if ( func ) {
-            *func = (TFunc)ptr.func; 
+            *func = (TFunc)(void*)ptr.func; 
         }
-        return (TFunc)ptr.func;
+        return (TFunc)(void*)ptr.func;
     }
 
     /// Get DLLs entry point (data).

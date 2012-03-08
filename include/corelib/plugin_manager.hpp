@@ -1202,7 +1202,7 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
 
             if (epoint.entry_point.func) {
                 FNCBI_EntryPoint ep =
-                   (FNCBI_EntryPoint)epoint.entry_point.func;
+                   (FNCBI_EntryPoint)(void*)epoint.entry_point.func;
 
                 if ( RegisterWithEntryPoint(ep, driver, version) ) {
                     m_RegisteredEntries.push_back(entry);
