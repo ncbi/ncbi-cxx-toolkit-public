@@ -86,6 +86,7 @@ private:
     TIdKeyMap m_IdKeys;
     Uint4 m_InPos;
     Uint4 m_InReadSize;
+    Uint8 m_TotalRead;
     char m_InBuf[1024 * 1024];
     char m_GetBuf[1024 * 1024];
 
@@ -110,7 +111,7 @@ static string s_InFile;
 static string s_NCService;
 static Uint8 s_StartTime = 0;
 static bool s_NeedConfReload = false;
-static bool s_SomeThreadFinished = false;
+static CAtomicCounter s_ThreadsFinished;
 static CFastMutex s_ReloadMutex;
 static vector< CRef<CReplayThread> > s_Threads;
 
@@ -281,6 +282,7 @@ CReplayThread::CReplayThread(const string& file_prefix, int file_num)
     : m_NC(s_NCService, "logs_replay_" + NStr::IntToString(file_num)),
       m_InPos(0),
       m_InReadSize(0),
+      m_TotalRead(0),
       m_CntWrites(100),
       m_CntErased(100),
       m_CntReads(100),
@@ -329,10 +331,13 @@ retry:
         if (n_read == 0) {
             LOG_POST("Cannot read file " << m_InFile.GetPathname()
                      << " (attempted to read "
-                     << (sizeof(m_InBuf) - m_InReadSize) << ")");
+                     << (sizeof(m_InBuf) - m_InReadSize)
+                     << " at position " << m_TotalRead
+                     << " with last req_time=" << m_ReqTime << ")");
             return false;
         }
         m_InReadSize += n_read;
+        m_TotalRead += n_read;
         goto retry;
     }
 
@@ -547,7 +552,7 @@ CReplayThread::Main(void)
             s_NeedConfReload = false;
         }
     }
-    s_SomeThreadFinished = true;
+    s_ThreadsFinished.Add(1);
     return NULL;
 }
 
@@ -602,6 +607,7 @@ CLogsReplayApp::Run(void)
     s_NCService = args["service"].AsString();
     s_StartTime = Uint8(args["start_time"].AsInt8());
 
+    s_ThreadsFinished.Set(0);
     s_Threads.resize(n_files);
     for (int i = 0; i < n_files; ++i) {
         CRef<CReplayThread> thr(new CReplayThread(s_InFile, i));
@@ -609,7 +615,7 @@ CLogsReplayApp::Run(void)
         thr->Run();
     }
     CStopWatch watch(CStopWatch::eStart);
-    while (!s_SomeThreadFinished) {
+    while (int(s_ThreadsFinished.Get()) != n_files) {
         SleepMilliSec(20000, eInterruptOnSignal);
         s_PrintStats(int(watch.Elapsed()));
     }
