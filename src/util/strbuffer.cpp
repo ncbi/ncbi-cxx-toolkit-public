@@ -553,7 +553,7 @@ void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
             NCBI_THROW(CIOException,eRead,"stream position is out of buffer");
         }
         m_BufferPos = pos;
-        m_CurrentPos = m_Buffer + pos;
+        m_CurrentPos = m_Buffer + (size_t)pos;
         m_Line = 1;
     }
 }

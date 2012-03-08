@@ -1364,7 +1364,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
            << GetServiceName();
         os << endl;
         os << "GETLOAD" << ends;
-        if (socket.Write(os.str(), os.pcount()) != eIO_Success) {
+        if (socket.Write(os.str(), (size_t)os.pcount()) != eIO_Success) {
             os.freeze(false);
             continue;
         }

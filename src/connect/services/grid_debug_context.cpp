@@ -90,7 +90,7 @@ int CGridDebugContext::SetExecuteList(const string& files)
         char buf[1024];
         while (!ifile.eof()) {
             ifile.read(buf, sizeof(buf));
-            writer->Write(buf, ifile.gcount());
+            writer->Write(buf, (size_t)ifile.gcount());
         }
         writer->Flush();
         m_Blobs[blob_id] = fname;

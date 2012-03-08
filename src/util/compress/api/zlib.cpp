@@ -742,7 +742,7 @@ bool CZipCompressionFile::Open(const string& file_name, EMode mode,
             SetError(-1, description.c_str());
             return false;
         }
-        s_CheckGZipHeader(buf, m_File->gcount(), info);
+        s_CheckGZipHeader(buf, (size_t)m_File->gcount(), info);
     }
 
     // Create compression stream for I/O
@@ -1406,7 +1406,7 @@ void g_GZip_ScanForChunks(CNcbiIstream& is, IChunkHandler& handler)
         while ( is  &&  action != IChunkHandler::eAction_Stop) {
             // Get some compressed data
             is.read((char*)in_buf, in_size);
-            size_t nread = is.gcount();
+            size_t nread = (size_t)is.gcount();
             if ( !nread ) {
                 break;
             }

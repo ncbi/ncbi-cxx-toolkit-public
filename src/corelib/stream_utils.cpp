@@ -306,8 +306,8 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
     if ( !sb ) {
         CT_CHAR_TYPE* bp = 0;
-        streamsize buf_size = m_DelPtr
-            ? (streamsize)(m_Buf - (CT_CHAR_TYPE*) m_DelPtr) + m_BufSize : 0;
+        size_t buf_size = m_DelPtr
+            ? size_t((m_Buf - (CT_CHAR_TYPE*) m_DelPtr) + m_BufSize) : 0;
         if (buf_size < kMinBufSize) {
             buf_size = kMinBufSize;
             bp = new CT_CHAR_TYPE[buf_size];
@@ -402,8 +402,8 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
                                   ? CPushback_Streambuf::kMinBufSize
                                   : CPushback_Streambuf::kMinBufSize >> 4))) {
             CT_CHAR_TYPE* bp = sb->gptr();
-            streamsize avail = (streamsize)(bp - sb->m_Buf);
-            streamsize take  = avail < buf_size ? avail : buf_size;
+            size_t avail = bp - sb->m_Buf;
+            size_t take  = avail < buf_size ? avail : (size_t)buf_size;
             if (take) {
                 bp -= take;
                 buf_size -= take;
@@ -421,8 +421,8 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
     }
 
     if (!del_ptr  &&  how != ePushback_NoCopy) {
-        del_ptr = new CT_CHAR_TYPE[buf_size];
-        buf = (CT_CHAR_TYPE*) memcpy(del_ptr, buf, buf_size);
+        del_ptr = new CT_CHAR_TYPE[(size_t)buf_size];
+        buf = (CT_CHAR_TYPE*) memcpy(del_ptr, buf, (size_t)buf_size);
     }
 
     (void) new CPushback_Streambuf(is, buf, buf_size, del_ptr);
@@ -585,7 +585,7 @@ ERW_Result CStreamReader::PendingCount(size_t* count)
         if (iostate) {
             return eRW_Eof;
         }
-        *count = m_Stream->rdbuf()->in_avail();
+        *count = (size_t)m_Stream->rdbuf()->in_avail();
         return eRW_Success;
     }
     return eRW_Error;
@@ -599,7 +599,7 @@ ERW_Result CStreamWriter::Write(const void* buf,
     streamsize w = m_Stream->good()
         ? m_Stream->rdbuf()->sputn(static_cast<const char*>(buf), count) : 0;
     if ( bytes_written ) {
-        *bytes_written = w;
+        *bytes_written = (size_t)w;
     }
     if (!w) {
         m_Stream->setstate(NcbiBadbit);

@@ -857,7 +857,7 @@ CFormatGuess::TestFormatNewick(
     AutoArray<char> autoDelete(pSample);
 
     m_Stream.read(pSample, maxSampleSize);
-    sampleSize = m_Stream.gcount();
+    sampleSize = (size_t)m_Stream.gcount();
     m_Stream.clear();  // in case we reached eof
     CStreamUtils::Stepback(m_Stream, pSample, sampleSize);
     if (0 == sampleSize) {
@@ -999,7 +999,7 @@ CFormatGuess::TestFormatXml(
         return false;
     }
 
-    string input( m_pTestBuffer, m_iTestDataSize );
+    string input( m_pTestBuffer, (size_t)m_iTestDataSize );
     NStr::TruncateSpacesInPlace( input, NStr::eTrunc_Begin );
 
     //
@@ -2233,7 +2233,7 @@ CFormatGuess::EnsureSplitLines()
     //
     //  Let's expect at least one line break in the given data:
     //
-    string data( m_pTestBuffer, m_iTestDataSize );
+    string data( m_pTestBuffer, (size_t)m_iTestDataSize );
     m_TestLines.clear();
 
     if ( string::npos != data.find( "\r\n" ) ) {

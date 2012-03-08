@@ -272,7 +272,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     http.SetCanceledCallback(m_Canceled);
     char buf[1024];
     http.read(buf, sizeof(buf));
-    CTempString str(buf, http.gcount());
+    CTempString str(buf, (size_t)http.gcount());
     EIO_Status status = ConnStatus
         (okay != 1  ||
          NStr::FindNoCase(str, "NCBI Dispatcher Test Page") == NPOS  ||
@@ -996,7 +996,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             }
         } else if (!str) {
             if (n  &&  net_info  &&  net_info->http_proxy_port
-                &&  NStr::strncasecmp(ry, kFWSign, n) == 0) {
+                &&  NStr::strncasecmp(ry, kFWSign, (size_t)n) == 0) {
                 temp += "NCBI Firewall";
                 if (!net_info->firewall)
                     temp += " (Connection Relay)";

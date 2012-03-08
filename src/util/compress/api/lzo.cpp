@@ -853,7 +853,7 @@ bool CLZOCompressionFile::Open(const string& file_name, EMode mode,
         char buf[kMaxHeaderSize];
         m_File->read(buf, kMaxHeaderSize);
         m_File->seekg(0);
-        s_CheckLZOHeader(buf, m_File->gcount(), &blocksize, 0, info);
+        s_CheckLZOHeader(buf, (size_t)m_File->gcount(), &blocksize, 0, info);
     }
 
     // Create compression stream for I/O

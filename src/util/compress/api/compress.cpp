@@ -125,7 +125,7 @@ bool CCompression::x_CompressFile(const string&     src_file,
     AutoPtr<char, ArrayDeleter<char> > buf(new char[buf_size]);
     while ( is ) {
         is.read(buf.get(), buf_size);
-        size_t nread = is.gcount();
+        size_t nread = (size_t)is.gcount();
         size_t nwritten = dst_file.Write(buf.get(), nread); 
         if ( nwritten != nread ) {
             return false;

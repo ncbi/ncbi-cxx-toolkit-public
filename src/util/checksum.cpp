@@ -202,7 +202,7 @@ bool CChecksum::ValidChecksumLineLong(const char* line, size_t length) const
     }
     CNcbiOstrstream buffer;
     WriteChecksum(buffer);
-    size_t bufferLength = buffer.pcount() - 1; // do not include '\n'
+    streamsize bufferLength = buffer.pcount() - 1; // do not include '\n'
     if ( bufferLength != length ) {
         return false;
     }
@@ -271,7 +271,7 @@ CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum)
     while ( !input.eof() ) {
         char buf[1024*4];
         input.read(buf, sizeof(buf));
-        size_t count = input.gcount();
+        size_t count = (size_t)input.gcount();
         if ( count ) {
             checksum.AddChars(buf, count);
         }

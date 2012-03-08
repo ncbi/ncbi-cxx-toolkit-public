@@ -127,7 +127,7 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, streamsize buf_size,
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Close,     timeout) ==eIO_Success);
     }
 
-    m_WriteBuf = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : 0;
+    m_WriteBuf = buf_size ? new CT_CHAR_TYPE[(size_t)m_BufSize << 1] : 0;
     m_ReadBuf  = buf_size ? m_WriteBuf + m_BufSize           : &x_Buf;
 
     setp(m_WriteBuf,    m_WriteBuf + buf_size);  // Put area (if any)
@@ -355,7 +355,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 
     // read from connection
     size_t n_read;
-    m_Status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize,
+    m_Status = CONN_Read(m_Conn, m_ReadBuf, (size_t)m_BufSize,
                          &n_read, eIO_ReadSupplement);
     if (!n_read) {
         _ASSERT(m_Status != eIO_Success);
@@ -396,7 +396,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     while (n) {
         // next, read from the connection
-        size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
+        size_t       x_read = n < (size_t) m_BufSize ? (size_t) m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         m_Status = CONN_Read(m_Conn, x_buf, x_read,
                              &x_read, eIO_ReadSupplement);
@@ -416,7 +416,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else {
             _ASSERT(x_read <= n);
-            size_t xx_read = x_read > (size_t) m_BufSize ? m_BufSize : x_read;
+            size_t xx_read = x_read > (size_t) m_BufSize ? (size_t) m_BufSize : x_read;
             memcpy(m_ReadBuf, buf + x_read - xx_read, xx_read);
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
@@ -456,7 +456,7 @@ streamsize CConn_Streambuf::showmanyc(void)
     if (m_BufSize > 1) {
         if (!tmo)
             _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, &kZeroTmo)==eIO_Success);
-        m_Status = CONN_Read(m_Conn, m_ReadBuf + 1, m_BufSize - 1,
+        m_Status = CONN_Read(m_Conn, m_ReadBuf + 1, (size_t)m_BufSize - 1,
                              &x_read, eIO_ReadSupplement);
         if (!tmo)
             _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, timeout)  ==eIO_Success);

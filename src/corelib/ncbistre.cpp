@@ -176,7 +176,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
         }
         is.putback(nextc);
         is.get(buf, sizeof(buf), delim);
-        str.append(buf, is.gcount());
+        str.append(buf, (size_t)is.gcount());
     }
     if (str.empty()  &&  is.eof()) {
         is.setstate(NcbiFailbit);
@@ -269,7 +269,7 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 
 CNcbiOstrstreamToString::operator string(void) const
 {
-    SIZE_TYPE length = m_Out.pcount();
+    SIZE_TYPE length = (size_t)m_Out.pcount();
     if ( length == 0 )
         return string();
     const char* str = m_Out.str();

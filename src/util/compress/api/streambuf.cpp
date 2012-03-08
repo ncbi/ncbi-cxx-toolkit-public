@@ -74,7 +74,7 @@ CCompressionStreambuf::CCompressionStreambuf(
     }
 
     // Allocate memory for all buffers at one time
-    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[read_bufsize + write_bufsize]);
+    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[size_t(read_bufsize + write_bufsize)]);
     m_Buf = bp.get();
     if ( !m_Buf ) {
         return;
@@ -430,9 +430,9 @@ bool CCompressionStreambuf::ProcessStreamRead()
 
 bool CCompressionStreambuf::ProcessStreamWrite()
 {
-    const char*      in_buf    = pbase();
-    const streamsize count     = pptr() - pbase();
-    size_t           in_avail  = count;
+    const char*  in_buf    = pbase();
+    const size_t count     = pptr() - pbase();
+    size_t       in_avail  = count;
 
     // Nothing was written into processor yet
     if ( m_Writer->m_State == CSP::eInit ) {
@@ -454,8 +454,8 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     while ( in_avail ) {
         // Process next data portion
         size_t out_avail = 0;
-        streamsize out_size = m_Writer->m_OutBuf + 
-                              m_Writer->m_OutBufSize - m_Writer->m_End;
+        size_t out_size = m_Writer->m_OutBuf + 
+                          m_Writer->m_OutBufSize - m_Writer->m_End;
         m_Writer->m_LastStatus = m_Writer->m_Processor->Process(
             in_buf + count - in_avail, in_avail, m_Writer->m_End, out_size,
             &in_avail, &out_avail);

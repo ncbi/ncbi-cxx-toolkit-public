@@ -181,7 +181,7 @@ CStreamByteSourceReader::~CStreamByteSourceReader(void)
 
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
-    return CStreamUtils::Readsome(*m_Stream, buffer, bufferLength);
+    return (size_t)CStreamUtils::Readsome(*m_Stream, buffer, bufferLength);
 }
 
 

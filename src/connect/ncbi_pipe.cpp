@@ -1942,7 +1942,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
             if (rmask & fStdIn  &&  !in_done) {
                 if (in.good()  &&  bytes_in_inbuf == 0) {
                     bytes_in_inbuf =
-                        CStreamUtils::Readsome(in, inbuf, buf_size);
+                        (size_t)CStreamUtils::Readsome(in, inbuf, buf_size);
                     total_bytes_written = 0;
                 }
 

@@ -1630,7 +1630,7 @@ const char* CTar::x_ReadArchive(size_t& n)
                 }
                 return 0;
             }
-            nread += xread;
+            nread += (size_t)xread;
         } while (nread < m_BufferSize);
         memset(m_Buffer + nread, 0, m_BufferSize - nread);
     } else {
@@ -1709,7 +1709,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
                              "Archive write failed" + s_OSReason(x_errno));
                     return;
                 }
-                nwritten += xwritten;
+                nwritten += (size_t)xwritten;
             } while (nwritten < m_BufferSize);
             m_BufferPos = 0;
         }
@@ -2609,7 +2609,7 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
             }
             gap = m_BufferPos;
         }
-        m_BufferPos -= gap;
+        m_BufferPos -= (size_t)gap;
         m_StreamPos -= gap;
         return;
     }
