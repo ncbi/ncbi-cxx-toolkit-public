@@ -166,10 +166,37 @@ extern bool SetCpuTimeLimit(size_t                max_cpu_time,
 /// System/memory information
 ///
 
-/// [UNIX & Windows]  Return number of active CPUs (never less than 1).
+/// [UNIX & Windows]
+/// Return number of active CPUs (never less than 1).
 NCBI_XNCBI_EXPORT
 extern unsigned int GetCpuCount(void);
 
+/// [UNIX & Windows]
+/// Get current process execution times.
+/// 
+/// Here is no portable solution to get 'real' process execution time,
+/// not all OS have an API to get such information. To get the time from
+/// the process start you could measure starting time yourself, at early
+/// as possible, and use it to calculate execution time.
+/// For example, you can use CStopWatch class.
+///
+/// @user_time
+///   Pointer to a value that receives the amount of time in seconds that
+///   the current process has executed in user mode. The time that each
+///   of the threads of the process has executed in user mode is determined,
+///   and then all of those times are summed together to obtain this value.
+/// @system_time
+///   Pointer to a value that receives the amount of time in second that
+///   the current process has executed in kernel mode. The time that each
+///   of the threads of the process has executed in user mode is determined,
+///   and then all of those times are summed together to obtain this value.
+/// @return
+///   TRUE on success; or FALSE on error.
+/// @note
+///   NULL arguments will not be filled in.
+/// @sa CStopWatch
+NCBI_XNCBI_EXPORT
+extern bool GetCurrentProcessTimes(double* user_time, double* system_time);
 
 /// [UNIX & Windows]
 /// Return virtual memory page size.
@@ -189,7 +216,8 @@ extern unsigned long GetVirtualMemoryAllocationGranularity(void);
 NCBI_XNCBI_EXPORT
 extern Uint8 GetPhysicalMemorySize(void);
 
-/// [UNIX & Windows] Return current memory usage, in bytes.
+/// [UNIX & Windows]
+/// Return current memory usage, in bytes.
 /// NULL arguments will not be filled in.
 /// Returns true if able to determine memory usage, and false otherwise.
 NCBI_XNCBI_EXPORT
