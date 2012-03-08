@@ -2340,9 +2340,9 @@ protected:
     /// Unmap mapped memory and close mapped file.
     void x_Close(void);
     /// Create new file or rewrite existent with zeros.
-    void x_Create(Uint8 length);
-    /// Extend file size on 'length' zero bytes.
-    void x_Extend(Uint8 length);
+    void x_Create(Uint8 size);
+    /// Extend file size from 'size' to 'new_size' with zero bytes.
+    void x_Extend(Uint8 size, Uint8 new_size);
 
     /// Get pointer to memory mapped file segment by pointer to data.
     CMemoryFileSegment* x_GetMemoryFileSegment(void* ptr) const;
