@@ -11,4 +11,6 @@
 
 LIB: libconnect.a libconnext.a liblbsmdapi.a
 
+POSTBUILD: $srcdir/connect/daemons/mod/pull_prepare_release.sh `readlink -f $srcdir` `readlink -f $installdir`
+
 Linux64-Centos  : gcc : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
