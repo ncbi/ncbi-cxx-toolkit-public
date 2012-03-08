@@ -335,7 +335,7 @@ CDbapiTestSpeedApp::RunSample(void)
                 int sz;
                 while ( f.good() && !f.eof() ) {
                     f.read( buf, sizeof(buf) );
-                    sz = f.gcount();
+                    sz = (size_t)f.gcount();
                     if ( sz <= 0 ) break;
                     pTxt.Append(buf, sz);
                     if ( sz != sizeof(buf) ) break;

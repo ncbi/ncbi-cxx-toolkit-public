@@ -158,7 +158,7 @@ static int s_StreamPushback(iostream&   ios,
         switch (j) {
         case 0:
             ios.read(data + nread, i);
-            j = ios.gcount();
+            j = (size_t)ios.gcount();
             _ASSERT(nread + j <= size);
             if (!ios.good()) {
                 _ASSERT(ios.rdstate() & NcbiEofbit);
@@ -172,7 +172,7 @@ static int s_StreamPushback(iostream&   ios,
             break;
         case 1:
             ios.get(data + nread, i + 1/*EOL*/, eol[0]);
-            j = ios.gcount();
+            j = (size_t)ios.gcount();
             _ASSERT(!data[nread + j]);
             if (nread + j < size)
                 data[nread + j] = orig[nread + j]; // undo '\0' side effect
@@ -198,7 +198,7 @@ static int s_StreamPushback(iostream&   ios,
             }
             break;
         default:
-            j = CStreamUtils::Readsome(ios, data + nread, i);
+            j = (size_t)CStreamUtils::Readsome(ios, data + nread, i);
             _ASSERT(nread + j <= size);
             break;
         }

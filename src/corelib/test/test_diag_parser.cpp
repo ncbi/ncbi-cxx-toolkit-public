@@ -259,7 +259,7 @@ void CDiagParserApp::x_CheckMessage(void)
         info = DIAG_COMPILE_INFO;
         ERR_POST_EX(123, 45, "Test error post message");
 
-        result = string(str.str(), str.pcount());
+        result = string(str.str(), (size_t)str.pcount());
         msg.reset(new SDiagMessage(result));
     }
     catch (...) {

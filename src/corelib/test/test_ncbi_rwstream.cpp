@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
         ERR_POST(Info
                  << "Read:  " << setw(8) << x_in);
         is.read(buf, x_in);
-        if (!(x_in = is.gcount()))
+        if (!(x_in = (size_t)is.gcount()))
             break;
         n_in += x_in;
         size_t x_out = 0;

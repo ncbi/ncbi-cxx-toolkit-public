@@ -268,7 +268,7 @@ public:
         } else {
             if (&*m_TmpFile) {
                 m_TmpFile->read((char*)buf, count);
-                *bytes_read = m_TmpFile->gcount();
+                *bytes_read = (size_t)m_TmpFile->gcount();
                 if (*bytes_read == 0) {
                     return eRW_Eof;
                 }
@@ -418,7 +418,7 @@ private:
             char buf[1024];
             while (true) {
                 m_TmpFile->read(buf, sizeof(buf));
-                size_t bytes_read = m_TmpFile->gcount();
+                size_t bytes_read = (size_t)m_TmpFile->gcount();
                 if (bytes_read == 0)
                     break;
                 out.write(buf, bytes_read);
@@ -441,7 +441,7 @@ private:
         }
         if (&*m_TmpFile) {
             CT_OFF_TYPE total_bytes = m_TmpFile->tellg() - CT_POS_TYPE(0);
-            ostream& out = cur.GetBlobOStream(1, total_bytes);
+            ostream& out = cur.GetBlobOStream(1, (size_t)total_bytes);
             ret = x_SaveBlob(out);
         }
         return ret;

@@ -313,7 +313,7 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
             bp = new CT_CHAR_TYPE[buf_size];
         }
         streamsize n = m_Sb->sgetn(bp ? bp : (CT_CHAR_TYPE*) m_DelPtr,
-                                   buf_size < max_size ? buf_size : max_size);
+                                   (streamsize)buf_size < max_size ? buf_size : max_size);
         if (n <= 0) {
             // NB: For unknown reasons WorkShop6 can return -1 from sgetn :-/
             delete[] bp;
@@ -403,7 +403,7 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
                                   : CPushback_Streambuf::kMinBufSize >> 4))) {
             CT_CHAR_TYPE* bp = sb->gptr();
             size_t avail = bp - sb->m_Buf;
-            size_t take  = avail < buf_size ? avail : (size_t)buf_size;
+            size_t take  = (streamsize)avail < buf_size ? avail : (size_t)buf_size;
             if (take) {
                 bp -= take;
                 buf_size -= take;
