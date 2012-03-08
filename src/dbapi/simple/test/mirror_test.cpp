@@ -46,6 +46,7 @@ public:
     CMyThread(int num) : m_Num(num) {}
 
     virtual void* Main(void) {
+        //for (int i = 0; i < 10; ++i) {
         for (;;) {
             try {
                 CDatabase db("MSDEV");
@@ -85,10 +86,13 @@ class CMyApplication : public CNcbiApplication
 public:
     int Run(void)
     {
+        CMyThread* thr[10];
         for (int i = 0; i < 10; ++i) {
-            (new CMyThread(i))->Run(CThread::fRunDetached);
+            thr[i] = new CMyThread(i);
+            thr[i]->Run();
         }
 
+        //for (int i = 0; i < 10; ++i) {
         for (;;) {
             string errMsg;
             list<string> servers;
@@ -101,6 +105,10 @@ public:
             else if(status != CSDBAPI::eMirror_Steady)
                 ERR_POST("DB connection pool unknown status.");
             SleepMilliSec(1000);
+        }
+
+        for (int i = 0; i < 10; ++i) {
+            thr[i]->Join();
         }
         return 0;
     }
