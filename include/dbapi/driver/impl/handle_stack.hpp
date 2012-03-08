@@ -69,7 +69,7 @@ public:
     bool HandleExceptions(const CDB_UserHandler::TExceptions&  exeptions,
                           const string&                        extra_msg) const;
 
-    bool HandleMessage(int severity, int msgnum, const string& message);
+    bool HandleMessage(int severity, int msgnum, const string& message) const;
 
 public:
     class NCBI_DBAPIDRIVER_EXPORT CUserHandlerWrapper : public CObject

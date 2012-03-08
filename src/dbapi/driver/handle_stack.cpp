@@ -153,7 +153,7 @@ bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions&  exep
     return false;
 }
 
-bool CDBHandlerStack::HandleMessage(int severity, int msgnum, const string& message)
+bool CDBHandlerStack::HandleMessage(int severity, int msgnum, const string& message) const
 {
     REVERSE_ITERATE(TContainer, cit, m_Stack) {
         if (cit->NotNull()
