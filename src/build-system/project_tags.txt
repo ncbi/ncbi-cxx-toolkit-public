@@ -4,4 +4,4 @@ web
 structure_cdtree
 gbench
 perf
-connect_daemons_mod_loadinfo
+mod_loadinfo
