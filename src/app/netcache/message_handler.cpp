@@ -608,6 +608,7 @@ CBufferedSockReaderWriter::x_ReadFromSocket(void* buf, size_t size)
     size_t n_read = 0;
     EIO_Status status = m_Socket->Read(buf, size, &n_read, eIO_ReadPlain);
     ResetSocketTimeout();
+    //LOG_POST("Read from socket " << n_read << " bytes");
     //LOG_POST("Read from socket " << n_read << " bytes: " << string((char*)buf, n_read));
 
     switch (status) {
@@ -707,6 +708,7 @@ CBufferedSockReaderWriter::x_WriteToSocket(const void* buf, size_t size)
     size_t n_written = 0;
     EIO_Status status = m_Socket->Write(buf, size, &n_written, eIO_WritePlain);
     ResetSocketTimeout();
+    //LOG_POST("Written to socket " << n_written << " bytes");
     //LOG_POST("Written to socket " << n_written << " bytes: " << string((char*)buf, n_written));
 
     switch (status) {

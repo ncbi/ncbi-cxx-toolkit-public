@@ -1068,7 +1068,7 @@ CNCBlobStorage::GetBlobAccess(ENCAccessType access,
     return accessor;
 }
 
-bool
+void
 CNCBlobStorage::DeleteBlobKey(Uint2 time_bucket, const string& key)
 {
     SBucketCache* cache = x_GetBucketCache(time_bucket);
@@ -1076,12 +1076,11 @@ CNCBlobStorage::DeleteBlobKey(Uint2 time_bucket, const string& key)
     SNCCacheData* data = &*cache->key_map.find(key, SCacheKeyCompare());
     if (!data->coord.empty()) {
         cache->lock.Unlock();
-        return false;
+        return;
     }
     data->key_del_time = int(time(NULL));
     cache->lock.Unlock();
     cache->deleter.AddElement(key);
-    return true;
 }
 
 void

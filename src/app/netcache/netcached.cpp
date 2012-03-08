@@ -278,7 +278,6 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
             if (!NStr::StartsWith(section, kNCReg_AppSetupPrefix, NStr::eNocase))
                 continue;
             SSpecParamsSet* cur_set  = m_SpecParams;
-            SSpecParamsSet* prev_set = NULL;
             NON_CONST_REVERSE_ITERATE(TSpecKeysList, prty_it, m_SpecPriority) {
                 const string& key_name = *prty_it;
                 if (reg.HasEntry(section, key_name, IRegistry::fCountCleared)) {
@@ -295,14 +294,12 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
                         x_PutNewParams(cur_set, next_ind,
                                        SSpecParamsEntry(key_value, next_set));
                     }
-                    prev_set = cur_set;
                     cur_set = next_set;
                 }
                 else {
                     if (cur_set->entries.size() == 0) {
                         cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, new SSpecParamsSet()));
                     }
-                    prev_set = cur_set;
                     cur_set = (SSpecParamsSet*)cur_set->entries[0].value.GetPointer();
                 }
             }

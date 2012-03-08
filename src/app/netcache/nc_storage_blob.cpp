@@ -259,14 +259,13 @@ CNCBlobVerManager::OnBlockedOpFinish(void)
 
         if (action != eNoAction) {
             m_CacheData->lock.Unlock();
-            bool success = true;
             switch (action) {
             case eUpdateVersion:
                 cur_ver->need_write = false;
                 g_NCStorage->WriteBlobInfo(m_Key, cur_ver, NULL, 0);
                 break;
             case eDeleteKey:
-                success = g_NCStorage->DeleteBlobKey(m_TimeBucket, m_Key);
+                g_NCStorage->DeleteBlobKey(m_TimeBucket, m_Key);
                 break;
             case eDeleteCurVer:
                 DeleteVersion(cur_ver);
