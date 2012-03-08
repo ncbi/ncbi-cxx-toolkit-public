@@ -1399,6 +1399,9 @@ if test "$with_lfs" = "yes" ; then
    CPPFLAGS="$LFSFLAGS $CPPFLAGS"
 fi
 
+tabchar='	'
+wschars=" $tabchar"
+wsrx="[[$wschars]]"
 
 #### Flags to enable (potentially unsafe) extra optimization.
 if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
@@ -1421,7 +1424,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         ;;
       WorkShop5[[89]]* | WorkShop510 )
         # Limit optimization to -xO2 (-O now maps to -xO3) due to compiler bugs.
-        subst='s/[[ 	]]-x*O[[1-9]]*//g'
+        subst="s/[$wsrx]-x*O[[1-9]]*//g"
         CFLAGS="`  echo \" $CFLAGS\"   | sed -e \"$subst\"` -xO2"
         CXXFLAGS="`echo \" $CXXFLAGS\" | sed -e \"$subst\"` -xO2"
         LDFLAGS="` echo \" $LDFLAGS\"  | sed -e \"$subst\"` -xO2"
@@ -2540,23 +2543,23 @@ if test "$compiler" != "MSVC" ; then
       NCBI_FEATURE(MaxDebug)
    fi
 changequote(, )dnl
+   dbgrx1="$wsrx-g[^cx$wschars]*$wsrx"
+   dbgrx2="$wsrx-gx*coff[0-9+]*$wsrx"
+   optrx="$wsrx-x*O[0-9s]*$wsrx"
    if test "$with_symbols" = "no" ; then
-      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
-      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
-      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
+      CFLAGS=`  echo " $CFLAGS "   | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
+      CXXFLAGS=`echo " $CXXFLAGS " | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
+      LDFLAGS=` echo " $LDFLAGS "  | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
    else
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
-         CFLAGS="$CFLAGS -g"     ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
-         CXXFLAGS="$CXXFLAGS -g" ; fi
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
-         then LDFLAGS="$LDFLAGS -g" ; fi
+      echo " $CFLAGS "  | $EGREP_Q "$dbgrx1|$dbgrx2" || CFLAGS="$CFLAGS -g"
+      echo " $CXXFLAGS "| $EGREP_Q "$dbgrx1|$dbgrx2" || CXXFLAGS="$CXXFLAGS -g" 
+      echo " $LDFLAGS " | $EGREP_Q "$dbgrx1|$dbgrx2" || LDFLAGS="$LDFLAGS -g"
       STRIP="@:"
    fi
 
-   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-x*O[0-9]*//g'`
-   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-x*O[0-9]*//g'`
-   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-x*O[0-9]*//g'`
+   NOPT_CFLAGS=`  echo " $CFLAGS "    | sed "s/$optrx/ /g"`
+   NOPT_CXXFLAGS=`echo " $CXXFLAGS "  | sed "s/$optrx/ /g"`
+   NOPT_LDFLAGS=` echo " $LDFLAGS "   | sed "s/$optrx/ /g"`
    if test "${with_tcheck-no}" != "no"; then
       # Suppress warnings when building with ICC.
       NOPT_CFLAGS="$NOPT_CFLAGS -O0"
@@ -2571,11 +2574,11 @@ changequote(, )dnl
       FAST_CXXFLAGS="$CXXFLAGS"
       FAST_LDFLAGS="$LDFLAGS"
    else
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
+      if echo " $CFLAGS "   | grep -v "$optrx" >/dev/null ; then
          CFLAGS="$CFLAGS -O" ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
+      if echo " $CXXFLAGS " | grep -v "$optrx" >/dev/null ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-x*O[0-9]*' ; then
+      if echo " $LDFLAGS "  | grep -v "$optrx" >/dev/null ; then
          LDFLAGS="$LDFLAGS -O" ; fi
       FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
       FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
@@ -4160,7 +4163,8 @@ if test "$with_bdb" != "no" ; then
 ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
           ]])])
           eval "$ac_cpp $BERKELEYDB_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' \
+             | tr -d "$wschars" > conftest.sh
           . ./conftest.sh
           rm -f contest*
          ])
@@ -4392,7 +4396,8 @@ if test "$with_boost" != "no"; then
 ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           ]])])
           eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
-             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+             2>&AS_MESSAGE_LOG_FD | grep '^ncbi_cv_' \
+             | tr -d "$wschars" > conftest.sh
           . ./conftest.sh
           rm -f contest*
          ])
