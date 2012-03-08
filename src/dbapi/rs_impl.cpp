@@ -251,15 +251,12 @@ void CResultSet::x_CacheItems(int last_num) {
     while ((ind = m_rs->CurrentItemNo()) >= 0 && ind <= last_num) {
         EDB_Type type = m_rs->ItemDataType(ind);
 
-        switch(type) {
-        case eDB_Text:
-        case eDB_Image:
-            ((CDB_Stream*)m_data[ind].GetNonNullData())->Truncate();
-            break;
-        default:
-            break;
+        CVariant& var = m_data[ind];
+        if (type == eDB_Text  ||  type == eDB_Image) {
+            ((CDB_Stream*)var.GetNonNullData())->Truncate();
+            var.SetITDescriptor(m_rs->GetImageOrTextDescriptor());
         }
-        m_rs->GetItem(m_data[ind].GetNonNullData());
+        m_rs->GetItem(var.GetNonNullData());
 
         if (m_rs->ResultType() == eDB_StatusResult)
             break;
@@ -365,8 +362,8 @@ CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn,
     m_rs->ReadItem(0, 0);
 
 
-    I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
-    if( desc == 0 ) {
+    auto_ptr<I_ITDescriptor> desc(m_rs->GetImageOrTextDescriptor());
+    if(desc.get() == NULL) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;
         _ASSERT(0);

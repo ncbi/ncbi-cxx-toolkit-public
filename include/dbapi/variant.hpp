@@ -36,6 +36,7 @@
 #include <corelib/ncbitype.h>
 #include <corelib/ncbitime.hpp>
 #include <dbapi/driver/types.hpp>
+#include <dbapi/driver/interfaces.hpp>
 
 
 /** @addtogroup DbVariant
@@ -196,6 +197,9 @@ public:
     // Moves the internal position pointer
     bool MoveTo(size_t pos) const;
 
+    void SetITDescriptor(I_ITDescriptor* descr);
+    I_ITDescriptor& GetITDescriptor(void) const;
+
 protected:
     // Set methods
     void SetData(CDB_Object* o);
@@ -209,6 +213,7 @@ private:
     void x_Inapplicable_Method(const char* method) const;
 
     class CDB_Object* m_data;
+    auto_ptr<I_ITDescriptor> m_descr;
 };
 
 bool NCBI_DBAPI_EXPORT operator==(const CVariant& v1, const CVariant& v2);
@@ -241,6 +246,18 @@ EDB_Type CVariant::GetType() const
 //    }
 //}
 
+
+inline void
+CVariant::SetITDescriptor(I_ITDescriptor* descr)
+{
+    m_descr.reset(descr);
+}
+
+inline I_ITDescriptor&
+CVariant::GetITDescriptor(void) const
+{
+    return *m_descr;
+}
 
 inline
 void CVariant::x_Verify_AssignType(EDB_Type db_type, const char* cxx_type) const

@@ -38,8 +38,11 @@
 #include <dbapi/error_codes.hpp>
 
 #include "sdbapi_impl.hpp"
+#include "../rw_impl.hpp"
+
 
 BEGIN_NCBI_SCOPE
+
 
 #define NCBI_USE_ERRCODE_X  Dbapi_Sdbapi
 
@@ -2222,6 +2225,12 @@ CQueryImpl::GetColumn(const CDBParamVariant& col) const
     return *m_Fields[pos - 1];
 }
 
+inline IConnection*
+CQueryImpl::GetConnection(void)
+{
+    return m_DBImpl->GetConnection();
+}
+
 
 CQuery::CRowIterator::CRowIterator(void)
     : m_IsEnd(false)
@@ -2417,14 +2426,35 @@ CQuery::CField::AsIStream(void) const
                    "Method is unsupported for this type of data");
     }
     m_ValueForStream = var_val.GetString();
-    m_Stream.reset(new CNcbiIstrstream(m_ValueForStream.c_str()));
-    return *m_Stream;
+    m_IStream.reset(new CNcbiIstrstream(m_ValueForStream.c_str()));
+    return *m_IStream;
 }
 
 bool
 CQuery::CField::IsNull(void) const
 {
     return m_Query->GetFieldValue(*this).IsNull();
+}
+
+CNcbiOstream&
+CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it /* = eEnableLog */) const
+{
+    const CVariant& var_val = m_Query->GetFieldValue(*this);
+    EDB_Type var_type = var_val.GetType();
+    if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
+        NCBI_THROW(CSDB_Exception, eUnsupported,
+                   "Method is unsupported for this type of data");
+    }
+    try {
+        IConnection* conn = m_Query->GetConnection()->CloneConnection();
+        CDB_Connection* db_conn = conn->GetCDB_Connection();
+        m_OStream.reset(new CWStream(new CxBlobWriter(
+                              db_conn, var_val.GetITDescriptor(),
+                              blob_size, log_it == eEnableLog, false),
+		                      0, 0, CRWStreambuf::fOwnWriter));
+        return *m_OStream;
+    }
+    SDBAPI_CATCH_LOWLEVEL()
 }
 
 

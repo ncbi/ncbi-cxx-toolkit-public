@@ -37,9 +37,12 @@
 #include <vector>
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/rwstream.hpp>
 #include <util/ncbi_url.hpp>
 
+
 BEGIN_NCBI_SCOPE
+
 
 class CSDBAPI;
 class CDatabase;
@@ -121,6 +124,12 @@ public:
     CQuery(const CQuery& q);
     CQuery& operator= (const CQuery& q);
 
+    ///  Allow transaction log (general, to avoid using bools).
+    enum EAllowLog {
+        eDisableLog,     ///< Disables log.
+        eEnableLog       ///< Enables log.
+    };
+
     /// Class representing value in result set or output parameter of stored
     /// procedure.
     class CField
@@ -188,6 +197,16 @@ public:
         /// Check if value is NULL.
         bool IsNull(void) const;
 
+        /// Get Blob output stream. The existing connection is
+        /// cloned for writing blob.
+        ///
+        /// @param blob_size
+        ///   blob_size is the size of the BLOB to be written.
+        /// @param log_it
+        ///    Enables transaction log for BLOB (enabled by default).
+        ///    Make sure you have enough log segment space, or disable it.
+        CNcbiOstream& GetOStream(size_t blob_size, EAllowLog log_it = eEnableLog) const;
+
     private:
         friend class CQueryImpl;
         friend struct Deleter<CField>;
@@ -216,7 +235,9 @@ public:
         /// String to represent Text/Image value
         mutable string                   m_ValueForStream;
         /// Stream to represent Text/Image value
-        mutable AutoPtr<CNcbiIstrstream> m_Stream;
+        mutable auto_ptr<CNcbiIstrstream> m_IStream;
+        /// Stream to change Text/Image value
+        mutable auto_ptr<CWStream>       m_OStream;
     };
 
     /// Iterator class doing main navigation through result sets.

@@ -152,6 +152,8 @@ public:
     string GetColumnName(unsigned int col);
     ESDB_Type GetColumnType(unsigned int col);
 
+    IConnection* GetConnection(void);
+
 private:
     void x_CheckCanWork(bool need_rs = false) const;
     void x_SetOutParameter(const string& name, const CVariant& value);

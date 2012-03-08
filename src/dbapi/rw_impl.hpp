@@ -62,7 +62,7 @@ private:
 
 class I_ITDescriptor;
 
-class CxBlobWriter : public IWriter
+class NCBI_DBAPI_EXPORT CxBlobWriter : public IWriter
 {
 public:
 
