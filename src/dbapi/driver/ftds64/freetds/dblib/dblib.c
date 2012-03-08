@@ -2856,7 +2856,7 @@ dbprrow(DBPROCESS * dbproc)
 				op = dbaltop(dbproc, computeid, col);
 				opname = dbprtype(op);
 				printf("%s", opname);
-				for (i = 0; i < col_printlens[selcol - 1] - strlen(opname); i++) {
+				for (i = 0; i < col_printlens[selcol - 1] - (int)strlen(opname); i++) {
 					putchar(' ');
 				}
 				selcol++;
@@ -4217,7 +4217,7 @@ dbbylist(DBPROCESS * dbproc, int computeid, int *size)
 		TDS_TINYINT *p = (TDS_TINYINT *) malloc(sizeof(info->bycolumns[0]) + info->by_cols);
 		if (!p)
 			return NULL;
-		for (n = 0; n < info->by_cols; ++n)
+		for (n = 0; n < (unsigned int)info->by_cols; ++n)
 			p[sizeof(info->bycolumns[0]) + n] = info->bycolumns[n] > 255 ? 255 : info->bycolumns[n];
 		*((TDS_SMALLINT *)p) = byte_flag;
 		free(info->bycolumns);

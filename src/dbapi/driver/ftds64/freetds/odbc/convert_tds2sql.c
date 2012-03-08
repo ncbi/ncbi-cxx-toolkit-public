@@ -96,7 +96,7 @@ convert_tds2sql(TDSCONTEXT * context, int srctype, TDS_CHAR * src, TDS_UINT srcl
 	} else if (is_numeric_type(nDestSybType)) {
 		/* TODO use descriptor information (APD) ?? However APD can contain SQL_C_DEFAULT... */
 		if (drec_ixd)
-			ores.n.precision = drec_ixd->sql_desc_precision;
+            ores.n.precision = (unsigned char)drec_ixd->sql_desc_precision;
 		else
 			ores.n.precision = 38;
 		ores.n.scale = 0;
@@ -115,7 +115,7 @@ convert_tds2sql(TDSCONTEXT * context, int srctype, TDS_CHAR * src, TDS_UINT srcl
 		ret = nRetVal;
 		/* TODO handle not terminated configuration */
 		if (destlen > 0) {
-			cplen = (destlen - 1) > nRetVal ? nRetVal : (destlen - 1);
+			cplen = (destlen - 1) > (SQLULEN)nRetVal ? nRetVal : (destlen - 1);
 			assert(cplen >= 0);
 			/*
 			 * odbc always terminate but do not overwrite 

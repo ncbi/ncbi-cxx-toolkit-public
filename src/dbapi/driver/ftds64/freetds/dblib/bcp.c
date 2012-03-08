@@ -1897,7 +1897,7 @@ _bcp_exec_in(DBPROCESS * dbproc, DBINT * rows_copied)
 				fseeko(hostfile, row_start, SEEK_SET);
 
 				while (error_row_size > 0) {
-					size_t chunk = error_row_size > chunk_size ? chunk_size : error_row_size;
+					size_t chunk = (size_t)error_row_size > chunk_size ? chunk_size : error_row_size;
 
 					if (!row_in_error)
 						row_in_error = malloc(chunk);
@@ -2364,7 +2364,7 @@ _bcp_build_bulk_insert_stmt(TDSSOCKET * tds, TDS_PBCB * clause, TDSCOLUMN * bcpc
 		return FAIL;
 	}
 
-	if (clause->cb < strlen(clause->pb) + tds_quote_id(tds, NULL, bcpcol->column_name, bcpcol->column_namelen) + strlen(column_type) + ((first) ? 2 : 4)) {
+	if ((size_t)clause->cb < strlen(clause->pb) + tds_quote_id(tds, NULL, bcpcol->column_name, bcpcol->column_namelen) + strlen(column_type) + ((first) ? 2 : 4)) {
 		char *temp = (char *) malloc(2 * clause->cb);
 
 		if (!temp)
@@ -2466,7 +2466,7 @@ _bcp_send_colmetadata(DBPROCESS * dbproc)
 
 		tds_put_smallint(tds, bcpcol->column_usertype);
 		tds_put_smallint(tds, bcpcol->column_flags);
-		tds_put_byte(tds, bcpcol->on_server.column_type);
+		tds_put_byte(tds, (unsigned char)bcpcol->on_server.column_type);
 
 		switch (bcpcol->column_varint_size) {
 		case 4:
@@ -2498,7 +2498,7 @@ _bcp_send_colmetadata(DBPROCESS * dbproc)
 			tds_put_string(tds, dbproc->bcpinfo->tablename, strlen(dbproc->bcpinfo->tablename));
 		}
 		/* FIXME column_namelen contains len in bytes not in characters required here */
-		tds_put_byte(tds, bcpcol->column_namelen);
+		tds_put_byte(tds, (unsigned char)bcpcol->column_namelen);
 		tds_put_string(tds, bcpcol->column_name, bcpcol->column_namelen);
 
 	}
@@ -2574,7 +2574,7 @@ bcp_readfmt(DBPROCESS * dbproc, char *filename)
 	}
 
 	if ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != NULL)
-		lf_version = atof(buffer);
+		lf_version = (float)atof(buffer);
 
 	if ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != NULL)
 		li_numcols = atoi(buffer);
@@ -3210,7 +3210,7 @@ _bcp_send_bcp_record(DBPROCESS * dbproc, int behaviour)
 					}
 					/* unknown but zero */
 					tds_put_smallint(tds, 0);
-					tds_put_byte(tds, bindcol->column_type);
+					tds_put_byte(tds, (unsigned char)bindcol->column_type);
 					tds_put_byte(tds, 0xff - blob_cols);
 					/*
 					 * offset of txptr we stashed during variable
@@ -3295,7 +3295,7 @@ _bcp_get_col_data(DBPROCESS * dbproc, TDSCOLUMN *bindcol)
 			data_is_null = 1;
 		else {
 			if (collen)
-				collen = (bindcol->column_bindlen < collen) ? bindcol->column_bindlen : collen;
+				collen = (bindcol->column_bindlen < (TDS_UINT)collen) ? bindcol->column_bindlen : collen;
 			else
 				collen = bindcol->column_bindlen;
 		}

@@ -626,7 +626,7 @@ void CThreadedApp::x_PrintThreadGroups( void)
 
 unsigned int CThreadedApp::x_InitializeDelayedStart(void)
 {
-    const unsigned int count = m_ThreadGroups.size();
+    const unsigned int count = (unsigned int)m_ThreadGroups.size();
     unsigned int start_now = count;
     unsigned int g;
     if (m_Max == 0)

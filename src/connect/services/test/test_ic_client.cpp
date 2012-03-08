@@ -215,7 +215,7 @@ int CTestICClient::Run(void)
         string str = "qwerty";
         writer1->Write(str.c_str(), str.size());
         }
-        int size = cl.GetSize(key1, version, subkey);
+        size_t size = cl.GetSize(key1, version, subkey);
         vector<unsigned char> test_buf(1000);
         cl.Read(key1, version, subkey, &test_buf[0], test_buf.size());
         cout << size << endl << string((char*)&test_buf[0],

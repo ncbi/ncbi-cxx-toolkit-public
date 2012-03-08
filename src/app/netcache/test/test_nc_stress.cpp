@@ -86,13 +86,13 @@ private:
                        unsigned         bcount,
                        TTransactionLog* tlog);
 
-    void DeleteRandomBlobs(TTransactionLog* tlog, unsigned bcount);
+    void DeleteRandomBlobs(TTransactionLog* tlog, size_t bcount);
 
     /// Read BLOB according to the transaction log
     /// (all of them straight or randomly)
     void StressTestGet(const TTransactionLog& tlog,
                        bool                   random,
-                       unsigned               count);
+                       size_t                 count);
 
     unsigned char* AllocateTestBlob(size_t blob_size) const;
 
@@ -199,14 +199,14 @@ void CTestNetCacheStress::CheckGetBlob(const STransactionInfo& ti,
 
 void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog,
                                         bool                   random,
-                                        unsigned               count)
+                                        size_t                 count)
 {
     size_t   buf_size = 0;
     unsigned char* buf = NULL;
 
     if (random) {
-        for (unsigned i = 0; i < count; ++i) {
-            unsigned idx = rand() % count;
+        for (size_t i = 0; i < count; ++i) {
+            size_t idx = rand() % count;
             const STransactionInfo& ti = tlog[idx];
 
             if (buf_size < ti.blob_size || buf == NULL) {
@@ -228,7 +228,7 @@ void CTestNetCacheStress::StressTestGet(const TTransactionLog& tlog,
         } // for
 
     } else {
-        for (unsigned i = 0; i < count; ++i) {
+        for (size_t i = 0; i < count; ++i) {
             const STransactionInfo& ti = tlog[i];
 
             if (buf_size < ti.blob_size || buf == NULL) {
@@ -298,13 +298,13 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
 
 
 void CTestNetCacheStress::DeleteRandomBlobs(TTransactionLog* tlog,
-                                            unsigned         bcount)
+                                            size_t           bcount)
 {
     if (!bcount)
         return;
 
-    for (unsigned i = 0; i < bcount; ++i) {
-        unsigned idx = rand() % bcount;
+    for (size_t i = 0; i < bcount; ++i) {
+        size_t idx = rand() % bcount;
         STransactionInfo& ti = (*tlog)[idx];
 
         if (ti.deleted)

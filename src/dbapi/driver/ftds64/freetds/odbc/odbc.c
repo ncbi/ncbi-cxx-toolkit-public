@@ -914,7 +914,7 @@ _SQLBindParameter(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT fParamType, SQL
 			odbc_errs_add(&stmt->errs, "HY104", "Invalid precision value");
 			ODBC_RETURN(stmt, SQL_ERROR);
 		}
-		if (ibScale < 0 || ibScale > cbColDef) {
+		if (ibScale < 0 || (SQLULEN)ibScale > cbColDef) {
 			odbc_errs_add(&stmt->errs, "HY104", "Invalid scale value");
 			ODBC_RETURN(stmt, SQL_ERROR);
 		}
@@ -968,7 +968,7 @@ _SQLBindParameter(SQLHSTMT hstmt, SQLUSMALLINT ipar, SQLSMALLINT fParamType, SQL
 		ODBC_RETURN(stmt, SQL_ERROR);
 	}
 	if (is_numeric) {
-		drec->sql_desc_precision = cbColDef;
+		drec->sql_desc_precision = (SQLSMALLINT)cbColDef;
 		drec->sql_desc_scale = ibScale;
 	} else {
 		drec->sql_desc_length = cbColDef;
@@ -2431,7 +2431,7 @@ _SQLExecute(TDS_STMT * stmt)
 	tds->query_timeout = stmt->attr.query_timeout;
 
 	/* check parameters are all OK */
-	if (stmt->params && stmt->param_num <= stmt->param_count)
+	if (stmt->params && stmt->param_num <= (int)stmt->param_count)
 		/* TODO what error ?? */
 		return SQL_ERROR;
 
@@ -2852,7 +2852,7 @@ _SQLFetch(TDS_STMT * stmt)
 	num_rows = stmt->ard->header.sql_desc_array_size;
 	status_ptr = stmt->ird->header.sql_desc_array_status_ptr;
 	if (status_ptr) {
-		for (i = 0; i < num_rows; ++i)
+		for (i = 0; i < (int)num_rows; ++i)
 			*status_ptr++ = SQL_ROW_NOROW;
 		status_ptr = stmt->ird->header.sql_desc_array_status_ptr;
 	}
@@ -4995,7 +4995,7 @@ SQLParamData(SQLHSTMT hstmt, SQLPOINTER FAR * prgbValue)
 {
 	INIT_HSTMT;
 
-	if (stmt->params && stmt->param_num <= stmt->param_count) {
+	if (stmt->params && stmt->param_num <= (int)stmt->param_count) {
 		SQLRETURN res;
 
 		if (stmt->param_num <= 0 || stmt->param_num > stmt->apd->header.sql_desc_count) {

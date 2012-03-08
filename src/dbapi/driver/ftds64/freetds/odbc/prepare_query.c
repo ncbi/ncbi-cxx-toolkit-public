@@ -192,7 +192,7 @@ parse_prepared_query(struct _hstmt *stmt, int compute_row)
 	if (stmt->prepared_pos)
 		return prepared_rpc(stmt, compute_row);
 
-	for (; stmt->param_num <= stmt->param_count; ++nparam, ++stmt->param_num) {
+	for (; stmt->param_num <= (int)stmt->param_count; ++nparam, ++stmt->param_num) {
 		/* find binded parameter */
 		if (stmt->param_num > stmt->apd->header.sql_desc_count || stmt->param_num > stmt->ipd->header.sql_desc_count) {
 			/* TODO set error */

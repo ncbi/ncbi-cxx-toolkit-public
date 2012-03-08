@@ -82,7 +82,7 @@ desc_alloc_records(TDS_DESC * desc, unsigned count)
 	int i;
 
 	/* shrink records */
-	if (desc->header.sql_desc_count >= count) {
+	if ((unsigned)desc->header.sql_desc_count >= count) {
 		for (i = count; i < desc->header.sql_desc_count; ++i)
 			desc_free_record(&desc->records[i]);
 		desc->header.sql_desc_count = count;
@@ -98,7 +98,7 @@ desc_alloc_records(TDS_DESC * desc, unsigned count)
 	desc->records = drecs;
 	memset(desc->records + desc->header.sql_desc_count, 0, sizeof(struct _drecord) * (count - desc->header.sql_desc_count));
 
-	for (i = desc->header.sql_desc_count; i < count; ++i) {
+	for (i = desc->header.sql_desc_count; (unsigned)i < count; ++i) {
 		drec = &desc->records[i];
 
 		tds_dstr_init(&drec->sql_desc_label);

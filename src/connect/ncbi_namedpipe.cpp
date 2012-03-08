@@ -497,7 +497,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             // We must read only "count" bytes of data regardless of the amount
             // available to read.
             if (bytes_avail > count) {
-                bytes_avail = count;
+                bytes_avail = (DWORD)count;
             }
             if ( !::ReadFile(m_Pipe, buf, bytes_avail, &bytes_avail, NULL) ) {
                 if ( !bytes_avail ) {

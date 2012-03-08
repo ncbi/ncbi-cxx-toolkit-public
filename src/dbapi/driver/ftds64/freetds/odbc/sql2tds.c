@@ -91,7 +91,7 @@ convert_datetime2server(int bindtype, const void *src, TDS_DATETIME * dt)
 #else
 		curr_time = time(NULL);
 #endif
-		dt_days = (curr_time / 86400u) + (70u * 365u + 17u);
+		dt_days = (TDS_INT)(curr_time / 86400u) + (70u * 365u + 17u);
 		src_tm.tm_hour = src_time->hour;
 		src_tm.tm_min = src_time->minute;
 		src_tm.tm_sec = src_time->second;
@@ -159,10 +159,10 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 	/* TODO what happen for unicode types ?? */
 	tds_set_param_type(dbc->tds_socket, curcol, dest_type);
 	if (is_numeric_type(curcol->column_type)) {
-		curcol->column_prec = drec_ipd->sql_desc_precision;
-		curcol->column_scale = drec_ipd->sql_desc_scale;
-		ores.n.precision = drec_ipd->sql_desc_precision;
-		ores.n.scale = drec_ipd->sql_desc_scale;
+		curcol->column_prec = (TDS_TINYINT)drec_ipd->sql_desc_precision;
+		curcol->column_scale = (TDS_TINYINT)drec_ipd->sql_desc_scale;
+        ores.n.precision = (unsigned char)drec_ipd->sql_desc_precision;
+		ores.n.scale = (unsigned char)drec_ipd->sql_desc_scale;
 	}
 
 	if (drec_ipd->sql_desc_parameter_type != SQL_PARAM_INPUT)
