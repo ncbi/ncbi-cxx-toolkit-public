@@ -468,6 +468,14 @@ public:
     /// @sa HandleAll(), CException::Throw()
     virtual bool HandleIt(CDB_Exception* ex) = 0;
 
+    /// Handle message resulting from a native API call.
+    /// Method MUST NOT throw any exceptions.
+    /// 
+    /// @return
+    ///   TRUE if message is processed and shouldn't be saved for later
+    ///   appearance as CDB_Exception, FALSE otherwise (default value is FALSE)
+    virtual bool HandleMessage(int severity, int msgnum, const string& message);
+
     // Get current global "last-resort" error handler.
     // If not set, then the default will be "CDB_UserHandler_Default".
     // This handler is guaranteed to be valid up to the program termination,

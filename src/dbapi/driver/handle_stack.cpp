@@ -153,6 +153,19 @@ bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions&  exep
     return false;
 }
 
+bool CDBHandlerStack::HandleMessage(int severity, int msgnum, const string& message)
+{
+    REVERSE_ITERATE(TContainer, cit, m_Stack) {
+        if (cit->NotNull()
+            && cit->GetNCObject().GetHandler()->HandleMessage(severity, msgnum, message))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 CDBHandlerStack::CUserHandlerWrapper::CUserHandlerWrapper(
     CDB_UserHandler* handler,

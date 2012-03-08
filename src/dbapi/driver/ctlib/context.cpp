@@ -43,6 +43,7 @@
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
+#include <dbapi/driver/impl/handle_stack.hpp>
 #include <dbapi/error_codes.hpp>
 
 #include <algorithm>
@@ -993,31 +994,52 @@ CS_CONTEXT* CTLibContext::CTLIB_GetContext() const
 
 CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 {
-    EDiagSev sev = eDiag_Error;
+    CPointerPot*    p_pot = NULL;
+    CTLibContext*   ctl_ctx = NULL;
+    CS_INT          outlen;
 
-    if (msg->severity == CS_SV_INFORM) {
-        sev = eDiag_Info;
-    }
-    else if (msg->severity == CS_SV_FATAL) {
-        sev = eDiag_Critical;
-    }
+    try {
+        if (cs_config(context,
+                      CS_GET,
+                      CS_USERDATA,
+                      (void*) &p_pot,
+                      (CS_INT) sizeof(p_pot),
+                      &outlen ) == CS_SUCCEED  &&
+            p_pot != 0  &&  p_pot->NofItems() > 0)
+        {
+            ctl_ctx = (CTLibContext*) p_pot->Get(0);
+        }
+        if (ctl_ctx
+            &&  ctl_ctx->GetCtxHandlerStack().HandleMessage(
+                                    msg->severity, msg->msgnumber, msg->msgstring))
+        {
+            return CS_SUCCEED;
+        }
+
+        EDiagSev sev = eDiag_Error;
+
+        if (msg->severity == CS_SV_INFORM) {
+            sev = eDiag_Info;
+        }
+        else if (msg->severity == CS_SV_FATAL) {
+            sev = eDiag_Critical;
+        }
 
 
 #ifdef FTDS_IN_USE
-    if ((msg->msgnumber & 0xFF) == 25) {
-        CDB_TruncateEx ex(
-            DIAG_COMPILE_INFO,
-            0,
-            msg->msgstring,
-            msg->msgnumber);
+        if ((msg->msgnumber & 0xFF) == 25) {
+            CDB_TruncateEx ex(
+                DIAG_COMPILE_INFO,
+                0,
+                msg->msgstring,
+                msg->msgnumber);
 
-        ex.SetSybaseSeverity(msg->severity);
-        GetCTLExceptionStorage().Accept(ex);
-        return CS_SUCCEED;
-    }
+            ex.SetSybaseSeverity(msg->severity);
+            GetCTLExceptionStorage().Accept(ex);
+            return CS_SUCCEED;
+        }
 #endif
 
-    try {
         CDB_ClientEx ex(
             DIAG_COMPILE_INFO,
             0, msg->msgstring,
@@ -1114,8 +1136,9 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                              )
 {
     CS_INT          outlen;
-    CPointerPot*    p_pot = 0;
-    CTL_Connection* link = 0;
+    CPointerPot*    p_pot = NULL;
+    CTL_Connection* ctl_conn = NULL;
+    CTLibContext*   ctl_ctx = NULL;
     string          message;
     string          server_name;
     string          user_name;
@@ -1137,12 +1160,13 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             ct_con_props(con,
                          CS_GET,
                          CS_USERDATA,
-                         (void*) &link,
-                         (CS_INT) sizeof(link),
-                         &outlen ) == CS_SUCCEED  &&  link != 0) {
-            if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
-                server_name = link->ServerName();
-                user_name = link->UserName();
+                         (void*) &ctl_conn,
+                         (CS_INT) sizeof(ctl_conn),
+                         &outlen ) == CS_SUCCEED  &&  ctl_conn != 0)
+        {
+            if (ctl_conn->ServerName().size() < 127 && ctl_conn->UserName().size() < 127) {
+                server_name = ctl_conn->ServerName();
+                user_name = ctl_conn->UserName();
             } else {
                 ERR_POST_X(1, Error << "Invalid value of ServerName." << CStackTrace());
             }
@@ -1153,8 +1177,9 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                            (void*) &p_pot,
                            (CS_INT) sizeof(p_pot),
                            &outlen ) == CS_SUCCEED  &&
-                 p_pot != 0  &&  p_pot->NofItems() > 0) {
-            // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
+                 p_pot != 0  &&  p_pot->NofItems() > 0)
+        {
+            ctl_ctx = (CTLibContext*) p_pot->Get(0);
         }
         else {
             if (msg->severity != CS_SV_INFORM) {
@@ -1181,6 +1206,14 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
 
             return CS_SUCCEED;
         }
+
+        impl::CDBHandlerStack* handlers;
+        if (ctl_conn)
+            handlers = &ctl_conn->GetMsgHandlers();
+        else
+            handlers = &ctl_ctx->GetCtxHandlerStack();
+        if (handlers->HandleMessage(msg->severity, msg->msgnumber, msg->msgstring))
+            return CS_SUCCEED;
 
         // In case of timeout ...
         /* Experimental. Based on C-Toolkit and code developed by Eugene
@@ -1284,20 +1317,22 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     }
 
     CS_INT          outlen;
-    CPointerPot*    p_pot = 0;
-    CTL_Connection* link = 0;
+    CPointerPot*    p_pot = NULL;
+    CTL_Connection* ctl_conn = NULL;
+    CTLibContext*   ctl_ctx = NULL;
     string          message;
     string          server_name;
     string          user_name;
 
     try {
         if (con != NULL && ct_con_props(con, CS_GET, CS_USERDATA,
-                                       (void*) &link, (CS_INT) sizeof(link),
+                                       (void*) &ctl_conn, (CS_INT) sizeof(ctl_conn),
                                        &outlen) == CS_SUCCEED  &&
-            link != NULL) {
-            if (link->ServerName().size() < 127 && link->UserName().size() < 127) {
-                server_name = link->ServerName();
-                user_name = link->UserName();
+            ctl_conn != NULL)
+        {
+            if (ctl_conn->ServerName().size() < 127 && ctl_conn->UserName().size() < 127) {
+                server_name = ctl_conn->ServerName();
+                user_name = ctl_conn->UserName();
             } else {
                 ERR_POST_X(3, Error << "Invalid value of ServerName." << CStackTrace());
             }
@@ -1307,9 +1342,9 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                            (void*) &p_pot,
                            (CS_INT) sizeof(p_pot),
                            &outlen) == CS_SUCCEED  &&
-                 p_pot != 0  &&  p_pot->NofItems() > 0) {
-
-            // CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
+                 p_pot != 0  &&  p_pot->NofItems() > 0)
+        {
+            ctl_ctx = (CTLibContext*) p_pot->Get(0);
             server_name = string(msg->svrname, msg->svrnlen);
         }
         else {
@@ -1339,6 +1374,14 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
 
             return CS_SUCCEED;
         }
+
+        impl::CDBHandlerStack* handlers;
+        if (ctl_conn)
+            handlers = &ctl_conn->GetMsgHandlers();
+        else
+            handlers = &ctl_ctx->GetCtxHandlerStack();
+        if (handlers->HandleMessage(msg->severity, msg->msgnumber, msg->text))
+            return CS_SUCCEED;
 
         if ( msg->text ) {
             message += msg->text;

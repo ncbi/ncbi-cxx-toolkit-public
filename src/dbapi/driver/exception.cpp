@@ -458,7 +458,14 @@ CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 }
 
 
-bool CDB_UserHandler::HandleAll(const TExceptions& exceptions)
+bool CDB_UserHandler::HandleAll(const TExceptions& /* exceptions */)
+{
+    return false;
+}
+
+bool CDB_UserHandler::HandleMessage(int /* severity */,
+                                    int /* msgnum */,
+                                    const string& /* message */)
 {
     return false;
 }
