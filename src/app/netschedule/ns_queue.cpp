@@ -1341,11 +1341,10 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
         // Apply restrictions on the group jobs if so
         candidates &= m_GroupRegistry.GetJobs(group);
 
-    unsigned int        job_id = *candidates.first();
-
-    if (!job_id)
+    if (!candidates.any())
         return;
 
+    unsigned int        job_id = *candidates.first();
     {{
          CNSTransaction     transaction(this);
 
