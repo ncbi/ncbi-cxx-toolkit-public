@@ -88,7 +88,7 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size,
                                void*               del_ptr)
-    { x_Pushback(is, buf, buf_size, del_ptr, ePushback_NoCopy); }
+    { x_Pushback(is, buf, (size_t) buf_size, del_ptr, ePushback_NoCopy); }
 
 // Acts just like its counterpart with 4 args (above), but this variant
 // always copies (if necessary) the "pushback data" into an internal buffer,
@@ -96,7 +96,7 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
     static void       Pushback(CNcbiIstream&       is,
                                const CT_CHAR_TYPE* buf,
                                streamsize          buf_size)
-    { x_Pushback(is, const_cast<CT_CHAR_TYPE*> (buf), buf_size); }
+    { x_Pushback(is, const_cast<CT_CHAR_TYPE*> (buf), (size_t) buf_size); }
 
 // Unsafe but fast API that tries to backup "buf_size" bytes in the
 // internal stream buffer,but if that is not possible, will use
@@ -107,7 +107,7 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size,
                                void*               del_ptr = 0)
-    { x_Pushback(is, buf, buf_size, del_ptr, ePushback_Stepback); }
+    { x_Pushback(is, buf, (size_t) buf_size, del_ptr, ePushback_Stepback); }
 
 // Read at most "buf_size" bytes from the stream "is" into a buffer pointed
 // to by "buf".  This call tries its best to be non-blocking.
@@ -127,7 +127,7 @@ private:
 
     static void     x_Pushback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
-                               streamsize          buf_size,
+                               size_t              buf_size,
                                void*               del_ptr = 0,
                                EPushback_How       how = ePushback_Copy);
 };

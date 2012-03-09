@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 /// process over nemed pipe.  Return NULL on error.
 extern NCBI_XCONNECT_EXPORT CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
- size_t        pipebufsize = 0 /* use default */
+ size_t        pipebufsize = 0 /** use default */
  );
 
 

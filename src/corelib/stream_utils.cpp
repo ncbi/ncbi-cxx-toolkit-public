@@ -68,7 +68,7 @@ class CPushback_Streambuf : public CPushback_StreambufBase
 
 public:
     CPushback_Streambuf(istream& istream, CT_CHAR_TYPE* buf,
-                        streamsize buf_size, void* del_ptr);
+                        size_t buf_size, void* del_ptr);
     virtual ~CPushback_Streambuf();
 
 protected:
@@ -96,7 +96,7 @@ protected:
 #endif //NCBI_OS_MSWIN
 
 private:
-    void                 x_FillBuffer(streamsize max_size);
+    void                 x_FillBuffer(size_t max_size);
     void                 x_DropBuffer(void);
 
     istream&             m_Is;      // I/O stream this streambuf is attached to
@@ -104,17 +104,17 @@ private:
     CPushback_Streambuf* m_Next;    // of the kin in the sb chain
 
     CT_CHAR_TYPE*        m_Buf;
-    streamsize           m_BufSize;
+    size_t               m_BufSize;
     void*                m_DelPtr;
 
     static volatile int  sm_Index;
     static void          x_Callback(IOS_BASE::event, IOS_BASE&, int);
 
-    static const streamsize kMinBufSize;
+    static const size_t  kMinBufSize;
 };
 
 
-const streamsize CPushback_Streambuf::kMinBufSize = 4096;
+const size_t CPushback_Streambuf::kMinBufSize = 4096;
 
 
 volatile int CPushback_Streambuf::sm_Index = -1;  // uninited
@@ -133,7 +133,7 @@ void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
 
 CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                                          CT_CHAR_TYPE* buf,
-                                         streamsize    buf_size,
+                                         size_t        buf_size,
                                          void*         del_ptr)
     : m_Is(is), m_Next(0), m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
 {
@@ -148,7 +148,7 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                 DEFINE_STATIC_FAST_MUTEX(s_PushbackMutex);
                 CFastMutexGuard guard(s_PushbackMutex);
                 if (sm_Index == -1) {
-                    sm_Index =  IOS_BASE::xalloc();
+                    sm_Index  = IOS_BASE::xalloc();
                 }
             }
             m_Is.register_callback(x_Callback, sm_Index);
@@ -228,14 +228,14 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
     m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
 #endif //NCBI_COMPILER_MIPSPRO
 
-    x_FillBuffer(m_Sb->in_avail());
+    x_FillBuffer((size_t) m_Sb->in_avail());
     return gptr() < egptr() ? CT_TO_INT_TYPE(*gptr()) : CT_EOF;
 }
 
 
 streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    size_t n_total = 0;
+    streamsize n_total = 0;
     while (m) {
         if (gptr() < egptr()) {
             size_t n       = (size_t) m;
@@ -249,7 +249,7 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             buf     += (streamsize) n_read;
             n_total += (streamsize) n_read;
         } else {
-            x_FillBuffer(m);
+            x_FillBuffer((size_t) m);
             if (gptr() >= egptr()) {
                 break;
             }
@@ -296,7 +296,7 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
-void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
+void CPushback_Streambuf::x_FillBuffer(size_t max_size)
 {
     _ASSERT(m_Sb);
     if ( !max_size ) {
@@ -307,13 +307,13 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
     if ( !sb ) {
         CT_CHAR_TYPE* bp = 0;
         size_t buf_size = m_DelPtr
-            ? size_t((m_Buf - (CT_CHAR_TYPE*) m_DelPtr) + m_BufSize) : 0;
+            ? (size_t)(m_Buf - (CT_CHAR_TYPE*) m_DelPtr) + m_BufSize : 0;
         if (buf_size < kMinBufSize) {
             buf_size = kMinBufSize;
             bp = new CT_CHAR_TYPE[buf_size];
         }
-        streamsize n = m_Sb->sgetn(bp ? bp : (CT_CHAR_TYPE*) m_DelPtr,
-                                   (streamsize)buf_size < max_size ? buf_size : max_size);
+        streamsize r = (streamsize)(buf_size < max_size ? buf_size : max_size);
+        streamsize n = m_Sb->sgetn(bp ? bp : (CT_CHAR_TYPE*) m_DelPtr, r);
         if (n <= 0) {
             // NB: For unknown reasons WorkShop6 can return -1 from sgetn :-/
             delete[] bp;
@@ -371,7 +371,7 @@ void CPushback_Streambuf::x_DropBuffer(void)
 
 void CStreamUtils::x_Pushback(CNcbiIstream& is,
                               CT_CHAR_TYPE* buf,
-                              streamsize    buf_size,
+                              size_t        buf_size,
                               void*         del_ptr,
                               EPushback_How how)
 {
@@ -403,7 +403,7 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
                                   : CPushback_Streambuf::kMinBufSize >> 4))) {
             CT_CHAR_TYPE* bp = sb->gptr();
             size_t avail = bp - sb->m_Buf;
-            size_t take  = (streamsize)avail < buf_size ? avail : (size_t)buf_size;
+            size_t take  = avail < buf_size ? avail : buf_size;
             if (take) {
                 bp -= take;
                 buf_size -= take;
@@ -421,8 +421,8 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
     }
 
     if (!del_ptr  &&  how != ePushback_NoCopy) {
-        del_ptr = new CT_CHAR_TYPE[(size_t)buf_size];
-        buf = (CT_CHAR_TYPE*) memcpy(del_ptr, buf, (size_t)buf_size);
+        del_ptr = new CT_CHAR_TYPE[buf_size];
+        buf = (CT_CHAR_TYPE*) memcpy(del_ptr, buf, buf_size);
     }
 
     (void) new CPushback_Streambuf(is, buf, buf_size, del_ptr);
@@ -599,7 +599,7 @@ ERW_Result CStreamWriter::Write(const void* buf,
     streamsize w = m_Stream->good()
         ? m_Stream->rdbuf()->sputn(static_cast<const char*>(buf), count) : 0;
     if ( bytes_written ) {
-        *bytes_written = (size_t)w;
+        *bytes_written = (size_t) w;
     }
     if (!w) {
         m_Stream->setstate(NcbiBadbit);

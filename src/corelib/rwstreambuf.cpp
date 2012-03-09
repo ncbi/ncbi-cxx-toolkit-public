@@ -162,9 +162,9 @@ CRWStreambuf::~CRWStreambuf()
 }
 
 
-CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
+CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
 {
-    if (!s  &&  !n) {
+    if (!s  &&  !m) {
         return this;
     }
 
@@ -177,20 +177,17 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
 
     delete[] m_pBuf;
 
+    size_t n = (size_t) m;
     if ( !n ) {
         _ASSERT(kDefaultBufSize > 1);
-        n = kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
+        n = (size_t) kDefaultBufSize << (m_Reader  &&  m_Writer ? 1 : 0);
     }
-
     if ( !s ) {
-        if (n != 1)
-            s = m_pBuf = new CT_CHAR_TYPE[(size_t)n];
-        else
-            s = &x_Buf;
+        s          = n == 1 ? &x_Buf : (m_pBuf = new CT_CHAR_TYPE[n]);
     }
 
     if ( m_Reader ) {
-        m_BufSize  = n == 1 ? 1 : n >> (m_Reader  &&  m_Writer ? 1 : 0);
+        m_BufSize  = n == 1 ? 1      : n >> (m_Reader  &&  m_Writer ? 1 : 0);
         m_ReadBuf  = s;
     } else {
         m_BufSize  = 0;
@@ -199,7 +196,7 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize n)
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);
 
     if ( m_Writer ) {
-        m_WriteBuf = n == 1 ? 0 : s + m_BufSize;
+        m_WriteBuf = n == 1 ? 0      : s + m_BufSize;
     } else {
         m_WriteBuf = 0;
     }
@@ -384,12 +381,12 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
     // read from device
     size_t n_read;
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
-        m_Reader->Read(m_ReadBuf, (size_t)m_BufSize, &n_read),
+        m_Reader->Read(m_ReadBuf, m_BufSize, &n_read),
         10, "CRWStreambuf::underflow(): IReader::Read()",
         n_read = 0);
     if ( !n_read )
         return CT_EOF;
-    _ASSERT(n_read <= (size_t) m_BufSize);
+    _ASSERT(n_read <= m_BufSize);
 
     // update input buffer with the data just read
     x_GPos += (CT_OFF_TYPE) n_read;
@@ -421,8 +418,8 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     while ( n ) {
         // next, read directly from the device
-        size_t      to_read = n < (size_t) m_BufSize ? (size_t) m_BufSize : n;
-        CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
+        size_t      to_read = n < m_BufSize ? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf = n < m_BufSize ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
         size_t       x_read;
 
@@ -443,7 +440,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else {
             _ASSERT(x_read <= n);
-            size_t xx_read = x_read > (size_t) m_BufSize ? (size_t) m_BufSize : x_read;
+            size_t xx_read = x_read > m_BufSize ? m_BufSize : x_read;
             memcpy(m_ReadBuf, buf + x_read - xx_read, xx_read);
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }

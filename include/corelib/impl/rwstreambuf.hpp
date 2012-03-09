@@ -78,7 +78,7 @@ public:
                  CT_CHAR_TYPE*  buf      = 0,
                  TFlags         flags    = 0);
 
-    /// NOTE:  if the reader and writer have actually happened to be
+    /// NOTE:  if both reader and writer have actually happened to be
     ///        the same object, it will _not_ be deleted twice.
     CRWStreambuf(IReader*       r,
                  IWriter*       w,
@@ -126,7 +126,7 @@ protected:
     IReader*       m_Reader;
     IWriter*       m_Writer;
 
-    streamsize     m_BufSize;
+    size_t         m_BufSize;
     CT_CHAR_TYPE*  m_ReadBuf;
     CT_CHAR_TYPE*  m_WriteBuf;
 

@@ -53,11 +53,9 @@ class CConn_Streambuf : public CConn_StreambufBase
 {
 public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
-                    streamsize buf_size, bool tie,
-                    CT_CHAR_TYPE* ptr, size_t size);
+                    size_t buf_size, bool tie, CT_CHAR_TYPE* ptr, size_t size);
     CConn_Streambuf(CONN conn, bool close, const STimeout* timeout,
-                    streamsize buf_size, bool tie,
-                    CT_CHAR_TYPE* ptr, size_t size);
+                    size_t buf_size, bool tie, CT_CHAR_TYPE* ptr, size_t size);
     virtual   ~CConn_Streambuf()   { Close();  delete[] m_WriteBuf; }
     CONN       GetCONN(void) const { return m_Conn;                 }
     EIO_Status Close  (void)       { return x_Close(true);          }
@@ -102,7 +100,7 @@ private:
 
     CT_CHAR_TYPE*       m_ReadBuf;   // I/O arena or &x_Buf (if unbuffered)
     CT_CHAR_TYPE*       m_WriteBuf;  // m_ReadBuf + m_BufSize (0 if unbuffered)
-    streamsize          m_BufSize;   // of m_ReadBuf, m_WriteBuf (if buffered)
+    size_t              m_BufSize;   // of m_ReadBuf, m_WriteBuf (if buffered)
 
     EIO_Status          m_Status;    // status of last I/O completed by CONN
 
@@ -114,7 +112,7 @@ private:
     CT_POS_TYPE         x_GPos;      // get position [for istream.tellg()]
     CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
 
-    void                x_Init(const STimeout* timeout, streamsize buf_size,
+    void                x_Init(const STimeout* timeout, size_t buf_size,
                                CT_CHAR_TYPE* ptr, size_t size);
 
     EIO_Status          x_Close(bool close);

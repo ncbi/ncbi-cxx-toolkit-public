@@ -85,6 +85,7 @@ CChecksum::CChecksum(EMethod method)
     }
 }
 
+
 CChecksum::CChecksum(const CChecksum& cks)
     : m_LineCount(cks.m_LineCount), m_CharCount(cks.m_CharCount),
       m_Method(cks.m_Method)
@@ -103,10 +104,12 @@ CChecksum::CChecksum(const CChecksum& cks)
     }
 }
 
+
 CChecksum::~CChecksum()
 {
     x_Free();
 }
+
 
 void CChecksum::x_Free()
 {
@@ -119,6 +122,7 @@ void CChecksum::x_Free()
         break;
     }
 }
+
 
 CChecksum& CChecksum::operator= (const CChecksum& cks)
 {
@@ -143,6 +147,7 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
     return *this;
 }
 
+
 void CChecksum::Reset()
 {
     m_LineCount = 0;
@@ -165,6 +170,7 @@ void CChecksum::Reset()
         break;
     }
 }
+
 
 Uint4 CChecksum::GetChecksum() const
 {
@@ -202,7 +208,7 @@ bool CChecksum::ValidChecksumLineLong(const char* line, size_t length) const
     }
     CNcbiOstrstream buffer;
     WriteChecksum(buffer);
-    streamsize bufferLength = buffer.pcount() - 1; // do not include '\n'
+    size_t bufferLength = (size_t) buffer.pcount() - 1; // do not include '\n'
     if ( bufferLength != length ) {
         return false;
     }
@@ -210,6 +216,7 @@ bool CChecksum::ValidChecksumLineLong(const char* line, size_t length) const
     buffer.freeze(false);
     return memcmp(line, bufferPtr, length) == 0;
 }
+
 
 CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
 {
@@ -227,6 +234,7 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
         return out << "none";
     }
 }
+
 
 void CChecksum::x_Update(const char* str, size_t count)
 {
@@ -248,6 +256,7 @@ void CChecksum::x_Update(const char* str, size_t count)
     }
 }
 
+
 void CChecksum::NextLine(void)
 {
     char eol = '\n';
@@ -255,12 +264,14 @@ void CChecksum::NextLine(void)
     ++m_LineCount;
 }
 
+
 CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
 {
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     CChecksum cks(method);
     return ComputeFileChecksum(path, cks);
 }
+
 
 CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum)
 {
@@ -475,6 +486,7 @@ static Uint4 s_CRC32ZIPTable[kCRC32Size];
 // Second pass is universal for any CRC32 and is performed by function
 // s_FillMultiBitsCRC().
 
+
 Uint4 s_CalcByteCRC32(size_t byte)
 {
     Uint4 byteCRC = byte << 24;
@@ -487,6 +499,7 @@ Uint4 s_CalcByteCRC32(size_t byte)
     return byteCRC;
 }
 
+
 Uint4 s_CalcByteCRC32ZIP(size_t byte)
 {
     Uint4 byteCRC = byte;
@@ -498,6 +511,7 @@ Uint4 s_CalcByteCRC32ZIP(size_t byte)
     }
     return byteCRC;
 }
+
 
 void s_FillMultiBitsCRC(Uint4* table, size_t size)
 {
@@ -531,6 +545,7 @@ void s_FillMultiBitsCRC(Uint4* table, size_t size)
         table[i] = table[lobit] ^ table[hibits];
     }
 }
+
 
 void s_InitTableCRC32(void)
 {

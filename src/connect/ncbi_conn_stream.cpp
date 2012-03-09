@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
-                               streamsize buf_size, bool tie,
+                               size_t buf_size, bool tie,
                                CT_CHAR_TYPE* ptr, size_t size) :
     CNcbiIostream(0), m_CSb(0)
 {
@@ -67,7 +67,7 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
 
 
 CConn_IOStream::CConn_IOStream(CONN conn, bool close, const STimeout* timeout,
-                               streamsize buf_size, bool tie,
+                               size_t buf_size, bool tie,
                                CT_CHAR_TYPE* ptr, size_t size) :
     CNcbiIostream(0), m_CSb(0)
 {
@@ -210,7 +210,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
-                                       streamsize      buf_size)
+                                       size_t          buf_size)
     : CConn_IOStream(x_SC(SOCK_CreateConnector(host.c_str(), port, max_try),
                           m_SockPtr),
                      timeout, buf_size)
@@ -226,7 +226,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        TSOCK_Flags     flags,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
-                                       streamsize      buf_size)
+                                       size_t          buf_size)
     : CConn_IOStream(x_SC(SOCK_CreateConnectorEx(host.c_str(), port, max_try,
                                                  data, size, flags),
                           m_SockPtr),
@@ -239,7 +239,7 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 CConn_SocketStream::CConn_SocketStream(SOCK            sock,
                                        EOwnership      if_to_own,
                                        const STimeout* timeout,
-                                       streamsize      buf_size)
+                                       size_t          buf_size)
     : CConn_IOStream(x_SC(SOCK_CreateConnectorOnTop(sock,
                                                     if_to_own != eNoOwnership),
                           m_SockPtr),
@@ -307,7 +307,7 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        const void*         data,
                                        size_t              size,
                                        TSOCK_Flags         flags,
-                                       streamsize          buf_size)
+                                       size_t              buf_size)
     : CConn_IOStream(x_SC(s_TunneledSocketConnector(&net_info,
                                                     data, size, flags),
                           m_SockPtr),
@@ -339,7 +339,7 @@ static SOCK s_GrabSOCK(CSocket& socket)
 
 CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
                                        const STimeout* timeout,
-                                       streamsize      buf_size)
+                                       size_t          buf_size)
     : CConn_IOStream(x_SC(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket),
                                                     1/*own*/),
                           m_SockPtr),
@@ -437,7 +437,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                    unsigned short  port,
                                    THTTP_Flags     flags,
                                    const STimeout* timeout,
-                                   streamsize      buf_size)
+                                   size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
                                             0,
                                             host.c_str(),
@@ -460,7 +460,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
 CConn_HttpStream::CConn_HttpStream(const string&   url,
                                    THTTP_Flags     flags,
                                    const STimeout* timeout,
-                                   streamsize      buf_size)
+                                   size_t          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
                                             url.c_str(),
                                             0,
@@ -485,7 +485,7 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                    const string&       user_header,
                                    THTTP_Flags         flags,
                                    const STimeout*     timeout,
-                                   streamsize          buf_size)
+                                   size_t              buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
                                             url.c_str(),
                                             0,
@@ -513,7 +513,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                    FHTTP_Cleanup       cleanup,
                                    THTTP_Flags         flags,
                                    const STimeout*     timeout,
-                                   streamsize          buf_size)
+                                   size_t              buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
                                             0,
                                             0,
@@ -571,7 +571,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          const SConnNetInfo*   net_info,
                                          const SSERVICE_Extra* params,
                                          const STimeout*       timeout,
-                                         streamsize            buf_size)
+                                         size_t                buf_size)
     : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
                                                types,
                                                net_info,
@@ -589,7 +589,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          TSERV_Type            types,
                                          const SSERVICE_Extra* params,
                                          const STimeout*       timeout,
-                                         streamsize            buf_size)
+                                         size_t                buf_size)
     : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
                                                types,
                                                0,
@@ -602,7 +602,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 }
 
 
-CConn_MemoryStream::CConn_MemoryStream(streamsize buf_size)
+CConn_MemoryStream::CConn_MemoryStream(size_t buf_size)
     : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true),
       m_Ptr(0)
 {
@@ -612,7 +612,7 @@ CConn_MemoryStream::CConn_MemoryStream(streamsize buf_size)
 
 CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
                                        EOwnership owner,
-                                       streamsize buf_size)
+                                       size_t     buf_size)
     : CConn_IOStream(MEMORY_CreateConnectorEx(buf, owner == eTakeOwnership
                                               ? 1/*true*/
                                               : 0/*false*/), 0, buf_size, true,
@@ -626,7 +626,7 @@ CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
 CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        size_t      size,
                                        EOwnership  owner,
-                                       streamsize  buf_size)
+                                       size_t      buf_size)
     : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true,
                      (CT_CHAR_TYPE*) ptr, size),
       m_Ptr(owner == eTakeOwnership ? ptr : 0)
@@ -692,7 +692,7 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
                                    CPipe::TCreateFlags   create_flags,
                                    const STimeout*       timeout,
-                                   streamsize            buf_size)
+                                   size_t                buf_size)
     : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags,
                                           &m_Pipe, eNoOwnership),
                      timeout, buf_size)
@@ -712,7 +712,7 @@ CConn_PipeStream::~CConn_PipeStream()
 CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
                                              size_t          pipebufsize,
                                              const STimeout* timeout,
-                                             streamsize      buf_size)
+                                             size_t          buf_size)
     : CConn_IOStream(NAMEDPIPE_CreateConnector(pipename, pipebufsize),
                      timeout, buf_size)
 {

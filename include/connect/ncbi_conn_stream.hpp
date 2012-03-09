@@ -90,7 +90,7 @@ class CConn_Streambuf;  // Forward declaration
 class CSocket;          // Forward declaration
 
 
-const streamsize kConn_DefaultBufSize = 4096;
+const size_t kConn_DefaultBufSize = 4096;
 
 
 
@@ -137,7 +137,7 @@ public:
     (CONN            conn,
      bool            close    = false,
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize,
+     size_t          buf_size = kConn_DefaultBufSize,
      bool            tie      = true,
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
@@ -162,7 +162,7 @@ protected:
     CConn_IOStream
     (CONNECTOR       connector,
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize,
+     size_t          buf_size = kConn_DefaultBufSize,
      bool            tie      = true,
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
@@ -352,7 +352,7 @@ public:
      unsigned short  port,                        ///< ... and port number
      unsigned short  max_try,                     ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize);
 
     /// Create a direct connection to "host:port" and pass an initial "data"
     /// block of the specified "size".
@@ -381,7 +381,7 @@ public:
      TSOCK_Flags     flags    = fSOCK_LogDefault, ///< see ncbi_socket.h
      unsigned short  max_try  = DEF_CONN_MAX_TRY, ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize);
 
     /// Create a tunneled socket stream connection.
     ///
@@ -411,7 +411,7 @@ public:
      const void*         data     = 0,
      size_t              size     = 0,
      TSOCK_Flags         flags    = fSOCK_LogDefault,
-     streamsize          buf_size = kConn_DefaultBufSize);
+     size_t              buf_size = kConn_DefaultBufSize);
 
     /// This variant uses an existing socket "sock" to build a stream upon it.
     /// The caller may retain the ownership of "sock" by passing "if_to_own" as
@@ -431,7 +431,7 @@ public:
     (SOCK            sock,         ///< socket
      EOwnership      if_to_own,    ///< whether stream to own "sock" param
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize);
 
     /// This variant uses existing CSocket to build a stream upon it.
     /// NOTE:  it revokes all ownership of the "socket"'s internals
@@ -446,7 +446,7 @@ public:
     CConn_SocketStream
     (CSocket&        socket,       ///< socket, underlying SOCK always grabbed
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize);
 
     /// Return the underlying SOCK object (which is currently in use!)
     /// Don't call this method unless you absolutely need it and know what
@@ -504,14 +504,14 @@ public:
      unsigned short      port         = 0, ///< 0 means default (80 for HTTP)
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
-     streamsize          buf_size     = kConn_DefaultBufSize
+     size_t              buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
     (const string&       url,
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
-     streamsize          buf_size     = kConn_DefaultBufSize
+     size_t              buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
@@ -520,7 +520,7 @@ public:
      const string&       user_header  = kEmptyStr,
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
-     streamsize          buf_size     = kConn_DefaultBufSize
+     size_t              buf_size     = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
@@ -532,7 +532,7 @@ public:
      FHTTP_Cleanup       cleanup      = 0,
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
-     streamsize          buf_size     = kConn_DefaultBufSize
+     size_t              buf_size     = kConn_DefaultBufSize
      );
 
 private:
@@ -567,7 +567,7 @@ public:
      const SConnNetInfo*   net_info    = 0,
      const SSERVICE_Extra* params      = 0,
      const STimeout*       timeout     = kDefaultTimeout,
-     streamsize            buf_size    = kConn_DefaultBufSize);
+     size_t                buf_size    = kConn_DefaultBufSize);
 
     CConn_ServiceStream
     (const string&         service,
@@ -575,7 +575,7 @@ public:
      TSERV_Type            types       = fSERV_Any,
      const SSERVICE_Extra* params      = 0,
      const STimeout*       timeout     = kDefaultTimeout,
-     streamsize            buf_size    = kConn_DefaultBufSize);
+     size_t                buf_size    = kConn_DefaultBufSize);
 
 private:
     // Disable copy constructor and assignment.
@@ -593,14 +593,14 @@ private:
 class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
 {
 public:
-    CConn_MemoryStream(streamsize  buf_size = kConn_DefaultBufSize);
+    CConn_MemoryStream(size_t      buf_size = kConn_DefaultBufSize);
 
     /// Build a stream on top of an NCBI buffer (which in turn
     /// could have been built over a memory area of a specified size).
     /// BUF's ownership is assumed by the stream as specified in "owner".
     CConn_MemoryStream(BUF         buf,
                        EOwnership  owner    = eTakeOwnership,
-                       streamsize  buf_size = kConn_DefaultBufSize);
+                       size_t      buf_size = kConn_DefaultBufSize);
 
     /// Build a stream on top of an existing data area of a specified size.
     /// The contents of the area is what will be read first from the stream.
@@ -617,8 +617,8 @@ public:
     /// while it is still holding the data yet to be read from the stream.
     CConn_MemoryStream(const void* ptr,
                        size_t      size,
-                       EOwnership  owner/**no default for satefy*/,
-                       streamsize  buf_size = kConn_DefaultBufSize);
+                       EOwnership  owner/**no default for safety*/,
+                       size_t      buf_size = kConn_DefaultBufSize);
 
     virtual ~CConn_MemoryStream();
 
@@ -657,7 +657,7 @@ public:
      const vector<string>& args,
      CPipe::TCreateFlags   create_flags = 0,
      const STimeout*       timeout      = kDefaultTimeout,
-     streamsize            buf_size     = kConn_DefaultBufSize
+     size_t                buf_size     = kConn_DefaultBufSize
      );
     virtual ~CConn_PipeStream();
 
@@ -689,7 +689,7 @@ public:
     (const string&   pipename,
      size_t          pipebufsize = 0/*default*/,
      const STimeout* timeout     = kDefaultTimeout,
-     streamsize      buf_size    = kConn_DefaultBufSize
+     size_t          buf_size    = kConn_DefaultBufSize
      );
 
 private:

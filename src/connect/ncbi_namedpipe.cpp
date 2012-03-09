@@ -306,8 +306,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
              PIPE_ACCESS_DUPLEX,            // read/write access 
              PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, nonblocking mode 
              1,                             // one instance only 
-             (DWORD)pipebufsize,            // output buffer size 
-             (DWORD)pipebufsize,            // input buffer size 
+             (DWORD) pipebufsize,           // output buffer size 
+             (DWORD) pipebufsize,           // input buffer size 
              INFINITE,                      // client time-out by default
              &attr);                        // security attributes
 
@@ -499,8 +499,8 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             _ASSERT(bytes_avail);
             // We must read only "count" bytes of data regardless of the amount
             // available to read.
-            if (bytes_avail > count) {
-                bytes_avail = (DWORD)count;
+            if (bytes_avail > (DWORD) count) {
+                bytes_avail = (DWORD) count;
             }
             if ( !::ReadFile(m_Pipe, buf, bytes_avail, &bytes_avail, NULL) ) {
                 if ( !bytes_avail ) {
@@ -550,18 +550,16 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
 
         status = eIO_Unknown;
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
+        DWORD to_write  = (count > numeric_limits<DWORD>::max()
+                           ? numeric_limits<DWORD>::max()
+                           : count);
         DWORD bytes_written = 0;
-        DWORD to_write_count;
-        if (count > numeric_limits<DWORD>::max())
-            to_write_count = numeric_limits<DWORD>::max();
-        else
-            to_write_count = (DWORD)count;
 
         // Wait for data from the pipe with timeout.
         // NOTE:  WaitForSingleObject() does not work with pipes.
 
         for (;;) {
-            if ( !::WriteFile(m_Pipe, buf, to_write_count, &bytes_written, NULL) ) {
+            if ( !::WriteFile(m_Pipe, buf, to_write, &bytes_written, NULL) ) {
                 // NB:  status == eIO_Unknown
                 if ( !bytes_written ) {
                     DWORD error = ::GetLastError();
