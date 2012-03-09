@@ -552,7 +552,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD to_write  = (count > numeric_limits<DWORD>::max()
                            ? numeric_limits<DWORD>::max()
-                           : count);
+                           : (DWORD) count);
         DWORD bytes_written = 0;
 
         // Wait for data from the pipe with timeout.
