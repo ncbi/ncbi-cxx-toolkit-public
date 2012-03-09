@@ -8166,7 +8166,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("NMV");
     ambig.push_back("MLS");
     ambig.push_back("NJM");
-    ambig.push_back("P");
     ambig.push_back("INA");
     ambig.push_back("BCM");
     ambig.push_back("YM");
