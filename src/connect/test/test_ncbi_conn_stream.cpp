@@ -108,15 +108,8 @@ int main(int argc, const char* argv[])
     SConnNetInfo* net_info;
     size_t i, j, k, l, m, n, size;
 
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(stderr, 0/*false*/);
-    if (argc <= 1)
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    else
-        g_NCBI_ConnectRandomSeed = atoi(argv[1]);
-    CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
-    srand(g_NCBI_ConnectRandomSeed);
+    reg = s_CreateRegistry();
+    CONNECT_Init(reg);
 
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
@@ -128,8 +121,12 @@ int main(int argc, const char* argv[])
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
-    reg = s_CreateRegistry();
-    CONNECT_Init(reg);
+    if (argc <= 1)
+        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    else
+        g_NCBI_ConnectRandomSeed = atoi(argv[1]);
+    CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
+    srand(g_NCBI_ConnectRandomSeed);
 
 
     LOG_POST(Info << "Test 0 of 8: Checking error log setup");
