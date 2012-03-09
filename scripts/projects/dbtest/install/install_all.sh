@@ -57,7 +57,7 @@ CGI_BIN_DIR="/net/iwebdev2/export/home/web/public/htdocs/ieb/ToolBox/STAT/test_s
 
 
 
-PREPARE_DIR="$(find . -type d -name "prepare_release*build*")"
+PREPARE_DIR="$(find . -type d -name "prepare_release*build.dbtest*")"
 if [[ ! -d "$PREPARE_DIR" ]]; then
     echo "Cannot find directory made by prepare_release build!!!"
     exit 4
