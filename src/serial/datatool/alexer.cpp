@@ -180,7 +180,7 @@ char AbstractLexer::FillChar(size_t index)
     while ( pos >= m_DataEnd ) {
         size_t space = m_AllocEnd - m_DataEnd;
         m_Input.read(m_DataEnd, space);
-        size_t read = m_Input.gcount();
+        size_t read = (size_t)m_Input.gcount();
         //        _TRACE("read(" << space << ") = " << read);
         if ( read == 0 )
             return 0;

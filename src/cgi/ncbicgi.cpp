@@ -1294,7 +1294,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 if ( !NcbiStreamCopy(buf, *istr) ) {
                     NCBI_THROW2(CCgiParseException, eRead,
                                 "Failed read of HTTP request body",
-                                istr->gcount());
+                                (size_t)istr->gcount());
                 }
                 string temp = CNcbiOstrstreamToString(buf);
                 m_Content.reset(new string);

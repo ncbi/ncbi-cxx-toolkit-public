@@ -127,7 +127,7 @@ ERW_Result CCGIStreamReader::Read(void*   buf,
                                   size_t  count,
                                   size_t* bytes_read)
 {
-    streamsize x_read = CStreamUtils::Readsome(m_IStr, (char*)buf, count);
+    size_t x_read = (size_t)CStreamUtils::Readsome(m_IStr, (char*)buf, count);
     ERW_Result result;
     if (x_read < 0) {
         result = eRW_Error;

@@ -456,12 +456,12 @@ bool CDelayedOfstream::equals(void)
 {
     if ( !m_Istream.get() )
         return false;
-    streamsize count = pcount();
+    size_t count = (size_t)pcount();
     const char* ptr = str();
     freeze(false);
     while ( count > 0 ) {
         char buffer[BUFFER_SIZE];
-        streamsize c = count;
+        size_t c = count;
         if ( c > BUFFER_SIZE )
             c = BUFFER_SIZE;
         if ( !m_Istream->read(buffer, c) ) {
@@ -515,7 +515,7 @@ bool Empty(const CNcbiOstrstream& src)
 CNcbiOstream& Write(CNcbiOstream& out, const CNcbiOstrstream& src)
 {
     CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(src);
-    size_t size = source.pcount();
+    size_t size = (size_t)source.pcount();
     if ( size != 0 ) {
         out.write(source.str(), size);
         source.freeze(false);
@@ -527,7 +527,7 @@ CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
                           const char* tab)
 {
     CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(code);
-    size_t size = source.pcount();
+    size_t size = (size_t)source.pcount();
     if ( size != 0 ) {
         if ( !tab )
             tab = "    ";

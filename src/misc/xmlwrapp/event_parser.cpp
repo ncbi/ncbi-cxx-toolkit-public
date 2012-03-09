@@ -340,7 +340,7 @@ bool event_parser::parse_stream (std::istream &stream, error_messages* messages,
 
     parse_finished_ = false;
     while (pimpl_->parser_status_ && (stream.read(buffer, const_buffer_size) || stream.gcount()))
-        pimpl_->parser_status_ = parse_chunk(buffer, stream.gcount(), temp, how);
+        pimpl_->parser_status_ = parse_chunk(buffer, (size_t)stream.gcount(), temp, how);
 
     if (!stream && !stream.eof()) { parse_finish(temp, how); return false; }
     return parse_finish(temp, how);
@@ -420,7 +420,7 @@ bool xml::event_parser::parse_stream (std::istream &stream, warnings_as_errors_t
 
     parse_finished_ = false;
     while (pimpl_->parser_status_ && (stream.read(buffer, const_buffer_size) || stream.gcount()))
-        pimpl_->parser_status_ = parse_chunk(buffer, stream.gcount(), how); /* NCBI_FAKE_WARNING */
+        pimpl_->parser_status_ = parse_chunk(buffer, (size_t)stream.gcount(), how); /* NCBI_FAKE_WARNING */
 
     if (!stream && !stream.eof()) { parse_finish(how); return false; }      /* NCBI_FAKE_WARNING */
     return parse_finish(how);                                               /* NCBI_FAKE_WARNING */

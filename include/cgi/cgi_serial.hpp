@@ -151,7 +151,7 @@ inline string ReadStringFromStream(CNcbiIstream& is)
     if (size > 0) {
         AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
         is.read(buf.get(), size);
-        size_t count = is.gcount();
+        size_t count = (size_t)is.gcount();
         if (count > 0)
             str.append(buf.get()+1, count-1);
     }

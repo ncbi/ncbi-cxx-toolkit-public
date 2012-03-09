@@ -656,7 +656,7 @@ bool CFileCode::ModifiedByUser(const string& fileName,
     while ( in ) {
         char buffer[1024]; // buffer must be as big as checksum line
         in.getline(buffer, sizeof(buffer), '\n');
-        SIZE_TYPE count = in.gcount();
+        SIZE_TYPE count = (size_t)in.gcount();
         if ( count == 0 ) {
             // end of file
             break;
@@ -735,7 +735,7 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
     (this->*method)(code);
 
     // get code length
-    size_t count = code.pcount();
+    size_t count = (size_t)code.pcount();
     if ( count == 0 ) {
         NCBI_THROW(CDatatoolException,eInvalidData,"empty generated code");
     }

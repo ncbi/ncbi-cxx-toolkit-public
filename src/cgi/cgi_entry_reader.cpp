@@ -302,8 +302,8 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
     } else {
         AutoArray<char> buffer(++n); // allow for a trailing NUL
         m_In.get(buffer.get(), n, delim);
-        s.assign(buffer.get(), m_In.gcount());
-        m_BytePos += m_In.gcount();
+        s.assign(buffer.get(), (size_t)m_In.gcount());
+        m_BytePos += (size_t)m_In.gcount();
         if (m_In.eof()  ||  m_BytePos >= m_ContentLength) {
             reason = eRT_EOF;
         } else {
