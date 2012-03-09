@@ -46,6 +46,7 @@
 #include <objects/variation/Variation.hpp>
 #include <objects/variation/VariantPlacement.hpp>
 #include <objects/variation/VariationMethod.hpp>
+#include <objects/variation/VariationException.hpp>
 
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
@@ -687,13 +688,21 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
 
     CSeq_id_Handle idh = context.ResolevSeqId(id_str);
     CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(idh);
+    if(!bsh) {
+        HGVS_THROW(eSemantic, "Could not resolve seq-id " + id_str);
+    }
+        
 
-    if(bsh.IsNucleotide() && mol_type == CVariantPlacement::eMol_protein) {
+    if(bsh.IsNucleotide() 
+       && mol_type == CVariantPlacement::eMol_protein 
+       && NStr::Find(id_str, "CCDS") == 0) 
+    {
         //If we have something like CCDS2.1:p., the CCDS2.1 will resolve
         //to an NM, but we need to resolve it to corresponding NP.
         //
-        //In general, we'll support auto-converting nucleatide id to corresponding
-        //protein when we have ".p", if we can do it uniquely
+        //We could do this for all seq-ids, as long as there's unique CDS,
+        //but as per SNP-4536 the seq-id and moltype correspondence must be enforced,
+        //so we do it for CCDS only
 
         SAnnotSelector sel;
         sel.SetResolveTSE();
@@ -703,7 +712,7 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
             const CMappedFeat& mf = *ci;
             if(mf.IsSetProduct() && mf.GetProduct().GetId()) {
                 if(already_found) {
-                    NCBI_THROW(CException, eUnknown, "Can't resolve to prot - multiple CDSes on " + idh.AsString());
+                    HGVS_THROW(eSemantic, "Can't resolve to prot - multiple CDSes on " + idh.AsString());
                 } else {
                     idh = sequence::GetId(*mf.GetProduct().GetId(), context.GetScope(), sequence::eGetId_ForceAcc);
                     already_found = true;
@@ -711,7 +720,7 @@ CHgvsParser::CContext CHgvsParser::x_header(TIterator const& i, const CContext& 
             }
         }
         if(!already_found) {
-            NCBI_THROW(CException, eUnknown, "Can't resolve to prot - can't find CDS on " + idh.AsString());
+            HGVS_THROW(eSemantic, "Can't resolve to prot - can't find CDS on " + idh.AsString());
         }
     }
 
@@ -1751,6 +1760,28 @@ CRef<CVariation>  CHgvsParser::x_unwrap_iff_singleton(CVariation& v)
 }
 
 
+void CHgvsParser::sx_AppendMoltypeExceptions(CVariation& v, CScope& scope)
+{
+    CVariationUtil util(scope);
+    for(CTypeIterator<CVariantPlacement> it(Begin(v)); it; ++it) {
+        CVariantPlacement& p = *it;
+        CVariantPlacement::TMol mol = util.GetMolType(sequence::GetId(p.GetLoc(), NULL));
+        if(p.GetMol() != mol) {
+            CRef<CVariantPlacement> p2(new CVariantPlacement);
+            p2->Assign(p);
+            p2->SetMol(mol);
+
+            string asserted_header = CHgvsParser::s_SeqIdToHgvsStr(p);
+            string expected_header = CHgvsParser::s_SeqIdToHgvsStr(*p2);
+
+            CRef<CVariationException> ex(new CVariationException);
+            ex->SetCode(CVariationException::eCode_inconsistent_asserted_moltype);
+            ex->SetMessage("Inconsistent mol-type. asserted:'" + asserted_header + "'; expected:'" + expected_header + "'");
+            p.SetExceptions().push_back(ex);
+        }
+    }
+}
+
 CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
 {
     string hgvs2 = NStr::TruncateSpaces(hgvs);
@@ -1767,8 +1798,8 @@ CRef<CVariation> CHgvsParser::AsVariation(const string& hgvs, TOpFlags flags)
     } else {
         CContext context(m_scope, m_seq_id_resolvers);
         vr = x_root(info.trees.begin(), context);
-
         vr->SetName(hgvs2);
+        sx_AppendMoltypeExceptions(*vr, context.GetScope());
     }
 
     return vr;

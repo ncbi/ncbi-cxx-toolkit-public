@@ -39,8 +39,8 @@ VariationException ::= SEQUENCE
         no-mapping (5),      --could not remap
         partial-mapping (6), --mapped location is shorter than the query
         split-mapping (7),   --a source interval maps to multiple non-abutting intervals.
-        mismatches-in-mapping (8) --the source sequence differs from sequence at mapped loc
-        
+        mismatches-in-mapping (8), --the source sequence differs from sequence at mapped loc
+        inconsistent-asserted-moltype (9) --asserted mol-type is inconsistent with seq-id (e.g. NM_12345.6:g.)
     } OPTIONAL,
     
     message VisibleString

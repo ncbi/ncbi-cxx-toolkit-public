@@ -459,8 +459,8 @@ CVariantPlacement::TMol CVariationUtil::GetMolType(const CSeq_id& id)
             moltype = CVariantPlacement::eMol_unknown;
         } else {
             //check if mitochondrion
-            if(bsh.IsSetDescr()) {
-                ITERATE(CBioseq_Handle::TDescr::Tdata, it, bsh.GetDescr().Get()) {
+            if(bsh.GetTopLevelEntry().IsSetDescr()) {
+                ITERATE(CBioseq_Handle::TDescr::Tdata, it, bsh.GetTopLevelEntry().GetDescr().Get()) {
                     const CSeqdesc& desc = **it;
                     if(!desc.IsSource()) {
                         continue;

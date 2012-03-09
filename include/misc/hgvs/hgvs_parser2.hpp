@@ -900,6 +900,7 @@ private:
     /// Construct an hgvs "header" consisting of seq-id and mol-type, e.g. "NG_016831.1:g."
     static string s_SeqIdToHgvsStr(const CVariantPlacement& vp);
 
+    static void sx_AppendMoltypeExceptions(CVariation& v, CScope& scope);
     /// In some cases the placement needs to be adjusted depending on inst, e.g. if we have a point-relative insertion,
     /// it needs to be converted to "between-dinucleotide" representation; or, in case of microsatellites, the
     /// location must point to the first repeat unit rather than whole tandem repeat
