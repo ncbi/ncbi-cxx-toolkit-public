@@ -397,9 +397,9 @@ public:
                           ESP_ParamType param_type = eSP_In);
 
     /// Get value of the parameter.
-    /// For eSP_In parameters value set to it will always be returned. For
-    /// eSP_InOut parameters value set to it will be returned before stored
-    /// procedure execution and value returned from proecedure after its
+    /// For eSP_In parameter value set to it will always be returned. For
+    /// eSP_InOut parameter value set to it will be returned before stored
+    /// procedure execution and value returned from procedure after its
     /// execution.
     const CField& GetParameter(CTempString name);
 
