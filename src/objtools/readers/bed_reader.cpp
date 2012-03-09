@@ -169,6 +169,16 @@ CBedReader::ReadSeqAnnot(
         return CRef<CSeq_annot>();
     }
     x_AddConversionInfo(annot, pErrorContainer);
+
+    if(m_columncount >= 3) {
+        CRef<CUser_object> columnCountUser( new CUser_object() );
+        columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
+        columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
+    
+        CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
+        userDesc->SetUser().Assign( *columnCountUser );
+        annot->SetDesc().Set().push_back( userDesc );
+    }
     return annot;
 }
 
@@ -277,14 +287,15 @@ bool CBedReader::xParseFeature(
 	string record_copy = record;
 	NStr::TruncateSpacesInPlace(record_copy);
 
-	// 'chr 8' fixup.
-	if (record_copy.find("chr ") == 0 || 
-		record_copy.find("Chr ") == 0 || 
-		record_copy.find("CHR ") == 0)
-		record_copy.erase(3, 1);
-
     //  parse
     NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
+    // better 'chr 8' fixup
+    if( fields.size() >= 2 ) {
+        if( NStr::EqualNocase(fields[0], "chr") ) {
+            fields[1] = fields[0] + fields[1];
+            fields.erase( fields.begin() );
+        }
+    }
     if (fields.size() != m_columncount) {
         if ( 0 == m_columncount ) {
             m_columncount = fields.size();
@@ -298,6 +309,7 @@ bool CBedReader::xParseFeature(
         }
     }
 
+    
     //  if feature tables get too big we _will_ run out of memory. To guard against
     //  that, limit feature tables to a single id, and to MAX_RECORDS at the most.
     if (m_currentId != fields[0]  ||  count == MAX_RECORDS+1) {

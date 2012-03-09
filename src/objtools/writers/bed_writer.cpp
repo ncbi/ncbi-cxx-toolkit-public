@@ -33,6 +33,10 @@
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -76,6 +80,20 @@ bool CBedWriter::WriteAnnot(
     const string& )
 //  ----------------------------------------------------------------------------
 {
+    if( annot.CanGetDesc() ) {
+        ITERATE(CAnnot_descr::Tdata, DescIter, annot.GetDesc().Get()) {
+            const CAnnotdesc& desc = **DescIter;
+            if(desc.IsUser()) {
+                if(desc.GetUser().HasField("NCBI_BED_COLUMN_COUNT")) {
+                    CConstRef< CUser_field > field = desc.GetUser().GetFieldRef("NCBI_BED_COLUMN_COUNT");
+                    if(field && field->CanGetData() && field->GetData().IsInt()) {
+                        m_colCount = field->GetData().GetInt();
+                    }
+                }
+            }
+        }
+    }
+    
     CBedTrackRecord track;
     if ( ! track.Assign(annot) ) {
         return false;
@@ -93,6 +111,7 @@ bool CBedWriter::WriteAnnot(
     m_Scope.RemoveSeq_annot(sah);
     return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CBedWriter::xWriteFeature(
