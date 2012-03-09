@@ -953,19 +953,22 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         CDB_Stream* val = NULL;
 
 		if (item_buf) {
-				val = static_cast<CDB_Stream*>(item_buf);
+			val = static_cast<CDB_Stream*>(item_buf);
 
-				if (policy == I_Result::eAssignLOB) {
-						// Explicitly truncate previous value ...
-						val->Truncate();
-				}
+			if (policy == I_Result::eAssignLOB) {
+				// Explicitly truncate previous value ...
+				val->Truncate();
+			}
 		} else if (fmt.datatype == CS_TEXT_TYPE) {
-				val = new CDB_Text;
+			val = new CDB_Text;
 		} else {
-				val = new CDB_Image;
+			val = new CDB_Image;
 		}
 
 		_ASSERT(val);
+
+        if (m_NullValue[GetCurrentItemNum()] == eIsNull)
+            return val;
 
         for (;;) {
             switch ( my_ct_get_data(cmd, item_no, buffer, sizeof(buffer), &outlen, is_null) ) {
@@ -1024,6 +1027,13 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
                                bool* is_null)
 {
     if ((unsigned int) CurrentItemNo() >= GetDefineParams().GetNum()  ||  CurrentItemNo() == -1) {
+        return 0;
+    }
+
+    if (m_NullValue[GetCurrentItemNum()] == eIsNull) {
+        if (is_null)
+            *is_null = true;
+        IncCurrentItemNum();
         return 0;
     }
 
@@ -1099,8 +1109,9 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
     }
 
     char dummy[4];
+    CS_INT outlen = 0;
 
-    switch (my_ct_get_data(x_GetSybaseCmd(), item_num + 1, dummy, 0, 0, is_null) ) {
+    switch (my_ct_get_data(x_GetSybaseCmd(), item_num + 1, dummy, 0, &outlen, is_null) ) {
     case CS_END_ITEM:
     case CS_END_DATA:
     case CS_SUCCEED:
@@ -1110,6 +1121,9 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
     default:
         DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
     }
+
+    if (is_null)
+        m_NullValue[item_num] = eIsNull;
 
     auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
 
