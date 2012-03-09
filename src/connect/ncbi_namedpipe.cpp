@@ -287,6 +287,9 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         if (m_Pipe != INVALID_HANDLE_VALUE) {
             throw string("Named pipe already open");
         }
+        if (pipebufsize > numeric_limits<DWORD>::max()) {
+            throw string("Buffer size is too large");
+        }
         // Save parameters
         m_PipeName    = pipename;
         m_PipeBufSize = pipebufsize;
@@ -303,8 +306,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
              PIPE_ACCESS_DUPLEX,            // read/write access 
              PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, nonblocking mode 
              1,                             // one instance only 
-             pipebufsize,                   // output buffer size 
-             pipebufsize,                   // input buffer size 
+             (DWORD)pipebufsize,            // output buffer size 
+             (DWORD)pipebufsize,            // input buffer size 
              INFINITE,                      // client time-out by default
              &attr);                        // security attributes
 
@@ -548,12 +551,17 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         status = eIO_Unknown;
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_written = 0;
+        DWORD to_write_count;
+        if (count > numeric_limits<DWORD>::max())
+            to_write_count = numeric_limits<DWORD>::max();
+        else
+            to_write_count = (DWORD)count;
 
         // Wait for data from the pipe with timeout.
         // NOTE:  WaitForSingleObject() does not work with pipes.
 
         for (;;) {
-            if ( !::WriteFile(m_Pipe, buf, count, &bytes_written, NULL) ) {
+            if ( !::WriteFile(m_Pipe, buf, to_write_count, &bytes_written, NULL) ) {
                 // NB:  status == eIO_Unknown
                 if ( !bytes_written ) {
                     DWORD error = ::GetLastError();

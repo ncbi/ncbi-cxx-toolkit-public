@@ -652,10 +652,15 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_written = 0;
+        DWORD to_write_count;
+        if (count > numeric_limits<DWORD>::max())
+            to_write_count = numeric_limits<DWORD>::max();
+        else
+            to_write_count = (DWORD)count;
 
         // Try to write data into the pipe within specified time.
         for (;;) {
-            BOOL ok = ::WriteFile(m_ChildStdIn, (char*)buf, count,
+            BOOL ok = ::WriteFile(m_ChildStdIn, (char*)buf, to_write_count,
                                   &bytes_written, NULL);
             if ( bytes_written ) {
                 break;
