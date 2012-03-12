@@ -96,7 +96,7 @@ inline void s_AdjustPipeBufSize(size_t& bufsize)
     if (!bufsize) {
         bufsize = kDefaultPipeBufSize;
     } else if (bufsize == (size_t) CNamedPipe::eDefaultSysBufSize) {
-        bufsize = 0 /* use system default buffer size */;
+        bufsize = 0/*use system default buffer size*/;
     }
 }
 
@@ -224,7 +224,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         }
         // Save parameters
         m_PipeName    = pipename;
-        m_PipeBufSize = 0/*pipebufsize is not used on client side*/;
+        m_PipeBufSize = 0/*pipebufsize not used on client side*/;
 
         // Set the base security attributes
         SECURITY_ATTRIBUTES attr;
@@ -288,7 +288,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
             throw string("Named pipe already open");
         }
         if (pipebufsize > numeric_limits<DWORD>::max()) {
-            throw string("Buffer size is too large");
+            throw string("Buffer size too large");
         }
         // Save parameters
         m_PipeName    = pipename;
@@ -499,7 +499,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             _ASSERT(bytes_avail);
             // We must read only "count" bytes of data regardless of the amount
             // available to read.
-            if (bytes_avail > (DWORD) count) {
+            if (bytes_avail >         count) {
                 bytes_avail = (DWORD) count;
             }
             if ( !::ReadFile(m_Pipe, buf, bytes_avail, &bytes_avail, NULL) ) {
@@ -909,7 +909,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
 
         status = SOCK_SetTimeout(m_IoSocket, eIO_Read, timeout);
         if (status == eIO_Success) {
-            status = SOCK_Read(m_IoSocket, buf, count, n_read, eIO_ReadPlain);
+            status  = SOCK_Read(m_IoSocket, buf, count, n_read, eIO_ReadPlain);
         }
     }
     catch (string& what) {
@@ -937,8 +937,8 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
 
         status = SOCK_SetTimeout(m_IoSocket, eIO_Write, timeout);
         if (status == eIO_Success) {
-            status = SOCK_Write(m_IoSocket, buf, count, n_written,
-                                eIO_WritePlain);
+            status  = SOCK_Write(m_IoSocket, buf, count, n_written,
+                                 eIO_WritePlain);
         }
     }
     catch (string& what) {
