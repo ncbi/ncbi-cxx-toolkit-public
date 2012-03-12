@@ -64,7 +64,7 @@ void BlockIntersector::addOneAlignment(const BlockModel& bm)
 	}
 	m_totalRows++;
 	const std::vector<Block>& blocks = bm.getBlocks();
-	for(int b = 0; b < blocks.size(); b++)
+	for(unsigned int b = 0; b < blocks.size(); b++)
 		for(int pos = blocks[b].getStart(); pos <= blocks[b].getEnd(); pos++)
 			m_aligned[pos]++;
 }
@@ -73,14 +73,14 @@ void BlockIntersector::removeOneAlignment(const BlockModel& bm)
 {
 	m_totalRows--;
 	const std::vector<Block>& blocks = bm.getBlocks();
-	for(int b = 0; b < blocks.size(); b++)
+	for(unsigned int b = 0; b < blocks.size(); b++)
 		for(int pos = blocks[b].getStart(); pos <= blocks[b].getEnd(); pos++)
 			if (m_aligned[pos] > 0)
 				m_aligned[pos]--;
 }
 
 
-BlockModel* BlockIntersector::getIntersectedAlignment()
+BlockModel* BlockIntersector::getIntersectedAlignment(double rowFraction)
 {
 	BlockModel* result = new BlockModel(*m_firstBm);
 	if (m_totalRows <= 1)
@@ -91,11 +91,15 @@ BlockModel* BlockIntersector::getIntersectedAlignment()
 	int start = 0;
 	int blockId = 0;
 	int i = 0;
+
+    if (rowFraction < 0.0 || rowFraction > 1.0) rowFraction = 1.0;
+    double adjustedTotalRows = m_totalRows * rowFraction;
+
 	for (; i < m_seqLen; i++)
 	{
 		if (!inBlock)
 		{
-			if (m_aligned[i] >= m_totalRows)
+			if (m_aligned[i] >= adjustedTotalRows)
 			{
 				start = i;
 				inBlock = true;
@@ -103,7 +107,7 @@ BlockModel* BlockIntersector::getIntersectedAlignment()
 		}
 		else
 		{
-			if (m_aligned[i] < m_totalRows)
+			if (m_aligned[i] < adjustedTotalRows)
 			{
 				inBlock = false;
 				blocks.push_back(Block(start, i - start, blockId));
@@ -116,7 +120,7 @@ BlockModel* BlockIntersector::getIntersectedAlignment()
 	return result;
 }
 
-BlockModel* BlockIntersector::getIntersectedAlignment(const std::set<int>& forcedBreak)
+BlockModel* BlockIntersector::getIntersectedAlignment(const std::set<int>& forcedBreak, double rowFraction)
 {
 	BlockModel* result = new BlockModel(*m_firstBm);
 	if (m_totalRows <= 1)
@@ -129,13 +133,17 @@ BlockModel* BlockIntersector::getIntersectedAlignment(const std::set<int>& force
 	int start = 0;
 	int blockId = 0;
 	int i = 0;
+
+    if (rowFraction <= 0.0 || rowFraction > 1.0) rowFraction = 1.0;
+    double adjustedTotalRows = m_totalRows * rowFraction;
+
 	for (; i < m_seqLen; i++)
 	{
 
         //  previous position was not in a block so forcedBreak is irrelevant
 		if (!inBlock)
 		{
-			if (m_aligned[i] >= m_totalRows)
+			if (m_aligned[i] >= adjustedTotalRows)
 			{
 				start = i;
 				inBlock = true;
@@ -147,7 +155,7 @@ BlockModel* BlockIntersector::getIntersectedAlignment(const std::set<int>& force
             forceNewBlock = (i > 0 && forcedBreak.find(i - 1) != setEnd);
 
             //  it's a C-termini w/o any forcing
-            if (m_aligned[i] < m_totalRows)
+            if (m_aligned[i] < adjustedTotalRows)
 			{
 				inBlock = false;
 				blocks.push_back(Block(start, i - start, blockId));

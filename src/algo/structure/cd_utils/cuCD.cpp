@@ -924,7 +924,7 @@ int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields)
 }
 
 
-int IntersectByMaster(CCdCore* ccd) {
+int IntersectByMaster(CCdCore* ccd, double rowFraction) {
 
     int result = -1;
     unsigned int masterLen = (ccd) ? ccd->GetSequenceStringByRow(0).length() : 0;
@@ -981,17 +981,21 @@ int IntersectByMaster(CCdCore* ccd) {
         return result;
     }
 
-    //simpleIntersectedBlockModel = blockIntersector.getIntersectedAlignment();
-    intersectedBlockModel = blockIntersector.getIntersectedAlignment(forcedCTerminiInIntersection);
+    //simpleIntersectedBlockModel = blockIntersector.getIntersectedAlignment(forcedCTerminiInIntersection);
+    intersectedBlockModel = blockIntersector.getIntersectedAlignment(forcedCTerminiInIntersection, rowFraction);
     nAlignedIBM = (intersectedBlockModel) ? intersectedBlockModel->getTotalBlockLength() : 0;
     if (nAlignedIBM == 0) {
         return result;
     }
 
-    //string testStr, testStr2;
-    //string sint = intersectedBlockModel->toString();
-    //string sintsimple = simpleIntersectedBlockModel->toString();
-    //delete simpleIntersectedBlockModel;
+/*
+    string testStr, testStr2;
+    string sint = intersectedBlockModel->toString();
+    string sintsimple = simpleIntersectedBlockModel->toString();
+    delete simpleIntersectedBlockModel;
+    cout << "rowFraction = 1:\n" << sintsimple << endl;
+    cout << "rowFraction = " << rowFraction << ":\n" << sint << endl;
+*/
 
     //  As we have case where every block model isn't identical,
     //  change each seq-align to reflect the common set of aligned columns.

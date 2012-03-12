@@ -48,12 +48,23 @@ public:
 
 	void addOneAlignment(const BlockModel& bm);
 	void removeOneAlignment(const BlockModel& bm);
-	BlockModel* getIntersectedAlignment();
+
+    //  'rowFraction' specifies the minimum fraction of rows in the alignment that
+    //  must have an aligned residue at a position for that position to be part of
+    //  the intersected alignment.  If 'rowFraction' <= 0 or > 1.0, rowFraction is
+    //  reset to 1.0 (i.e., only columns with an aligned residue on all rows appear
+    //  in the interested alignment).
+	BlockModel* getIntersectedAlignment(double rowFraction = 1.0);
     //  'forcedBreak' contains sequences positions after which, if part
     //  of a block in the intersected alignment, forced the block to end.
     //  (I.e., forced C-terminal ends of a block).  This will force breaking 
     //  large blocks into multiple smaller blocks.
-	BlockModel* getIntersectedAlignment(const std::set<int>& forcedBreak);
+    //  'rowFraction' specifies the minimum fraction of rows in the alignment that
+    //  must have an aligned residue at a position for that position to be part of
+    //  the intersected alignment.  If 'rowFraction' <= 0 or > 1.0, rowFraction is
+    //  reset to 1.0 (i.e., only columns with an aligned residue on all rows appear
+    //  in the interested alignment).
+	BlockModel* getIntersectedAlignment(const std::set<int>& forcedBreak, double rowFraction = 1.0);
 
 private:
 	int m_seqLen;

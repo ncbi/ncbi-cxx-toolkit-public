@@ -170,10 +170,15 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = tru
 //   Return +ve (equal to # of block in IBM CD) if the block structure was modified successfully. 
 //   Return 0 if no action taken.
 //   Return -ve if run IBM and it found no intersection or otherwise failed.
+//  'rowFraction' specifies the minimum fraction of rows in the alignment that
+//  must have an aligned residue at a position for that position to be part of
+//  the intersected alignment.  If 'rowFraction' <= 0 or > 1.0, rowFraction is
+//  reset to 1.0 (i.e., only columns with an aligned residue on all rows appear
+//  in the interested alignment).
 //   NOTE:  Only modifying the alignment data; no other coordinate-dependent data in
 //          'ccd' are altered due to modification of alignment blocks caused by IBM.
 NCBI_CDUTILS_EXPORT 
-int IntersectByMaster(CCdCore* ccd);
+int IntersectByMaster(CCdCore* ccd, double rowFraction = 1.0);
 
 //return the number of PDBs fixed
 NCBI_CDUTILS_EXPORT
