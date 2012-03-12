@@ -196,7 +196,7 @@ test/alt_bad_test.agp:2:scaffold_0	2107	4201	2	N	2095	fragment	yes
 test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
 	WARNING: gap at the end of object scaffold_0
 
-50 errors, 32 warnings; 13 not printed.
+50 errors, 22 warnings; 3 not printed.
   Count Code  Description
       2  e01  expecting 9 tab-separated columns
       8  e02  column X is empty
@@ -221,7 +221,6 @@ test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
       2  w36  component span appears out of order
       4  w37  duplicate component with non-draft type
       1  w40  extra tab or space at the end of line
-     10  w41  gap line missing column 9 (null)
       2  w45  component_id looks like a WGS accession, component_type is not W
          (Use -g to print lines with WGS component_id/component_type mismatch.)
       4  w49  component lines with the same component_id found on different scaffolds

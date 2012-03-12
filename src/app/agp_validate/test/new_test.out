@@ -36,10 +36,9 @@
 30:LACBIscaffold_3	1	1103	1	W	LACBIscaffold_3_Cont1	1	1103	-
 	WARNING: in unplaced singleton scaffold, component orientation is not "+"
 
-No errors, 20 warnings; 7 not printed.
+No errors, 13 warnings.
   Count Code  Description
       1  w37  duplicate component with non-draft type
-      7  w41  gap line missing column 9 (null)
       6  w47  object name (column 1) is the same as component_id (column 6)
       1  w48  gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)
       1  w49  component lines with the same component_id found on different scaffolds

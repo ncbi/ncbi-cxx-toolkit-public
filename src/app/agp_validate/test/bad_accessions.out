@@ -4,10 +4,9 @@
 2:chr22	11330001	13570000	2	N	2240000	centromere	no
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
-No errors, 106 warnings; 104 not printed.
+No errors, 5 warnings; 3 not printed.
   Count Code  Description
       1  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
-    101  w41  gap line missing column 9 (null)
       3  w52  gap shorter than 10 bp
          (Use -show w52 to print lines with short gaps.)
       1  w58  assuming AGP version X
