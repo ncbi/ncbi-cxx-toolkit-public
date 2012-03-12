@@ -180,25 +180,34 @@ void CAltValidator::ValidateLength(
 }
 */
 
-void CAltValidator::PrintTotals()
+void CAltValidator::PrintTotals(CNcbiOstream& out, bool use_xml)
 {
   int e_count=agpErr.CountTotals(CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last);
 
-  if(m_GenBankCompLineCount) {
-    cout << m_GenBankCompLineCount << " lines with valid component accessions";
-  }
-  else{
-    cout << "No valid component accessions found";
-  }
-  if(e_count) {
-    if(e_count==1) cout << ".\n1 error";
-    else cout << ".\n" << e_count << " errors";
-    if(agpErr.m_msg_skipped) cout << ", " << agpErr.m_msg_skipped << " not printed";
-    cout << ":\n";
-    agpErr.PrintMessageCounts(cout, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
+  if(use_xml) {
+    cout << " <LinesWithValidCompAcc>" << m_GenBankCompLineCount << "</LinesWithValidCompAcc>\n";
+    cout << " <errors>" << e_count << "</errors>\n";
+    // >0: too many messages
+    cout << " <skipped>" << agpErr.m_msg_skipped << "</skipped>\n";
+    agpErr.PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
   }
   else {
-    cout << "; no invalid component accessions.\n";
+    if(m_GenBankCompLineCount) {
+      out << m_GenBankCompLineCount << " lines with valid component accessions";
+    }
+    else{
+      out << "No valid component accessions found";
+    }
+    if(e_count) {
+      if(e_count==1) out << ".\n1 error";
+      else out << ".\n" << e_count << " errors";
+      if(agpErr.m_msg_skipped) out << ", " << agpErr.m_msg_skipped << " not printed";
+      out << ":\n";
+      agpErr.PrintMessageCounts(out, CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last, true);
+    }
+    else {
+      out << "; no invalid component accessions.\n";
+    }
   }
 }
 
@@ -288,9 +297,9 @@ void CAltValidator::x_AddToTaxidMap(
   m_TaxidComponentTotal++;
 }
 
-void CAltValidator::CheckTaxids()
+bool CAltValidator::CheckTaxids(CNcbiOstream& out, bool use_xml)
 {
-  if (m_TaxidMap.size() == 0) return;
+  if (m_TaxidMap.size() == 0) return true;
 
   int agp_taxid = 0;
   float agp_taxid_percent = 0;
@@ -311,20 +320,26 @@ void CAltValidator::CheckTaxids()
     }
   }
 
+  if(use_xml) out << " <taxid>" << agp_taxid << "</taxid>\n";
   if(!taxid_found) {
-    cerr << "\nUnable to determine a Taxid for the AGP";
-    if(agp_taxid) {
-      cerr << ":\nless than 80% of components have one common taxid="<<agp_taxid<<"";
+    if(use_xml) {
+      out << " <cannot_determine_taxid/>\n";
     }
-    // else: no taxid was found
-    cerr << ".\n";
-    return;
+    else {
+      cerr << "\nUnable to determine a Taxid for the AGP";
+      if(agp_taxid) {
+        cerr << ":\nless than 80% of components have one common taxid="<<agp_taxid<<"";
+      }
+      // else: no taxid was found
+      cerr << ".\n";
+    }
+    return false;
   }
 
-  cout << "The AGP taxid is: " << agp_taxid << endl;
-  if (m_TaxidMap.size() == 1) return;
+  if(!use_xml) out << "The AGP taxid is: " << agp_taxid << endl;
+  if (m_TaxidMap.size() == 1) return true;
 
-  cerr << "Components with incorrect taxids:\n";
+  if(!use_xml) cerr << "Components with incorrect taxids:\n";
 
   // report components that have an incorrect taxid
   ITERATE(TTaxidMap, map_it, m_TaxidMap) {
@@ -332,15 +347,26 @@ void CAltValidator::CheckTaxids()
 
     int taxid = map_it->first;
     ITERATE(TAgpInfoList, list_it, map_it->second) {
-      cerr << "\t";
-      if(list_it->file_num) {
-        cerr << agpErr.GetFile(list_it->file_num)  << ":";
+      if(use_xml) {
+         out << " <CompBadTaxid taxid=\"" << taxid
+             << "\" line_num=\"" << list_it->line_num
+             << (list_it->file_num ? string(
+                  "\" filename=\"" + NStr::XmlEncode(agpErr.GetFile(list_it->file_num))
+                ) : NcbiEmptyString)
+             << "\">" <<  NStr::XmlEncode(list_it->component_id)<< "</CompBadTaxid>\n";
       }
-      cerr<< list_it->line_num << ": " << list_it->component_id
-          << " - Taxid " << taxid << "\n";
+      else {
+        cerr << "\t";
+        if(list_it->file_num) {
+          cerr << agpErr.GetFile(list_it->file_num)  << ":";
+        }
+        cerr<< list_it->line_num << ": " << list_it->component_id
+            << " - Taxid " << taxid << "\n";
+      }
     }
   }
-  cerr << "\n";
+  if(!use_xml) cerr << "\n";
+  return false;
 }
 
 //// Batch processing using queue

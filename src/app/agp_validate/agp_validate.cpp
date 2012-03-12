@@ -74,9 +74,11 @@ private:
   virtual void Init(void);
   virtual int  Run(void);
   virtual void Exit(void);
+  //string Run(const CArgs& args);
 
   string m_CurrentFileName;
   EAgpVersion m_agp_version;
+  bool m_use_xml;
 
   enum EValidationType {
       VT_Context, VT_Acc=1, VT_Len=2, VT_Taxid=4,
@@ -100,6 +102,8 @@ private:
 public:
   CAgpValidateApplication() : m_reader(agpErr, m_comp2len, m_comp2range_coll)
   {
+    m_agp_version=eAgpVersion_auto;
+    m_use_xml=false;
   }
 };
 
@@ -132,6 +136,7 @@ public:
     "  -obj       Use FASTA files to read names and lengths of objects (the default is components).\n"
     "  -v VER     AGP version (1.1 or 2.0). The default is to choose automatically. 2.0 is chosen\n"
     "             when the linkage evidence (column 9) is not empty in the first gap line encountered.\n"
+    "  -xml       Report results in XML format.\n"
     "\n"
     "  Extra checks specific to an object type:\n"
     "  -un        Unplaced/unlocalized scaffolds:\n"
@@ -146,7 +151,7 @@ public:
     "  -limit COUNT        Print only the first COUNT messages of each type.\n"
     "                      Default=100. To print all, use: -limit 0\n"
     "  -skip, -only WHAT   Skip, or report only a particular error or warning.\n"
-    "  -show WHAT          Show the warning hidden by default (w30, w31, w35, w36, w42).\n"
+    "  -show WHAT          Show the warning hidden by default (w40, w45, w46, w52).\n"
     "  'WHAT' could be a part of the message text, an error code (e11, w22, etc; see -list),\n"
     "  or a keyword: all, warn, err, alt.\n"
     "\n"
@@ -180,6 +185,7 @@ void CAgpValidateApplication::Init(void)
   arg_desc->AddFlag("scaf", "");
   arg_desc->AddFlag("chr" , "");
   arg_desc->AddFlag("comp", "");
+  arg_desc->AddFlag("xml" , "");
 
   // -comp args
   arg_desc->AddOptionalKey( "loadlog", "FILE",
@@ -242,6 +248,12 @@ int CAgpValidateApplication::Run(void)
   if( args["list"].HasValue() ) {
     CAgpErrEx::PrintAllMessages(cout);
     exit(0);
+  }
+
+  if( args["xml"].HasValue() ) {
+    m_use_xml=true;
+    agpErr.m_use_xml=true;
+    agpErr.m_out = &cout;
   }
 
   m_reader.m_CheckObjLen=args["obj"].HasValue();
@@ -385,15 +397,23 @@ int CAgpValidateApplication::Run(void)
       }
 
       //// Process files, print results
+      bool taxid_check_failed=false;
+      if(m_use_xml) {
+        cout << "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<page>\n";
+      }
       x_ValidateUsingFiles(args);
       if(m_ValidationType == VT_Context) {
-        m_reader.PrintTotals();
+        m_reader.PrintTotals(cout, m_use_xml);
       }
       else if(m_ValidationType & VT_Acc) {
-        cout << "\n";
-        if(m_ValidationType & VT_Taxid) m_AltValidator->CheckTaxids();
-        m_AltValidator->PrintTotals();
+        if(!m_use_xml) cout << "\n";
+        if(m_ValidationType & VT_Taxid) taxid_check_failed = !m_AltValidator->CheckTaxids(cout, m_use_xml);
+        m_AltValidator->PrintTotals(cout, m_use_xml);
       }
+      if(m_use_xml) {
+        cout << "</page>\n";
+      }
+      return agpErr.CountTotals(CAgpErrEx::E_Last)>0 || taxid_check_failed ? 2 : 0;
   }
   else {
       // Note: traditional validation (now in the "if" clause above) used to be done regardless of args["comp"].
@@ -441,7 +461,7 @@ void CAgpValidateApplication::x_ReportFastaSeqCount()
 {
   string s;
   if(m_comp2len.m_count!=1) s="s";
-  cout<< m_comp2len.m_count << " "
+  if(!m_use_xml) cout<< m_comp2len.m_count << " "
       << (m_reader.m_CheckObjLen?"object name":"component_id")
       << s <<" and length" << s << " loaded from FASTA." << endl;
   if(m_comp2range_coll.size()) {
@@ -449,10 +469,10 @@ void CAgpValidateApplication::x_ReportFastaSeqCount()
       for(TMapStrRangeColl::iterator it = m_comp2range_coll.begin();  it != m_comp2range_coll.end(); ++it) {
           runs_of_Ns += it->second.size();
       }
-      cout <<  m_comp2range_coll.size() << " component sequences have masked spans (" << runs_of_Ns << " spans)." << endl;
+      if(!m_use_xml) cout <<  m_comp2range_coll.size() << " component sequences have masked spans (" << runs_of_Ns << " spans)." << endl;
   }
   else if(!m_reader.m_CheckObjLen) {
-    cout << "No runs of Ns longer than 10 bp found in FASTA sequences." << endl;
+    if(!m_use_xml) cout << "No runs of Ns longer than 10 bp found in FASTA sequences." << endl;
   }
 
 }
@@ -461,12 +481,12 @@ void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
 {
   if(m_reader.m_is_chr) {
     if(m_reader.m_explicit_scaf) {
-      cout << "===== Reading Chromosome from scaffold AGP =====" << endl;
+      if(!m_use_xml) cout << "===== Reading Chromosome from scaffold AGP =====" << endl;
     }
     // else: cout << "===== Reading Chromosome from component AGP =====" << endl;
   }
   else if(m_reader.m_explicit_scaf) {
-    cout << "===== Reading Scaffold from component AGP =====" << endl;
+    if(!m_use_xml) cout << "===== Reading Scaffold from component AGP =====" << endl;
   }
 
   if( 0==(m_ValidationType&VT_Acc) && args["out"].HasValue()) {
@@ -494,11 +514,11 @@ void CAgpValidateApplication::x_ValidateUsingFiles(const CArgs& args)
           exit(1);
         }
 
-        m_reader.PrintTotals();
+        m_reader.PrintTotals(cout, m_use_xml);
         m_reader.Reset(true);
         agpErr.ResetTotals();
 
-        cout << "\n===== Reading Chromosome from scaffold AGP =====" << endl;
+        if(!m_use_xml) cout << "\n===== Reading Chromosome from scaffold AGP =====" << endl;
         continue;
       }
 

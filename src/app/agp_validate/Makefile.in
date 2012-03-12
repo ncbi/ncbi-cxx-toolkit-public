@@ -17,47 +17,47 @@ test: $(TESTS) alt_test
 	echo All tests succeeded.
 
 bad_test : agp_validate
-	sh -c "./agp_validate $(srcdir)/test/bad_test.agp >bad_test.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/bad_test.agp >bad_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/bad_test.out bad_test.out
 
 alt_test : agp_validate
-	sh -c "./agp_validate -alt $(srcdir)/test/alt_bad_test.agp >alt_bad_test.out 2>&1"
+	-sh -c "./agp_validate -alt $(srcdir)/test/alt_bad_test.agp >alt_bad_test.out 2>&1"
 	diff ${DOPT} -I 'CId2ReaderBase: bad reply serial number' -u $(srcdir)/test/alt_bad_test.out alt_bad_test.out
 
 test2 : agp_validate
-	sh -c 'curdir=`pwd` && cd $(srcdir) && $$curdir/agp_validate test/bad_test.agp test/alt_bad_test.agp >$$curdir/test2.out 2>&1'
+	-sh -c 'curdir=`pwd` && cd $(srcdir) && $$curdir/agp_validate test/bad_test.agp test/alt_bad_test.agp >$$curdir/test2.out 2>&1'
 	diff ${DOPT} -u $(srcdir)/test/test2.out test2.out
 
 acc_test : agp_validate
-	sh -c "./agp_validate $(srcdir)/test/bad_accessions.agp >bad_accessions.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/bad_accessions.agp >bad_accessions.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/bad_accessions.out bad_accessions.out
 
 fa_test : agp_validate
-	sh -c "./agp_validate $(srcdir)/test/fa_test.fa $(srcdir)/test/fa_test.agp >fa_test.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/fa_test.fa $(srcdir)/test/fa_test.agp >fa_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/fa_test.out fa_test.out
 
 un_test : agp_validate
-	sh -c "./agp_validate -un $(srcdir)/test/fa_test.fa $(srcdir)/test/un_test.agp >un_test.out 2>&1"
+	-sh -c "./agp_validate -un $(srcdir)/test/fa_test.fa $(srcdir)/test/un_test.agp >un_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/un_test.out un_test.out
 
 obj_len_test : agp_validate
-	sh -c "./agp_validate -obj $(srcdir)/test/obj_len_test.fa $(srcdir)/test/obj_len_test.agp >obj_len_test.out 2>&1"
+	-sh -c "./agp_validate -obj $(srcdir)/test/obj_len_test.fa $(srcdir)/test/obj_len_test.agp >obj_len_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/obj_len_test.out obj_len_test.out
 
 order_test: agp_validate
-	sh -c "./agp_validate $(srcdir)/test/obj_id_OrderNotNumerical.agp >obj_id_OrderNotNumerical.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/obj_id_OrderNotNumerical.agp >obj_id_OrderNotNumerical.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/obj_id_OrderNotNumerical.out obj_id_OrderNotNumerical.out
 
 overlap_test: agp_validate
-	sh -c "./agp_validate $(srcdir)/test/overlap_test.agp >overlap_test.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/overlap_test.agp >overlap_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/overlap_test.out overlap_test.out
 
 new_test: agp_validate
-	sh -c "./agp_validate -un $(srcdir)/test/new_test.agp >new_test.out 2>&1"
+	-sh -c "./agp_validate -un $(srcdir)/test/new_test.agp >new_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/new_test.out new_test.out
 
 space_test: agp_validate
-	sh -c "./agp_validate $(srcdir)/test/space_test.agp>space_test.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/space_test.agp>space_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/space_test.out space_test.out
 
 runs_of_ns: agp_validate
@@ -71,24 +71,24 @@ chr_scaf_test: agp_validate
 	diff ${DOPT} -u $(srcdir)/test/chr_scaf_test.out chr_scaf_test.out
 
 chr_scaf_test2: agp_validate
-	sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp -chr $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test2.out 2>&1"
-	sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp -chr $(srcdir)/test/chr_from_scaffold_WGS_bad.agp>>chr_scaf_test2.out 2>&1"
+	-sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp -chr $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test2.out 2>&1"
+	-sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp -chr $(srcdir)/test/chr_from_scaffold_WGS_bad.agp>>chr_scaf_test2.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/chr_scaf_test2.out chr_scaf_test2.out
 
 chr_scaf_test_bad: agp_validate
-	sh -c "./agp_validate -scaf $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test_bad.out 2>&1"
-	sh -c "./agp_validate -chr $(srcdir)/test/scaffold_from_contig_WGS.agp>>chr_scaf_test_bad.out 2>&1"
+	-sh -c "./agp_validate -scaf $(srcdir)/test/chr_from_scaffold_WGS.agp>chr_scaf_test_bad.out 2>&1"
+	-sh -c "./agp_validate -chr $(srcdir)/test/scaffold_from_contig_WGS.agp>>chr_scaf_test_bad.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/chr_scaf_test_bad.out chr_scaf_test_bad.out
 
 ver2.0: agp_validate
-	sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp2.0 -chr $(srcdir)/test/chr_from_scaffold_WGS.agp2.0>ver2.0.out 2>&1"
-	sh -c "./agp_validate $(srcdir)/test/chr_from_contig_BAC.agp2.0 $(srcdir)/test/chr_from_contig_WGS.agp2.0 >>ver2.0.out 2>&1"
+	-sh -c "./agp_validate -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp2.0 -chr $(srcdir)/test/chr_from_scaffold_WGS.agp2.0>ver2.0.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/chr_from_contig_BAC.agp2.0 $(srcdir)/test/chr_from_contig_WGS.agp2.0 >>ver2.0.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/ver2.0.out ver2.0.out
 
 # W_AGPVersionCommentInvalid, W_AGPVersionCommentUnnecessary
 ver2.0_bad: agp_validate
-	+sh -c "./agp_validate -v 2 -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp2.0 -chr $(srcdir)/test/chr_from_scaffold_WGS.agp2.0>ver2.0_bad.out 2>&1"
-	sh -c "./agp_validate $(srcdir)/test/chr_from_contig_BAC.agp2.0_bad_ver $(srcdir)/test/chr_from_contig_WGS.agp2.0 >>ver2.0_bad.out 2>&1"
+	-sh -c "./agp_validate -v 2 -scaf $(srcdir)/test/scaffold_from_contig_WGS.agp2.0 -chr $(srcdir)/test/chr_from_scaffold_WGS.agp2.0>ver2.0_bad.out 2>&1"
+	-sh -c "./agp_validate $(srcdir)/test/chr_from_contig_BAC.agp2.0_bad_ver $(srcdir)/test/chr_from_contig_WGS.agp2.0 >>ver2.0_bad.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/ver2.0_bad.out ver2.0_bad.out
 
 comp_test: agp_validate

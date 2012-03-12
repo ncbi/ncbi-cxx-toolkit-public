@@ -73,8 +73,9 @@ public:
   int m_GenBankCompLineCount;
 
   void Init();
-  void CheckTaxids();
-  void PrintTotals();
+  // true - no problems, false - found bad taxids
+  bool CheckTaxids(CNcbiOstream& out, bool use_xml);
+  void PrintTotals(CNcbiOstream& out, bool use_xml);
 
   /// missing_ver: assign 0 if not missing, else the latest version
   static void ValidateLength(const string& comp_id, int comp_end, int comp_len);
