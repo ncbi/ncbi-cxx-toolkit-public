@@ -2372,6 +2372,16 @@ typedef Uint2 TCharUCS2;
 typedef basic_string<TCharUCS2> TStringUCS2;
 
 
+/// Operator for writing TStringUCS2 to stream.
+/// Operator is needed for using in SDBAPI.
+inline CNcbiOstream&
+operator<< (CNcbiOstream& os, const TStringUCS2& str)
+{
+    os.write((const char*)str.data(), str.size() * sizeof(TCharUCS2));
+    return os;
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
