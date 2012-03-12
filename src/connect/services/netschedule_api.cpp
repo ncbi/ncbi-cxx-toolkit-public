@@ -222,6 +222,17 @@ void CNetScheduleServerListener::OnError(
     NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 }
 
+void CNetScheduleServerListener::OnWarning(const string& warn_msg,
+        SNetServerImpl* server)
+{
+    if (m_EventHandler)
+        m_EventHandler->OnWarning(warn_msg, server);
+    else {
+        LOG_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
+                ": " << warn_msg);
+    }
+}
+
 const char* const kNetScheduleAPIDriverName = "netschedule_api";
 
 static const char* const s_NetScheduleConfigSections[] = {
@@ -235,7 +246,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         CConfig* config, const string& section,
         const string& service_name, const string& client_name,
         const string& queue_name) :
-    m_Service(new SNetServiceImpl_Real(s_NetScheduleAPIName,
+    m_Service(new SNetServiceImpl(s_NetScheduleAPIName,
         client_name, new CNetScheduleServerListener)),
     m_Queue(queue_name)
 {
@@ -244,8 +255,8 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-        SNetServerImpl* server, SNetScheduleAPIImpl* parent) :
-    m_Service(new SNetServiceImpl_Real(server, parent->m_Service)),
+        SNetServerInPool* server, SNetScheduleAPIImpl* parent) :
+    m_Service(new SNetServiceImpl(server, parent->m_Service)),
     m_Queue(parent->m_Queue),
     m_ProgramVersion(parent->m_ProgramVersion),
     m_ClientNode(parent->m_ClientNode),
@@ -585,8 +596,8 @@ void CNetScheduleAPI::SetClientSession(const string& client_session)
 void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 {
     CNetScheduleServerListener* listener =
-        static_cast<CNetScheduleServerListener*>(m_Impl->
-            m_Service->m_ServerPool->m_Listener.GetPointer());
+            static_cast<CNetScheduleServerListener*>(
+            m_Impl->m_Service->m_Listener.GetPointer());
 
     listener->m_WorkerNodeCompatMode = true;
     listener->SetAuthString(m_Impl);
@@ -601,7 +612,13 @@ void CNetScheduleAPI::UseOldStyleAuth()
 
 CNetScheduleAPI CNetScheduleAPI::GetServer(CNetServer::TInstance server)
 {
-    return new SNetScheduleAPIImpl(server, m_Impl);
+    return new SNetScheduleAPIImpl(server->m_ServerInPool, m_Impl);
+}
+
+void CNetScheduleAPI::SetEventHandler(IEventHandler* event_handler)
+{
+    static_cast<CNetScheduleServerListener*>(m_Impl->m_Service->
+            m_Listener.GetPointer())->m_EventHandler = event_handler;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

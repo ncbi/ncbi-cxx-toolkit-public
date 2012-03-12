@@ -100,9 +100,9 @@ bool CNetServerMultilineCmdOutput::ReadLine(string& output)
 }
 
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
-    SNetServerImpl* server) :
-        m_Server(server),
-        m_NextFree(NULL)
+        SNetServerImpl* server) :
+    m_Server(server),
+    m_NextFree(NULL)
 {
     if (TServConn_UserLinger2::GetDefault())
         m_Socket.SetTimeout(eIO_Close, &s_ZeroTimeout);
@@ -111,17 +111,18 @@ inline SNetServerConnectionImpl::SNetServerConnectionImpl(
 void SNetServerConnectionImpl::DeleteThis()
 {
     // Return this connection to the pool.
-    if (m_Server->m_ServerPool->m_PermanentConnection != eOff &&
+    if (m_Server->m_ServerInPool->m_ServerPool->m_PermanentConnection != eOff &&
             m_Socket.GetStatus(eIO_Open) == eIO_Success) {
-        TFastMutexGuard guard(m_Server->m_FreeConnectionListLock);
+        TFastMutexGuard guard(
+                m_Server->m_ServerInPool->m_FreeConnectionListLock);
 
         int upper_limit = TServConn_MaxConnPoolSize::GetDefault();
 
-        if (upper_limit == 0 ||
-                m_Server->m_FreeConnectionListSize < upper_limit) {
-            m_NextFree = m_Server->m_FreeConnectionListHead;
-            m_Server->m_FreeConnectionListHead = this;
-            ++m_Server->m_FreeConnectionListSize;
+        if (upper_limit == 0 || m_Server->m_ServerInPool->
+                m_FreeConnectionListSize < upper_limit) {
+            m_NextFree = m_Server->m_ServerInPool->m_FreeConnectionListHead;
+            m_Server->m_ServerInPool->m_FreeConnectionListHead = this;
+            ++m_Server->m_ServerInPool->m_FreeConnectionListSize;
             m_Server = NULL;
             return;
         }
@@ -141,20 +142,21 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
         break;
     case eIO_Timeout:
         Abort();
-        NCBI_THROW(CNetSrvConnException, eReadTimeout,
-            "Communication timeout reading from " +
-                m_Server->m_Address.AsString());
+        NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout,
+                "Communication timeout reading from " <<
+                m_Server->m_ServerInPool->m_Address.AsString());
         break;
     case eIO_Closed:
         Abort();
-        NCBI_THROW(CNetSrvConnException, eConnClosedByServer,
-            "Connection closed by " + m_Server->m_Address.AsString());
+        NCBI_THROW_FMT(CNetSrvConnException, eConnClosedByServer,
+                "Connection closed by " <<
+                m_Server->m_ServerInPool->m_Address.AsString());
         break;
     default: // invalid socket or request, bailing out
         Abort();
-        NCBI_THROW(CNetSrvConnException, eCommunicationError,
-            "Communication error reading from " +
-                m_Server->m_Address.AsString());
+        NCBI_THROW_FMT(CNetSrvConnException, eCommunicationError,
+                "Communication error reading from " <<
+                m_Server->m_ServerInPool->m_Address.AsString());
     }
 
     if (NStr::StartsWith(result, "OK:")) {
@@ -163,21 +165,21 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
             string::size_type semicolon_pos =
                 result.find(';', sizeof("WARNING:") - 1);
             if (semicolon_pos != string::npos) {
-                LOG_POST(Warning <<
-                    string(result.begin() + sizeof("WARNING:") - 1,
-                        result.begin() + semicolon_pos));
+                m_Server->m_Service->m_Listener->OnWarning(string(
+                        result.begin() + sizeof("WARNING:") - 1,
+                        result.begin() + semicolon_pos), m_Server);
                 result.erase(0, semicolon_pos + 1);
             } else {
-                LOG_POST(Warning <<
-                    string(result.begin() + sizeof("WARNING:") - 1,
-                        result.end()));
+                m_Server->m_Service->m_Listener->OnWarning(string(
+                        result.begin() + sizeof("WARNING:") - 1,
+                        result.end()), m_Server);
                 result.clear();
             }
         }
     } else if (NStr::StartsWith(result, "ERR:")) {
         result.erase(0, sizeof("ERR:") - 1);
         result = NStr::ParseEscapes(result);
-        m_Server->m_ServerPool->m_Listener->OnError(result, m_Server);
+        m_Server->m_Service->m_Listener->OnError(result, m_Server);
     }
 }
 
@@ -216,9 +218,10 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
             CIO_Exception io_ex(DIAG_COMPILE_INFO, 0,
                 (CIO_Exception::EErrCode) io_st, "IO error.");
 
-            NCBI_THROW(CNetSrvConnException, eWriteFailure,
-                "Failed to write to " + m_Server->m_Address.AsString() +
-                ": " + string(io_ex.what()));
+            NCBI_THROW_FMT(CNetSrvConnException, eWriteFailure,
+                "Failed to write to " <<
+                m_Server->m_ServerInPool->m_Address.AsString() << ": " <<
+                string(io_ex.what()));
         }
         len -= n_written;
         buf += n_written;
@@ -249,8 +252,8 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 }
 
 /*************************************************************************/
-SNetServerImplReal::SNetServerImplReal(const string& host,
-    unsigned short port) : SNetServerImpl(host, port)
+SNetServerInPool::SNetServerInPool(const string& host, unsigned short port) :
+    m_Address(host, port)
 {
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
@@ -258,7 +261,7 @@ SNetServerImplReal::SNetServerImplReal(const string& host,
     ResetThrottlingParameters();
 }
 
-void SNetServerImpl::DeleteThis()
+void SNetServerInPool::DeleteThis()
 {
     CNetServerPool server_pool(m_ServerPool);
 
@@ -277,7 +280,7 @@ void SNetServerImpl::DeleteThis()
         m_ServerPool = NULL;
 }
 
-SNetServerImplReal::~SNetServerImplReal()
+SNetServerInPool::~SNetServerInPool()
 {
     // No need to lock the mutex in the destructor.
     SNetServerConnectionImpl* impl = m_FreeConnectionListHead;
@@ -365,32 +368,32 @@ bool CNetServerInfo::GetNextAttribute(string& attr_name, string& attr_value)
 
 string CNetServer::GetHost() const
 {
-    return m_Impl->m_Address.host;
+    return m_Impl->m_ServerInPool->m_Address.host;
 }
 
 unsigned short CNetServer::GetPort() const
 {
-    return m_Impl->m_Address.port;
+    return m_Impl->m_ServerInPool->m_Address.port;
 }
 
 string CNetServer::GetServerAddress() const
 {
-    return m_Impl->m_Address.AsString();
+    return m_Impl->m_ServerInPool->m_Address.AsString();
 }
 
 CNetServerConnection SNetServerImpl::GetConnectionFromPool()
 {
     for (;;) {
-        TFastMutexGuard guard(m_FreeConnectionListLock);
+        TFastMutexGuard guard(m_ServerInPool->m_FreeConnectionListLock);
 
-        if (m_FreeConnectionListSize == 0)
+        if (m_ServerInPool->m_FreeConnectionListSize == 0)
             return NULL;
 
         // Get an existing connection object from the connection pool.
-        CNetServerConnection conn = m_FreeConnectionListHead;
+        CNetServerConnection conn = m_ServerInPool->m_FreeConnectionListHead;
 
-        m_FreeConnectionListHead = conn->m_NextFree;
-        --m_FreeConnectionListSize;
+        m_ServerInPool->m_FreeConnectionListHead = conn->m_NextFree;
+        --m_ServerInPool->m_FreeConnectionListSize;
         conn->m_Server = this;
 
         guard.Release();
@@ -419,7 +422,7 @@ CNetServerConnection SNetServerImpl::Connect()
 
     EIO_Status io_st;
     STimeout internal_timeout = s_InternalConnectTimeout;
-    STimeout remaining_timeout = m_ServerPool->m_ConnTimeout;
+    STimeout remaining_timeout = m_ServerInPool->m_ServerPool->m_ConnTimeout;
 
     do {
         if (remaining_timeout.sec == s_InternalConnectTimeout.sec ?
@@ -436,29 +439,32 @@ CNetServerConnection SNetServerImpl::Connect()
             remaining_timeout.sec = remaining_timeout.usec = 0;
         }
 
-        io_st = conn->m_Socket.Connect(m_Address.host, m_Address.port,
-            &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
+        io_st = conn->m_Socket.Connect(
+                m_ServerInPool->m_Address.host, m_ServerInPool->m_Address.port,
+                &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
     } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
         remaining_timeout.sec > 0));
 
     if (io_st != eIO_Success) {
         conn->m_Socket.Close();
 
-        string message = "Could not connect to " + m_Address.AsString();
+        string message = "Could not connect to " +
+                m_ServerInPool->m_Address.AsString();
         message += ": ";
         message += IO_StatusStr(io_st);
 
         NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
     }
 
-    AdjustThrottlingParameters(eCOR_Success);
+    m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
 
     conn->m_Socket.SetDataLogging(eOff);
-    conn->m_Socket.SetTimeout(eIO_ReadWrite, &m_ServerPool->m_CommTimeout);
+    conn->m_Socket.SetTimeout(eIO_ReadWrite,
+            &m_ServerInPool->m_ServerPool->m_CommTimeout);
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
 
-    m_ServerPool->m_Listener->OnConnected(conn);
+    m_Service->m_Listener->OnConnected(conn);
 
     return conn;
 }
@@ -466,7 +472,7 @@ CNetServerConnection SNetServerImpl::Connect()
 void SNetServerImpl::ConnectAndExec(const string& cmd,
     CNetServer::SExecResult& exec_result)
 {
-    CheckIfThrottled();
+    m_ServerInPool->CheckIfThrottled();
 
     // Silently reconnect if the connection was taken
     // from the pool and it was closed by the server
@@ -481,7 +487,8 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
             if (err_code != CNetSrvConnException::eWriteFailure &&
                 err_code != CNetSrvConnException::eConnClosedByServer)
             {
-                AdjustThrottlingParameters(eCOR_Failure);
+                m_ServerInPool->AdjustThrottlingParameters(
+                        SNetServerInPool::eCOR_Failure);
                 throw;
             }
         }
@@ -492,12 +499,13 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
         exec_result.response = exec_result.conn.Exec(cmd);
     }
     catch (CNetSrvConnException&) {
-        AdjustThrottlingParameters(eCOR_Failure);
+        m_ServerInPool->AdjustThrottlingParameters(
+                SNetServerInPool::eCOR_Failure);
         throw;
     }
 }
 
-void SNetServerImpl::AdjustThrottlingParameters(EConnOpResult op_result)
+void SNetServerInPool::AdjustThrottlingParameters(EConnOpResult op_result)
 {
     if (m_ServerPool->m_ServerThrottlePeriod <= 0)
         return;
@@ -527,7 +535,7 @@ void SNetServerImpl::AdjustThrottlingParameters(EConnOpResult op_result)
     }
 }
 
-void SNetServerImpl::CheckIfThrottled()
+void SNetServerInPool::CheckIfThrottled()
 {
     if (m_ServerPool->m_ServerThrottlePeriod <= 0)
         return;
@@ -572,7 +580,7 @@ void SNetServerImpl::CheckIfThrottled()
     }
 }
 
-void SNetServerImpl::ResetThrottlingParameters()
+void SNetServerInPool::ResetThrottlingParameters()
 {
     m_NumberOfConsecutiveIOFailures = 0;
     memset(m_IOFailureRegister, 0, sizeof(m_IOFailureRegister));
@@ -586,7 +594,7 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
 
     CTime max_connection_time(GetFastLocalTime());
     max_connection_time.AddNanoSecond(
-        m_Impl->m_ServerPool->m_MaxConnectionTime * 1000000);
+        m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime * 1000000);
 
     unsigned attempt = 0;
 
@@ -600,10 +608,10 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
                     e.GetErrCode() == CNetSrvConnException::eServerThrottle)
                 throw;
 
-            if (m_Impl->m_ServerPool->m_MaxConnectionTime > 0 &&
+            if (m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
                     max_connection_time <= GetFastLocalTime()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_Impl->m_ServerPool->m_MaxConnectionTime <<
+                    m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
                     "); cmd=" << cmd <<
                     "; exception=" << e.GetMsg());
                 throw;
@@ -617,10 +625,10 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
                     e.GetErrCode() != CNetScheduleException::eTryAgain)
                 throw;
 
-            if (m_Impl->m_ServerPool->m_MaxConnectionTime > 0 &&
+            if (m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
                     max_connection_time <= GetFastLocalTime()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_Impl->m_ServerPool->m_MaxConnectionTime <<
+                    m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
                     "); cmd=" << cmd <<
                     "; exception=" << e.GetMsg());
                 throw;

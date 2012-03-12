@@ -224,12 +224,25 @@ struct SNetCacheAutomationObject : public SAutomationObject
     CNetCacheAPI m_NetCacheAPI;
 };
 
-struct SNetScheduleServerAutomationObject : public SAutomationObject
+struct SNetScheduleBaseAutomationObject : public SAutomationObject
+{
+    SNetScheduleBaseAutomationObject(EObjectType object_type,
+            CNetScheduleAPI ns_api) :
+        SAutomationObject(object_type),
+        m_NetScheduleAPI(ns_api)
+    {
+    }
+
+    CNetScheduleAPI m_NetScheduleAPI;
+};
+
+struct SNetScheduleServerAutomationObject :
+        public SNetScheduleBaseAutomationObject
 {
     SNetScheduleServerAutomationObject(CNetScheduleAPI ns_api,
             CNetServer::TInstance server) :
-        SAutomationObject(eNetScheduleServer),
-        m_NetScheduleServer(ns_api.GetServer(server)),
+        SNetScheduleBaseAutomationObject(eNetScheduleServer,
+                ns_api.GetServer(server)),
         m_NetServer(server)
     {
     }
@@ -237,23 +250,21 @@ struct SNetScheduleServerAutomationObject : public SAutomationObject
     virtual CJsonNode Call(const string& method, CArgArray& arg_array,
             CAutomationProc* automation_proc);
 
-    CNetScheduleAPI m_NetScheduleServer;
     CNetServer m_NetServer;
 };
 
-struct SNetScheduleServiceAutomationObject : public SAutomationObject
+struct SNetScheduleServiceAutomationObject :
+        public SNetScheduleBaseAutomationObject
 {
     SNetScheduleServiceAutomationObject(const string& service_name,
             const string& queue_name, const string& client_name) :
-        SAutomationObject(eNetScheduleAPI),
-        m_NetScheduleAPI(service_name, client_name, queue_name)
+        SNetScheduleBaseAutomationObject(eNetScheduleAPI,
+                CNetScheduleAPI(service_name, client_name, queue_name))
     {
     }
 
     virtual CJsonNode Call(const string& method, CArgArray& arg_array,
             CAutomationProc* automation_proc);
-
-    CNetScheduleAPI m_NetScheduleAPI;
 };
 
 typedef CRef<SAutomationObject> TAutomationObjectRef;
@@ -292,6 +303,10 @@ private:
     vector<TAutomationObjectRef> m_Objects;
 
     CJsonNode m_RootNode;
+
+    CJsonNode m_OKNode;
+    CJsonNode m_ErrNode;
+    CJsonNode m_WarnNode;
 };
 
 inline void CAutomationProc::AddObject(TAutomationObjectRef new_object)
@@ -364,7 +379,7 @@ CJsonNode SNetScheduleServerAutomationObject::Call(const string& method,
         ExtractVectorOfStrings(arg_array, affs_to_add);
         vector<string> affs_to_del;
         ExtractVectorOfStrings(arg_array, affs_to_del);
-        m_NetScheduleServer.GetExecuter().ChangePreferredAffinities(
+        m_NetScheduleAPI.GetExecuter().ChangePreferredAffinities(
                 affs_to_add, affs_to_del);
     } else if (method == "exec") {
         string command(arg_array.NextString());
@@ -430,7 +445,10 @@ CJsonNode SNetScheduleServiceAutomationObject::Call(const string& method,
 CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
     m_Pipe(pipe),
     m_JSONWriter(pipe, m_Writer),
-    m_ProtocolDumpFile(protocol_dump)
+    m_ProtocolDumpFile(protocol_dump),
+    m_OKNode(CJsonNode::NewStringNode("ok")),
+    m_ErrNode(CJsonNode::NewStringNode("err")),
+    m_WarnNode(CJsonNode::NewStringNode("warn"))
 {
     m_Writer.Reset(m_WriteBuf, sizeof(m_WriteBuf));
 

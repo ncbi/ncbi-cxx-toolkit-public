@@ -92,6 +92,11 @@ class CJsonNode
     void SetBoolean(const string& key, bool value);
     void SetNull(const string& key);
 
+    static CJsonNode NewStringNode(const string& value);
+    static CJsonNode NewNumberNode(TNumber value);
+    static CJsonNode NewBooleanNode(bool value);
+    static CJsonNode NewNullNode();
+
     const string& GetString() const;
     TNumber GetNumber() const;
     bool GetBoolean() const;

@@ -67,6 +67,8 @@ struct SNetServerMultilineCmdOutputImpl : public CObject
     bool m_ReadCompletely;
 };
 
+struct SNetServerInPool;
+
 struct SNetServerConnectionImpl : public CObject
 {
     SNetServerConnectionImpl(SNetServerImpl* pool);
@@ -97,18 +99,12 @@ public:
         CConfig* config, const string& config_section) = 0;
     virtual void OnConnected(CNetServerConnection::TInstance conn) = 0;
     virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
+    virtual void OnWarning(const string& warn_msg, SNetServerImpl* server) = 0;
 };
 
-struct SNetServiceImpl;
-
-struct SNetServerImpl : public CObject
+struct SNetServerInPool : public CObject
 {
-    // Special constructor for making search images
-    // for searching in TNetServerSet.
-    SNetServerImpl(const string& host, unsigned short port) :
-        m_Address(host, port)
-    {
-    }
+    SNetServerInPool(const string& host, unsigned short port);
 
     // Releases a reference to the parent service object,
     // and if that was the last reference, the service object
@@ -117,10 +113,7 @@ struct SNetServerImpl : public CObject
     // objects that the parent service object may contain).
     virtual void DeleteThis();
 
-    CNetServerConnection GetConnectionFromPool();
-    CNetServerConnection Connect();
-    void ConnectAndExec(const string& cmd,
-        CNetServer::SExecResult& exec_result);
+    virtual ~SNetServerInPool();
 
     // Server throttling implementation.
     enum EConnOpResult {
@@ -132,8 +125,9 @@ struct SNetServerImpl : public CObject
     void CheckIfThrottled();
     void ResetThrottlingParameters();
 
-    // A smart pointer to the server pool object
-    // that contains this NetServer.
+    // A smart pointer to the server pool object that contains
+    // this NetServer. Valid only when this object is returned
+    // to an outside caller via ReturnServer() or GetServer().
     CNetServerPool m_ServerPool;
 
     SServerAddress m_Address;
@@ -153,13 +147,6 @@ struct SNetServerImpl : public CObject
     CFastMutex m_ThrottleLock;
 };
 
-struct SNetServerImplReal : public SNetServerImpl
-{
-    SNetServerImplReal(const string& host, unsigned short port);
-
-    virtual ~SNetServerImplReal();
-};
-
 struct SNetServerInfoImpl : public CObject
 {
     typedef CUrlArgs::TArgs TAttributes;
@@ -172,6 +159,26 @@ struct SNetServerInfoImpl : public CObject
     TAttributes::const_iterator m_NextAttribute;
 
     SNetServerInfoImpl(const string& version_string);
+};
+
+struct SNetServerImpl : public CObject
+{
+    SNetServerImpl(CNetService::TInstance service,
+            SNetServerInPool* server_in_pool) :
+        m_Service(service),
+        m_ServerInPool(server_in_pool)
+    {
+    }
+
+    CNetServerConnection Connect();
+
+    CNetServerConnection GetConnectionFromPool();
+
+    void ConnectAndExec(const string& cmd,
+            CNetServer::SExecResult& exec_result);
+
+    CNetService m_Service;
+    CRef<SNetServerInPool> m_ServerInPool;
 };
 
 END_NCBI_SCOPE

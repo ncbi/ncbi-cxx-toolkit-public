@@ -136,7 +136,8 @@ ERW_Result CNetCacheReader::Read(void*   buf,
             m_BlobBytesToRead = 0;
             NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
                 "Unexpected EOF while reading file cache for " << m_BlobID <<
-                " read from " << m_Connection->m_Server->m_Address.AsString() <<
+                " read from " <<
+                m_Connection->m_Server->m_ServerInPool->m_Address.AsString() <<
                 " (blob size: " << m_BlobSize <<
                 ", unread bytes: " << remaining_bytes << ")");
         }
@@ -192,7 +193,8 @@ void CNetCacheReader::SocketRead(void* buf, size_t count, size_t* bytes_read)
             m_BlobBytesToRead = 0;
             NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
                 "Unexpected EOF while reading " << m_BlobID <<
-                " from " << m_Connection->m_Server->m_Address.AsString() <<
+                " from " <<
+                m_Connection->m_Server->m_ServerInPool->m_Address.AsString() <<
                 " (blob size: " << m_BlobSize <<
                 ", unread bytes: " << remaining_bytes << ")");
         }

@@ -77,8 +77,10 @@ public:
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
+    virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
 
     string m_Auth;
+    CRef<CNetScheduleAPI::IEventHandler> m_EventHandler;
     bool m_WorkerNodeCompatMode;
 };
 
@@ -89,12 +91,12 @@ struct SNetScheduleAPIImpl : public CObject
         const string& queue_name);
 
     // Special constructor for CNetScheduleAPI::GetServer().
-    SNetScheduleAPIImpl(SNetServerImpl* server, SNetScheduleAPIImpl* parent);
+    SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);
 
     void UpdateAuthString()
     {
-        static_cast<CNetScheduleServerListener*>(m_Service->
-            m_ServerPool->m_Listener.GetPointer())->SetAuthString(this);
+        static_cast<CNetScheduleServerListener*>(
+            m_Service->m_Listener.GetPointer())->SetAuthString(this);
     }
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
@@ -138,7 +140,7 @@ struct SNetScheduleAPIImpl : public CObject
     CNetServer GetServer(const string& job_key)
     {
         CNetScheduleKey nskey(job_key);
-        return m_Service->m_ServerPool->GetServer(nskey.host, nskey.port);
+        return m_Service->GetServer(nskey.host, nskey.port);
     }
 
     CNetScheduleAPI::EJobStatus x_GetJobStatus(

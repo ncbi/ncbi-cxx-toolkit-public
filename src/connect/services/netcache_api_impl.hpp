@@ -43,6 +43,7 @@ protected:
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
+    virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
 
 private:
     string m_Auth;
@@ -72,7 +73,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     CNetServer GetServer(const CNetCacheKey& key)
     {
-        return m_Service->m_ServerPool->GetServer(key.GetHost(), key.GetPort());
+        return m_Service->GetServer(key.GetHost(), key.GetPort());
     }
 
     virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer);
@@ -85,18 +86,11 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     CNetServer::SExecResult ExecMirrorAware(
         const CNetCacheKey& key, const string& cmd);
 
-    struct SCompareServiceName {
-        bool operator()(const CNetService& l, const CNetService& r) const
-        {
-            return l->m_ServiceName < r->m_ServiceName;
-        }
-    };
-
     CNetService m_Service;
 
-    typedef set<CNetService, SCompareServiceName> TServiceSet;
+    typedef map<string, CNetService> TNetServiceByName;
 
-    TServiceSet m_ServicesFromKeys;
+    TNetServiceByName m_ServicesFromKeys;
 
     string m_TempDir;
     bool m_CacheInput;

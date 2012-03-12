@@ -337,8 +337,8 @@ void CNetScheduleExecuter::UnRegisterClient()
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
                 throw;
             else {
-                ERR_POST_X(12,
-                    server->m_Address.AsString() << ": " << ex.what());
+                ERR_POST_X(12, server->m_ServerInPool->m_Address.AsString() <<
+                        ": " << ex.what());
             }
         }
     }

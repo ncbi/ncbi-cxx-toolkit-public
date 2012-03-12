@@ -132,7 +132,7 @@ void CNetCacheServerListener::OnConnected(CNetServerConnection::TInstance conn)
 void CNetCacheServerListener::OnError(
     const string& err_msg, SNetServerImpl* server)
 {
-    string message = server->m_Address.AsString();
+    string message = server->m_ServerInPool->m_Address.AsString();
 
     message += ": ";
     message += err_msg;
@@ -155,6 +155,13 @@ void CNetCacheServerListener::OnError(
     NCBI_THROW(CNetCacheException, eServerError, message);
 }
 
+void CNetCacheServerListener::OnWarning(const string& warn_msg,
+        SNetServerImpl* server)
+{
+    LOG_POST(Warning << server->m_ServerInPool->m_Address.AsString() <<
+            ": " << warn_msg);
+}
+
 const char* const kNetCacheAPIDriverName = "netcache_api";
 
 static const char* const s_NetCacheConfigSections[] = {
@@ -168,7 +175,7 @@ static const string s_NetCacheAPIName("NetCacheAPI");
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name) :
-    m_Service(new SNetServiceImpl_Real(s_NetCacheAPIName, client_name,
+    m_Service(new SNetServiceImpl(s_NetCacheAPIName, client_name,
         new CNetCacheServerListener))
 {
     m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
@@ -241,16 +248,15 @@ CNetServiceIterator SNCMirrorIterationBeginner::BeginIteration()
 
 CNetService SNetCacheAPIImpl::FindOrCreateService(const string& service_name)
 {
-    SNetServiceImpl search_image(service_name);
+    pair<TNetServiceByName::iterator, bool> loc(m_ServicesFromKeys.insert(
+            TNetServiceByName::value_type(service_name, NULL)));
 
-    TServiceSet::iterator it = m_ServicesFromKeys.find(&search_image);
+    if (!loc.second)
+        return loc.first->second;
 
-    if (it != m_ServicesFromKeys.end())
-        return *it;
+    CNetService new_service(new SNetServiceImpl(service_name, m_Service));
 
-    CNetService new_service(new SNetServiceImpl_Real(service_name, m_Service));
-
-    m_ServicesFromKeys.insert(new_service);
+    loc.first->second = new_service;
 
     return new_service;
 }
@@ -369,8 +375,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
                 m_Service.GetServiceName() << ":" << e.what() <<
                 ". Connecting to backup server " << backup->AsString() << ".");
 
-            exec_result = m_Service->m_ServerPool->
-                    GetServer(*backup).ExecWithRetry(cmd);
+            exec_result = m_Service->GetServer(*backup).ExecWithRetry(cmd);
         }
     }
 

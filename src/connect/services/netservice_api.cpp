@@ -79,8 +79,9 @@ void SDiscoveredServers::DeleteThis()
 
 CNetServer CNetServiceIterator::GetServer()
 {
-    return m_Impl->m_ServerGroup->m_Service->
-        m_ServerPool->ReturnServer(m_Impl->m_Position->first);
+    return new SNetServerImpl(m_Impl->m_ServerGroup->m_Service,
+            m_Impl->m_ServerGroup->m_Service->m_ServerPool->
+            ReturnServer(m_Impl->m_Position->first));
 }
 
 bool CNetServiceIterator::Next()
@@ -153,20 +154,17 @@ bool SNetServiceIterator_RandomPivot::Next()
     return true;
 }
 
-SNetServerPoolImpl::SNetServerPoolImpl(
-        const string& api_name,
-        const string& client_name,
-        INetServerConnectionListener* listener) :
+SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
+        const string& client_name) :
     m_APIName(api_name),
     m_ClientName(client_name),
-    m_Listener(listener),
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
     m_UseOldStyleAuth(false)
 {
 }
 
-void SNetServiceImpl::Construct(SNetServerImpl* server)
+void SNetServiceImpl::Construct(SNetServerInPool* server)
 {
     m_ServiceType = eSingleServerService;
     m_ServerGroupPool = NULL;
@@ -292,13 +290,14 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         }
     }
 
-    m_ServerPool->Init(api_impl, config, section);
+    m_ServerPool->Init(config, section);
+
+    m_Listener->OnInit(api_impl, config, config_section);
 
     Construct();
 }
 
-void SNetServerPoolImpl::Init(CObject* api_impl, CConfig* config,
-        const string& section)
+void SNetServerPoolImpl::Init(CConfig* config, const string& section)
 {
     if (config != NULL) {
         if (m_ClientName.empty()) {
@@ -417,8 +416,6 @@ void SNetServerPoolImpl::Init(CObject* api_impl, CConfig* config,
     if (!m_LBSMAffinityName.empty())
         m_LBSMAffinityValue = LBSMD_GetHostParameter(SERV_LOCALHOST,
             m_LBSMAffinityName.c_str());
-
-    m_Listener->OnInit(api_impl, config, section);
 }
 
 SDiscoveredServers* SNetServiceImpl::AllocServerGroup(
@@ -520,45 +517,48 @@ void CNetService::PrintCmdOutput(const string& cmd,
     }
 }
 
-SNetServerImpl* SNetServerPoolImpl::FindOrCreateServerImpl(
+SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
     const string& host, unsigned short port)
 {
-    SNetServerImpl search_image(host, port);
+    SServerAddress server_address(host, port);
 
-    TNetServerSet::iterator it = m_Servers.find(&search_image);
+    pair<TNetServerByAddress::iterator, bool> loc(m_Servers.insert(
+            TNetServerByAddress::value_type(server_address, NULL)));
 
-    if (it != m_Servers.end())
-        return *it;
+    if (!loc.second)
+        return loc.first->second;
 
-    SNetServerImpl* server = new SNetServerImplReal(host, port);
+    SNetServerInPool* server = new SNetServerInPool(host, port);
 
-    m_Servers.insert(server);
+    loc.first->second = server;
 
     return server;
 }
 
-CNetServer SNetServerPoolImpl::ReturnServer(SNetServerImpl* server_impl)
+CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
+        SNetServerInPool* server_impl)
 {
     m_RebalanceStrategy->OnResourceRequested();
 
     CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
     server_impl->m_ServerPool = this;
-    return server_impl;
+    return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer SNetServerPoolImpl::GetServer(const string& host, unsigned int port)
+CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
 {
-    m_RebalanceStrategy->OnResourceRequested();
+    m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
 
-    CFastMutexGuard server_mutex_lock(m_ServerMutex);
+    CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
 
-    SNetServerImpl* server = m_EnforcedServer ?
-            (SNetServerImpl*) m_EnforcedServer :
-                FindOrCreateServerImpl(host, port);
+    SNetServerInPool* server = m_ServerPool->m_EnforcedServer ?
+            (SNetServerInPool*) m_ServerPool->m_EnforcedServer :
+                m_ServerPool->FindOrCreateServerImpl(host, port);
 
-    server->m_ServerPool = this;
-    return server;
+    server->m_ServerPool = m_ServerPool;
+
+    return new SNetServerImpl(this, server);
 }
 
 CNetServer SNetServiceImpl::GetSingleServer(const string& cmd)
@@ -571,8 +571,8 @@ CNetServer SNetServiceImpl::GetSingleServer(const string& cmd)
                 "' requires a server but none specified");
     }
 
-    return m_ServerPool->ReturnServer(
-        m_DiscoveredServers->m_Servers.front().first);
+    return new SNetServerImpl(this, m_ServerPool->ReturnServer(
+            m_DiscoveredServers->m_Servers.front().first));
 }
 
 class SRandomIterationBeginner : public IIterationBeginner
@@ -688,7 +688,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
                 if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
                         sinfo->rate != 0.0) {
-                    SNetServerImpl* server =
+                    SNetServerInPool* server =
                         m_ServerPool->FindOrCreateServerImpl(
                             CSocketAPI::ntoa(sinfo->host), sinfo->port);
                     {{
@@ -876,15 +876,15 @@ void SNetServiceImpl::IterateAndExec(const string& cmd,
 SNetServerPoolImpl::~SNetServerPoolImpl()
 {
     // Clean up m_Servers
-    NON_CONST_ITERATE(TNetServerSet, it, m_Servers) {
-        delete *it;
+    NON_CONST_ITERATE(TNetServerByAddress, it, m_Servers) {
+        delete it->second;
     }
 
     if (m_LBSMAffinityValue != NULL)
         free((void*) m_LBSMAffinityValue);
 }
 
-SNetServiceImpl_Real::~SNetServiceImpl_Real()
+SNetServiceImpl::~SNetServiceImpl()
 {
     // Delete fake server "groups" in single-server "services".
     // See SNetServiceImpl::Construct().
@@ -944,7 +944,7 @@ CNetServiceIterator CNetService::Iterate(
     // Find the requested server among the discovered servers.
     for (TNetServerList::const_iterator it = servers->m_Servers.begin();
             it != servers->m_SuppressedBegin; ++it)
-        if (it->first == priority_server)
+        if (it->first == priority_server->m_ServerInPool)
             return new SNetServiceIterator_RandomPivot(servers, it);
 
     if (servers->m_Servers.begin() < servers->m_SuppressedBegin)
@@ -957,7 +957,7 @@ CNetServiceIterator CNetService::Iterate(
         servers.Reset();
         CFastMutexGuard discovery_mutex_lock(m_Impl->m_DiscoveryMutex);
         (servers = m_Impl->AllocServerGroup(0))->m_Servers.push_back(
-            TServerRate(priority_server, 1));
+            TServerRate(priority_server->m_ServerInPool, 1));
         servers->m_Service = m_Impl;
         servers->m_SuppressedBegin = servers->m_Servers.end();
         return new SNetServiceIterator_RandomPivot(servers,
@@ -983,13 +983,13 @@ bool CNetService::FindServer(INetServerFinder* finder,
                 throw;
 
             had_comm_err = true;
-            error_message = server->m_Address.AsString();
+            error_message = server->m_ServerInPool->m_Address.AsString();
             error_message += ": ";
             error_message += ex.what();
         }
         catch (CIO_Exception& ex) {
             had_comm_err = true;
-            error_message = server->m_Address.AsString();
+            error_message = server->m_ServerInPool->m_Address.AsString();
             error_message += ": ";
             error_message += ex.what();
         }

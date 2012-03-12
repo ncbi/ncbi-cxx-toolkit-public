@@ -189,6 +189,26 @@ void CJsonNode::SetNull(const string& key)
     SetNode(key, new SJsonFixedSizeNodeImpl);
 }
 
+CJsonNode CJsonNode::NewStringNode(const string& value)
+{
+    return new SJsonStringNodeImpl(value);
+}
+
+CJsonNode CJsonNode::NewNumberNode(const CJsonNode::TNumber value)
+{
+    return new SJsonFixedSizeNodeImpl(value);
+}
+
+CJsonNode CJsonNode::NewBooleanNode(const bool value)
+{
+    return new SJsonFixedSizeNodeImpl(value);
+}
+
+CJsonNode CJsonNode::NewNullNode()
+{
+    return new SJsonFixedSizeNodeImpl();
+}
+
 const string& CJsonNode::GetString() const
 {
     _ASSERT(m_Impl->m_NodeType == eString);

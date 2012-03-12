@@ -34,20 +34,13 @@
 #include "srv_connections_impl.hpp"
 #include "balancing.hpp"
 
-#include <set>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
-struct SCompareServerAddress {
-    bool operator()(const SNetServerImpl* l, const SNetServerImpl* r) const
-    {
-        return l->m_Address < r->m_Address;
-    }
-};
-
-typedef pair<SNetServerImpl*, double> TServerRate;
+typedef pair<SNetServerInPool*, double> TServerRate;
 typedef vector<TServerRate> TNetServerList;
-typedef set<SNetServerImpl*, SCompareServerAddress> TNetServerSet;
+typedef map<SServerAddress, SNetServerInPool*> TNetServerByAddress;
 
 struct SDiscoveredServers : public CObject
 {
@@ -89,36 +82,27 @@ struct SDiscoveredServers : public CObject
 struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 {
     // Construct a new object.
-    SNetServerPoolImpl(
-        const string& api_name,
-        const string& client_name,
-        INetServerConnectionListener* listener);
+    SNetServerPoolImpl(const string& api_name, const string& client_name);
 
-    void Init(CObject* api_impl, CConfig* config, const string& section);
+    void Init(CConfig* config, const string& section);
 
-    SNetServerImpl* FindOrCreateServerImpl(
+    SNetServerInPool* FindOrCreateServerImpl(
         const string& host, unsigned short port);
-    CNetServer ReturnServer(SNetServerImpl* server_impl);
-    CNetServer GetServer(const string& host, unsigned int port);
-    CNetServer GetServer(const SServerAddress& server_address);
+    CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
 
     virtual ~SNetServerPoolImpl();
 
     string m_APIName;
     string m_ClientName;
 
-    CNetServer m_EnforcedServer;
-
-    // Connection event listening. This listener implements
-    // the authentication part of both NS and NC protocols.
-    CRef<INetServerConnectionListener> m_Listener;
+    CRef<SNetServerInPool> m_EnforcedServer;
 
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
     string m_LBSMAffinityName;
     const char* m_LBSMAffinityValue;
 
-    TNetServerSet m_Servers;
+    TNetServerByAddress m_Servers;
     CFastMutex m_ServerMutex;
 
     STimeout m_ConnTimeout;
@@ -134,12 +118,6 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     bool m_UseOldStyleAuth;
 };
-
-inline CNetServer SNetServerPoolImpl::GetServer(
-    const SServerAddress& server_address)
-{
-    return GetServer(server_address.host, server_address.port);
-}
 
 struct SNetServiceIteratorImpl : public CObject
 {
@@ -208,21 +186,36 @@ enum EServiceType {
 
 struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
-    // Default constructor - used by SNetServiceImpl_Real.
-    SNetServiceImpl() {}
+    // Construct a new object.
+    SNetServiceImpl(const string& api_name, const string& client_name,
+            INetServerConnectionListener* listener) :
+        m_Listener(listener),
+        m_ServerPool(new SNetServerPoolImpl(api_name, client_name))
+    {
+    }
 
-    void Construct(SNetServerImpl* server);
+    // Constructors for 'spawning'.
+    SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* parent) :
+        m_Listener(parent->m_Listener),
+        m_ServerPool(parent->m_ServerPool),
+        m_ServiceName(server->m_Address.AsString())
+    {
+        Construct(server);
+    }
+    SNetServiceImpl(const string& service_name, SNetServiceImpl* parent) :
+        m_Listener(parent->m_Listener),
+        m_ServerPool(parent->m_ServerPool),
+        m_ServiceName(service_name)
+    {
+        Construct();
+    }
+
+    void Construct(SNetServerInPool* server);
     void Construct();
 
     void Init(CObject* api_impl, const string& service_name,
         CConfig* config, const string& config_section,
         const char* const* default_config_sections);
-
-    // Constructor for making a prototype for searching
-    // in sets of CNetService objects.
-    SNetServiceImpl(const string& service_name) : m_ServiceName(service_name)
-    {
-    }
 
     string MakeAuthString();
 
@@ -233,6 +226,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         CNetServer::SExecResult& exec_result,
         IIterationBeginner* iteration_beginner);
 
+    CNetServer GetServer(const string& host, unsigned int port);
+    CNetServer GetServer(const SServerAddress& server_address);
+
     CNetServer GetSingleServer(const string& cmd);
     // Utility method for commands that require a single server (that is,
     // a host:port pair) to be specified (not a load-balanced service name).
@@ -241,6 +237,12 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     void Monitor(CNcbiOstream& out, const string& cmd);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
+
+    virtual ~SNetServiceImpl();
+
+    // Connection event listening. This listener implements
+    // the authentication part of both NS and NC protocols.
+    CRef<INetServerConnectionListener> m_Listener;
 
     CNetServerPool m_ServerPool;
 
@@ -253,34 +255,11 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     unsigned m_LatestDiscoveryIteration;
 };
 
-struct NCBI_XCONNECT_EXPORT SNetServiceImpl_Real : public SNetServiceImpl
+inline CNetServer SNetServiceImpl::GetServer(
+        const SServerAddress& server_address)
 {
-public:
-    // Construct a new object.
-    SNetServiceImpl_Real(const string& api_name, const string& client_name,
-            INetServerConnectionListener* listener)
-    {
-        m_ServerPool = new SNetServerPoolImpl(api_name, client_name, listener);
-    }
-
-    // Constructors for 'spawning'.
-    SNetServiceImpl_Real(SNetServerImpl* server, SNetServiceImpl* parent)
-    {
-        m_ServerPool = parent->m_ServerPool;
-        m_ServiceName = server->m_Address.AsString();
-
-        Construct(server);
-    }
-    SNetServiceImpl_Real(const string& service_name, SNetServiceImpl* parent)
-    {
-        m_ServerPool = parent->m_ServerPool;
-        m_ServiceName = service_name;
-
-        Construct();
-    }
-
-    virtual ~SNetServiceImpl_Real();
-};
+    return GetServer(server_address.host, server_address.port);
+}
 
 END_NCBI_SCOPE
 

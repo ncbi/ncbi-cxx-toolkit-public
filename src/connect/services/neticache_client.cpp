@@ -137,7 +137,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& service_name,
             const string& client_name,
             const string& cache_name) :
-        SNetCacheAPIImpl(new SNetServiceImpl_Real(s_NetICacheAPIName,
+        SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
             client_name, new CNetICacheServerListener)),
         m_CacheName(cache_name),
         m_CacheFlags(ICache::fBestPerformance)
