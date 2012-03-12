@@ -479,15 +479,15 @@ void CPipeHandle::x_Clear(void)
     } else {
         if (m_ChildStdIn != INVALID_HANDLE_VALUE) {
             ::CloseHandle(m_ChildStdIn);
-            m_ChildStdIn = INVALID_HANDLE_VALUE;
+            m_ChildStdIn  = INVALID_HANDLE_VALUE;
         }
         if (m_ChildStdOut != INVALID_HANDLE_VALUE) {
             ::CloseHandle(m_ChildStdOut);
-            m_ChildStdOut = INVALID_HANDLE_VALUE;
+            m_ChildStdOut  = INVALID_HANDLE_VALUE;
         }
         if (m_ChildStdErr != INVALID_HANDLE_VALUE) {
             ::CloseHandle(m_ChildStdErr);
-            m_ChildStdErr = INVALID_HANDLE_VALUE;
+            m_ChildStdErr  = INVALID_HANDLE_VALUE;
         }
     }
 }
@@ -613,7 +613,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         _ASSERT(bytes_avail);
         // We must read only "count" bytes of data regardless of
         // the amount available to read
-        if (bytes_avail > (DWORD) count) {
+        if (bytes_avail >         count) {
             bytes_avail = (DWORD) count;
         }
         if ( !::ReadFile(fd, buf, bytes_avail, &bytes_avail, NULL) ) {
