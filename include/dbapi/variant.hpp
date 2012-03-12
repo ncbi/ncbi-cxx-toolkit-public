@@ -199,6 +199,7 @@ public:
 
     void SetITDescriptor(I_ITDescriptor* descr);
     I_ITDescriptor& GetITDescriptor(void) const;
+    I_ITDescriptor* ReleaseITDescriptor(void) const;
 
 protected:
     // Set methods
@@ -213,7 +214,7 @@ private:
     void x_Inapplicable_Method(const char* method) const;
 
     class CDB_Object* m_data;
-    auto_ptr<I_ITDescriptor> m_descr;
+    mutable auto_ptr<I_ITDescriptor> m_descr;
 };
 
 bool NCBI_DBAPI_EXPORT operator==(const CVariant& v1, const CVariant& v2);
@@ -257,6 +258,12 @@ inline I_ITDescriptor&
 CVariant::GetITDescriptor(void) const
 {
     return *m_descr;
+}
+
+inline I_ITDescriptor*
+CVariant::ReleaseITDescriptor(void) const
+{
+    return m_descr.release();
 }
 
 inline

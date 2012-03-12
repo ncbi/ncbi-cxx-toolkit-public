@@ -2225,10 +2225,66 @@ CQueryImpl::GetColumn(const CDBParamVariant& col) const
     return *m_Fields[pos - 1];
 }
 
+inline CDatabaseImpl*
+CQueryImpl::GetDatabase(void) const
+{
+    return m_DBImpl.GetNCPointer();
+}
+
 inline IConnection*
 CQueryImpl::GetConnection(void)
 {
     return m_DBImpl->GetConnection();
+}
+
+
+inline
+CBlobBookmarkImpl::CBlobBookmarkImpl(CDatabaseImpl* db_impl, I_ITDescriptor* descr)
+    : m_DBImpl(db_impl),
+      m_Descr(descr)
+{}
+
+CNcbiOstream&
+CBlobBookmarkImpl::GetOStream(size_t blob_size, CQuery::EAllowLog log_it)
+{
+    try {
+        CDB_Connection* db_conn = m_DBImpl->GetConnection()->GetCDB_Connection();
+        m_OStream.reset(new CWStream(new CxBlobWriter(
+                              db_conn, *m_Descr,
+                              blob_size, log_it == eEnableLog, false),
+		                      0, 0, CRWStreambuf::fOwnWriter));
+        return *m_OStream;
+    }
+    SDBAPI_CATCH_LOWLEVEL()
+}
+
+
+CBlobBookmark::CBlobBookmark(void)
+{}
+
+CBlobBookmark::CBlobBookmark(CBlobBookmarkImpl* bm_impl)
+    : m_Impl(bm_impl)
+{}
+
+CBlobBookmark::CBlobBookmark(const CBlobBookmark& bm)
+    : m_Impl(bm.m_Impl)
+{}
+
+CBlobBookmark&
+CBlobBookmark::operator= (const CBlobBookmark& bm)
+{
+    m_Impl = bm.m_Impl;
+    return *this;
+}
+
+CBlobBookmark::~CBlobBookmark(void)
+{}
+
+CNcbiOstream&
+CBlobBookmark::GetOStream(size_t blob_size,
+                          CQuery::EAllowLog log_it /* = eEnableLog */) const
+{
+    return m_Impl.GetNCPointer()->GetOStream(blob_size, log_it);
 }
 
 
@@ -2455,6 +2511,20 @@ CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it /* = eEnableLog */
         return *m_OStream;
     }
     SDBAPI_CATCH_LOWLEVEL()
+}
+
+CBlobBookmark
+CQuery::CField::GetBookmark(void) const
+{
+    const CVariant& var_val = m_Query->GetFieldValue(*this);
+    EDB_Type var_type = var_val.GetType();
+    if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
+        NCBI_THROW(CSDB_Exception, eUnsupported,
+                  "Method is unsupported for this type of data");
+    }
+    CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Query->GetDatabase(),
+                                                     var_val.ReleaseITDescriptor()));
+    return CBlobBookmark(bm);
 }
 
 

@@ -46,9 +46,11 @@ BEGIN_NCBI_SCOPE
 
 class CSDBAPI;
 class CDatabase;
+class CBlobBookmark;
 class CDatabaseImpl;
 class CBulkInsertImpl;
 class CQueryImpl;
+class CBlobBookmarkImpl;
 struct SQueryParamInfo;
 
 
@@ -206,6 +208,10 @@ public:
         ///    Enables transaction log for BLOB (enabled by default).
         ///    Make sure you have enough log segment space, or disable it.
         CNcbiOstream& GetOStream(size_t blob_size, EAllowLog log_it = eEnableLog) const;
+
+        /// Get bookmark for the blob. This bookmark can be used to change
+        /// blob data later when all results from this query are processed.
+        CBlobBookmark GetBookmark(void) const;
 
     private:
         friend class CQueryImpl;
@@ -494,6 +500,45 @@ private:
 
     /// Query implementation object
     CRef<CQueryImpl> m_Impl;
+};
+
+
+/// Object used to store bookmarks to blobs to be changed later.
+class CBlobBookmark
+{
+public:
+    /// Get Blob output stream. Blob will be updated using the same
+    /// database connection which this bookmark was create on.
+    /// Thus it shouldn't have any active queries or bulk inserts by the time
+    /// this method is called and until the stream is not used anymore.
+    ///
+    /// @param blob_size
+    ///   blob_size is the size of the BLOB to be written.
+    /// @param log_it
+    ///    Enables transaction log for BLOB (enabled by default).
+    ///    Make sure you have enough log segment space, or disable it.
+    CNcbiOstream& GetOStream(size_t blob_size,
+                             CQuery::EAllowLog log_it = CQuery::eEnableLog) const;
+
+    /// Empty constructor of bookmark object.
+    /// Object created this way cannot be used for anything except assigning
+    /// from the other bookmark object.
+    CBlobBookmark(void);
+    ~CBlobBookmark(void);
+
+    /// Copy of bookmark object
+    CBlobBookmark(const CBlobBookmark& bm);
+    CBlobBookmark& operator= (const CBlobBookmark& bm);
+
+private:
+    friend class CQuery::CField;
+
+    /// Create bookmark with the given implementation
+    CBlobBookmark(CBlobBookmarkImpl* bm_impl);
+
+
+    /// Bookmark implementation object
+    CRef<CBlobBookmarkImpl> m_Impl;
 };
 
 

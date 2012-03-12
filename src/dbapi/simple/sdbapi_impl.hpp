@@ -152,6 +152,7 @@ public:
     string GetColumnName(unsigned int col);
     ESDB_Type GetColumnType(unsigned int col);
 
+    CDatabaseImpl* GetDatabase(void) const;
     IConnection* GetConnection(void);
 
 private:
@@ -183,6 +184,20 @@ private:
     int                 m_Status;
     TColNumsMap         m_ColNums;
     TFields             m_Fields;
+};
+
+
+class CBlobBookmarkImpl : public CObject
+{
+public:
+    CBlobBookmarkImpl(CDatabaseImpl* db_impl, I_ITDescriptor* descr);
+
+    CNcbiOstream& GetOStream(size_t blob_size, CQuery::EAllowLog log_it);
+
+private:
+    CRef<CDatabaseImpl> m_DBImpl;
+    auto_ptr<I_ITDescriptor> m_Descr;
+    auto_ptr<CWStream> m_OStream;
 };
 
 END_NCBI_SCOPE
