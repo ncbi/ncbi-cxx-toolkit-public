@@ -669,7 +669,10 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
 
     CAgpErrEx::TMapCcodeToString hints;
     if(use_xml) {
-      m_AgpErr->PrintTotalsXml(out, e_count, w_count, m_AgpErr->m_msg_skipped);
+      // jira/browse/GP-594: [iinsignificant warning are] making it hard for the naive user to know what to fix
+      // w_count -= m_AgpErr->CountTotals(CAgpErrEx::W_GapLineMissingCol9);
+      int note_count = m_AgpErr->CountTotals(CAgpErrEx::W_ShortGap) + m_AgpErr->CountTotals(CAgpErrEx::W_AssumingVersion);
+      m_AgpErr->PrintTotalsXml(out, e_count, w_count-note_count, note_count, m_AgpErr->m_msg_skipped);
     }
     else {
       out << "\n";

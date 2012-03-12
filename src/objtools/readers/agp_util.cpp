@@ -424,8 +424,10 @@ int CAgpRow::FromString(const string& line)
                     return CAgpErr::E_ColumnCount;
                 }
                 else
-                */
+
+                not important enough:
                 m_AgpErr->Msg( CAgpErr::W_GapLineMissingCol9);
+                */
             }
             if( m_agp_version == eAgpVersion_2_0 && cols.size()==8 ) {
                 // just to make sure no out-of-bounds array accesses
@@ -1142,7 +1144,8 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
     for(int i=W_First; i<W_Last; i++) {
         out << GetPrintableCode(i) << "\t" << GetMsg(i);
         if(i==W_GapLineMissingCol9) {
-            out << " (only the total count is printed unless you specify: -only " << GetPrintableCode(i) << ")";
+            out << " (no longer reported)";
+            //out << " (only the total count is printed unless you specify: -only " << GetPrintableCode(i) << ")";
         }
         out << "\n";
     }
@@ -1217,8 +1220,9 @@ void CAgpErrEx::PrintMessage(CNcbiOstream& ostr, int code,
 void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& details, int appliesTo)
 {
     ostr<< " <message severity=\"" << (
-        (code>=W_First && code<W_Last) ? "WARNING" : "ERROR"
-        ) << "\"";
+        (code<W_First || code>W_Last) ? "ERROR" :
+        (code==W_ShortGap || code==W_AssumingVersion) ? "NOTE" : "WARNING"
+    ) << "\"";
     if(code <=E_LastToSkipLine) ostr << " line_skipped=\"1\"";
     ostr<<">\n";
 
@@ -1250,12 +1254,16 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml) : m_use_xml(use_xml), m_ou
 
     memset(m_MustSkip , 0, sizeof(m_MustSkip ));
     ResetTotals();
+
     // errors that are "silenced" by default (only the count is printed)
     m_MustSkip[W_GapLineMissingCol9]=true;
-    m_MustSkip[W_ExtraTab          ]=true;
-    m_MustSkip[W_CompIsWgsTypeIsNot]=true;
-    m_MustSkip[W_CompIsNotWgsTypeIs]=true;
-    m_MustSkip[W_ShortGap          ]=true;
+    if(!use_xml) // perhaps, we should have a separate parameter for hiding these...
+    {
+        m_MustSkip[W_ExtraTab          ]=true;
+        m_MustSkip[W_CompIsWgsTypeIsNot]=true;
+        m_MustSkip[W_CompIsNotWgsTypeIs]=true;
+        m_MustSkip[W_ShortGap          ]=true;
+    }
 
     // A "random check" to make sure enum and msg[] are not out of skew.
     //cerr << sizeof(msg)/sizeof(msg[0]) << "\n";
@@ -1504,6 +1512,8 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
                 ostr << "</msg_summary>\n";
             }
         }
+        // lines that we failed to parse because of syntax errors
+        ostr << " <invalid_lines>"  << m_lines_skipped << "</invalid_lines>\n";
     }
     else {
         if(from<to) ostr<< setw(7) << "Count" << " Code  Description\n"; // code?
@@ -1526,11 +1536,12 @@ void CAgpErrEx::PrintMessageCounts(CNcbiOstream& ostr, int from, int to, bool re
     }
 }
 
-void CAgpErrEx::PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count)
+void CAgpErrEx::PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int note_count, int skipped_count)
 {
-    ostr << " <warnings>" << w_count << "</warnings>\n";
-    ostr << " <errors>"   << e_count << "</errors>\n";
-    ostr << " <skipped>"  << skipped_count  << "</skipped>\n";
+    ostr << " <notes>"    << note_count    << "</notes>\n";
+    ostr << " <warnings>" << w_count       << "</warnings>\n";
+    ostr << " <errors>"   << e_count       << "</errors>\n";
+    ostr << " <skipped>"  << skipped_count << "</skipped>\n";
 }
 
 void CAgpErrEx::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count)

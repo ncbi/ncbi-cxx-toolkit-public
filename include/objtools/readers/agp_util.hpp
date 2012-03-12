@@ -578,8 +578,8 @@ public:
     virtual void PrintMessageXml(CNcbiOstream& ostr, int code, const string& details, int appliesTo);
 
     // Construct a readable message on total error & warning counts
-    static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
-    static void PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count=0);
+    static void PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int skipped_count);
+    static void PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int note_count, int skipped_count);
 
     CAgpErrEx(CNcbiOstream* out=&cerr, bool use_xml=false);
 
