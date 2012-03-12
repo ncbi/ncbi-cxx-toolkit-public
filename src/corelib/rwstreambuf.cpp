@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -283,6 +283,14 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_MSVC
+    _ASSERT(m < numeric_limits<size_t>::max());
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_MSVC
     size_t n = (size_t) m;
 
     ERW_Result result = eRW_Success;
@@ -304,7 +312,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                     n_written += x_written;
                     n         -= x_written;
                     if ( !n )
-                        return n_written;
+                        return (streamsize) n_written;
                     buf       += x_written;
                 }
             }
@@ -405,10 +413,18 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_MSVC
+    _ASSERT(m < numeric_limits<size_t>::max());
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_MSVC
     size_t n = (size_t) m;
 
     // first, read from the memory buffer
-    size_t n_read = gptr() ?  egptr() - gptr() : 0;
+    size_t n_read = gptr() ? (size_t)(egptr() - gptr()) : 0;
     if (n_read > n)
         n_read = n;
     memcpy(buf, gptr(), n_read);

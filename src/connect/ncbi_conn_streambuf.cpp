@@ -211,7 +211,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
     if (pbase()) {
         // send buffer
-        size_t n_towrite = pptr() - pbase();
+        size_t n_towrite = (size_t)(pptr() - pbase());
         if (n_towrite) {
             size_t n_written;
             m_Status = CONN_Write(m_Conn, pbase(),
@@ -240,7 +240,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             ERR_POST_X(5, x_Message("overflow(): CONN_Write(1) failed"));
             return CT_EOF;
         }
-        x_PPos += (CT_OFF_TYPE) n_written;
+        x_PPos += (CT_OFF_TYPE) 1;
         _ASSERT(n_written == 1);
         return c;
     }
@@ -261,6 +261,14 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_MSVC
+    _ASSERT(m < numeric_limits<size_t>::max());
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_MSVC
     size_t n = (size_t) m;
 
     m_Status = eIO_Success;
@@ -275,13 +283,13 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
                 x_written = (size_t)(epptr() - pptr());
                 if (x_written > n)
                     x_written = n;
-                if ( x_written ) {
+                if (x_written) {
                     memcpy(pptr(), buf, x_written);
                     pbump(int(x_written));
                     n_written += x_written;
                     n         -= x_written;
                     if (!n)
-                        return n_written;
+                        return (streamsize) n_written;
                     buf       += x_written;
                 }
             }
@@ -383,6 +391,14 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_MSVC
+    _ASSERT(m < numeric_limits<size_t>::max());
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_MSVC
     size_t n = (size_t) m;
 
     // first, read from the memory buffer

@@ -125,11 +125,11 @@ private:
         ePushback_Stepback
     } EPushback_How;
 
-    static void     x_Pushback(CNcbiIstream&       is,
-                               CT_CHAR_TYPE*       buf,
-                               size_t              buf_size,
-                               void*               del_ptr = 0,
-                               EPushback_How       how = ePushback_Copy);
+    static void x_Pushback(CNcbiIstream&       is,
+                           CT_CHAR_TYPE*       buf,
+                           streamsize          buf_size,
+                           void*               del_ptr = 0,
+                           EPushback_How       how = ePushback_Copy);
 };
 
 

@@ -224,7 +224,7 @@ ERW_Result CMyReaderWriter::Read(void* buf, size_t count,
 {
     ERW_Result result = CMyReader::Read(buf, count, bytes_read);
     if (result == eRW_Eof  &&  !m_Err)
-        result = eRW_Error;
+        result  = eRW_Error;
     return result;
 }
 
@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
         ERR_POST(Info
                  << "Read:  " << setw(8) << x_in);
         is.read(buf, x_in);
-        if (!(x_in = (size_t)is.gcount()))
+        if (!(x_in = (size_t) is.gcount()))
             break;
         n_in += x_in;
         size_t x_out = 0;

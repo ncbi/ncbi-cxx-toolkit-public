@@ -164,7 +164,7 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
 CPushback_Streambuf::~CPushback_Streambuf()
 {
     if (m_Is.pword(sm_Index) == this) {
-        m_Is.pword(sm_Index) =  0;
+        m_Is.pword(sm_Index)  = 0;
     }
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
     delete m_Next;
@@ -236,9 +236,18 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
 streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     streamsize n_total = 0;
-    while (m) {
+    while (m > 0) {
         if (gptr() < egptr()) {
-            size_t n       = (size_t) m;
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_MSVC
+            size_t n       = (m > numeric_limits<size_t>::max()
+                              ? numeric_limits<size_t>::max()
+                              : (size_t) m);
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_MSVC
             size_t n_avail = (size_t)(egptr() - gptr());
             size_t n_read  = n < n_avail ? n : n_avail;
             if (buf != gptr()) {  // either equal or non-overlapping
@@ -246,7 +255,7 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             }
             gbump((int) n_read);
             m       -= (streamsize) n_read;
-            buf     += (streamsize) n_read;
+            buf     +=              n_read;
             n_total += (streamsize) n_read;
         } else {
             x_FillBuffer((size_t) m);
@@ -371,12 +380,25 @@ void CPushback_Streambuf::x_DropBuffer(void)
 
 void CStreamUtils::x_Pushback(CNcbiIstream& is,
                               CT_CHAR_TYPE* buf,
-                              size_t        buf_size,
+                              streamsize    x_buf_size,
                               void*         del_ptr,
                               EPushback_How how)
 {
-    _ASSERT(!buf_size  ||  buf);
+    _ASSERT(!x_buf_size  ||  buf);
     _ASSERT(del_ptr <= buf);
+
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_MSVC
+    if (x_buf_size > numeric_limits<size_t>::max()) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Pushback data size too large");
+    }
+#ifdef NCBI_COMPILER_MSVC
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_MSVC
+    size_t buf_size = (size_t) x_buf_size;
 
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
 
@@ -459,7 +481,7 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
 
 
 #ifndef NCBI_NO_READSOME
-static inline streamsize s_Readsome(CNcbiIstream& is,
+static inline streamsize x_Readsome(CNcbiIstream& is,
                                     CT_CHAR_TYPE* buf,
                                     streamsize    buf_size)
 {
@@ -482,15 +504,15 @@ static inline streamsize s_Readsome(CNcbiIstream& is,
 #endif /*NCBI_NO_READSOME*/
 
 
-static streamsize s_DoReadsome(CNcbiIstream& is,
-                               CT_CHAR_TYPE* buf,
-                               streamsize    buf_size)
+static streamsize s_Readsome(CNcbiIstream& is,
+                             CT_CHAR_TYPE* buf,
+                             streamsize    buf_size)
 {
     _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
     if ( !is.good() ) {
         is.setstate(is.rdstate() | NcbiFailbit);
-        return 0; // simulate construction of sentry in real readsome()
+        return 0; // simulate construction of sentry in standard readsome()
     }
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
@@ -504,7 +526,7 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     if (save)
         is.exceptions(NcbiGoodbit);
     is.read(buf, avail);
-    // readsome is not supposed to set a failbit on a stream initially good
+    // readsome() is not supposed to set a failbit on a stream initially good
     is.clear(is.rdstate() & ~NcbiFailbit);
     if (save)
         is.exceptions(save);
@@ -515,7 +537,7 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     return count;
 #else
     // Try to read data
-    streamsize n = s_Readsome(is, buf, buf_size);
+    streamsize n = x_Readsome(is, buf, buf_size);
     if (n != 0  ||  !is.good())
         return n;
     // No buffered data found, try to read from the real source [still good]
@@ -532,7 +554,7 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     if (buf_size == 1)
         return 1; // do not need more data
     // Read more data (up to "buf_size" bytes)
-    return s_Readsome(is, buf + 1, buf_size - 1) + 1;
+    return x_Readsome(is, buf + 1, buf_size - 1) + 1;
 #endif /*NCBI_NO_READSOME*/
 }
 
@@ -547,7 +569,7 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
     if (sb)
         sb->MIPSPRO_ReadsomeBegin();
 #  endif //NCBI_COMPILER_MIPSPRO
-    streamsize result = s_DoReadsome(is, buf, buf_size);
+    streamsize result = s_Readsome(is, buf, buf_size);
 #  ifdef NCBI_COMPILER_MIPSPRO
     if (sb)
         sb->MIPSPRO_ReadsomeEnd();
