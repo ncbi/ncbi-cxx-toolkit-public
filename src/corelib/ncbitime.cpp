@@ -2905,6 +2905,9 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
 
 CTime CFastLocalTime::GetLocalTime(void)
 {
+    CFastMutexGuard LOCK(eEmptyGuard);
+
+retry:
     // Get system time
     time_t timer;
     long ns;
@@ -2937,20 +2940,12 @@ CTime CFastLocalTime::GetLocalTime(void)
         }
     }
     // MT-Safe protect
-    CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+    LOCK.Guard(s_FastLocalTimeMutex);
 
     if ( !m_LastTuneupTime ) {
-        // MT: other attempt to do first time Tuneup().
-        // So, local time is undefined. We cannot use timezone information,
-        // because it can be undefined also.
-        // Lets make its dirty initialization using UTC time... 
-        m_LocalTime = CTime(1970, 1);
-        m_LocalTime.AddSecond(timer, CTime::eIgnoreDaylight);
-        m_LocalTime.SetNanoSecond(ns);
-        // Temporary, setup a tuneup time to current.
-        // This variable will be changed soon to correct value,
-        // after finishing current Tuneup() process in another thread.
-        m_LastTuneupTime = timer;
+        LOCK.Release();
+        NCBI_SCHED_YIELD();
+        goto retry;
     } else {
         // Adjust local time on base of system time without any system calls
         m_LocalTime.AddSecond(timer - m_LastSysTime, CTime::eIgnoreDaylight);
