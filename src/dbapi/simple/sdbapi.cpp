@@ -2251,7 +2251,7 @@ CBlobBookmarkImpl::GetOStream(size_t blob_size, CQuery::EAllowLog log_it)
         CDB_Connection* db_conn = m_DBImpl->GetConnection()->GetCDB_Connection();
         m_OStream.reset(new CWStream(new CxBlobWriter(
                               db_conn, *m_Descr,
-                              blob_size, log_it == eEnableLog, false),
+                              blob_size, log_it == CQuery::eEnableLog, false),
 		                      0, 0, CRWStreambuf::fOwnWriter));
         return *m_OStream;
     }
