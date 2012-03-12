@@ -233,21 +233,34 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
 }
 
 
+#if   defined(NCBI_COMPILER_GCC)
+#  pragma GCC diagnostic push                      // NCBI_FAKE_WARNING
+#  pragma GCC diagnostic ignored "-Wsign-compare"  // NCBI_FAKE_WARNING
+#elif defined(NCBI_COMPILER_MSVC)
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_...
+static inline size_t x_SizeT(streamsize m)
+{
+    return m > numeric_limits<size_t>::max()       // NCBI_FAKE_WARNING
+        ? numeric_limits<size_t>::max()
+        : (size_t) m;
+
+}
+#if   defined(NCBI_COMPILER_GCC)
+#  pragma GCC diagnostic warning "-Wsign-compare"  // NCBI_FAKE_WARNING
+#  pragma GCC diagnostic pop                       // NCBI_FAKE_WARNING
+#elif defined(NCBI_COMPILER_MSVC)
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_...
+
+
 streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     streamsize n_total = 0;
     while (m > 0) {
         if (gptr() < egptr()) {
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(push)
-#  pragma warning(disable : 4018)
-#endif //NCBI_COMPILER_MSVC
-            size_t n       = (m > numeric_limits<size_t>::max()
-                              ? numeric_limits<size_t>::max()
-                              : (size_t) m);
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(pop)
-#endif //NCBI_COMPILER_MSVC
+            size_t n       = x_SizeT(m);
             size_t n_avail = (size_t)(egptr() - gptr());
             size_t n_read  = n < n_avail ? n : n_avail;
             if (buf != gptr()) {  // either equal or non-overlapping

@@ -262,14 +262,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(push)
-#  pragma warning(disable : 4018)
-#endif //NCBI_COMPILER_MSVC
-    _ASSERT(m < numeric_limits<size_t>::max());
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(pop)
-#endif //NCBI_COMPILER_MSVC
+    _ASSERT(m < numeric_limits<size_t>::max());  // NCBI_FAKE_WARNING
     size_t n = (size_t) m;
 
     m_Status = eIO_Success;
@@ -392,14 +385,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(push)
-#  pragma warning(disable : 4018)
-#endif //NCBI_COMPILER_MSVC
-    _ASSERT(m < numeric_limits<size_t>::max());
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(pop)
-#endif //NCBI_COMPILER_MSVC
+    _ASSERT(m < numeric_limits<size_t>::max());  // NCBI_FAKE_WARNING
     size_t n = (size_t) m;
 
     // first, read from the memory buffer
