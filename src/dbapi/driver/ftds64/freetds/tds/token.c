@@ -421,7 +421,7 @@ static void unix_to_nt_time(TDS_UINT8 *nt, time_t t)
     *nt = t2;
 }
 
-
+/*
 static TDS_UINT
 swap_32(TDS_UINT val)
 {
@@ -429,7 +429,7 @@ swap_32(TDS_UINT val)
       (((((TDS_UINT)val) & 0xff000000) >> 24) | ((((TDS_UINT)val) & 0x00ff0000) >>  8) |
        ((((TDS_UINT)val) & 0x0000ff00) <<  8) | ((((TDS_UINT)val) & 0x000000ff) << 24));
 }
-
+*/
 
 static TDS_UINT8
 to_le(TDS_UINT8 val)
@@ -475,7 +475,7 @@ tds_process_auth(TDSSOCKET * tds)
     int domain_len;
     int data_block_offset;
 
-    int target_info_len;
+    int target_info_len = 0;
     int target_info_offset;
 
     /* For debuging purposes ...
@@ -2005,7 +2005,7 @@ tds_process_compute(TDSSOCKET * tds, TDS_INT * computeid)
     return TDS_SUCCEED;
 }
 
-
+/*
 static int
 tds_process_compute_095(TDSSOCKET * tds, TDS_INT * pcomputeid)
 {
@@ -2042,7 +2042,7 @@ tds_process_compute_095(TDSSOCKET * tds, TDS_INT * pcomputeid)
         *pcomputeid = id;
     return TDS_SUCCEED;
 }
-
+*/
 
 /**
  * Read a data from wire
@@ -3226,7 +3226,7 @@ tds_process_compute_names(TDSSOCKET * tds)
     }
 }
 
-
+/*
 static int
 tds_process_compute_names_095(TDSSOCKET * tds)
 {
@@ -3257,11 +3257,11 @@ tds_process_compute_names_095(TDSSOCKET * tds)
     remainder = hdrsize;
     tdsdump_log(TDS_DBG_INFO1, "processing tds5 compute names. remainder = %d\n", remainder);
 
-    /*
+    / *
      * compute statement id which this relates
      * to. You can have more than one compute
      * statement in a SQL statement
-     */
+     * /
 
     compute_id = tds_get_smallint(tds);
     remainder -= 2;
@@ -3323,7 +3323,7 @@ tds_process_compute_names_095(TDSSOCKET * tds)
         return TDS_FAIL;
     }
 }
-
+*/
 /**
  * tds7_process_compute_result() processes compute result sets for TDS 7/8.
  * They is are very  similar to normal result sets.

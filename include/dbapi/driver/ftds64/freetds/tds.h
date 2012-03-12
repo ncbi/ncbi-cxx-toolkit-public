@@ -1420,7 +1420,11 @@ void tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...
 ;
 #else
 
-static void tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
+static
+#ifdef __GNUC__
+inline
+#endif
+void tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
 {}
 
 #endif

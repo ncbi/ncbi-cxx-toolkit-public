@@ -648,7 +648,6 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
     TDSSOCKET  *tds = blkdesc->con->tds_socket;
     TDSCOLUMN  *bindcol;
-    TDS_INT    offset = 0;
 
     static const unsigned char textptr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
@@ -665,14 +664,11 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
 
     CS_RETCODE rc = CS_SUCCEED;
 
-    int         result = 0;
     CS_INT      null_column = 0;
     CS_INT      srclen  = 0;
-    CS_INT      destlen  = 0;
     CS_INT      srctype = 0;
     CS_SMALLINT *nullind = NULL;
     CS_INT      *datalen = NULL;
-    CS_CONTEXT  *ctx = blkdesc->con->ctx;
     unsigned char* current_row = blkdesc->bindinfo->current_row;
 
     CS_DATAFMT srcfmt;

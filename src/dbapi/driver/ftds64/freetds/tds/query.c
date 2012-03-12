@@ -53,8 +53,8 @@ static int tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags);
  static int tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row);
 static char *tds_build_param_def_from_query(TDSSOCKET * tds, const char* query, size_t query_len, TDSPARAMINFO * params, const char** converted_query, int *converted_query_len, int *out_len);
 static char *tds_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t query_len, TDSPARAMINFO * params, int *out_len);
-static char *tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, int converted_query_len, TDSPARAMINFO * params, int *out_len);
-static char *tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t query_len, TDSPARAMINFO * params, int *out_len);
+/*static char *tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, int converted_query_len, TDSPARAMINFO * params, int *out_len);
+static char *tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t query_len, TDSPARAMINFO * params, int *out_len);*/
 
 static int tds_send_emulated_execute(TDSSOCKET * tds, const char *query, TDSPARAMINFO * params);
 static const char *tds_skip_comment(const char *s);
@@ -779,7 +779,7 @@ tds_build_param_def_from_query(TDSSOCKET * tds, const char* query, size_t query_
     tds_convert_string_free(query, *converted_query);
     return NULL;
 }
-
+/*
 static char *
 tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, int converted_query_len, TDSPARAMINFO * params, int *out_len)
 {
@@ -809,7 +809,7 @@ tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, in
             param_str[l++] = 0;
         }
 
-        /* realloc on insufficient space */
+        / * realloc on insufficient space * /
         while ((l + (2 * 40)) > size) {
             p = (char *) realloc(param_str, size += 512);
             if (!p)
@@ -817,7 +817,7 @@ tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, in
             param_str = p;
         }
 
-        /* get this parameter declaration */
+        / * get this parameter declaration * /
         sprintf(declaration, "@P%d ", i+1);
         if (params && (int)i < params->num_cols) {
             if (tds_get_column_declaration(tds, params->columns[i], declaration + strlen(declaration)) == TDS_FAIL)
@@ -826,7 +826,7 @@ tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, in
             strcat(declaration, "varchar(80)");
         }
 
-        /* convert it to ucs2 and append */
+        / * convert it to ucs2 and append * /
         l += tds_ascii_to_ucs2(param_str + l, declaration);
     }
     *out_len = l;
@@ -836,7 +836,7 @@ tds7_build_param_def_from_query(TDSSOCKET * tds, const char* converted_query, in
     free(param_str);
     return NULL;
 }
-
+*/
 /**
  * Return string with parameters definition, useful for TDS7+
  * \param tds     state information for the socket and the TDS protocol
@@ -951,7 +951,7 @@ tds_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t query
     free(param_str);
     return NULL;
 }
-
+/*
 static char *
 tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t query_len,  TDSPARAMINFO * params, int *out_len)
 {
@@ -976,7 +976,7 @@ tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t quer
     if (!param_str)
         return NULL;
 
-    /* try to detect missing names */
+    / * try to detect missing names * /
     if (params->num_cols) {
         ids = (struct tds_ids *) calloc(params->num_cols, sizeof(struct tds_ids));
         if (!ids)
@@ -991,7 +991,7 @@ tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t quer
                     break;
                 if (e[0] != '@')
                     continue;
-                /* find end of param name */
+                / * find end of param name * /
                 for (id_end = e + 2; id_end != query_end; id_end += 2)
                     if (!id_end[1] && (id_end[0] != '_' && id_end[1] != '#' && !isalnum(id_end[0])))
                         break;
@@ -1012,7 +1012,7 @@ tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t quer
             param_str[l++] = 0;
         }
 
-        /* realloc on insufficient space */
+        / * realloc on insufficient space * /
         il = ids[i].p ? ids[i].len : 2 * params->columns[i]->column_namelen;
         while ((l + (2 * 26) + (int)il) > size) {
             p = (char *) realloc(param_str, size += 512);
@@ -1021,7 +1021,7 @@ tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t quer
             param_str = p;
         }
 
-        /* this part of buffer can be not-ascii compatible, use all ucs2... */
+        / * this part of buffer can be not-ascii compatible, use all ucs2... * /
         if (ids[i].len) {
             memcpy(param_str + l, ids[i].p, ids[i].len);
             l += ids[i].len;
@@ -1038,12 +1038,12 @@ tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t quer
         param_str[l++] = ' ';
         param_str[l++] = 0;
 
-        /* get this parameter declaration */
+        / * get this parameter declaration * /
         tds_get_column_declaration(tds, params->columns[i], declaration);
         if (!declaration[0])
             goto Cleanup;
 
-        /* convert it to ucs2 and append */
+        / * convert it to ucs2 and append * /
         l += tds_ascii_to_ucs2(param_str + l, declaration);
 
     }
@@ -1058,7 +1058,7 @@ tds7_build_param_def_from_params(TDSSOCKET * tds, const char* query, size_t quer
     free(param_str);
     return NULL;
 }
-
+*/
 
 /**
  * Output params types and query (required by sp_prepare/sp_executesql/sp_prepexec)

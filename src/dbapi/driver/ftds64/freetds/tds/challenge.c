@@ -159,7 +159,7 @@ static void make_ntlm_hash(TDSSOCKET * tds, const char* passwd, unsigned char nt
 
     /* compute NTLM hash */
     MD4Init(&context);
-    MD4Update(&context, passwd_usc2le, passwd_usc2le_len);
+    MD4Update(&context, (const unsigned char*)passwd_usc2le, passwd_usc2le_len);
     MD4Final(&context, ntlm_hash);
 
     /* with security is best be pedantic */
@@ -205,7 +205,7 @@ static void make_ntlm_v2_hash(TDSSOCKET * tds,
                                           &buf_usc2le_len);
 
     make_ntlm_hash(tds, passwd, ntlm_hash);
-    hmac_md5(ntlm_hash, buf_usc2le, buf_usc2le_len, ntlm_v2_hash);
+    hmac_md5(ntlm_hash, (const unsigned char*)buf_usc2le, buf_usc2le_len, ntlm_v2_hash);
 
     /* with security is best be pedantic */
     memset(&ntlm_hash, 0, sizeof(ntlm_hash));
@@ -243,7 +243,7 @@ make_lm_v2_response(const unsigned char ntlm_v2_hash[16],
     return mac;
 }
 
-
+/*
 static unsigned char*
 get_lm_v2_response(unsigned char hash[16], const unsigned char* challenge)
 {
@@ -252,7 +252,7 @@ get_lm_v2_response(unsigned char hash[16], const unsigned char* challenge)
     generate_random_buffer(client_chalenge, sizeof(client_chalenge));
     return make_lm_v2_response(hash, client_chalenge, sizeof(client_chalenge), challenge);
 }
-
+*/
 
 /**
  * Crypt a given password using schema required for NTLMv1 authentication
