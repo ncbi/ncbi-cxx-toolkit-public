@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/error_codes.hpp>
