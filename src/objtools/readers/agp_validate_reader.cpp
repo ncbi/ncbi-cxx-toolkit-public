@@ -848,7 +848,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
       if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ])
         xprint.line("  repeat  , linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
       if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold  ])
-        xprint.line("  repeat  , linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
+        xprint.line("  scaffold, linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold]);
     }
 
     xprint.line("- break it, linkage no : ", breakCnt, "GapsBreakScaf");
