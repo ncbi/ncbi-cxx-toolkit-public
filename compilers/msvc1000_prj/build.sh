@@ -5,14 +5,14 @@
 # Build C++ Toolkit.
 
 
----------------- Arguments ----------------
+#---------------- Arguments ----------------
 
 script="$0"
 cfgs="${1:-DebugDLL ReleaseDLL}"
 arch="$2"
 
 
----------------- Global variables ----------------
+#---------------- Global variables ----------------
 
 build_trees='static dll'
 ###sol_static="ncbi_cpp.sln"
@@ -26,7 +26,7 @@ is_ppb=false
 need_ppb_check=true
 
 
--------------- Functions --------------
+#-------------- Functions --------------
 
 error()
 {
@@ -103,7 +103,7 @@ generate_simple_log()
 }
 
 
----------------- Main ----------------
+#---------------- Main ----------------
 
 # Get build dir
 build_dir=`dirname $script`
