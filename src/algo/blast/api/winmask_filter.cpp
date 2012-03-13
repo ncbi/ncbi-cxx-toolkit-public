@@ -373,124 +373,6 @@ s_FindPathToWM(void)
     return retval;
 }
 
-/********* NOTE: The functions starting with s_Old* are preserved
- * for backwards compatibility only. After Gbench clients update to the
- * simplified directory layout in WINDOW_MASKER_PATH, this code can be removed
- * as it doesn't work as expected given the renaming of the subdirectory names
- * (e.g.: human 36.3 to human GRCh37)
- * 01/18/11
- */
-
-// This is a "Schwartzian transform" for comparing strings containing
-// version numbers.  A vector<int> is produced that sorts like the
-// string would, except that sequences of digits are transformed into
-// single entries that sort numerically.  If a number is greater than
-// around 2^31/1000, the outcome will be defined and repeatable, but
-// not useful; however the version number parts of the string should
-// not get this large, so even in this case it probably will not
-// affect the ordering of the strings, (only the reversibility of the
-// transformation, which is not needed by this code).
-//
-// This chained inequality shows the kind of ordering expected here:
-// X < X9 < X10 < Y < Z1.10 < Z1.20 < Z2.10 < Z9.999 < Z10.9 < Z10.10
-//
-// (Normally a Schwartzian transform is used to reduce the cost of
-// sorting a set when the comparison function is expensive, and so
-// elements are decorated with the transformed version, then sorted,
-// then undecorated.  In this instance, the only goal is to find the
-// maximum element, and N is expected to be small, so the transformed
-// vectors are not cached, and the transform is computed more often
-// than necessary.)
-
-
-static void s_OldVersionNumberTransform(const string & a, vector<int> & b)
-{
-    b.reserve(a.size());
-    
-    bool prev_dig = false;
-    
-    for(size_t i = 0; i < a.size(); i++) {
-        int ch = a[i];
-        bool dig = isdigit(ch) ? true : false;
-        
-        if (dig) {
-            int v = (ch - '0');
-            
-            if (prev_dig) {
-                b.back() *= 10;
-                b.back() += v;
-            } else {
-                b.push_back(v + 1000);
-            }
-        } else {
-            b.push_back(a[i] & 0xFF);
-        }
-        
-        prev_dig = dig;
-    }
-}
-
-// If working with large sets of values, the results of these
-// transforms should normally be cached in some way.  The standard
-// technique would be to build a vector of pair<vector<int>,string>
-// objects, sort, then extract the second field when the first field
-// (the sort key) is no longer needed.
-
-static bool s_OldVersionNumberLess(const string & a, const string & b)
-{
-    vector<int> one, two;
-    s_OldVersionNumberTransform(a, one);
-    s_OldVersionNumberTransform(b, two);
-    return one < two;
-}
-
-static string s_OldWindowMaskerTaxidToDb(const string& window_masker_path,
-                                         int taxid)
-{
-    string path = window_masker_path;
-    path += CFile::GetPathSeparator() + NStr::IntToString(taxid)
-        + CFile::GetPathSeparator() + "*.*"
-        + CFile::GetPathSeparator();
-    
-    const string binpath = path + "wmasker.obinary";
-    const string ascpath = path + "wmasker.oascii";
-    
-    list<string> builds;
-    FindFiles(binpath, builds, fFF_File);
-    
-    if (builds.empty()) {
-        FindFiles(ascpath, builds, fFF_File);
-    }
-    
-    if (builds.empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Unable to open window masker files");
-    }
-    
-    // I want to select the latest build, so I pick the directory name
-    // with the longest length ("36.10" > "36.9"), and highest value
-    // at that length.  ("36.9" > "36.3").  This is fairly resilient
-    // against changes in directory/file naming (but could be changed
-    // to a more "formal" technique later.)
-
-    // This does not necessarily work when two components of a version
-    // numbers change, i.e. 9.10 to 10.1.  If these are likely to
-    // coexist, it shouldn't be too hard to build a sorting system
-    // that treats the data as alternating between sequences of digits
-    // and single characters.
-    
-    string max_str;
-    
-    ITERATE(list<string>, iter, builds) {
-        if (s_OldVersionNumberLess(max_str, *iter)) {
-            max_str = *iter;
-        }
-    }
-    
-    _ASSERT(max_str.size());
-    return max_str;
-}
-
 string WindowMaskerTaxidToDb(const string& window_masker_path, int taxid)
 {
     string path = window_masker_path;
@@ -507,11 +389,6 @@ string WindowMaskerTaxidToDb(const string& window_masker_path, int taxid)
         retval = binpath;
     } else if (CFile(ascpath).Exists()) {
         retval = ascpath;
-    } else {
-        /* NOTE: this code branch can be replaced by the exception thrown in
-         * s_OldWindowMaskerTaxidToDb once the backwards compatibility code is
-         * removed */
-        retval = s_OldWindowMaskerTaxidToDb(window_masker_path, taxid);
     }
     return retval;
 }
