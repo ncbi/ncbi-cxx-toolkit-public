@@ -21,7 +21,7 @@ Components                   : 95 (W)
 
 Gaps                   : 72 (N)
 - do not break scaffold: 72
-  repeat  , linkage yes:  0
+  scaffold, linkage yes: 72
 - break it, linkage no :  0
 
 Object names         :  23
@@ -111,7 +111,7 @@ Components                   : 208 (W:95, F:80, A:18, D:15)
 
 Gaps                   : 125 (N:113, U:12)
 - do not break scaffold:  94
-  repeat  , linkage yes:   0
+  scaffold, linkage yes:  94
 - break it, linkage no :  31
 	contig         :  24
 	centromere     :   2
