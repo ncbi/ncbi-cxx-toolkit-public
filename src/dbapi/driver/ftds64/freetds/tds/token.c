@@ -421,7 +421,7 @@ static void unix_to_nt_time(TDS_UINT8 *nt, time_t t)
     *nt = t2;
 }
 
-/*
+#ifdef WORDS_BIGENDIAN
 static TDS_UINT
 swap_32(TDS_UINT val)
 {
@@ -429,7 +429,7 @@ swap_32(TDS_UINT val)
       (((((TDS_UINT)val) & 0xff000000) >> 24) | ((((TDS_UINT)val) & 0x00ff0000) >>  8) |
        ((((TDS_UINT)val) & 0x0000ff00) <<  8) | ((((TDS_UINT)val) & 0x000000ff) << 24));
 }
-*/
+#endif
 
 static TDS_UINT8
 to_le(TDS_UINT8 val)
