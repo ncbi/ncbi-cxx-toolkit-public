@@ -5,6 +5,7 @@ serial/datatool$
 util$
 util/compress
 util/sequtil$
+util/bitset$
 objects$
 objects/biblio$
 objects/general$
@@ -19,6 +20,7 @@ objects/seqloc$
 objects/seqres$
 objects/seqset$
 objects/seqtable$
+objects/misc$
 db$
 db/bdb$
 internal$
