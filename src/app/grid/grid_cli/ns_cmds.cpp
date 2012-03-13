@@ -46,7 +46,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 {
     string queue(!m_Opts.queue.empty() ? m_Opts.queue : "noname");
 
-    if (!IsOptionSet(eID))
+    if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
         m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
             m_Opts.auth, queue);
     else if (!m_Opts.ns_service.empty()) {
