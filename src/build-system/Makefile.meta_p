@@ -10,11 +10,23 @@ $(builddir)/projects.pseudo.c: $(PROJECTS_)
 	$(RM) -f $@
 	$(if $(wildcard $(PROJECTS_)),$(LN_S) "$(PROJECTS_)",echo ".*" >) $@
 
-$(PROJECTS): $(builddir)/projects.pseudo.c
-	$(CPP) $(if $(PROJECTS_),-I$(dir $(PROJECTS_)),) \
+PROJECTS_CPPFLAGS=$(if $(PROJECTS_),-I$(dir $(PROJECTS_)),) \
             -I$(top_srcdir)/scripts/projects \
-	    -I$(top_srcdir)/scripts/internal/projects \
-            $(builddir)/projects.pseudo.c | sed -e '/#/d' > $@
+	    -I$(top_srcdir)/scripts/internal/projects
+
+$(PROJECTS): $(builddir)/projects.pseudo.c
+	$(CPP) $(PROJECTS_CPPFLAGS) $(builddir)/projects.pseudo.c \
+	    | sed -e '/#/d' > $@
+
+$(builddir)/projects.pseudo.d: $(builddir)/projects.pseudo.c
+	$(CC) $(PROJECTS_CPPFLAGS) $(DEPFLAGS) $(builddir)/projects.pseudo.c \
+	  $(DEPFLAGS_POST) \
+	    | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	       -e 's%\$$(wildcard [^:]*$(obj_ext)) *:%$(PROJECTS) $@ :%g' > $@_
+	test -s $@_
+	mv -f $@_ $@
+
+-include $(builddir)/projects.pseudo.d
 
 # This file contains the actual patterns to grep for, formed by
 # prepending "build/" to each original pattern as an anchor.
