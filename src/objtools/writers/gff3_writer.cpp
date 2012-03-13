@@ -683,8 +683,12 @@ bool CGff3Writer::x_WriteFeatureGeneric(
             pParent->AssignParent( *( it->second ) );
         }
     }
-    return x_WriteFeatureRecords( 
-        *pParent, mf.GetLocation(), fc.BioseqHandle().GetInst().GetLength() );
+    TSeqPos inst_len = 0;
+    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst() && 
+        fc.BioseqHandle().GetInst().CanGetLength()) {
+        inst_len = fc.BioseqHandle().GetInst().GetLength();
+    }
+    return x_WriteFeatureRecords( *pParent, mf.GetLocation(), inst_len );
 }
 
 //  ============================================================================
