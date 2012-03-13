@@ -1,6 +1,7 @@
 #define TAGS [perf]
 corelib$
 serial$
+serial/datatool$
 util$
 util/compress
 util/sequtil$
