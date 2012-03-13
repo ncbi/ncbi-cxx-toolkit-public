@@ -1,0 +1,40 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+APP: test_ccpp_read
+
+# The -t key prevents inclusion of the tree builder into the release
+# SVN_TAG_RELEASE_ADD_FLAGS: -t
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+Linux32-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
+
+Linux64-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
+
+FreeBSD32  : plain : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
+
+SunOSx86   : plain : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
+
+SunOSSparc : plain : WorkShop59.sh 32 --without-debug --with-static --without-runpath --with-flat-makefile
+
+IntelMAC   : plain : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
+
+#Win32_9    : 900  : static  32  ReleaseMT
+Win64_9     : 900  : static  64  ReleaseMT
+Win64_10    : 1000 : static  64  ReleaseMT
+
+XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
+
