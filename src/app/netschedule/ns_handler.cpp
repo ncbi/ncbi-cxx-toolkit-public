@@ -1407,12 +1407,14 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 
     // Here: invalid job status, nothing will be done
     x_WriteMessageNoThrow("ERR:eInvalidJobStatus:"
-                          "Cannot accept job results; job status is " +
-                          CNetScheduleAPI::StatusToString(old_status));
+                          "Cannot accept job results; job is in " +
+                          CNetScheduleAPI::StatusToString(old_status) +
+                          " state");
     ERR_POST(Warning << "Cannot accept job "
                      << m_CommandArguments.job_key
-                     << " results. The job status is "
-                     << CNetScheduleAPI::StatusToString(old_status));
+                     << " results; job is in "
+                     << CNetScheduleAPI::StatusToString(old_status)
+                     << " state");
     x_PrintRequestStop(eStatus_InvalidJobStatus);
 }
 
@@ -1553,11 +1555,15 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
     }
 
     if (old_status != CNetScheduleAPI::eRunning) {
-        x_WriteMessageNoThrow("ERR:eInvalidJobStatus");
+        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:Cannot fail job; "
+                              "job is in " +
+                              CNetScheduleAPI::StatusToString(old_status) +
+                              " state");
         ERR_POST(Warning << "Cannot fail job "
                          << m_CommandArguments.job_key
-                         << " in status "
-                         << CNetScheduleAPI::StatusToString(old_status));
+                         << "; job is in "
+                         << CNetScheduleAPI::StatusToString(old_status)
+                         << " state");
         x_PrintRequestStop(eStatus_InvalidJobStatus);
         return;
     }
@@ -1611,12 +1617,12 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
         return;
     }
 
-    x_WriteMessageNoThrow("ERR:eInvalidJobStatus:" +
-                          CNetScheduleAPI::StatusToString(old_status));
+    x_WriteMessageNoThrow("ERR:eInvalidJobStatus:Cannot return job; job is in " +
+                          CNetScheduleAPI::StatusToString(old_status) + " state");
     ERR_POST(Warning << "Cannot return job "
                      << m_CommandArguments.job_key
-                     << " in status "
-                     << CNetScheduleAPI::StatusToString(old_status));
+                     << "; job is in "
+                     << CNetScheduleAPI::StatusToString(old_status) << " state");
 
     x_PrintRequestStop(eStatus_InvalidJobStatus);
 }
@@ -2055,7 +2061,7 @@ void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
                                             m_ClientId,
                                             m_CommandArguments.job_id,
                                             m_CommandArguments.auth_token);
-    x_FinalizeReadCommand("CFRM", "confirm", old_status);
+    x_FinalizeReadCommand("CFRM", old_status);
 }
 
 
@@ -2068,7 +2074,7 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
                                             m_ClientId,
                                             m_CommandArguments.job_id,
                                             m_CommandArguments.auth_token);
-    x_FinalizeReadCommand("FRED", "fail", old_status);
+    x_FinalizeReadCommand("FRED", old_status);
 }
 
 
@@ -2081,12 +2087,11 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
                                             m_ClientId,
                                             m_CommandArguments.job_id,
                                             m_CommandArguments.auth_token);
-    x_FinalizeReadCommand("RDRB", "rollback", old_status);
+    x_FinalizeReadCommand("RDRB", old_status);
 }
 
 
 void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
-                                                const string &  description,
                                                 TJobStatus      status)
 {
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -2096,17 +2101,9 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
-    if (status != CNetScheduleAPI::eReading) {
-        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:" +
-                              CNetScheduleAPI::StatusToString(status));
-        ERR_POST(Warning << "Cannot " << description << " read job "
-                         << m_CommandArguments.job_key
-                         << " in status "
-                         << CNetScheduleAPI::StatusToString(status));
 
-        x_PrintRequestStop(eStatus_InvalidJobStatus);
-        return;
-    }
+    // No need to check the source state. If it is invalid then an exception
+    // is thrown earlier.
 
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);

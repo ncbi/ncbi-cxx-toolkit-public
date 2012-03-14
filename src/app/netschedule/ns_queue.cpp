@@ -1443,9 +1443,6 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
             NCBI_THROW(CNetScheduleException, eInternalError,
                        "Error fetching job: " + DecorateJobId(job_id));
-        if (job.GetStatus() != CNetScheduleAPI::eReading)
-            NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
-                       "Operation is applicable to eReading job state only");
 
         // Check that authorization token matches
         CJob::EAuthTokenCompareResult   token_compare_result =
@@ -1456,6 +1453,28 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
         if (token_compare_result == CJob::eNoMatch)
             NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
                        "Authorization token does not match");
+
+        // Check the current job state
+        if (job.GetStatus() != CNetScheduleAPI::eReading) {
+            string      operation;
+            switch (target_status) {
+                case CNetScheduleAPI::eConfirmed:
+                        operation = "confirm";
+                        break;
+                case CNetScheduleAPI::eReadFailed:
+                        operation = "fail reading";
+                        break;
+                case CNetScheduleAPI::eDone:
+                        operation = "rollback reading";
+                        break;
+                default:
+                        operation = "unknown-operation";
+            }
+            NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
+                       "Cannot " + operation + " job; job is in " +
+                       CNetScheduleAPI::StatusToString(job.GetStatus()) +
+                       " state");
+        }
 
         // Add an event
         CJobEvent &     event = job.AppendEvent();

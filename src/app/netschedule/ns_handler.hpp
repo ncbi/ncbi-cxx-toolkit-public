@@ -175,7 +175,6 @@ private:
     void x_ProcessReadFailed(CQueue*);
     void x_ProcessReadRollback(CQueue*);
     void x_FinalizeReadCommand(const string &  command,
-                               const string &  description,
                                TJobStatus      status);
     void x_ProcessGetAffinityList(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);
