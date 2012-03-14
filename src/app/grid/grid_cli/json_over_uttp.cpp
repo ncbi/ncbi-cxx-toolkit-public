@@ -194,12 +194,12 @@ CJsonNode CJsonNode::NewStringNode(const string& value)
     return new SJsonStringNodeImpl(value);
 }
 
-CJsonNode CJsonNode::NewNumberNode(const CJsonNode::TNumber value)
+CJsonNode CJsonNode::NewNumberNode(CJsonNode::TNumber value)
 {
     return new SJsonFixedSizeNodeImpl(value);
 }
 
-CJsonNode CJsonNode::NewBooleanNode(const bool value)
+CJsonNode CJsonNode::NewBooleanNode(bool value)
 {
     return new SJsonFixedSizeNodeImpl(value);
 }
