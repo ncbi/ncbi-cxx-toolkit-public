@@ -523,7 +523,8 @@ SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
     SServerAddress server_address(host, port);
 
     pair<TNetServerByAddress::iterator, bool> loc(m_Servers.insert(
-            TNetServerByAddress::value_type(server_address, (SNetServerInPool*)NULL)));
+            TNetServerByAddress::value_type(server_address,
+                    (SNetServerInPool*) NULL)));
 
     if (!loc.second)
         return loc.first->second;
