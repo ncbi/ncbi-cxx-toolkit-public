@@ -884,7 +884,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     TMultiMapIntInt cnt2ln_ev;
     int label_width=0;
     for(TMapIntInt::iterator it = m_ln_ev_flags2count.begin();  it != m_ln_ev_flags2count.end(); ++it) {
-      cnt2ln_ev.insert(TPairIntInt(it->second, it->first));
+      cnt2ln_ev.insert(TMultiMapIntInt::value_type(it->second, it->first));
       string label = CAgpRow::LinkageEvidenceFlagsToString(it->first);
       if(label.size() > label_width) label_width = label.size();
     }
