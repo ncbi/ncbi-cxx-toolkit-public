@@ -543,6 +543,8 @@ size_t CFastaReader::ParseRange(const TStr& s, TSeqPos& start, TSeqPos& end)
     if ((negative ? (end > start) : (start > end))  ||  s[pos] != ':') {
         return 0;
     }
+    --start;
+    --end;
     return s.length() - pos;
 }
 
