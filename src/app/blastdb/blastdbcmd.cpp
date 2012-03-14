@@ -237,7 +237,8 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
         }
 
     } else {
-        NCBI_THROW(CInputException, eInvalidInput, "Must specify query type");
+        NCBI_THROW(CInputException, eInvalidInput, 
+                   "Must specify query type: one of 'entry', 'entry_batch', or 'pig'");
     }
 
     if (retval.empty()) {
