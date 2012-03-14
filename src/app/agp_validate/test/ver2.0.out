@@ -19,6 +19,9 @@ Gaps                   : 72 (N)
   scaffold, linkage yes: 72
 - break it, linkage no :  0
 
+Linkage evidence:
+  paired-ends: 72
+
 Object names         :  23
   EG1_scaffold[1..23]:  23
 
@@ -90,6 +93,11 @@ Gaps                   : 127 (N:115, U:12)
 	short_arm      :   1
 	heterochromatin:   1
 	telomere       :   3
+
+Linkage evidence:
+  paired-ends :  79
+  within_clone:  12
+  clone_contig:   5
 
 Object names:  2
   chrY      :  1
