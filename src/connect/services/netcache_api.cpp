@@ -249,7 +249,7 @@ CNetServiceIterator SNCMirrorIterationBeginner::BeginIteration()
 CNetService SNetCacheAPIImpl::FindOrCreateService(const string& service_name)
 {
     pair<TNetServiceByName::iterator, bool> loc(m_ServicesFromKeys.insert(
-            TNetServiceByName::value_type(service_name, NULL)));
+            TNetServiceByName::value_type(service_name, CNetService())));
 
     if (!loc.second)
         return loc.first->second;
