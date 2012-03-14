@@ -250,6 +250,10 @@ protected:
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
 
+  typedef map<int,int> TMapIntInt;
+  typedef pair<int,int> TPairIntInt;
+  TMapIntInt m_ln_ev_flags2count;
+
   // an optional callback object
   IAgpRowOutput* m_row_output;
 

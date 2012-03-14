@@ -71,6 +71,7 @@ void CAgpValidateReader::Reset(bool for_chr_from_scaf)
 
   memset(m_CompOri, 0, sizeof(m_CompOri));
   memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
+  m_ln_ev_flags2count.clear();
 
   if(for_chr_from_scaf) {
     NCBI_ASSERT(m_explicit_scaf, "m_explicit_scaf is false in CAgpValidateReader::Reset(true)");
@@ -171,6 +172,8 @@ void CAgpValidateReader::OnGapOrComponent()
       if(m_explicit_scaf && m_is_chr) {
         m_AgpErr->Msg(CAgpErrEx::E_WithinScafGap);
       }
+
+      m_ln_ev_flags2count[m_this_row->linkage_evidence_flags]++;
     }
     else {
       if(!m_at_beg && !m_prev_row->IsGap()) {
@@ -870,6 +873,32 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
       }
     }
   }
+
+  if( m_agp_version == eAgpVersion_2_0 && m_ln_ev_flags2count.size() ) {
+    xprint.line();
+    xprint.line("Linkage evidence:");
+    xprint.last_tag="LinkageEvidence value=";
+
+    // sort by count
+    typedef multimap<int,int> TMultiMapIntInt;
+    TMultiMapIntInt cnt2ln_ev;
+    int label_width=0;
+    for(TMapIntInt::iterator it = m_ln_ev_flags2count.begin();  it != m_ln_ev_flags2count.end(); ++it) {
+      cnt2ln_ev.insert(TPairIntInt(it->second, it->first));
+      string label = CAgpRow::LinkageEvidenceFlagsToString(it->first);
+      if(label.size() > label_width) label_width = label.size();
+    }
+    if(label_width>40) label_width=40;
+    for(TMultiMapIntInt::reverse_iterator it = cnt2ln_ev.rbegin();  it != cnt2ln_ev.rend(); ++it) {
+      string label = CAgpRow::LinkageEvidenceFlagsToString(it->second);
+      if(label.size()<label_width) label +=
+        string("                                        ").substr(0, label_width-label.size());
+
+      xprint.m_strip_attrs=false;
+      xprint.line(string("  ") + label +": ", it->first );
+    }
+  }
+
 
   if(m_ObjCount) {
     x_PrintPatterns(m_objNamePatterns, "Object names",
