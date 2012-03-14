@@ -154,6 +154,8 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
 
     if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1000) {
         GenerateMsbuild(collector, project_context, prj);
+        GetApp().RegisterProjectWatcher(
+            project_context.ProjectName(), prj.m_SourcesBaseDir, prj.m_Watchers);
         return;
     }
 
