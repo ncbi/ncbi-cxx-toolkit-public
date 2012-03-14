@@ -64,8 +64,14 @@ public:
     // Find the enumerated subtype value.
     // does case-insesitive search and '_' are converted to '-'.
     // Throws an exception on failure.
-    static TSubtype GetSubtypeValue(const string& str);
-    static string GetSubtypeName(TSubtype stype);
+    enum EVocabulary {
+        eVocabulary_raw, // per ASN.1, except eSubtype_other <-> "note"
+        eVocabulary_insdc // per GB/DDBJ/EMBL qualifier names
+    };
+    static TSubtype GetSubtypeValue(const string& str,
+                                    EVocabulary vocabulary = eVocabulary_raw);
+    static string GetSubtypeName(TSubtype stype,
+                                 EVocabulary vocabulary = eVocabulary_raw);
 
 	static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
     static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country);

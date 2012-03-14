@@ -56,27 +56,39 @@ COrgMod::~COrgMod(void)
 }
 
 
-COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str)
+COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
+                                           EVocabulary vocabulary)
 {
     string name = NStr::TruncateSpaces(str);
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
     
-    if (NStr::Equal(name, "note")) {
-        name = "other";
+    if (name == "note") {
+        return eSubtype_other;
+    } else if (vocabulary == eVocabulary_insdc) {
+        if (name == "host") {
+            return eSubtype_nat_host;
+        } else if (name == "sub-strain") {
+            return eSubtype_substrain;
+        }
     }
 
     return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
 }
 
 
-string COrgMod::GetSubtypeName(COrgMod::TSubtype stype)
+string COrgMod::GetSubtypeName(COrgMod::TSubtype stype, EVocabulary vocabulary)
 {
-    if (stype == COrgMod::eSubtype_other) {
+    if (stype == eSubtype_other) {
         return "note";
-    } else {
-        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
+    } else if (vocabulary == eVocabulary_insdc) {
+        switch (stype) {
+        case eSubtype_substrain: return "sub_strain";
+        case eSubtype_nat_host:  return "host";
+        default:                 break;
+        }
     }
+    return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
 }
 
 
