@@ -293,7 +293,12 @@ void CMsvcConfigure::AnalyzeDefines(
     }
 #else
     signature += "--";
-    signature += HOST;
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        signature += "i386-pc-";
+        signature += CMsvc7RegSettings::GetRequestedArchs();
+    } else {
+        signature += HOST;
+    }
     signature += "-";
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         signature += GetApp().GetEnvironment().Get("COMPUTERNAME");
