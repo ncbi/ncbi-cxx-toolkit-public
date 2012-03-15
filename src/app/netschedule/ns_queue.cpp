@@ -1433,8 +1433,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
     CFastMutexGuard                             guard(m_OperationLock);
     TJobStatus                                  old_status = GetJobStatus(job_id);
 
-    if (old_status == CNetScheduleAPI::eJobNotFound ||
-        old_status != CNetScheduleAPI::eReading)
+    if (old_status != CNetScheduleAPI::eReading)
         return old_status;
 
     {{
@@ -1454,27 +1453,14 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
             NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
                        "Authorization token does not match");
 
-        // Check the current job state
-        if (job.GetStatus() != CNetScheduleAPI::eReading) {
-            string      operation;
-            switch (target_status) {
-                case CNetScheduleAPI::eConfirmed:
-                        operation = "confirm";
-                        break;
-                case CNetScheduleAPI::eReadFailed:
-                        operation = "fail reading";
-                        break;
-                case CNetScheduleAPI::eDone:
-                        operation = "rollback reading";
-                        break;
-                default:
-                        operation = "unknown-operation";
-            }
-            NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
-                       "Cannot " + operation + " job; job is in " +
-                       CNetScheduleAPI::StatusToString(job.GetStatus()) +
-                       " state");
-        }
+        // Sanity check of the current job state
+        if (job.GetStatus() != CNetScheduleAPI::eReading)
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                "Internal inconsistency detected. The job " +
+                DecorateJobId(job_id) + " state in memory is " +
+                CNetScheduleAPI::StatusToString(CNetScheduleAPI::eReading) +
+                " while in database it is " +
+                CNetScheduleAPI::StatusToString(job.GetStatus()));
 
         // Add an event
         CJobEvent &     event = job.AppendEvent();

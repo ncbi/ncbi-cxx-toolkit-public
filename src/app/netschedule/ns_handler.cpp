@@ -2092,9 +2092,9 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
 
 
 void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
-                                                TJobStatus      status)
+                                                TJobStatus      old_status)
 {
-    if (status == CNetScheduleAPI::eJobNotFound) {
+    if (old_status == CNetScheduleAPI::eJobNotFound) {
         WriteMessage("ERR:eJobNotFound");
         ERR_POST(Warning << command << " for unknown job "
                          << m_CommandArguments.job_key);
@@ -2102,8 +2102,24 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
         return;
     }
 
-    // No need to check the source state. If it is invalid then an exception
-    // is thrown earlier.
+    if (old_status != CNetScheduleAPI::eReading) {
+        string      operation = "unknown";
+
+        if (command == "CFRM")      operation = "confirm";
+        else if (command == "FRED") operation = "fail";
+        else if (command == "RDRB") operation = "rollback";
+
+        x_WriteMessageNoThrow("ERR:eInvalidJobStatus:Cannot " +
+                              operation + " job; job is in " +
+                              CNetScheduleAPI::StatusToString(old_status) +
+                              " state");
+        ERR_POST(Warning << "Cannot " << operation << " read job; job is in "
+                         << CNetScheduleAPI::StatusToString(old_status)
+                         << " state");
+
+        x_PrintRequestStop(eStatus_InvalidJobStatus);
+        return;
+    }
 
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
