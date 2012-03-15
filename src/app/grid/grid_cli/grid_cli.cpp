@@ -179,7 +179,7 @@ struct SOptionDefinition {
         JOB_ID_OPTION, "Job ID to operate on."},
 
     {CCommandLineParser::eSwitch, eJobGroupInfo,
-        "client-info", "Print information on job groups."},
+        "job-group-info", "Print information on job groups."},
 
     {CCommandLineParser::eSwitch, eClientInfo,
         "client-info", "Print information on the recently "
