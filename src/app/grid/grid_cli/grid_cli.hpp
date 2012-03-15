@@ -106,6 +106,7 @@ enum EOption {
     eFailRead,
     eErrorMessage,
     eJobId,
+    eJobGroupInfo,
     eClientInfo,
     eNotificationInfo,
     eAffinityInfo,
@@ -150,9 +151,11 @@ enum EOutputFormat {
 };
 
 enum ENetScheduleStatTopic {
+    eNetScheduleStatJobGroups,
     eNetScheduleStatClients,
     eNetScheduleStatNotifications,
-    eNetScheduleStatAffinities
+    eNetScheduleStatAffinities,
+    eNumberOfStatTopics
 };
 
 #define OPTION_ACCEPTED 1

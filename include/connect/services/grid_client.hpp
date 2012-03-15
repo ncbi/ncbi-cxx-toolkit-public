@@ -135,7 +135,7 @@ public:
 
     /// Submit a batch to the queue
     ///
-    void Submit(const string& job_group);
+    void Submit(const string& job_group = kEmptyStr);
 
     ///
     void Reset();

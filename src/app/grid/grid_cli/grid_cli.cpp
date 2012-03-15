@@ -178,6 +178,9 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eJobId,
         JOB_ID_OPTION, "Job ID to operate on."},
 
+    {CCommandLineParser::eSwitch, eJobGroupInfo,
+        "client-info", "Print information on job groups."},
+
     {CCommandLineParser::eSwitch, eClientInfo,
         "client-info", "Print information on the recently "
             "connected clients."},
@@ -652,7 +655,7 @@ struct SCommandDefinition {
         "\"human-readable\", \"json\".  If none specified, "
         "\"human-readable\" is assumed.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
-            eClientInfo, eNotificationInfo, eAffinityInfo,
+            eJobGroupInfo, eClientInfo, eNotificationInfo, eAffinityInfo,
             eActiveJobCount, eJobsByAffinity, eJobsByStatus,
             eAffinity, eVerbose, eOutputFormat, eCompatMode,
             eAuth, eClientNode, eClientSession, -1},

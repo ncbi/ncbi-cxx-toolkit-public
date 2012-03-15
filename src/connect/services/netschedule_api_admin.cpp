@@ -306,12 +306,21 @@ void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 }
 
 void CNetScheduleAdmin::StatusSnapshot(
-    CNetScheduleAdmin::TStatusMap&  status_map,
-    const string& affinity_token)
+        CNetScheduleAdmin::TStatusMap& status_map,
+        const string& affinity_token,
+        const string& job_group)
 {
-    string cmd = "STSN aff=\"";
-    cmd.append(NStr::PrintableString(affinity_token));
-    cmd.append("\"");
+    string cmd = "STAT JOBS";
+
+    if (!affinity_token.empty()) {
+        cmd.append(" aff=");
+        cmd.append(affinity_token);
+    }
+
+    if (!job_group.empty()) {
+        cmd.append(" group=");
+        cmd.append(job_group);
+    }
 
     string output_line, st_str, cnt_str;
 
@@ -320,9 +329,13 @@ void CNetScheduleAdmin::StatusSnapshot(
         CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
 
         while (cmd_output.ReadLine(output_line))
-            if (NStr::SplitInTwo(output_line, " ", st_str, cnt_str))
-                status_map[CNetScheduleAPI::StringToStatus(st_str)] +=
-                    NStr::StringToUInt(cnt_str);
+            if (NStr::SplitInTwo(output_line, ": ",
+                    st_str, cnt_str, NStr::eMergeDelims)) {
+                CNetScheduleAPI::EJobStatus job_status =
+                        CNetScheduleAPI::StringToStatus(st_str);
+                if (job_status != CNetScheduleAPI::eJobNotFound)
+                    status_map[job_status] += NStr::StringToUInt(cnt_str);
+            }
     }
 }
 

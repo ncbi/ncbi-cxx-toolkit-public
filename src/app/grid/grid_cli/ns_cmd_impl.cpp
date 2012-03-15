@@ -88,7 +88,9 @@ struct {
     const char* command;
     const char* record_prefix;
     const char* entity_name;
-} static const s_StatTopics[] = {
+} static const s_StatTopics[eNumberOfStatTopics] = {
+    // eNetScheduleStatJobGroups
+    {"STAT GROUPS", "GROUP: ", "group"},
     // eNetScheduleStatClients
     {"STAT CLIENTS", "CLIENT: ", "client_node"},
     // eNetScheduleStatNotifications
@@ -204,7 +206,9 @@ CJsonNode LegacyStatToJson(CNetServer server, bool verbose)
 
 void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
 {
-    if (IsOptionSet(eClientInfo))
+    if (IsOptionSet(eJobGroupInfo))
+        PrintNetScheduleStats_Generic(eNetScheduleStatJobGroups);
+    else if (IsOptionSet(eClientInfo))
         PrintNetScheduleStats_Generic(eNetScheduleStatClients);
     else if (IsOptionSet(eNotificationInfo))
         PrintNetScheduleStats_Generic(eNetScheduleStatNotifications);
@@ -263,14 +267,26 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
         if (m_Opts.output_format == eJSON)
             printf("\n}\n");
     } else if (IsOptionSet(eJobsByStatus)) {
-        if (m_Opts.output_format == eRaw)
-            m_NetScheduleAPI.GetService().PrintCmdOutput(
-                    "STSN aff=\"" + m_Opts.affinity + "\"",
+        if (m_Opts.output_format == eRaw) {
+            string cmd = "STAT JOBS";
+
+            if (!m_Opts.affinity.empty()) {
+                cmd.append(" aff=");
+                cmd.append(m_Opts.affinity);
+            }
+
+            if (!m_Opts.job_group.empty()) {
+                cmd.append(" group=");
+                cmd.append(m_Opts.job_group);
+            }
+
+            m_NetScheduleAPI.GetService().PrintCmdOutput(cmd,
                     NcbiCout, CNetService::eMultilineOutput);
-        else {
+        } else {
             CNetScheduleAdmin::TStatusMap st_map;
 
-            m_NetScheduleAdmin.StatusSnapshot(st_map, m_Opts.affinity);
+            m_NetScheduleAdmin.StatusSnapshot(st_map,
+                    m_Opts.affinity, m_Opts.job_group);
 
             const char* format;
             const char* format_cont;

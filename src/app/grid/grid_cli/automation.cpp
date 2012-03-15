@@ -454,6 +454,9 @@ void SNetScheduleServerAutomationObject::Call(const string& method,
     } else if (method == "server_status")
         reply.PushNode(LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
+    else if (method == "job_group_info")
+        reply.PushNode(GenericStatToJson(m_NetServer,
+                eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
     else if (method == "client_info")
         reply.PushNode(GenericStatToJson(m_NetServer,
                 eNetScheduleStatClients, arg_array.NextBoolean(false)));

@@ -341,7 +341,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///
     /// Every job in the job list receives job id
     ///
-    void SubmitJobBatch(vector<CNetScheduleJob>& jobs, const string& job_group);
+    void SubmitJobBatch(vector<CNetScheduleJob>& jobs,
+            const string& job_group = kEmptyStr);
 
     /// Incremental retrieval of jobs that are done or failed.
     ///
@@ -634,8 +635,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///    Status map (status to job count)
     /// @param affinity_token
     ///    Affinity token (optional)
+    /// @param job_group
+    ///    Only jobs belonging to the specified group (optional)
     void StatusSnapshot(TStatusMap& status_map,
-        const string& affinity_token);
+            const string& affinity_token = kEmptyStr,
+            const string& job_group = kEmptyStr);
 
     /// Affinity information returned by AffinitySnapshot().
     struct SAffinityInfo {
