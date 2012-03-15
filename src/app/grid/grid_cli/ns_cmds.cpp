@@ -632,6 +632,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             }
         }
 
+        submitter.SetJobGroup(m_Opts.job_group);
         submitter.SetJobAffinity(m_Opts.affinity);
 
         if (IsOptionSet(eExclusiveJob))
