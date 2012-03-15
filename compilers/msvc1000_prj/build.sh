@@ -15,8 +15,6 @@ arch="$2"
 #---------------- Global variables ----------------
 
 build_trees='static dll'
-###sol_static="ncbi_cpp.sln"
-###sol_dll="ncbi_cpp_dll.sln"
 sol_static="ncbi_cpp.sln gui/ncbi_gui.sln"
 sol_dll="ncbi_cpp_dll.sln gui/ncbi_gui_dll.sln"
 timer="date +'%H:%M'"
@@ -24,6 +22,7 @@ timer="date +'%H:%M'"
 # TRUE if parallell project build system is enabled in Visual Studio
 is_ppb=false
 need_ppb_check=true
+
 
 
 #-------------- Functions --------------
@@ -88,7 +87,7 @@ generate_simple_log()
         target_name=`echo $s | sed 's%^.*/%%'`
 
         # Path to regular logfile for current project
-        prj_log="$tree/build/$target_dir/$cfg/$prj_name/$target_name.log"
+        prj_log="$tree/build/$sol_dir/$target_dir/$cfg/$prj_name/$target_name.log"
 
         # Add it to new combined log
         if test ! -f "$prj_log" ; then
@@ -166,12 +165,10 @@ for tree in $build_trees ; do
         fi
         if $is_ppb; then
             generate_simple_log $out $tree "$sol" $cfg_configure > $out.simple
-            cat $out.simple
-###            cat $out.simple >> ${log_dir}/${tree}_${cfg_configure}.log
-        else 
-            cat $out
-            cat $out >> ${log_dir}/${tree}_${cfg_configure}.log
+            rm $out  &&  out="$out.simple"
         fi 
+        cat $out
+        cat $out >> ${log_dir}/${tree}_${cfg_configure}.log
         echo "Build time: $start - `eval $timer`"
         if [ $status -ne 0 ] ; then
             echo "FAILED: Configure $tree\\build\\$sol, $cfg_configure"
@@ -218,12 +215,10 @@ for tree in $build_trees ; do
             sleep 20
             if $is_ppb; then
                 generate_simple_log $out $tree "$sol" $cfg > $out.simple
-                cat $out.simple
-###                cat $out.simple >> ${log_dir}/${tree}_${cfg}.log
-            else 
-                cat $out
-                cat $out >> ${log_dir}/${tree}_${cfg}.log
+                rm $out  &&  out="$out.simple"
             fi 
+            cat $out
+            cat $out >> ${log_dir}/${tree}_${cfg}.log
             echo "Build time: $start - `eval $timer`"
             if [ $status -ne 0 ] ; then
                 # Check on errors (skip expendable projects)
