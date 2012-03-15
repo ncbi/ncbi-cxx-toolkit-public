@@ -391,6 +391,28 @@ void CPushback_Streambuf::x_DropBuffer(void)
 }
 
 
+#if   defined(NCBI_COMPILER_GCC)
+#  pragma GCC diagnostic push                        // NCBI_FAKE_WARNING
+#  pragma GCC diagnostic ignored "-Wsign-compare"    // NCBI_FAKE_WARNING
+#elif defined(NCBI_COMPILER_MSVC)
+#  pragma warning(push)
+#  pragma warning(disable : 4018)
+#endif //NCBI_COMPILER_...
+static inline void x_CheckPushbackSize(streamsize buf_size)
+{
+    if (buf_size > numeric_limits<size_t>::max()) {  // NCBI_FAKE_WARNING
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Pushback data size too large");
+    }
+}
+#if   defined(NCBI_COMPILER_GCC)
+#  pragma GCC diagnostic warning "-Wsign-compare"    // NCBI_FAKE_WARNING
+#  pragma GCC diagnostic pop                         // NCBI_FAKE_WARNING
+#elif defined(NCBI_COMPILER_MSVC)
+#  pragma warning(pop)
+#endif //NCBI_COMPILER_...
+
+
 void CStreamUtils::x_Pushback(CNcbiIstream& is,
                               CT_CHAR_TYPE* buf,
                               streamsize    x_buf_size,
@@ -400,17 +422,7 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
     _ASSERT(!x_buf_size  ||  buf);
     _ASSERT(del_ptr <= buf);
 
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(push)
-#  pragma warning(disable : 4018)
-#endif //NCBI_COMPILER_MSVC
-    if (x_buf_size > numeric_limits<size_t>::max()) {
-        NCBI_THROW(CCoreException, eInvalidArg,
-                   "Pushback data size too large");
-    }
-#ifdef NCBI_COMPILER_MSVC
-#  pragma warning(pop)
-#endif //NCBI_COMPILER_MSVC
+    x_CheckPushbackSize(x_buf_size);
     size_t buf_size = (size_t) x_buf_size;
 
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
@@ -471,12 +483,12 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
 
 #ifdef   NCBI_NO_READSOME
 #  undef NCBI_NO_READSOME
-#endif /*NCBI_NO_READSOME*/
+#endif //NCBI_NO_READSOME
 
-#if defined(NCBI_COMPILER_GCC)
+#if   defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION < 300
 #    define NCBI_NO_READSOME 1
-#  endif /*NCBI_COMPILER_VERSION*/
+#  endif //NCBI_COMPILER_VERSION<300
 #elif defined(NCBI_COMPILER_MSVC)
     /* MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided.
      * Now when we have worked around the issue by implementing fastopen()
@@ -490,7 +502,7 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
      * Don't use istream::readsome() but istream::read() instead in order to be
      * able to clear fake EOF caused by the unnecessary underflow() upcall.*/
 #  define NCBI_NO_READSOME 1
-#endif /*NCBI_COMPILER*/
+#endif //NCBI_COMPILER_...
 
 
 #ifndef NCBI_NO_READSOME
@@ -501,10 +513,10 @@ static inline streamsize x_Readsome(CNcbiIstream& is,
 #  ifdef NCBI_COMPILER_WORKSHOP
     /* Rogue Wave does not always return correct value from is.readsome() :-/
      * In particular, when streambuf::showmanyc() returns 1 followed by a
-     * failed read() [that implements the extraction from the stream], which
-     * encounters the EOF, the readsome() will blindly return 1, and in
-     * general, always exactly the number of bytes showmanyc() reported,
-     * regardless of actually extracted by subsequent read operation.  Bug!
+     * failed read() [that implements an extraction from the stream] due to
+     * reaching the EOF, then readsome() will blindly return 1; and in general,
+     * returns always exactly the number of bytes that showmanyc()'s reported,
+     * regardless of the actually extracted ones by a subsequent read.  Bug!!
      * NOTE that showmanyc() does not guarantee the number of bytes that can
      * be read, but returns a best guess estimate [C++ Standard, footnote 275].
      */
@@ -512,9 +524,9 @@ static inline streamsize x_Readsome(CNcbiIstream& is,
     return n ? is.gcount() : 0;
 #  else
     return is.readsome(buf, buf_size);
-#  endif /*NCBI_COMPILER_WORKSHOP*/
+#  endif //NCBI_COMPILER_WORKSHOP
 }
-#endif /*NCBI_NO_READSOME*/
+#endif //NCBI_NO_READSOME
 
 
 static streamsize s_Readsome(CNcbiIstream& is,
@@ -568,7 +580,7 @@ static streamsize s_Readsome(CNcbiIstream& is,
         return 1; // do not need more data
     // Read more data (up to "buf_size" bytes)
     return x_Readsome(is, buf + 1, buf_size - 1) + 1;
-#endif /*NCBI_NO_READSOME*/
+#endif //NCBI_NO_READSOME
 }
 
 
