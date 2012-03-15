@@ -101,6 +101,8 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     CNetServer::SExecResult FindServerAndExec(const string& cmd);
 
+    void ExecOnAllServers(const string& cmd);
+
     enum ECmdOutputStyle {
         eSingleLineOutput,
         eMultilineOutput,

@@ -432,6 +432,12 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///    Job key
     void CancelJob(const string& job_key);
 
+    /// Cancel job group
+    ///
+    /// @param group_id
+    ///    Group ID.
+    void CancelJobGroup(const string& group_id);
+
     /// Get progress message
     ///
     /// @param job
@@ -716,10 +722,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         EStatisticsOptions opt = eStatisticsBrief);
 
     void DumpQueue(CNcbiOstream& output_stream,
-        const string& start_after_job = kEmptyStr, size_t job_count = 0);
-
-    void PrintQueue(CNcbiOstream& output_stream,
-        CNetScheduleAPI::EJobStatus status);
+        const string& start_after_job = kEmptyStr,
+        size_t job_count = 0,
+        CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::eJobNotFound,
+        const string& job_group = kEmptyStr);
 
     void PrintQueueInfo(CNcbiOstream& output_stream,
         const string& queue_name);

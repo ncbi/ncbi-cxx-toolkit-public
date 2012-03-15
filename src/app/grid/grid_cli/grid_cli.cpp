@@ -235,7 +235,7 @@ struct SOptionDefinition {
         "progress-message", "Set job progress message."},
 
     {CCommandLineParser::eOptionWithParameter, eJobGroup,
-        "job-group", "Only consider jobs belonging to the specified group."},
+        "job-group", "Select jobs by job group."},
 
     {CCommandLineParser::eSwitch, eAllJobs,
         "all-jobs", "Apply to all jobs in the queue."},
@@ -509,11 +509,12 @@ struct SCommandDefinition {
             eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CancelJob,
-        "canceljob", "Cancel a NetSchedule job.",
-        "Mark the job as canceled. This command also instructs the worker "
-        "node that may be processing this job to stop the processing.",
-        {eOptionalID, eNetSchedule, eQueue, eAllJobs, eAuth,
-            eClientNode, eClientSession, -1}},
+        "canceljob", "Cancel one or more NetSchedule jobs.",
+        "Mark the specified job (or multiple jobs) as canceled. "
+        "This command also instructs the worker node that may be "
+        "processing those jobs to stop the processing.",
+        {eOptionalID, eNetSchedule, eQueue, eAllJobs, eJobGroup,
+            eAuth, eClientNode, eClientSession, -1}},
 
 /*
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_RegWNode,
@@ -597,10 +598,11 @@ struct SCommandDefinition {
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DumpQueue,
         "dumpqueue", "Dump a NetSchedule queue.",
-        "This command dumps the entire contents of a NetSchedule queue. "
-        "It is also possible to filter the output by job status, but "
-        "in this case significantly less information is printed.",
-        {eNetSchedule, eQueue, eStartAfterJob, eJobCount,
+        "This command dumps detailed information about jobs in a "
+        "NetSchedule queue. It is possible to limit the number of "
+        "records printed and also to filter the output by job status "
+        "and/or job group.",
+        {eNetSchedule, eQueue, eStartAfterJob, eJobCount, eJobGroup,
             eSelectByStatus, eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,

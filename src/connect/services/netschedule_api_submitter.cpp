@@ -398,6 +398,11 @@ void CNetScheduleSubmitter::CancelJob(const string& job_key)
     m_Impl->m_API->x_SendJobCmdWaitResponse("CANCEL", job_key);
 }
 
+void CNetScheduleSubmitter::CancelJobGroup(const string& group_id)
+{
+    m_Impl->m_API->m_Service.ExecOnAllServers("CANCEL group=" + group_id);
+}
+
 CNetScheduleAPI::EJobStatus
     CNetScheduleSubmitter::GetJobStatus(const string& job_key)
 {

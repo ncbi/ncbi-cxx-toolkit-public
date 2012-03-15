@@ -168,11 +168,6 @@ void CNetScheduleControl::Init(void)
                              "Cancel a job",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("qprint",
-                             "job_status",
-                             "Print queue content for the specified job status",
-                             CArgDescriptions::eString);
-
     arg_desc->AddFlag("count_active", "Count active jobs in all queues");
 
     arg_desc->AddOptionalKey("fields",
@@ -300,17 +295,6 @@ int CNetScheduleControl::Run(void)
     else if (args["getconf"]) {
         ctl = x_CreateNewClient(true);
         ctl.GetAdmin().PrintConf(os);
-    }
-    else if (args["qprint"]) {
-        string sstatus = args["qprint"].AsString();
-        CNetScheduleAPI::EJobStatus status =
-            CNetScheduleAPI::StringToStatus(sstatus);
-        if (status == CNetScheduleAPI::eJobNotFound) {
-            ERR_POST("Status string unknown:" << sstatus);
-            return 1;
-        }
-        ctl = x_CreateNewClient(true);
-        ctl.GetAdmin().PrintQueue(os, status);
     }
     else if (args["affstat"]) {
         string affinity = args["affstat"].AsString();

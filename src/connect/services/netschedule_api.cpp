@@ -211,15 +211,22 @@ void CNetScheduleServerListener::OnError(
     string msg;
     if (NStr::SplitInTwo(err_msg, ":", code, msg)) {
         // Map code into numeric value
-        CException::TErrCode n_code =
+        CException::TErrCode err_code =
             SNetScheduleAPIImpl::sm_ExceptionMap.GetCode(code);
-        if (n_code != CException::eInvalid) {
-            NCBI_THROW(CNetScheduleException, EErrCode(n_code), msg);
+        switch (err_code) {
+        case CException::eInvalid:
+            NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
+
+        case CNetScheduleException::eGroupNotFound:
+            // Ignore this error.
+            break;
+
+        default:
+            NCBI_THROW(CNetScheduleException, EErrCode(err_code), msg);
         }
     } else if (err_msg == "Job not found") {
         NCBI_THROW(CNetScheduleException, eJobNotFound, msg);
     }
-    NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 }
 
 void CNetScheduleServerListener::OnWarning(const string& warn_msg,

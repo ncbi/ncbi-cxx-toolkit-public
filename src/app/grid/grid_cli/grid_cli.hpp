@@ -222,7 +222,7 @@ private:
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), job_count(0),
-            extend_lifetime_by(0),
+            job_status(CNetScheduleAPI::eJobNotFound), extend_lifetime_by(0),
             input_stream(NULL), output_stream(NULL), protocol_dump(NULL)
         {
             memset(option_flags, 0, eNumberOfOptions);

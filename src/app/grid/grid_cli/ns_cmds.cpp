@@ -829,14 +829,18 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
 
 int CGridCommandLineInterfaceApp::Cmd_CancelJob()
 {
-    if (!IsOptionSet(eAllJobs)) {
+    if (IsOptionSet(eJobGroup)) {
         SetUp_NetScheduleCmd(eNetScheduleAPI);
 
-        m_NetScheduleAPI.GetSubmitter().CancelJob(m_Opts.id);
-    } else {
+        m_NetScheduleAPI.GetSubmitter().CancelJobGroup(m_Opts.job_group);
+    } else if (IsOptionSet(eAllJobs)) {
         SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
         m_NetScheduleAdmin.CancelAllJobs();
+    } else {
+        SetUp_NetScheduleCmd(eNetScheduleAPI);
+
+        m_NetScheduleAPI.GetSubmitter().CancelJob(m_Opts.id);
     }
 
     return 0;
@@ -1003,11 +1007,8 @@ int CGridCommandLineInterfaceApp::Cmd_DumpQueue()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
-    if (!IsOptionSet(eSelectByStatus))
-        m_NetScheduleAdmin.DumpQueue(NcbiCout,
-            m_Opts.start_after_job, m_Opts.job_count);
-    else
-        m_NetScheduleAdmin.PrintQueue(NcbiCout, m_Opts.job_status);
+    m_NetScheduleAdmin.DumpQueue(NcbiCout, m_Opts.start_after_job,
+            m_Opts.job_count, m_Opts.job_status, m_Opts.job_group);
 
     return 0;
 }

@@ -49,10 +49,7 @@ void CNetCacheAdmin::ShutdownServer()
 
 void CNetCacheAdmin::ReloadServerConfig()
 {
-    string cmd(m_Impl->m_API->MakeCmd("RECONF"));
-
-    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(); it; ++it)
-        (*it).ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(m_Impl->m_API->MakeCmd("RECONF"));
 }
 
 void CNetCacheAdmin::Reinitialize(const string& cache_name)

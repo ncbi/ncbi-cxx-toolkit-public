@@ -62,10 +62,7 @@ void CNetScheduleAdmin::ShutdownServer(
 
 void CNetScheduleAdmin::ReloadServerConfig()
 {
-    string cmd("RECO");
-
-    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(); it; ++it)
-        (*it).ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers("RECO");
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
@@ -81,19 +78,13 @@ void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
         cmd += '"';
     }
 
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it)
-        (*it).ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
 
 void CNetScheduleAdmin::DeleteQueue(const string& qname)
 {
-    string cmd = "QDEL " + qname;
-
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it)
-        (*it).ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers("QDEL " + qname);
 }
 
 void CNetScheduleAdmin::DumpJob(CNcbiOstream& out, const string& job_key)
@@ -113,11 +104,7 @@ CNetServerMultilineCmdOutput CNetScheduleAdmin::DumpJob(const string& job_key)
 
 void CNetScheduleAdmin::CancelAllJobs()
 {
-    string cmd = "CANCELQ";
-
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it)
-        (*it).ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers("CANCELQ");
 }
 
 
@@ -137,10 +124,18 @@ string CNetScheduleAdmin::GetServerVersion()
 }
 
 
-void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream,
-    const string& start_after_job, size_t job_count)
+void CNetScheduleAdmin::DumpQueue(
+        CNcbiOstream& output_stream,
+        const string& start_after_job,
+        size_t job_count,
+        CNetScheduleAPI::EJobStatus status,
+        const string& job_group)
 {
     string cmd("DUMP");
+    if (status != CNetScheduleAPI::eJobNotFound) {
+        cmd.append(" status=");
+        cmd.append(CNetScheduleAPI::StatusToString(status));
+    }
     if (!start_after_job.empty()) {
         cmd.append(" start_after=");
         cmd.append(start_after_job);
@@ -149,18 +144,14 @@ void CNetScheduleAdmin::DumpQueue(CNcbiOstream& output_stream,
         cmd.append(" count=");
         cmd.append(NStr::NumericToString(job_count));
     }
+    if (!job_group.empty()) {
+        cmd.append(" group=");
+        cmd.append(job_group);
+    }
     m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
         output_stream, CNetService::eMultilineOutput);
 }
 
-
-void CNetScheduleAdmin::PrintQueue(CNcbiOstream& output_stream,
-    CNetScheduleAPI::EJobStatus status)
-{
-    m_Impl->m_API->m_Service.PrintCmdOutput("QPRT " +
-            CNetScheduleAPI::StatusToString(status),
-        output_stream, CNetService::eMultilineOutput);
-}
 
 void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream,
     const string& queue_name)
@@ -204,7 +195,7 @@ void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream,
 
 unsigned CNetScheduleAdmin::CountActiveJobs()
 {
-    string cmd("ACNT");
+    static const string cmd("ACNT");
 
     unsigned counter = 0;
 

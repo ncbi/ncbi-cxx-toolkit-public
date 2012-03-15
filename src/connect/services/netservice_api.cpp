@@ -608,6 +608,12 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
     return exec_result;
 }
 
+void CNetService::ExecOnAllServers(const string& cmd)
+{
+    for (CNetServiceIterator it = Iterate(); it; ++it)
+        (*it).ExecWithRetry(cmd);
+}
+
 CNetServer SNetServiceImpl::RequireStandAloneServerSpec(const string& cmd)
 {
     if (m_ServiceType != eLoadBalancedService)

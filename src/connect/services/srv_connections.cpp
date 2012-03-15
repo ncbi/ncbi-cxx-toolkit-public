@@ -134,9 +134,7 @@ void SNetServerConnectionImpl::DeleteThis()
 
 void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
 {
-    EIO_Status io_st = m_Socket.ReadLine(result);
-
-    switch (io_st)
+    switch (m_Socket.ReadLine(result))
     {
     case eIO_Success:
         break;
