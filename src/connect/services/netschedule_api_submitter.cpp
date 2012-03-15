@@ -115,6 +115,11 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
 
     s_AppendClientIPAndSessionID(cmd);
 
+    if (!job.group.empty()) {
+        cmd.append(" group=");
+        cmd.append(job.group);
+    }
+
     job.job_id = m_API->m_Service.FindServerAndExec(cmd).response;
 
     if (job.job_id.empty()) {
@@ -125,7 +130,8 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
     return job.job_id;
 }
 
-void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
+void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
+        const string& job_group)
 {
     // verify the input data
     size_t max_input_size = m_Impl->m_API->GetServerParams().max_input_size;
@@ -139,6 +145,11 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs)
     string cmd = "BSUB";
 
     s_AppendClientIPAndSessionID(cmd);
+
+    if (!job_group.empty()) {
+        cmd.append(" group=");
+        cmd.append(job_group);
+    }
 
     CNetServer::SExecResult exec_result(
         m_Impl->m_API->m_Service.FindServerAndExec(cmd));

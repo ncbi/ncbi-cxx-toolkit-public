@@ -289,6 +289,7 @@ struct CNetScheduleJob
         output.erase();
         error_msg.erase();
         progress_msg.erase();
+        group.erase();
     }
     // input parameters
 
@@ -314,6 +315,8 @@ struct CNetScheduleJob
     string    output;
     string    error_msg;
     string    progress_msg;
+
+    string    group;
 };
 
 struct SNetScheduleSubmitterImpl;
@@ -338,7 +341,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     ///
     /// Every job in the job list receives job id
     ///
-    void SubmitJobBatch(vector<CNetScheduleJob>& jobs);
+    void SubmitJobBatch(vector<CNetScheduleJob>& jobs, const string& job_group);
 
     /// Incremental retrieval of jobs that are done or failed.
     ///

@@ -120,6 +120,9 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eBatch,
         BATCH_OPTION, "Enable batch mode and specify batch size."},
 
+    {CCommandLineParser::eOptionWithParameter, eGroup,
+        "group", "Define group membership for the created job(s)."},
+
     {CCommandLineParser::eOptionWithParameter, eAffinity,
         AFFINITY_OPTION, "Affinity token."},
 
@@ -432,7 +435,7 @@ struct SCommandDefinition {
         "A NetCache server is required for saving job input if it "
         "exceeds the capability of the NetSchedule internal storage.",
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
-            eAffinity, eExclusiveJob, eOutputFile,
+            eGroup, eAffinity, eExclusiveJob, eOutputFile,
             eWaitTimeout, eAuth, eClientNode, eClientSession,
             eDumpNSNotifications, -1}},
 
@@ -915,6 +918,7 @@ int CGridCommandLineInterfaceApp::Run()
             case eProgressMessage:
                 m_Opts.progress_message = opt_value;
                 break;
+            case eGroup:
             case eJobGroup:
                 m_Opts.job_group = opt_value;
                 break;

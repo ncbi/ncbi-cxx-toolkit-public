@@ -88,6 +88,7 @@ enum EOption {
     eNetSchedule,
     eQueue,
     eWorkerNode,
+    eGroup,
     eBatch,
     eAffinity,
     eAffinityList,

@@ -212,7 +212,7 @@ void CGridJobBatchSubmitter::PrepareNextJob()
     m_Jobs.push_back(CNetScheduleJob());
 }
 
-void CGridJobBatchSubmitter::Submit()
+void CGridJobBatchSubmitter::Submit(const string& job_group)
 {
     CheckIfAlreadySubmitted();
     m_WStream.reset();
@@ -221,7 +221,7 @@ void CGridJobBatchSubmitter::Submit()
         m_Writer.reset();
     }
     if (!m_Jobs.empty()) {
-        m_GridClient.GetNSClient().SubmitJobBatch(m_Jobs);
+        m_GridClient.GetNSClient().SubmitJobBatch(m_Jobs, job_group);
         m_HasBeenSubmitted = true;
     }
 }

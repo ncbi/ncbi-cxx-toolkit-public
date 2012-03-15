@@ -74,12 +74,10 @@ public:
 
     void CloseStream();
 
-    /// Set a job mask
-    ///
     void SetJobMask(CNetScheduleAPI::TJobMask mask) {m_Job.mask = mask;}
 
-    /// Set a job affinity
-    ///
+    void SetJobGroup(const string& group) {m_Job.group = group;}
+
     void SetJobAffinity(const string& affinity) {m_Job.affinity = affinity;}
 
     /// Submit a job to the queue
@@ -137,7 +135,7 @@ public:
 
     /// Submit a batch to the queue
     ///
-    void Submit();
+    void Submit(const string& job_group);
 
     ///
     void Reset();

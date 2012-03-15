@@ -539,6 +539,8 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                         break;
                     }
                 }
+                if (IsOptionSet(eGroup))
+                    submitter.SetJobGroup(m_Opts.job_group);
                 if (!input_set) {
                     NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
                         ": attribute \"input\" is required at line " <<
@@ -554,7 +556,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
             while (attr_parser.NextLine()) {
                 if (remaining_batch_size == 0) {
-                    batch_submitter.Submit();
+                    batch_submitter.Submit(m_Opts.job_group);
                     const vector<CNetScheduleJob>& jobs =
                         batch_submitter.GetBatch();
                     ITERATE(vector<CNetScheduleJob>, it, jobs)
@@ -599,7 +601,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                 --remaining_batch_size;
             }
             if (remaining_batch_size < m_Opts.batch_size) {
-                batch_submitter.Submit();
+                batch_submitter.Submit(m_Opts.job_group);
                 const vector<CNetScheduleJob>& jobs =
                     batch_submitter.GetBatch();
                 ITERATE(vector<CNetScheduleJob>, it, jobs)
