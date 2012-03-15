@@ -707,13 +707,6 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
     char   buff[1800];
     size_t len = 0;
     size_t invalid_len = 0;
-    CDB_ITDescriptor::ETDescriptorType descr_type = CDB_ITDescriptor::eUnknown;
-
-    if (desc.m_Desc.datatype == CS_TEXT_TYPE) {
-        descr_type = CDB_ITDescriptor::eText;
-    } else if (desc.m_Desc.datatype == CS_IMAGE_TYPE) {
-        descr_type = CDB_ITDescriptor::eBinary;
-    }
 
     while (size > 0) {
         len = (CS_INT) stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1);
