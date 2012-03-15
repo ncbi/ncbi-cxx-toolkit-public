@@ -1176,6 +1176,19 @@ void CNewCleanup_imp::BiosourceBC (
                 }
             }
 
+            if( chs == NCBI_SUBSOURCE(lat_lon) ) {
+                string &lat_lon = GET_MUTABLE(sbs, Name);
+
+                static CRegexp lat_lon_with_comma("^[-.0-9]+ ., [-.0-9]+ .$");
+                if( lat_lon_with_comma.IsMatch(lat_lon) ) {
+                    // remove the comma
+                    SIZE_TYPE comma_pos = lat_lon.find(',');
+                    _ASSERT(comma_pos != NPOS );
+                    lat_lon.erase(comma_pos, 1);
+                    ChangeMade(CCleanupChange::eCleanSubsource);
+                }
+            }
+
             if ( chs == NCBI_SUBSOURCE(fwd_primer_seq) ||
                 chs == NCBI_SUBSOURCE(rev_primer_seq) )
             {
@@ -6322,7 +6335,7 @@ void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
 
     static CRegexp prefixRegexp("^(micro|mini|)satellite");
     if( prefixRegexp.IsMatch(val) ) {
-        int spot_just_after_match = prefixRegexp.GetResults(0)[1];
+        SIZE_TYPE spot_just_after_match = prefixRegexp.GetResults(0)[1];
         if( spot_just_after_match < val.length() && 
             val[spot_just_after_match] == ' ' ) 
         {
