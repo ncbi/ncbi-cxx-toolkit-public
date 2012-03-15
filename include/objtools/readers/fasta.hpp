@@ -212,8 +212,8 @@ protected:
 
 private:
     struct SGap {
-        TSeqPos pos; // 0-based, and NOT counting previous gaps
-        TSeqPos len; // may be zero for gaps of unknown length
+        TSeqPos       pos; // 0-based, and NOT counting previous gaps
+        TSignedSeqPos len; // 0: unknown, negative: negated nominal length
     };
     typedef vector<SGap>        TGaps;
     typedef set<CSeq_id_Handle> TIDTracker;

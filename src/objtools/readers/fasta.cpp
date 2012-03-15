@@ -698,7 +698,11 @@ bool CFastaReader::ParseGapLine(const TStr& line)
 {
     SGap gap = { GetCurrentPos(eRawPos),
                  NStr::StringToUInt(line.substr(2), NStr::fConvErr_NoThrow) };
-    if (gap.len > 0  ||  line == ">?unk100") {
+    if (gap.len > 0) {
+        m_Gaps.push_back(gap);
+        return true;
+    } else if (line == ">?unk100") {
+        gap.len = -100;
         m_Gaps.push_back(gap);
         return true;
     } else {
@@ -771,12 +775,17 @@ void CFastaReader::AssembleSeq(void)
                 }
             }
 
-            if (m_Gaps[i].len == 0) { // unknown length
-                CRef<CDelta_seq> gap_ds(new CDelta_seq);
-                gap_ds->SetLoc().SetNull();
-                delta_ext.Set().push_back(gap_ds);
-            } else {
+            if (m_Gaps[i].len > 0) {
                 delta_ext.AddLiteral(m_Gaps[i].len);
+            } else {
+                CRef<CDelta_seq> gap_ds(new CDelta_seq);
+                if (m_Gaps[i].len == 0) { // totally unknown
+                    gap_ds->SetLoc().SetNull();
+                } else { // has a nominal length (normally 100)
+                    gap_ds->SetLiteral().SetLength(-m_Gaps[i].len);
+                    gap_ds->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                }
+                delta_ext.Set().push_back(gap_ds);
             }
 
             TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1].pos;
