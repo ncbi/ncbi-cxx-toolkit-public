@@ -137,10 +137,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "start_after", eNSPT_Id,  eNSPA_Optional      },
           { "count",       eNSPT_Int, eNSPA_Optional, "0" },
           { "group",       eNSPT_Str, eNSPA_Optional } } },
-    // QPRT status : id
-    { "QPRT",     { &CNetScheduleHandler::x_ProcessPrintQueue,
-                    eNSCR_Queue },
-        { { "status", eNSPT_Id, eNSPA_Required } } },
     // STSN [ affinity_token : keystr(aff) ]
     { "STSN",     { &CNetScheduleHandler::x_ProcessStatusSnapshot,
                     eNSCR_Queue },
@@ -1892,21 +1888,6 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
     WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
     return;
-}
-
-
-void CNetScheduleHandler::x_ProcessPrintQueue(CQueue* q)
-{
-    if (m_CommandArguments.job_status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:Status unknown: ",
-                              m_CommandArguments.job_status_string);
-        x_PrintRequestStop(eStatus_BadRequest);
-        return;
-    }
-
-    q->PrintQueue(*this, m_CommandArguments.job_status);
-    WriteMessage("OK:END");
-    x_PrintRequestStop(eStatus_OK);
 }
 
 

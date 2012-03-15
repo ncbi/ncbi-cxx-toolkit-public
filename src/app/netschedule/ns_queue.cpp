@@ -2458,49 +2458,6 @@ void CQueue::x_DumpJobs(CNetScheduleHandler &   handler,
 }
 
 
-void CQueue::PrintQueue(CNetScheduleHandler &   handler,
-                        TJobStatus              job_status)
-{
-    TNSBitVector        jobs_to_print;
-
-    {{
-        CFastMutexGuard     guard(m_OperationLock);
-        JobsWithStatus(job_status, &jobs_to_print);
-    }}
-
-
-    TNSBitVector::enumerator    en(jobs_to_print.first());
-    size_t                      buffer_size = min(m_DumpBufferSize,
-                                                  jobs_to_print.count());
-
-    {{
-        CJob        buffer[buffer_size];
-        size_t      read_jobs = 0;
-
-        for (; en.valid(); ) {
-            {{
-                CFastMutexGuard     guard(m_OperationLock);
-
-                m_QueueDbBlock->job_db.SetTransaction(NULL);
-                m_QueueDbBlock->events_db.SetTransaction(NULL);
-                m_QueueDbBlock->job_info_db.SetTransaction(NULL);
-
-                for ( ; en.valid() && read_jobs < buffer_size; ++en)
-                    if (buffer[read_jobs].Fetch(this, *en) == CJob::eJF_Ok)
-                        ++read_jobs;
-            }}
-
-            for (size_t  index = 0; index < read_jobs; ++index)
-                x_PrintShortJobStat(handler, buffer[index]);
-
-            read_jobs = 0;
-        }
-    }}
-
-    return;
-}
-
-
 unsigned CQueue::CountStatus(TJobStatus st) const
 {
     return m_StatusTracker.CountStatus(st);

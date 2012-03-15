@@ -159,7 +159,6 @@ private:
     void x_ProcessReloadConfig(CQueue*);
     void x_ProcessActiveCount(CQueue*);
     void x_ProcessDump(CQueue*);
-    void x_ProcessPrintQueue(CQueue*);
     void x_ProcessShutdown(CQueue*);
     void x_ProcessGetConf(CQueue*);
     void x_ProcessVersion(CQueue*);

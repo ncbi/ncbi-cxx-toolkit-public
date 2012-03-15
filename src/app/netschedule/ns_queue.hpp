@@ -311,9 +311,6 @@ public:
     void PrintSubmHosts(CNetScheduleHandler &  handler) const;
     void PrintWNodeHosts(CNetScheduleHandler &  handler) const;
 
-    void PrintQueue(CNetScheduleHandler &   handler,
-                    TJobStatus              job_status);
-
     /// Dump a single job
     size_t PrintJobDbStat(CNetScheduleHandler &   handler,
                           unsigned                job_id);
