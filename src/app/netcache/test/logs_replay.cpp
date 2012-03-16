@@ -186,7 +186,8 @@ s_ToSizeStr(Uint8 size)
 static void
 s_PrintStats(int elapsed)
 {
-    Uint8 m_ReqTime = numeric_limits<Uint8>::max();
+    Uint8 m_MinReqTime = numeric_limits<Uint8>::max();
+    Uint8 m_MaxReqTime = 0;
     vector<Uint8> m_CntWrites(100);
     vector<Uint8> m_CntErased(100);
     vector<Uint8> m_CntReads(100);
@@ -204,7 +205,9 @@ s_PrintStats(int elapsed)
     Uint8 tot_ws = 0, tot_ers = 0, tot_rs = 0;
     for (size_t i = 0; i < s_Threads.size(); ++i) {
         for (size_t j = 0; j < m_CntWrites.size(); ++j) {
-            m_ReqTime = min(m_ReqTime, s_Threads[i]->m_ReqTime);
+            Uint8 req_time = s_Threads[i]->m_ReqTime;
+            m_MinReqTime = min(m_MinReqTime, req_time);
+            m_MaxReqTime = max(m_MaxReqTime, req_time);
             Uint8 cnt = s_Threads[i]->m_CntWrites[j];
             m_CntWrites[j] += cnt;
             tot_w += cnt;
@@ -245,7 +248,8 @@ s_PrintStats(int elapsed)
     LOG_POST("Time: " << CTime(CTime::eCurrent));
     LOG_POST("Elapsed: " << elapsed << " secs, processing " << s_InFile
                          << " starting from " << s_StartTime
-                         << ", cur req_time " << (m_ReqTime / 1000));
+                         << ", min req_time " << (m_MinReqTime / 1000)
+                         << ", max req_time " << (m_MaxReqTime / 1000));
     LOG_POST("Total: " << tot_w << " (w) " << s_ToSizeStr(tot_ws) << " (ws) "
                        << tot_er << " (er) " << s_ToSizeStr(tot_ers) << " (ers) "
                        << tot_r << " (r) " << s_ToSizeStr(tot_rs) << " (rs) "
@@ -447,7 +451,7 @@ CReplayThread::x_GetBlob(Uint8 key_id)
             return;
         }
         if (key_info->size != Uint8(-1)  &&  blob_size != key_info->size) {
-            ERR_POST("Blob " << key_info->key << " has incorrect size "
+            ERR_POST(Critical << "Blob " << key_info->key << " has incorrect size "
                      << blob_size << " (expected " << key_info->size << ")");
             ++m_CntBadReads[size_index];
             return;
@@ -468,7 +472,7 @@ CReplayThread::x_GetBlob(Uint8 key_id)
 
         string hash = md5.GetHexSum();
         if (key_info->size != Uint8(-1)  &&  hash != key_info->md5) {
-            ERR_POST("Blob " << key_info->key << " has wrong md5 hash");
+            ERR_POST(Critical << "Blob " << key_info->key << " has wrong md5 hash");
             ++m_CntBadReads[size_index];
         }
         else {
@@ -531,13 +535,14 @@ CReplayThread::Main(void)
 
         CTime cur_ctime = GetFastLocalTime();
         Uint8 cur_time = Uint8(cur_ctime.GetTimeT()) * 1000 + cur_ctime.MilliSecond();
-        cur_time -= start_time;
-        cur_time += s_StartTime;
-        if (cur_time < m_ReqTime) {
-            SleepMilliSec((unsigned long)(m_ReqTime - cur_time));
+        Uint8 check_req_time = cur_time - start_time;
+        check_req_time += s_StartTime;
+        if (check_req_time < m_ReqTime) {
+            SleepMilliSec((unsigned long)(m_ReqTime - check_req_time));
         }
 
         string str_cmd = cmd;
+        //LOG_POST("File " << m_InFile.GetPathname() << " executing " << line << ", cur_time=" << cur_time << ", start_time=" << start_time);
         if (str_cmd == "PUT3")
             x_PutBlob(key_id, gen_key == 1, size);
         else if (str_cmd == "GET2")
