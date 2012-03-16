@@ -1955,7 +1955,7 @@ public:
     ///   This lets you distinguish when there were no delimiters and when
     ///   the very last character was the first delimiter.
     /// @sa
-    ///   Split, Tokenoze, TokenizePattern
+    ///   Split, Tokenize, TokenizePattern
     static bool SplitInTwo(const CTempString& str, 
                            const CTempString& delim,
                            string&            str1,
