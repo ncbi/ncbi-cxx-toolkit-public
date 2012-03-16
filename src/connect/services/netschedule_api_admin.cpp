@@ -330,12 +330,8 @@ void CNetScheduleAdmin::StatusSnapshot(
 
         while (cmd_output.ReadLine(output_line))
             if (NStr::SplitInTwo(output_line, ": ",
-                    st_str, cnt_str, NStr::eMergeDelims)) {
-                CNetScheduleAPI::EJobStatus job_status =
-                        CNetScheduleAPI::StringToStatus(st_str);
-                if (job_status != CNetScheduleAPI::eJobNotFound)
-                    status_map[job_status] += NStr::StringToUInt(cnt_str);
-            }
+                    st_str, cnt_str, NStr::eMergeDelims))
+                status_map[st_str] += NStr::StringToUInt(cnt_str);
     }
 }
 

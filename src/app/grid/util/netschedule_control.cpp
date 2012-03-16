@@ -304,9 +304,7 @@ int CNetScheduleControl::Run(void)
         CNetScheduleAdmin::TStatusMap st_map;
         ctl.GetAdmin().StatusSnapshot(st_map, affinity);
         ITERATE(CNetScheduleAdmin::TStatusMap, it, st_map) {
-            os << CNetScheduleAPI::StatusToString(it->first) << ": "
-               << it->second
-               << endl;
+            os << it->first << ": " << it->second << endl;
         }
     } else {
         NCBI_THROW(CArgException, eNoArg,

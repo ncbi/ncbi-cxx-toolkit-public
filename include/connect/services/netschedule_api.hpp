@@ -628,7 +628,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     NCBI_NET_COMPONENT(NetScheduleAdmin);
 
     /// Status map, shows number of jobs in each status
-    typedef map<CNetScheduleAPI::EJobStatus, unsigned> TStatusMap;
+    typedef map<string, unsigned> TStatusMap;
 
     /// Returns statuses for a given affinity token
     /// @param status_map

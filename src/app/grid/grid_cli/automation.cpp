@@ -104,7 +104,12 @@ inline CArgArray::CArgArray(const CJsonNode::TArray& args) : m_Args(args)
 
 inline CJsonNode CArgArray::NextNodeOrNull()
 {
-    return m_Position == m_Args.end() ? CJsonNode() : *m_Position++;
+    if (m_Position != m_Args.end()) {
+        if (!m_Position->IsNull())
+            return *m_Position++;
+        ++m_Position;
+    }
+    return CJsonNode();
 }
 
 inline CJsonNode CArgArray::NextNode()
@@ -513,6 +518,16 @@ void SNetScheduleServiceAutomationObject::Call(const string& method,
         arg = arg_array.NextNode();
         if (!arg.IsNull())
             m_NetScheduleAPI.SetClientSession(arg_array.GetString(arg));
+    } else if (method == "jobs_by_status") {
+        CNetScheduleAdmin::TStatusMap status_map;
+        m_NetScheduleAPI.GetAdmin().StatusSnapshot(status_map,
+                arg_array.NextString(kEmptyStr),
+                arg_array.NextString(kEmptyStr));
+        CJsonNode jobs_by_status(CJsonNode::NewObjectNode());
+        ITERATE(CNetScheduleAdmin::TStatusMap, it, status_map) {
+            jobs_by_status.SetNumber(it->first, it->second);
+        }
+        reply.PushNode(jobs_by_status);
     } else if (method == "exec") {
         string command(arg_array.NextString());
         reply.PushNode(ExecToJson(m_NetScheduleAPI.GetService(),
