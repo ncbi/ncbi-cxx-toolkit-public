@@ -2203,7 +2203,7 @@ void CNetScheduleHandler::x_PrintRequestStart(const SParsedCmd& cmd)
 
         // SUMBIT parameters should not be logged. The new job attributes will
         // be logged when a new job is actually submitted.
-        if (strcmp(cmd.command->cmd, "SUBMIT") != 0 ) {
+        if (cmd.command->extra.processor != &CNetScheduleHandler::x_ProcessSubmit) {
             ITERATE(TNSProtoParams, it, cmd.params) {
                 ctxt_extra.Print(it->first, it->second);
             }

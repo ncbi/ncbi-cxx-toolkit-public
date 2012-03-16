@@ -328,9 +328,6 @@ public:
 
     string MakeKey(unsigned job_id) const
     { return m_KeyGenerator.GenerateV1(job_id); }
-    string MakeBatchKey(unsigned int  batch_id) const
-//    { return m_BatchKeyGenerator.GenerateV1(batch_id); }
-    { return "bla"; }
 
     void TouchClientsRegistry(CNSClientId &  client);
     void ResetRunningDueToClear(const CNSClientId &   client,
@@ -391,6 +388,8 @@ private:
     void x_PrintShortJobStat(CNetScheduleHandler &  handler,
                              const CJob&            job);
     void x_LogSubmit(const CJob &   job,
+                     const string & aff,
+                     const string & group,
                      unsigned int   batch_id,
                      bool           separate_request);
     void x_UpdateStartFromCounter(void);
