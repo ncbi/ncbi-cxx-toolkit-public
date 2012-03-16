@@ -85,10 +85,14 @@ string COrgMod::GetSubtypeName(COrgMod::TSubtype stype, EVocabulary vocabulary)
         switch (stype) {
         case eSubtype_substrain: return "sub_strain";
         case eSubtype_nat_host:  return "host";
-        default:                 break;
+        default:
+            return NStr::Replace
+                (ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true),
+                 "-", "_");
         }
+    } else {
+        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
     }
-    return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
 }
 
 
