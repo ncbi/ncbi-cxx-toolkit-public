@@ -178,6 +178,7 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
         result.erase(0, sizeof("ERR:") - 1);
         result = NStr::ParseEscapes(result);
         m_Server->m_Service->m_Listener->OnError(result, m_Server);
+        result = kEmptyStr;
     }
 }
 
