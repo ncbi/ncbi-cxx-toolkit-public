@@ -209,23 +209,33 @@ void CNetScheduleServerListener::OnError(
 {
     string code;
     string msg;
-    if (NStr::SplitInTwo(err_msg, ":", code, msg)) {
-        // Map code into numeric value
-        CException::TErrCode err_code =
-            SNetScheduleAPIImpl::sm_ExceptionMap.GetCode(code);
-        switch (err_code) {
-        case CException::eInvalid:
-            NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 
-        case CNetScheduleException::eGroupNotFound:
-            // Ignore this error.
-            break;
-
-        default:
-            NCBI_THROW(CNetScheduleException, EErrCode(err_code), msg);
+    if (!NStr::SplitInTwo(err_msg, ":", code, msg)) {
+        if (err_msg == "Job not found") {
+            NCBI_THROW(CNetScheduleException, eJobNotFound, err_msg);
         }
-    } else if (err_msg == "Job not found") {
-        NCBI_THROW(CNetScheduleException, eJobNotFound, msg);
+        code = err_msg;
+        msg = err_msg;
+    }
+
+    // Map code into numeric value
+    CException::TErrCode err_code =
+        SNetScheduleAPIImpl::sm_ExceptionMap.GetCode(code);
+
+    switch (err_code) {
+    case CException::eInvalid:
+        NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
+
+    case CNetScheduleException::eGroupNotFound:
+        // Ignore this error.
+        break;
+
+    case CNetScheduleException::eJobNotFound:
+        msg = "Job not found";
+        /* FALL THROUGH */
+
+    default:
+        NCBI_THROW(CNetScheduleException, EErrCode(err_code), msg);
     }
 }
 
