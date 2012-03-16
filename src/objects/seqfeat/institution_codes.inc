@@ -305,6 +305,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AUG	s	Augustana College, Biology Department",
 "AUGD	s	Department of Geology and Petroleum Geology",
 "AUM	s	Auburn University Museum",
+"AUMC<EGY>	c	Assiut University Mycological Centre Culture Collection",
 "AUSPGRIS	b	Australian Plant Genetic Resource Information Service",
 "AUT	s	Museum d'Histoire Naturelle",
 "AUW	s	Acadia University, Wildlife Museum",
