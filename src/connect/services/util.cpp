@@ -242,7 +242,8 @@ void g_VerifyAlphabet(const string& str, const CTempString& param_name,
     if (len != 0) {
         NCBI_THROW_FMT(CConfigException, eParameterMissing,
                 "Invalid character #" << unsigned(*ch) <<
-                " in '" << param_name << "': " << NStr::PrintableString(str));
+                " in " << param_name << " \"" << NStr::PrintableString(str) <<
+                "\"");
     }
 }
 

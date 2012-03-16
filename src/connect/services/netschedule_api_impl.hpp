@@ -145,12 +145,12 @@ struct SNetScheduleAPIImpl : public CObject
 
     static void VerifyJobGroupAlphabet(const string& job_group)
     {
-        g_VerifyAlphabet(job_group, "job_group", eCC_BASE64_PI);
+        g_VerifyAlphabet(job_group, "job group name", eCC_BASE64_PI);
     }
 
     static void VerifyAffinityAlphabet(const string& affinity)
     {
-        g_VerifyAlphabet(affinity, "affinity_token", eCC_BASE64_PI);
+        g_VerifyAlphabet(affinity, "affinity token", eCC_BASE64_PI);
     }
 
     CNetScheduleAPI::EJobStatus x_GetJobStatus(

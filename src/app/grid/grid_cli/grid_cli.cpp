@@ -984,6 +984,10 @@ int CGridCommandLineInterfaceApp::Run()
     try {
         return (this->*cmd_def->cmd_proc)();
     }
+    catch (CConfigException& e) {
+        fprintf(stderr, "%s\n", e.GetMsg().c_str());
+        return 2;
+    }
     catch (CArgException& e) {
         fprintf(stderr, "%s\n", e.GetErrCode() == CArgException::eInvalidArg ?
             e.GetMsg().c_str() : e.what());

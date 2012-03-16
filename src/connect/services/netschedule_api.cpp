@@ -562,7 +562,7 @@ static void s_VerifyClientCredentialString(const string& str,
 
 void CNetScheduleAPI::SetClientNode(const string& client_node)
 {
-    s_VerifyClientCredentialString(client_node, "client_node");
+    s_VerifyClientCredentialString(client_node, "client node ID");
 
     m_Impl->m_ClientNode = client_node;
 
@@ -571,7 +571,7 @@ void CNetScheduleAPI::SetClientNode(const string& client_node)
 
 void CNetScheduleAPI::SetClientSession(const string& client_session)
 {
-    s_VerifyClientCredentialString(client_session, "client_session");
+    s_VerifyClientCredentialString(client_session, "client session ID");
 
     m_Impl->m_ClientSession = client_session;
 
