@@ -535,6 +535,9 @@ public:
             type.SetDescription(descr);
         }
         type.SupportGetAttr(GetAttrImpl);
+        if (GetMethodHndlList().size() <= GetMethodList().size())
+            GetMethodHndlList().resize(GetMethodList().size() + 1);
+        type.tp_methods = &GetMethodHndlList().front();
     }
 
     static CClass<1> Def(const char* name, TMethodVarArgsFunc func, const char* doc = 0)

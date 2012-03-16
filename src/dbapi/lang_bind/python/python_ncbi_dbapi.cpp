@@ -4427,19 +4427,28 @@ void init_common(const string& module_name)
         return;
     }
 
-    if ( PyType_Ready(&python::CConnection::GetType()) == -1 ) {
+    pythonpp::CExtType* extt = &python::CConnection::GetType();
+    static char str_class[] = "__class__";
+    static PyMemberDef conn_members[] = {
+        {str_class, T_OBJECT_EX, 0, READONLY, NULL},
+        {NULL}
+    };
+    extt->tp_members = conn_members;
+    if ( PyType_Ready(extt) == -1 ) {
         return;
     }
-    if ( PyModule_AddObject(module, const_cast<char*>("Connection"), (PyObject*)&python::CConnection::GetType() ) == -1 ) {
+    if ( PyModule_AddObject(module, const_cast<char*>("Connection"), (PyObject*)extt ) == -1 ) {
         return;
     }
-    if ( PyType_Ready(&python::CTransaction::GetType()) == -1 ) {
+    extt = &python::CTransaction::GetType();
+    extt->tp_members = conn_members;
+    if ( PyType_Ready(extt) == -1 ) {
         return;
     }
-    if ( PyModule_AddObject(module, const_cast<char*>("Transaction"), (PyObject*)&python::CTransaction::GetType() ) == -1 ) {
+    if ( PyModule_AddObject(module, const_cast<char*>("Transaction"), (PyObject*)extt ) == -1 ) {
         return;
     }
-    pythonpp::CExtType* extt = &python::CCursor::GetType();
+    extt = &python::CCursor::GetType();
     // This list should reflect exactly attributes added in CCursor constructor
     static char str_rowcount[] = "rowcount";
     static char str_messages[] = "messages";
@@ -4448,14 +4457,15 @@ void init_common(const string& module_name)
         {str_rowcount, T_LONG, 0, READONLY, NULL},
         {str_messages, T_OBJECT_EX, 0, READONLY, NULL},
         {str_description, T_OBJECT_EX, 0, READONLY, NULL},
+        {str_class, T_OBJECT_EX, 0, READONLY, NULL},
         {NULL}
-    };              // NCBI_FAKE_WARNING
+    };
     extt->tp_members = members;
     extt->tp_iter = &python::s_GetCursorIter;
     if ( PyType_Ready(extt) == -1 ) {
         return;
     }
-    if ( PyModule_AddObject(module, const_cast<char*>("Cursor"), (PyObject*)&python::CCursor::GetType() ) == -1 ) {
+    if ( PyModule_AddObject(module, const_cast<char*>("Cursor"), (PyObject*)extt ) == -1 ) {
         return;
     }
     extt = &python::CCursorIter::GetType();
@@ -4464,7 +4474,7 @@ void init_common(const string& module_name)
     if ( PyType_Ready(extt) == -1 ) {
         return;
     }
-    if ( PyModule_AddObject(module, const_cast<char*>("__CursorIterator__"), (PyObject*)&python::CCursorIter::GetType() ) == -1 ) {
+    if ( PyModule_AddObject(module, const_cast<char*>("__CursorIterator__"), (PyObject*)extt ) == -1 ) {
         return;
     }
 
