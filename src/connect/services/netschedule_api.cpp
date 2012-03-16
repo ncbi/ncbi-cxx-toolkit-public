@@ -552,34 +552,12 @@ void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 static void s_VerifyClientCredentialString(const string& str,
     const CTempString& param_name)
 {
-    size_t len = str.length();
-
-    if (len == 0) {
+    if (str.empty()) {
         NCBI_THROW_FMT(CConfigException, eParameterMissing,
             "'" << param_name << "' cannot be empty");
     }
 
-    const char* ch = str.data();
-
-    do {
-        switch (*ch) {
-        case '-':
-        case '.':
-        case ':':
-        case '_':
-        case '|':
-            break;
-
-        default:
-            if ((*ch < 'a' || *ch > 'z') && (*ch < 'A' || *ch > 'Z') &&
-                    (*ch < '0' || *ch > '9')) {
-                NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                    "Invalid character #" << unsigned(*ch) <<
-                    " in '" << param_name << "': " << str);
-            }
-        }
-        ch++;
-    } while (--len != 0);
+    g_VerifyAlphabet(str, param_name, eCC_RelaxedId);
 }
 
 void CNetScheduleAPI::SetClientNode(const string& client_node)

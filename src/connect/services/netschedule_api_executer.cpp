@@ -145,9 +145,9 @@ bool CNetScheduleExecuter::GetJob(CNetScheduleJob& job, const string& affinity)
     string cmd = "GET";
 
     if (!affinity.empty()) {
-        cmd += " aff=\"";
-        cmd += NStr::PrintableString(affinity);
-        cmd += '"';
+        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
+        cmd += " aff=";
+        cmd += affinity;
     }
 
     return m_Impl->GetJobImpl(cmd, job);
@@ -167,8 +167,9 @@ bool CNetScheduleNotificationHandler::RequestJob(
     cmd += NStr::UIntToString(GetTimeout());
 
     if (!affinity.empty()) {
+        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
         cmd += " aff=";
-        cmd += NStr::PrintableString(affinity);
+        cmd += affinity;
     }
 
     return executor->GetJobImpl(cmd, GetJobRef());

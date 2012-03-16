@@ -143,6 +143,16 @@ struct SNetScheduleAPIImpl : public CObject
         return m_Service->GetServer(nskey.host, nskey.port);
     }
 
+    static void VerifyJobGroupAlphabet(const string& job_group)
+    {
+        g_VerifyAlphabet(job_group, "job_group", eCC_BASE64_PI);
+    }
+
+    static void VerifyAffinityAlphabet(const string& affinity)
+    {
+        g_VerifyAlphabet(affinity, "affinity_token", eCC_BASE64_PI);
+    }
+
     CNetScheduleAPI::EJobStatus x_GetJobStatus(
         const string& job_key,
         bool submitter);

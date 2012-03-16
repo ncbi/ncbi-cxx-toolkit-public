@@ -39,6 +39,7 @@
 #include <connect/ncbi_socket.hpp>
 
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_config.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -188,6 +189,61 @@ string g_NetService_TryResolveHost(const string& ip_or_hostname)
         return ip_or_hostname;
 
     return hostname;
+}
+
+#define NOT_ALPHA(c) ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z'))
+#define NOT_DIGIT(c) (c < '0' || c > '9')
+
+void g_VerifyAlphabet(const string& str, const CTempString& param_name,
+        ECharacterClass char_class)
+{
+    const char* ch = str.data();
+    size_t len = str.length();
+
+    switch (char_class) {
+    case eCC_Alphabetic:
+        for (; len > 0; ++ch, --len)
+            if (NOT_ALPHA(*ch))
+                break;
+        break;
+
+    case eCC_Alphanumeric:
+        for (; len > 0; ++ch, --len)
+            if (NOT_ALPHA(*ch) && NOT_DIGIT(*ch))
+                break;
+        break;
+
+    case eCC_StrictId:
+        for (; len > 0; ++ch, --len)
+            if (NOT_ALPHA(*ch) && NOT_DIGIT(*ch) && *ch != '_')
+                break;
+        break;
+
+    case eCC_BASE64URL:
+        for (; len > 0; ++ch, --len)
+            if (NOT_ALPHA(*ch) && NOT_DIGIT(*ch) && *ch != '_' && *ch != '-')
+                break;
+        break;
+
+    case eCC_BASE64_PI:
+        for (; len > 0; ++ch, --len)
+            if (NOT_ALPHA(*ch) && NOT_DIGIT(*ch) && *ch != '_' && *ch != '.')
+                break;
+        break;
+
+    case eCC_RelaxedId:
+        for (; len > 0; ++ch, --len)
+            if (NOT_ALPHA(*ch) && NOT_DIGIT(*ch) && *ch != '_' &&
+                    *ch != '-' && *ch != '.' && *ch != ':' && *ch != '|')
+                break;
+        break;
+    }
+
+    if (len != 0) {
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                "Invalid character #" << unsigned(*ch) <<
+                " in '" << param_name << "': " << NStr::PrintableString(str));
+    }
 }
 
 END_NCBI_SCOPE

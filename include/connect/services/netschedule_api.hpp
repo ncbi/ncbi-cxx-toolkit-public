@@ -438,9 +438,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 
     /// Cancel job group
     ///
-    /// @param group_id
+    /// @param job_group
     ///    Group ID.
-    void CancelJobGroup(const string& group_id);
+    void CancelJobGroup(const string& job_group);
 
     /// Get progress message
     ///

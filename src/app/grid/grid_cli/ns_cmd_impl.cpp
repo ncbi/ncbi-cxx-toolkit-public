@@ -272,12 +272,12 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
 
             if (!m_Opts.affinity.empty()) {
                 cmd.append(" aff=");
-                cmd.append(m_Opts.affinity);
+                cmd.append(NStr::PrintableString(m_Opts.affinity));
             }
 
             if (!m_Opts.job_group.empty()) {
                 cmd.append(" group=");
-                cmd.append(m_Opts.job_group);
+                cmd.append(NStr::PrintableString(m_Opts.job_group));
             }
 
             m_NetScheduleAPI.GetService().PrintCmdOutput(cmd,

@@ -61,9 +61,9 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
     }
 
     if (!job.affinity.empty()) {
-        cmd.append(" aff=\"");
-        cmd.append(NStr::PrintableString(job.affinity));
-        cmd.push_back('"');
+        SNetScheduleAPIImpl::VerifyAffinityAlphabet(job.affinity);
+        cmd.append(" aff=");
+        cmd.append(job.affinity);
     }
 
     if (job.mask != CNetScheduleAPI::eEmptyMask) {
@@ -116,6 +116,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
     s_AppendClientIPAndSessionID(cmd);
 
     if (!job.group.empty()) {
+        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job.group);
         cmd.append(" group=");
         cmd.append(job.group);
     }
@@ -147,6 +148,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
     s_AppendClientIPAndSessionID(cmd);
 
     if (!job_group.empty()) {
+        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
         cmd.append(" group=");
         cmd.append(job_group);
     }
@@ -313,6 +315,7 @@ bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
         cmd += NStr::UIntToString(timeout);
     }
     if (!job_group.empty()) {
+        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
         cmd += " group=";
         cmd += job_group;
     }
@@ -409,9 +412,10 @@ void CNetScheduleSubmitter::CancelJob(const string& job_key)
     m_Impl->m_API->x_SendJobCmdWaitResponse("CANCEL", job_key);
 }
 
-void CNetScheduleSubmitter::CancelJobGroup(const string& group_id)
+void CNetScheduleSubmitter::CancelJobGroup(const string& job_group)
 {
-    m_Impl->m_API->m_Service.ExecOnAllServers("CANCEL group=" + group_id);
+    SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
+    m_Impl->m_API->m_Service.ExecOnAllServers("CANCEL group=" + job_group);
 }
 
 CNetScheduleAPI::EJobStatus

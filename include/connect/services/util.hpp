@@ -73,6 +73,20 @@ extern NCBI_XCONNECT_EXPORT
 string g_NetService_TryResolveHost(const string& ip_or_hostname);
 
 
+enum ECharacterClass {
+    eCC_Alphabetic,
+    eCC_Alphanumeric,
+    eCC_StrictId,
+    eCC_BASE64URL,
+    eCC_BASE64_PI,
+    eCC_RelaxedId
+};
+
+extern NCBI_XCONNECT_EXPORT
+void g_VerifyAlphabet(const string& str, const CTempString& param_name,
+        ECharacterClass char_class);
+
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___UTIL__HPP */
