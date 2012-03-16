@@ -223,7 +223,7 @@ cursor.fetchall()
 
 cursor.execute('select cast(? as datetime)', (datetime.datetime(2010,1,1,12,1,2,50000),))
 dt = cursor.fetchone()[0]
-if dt.year != 2010 || dt.month != 1 || dt.day != 1 || dt.hour != 12 || dt.minute != 1 || dt.second != 2 || dt.microsecond != 50000:
+if dt.year != 2010 or dt.month != 1 or dt.day != 1 or dt.hour != 12 or dt.minute != 1 or dt.second != 2 or dt.microsecond != 50000:
     raise Exception('Invalid datetime returned.')
 
 
