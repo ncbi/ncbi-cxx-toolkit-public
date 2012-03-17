@@ -499,6 +499,9 @@ public:
 
         CBioseq_Handle q = scope->GetBioseqHandle(align.GetSeq_id(0));
         CBioseq_Handle s = scope->GetBioseqHandle(align.GetSeq_id(1));
+        if (q.IsAa()  &&  s.IsAa()) {
+            pct_overlap *= 3;
+        }
 
         switch (m_Type) {
             case e_Min:
