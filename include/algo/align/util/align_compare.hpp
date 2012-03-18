@@ -50,7 +50,7 @@ public:
     
     typedef map<TSeqRange, TSeqRange> TAlignmentSpans;
 
-    enum EMode { e_Interval, e_Exon, e_Span };
+    enum EMode { e_Interval, e_Exon, e_Span, e_Intron };
 
     enum EMatchLevel {e_Equiv, e_Overlap, e_NoMatch};
 
