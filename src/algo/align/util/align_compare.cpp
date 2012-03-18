@@ -157,79 +157,52 @@ static void s_GetAlignmentSpans_Exon(const CSeq_align& align,
 static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
                                        CAlignCompare::TAlignmentSpans& spans)
 {
-    if (!align.GetSegs().IsSpliced()) {
+    if (!align.GetSegs().IsSpliced() ||
+        !align.GetSegs().GetSpliced().CanGetProduct_strand() ||
+        !align.GetSegs().GetSpliced().CanGetGenomic_strand())
+    {
         NCBI_THROW(CException, eUnknown,
                    "intron mode only meaningful for Spliced-seg alignments");
     }
 
-    CRangeCollection<TSeqPos> product_introns, genomic_introns;
-    genomic_introns += align.GetSeqRange(1);
-    if (align.GetSegs().GetSpliced().GetProduct_type() ==
-        CSpliced_seg::eProduct_type_transcript) {
-        product_introns += align.GetSeqRange(0);
-    } else {
-        CRef<CSpliced_exon> start_exon =
-            align.GetSegs().GetSpliced().GetExons().front();
-        CRef<CSpliced_exon> end_exon =
-            align.GetSegs().GetSpliced().GetExons().back();
-        if (end_exon->GetProduct_start().GetProtpos().GetAmin() <
-            start_exon->GetProduct_start().GetProtpos().GetAmin())
-        {
-            swap(start_exon, end_exon);
-        }
-        const CProt_pos& amin_start =
-            start_exon->GetProduct_start().GetProtpos();
-        const CProt_pos& amin_end =
-            end_exon->GetProduct_end().GetProtpos();
+    bool is_reverse = align.GetSegs().GetSpliced().GetProduct_strand() !=
+                          align.GetSegs().GetSpliced().GetGenomic_strand();
 
-        TSeqPos start = amin_start.GetAmin() * 3;
-        if (amin_start.GetFrame()) {
-            start += amin_start.GetFrame() - 1;
-        }
-
-        TSeqPos end = amin_end.GetAmin() * 3;
-        if (amin_end.GetFrame()) {
-            end += amin_end.GetFrame() - 1;
-        }
-        product_introns += TSeqRange(start, end);
-    }
-
+    CRef<CSpliced_exon> last_exon;
     ITERATE (CSpliced_seg::TExons, it,
              align.GetSegs().GetSpliced().GetExons()) {
-        const CSpliced_exon& exon = **it;
-        TSeqRange genomic(exon.GetGenomic_start(), exon.GetGenomic_end());
-        TSeqRange product;
-        if (align.GetSegs().GetSpliced().GetProduct_type() ==
-            CSpliced_seg::eProduct_type_transcript) {
-            product.SetFrom(exon.GetProduct_start().GetNucpos());
-            product.SetTo(exon.GetProduct_end().GetNucpos());
-        } else {
-            const CProt_pos& amin_start =
-                exon.GetProduct_start().GetProtpos();
-            const CProt_pos& amin_end =
-                exon.GetProduct_end().GetProtpos();
+        CRef<CSpliced_exon> exon = *it;
+        if (last_exon) {
+            CRef<CSpliced_exon> first_exon = is_reverse ? exon : last_exon;
+            CRef<CSpliced_exon> second_exon = is_reverse ? last_exon : exon;
+            TSeqRange genomic(first_exon->GetGenomic_end()+1,
+                              second_exon->GetGenomic_start()-1);
+            TSeqRange product;
+            if (align.GetSegs().GetSpliced().GetProduct_type() ==
+                CSpliced_seg::eProduct_type_transcript) {
+                product.SetFrom(first_exon->GetProduct_end().GetNucpos()+1);
+                product.SetTo(second_exon->GetProduct_start().GetNucpos()-1);
+            } else {
+                const CProt_pos& amin_start =
+                    first_exon->GetProduct_end().GetProtpos();
+                const CProt_pos& amin_end =
+                    second_exon->GetProduct_start().GetProtpos();
+    
+                TSeqPos start = amin_start.GetAmin() * 3 + 1;
+                if (amin_start.GetFrame()) {
+                    start += amin_start.GetFrame() - 1;
+                }
 
-            TSeqPos start = amin_start.GetAmin() * 3;
-            if (amin_start.GetFrame()) {
-                start += amin_start.GetFrame() - 1;
+                TSeqPos end = amin_end.GetAmin() * 3 - 1;
+                if (amin_end.GetFrame()) {
+                    end += amin_end.GetFrame() - 1;
+                }
+                product.SetFrom(start);
+                product.SetTo(end);
             }
-
-            TSeqPos end = amin_end.GetAmin() * 3;
-            if (amin_end.GetFrame()) {
-                end += amin_end.GetFrame() - 1;
-            }
-            product.SetFrom(start);
-            product.SetTo(end);
+            spans[genomic] = product;
         }
-        product_introns -= product;
-        genomic_introns -= genomic;
-    }
-    for (CRangeCollection<TSeqPos>::const_iterator
-             product_iter = product_introns.begin(),
-             genomic_iter = genomic_introns.begin();
-         product_iter != product_introns.end(); ++product_iter, ++genomic_iter)
-    {
-        spans[*genomic_iter] = *product_iter;
+        last_exon = exon;
     }
 }
 
