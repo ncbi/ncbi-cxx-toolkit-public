@@ -315,7 +315,7 @@ s_GetNextNonAffineTback(Int4 **last_seq2_off, Int4 d,
  *            is uncompressed [in]
  * @return Number of exact matches found before a mismatch was encountered
  */
-static Int4 s_FindFirstMismatch(const Uint1 *seq1, const Uint1 *seq2,
+static NCBI_INLINE Int4 s_FindFirstMismatch(const Uint1 *seq1, const Uint1 *seq2,
                                 Int4 len1, Int4 len2, 
                                 Int4 seq1_index, Int4 seq2_index,
                                 Boolean *fence_hit,
