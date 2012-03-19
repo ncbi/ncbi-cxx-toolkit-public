@@ -296,7 +296,7 @@ SComparison::SComparison(const CAlignCompare::TAlignmentSpans& first,
         sum_b += second_it->first.GetLength() * second_it->first.GetLength();
     }
 
-    overlap = dot / ::sqrt(sum_a * sum_b);
+    overlap = dot == 0 ? 0 : dot / ::sqrt(sum_a * sum_b);
 }
 
 
@@ -354,18 +354,26 @@ struct SComp_Less
         // alignments together into equivalence groups with alignments that are
         // identical
         if (strict_compare) {
-            if (c1.second.overlap > c2.second.overlap) {
+            if (c1.second.is_equivalent && !c2.second.is_equivalent ||
+                c1.second.overlap > c2.second.overlap)
+            {
                 return true;
             }
-            if (c2.second.overlap > c1.second.overlap) {
+            if (c2.second.is_equivalent && !c1.second.is_equivalent ||
+                c2.second.overlap > c1.second.overlap)
+            {
                 return false;
             }
         }
         else {
-            if (c1.second.overlap > c2.second.overlap) {
+            if (c1.second.is_equivalent && !c2.second.is_equivalent ||
+                c1.second.overlap > c2.second.overlap)
+            {
                 return false;
             }
-            if (c2.second.overlap > c1.second.overlap) {
+            if (c2.second.is_equivalent && !c1.second.is_equivalent ||
+                c2.second.overlap > c1.second.overlap)
+            {
                 return true;
             }
         }
@@ -528,8 +536,8 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
                 /// Found best comparison for all alignments
                 break;
             }
-            if (comp_it->second.overlap > 0) {
-                bool is_equivalent = comp_it->second.is_equivalent;
+            bool is_equivalent = comp_it->second.is_equivalent;
+            if (is_equivalent || comp_it->second.overlap > 0) {
                 vector<TComp>::const_iterator equiv_comp_it;
                 for(equiv_comp_it = comp_it+1;
                     equiv_comp_it != comparisons.end() &&
