@@ -387,11 +387,9 @@ private:
 
     void x_PrintShortJobStat(CNetScheduleHandler &  handler,
                              const CJob&            job);
-    void x_LogSubmit(const CJob &   job,
-                     const string & aff,
-                     const string & group,
-                     unsigned int   batch_id,
-                     bool           separate_request);
+    void x_LogSubmit(const CJob &       job,
+                     const string &     aff,
+                     const string &     group);
     void x_UpdateStartFromCounter(void);
     unsigned int x_ReadStartFromCounter(void);
     void x_DeleteJobEvents(unsigned int  job_id);

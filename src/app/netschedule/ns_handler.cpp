@@ -383,7 +383,7 @@ void CNetScheduleHandler::OnOpen(void)
 
     // Log the fact of opened connection
     m_ConnContext.Reset(new CRequestContext());
-    m_ConnReqId = NStr::UInt8ToString(m_ConnContext->SetRequestID());
+    m_ConnContext->SetRequestID();
 
     CDiagnosticsGuard   guard(this);
     if (m_Server->IsLog()) {
@@ -1063,6 +1063,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
             GetDiagContext().SetRequestContext(ctx);
             GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
+                            .Print("bsub", m_DiagContext->GetRequestID())
                             .Print("cmd", "BTCH")
                             .Print("size", m_BatchJobs.size());
             ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
@@ -1077,6 +1078,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
 
         if (m_Server->IsLog())
             GetDiagContext().Extra()
+                .Print("start_job", job_id)
                 .Print("commit_time",
                        NStr::DoubleToString(comm_elapsed, 4, NStr::fDoubleFixed))
                 .Print("transaction_time",
@@ -2199,7 +2201,7 @@ void CNetScheduleHandler::x_PrintRequestStart(const SParsedCmd& cmd)
                             .Print("_type", "cmd")
                             .Print("cmd", cmd.command->cmd)
                             .Print("peer", GetSocket().GetPeerAddress(eSAF_IP))
-                            .Print("conn", m_ConnReqId);
+                            .Print("conn", m_ConnContext->GetRequestID());
 
         // SUMBIT parameters should not be logged. The new job attributes will
         // be logged when a new job is actually submitted.
@@ -2220,7 +2222,7 @@ void CNetScheduleHandler::x_PrintRequestStart(CTempString  msg)
                 .Print("_type", "cmd")
                 .Print("info", msg)
                 .Print("peer",  GetSocket().GetPeerAddress(eSAF_IP))
-                .Print("conn", m_ConnReqId);
+                .Print("conn", m_ConnContext->GetRequestID());
 }
 
 

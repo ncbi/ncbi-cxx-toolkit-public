@@ -246,7 +246,6 @@ private:
 
     /// Diagnostics context for the current connection
     CRef<CRequestContext>           m_ConnContext;
-    string                          m_ConnReqId;
     /// Diagnostics context for the currently executed command
     CRef<CRequestContext>           m_DiagContext;
 

@@ -311,62 +311,35 @@ unsigned CQueue::LoadStatusMatrix()
 }
 
 
-// Used to log a job submit.
-// if batch_submit == true => it was a bach submit and batch_id should also
-// be logged.
-void CQueue::x_LogSubmit(const CJob &   job,
-                         const string & aff,
-                         const string & group,
-                         unsigned int   batch_id,
-                         bool           batch_submit)
+// Used to log a single job
+void CQueue::x_LogSubmit(const CJob &       job,
+                         const string &     aff,
+                         const string &     group)
 {
     if (!m_Log)
         return;
 
-    CRef<CRequestContext>   current_context(& CDiagContext::GetRequestContext());
-    bool                    log_batch_each_job = m_LogBatchEachJob;
-    bool                    create_sep_request = batch_submit && log_batch_each_job;
     string                  group_token(group);
 
     if (group_token.empty())
         group_token = "n/a";
 
-    if (create_sep_request) {
-        CRequestContext *   ctx(new CRequestContext());
-        ctx->SetRequestID();
-        GetDiagContext().SetRequestContext(ctx);
-        GetDiagContext().PrintRequestStart()
-                        .Print("_type", "cmd")
-                        .Print("cmd", "BATCH-SUBMIT")
-                        .Print("group", group_token)
-                        .Print("batch_id", batch_id);
-        ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
-    }
+    CDiagContext_Extra  extra = GetDiagContext().Extra()
+        .Print("job_key", MakeKey(job.GetId()))
+        .Print("queue", GetQueueName())
+        .Print("input", job.GetInput())
+        .Print("aff", aff)
+        .Print("group", group_token)
+        .Print("mask", job.GetMask())
+        .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
+        .Print("subm_notif_port", job.GetSubmNotifPort())
+        .Print("subm_notif_timeout", job.GetSubmNotifTimeout())
+        .Print("timeout", job.GetTimeout())
+        .Print("run_timeout", job.GetRunTimeout())
+        .Print("progress_msg", job.GetProgressMsg());
 
-    if (!batch_submit || log_batch_each_job) {
-        CDiagContext_Extra  extra = GetDiagContext().Extra()
-            .Print("job_key", MakeKey(job.GetId()))
-            .Print("queue", GetQueueName())
-            .Print("input", job.GetInput())
-            .Print("aff", aff)
-            .Print("group", group_token)
-            .Print("mask", job.GetMask())
-            .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
-            .Print("subm_notif_port", job.GetSubmNotifPort())
-            .Print("subm_notif_timeout", job.GetSubmNotifTimeout())
-            .Print("timeout", NStr::ULongToString(job.GetTimeout()))
-            .Print("run_timeout", job.GetRunTimeout());
-
-        const string &  progress_msg = job.GetProgressMsg();
-        if (!progress_msg.empty())
-            extra.Print("progress_msg", progress_msg);
-        extra.Flush();
-    }
-
-    if (create_sep_request) {
-        GetDiagContext().PrintRequestStop();
-        GetDiagContext().SetRequestContext(current_context);
-    }
+    extra.Flush();
+    return;
 }
 
 
@@ -437,7 +410,7 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
     }}
 
     m_StatisticsCounters.CountSubmit(1);
-    x_LogSubmit(job, aff_token, group, 0, false);
+    x_LogSubmit(job, aff_token, group);
     return job_id;
 }
 
@@ -508,8 +481,9 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
     }}
 
     m_StatisticsCounters.CountSubmit(batch_size);
-    for (size_t  k= 0; k < batch_size; ++k)
-        x_LogSubmit(batch[k].first, batch[k].second, group, job_id, true);
+    if (m_LogBatchEachJob)
+        for (size_t  k= 0; k < batch_size; ++k)
+            x_LogSubmit(batch[k].first, batch[k].second, group);
 
     return job_id;
 }
