@@ -477,7 +477,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
     CDiagnosticsGuard   guard(this);
 
     if (m_Server->ShutdownRequested()) {
-        x_WriteMessageNoThrow("ERR:NetSchedule server is shutting down. "
+        x_WriteMessageNoThrow("ERR:eShuttingDown:NetSchedule server is shutting down. "
                               "Session aborted.");
         return;
     }
@@ -541,7 +541,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         x_PrintRequestStop(eStatus_ServerError);
     }
     catch (...) {
-        x_WriteMessageNoThrow("ERR:Unknown server exception.");
+        x_WriteMessageNoThrow("ERR:eInternalError:Unknown server exception.");
         ERR_POST("ERR:Unknown server exception.");
         x_PrintRequestStop(eStatus_ServerError);
     }
@@ -1159,7 +1159,7 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     if (m_CommandArguments.aff_to_add.empty() &&
         m_CommandArguments.aff_to_del.empty()) {
         ERR_POST(Warning << "CHAFF with neither add list nor del list");
-        x_WriteMessageNoThrow("ERR:eInvalidParameter");
+        x_WriteMessageNoThrow("ERR:eInvalidParameter:");
         x_PrintRequestStop(eStatus_BadRequest);
         return;
     }
@@ -1393,7 +1393,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
         return;
     }
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job is unknown");
@@ -1491,7 +1491,7 @@ void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
         x_PrintRequestStop(eStatus_OK);
     }
     else {
-        x_WriteMessageNoThrow("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "MPUT for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1507,7 +1507,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
         WriteMessage("OK:", job.GetProgressMsg());
         x_PrintRequestStop(eStatus_OK);
     } else {
-        x_WriteMessageNoThrow("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "MGET for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1535,7 +1535,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                                 warning);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "FPUT for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1606,7 +1606,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
     }
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "RETURN for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1627,7 +1627,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 {
     if (m_CommandArguments.timeout <= 0) {
-        x_WriteMessageNoThrow("ERR:eInvalidParameter");
+        x_WriteMessageNoThrow("ERR:eInvalidParameter:");
         ERR_POST(Warning << "Invalid timeout "
                          << m_CommandArguments.timeout
                          << " in JDEX for job "
@@ -1640,7 +1640,7 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
                                                    m_CommandArguments.timeout);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        x_WriteMessageNoThrow("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         ERR_POST(Warning << "JDEX for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -1861,7 +1861,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
             !m_CommandArguments.job_status_string.empty()) {
             // The state parameter was provided but it was not possible to
             // convert it into a valid job state
-            x_WriteMessageNoThrow("ERR:Status unknown: ",
+            x_WriteMessageNoThrow("ERR:eInvalidParameter:Status unknown: ",
                                   m_CommandArguments.job_status_string);
             x_PrintRequestStop(eStatus_BadRequest);
             return;
@@ -1880,7 +1880,7 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
     // Certain job dump
     if (q->PrintJobDbStat(*this, m_CommandArguments.job_id) == 0) {
         // Nothing was printed because there is no such a job
-        x_WriteMessageNoThrow("ERR:eJobNotFound");
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
@@ -2076,7 +2076,7 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
                                                 TJobStatus      old_status)
 {
     if (old_status == CNetScheduleAPI::eJobNotFound) {
-        WriteMessage("ERR:eJobNotFound");
+        WriteMessage("ERR:eJobNotFound:");
         ERR_POST(Warning << command << " for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
@@ -2132,7 +2132,7 @@ void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 
 void CNetScheduleHandler::x_CmdNotImplemented(CQueue *)
 {
-    x_WriteMessageNoThrow("ERR:Not implemented");
+    x_WriteMessageNoThrow("ERR:eObsoleteCommand:");
     x_PrintRequestStop(eStatus_NotImplemented);
 }
 
