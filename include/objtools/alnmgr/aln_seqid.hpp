@@ -54,12 +54,9 @@ public:
     virtual bool operator!= (const IAlnSeqId& id) const = 0;
     virtual bool operator<  (const IAlnSeqId& id) const = 0;
 
-
     virtual const CSeq_id& GetSeqId() const = 0;
 
-
     virtual string AsString(void) const = 0;
-
 
     // Check sequence type
     typedef CSeq_inst::TMol TMol;
@@ -67,11 +64,9 @@ public:
     bool IsProtein(void) const;
     bool IsNucleotide(void) const;
 
-
     /// Base width
     virtual int GetBaseWidth() const = 0;
     virtual void SetBaseWidth(int base_width) = 0;
-
 
     /// Virtual destructor
     virtual ~IAlnSeqId() {};
@@ -115,32 +110,25 @@ public:
         m_BaseWidth(1)
     {};
 
-
-    const CSeq_id& GetSeqId() const;
-
+    virtual const CSeq_id& GetSeqId() const;
 
     // Sequence label
-    string AsString(void) const;
-
+    virtual string AsString(void) const;
 
     // Comparison operators
-    bool operator== (const IAlnSeqId& id) const;
-    bool operator!= (const IAlnSeqId& id) const;
-    bool operator<  (const IAlnSeqId& id) const;
-
+    virtual bool operator== (const IAlnSeqId& id) const;
+    virtual bool operator!= (const IAlnSeqId& id) const;
+    virtual bool operator<  (const IAlnSeqId& id) const;
 
     // Bioseq handle
     virtual void SetBioseqHandle(const CBioseq_Handle& handle);
 
-
     // Check sequence type
     virtual TMol GetSequenceType(void) const;
 
-    
     // Base Width
-    int GetBaseWidth(void) const;
-    void SetBaseWidth(int base_width);
-
+    virtual int GetBaseWidth(void) const;
+    virtual void SetBaseWidth(int base_width);
 
 private:
     CConstRef<CSeq_id> m_Seq_id;

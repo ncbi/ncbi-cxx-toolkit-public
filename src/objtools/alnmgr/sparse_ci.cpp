@@ -247,8 +247,8 @@ void CSparse_CI::x_CheckSegment(void)
         }
         else {
             // Distinguish between insertions and deletions.
-            bool ins = (m_Segment.m_Type & IAlnSegment::fIndel) != 0  &&
-                m_Segment.m_RowRange.Empty();
+            bool ins = (m_Segment.m_Type & (IAlnSegment::fIndel | IAlnSegment::fUnaligned)) != 0  &&
+                m_Segment.m_AlnRange.Empty();
             if ((m_Flags == eInsertsOnly  &&  ins)  ||
                 (m_Flags == eSkipInserts  &&  !ins)) {
                 break;
