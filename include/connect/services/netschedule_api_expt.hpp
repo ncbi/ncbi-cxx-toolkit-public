@@ -74,6 +74,7 @@ public:
         eKeyFormatError,
         eJobNotFound,
         eGroupNotFound,
+        eAffinityNotFound,
         eInvalidJobStatus,
         eUnknownQueue,
         eUnknownQueueClass,
@@ -98,6 +99,7 @@ public:
         case eKeyFormatError:      return "eKeyFormatError";
         case eJobNotFound:         return "eJobNotFound";
         case eGroupNotFound:       return "eGroupNotFound";
+        case eAffinityNotFound:    return "eAffinityNotFound";
         case eInvalidJobStatus:    return "eInvalidJobStatus";
         case eUnknownQueue:        return "eUnknownQueue";
         case eUnknownQueueClass:   return "eUnknownQueueClass";
