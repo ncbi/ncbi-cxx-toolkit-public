@@ -533,8 +533,12 @@ Int8 CLDS2_Database::AddBioseq(Int8 blob_id, const TSeqIdSet& ids)
     // Convert ids to lds-ids
     TLdsIds lds_ids;
     ITERATE(TSeqIdSet, id, ids) {
-        Int8 lds_id = x_GetLdsSeqId(*id);
-        lds_ids.push_back(lds_id);
+        CSeq_id_Handle::TMatches matches;
+        id->GetReverseMatchingHandles(matches);
+        ITERATE(CSeq_id_Handle::TMatches, match, matches) {
+            Int8 lds_id = x_GetLdsSeqId(*match);
+            lds_ids.push_back(lds_id);
+        }
     }
 
     CSQLITE_Statement& st1 = x_GetStatement(eSt_AddBioseqToBlob);
