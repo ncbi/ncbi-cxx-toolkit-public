@@ -1329,6 +1329,10 @@ Apply-table-action ::= SEQUENCE {
   match-type Table-match
 }
 
+Remove-sequences-action ::= SEQUENCE {
+  constraint Constraint-choice-set
+}
+
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
   parse Parse-action ,
@@ -1363,7 +1367,9 @@ Macro-action-choice ::= CHOICE {
   create-tsa-ids Create-TSA-ids-action ,
   perform-autofix Autofix-action ,
   fix-sets Fix-sets-action ,
-  apply-table Apply-table-action }
+  apply-table Apply-table-action ,
+  remove-sequences Remove-sequences-action ,
+  propagate-sequence-technology NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
