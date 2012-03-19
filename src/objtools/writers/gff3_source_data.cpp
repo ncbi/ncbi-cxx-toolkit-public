@@ -93,7 +93,7 @@ bool CGff3SourceRecord::AssignData(
         return false;
     }
     if ( CWriteUtil::IsSequenceCircular(bsh)) {
-       SetAttribute("is_circular", "true");
+       SetAttribute("Is_circular", "true");
     }
 
     return true;
