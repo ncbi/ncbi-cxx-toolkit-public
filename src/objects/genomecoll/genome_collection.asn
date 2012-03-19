@@ -133,6 +133,8 @@ GC-AssemblySet ::= SEQUENCE {
         diploid(3),
         -- assembly is a collection for annotation
         annotation-target-set(101),
+        -- analysis set used for sequencing by alignments
+        analysis-set(102),
         -- stopper
         other(255)
     },
