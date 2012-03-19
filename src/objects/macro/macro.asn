@@ -929,7 +929,8 @@ Remove-action ::= SEQUENCE {
 
 Remove-outside-action ::= SEQUENCE {
     portion Text-portion ,
-    field Field-type }
+    field Field-type ,
+    remove-if-not-found BOOLEAN DEFAULT FALSE }
 
 Action-choice ::= CHOICE {
     apply Apply-action ,
