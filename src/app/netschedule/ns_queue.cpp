@@ -334,7 +334,7 @@ void CQueue::x_LogSubmit(const CJob &       job,
         .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
         .Print("subm_notif_port", job.GetSubmNotifPort())
         .Print("subm_notif_timeout", job.GetSubmNotifTimeout())
-        .Print("timeout", job.GetTimeout())
+        .Print("timeout", Uint8(job.GetTimeout()))
         .Print("run_timeout", job.GetRunTimeout())
         .Print("progress_msg", job.GetProgressMsg());
 
