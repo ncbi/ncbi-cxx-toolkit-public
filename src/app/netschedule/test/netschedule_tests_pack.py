@@ -12,7 +12,6 @@ import sys
 import time
 
 
-
 class TestBase:
     " Base class for tests "
 
@@ -50,16 +49,16 @@ class TestBase:
         " Should return True if the execution completed successfully "
         raise Exception( "Not implemented" )
 
-    def clear( self ):
+    def clear( self, configID = 1 ):
         " Stops and cleans everything "
         self.ns.kill( "SIGKILL" )
         self.ns.deleteDB()
-        self.ns.setConfig( 1 )
+        self.ns.setConfig( configID )
         return
 
-    def fromScratch( self ):
+    def fromScratch( self, configID = 1 ):
         " Starts a fresh copy of ns "
-        self.clear()
+        self.clear( configID )
         self.ns.start()
         time.sleep( 1 )
         if not self.ns.isRunning():
@@ -169,7 +168,8 @@ class Scenario03( TestBase ):
         try:
             self.ns.shutdown( 'nobody' )
         except Exception, exc:
-            if "Access denied: admin privileges required" in str( exc ):
+            if "Access denied: admin privileges required" in str( exc ) or \
+               "Access denied:  admin privileges required" in str( exc ):
                 return True
             raise
         return self.ns.isRunning()
@@ -433,7 +433,7 @@ class Scenario12( TestBase ):
         if self.ns.getActiveJobsCount( 'TEST' ) != 0:
             return False
 
-        return self.ns.getFastJobStatus( 'TEST', jobID ) == "NotFound"
+        return self.ns.getFastJobStatus( 'TEST', jobID ) == "Canceled"
 
 
 class Scenario13( TestBase ):
@@ -639,8 +639,8 @@ class Scenario18( TestBase ):
            info[ 'progress_msg' ] != "''" or \
            info[ 'mask' ] != "0" or \
            info[ 'run_counter' ] != "0" or \
-           info[ 'input-storage' ] != "embedded, size=10" or \
-           info[ 'input-data' ] != "'D test input'":
+           info[ 'input_storage' ] != "embedded, size=10" or \
+           info[ 'input_data' ] != "'D test input'":
             return False
 
         if info.has_key( 'aff_id' ):
@@ -976,8 +976,8 @@ class Scenario26( TestBase ):
             return False
 
         info = self.ns.getServerInfo( 'TEST' )
-        if info[ "Maximum output size" ] != "262144" or \
-           info[ "Maximum input size" ] != "262144":
+        if info[ "max_output_size" ] != "262144" or \
+           info[ "max_input_size" ] != "262144":
             return False
         return True
 
@@ -1008,7 +1008,6 @@ class Scenario27( TestBase ):
 
         dump = self.ns.getQueueDump( 'TEST', 'Pending' )
         if len( dump ) != 0:
-
             return False
 
         jobID1 = self.ns.submitJob( "TEST", '111' )
@@ -1016,19 +1015,19 @@ class Scenario27( TestBase ):
         jobID2 = jobID2     # pylint is happy
 
         dump = self.ns.getQueueDump( 'TEST', 'Pending' )
-        if len( dump ) != 2:
-            return False
+        if dump.count( 'status: Pending' ) != 2:
+            raise Exception( "Unexpected number of jobs in dump" )
 
         jobIDReceived = self.ns.getJob( 'TEST' )
         if jobID1 != jobIDReceived:
             return False
 
         dump = self.ns.getQueueDump( 'TEST', 'Pending' )
-        if len( dump ) != 1:
+        if dump.count( 'status: Pending' ) != 1:
             return False
 
         dump = self.ns.getQueueDump( 'TEST', 'Running' )
-        if len( dump ) != 1:
+        if dump.count( 'status: Running' ) != 1:
             return False
 
         return True
@@ -1399,7 +1398,7 @@ class Scenario36( TestBase ):
         if info1[ 'status' ] != 'Done' or \
            info1[ 'run_counter' ] != '1' or \
            getRetCode( info1 ) != '12' or \
-           info1[ 'output-data' ] != "'D Test output'":
+           info1[ 'output_data' ] != "'D Test output'":
             return False
 
         info2 = self.ns.getJobInfo( 'TEST', jobID2 )
@@ -1430,7 +1429,7 @@ class Scenario37( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         try:
-            self.ns.getAffinityStatus( 'TEST', 'non-existing-affinity' )
+            self.ns.getAffinityStatus( 'TEST', 'non_existing_affinity' )
         except Exception, exc:
             if "Unknown affinity token" in str( exc ):
                 return True
@@ -1493,8 +1492,8 @@ class Scenario39( TestBase ):
         self.ns.submitJob( 'TEST', 'bla', 'myaffinity2' )
 
         affList = self.ns.getAffinityList( 'TEST' )
-        if affList[ "myaffinity1" ] == 1 and \
-           affList[ "myaffinity2" ] == 1:
+        if affList[ "myaffinity1" ][0] == 1 and \
+           affList[ "myaffinity2" ][0] == 1:
             return True
         return False
 
