@@ -520,9 +520,10 @@ void SNetScheduleServiceAutomationObject::Call(const string& method,
             m_NetScheduleAPI.SetClientSession(arg_array.GetString(arg));
     } else if (method == "jobs_by_status") {
         CNetScheduleAdmin::TStatusMap status_map;
+        string affinity(arg_array.NextString(kEmptyStr));
+        string job_group(arg_array.NextString(kEmptyStr));
         m_NetScheduleAPI.GetAdmin().StatusSnapshot(status_map,
-                arg_array.NextString(kEmptyStr),
-                arg_array.NextString(kEmptyStr));
+                affinity, job_group);
         CJsonNode jobs_by_status(CJsonNode::NewObjectNode());
         ITERATE(CNetScheduleAdmin::TStatusMap, it, status_map) {
             jobs_by_status.SetNumber(it->first, it->second);
