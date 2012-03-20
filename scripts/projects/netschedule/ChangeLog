@@ -1,3 +1,138 @@
+Release 4.10.0 based on TRUNK (2012-03-20)
+
+Improvements and bug fixes
+
+    * Many non-ticketed performance/output/cosmetic changes
+    * error messages (JIRA: CXX-2232 duplicate)
+    * second INIT within one connection session (JIRA: CXX-2233)
+    * SST/WST (fast status) reports incorrect state for jobs in various states
+      (JIRA: CXX-2251)
+    * FRES does not reschedule a job (JIRA: CXX-2252)
+    * Eliminate excessive/duplicate logging of events (JIRA: CXX-2403)
+    * wrong job status after run expiration (JIRA: CXX-2405)
+    * Delay job expiration (JDEX) for a job in the 'Pending' state
+      (JIRA: CXX-2422)
+    * remove obsolete commands REGC and URGC (JIRA: CXX-2429)
+    * fix CLRN implementation (duplicate registration records, no actual
+      unregistration) (JIRA: CXX-2432)
+    * fix worker node registration algorithm (the INIT command)
+      (JIRA: CXX-2433)
+    * GET with affinity for the case when there is no such a job
+      (JIRA: CXX-2437)
+    * job status after getting previously timeouted job (JIRA: CXX-2438)
+    * incorrect version report for -version and -version-full options
+      (JIRA: CXX-2505)
+    * run_counter (JIRA: CXX-2514)
+    * infinite loop for timeouted job runs (JIRA: CXX-2517)
+    * remove FRES command (JIRA: CXX-2518)
+    * make CANCEL working for any state (JIRA: CXX-2519)
+    * CFRM and FRED for cancelled jobs (JIRA: CXX-2520)
+    * rename "attempt*" fields with "event*" fields in the DUMP output
+      (JIRA: CXX-2525)
+    * split records in the job history where 2 events are written as one
+      (JIRA: CXX-2526)
+    * RETURN output (JIRA: CXX-2528)
+    * job events info (JIRA: CXX-2530)
+    * job run fields (JIRA: CXX-2531)
+    * introduce read_counter (JIRA: CXX-2533)
+    * reading group may be destroyed while it should not be (JIRA: CXX-2542)
+    * infinite Reading state (JIRA: CXX-2543)
+    * infinite loop for timeouted job reading (JIRA: CXX-2545)
+    * Introduce new field 'event' in jobs history (JIRA: CXX-2549)
+    * may crash when JDEX is received (JIRA: CXX-2554)
+    * remove the event_count field from the DUMP <job key> command output
+      (JIRA: CXX-2555)
+    * accept job results given in JXCG even if there was a problem of providing
+      a new job (JIRA: CXX-2556)
+    * JXCG for Confrmed/ReadFailed job (JIRA: CXX-2559)
+    * PUT/JXCG for a job in Reading state (JIRA: CXX-2560)
+    * GET/WGET does not provide a job even though there are some available
+      (JIRA: CXX-2565)
+    * Add security token and run-counter for jobs that are given away for
+      executing or reading (JIRA: CXX-2568)
+    * DROJ command to be replaced with CANCEL and retired later
+      (JIRA: CXX-2570)
+    * introduce reduced fetch for jobs (JIRA: CXX-2572)
+    * introduce new CANCELQ command (JIRA: CXX-2573)
+    * remove 'time_submit', 'subm_addr' and 'subm_port' fields from the job
+      DUMP and replace them with an event record. (JIRA: CXX-2575)
+    * a partial job input/output could be provided (JIRA: CXX-2577)
+    * strip tags support (JIRA: CXX-2578)
+    * DB error while getting a job leaves the job in the Running state
+      (JIRA: CXX-2581)
+    * client identification (JIRA: CXX-2584)
+    * daemonization parameters (JIRA: CXX-2611)
+    * non-existing queue during handshaking (JIRA: CXX-2630)
+    * skip the version checking for SST and WST commands (JIRA: CXX-2636)
+    * memorizing the jobs which have ever been given for running and reading
+      (JIRA: CXX-2649)
+    * race condition in GETP (JIRA: CXX- 2663)
+    * notification in case a job is cancelled (JIRA: CXX-2667)
+    * notifications for clients which used WGET command. (JIRA: CXX-2668)
+    * remove the [server]:udp_port parameter from the .ini file
+      (JIRA: CXX-2679)
+    * job status notification message format - should use job key instead of
+      job number (JIRA: CXX-2680)
+    * changes in serving affinities (JIRA: CXX-2697)
+    * Changes in the job available message format (NCBI_JSQ_) (JIRA: CXX-2701)
+    * remove support of the 'affp' in batch submit (JIRA: CXX-2702)
+    * QERY and QSEL are deleted (JIRA: CXX-2709)
+    * 'delete_done' queue attribute to eliminate (JIRA: CXX-2726)
+    * the queue notif_timeout parameter (JIRA: CXX-2728)
+    * incorrect output for DUMP and DUMP <job key> (JIRA: CXX-2757)
+    * configuration parameters for the speed of deleting jobs from BerkleyDB
+      (JIRA: CXX-2758)
+    * unnecessery fetch from BerkleyDB when fetching a job
+      (JIRA: CXX-2760)
+    * DUMP implementation improvement (JIRA: CXX-2763)
+    * periodic statistics logging (JIRA: CXX-2780)
+    * log output false positive for JDEX (JIRA: CXX-2781)
+    * Replace "Job not found" with "eJobNotFound" in the output
+      (JIRA: CXX-2801)
+    * incorrect pending job garbage collecting (JIRA: CXX-2805)
+    * worker node affinity storage on the server side (JIRA: CXX-2807)
+    * introduce the new GETCONF command (JIRA: CXX-2819)
+    * add a job to the clients blacklist if running/reading timeout is
+      detected. (JIRA: CXX-2835)
+    * Affinity registry garbage collector (JIRA: CXX-2838)
+    * limit the max timeout for the WGET command (JIRA: CXX-2851)
+    * introduce CWGET command (JIRA: CXX-2857)
+    * More specific WGET/GET2 notifications (JIRA: CXX-2863)
+    * notifications to to send to WGET listeners for
+      returned/failed/timeouted jobs (JIRA: CXX-2865)
+    * introduce the new STAT NOTIFICATIONS command (JIRA: CXX-2870)
+    * introduce the new 'STAT AFFINITIES' command (JIRA: CXX-2871)
+    * DROPQ to send notifications that a job has changed its state
+      (JIRA: CXX-2882)
+    * logging client IP in case of socket writing errors (JIRA: CXX-2883)
+    * DUMP parameters to return a part of the queue (JIRA: CXX-2889)
+    * GET2/JXCG2 to be extended with optional port and timeout parameters
+      (JIRA: CXX-2895)
+    * Do not keep history of the running and reading jobs for clients
+      (JIRA: CXX-2898)
+    * Get rid of the 'daemon' parameter from a config file (JIRA: CXX-2911)
+    * Extended STAT output; it also works for all the queues (JIRA: CXX-2925)
+    * RECO is now allowed for admins only (JIRA: CXX-2944)
+    * Admin identifiers are now configurable (JIRA: CXX-2945)
+    * Extending AFLS output format (JIRA: CXX-2953)
+    * GET2/JXCG2 accepting affinity related parameters (wnode_aff, any_aff)
+      (JIRA: CXX-2968)
+    * STAT CLIENTS/AFFINITIES/NOTIFICATIONS are introduced (JIRA: CXX-2976)
+    * HTTP respecting stop request status codes in logs (JIRA: CXX-3019)
+    * ns_node is sent with SUBMIT notifications (JIRA: CXX-3023)
+    * ns_node and queue are sent with GET2 notifications (JIRA: CXX-3024)
+    * DUMP now has an optional status=... argument (JIRA: CXX-3032)
+    * Job groups are introduced. Some commands have been extended with the
+      group=... optional parameter (JIRA: CXX-3034)
+    * The progress_message parameter is deleted from the SUBMIT command
+      (JIRA: CXX-3036)
+    * The ns_node identifier is generated/used stored at the startup
+      (JIRA: CXX-3041)
+    * The STSN command is deleted; STAT JOBS aff=... is introduced instead
+      (JIRA: CXX-3103)
+    * The QPRT command is deleted (JIRA: CXX-3104)
+
+
 Release 4.9.0 based on SC 8.0 (2011-07-11)
 
 Improvements and bug fixes
