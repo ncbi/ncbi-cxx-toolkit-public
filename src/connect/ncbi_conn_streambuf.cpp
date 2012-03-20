@@ -262,7 +262,7 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
-    _ASSERT(m < numeric_limits<size_t>::max());  // NCBI_FAKE_WARNING
+    _ASSERT((Uint8)m < numeric_limits<size_t>::max());
     size_t n = (size_t) m;
 
     m_Status = eIO_Success;
@@ -385,7 +385,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
-    _ASSERT(m < numeric_limits<size_t>::max());  // NCBI_FAKE_WARNING
+    _ASSERT((Uint8)m < numeric_limits<size_t>::max());
     size_t n = (size_t) m;
 
     // first, read from the memory buffer
