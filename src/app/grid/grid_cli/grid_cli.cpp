@@ -657,8 +657,8 @@ struct SCommandDefinition {
         {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
             eJobGroupInfo, eClientInfo, eNotificationInfo, eAffinityInfo,
             eActiveJobCount, eJobsByAffinity, eJobsByStatus,
-            eAffinity, eVerbose, eOutputFormat, eCompatMode,
-            eAuth, eClientNode, eClientSession, -1},
+            eAffinity, eJobGroup, eVerbose, eOutputFormat,
+            eCompatMode, eAuth, eClientNode, eClientSession, -1},
             {eHumanReadable, eRaw, eJSON, -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_Health,
