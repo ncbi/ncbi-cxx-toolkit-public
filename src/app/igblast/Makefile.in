@@ -15,7 +15,7 @@ include @builddir@/Makefile.meta
 .PHONY: all $(APP_PROJ)
 
 lib:
-	make -f Makefile.blast_app_util_lib
+	(cd ../blast && make -f Makefile.blast_app_util_lib)
 igblastn: lib
 	make -f Makefile.igblastn_app
 igblastp: lib
