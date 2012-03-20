@@ -291,7 +291,9 @@ const string& CCgiContext::GetSelfURL(void) const
     m_SelfURL += server;
     string port = GetRequest().GetProperty(eCgi_ServerPort);
     // Skip port if it's default for the selected scheme
-    if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")) {
+    if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")
+	||  (server.size() >= port.size() + 2  &&  NStr::EndsWith(server, port)
+	     &&  server[server.size() - port.size() - 1] == ':')) {
         port = kEmptyStr;
     }
     if ( !port.empty() ) {
