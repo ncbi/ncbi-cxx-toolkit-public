@@ -137,6 +137,9 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
 {
     bool icache_mode = IsOptionSet(eCache);
 
+    if (icache_mode)
+        ParseICacheKey();
+
     SetUp_NetCacheCmd(icache_mode ? eNetICacheClient : eNetCacheAPI);
 
     try {
@@ -150,11 +153,10 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
     catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eServerError)
             throw;
-        if (!icache_mode) {
+        if (!icache_mode)
             printf("Size: %lu\n", (unsigned long)
                 m_NetCacheAPI.GetBlobSize(m_Opts.id));
-        } else {
-            ParseICacheKey();
+        else {
             printf("Size: %lu\n", (unsigned long)
                 m_NetICacheClient.GetSize(m_Opts.icache_key.key,
                     m_Opts.icache_key.version, m_Opts.icache_key.subkey));
