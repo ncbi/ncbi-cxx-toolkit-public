@@ -984,6 +984,7 @@ CLEY	s	Coastal Ecology Research Station
 CLF	s	Institut des Universitaires et Musee Lecoq
 CLI	s	Literary and Philosophical Institution of Chatham
 CLIB	c	Collection de Levures d'Interet Biotechnologique Collection of Yeasts of Biotechnological Interest
+CLIOC<BRA>	c	Colecao de Leishmania do Instituto Oswaldo Cruz
 CLM	s	Cleveland Museum of Natural History, Botany Department
 CLMP	s	Department of Conservation & Land Management
 CLNP	s	Crater Lake National Park
@@ -2355,6 +2356,7 @@ IBT	c	IBT Culture Collection of Fungi, Mycology Group, Technical University of D
 IBTS	s	Institutul de Biologie, Tr. Savulescu
 IBUG	s	Universidad de Guadalajara
 IBUNAM	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia
+IBUNAM:CFB	b	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Coleccion de Fotocolectas Biologicas
 IBUNAM:CNAC	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Coleccion Nacional de Acaros
 IBUNAM:CNAN	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Coleccion Nacional de Aracnidos
 IBUNAM:CNAR	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Coleccion Nacional de Anfibios y Reptiles
@@ -2365,6 +2367,7 @@ IBUNAM:CNIN	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Co
 IBUNAM:CNMA	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Coleccion Nacional de Mamiferos
 IBUNAM:CNMO	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Coleccion Nacional de Moluscos
 IBUNAM:CNPE	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Coleccion Nacional de Peces
+IBUNAM:MEXU	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia, Herbario Nacional
 IBUP	s	Institute of Biology
 IBUS	s	Universidade Federal do Rio de Janeiro
 IBUT	s	Instituto Butanta
