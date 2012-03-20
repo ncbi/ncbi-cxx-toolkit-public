@@ -1534,8 +1534,8 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
             if (m_BlobKey[0] == '\1') {
                 try {
                     CNetCacheKey nc_key(m_RawKey);
-                    m_RawKey = nc_key.StripKeyExtensions();
-                    g_NCStorage->PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
+                    string stripped = nc_key.StripKeyExtensions();
+                    g_NCStorage->PackBlobKey(&m_BlobKey, CTempString(), stripped, CTempString());
                 }
                 catch (CNetCacheException& ex) {
                     ERR_POST(Critical << "Error parsing blob key: " << ex);
