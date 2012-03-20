@@ -217,10 +217,10 @@ public:
     CHTMLNode* SetAccessKey(char key);
 
     // Convenient way to add CHTMLPlainText or CHTMLText.
-    void AppendPlainText(const char*   text, bool noEncode = false);
-    void AppendPlainText(const string& text, bool noEncode = false);
-    void AppendHTMLText (const char*   text);
-    void AppendHTMLText (const string& text);
+    CHTMLNode* AppendPlainText(const char*   text, bool noEncode = false);
+    CHTMLNode* AppendPlainText(const string& text, bool noEncode = false);
+    CHTMLNode* AppendHTMLText (const char*   text);
+    CHTMLNode* AppendHTMLText (const string& text);
 
     // Get event handler name.
     string GetEventHandlerName(const EHTML_EH_Attribute event) const;

@@ -146,35 +146,39 @@ CHTMLNode* CHTMLNode::SetStyle(const string& style)
 }
 
 inline
-void CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
+CHTMLNode* CHTMLNode::AppendPlainText(const string& appendstring, bool noEncode)
 {
     if ( !appendstring.empty() ) {
         AppendChild(new CHTMLPlainText(appendstring, noEncode));
     }
+    return this;
 }
 
 inline
-void CHTMLNode::AppendPlainText(const char* appendstring, bool noEncode)
+CHTMLNode* CHTMLNode::AppendPlainText(const char* appendstring, bool noEncode)
 {
     if ( appendstring && *appendstring ) {
         AppendChild(new CHTMLPlainText(appendstring, noEncode));
     }
+    return this;
 }
 
 inline
-void CHTMLNode::AppendHTMLText(const string& appendstring)
+CHTMLNode* CHTMLNode::AppendHTMLText(const string& appendstring)
 {
     if ( !appendstring.empty() ) {
         AppendChild(new CHTMLText(appendstring));
     }
+    return this;
 }
 
 inline
-void CHTMLNode::AppendHTMLText(const char* appendstring)
+CHTMLNode* CHTMLNode::AppendHTMLText(const char* appendstring)
 {
     if ( appendstring && *appendstring ) {
         AppendChild(new CHTMLText(appendstring));
     }
+    return this;
 }
 
 
