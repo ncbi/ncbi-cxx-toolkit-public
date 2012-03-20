@@ -759,7 +759,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
 
 END_NCBI_SCOPE
 
-int NcbiSys_main(int argc, const ncbi::TXChar* argv[])
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     USING_NCBI_SCOPE;
     CException::EnableBackgroundReporting(false);
