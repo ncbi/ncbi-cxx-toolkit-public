@@ -119,6 +119,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                     eNSCR_Any },
         { { "option",  eNSPT_Id,  eNSPA_Optional },
           { "comment", eNSPT_Id,  eNSPA_Optional },
+          { "aff",     eNSPT_Str, eNSPA_Optional },
           { "group",   eNSPT_Str, eNSPA_Optional } } },
     // MPUT job_key : id  progress_msg : str
     { "MPUT",     { &CNetScheduleHandler::x_ProcessPutMessage,
@@ -137,10 +138,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "start_after", eNSPT_Id,  eNSPA_Optional      },
           { "count",       eNSPT_Int, eNSPA_Optional, "0" },
           { "group",       eNSPT_Str, eNSPA_Optional } } },
-    // STSN [ affinity_token : keystr(aff) ]
-    { "STSN",     { &CNetScheduleHandler::x_ProcessStatusSnapshot,
-                    eNSCR_Queue },
-        { { "aff", eNSPT_Str, eNSPA_Optional, "" } } },
     // GETP [ client_info : id ]
     { "GETP",     { &CNetScheduleHandler::x_ProcessGetParam,
                     eNSCR_Queue } },
@@ -1797,28 +1794,6 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 }
 
 
-void CNetScheduleHandler::x_ProcessStatusSnapshot(CQueue* q)
-{
-    CJobStatusTracker::TStatusSummaryMap st_map;
-    bool    aff_exists = q->CountStatus(&st_map,
-                                NStr::ParseEscapes(m_CommandArguments.affinity_token));
-
-    if (!aff_exists) {
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
-                              "Unknown affinity token \"" +
-                              m_CommandArguments.affinity_token + "\"");
-        x_PrintRequestStop(eStatus_NotFound);
-        return;
-    }
-    ITERATE(CJobStatusTracker::TStatusSummaryMap, it, st_map) {
-        WriteMessage("OK:", CNetScheduleAPI::StatusToString(it->first) +
-                            " " + NStr::UIntToString(it->second));
-    }
-    WriteMessage("OK:END");
-    x_PrintRequestStop(eStatus_OK);
-}
-
-
 void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 {
     CNcbiApplication *      app = CNcbiApplication::Instance();
@@ -2304,17 +2279,12 @@ void CNetScheduleHandler::x_StatisticsNew(CQueue *        q,
     else if (what == "GROUPS")
         q->PrintGroupsList(*this,
                            m_CommandArguments.comment == "VERBOSE");
-    else if (what == "JOBS") {
-        if (!m_CommandArguments.group.empty())
-            // STAT JOBS for a group
-            q->PrintGroupStat(*this, m_CommandArguments.group);
-        else
-            // STAT JOBS for the queue
-            q->PrintQueueStat(*this);
-    }
-    else if (what == "WNODE") {
+    else if (what == "JOBS")
+        q->PrintJobsStat(*this, m_CommandArguments.group,
+                                m_CommandArguments.affinity_token);
+    else if (what == "WNODE")
         WriteMessage("OK:WARNING:Obsolete, use STAT CLIENTS instead;");
-    }
+
     WriteMessage("OK:END");
     x_PrintRequestStop(eStatus_OK);
 }

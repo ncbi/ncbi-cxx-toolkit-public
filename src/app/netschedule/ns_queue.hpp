@@ -207,11 +207,6 @@ public:
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
-    /// count status snapshot for affinity token
-    /// returns false if affinity token not found
-    bool CountStatus(CJobStatusTracker::TStatusSummaryMap* status_map,
-                     const string&                         affinity_token);
-
     /// Is the queue empty long enough to be deleted?
     bool IsExpired();
 
@@ -341,9 +336,9 @@ public:
 
     void PrintStatistics(size_t &  aff_count);
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
-    void PrintGroupStat(CNetScheduleHandler &  handler,
-                        const string &         group);
-    void PrintQueueStat(CNetScheduleHandler &  handler);
+    void PrintJobsStat(CNetScheduleHandler &  handler,
+                       const string &         group_token,
+                       const string &         aff_token);
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
