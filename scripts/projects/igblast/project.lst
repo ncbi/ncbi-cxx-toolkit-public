@@ -12,6 +12,7 @@ algo/blast/dbindex
 algo/blast/format
 algo/blast/igblast
 algo/dustmask$
+algo/winmask$
 -algo/blast/blastinput/unit_test
 -algo/blast/blastinput/demo
 objects
