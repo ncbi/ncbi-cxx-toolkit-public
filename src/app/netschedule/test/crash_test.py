@@ -62,6 +62,10 @@ def main():
                        default=500,
                        help="Number of affinities for each instance of " \
                             "test_netschedule_crash. (Default: 500)" )
+    parser.add_option( "--groups", dest="groups",
+                       default=500,
+                       help="Number of groups for each instance of " \
+                            "test_netschedule_crash. (Default: 500)" )
     parser.add_option( "--clients", dest="clients",
                        default=0,
                        help="Number of clients for each instance of " \
@@ -88,6 +92,9 @@ def main():
     affs = int( options.affs )
     if affs < 0:
         raise Exception( "Invalid number of affinities" )
+    groups = int( options.groups )
+    if groups < 0:
+        raise Exception( "Invalid number of groups" )
     clients = int( options.clients )
     if clients < 0:
         raise Exception( "Invalid number of clients" )
@@ -147,6 +154,7 @@ def main():
                       " -jobs " + str( jobs ) + \
                       " -delay 1 " \
                       " -naff " + str( affs ) + \
+                      " -ngroup " + str( groups ) + \
                       " -nclients " + str( clients )
             if options.verbose:
                 print "Launching test_netschedule_crash #" + \
