@@ -40,4 +40,4 @@ CHECK_COPY = blast_unit_test.ini data
 # This unit test suite shouldn't run longer than 15 minutes
 CHECK_TIMEOUT = 900
 
-WATCHERS = coulouri boratyng morgulis madden camacho fongah2 maning
+WATCHERS = coulouri boratyng morgulis madden camacho fongah2 maning merezhuk
