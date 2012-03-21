@@ -618,6 +618,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     const string& GetServiceName();
 };
 
+// Definition for backward compatibility.
+typedef CNetScheduleExecutor CNetScheduleExecuter;
+
 /////////////////////////////////////////////////////////////////////////////////////
 ////
 
