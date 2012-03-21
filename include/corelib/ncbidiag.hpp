@@ -911,7 +911,8 @@ public:
     /// @sa Reset(), Endm()
     /// @sa Info(), Warning(), Error(), Critical(), Fatal(), Trace()
     typedef const CNcbiDiag& (*FManip)(const CNcbiDiag&);
-    typedef IOS_BASE& (*FIosManip)(IOS_BASE&);
+    typedef IOS_BASE& (*FIosbaseManip)(IOS_BASE&);
+    typedef CNcbiIos& (*FIosManip)(CNcbiIos&);
 
     /// Helper method to post error code and subcode to diagnostic stream.
     ///
@@ -955,6 +956,7 @@ public:
     {
         return manip(*this);
     }
+    const CNcbiDiag& operator<< (FIosbaseManip manip) const;
     const CNcbiDiag& operator<< (FIosManip manip) const;
 
     /// Post the arguments

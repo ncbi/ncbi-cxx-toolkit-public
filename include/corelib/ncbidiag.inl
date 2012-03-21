@@ -260,6 +260,12 @@ const CNcbiDiag& CNcbiDiag::Put(const void*, const X& x) const
 #endif
 
 
+inline const CNcbiDiag& CNcbiDiag::operator<< (FIosbaseManip manip) const
+{
+    m_Buffer.Put(*this, manip);
+    return *this;
+}
+
 inline const CNcbiDiag& CNcbiDiag::operator<< (FIosManip manip) const
 {
     m_Buffer.Put(*this, manip);
