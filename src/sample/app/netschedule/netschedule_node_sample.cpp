@@ -123,7 +123,7 @@ int CSampleNetScheduleNode::Run(void)
     // It is strongly suggested that there is just one program using
     // specified UDP port on the machine.
 
-    CNetScheduleExecuter executor = cl.GetExecuter();
+    CNetScheduleExecutor executor = cl.GetExecutor();
 
     CNetScheduleJob job;
 
