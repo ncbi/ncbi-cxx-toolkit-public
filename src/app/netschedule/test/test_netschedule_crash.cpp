@@ -70,6 +70,7 @@ public:
                                   const string &           service,
                                   unsigned int             jcount,
                                   unsigned int             naff,
+                                  unsigned int             ngroup,
                                   unsigned int             notif_port,
                                   unsigned int             nclients,
                                   const string &           queue );
@@ -134,6 +135,11 @@ void CTestNetScheduleCrash::Init(void)
                              "Number of affinities",
                              CArgDescriptions::eInteger);
 
+    arg_desc->AddOptionalKey("ngroup",
+                             "ngroup",
+                             "Number of groups",
+                             CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("notifport",
                              "notifport",
                              "If given then jobs are submitted with notif port"
@@ -166,6 +172,7 @@ CTestNetScheduleCrash::Submit( CNetScheduleAPI &        cl,
                                const string &           service,
                                unsigned int             jcount,
                                unsigned int             naff,
+                               unsigned int             ngroup,
                                unsigned int             notif_port,
                                unsigned int             nclients,
                                const string &           queue )
@@ -173,8 +180,10 @@ CTestNetScheduleCrash::Submit( CNetScheduleAPI &        cl,
     string                  input = "Crash test for " + queue;
     vector<unsigned int>    jobs;
     unsigned int            caff = 0;
+    unsigned int            cgroup = 0;
     unsigned int            client = 0;
     string                  aff = "";
+    string                  group = "";
 
 
     CNetServer              server = cl.GetService().Iterate().GetServer();
@@ -208,10 +217,19 @@ CTestNetScheduleCrash::Submit( CNetScheduleAPI &        cl,
             aff = string( buffer );
         }
 
+        if (ngroup > 0) {
+            char        buffer[ 1024 ];
+            sprintf( buffer, "group%d", cgroup++ );
+            if (cgroup >= ngroup)
+                cgroup = 0;
+            group = string( buffer );
+        }
+
         // Two options here: with/without notifications
         if (notif_port == 0) {
             CNetScheduleJob         job(input);
             job.affinity = aff;
+            job.group = group;
             submitter.SubmitJob(job);
 
             CNetScheduleKey     key( job.job_id );
@@ -229,6 +247,8 @@ CTestNetScheduleCrash::Submit( CNetScheduleAPI &        cl,
             string  cmd = string( buffer );
             if (aff.empty() == false)
                 cmd += " aff=" + aff;
+            if (group.empty() == false)
+                cmd += " group=" + group;
             CNetServer::SExecResult     result = server.ExecWithRetry( cmd );
 
             // Dirty hack: 'OK:' need to be stripped
@@ -434,6 +454,10 @@ int CTestNetScheduleCrash::Run(void)
     if (args["naff"])
         naff = args["naff"].AsInteger();
 
+    unsigned int        ngroup = 0;
+    if (args["ngroup"])
+        ngroup = args["ngroup"].AsInteger();
+
     unsigned int        notif_port = 0;
     if (args["notifport"])
         notif_port = args["notifport"].AsInteger();
@@ -476,7 +500,8 @@ int CTestNetScheduleCrash::Run(void)
 
         /* ----- Submit jobs ----- */
         vector<unsigned int>    jobs = this->Submit(cl, service, jcount, naff,
-                                                    notif_port, nclients, queue);
+                                                    ngroup, notif_port,
+                                                    nclients, queue);
 
 
         NcbiCout << NcbiEndl << "Waiting " << delay << " second(s) ..." << NcbiEndl;
