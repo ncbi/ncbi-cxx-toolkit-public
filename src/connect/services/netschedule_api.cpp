@@ -399,9 +399,9 @@ CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
     return new SNetScheduleSubmitterImpl(m_Impl);
 }
 
-CNetScheduleExecuter CNetScheduleAPI::GetExecuter()
+CNetScheduleExecutor CNetScheduleAPI::GetExecutor()
 {
-    return new SNetScheduleExecuterImpl(m_Impl);
+    return new SNetScheduleExecutorImpl(m_Impl);
 }
 
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()

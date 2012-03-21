@@ -92,7 +92,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
         break;
     case eNetScheduleExecutor:
-        m_NetScheduleExecutor = m_NetScheduleAPI.GetExecuter();
+        m_NetScheduleExecutor = m_NetScheduleAPI.GetExecutor();
         break;
     default:
         _ASSERT(0);
@@ -318,7 +318,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         }
     } else if (IsOptionSet(eStatusOnly)) {
         PrintLine(CNetScheduleAPI::StatusToString(
-            m_NetScheduleAPI.GetExecuter().GetJobStatus(m_Opts.id)));
+            m_NetScheduleAPI.GetExecutor().GetJobStatus(m_Opts.id)));
         return 0;
     }
 
@@ -984,14 +984,14 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
     if (IsOptionSet(eExtendLifetime))
-        m_NetScheduleAPI.GetExecuter().JobDelayExpiration(
+        m_NetScheduleAPI.GetExecutor().JobDelayExpiration(
             m_Opts.id, (unsigned) m_Opts.extend_lifetime_by);
 
     if (IsOptionSet(eProgressMessage)) {
         CNetScheduleJob job;
         job.job_id = m_Opts.id;
         job.progress_msg = m_Opts.progress_message;
-        m_NetScheduleAPI.GetExecuter().PutProgressMsg(job);
+        m_NetScheduleAPI.GetExecutor().PutProgressMsg(job);
     }
 
     return 0;

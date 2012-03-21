@@ -62,9 +62,9 @@ public:
     void Init(void);
     int Run(void);
 
-    void GetStatus( CNetScheduleExecuter &        executor,
+    void GetStatus( CNetScheduleExecutor &        executor,
                     const vector<unsigned int> &  jobs );
-    void GetReturn( CNetScheduleExecuter &  executor,
+    void GetReturn( CNetScheduleExecutor &  executor,
                     unsigned int            count );
     vector<unsigned int>  Submit( CNetScheduleAPI &        server,
                                   const string &           service,
@@ -74,9 +74,9 @@ public:
                                   unsigned int             notif_port,
                                   unsigned int             nclients,
                                   const string &           queue );
-    vector<unsigned int>  GetDone( CNetScheduleExecuter &  executor );
+    vector<unsigned int>  GetDone( CNetScheduleExecutor &  executor );
     void  MainLoop( CNetScheduleSubmitter &  submitter,
-                    CNetScheduleExecuter &   executor,
+                    CNetScheduleExecutor &   executor,
                     unsigned int             jcount,
                     const string &           queue);
 
@@ -278,7 +278,7 @@ CTestNetScheduleCrash::Submit( CNetScheduleAPI &        cl,
 }
 
 
-void CTestNetScheduleCrash::GetStatus( CNetScheduleExecuter &        executor,
+void CTestNetScheduleCrash::GetStatus( CNetScheduleExecutor &        executor,
                                        const vector<unsigned int> &  jobs )
 {
     NcbiCout << NcbiEndl
@@ -309,7 +309,7 @@ void CTestNetScheduleCrash::GetStatus( CNetScheduleExecuter &        executor,
 
 
 /* Returns up to count jobs */
-void  CTestNetScheduleCrash::GetReturn( CNetScheduleExecuter &  executor,
+void  CTestNetScheduleCrash::GetReturn( CNetScheduleExecutor &  executor,
                                         unsigned int            count )
 {
     NcbiCout << NcbiEndl << "Take and Return " << count << " jobs..." << NcbiEndl;
@@ -358,7 +358,7 @@ void  CTestNetScheduleCrash::GetReturn( CNetScheduleExecuter &  executor,
 }
 
 
-vector<unsigned int>  CTestNetScheduleCrash::GetDone( CNetScheduleExecuter &  executor )
+vector<unsigned int>  CTestNetScheduleCrash::GetDone( CNetScheduleExecutor &  executor )
 {
     unsigned                cnt = 0;
     vector<unsigned int>    jobs_processed;
@@ -400,7 +400,7 @@ vector<unsigned int>  CTestNetScheduleCrash::GetDone( CNetScheduleExecuter &  ex
 
 
 void CTestNetScheduleCrash::MainLoop( CNetScheduleSubmitter &  submitter,
-                                      CNetScheduleExecuter &   executor,
+                                      CNetScheduleExecutor &   executor,
                                       unsigned int             jcount,
                                       const string &           queue)
 {
@@ -481,7 +481,7 @@ int CTestNetScheduleCrash::Run(void)
     cl.GetAdmin().PrintServerVersion(NcbiCout);
 
     CNetScheduleSubmitter               submitter = cl.GetSubmitter();
-    CNetScheduleExecuter                executor = cl.GetExecuter();
+    CNetScheduleExecutor                executor = cl.GetExecutor();
 
 
     if (args["main"]) {

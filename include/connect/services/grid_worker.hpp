@@ -616,7 +616,7 @@ public:
 
     CNetCacheAPI GetNetCacheAPI() const { return m_NetCacheAPI; }
     CNetScheduleAPI GetNetScheduleAPI() const { return m_NetScheduleAPI; }
-    CNetScheduleExecuter GetNSExecuter() const { return m_NSExecuter; }
+    CNetScheduleExecutor GetNSExecutor() const { return m_NSExecutor; }
 
     bool IsTimeToRebalance();
 
@@ -644,7 +644,7 @@ private:
 
     CNetCacheAPI m_NetCacheAPI;
     CNetScheduleAPI m_NetScheduleAPI;
-    CNetScheduleExecuter m_NSExecuter;
+    CNetScheduleExecutor m_NSExecutor;
 
     unsigned int                 m_MaxThreads;
     unsigned int                 m_NSTimeout;

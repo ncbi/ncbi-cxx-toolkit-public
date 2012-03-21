@@ -150,10 +150,10 @@ void TestBatchSubmit(const string& service,
     job.output = "DONE";
 
     CStopWatch sw(CStopWatch::eStart);
-    CNetScheduleExecuter executer = cl.GetExecuter();
+    CNetScheduleExecutor executor = cl.GetExecutor();
 
     for (;1;++cnt) {
-        bool job_exists = executer.PutResultGetJob(job, job);
+        bool job_exists = executor.PutResultGetJob(job, job);
         if (!job_exists) {
             break;
         }
@@ -201,7 +201,7 @@ int CTestNetScheduleStress::Run(void)
     string input = "Hello " + queue;
 
     CNetScheduleSubmitter submitter = cl.GetSubmitter();
-    CNetScheduleExecuter executer = cl.GetExecuter();
+    CNetScheduleExecutor executor = cl.GetExecutor();
 
     CNetScheduleJob job(input);
     job.progress_msg = "pmsg";
@@ -212,7 +212,7 @@ int CTestNetScheduleStress::Run(void)
 
     // test progress message
     job.progress_msg = "progress report message";
-    executer.PutProgressMsg(job);
+    executor.PutProgressMsg(job);
 
     string pmsg = job.progress_msg;
     job.progress_msg = "";
@@ -222,7 +222,7 @@ int CTestNetScheduleStress::Run(void)
 
 
     job.error_msg = "test error\r\nmessage";
-    executer.PutFailure(job);
+    executor.PutFailure(job);
     status = cl.GetJobDetails(job);
     
     //    _ASSERT(status == CNetScheduleAPI::eFailed);
@@ -243,7 +243,7 @@ int CTestNetScheduleStress::Run(void)
     //< ?????????? How should it really work??????????????
 
     submitter.CancelJob(job.job_id);
-    status = executer.GetJobStatus(job.job_id);
+    status = executor.GetJobStatus(job.job_id);
 
     _ASSERT(status == CNetScheduleAPI::eCanceled);
 
@@ -287,7 +287,7 @@ int CTestNetScheduleStress::Run(void)
     unsigned i = 0;
     NON_CONST_ITERATE(vector<string>, it, jobs) {
         const string& jk = *it;
-        status = executer.GetJobStatus(jk);
+        status = executor.GetJobStatus(jk);
         //status = cl.GetStatus(jk, &ret_code, &output);
         if (i++ % 1000 == 0) {
             NcbiCout << "." << flush;
@@ -321,11 +321,11 @@ int CTestNetScheduleStress::Run(void)
     unsigned cnt = 0;
     for (; cnt < jcount/2; ++cnt) {
         CNetScheduleJob job;
-        bool job_exists = executer.WaitJob(job, 60);
+        bool job_exists = executor.WaitJob(job, 60);
 //        bool job_exists = cl.GetJob(&job_key, &input);
         if (!job_exists)
             break;
-        executer.ReturnJob(job.job_id);
+        executor.ReturnJob(job.job_id);
         jobs_returned.push_back(job.job_id);
     }
     NcbiCout << "Returned " << cnt << " jobs." << NcbiEndl;
@@ -361,14 +361,14 @@ int CTestNetScheduleStress::Run(void)
 
     for (; 1; ++cnt) {
         CNetScheduleJob job;
-        bool job_exists = executer.GetJob(job);
+        bool job_exists = executor.GetJob(job);
         if (!job_exists)
             break;
 
         jobs_processed.push_back(job.job_id);
 
         job.output = "DONE " + queue;
-        executer.PutResult(job);
+        executor.PutResult(job);
     }
     double elapsed = sw.Elapsed();
 

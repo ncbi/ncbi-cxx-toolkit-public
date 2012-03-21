@@ -255,7 +255,7 @@ private:
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleAdmin m_NetScheduleAdmin;
     CNetScheduleSubmitter m_NetScheduleSubmitter;
-    CNetScheduleExecuter m_NetScheduleExecutor;
+    CNetScheduleExecutor m_NetScheduleExecutor;
     auto_ptr<CGridClient> m_GridClient;
 
 // NetCache commands.

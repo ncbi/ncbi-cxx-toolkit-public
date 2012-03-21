@@ -165,7 +165,7 @@ int CNetScheduleCheck::Run(void)
 int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
 {
     CNetScheduleSubmitter submitter = nc.GetSubmitter();
-    CNetScheduleExecuter executer = nc.GetExecuter();
+    CNetScheduleExecutor executor = nc.GetExecutor();
 
     const string input = "Hello ";
     const string output = "DONE ";
@@ -176,19 +176,19 @@ int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
         //SleepSec(1);
 
         CNetScheduleJob job1;
-        bool job_exists = executer.WaitJob(job1, 5);
+        bool job_exists = executor.WaitJob(job1, 5);
         if (job_exists) {
             if (job1.job_id != job.job_id)
-                executer.ReturnJob(job1.job_id);
+                executor.ReturnJob(job1.job_id);
             else {
                 if (job1.input != job.input) {
                     job1.error_msg = "Job's (" + job1.job_id +
                         ") input does not match.(" + job.input + ") ["+ job1.input +"]";
-                    executer.PutFailure(job1);
+                    executor.PutFailure(job1);
                 } else {
                     job1.output = output;
                     job1.ret_code = 0;
-                    executer.PutResult(job1);
+                    executor.PutResult(job1);
                 }
                 break;
             }

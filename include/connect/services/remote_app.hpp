@@ -80,7 +80,7 @@ private:
 };
 
 
-/// Remote Application Request (both client side and application executer side)
+/// Remote Application Request (both client side and application executor side)
 ///
 /// It is used by a client application which wants to run a remote application
 /// through NetSchedule infrastructure and should be used in conjunction with
@@ -116,10 +116,10 @@ public:
     void SetAppRunTimeout(unsigned int sec) { m_AppRunTimeout = sec; }
     unsigned int GetAppRunTimeout() const { return m_AppRunTimeout; }
 
-    /// Transfer a file to an application executer side.
+    /// Transfer a file to an application executor side.
     /// It only makes sense to transfer a file if its name also mentioned in
     /// the command line for the remote application. When the file is transfered
-    /// the the executer side it gets stored to a temporary directory and then its
+    /// the the executor side it gets stored to a temporary directory and then its
     /// original name in the command line will be replaced with the new temporary name.
     void AddFileForTransfer(const string& fname,
         EStdOutErrStorageType tt = eBlobStorage)
@@ -205,7 +205,7 @@ private:
     bool x_CopyLocalFile(const string& old_fname, string& new_fname);
 };
 
-/// Remote Application Result (both client side and application executer side)
+/// Remote Application Result (both client side and application executor side)
 ///
 /// It is used by a grid worker node to send results of a
 /// finished remote application to the client.

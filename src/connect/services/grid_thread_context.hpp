@@ -69,7 +69,7 @@ private:
     CGridWorkerNode&              m_Worker;
     CWorkerNodeJobContext*        m_JobContext;
     CRef<IWorkerNodeJob>          m_Job;
-    CNetScheduleExecuter          m_NetScheduleExecuter;
+    CNetScheduleExecutor          m_NetScheduleExecutor;
 
     CNetCacheAPI                  m_NetCacheAPI;
     auto_ptr<CNcbiIstream>        m_RStream;

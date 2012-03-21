@@ -195,9 +195,9 @@ inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
 {
 }
 
-struct SNetScheduleExecuterImpl : public CObject
+struct SNetScheduleExecutorImpl : public CObject
 {
-    SNetScheduleExecuterImpl(CNetScheduleAPI::TInstance ns_api_impl) :
+    SNetScheduleExecutorImpl(CNetScheduleAPI::TInstance ns_api_impl) :
         m_API(ns_api_impl)
     {
     }

@@ -138,7 +138,7 @@ int CTestNetScheduleNode::Run(void)
     comm_timeout.sec  = 1200;
     comm_timeout.usec = 0;
     ns_api.GetService().GetServerPool().SetCommunicationTimeout(comm_timeout);
-    CNetScheduleExecuter ns_exec = ns_api.GetExecuter();
+    CNetScheduleExecutor ns_exec = ns_api.GetExecutor();
 
     string job_key;
     string input;

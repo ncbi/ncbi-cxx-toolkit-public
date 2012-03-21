@@ -1068,7 +1068,7 @@ int CGridWorkerNode::Run()
 
     m_RebalanceStrategy = CreateSimpleRebalanceStrategy(conf, "server");
 
-    m_NSExecuter = m_NetScheduleAPI.GetExecuter();
+    m_NSExecutor = m_NetScheduleAPI.GetExecutor();
 
     m_NetScheduleAPI.SetProgramVersion(m_JobFactory->GetJobVersion());
 
@@ -1196,7 +1196,7 @@ int CGridWorkerNode::Run()
         }
     }
     try {
-        GetNSExecuter().UnRegisterClient();
+        GetNSExecutor().UnRegisterClient();
     }
     catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error
@@ -1297,7 +1297,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         if (!WaitForExclusiveJobToFinish())
             return false;
 
-        job_exists = GetNSExecuter().WaitJob(job, m_NSTimeout);
+        job_exists = GetNSExecutor().WaitJob(job, m_NSTimeout);
 
         if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob)
             job_exists = EnterExclusiveModeOrReturnJob(job);
@@ -1313,7 +1313,7 @@ void CGridWorkerNode::x_ReturnJob(const string& job_key)
 {
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (!debug_context || debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-         GetNSExecuter().ReturnJob(job_key);
+         GetNSExecutor().ReturnJob(job_key);
     }
 }
 
@@ -1324,7 +1324,7 @@ void CGridWorkerNode::x_FailJob(const string& job_key, const string& reason)
             debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
          CNetScheduleJob job(job_key);
          job.error_msg = reason;
-         GetNSExecuter().PutFailure(job);
+         GetNSExecutor().PutFailure(job);
     }
 }
 

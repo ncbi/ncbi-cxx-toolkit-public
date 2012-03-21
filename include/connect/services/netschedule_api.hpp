@@ -64,7 +64,7 @@ const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
  */
 
 class CNetScheduleSubmitter;
-class CNetScheduleExecuter;
+class CNetScheduleExecutor;
 class CNetScheduleAdmin;
 
 struct CNetScheduleJob;
@@ -214,8 +214,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// Create an instance of CNetScheduleSubmitter.
     CNetScheduleSubmitter GetSubmitter();
 
-    /// Create an instance of CNetScheduleExecuter.
-    CNetScheduleExecuter GetExecuter();
+    /// Create an instance of CNetScheduleExecutor.
+    CNetScheduleExecutor GetExecutor();
 
     CNetScheduleAdmin GetAdmin();
 
@@ -326,7 +326,7 @@ struct SNetScheduleSubmitterImpl;
 /// CNetScheduleAPI::GetSubmitter().  It is possible to have several
 /// submitters per one CNetScheduleAPI object.
 ///
-/// @sa CNetScheduleAPI, CNetScheduleExecuter
+/// @sa CNetScheduleAPI, CNetScheduleExecutor
 class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 {
     NCBI_NET_COMPONENT(NetScheduleSubmitter);
@@ -465,17 +465,17 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////
-struct SNetScheduleExecuterImpl;
+struct SNetScheduleExecutorImpl;
 
 /// Smart pointer to a part of the NetSchedule API that does job
 /// retrieval and processing on the worker node side.
 /// Objects of this class are returned by
-/// CNetScheduleAPI::GetExecuter().
+/// CNetScheduleAPI::GetExecutor().
 ///
 /// @sa CNetScheduleAPI, CNetScheduleSubmitter
-class NCBI_XCONNECT_EXPORT CNetScheduleExecuter
+class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
 {
-    NCBI_NET_COMPONENT(NetScheduleExecuter);
+    NCBI_NET_COMPONENT(NetScheduleExecutor);
 
     /// Get a pending job.
     /// When function returns TRUE and job_key job receives running status,
@@ -793,9 +793,9 @@ public:
     void SubmitJob(CNetScheduleSubmitter::TInstance submitter);
     bool CheckSubmitJobNotification();
 
-    bool RequestJob(CNetScheduleExecuter::TInstance executor,
+    bool RequestJob(CNetScheduleExecutor::TInstance executor,
         const string& affinity);
-    bool CheckRequestJobNotification(CNetScheduleExecuter::TInstance executor);
+    bool CheckRequestJobNotification(CNetScheduleExecutor::TInstance executor);
 
 protected:
     CNetScheduleJob& m_Job;
