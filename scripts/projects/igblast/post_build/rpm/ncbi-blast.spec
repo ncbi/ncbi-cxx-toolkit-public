@@ -12,7 +12,7 @@ Prefix:      /usr
 
 %description
 Immunoglobulin BLAST (IgBLAST), a specialized variant of BLAST that is designed
-for the analysis of human or mouse immunoglobulin sequence data.
+for the analysis of immunoglobulin sequence data.
 
 %prep 
 %setup -q
