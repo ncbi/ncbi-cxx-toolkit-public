@@ -210,10 +210,12 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
 };
 
 static const TDbxrefPair kApprovedProbeDbXrefs[] = {
+    TDbxrefPair("BB", CDbtag::eDbtagType_BB),
     TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
     TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
     TDbxrefPair("GEO", CDbtag::eDbtagType_GEO),
-    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank)
+    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
+    TDbxrefPair("GrainGenes", CDbtag::eDbtagType_GrainGenes)
 };
 
 
@@ -530,6 +532,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
     TDbtUrl(CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
+    TDbtUrl(CDbtag::eDbtagType_BB, "http://beetlebase.org/cgi-bin/cmap/feature_search?features="),
     TDbtUrl(CDbtag::eDbtagType_BEETLEBASE, "http://www.beetlebase.org/cgi-bin/report.cgi?name="),
     TDbtUrl(CDbtag::eDbtagType_BGD, "http://genomes.arc.georgetown.edu/bovine/genepages/genes/"),
     TDbtUrl(CDbtag::eDbtagType_BoLD, "http://www.boldsystems.org/connectivity/specimenlookup.php?processid="),
@@ -551,6 +554,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?"),
     TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://old.genedb.org/genedb/Search?organism=All%3A*&name="),
     TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/gene/"),
+    TDbtUrl(CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name="),
     TDbtUrl(CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id="),
     TDbtUrl(CDbtag::eDbtagType_HGNC, "http://www.genenames.org/data/hgnc_data.php?hgnc_id="),
     TDbtUrl(CDbtag::eDbtagType_HMP, "http://www.hmpdacc-resources.org/cgi-bin/hmp_catalog/main.cgi?section=HmpSummary&page=displayHmpProject&hmp_id="),
