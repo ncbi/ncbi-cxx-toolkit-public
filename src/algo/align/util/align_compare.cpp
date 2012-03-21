@@ -180,13 +180,13 @@ static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
             TSeqRange product;
             if (align.GetSegs().GetSpliced().GetProduct_type() ==
                 CSpliced_seg::eProduct_type_transcript) {
-                product.SetFrom(first_exon->GetProduct_end().GetNucpos());
-                product.SetTo(second_exon->GetProduct_start().GetNucpos());
+                product.SetFrom(last_exon->GetProduct_end().GetNucpos());
+                product.SetTo(exon->GetProduct_start().GetNucpos());
             } else {
                 const CProt_pos& amin_start =
-                    first_exon->GetProduct_end().GetProtpos();
+                    last_exon->GetProduct_end().GetProtpos();
                 const CProt_pos& amin_end =
-                    second_exon->GetProduct_start().GetProtpos();
+                    exon->GetProduct_start().GetProtpos();
     
                 TSeqPos start = amin_start.GetAmin() * 3;
                 if (amin_start.GetFrame()) {
@@ -354,24 +354,24 @@ struct SComp_Less
         // alignments together into equivalence groups with alignments that are
         // identical
         if (strict_compare) {
-            if (c1.second.is_equivalent && !c2.second.is_equivalent ||
+            if ((c1.second.is_equivalent && !c2.second.is_equivalent) ||
                 c1.second.overlap > c2.second.overlap)
             {
                 return true;
             }
-            if (c2.second.is_equivalent && !c1.second.is_equivalent ||
+            if ((c2.second.is_equivalent && !c1.second.is_equivalent) ||
                 c2.second.overlap > c1.second.overlap)
             {
                 return false;
             }
         }
         else {
-            if (c1.second.is_equivalent && !c2.second.is_equivalent ||
+            if ((c1.second.is_equivalent && !c2.second.is_equivalent) ||
                 c1.second.overlap > c2.second.overlap)
             {
                 return false;
             }
-            if (c2.second.is_equivalent && !c1.second.is_equivalent ||
+            if ((c2.second.is_equivalent && !c1.second.is_equivalent) ||
                 c2.second.overlap > c1.second.overlap)
             {
                 return true;
