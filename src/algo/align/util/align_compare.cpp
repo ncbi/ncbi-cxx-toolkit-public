@@ -175,25 +175,25 @@ static void s_GetAlignmentSpans_Intron(const CSeq_align& align,
         if (last_exon) {
             CRef<CSpliced_exon> first_exon = is_reverse ? exon : last_exon;
             CRef<CSpliced_exon> second_exon = is_reverse ? last_exon : exon;
-            TSeqRange genomic(first_exon->GetGenomic_end()+1,
-                              second_exon->GetGenomic_start()-1);
+            TSeqRange genomic(first_exon->GetGenomic_end(),
+                              second_exon->GetGenomic_start());
             TSeqRange product;
             if (align.GetSegs().GetSpliced().GetProduct_type() ==
                 CSpliced_seg::eProduct_type_transcript) {
-                product.SetFrom(first_exon->GetProduct_end().GetNucpos()+1);
-                product.SetTo(second_exon->GetProduct_start().GetNucpos()-1);
+                product.SetFrom(first_exon->GetProduct_end().GetNucpos());
+                product.SetTo(second_exon->GetProduct_start().GetNucpos());
             } else {
                 const CProt_pos& amin_start =
                     first_exon->GetProduct_end().GetProtpos();
                 const CProt_pos& amin_end =
                     second_exon->GetProduct_start().GetProtpos();
     
-                TSeqPos start = amin_start.GetAmin() * 3 + 1;
+                TSeqPos start = amin_start.GetAmin() * 3;
                 if (amin_start.GetFrame()) {
                     start += amin_start.GetFrame() - 1;
                 }
 
-                TSeqPos end = amin_end.GetAmin() * 3 - 1;
+                TSeqPos end = amin_end.GetAmin() * 3;
                 if (amin_end.GetFrame()) {
                     end += amin_end.GetFrame() - 1;
                 }
