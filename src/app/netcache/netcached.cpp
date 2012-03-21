@@ -617,6 +617,26 @@ CNetCacheServer::GetDiskFree(void)
 }
 
 
+CNetCacheDApp::CNetCacheDApp(void)
+{
+    CVersionInfo version(NCBI_PACKAGE_VERSION_MAJOR,
+                         NCBI_PACKAGE_VERSION_MINOR,
+                         NCBI_PACKAGE_VERSION_PATCH);
+    CRef<CVersion> full_version(new CVersion(version));
+
+    full_version->AddComponentVersion("Storage",
+                                      NETCACHED_STORAGE_VERSION_MAJOR,
+                                      NETCACHED_STORAGE_VERSION_MINOR,
+                                      NETCACHED_STORAGE_VERSION_PATCH);
+    full_version->AddComponentVersion("Protocol",
+                                      NETCACHED_PROTOCOL_VERSION_MAJOR,
+                                      NETCACHED_PROTOCOL_VERSION_MINOR,
+                                      NETCACHED_PROTOCOL_VERSION_PATCH);
+
+    SetVersion(version);
+    SetFullVersion(full_version);
+}
+
 void
 CNetCacheDApp::Init(void)
 {
@@ -646,10 +666,6 @@ CNetCacheDApp::Run(void)
 {
     CArgs args = GetArgs();
 
-    if (args["version-full"]) {
-        printf(NETCACHED_FULL_VERSION "\n");
-        return 0;
-    }
     INFO_POST(NETCACHED_FULL_VERSION);
 
 #ifdef NCBI_OS_LINUX

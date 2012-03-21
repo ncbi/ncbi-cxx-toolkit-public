@@ -224,6 +224,9 @@ extern CNetCacheServer* g_NetcacheServer;
 /// NetCache daemon application
 class CNetCacheDApp : public CNcbiApplication
 {
+public:
+    CNetCacheDApp(void);
+
 protected:
     virtual void Init(void);
     virtual int  Run (void);
