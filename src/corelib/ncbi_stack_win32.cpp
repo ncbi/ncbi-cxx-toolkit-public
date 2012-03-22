@@ -446,6 +446,9 @@ private:
     } while(0)
 
 
+#pragma warning( push )
+#pragma warning( disable : 4748)
+
 CStackTraceImpl::CStackTraceImpl(void)
 {
     HANDLE curr_proc = GetCurrentProcess();
@@ -498,6 +501,8 @@ CStackTraceImpl::CStackTraceImpl(void)
         ERR_POST_X(8, Error << "Unknown error getting stack trace");
     }
 }
+
+#pragma warning( pop )
 
 
 CStackTraceImpl::~CStackTraceImpl(void)
