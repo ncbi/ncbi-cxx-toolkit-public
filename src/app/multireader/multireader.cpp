@@ -581,6 +581,7 @@ void CMultiReaderApp::xProcessAlignment(
 {
     CAlnReader reader(istr);
     reader.SetAllGap(args["aln-gapchar"].AsString());
+    reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     if (args["aln-alphabet"].AsString() == "prot") {
         reader.SetAlphabet(CAlnReader::eAlpha_Protein);
     }
@@ -610,9 +611,12 @@ void CMultiReaderApp::xSetFormat(
         format == "microarray") {
         m_uFormat = CFormatGuess::eBed15;
     }
-    if (NStr::StartsWith(strProgramName, "gtf") || 
-        format == "gtf" || format == "gff3" || format == "gff2") {
+    if (NStr::StartsWith(strProgramName, "gtf") || format == "gtf") {
         m_uFormat = CFormatGuess::eGtf;
+    }
+    if (NStr::StartsWith(strProgramName, "gff") || 
+        format == "gff3" || format == "gff2") {
+        m_uFormat = CFormatGuess::eGff3;
     }
     if (NStr::StartsWith(strProgramName, "newick") || 
         format == "newick" || format == "tree" || format == "tre") {
@@ -694,6 +698,7 @@ void CMultiReaderApp::xWriteObject(
         return;
     }
     ostr << MSerial_AsnText << object;
+    ostr.flush();
 }
         
 //  ----------------------------------------------------------------------------
