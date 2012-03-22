@@ -86,10 +86,12 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */)
 
     switch (program) {
     case eBlastn:
-        retval = 1000000;
+        retval = 100000;
         break;
-    case eMegablast:
     case eDiscMegablast:
+	retval = 1000000;
+	break;
+    case eMegablast:
         retval = 5000000;
         break;
     case eTblastn:
