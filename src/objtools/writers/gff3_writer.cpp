@@ -470,7 +470,7 @@ bool CGff3Writer::x_WriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 {
     CRef<CGff3WriteRecordFeature> pParent( new CGff3WriteRecordFeature( fc ) );
-    if ( ! pParent->AssignFromAsn( mf ) ) {
+    if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
     vector<string> ids;
@@ -487,7 +487,7 @@ bool CGff3Writer::x_WriteFeatureTrna(
         new CGff3WriteRecordFeature( 
             fc,
             string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId++ ) ) );
-    if ( ! pRna->AssignFromAsn( mf ) ) {
+    if ( ! pRna->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
     const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
@@ -527,7 +527,7 @@ bool CGff3Writer::x_WriteFeatureGene(
             fc,
             string("gene") + NStr::UIntToString(m_uPendingGeneId++)));
 
-    if (!pRecord->AssignFromAsn(mf)) {
+    if (!pRecord->AssignFromAsn(mf, m_uFlags)) {
         return false;
     }
     m_GeneMap[mf] = pRecord;
@@ -547,7 +547,7 @@ bool CGff3Writer::x_WriteFeatureCds(
 {
     CRef< CGff3WriteRecordFeature > pCds( new CGff3WriteRecordFeature( fc ) );
 
-    if ( ! pCds->AssignFromAsn( mf ) ) {
+    if ( ! pCds->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
     CMappedFeat mrna = feature::GetBestMrnaForCds( mf, &fc.FeatTree() );
@@ -615,7 +615,7 @@ bool CGff3Writer::x_WriteFeatureRna(
         new CGff3WriteRecordFeature( 
             fc,
             string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId++ ) ) );
-    if ( ! pRna->AssignFromAsn( mf ) ) {
+    if ( ! pRna->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
     CMappedFeat gene = feature::GetBestGeneForFeat( mf, &fc.FeatTree() );
@@ -664,7 +664,7 @@ bool CGff3Writer::x_WriteFeatureGeneric(
 //  ----------------------------------------------------------------------------
 {
     CRef<CGff3WriteRecordFeature> pParent( new CGff3WriteRecordFeature( fc ) );
-    if ( ! pParent->AssignFromAsn( mf ) ) {
+    if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
     vector<string> ids;
@@ -683,12 +683,8 @@ bool CGff3Writer::x_WriteFeatureGeneric(
             pParent->AssignParent( *( it->second ) );
         }
     }
-    TSeqPos inst_len = 0;
-    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst() && 
-        fc.BioseqHandle().GetInst().CanGetLength()) {
-        inst_len = fc.BioseqHandle().GetInst().GetLength();
-    }
-    return x_WriteFeatureRecords( *pParent, mf.GetLocation(), inst_len );
+    return x_WriteFeatureRecords( 
+        *pParent, mf.GetLocation(), fc.BioseqHandle().GetInst().GetLength() );
 }
 
 //  ============================================================================

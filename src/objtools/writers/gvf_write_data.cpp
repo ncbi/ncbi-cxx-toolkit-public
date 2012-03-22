@@ -119,7 +119,8 @@ bool CGvfWriteRecord::x_AssignSource(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignType(
-    CMappedFeat mapped_feat )
+    CMappedFeat mapped_feat,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     m_strType = ".";
@@ -185,7 +186,8 @@ bool CGvfWriteRecord::x_AssignType(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributes(
-    CMappedFeat mapped_feat )
+    CMappedFeat mapped_feat,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     if ( ! x_AssignAttributeID( mapped_feat ) ) {

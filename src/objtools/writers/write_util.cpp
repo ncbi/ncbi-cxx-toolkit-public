@@ -635,6 +635,41 @@ bool CWriteUtil::GetBestId(
 }
     
 //  ----------------------------------------------------------------------------
+bool CWriteUtil::GetBestId(
+    CMappedFeat mf,
+    string& best_id)
+//  ----------------------------------------------------------------------------
+{
+	CSeq_id_Handle idh = mf.GetLocationId();
+    if (idh) {
+        return GetBestId(idh, mf.GetScope(), best_id);
+    }
+    const CSeq_loc& loc = mf.GetLocation();
+    if (loc.IsInt()) {
+        return  GetBestId( 
+            CSeq_id_Handle::GetHandle(loc.GetInt().GetId()), 
+            mf.GetScope(), best_id);
+    }
+    if (loc.IsMix()) {
+        try {
+            const CSeq_loc& sub = *loc.GetMix().Get().front();
+            if (sub.IsInt()) {
+                return  GetBestId( 
+                    CSeq_id_Handle::GetHandle(sub.GetInt().GetId()), 
+                    mf.GetScope(), best_id);
+            }
+            const CSeq_id* pid = sub.GetId();
+            return GetBestId(CSeq_id_Handle::GetHandle(*pid), mf.GetScope(),
+                best_id);
+
+        }
+        catch (...) {};
+    }
+    best_id = mf.GetLocationId().AsString();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CWriteUtil::IsNucProtSet(
     CSeq_entry_Handle seh)
 //  ----------------------------------------------------------------------------

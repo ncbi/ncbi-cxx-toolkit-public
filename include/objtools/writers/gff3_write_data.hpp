@@ -65,7 +65,8 @@ public:
     virtual string StrAttributes() const;
 
     virtual bool AssignFromAsn(
-        CMappedFeat );
+        CMappedFeat,
+        unsigned int =0);
 
     bool AssignParent(
         const CGff3WriteRecordFeature& );
@@ -80,17 +81,21 @@ public:
 
 protected:
     virtual bool x_AssignType(
-        CMappedFeat );
+        CMappedFeat,
+        unsigned int =0 );
     virtual bool x_AssignStart(
         CMappedFeat );
     virtual bool x_AssignStop(
         CMappedFeat );
 
     virtual bool x_AssignAttributes(
-        CMappedFeat );
+        CMappedFeat,
+        unsigned int =0);
     virtual bool x_AssignAttributesFromAsnCore(
         CMappedFeat );
     virtual bool x_AssignAttributesFromAsnExtended(
+        CMappedFeat );
+    virtual bool x_AssignAttributesExtraQuals(
         CMappedFeat );
 
     virtual bool x_AssignAttributesMrna(

@@ -52,6 +52,12 @@ class NCBI_XOBJWRITE_EXPORT CGff3Writer
     : public CGff2Writer
 {
 public:
+    typedef enum {
+        fExtraQuals = (fSoQuirks << 1),
+        fGff3WriterLast = fExtraQuals,
+    } TFlags;
+    
+public:
     CGff3Writer(
         CScope&,
         CNcbiOstream&,

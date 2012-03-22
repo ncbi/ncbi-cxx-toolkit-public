@@ -49,6 +49,7 @@
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/writers/write_util.hpp>
+#include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -134,7 +135,8 @@ CGff3WriteRecordFeature::~CGff3WriteRecordFeature()
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::AssignFromAsn(
-    CMappedFeat mf )
+    CMappedFeat mf,
+    unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
     m_pLoc.Reset( new CSeq_loc( CSeq_loc::e_Mix ) );
@@ -143,7 +145,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
 
     CBioseq_Handle bsh = m_fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {
-        return CGffWriteRecordFeature::AssignFromAsn(mf);
+        return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
     }
 
     //  intervals wrapping around the origin extend beyond the sequence length
@@ -152,7 +154,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
     unsigned int len = bsh.GetInst().GetLength();
     list< CRef< CSeq_interval > >& sublocs = m_pLoc->SetPacked_int().Set();
     if (sublocs.size() < 2) {
-        return CGffWriteRecordFeature::AssignFromAsn(mf);
+        return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
     }
 
     list< CRef< CSeq_interval > >::iterator it, it_ceil=sublocs.end(), 
@@ -174,14 +176,27 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
         sublocs.erase(it_floor);
     }
 
-    return CGffWriteRecordFeature::AssignFromAsn(mf);
+    return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
 };
     
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignType(
-    CMappedFeat mf )
+    CMappedFeat mf,
+    unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
+    if (flags & CGff3Writer::fExtraQuals  &&  mf.IsSetQual()) {
+        const vector< CRef< CGb_qual > >& quals = mf.GetQual();
+        vector< CRef< CGb_qual > >::const_iterator cit = quals.begin();
+        for ( ; cit != quals.end(); cit++) {
+            const CGb_qual& qual = **cit;
+            if (qual.GetQual() == "gff_type") {
+                m_strType = qual.GetVal();
+                return true;
+            }
+        }
+    }
+
     static CSofaMap SOFAMAP;
 
     if ( ! mf.IsSetData() ) {
@@ -284,7 +299,8 @@ void CGff3WriteRecordFeature::x_StrAttributesAppendValueGff3(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributes(
-    CMappedFeat mf )
+    CMappedFeat mf,
+    unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
     if ( ! x_AssignAttributesFromAsnCore( mf ) ) {
@@ -326,13 +342,53 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
             }
             break;
     }
+
+    //  any extra junk in the feature attributes. Such extra junk could originate
+    //  from a GFF3 round trip starting with GFF3 that uses non-standard attribute
+    //  keys:
+    if (flags & CGff3Writer::fExtraQuals) {
+        if (!x_AssignAttributesExtraQuals( mf ) ) {
+            return false;
+        }
+    }
     
     //  deriviate attributes --- depend on other attributes. Hence need to be
     //  done last: 
     if ( !x_AssignAttributeName( mf ) ) {
         return false;
     }
+
     return true; 
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::x_AssignAttributesExtraQuals(
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    if (!mf.IsSetQual()) {
+        return true;
+    }
+    const vector< CRef< CGb_qual > >& quals = mf.GetQual();
+    vector< CRef< CGb_qual > >::const_iterator cit = quals.begin();
+    for ( ; cit != quals.end(); cit++) {
+        const CGb_qual& qual = **cit;
+        if (!qual.IsSetQual() || !qual.IsSetVal()) {
+            continue;
+        }
+        string key = qual.GetQual();
+        if (NStr::StartsWith(key, "gff_")) {
+            continue;
+        }
+        if (key == "exon_number"  &&  mf.GetData().IsGene()) {
+            continue;
+        }
+        TAttrCit fit = this->m_Attributes.find(key);
+        if (fit == m_Attributes.end()) {
+            SetAttribute(key, qual.GetVal());
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

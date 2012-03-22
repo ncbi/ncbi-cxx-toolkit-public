@@ -356,10 +356,11 @@ bool CGffWriteRecord::AssignSequenceNumber(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::AssignFromAsn(
-    CMappedFeat mapped_feature )
+    CMappedFeat mapped_feature,
+    unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_AssignType( mapped_feature ) ) {
+    if ( ! x_AssignType( mapped_feature, flags ) ) {
         return false;
     }
     if ( ! x_AssignSeqId( mapped_feature ) ) {
@@ -383,7 +384,7 @@ bool CGffWriteRecordFeature::AssignFromAsn(
     if ( ! x_AssignPhase( mapped_feature ) ) {
         return false;
     }
-    if ( ! x_AssignAttributes( mapped_feature ) ) {
+    if ( ! x_AssignAttributes( mapped_feature, flags ) ) {
         return false;
     }
     return true;
@@ -394,18 +395,17 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-	const CSeq_loc& loc = mf.GetLocation();
-    CConstRef<CSeq_id> id(loc.GetId());
-	if (!id  ||  !CWriteUtil::GetBestId(
-            CSeq_id_Handle::GetHandle(*id), mf.GetScope(), m_strId)) {
-        m_strId = ".";
+    if (CWriteUtil::GetBestId(mf, m_strId)) {
+        return true;
     }
+    m_strId = ".";
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignType(
-    CMappedFeat mf )
+    CMappedFeat mf,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     m_strType = "region";
@@ -540,7 +540,8 @@ bool CGffWriteRecordFeature::x_AssignPhase(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignAttributes(
-    CMappedFeat mapped_feat )
+    CMappedFeat mapped_feat,
+    unsigned int )
 //  ----------------------------------------------------------------------------
 {
     cerr << "FIXME: CGffWriteRecord::x_AssignAttributes" << endl;

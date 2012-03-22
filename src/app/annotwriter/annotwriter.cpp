@@ -231,6 +231,10 @@ void CAnnotWriterApp::Init()
         "full-annots",
         "GFF dialects: Inherit annots from components, unless prohibited",
         true );
+    arg_desc->AddFlag(
+        "use-extra-quals",
+        "GFF dialects: Restore original GFF type and attributes, if possible",
+        true );
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -528,6 +532,9 @@ unsigned int CAnnotWriterApp::xGffFlags(
     }
     if ( args["skip-exon-numbers"] ) {
         eFlags |= CGtfWriter::fNoExonNumbers;
+    }
+    if ( args["use-extra-quals"] ) {
+        eFlags |= CGff3Writer::fExtraQuals;
     }
     return eFlags;
 }

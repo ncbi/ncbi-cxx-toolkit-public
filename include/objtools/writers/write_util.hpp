@@ -97,6 +97,10 @@ public:
         CScope&, 
         string& );
 
+    static bool GetBestId(
+        CMappedFeat,
+        string& );
+
     static bool GetTrnaCodons(
         const CTrna_ext&,
         string& );

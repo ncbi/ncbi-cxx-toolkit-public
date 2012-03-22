@@ -151,7 +151,10 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
 {
-    if (CWriteUtil::IsNucProtSet(seh)) {
+    bool isNucProtSet = ( (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&  
+        seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) );
+
+    if (isNucProtSet) {
         for (CBioseq_CI bci(seh); bci; ++bci) {
             if (bci->IsSetInst_Mol() && (bci->GetInst_Mol() == CSeq_inst::eMol_aa)) {
                 continue;
@@ -273,7 +276,7 @@ bool CGff2Writer::x_WriteFeature(
 //  ----------------------------------------------------------------------------
 {
     CRef<CGffWriteRecordFeature> pParent(new CGffWriteRecordFeature(context));
-    if ( ! pParent->AssignFromAsn( mf ) ) {
+    if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }
 
@@ -287,12 +290,8 @@ bool CGff2Writer::x_WriteFeature(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffWriteRecord> pChild( new CGffWriteRecord( *pParent ) );
-            TSeqPos inst_len = 0;
-            if (context.BioseqHandle() && context.BioseqHandle().CanGetInst() &&
-                context.BioseqHandle().GetInst().CanGetLength()) {
-                inst_len = context.BioseqHandle().GetInst().GetLength();
-            }
-            pChild->CorrectLocation( *pParent, subint, inst_len );
+            pChild->CorrectLocation( *pParent, subint,
+                context.BioseqHandle().GetInst().GetLength() );
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }
