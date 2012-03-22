@@ -456,8 +456,10 @@ bool CGff3Writer::x_WriteFeature(
                 return true; //ignore
         }
     }
-    catch (...) {
+    catch (CException& e) {
         cerr << "CGff3Writer: Unsupported feature type encountered: Removed." << endl;
+        cerr << mf.GetFeatType() << "\t" << mf.GetFeatSubtype() << endl;
+        cerr << "  exc: " << e.ReportAll() << endl;
         return true;
     }
     return false;
@@ -478,8 +480,10 @@ bool CGff3Writer::x_WriteFeatureTrna(
         pParent->ForceAttributeID( 
             string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId ) );
     }
-    if (!x_WriteFeatureRecords( 
-            *pParent, mf.GetLocation(), fc.BioseqHandle().GetInst().GetLength() ) ) {
+    TSeqPos seqlength = 0;
+    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
+        seqlength = fc.BioseqHandle().GetInst().GetLength();
+    if (!x_WriteFeatureRecords( *pParent, mf.GetLocation(), seqlength ) ) {
         return false;
     }
 
@@ -492,7 +496,8 @@ bool CGff3Writer::x_WriteFeatureTrna(
     }
     const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
     unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
+        fc.BioseqHandle( )) {
         seqLength = fc.BioseqHandle().GetInst().GetLength();
     }
 
@@ -533,7 +538,8 @@ bool CGff3Writer::x_WriteFeatureGene(
     m_GeneMap[mf] = pRecord;
 
     unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
+        fc.BioseqHandle() ) {
         seqLength = fc.BioseqHandle().GetInst().GetLength();
     }
     return x_WriteFeatureRecords(*pRecord, *pRecord->GetCircularLocation(), 0);
@@ -576,7 +582,8 @@ bool CGff3Writer::x_WriteFeatureCds(
         iPhase = 3-iPhase;
     }
     unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
+        fc.BioseqHandle() ) {
         seqLength = fc.BioseqHandle().GetInst().GetLength();
     }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
@@ -632,7 +639,8 @@ bool CGff3Writer::x_WriteFeatureRna(
 
     const CSeq_loc& PackedInt = *pRna->GetCircularLocation();
     unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle())) {
+    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
+        fc.BioseqHandle() ) {
         seqLength = fc.BioseqHandle().GetInst().GetLength();
     }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
@@ -683,8 +691,10 @@ bool CGff3Writer::x_WriteFeatureGeneric(
             pParent->AssignParent( *( it->second ) );
         }
     }
-    return x_WriteFeatureRecords( 
-        *pParent, mf.GetLocation(), fc.BioseqHandle().GetInst().GetLength() );
+    TSeqPos seqlength = 0;
+    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
+        seqlength = fc.BioseqHandle().GetInst().GetLength();
+    return x_WriteFeatureRecords( *pParent, mf.GetLocation(), seqlength );
 }
 
 //  ============================================================================
