@@ -72,6 +72,8 @@ namespace NWinHook
     ///
     class CHookedFunction;
 
+    int my_stricmp(const char* left, const char* right);
+
     // !!! Not thred-safe class !!!
     class CHookedFunctions
     {
@@ -133,31 +135,7 @@ namespace NWinHook
     private:
         struct SNocaseCmp {
             bool operator()(const string& x, const string& y) const {
-                size_t sx = x.size();
-                size_t sy = y.size();
-                if (sx < sy)
-                    return true;
-                if (sx > sy)
-                    return false;
-
-                const char* dx = x.data();
-                const char* dy = y.data();
-                for (; sx != 0 /* &&  sy != 0 */; ++dx, --sx, ++dy /*, --sy*/) {
-                    char cx = *dx;
-                    char cy = *dy;
-                    if (cx >= 'A'  &&  cx <= 'Z')
-                        cx += 'a' - 'A';
-                    if (cy >= 'A'  &&  cy <= 'Z')
-                        cy += 'a' - 'A';
-                    if (cx < cy)
-                        return true;
-                    if (cx > cy)
-                        return false;
-                }
-                /*if (sy == 0)
-                    return false;
-                return true;*/
-                return false;
+                return my_stricmp(x.c_str(), y.c_str()) < 0;
             }
         };
         typedef map<string, CRef<CHookedFunction>, SNocaseCmp> TFunctionList;

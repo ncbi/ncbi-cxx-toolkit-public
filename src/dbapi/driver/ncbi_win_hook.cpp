@@ -1111,7 +1111,7 @@ namespace NWinHook
         for (BOOL bOk = ModuleFirst(hSnapshot, &me); bOk; bOk = ModuleNext(hSnapshot, &me)) {
             // We don't need to add to the list the process itself.
             // The module list should keep references to DLLs only
-            if (stricmp(pProcess->GetBaseName(), me.szModule) != 0) {
+            if (my_stricmp(pProcess->GetBaseName(), me.szModule) != 0) {
                 pDllModuleInstance = new CModuleInstance(me.szExePath, me.hModule);
                 pProcess->AddModule(pDllModuleInstance);
             }
@@ -1437,10 +1437,10 @@ namespace NWinHook
 
         // Loop through all descriptors and
         // find the import descriptor containing references to callee's functions
-        // Get import descriptor for a given pszCalleeModName (allee's module name)
+        // Get import descriptor for a given pszCalleeModName (callee's module name)
         while (pImportDesc->Name) {
             PSTR pszModName = (PSTR)((PBYTE) hmodCaller + pImportDesc->Name);
-            if (stricmp(pszModName, pszCalleeModName) == 0) {
+            if (my_stricmp(pszModName, pszCalleeModName) == 0) {
                 break;   // Found
             }
             pImportDesc++;
@@ -1482,16 +1482,13 @@ namespace NWinHook
             }
 
             if (bFound) {
-                MEMORY_BASIC_INFORMATION mbi;
-                ::VirtualQuery(ppfn, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
+                DWORD dwOldProtect;
                 // In order to provide writable access to this part of the
                 // memory we need to change the memory protection
-                if (::VirtualProtect(mbi.BaseAddress,
-                                     mbi.RegionSize,
-                                     // Use copy-on-write protection
-                                     // PAGE_WRITECOPY,
+                if (::VirtualProtect(ppfn,
+                                     sizeof(*ppfn),
                                      PAGE_READWRITE,
-                                     &mbi.Protect) == FALSE
+                                     &dwOldProtect) == FALSE
                    ) {
                     return bResult;
                 }
@@ -1500,11 +1497,11 @@ namespace NWinHook
                 *ppfn = *pfnNew;
 
                 // Restore the protection back
-                DWORD dwOldProtect;
-                ::VirtualProtect(mbi.BaseAddress,
-                                 mbi.RegionSize,
-                                 mbi.Protect,
-                                 &dwOldProtect
+                DWORD dwDummy;
+                ::VirtualProtect(ppfn,
+                                 sizeof(*ppfn),
+                                 dwOldProtect,
+                                 &dwDummy
                                  );
 
                 bResult = TRUE;
@@ -1545,8 +1542,8 @@ namespace NWinHook
         API_FUNC_ID apiFuncId;
         for (int i = 0; i < NUMBER_OF_MANDATORY_API_FUNCS; ++i) {
             apiFuncId = MANDATORY_API_FUNCS[i];
-            if ((stricmp(apiFuncId.szCalleeModName, m_szCalleeModName) == 0) &&
-                (stricmp(apiFuncId.szFuncName, m_szFuncName) == 0)) {
+            if ((my_stricmp(apiFuncId.szCalleeModName, m_szCalleeModName) == 0) &&
+                (my_stricmp(apiFuncId.szFuncName, m_szFuncName) == 0)) {
                 bResult = TRUE;
                 break;
             }
@@ -2328,10 +2325,17 @@ namespace NWinHook
                                            );
     }
 
+
+    static bool s_AppExited = false;
+
+
     ////////////////////////////////////////////////////////////////////////////
     COnExitProcess::COnExitProcess(void)
     : m_Hooked(false)
     {
+        if (s_AppExited)
+            return;
+
         BOOL result = CApiHookMgr::GetInstance().HookImport(
             "Kernel32.DLL",
             "ExitProcess",
@@ -2354,6 +2358,8 @@ namespace NWinHook
             ClearAll();
         }
         NCBI_CATCH_ALL_X( 9, NCBI_CURRENT_FUNCTION )
+
+        s_AppExited = true;
     }
 
     COnExitProcess&
@@ -2425,6 +2431,30 @@ namespace NWinHook
         COnExitProcess::Instance().ClearAll();
 
         CKernell32::ExitProcess(uExitCode);
+    }
+
+
+    int my_stricmp(const char* left, const char* right)
+    {
+        for (; *left != 0  &&  *right != 0; ++left, ++right) {
+            char cl = *left;
+            char cr = *right;
+            if (cl >= 'A'  &&  cl <= 'Z')
+                cl += 'a' - 'A';
+            if (cr >= 'A'  &&  cr <= 'Z')
+                cr += 'a' - 'A';
+            if (cl < cr)
+                return -1;
+            if (cl > cr)
+                return 1;
+        }
+        if (*right == 0) {
+            if (*left == 0)
+                return 0;
+            else
+                return 1;
+        }
+        return -1;
     }
 
 }
