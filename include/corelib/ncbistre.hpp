@@ -437,7 +437,7 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 /// @return
 /// "true" if the operation was successful, "is" was read entirely,
 /// and all of its contents had been written to "os";
-/// "false" if either extraction from "is" or insertion into "os" had failed.
+/// "false" if either extraction from "is" or insertion into "os" have failed.
 ///
 /// Note that upon successful completion, is.eof() may not always be true.
 /// The call may throw exceptions only if they are enabled on the
@@ -449,7 +449,7 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 ///
 /// NOTE that the call (as well as the mentioned STL counterpart) provides
 /// only a mechanism of delivering data to the destination "os" stream(buf);
-/// and the successful result code does not, generally, guarantee that the
+/// and the successful return result does not generally guarantee that the
 /// data have yet reached the physical destination.  Other "os"-specific API
 /// must be performed to assure the data integrity at the receiving device;
 /// such as checking for errors after doing a "close()" on an ofstream "os".

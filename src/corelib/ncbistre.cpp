@@ -42,6 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 #if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
 
 CNcbiIfstream::CNcbiIfstream(
@@ -79,8 +80,8 @@ void CNcbiFstream::open(
     IO_PREFIX::fstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
 }
 
-
 #endif
+
 
 CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 {
@@ -95,57 +96,63 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 #ifdef NO_PUBSYNC
     if ( !is.ipfx(1) ) {
         is.flags(f);
+        is.setstate(NcbiFailbit);
         return is;
     }
 #else
     CNcbiIstream::sentry s(is);
     if ( !s ) {
-        is.clear(NcbiFailbit | is.rdstate());
         is.flags(f);
+        is.setstate(NcbiFailbit);
         return is;
     }
 #endif
+    _ASSERT( is.good() );
 
-    SIZE_TYPE end = str.max_size();
-    SIZE_TYPE i = 0;
-    for (ch = is.rdbuf()->sbumpc();  !CT_EQ_INT_TYPE(ch, CT_EOF);
-         ch = is.rdbuf()->sbumpc()) {
-        i++;
+    SIZE_TYPE size = 0;
+    SIZE_TYPE max_size = str.max_size();
+    IOS_BASE::iostate iostate = NcbiGoodbit/*0*/;
+    for (;;) {
+        ch = is.rdbuf()->sbumpc();
+        if ( CT_EQ_INT_TYPE(ch, CT_EOF) ) {
+            iostate = NcbiEofbit;
+            break;
+        }
         SIZE_TYPE delim_pos = delims.find(CT_TO_CHAR_TYPE(ch));
         if (delim_pos != NPOS) {
             // Special case -- if two different delimiters are back to
             // back and in the same order as in delims, treat them as
             // a single delimiter (necessary for correct handling of
-            // DOS-style CRLF endings).
-            CT_INT_TYPE next = is.rdbuf()->sgetc();
-            if (!CT_EQ_INT_TYPE(next, CT_EOF)
-                &&  delims.find(CT_TO_CHAR_TYPE(next), delim_pos + 1) != NPOS){
+            // DOS/MAC-style CR/LF endings).
+            ch = is.rdbuf()->sgetc();
+            if (!CT_EQ_INT_TYPE(ch, CT_EOF)
+                &&  delims.find(CT_TO_CHAR_TYPE(ch), delim_pos + 1) != NPOS) {
                 is.rdbuf()->sbumpc();
             }
             break;
         }
-        if (i == end) {
-            is.clear(NcbiFailbit | is.rdstate());      
+        if (size == max_size) {
+            CT_INT_TYPE pc = is.rdbuf()->sungetc();
+            iostate = CT_EQ_INT_TYPE(pc, ch) ? NcbiFailbit : NcbiBadbit;
             break;
         }
 
         buf[pos++] = CT_TO_CHAR_TYPE(ch);
         if (pos == sizeof(buf)) {
             str.append(buf, pos);
-            pos = 0;
+            pos  = 0;
         }
+        size++;
     }
-    str.append(buf, pos);
-    if (CT_EQ_INT_TYPE(ch, EOF)) 
-        is.clear(NcbiEofbit | is.rdstate());      
-    if ( !i )
-        is.clear(NcbiFailbit | is.rdstate());      
+    if (pos > 0)
+        str.append(buf, pos);
 
 #ifdef NO_PUBSYNC
     is.isfx();
 #endif
-
     is.flags(f);
+    if (iostate  &&  (iostate != NcbiEofbit  ||  str.empty()))
+        is.clear(iostate);
     return is;
 }
 
@@ -162,27 +169,44 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
     return NcbiGetline(is, str, string(1, delim));
 #elif defined(NCBI_COMPILER_GCC29x)
     // The code below is normally somewhat faster than this call,
-    // which typically appends one character at a time to str;
-    // however, it blows up when built with some GCC versions.
-    return getline(is, str, delim);
+    // which typically appends only one character to "str" at a time;
+    // however, it blows up when is built with some GCC versions.
+    getline(is, str, delim);
 #else
-    char buf[1024];
     str.erase();
-    while (is.good()) {
+
+    if ( !is.good() ) {
+        is.setstate(NcbiFailbit);
+        return is;
+    }
+
+    char buf[1024];
+    SIZE_TYPE size = 0;
+    SIZE_TYPE max_size = str.max_size();
+    do {
         CT_INT_TYPE nextc = is.get();
         if (CT_EQ_INT_TYPE(nextc, CT_EOF) 
             ||  CT_EQ_INT_TYPE(nextc, CT_TO_INT_TYPE(delim))) {
             break;
         }
-        is.putback(nextc);
-        is.get(buf, sizeof(buf), delim);
-        str.append(buf, (size_t)is.gcount());
-    }
-    if (str.empty()  &&  is.eof()) {
-        is.setstate(NcbiFailbit);
-    }
-    return is;
+        if ( !is.unget() )
+            break;
+        if (size == max_size) {
+            is.clear(NcbiFailbit);
+            break;
+        }
+        SIZE_TYPE n = max_size - size;
+        is.get(buf, n < sizeof(buf) ? n : sizeof(buf), delim);
+        n = (size_t) is.gcount();
+        str.append(buf, n);
+        size += n;
+        _ASSERT(size == str.length());
+    } while ( is.good() );
 #endif
+
+    if (is.rdstate() == NcbiEofbit  &&  !str.empty())
+        is.clear();
+    return is;
 }
 
 
@@ -198,21 +222,18 @@ const char* Endl(void)
 }
 
 
-// Get the next line taking into account platform specifics of End-of-Line
+// Get a line taking into account platform-specific of End-Of-Line
 CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
 {
-#if defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)
     NcbiGetline(is, str, '\n');
-    if (!str.empty()  &&  str[str.length()-1] == '\r')
+    if (!str.empty()  &&  str[str.length() - 1] == '\r')
         str.resize(str.length() - 1);
 #elif defined(NCBI_OS_DARWIN)
     NcbiGetline(is, str, "\r\n");
 #else /* assume UNIX-like EOLs */
     NcbiGetline(is, str, '\n');
-#endif
-    // special case -- an empty line
-    if (is.fail()  &&  !is.eof()  &&  !is.gcount()  &&  str.empty())
-        is.clear(is.rdstate() & ~NcbiFailbit);
+#endif //NCBI_OS_...
     return is;
 }
 
@@ -476,8 +497,8 @@ istream& istream::read(char *s, streamsize n)
 EEncodingForm ReadIntoUtf8(
     CNcbiIstream&     input,
     CStringUTF8*      result,
-    EEncodingForm     ef             /*  = eEncodingForm_Unknown*/,
-    EReadUnknownNoBOM what_if_no_bom /* = eNoBOM_GuessEncoding*/
+    EEncodingForm     ef             /* = eEncodingForm_Unknown */,
+    EReadUnknownNoBOM what_if_no_bom /* = eNoBOM_GuessEncoding  */
 )
 {
     EEncodingForm ef_bom = eEncodingForm_Unknown;
