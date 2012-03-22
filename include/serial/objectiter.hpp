@@ -265,8 +265,7 @@ public:
 
     void SetLocalReadHook(CObjectIStream& stream,
                           CReadClassMemberHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalReadHook(CReadClassMemberHook* hook) const;
+    void SetGlobalReadHook(CReadClassMemberHook* hook) const;
     void ResetLocalReadHook(CObjectIStream& stream) const;
     void ResetGlobalReadHook(void) const;
     void SetPathReadHook(CObjectIStream* in, const string& path,
@@ -274,8 +273,7 @@ public:
 
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteClassMemberHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalWriteHook(CWriteClassMemberHook* hook) const;
+    void SetGlobalWriteHook(CWriteClassMemberHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
     void SetPathWriteHook(CObjectOStream* stream, const string& path,
@@ -292,8 +290,7 @@ public:
 
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyClassMemberHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalCopyHook(CCopyClassMemberHook* hook) const;
+    void SetGlobalCopyHook(CCopyClassMemberHook* hook) const;
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
     void ResetGlobalCopyHook(void) const;
     void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
@@ -346,8 +343,7 @@ public:
 
     void SetLocalReadHook(CObjectIStream& stream,
                           CReadChoiceVariantHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
+    void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
     void ResetLocalReadHook(CObjectIStream& stream) const;
     void ResetGlobalReadHook(void) const;
     void SetPathReadHook(CObjectIStream* stream, const string& path,
@@ -355,8 +351,7 @@ public:
 
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteChoiceVariantHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
+    void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
     void SetPathWriteHook(CObjectOStream* stream, const string& path,
@@ -373,8 +368,7 @@ public:
 
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyChoiceVariantHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
+    void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
     void ResetGlobalCopyHook(void) const;
     void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
@@ -512,8 +506,7 @@ public:
 
     void SetLocalReadHook(CObjectIStream& stream,
                           CReadChoiceVariantHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
+    void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
     void ResetLocalReadHook(CObjectIStream& stream) const;
     void ResetGlobalReadHook(void) const;
     void SetPathReadHook(CObjectIStream* stream, const string& path,
@@ -521,8 +514,7 @@ public:
 
     void SetLocalWriteHook(CObjectOStream& stream,
                           CWriteChoiceVariantHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
+    void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
     void SetPathWriteHook(CObjectOStream* stream, const string& path,
@@ -530,8 +522,7 @@ public:
 
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyChoiceVariantHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
+    void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
     void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
     void ResetGlobalCopyHook(void) const;
     void SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
