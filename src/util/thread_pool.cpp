@@ -1907,6 +1907,11 @@ CThreadPool_Controller::CThreadPool_Controller(unsigned int max_threads,
       m_MaxThreads(max_threads),
       m_InHandleEvent(false)
 {
+    if (max_threads < min_threads  ||  max_threads == 0) {
+        NCBI_THROW_FMT(CThreadPoolException, eInvalid,
+                       "Invalid numbers of min and max number of threads:"
+                       " min=" << min_threads << ", max=" << max_threads);
+    }
 }
 
 CThreadPool_Controller::~CThreadPool_Controller(void)

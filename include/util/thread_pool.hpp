@@ -69,7 +69,7 @@ class CThreadPoolException;
 /// To use this class in application you should inherit your own class from it
 /// and define method Execute() - the main method where all task logic
 /// executes.
-/// Every single task can be executed (or cancelled before execution)
+/// Every single task can be executed (or canceled before execution)
 /// only once and only in one pool.
 
 class NCBI_XUTIL_EXPORT CThreadPool_Task : public CObject
@@ -112,7 +112,7 @@ public:
     ///   If the task has already finished its execution then do nothing.
     void RequestToCancel(void);
 
-    /// Check if cancelation of the task was requested
+    /// Check if cancellation of the task was requested
     bool IsCancelRequested(void) const;
 
     /// Get status of the task
@@ -127,6 +127,10 @@ public:
 
 protected:
     /// Callback to notify on changes in the task status
+    /// @param old
+    ///   Task status before the change. Current value can be obtained from
+    ///   GetStatus().
+    ///
     /// @note
     ///   Status eQueued is set before task is actually pushed to the queue.
     ///   After eQueued status eIdle can appear if
@@ -134,12 +138,12 @@ protected:
     ///   Status eCanceled will be set only in 2 cases:
     ///   - if task is not executing yet and RequestToCancel() called, or
     ///   - if method Execute() returned eCanceled.
-    ///   To check if task cancelation is requested during its execution
+    ///   To check if task cancellation is requested during its execution
     ///   use methods OnCancelRequested() or IsCancelRequested().
-    /// @sa OnCancelRequested(), IsCancelRequested()
-    virtual void OnStatusChange(EStatus /* old */);
+    /// @sa OnCancelRequested(), IsCancelRequested(), GetStatus()
+    virtual void OnStatusChange(EStatus old);
 
-    /// Callback to notify when cancelation of the task is requested
+    /// Callback to notify when cancellation of the task is requested
     /// @sa  OnStatusChange()
     virtual void OnCancelRequested(void);
 
@@ -188,7 +192,7 @@ private:
     unsigned int       m_Priority;
     /// Status of the task
     EStatus            m_Status;
-    /// Flag indicating if cancelation of the task was already requested
+    /// Flag indicating if cancellation of the task was already requested
     volatile bool      m_CancelRequested;
 };
 
@@ -222,9 +226,11 @@ public:
     ///   given timeout for some empty space in the queue.
     /// @param max_threads
     ///   Maximum number of threads allowed to be launched in the pool.
+    ///   Value cannot be less than min_threads or equal to 0.
     /// @param min_threads
     ///   Minimum number of threads that have to be launched even
-    ///   if there are no tasks added.
+    ///   if there are no tasks added. Value cannot be greater
+    ///   than max_threads.
     /// @param threads_mode
     ///   Running mode of all threads in thread pool. Values fRunDetached and
     ///   fRunAllowST are ignored.
@@ -538,7 +544,7 @@ protected:
     /// So every time when you need to guard access to some members of derived
     /// class it is recommended to use this very mutex. But NB: it's assumed
     /// everywhere that this mutex is locked on the small periods of time. So
-    /// be carefull and implement the same pattern.
+    /// be careful and implement the same pattern.
     CMutex& GetMainPoolMutex(CThreadPool* pool) const;
 
     /// Ensure that constraints of minimum and maximum count of threads in pool
@@ -595,7 +601,8 @@ public:
                          ///< ThreadPool_Controller when it is not attached
                          ///< to any ThreadPool
         eInvalid         ///< attempt to operate task added in one ThreadPool
-                         ///< by means of methods of another ThreadPool
+                         ///< by means of methods of another ThreadPool or
+                         ///< invalid parameters in the constructor
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CThreadPoolException, CException);
