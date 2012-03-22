@@ -515,6 +515,10 @@ IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
                  fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces
                  | fWithNcbirc | fJustCore | fCountCleared);
 
+    if ( !is ) {
+        return NULL;
+    }
+
     // Ensure that x_Read gets a stream it can handle.
     EEncodingForm ef = GetTextEncodingForm(is, eBOM_Discard);
     if (ef == eEncodingForm_Utf16Native  ||  ef == eEncodingForm_Utf16Foreign) {
@@ -687,8 +691,8 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     }
 
     if ( !is.eof() ) {
-        NCBI_THROW2(CRegistryException, eErr,
-                    "Error in reading the registry: '" + str + "'", line);
+        ERR_POST_X(4, "Error reading the registry after line " << line << ": "
+                       << str);
     }
 
     if ( non_modifying ) {
