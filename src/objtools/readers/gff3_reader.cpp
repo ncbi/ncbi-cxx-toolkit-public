@@ -180,6 +180,17 @@ bool CGff3Reader::x_UpdateAnnot(
     record.GetAttribute("gbkey", gbkey);
     CRef< CSeq_feat > pFeature(new CSeq_feat);
 
+    //  Round trip info:
+    CRef< CGb_qual > pQual( new CGb_qual );
+    pQual->SetQual( "gff_source" );
+    pQual->SetVal( record.Source() );
+    pFeature->SetQual().push_back( pQual );
+
+    pQual.Reset( new CGb_qual );
+    pQual->SetQual( "gff_type" );
+    pQual->SetVal( record.Type() );
+    pFeature->SetQual().push_back( pQual );
+
     //  Special case: exon feature belonging to an RNA we have already seen
     if (record.Type() == "exon") {
         string parent;
