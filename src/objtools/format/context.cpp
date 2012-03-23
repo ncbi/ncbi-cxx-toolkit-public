@@ -879,6 +879,7 @@ void CMasterContext::x_SetBaseName(void)
 CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle )
 {
     m_CanSourcePubsBeFused = false;
+    m_HasSmallGenomeSet = false;
 
     CBioseq_CI bioseq_iter( entry_handle.GetScope(), *entry_handle.GetSeq_entryCore() );
     for( ; bioseq_iter; ++bioseq_iter ) {
@@ -920,6 +921,17 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
                             break;
                 }
             }
+        }
+    }
+
+    // check all Bioseq-sets
+    CSeq_entry_CI seq_entry_ci( entry_handle );
+    for( ; seq_entry_ci; ++seq_entry_ci ) {
+        if( seq_entry_ci->IsSet() && seq_entry_ci->GetSet().CanGetClass() &&
+            seq_entry_ci->GetSet().GetClass() == CBioseq_set::eClass_small_genome_set ) 
+        {
+            m_HasSmallGenomeSet = true;
+            break;
         }
     }
 }

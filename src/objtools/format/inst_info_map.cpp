@@ -108,6 +108,8 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         TVoucherInfoElem("KU:I",             TVoucherInfoRef(new SVoucherInfo(&s_ku_base,   false, &s_kui_pfx,    NULL,        "University of Kansas, Museum of Natural History, Ichthyology collection") ) ),
         TVoucherInfoElem("KU:IT",            TVoucherInfoRef(new SVoucherInfo(&s_ku_base,   false, &s_kuit_pfx,   NULL,        "University of Kansas, Museum of Natural History, Ichthyology tissue collection") ) ),
         TVoucherInfoElem("KWP:Ento",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Kenelm W. Philip Collection, University of Alaska Museum of the North, Lepidoptera collection") ) ),
+        TVoucherInfoElem("MLZ:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Moore Laboratory of Zoology, Occidental College, Bird Collection" ) ) ),
+        TVoucherInfoElem("MLZ:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Moore Laboratory of Zoology, Occidental College, Mammal Collection" ) ) ),
         TVoucherInfoElem("MSB:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Bird Collection") ) ),
         TVoucherInfoElem("MSB:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Mammal Collection") ) ),
         TVoucherInfoElem("MSB:Para",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,  true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Parasitology Collection") ) ),

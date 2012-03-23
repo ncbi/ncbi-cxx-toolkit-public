@@ -405,9 +405,11 @@ public:
     CTopLevelSeqEntryContext( const CSeq_entry_Handle &entry_handle );
 
     bool GetCanSourcePubsBeFused(void) const { return m_CanSourcePubsBeFused; }
+    bool GetHasSmallGenomeSet(void) const { return m_HasSmallGenomeSet; }
 
 private:
     bool m_CanSourcePubsBeFused;
+    bool m_HasSmallGenomeSet;
 };
 
 
