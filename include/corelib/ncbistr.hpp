@@ -42,7 +42,7 @@
 #endif
 #include <stdarg.h>
 #include <time.h>
-
+#include <errno.h>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -184,17 +184,19 @@ inline const char* impl_ToCString(const string& s) { return s.c_str(); }
 class NCBI_XNCBI_EXPORT NStr
 {
 public:
-    /// Convert string to numeric value.
+    /// Convert string to positive integer value.
     ///
     /// @param str
-    ///   String containing digits.
+    ///   String containing only digits, representing non-negative value in
+    ///   the "int" range: [0..kMax_Int].
     /// @return
     ///   - Convert "str" to a (non-negative) "int" value and return
     ///     this value.
     ///   - -1 if "str" contains any symbols other than [0-9], or
     ///     if it represents a number that does not fit into "int".
+    /// @deprecated  Use template-based StringToNumeric<> instead.
+    NCBI_DEPRECATED
     static int StringToNumeric(const string& str);
-
 
     /// Number to string conversion flags.
     ///
@@ -230,6 +232,50 @@ public:
         fAllStringToNumFlags  = 0x7F00
     };
     typedef int TStringToNumFlags;   ///< Bitwise OR of "EStringToNumFlags"
+
+
+    /// Convert string to a numeric value.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param flags
+    ///   Optional flags to tune up how the string is converted to value.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @return
+    ///   If conversion succeeded, then -- the numeric value that is
+    ///   represented by "str".
+    ///   On conversion error, depending on whether flag 'fConvErr_NoThrow' is:
+    ///   - Not set -- throw an exception.
+    ///   - Set     -- return zero, and set 'errno' either to EINVAL
+    ///     (if "str" contains illegal symbols) or to ERANGE (if "str"
+    ///     represents a number that does not fit into the target result
+    ///     type's range).
+    template <typename TNumeric>
+    static TNumeric StringToNumeric(const CTempString& str,
+                                    TStringToNumFlags  flags = 0,
+                                    int                base  = 10);
+
+    /// Convert string to a numeric value.
+    ///
+    /// @param str [in]
+    ///   String to be converted.
+    /// @param value [out]
+    ///   The numeric value represented by "str". Zero on any error.
+    /// @param flags [in]
+    ///   Optional flags to tune up how the string is converted to value.
+    /// @param base [in]
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    /// @return
+    ///   If conversion succeeded -- TRUE.
+    ///   On conversion error, depending on whether flag 'fConvErr_NoThrow' is:
+    ///   - Not set -- throw an exception.
+    ///   - Set     -- return FALSE.
+    template <typename TNumeric>
+    static bool StringToNumeric(const CTempString& str,
+                                TNumeric*          value, /*[out]*/ 
+                                TStringToNumFlags  flags = 0,
+                                int                base  = 10);
 
     /// Convert string to int.
     ///
@@ -451,7 +497,7 @@ public:
     ///   Converted string value.
     template<typename TNumeric>
     static string NumericToString(TNumeric value,
-        TNumToStringFlags flags = 0, int  base = 10);
+                                  TNumToStringFlags flags = 0, int base = 10);
 
     /// Convert numeric value to string.
     ///
@@ -468,7 +514,7 @@ public:
     ///   If value is float or double type, the parameter is ignored.
     template<typename TNumeric>
     static void NumericToString(string& out_str, TNumeric value,
-        TNumToStringFlags flags = 0, int  base = 10);
+                                TNumToStringFlags flags = 0, int base = 10);
     
     /// Convert int to string.
     ///
@@ -483,27 +529,27 @@ public:
     /// @return
     ///   Converted string value.
     static string IntToString(int value, TNumToStringFlags flags = 0,
-                              int  base = 10);
+                              int base = 10);
 
     static string IntToString(unsigned int value, TNumToStringFlags flags = 0,
-                              int  base = 10);
+                              int base = 10);
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(long value, TNumToStringFlags flags = 0,
-                              int  base = 10);
+                              int base = 10);
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(unsigned long value, TNumToStringFlags flags = 0,
-                              int  base = 10);
+                              int base = 10);
 #if !NCBI_INT8_IS_LONG
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(Int8 value, TNumToStringFlags flags = 0,
-                              int  base = 10);
+                              int base = 10);
     /// @deprecated  Use NumericToString instead
     NCBI_DEPRECATED
     static string IntToString(Uint8 value, TNumToStringFlags flags = 0,
-                              int  base = 10);
+                              int base = 10);
 #endif
 
 
@@ -646,7 +692,7 @@ public:
     /// @return
     ///   Converted string value.
     static string LongToString(long value, TNumToStringFlags flags = 0,
-                               int  base = 10);
+                               int base = 10);
 
     /// Convert Int to string.
     ///
@@ -3099,6 +3145,7 @@ bool   CStringUTF8::x_EvalNext(char ch)
 }
 #endif // __NO_EXPORT_STRINGUTF8__
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CParseTemplException --
@@ -3722,243 +3769,634 @@ const string& CNcbiEmptyString::Get(void)
 
 
 //-------------------- default implementation causes compilation error
-template<typename TNumeric>
-inline
+
+template<typename TNumeric> inline
 string NStr::NumericToString(TNumeric /*value*/,
-                             TNumToStringFlags /*flags*/, int  /*base*/)
+                             TNumToStringFlags /*flags*/, int /*base*/)
 {
     return CNotImplemented<TNumeric>::NumericToString_is_not_implemented_for_non_numeric_types();
 }
 
-template<typename TNumeric>
-inline
+template<typename TNumeric> inline
 void NStr::NumericToString(string& /*out_str*/, TNumeric /*value*/,
-                           TNumToStringFlags /*flags*/, int  /*base*/)
+                           TNumToStringFlags /*flags*/, int /*base*/)
 {
     CNotImplemented<TNumeric>::NumericToString_is_not_implemented_for_non_numeric_types();
 }
 
+template <typename TNumeric> inline
+TNumeric NStr::StringToNumeric(const CTempString& /*str*/, 
+                               TStringToNumFlags /*flags*/, int /*base*/)
+{
+    return CNotImplemented<TNumeric>::StringToNumeric_is_not_implemented_for_non_numeric_types();
+}
+
+template <typename TNumeric> inline
+bool NStr::StringToNumeric(const CTempString& /*str*/, TNumeric* /*value*/,
+                           TStringToNumFlags /*flags*/, int /*base*/)
+{
+    return CNotImplemented<TNumeric>::StringToNumeric_is_not_implemented_for_non_numeric_types();
+}
+
 //---------------------- char
+
 template<> inline
 string NStr::NumericToString(char value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::IntToString(value,flags,base);
+    return NStr::IntToString(value, flags, base);
 }
 
 template<> inline
 string NStr::NumericToString(unsigned char value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::UIntToString(value,flags,base);
+    return NStr::UIntToString(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, char value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::IntToString(out_str, value,flags,base);
+    NStr::IntToString(out_str, value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, unsigned char value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::UIntToString(out_str, value,flags,base);
+    NStr::UIntToString(out_str, value, flags, base);
+}
+
+template<> inline
+char NStr::StringToNumeric(const CTempString& str,
+                           TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    if (n > numeric_limits<char>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return 0;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<char>(): overflow", 0);
+        }
+    }
+    return (char) n;
+}
+
+template<> inline
+unsigned char NStr::StringToNumeric(const CTempString& str,
+                                    TStringToNumFlags flags, int base)
+{
+    unsigned int n = StringToUInt(str, flags, base);
+    if (n > numeric_limits<unsigned char>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return 0;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<unsigned char>(): overflow", 0);
+        }
+    }
+    return (unsigned char) n;
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           char* value, TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    *value = 0;
+    if ( !n && errno ) {
+        return false;
+    }
+    if (n > numeric_limits<char>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return false;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<char>(): overflow", 0);
+        }
+    }
+    *value = (char) n;
+    return true;
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           unsigned char* value, TStringToNumFlags flags, int base)
+{
+    unsigned int n = StringToUInt(str, flags, base);
+    *value = 0;
+    if ( !n && errno ) {
+        return false;
+    }
+    if (n > numeric_limits<unsigned char>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return false;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<unsigned char>(): overflow", 0);
+        }
+    }
+    *value = (unsigned char) n;
+    return true;
 }
 
 //---------------------- wchar_t
+
 template<> inline
 string NStr::NumericToString(wchar_t value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::IntToString(value,flags,base);
+    return NStr::IntToString(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, wchar_t value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::IntToString(out_str, value,flags,base);
+    NStr::IntToString(out_str, value, flags, base);
+}
+
+template<> inline
+wchar_t NStr::StringToNumeric(const CTempString& str,
+                              TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    if (n > numeric_limits<wchar_t>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return 0;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<wchar_t>(): overflow", 0);
+        }
+    }
+    return (wchar_t) n;
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           wchar_t* value, TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    *value = 0;
+    if ( !n && errno ) {
+        return false;
+    }
+    if (n > numeric_limits<wchar_t>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return false;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<wchar_t>(): overflow", 0);
+        }
+    }
+    *value = (wchar_t) n;
+    return true;
 }
 
 //---------------------- short
+
 template<> inline
 string NStr::NumericToString(short value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::IntToString(value,flags,base);
+    return NStr::IntToString(value, flags, base);
 }
 
 template<> inline
 string NStr::NumericToString(unsigned short value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::UIntToString(value,flags,base);
+    return NStr::UIntToString(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, short value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::IntToString(out_str, value,flags,base);
+    NStr::IntToString(out_str, value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, unsigned short value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::UIntToString(out_str, value,flags,base);
+    NStr::UIntToString(out_str, value, flags, base);
+}
+
+template<> inline
+short NStr::StringToNumeric(const CTempString& str,
+                            TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    if (n > numeric_limits<short>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return 0;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<short>(): overflow", 0);
+        }
+    }
+    return (short) n;
+}
+
+template<> inline
+unsigned short NStr::StringToNumeric(const CTempString& str,
+                                     TStringToNumFlags flags, int base)
+{
+    unsigned int n = StringToUInt(str, flags, base);
+    if (n > numeric_limits<unsigned short>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return 0;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<unsigned short>(): overflow", 0);
+        }
+    }
+    return (unsigned short) n;
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           short* value, TStringToNumFlags flags, int base)
+{
+    int n = StringToInt(str, flags, base);
+    *value = 0;
+    if ( !n && errno ) {
+        return false;
+    }
+    if (n > numeric_limits<short>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return false;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<short>(): overflow", 0);
+        }
+    }
+    *value = (short) n;
+    return true;
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           unsigned short* value, TStringToNumFlags flags, int base)
+{
+    unsigned int n = StringToUInt(str, flags, base);
+    *value = 0;
+    if ( !n && errno ) {
+        return false;
+    }
+    if (n > numeric_limits<unsigned short>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return false;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<unsigned short>(): overflow", 0);
+        }
+    }
+    *value = (unsigned short) n;
+    return true;
 }
 
 //---------------------- int
+
 template<> inline
 string NStr::NumericToString(int value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::IntToString(value,flags,base);
+    return NStr::IntToString(value, flags, base);
 }
 
 template<> inline
 string NStr::NumericToString(unsigned int value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::UIntToString(value,flags,base);
+    return NStr::UIntToString(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, int value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::IntToString(out_str, value,flags,base);
+    NStr::IntToString(out_str, value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, unsigned int value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::UIntToString(out_str, value,flags,base);
+    NStr::UIntToString(out_str, value, flags, base);
+}
+
+template<> inline
+int NStr::StringToNumeric(const CTempString& str,
+                          TStringToNumFlags flags, int base)
+{
+    return StringToInt(str, flags, base);
+}
+
+template<> inline
+unsigned int NStr::StringToNumeric(const CTempString& str,
+                                   TStringToNumFlags flags, int base)
+{
+    return StringToUInt(str, flags, base);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           int* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToInt(str, flags, base);
+    return (*value || !errno);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           unsigned int* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToUInt(str, flags, base);
+    return (*value || !errno);
 }
 
 //---------------------- long
+
 template<> inline
 string NStr::NumericToString(long value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::LongToString(value,flags,base);
+    return NStr::LongToString(value, flags, base);
 }
 
 template<> inline
 string NStr::NumericToString(unsigned long value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::ULongToString(value,flags,base);
+    return NStr::ULongToString(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, long value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::LongToString(out_str, value,flags,base);
+    NStr::LongToString(out_str, value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, unsigned long value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::ULongToString(out_str, value,flags,base);
+    NStr::ULongToString(out_str, value, flags, base);
+}
+
+template<> inline
+long NStr::StringToNumeric(const CTempString& str,
+                           TStringToNumFlags flags, int base)
+{
+    return StringToLong(str, flags, base);
+}
+
+template<> inline
+unsigned long NStr::StringToNumeric(const CTempString& str,
+                                    TStringToNumFlags flags, int base)
+{
+    return StringToULong(str, flags, base);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           long* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToLong(str, flags, base);
+    return (*value || !errno);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           unsigned long* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToULong(str, flags, base);
+    return (*value || !errno);
 }
 
 //---------------------- int64
+
 #if !NCBI_INT8_IS_LONG
 template<> inline
 string NStr::NumericToString(Int8 value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::Int8ToString(value,flags,base);
+    return NStr::Int8ToString(value, flags, base);
 }
 
 template<> inline
 string NStr::NumericToString(Uint8 value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::UInt8ToString(value,flags,base);
+    return NStr::UInt8ToString(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, Int8 value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::Int8ToString(out_str, value,flags,base);
+    NStr::Int8ToString(out_str, value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, Uint8 value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::UInt8ToString(out_str, value,flags,base);
+    NStr::UInt8ToString(out_str, value, flags, base);
 }
+
+template<> inline
+Int8 NStr::StringToNumeric(const CTempString& str,
+                           TStringToNumFlags flags, int base)
+{
+    return StringToInt8(str, flags, base);
+}
+
+template<> inline
+Uint8 NStr::StringToNumeric(const CTempString& str,
+                            TStringToNumFlags flags, int base)
+{
+    return StringToUInt8(str, flags, base);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           Int8* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToInt8(str, flags, base);
+    return (*value || !errno);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           Uint8* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToUInt8(str, flags, base);
+    return (*value || !errno);
+}
+
 #elif SIZEOF_LONG_LONG
+
 template<> inline
 string NStr::NumericToString(long long value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::Int8ToString(value,flags,base);
+    return NStr::Int8ToString(value, flags, base);
 }
 
 template<> inline
 string NStr::NumericToString(unsigned long long value,
-    TNumToStringFlags flags, int  base)
+                             TNumToStringFlags flags, int base)
 {
-    return NStr::UInt8ToString(value,flags,base);
+    return NStr::UInt8ToString(value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, long long value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::Int8ToString(out_str, value,flags,base);
+    NStr::Int8ToString(out_str, value, flags, base);
 }
 
 template<> inline
 void NStr::NumericToString(string& out_str, unsigned long long value,
-    TNumToStringFlags flags, int  base)
+                           TNumToStringFlags flags, int base)
 {
-    NStr::UInt8ToString(out_str, value,flags,base);
+    NStr::UInt8ToString(out_str, value, flags, base);
+}
+
+template<> inline
+long long NStr::StringToNumeric(const CTempString& str,
+                                TStringToNumFlags flags, int base)
+{
+    return StringToInt8(str, flags, base);
+}
+
+template<> inline
+unsigned long long NStr::StringToNumeric(const CTempString& str,
+                                         TStringToNumFlags flags, int base)
+{
+    return StringToUInt8(str, flags, base);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           long long* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToInt8(str, flags, base);
+    return (*value || !errno);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           unsigned long long* value, TStringToNumFlags flags, int base)
+{
+    *value = StringToUInt8(str, flags, base);
+    return (*value || !errno);
 }
 #endif
 
 //---------------------- float
+
 template<> inline
 string NStr::NumericToString(float value,
-    TNumToStringFlags flags, int  /*base*/)
+                             TNumToStringFlags flags, int /*base*/)
 {
-    return NStr::DoubleToString(value,-1,flags);
+    return NStr::DoubleToString(value, -1, flags);
 }
-
 
 template<> inline
 void NStr::NumericToString(string& out_str, float value,
-    TNumToStringFlags flags, int  /*base*/)
+                           TNumToStringFlags flags, int /*base*/)
 {
-    NStr::DoubleToString(out_str, value,-1,flags);
+    NStr::DoubleToString(out_str, value, -1, flags);
+}
+
+template<> inline
+float NStr::StringToNumeric(const CTempString& str,
+                            TStringToNumFlags flags, int /*base*/)
+{
+    double n = StringToDouble(str, flags);
+    if (n > numeric_limits<float>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return 0;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<float>(): overflow", 0);
+        }
+    }
+    return (float) n;
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           float* value, TStringToNumFlags flags, int /*base*/)
+{
+    double n = StringToDouble(str, flags);
+    *value = 0;
+    if ( !n && errno ) {
+        return false;
+    }
+    if (n > numeric_limits<float>::max()) {
+        if (flags & NStr::fConvErr_NoThrow) {
+            errno = ERANGE;
+            return false;
+        } else {
+            NCBI_THROW2(CStringException, eConvert, 
+                "NStr::StringToNumeric<float>(): overflow", 0);
+        }
+    }
+    *value = (float) n;
+    return true;
 }
 
 //---------------------- double
+
 template<> inline
 string NStr::NumericToString(double value,
-    TNumToStringFlags flags, int  /*base*/)
+                             TNumToStringFlags flags, int /*base*/)
 {
-    return NStr::DoubleToString(value,-1,flags);
+    return NStr::DoubleToString(value, -1, flags);
 }
-
 
 template<> inline
 void NStr::NumericToString(string& out_str, double value,
-    TNumToStringFlags flags, int  /*base*/)
+                           TNumToStringFlags flags, int /*base*/)
 {
-    NStr::DoubleToString(out_str, value,-1,flags);
+    NStr::DoubleToString(out_str, value, -1, flags);
 }
+
+template<> inline
+double NStr::StringToNumeric(const CTempString& str,
+                             TStringToNumFlags flags, int /*base*/)
+{
+    return StringToDouble(str, flags);
+}
+
+template<> inline
+bool NStr::StringToNumeric(const CTempString& str,
+                           double* value, TStringToNumFlags flags, int /*base*/)
+{
+    *value = StringToDouble(str, flags);
+    return (*value || !errno);
+}
+
 //---------------------- 
 
 inline

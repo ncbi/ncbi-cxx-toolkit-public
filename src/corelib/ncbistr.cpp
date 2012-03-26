@@ -34,14 +34,12 @@
 #include <common/ncbi_source_ver.h>
 #include <corelib/ncbistr.hpp>
 #include <corelib/tempstr.hpp>
-#include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbistr_util.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbifloat.h>
 #include <memory>
 #include <algorithm>
 #include <iterator>
-#include <errno.h>
 #include <stdio.h>
 #include <locale.h>
 #include <math.h>
