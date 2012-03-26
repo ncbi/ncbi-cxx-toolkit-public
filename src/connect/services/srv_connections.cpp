@@ -425,26 +425,22 @@ CNetServerConnection SNetServerImpl::Connect()
 
     EIO_Status io_st;
     STimeout internal_timeout = s_InternalConnectTimeout;
-    STimeout remaining_timeout = m_ServerInPool->m_ServerPool->m_ConnTimeout;
+    const STimeout& conn_timeout = m_ServerInPool->m_ServerPool->m_ConnTimeout;
+    CAbsTimeout abs_timeout(conn_timeout.sec, conn_timeout.usec * 1000);
+    STimeout remaining_timeout;
 
     do {
-        if (remaining_timeout.sec == s_InternalConnectTimeout.sec ?
-                remaining_timeout.usec > s_InternalConnectTimeout.usec :
-                remaining_timeout.sec > s_InternalConnectTimeout.sec) {
-            remaining_timeout.sec -= s_InternalConnectTimeout.sec;
-            if (remaining_timeout.usec < s_InternalConnectTimeout.usec) {
-                --remaining_timeout.sec;
-                remaining_timeout.usec += 1000 * 1000;
-            }
-            remaining_timeout.usec -= s_InternalConnectTimeout.usec;
-        } else {
-            internal_timeout = remaining_timeout;
-            remaining_timeout.sec = remaining_timeout.usec = 0;
-        }
-
         io_st = conn->m_Socket.Connect(
                 m_ServerInPool->m_Address.host, m_ServerInPool->m_Address.port,
                 &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
+
+        abs_timeout.GetRemainingTime().Get(&remaining_timeout.sec,
+                &remaining_timeout.usec);
+
+        if (s_InternalConnectTimeout.sec == remaining_timeout.sec ?
+                s_InternalConnectTimeout.usec > remaining_timeout.usec :
+                s_InternalConnectTimeout.sec > remaining_timeout.sec)
+            internal_timeout = remaining_timeout;
     } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
         remaining_timeout.sec > 0));
 
