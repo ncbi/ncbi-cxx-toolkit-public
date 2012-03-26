@@ -6,7 +6,7 @@
 LIB_PROJ = hgvs_parser
 SUB_PROJ = test
 
-REQUIRES = Boost.Spirit
+REQUIRES = Boost.Spirit objects
 
 WATCHERS = astashya
 
