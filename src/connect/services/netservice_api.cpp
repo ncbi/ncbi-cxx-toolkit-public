@@ -93,9 +93,26 @@ bool CNetServiceIterator::Next()
     return false;
 }
 
+bool CNetServiceIterator::Prev()
+{
+    if (m_Impl->Prev())
+        return true;
+
+    m_Impl.Reset(NULL);
+    return false;
+}
+
 bool SNetServiceIteratorImpl::Next()
 {
     return ++m_Position != m_ServerGroup->m_Servers.end();
+}
+
+bool SNetServiceIteratorImpl::Prev()
+{
+    if (m_Position == m_ServerGroup->m_Servers.begin())
+        return false;
+    --m_Position;
+    return true;
 }
 
 bool SNetServiceIterator_OmitPenalized::Next()
@@ -126,30 +143,44 @@ bool SNetServiceIterator_RandomPivot::Next()
 {
     if (m_RandomIterators.empty()) {
         TNetServerList::const_iterator it = m_ServerGroup->m_Servers.begin();
-        size_t more_servers = (m_ServerGroup->m_SuppressedBegin - it) - 1;
-        if (more_servers == 0)
-            return false;
-        m_RandomIterators.reserve(more_servers);
+        size_t number_of_servers = m_ServerGroup->m_SuppressedBegin - it;
+        if (number_of_servers <= 1)
+            return false; // There are no servers to advance to.
+        m_RandomIterators.reserve(number_of_servers);
+        m_RandomIterators.push_back(m_Position);
+        --number_of_servers;
         do {
             if (it != m_Position) {
                 m_RandomIterators.push_back(it);
-                --more_servers;
+                --number_of_servers;
             }
             ++it;
-        } while (more_servers > 0);
-        // Shuffle m_RandomIterators.
-        if (m_RandomIterators.size() > 1) {
-            NON_CONST_ITERATE(TRandomIterators, it, m_RandomIterators) {
-                swap(*it, m_RandomIterators[s_RandomIteratorGen.GetRand(0,
+        } while (number_of_servers > 0);
+        // Shuffle m_RandomIterators starting from the element with index '1'.
+        if (m_RandomIterators.size() > 2) {
+            TRandomIterators::iterator it = m_RandomIterators.begin();
+            while (++it != m_RandomIterators.end())
+                swap(*it, m_RandomIterators[s_RandomIteratorGen.GetRand(1,
                     CRandom::TValue(m_RandomIterators.size() - 1))]);
-            }
         }
         m_RandomIterator = m_RandomIterators.begin();
+        ++m_RandomIterator;
     } else
         if (++m_RandomIterator == m_RandomIterators.end())
             return false;
 
     m_Position = *m_RandomIterator;
+
+    return true;
+}
+
+bool SNetServiceIterator_RandomPivot::Prev()
+{
+    if (m_RandomIterators.empty() ||
+            m_RandomIterator == m_RandomIterators.begin())
+        return false;
+
+    m_Position = *--m_RandomIterator;
 
     return true;
 }
@@ -972,41 +1003,44 @@ CNetServiceIterator CNetService::Iterate(
     }
 }
 
-bool CNetService::FindServer(INetServerFinder* finder,
+CNetServiceIterator CNetService::FindServer(INetServerFinder* finder,
     CNetService::EIterationMode mode)
 {
-    bool had_comm_err = false;
-    string error_message;
+    string error_messages;
 
-    for (CNetServiceIterator it = Iterate(mode); it; ++it) {
-        CNetServer server = *it;
+    CNetServiceIterator it = Iterate(mode);
 
+    for (; it; ++it) {
         try {
-            if (finder->Consider(server))
-                return true;
+            if (finder->Consider(*it))
+                break;
         }
         catch (CNetServiceException& ex) {
             if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
                 throw;
 
-            had_comm_err = true;
-            error_message = server->m_ServerInPool->m_Address.AsString();
-            error_message += ": ";
-            error_message += ex.what();
+            if (!error_messages.empty())
+                error_messages += '\n';
+
+            error_messages += (*it)->m_ServerInPool->m_Address.AsString();
+            error_messages += ": ";
+            error_messages += ex.what();
         }
         catch (CIO_Exception& ex) {
-            had_comm_err = true;
-            error_message = server->m_ServerInPool->m_Address.AsString();
-            error_message += ": ";
-            error_message += ex.what();
+            if (!error_messages.empty())
+                error_messages += '\n';
+
+            error_messages += (*it)->m_ServerInPool->m_Address.AsString();
+            error_messages += ": ";
+            error_messages += ex.what();
         }
     }
 
-    if (had_comm_err) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, error_message);
+    if (!error_messages.empty()) {
+        LOG_POST(error_messages);
     }
 
-    return false;
+    return it;
 }
 
 END_NCBI_SCOPE

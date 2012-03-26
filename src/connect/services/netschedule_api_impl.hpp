@@ -202,7 +202,7 @@ struct SNetScheduleExecutorImpl : public CObject
     {
     }
 
-    bool GetJobImpl(const string& cmd, CNetScheduleJob& job);
+    CNetServiceIterator GetJobImpl(const string& cmd, CNetScheduleJob& job);
 
     CNetScheduleAPI m_API;
 };

@@ -783,7 +783,7 @@ public:
     bool WaitForNotification();
 
     CNetScheduleJob& GetJobRef() {return m_Job;}
-    unsigned GetTimeout() const {return m_Timeout.sec;}
+    unsigned GetRemainingSeconds() const;
     unsigned GetPort() const {return m_UDPPort;}
 
     const string& GetServerHost() const {return m_ServerHost;}
@@ -802,7 +802,7 @@ public:
 
 protected:
     CNetScheduleJob& m_Job;
-    STimeout m_Timeout;
+    CAbsTimeout m_Timeout;
     CDatagramSocket m_UDPSocket;
     unsigned short m_UDPPort;
     string m_ServerHost;
@@ -811,6 +811,19 @@ protected:
     char m_Buffer[1024];
     CTempString m_Message;
 };
+
+inline unsigned CNetScheduleNotificationHandler::GetRemainingSeconds() const
+{
+    unsigned sec;
+    unsigned nanosec;
+
+    m_Timeout.GetRemainingTime().GetNano(&sec, &nanosec);
+
+    if (nanosec > 0)
+        ++sec;
+
+    return sec;
+}
 
 /* @} */
 

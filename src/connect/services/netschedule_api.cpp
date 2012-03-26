@@ -50,13 +50,9 @@ BEGIN_NCBI_SCOPE
 
 CNetScheduleNotificationHandler::CNetScheduleNotificationHandler(
         CNetScheduleJob& job, unsigned wait_time) :
-    m_Job(job)
+    m_Job(job),
+    m_Timeout(wait_time, 0)
 {
-    _ASSERT(wait_time);
-
-    m_Timeout.sec = wait_time;
-    m_Timeout.usec = 0;
-
     m_UDPSocket.SetReuseAddress(eOn);
 
     STimeout rto;
@@ -99,26 +95,34 @@ bool CNetScheduleNotificationHandler::ParseNotification(
 
 bool CNetScheduleNotificationHandler::WaitForNotification()
 {
-    time_t start_time = time(0);
-    time_t end_time = start_time + m_Timeout.sec;
-
-    do {
-        time_t curr_time = time(0);
-        if (curr_time >= end_time)
-            return false;
-        m_Timeout.sec = (unsigned int) (end_time - curr_time);
-
-    } while (m_UDPSocket.Wait(&m_Timeout) != eIO_Success);
-
+    STimeout timeout;
     size_t msg_len;
 
-    if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
-            &m_ServerHost, &m_ServerPort) != eIO_Success)
-        return false;
+    for (;;) {
+        m_Timeout.GetRemainingTime().Get(&timeout.sec, &timeout.usec);
 
-    m_Message.assign(m_Buffer, msg_len);
+        if (timeout.sec == 0 && timeout.usec == 0)
+            return false;
 
-    return true;
+        switch (m_UDPSocket.Wait(&timeout)) {
+        case eIO_Timeout:
+            return false;
+
+        case eIO_Success:
+            if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
+                    &m_ServerHost, &m_ServerPort) == eIO_Success) {
+                m_Message.assign(m_Buffer, msg_len);
+
+                return true;
+            }
+            /* FALL THROUGH */
+
+        default:
+            break;
+        }
+    }
+
+    return false;
 }
 
 /**********************************************************************/

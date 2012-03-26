@@ -370,7 +370,7 @@ void CNetScheduleSubmitter::ReadFail(const string& job_id,
 void CNetScheduleNotificationHandler::SubmitJob(
         CNetScheduleSubmitter::TInstance submitter)
 {
-    submitter->SubmitJobImpl(GetJobRef(), GetPort(), GetTimeout());
+    submitter->SubmitJobImpl(GetJobRef(), GetPort(), GetRemainingSeconds());
 }
 
 bool CNetScheduleNotificationHandler::CheckSubmitJobNotification()

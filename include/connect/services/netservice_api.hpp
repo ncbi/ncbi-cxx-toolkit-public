@@ -49,6 +49,8 @@ class NCBI_XCONNECT_EXPORT CNetServiceIterator
 
     bool Next();
     CNetServiceIterator& operator ++() {Next(); return *this;}
+    bool Prev();
+    CNetServiceIterator& operator --() {Prev(); return *this;}
 };
 
 class INetServerFinder
@@ -94,7 +96,7 @@ class NCBI_XCONNECT_EXPORT CNetService
     CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad);
     CNetServiceIterator Iterate(CNetServer::TInstance priority_server);
 
-    bool FindServer(INetServerFinder* finder,
+    CNetServiceIterator FindServer(INetServerFinder* finder,
         EIterationMode mode = eSortByLoad);
 
     bool IsLoadBalanced() const;

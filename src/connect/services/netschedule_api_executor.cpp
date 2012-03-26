@@ -150,21 +150,19 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job, const string& affinity)
         cmd += affinity;
     }
 
-    return m_Impl->GetJobImpl(cmd, job);
+    return m_Impl->GetJobImpl(cmd, job) != NULL;
 }
 
-
-const char s_WGETNotification[] = "NCBI_JSQ_";
-
-bool CNetScheduleNotificationHandler::RequestJob(
-        CNetScheduleExecutor::TInstance executor, const string& affinity)
+static string s_MakeRequestJobCmd(
+        const CNetScheduleNotificationHandler& notification_handler,
+        const string& affinity)
 {
     string cmd = "WGET ";
 
     cmd += " port=";
-    cmd += NStr::UIntToString(GetPort());
+    cmd += NStr::UIntToString(notification_handler.GetPort());
     cmd += " timeout=";
-    cmd += NStr::UIntToString(GetTimeout());
+    cmd += NStr::UIntToString(notification_handler.GetRemainingSeconds());
 
     if (!affinity.empty()) {
         SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
@@ -172,8 +170,25 @@ bool CNetScheduleNotificationHandler::RequestJob(
         cmd += affinity;
     }
 
-    return executor->GetJobImpl(cmd, GetJobRef());
+    return cmd;
 }
+
+bool CNetScheduleNotificationHandler::RequestJob(
+        CNetScheduleExecutor::TInstance executor, const string& affinity)
+{
+    CNetServiceIterator it(executor->GetJobImpl(s_MakeRequestJobCmd(*this,
+            affinity), GetJobRef()));
+
+    if (!it)
+        return false;
+
+    while (--it)
+        (*it).ExecWithRetry("CWGET");
+
+    return true;
+}
+
+const char s_WGETNotification[] = "NCBI_JSQ_";
 
 bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
         CNetScheduleExecutor::TInstance executor)
@@ -310,7 +325,7 @@ bool CGetJobCmdExecutor::Consider(CNetServer server)
     return s_ParseGetJobResponse(m_Job, server.ExecWithRetry(m_Cmd).response);
 }
 
-bool SNetScheduleExecutorImpl::GetJobImpl(
+CNetServiceIterator SNetScheduleExecutorImpl::GetJobImpl(
     const string& cmd, CNetScheduleJob& job)
 {
     CGetJobCmdExecutor get_executor(cmd, job);

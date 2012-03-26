@@ -128,6 +128,7 @@ struct SNetServiceIteratorImpl : public CObject
     }
 
     virtual bool Next();
+    virtual bool Prev();
 
     CRef<SDiscoveredServers> m_ServerGroup;
 
@@ -163,6 +164,7 @@ struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
     SNetServiceIterator_RandomPivot(SDiscoveredServers* server_group_impl);
 
     virtual bool Next();
+    virtual bool Prev();
 
     typedef vector<TNetServerList::const_iterator> TRandomIterators;
 
