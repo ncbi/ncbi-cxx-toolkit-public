@@ -63,9 +63,10 @@ objtools/data_loaders/genbank
 -objtools/data_loaders/genbank/test
 objtools/data_loaders$
 objtools/data_loaders/blastdb$
-align/util
--align/util/demo
--align/util/unit_test
+algo/align$
+algo/align/util
+-algo/align/util/demo
+-algo/align/util/unit_test
 app$
 app/blast
 app/igblast
