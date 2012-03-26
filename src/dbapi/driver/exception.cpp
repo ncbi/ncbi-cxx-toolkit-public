@@ -508,10 +508,19 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
     if ( !ex )
         return true;
 
-    if ( m_Prefix.empty() ) {
-        ERR_POST_X(1, *ex);
-    } else {
-        ERR_POST_X(2, Severity(ex->GetSeverity()) << m_Prefix << " " << *ex);
+    if (ex->GetSeverity() == eDiag_Info) {
+        if ( m_Prefix.empty() ) {
+            ERR_POST_X(1, Info << ex->GetMsg());
+        } else {
+            ERR_POST_X(2, Info << m_Prefix << " " << ex->GetMsg());
+        }
+    }
+    else {
+        if ( m_Prefix.empty() ) {
+            ERR_POST_X(3, *ex);
+        } else {
+            ERR_POST_X(4, Severity(ex->GetSeverity()) << m_Prefix << " " << *ex);
+        }
     }
 
     return true;
