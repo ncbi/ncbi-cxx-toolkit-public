@@ -921,5 +921,56 @@ void CLDS2_Database::EndRead(void)
 }
 
 
+const char* kLDS2_ListTables =
+    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+const string kLDS2_DumpTable = "SELECT * FROM ";
+
+
+void CLDS2_Database::Dump(const string& table, CNcbiOstream& out)
+{
+    vector<string> tables; // selected table name(s)
+    if (table.empty()  ||  table == "*") {
+        CSQLITE_Statement st(&x_GetConn(), kLDS2_ListTables);
+        while ( st.Step() ) {
+            tables.push_back(st.GetString(0));
+        }
+    }
+    else {
+        tables.push_back(table);
+    }
+
+    if ( table.empty() ) {
+        // Dump names and exit
+        out << "LDS2 table names:" << endl;
+        ITERATE(vector<string>, it, tables) {
+            out << *it << endl;
+        }
+        return;
+    }
+
+    // Dump all selected tables
+    ITERATE(vector<string>, it, tables) {
+        // ?1 does not work for table name, need to append.
+        CSQLITE_Statement st(&x_GetConn(), kLDS2_DumpTable + *it);
+        for (int i = 0; i < st.GetColumnsCount(); i++) {
+            if (i > 0) {
+                out << "\t";
+            }
+            out << st.GetColumnName(i);
+        }
+        out << endl;
+        while ( st.Step() ) {
+            for (int i = 0; i < st.GetColumnsCount(); i++) {
+                if (i > 0) {
+                    out << "\t";
+                }
+                out << NStr::PrintableString(st.GetString(i), NStr::eNewLine_Quote);
+            }
+            out << endl;
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

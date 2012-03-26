@@ -343,6 +343,10 @@ public:
     /// Analyze the DB.
     void Analyze(void);
 
+    /// Dump the selected table (use empty string to dump table names
+    /// or * to dump all tables.
+    void Dump(const string& table, CNcbiOstream& out);
+
 private:
     CLDS2_Database(const CLDS2_Database&);
     CLDS2_Database& operator=(const CLDS2_Database&);
