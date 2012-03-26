@@ -58,6 +58,7 @@ struct SNS_Parameters : SServer_Parameters
 
     unsigned int    del_batch_size;     // Max number of jobs to be deleted
                                         // from BDB during one Purge() call
+    unsigned int    markdel_batch_size; // Max number of jobs marked for deletion
     unsigned int    scan_batch_size;    // Max number of jobs expiration checks
                                         // during one Purge() call
     double          purge_timeout;      // Timeout in seconds between
@@ -77,6 +78,7 @@ struct SNS_Parameters : SServer_Parameters
 
     void Read(const IRegistry& reg, const std::string& sname);
     void CheckAffinityGarbageCollectorSettings(void);
+    void CheckGarbageCollectorSettings(void);
 
     unsigned GetNumParams() const;
     std::string GetParamName(unsigned n) const;

@@ -56,6 +56,7 @@ static bool             default_log_cleaning_thread = true;
 static bool             default_log_execution_watcher_thread = true;
 static bool             default_log_statistics_thread = true;
 static unsigned int     default_del_batch_size = 100;
+static unsigned int     default_markdel_batch_size = 200;
 static unsigned int     default_scan_batch_size = 10000;
 static double           default_purge_timeout = 0.1;
 static unsigned int     default_max_affinities = 10000;
@@ -108,38 +109,10 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
 
     // Job deleting parameters
     del_batch_size = GetIntNoErr("del_batch_size", default_del_batch_size);
+    markdel_batch_size = GetIntNoErr("markdel_batch_size", default_markdel_batch_size);
     scan_batch_size = GetIntNoErr("scan_batch_size", default_scan_batch_size);
     purge_timeout = GetDoubleNoErr("purge_timeout", default_purge_timeout);
-
-    if (del_batch_size == 0) {
-        LOG_POST(Message << Warning <<
-                 "INI file sets the del_batch_size = 0. "
-                 "Assume " << default_del_batch_size << " instead." );
-        del_batch_size = default_del_batch_size;
-    }
-    if (scan_batch_size == 0) {
-        LOG_POST(Message << Warning <<
-                 "INI file sets the scan_batch_size = 0. "
-                 "Assume " << default_scan_batch_size << " instead." );
-        scan_batch_size = default_scan_batch_size;
-    }
-    if (purge_timeout <= 0.0) {
-        LOG_POST(Message << Warning <<
-                 "INI file sets purge_timeout <= 0.0. "
-                 "Assume " << default_purge_timeout << " instead." );
-        purge_timeout = default_purge_timeout;
-    }
-
-    max_affinities = GetIntNoErr("max_affinities", default_max_affinities);
-    if (max_affinities <= 0) {
-        LOG_POST(Message << Warning <<
-            "INI file sets the max number of preferred affinities <= 0."
-            " Assume " << default_max_affinities << " instead.");
-        max_affinities = default_max_affinities;
-    }
-
-    admin_hosts        = reg.GetString(sname, "admin_host", kEmptyStr);
-    admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
+    CheckGarbageCollectorSettings();
 
     // Affinity GC settings
     affinity_high_mark_percentage = GetIntNoErr("affinity_high_mark_percentage",
@@ -153,6 +126,19 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname)
     affinity_dirt_percentage = GetIntNoErr("affinity_dirt_percentage",
                                            default_affinity_dirt_percentage);
     CheckAffinityGarbageCollectorSettings();
+
+    // Max affinities
+    max_affinities = GetIntNoErr("max_affinities", default_max_affinities);
+    if (max_affinities <= 0) {
+        LOG_POST(Message << Warning <<
+            "INI file sets the max number of preferred affinities <= 0."
+            " Assume " << default_max_affinities << " instead.");
+        max_affinities = default_max_affinities;
+    }
+
+    admin_hosts        = reg.GetString(sname, "admin_host", kEmptyStr);
+    admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
+
     return;
 }
 
@@ -168,14 +154,14 @@ void SNS_Parameters::CheckAffinityGarbageCollectorSettings(void)
         well_formed = false;
     }
 
-    if (affinity_low_mark_percentage >= affinity_high_mark_percentage) {
+    if (well_formed && affinity_low_mark_percentage >= affinity_high_mark_percentage) {
         LOG_POST(Message << Warning <<
                  "INI file sets affinity_low_mark_percentage >= affinity_high_mark_percentage. "
                  "All the affinity garbage collector settings are reset to default.");
         well_formed = false;
     }
 
-    if (affinity_dirt_percentage >= affinity_low_mark_percentage) {
+    if (well_formed && affinity_dirt_percentage >= affinity_low_mark_percentage) {
         LOG_POST(Message << Warning <<
                  "INI file sets affinity_dirt_percentage >= affinity_low_mark_percentage. "
                  "All the affinity garbage collector settings are reset to default.");
@@ -189,6 +175,64 @@ void SNS_Parameters::CheckAffinityGarbageCollectorSettings(void)
         affinity_low_removal = default_affinity_low_removal;
         affinity_dirt_percentage = default_affinity_dirt_percentage;
     }
+    return;
+}
+
+
+void SNS_Parameters::CheckGarbageCollectorSettings(void)
+{
+    bool    well_formed = true;
+
+    if (del_batch_size == 0) {
+        LOG_POST(Message << Warning <<
+                 "INI file sets the del_batch_size = 0. "
+                 "All the jobs garbage collector settings are reset to defaults.");
+        well_formed = false;
+    }
+
+    if (well_formed && markdel_batch_size == 0) {
+        LOG_POST(Message << Warning <<
+                 "INI file sets the markdel_batch_size = 0. "
+                 "All the jobs garbage collector settings are reset to defaults.");
+        well_formed = false;
+    }
+
+
+    if (well_formed && scan_batch_size == 0) {
+        LOG_POST(Message << Warning <<
+                 "INI file sets the scan_batch_size = 0. "
+                 "All the jobs garbage collector settings are reset to defaults.");
+        well_formed = false;
+    }
+
+    if (well_formed && purge_timeout <= 0.0) {
+        LOG_POST(Message << Warning <<
+                 "INI file sets purge_timeout <= 0.0. "
+                 "All the jobs garbage collector settings are reset to defaults.");
+        well_formed = false;
+    }
+
+    if (well_formed && scan_batch_size < markdel_batch_size) {
+        LOG_POST(Message << Warning <<
+                 "INI file sets scan_batch_size < markdel_batch_size. "
+                 "All the jobs garbage collector settings are reset to defaults.");
+        well_formed = false;
+    }
+
+    if (markdel_batch_size < del_batch_size) {
+        LOG_POST(Message << Warning <<
+                 "INI file sets markdel_batch_size < del_batch_size. "
+                 "All the jobs garbage collector settings are reset to defaults.");
+        well_formed = false;
+    }
+
+    if (well_formed == false) {
+        del_batch_size = default_del_batch_size;
+        scan_batch_size = default_scan_batch_size;
+        purge_timeout = default_purge_timeout;
+        markdel_batch_size = default_markdel_batch_size;
+    }
+    return;
 }
 
 
@@ -210,14 +254,15 @@ static string s_NSParameters[] =
     "log_execution_watcher_thread",     // 13
     "log_statistics_thread",            // 14
     "del_batch_size",                   // 15
-    "scan_batch_size",                  // 16
-    "purge_timeout",                    // 17
-    "max_affinities",                   // 18
-    "affinity_high_mark_percentage",    // 19
-    "affinity_low_mark_percentage",     // 20
-    "affinity_high_removal",            // 21
-    "affinity_low_removal",             // 22
-    "affinity_dirt_percentage"          // 23
+    "markdel_batch_size",               // 16
+    "scan_batch_size",                  // 17
+    "purge_timeout",                    // 18
+    "max_affinities",                   // 19
+    "affinity_high_mark_percentage",    // 20
+    "affinity_low_mark_percentage",     // 21
+    "affinity_high_removal",            // 22
+    "affinity_low_removal",             // 23
+    "affinity_dirt_percentage"          // 24
 };
 static unsigned s_NumNSParameters = sizeof(s_NSParameters) / sizeof(string);
 
@@ -255,14 +300,15 @@ string SNS_Parameters::GetParamValue(unsigned n) const
     case 13: return NStr::BoolToString(log_execution_watcher_thread);
     case 14: return NStr::BoolToString(log_statistics_thread);
     case 15: return NStr::UIntToString(del_batch_size);
-    case 16: return NStr::UIntToString(scan_batch_size);
-    case 17: return NStr::DoubleToString(purge_timeout);
-    case 18: return NStr::UIntToString(max_affinities);
-    case 19: return NStr::UIntToString(affinity_high_mark_percentage);
-    case 20: return NStr::UIntToString(affinity_low_mark_percentage);
-    case 21: return NStr::UIntToString(affinity_high_removal);
-    case 22: return NStr::UIntToString(affinity_low_removal);
-    case 23: return NStr::UIntToString(affinity_dirt_percentage);
+    case 16: return NStr::UIntToString(markdel_batch_size);
+    case 17: return NStr::UIntToString(scan_batch_size);
+    case 18: return NStr::DoubleToString(purge_timeout);
+    case 19: return NStr::UIntToString(max_affinities);
+    case 20: return NStr::UIntToString(affinity_high_mark_percentage);
+    case 21: return NStr::UIntToString(affinity_low_mark_percentage);
+    case 22: return NStr::UIntToString(affinity_high_removal);
+    case 23: return NStr::UIntToString(affinity_low_removal);
+    case 24: return NStr::UIntToString(affinity_dirt_percentage);
     default: return kEmptyStr;
     }
 }

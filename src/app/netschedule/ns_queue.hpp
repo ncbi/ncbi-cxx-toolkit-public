@@ -283,11 +283,13 @@ public:
     void CheckExecutionTimeout(bool logging);
 
     // Checks up to given # of jobs at the given status for expiration and
-    // marks up to given # of jobs for deletion.
+    // marks up to given # of jobs for deletion. Check no further than the
+    // given last_job id
     // Returns the # of performed scans, the # of jobs marked for deletion and
     // the last scanned job id.
     SPurgeAttributes CheckJobsExpiry(time_t             current_time,
                                      SPurgeAttributes   attributes,
+                                     unsigned int       last_job,
                                      TJobStatus         status);
 
     void TimeLineMove(unsigned job_id, time_t old_time, time_t new_time);
@@ -297,7 +299,7 @@ public:
                           unsigned add_job_id,
                           time_t   new_time);
 
-    unsigned int  DeleteBatch(void);
+    unsigned int  DeleteBatch(unsigned int  max_deleted);
     unsigned int  PurgeAffinities(void);
     unsigned int  PurgeGroups(void);
 

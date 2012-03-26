@@ -241,20 +241,22 @@ private:
     CNetScheduleServer*                      m_Server;
 
 private:
-    string              m_PurgeQueue;
-    size_t              m_PurgeStatusIndex;
-    unsigned int        m_PurgeJobScanned;
-    time_t              m_PurgeLoopStartTime;
+    // Last scan attributes
+    string              m_PurgeQueue;           // The queue name
+    size_t              m_PurgeStatusIndex;     // Scanned status index
+    unsigned int        m_PurgeJobScanned;      // Scanned job ID within status
 
     CQueueCollection::iterator  x_GetPurgeQueueIterator(void);
-    bool                        x_PurgeQueue(CQueue &  queue,
-                                             size_t    status_to_start,
-                                             size_t    status_to_end,
-                                             size_t    max_scanned,
-                                             size_t    max_deleted,
-                                             time_t    current_time,
-                                             size_t &  total_scanned,
-                                             size_t &  total_deleted);
+    bool                        x_PurgeQueue(CQueue &       queue,
+                                             size_t         status_to_start,
+                                             size_t         status_to_end,
+                                             unsigned int   start_job_id,
+                                             unsigned int   end_job_id,
+                                             size_t         max_scanned,
+                                             size_t         max_mark_deleted,
+                                             time_t         current_time,
+                                             size_t &       total_scanned,
+                                             size_t &       total_mark_deleted);
 
 }; // CQueueDataBase
 

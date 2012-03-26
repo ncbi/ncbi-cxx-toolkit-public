@@ -59,6 +59,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_LogCleaningThreadFlag(false),
       m_LogStatisticsThreadFlag(false),
       m_DeleteBatchSize(100),
+      m_MarkdelBatchSize(200),
       m_ScanBatchSize(10000),
       m_PurgeTimeout(0.1),
       m_MaxAffinities(10000),
@@ -124,6 +125,7 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
 
     // Purge related parameters
     m_DeleteBatchSize = params.del_batch_size;
+    m_MarkdelBatchSize = params.markdel_batch_size;
     m_ScanBatchSize = params.scan_batch_size;
     m_PurgeTimeout = params.purge_timeout;
     m_MaxAffinities = params.max_affinities;

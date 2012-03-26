@@ -175,8 +175,7 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server)
   m_Server(server),
   m_PurgeQueue(""),
   m_PurgeStatusIndex(0),
-  m_PurgeJobScanned(0),
-  m_PurgeLoopStartTime(0)
+  m_PurgeJobScanned(0)
 {}
 
 
@@ -844,21 +843,17 @@ const size_t kStatusesSize = sizeof(statuses_to_delete_from) /
 void CQueueDataBase::Purge(void)
 {
     vector<string>      queues_to_delete;
-    size_t              max_deleted = m_Server->GetDeleteBatchSize();
+    size_t              max_mark_deleted = m_Server->GetMarkdelBatchSize();
     size_t              max_scanned = m_Server->GetScanBatchSize();
-    SPurgeAttributes    purge_io;
     size_t              total_scanned = 0;
-    size_t              total_deleted = 0;
+    size_t              total_mark_deleted = 0;
     time_t              current_time = time(0);
+    bool                limit_reached = false;
 
     // Part I: from the last end till the end of the list
     CQueueCollection::iterator      start_iterator = x_GetPurgeQueueIterator();
     size_t                          start_status_index = m_PurgeStatusIndex;
-
-    if (start_iterator == m_QueueCollection.begin()) {
-        if (m_PurgeLoopStartTime == current_time)
-            return;
-    }
+    unsigned int                    start_job_id = m_PurgeJobScanned;
 
     for (CQueueCollection::iterator  it = start_iterator;
          it != m_QueueCollection.end(); ++it) {
@@ -869,60 +864,74 @@ void CQueueDataBase::Purge(void)
 
         m_PurgeQueue = it.GetName();
         if (x_PurgeQueue(*it, m_PurgeStatusIndex, kStatusesSize - 1,
-                         max_scanned, max_deleted,
+                         m_PurgeJobScanned, 0,
+                         max_scanned, max_mark_deleted,
                          current_time,
-                         total_scanned, total_deleted) == true)
+                         total_scanned, total_mark_deleted) == true)
             return;
 
-        if (total_deleted >= max_deleted ||
-            total_scanned >= max_scanned)
+        if (total_mark_deleted >= max_mark_deleted ||
+            total_scanned >= max_scanned) {
+            limit_reached = true;
             break;
+        }
     }
 
-    // This is the point of the queue list beginning. If we cross this point
-    // within the same second twice or more we can safely skip scanning as it
-    // would be too often.
-    if (m_PurgeLoopStartTime != current_time) {
-        m_PurgeLoopStartTime = current_time;
 
+    // Part II: from the beginning of the list till the last end
+    if (limit_reached == false) {
+        for (CQueueCollection::iterator  it = m_QueueCollection.begin();
+             it != start_iterator; ++it) {
+            if ((*it).IsExpired()) {
+                queues_to_delete.push_back(it.GetName());
+                continue;
+            }
 
-        // Part II: from the beginning of the list till the last end
-        if (total_deleted < max_deleted && total_scanned < max_scanned) {
-            for (CQueueCollection::iterator  it = m_QueueCollection.begin();
-                 it != start_iterator; ++it) {
-                if ((*it).IsExpired()) {
-                    queues_to_delete.push_back(it.GetName());
-                    continue;
-                }
+            m_PurgeQueue = it.GetName();
+            if (x_PurgeQueue(*it, m_PurgeStatusIndex, kStatusesSize - 1,
+                             m_PurgeJobScanned, 0,
+                             max_scanned, max_mark_deleted,
+                             current_time,
+                             total_scanned, total_mark_deleted) == true)
+                return;
 
-                m_PurgeQueue = it.GetName();
-                if (x_PurgeQueue(*it, m_PurgeStatusIndex, kStatusesSize - 1,
-                                 max_scanned, max_deleted,
+            if (total_mark_deleted >= max_mark_deleted ||
+                total_scanned >= max_scanned) {
+                limit_reached = true;
+                break;
+            }
+        }
+    }
+
+    // Part III: it might need to check the statuses in the queue we started
+    // with if the start status was not the first one.
+    if (limit_reached == false) {
+        if (start_iterator != m_QueueCollection.end()) {
+            m_PurgeQueue = start_iterator.GetName();
+            if (start_status_index > 0) {
+                if (x_PurgeQueue(*start_iterator, 0, start_status_index - 1,
+                                 m_PurgeJobScanned, 0,
+                                 max_scanned, max_mark_deleted,
                                  current_time,
-                                 total_scanned, total_deleted) == true)
+                                 total_scanned, total_mark_deleted) == true)
                     return;
-
-                if (total_deleted >= max_deleted ||
-                    total_scanned >= max_scanned)
-                    break;
-            }
-        }
-
-        // Part III: it might need to check the statuses in the queue we started
-        // with if the start status was not the first one.
-        if (total_deleted < max_deleted && total_scanned < max_scanned) {
-            if (start_iterator != m_QueueCollection.end()) {
-                m_PurgeQueue = start_iterator.GetName();
-                if (start_status_index > 0) {
-                    if (x_PurgeQueue(*start_iterator, 0, start_status_index - 1,
-                                     max_scanned, max_deleted,
-                                     current_time,
-                                     total_scanned, total_deleted) == true)
-                        return;
-                }
             }
         }
     }
+
+    if (limit_reached == false) {
+        if (start_iterator != m_QueueCollection.end()) {
+            m_PurgeQueue = start_iterator.GetName();
+            if (x_PurgeQueue(*start_iterator,
+                             start_status_index, start_status_index,
+                             0, start_job_id,
+                             max_scanned, max_mark_deleted,
+                             current_time,
+                             total_scanned, total_mark_deleted) == true)
+                return;
+        }
+    }
+
 
     // Part IV: purge the found candidates and optimize the memory if required
     m_FreeStatusMemCnt += x_PurgeUnconditional();
@@ -962,6 +971,7 @@ CQueueCollection::iterator  CQueueDataBase::x_GetPurgeQueueIterator(void)
 
     // Not found, which means the queue was deleted. Pick a random one
     m_PurgeStatusIndex = 0;
+    m_PurgeJobScanned = 0;
 
     int     queue_num = ((rand() * 1.0) / RAND_MAX) * m_QueueCollection.GetSize();
     int     k = 1;
@@ -980,47 +990,54 @@ CQueueCollection::iterator  CQueueDataBase::x_GetPurgeQueueIterator(void)
 // Purges jobs from a queue starting from the given status.
 // Returns true if the purge should be stopped.
 // The status argument is a status to start from
-bool  CQueueDataBase::x_PurgeQueue(CQueue &  queue,
-                                   size_t    status,
-                                   size_t    status_to_end,
-                                   size_t    max_scanned,
-                                   size_t    max_deleted,
-                                   time_t    current_time,
-                                   size_t &  total_scanned,
-                                   size_t &  total_deleted)
+bool  CQueueDataBase::x_PurgeQueue(CQueue &      queue,
+                                   size_t        status,
+                                   size_t        status_to_end,
+                                   unsigned int  start_job_id,
+                                   unsigned int  end_job_id,
+                                   size_t        max_scanned,
+                                   size_t        max_mark_deleted,
+                                   time_t        current_time,
+                                   size_t &      total_scanned,
+                                   size_t &      total_mark_deleted)
 {
     SPurgeAttributes    purge_io;
 
     for (; status <= status_to_end; ++status) {
         purge_io.scans = max_scanned - total_scanned;
-        purge_io.deleted = max_deleted - total_deleted;
-        purge_io.job_id = m_PurgeJobScanned;
+        purge_io.deleted = max_mark_deleted - total_mark_deleted;
+        purge_io.job_id = start_job_id;
 
         purge_io = queue.CheckJobsExpiry(current_time, purge_io,
+                                         end_job_id,
                                          statuses_to_delete_from[status]);
         total_scanned += purge_io.scans;
-        total_deleted += purge_io.deleted;
+        total_mark_deleted += purge_io.deleted;
         m_PurgeJobScanned = purge_io.job_id;
 
         if (x_CheckStopPurge())
             return true;
 
-        if (total_deleted >= max_deleted || total_scanned >= max_scanned) {
+        if (total_mark_deleted >= max_mark_deleted || total_scanned >= max_scanned) {
             m_PurgeStatusIndex = status;
             return false;
         }
     }
     m_PurgeStatusIndex = 0;
+    m_PurgeJobScanned = 0;
     return false;
 }
 
 
-unsigned CQueueDataBase::x_PurgeUnconditional(void) {
+unsigned int  CQueueDataBase::x_PurgeUnconditional(void) {
     // Purge unconditional jobs
-    unsigned        del_rec = 0;
+    unsigned int        del_rec = 0;
+    unsigned int        max_deleted = m_Server->GetDeleteBatchSize();
 
     NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        del_rec += (*it).DeleteBatch();
+        del_rec += (*it).DeleteBatch(max_deleted - del_rec);
+        if (del_rec >= max_deleted)
+            break;
     }
     return del_rec;
 }

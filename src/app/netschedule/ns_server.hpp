@@ -96,6 +96,7 @@ public:
     std::string& GetHost()                      { return m_Host; }
     unsigned GetPort() const                    { return m_Port; }
     unsigned GetDeleteBatchSize(void) const     { return m_DeleteBatchSize; }
+    unsigned GetMarkdelBatchSize(void) const    { return m_MarkdelBatchSize; }
     unsigned GetScanBatchSize(void) const       { return m_ScanBatchSize; }
     double   GetPurgeTimeout(void) const        { return m_PurgeTimeout; }
     unsigned GetHostNetAddr() const             { return m_HostNetAddr; }
@@ -145,8 +146,9 @@ private:
     bool                                        m_LogStatisticsThreadFlag;
 
     // Purge() related parameters
-    unsigned int                                m_DeleteBatchSize;  // Max number of jobs to be deleted
-    unsigned int                                m_ScanBatchSize;    // Max number of scanned jobs
+    unsigned int                                m_DeleteBatchSize;  // Max # of jobs to be deleted
+    unsigned int                                m_MarkdelBatchSize; // Max # of jobs to be marked for deletion
+    unsigned int                                m_ScanBatchSize;    // Max # of scanned jobs
     double                                      m_PurgeTimeout;     // Interval between purges
 
     unsigned int                                m_MaxAffinities;

@@ -2002,6 +2002,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
 // the last scanned job id.
 SPurgeAttributes  CQueue::CheckJobsExpiry(time_t             current_time,
                                           SPurgeAttributes   attributes,
+                                          unsigned int       last_job,
                                           TJobStatus         status)
 {
     unsigned int    queue_timeout;
@@ -2017,16 +2018,21 @@ SPurgeAttributes  CQueue::CheckJobsExpiry(time_t             current_time,
     TNSBitVector        job_ids;
     CJob                job;
     SPurgeAttributes    result;
+    unsigned int        job_id;
 
     result.job_id = attributes.job_id;
     result.deleted = 0;
     {{
         CFastMutexGuard     guard(m_OperationLock);
 
-        for (result.scans = 1; result.scans <= attributes.scans; ++result.scans) {
-            result.job_id = m_StatusTracker.GetNext(status, result.job_id);
-            if (result.job_id == 0)
-                break;
+        for (result.scans = 0; result.scans < attributes.scans; ++result.scans) {
+            job_id = m_StatusTracker.GetNext(status, result.job_id);
+            if (job_id == 0)
+                break;  // No more jobs in the state
+            if (last_job != 0 && job_id >= last_job)
+                break;  // The job in the state is above the limit
+
+            result.job_id = job_id;
 
             {{
                  m_QueueDbBlock->job_db.SetTransaction(NULL);
@@ -2119,7 +2125,7 @@ void CQueue::TimeLineExchange(unsigned  remove_job_id,
 }
 
 
-unsigned int  CQueue::DeleteBatch(void)
+unsigned int  CQueue::DeleteBatch(unsigned int  max_deleted)
 {
     // Copy the vector with deleted jobs
     TNSBitVector    jobs_to_delete;
@@ -2134,18 +2140,21 @@ unsigned int  CQueue::DeleteBatch(void)
     unsigned int                del_rec = 0;
     TNSBitVector::enumerator    en = jobs_to_delete.first();
 
-    while (en.valid()) {
+    while (en.valid() && del_rec < max_deleted) {
         {{
             CFastMutexGuard     guard(m_OperationLock);
             CNSTransaction      transaction(this);
 
-            for (size_t n = 0; en.valid() && n < chunk_size; ++en, ++n) {
+            for (size_t n = 0;
+                 en.valid() && n < chunk_size && del_rec < max_deleted;
+                 ++en, ++n) {
                 unsigned int    job_id = *en;
 
                 try {
                     m_QueueDbBlock->job_db.id = job_id;
                     m_QueueDbBlock->job_db.Delete();
                     ++del_rec;
+                    jobs_to_delete.set_bit(job_id, false);
                 } catch (CBDB_ErrnoException& ex) {
                     ERR_POST("BDB error " << ex.what());
                 }
@@ -2164,7 +2173,14 @@ unsigned int  CQueue::DeleteBatch(void)
         }}
     }
 
-    m_StatisticsCounters.CountDBDeletion(del_rec);
+    if (del_rec > 0) {
+        m_StatisticsCounters.CountDBDeletion(del_rec);
+
+        if (jobs_to_delete.any()) {
+            CFastMutexGuard     guard(m_JobsToDeleteLock);
+            m_JobsToDelete |= jobs_to_delete;
+        }
+    }
     return del_rec;
 }
 
