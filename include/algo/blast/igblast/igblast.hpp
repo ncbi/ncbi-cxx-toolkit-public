@@ -30,8 +30,8 @@
 /// @file igblast.hpp
 /// Declares CIgBlast, the C++ API for the IG-BLAST engine.
 
-#ifndef ALGO_BLAST_API___IGBLAST__HPP
-#define ALGO_BLAST_API___IGBLAST__HPP
+#ifndef ALGO_BLAST_IGBLAST___IGBLAST__HPP
+#define ALGO_BLAST_IGBLAST___IGBLAST__HPP
 
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/uniform_search.hpp>
@@ -46,6 +46,16 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(blast)
+
+/// Keeps track of the version of IgBLAST in the NCBI C++ toolkit.
+/// Used to perform run-time version checks
+///
+/// For reference, please refer to http://apr.apache.org/versioning.html
+class CIgBlastVersion : public CVersionInfo {
+public:
+    CIgBlastVersion()
+        : CVersionInfo(1, 0, 0) {}
+};
 
 class IQueryFactory;
 
@@ -292,4 +302,4 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#endif  /* ALGO_BLAST_API___IGBLAST__HPP */
+#endif  /* ALGO_BLAST_IGBLAST___IGBLAST__HPP */

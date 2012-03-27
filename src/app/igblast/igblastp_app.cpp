@@ -58,7 +58,7 @@ public:
     /** @inheritDoc */
     CIgBlastpApp() {
         CRef<CVersion> version(new CVersion());
-        version->SetVersionInfo(new CBlastVersion());
+        version->SetVersionInfo(new CIgBlastVersion());
         SetFullVersion(version);
     }
 private:
