@@ -44,7 +44,7 @@ def update_blast_version(config_file, blast_version):
         infile.close()
         os.unlink(temp_fname)
 
-def create_new_tarball_name(platform, version):
+def create_new_tarball_name(platform, program, version):
     """ Converts the name of a platform as specified to the prepare_release 
     framework to an archive name according to BLAST release naming conventions.
     
@@ -52,7 +52,9 @@ def create_new_tarball_name(platform, version):
     more information can be found in http://mini.ncbi.nih.gov/3oo
     """
     
-    retval = "ncbi-blast-" + version + "+"
+    retval = "ncbi-" + program + "-" + version
+    if program == "blast":
+        retval += "+"
     if platform.startswith("Win32"):
         retval += "-ia32-win32"
     elif platform.startswith("Win64"):
