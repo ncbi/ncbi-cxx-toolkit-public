@@ -4,7 +4,7 @@ WATCHERS = kiryutin kapustin
 
 ASN_DEP = seq xnetblast
 
-SRC = splign splign_util splign_formatter splign_simple splign_cmdargs
+SRC = splign splign_util splign_formatter splign_simple splign_cmdargs compart_matching
 
 LIB = xalgoalignsplign
 
