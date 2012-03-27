@@ -1688,6 +1688,7 @@ public:
     NCBI_DEPRECATED_CTOR(CStopWatch(bool start));
 
     /// Start the timer.
+    /// Do nothing if already started.
     void Start(void);
 
     /// Return time elapsed since first Start() or last Restart() call
@@ -2477,6 +2478,9 @@ CStopWatch::CStopWatch(EStart state)
 inline
 void CStopWatch::Start(void)
 {
+    if ( m_State == eStart ) {
+        return;
+    }
     m_Start = GetTimeMark();
     m_State = eStart;
 }
