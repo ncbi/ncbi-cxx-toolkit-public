@@ -6005,7 +6005,7 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
         return false;
     } 
     // Digital value
-    int nsev = NStr::StringToNumeric(str_sev);
+    int nsev = NStr::StringToInt(str_sev);
 
     if (nsev > eDiagSevMax) {
         nsev = eDiagSevMax;
