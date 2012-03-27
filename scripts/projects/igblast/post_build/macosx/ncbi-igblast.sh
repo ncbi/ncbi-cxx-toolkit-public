@@ -6,7 +6,7 @@ BLAST_VERSION=$3
 PRODUCT="ncbi-igblast-$BLAST_VERSION+"
 
 if [ $# -ne 3 ] ; then
-    echo "Usage: ncbi-blast.sh [installation directory] [MacOSX post-build script directory] [BLAST version]";
+    echo "Usage: ncbi-igblast.sh [installation directory] [MacOSX post-build script directory] [BLAST version]";
     exit 1;
 fi
 
