@@ -1069,7 +1069,7 @@ void PassException(CDB_Exception& ex,
     ex.SetUserName(user_name);
     ex.SetSybaseSeverity(severity);
 
-    if (severity != eDiag_Info) {
+    if (ex.GetSeverity() != eDiag_Info) {
         string msg =
             " SERVER: '" + server_name +
             "' USER: '" + user_name + "'" +
