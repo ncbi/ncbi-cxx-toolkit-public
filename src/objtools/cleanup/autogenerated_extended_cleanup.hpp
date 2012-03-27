@@ -34,10 +34,10 @@
 ///   be overridden (by DATATOOL) without warning!
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include "newcleanupp.hpp"
@@ -64,15 +64,17 @@ public:
   void ExtendedCleanupSeqFeat( CSeq_feat & arg0_raw );
 
 private: 
+  void x_ExtendedCleanupSeqEntry_seq( CBioseq & arg0 );
   void x_ExtendedCleanupSeqEntry_set_set_seq_set_E( CSeq_entry & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_entry_ >
 void x_ExtendedCleanupSeqEntry_set_set_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
-  void x_ExtendedCleanupSeqEntry_set_set( CBioseq_set & arg0 );
+  void x_ExtendedCleanupSeqEntry_set_set_ETC( CBioseq_set & arg0 );
   void x_ExtendedCleanupSeqEntry_set( CBioseq_set & arg0 );
   void x_ExtendedCleanupSeqSubmit_data_entrys_E( CSeq_entry & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_entry_ >
 void x_ExtendedCleanupSeqSubmit_data_entrys( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
   void x_ExtendedCleanupSeqSubmit_data( CSeq_submit::C_Data & arg0 );
+  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq( CBioseq & arg0 );
   void x_ExtendedCleanupBioseqSet_seq_set_E_E_set( CBioseq_set & arg0 );
   void x_ExtendedCleanupBioseqSet_seq_set_E_E( CSeq_entry & arg0 );
   void x_ExtendedCleanupBioseqSet_seq_set_E( CSeq_entry & arg0 );

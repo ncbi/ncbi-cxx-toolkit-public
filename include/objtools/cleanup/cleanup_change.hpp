@@ -155,6 +155,7 @@ public:
         eTrimFlankingQuotes,
         eCleanBioseqTitle,
         eDecodeXML,
+        eRemoveDupBioSource,
 
         // set when any other change is made.
         eChangeOther,

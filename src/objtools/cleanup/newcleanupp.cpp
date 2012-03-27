@@ -9109,6 +9109,80 @@ void CNewCleanup_imp::x_SortSeqDescs( CSeq_entry & seq_entry )
     }
 }
 
+namespace {
+    // T can be CBioseq or CBioseq_set.
+    // Logic is basically the same for bioseq and bioseq-set, but since they
+    // don't share the right functions in the class inheritance hierarchy, we
+    // have to use templates instead of polymorphism.
+
+    // returns true if change made
+    template <class T>
+    bool x_RemoveDupBioSourceImpl( T & obj )
+    {
+        if( ! obj.IsSetDescr() || ! obj.SetDescr().IsSet() || 
+            obj.SetDescr().Set().empty() ) 
+        {
+            // nothing to remove
+            return false;
+        }
+
+        CSeq_descr::Tdata & descr_vec = obj.SetDescr().Set();
+
+        // erase BioSources that are equal to a BioSource in some ancestor
+        // Bioseq-set
+        typedef vector<CSeq_descr::Tdata::iterator> TBioSrcIterVec;
+        TBioSrcIterVec sourcesToErase;
+        NON_CONST_ITERATE( CSeq_descr::Tdata, descr_iter, descr_vec ) {
+            if( ! (*descr_iter)->IsSource() ) {
+                continue;
+            }
+
+            // climb the hierarchy looking for identical BioSource
+            bool bShouldEraseDescr = false;
+            CConstRef< CBioseq_set > pParent = obj.GetParentSet();
+            for( ; pParent; pParent = pParent->GetParentSet() ) {
+                if( ! pParent->IsSetDescr() || ! pParent->GetDescr().IsSet() ) {
+                    continue;
+                }
+                ITERATE( CSeq_descr::Tdata, parent_descr_iter, pParent->GetDescr().Get() ) {
+                    if( ! (*parent_descr_iter)->IsSource() ) {
+                        continue;
+                    }
+                    if( (*parent_descr_iter)->Equals(**descr_iter) ) {
+                        bShouldEraseDescr = true;
+                        break;
+                    }
+                }
+                if( bShouldEraseDescr ) {
+                    break;
+                }
+            }
+            if( bShouldEraseDescr ) {
+                sourcesToErase.push_back(descr_iter);
+            }
+        }
+        // erase the BioSources we've decided to erase
+        NON_CONST_ITERATE(TBioSrcIterVec, iter_iter, sourcesToErase) {
+            descr_vec.erase(*iter_iter);
+        }
+        return ! sourcesToErase.empty();
+    }
+}
+
+void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq & bioseq )
+{
+    if( x_RemoveDupBioSourceImpl( bioseq ) ) {
+        ChangeMade( CCleanupChange::eRemoveDupBioSource );
+    }
+}
+
+void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq_set & bioseq_set )
+{
+    if( x_RemoveDupBioSourceImpl( bioseq_set ) ) {
+        ChangeMade( CCleanupChange::eRemoveDupBioSource );
+    }
+}
+
 void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )
 {
     EDIT_EACH_PCRREACTION_IN_PCRREACTIONSET( reaction_iter, pcr_reaction_set ) {

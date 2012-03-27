@@ -52,3 +52,10 @@ deprecated {
 use m_NewCleanup.x_SortSeqDescs {
     Seq-entry
 }
+
+use m_NewCleanup.x_RemoveDupBioSource {
+    Bioseq
+}
+use m_NewCleanup.x_RemoveDupBioSource {
+    Bioseq-set
+}

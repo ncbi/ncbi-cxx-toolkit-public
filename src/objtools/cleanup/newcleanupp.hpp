@@ -437,6 +437,9 @@ private:
 private:
     void x_SortSeqDescs( CSeq_entry & seq_entry );
 
+    void x_RemoveDupBioSource( CBioseq & bioseq );
+    void x_RemoveDupBioSource( CBioseq_set & bioseq_set );
+
 protected:
 
     CRef<CCleanupChange>  m_Changes;
