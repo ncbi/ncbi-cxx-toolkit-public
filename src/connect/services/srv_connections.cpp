@@ -185,10 +185,6 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
 
 void SNetServerConnectionImpl::Close()
 {
-    static const STimeout zero_timeout = {0, 0};
-
-    m_Socket.SetTimeout(eIO_Close, &zero_timeout);
-
     m_Socket.Close();
 }
 
