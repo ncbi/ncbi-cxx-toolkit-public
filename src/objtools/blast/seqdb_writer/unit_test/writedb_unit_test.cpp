@@ -385,6 +385,7 @@ void s_CheckSorted(const string & fname)
     string s, s2;
     
     while(NcbiGetlineEOL(file, s)) {
+        if (s.size() == 0) break;
         BOOST_REQUIRE(s2 <= s);
         s.swap(s2);
     }
