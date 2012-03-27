@@ -213,20 +213,20 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
 
     // Query clusters
     m_UseQueryClusters = !(mode & fNoQueryClusters);
-    m_MaxInClusterDist = 0.8;
-    m_KmerLength = 4;
-    m_KmerAlphabet = TKMethods::eRegular;
+    m_MaxInClusterDist = COBALT_MAX_CLUSTER_DIAM;
+    m_KmerLength = COBALT_KMER_LEN;
+    m_KmerAlphabet = COBALT_KMER_ALPH;
     m_ClustDistMeasure = TKMethods::eFractionCommonKmersGlobal;
     m_InClustAlnMethod = m_UseQueryClusters ? eMulti : eNone;
 
     // RPS Blast
     m_UsePreRpsHits = true;
-    m_RpsEvalue = 0.01;
-    m_DomainResFreqBoost = 0.5;
-    m_DomainHitlistSize = 500;
+    m_RpsEvalue = COBALT_RPS_EVALUE;
+    m_DomainResFreqBoost = COBALT_DOMAIN_BOOST;
+    m_DomainHitlistSize = COBALT_DOMAIN_HITLIST_SIZE;
 
     // Blatp
-    m_BlastpEvalue = 0.01;
+    m_BlastpEvalue = COBALT_BLAST_EVALUE;
 
     // Patterns
     if (!(mode & fNoPatterns)) {
@@ -235,19 +235,19 @@ void CMultiAlignerOptions::x_InitParams(TMode mode)
 
     // Iterate
     m_Iterate = !(mode & fNoIterate);
-    m_ConservedCutoff = 0.67;
-    m_Pseudocount = 2.0;
+    m_ConservedCutoff = COBALT_CONSERVED_CUTOFF;
+    m_Pseudocount = COBALT_PSEUDO_COUNT;
 
-    m_TreeMethod = eClusters;
-    m_LocalResFreqBoost = 1.0;
+    m_TreeMethod = COBALT_TREE_METHOD;
+    m_LocalResFreqBoost = COBALT_LOCAL_BOOST;
 
     m_UserHitsScore = kDefaultUserConstraintsScore;
 
-    m_MatrixName = "BLOSUM62";
-    m_EndGapOpen = -5;
-    m_EndGapExtend = -1;
-    m_GapOpen = -11;
-    m_GapExtend = -1;
+    m_MatrixName = COBALT_DEFAULT_MATRIX;
+    m_EndGapOpen = COBALT_END_GAP_OPEN;
+    m_EndGapExtend = COBALT_END_GAP_EXTNT;
+    m_GapOpen = COBALT_GAP_OPEN;
+    m_GapExtend = COBALT_GAP_EXTNT;
 
     m_Verbose = false;
 }

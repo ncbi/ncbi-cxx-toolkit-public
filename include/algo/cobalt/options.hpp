@@ -45,6 +45,45 @@ Contents: Interface for CMultiAlignerOptions
 #include <algo/align/nw/nw_pssm_aligner.hpp>
 #include <objects/blast/Blast4_archive.hpp>
 
+/// Default values for cobalt parameters
+/// Rps-Blast e-value cutoff for creating contraints
+#define COBALT_RPS_EVALUE 0.01
+/// Weight for domain residue frequecies when creating MSA profiles 
+#define COBALT_DOMAIN_BOOST 0.5
+/// Hitlist size for Rps-Blast searches
+#define COBALT_DOMAIN_HITLIST_SIZE 500
+
+/// Blastp e-value cutoff for creating contraints
+#define COBALT_BLAST_EVALUE 0.01
+/// Weight for sequence residues when creating MSA profules
+#define COBALT_LOCAL_BOOST 1.0
+
+/// Pseudocount constant used in multiple alignment
+#define COBALT_PSEUDO_COUNT 2.0
+/// Conservation score cutoff used for selecting conserved columns in
+/// initial MSA
+#define COBALT_CONSERVED_CUTOFF 0.67
+
+/// Default method for computing progressive alignment tree
+#define COBALT_TREE_METHOD CMultiAlignerOptions::eClusters
+
+/// Default substitution matrix used in multiple alignment
+#define COBALT_DEFAULT_MATRIX "BLOSUM62"
+/// End gap opening score
+#define COBALT_END_GAP_OPEN -5
+/// End gap extension score
+#define COBALT_END_GAP_EXTNT -1
+/// Gap opening score
+#define COBALT_GAP_OPEN -11
+/// Gap extension score
+#define COBALT_GAP_EXTNT -1
+
+/// Maximum cluster diameter for pre-alignment sequence clustering
+#define COBALT_MAX_CLUSTER_DIAM 0.8
+/// K-mer length for sequence clustering
+#define COBALT_KMER_LEN 4
+/// K-mer alphabet for sequence clustering
+#define COBALT_KMER_ALPH CMultiAlignerOptions::TKMethods::eSE_B15
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)

@@ -76,6 +76,31 @@ private:
     CRef<CObjectManager> m_ObjMgr;
 };
 
+// Get tree computation method as string that can be used to initialize
+// default command line option value
+string s_GetTreeMethodAsString(CMultiAlignerOptions::ETreeMethod method)
+{
+    switch (method) {
+    case CMultiAlignerOptions::eFastME : return "fastme";
+    case CMultiAlignerOptions::eNJ : return "nj";
+    case CMultiAlignerOptions::eClusters : return "clust";
+    default: return "";
+    }
+}
+
+// Get k-mer alphabet as string that can be used to initialize
+// default command line option value
+string s_GetKmerAlphabetAsString(
+                    CMultiAlignerOptions::TKMethods::ECompressedAlphabet alph)
+{
+    switch (alph) {
+    case CMultiAligner::TKMethods::eRegular : return "regular";
+    case CMultiAligner::TKMethods::eSE_V10 : return "se-v10";
+    case CMultiAligner::TKMethods::eSE_B15 : return "se-b15";
+    default : return "";
+    }
+}
+
 void CMultiApplication::Init(void)
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp
@@ -135,10 +160,12 @@ void CMultiApplication::Init(void)
     arg_desc->AddDefaultKey("rps_evalue", "evalue", 
                             "E-value threshold for selecting conserved domains"
                             " from results of RPS-BLAST search",
-                            CArgDescriptions::eDouble, "0.01");
+                            CArgDescriptions::eDouble,
+                            NStr::DoubleToString(COBALT_RPS_EVALUE));
     arg_desc->AddDefaultKey("num_domain_hits", "number", "Maximum number of "
                             "of domain hits for each sequence",
-                            CArgDescriptions::eInteger, "250");
+                            CArgDescriptions::eInteger,
+                            NStr::IntToString(COBALT_DOMAIN_HITLIST_SIZE));
     arg_desc->AddOptionalKey("p", "patternfile", 
                              "Filename containing regular expression patterns "
                              "for conserved domains",
@@ -147,7 +174,8 @@ void CMultiApplication::Init(void)
                      "When assigning domain residue frequencies, the amount of "
                      "extra weight (0..1) to give to the actual sequence letter "
                      "at that position",
-                     CArgDescriptions::eDouble, "0.5");
+                            CArgDescriptions::eDouble,
+                            NStr::DoubleToString(COBALT_DOMAIN_BOOST));
 
     arg_desc->AddOptionalKey("domain_hits", "infile", "Results of pre-computed"
                              " domain search in BLAST archive format",
@@ -176,7 +204,8 @@ void CMultiApplication::Init(void)
     arg_desc->SetCurrentGroup("Multiple alignment options");
     arg_desc->AddDefaultKey("treemethod", "method", 
                      "Method for generating progressive alignment guide tree",
-                      CArgDescriptions::eString, "clust");
+                      CArgDescriptions::eString,
+                      s_GetTreeMethodAsString(COBALT_TREE_METHOD));
     arg_desc->SetConstraint("treemethod", &(*new CArgAllow_Strings,
                                       "clust", "nj", "fastme"));
     arg_desc->AddDefaultKey("iter", "iterate", 
@@ -186,38 +215,46 @@ void CMultiApplication::Init(void)
     arg_desc->AddDefaultKey("ccc", "conserved_cutoff", 
                      "Minimum average score needed for a multiple alignment "
                      "column to be considered as conserved",
-                     CArgDescriptions::eDouble, "0.67");
+                     CArgDescriptions::eDouble,
+                     NStr::DoubleToString(COBALT_CONSERVED_CUTOFF));
     arg_desc->AddDefaultKey("pseudo", "pseudocount", 
                      "Pseudocount constant",
-                     CArgDescriptions::eDouble, "2.0");
+                     CArgDescriptions::eDouble,
+                     NStr::DoubleToString(COBALT_PSEUDO_COUNT, 1));
     arg_desc->AddDefaultKey("ffb", "filler_res_boost", 
                      "When assigning filler residue frequencies, the amount of "
                      "extra weight (0..1) to give to the actual sequence letter "
                      "at that position",
-                     CArgDescriptions::eDouble, "1.0");
+                     CArgDescriptions::eDouble,
+                     NStr::DoubleToString(COBALT_LOCAL_BOOST, 1));
 
 
     // Pairwise alignment options
     arg_desc->SetCurrentGroup("Pairwise alignment options");
     arg_desc->AddDefaultKey("matrix", "matrix", 
                      "Score matrix to use",
-                     CArgDescriptions::eString, "BLOSUM62");
+                     CArgDescriptions::eString, COBALT_DEFAULT_MATRIX);
     arg_desc->AddDefaultKey("end_gapopen", "penalty", 
                      "Gap open penalty for terminal gaps",
-                     CArgDescriptions::eInteger, "5");
+                     CArgDescriptions::eInteger,
+                     NStr::IntToString(-COBALT_END_GAP_OPEN));
     arg_desc->AddDefaultKey("end_gapextend", "penalty", 
                      "Gap extend penalty for terminal gaps",
-                     CArgDescriptions::eInteger, "1");
+                     CArgDescriptions::eInteger,
+                     NStr::IntToString(-COBALT_END_GAP_EXTNT));
     arg_desc->AddDefaultKey("gapopen", "penalty", 
                      "Gap open penalty for internal gaps",
-                     CArgDescriptions::eInteger, "11");
+                     CArgDescriptions::eInteger,
+                     NStr::IntToString(-COBALT_GAP_OPEN));
     arg_desc->AddDefaultKey("gapextend", "penalty", 
                      "Gap extend penalty for internal gaps",
-                     CArgDescriptions::eInteger, "1");
+                     CArgDescriptions::eInteger,
+                     NStr::IntToString(-COBALT_GAP_EXTNT));
     arg_desc->AddDefaultKey("blast_evalue", "evalue", 
                    "E-value threshold for selecting segments matched "
                    "by BLASTP",
-                   CArgDescriptions::eDouble, "0.01");
+                   CArgDescriptions::eDouble,
+                   NStr::DoubleToString(COBALT_BLAST_EVALUE));
 
 
     // Query clustering options
@@ -227,14 +264,17 @@ void CMultiApplication::Init(void)
                      CArgDescriptions::eBoolean, "T");
     arg_desc->AddDefaultKey("k", "length", 
                       "K-mer length for query clustering",
-                     CArgDescriptions::eInteger, "4");
+                     CArgDescriptions::eInteger,
+                     NStr::IntToString(COBALT_KMER_LEN));
     arg_desc->AddDefaultKey("max_dist", "distance",
                      "Maximum allowed distance between sequences in a cluster"
                      " (0..1)",
-                     CArgDescriptions::eDouble, "0.8");
+                     CArgDescriptions::eDouble,
+                     NStr::DoubleToString(COBALT_MAX_CLUSTER_DIAM));
     arg_desc->AddDefaultKey("alph", "name",
                      "Alphabet for used k-mer counting",
-                     CArgDescriptions::eString, "se-b15");
+                     CArgDescriptions::eString,
+                     s_GetKmerAlphabetAsString(COBALT_KMER_ALPH));
     arg_desc->SetConstraint("alph", &(*new CArgAllow_Strings, "regular",
                                       "se-v10", "se-b15"));
 
