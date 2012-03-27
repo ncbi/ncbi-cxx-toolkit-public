@@ -1067,7 +1067,6 @@ CNHM<CRO>	s	Croatian Natural History Museum, Botany Department
 CNHM<USA-OH>	s	Cincinnati Museum of Natural History
 CNHP	s	Beijing Natural History Museum
 CNHS	s	Croydon Natural History and Scientific Society
-CNIN	s	Coleccion Nacional de Insectos, Universidad Nacional Autonoma de Mexico
 CNM	s	Cheltenham Naturalists' Association
 CNM-CM	c	Filamentous fungus collection of the Spanish National Center for Microbiology
 CNMC	s	Colorado National Monument
@@ -2364,6 +2363,7 @@ IBUNAM:CNAR	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Co
 IBUNAM:CNAV	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Aves
 IBUNAM:CNCR	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Crustaceos
 IBUNAM:CNHE	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Helmintos
+IBUNAM:CNIN	s	Coleccion Nacional de Insectos, Universidad Nacional Autonoma de Mexico
 IBUNAM:CNIN	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Insectos
 IBUNAM:CNMA	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Mamiferos
 IBUNAM:CNMO	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Moluscos
