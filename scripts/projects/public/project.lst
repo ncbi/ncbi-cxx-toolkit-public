@@ -1,12 +1,12 @@
 algo
 app
-db
 build-system
 cgi
 check
 connect
 corelib
 ctools
+db
 dbapi
 dll
 html
@@ -21,7 +21,6 @@ util
 ./doc/public/gpl.txt
 ./doc/public/index_html_files
 ./doc/public/index.html
--app/sample/gui
 -dll/_ncbi
 -dll/gui
 -dll/internal
@@ -29,7 +28,6 @@ util
 -./include/cgi/caf_plain.hpp
 -./include/connect/daemons
 -./include/connect/ext
--./include/dbapi/driver/gateway
 -./include/objtools/data_loaders/genbank/pubseq
 -./include/objtools/data_loaders/genbank/pubseq2
 -connect/daemons
@@ -39,7 +37,6 @@ util
 -connect/ncbi_lbsm_ipc.c
 -connect/ncbi_lbsm_ipc.h
 -connect/ncbi_lbsmd.c
--dbapi/driver/gateway
 -objtools/data_loaders/genbank/pubseq
 -objtools/data_loaders/genbank/pubseq2
 -./scripts/internal

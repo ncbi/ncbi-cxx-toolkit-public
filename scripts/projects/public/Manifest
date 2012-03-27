@@ -9,30 +9,29 @@
 #          It is used by release configurator.
 #
 
-
 USE_COMPONENTS
 
-Win32_9    : MSVC8 : static  32  ReleaseDLL
-Win64_9    : MSVC9-32 : dll     32  DebugDLL
-Win64_9    : MSVC9-64 : static  64  ReleaseDLL
+Win32_9    : MSVC9-32  : dll  	 32  DebugDLL
+Win64_9    : MSVC9-64  : static  64  DebugDLL
+Win32_10   : MSVC10-32 : dll     32  ReleaseDLL
+Win64_10   : MSVC10-64 : static  64  ReleaseDLL
 
-Linux32-Centos : GCC304  : GCC.sh 3.0.4 --with-dll --with-mt --with-distcc
-Linux32-Centos : GCC342  : GCC.sh 3.4.2 --without-flat-makefile --with-distcc
-Linux32-Centos : GCC412  : GCC.sh 4.1.2 --without-debug --with-mt  <ENV>NCBI=</ENV>
-Linux32-Centos : GCC423  : GCC.sh 4.2.3 --without-debug --with-distcc
+Linux32-Centos : GCC445  : GCC.sh 4.4.5 --without-debug --with-3psw=system
+Linux32-Centos : GCC460  : GCC.sh 4.6.0 --without-debug --with-mt
 Linux32-Centos : ICC     : ICC.sh       --without-debug --with-dll --with-mt
 
 Linux64-Centos : GCC401  : GCC.sh 4.0.1 --without-debug --without-flat-makefile
-Linux64-Centos : GCC401d : GCC.sh 4.0.1 --with-mt --with-distcc  <ENV>NCBI=</ENV> 
-Linux64-Centos : GCC412  : GCC.sh 4.1.2 --with-distcc
-Linux64-Centos : GCC423  : GCC.sh 4.2.3 --without-debug --with-mt --with-distcc
-Linux64-Centos : ICC     : ICC.sh       --with-mt  <ENV>NCBI=</ENV>
+Linux64-Centos : GCC442  : GCC.sh 4.4.2 --without-debug --with-mt --with-distcc
+Linux64-Centos : GCC442d : GCC.sh 4.4.2 --with-mt --with-distcc --with-3psw=system
+Linux64-Centos : GCC463  : GCC.sh 4.6.3 --with-distcc
+Linux64-Centos : ICC     : ICC.sh       --with-mt --with-3psw=system
 
 FreeBSD32 : GCC : GCC.sh --without-debug
 
 SunOSx86 : WS64 : WorkShop59.sh 64 --with-debug --with-dll --with-mt
 
-SunOSSparc : GCC  : GCC.sh 4.1.1 --without-debug --with-mt  <ENV>NCBI=</ENV>
-SunOSSparc : WS32 : WorkShop55.sh 32 --with-debug
+SunOSSparc : GCC  : GCC.sh 4.5.3 --without-debug --with-mt --with-3psw=system
+SunOSSparc : WS32 : WorkShop59.sh 32 --with-debug
 
-IntelMAC : GCC : GCC.sh --with-debug --with-dll --with-mt
+IntelMAC : GCC401 : GCC.sh 4.0 --with-debug --with-dll --with-mt --with-universal
+IntelMAC : GCC421 : GCC.sh 4.2 --without-debug --with-dll --with-mt --with-universal=i386,x86_64
