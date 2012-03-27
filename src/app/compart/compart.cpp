@@ -31,15 +31,13 @@
 
 #include <ncbi_pch.hpp>
 
-#include "compart.hpp"
-#include "em.hpp"
-
+#include <math.h>
+#include <algo/align/splign/compart_matching.hpp>
 #include <algo/align/util/compartment_finder.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
-
-#include <math.h>
+#include "compart.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -230,9 +228,46 @@ int CCompartApp::Run()
         rv = x_DoWithExternalHits();
     }
     else {
+
+        CBlastSequenceSource bss(args["qdb"].AsString());
+
+        /*
+        class CTestSequenceSource : public ISequenceSource {
+        private:
+            virtual const vector<CSeq_id_Handle>& GetIds(void) const { return m_sih; }
+            virtual CBioseq_Handle GetSequence(const CSeq_id_Handle& sih) {
+                return m_scope->GetBioseqHandle(*sih.GetSeqId());
+            }
+        public:
+            CTestSequenceSource() {
+                m_sih.push_back( CSeq_id_Handle::GetGiHandle(21637378) );
+                m_sih.push_back( CSeq_id_Handle::GetGiHandle(47551258) );
+                m_object_manager = CObjectManager::GetInstance();
+                CGBDataLoader::RegisterInObjectManager(*m_object_manager);
+                m_scope = new CScope(*m_object_manager);
+                m_scope->AddDefaults();
+            }
+        protected:
+            vector<CSeq_id_Handle> m_sih;
+            CRef<CObjectManager> m_object_manager;
+            CRef<CScope> m_scope;
+
+        };
+         CTestSequenceSource bss;
+
+        cerr<<"number of seqs:  "<< bss.GetNumSeqs()<<endl;
+        const char *seq;
+        int len = ((ISequenceSource *)&bss)->GetSequence(1, &seq);
+        cerr<<"sequence length: "<<len<<endl;
+        //string sseq(seq, seq+len);
+        ((ISequenceSource *)&bss)->RetSequence(&seq);
+        */
+    
         CRef<CElementaryMatching> matcher (
-                     new CElementaryMatching(args["qdb"].AsString(),
+                     new CElementaryMatching(&bss,
                                              args["sdb"].AsString()));
+
+        matcher->SetOutputMethod(true);
 
         matcher->SetMinQueryLength(m_min_query_len);
 
@@ -251,7 +286,19 @@ int CCompartApp::Run()
         catch(std::bad_alloc&) {
             NCBI_THROW(CException, eUnknown, 
                        "Not enough memory available to run this program");
-        }      
+        }
+
+        /* 
+        //set SetOutputMethod to false before Run to get the results as a vector
+        vector<vector<CRef<CBlastTabular> > > vec = matcher->GetResults();
+        ITERATE(vector<vector<CRef<CBlastTabular> > >, itt, vec) {
+            ITERATE(vector<CRef<CBlastTabular> >, ittt, *itt) {
+                //cerr<<"Here"<<endl;
+                cout<<**ittt<<endl;
+            }
+            cout<<endl;
+        }
+        */
     }
 
     return rv;
