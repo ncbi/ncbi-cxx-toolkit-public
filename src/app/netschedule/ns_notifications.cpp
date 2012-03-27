@@ -234,17 +234,23 @@ void CNSNotificationList::UnregisterListener(const CNSClientId &  client,
 
 void CNSNotificationList::NotifyJobStatus(unsigned int    address,
                                           unsigned short  port,
-                                          const string &  job_key)
+                                          const string &  job_key,
+                                          TJobStatus      job_status
+                                          )
 {
     char    buffer[k_MessageBufferSize];
 
     memcpy(buffer, m_JobStateConstPart, m_JobStateConstPartLength);
     strncpy(buffer + m_JobStateConstPartLength,
             job_key.c_str(), k_MessageBufferSize - m_JobStateConstPartLength);
+    snprintf(buffer + m_JobStateConstPartLength + job_key.size(),
+             k_MessageBufferSize - m_JobStateConstPartLength - job_key.size(),
+             "&job_status=%s", CNetScheduleAPI::StatusToString(job_status).c_str());
+
 
     m_StatusNotificationSocket.Send(
                                 buffer,
-                                m_JobStateConstPartLength + job_key.size() + 1,
+                                strlen(buffer) + 1,
                                 CSocketAPI::ntoa(address), port);
     return;
 }

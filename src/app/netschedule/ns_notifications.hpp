@@ -104,7 +104,8 @@ class CNSNotificationList
 
         void NotifyJobStatus(unsigned int    address,
                              unsigned short  port,
-                             const string &  job_key);
+                             const string &  job_key,
+                             TJobStatus      job_status);
         void CheckTimeout(time_t                 current_time,
                           CNSClientsRegistry &   clients_registry,
                           CNSAffinityRegistry &  aff_registry);

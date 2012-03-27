@@ -569,7 +569,8 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
             if (job.ShouldNotify(curr))
                 m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
                                                     job.GetSubmNotifPort(),
-                                                    MakeKey(job_id));
+                                                    MakeKey(job_id),
+                                                    job.GetStatus());
             return old_status;
         }
         catch (CBDB_ErrnoException &  ex) {
@@ -1064,7 +1065,8 @@ void CQueue::Truncate(void)
                 if (job.ShouldNotify(current_time))
                     m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
                                                         job.GetSubmNotifPort(),
-                                                        MakeKey(job_id));
+                                                        MakeKey(job_id),
+                                                        job.GetStatus());
             }
 
             // There is no need to commit transaction - there were no changes
@@ -1143,7 +1145,8 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
          old_status == CNetScheduleAPI::ePending) && job.ShouldNotify(current_time))
         m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
                                             job.GetSubmNotifPort(),
-                                            MakeKey(job_id));
+                                            MakeKey(job_id),
+                                            job.GetStatus());
 
     return old_status;
 }
@@ -1216,7 +1219,8 @@ void CQueue::x_CancelJobs(const CNSClientId &   client,
              old_status == CNetScheduleAPI::ePending) && job.ShouldNotify(current_time))
             m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
                                                 job.GetSubmNotifPort(),
-                                                MakeKey(job_id));
+                                                MakeKey(job_id),
+                                                job.GetStatus());
     }
 
     return;
@@ -1790,7 +1794,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
         if (!rescheduled  &&  job.ShouldNotify(curr)) {
             m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
                                                 job.GetSubmNotifPort(),
-                                                MakeKey(job_id));
+                                                MakeKey(job_id),
+                                                job.GetStatus());
         }
 
         if (rescheduled)
@@ -2038,7 +2043,8 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
     if (new_status == CNetScheduleAPI::eFailed && job.ShouldNotify(time(0)))
         m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
                                             job.GetSubmNotifPort(),
-                                            MakeKey(job_id));
+                                            MakeKey(job_id),
+                                            job.GetStatus());
 
     if (logging)
     {
