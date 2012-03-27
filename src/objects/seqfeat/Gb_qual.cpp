@@ -56,6 +56,13 @@ CGb_qual::~CGb_qual(void)
 {
 }
 
+
+static const char * const valid_inf_categories [] = {
+    "EXISTENCE",
+    "COORDINATES",
+    "DESCRIPTION"
+};
+
 static const char * const valid_inf_prefixes [] = {
     "ab initio prediction",
     "nucleotide motif",
@@ -85,16 +92,29 @@ CInferencePrefixList::~CInferencePrefixList(void)
 
 void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, string& prefix, string& remainder)
 {
+    string category = "";
     prefix = "";
     remainder = "";
+    string check = inference;
 
     for (unsigned int i = 0; i < sizeof (valid_inf_prefixes) / sizeof (char *); i++) {
-        if (NStr::StartsWith (inference, valid_inf_prefixes[i])) {
+        if (NStr::StartsWith (check, valid_inf_categories[i])) {
+            category = valid_inf_categories[i];
+            check = check.substr(category.length());
+            NStr::TruncateSpacesInPlace(check);
+            if (NStr::StartsWith(check, ":")) {
+                check = check.substr(1);
+            }
+            break;
+        }
+    }
+    for (unsigned int i = 0; i < sizeof (valid_inf_prefixes) / sizeof (char *); i++) {
+        if (NStr::StartsWith (check, valid_inf_prefixes[i])) {
             prefix = valid_inf_prefixes[i];
         }
     }
 
-    remainder = inference.substr (prefix.length());
+    remainder = check.substr (prefix.length());
     NStr::TruncateSpacesInPlace (remainder);
 }
 
