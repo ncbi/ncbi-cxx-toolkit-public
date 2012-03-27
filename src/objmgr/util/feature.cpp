@@ -1252,9 +1252,10 @@ namespace {
     }
 
     
-    static const int kSameTypeParentQuality  = 1000;
+    static const int kBetterTypeParentQuality= 1000;
     static const int kByLocusParentQuality   =  750;
-    static const int kWorseTypeParentQuality =  500;
+    static const int kSameTypeParentQuality  =  500;
+    static const int kWorseTypeParentQuality =  kSameTypeParentQuality;
 
     static
     int sx_GetParentTypeQuality(CSeqFeatData::ESubtype parent,
@@ -1262,10 +1263,10 @@ namespace {
     {
         int d_child = sx_GetRootDistance(child);
         int d_parent = sx_GetRootDistance(parent);
-        if ( d_parent <= d_child ) {
+        if ( d_parent < d_child ) {
             // parent candidate is higher than child
-            // return value <= kSameTypeParentQuality
-            return kSameTypeParentQuality - (d_child - d_parent);
+            // return value <= kBetterTypeParentQuality
+            return kBetterTypeParentQuality - (d_child - d_parent);
         }
         else {
             // parent candidate is not higher than child
