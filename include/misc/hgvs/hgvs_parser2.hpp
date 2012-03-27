@@ -761,11 +761,11 @@ protected:
 
                 expr2           = ch_p('(') >> expr2 >> ch_p(')')
                                 | list2a
-                                | str_p("0?") //note: precdes location>>expr3 such that not matched as unknown variation at pos=0 here
-                                | ch_p('0')
+                                | str_p("0?") //note: HGVS-special; precedes "location>>expr3" rule, so that it is not matched as unknown-variation@pos=0
                                 | location >> expr3
-                                | prot_ext    //can also exist within location context (mut_inst)
-                                | ch_p('?')   //note: follows location>>expr3 such that variation at unknown pos is not partially-matched as unknown variation
+                                | prot_ext    //note: can also exist within location context (mut_inst)
+                                | ch_p('0')   //note: HGVS-special; follows "location>>expr3" such that if location contains padding zeros, they are not consumed by this rule.
+                                | ch_p('?')   //note: follows "location>>expr3" such that variation at unknown pos is not partially-matched as unknown variation
                                 | ch_p('=');
                 list2a          = list_p(discard_node_d[ch_p('[')] >> list2b >> discard_node_d[ch_p(']')], chset<>(";+"));
                 list2b          = list_p(expr2, list_delimiter);
