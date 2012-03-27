@@ -3833,7 +3833,7 @@ char NStr::StringToNumeric(const CTempString& str,
                            TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
-    if (n > numeric_limits<char>::max()) {
+    if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return 0;
@@ -3871,7 +3871,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     if ( !n && errno ) {
         return false;
     }
-    if (n > numeric_limits<char>::max()) {
+    if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return false;
@@ -3927,7 +3927,7 @@ wchar_t NStr::StringToNumeric(const CTempString& str,
                               TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
-    if (n > numeric_limits<wchar_t>::max()) {
+    if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return 0;
@@ -3948,7 +3948,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     if ( !n && errno ) {
         return false;
     }
-    if (n > numeric_limits<wchar_t>::max()) {
+    if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return false;
@@ -3996,7 +3996,7 @@ short NStr::StringToNumeric(const CTempString& str,
                             TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
-    if (n > numeric_limits<short>::max()) {
+    if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return 0;
@@ -4034,7 +4034,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     if ( !n && errno ) {
         return false;
     }
-    if (n > numeric_limits<short>::max()) {
+    if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return false;
@@ -4332,7 +4332,7 @@ float NStr::StringToNumeric(const CTempString& str,
                             TStringToNumFlags flags, int /*base*/)
 {
     double n = StringToDouble(str, flags);
-    if (n > numeric_limits<float>::max()) {
+    if (n < numeric_limits<float>::min()  ||  n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return 0;
@@ -4353,7 +4353,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     if ( !n && errno ) {
         return false;
     }
-    if (n > numeric_limits<float>::max()) {
+    if (n < numeric_limits<float>::min()  ||  n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
             errno = ERANGE;
             return false;
