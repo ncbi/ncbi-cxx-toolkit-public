@@ -110,6 +110,8 @@ Improvements and bug fixes
       (JIRA: CXX-2895)
     * Do not keep history of the running and reading jobs for clients
       (JIRA: CXX-2898)
+    * improving job expiration detection for garbage collector and picking
+      pending job (JIRA: CXX-2900)
     * Get rid of the 'daemon' parameter from a config file (JIRA: CXX-2911)
     * Extended STAT output; it also works for all the queues (JIRA: CXX-2925)
     * RECO is now allowed for admins only (JIRA: CXX-2944)
@@ -131,6 +133,9 @@ Improvements and bug fixes
     * The STSN command is deleted; STAT JOBS aff=... is introduced instead
       (JIRA: CXX-3103)
     * The QPRT command is deleted (JIRA: CXX-3104)
+    * Garbage collector: the speed of deletion from the DB is wrong
+      (JIRA: CXX-3138)
+    * introduce SST2/WST2/STATUS2 commands (JIRA: CXX-3147)
 
 
 Release 4.9.0 based on SC 8.0 (2011-07-11)
