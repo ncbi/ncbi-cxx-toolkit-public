@@ -114,6 +114,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "STATUS",   { &CNetScheduleHandler::x_ProcessStatus,
                     eNSCR_Queue },
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
+    // STATUS2 job_key : id
+    { "STATUS2",  { &CNetScheduleHandler::x_ProcessStatus,
+                    eNSCR_Queue },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // STAT [ option : id ] -- "ALL"
     { "STAT",     { &CNetScheduleHandler::x_ProcessStatistics,
                     eNSCR_Any },
@@ -152,6 +156,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     /*** Submitter role ***/
     // SST job_key : id -- submitter fast status, changes timestamp
     { "SST",      { &CNetScheduleHandler::x_ProcessFastStatusS,
+                    eNSCR_Submitter },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
+    // SST2 job_key : id -- submitter fast status, changes timestamp
+    { "SST2",     { &CNetScheduleHandler::x_ProcessFastStatusS,
                     eNSCR_Submitter },
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // SUBMIT input : str [ progress_msg : str ] [ port : uint [ timeout : uint ]]
@@ -207,6 +215,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     /*** Worker node role ***/
     // WST job_key : id -- worker node fast status, does not change timestamp
     { "WST",      { &CNetScheduleHandler::x_ProcessFastStatusW,
+                    eNSCR_Worker },
+        { { "job_key", eNSPT_Id, eNSPA_Required } } },
+    // WST2 job_key : id -- worker node fast status, does not change timestamp
+    { "WST2",     { &CNetScheduleHandler::x_ProcessFastStatusW,
                     eNSCR_Worker },
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
     // CHAFF [add: string] [del: string] -- change affinity
@@ -1124,7 +1136,12 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
     TJobStatus      status = q->GetJobStatus(m_CommandArguments.job_id);
     // TODO: update timestamp
 
-    WriteMessage("OK:", NStr::IntToString((int) status));
+    if (m_CommandArguments.cmd == "SST2")
+        WriteMessage("OK:job_status=",
+                     CNetScheduleAPI::StatusToString(status));
+    else
+        WriteMessage("OK:", NStr::IntToString((int) status));
+
     if (status == CNetScheduleAPI::eJobNotFound) {
         ERR_POST(Warning << "SST for unknown job: "
                          << m_CommandArguments.job_key);
@@ -1139,7 +1156,12 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 {
     TJobStatus      status = q->GetJobStatus(m_CommandArguments.job_id);
 
-    WriteMessage("OK:", NStr::IntToString((int) status));
+    if (m_CommandArguments.cmd == "WST2")
+        WriteMessage("OK:job_status=",
+                     CNetScheduleAPI::StatusToString(status));
+    else
+        WriteMessage("OK:", NStr::IntToString((int) status));
+
     if (status == CNetScheduleAPI::eJobNotFound) {
         ERR_POST(Warning << "WST for unknown job: "
                          << m_CommandArguments.job_key);
@@ -1308,12 +1330,22 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
 
     // Here: the job was found
     q->TouchJob(job);
-    WriteMessage("OK:", NStr::IntToString((int) job.GetStatus()) +
-                        " " + NStr::IntToString(job.GetRetCode()) +
-                        " \""   + NStr::PrintableString(job.GetOutput()) +
-                        "\" \"" + NStr::PrintableString(job.GetErrorMsg()) +
-                        "\" \"" + NStr::PrintableString(job.GetInput()) +
-                        "\"");
+    if (m_CommandArguments.cmd == "STATUS2")
+        WriteMessage("OK:",
+                     "job_status=" + CNetScheduleAPI::StatusToString(job.GetStatus()) +
+                     "&ret_code=" + NStr::IntToString(job.GetRetCode()) +
+                     "&output=" + NStr::URLEncode(job.GetOutput()) +
+                     "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
+                     "&input=" + NStr::URLEncode(job.GetInput())
+                    );
+
+    else
+        WriteMessage("OK:", NStr::IntToString((int) job.GetStatus()) +
+                            " " + NStr::IntToString(job.GetRetCode()) +
+                            " \""   + NStr::PrintableString(job.GetOutput()) +
+                            "\" \"" + NStr::PrintableString(job.GetErrorMsg()) +
+                            "\" \"" + NStr::PrintableString(job.GetInput()) +
+                            "\"");
     x_PrintRequestStop(eStatus_OK);
 }
 
