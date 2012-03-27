@@ -58,6 +58,7 @@
 #include "queue_clean_thread.hpp"
 #include "ns_statistics_thread.hpp"
 #include "ns_group.hpp"
+#include "ns_gc_registry.hpp"
 
 #include <deque>
 #include <map>
@@ -192,6 +193,8 @@ public:
 
     /// 0 - job not found
     unsigned int  ReadJobFromDB(unsigned int  job_id, CJob &  job);
+
+    void  TouchJob(const CJob &  job);
 
     /// Remove all jobs
     void Truncate(void);
@@ -512,6 +515,9 @@ private:
 
     // Group registry
     CNSGroupsRegistry            m_GroupRegistry;
+
+    // Garbage collector registry
+    CJobGCRegistry               m_GCRegistry;
 };
 
 

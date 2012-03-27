@@ -147,6 +147,16 @@ private:
 };
 
 
+
+time_t  GetJobExpirationTime(time_t      last_touch,
+                             TJobStatus  status,
+                             time_t      job_timeout,
+                             time_t      job_run_timeout,
+                             time_t      queue_timeout,
+                             time_t      queue_run_timeout,
+                             time_t      event_time = 0);
+
+
 // Internal representation of a Job
 // mirrors database tables SQueueDB, SJobInfoDB, and SEventsDB
 class CJob
@@ -214,6 +224,8 @@ public:
     { return m_Mask; }
     unsigned       GetGroupId() const
     { return m_GroupId; }
+    time_t         GetLastTouch() const
+    { return m_LastTouch; }
     const string&  GetClientIP() const
     { return m_ClientIP; }
     const string&  GetClientSID() const
@@ -275,6 +287,9 @@ public:
     void           SetGroupId(unsigned id)
     { m_GroupId = id;
       m_Dirty |= fJobPart; }
+    void           SetLastTouch(time_t  t)
+    { m_LastTouch = t;
+      m_Dirty |= fJobPart; }
 
     void           SetClientIP(const string& client_ip)
     { m_ClientIP = client_ip;
@@ -299,33 +314,19 @@ public:
     const CJobEvent *   GetLastEvent() const;
     CJobEvent *         GetLastEvent();
 
-    // Time related helpers
-    time_t          GetLastUpdateTime(void) const
-    {   // When a job is submitted the first event is created, so
-        // it is impossible that the event list is empty
-        return m_Events[m_Events.size()-1].GetTimestamp();
-    }
-
     time_t          GetSubmitTime(void) const
     { return m_Events[0].m_Timestamp; }
 
     // This one called very often to test job expiration so it needs to be as
     // fast as possible. Lets make it inline
-    time_t          GetJobExpirationTime(time_t  queue_timeout,
-                                         time_t  queue_run_timeout) const
+    time_t          GetExpirationTime(time_t  queue_timeout,
+                                      time_t  queue_run_timeout,
+                                      time_t  event_time = 0) const
     {
-        time_t      last_update = GetLastUpdateTime();
-
-        if (m_Status == CNetScheduleAPI::eRunning ||
-            m_Status == CNetScheduleAPI::eReading) {
-            if (m_RunTimeout != 0)
-                return last_update + m_RunTimeout;
-            return last_update + queue_run_timeout;
-        }
-
-        if (m_Timeout != 0)
-            return last_update + m_Timeout;
-        return last_update + queue_timeout;
+       return GetJobExpirationTime(m_LastTouch, m_Status,
+                                   m_Timeout, m_RunTimeout,
+                                   queue_timeout, queue_run_timeout,
+                                   event_time);
     }
 
     EAuthTokenCompareResult  CompareAuthToken(const string &  auth_token) const;
@@ -338,11 +339,6 @@ public:
     EJobFetchResult Fetch(CQueue* queue);
     // Fetch object by its numeric id
     EJobFetchResult Fetch(CQueue* queue, unsigned id);
-    // Fetch a strictly limited set of fields:
-    // m_AffinityId, m_Status, m_RunTimeout, m_Timeout, m_Events
-    // Attention: other fields are not initialized
-    EJobFetchResult FetchToTestExpiration(CQueue *      queue,
-                                          unsigned int  id);
 
     // Cursor like functionality - not here yet. May be we need
     // to create separate CJobIterator.
@@ -381,6 +377,7 @@ private:
     unsigned            m_AffinityId;
     unsigned            m_Mask;
     unsigned            m_GroupId;
+    time_t              m_LastTouch;
 
     string              m_ClientIP;
     string              m_ClientSID;

@@ -272,6 +272,9 @@ unsigned CQueue::LoadStatusMatrix()
         unsigned int    job_id = m_QueueDbBlock->job_db.id;
         unsigned int    group_id = m_QueueDbBlock->job_db.group_id;
         unsigned int    aff_id = m_QueueDbBlock->job_db.aff_id;
+        time_t          last_touch = m_QueueDbBlock->job_db.last_touch;
+        time_t          job_timeout = m_QueueDbBlock->job_db.timeout;
+        time_t          job_run_timeout = m_QueueDbBlock->job_db.run_timeout;
         TJobStatus      status = TJobStatus(static_cast<int>(m_QueueDbBlock->job_db.status));
 
         m_StatusTracker.SetExactStatusNoLock(job_id, status, true);
@@ -295,6 +298,13 @@ unsigned CQueue::LoadStatusMatrix()
         // Register the job in the group registry
         if (group_id != 0)
             m_GroupRegistry.AddJob(group_id, job_id);
+
+        // Register the loaded job with the garbage collector
+        m_GCRegistry.RegisterJob(job_id, aff_id, group_id,
+                                 GetJobExpirationTime(last_touch, status,
+                                                      job_timeout,
+                                                      job_run_timeout,
+                                                      m_Timeout, m_RunTimeout));
 
         ++recs;
     }
@@ -356,16 +366,18 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
 
     unsigned int    aff_id = 0;
     unsigned int    group_id = 0;
+    time_t          current_time = time(0);
     unsigned int    job_id = GetNextId();
     CJobEvent &     event = job.AppendEvent();
 
     job.SetId(job_id);
     job.SetPassport(rand());
+    job.SetLastTouch(current_time);
 
     event.SetNodeAddr(client.GetAddress());
     event.SetStatus(CNetScheduleAPI::ePending);
     event.SetEvent(CJobEvent::eSubmit);
-    event.SetTimestamp(time(0));
+    event.SetTimestamp(current_time);
     event.SetClientNode(client.GetNode());
     event.SetClientSession(client.GetSession());
 
@@ -407,6 +419,10 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
                                    m_NotifHifreqPeriod);
+
+        m_GCRegistry.RegisterJob(job_id, aff_id, group_id,
+                                 job.GetExpirationTime(m_Timeout,
+                                                       m_RunTimeout));
     }}
 
     m_StatisticsCounters.CountSubmit(1);
@@ -445,6 +461,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                 job.SetId(job_id_cnt);
                 job.SetPassport(rand());
                 job.SetGroupId(group_id);
+                job.SetLastTouch(curr_time);
 
                 event.SetNodeAddr(client.GetAddress());
                 event.SetStatus(CNetScheduleAPI::ePending);
@@ -478,11 +495,18 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
                                    m_NotifHifreqPeriod);
+
+        for (size_t  k = 0; k < batch_size; ++k)
+            m_GCRegistry.RegisterJob(batch[k].first.GetId(),
+                                     batch[k].first.GetAffinityId(),
+                                     group_id,
+                                     batch[k].first.GetExpirationTime(m_Timeout,
+                                                                      m_RunTimeout));
     }}
 
     m_StatisticsCounters.CountSubmit(batch_size);
     if (m_LogBatchEachJob)
-        for (size_t  k= 0; k < batch_size; ++k)
+        for (size_t  k = 0; k < batch_size; ++k)
             x_LogSubmit(batch[k].first, batch[k].second, group);
 
     return job_id;
@@ -536,6 +560,10 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
 
             m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eDone);
             m_ClientsRegistry.ClearExecuting(job_id);
+
+            m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                                      m_RunTimeout));
+
             TimeLineRemove(job_id);
 
             if (job.ShouldNotify(curr))
@@ -632,6 +660,8 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                                             job_id, *new_job)) {
                     // The job is not expired and successfully read
                     m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eRunning);
+                    m_GCRegistry.UpdateLifetime(job_id, new_job->GetExpirationTime(m_Timeout,
+                                                                                   m_RunTimeout));
                     TimeLineAdd(job_id, curr + m_RunTimeout);
                     m_ClientsRegistry.AddToRunning(client, job_id);
                     return;
@@ -840,9 +870,13 @@ TJobStatus  CQueue::JobDelayExpiration(unsigned int     job_id,
                                                     // keep it.
 
             job.SetRunTimeout(curr + tm - time_start);
+            job.SetLastTouch(curr);
             job.Flush(this);
             transaction.Commit();
         }}
+
+        // No need to update the GC registry because the running (and reading)
+        // jobs are skipped by GC
 
         time_t  exp_time = run_timeout == 0 ? 0 : time_start + run_timeout;
 
@@ -869,6 +903,8 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
         job.Flush(this);
         transaction.Commit();
     }}
+
+    TouchJob(job);
     return true;
 }
 
@@ -919,6 +955,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
 
         unsigned int    run_count = job.GetRunCount();
         CJobEvent *     event = job.GetLastEvent();
+        time_t          current_time = time(0);
 
         if (!event)
             ERR_POST("No JobEvent for running job " << DecorateJobId(job_id));
@@ -927,7 +964,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
         event->SetNodeAddr(client.GetAddress());
         event->SetStatus(CNetScheduleAPI::ePending);
         event->SetEvent(CJobEvent::eReturn);
-        event->SetTimestamp(time(0));
+        event->SetTimestamp(current_time);
         event->SetClientNode(client.GetNode());
         event->SetClientSession(client.GetSession());
 
@@ -935,6 +972,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
             job.SetRunCount(run_count-1);
 
         job.SetStatus(CNetScheduleAPI::ePending);
+        job.SetLastTouch(current_time);
         job.Flush(this);
 
         transaction.Commit();
@@ -944,6 +982,8 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
     TimeLineRemove(job_id);
     m_ClientsRegistry.ClearExecuting(job_id);
     m_ClientsRegistry.AddToBlacklist(client, job_id);
+    m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                              m_RunTimeout));
 
     m_NotificationsList.Notify(job.GetAffinityId(), m_ClientsRegistry,
                                m_AffinityRegistry, m_NotifHifreqPeriod);
@@ -975,6 +1015,18 @@ unsigned int  CQueue::ReadJobFromDB(unsigned int  job_id, CJob &  job)
     if (res == CJob::eJF_Ok)
         return job_id;
     return 0;
+}
+
+
+void CQueue::TouchJob(const CJob &  job)
+{
+    CFastMutexGuard     guard(m_OperationLock);
+
+    m_GCRegistry.UpdateLifetime( job.GetId(),
+                                 job.GetExpirationTime(m_Timeout,
+                                                       m_RunTimeout,
+                                                       time(0)));
+    return;
 }
 
 
@@ -1068,6 +1120,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
             event->SetClientSession(client.GetSession());
 
             job.SetStatus(CNetScheduleAPI::eCanceled);
+            job.SetLastTouch(current_time);
             job.Flush(this);
 
             transaction.Commit();
@@ -1080,6 +1133,9 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
             m_ClientsRegistry.ClearExecuting(job_id);
         else if (old_status == CNetScheduleAPI::eReading)
             m_ClientsRegistry.ClearReading(job_id);
+
+        m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                                  m_RunTimeout));
 
     }}
 
@@ -1140,6 +1196,7 @@ void CQueue::x_CancelJobs(const CNSClientId &   client,
             event->SetClientSession(client.GetSession());
 
             job.SetStatus(CNetScheduleAPI::eCanceled);
+            job.SetLastTouch(current_time);
             job.Flush(this);
 
             transaction.Commit();
@@ -1153,6 +1210,8 @@ void CQueue::x_CancelJobs(const CNSClientId &   client,
         else if (old_status == CNetScheduleAPI::eReading)
             m_ClientsRegistry.ClearReading(job_id);
 
+        m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                                  m_RunTimeout));
         if ((old_status == CNetScheduleAPI::eRunning ||
              old_status == CNetScheduleAPI::ePending) && job.ShouldNotify(current_time))
             m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
@@ -1327,6 +1386,7 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
         job->SetRunTimeout(read_timeout);
         job->SetStatus(CNetScheduleAPI::eReading);
         job->SetReadCount(read_count);
+        job->SetLastTouch(curr);
         job->Flush(this);
 
         transaction.Commit();
@@ -1341,6 +1401,9 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
     // Update the memory cache
     m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eReading);
     m_ClientsRegistry.AddToReading(client, job_id);
+
+    m_GCRegistry.UpdateLifetime(job_id, job->GetExpirationTime(m_Timeout,
+                                                               m_RunTimeout));
     return;
 }
 
@@ -1389,6 +1452,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                           const string &       auth_token,
                                           TJobStatus           target_status)
 {
+    time_t                                      current_time = time(0);
     CJob                                        job;
     TJobStatus                                  new_status = target_status;
     CStatisticsCounters::ETransitionPathOption  path_option =
@@ -1427,7 +1491,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
 
         // Add an event
         CJobEvent &     event = job.AppendEvent();
-        event.SetTimestamp(time(0));
+        event.SetTimestamp(current_time);
         event.SetNodeAddr(client.GetAddress());
         event.SetClientNode(client.GetNode());
         event.SetClientSession(client.GetSession());
@@ -1456,6 +1520,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
 
         event.SetStatus(new_status);
         job.SetStatus(new_status);
+        job.SetLastTouch(current_time);
 
         job.Flush(this);
         transaction.Commit();
@@ -1464,6 +1529,8 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
     TimeLineRemove(job_id);
 
     m_StatusTracker.SetStatus(job_id, new_status);
+    m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                              m_RunTimeout));
     m_StatisticsCounters.CountTransition(CNetScheduleAPI::eReading,
                                          new_status,
                                          path_option);
@@ -1695,6 +1762,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
             }
 
             job.SetOutput(output);
+            job.SetLastTouch(curr);
             job.Flush(this);
             transaction.Commit();
         }}
@@ -1715,6 +1783,9 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
         // their credentials and job passport is checked strictly
         m_ClientsRegistry.ClearExecuting(job_id);
         m_ClientsRegistry.AddToBlacklist(client, job_id);
+
+        m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                                  m_RunTimeout));
 
         if (!rescheduled  &&  job.ShouldNotify(curr)) {
             m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
@@ -1912,6 +1983,7 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
             }
 
             job.SetStatus(new_status);
+            job.SetLastTouch(curr_time);
 
             event = &job.AppendEvent();
             event->SetStatus(new_status);
@@ -1924,6 +1996,8 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
 
 
         m_StatusTracker.SetStatus(job_id, new_status);
+        m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                                  m_RunTimeout));
 
         if (status == CNetScheduleAPI::eRunning) {
             if (new_status == CNetScheduleAPI::ePending) {
@@ -2005,20 +2079,11 @@ SPurgeAttributes  CQueue::CheckJobsExpiry(time_t             current_time,
                                           unsigned int       last_job,
                                           TJobStatus         status)
 {
-    unsigned int    queue_timeout;
-    unsigned int    queue_run_timeout;
-
-    {{
-        CQueueParamAccessor     qp(*this);
-
-        queue_timeout = qp.GetTimeout();
-        queue_run_timeout = qp.GetRunTimeout();
-    }}
-
     TNSBitVector        job_ids;
-    CJob                job;
     SPurgeAttributes    result;
     unsigned int        job_id;
+    unsigned int        aff;
+    unsigned int        group;
 
     result.job_id = attributes.job_id;
     result.deleted = 0;
@@ -2034,38 +2099,21 @@ SPurgeAttributes  CQueue::CheckJobsExpiry(time_t             current_time,
 
             result.job_id = job_id;
 
-            {{
-                 m_QueueDbBlock->job_db.SetTransaction(NULL);
-                 m_QueueDbBlock->events_db.SetTransaction(NULL);
-                 m_QueueDbBlock->job_info_db.SetTransaction(NULL);
-
-                if (job.FetchToTestExpiration(this,
-                                              result.job_id) != CJob::eJF_Ok) {
-                    ERR_POST("Error fetching job " << result.job_id <<
-                             ". Memory matrix reports it is in " <<
-                             CNetScheduleAPI::StatusToString(status) <<
-                             " status but it is not found in the DB.");
-                    m_StatusTracker.Erase(result.job_id);
-                    continue;
-                }
-            }}
-
-            // Is the job expired?
-            if (job.GetJobExpirationTime(queue_timeout,
-                                         queue_run_timeout) <= current_time) {
-                m_StatusTracker.Erase(result.job_id);
-                job_ids.set_bit(result.job_id);
+            if (m_GCRegistry.DeleteIfTimedOut(job_id, current_time,
+                                              &aff, &group))
+            {
+                // The job is expired and needs to be marked for deletion
+                m_StatusTracker.Erase(job_id);
+                job_ids.set_bit(job_id);
                 ++result.deleted;
 
                 // check if the affinity should also be updated
-                if (job.GetAffinityId() != 0)
-                    m_AffinityRegistry.RemoveJobFromAffinity(
-                                                    result.job_id,
-                                                    job.GetAffinityId());
+                if (aff != 0)
+                    m_AffinityRegistry.RemoveJobFromAffinity(job_id, aff);
 
                 // Check if the group registry should also be updated
-                if (job.GetGroupId() != 0)
-                    m_GroupRegistry.RemoveJob(job.GetGroupId(), result.job_id);
+                if (group != 0)
+                    m_GroupRegistry.RemoveJob(group, job_id);
 
                 if (result.deleted >= attributes.deleted)
                     break;
@@ -2499,6 +2547,7 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &   client,
         }
 
         job.SetStatus(new_status);
+        job.SetLastTouch(current_time);
 
         CJobEvent *     event = &job.AppendEvent();
         event->SetStatus(new_status);
@@ -2513,6 +2562,9 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &   client,
 
     // Update the memory map
     m_StatusTracker.SetStatus(job_id, new_status);
+
+    m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
+                                                              m_RunTimeout));
 
     // remove the job from the time line
     TimeLineRemove(job_id);
@@ -2773,6 +2825,7 @@ void CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
 
     job.SetStatus(CNetScheduleAPI::eDone);
     job.SetOutput(output);
+    job.SetLastTouch(curr);
 
     job.Flush(this);
     return;
@@ -2798,7 +2851,7 @@ bool  CQueue::x_UpdateDB_GetJobNoLock(const CNSClientId &  client,
     // The job has been read successfully, check if it is still within the
     // expiration timeout; note: run_timeout is not applicable because the job
     // is guaranteed in the pending state
-    if (job.GetJobExpirationTime(m_Timeout, 0) <= curr) {
+    if (job.GetExpirationTime(m_Timeout, 0) <= curr) {
         // The job has expired, so mark it for deletion
         EraseJob(job_id);
 
@@ -2825,6 +2878,7 @@ bool  CQueue::x_UpdateDB_GetJobNoLock(const CNSClientId &  client,
     job.SetStatus(CNetScheduleAPI::eRunning);
     job.SetRunTimeout(0);
     job.SetRunCount(run_count);
+    job.SetLastTouch(curr);
 
     job.Flush(this);
     transaction.Commit();

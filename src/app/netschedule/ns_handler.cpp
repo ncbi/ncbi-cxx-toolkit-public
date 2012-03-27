@@ -1307,6 +1307,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     }
 
     // Here: the job was found
+    q->TouchJob(job);
     WriteMessage("OK:", NStr::IntToString((int) job.GetStatus()) +
                         " " + NStr::IntToString(job.GetRetCode()) +
                         " \""   + NStr::PrintableString(job.GetOutput()) +
@@ -1503,6 +1504,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
     CJob        job;
 
     if (q->ReadJobFromDB(m_CommandArguments.job_id, job) != 0) {
+        q->TouchJob(job);
         WriteMessage("OK:", job.GetProgressMsg());
         x_PrintRequestStop(eStatus_OK);
     } else {

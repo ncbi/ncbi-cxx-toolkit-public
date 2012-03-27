@@ -206,6 +206,34 @@ string CJobEvent::GetField(int  index) const
 }
 
 
+
+time_t  GetJobExpirationTime(time_t      last_touch,
+                             TJobStatus  status,
+                             time_t      job_timeout,
+                             time_t      job_run_timeout,
+                             time_t      queue_timeout,
+                             time_t      queue_run_timeout,
+                             time_t      event_time)
+{
+    time_t      last_update = event_time;
+    if (last_update == 0)
+        last_update = last_touch;
+
+    if (status == CNetScheduleAPI::eRunning ||
+        status == CNetScheduleAPI::eReading) {
+        if (job_run_timeout != 0)
+            return last_update + job_run_timeout;
+        return last_update + queue_run_timeout;
+    }
+
+    if (job_timeout != 0)
+        return last_update + job_timeout;
+    return last_update + queue_timeout;
+}
+
+
+
+
 //////////////////////////////////////////////////////////////////////////
 // CJob implementation
 
@@ -222,7 +250,8 @@ CJob::CJob() :
     m_ReadCount(0),
     m_AffinityId(0),
     m_Mask(0),
-    m_GroupId(0)
+    m_GroupId(0),
+    m_LastTouch(0)
 {}
 
 
@@ -241,6 +270,7 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_AffinityId(0),
     m_Mask(request.job_mask),
     m_GroupId(0),
+    m_LastTouch(0),
     m_ClientIP(request.ip),
     m_ClientSID(request.sid),
     m_Output("")
@@ -316,6 +346,7 @@ static string  s_JobFieldNames[] = {
     "read_count",
     "mask",
     "group_id",
+    "last_touch",
     "client_ip",
     "client_sid",
     "events",
@@ -359,17 +390,19 @@ string CJob::GetField(int index) const
         return NStr::IntToString(m_Mask);
     case 10: // group id
         return NStr::IntToString(m_GroupId);
-    case 11: // client_ip
+    case 11: // last_touch
+        return NStr::NumericToString(m_LastTouch);
+    case 12: // client_ip
         return m_ClientIP;
-    case 12: // client_sid
+    case 13: // client_sid
         return m_ClientSID;
-    case 13: // events
+    case 14: // events
         return NStr::SizetToString(m_Events.size());
-    case 14: // input
+    case 15: // input
         return m_Input;
-    case 15: // output
+    case 16: // output
         return m_Output;
-    case 16: // progress_msg
+    case 17: // progress_msg
         return m_ProgressMsg;
     }
     return "NULL";
@@ -451,6 +484,7 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     m_AffinityId    = job_db.aff_id;
     m_Mask          = job_db.mask;
     m_GroupId       = job_db.group_id;
+    m_LastTouch     = job_db.last_touch;
 
     m_ClientIP      = job_db.client_ip;
     m_ClientSID     = job_db.client_sid;
@@ -539,58 +573,6 @@ CJob::EJobFetchResult  CJob::Fetch(CQueue *  queue, unsigned  id)
 }
 
 
-// Attention: this is a highly specialized member to fetch the only portion of
-// data which required to make a decision if a job is expired. In fact it
-// retrieves the following members:
-// m_AffinityId, m_Status, m_Timeout, m_RunTimeout and the m_Timestamp of the
-// last job event.
-// Do not use this member for anything else except of the fetching a job before
-// testing the job expiration! (See CQueue::CheckJobsExpiry)
-CJob::EJobFetchResult  CJob::FetchToTestExpiration(CQueue *      queue,
-                                                   unsigned int  id)
-{
-    SJobDB &        job_db = queue->m_QueueDbBlock->job_db;
-
-    job_db.id = id;
-    EBDB_ErrCode    res = job_db.Fetch();
-    if (res != eBDB_Ok) {
-        if (res != eBDB_NotFound) {
-            ERR_POST("Error reading queue job db, job_key " <<
-                     queue->MakeKey(id));
-            return eJF_DBErr;
-        }
-        return eJF_NotFound;
-    }
-
-    m_Status     = TJobStatus(int(job_db.status));
-    m_Timeout    = job_db.timeout;
-    m_RunTimeout = job_db.run_timeout;
-    m_AffinityId = job_db.aff_id;
-    m_GroupId    = job_db.group_id;
-
-    // EventsDB
-    m_Events.clear();
-
-    SEventsDB &         events_db   = queue->m_QueueDbBlock->events_db;
-    CBDB_FileCursor &   cur = queue->GetEventsCursor();
-    CBDB_CursorGuard    cg(cur);
-
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << id;
-
-    time_t      last_event_timestamp = 0;
-    for (unsigned n = 0; (res = cur.Fetch()) == eBDB_Ok; ++n)
-        last_event_timestamp  = events_db.timestamp;
-
-    if (res != eBDB_NotFound)
-        return eJF_DBErr;
-
-    CJobEvent &       event = AppendEvent();
-    event.m_Timestamp  = last_event_timestamp;
-    return eJF_Ok;
-}
-
-
 bool CJob::Flush(CQueue* queue)
 {
     if (m_Deleted) {
@@ -626,6 +608,7 @@ bool CJob::Flush(CQueue* queue)
         job_db.aff_id         = m_AffinityId;
         job_db.mask           = m_Mask;
         job_db.group_id       = m_GroupId;
+        job_db.last_touch     = m_LastTouch;
 
         job_db.client_ip      = m_ClientIP;
         job_db.client_sid     = m_ClientSID;
@@ -723,9 +706,11 @@ void CJob::Print(CNetScheduleHandler &        handler,
     if (m_RunTimeout == 0)
         run_timeout = queue.GetRunTimeout();
 
-    CTime       exp_time(GetJobExpirationTime(queue.GetTimeout(),
-                                              queue.GetRunTimeout()));
+    CTime       exp_time(GetExpirationTime(queue.GetTimeout(),
+                                           queue.GetRunTimeout()));
     exp_time.ToLocalTime();
+    CTime       touch_time(m_LastTouch);
+    touch_time.ToLocalTime();
 
 
 
@@ -733,6 +718,7 @@ void CJob::Print(CNetScheduleHandler &        handler,
     handler.WriteMessage("OK:", "key: " + queue.MakeKey(m_Id));
     handler.WriteMessage("OK:", "status: " +
                                 CNetScheduleAPI::StatusToString(m_Status));
+    handler.WriteMessage("OK:", "last_touch: " + touch_time.AsString());
 
     if (m_Status == CNetScheduleAPI::eRunning ||
         m_Status == CNetScheduleAPI::eReading)

@@ -87,6 +87,8 @@ struct SJobDB : public CBDB_File
     // Jobs group support
     CBDB_FieldUint4        group_id;        ///< group ID. If 0 => not in a group.
 
+    CBDB_FieldUint4        last_touch;      ///< last access time_t
+
     CBDB_FieldChar         input_overflow;  ///< Is input in JobInfo table
     CBDB_FieldChar         output_overflow; ///< Is output in JobInfo table
     CBDB_FieldLString      input;           ///< Input data
@@ -118,6 +120,7 @@ struct SJobDB : public CBDB_File
 
         BindData("group_id",           &group_id);
 
+        BindData("last_touch",         &last_touch);
 
         BindData("input_overflow",     &input_overflow);
         BindData("output_overflow",    &output_overflow);
