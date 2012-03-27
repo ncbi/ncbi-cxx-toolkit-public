@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -63,10 +64,30 @@ public:
     EResult Run( const std::list<std::string> & files,
                  const std::string & loadlog,
                  const std::string & agp_as_fasta_file,
-                 TDiffsToHide diffsToHide );
+                 TDiffsToHide diffsToHide,
+                 int diffs_to_find );
 
     typedef set<objects::CSeq_id_Handle> TSeqIdSet;
 private:
+
+    class CTmpSeqVecStorage {
+    public:
+        CTmpSeqVecStorage(void);
+        ~CTmpSeqVecStorage(void);
+
+        enum EType {
+            eType_AGP,          // AGP sequences
+            eType_Obj           // object (usually fasta) sequences
+        };
+        void WriteData( EType type, objects::CSeq_entry_Handle seh );
+        string GetFileName( EType type, objects::CSeq_id_Handle idh );
+
+    private:
+        CDir m_dir;
+
+        string x_GetTmpDir(void);
+    };
+
     // after constructor, only set to false
     bool m_bSuccess; 
 
@@ -86,9 +107,11 @@ private:
                           const std::list<std::string> & agpFiles );
 
     void x_ProcessObjects( const list<string> & filenames,
-                          TUniqueSeqs& seqs );
+                           TUniqueSeqs& fasta_ids,
+                           CTmpSeqVecStorage *temp_dir );
     void x_ProcessAgps(const list<string> & filenames,
-                       TUniqueSeqs& seqs );
+                       TUniqueSeqs& agp_ids,
+                       CTmpSeqVecStorage *temp_dir );
 
     void x_Process(const objects::CSeq_entry_Handle seh,
                    TUniqueSeqs& seqs,
@@ -102,13 +125,19 @@ private:
 
     void x_PrintDetailsOfLengthIssue( objects::CBioseq_Handle bioseq_h );
 
-    void x_OutputDifferences(
+    void x_OutputDifferingSeqIds(
         const TSeqIdSet & vSeqIdFASTAOnly,
         const TSeqIdSet & vSeqIdAGPOnly,
-        TDiffsToHide diffs_to_hide );
+        TDiffsToHide diffs_to_hide,
+        TSeqIdSet & out_seqIdIntersection );
 
     void x_CheckForDups( TUniqueSeqs & unique_ids,
                          const string & file_type );
+
+    void x_OutputSeqDifferences(
+        int diffs_to_find,
+        const TSeqIdSet & seqIdIntersection,
+        CTmpSeqVecStorage & temp_dir );
 
     void x_SetBinaryVsText( CNcbiIstream & file_istrm, 
         CFormatGuess::EFormat guess_format );

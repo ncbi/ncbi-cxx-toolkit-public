@@ -36,10 +36,12 @@
 #include "AgpFastaComparator.hpp"
 
 #include <algorithm>
+#include <sstream>
 
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbiexec.hpp>
 
 #include <util/checksum.hpp>
 
@@ -199,7 +201,9 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     const std::list<std::string> & files,
     const std::string & loadlog,
     const std::string & agp_as_fasta_file,
-    TDiffsToHide diffsToHide )
+    TDiffsToHide diffsToHide,
+    int diffs_to_find           // how many differences to show
+    )
 {
     LOG_POST(Error << "" );     // newline
     LOG_POST(Error << "Starting AGP/Fasta Compare" );
@@ -288,13 +292,20 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
 
     // calculate checksum of the AGP sequences and the FASTA sequences
 
+    // temporary dir to hold outputs so we can diff.
+    // this is only used if we're showing diffs
+    auto_ptr<CTmpSeqVecStorage> temp_dir;
+    if( diffs_to_find > 0 ) {
+        temp_dir.reset( new CTmpSeqVecStorage );
+    }
+
     TUniqueSeqs agp_ids;
     // process every AGP file
     if( agpFiles.empty() ) {
         cerr << "error: could not find any agp files" << endl;
         return eResult_Failure;
     }
-    x_ProcessAgps( agpFiles, agp_ids );
+    x_ProcessAgps( agpFiles, agp_ids, temp_dir.get()  );
 
     TUniqueSeqs fasta_ids;
     // process every objfile 
@@ -302,7 +313,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
         cerr << "error: could not find any obj files" << endl;
         return eResult_Failure;
     }
-    x_ProcessObjects( objfiles, fasta_ids );
+    x_ProcessObjects( objfiles, fasta_ids, temp_dir.get() );
 
     // check for duplicate sequences
     x_CheckForDups( fasta_ids, "object file(s)" );
@@ -368,7 +379,9 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
 
     // look at vSeqIdFASTAOnly and vSeqIdAGPOnly and 
     // print in user-friendly way
-    x_OutputDifferences( vSeqIdFASTAOnly, vSeqIdAGPOnly, diffsToHide );
+    // Also, fill in SeqIds that are in both
+    TSeqIdSet seqIdIntersection;
+    x_OutputDifferingSeqIds( vSeqIdFASTAOnly, vSeqIdAGPOnly, diffsToHide, seqIdIntersection );
 
     const bool bThereWereDifferences = ( 
         ( ! vSeqIdFASTAOnly.empty() &&
@@ -382,9 +395,113 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
         m_bSuccess = false;
     }
 
+    if( bThereWereDifferences && diffs_to_find > 0 &&
+        ! seqIdIntersection.empty() ) 
+    {
+        x_OutputSeqDifferences( diffs_to_find,
+                                seqIdIntersection,
+                                *temp_dir );
+    }
+
+
     return ( m_bSuccess ? eResult_Success : eResult_Failure );
 }
 
+CAgpFastaComparator::CTmpSeqVecStorage::CTmpSeqVecStorage(void) :
+    m_dir( x_GetTmpDir() )
+{
+    if( m_dir.Exists() ) {
+        throw std::runtime_error("Temp dir already exists: " + m_dir.GetPath() );
+    }
+
+    if( ! m_dir.Create() ) {
+        throw std::runtime_error("Could not create temp dir: " + m_dir.GetPath() );
+    }
+}
+
+CAgpFastaComparator::CTmpSeqVecStorage::~CTmpSeqVecStorage(void)
+{
+    if( ! m_dir.Remove() ) {
+        cerr << "Warning: could not delete temporary dir "
+             << m_dir.GetPath() << endl;
+    }
+}
+
+void CAgpFastaComparator::CTmpSeqVecStorage::WriteData( EType type, CSeq_entry_Handle seh )
+{
+    for (CBioseq_CI bioseq_it(seh, CSeq_inst::eMol_na);  bioseq_it;  ++bioseq_it) 
+    {
+        CSeq_id_Handle idh = sequence::GetId(*bioseq_it,
+                                             sequence::eGetId_Best);
+        ofstream output_stream( GetFileName(type, idh).c_str() );
+
+        // write raw sequence, but have a newline every 60 residues.
+        // newlines are important for the "diff" command
+        CSeqVector vec(*bioseq_it, CBioseq_Handle::eCoding_Iupac);
+        CSeqVector::const_iterator iter = vec.begin();
+        int bytes_copied = 0;
+        for( ; iter != vec.end(); ++iter, ++bytes_copied ) {
+            if( bytes_copied > 0 && (bytes_copied % 60) == 0 ) {
+                // use '\n' instead of endl to avoid flushing
+                output_stream << '\n'; 
+            }
+            output_stream << *iter;
+        }
+        copy( vec.begin(), vec.end(),
+              ostream_iterator<CSeqVector::TResidue>(output_stream) );
+    }
+}
+
+string
+CAgpFastaComparator::CTmpSeqVecStorage::GetFileName( EType type, CSeq_id_Handle idh )
+{
+    std::stringstream file_name_strm;
+    file_name_strm << m_dir.GetPath() << CDirEntry::GetPathSeparator();
+
+    switch( type ) {
+    case eType_AGP:
+        file_name_strm << "agp";
+        break;
+    case eType_Obj:
+        file_name_strm << "obj";
+        break;
+    default:
+        _TROUBLE;
+        // in case _TROUBLE falls through, do the best we can:
+        file_name_strm << "UNKNOWN";
+        break;
+    }
+
+    file_name_strm << '.';
+
+    // get cleaned version of seqid without any
+    // illegal characters
+    {
+        const string initial_seq_id = idh.AsString();
+        std::stringstream final_seq_id;
+        ITERATE(string, ch_iter, initial_seq_id) {
+            const unsigned char ch = *ch_iter;
+            if( isalnum(ch) ) {
+                final_seq_id << ch;
+            } else {
+                final_seq_id << '_' << setfill('0') << setw(3) << ch;
+            }
+        }
+        file_name_strm << final_seq_id.str();
+    }
+
+    return file_name_strm.str();
+}
+
+string CAgpFastaComparator::CTmpSeqVecStorage::x_GetTmpDir(void)
+{
+    std::stringstream dir_strm;
+    dir_strm << CDir::GetTmpDir() << '/'
+             << "AgpFastaComparator." << CProcess::GetCurrentPid()
+             << "."
+             << CTime(CTime::eCurrent).AsString("YMDTh:m:s.l");
+    return dir_strm.str();
+}
 
 void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
                                     TUniqueSeqs& seqs,
@@ -591,8 +708,10 @@ void CAgpFastaComparator::x_GetCompSeqIds(
     }
 }
 
-void CAgpFastaComparator::x_ProcessObjects( const list<string> & filenames,
-                                                   TUniqueSeqs& fasta_ids )
+void CAgpFastaComparator::x_ProcessObjects(
+    const list<string> & filenames,
+    TUniqueSeqs& fasta_ids,
+    CTmpSeqVecStorage *temp_dir )
 {
     int iNumLoaded = 0;
     int iNumSkipped = 0;
@@ -617,6 +736,9 @@ void CAgpFastaComparator::x_ProcessObjects( const list<string> & filenames,
                     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
                     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
                     x_Process(seh, fasta_ids, &iNumLoaded, &iNumSkipped, NULL );
+                    if( temp_dir ) {
+                        temp_dir->WriteData( CTmpSeqVecStorage::eType_Obj, seh );
+                    }
                 }
             } else if( format == CFormatGuess::eBinaryASN || 
                        format == CFormatGuess::eTextASN )
@@ -688,7 +810,8 @@ void CAgpFastaComparator::x_ProcessObjects( const list<string> & filenames,
 
 
 void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
-                                        TUniqueSeqs& agp_ids )
+                                       TUniqueSeqs& agp_ids,
+                                       CTmpSeqVecStorage *temp_dir )
 {
     int iNumLoaded = 0;
     int iNumSkipped = 0;
@@ -718,6 +841,9 @@ void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
                 scope->AddDefaults();
 
                 x_Process(seh, agp_ids, &iNumLoaded, &iNumSkipped, m_pAgpAsFastaFile.get() );
+                if( temp_dir ) {
+                    temp_dir->WriteData( CTmpSeqVecStorage::eType_AGP, seh );
+                }
             }
         }
     }
@@ -727,27 +853,27 @@ void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
     }
 }
 
-void CAgpFastaComparator::x_OutputDifferences(
+void CAgpFastaComparator::x_OutputDifferingSeqIds(
     const TSeqIdSet & vSeqIdFASTAOnly,
     const TSeqIdSet & vSeqIdAGPOnly,
-    TDiffsToHide diffs_to_hide )
+    TDiffsToHide diffs_to_hide,
+    TSeqIdSet & out_seqIdIntersection )
 {
     // find the ones in both
-    TSeqIdSet vSeqIdTempSet;
     set_intersection( 
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
-        inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
-    if( ! vSeqIdTempSet.empty() ) {
-        LOG_POST(Error << "  These " << vSeqIdTempSet.size()
+        inserter(out_seqIdIntersection, out_seqIdIntersection.begin()) );
+    if( ! out_seqIdIntersection.empty() ) {
+        LOG_POST(Error << "  These " << out_seqIdIntersection.size()
                  << " differ between object file and AGP:");
-        ITERATE( TSeqIdSet, id_iter, vSeqIdTempSet ) {
+        ITERATE( TSeqIdSet, id_iter, out_seqIdIntersection ) {
             LOG_POST(Error << "    " << *id_iter);
         }
     }
 
     // find the ones in FASTA only
-    vSeqIdTempSet.clear();
+    TSeqIdSet vSeqIdTempSet;
     set_difference( 
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
@@ -792,6 +918,29 @@ void CAgpFastaComparator::x_CheckForDups( TUniqueSeqs & unique_ids,
             }
             LOG_POST( Error << (string)CNcbiOstrstreamToString(errmsg) );
         }
+    }
+}
+
+void CAgpFastaComparator::x_OutputSeqDifferences(
+        int diffs_to_find,
+        const TSeqIdSet & seqIdIntersection,
+        CTmpSeqVecStorage & temp_dir )
+{
+    ITERATE( TSeqIdSet, id_iter, seqIdIntersection ) {
+        const CSeq_id_Handle & idh = *id_iter;
+        const string agp_file = temp_dir.GetFileName( CTmpSeqVecStorage::eType_AGP, idh );
+        const string obj_file = temp_dir.GetFileName( CTmpSeqVecStorage::eType_Obj, idh );
+
+        cout << endl;        
+        cout << "##### Comparing " << idh << " for AGP ('<') and Obj ('>'):" << endl;
+        cout << endl;
+
+        // This is a poor implementation for multiple reasons.
+        // I'm awaiting JIRA CXX-3145 to see if a superior
+        // solution is possible.
+        std::stringstream cmd_strm;
+        cmd_strm << "/usr/bin/diff '" << agp_file << "' '" << obj_file << "' 2> /dev/null | /usr/bin/head -n " << diffs_to_find;
+        CExec::System( cmd_strm.str().c_str() );
     }
 }
 

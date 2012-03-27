@@ -193,6 +193,8 @@ void CAgpValidateApplication::Init(void)
     CArgDescriptions::eOutputFile);
   arg_desc->AddFlag("ignoreagponly",     "");
   arg_desc->AddFlag("ignoreobjfileonly", "");
+  arg_desc->AddDefaultKey( "diffstofind", "", "",
+                           CArgDescriptions::eInteger, "0" );
 
   arg_desc->AddFlag("species", "allow components from different subspecies");
 
@@ -390,7 +392,8 @@ int CAgpValidateApplication::Run(void)
       // if "-comp" not specified, neither should the other
       // comp-related args
       if( args["loadlog"] || args["ignoreagponly"] ||
-          args["ignoreobjfileonly"] )
+          args["ignoreobjfileonly"] ||
+          args["diffstofind"].AsInteger() > 0 )
       {
           cerr << "Error -- -comp mode options without -comp" << endl;
           exit(1);
@@ -445,10 +448,13 @@ int CAgpValidateApplication::Run(void)
           diffsToHide |= CAgpFastaComparator::fDiffsToHide_ObjfileOnly;
       }
 
+      int diffsToFind = args["diffstofind"].AsInteger();
+
       CAgpFastaComparator agpFastaComparator;
       if( CAgpFastaComparator::eResult_Success !=
           agpFastaComparator.Run( filenames, comploadlog,
-                                  agp_as_fasta_file, diffsToHide) )
+                                  agp_as_fasta_file, diffsToHide,
+                                  diffsToFind) )
       {
           cerr << "AGP/FASTA comparison failed." << endl;
       }
@@ -848,6 +854,7 @@ int main(int argc, const char* argv[])
       "    -loadlog OUTPUT_FILE   Save the list of all loaded sequences.\n"
       "    -ignoreagponly         Do not report objects present in AGP file(s) only.\n"
       "    -ignoreobjfileonly     Do not report objects present in FASTA file(s) only.\n"
+      "    -diffstofind NUM       (EXPERIMENTAL) If specified, list the first NUM lines of each difference.\n"
       "    -out OUTPUT_FILE       Save the assembled AGP sequences as FASTA.\n"
       "\n"
       "FASTA files for components can be provided (along with object FASTA files) if components are not yet in GenBank.\n"
