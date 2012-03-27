@@ -71,7 +71,7 @@ def mac_post_build(installdir, blast_version):
     if VERBOSE:
         print "Packaging for MacOSX..."
     script_dir = os.path.join(SCRIPTS_DIR, "macosx")
-    cmd = os.path.join(script_dir, "ncbi-blast.sh") + " "
+    cmd = os.path.join(script_dir, "ncbi-igblast.sh") + " "
     cmd += installdir + " " + script_dir + " " + blast_version
     blast_utils.safe_exec(cmd)
     return 0
