@@ -47,14 +47,14 @@ Contents: Interface for CMultiAlignerOptions
 
 /// Default values for cobalt parameters
 /// Rps-Blast e-value cutoff for creating contraints
-#define COBALT_RPS_EVALUE 0.01
+#define COBALT_RPS_EVALUE 0.003
 /// Weight for domain residue frequecies when creating MSA profiles 
 #define COBALT_DOMAIN_BOOST 0.5
 /// Hitlist size for Rps-Blast searches
 #define COBALT_DOMAIN_HITLIST_SIZE 500
 
 /// Blastp e-value cutoff for creating contraints
-#define COBALT_BLAST_EVALUE 0.01
+#define COBALT_BLAST_EVALUE 0.005
 /// Weight for sequence residues when creating MSA profules
 #define COBALT_LOCAL_BOOST 1.0
 
