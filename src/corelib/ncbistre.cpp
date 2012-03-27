@@ -50,30 +50,31 @@ CNcbiIfstream::CNcbiIfstream(
  : IO_PREFIX::ifstream(_T_XCSTRING(_Filename), _Mode, _Prot)
 {
 }
+
 void CNcbiIfstream::open(
     const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
 {
     IO_PREFIX::ifstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
 }
 
-
 CNcbiOfstream::CNcbiOfstream(
     const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
  : IO_PREFIX::ofstream(_T_XCSTRING(_Filename), _Mode, _Prot)
 {
 }
+
 void CNcbiOfstream::open(
     const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
 {
     IO_PREFIX::ofstream::open(_T_XCSTRING(_Filename), _Mode, _Prot);
 }
 
-
 CNcbiFstream::CNcbiFstream(
     const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
  : IO_PREFIX::fstream(_T_XCSTRING(_Filename), _Mode, _Prot)
 {
 }
+
 void CNcbiFstream::open(
     const char *_Filename, IOS_BASE::openmode _Mode, int _Prot)
 {
@@ -85,10 +86,6 @@ void CNcbiFstream::open(
 
 CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 {
-    CT_INT_TYPE ch;
-    char        buf[1024];
-    SIZE_TYPE   pos = 0;
-
     str.erase();
 
     IOS_BASE::fmtflags f = is.flags();
@@ -106,14 +103,16 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
         is.setstate(NcbiFailbit);
         return is;
     }
-#endif
+#endif //NO_PUBSYNC
     _ASSERT( is.good() );
 
+    char buf[1024];
+    SIZE_TYPE pos = 0;
     SIZE_TYPE size = 0;
     SIZE_TYPE max_size = str.max_size();
     IOS_BASE::iostate iostate = NcbiGoodbit/*0*/;
     for (;;) {
-        ch = is.rdbuf()->sbumpc();
+        CT_INT_TYPE ch = is.rdbuf()->sbumpc();
         if ( CT_EQ_INT_TYPE(ch, CT_EOF) ) {
             iostate = NcbiEofbit;
             break;
@@ -132,8 +131,8 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
             break;
         }
         if (size == max_size) {
-            CT_INT_TYPE pc = is.rdbuf()->sungetc();
-            iostate = CT_EQ_INT_TYPE(pc, ch) ? NcbiFailbit : NcbiBadbit;
+            CT_INT_TYPE bk = is.rdbuf()->sungetc();
+            iostate = CT_EQ_INT_TYPE(bk, ch) ? NcbiFailbit : NcbiBadbit;
             break;
         }
 
@@ -149,10 +148,13 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 
 #ifdef NO_PUBSYNC
     is.isfx();
-#endif
+#endif //NO_PUBSYNC
     is.flags(f);
-    if (iostate  &&  (iostate != NcbiEofbit  ||  str.empty()))
+    if (iostate) {
+        if (iostate == NcbiEofbit  &&  str.empty())
+            iostate |= NcbiFailbit;
         is.clear(iostate);
+    }
     return is;
 }
 
@@ -165,7 +167,7 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
-#if defined(NCBI_USE_OLD_IOSTREAM)
+#if   defined(NCBI_USE_OLD_IOSTREAM)
     return NcbiGetline(is, str, string(1, delim));
 #elif defined(NCBI_COMPILER_GCC29x)
     // The code below is normally somewhat faster than this call,
@@ -204,8 +206,8 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
     } while ( is.good() );
 #endif
 
-    if (is.rdstate() == NcbiEofbit  &&  !str.empty())
-        is.clear();
+    if (is.rdstate() == NcbiEofbit  &&  str.empty())
+        is.setstate(NcbiFailbit);
     return is;
 }
 

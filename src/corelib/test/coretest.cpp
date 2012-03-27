@@ -50,12 +50,19 @@ USING_NCBI_SCOPE;
 
 static void TestIostream(void)
 {
-    CNcbiIstrstream is("abc\nx0123456789\ny012345\r \tcba");
+    CNcbiIstrstream is("abc\r\nx0123456789\ny012345\r \tcba");
     string str;
+
+    while (NcbiGetline(is, str, "\r\n")) {
+        NcbiCout << str << NcbiEndl;
+        _ASSERT(!str.empty());
+    }
+    is.clear();
+    is.seekg(0, IOS_BASE::beg);
 
     NcbiGetline(is, str, '\n');
     assert( is.good() );
-    assert( str.compare("abc") == 0 );
+    assert( str.compare("abc\r") == 0 );
 
     is >> str;
     assert( is.good() );
