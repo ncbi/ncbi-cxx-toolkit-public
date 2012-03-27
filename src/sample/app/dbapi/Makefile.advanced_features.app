@@ -2,8 +2,8 @@
 
 REQUIRES = dbapi
 
-APP = dbapi_sample
-SRC = dbapi_sample
+APP = advanced_features
+SRC = advanced_features
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
@@ -14,7 +14,7 @@ LIB  = dbapi dbapi_driver $(XCONNEXT) xconnect xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
 
-# CHECK_CMD = dbapi_sample.sh
-# CHECK_COPY = dbapi_sample.sh
+# CHECK_CMD = advanced_features.sh
+# CHECK_COPY = advanced_features.sh
 
 WATCHERS = ivanovp
