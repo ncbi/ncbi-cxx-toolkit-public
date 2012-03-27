@@ -354,7 +354,7 @@ s_SplitHsp(BlastHSPList* hsp_list,
                    query_info->contexts[hsp->context].query_offset;
 
         for (qid=hsp->query.offset; qid< hsp->query.end; ++qid) {
-            if (query[qid] == 0xf) {
+            if (query[qid] == 0x0) {
                 found = TRUE;
                 break;
             }
@@ -380,7 +380,7 @@ s_SplitHsp(BlastHSPList* hsp_list,
 
             for (eid=0; eid < esp->size; eid++) {
                 for(oid=0; oid < esp->num[eid];) {
-                    if (!seek_start && query[qid] == 0xf) {
+                    if (!seek_start && query[qid] == 0x0) {
                         new_esp = GapEditScriptNew(1 + ee - es);
                         GapEditScriptPartialCopy(new_esp, 0, esp, es, ee);
                         new_esp->num[0] -= os;
@@ -398,7 +398,7 @@ s_SplitHsp(BlastHSPList* hsp_list,
                     } 
 
                     if (esp->op_type[eid] == eGapAlignSub) {
-                        if (seek_start && query[qid] != 0xf) {
+                        if (seek_start && query[qid] != 0x0) {
                             qs = qid;
                             ss = sid;
                             es = eid;
