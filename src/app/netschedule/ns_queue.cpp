@@ -892,9 +892,9 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
                                 const string &  msg)
 {
     CJob                job;
-    CFastMutexGuard     guard(m_OperationLock);
 
     {{
+        CFastMutexGuard     guard(m_OperationLock);
         CNSTransaction      transaction(this);
 
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
