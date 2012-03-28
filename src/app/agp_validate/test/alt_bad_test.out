@@ -22,7 +22,7 @@ Components with incorrect taxids:
 	13: ABRQ01000007 - Taxid 9813
 
 7 lines with valid component accessions.
-6 errors:
+5 errors:
   Count Code  Description
       1  w58  assuming AGP version X
       1  g71  invalid component_id
