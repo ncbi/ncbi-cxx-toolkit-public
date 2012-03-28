@@ -66,7 +66,7 @@ static unsigned char symbol_type_table[256];
 static bool s_IsTokenPosInt(
     const string& strToken )
 {
-    return ( -1 != NStr::StringToInt( strToken ) );
+    return ( -1 != NStr::StringToNonNegativeInt( strToken ) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -1835,21 +1835,21 @@ bool CFormatGuess::IsLineAgp(
     if ( tokens[1].size() > 1 && tokens[1][0] == '-' ) {
         tokens[1][0] = '1';
     }
-    if ( -1 == NStr::StringToInt( tokens[1] ) ) {
+    if ( -1 == NStr::StringToNonNegativeInt( tokens[1] ) ) {
         return false;
     }
 
     if ( tokens[2].size() > 1 && tokens[2][0] == '-' ) {
         tokens[2][0] = '1';
     }
-    if ( -1 == NStr::StringToInt( tokens[2] ) ) {
+    if ( -1 == NStr::StringToNonNegativeInt( tokens[2] ) ) {
         return false;
     }
 
     if ( tokens[3].size() > 1 && tokens[3][0] == '-' ) {
         tokens[3][0] = '1';
     }
-    if ( -1 == NStr::StringToInt( tokens[3] ) ) {
+    if ( -1 == NStr::StringToNonNegativeInt( tokens[3] ) ) {
         return false;
     }
 
@@ -1857,15 +1857,15 @@ bool CFormatGuess::IsLineAgp(
         return false;
     }
     if ( tokens[4] == "N" ) {
-        if ( -1 == NStr::StringToInt( tokens[5] ) ) {
+        if ( -1 == NStr::StringToNonNegativeInt( tokens[5] ) ) {
             return false;
         }
     }
     else {
-        if ( -1 == NStr::StringToInt( tokens[6] ) ) {
+        if ( -1 == NStr::StringToNonNegativeInt( tokens[6] ) ) {
             return false;
         }
-        if ( -1 == NStr::StringToInt( tokens[7] ) ) {
+        if ( -1 == NStr::StringToNonNegativeInt( tokens[7] ) ) {
             return false;
         }            
         if ( tokens.size() != 9 ) {
@@ -2114,8 +2114,8 @@ bool CFormatGuess::IsLinePhrapId(
     //  New style: "^AS [0-9]+ [0-9]+"
     //
     if ( values[0] == "AS" ) {
-        return ( 0 <= NStr::StringToInt( values[1] ) &&
-          0 <= NStr::StringToInt( values[2] ) );
+        return ( 0 <= NStr::StringToNonNegativeInt( values[1] ) &&
+          0 <= NStr::StringToNonNegativeInt( values[2] ) );
     }
 
     return false;
