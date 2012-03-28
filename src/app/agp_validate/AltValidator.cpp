@@ -182,7 +182,7 @@ void CAltValidator::ValidateLength(
 
 void CAltValidator::PrintTotals(CNcbiOstream& out, bool use_xml)
 {
-  int e_count=agpErr.CountTotals(CAgpErrEx::CODE_First, CAgpErrEx::CODE_Last);
+  int e_count=agpErr.CountTotals(CAgpErrEx::E_Last) + agpErr.CountTotals(CAgpErrEx::G_Last);
 
   if(use_xml) {
     cout << " <LinesWithValidCompAcc>" << m_GenBankCompLineCount << "</LinesWithValidCompAcc>\n";
