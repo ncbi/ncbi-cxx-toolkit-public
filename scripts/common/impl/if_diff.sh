@@ -54,7 +54,9 @@ ExecHelper()
   test "$quiet" = yes || echo "$cmd"
   PATH=$orig_PATH
   "$@" "$dest"
+  status=$?
   PATH=/bin:/usr/bin
+  return $status
 }
 
 ExecAction()
