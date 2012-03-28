@@ -16,6 +16,7 @@
 # It is allowed to have more than one of each statements
 APP: netscheduled
 APP: test_netschedule_client+ test_netschedule_node+ test_netschedule_stress+ test_netschedule_stress_new+
+APP: test_netschedule_crash+
 APP: $srcdir/src/app/netschedule/test/ns.py $srcdir/src/app/netschedule/test/test_netschedule_bsub.py
 ETC: src/app/netschedule/netscheduled.ini
 
