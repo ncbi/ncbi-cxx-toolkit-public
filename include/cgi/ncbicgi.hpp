@@ -38,6 +38,7 @@
 #include <corelib/rwstream.hpp>
 #include <corelib/stream_utils.hpp>
 #include <cgi/cgi_util.hpp>
+#include <cgi/user_agent.hpp>
 #include <set>
 
 

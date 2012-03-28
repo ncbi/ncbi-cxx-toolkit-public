@@ -6,7 +6,7 @@
 
 SRC = ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_util cgi_serial \
       $(FASTCGI_OBJS) fcgi_run cgi_session cgi_exception cgiapp_cached \
-      cgi_entry_reader
+      cgi_entry_reader user_agent
 LIB = xfcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE) -DNCBI_XFCGI_EXPORTS

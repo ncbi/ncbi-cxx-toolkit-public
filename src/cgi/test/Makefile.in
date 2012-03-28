@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = cgitest test_multipart_cgi cgi_io_test test_cgi_entry_reader
+APP_PROJ = cgitest test_multipart_cgi cgi_io_test test_cgi_entry_reader test_user_agent
 PROJ_TAG = test
 
 srcdir = @srcdir@
