@@ -489,7 +489,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
       qp = best_q_start - q;
       sp = best_s_start - s;
       ext = 0;
-      while(qp > 0 && sp > 0 && (q[--qp] == s[--sp])) ext++;
+      while(qp > 0 && sp > 0 && (q[--qp] == s[--sp]) && q[qp]!=0xf) ext++;
       best_q_start -= ext;
       best_s_start -= ext;
       esp->num[best_start_esp_index] += ext;
@@ -499,7 +499,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
       qp = best_q_end - q;
       sp = best_s_end - s;
       ext = 0;
-      while(qp < qlen && sp < slen && (q[qp++] == s[sp++])) ext++;
+      while(qp < qlen && sp < slen && (q[qp++] == s[sp++]) && q[qp]!=0xf) ext++;
       best_q_end += ext;
       best_s_end += ext;
       esp->num[best_end_esp_index] += ext;
