@@ -1302,6 +1302,7 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
                 if (!val.empty()) {
                     m_CmdCtx->SetClientIP(val);
                 }
+                params.erase(it);
             }
             break;
         case 'k':
@@ -1361,6 +1362,7 @@ CNCMessageHandler::x_AssignCmdParams(TNSProtoParams& params)
                     if (!val.empty()) {
                         m_CmdCtx->SetSessionID(NStr::URLDecode(val));
                     }
+                    params.erase(it);
                 }
                 else if (key == "size") {
                     m_Size = Uint8(NStr::StringToInt8(val));
