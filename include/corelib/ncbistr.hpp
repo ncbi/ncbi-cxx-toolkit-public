@@ -187,8 +187,8 @@ public:
     /// Convert string to non-negative integer value.
     ///
     /// @param str
-    ///   String containing only digits, representing non-negative value in
-    ///   the int range: [0..kMax_Int].
+    ///   String containing only digits, representing non-negative 
+    ///   decimal value in the int range: [0..kMax_Int].
     /// @return
     ///   - Convert "str" to a (non-negative) int value and return
     ///     this value.
