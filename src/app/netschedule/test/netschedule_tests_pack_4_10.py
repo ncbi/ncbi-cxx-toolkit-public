@@ -1473,7 +1473,8 @@ class Scenario138( TestBase ):
             # Job is unknown, but the key format is just fine
             self.ns.returnJob( "TEST", NON_EXISTED_JOB )
         except Exception, exc:
-            if "Job not found" in str( exc ):
+            if "Job not found" in str( exc ) or \
+               "eJobNotFound" in str( exc ):
                 return True
             raise
 
