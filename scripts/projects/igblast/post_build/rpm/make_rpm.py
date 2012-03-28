@@ -156,7 +156,7 @@ def main():
     if VERBOSE: 
         print "Installing RPM to", installdir
         
-    PACKAGE_NAME = "ncbi-igblast-" + blast_version + "+"
+    PACKAGE_NAME = "ncbi-igblast-" + blast_version
     TARBALL = PACKAGE_NAME + ".tgz"
     
     setup_rpmbuild()

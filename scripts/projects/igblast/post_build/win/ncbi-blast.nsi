@@ -11,7 +11,7 @@
 ; Initialization function to properly set the installation directory
 Function .onInit
   ${If} ${RunningX64}
-    StrCpy $INSTDIR "$PROGRAMFILES64\NCBI\igblast-BLAST_VERSION+"
+    StrCpy $INSTDIR "$PROGRAMFILES64\NCBI\igblast-BLAST_VERSION"
   ${EndIf}
 FunctionEnd
 
@@ -19,17 +19,17 @@ FunctionEnd
 ;General
 
   ;Name and file
-  Name "NCBI igBLAST BLAST_VERSION+"
-  OutFile "ncbi-igblast-BLAST_VERSION+.exe"
+  Name "NCBI igBLAST BLAST_VERSION"
+  OutFile "ncbi-igblast-BLAST_VERSION.exe"
   ; Install/uninstall icons
   !define MUI_ICON "ncbilogo.ico"
   !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\nsis1-uninstall.ico"
 
   ;Default installation folder
-  InstallDir "$PROGRAMFILES\NCBI\igblast-BLAST_VERSION+"
+  InstallDir "$PROGRAMFILES\NCBI\igblast-BLAST_VERSION"
   
   ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\NCBI\igblast-BLAST_VERSION+" ""
+  InstallDirRegKey HKCU "Software\NCBI\igblast-BLAST_VERSION" ""
 
 ;--------------------------------
 ;Interface Settings
@@ -66,10 +66,10 @@ Section "DefaultSection" SecDflt
   File "README.txt"
   
   ;Store installation folder
-  WriteRegStr HKCU "Software\NCBI\igblast-BLAST_VERSION+" "" $INSTDIR
+  WriteRegStr HKCU "Software\NCBI\igblast-BLAST_VERSION" "" $INSTDIR
   
   ;Create uninstaller
-  WriteUninstaller "$INSTDIR\Uninstall-ncbi-igblast-BLAST_VERSION+.exe"
+  WriteUninstaller "$INSTDIR\Uninstall-ncbi-igblast-BLAST_VERSION.exe"
   
   ;Update PATH
   ${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR\bin"
@@ -80,7 +80,7 @@ SectionEnd
 ;Uninstaller Section
 
 Section "Uninstall"
-  Delete "$INSTDIR\Uninstall-ncbi-igblast-BLAST_VERSION+.exe"
+  Delete "$INSTDIR\Uninstall-ncbi-igblast-BLAST_VERSION.exe"
   
   Delete "$INSTDIR\bin\igblastn.exe"
   Delete "$INSTDIR\bin\igblastp.exe"
@@ -89,7 +89,7 @@ Section "Uninstall"
   RmDir "$INSTDIR\doc"
   RMDir "$INSTDIR"
 
-  DeleteRegKey /ifempty HKCU "Software\NCBI\igblast-BLAST_VERSION+"
+  DeleteRegKey /ifempty HKCU "Software\NCBI\igblast-BLAST_VERSION"
   
   ; Remove installation directory from PATH
   ${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR\bin" 
