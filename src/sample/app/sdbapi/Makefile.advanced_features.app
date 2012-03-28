@@ -2,7 +2,7 @@
 
 REQUIRES = dbapi
 
-APP = advanced_features
+APP = sdbapi_advanced_features
 SRC = advanced_features
 
 # new_project.sh will copy everything in the following block to any

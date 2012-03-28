@@ -2,7 +2,7 @@
 
 REQUIRES = dbapi
 
-APP = simple_sproc
+APP = sdbapi_simple_sproc
 SRC = simple_sproc
 
 # new_project.sh will copy everything in the following block to any
