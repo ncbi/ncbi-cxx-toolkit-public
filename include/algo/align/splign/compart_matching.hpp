@@ -50,7 +50,8 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-class ISequenceSource
+
+class NCBI_XALGOALIGN_EXPORT ISequenceSource
 {
 private:
     virtual const vector<CSeq_id_Handle>& GetIds(void) const = 0;
@@ -102,7 +103,7 @@ protected:
 };
 
 
-class CBlastSequenceSource : public ISequenceSource
+class NCBI_XALGOALIGN_EXPORT CBlastSequenceSource : public ISequenceSource
 {
 private:
     virtual const vector<CSeq_id_Handle>& GetIds(void) const { return s_ids; } //never called
@@ -128,8 +129,9 @@ protected:
     static vector<CSeq_id_Handle> s_ids;
 };
 
-class CElementaryMatching: public CObject {
 
+class NCBI_XALGOALIGN_EXPORT CElementaryMatching: public CObject
+{
 public:
 
     CElementaryMatching(ISequenceSource *qsrc, const string & sdb):
