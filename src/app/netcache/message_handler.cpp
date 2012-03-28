@@ -1510,8 +1510,12 @@ CNCMessageHandler::x_StartCommand(SParsedCmd& cmd)
         ||  cmd_extra.storage_access == eWithAutoBlobKey
         ||  m_CmdProcessor == &CNCMessageHandler::x_DoCmd_HasBlob)
     {
-        if ((m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithPass)
-            ||  (!m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithoutPass))
+        if (((m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithPass)
+                ||  (!m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithoutPass)
+            &&  !NStr::StartsWith(m_CurCmd, "COPY_")
+            &&  !NStr::StartsWith(m_CurCmd, "SYNC_")
+            &&  NStr::FindCase(m_CurCmd, "GETMETA") == NPOS
+            &&  NStr::CompareCase(m_CurCmd, "PROXY_META") != 0))
         {
             if (diag_extra.get() != NULL)
                 diag_extra->Flush();
