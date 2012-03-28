@@ -184,19 +184,25 @@ inline const char* impl_ToCString(const string& s) { return s.c_str(); }
 class NCBI_XNCBI_EXPORT NStr
 {
 public:
-    /// Convert string to positive integer value.
+    /// Convert string to non-negative integer value.
     ///
     /// @param str
     ///   String containing only digits, representing non-negative value in
-    ///   the "int" range: [0..kMax_Int].
+    ///   the int range: [0..kMax_Int].
     /// @return
-    ///   - Convert "str" to a (non-negative) "int" value and return
+    ///   - Convert "str" to a (non-negative) int value and return
     ///     this value.
-    ///   - -1 if "str" contains any symbols other than [0-9], or
-    ///     if it represents a number that does not fit into "int".
-    /// @deprecated  Use template-based StringToNumeric<> instead.
+    ///   - -1 if "str" contains negative value,
+    ///        or any symbols strtoul() cannot accept, 
+    ///        or if it represents a number that does not fit into int.
+    static int StringToNonNegativeInt(const string& str);
+
+    /// @deprecated
+    ///   Use template-based StringToNumeric<> or StringToNonNegativeInt() instead.
     NCBI_DEPRECATED
-    static int StringToNumeric(const string& str);
+    static int StringToNumeric(const string& str) {
+        return StringToNonNegativeInt(str);
+    }
 
     /// Number to string conversion flags.
     ///

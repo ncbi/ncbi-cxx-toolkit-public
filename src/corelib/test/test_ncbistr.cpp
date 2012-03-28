@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // num
         {{
-            int value = NStr::StringToNumeric(str);
+            int value = NStr::StringToNonNegativeInt(str);
             NcbiCout << "numeric value: " << value << ", toString: '"
                      << NStr::NumericToString(value) << "'" << NcbiEndl;
             BOOST_CHECK_EQUAL(value, test->num);

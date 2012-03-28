@@ -362,7 +362,7 @@ string& NStr::ToUpper(string& str)
 }
 
 
-int NStr::StringToNumeric(const string& str)
+int NStr::StringToNonNegativeInt(const string& str)
 {
     int& errno_ref = errno;
     if ( str.empty() ) {
