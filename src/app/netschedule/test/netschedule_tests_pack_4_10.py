@@ -2320,7 +2320,7 @@ class Scenario158( TestBase ):
                                'mynode', 'mysession' )
             raise Exception( "Wrong FRED but no exception" )
         except Exception, excpt:
-            if "Invalid authorization token" not in str( excpt ):
+            if "authorization" not in str( excpt ).lower():
                 raise
 
         # Check the status
