@@ -6915,6 +6915,7 @@ with_configure_dialog='$with_configure_dialog'
 with_saved_settings='$with_saved_settings'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
+EGREP='$EGREP'
 ])
 
 AC_WARNING([*** Please don't forget to update .../src/build-system/NEWS if appropriate! ***])dnl
