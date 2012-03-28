@@ -493,9 +493,9 @@ class NetSchedule:
         self.verbosePrint( cmdLine )
         output = self.__safeRun( cmdLine ).strip()
         parts = output.split( ":" )
-        if len( parts ) != 2:
-            raise Exception( "Unexpected line format" )
-        return int( parts[ 1 ].strip() )
+        if len( parts ) not in [1, 2]:
+            raise Exception( "Unexpected line format (" + output + ")" )
+        return int( parts[ len( parts ) - 1 ].strip() )
 
     def getQueueList( self, node = "", session = "" ):
         " Get the list of queues "
