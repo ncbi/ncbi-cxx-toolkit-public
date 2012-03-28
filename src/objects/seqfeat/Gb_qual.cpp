@@ -97,7 +97,7 @@ void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, strin
     remainder = "";
     string check = inference;
 
-    for (unsigned int i = 0; i < sizeof (valid_inf_prefixes) / sizeof (char *); i++) {
+    for (unsigned int i = 0; i < sizeof (valid_inf_categories) / sizeof (char *); i++) {
         if (NStr::StartsWith (check, valid_inf_categories[i])) {
             category = valid_inf_categories[i];
             check = check.substr(category.length());
