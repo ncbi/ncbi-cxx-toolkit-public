@@ -2,8 +2,8 @@
 
 REQUIRES = dbapi
 
-APP = sdbapi_sample
-SRC = sdbapi_sample
+APP = advanced_features
+SRC = advanced_features
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change

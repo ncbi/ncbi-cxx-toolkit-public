@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = sdbapi_sample
+APP_PROJ = simple_sproc advanced_features
 
 REQUIRES = dbapi FreeTDS
 
