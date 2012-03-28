@@ -46,12 +46,10 @@
 #include <dbapi/driver/drivers.hpp>             // DBAPI_RegisterDriver_FTDS
 #include <dbapi/driver/exception.hpp>           // CDB_UserHandler
 
-#include <map>
-
-#define NCBI_USE_ERRCODE_X   DbapiSimpleQuery
+#define NCBI_USE_ERRCODE_X   DbapiSimpleSproc
 
 BEGIN_NCBI_SCOPE
-NCBI_DEFINE_ERRCODE_X(DbapiSimpleQuery, 2525, 1);
+NCBI_DEFINE_ERRCODE_X(DbapiSimpleSproc, 2500, 1);
 END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
@@ -141,7 +139,7 @@ void CDbapiSimpleApp::Init(void)
 {
     CArgDescriptions* argdesc = new CArgDescriptions();
     argdesc->SetUsageContext(GetArguments().GetProgramBasename(),
-                             "DBAPI simple query demo");
+                             "DBAPI simple stored procedure demo");
 
 
     argdesc->AddPositional("server", "Server name",
@@ -159,8 +157,7 @@ void CDbapiSimpleApp::Init(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  Run - i.e. parse command-line arguments, demo executing a stored proc
-//  and a parameterized query.
+//  Run - i.e. parse command-line arguments and demo executing a stored proc.
 
 
 int CDbapiSimpleApp::Run(void)
@@ -193,14 +190,14 @@ void CDbapiSimpleApp::Exit(void)
 //  DemoProcExec - demonstrate executing a stored proc.
 //
 //  This demo uses a stored proc that:
-//  1.  Checks for recommended settings.
+//  1.  Sets recommended settings.
 //  2.  Selects some data per parameters.
 //  3.  Assigns an output parameter.
 //  4.  Generates a simple message, a warning, and an exception.
 //
-//  The warning will be exception will be caught and processed so that you can see how the user handling works.  In case you
-//  don't have access to the stored procedure, please see the companion
-//  file simple_sproc.sql.
+//  The server errors and exceptions will be caught and processed so that you
+//  can see how the user handling works.  In case you don't have access to the
+//  stored procedure, please see the companion file simple_sproc.sql.
 //
 //  NOTE: It is recommended that you create your stored procedures using the
 //  following settings because these settings are generally advisable
@@ -219,18 +216,17 @@ void CDbapiSimpleApp::Exit(void)
 void CDbapiSimpleApp::DemoProcExec(void)
 {
     try {
-        // Get access to an SQL statement.
+        // Get access to a SQL statement.
         auto_ptr<ICallableStatement> cstmt(m_Conn->GetCallableStatement(
             sm_kSpName));
-        NcbiCout << "\n\n" << string(60, '=') << NcbiEndl;
         NcbiCout << "Executing stored procedure \"" << sm_kSpName << "\":"
             << NcbiEndl;
 
         // Create an integer input parameter "@max_id", a float input
-        // parameter "@max_fl", and an integer output parameter "@outp".
+        // parameter "@max_fl", and an integer output parameter "@num_rows".
         cstmt->SetParam(CVariant(5), "@max_id");
         cstmt->SetParam(CVariant(5.1f), "@max_fl");
-        cstmt->SetOutputParam(CVariant(eDB_Int), "@outp");
+        cstmt->SetOutputParam(CVariant(eDB_Int), "@num_rows");
 
         // Execute the stored procedure.
         cstmt->Execute();
@@ -436,7 +432,6 @@ void CDbapiSimpleApp::SetupDb(void)
         // given database is successful.
         CTrivialConnValidator val(sm_kDbName);
         m_Conn->ConnectValidated(val, m_User, m_Password, m_Server, sm_kDbName);
-        //m_Conn = drv_context->ConnectValidated(m_Server, m_User, m_Password, val);
 
     } catch (...) { // try/catch here just to facilitate debugging
         throw;

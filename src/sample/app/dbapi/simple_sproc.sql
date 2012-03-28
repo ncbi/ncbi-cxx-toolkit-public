@@ -19,7 +19,7 @@ GO
 ALTER PROCEDURE [simple_sproc]
     @max_id INT,
     @max_fl FLOAT,
-    @outp INT OUTPUT
+    @num_rows INT OUTPUT
 AS
 BEGIN
     /*
@@ -40,11 +40,11 @@ BEGIN
         WHERE int_val <= @max_id AND fl_val <= @max_fl;
 
     -- Assign an output parameter.
-    SET @outp = 11;
+    SET @num_rows = @@ROWCOUNT;
 
     -- Select some more data.
     SELECT 'abc' AS col1, 123 AS col2;
-    SELECT @max_id AS max_id, @max_fl AS max_fl, @outp AS outp;
+    SELECT @max_id AS max_id, @max_fl AS max_fl, @num_rows AS num_rows;
 
     -- Generate a simple message and a warning.
     PRINT 'Print something.';
