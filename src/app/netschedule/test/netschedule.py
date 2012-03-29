@@ -1376,7 +1376,7 @@ class NetSchedule:
         cmdLine = [ self.__grid_cli,
                     "--extended-cli",
                     "submitjob", "--dump-ns-notifications",
-                    "--wait-timeout=" + str( timeout ),
+                    "--wait-timeout=" + str( timeout + 2 ),
                     "--queue=" + qname,
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         cmdLine = self.__appendNodeSession( cmdLine, node, session )
@@ -1387,6 +1387,9 @@ class NetSchedule:
         process = Popen( cmdLine, stdin = PIPE,
                          stdout = PIPE, stderr = PIPE )
         process.stdin.close()
+        time.sleep( 2 )
+        if process.poll() is not None:
+            raise Exception( "Failed to spawn with submit" )
         return process
 
     def getJobsForReading2( self, qname, timeout = -1,
