@@ -2440,9 +2440,15 @@ class Scenario161( TestBase ):
         jobID = self.ns.submitJob( 'TEST', 'bla' )
         info = self.ns.getJobInfo( 'TEST', jobID )
 
-        return info[ 'event' ] == 'Submit' and \
-               info[ "node" ] == "" and \
-               info[ "session" ] == ""
+        if info.has_key( "event" ):
+            # grid 1.5
+            return info[ 'event' ] == 'Submit' and \
+                   info[ "node" ] == "" and \
+                   info[ "session" ] == ""
+        # grid 1.4
+        return "event=Submit" in info[ "event1" ] and \
+               "node=''" in info[ "event1" ] and \
+               "session=''" in info[ "event1" ]
 
 class Scenario162( TestBase ):
     " Scenario 162 "
