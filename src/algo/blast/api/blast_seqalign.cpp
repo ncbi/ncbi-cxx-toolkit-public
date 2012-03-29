@@ -1748,6 +1748,116 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
     return retval;
 }
 
+/// Creates a Std-seg object from HSP information and sequence identifiers
+/// for a non-translated ungapped search.
+/// @param hsp An HSP structure [in]
+/// @param query_id Query sequence identifier [in]
+/// @param subject_id Subject sequence identifier [in]
+/// @param query_length Length of the query [in]
+/// @param subject_length Length of the subject [in]
+/// @param gi_list List of GIs for the subject sequence.
+/// @return Resulting Std-seg object.
+CRef<CStd_seg>
+x_NonTranslatedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id,
+                      	   CRef<CSeq_id> subject_id,
+                      	   Int4 query_length, Int4 subject_length,
+                      	   const vector<int> & gi_list)
+{
+    CRef<CStd_seg> retval(new CStd_seg());
+
+    retval->SetDim(kBlastAlignmentDim);
+    retval->SetLoc().reserve(kBlastAlignmentDim);
+
+    CRef<CSeq_loc> query_loc(new CSeq_loc());
+    CRef<CSeq_loc> subject_loc(new CSeq_loc());
+    query_loc->SetInt().SetId(*query_id);
+    subject_loc->SetInt().SetId(*subject_id);
+
+    // Set the sequence ids
+    CStd_seg::TIds& ids = retval->SetIds();
+    ids.reserve(kBlastAlignmentDim);
+    ids.push_back(query_id);
+    ids.push_back(subject_id);
+
+    query_loc->SetInt().SetStrand(s_Frame2Strand(hsp->query.frame));
+    subject_loc->SetInt().SetStrand(s_Frame2Strand(hsp->subject.frame));
+
+    if (hsp->query.frame >= 0) {
+           query_loc->SetInt().SetFrom(hsp->query.offset);
+           query_loc->SetInt().SetTo(hsp->query.end -1);
+   } else {
+           query_loc->SetInt().SetFrom(query_length - hsp->query.end);
+           query_loc->SetInt().SetTo(query_length - hsp->query.offset -1);
+   }
+
+   if (hsp->subject.frame >= 0) {
+       subject_loc->SetInt().SetFrom(hsp->subject.offset);
+       subject_loc->SetInt().SetTo(hsp->subject.end-1);
+   } else {
+	   subject_loc->SetInt().SetFrom(subject_length - hsp->subject.end);
+	   subject_loc->SetInt().SetTo(subject_length - hsp->subject.offset -1);
+   }
+
+    retval->SetLoc().push_back(query_loc);
+    retval->SetLoc().push_back(subject_loc);
+
+    CSeq_align::TScore& score_list = retval->SetScores();
+    s_BuildScoreList(hsp, score_list, gi_list);
+
+    return retval;
+}
+
+
+void
+BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
+                     	 	 	  BlastHitList*			   hit_list,
+                     	 	 	  const CSeq_loc & 		   query_loc,
+                     	 	 	  TSeqPos				   query_length,
+                     	 	 	  const IBlastSeqInfoSrc * subject_seqinfo,
+                     	 	 	  list<CRef<CStd_seg > > & seg_list)
+{
+	seg_list.clear();
+
+	CRef<CSeq_id> query_id(new CSeq_id);
+	SerialAssign(*query_id, CSeq_loc_CI(query_loc).GetSeq_id());
+	_ASSERT(query_id);
+
+	CRef<CStd_seg>
+	(*fun_ptr) (BlastHSP* , CRef<CSeq_id> , CRef<CSeq_id> , Int4 , Int4 ,
+	                      	   const vector<int> & ) = NULL;
+
+	if((TRANSLATED_QUERY_MASK | TRANSLATED_SUBJECT_MASK) & program )
+		fun_ptr = x_UngappedHSPToStdSeg;
+	else
+		fun_ptr = x_NonTranslatedHSPToStdSeg;
+
+    for (int i = 0; i < hit_list->hsplist_count; i++)
+    {
+    	BlastHSPList* hsp_list = hit_list->hsplist_array[i];
+	    if (!hsp_list)
+	    	continue;
+
+	    BlastHSP ** hsp_array = hsp_list->hsp_array;
+        for (int j = 0; j < hsp_list->hspcnt; j++)
+        {
+        	BlastHSP* hsp = hsp_array[j];
+
+        	if(!hsp)
+        		continue;
+
+        	const Uint4 oid = hsp_list->oid;
+        	TSeqPos subject_length = 0;
+        	CRef<CSeq_id> subject_id;
+        	vector<int> gi_list;
+        	GetFilteredRedundantGis(*subject_seqinfo, oid, gi_list);
+        	GetSequenceLengthAndId(subject_seqinfo, oid, subject_id, &subject_length);
+        	seg_list.push_back((*fun_ptr) (hsp, query_id, subject_id,
+        									query_length, subject_length,
+        									 gi_list));
+        }
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

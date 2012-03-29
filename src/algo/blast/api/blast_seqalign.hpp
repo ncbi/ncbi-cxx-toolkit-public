@@ -127,6 +127,29 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                            vector<TSeqLocInfoVector>& subj_masks,
                            EResultType         result_type = eDatabaseSearch);
 
+// Convert PrelminSearch Output to CStdseg
+//
+// This converts the BlatsHitsLists for a query into a list of CStd_seg
+// @param program
+//		Blast Program type [in]
+// @param   hit_list,
+// 		ptr to BlastHitList, results from prelimiary search [in]
+// @param  query_loc
+//		seq-loc for the query [in]
+// @param query_length,
+//		query length [in]
+// @param subject_seqiinfo
+//		sbject seqinfosrc ptr [in]
+// @param seg_list
+// 		List of CStd_seg convetred from blast hsp [out]
+void
+BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
+                     	 	 	  BlastHitList*			   hit_list,
+                     	 	 	  const CSeq_loc & 		   query_loc,
+                     	 	 	  TSeqPos				   query_length,
+                     	 	 	  const IBlastSeqInfoSrc * subject_seqinfo,
+                     	 	 	  list<CRef<CStd_seg > > & seg_list);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

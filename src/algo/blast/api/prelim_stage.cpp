@@ -47,6 +47,7 @@ static char const rcsid[] =
 #include "blast_aux_priv.hpp"
 #include "psiblast_aux_priv.hpp"
 #include "split_query_aux_priv.hpp"
+#include "blast_seqalign.hpp"
 #include <sstream>
 
 #include <algo/blast/api/blast_dbindex.hpp>
@@ -60,11 +61,13 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+
+
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
                                        const CSearchDatabase& dbinfo)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData),
-    m_Options(options)
+    m_Options(options), m_DbAdapter(NULL), m_DbInfo(&dbinfo)
 {
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(dbinfo);
     x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
@@ -76,7 +79,7 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
                                        CRef<CLocalDbAdapter> db)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData),
-    m_Options(options)
+    m_Options(options), m_DbAdapter(db), m_DbInfo(NULL)
 {
     BlastSeqSrc* seqsrc = db->MakeSeqSrc();
     x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
@@ -88,7 +91,7 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                BlastSeqSrc* seqsrc,
                                CConstRef<objects::CPssmWithParameters> pssm)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData),
-    m_Options(options)
+    m_Options(options),  m_DbAdapter(NULL), m_DbInfo(NULL)
 {
     x_Init(query_factory, options, pssm, seqsrc);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
@@ -335,6 +338,63 @@ CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
     return retval;
 }
 
+bool CBlastPrelimSearch::Run( vector<list<CRef<CStd_seg> > >  & l )
+{
+	Run();
+	return x_BuildStdSegList(l);
+}
+
+// Results is trimmed by Blast Hits Save Options if set
+bool CBlastPrelimSearch::x_BuildStdSegList( vector<list<CRef<CStd_seg> > >  & l )
+{
+	if(m_InternalData->m_HspStream.Empty())
+	{
+		_TRACE("HSP Stream is empty");
+		return false;
+	}
+
+	if(NULL != m_DbInfo)
+	{
+		m_DbAdapter.Reset(new CLocalDbAdapter(*m_DbInfo));
+	}
+
+	if(m_DbAdapter.Empty())
+	{
+		_TRACE("This method does not support CBlastPrelimSearch constructed with BlastSeqSrc");
+		return false;
+	}
+
+	BlastHSPStream * hsp_stream  = m_InternalData->m_HspStream->GetPointer();
+	if(NULL == hsp_stream)
+	{
+		_TRACE("NULL HSP Stream Pointer");
+		return false;
+	}
+
+	IBlastSeqInfoSrc * s_seqInfoSrc = m_DbAdapter->MakeSeqInfoSrc();
+	EBlastProgramType program = hsp_stream->program;
+
+	BlastHSPResults * results = ComputeBlastHSPResults(hsp_stream );
+
+	if(NULL == results)
+		return false;
+
+	int num_queries = results->num_queries;
+
+	BlastHitList ** q_list_ptr = results->hitlist_array;
+	CRef<ILocalQueryData> local_query_data = m_QueryFactory->MakeLocalQueryData(m_Options.GetPointer());
+	l.resize(num_queries);
+	for(int i=0; i < num_queries; i++)
+	{
+		CConstRef<CSeq_loc> query_loc = local_query_data->GetSeq_loc(i);
+		TSeqPos	query_length = local_query_data->GetSeqLength(i);
+		BlastHitList * hit_list = q_list_ptr[i];
+		if(NULL != hit_list)
+			BLASTPrelminSearchHitListToStdSeg(program, hit_list, *query_loc, query_length, s_seqInfoSrc, l[i]);
+	}
+
+	return true;
+}
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

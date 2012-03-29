@@ -40,6 +40,7 @@
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -105,6 +106,23 @@ public:
     /// Retrieve the filtered/masked query regions
     TSeqLocInfoVector GetFilteredQueryRegions() const;
 
+    // Results from prelim search are converted to a list of
+    // CStd_seg for each query.
+    // vector size = num of query
+    // list size = num of HSP for that query
+    // For CStd_seg:-
+    //     Use row 0 to retrieve range and seqloc for query
+    //     Use row 1 to retrieve range and seqloc for subject
+    //     With the exception of rpsblast, the order is reversed.
+    //     (0 for subject and 1 for query)
+    // This method returns false if:-
+    //     Object is constructed using Blastseqsrc
+    //     It fails to make BlastSeqInfoSrc.
+    // Results can be trimmed using the hit list size and max num hsp
+    // in CBlastOptions.
+    //
+    bool Run( vector<list<CRef<CStd_seg> > >  & results );
+
 private:
     /// Prohibit copy constructor
     CBlastPrelimSearch(const CBlastPrelimSearch& rhs);
@@ -126,17 +144,24 @@ private:
     /// @param internal_data internal preliminary data structures
     int x_LaunchMultiThreadedSearch(SInternalData& internal_data);
 
+    bool x_BuildStdSegList( vector<list<CRef<CStd_seg> > >  & list );
+
     /// Query factory is retained to ensure the lifetime of the data (queries)
     /// produced by it.
     CRef<IQueryFactory>             m_QueryFactory;
     CRef<SInternalData>             m_InternalData;
     CRef<CBlastOptions>             m_Options;
 
+
+    CRef<CLocalDbAdapter> 		m_DbAdapter;
+    const CSearchDatabase *		m_DbInfo;
+
     /// Warnings and error messages
     TSearchMessages                 m_Messages;
 
     /// Query masking information
     TSeqLocInfoVector               m_MasksForAllQueries;
+
 };
 
 inline TSearchMessages
