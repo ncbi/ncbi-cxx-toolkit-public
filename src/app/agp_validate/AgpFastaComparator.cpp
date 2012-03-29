@@ -958,7 +958,7 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
         // solution is possible.  In particular, I would like the NCBI
         // C++ toolkit to have a diff library.
         std::stringstream cmd_strm;
-        cmd_strm << CExec::QuoteArg(kDiff) << " " << CExec::QuoteArg(agp_file) << " " << CExec::QuoteArg(obj_file) << " 2> /dev/null | " << CExec::QuoteArg(kHead) << " -n " << diffs_to_find;
+        cmd_strm << kDiff << " '" << agp_file << "' '" << obj_file << "' 2> /dev/null | " << kHead << " -n " << diffs_to_find;
         CExec::System( cmd_strm.str().c_str() );
     }
 }
