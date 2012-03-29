@@ -808,7 +808,7 @@ class NetSchedule:
                                  "Expected: 'key: value', " \
                                  "Received: " + line )
             value = ":".join( parts[ 1: ] ).strip()
-            result[ parts[0].strip() ] = value
+            result[ parts[0].strip().replace( '-', '_' ) ] = value
         return result
 
 
