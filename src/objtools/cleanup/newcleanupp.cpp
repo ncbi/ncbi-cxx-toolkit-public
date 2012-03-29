@@ -3526,7 +3526,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     // codon_start qual -> Cdregion.frame
     if (NStr::EqualNocase(qual, "codon_start")) {
         CCdregion::TFrame frame = GET_FIELD(cds, Frame);
-        CCdregion::TFrame new_frame = CCdregion::TFrame(NStr::StringToNumeric(val));
+        CCdregion::TFrame new_frame = CCdregion::TFrame(NStr::StringToNonNegativeInt(val));
         if (new_frame == CCdregion::eFrame_one  ||
             new_frame == CCdregion::eFrame_two  ||
             new_frame == CCdregion::eFrame_three) {
@@ -3555,7 +3555,7 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
                 return eAction_Erase;
             }
         } else {
-            int new_val = NStr::StringToNumeric(val);
+            int new_val = NStr::StringToNonNegativeInt(val);
             if (new_val > 0) {
                 CRef<CGenetic_code::C_E> gc(new CGenetic_code::C_E);
                 SET_FIELD(*gc, Id, new_val);
