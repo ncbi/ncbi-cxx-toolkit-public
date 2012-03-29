@@ -281,10 +281,7 @@ public:
 
     void SetLocalSkipHook(CObjectIStream& stream,
                           CSkipClassMemberHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalSkipHook(CSkipClassMemberHook* hook) const;
     void ResetLocalSkipHook(CObjectIStream& stream) const;
-    void ResetGlobalSkipHook(void) const;
     void SetPathSkipHook(CObjectIStream* stream, const string& path,
                          CSkipClassMemberHook* hook) const;
 
@@ -359,10 +356,7 @@ public:
 
     void SetLocalSkipHook(CObjectIStream& stream,
                           CSkipChoiceVariantHook* hook) const;
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalSkipHook(CSkipChoiceVariantHook* hook) const;
     void ResetLocalSkipHook(CObjectIStream& stream) const;
-    void ResetGlobalSkipHook(void) const;
     void SetPathSkipHook(CObjectIStream* stream, const string& path,
                          CSkipChoiceVariantHook* hook) const;
 

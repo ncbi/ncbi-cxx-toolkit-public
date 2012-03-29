@@ -205,12 +205,8 @@ public:
     void SetPathWriteHook(CObjectOStream* out, const string& path,
                           CWriteObjectHook* hook);
 
-    /// Set global (for all input streams) skip hook
-    void SetGlobalSkipHook(CSkipObjectHook* hook);
     /// Set local (for a specific input stream) skip hook
     void SetLocalSkipHook(CObjectIStream& in, CSkipObjectHook* hook);
-    /// Reset global skip hooks
-    void ResetGlobalSkipHook(void);
     /// Reset local skip hook
     void ResetLocalSkipHook(CObjectIStream& in);
     /// Set local context-specific skip hook

@@ -352,24 +352,12 @@ void CTypeInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
     m_WriteHookData.SetPathHook(out,path,hook);
 }
 
-void CTypeInfo::SetGlobalSkipHook(CSkipObjectHook* hook)
-{
-    CMutexGuard guard(GetTypeInfoMutex());
-    m_SkipHookData.SetGlobalHook(hook);
-}
-
 void CTypeInfo::SetLocalSkipHook(CObjectIStream& stream,
                                  CSkipObjectHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_SkipHookData.SetLocalHook(stream.m_ObjectSkipHookKey, hook);
     stream.AddMonitorType(this);
-}
-
-void CTypeInfo::ResetGlobalSkipHook(void)
-{
-    CMutexGuard guard(GetTypeInfoMutex());
-    m_SkipHookData.ResetGlobalHook();
 }
 
 void CTypeInfo::ResetLocalSkipHook(CObjectIStream& stream)

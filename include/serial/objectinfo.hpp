@@ -329,20 +329,10 @@ public:
     void SetLocalSkipHook(CObjectIStream& stream,
                           CSkipObjectHook* hook) const;
 
-    /// Set global (for all streams) skip hook
-    /// @param hook
-    ///   Pointer to hook object
-    /// @deprecated
-    ///   Use local hooks instead
-    NCBI_DEPRECATED void SetGlobalSkipHook(CSkipObjectHook* hook) const;
-
     /// Reset local skip hook
     /// @param stream
     ///   Input data stream reader
     void ResetLocalSkipHook(CObjectIStream& stream) const;
-
-    /// Reset global skip hooks
-    void ResetGlobalSkipHook(void) const;
 
     /// Set local context-specific skip hook
     /// @param stream

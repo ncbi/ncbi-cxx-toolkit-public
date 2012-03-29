@@ -145,9 +145,7 @@ public:
     void SetPathWriteHook(CObjectOStream* out, const string& path,
                           CWriteChoiceVariantHook* hook);
 
-    void SetGlobalSkipHook(CSkipChoiceVariantHook* hook);
     void SetLocalSkipHook(CObjectIStream& in, CSkipChoiceVariantHook* hook);
-    void ResetGlobalSkipHook(void);
     void ResetLocalSkipHook(CObjectIStream& in);
     void SetPathSkipHook(CObjectIStream* in, const string& path,
                          CSkipChoiceVariantHook* hook);

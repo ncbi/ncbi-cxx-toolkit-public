@@ -421,19 +421,9 @@ void CObjectTypeInfo::SetLocalSkipHook(CObjectIStream& stream,
     GetNCTypeInfo()->SetLocalSkipHook(stream, hook);
 }
 
-void CObjectTypeInfo::SetGlobalSkipHook(CSkipObjectHook* hook) const
-{
-    GetNCTypeInfo()->SetGlobalSkipHook(hook);
-}
-
 void CObjectTypeInfo::ResetLocalSkipHook(CObjectIStream& stream) const
 {
     GetNCTypeInfo()->ResetLocalSkipHook(stream);
-}
-
-void CObjectTypeInfo::ResetGlobalSkipHook(void) const
-{
-    GetNCTypeInfo()->ResetGlobalSkipHook();
 }
 
 void CObjectTypeInfo::SetPathSkipHook(CObjectIStream* stream, const string& path,

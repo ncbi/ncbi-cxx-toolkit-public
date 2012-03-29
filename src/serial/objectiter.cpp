@@ -154,19 +154,9 @@ void CObjectTypeInfoMI::SetLocalSkipHook(CObjectIStream& stream,
     stream.AddMonitorType(GetClassType().GetTypeInfo());
 }
 
-void CObjectTypeInfoMI::SetGlobalSkipHook(CSkipClassMemberHook* hook) const
-{
-    GetNCMemberInfo()->SetGlobalSkipHook(hook);
-}
-
 void CObjectTypeInfoMI::ResetLocalSkipHook(CObjectIStream& stream) const
 {
     GetNCMemberInfo()->ResetLocalSkipHook(stream);
-}
-
-void CObjectTypeInfoMI::ResetGlobalSkipHook(void) const
-{
-    GetNCMemberInfo()->ResetGlobalSkipHook();
 }
 
 void CObjectTypeInfoMI::SetPathSkipHook(CObjectIStream* stream, const string& path,
@@ -318,11 +308,6 @@ void CObjectTypeInfoVI::SetLocalSkipHook(CObjectIStream& stream,
     stream.AddMonitorType(GetChoiceType().GetTypeInfo());
 }
 
-void CObjectTypeInfoVI::SetGlobalSkipHook(CSkipChoiceVariantHook* hook) const
-{
-    GetNCVariantInfo()->SetGlobalSkipHook(hook);
-}
-
 void CObjectTypeInfoVI::ResetLocalSkipHook(CObjectIStream& stream) const
 {
     GetNCVariantInfo()->ResetLocalSkipHook(stream);
@@ -332,11 +317,6 @@ void CObjectTypeInfoVI::SetPathSkipHook(CObjectIStream* stream, const string& pa
                                          CSkipChoiceVariantHook* hook) const
 {
     GetNCVariantInfo()->SetPathSkipHook(stream, path, hook);
-}
-
-void CObjectTypeInfoVI::ResetGlobalSkipHook(void) const
-{
-    GetNCVariantInfo()->ResetGlobalSkipHook();
 }
 
 void CObjectTypeInfoVI::SetLocalCopyHook(CObjectStreamCopier& stream,

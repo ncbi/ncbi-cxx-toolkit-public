@@ -587,23 +587,11 @@ void CMemberInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
     m_WriteHookData.SetPathHook(out,path,hook);
 }
 
-void CMemberInfo::SetGlobalSkipHook(CSkipClassMemberHook* hook)
-{
-    CMutexGuard guard(GetTypeInfoMutex());
-    m_SkipHookData.SetGlobalHook(hook);
-}
-
 void CMemberInfo::SetLocalSkipHook(CObjectIStream& stream,
                                    CSkipClassMemberHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_SkipHookData.SetLocalHook(stream.m_ClassMemberSkipHookKey, hook);
-}
-
-void CMemberInfo::ResetGlobalSkipHook(void)
-{
-    CMutexGuard guard(GetTypeInfoMutex());
-    m_SkipHookData.ResetGlobalHook();
 }
 
 void CMemberInfo::ResetLocalSkipHook(CObjectIStream& stream)

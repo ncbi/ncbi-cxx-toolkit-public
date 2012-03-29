@@ -271,9 +271,6 @@ CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
     if ( stream ) {
         info.SetLocalSkipHook(*stream, &hook);
     }
-    else {
-        info.SetGlobalSkipHook(&hook);
-    }
 }
 
 
@@ -347,9 +344,6 @@ CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
     CObjectTypeInfoMI member = info.FindMember(id);
     if ( stream ) {
         member.SetLocalSkipHook(*stream, &hook);
-    }
-    else {
-        member.SetGlobalSkipHook(&hook);
     }
 }
 
@@ -428,9 +422,6 @@ CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
     if ( stream ) {
         variant.SetLocalSkipHook(*stream, &hook);
     }
-    else {
-        variant.SetGlobalSkipHook(&hook);
-    }
 }
 
 
@@ -486,9 +477,6 @@ void CObjectHookGuardBase::ResetHook(const CObjectTypeInfo& info)
             if ( m_Stream.m_IStream ) {
                 info.ResetLocalSkipHook(*m_Stream.m_IStream);
             }
-            else {
-                info.ResetGlobalSkipHook();
-            }
             break;
         case eHook_Copy:
             if ( m_Stream.m_Copier ) {
@@ -525,9 +513,6 @@ void CObjectHookGuardBase::ResetHook(const CObjectTypeInfo& info)
         case eHook_Skip:
             if ( m_Stream.m_IStream ) {
                 member.ResetLocalSkipHook(*m_Stream.m_IStream);
-            }
-            else {
-                member.ResetGlobalSkipHook();
             }
             break;
         case eHook_Copy:
@@ -566,9 +551,6 @@ void CObjectHookGuardBase::ResetHook(const CObjectTypeInfo& info)
         case eHook_Skip:
             if ( m_Stream.m_IStream ) {
                 variant.ResetLocalSkipHook(*m_Stream.m_IStream);
-            }
-            else {
-                variant.ResetGlobalSkipHook();
             }
             break;
         case eHook_Copy:

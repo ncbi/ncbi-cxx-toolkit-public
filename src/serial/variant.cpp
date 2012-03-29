@@ -815,23 +815,11 @@ void CVariantInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
     m_WriteHookData.SetPathHook(out,path,hook);
 }
 
-void CVariantInfo::SetGlobalSkipHook(CSkipChoiceVariantHook* hook)
-{
-    CMutexGuard guard(GetTypeInfoMutex());
-    m_SkipHookData.SetGlobalHook(hook);
-}
-
 void CVariantInfo::SetLocalSkipHook(CObjectIStream& stream,
                                     CSkipChoiceVariantHook* hook)
 {
     CMutexGuard guard(GetTypeInfoMutex());
     m_SkipHookData.SetLocalHook(stream.m_ChoiceVariantSkipHookKey, hook);
-}
-
-void CVariantInfo::ResetGlobalSkipHook(void)
-{
-    CMutexGuard guard(GetTypeInfoMutex());
-    m_SkipHookData.ResetGlobalHook();
 }
 
 void CVariantInfo::ResetLocalSkipHook(CObjectIStream& stream)
