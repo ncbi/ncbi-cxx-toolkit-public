@@ -498,8 +498,19 @@ string CHgvsParser::AsHgvsExpression(const CVariantPlacement& p)
     return s_SeqIdToHgvsStr(p) + x_PlacementCoordsToStr(p);
 }
 
-string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& vp)
+string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
 {
+    //For protein placement we'll need seq-data (e.g. p.123Glu)
+    CRef<CVariantPlacement> vp_ref;
+    if(orig_vp.GetMol() == CVariantPlacement::eMol_protein && !orig_vp.IsSetSeq()) {
+        CVariationUtil util(*m_scope);
+        vp_ref.Reset(new CVariantPlacement);
+        vp_ref->Assign(orig_vp);
+        util.AttachSeq(*vp_ref);
+    }
+    const CVariantPlacement& vp = vp_ref ? *vp_ref : orig_vp;
+        
+
     //for c.-based coordinates, the first pos as start of CDS.
     TSeqPos first_pos = 0;
     TSeqPos cds_last_pos = 0;
@@ -739,6 +750,8 @@ string CHgvsParser::x_AsHgvsInstExpression(
     } else if(inst.GetType() == CVariation_inst::eType_del) {
         if(placement && placement->GetLoc().IsWhole()) {
             inst_str = "0"; //whole-product deletion
+        } else if(is_prot_inst) {
+            inst_str = "del"; //do not generate asserted part for protein expressions: SNP-4623
         } else {
             inst_str = "del" + asserted_seq_str;
         }
