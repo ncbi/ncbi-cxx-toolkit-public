@@ -4496,6 +4496,43 @@ static const string sc_BypassMrnaTransCheckText[] = {
 };
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BypassMrnaTransCheck, sc_BypassMrnaTransCheckText);
 
+
+static bool s_IsBioseqPartial (CBioseq_Handle bsh)
+{
+    CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
+    if ( !sd ) {
+        return false;
+    }
+    const CMolInfo& molinfo = sd->GetMolinfo();
+    if (!molinfo.IsSetCompleteness ()) {
+        return false;
+    } 
+    CMolInfo::TCompleteness completeness = molinfo.GetCompleteness();
+    if (completeness == CMolInfo::eCompleteness_partial
+        || completeness == CMolInfo::eCompleteness_no_ends 
+        || completeness == CMolInfo::eCompleteness_no_left
+        || completeness == CMolInfo::eCompleteness_no_right) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+static bool s_BioseqHasRefSeqThatStartsWithPrefix (CBioseq_Handle bsh, string prefix)
+{
+    bool rval = false;
+    FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
+        if ((*it)->IsOther() && (*it)->GetTextseq_Id()->IsSetAccession()
+            && NStr::StartsWith ((*it)->GetTextseq_Id()->GetAccession(), prefix)) {
+            rval = true;
+            break;
+        }
+    }
+    return rval;
+}
+
+
 void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
 {
     bool has_errors = false, unclassified_except = false, other_than_mismatch = false,
@@ -4591,6 +4628,11 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                     return;
                 }
                 farstr = "(far) ";
+                if (feat.IsSetPartial() 
+                    && !s_IsBioseqPartial(rna) 
+                    && s_BioseqHasRefSeqThatStartsWithPrefix(rna, "NM_")) {
+                    sev = eDiag_Warning;
+                }
             }
             _ASSERT(nuc  &&  rna);
 
@@ -4680,7 +4722,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 if (mismatches > 0) {
                     has_errors = true;
                     if (report_errors  &&  !mismatch_except) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
+                        PostErr(sev, eErr_SEQ_FEAT_TranscriptMismatches,
                             "There are " + NStr::SizetToString(mismatches) + 
                             " mismatches out of " + NStr::SizetToString(nuc_len) +
                             " bases between the transcript and " + farstr + "product sequence",
@@ -4871,14 +4913,7 @@ void CValidError_feat::ValidateCommonCDSProduct
     }
     CBioseq_Handle nuc  = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
     if ( nuc ) {
-        bool is_nt = false;
-        FOR_EACH_SEQID_ON_BIOSEQ (it, *(nuc.GetBioseqCore())) {
-            if ((*it)->IsOther() && (*it)->GetTextseq_Id()->IsSetAccession()
-                && NStr::StartsWith ((*it)->GetTextseq_Id()->GetAccession(), "NT_")) {
-                is_nt = true;
-                break;
-            }
-        }
+        bool is_nt = s_BioseqHasRefSeqThatStartsWithPrefix (nuc, "NT_");
         if (!is_nt) {
             CSeq_entry_Handle wgs = nuc.GetExactComplexityLevel (CBioseq_set::eClass_gen_prod_set);
             if (!wgs) {

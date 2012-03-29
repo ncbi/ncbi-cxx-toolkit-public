@@ -119,6 +119,13 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
                  align);
         return;
         break;
+    case CSeq_align::C_Segs::e_Sparse:
+    case CSeq_align::C_Segs::e_Spliced:
+        PostErr(eDiag_Warning, eErr_SEQ_ALIGN_Segtype,
+                "Segs: This alignment has an undefined or unsupported Seqalign segtype "
+                + NStr::IntToString(segtype), align);
+        return;
+        break;
     default:
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_Segtype,
                 "Segs: This alignment has an undefined or unsupported Seqalign segtype "
