@@ -13,10 +13,10 @@ GO
  *  ANSI_NULLS or QUOTED_IDENTIFIER is not set correctly because those can
  *  only be set during the stored procedure creation.
  */
-IF OBJECT_ID('[simple_sproc_sdbapi]', 'P') IS NULL
-    EXEC('CREATE PROCEDURE [simple_sproc_sdbapi] AS RAISERROR(''Incomplete.'', 11, 1);');
+IF OBJECT_ID('[sdbapi_simple_sproc]', 'P') IS NULL
+    EXEC('CREATE PROCEDURE [sdbapi_simple_sproc] AS RAISERROR(''Incomplete.'', 11, 1);');
 GO
-ALTER PROCEDURE [simple_sproc_sdbapi]
+ALTER PROCEDURE [sdbapi_simple_sproc]
     @max_id INT,
     @max_fl FLOAT,
     @num_rows INT OUTPUT

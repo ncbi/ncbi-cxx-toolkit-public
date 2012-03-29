@@ -3,7 +3,7 @@
 REQUIRES = dbapi
 
 APP = sdbapi_simple_sproc
-SRC = simple_sproc
+SRC = sdbapi_simple_sproc
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
@@ -14,4 +14,4 @@ LIB  = $(SDBAPI_LIB) xconnect xutil xncbi
 LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
 
-WATCHERS = ivanovp
+WATCHERS = ivanovp mcelhany

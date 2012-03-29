@@ -73,7 +73,7 @@ private:
     static const string sm_kSpName;
 };
 const string    CSdbapiSimpleApp::sm_kDbName = "DBAPI_Sample";
-const string    CSdbapiSimpleApp::sm_kSpName = "simple_sproc_sdbapi";
+const string    CSdbapiSimpleApp::sm_kSpName = "sdbapi_simple_sproc";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -124,6 +124,9 @@ int CSdbapiSimpleApp::Run(void)
 //  1.  Checks for recommended settings.
 //  2.  Selects some data per parameters.
 //  3.  Assigns an output parameter.
+//
+//  In case you don't have access to the stored procedure, please see the
+//  companion file sdbapi_simple_sproc.sql.
 //
 //  NOTE: It is recommended that you create your stored procedures using the
 //  following settings because these settings are generally advisable
