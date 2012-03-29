@@ -976,9 +976,14 @@ class Scenario26( TestBase ):
             return False
 
         info = self.ns.getServerInfo( 'TEST' )
-        if info[ "max_output_size" ] != "262144" or \
-           info[ "max_input_size" ] != "262144":
-            return False
+        if info.has_key( "max_output_size" ):
+            if info[ "max_output_size" ] != "262144" or \
+               info[ "max_input_size" ] != "262144":
+                return False
+        else:
+            if info[ "Maximum input size" ] != "262144" or \
+               info[ "Maximum output size" ] != "262144":
+                return False
         return True
 
 
