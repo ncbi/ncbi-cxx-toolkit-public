@@ -2578,9 +2578,16 @@ class Scenario163( TestBase ):
         self.ns.failJob( 'TEST', jobID, 4 )
         info = self.ns.getJobInfo( 'TEST', jobID )
 
-        return info[ 'event' ] == 'Fail' and \
-               info[ "status" ] == "Failed" and \
-               info[ "ret_code" ] == "4"
+        if info.has_key( "event" ):
+            # grid 1.5
+            return info[ 'event' ] == 'Fail' and \
+                   info[ "status" ] == "Failed" and \
+                   info[ "ret_code" ] == "4"
+        # grid 1.4
+        return "event=Fail" in info[ "event3" ] and \
+               "status=Failed" in info[ "event3" ] and \
+               "ret_code=4" in info[ "event3" ]
+
 
 class Scenario164( TestBase ):
     " Scenario 164 "
@@ -2608,8 +2615,14 @@ class Scenario164( TestBase ):
 
         info = self.ns.getJobInfo( 'TEST', jobID )
 
-        return info[ 'event' ] == 'Timeout' and \
-               info[ "status" ] == "Failed" and \
+        if info.has_key( "event" ):
+            # grid 1.5
+            return info[ 'event' ] == 'Timeout' and \
+                   info[ "status" ] == "Failed" and \
+                   info[ "run_counter" ] == "1"
+        # grid 1.4
+        return "event=Timeout" in info[ "event3" ] and \
+               "status=Failed" in info[ "event3" ] and \
                info[ "run_counter" ] == "1"
 
 class Scenario165( TestBase ):
