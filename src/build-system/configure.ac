@@ -2076,6 +2076,10 @@ if test "${with_universal-no}" = "no"; then
    fi
 fi
 
+if test "$bit64_sfx" = 64 -o "$with_lfs" = "yes"; then
+   NCBI_FEATURE(LFS)
+fi
+
 
 ### Intel Thread Checker
 if test "${with_tcheck=no}" != "no" ; then

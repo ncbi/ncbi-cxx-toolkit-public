@@ -7782,6 +7782,10 @@ _ACEOF
    fi
 fi
 
+if test "$bit64_sfx" = 64 -o "$with_lfs" = "yes"; then
+             WithFeatures="$WithFeatures${WithFeaturesSep}LFS"; WithFeaturesSep=" "
+fi
+
 
 ### Intel Thread Checker
 if test "${with_tcheck=no}" != "no" ; then
@@ -32854,7 +32858,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
+for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
