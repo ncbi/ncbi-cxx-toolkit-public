@@ -378,6 +378,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Trim Flanking Quotes",
     "Clean Bioseq Title",
     "Decode XML",
+    "Remove Dup BioSource",
 
     // set when any other change is made.
     "Change Other", 
