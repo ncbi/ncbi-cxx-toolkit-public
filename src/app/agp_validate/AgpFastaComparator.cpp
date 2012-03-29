@@ -926,6 +926,18 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
         const TSeqIdSet & seqIdIntersection,
         CTmpSeqVecStorage & temp_dir )
 {
+    const static string kDiff = "/usr/bin/diff";
+    if( ! CExec::IsExecutable(kDiff) ) {
+        cerr << "No differences shown because cannot run " << kDiff << endl;
+        return;
+    }
+
+    const static string kHead = "/usr/bin/head";
+    if( ! CExec::IsExecutable(kHead) ) {
+        cerr << "No differences shown because cannot run " << kHead << endl;
+        return;
+    }
+
     ITERATE( TSeqIdSet, id_iter, seqIdIntersection ) {
         const CSeq_id_Handle & idh = *id_iter;
         const string agp_file = temp_dir.GetFileName( CTmpSeqVecStorage::eType_AGP, idh );
@@ -935,11 +947,18 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
         cout << "##### Comparing " << idh << " for AGP ('<') and Obj ('>'):" << endl;
         cout << endl;
 
-        // This is a poor implementation for multiple reasons.
+        // This is a suboptimal implementation for multiple reasons:
+        // - It won't work in Windows
+        // - CExec::System is prone to exploits (though since agp_validate
+        //   is not setuid or setgid, this is less severe an issue than
+        //   it could be).
+        //   - Similarly, building a command-line from a stringstream 
+        //     could also be dangerous.
         // I'm awaiting JIRA CXX-3145 to see if a superior
-        // solution is possible.
+        // solution is possible.  In particular, I would like the NCBI
+        // C++ toolkit to have a diff library.
         std::stringstream cmd_strm;
-        cmd_strm << "/usr/bin/diff '" << agp_file << "' '" << obj_file << "' 2> /dev/null | /usr/bin/head -n " << diffs_to_find;
+        cmd_strm << CExec::QuoteArg(kDiff) << " " << CExec::QuoteArg(agp_file) << " " << CExec::QuoteArg(obj_file) << " 2> /dev/null | " << CExec::QuoteArg(kHead) << " -n " << diffs_to_find;
         CExec::System( cmd_strm.str().c_str() );
     }
 }
