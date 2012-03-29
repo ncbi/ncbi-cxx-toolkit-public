@@ -99,7 +99,7 @@ CTextseq_id& CTextseq_id::Set
             // accession.version
             string accession = acc.substr(0, idx);
             string acc_ver   = acc.substr(idx + 1);
-            int    ver       = NStr::StringToNumeric(acc_ver);
+            int    ver       = NStr::StringToNonNegativeInt(acc_ver);
  
             if (ver <= 0) {
                 NCBI_THROW(CSeqIdException, eFormat,

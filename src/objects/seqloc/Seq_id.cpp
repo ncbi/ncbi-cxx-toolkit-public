@@ -93,7 +93,7 @@ static void s_SplitVersion(const string& acc_in, string& acc, int& ver)
     if (verstr.empty()) {
         ver = 0;
     } else {
-        ver = NStr::StringToNumeric(verstr);
+        ver = NStr::StringToNonNegativeInt(verstr);
         if (ver <= 0) {
             NCBI_THROW(CSeqIdException, eFormat,
                        "Version embedded in accession " + acc_in
@@ -1762,7 +1762,7 @@ void CSeq_id::x_Init(list<CTempString>& fasta_pieces)
 
     case e_Patent:
         // "version" actually sequence number within patent, but whatever...
-        ver = NStr::StringToNumeric(fields[2]);
+        ver = NStr::StringToNonNegativeInt(fields[2]);
         if (ver <= 0) {
             NCBI_THROW(CSeqIdException, eFormat,
                        "Bad sequence number " + string(fields[2]) + " for "
@@ -1868,7 +1868,8 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
         {
             string::const_iterator it = acc.begin();
 
-            if ( (the_id = NStr::StringToNumeric(acc)) >= 0 && *it != '0' ) {
+            if ( (the_id = NStr::StringToNonNegativeInt(acc)) >= 0
+                && *it != '0' ) {
                 SetLocal().SetId(the_id);
             } else { // to cover case where embedded vertical bar in
                 // string, could add code here, to concat a
@@ -1883,7 +1884,7 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
     case e_Gibbmt:
     case e_Giim:
     case e_Gi:
-        if ( (the_id = NStr::StringToNumeric (acc)) >= 0 ) {
+        if ( (the_id = NStr::StringToNonNegativeInt (acc)) >= 0 ) {
             return Set(the_type, the_id);
         } else {
             NCBI_THROW(CSeqIdException, eFormat,
@@ -1929,7 +1930,7 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
             CDbtag& dbt = SetGeneral();
             dbt.SetDb(acc);
             CObject_id& oid = dbt.SetTag();
-            the_id = NStr::StringToNumeric(name);
+            the_id = NStr::StringToNonNegativeInt(name);
             if (the_id >= 0  &&  (name.size() == 1 || name[0] != '0')) {
                 oid.SetId(the_id);
             } else {
