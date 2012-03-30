@@ -162,6 +162,9 @@ void CSdbapiSimpleApp::DemoProcExec(void)
     NcbiCout << "    int_val    fl_val" << NcbiEndl;
 
     // Retrieve the data.
+    //
+    // NOTE: For database APIs, array-like indexes are 1-based, not 0-based!
+    //
     ITERATE(CQuery, row, query.SingleSet()) {
         NcbiCout
             << "    " << row[1].AsInt4()
