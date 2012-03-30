@@ -21,21 +21,12 @@ APP: test_ccpp_read
 # --with-distcc, --with-action etc.
 
 Linux32-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
-
 Linux64-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
+IntelMAC        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
 
-FreeBSD32  : plain : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
+Win64_9     : 900  : static  64  ReleaseDLL
+Win32_10    : 1000 : static  32  ReleaseDLL
+Win64_10    : 1000 : static  64  ReleaseDLL
 
-SunOSx86   : plain : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
-
-SunOSSparc : plain : WorkShop59.sh 32 --without-debug --with-static --without-runpath --with-flat-makefile
-
-IntelMAC   : plain : GCC.sh           --without-debug --with-static --without-runpath --with-flat-makefile
-
-#Win32_9    : 900  : static  32  ReleaseMT
-Win64_9     : 900  : static  64  ReleaseMT
-Win64_10    : 1000 : static  64  ReleaseMT
-
-XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
 
 #USE_COMPONENTS
