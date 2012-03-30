@@ -2187,12 +2187,12 @@ unsigned int  CQueue::DeleteBatch(unsigned int  max_deleted)
     {{
          CFastMutexGuard     guard(m_JobsToDeleteLock);
          jobs_to_delete = m_JobsToDelete;
-         m_JobsToDelete.clear();
     }}
 
     static const size_t         chunk_size = 100;
     unsigned int                del_rec = 0;
     TNSBitVector::enumerator    en = jobs_to_delete.first();
+    TNSBitVector                deleted_jobs;
 
     while (en.valid() && del_rec < max_deleted) {
         {{
@@ -2208,7 +2208,7 @@ unsigned int  CQueue::DeleteBatch(unsigned int  max_deleted)
                     m_QueueDbBlock->job_db.id = job_id;
                     m_QueueDbBlock->job_db.Delete();
                     ++del_rec;
-                    jobs_to_delete.set_bit(job_id, false);
+                    deleted_jobs.set_bit(job_id, true);
                 } catch (CBDB_ErrnoException& ex) {
                     ERR_POST("BDB error " << ex.what());
                 }
@@ -2230,10 +2230,10 @@ unsigned int  CQueue::DeleteBatch(unsigned int  max_deleted)
     if (del_rec > 0) {
         m_StatisticsCounters.CountDBDeletion(del_rec);
 
-        if (jobs_to_delete.any()) {
-            CFastMutexGuard     guard(m_JobsToDeleteLock);
-            m_JobsToDelete |= jobs_to_delete;
-        }
+        TNSBitVector::enumerator    en = deleted_jobs.first();
+        CFastMutexGuard             guard(m_JobsToDeleteLock);
+        for (; en.valid(); ++en)
+            m_JobsToDelete.set_bit(*en, false);
     }
     return del_rec;
 }
