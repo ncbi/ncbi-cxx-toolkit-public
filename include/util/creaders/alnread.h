@@ -65,6 +65,11 @@ extern "C" {
 typedef char * (ALIGNMENT_CALLBACK *FReadLineFunction) (void * userdata);
 
 typedef enum {
+    eTrue = -1,
+    eFalse = 0
+} EBool;
+
+typedef enum {
     eAlnErr_Unknown = -1,
     eAlnErr_NoError = 0,
     eAlnErr_Fatal,
@@ -151,11 +156,63 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx (
   TSequenceInfoPtr     sequence_info, /* structure containing sequence
                                        * alphabet and special characters
                                        */
-  int                  use_nexus_file_info /* set to nonzero to replace data in 
-                                            * sequence_info with characters
-                                            * read from NEXUS comment in file,
-                                            * set to 0 otherwise.
-                                            */
+  EBool           use_nexus_file_info /* set to nonzero to replace data in 
+                                       * sequence_info with characters
+                                       * read from NEXUS comment in file,
+                                       * set to 0 otherwise.
+                                       */
+);
+
+/*
+ * The following are to accommodate creating of local IDs to replace the IDs
+ * found in the actual alignment file. We are retaining the original API for
+ * legacy code compatibility, hence the new functions with almost the same
+ * signature.
+ */
+
+extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile2 (
+  FReadLineFunction    readfunc,      /* function for reading lines of 
+                                       * alignment file
+                                       */
+  void *               fileuserdata,  /* data to be passed back each time
+                                       * readfunc is invoked
+                                       */
+  FReportErrorFunction errfunc,       /* function for reporting errors */
+  void *               erroruserdata, /* data to be passed back each time
+                                       * errfunc is invoked
+                                       */
+  TSequenceInfoPtr     sequence_info, /* structure containing sequence
+                                       * alphabet and special characters
+                                       */
+  EBool                gen_local_ids  /* flag indicating whether input IDs
+                                       * should be replaced with unique
+                                       * local IDs
+                                       */ 
+);
+
+extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx2 (
+  FReadLineFunction    readfunc,      /* function for reading lines of 
+                                       * alignment file
+                                       */
+  void *               fileuserdata,  /* data to be passed back each time
+                                       * readfunc is invoked
+                                       */
+  FReportErrorFunction errfunc,       /* function for reporting errors */
+  void *               erroruserdata, /* data to be passed back each time
+                                       * errfunc is invoked
+                                       */
+  TSequenceInfoPtr     sequence_info, /* structure containing sequence
+                                       * alphabet and special characters
+                                       */
+  EBool          use_nexus_file_info, /* set to nonzero to replace data in 
+                                       * sequence_info with characters
+                                       * read from NEXUS comment in file,
+                                       * set to 0 otherwise.
+                                       */
+  EBool                gen_local_ids  /* flag indicating whether input IDs
+                                       * should be replaced with unique
+                                       * local IDs
+                                       */ 
 );
 
 #ifdef __cplusplus

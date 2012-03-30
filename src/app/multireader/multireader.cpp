@@ -355,6 +355,11 @@ void CMultiReaderApp::Init(void)
             "nuc", 
             "prot") );    
 
+    arg_desc->AddFlag(
+        "force-local-ids",
+        "treat all IDs as local IDs",
+        true);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -585,7 +590,7 @@ void CMultiReaderApp::xProcessAlignment(
     if (args["aln-alphabet"].AsString() == "prot") {
         reader.SetAlphabet(CAlnReader::eAlpha_Protein);
     }
-    reader.Read();
+    reader.Read(false, args["force-local-ids"]);
     CRef<CSeq_align> pAlign = reader.GetSeqAlign();
     xWriteObject(*pAlign, ostr);
 }

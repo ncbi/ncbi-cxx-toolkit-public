@@ -43,22 +43,15 @@ static const int kMaxPrintedIntLen = 10;
 #define MAX_PRINTED_INT_LEN_PLUS_ONE 11
 
 /*  ---------------------------------------------------------------------- */
-enum EAlignFormat{
+typedef enum {
     ALNFMT_UNKNOWN,
     ALNFMT_NEXUS,
     ALNFMT_PHYLIP,
     ALNFMT_CLUSTAL,
     ALNFMT_FASTAGAP,
-};
-
-static enum EAlignFormat eFormat = ALNFMT_UNKNOWN;
+} EAlignFormat;
 
 /*  ---------------------------------------------------------------------- */
-
-typedef enum {
-    eTrue = -1,
-    eFalse = 0
-} EBool;
 
 /* structures used internally */
 typedef struct SLineInfo {
@@ -3562,12 +3555,12 @@ s_AfrpProcessFastaGap(
         if (last_line_was_marked_id)
         {
             afrp->marked_ids = eFalse;
-            eFormat = ALNFMT_UNKNOWN;
+//            eFormat = ALNFMT_UNKNOWN;
         }
         else
         {
             afrp->marked_ids = eTrue;
-            eFormat = ALNFMT_FASTAGAP;
+//            eFormat = ALNFMT_FASTAGAP;
         }
         new_offset = s_IntLinkNew (overall_line_count + 1,
                                     afrp->offset_list);
@@ -3615,7 +3608,8 @@ s_ReadAlignFileRaw
  TSequenceInfoPtr     sequence_info,
  EBool                use_nexus_file_info,
  FReportErrorFunction errfunc,
- void *               errdata)
+ void *               errdata,
+ EAlignFormat*        pformat)
 {
     char *                   linestring;
     SAlignRawFilePtr         afrp;
@@ -3655,7 +3649,7 @@ s_ReadAlignFileRaw
         linestring = next_line->data;
         overall_line_count = next_line->line_num-1;
 
-        if (eFormat == ALNFMT_FASTAGAP) {
+        if (*pformat == ALNFMT_FASTAGAP) {
             s_AfrpProcessFastaGap(afrp, pattern_list, linestring, overall_line_count);
             continue;
         }
@@ -3747,11 +3741,11 @@ s_ReadAlignFileRaw
             if (last_line_was_marked_id)
             {
                 afrp->marked_ids = eFalse;
-                eFormat = ALNFMT_UNKNOWN;
+                *pformat = ALNFMT_UNKNOWN;
             }
             else
             {
-                eFormat = ALNFMT_FASTAGAP;
+                *pformat = ALNFMT_FASTAGAP;
                 s_AfrpProcessFastaGap(afrp, pattern_list, linestring, overall_line_count);
                 continue;
             }
@@ -4134,7 +4128,8 @@ s_CreateSequencesBasedOnTokenPatterns
 (TLineInfoPtr     token_list,
  TIntLinkPtr      offset_list,
  SLengthListPtr * anchorpattern,
- SAlignRawFilePtr afrp)
+ SAlignRawFilePtr afrp,
+ EBool gen_local_ids)
 {
     TLineInfoPtr lip;
     int          line_counter;
@@ -4143,6 +4138,8 @@ s_CreateSequencesBasedOnTokenPatterns
     TSizeInfoPtr sip;
     int          pattern_line_counter;
     int          curr_seg;
+
+    static int next_local_id = 1;
 
     if (token_list == NULL  ||  offset_list == NULL
         ||  anchorpattern == NULL 
@@ -4173,6 +4170,12 @@ s_CreateSequencesBasedOnTokenPatterns
             line_counter ++;
         }
         if (lip != NULL) {
+            if (gen_local_ids) {
+                char * replacement_id = malloc(32 +strlen(lip->data));
+                sprintf(replacement_id, "lcl|%d %s", next_local_id++, lip->data+1);
+                free(lip->data);
+                lip->data = replacement_id; 
+            }
             curr_id = lip->data;
             lip = lip->next;
             line_counter ++;
@@ -4418,7 +4421,9 @@ static void s_RemoveBasePairCountCommentsFromData (SAlignRawFilePtr afrp)
  * uses that pattern to attach the data to the correct IDs and report any
  * errors in formatting.
  */
-static void s_ProcessAlignFileRawForMarkedIDs (SAlignRawFilePtr afrp)
+static void s_ProcessAlignFileRawForMarkedIDs (
+    SAlignRawFilePtr afrp,
+    EBool gen_local_ids)
 {
     SLengthListPtr * anchorpattern;
     
@@ -4432,7 +4437,7 @@ static void s_ProcessAlignFileRawForMarkedIDs (SAlignRawFilePtr afrp)
         return;
     }
     s_CreateSequencesBasedOnTokenPatterns (afrp->line_list, afrp->offset_list,
-                                         anchorpattern, afrp);
+                                         anchorpattern, afrp, gen_local_ids);
 }
 
 
@@ -5328,7 +5333,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
      * between anchor patterns for sequence data
      */
     s_CreateSequencesBasedOnTokenPatterns (token_list, offset_list,
-                                       anchorpattern, afrp);
+                                       anchorpattern, afrp, eFalse);
   
     s_LengthListFree (anchorpattern[0]);
     s_LengthListFree (list);
@@ -5761,7 +5766,7 @@ s_s_FindBadDataCharsInSequenceList
  TSequenceInfoPtr sip)
 {
     TAlignRawSeqPtr arsp;
-    EBool           rval = eFalse;
+    EBool is_bad = eFalse;
 
     if (afrp == NULL  ||  afrp->sequences == NULL) {
         return eTrue;
@@ -5771,10 +5776,10 @@ s_s_FindBadDataCharsInSequenceList
                                         afrp->num_segments,
                                         afrp->report_error,
                                         afrp->report_error_userdata)) {
-            rval = eTrue;
+            is_bad = eTrue;
         }
     }
-    return rval;
+    return is_bad;
 }
 
 
@@ -6010,17 +6015,19 @@ s_ConvertDataToOutput
  * match, and gap characters to use in interpreting the sequence data.
  */
 extern TAlignmentFilePtr 
-ReadAlignmentFileEx 
+ReadAlignmentFileEx2 
 (FReadLineFunction readfunc,
  void * fileuserdata,
  FReportErrorFunction errfunc,
  void * erroruserdata,
  TSequenceInfoPtr sequence_info,
- int              use_nexus_file_info)
+ EBool use_nexus_file_info,
+ EBool gen_local_ids)
 {
     SAlignRawFilePtr afrp;
     TAlignmentFilePtr afp;
-    EBool             use_file = eFalse;
+    EBool use_file = eFalse;
+    EAlignFormat format = ALNFMT_UNKNOWN;
 
     if (sequence_info == NULL  ||  sequence_info->alphabet == NULL) {
         return NULL;
@@ -6033,7 +6040,7 @@ ReadAlignmentFileEx
     
     afrp = s_ReadAlignFileRaw ( readfunc, fileuserdata, sequence_info,
                                 use_file,
-                                errfunc, erroruserdata);
+                                errfunc, erroruserdata, &format);
     if (afrp == NULL) {
         return NULL;
     }
@@ -6041,7 +6048,8 @@ ReadAlignmentFileEx
     if (afrp->block_size > 1) {
         s_ProcessAlignRawFileByBlockOffsets (afrp);
     } else if (afrp->marked_ids) {
-        s_ProcessAlignFileRawForMarkedIDs (afrp);
+        s_ProcessAlignFileRawForMarkedIDs (
+            afrp, gen_local_ids);
     } else {
         s_ProcessAlignFileRawByLengthPattern (afrp);
     }
@@ -6060,6 +6068,19 @@ ReadAlignmentFileEx
 }
 
 extern TAlignmentFilePtr 
+ReadAlignmentFileEx 
+(FReadLineFunction readfunc,
+ void * fileuserdata,
+ FReportErrorFunction errfunc,
+ void * erroruserdata,
+ TSequenceInfoPtr sequence_info,
+ EBool use_nexus_file_info)
+{
+    return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
+        sequence_info, use_nexus_file_info, eFalse);
+}
+
+extern TAlignmentFilePtr 
 ReadAlignmentFile 
 (FReadLineFunction readfunc,
  void * fileuserdata,
@@ -6067,6 +6088,19 @@ ReadAlignmentFile
  void * erroruserdata,
  TSequenceInfoPtr sequence_info)
 {
-    return ReadAlignmentFileEx (readfunc, fileuserdata, errfunc, erroruserdata,
-                                sequence_info, eFalse);
+    return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
+                                sequence_info, eFalse, eFalse);
+}
+
+extern TAlignmentFilePtr 
+ReadAlignmentFile2 
+(FReadLineFunction readfunc,
+ void * fileuserdata,
+ FReportErrorFunction errfunc,
+ void * erroruserdata,
+ TSequenceInfoPtr sequence_info,
+ EBool gen_local_ids)
+{
+    return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
+                                sequence_info, eFalse, gen_local_ids);
 }

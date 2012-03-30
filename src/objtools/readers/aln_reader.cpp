@@ -150,7 +150,7 @@ CAlnReader::~CAlnReader()
 }
 
 
-void CAlnReader::Read(bool guess)
+void CAlnReader::Read(bool guess, bool generate_local_ids)
 {
     if (m_ReadDone) {
         return;
@@ -168,8 +168,9 @@ void CAlnReader::Read(bool guess)
     // read the alignment stream
     TAlignmentFilePtr afp;
     m_Errors.clear();
-    afp = ReadAlignmentFile(s_ReadLine, (void *) &m_IS,
-                            s_ReportError, &(m_Errors), &info);
+    afp = ReadAlignmentFile2(s_ReadLine, (void *) &m_IS,
+                            s_ReportError, &(m_Errors), &info,
+                            (generate_local_ids ? eTrue : eFalse));
     if (!afp) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment", 0);

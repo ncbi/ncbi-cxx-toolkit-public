@@ -142,7 +142,7 @@ public:
     /// Read the file
     /// This is the main function
     /// that would parse the alignment file and create the result data
-    void Read(bool guess=false);
+    void Read(bool guess=false, bool generate_local_ids=false);
 
 
 
