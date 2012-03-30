@@ -924,14 +924,16 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
         }
     }
 
-    // check all Bioseq-sets
-    CSeq_entry_CI seq_entry_ci( entry_handle );
-    for( ; seq_entry_ci; ++seq_entry_ci ) {
-        if( seq_entry_ci->IsSet() && seq_entry_ci->GetSet().CanGetClass() &&
-            seq_entry_ci->GetSet().GetClass() == CBioseq_set::eClass_small_genome_set ) 
-        {
-            m_HasSmallGenomeSet = true;
-            break;
+    // check all Bioseq-sets, if any
+    if( entry_handle.IsSet() ) {
+        CSeq_entry_CI seq_entry_ci( entry_handle );
+        for( ; seq_entry_ci; ++seq_entry_ci ) {
+            if( seq_entry_ci->IsSet() && seq_entry_ci->GetSet().CanGetClass() &&
+                seq_entry_ci->GetSet().GetClass() == CBioseq_set::eClass_small_genome_set ) 
+            {
+                m_HasSmallGenomeSet = true;
+                break;
+            }
         }
     }
 }
