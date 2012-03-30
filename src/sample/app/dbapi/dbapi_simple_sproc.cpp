@@ -88,7 +88,7 @@ private:
 };
 const string    CDbapiSimpleApp::sm_kDriver = "ftds";
 const string    CDbapiSimpleApp::sm_kDbName = "DBAPI_Sample";
-const string    CDbapiSimpleApp::sm_kSpName = "simple_sproc";
+const string    CDbapiSimpleApp::sm_kSpName = "dbapi_simple_sproc";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -197,7 +197,7 @@ void CDbapiSimpleApp::Exit(void)
 //
 //  The server errors and exceptions will be caught and processed so that you
 //  can see how the user handling works.  In case you don't have access to the
-//  stored procedure, please see the companion file simple_sproc.sql.
+//  stored procedure, please see the companion file dbapi_simple_sproc.sql.
 //
 //  NOTE: It is recommended that you create your stored procedures using the
 //  following settings because these settings are generally advisable

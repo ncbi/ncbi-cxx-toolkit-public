@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = simple_sproc advanced_features db_copy
+APP_PROJ = dbapi_simple_sproc dbapi_advanced_features db_copy
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

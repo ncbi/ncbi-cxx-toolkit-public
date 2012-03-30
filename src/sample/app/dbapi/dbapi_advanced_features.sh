@@ -26,18 +26,18 @@ RunTest()
 {
   echo
   (
-    $CHECK_EXEC run_sybase_app.sh advanced_features $1 > $res_file 2>&1
+    $CHECK_EXEC run_sybase_app.sh dbapi_advanced_features $1 > $res_file 2>&1
   )
   if test $? -eq 0 ; then
       echo "OK:"
       n_ok=`expr $n_ok + 1`
-      sum_list="$sum_list XXX_SEPARATOR +  advanced_features $1 "
+      sum_list="$sum_list XXX_SEPARATOR +  dbapi_advanced_features $1 "
       return
   fi
 
   # error occurred
   n_err=`expr $n_err + 1`
-  sum_list="$sum_list XXX_SEPARATOR -  advanced_features $1 "
+  sum_list="$sum_list XXX_SEPARATOR -  dbapi_advanced_features $1 "
 
   cat $res_file
 }
@@ -104,12 +104,12 @@ EOF
             fi
 
             if test $driver = "ftds" -a $server != $server_mssql ; then
-                sum_list="$sum_list XXX_SEPARATOR #  advanced_features -d $driver -s $server (skipped)"
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_advanced_features -d $driver -s $server (skipped)"
                 continue
             fi
 
             if test $driver = "odbc" ; then
-                sum_list="$sum_list XXX_SEPARATOR #  advanced_features -d $driver -s $server (skipped)"
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_advanced_features -d $driver -s $server (skipped)"
                 continue
             fi
 

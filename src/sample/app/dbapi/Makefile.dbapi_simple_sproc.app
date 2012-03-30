@@ -2,8 +2,8 @@
 
 REQUIRES = dbapi
 
-APP = simple_sproc
-SRC = simple_sproc
+APP = dbapi_simple_sproc
+SRC = dbapi_simple_sproc
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
