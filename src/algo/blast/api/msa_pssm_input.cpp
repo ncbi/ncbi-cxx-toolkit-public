@@ -126,7 +126,7 @@ CPsiBlastInputClustalW::x_ReadAsciiMsa(CNcbiIstream& input_file)
     CAlnReader reader(input_file);
     reader.SetClustal(CAlnReader::eAlpha_Protein);
     try {
-        reader.Read();
+        reader.Read(false, true);
     } catch (const CObjReaderParseException& e) {
         // Workaround to provide a more useful error message when repeated
         // Seq-IDs are encountered
