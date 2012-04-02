@@ -117,10 +117,10 @@ int CGridClientSampleApp::Run(void)
 
     for (int i = 0; i < jobs_number; ++i) {
         // Get a job submitter
-        CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
+        CGridClient& grid_client(GetGridClient());
 
         // Get an ouptut stream
-        CNcbiOstream& os = job_submitter.GetOStream();
+        CNcbiOstream& os = grid_client.GetOStream();
 
         // Send jobs input data
         os << "doubles ";  // output_type - just a list of doubels
@@ -132,7 +132,7 @@ int CGridClientSampleApp::Run(void)
         }
         
         // Submit a job
-        job_keys.push_back(job_submitter.Submit());
+        job_keys.push_back(grid_client.Submit());
     }
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
      
@@ -146,14 +146,15 @@ int CGridClientSampleApp::Run(void)
         for(vector<string>::const_iterator it = job_keys.begin();
             it != job_keys.end(); ++it) {
             // Get a job status
-            CGridJobStatus& job_status = GetGridClient().GetJobStatus(*it);
+            CGridClient& grid_client(GetGridClient());
+            grid_client.SetJobKey(*it);
             CNetScheduleAPI::EJobStatus status;
-            status = job_status.GetStatus();
+            status = grid_client.GetStatus();
 
             // A job is done here
             if (status == CNetScheduleAPI::eDone) {
                 // Get an input stream
-                CNcbiIstream& is = job_status.GetIStream();
+                CNcbiIstream& is = grid_client.GetIStream();
                 int count;
                 
                 // Get the result
@@ -176,7 +177,7 @@ int CGridClientSampleApp::Run(void)
             // A job has failed
             if (status == CNetScheduleAPI::eFailed) {
                 ERR_POST( "Job " << *it << " failed : " 
-                          << job_status.GetErrorMessage() );
+                          << grid_client.GetErrorMessage() );
                 done_jobs.push_back(*it);
                 break;
             }

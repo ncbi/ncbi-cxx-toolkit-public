@@ -170,14 +170,15 @@ int CRemoteAppClientSampleApp::Run(void)
         for(TJobKeys::iterator it = job_keys.begin();
             it != job_keys.end(); ++it) {
         // Get a job status
-            CGridJobStatus& job_status = GetGridClient().GetJobStatus(*it);
+            CGridClient& grid_client(GetGridClient());
+            grid_client.SetJobKey(*it);
             CNetScheduleAPI::EJobStatus status;
-            status = job_status.GetStatus();
+            status = grid_client.GetStatus();
 
             // A job is done here
             if (status == CNetScheduleAPI::eDone) {
                 
-                result.Receive(job_status.GetIStream());
+                result.Receive(grid_client.GetIStream());
                 
                 NcbiCout << "Job : " << *it << NcbiEndl;
                 NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
@@ -197,7 +198,7 @@ int CRemoteAppClientSampleApp::Run(void)
             // A job has failed
             if (status == CNetScheduleAPI::eFailed) {
                 ERR_POST( "Job " << *it << " failed : " 
-                             << job_status.GetErrorMessage() );
+                             << grid_client.GetErrorMessage() );
                 failed_jobs.push_back(*it);
                 done_jobs.push_back(it);
             }
@@ -239,17 +240,18 @@ void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
 void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
     CNetCacheAPI::TInstance netcache_api)
 {
-    CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
+    CGridClient& grid_client(GetGridClient());
+    grid_client.SetJobKey(job_key);
     CNetScheduleAPI::EJobStatus status;
-    status = job_status.GetStatus();
+    status = grid_client.GetStatus();
     // A job is done here
     if (status == CNetScheduleAPI::eDone) {
         NcbiCout << "Job : " << job_key << NcbiEndl;
-        NcbiCout << "Input : " << job_status.GetJobInput() << NcbiEndl; 
-        NcbiCout << "Output : " << job_status.GetJobOutput() << NcbiEndl; 
+        NcbiCout << "Input : " << grid_client.GetJobInput() << NcbiEndl; 
+        NcbiCout << "Output : " << grid_client.GetJobOutput() << NcbiEndl; 
         NcbiCout << "======================================" << NcbiEndl; 
         CRemoteAppResult result(netcache_api);
-        result.Receive(job_status.GetIStream());
+        result.Receive(grid_client.GetIStream());
         NcbiCout << "Return code: " << result.GetRetCode() << NcbiEndl;
         NcbiCout << "StdOut : " <<  NcbiEndl;
         NcbiCout << result.GetStdOut().rdbuf();
@@ -262,7 +264,7 @@ void CRemoteAppClientSampleApp::PrintJobInfo(const string& job_key,
     // A job has failed
     if (status == CNetScheduleAPI::eFailed) {
         ERR_POST( "Job " << job_key << " failed : " 
-                  << job_status.GetErrorMessage() );
+                  << grid_client.GetErrorMessage() );
     }
     
     // A job has been canceled

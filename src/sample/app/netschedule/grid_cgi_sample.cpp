@@ -74,13 +74,13 @@ protected:
     virtual bool CollectParams(CGridCgiContext&);
 
     // Prepare the job's input data
-    virtual void PrepareJobData(CGridJobSubmitter& submitter);
+    virtual void PrepareJobData(CGridClient& grid_client);
 
     // Show an information page
     virtual void OnJobSubmitted(CGridCgiContext& ctx);
 
     // Get the job's result.
-    virtual void OnJobDone(CGridJobStatus& status, CGridCgiContext& ctx);
+    virtual void OnJobDone(CGridClient& grid_client, CGridCgiContext& ctx);
     
     // Report the job's failure.
     virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx);
@@ -189,9 +189,9 @@ bool CGridCgiSampleApplication::CollectParams(CGridCgiContext&)
 }
 
 
-void CGridCgiSampleApplication::PrepareJobData(CGridJobSubmitter& submitter)
+void CGridCgiSampleApplication::PrepareJobData(CGridClient& grid_client)
 {   
-    CNcbiOstream& os = submitter.GetOStream();
+    CNcbiOstream& os = grid_client.GetOStream();
     // Send jobs input data
     os << "doubles ";  // request output type just a list of doubles
     os << m_Doubles.size() << ' ';
@@ -214,11 +214,11 @@ void CGridCgiSampleApplication::OnJobSubmitted(CGridCgiContext& ctx)
 
 
 
-void CGridCgiSampleApplication::OnJobDone(CGridJobStatus& status, 
+void CGridCgiSampleApplication::OnJobDone(CGridClient& grid_client,
                                           CGridCgiContext& ctx)
 {
 
-    CNcbiIstream& is = status.GetIStream();
+    CNcbiIstream& is = grid_client.GetIStream();
     int count;
                 
     // Get the result

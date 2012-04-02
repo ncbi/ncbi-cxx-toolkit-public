@@ -258,11 +258,11 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
             if (CollectParams(grid_ctx)) {
                 bool finished = false;
                 // Get a job submiter
-                CGridJobSubmitter& job_submiter = GetGridClient().GetJobSubmitter();
+                CGridClient& grid_client(GetGridClient());
                 // Submit a job
                 try {
-                    PrepareJobData(job_submiter);
-                    string job_key = job_submiter.Submit();
+                    PrepareJobData(grid_client);
+                    string job_key = grid_client.Submit();
                     grid_ctx.SetJobKey(job_key);
 
                     unsigned long wait_time = m_FirstDelay*1000;
@@ -367,12 +367,13 @@ void CGridCgiApplication::RenderRefresh(CHTMLPage& page,
 bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
 {
     string job_key = grid_ctx.GetEntryValue("job_key");
-    CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
+    CGridClient& grid_client(GetGridClient());
+    grid_client.SetJobKey(job_key);
 
     CNetScheduleAPI::EJobStatus status;
-    status = job_status.GetStatus();
-    grid_ctx.SetJobInput(job_status.GetJobInput());
-    grid_ctx.SetJobOutput(job_status.GetJobOutput());
+    status = grid_client.GetStatus();
+    grid_ctx.SetJobInput(grid_client.GetJobInput());
+    grid_ctx.SetJobOutput(grid_client.GetJobOutput());
             
     bool finished = false;
     bool save_result = false;
@@ -381,13 +382,13 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
     switch (status) {
     case CNetScheduleAPI::eDone:
         // a job is done
-        OnJobDone(job_status, grid_ctx);
+        OnJobDone(grid_client, grid_ctx);
         save_result = true;
         finished = true;
         break;
     case CNetScheduleAPI::eFailed:
         // a job has failed
-        OnJobFailed(job_status.GetErrorMessage(), grid_ctx);
+        OnJobFailed(grid_client.GetErrorMessage(), grid_ctx);
         finished = true;
         break;
 
@@ -411,7 +412,7 @@ bool CGridCgiApplication::x_CheckJobStatus(CGridCgiContext& grid_ctx)
         
     case CNetScheduleAPI::eRunning:
         // A job is being processed by a worker node
-        grid_ctx.SetJobProgressMessage(job_status.GetProgressMessage());
+        grid_ctx.SetJobProgressMessage(grid_client.GetProgressMessage());
         OnJobRunning(grid_ctx);
         break;
         

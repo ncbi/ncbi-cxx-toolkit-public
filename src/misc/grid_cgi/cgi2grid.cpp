@@ -78,10 +78,9 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                       CGridClient::eProgressMsgOn)
                       );
 
-    CGridJobSubmitter& job_submitter = grid_client->GetJobSubmitter();
-    CNcbiOstream& job_os = job_submitter.GetOStream();
+    CNcbiOstream& job_os = grid_client->GetOStream();
     cgi_request.Serialize(job_os);
-    string job_key = job_submitter.Submit();
+    string job_key = grid_client->Submit();
     string url = s_GetCgiTunnel2GridUrl(cgi_request);
     url += "?ctg_project=" + NStr::URLEncode(project_name);
     url += "&job_key=" + job_key;
