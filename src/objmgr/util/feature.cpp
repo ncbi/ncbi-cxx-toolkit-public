@@ -163,17 +163,17 @@ static void s_GetCdregionLabel
             const CSeq_id& id = GetId(feat.GetProduct(), scope);            
             CBioseq_Handle hnd = scope->GetBioseqHandle(id);
             if (hnd) {
-                const CBioseq& seq = *hnd.GetCompleteBioseq();
-            
-                // Now look for a CProt_ref feature in seq and
-                // if found call GetLabel() on the CProt_ref
-                CTypeConstIterator<CSeqFeatData> it = ConstBegin(seq);
-                for (;it; ++it) {
-                    if (it->IsProt()) {
-                        it->GetProt().GetLabel(tlabel);
-                        return;
-                    }
+
+                for (CFeat_CI feat_it(hnd,
+                                      SAnnotSelector()
+                                      .IncludeFeatType(CSeqFeatData::e_Prot));
+                     feat_it;  ++feat_it) {
+                    feat_it->GetData().GetProt().GetLabel(tlabel);
+                    return;
                 }
+            }
+            else {
+                ERR_POST(Error << "cannot find sequence: " + id.AsFastaString());
             }
         } catch (CObjmgrUtilException&) {}
     }
