@@ -166,4 +166,78 @@ BOOST_AUTO_TEST_CASE(SplitNucleotideQuery) {
     BOOST_REQUIRE(results->m_Diagnostics != 0);
 }
 
+BOOST_AUTO_TEST_CASE(BuildCStd_seg_blastn) {
+    CSeq_id q_id(CSeq_id::e_Gi, 41646578);
+    const TSeqRange kRange(54, 560);
+    const ENa_strand kStrand(eNa_strand_plus);
+    auto_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
+    TSeqLocVector q_tsl;
+    q_tsl.push_back(*q_ssl);
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q_tsl));
+
+
+    CSearchDatabase dbinfo("data/nt.41646578", CSearchDatabase::eBlastDbIsNucleotide);
+
+    // Create the options
+    CRef<CBlastOptionsHandle> options_handle
+        (CBlastOptionsFactory::Create(eMegablast));
+    CRef<CBlastOptions> options(&options_handle->SetOptions());
+
+    CBlastPrelimSearch prelim_search(query_factory, options, dbinfo);
+
+    std::vector<std::list<CRef<CStd_seg> > > 	l;
+    prelim_search.Run(l);
+
+    BOOST_REQUIRE(l.size() == 1);
+    BOOST_REQUIRE(l[0].size() >= 1);
+    CRef<CStd_seg>  & seg = l[0].front();
+    BOOST_REQUIRE(seg->GetSeqStart(0) == 0);
+    BOOST_REQUIRE(seg->GetSeqStop(0) == 506);
+    BOOST_REQUIRE(seg->GetSeqStart(1) == 54);
+    BOOST_REQUIRE(seg->GetSeqStop(1) == 560);
+    const vector<CRef<CSeq_id> > & id = seg->GetIds();
+    BOOST_REQUIRE(id[0]->GetSeqIdString() == "41646578"); 
+    const vector<CRef<CSeq_loc> > & loc = seg->GetLoc();
+    BOOST_REQUIRE(loc[0]->GetStrand() ==  eNa_strand_plus);
+    BOOST_REQUIRE(loc[1]->GetStrand() ==  eNa_strand_plus);
+}
+
+
+BOOST_AUTO_TEST_CASE(BuildCStd_seg_tblastx) {
+    CSeq_id q_id(CSeq_id::e_Gi, 41646578);
+    const TSeqRange kRange(54, 560);
+    const ENa_strand kStrand(eNa_strand_plus);
+    auto_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
+    TSeqLocVector q_tsl;
+    q_tsl.push_back(*q_ssl);
+    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q_tsl));
+
+
+    CSearchDatabase dbinfo("data/nt.41646578", CSearchDatabase::eBlastDbIsNucleotide);
+
+    // Create the options
+    CRef<CBlastOptionsHandle> options_handle
+        (CBlastOptionsFactory::Create(eTblastx));
+    CRef<CBlastOptions> options(&options_handle->SetOptions());
+
+    CBlastPrelimSearch prelim_search(query_factory, options, dbinfo);
+
+    std::vector<std::list<CRef<CStd_seg> > > 	l;
+    prelim_search.Run(l);
+
+    BOOST_REQUIRE(l.size() == 1);
+    BOOST_REQUIRE(l[0].size() > 1);
+    CRef<CStd_seg>  & seg = l[0].front();
+    BOOST_REQUIRE(seg->GetSeqStart(0) == 0);
+    BOOST_REQUIRE(seg->GetSeqStop(0) == 506);
+    BOOST_REQUIRE(seg->GetSeqStart(1) == 54);
+    BOOST_REQUIRE(seg->GetSeqStop(1) == 560);
+    const vector<CRef<CSeq_id> > & id = seg->GetIds();
+    BOOST_REQUIRE(id[0]->GetSeqIdString() == "41646578"); 
+    const vector<CRef<CSeq_loc> > & loc = seg->GetLoc();
+    BOOST_REQUIRE(loc[0]->GetStrand() ==  eNa_strand_plus);
+    BOOST_REQUIRE(loc[1]->GetStrand() ==  eNa_strand_plus);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
