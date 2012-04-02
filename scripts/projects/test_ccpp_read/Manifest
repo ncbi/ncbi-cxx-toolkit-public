@@ -29,4 +29,4 @@ Win32_10    : 1000 : static  32  ReleaseDLL
 Win64_10    : 1000 : static  64  ReleaseDLL
 
 
-USE_COMPONENTS
+#USE_COMPONENTS
