@@ -205,6 +205,8 @@ struct SNetScheduleExecutorImpl : public CObject
     CNetServiceIterator GetJobImpl(const string& cmd, CNetScheduleJob& job);
 
     CNetScheduleAPI m_API;
+
+    CNetScheduleNotificationHandler m_NotificationHandler;
 };
 
 struct SNetScheduleAdminImpl : public CObject

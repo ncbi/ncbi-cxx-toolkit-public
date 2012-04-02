@@ -512,7 +512,6 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
         if (m_Opts.batch_size <= 1) {
             while (attr_parser.NextLine()) {
-                CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
                 bool input_set = false;
                 while (attr_parser.NextAttribute()) {
                     const string& attr_value(attr_parser.GetAttributeValue());
@@ -521,7 +520,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                         input_set = true;
                         {
                             CNcbiOstream& job_input_stream(
-                                submitter.GetOStream());
+                                m_GridClient->GetOStream());
                             job_input_stream.write(attr_value.data(),
                                 attr_value.length());
                             if (job_input_stream.bad())
@@ -529,10 +528,11 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                         }
                         break;
                     case eAffinity:
-                        submitter.SetJobAffinity(attr_value);
+                        m_GridClient->SetJobAffinity(attr_value);
                         break;
                     case eExclusiveJob:
-                        submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
+                        m_GridClient->SetJobMask(
+                                CNetScheduleAPI::eExclusiveJob);
                         break;
                     default:
                         _ASSERT(0);
@@ -540,14 +540,14 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     }
                 }
                 if (IsOptionSet(eGroup))
-                    submitter.SetJobGroup(m_Opts.job_group);
+                    m_GridClient->SetJobGroup(m_Opts.job_group);
                 if (!input_set) {
                     NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
                         ": attribute \"input\" is required at line " <<
                             attr_parser.GetLineNumber());
                 }
                 fprintf(m_Opts.output_stream,
-                    "%s\n", submitter.Submit(m_Opts.affinity).c_str());
+                    "%s\n", m_GridClient->Submit(m_Opts.affinity).c_str());
             }
         } else {
             CGridJobBatchSubmitter& batch_submitter(
@@ -610,9 +610,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             }
         }
     } else {
-        CGridJobSubmitter& submitter(m_GridClient->GetJobSubmitter());
-
-        CNcbiOstream& job_input_stream = submitter.GetOStream();
+        CNcbiOstream& job_input_stream = m_GridClient->GetOStream();
 
         if (IsOptionSet(eInput)) {
             job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
@@ -632,32 +630,36 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
             }
         }
 
-        submitter.SetJobGroup(m_Opts.job_group);
-        submitter.SetJobAffinity(m_Opts.affinity);
+        m_GridClient->SetJobGroup(m_Opts.job_group);
+        m_GridClient->SetJobAffinity(m_Opts.affinity);
 
         if (IsOptionSet(eExclusiveJob))
-            submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
+            m_GridClient->SetJobMask(CNetScheduleAPI::eExclusiveJob);
 
         if (!IsOptionSet(eWaitTimeout))
-            PrintLine(submitter.Submit());
+            PrintLine(m_GridClient->Submit());
         else {
-            submitter.CloseStream();
+            m_GridClient->CloseStream();
 
-            CNetScheduleJob& job = submitter.GetJob();
+            CNetScheduleJob& job = m_GridClient->GetJob();
 
-            CNetScheduleNotificationHandler submit_job_handler(job,
-                m_Opts.timeout);
+            CAbsTimeout abs_timeout(m_Opts.timeout, 0);
 
-            submit_job_handler.SubmitJob(m_NetScheduleSubmitter);
+            CNetScheduleNotificationHandler submit_job_handler;
 
-            PrintLine(submit_job_handler.GetJobRef().job_id);
+            submit_job_handler.SubmitJob(
+                    m_NetScheduleSubmitter, job, abs_timeout);
+
+            PrintLine(job.job_id);
+
+            string server;
 
             if (!IsOptionSet(eDumpNSNotifications)) {
-                if (submit_job_handler.WaitForNotification() &&
-                        submit_job_handler.CheckSubmitJobNotification()) {
-                    CNetScheduleAPI::EJobStatus status =
-                            m_NetScheduleSubmitter.GetJobStatus(job.job_id);
-
+                CNetScheduleAPI::EJobStatus status;
+                if (submit_job_handler.WaitForNotification(abs_timeout,
+                            &server) &&
+                        submit_job_handler.CheckSubmitJobNotification(
+                            &status, job)) {
                     PrintLine(CNetScheduleAPI::StatusToString(status));
 
                     if (status == CNetScheduleAPI::eDone) {
@@ -666,27 +668,24 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     }
                 }
             } else {
-                printf("Using UDP port %u\n", submit_job_handler.GetPort());
+                printf("Using UDP port %hu\n", submit_job_handler.GetPort());
 
-                submit_job_handler.WaitForNotification();
+                submit_job_handler.WaitForNotification(abs_timeout, &server);
 
                 CNetScheduleAPI::EJobStatus job_status =
                         CNetScheduleAPI::eJobNotFound;
 
                 const char* format = "%s \"%.*s\" %s:%u [invalid]\n";
 
-                if (submit_job_handler.CheckSubmitJobNotification()) {
-                    job_status = m_NetScheduleSubmitter.GetJobStatus(
-                            submit_job_handler.GetJobRef().job_id);
-                    format = "%s \"%.*s\" %s:%u [valid, status=%s]\n";
-                }
+                if (submit_job_handler.CheckSubmitJobNotification(
+                        &job_status, job))
+                    format = "%s \"%.*s\" from %s [valid, status=%s]\n";
 
                 printf(format, GetFastLocalTime().
                         AsString(s_NotificationTimestampFormat).c_str(),
                         (int) submit_job_handler.GetMessage().size(),
                         submit_job_handler.GetMessage().data(),
-                        submit_job_handler.GetServerHost().c_str(),
-                        submit_job_handler.GetServerPort(),
+                        server.c_str(),
                     CNetScheduleAPI::StatusToString(job_status).c_str());
             }
         }
@@ -890,26 +889,30 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         } else {
             CNetScheduleJob job;
 
-            CNetScheduleNotificationHandler wait_job_handler(job,
-                    m_Opts.timeout);
+            CAbsTimeout abs_timeout(m_Opts.timeout, 0);
 
-            printf("Using UDP port %u\n", wait_job_handler.GetPort());
+            CNetScheduleNotificationHandler wait_job_handler;
+
+            printf("Using UDP port %hu\n", wait_job_handler.GetPort());
 
             if (wait_job_handler.RequestJob(m_NetScheduleExecutor,
-                    m_Opts.affinity))
+                    m_Opts.affinity, job, abs_timeout))
                 printf("%s\nA job has been returned; won't wait.\n",
-                    wait_job_handler.GetJobRef().job_id.c_str());
-            else
-                while (wait_job_handler.WaitForNotification())
-                    printf("%s \"%.*s\" %s:%u [%s]\n",
+                    job.job_id.c_str());
+            else {
+                string server;
+
+                while (wait_job_handler.WaitForNotification(abs_timeout,
+                        &server))
+                    printf("%s \"%.*s\" from %s [%s]\n",
                             GetFastLocalTime().AsString(
                                 s_NotificationTimestampFormat).c_str(),
                             (int) wait_job_handler.GetMessage().size(),
                             wait_job_handler.GetMessage().data(),
-                            wait_job_handler.GetServerHost().c_str(),
-                            wait_job_handler.GetServerPort(),
+                            server.c_str(),
                             wait_job_handler.CheckRequestJobNotification(
                                 m_NetScheduleExecutor) ? "valid" : "invalid");
+            }
         }
     }
 
@@ -983,15 +986,20 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
-    if (IsOptionSet(eExtendLifetime))
-        m_NetScheduleAPI.GetExecutor().JobDelayExpiration(
-            m_Opts.id, (unsigned) m_Opts.extend_lifetime_by);
+    if (IsOptionSet(eExtendLifetime) ||
+            IsOptionSet(eProgressMessage)) {
+        CNetScheduleExecutor executor(m_NetScheduleAPI.GetExecutor());
 
-    if (IsOptionSet(eProgressMessage)) {
-        CNetScheduleJob job;
-        job.job_id = m_Opts.id;
-        job.progress_msg = m_Opts.progress_message;
-        m_NetScheduleAPI.GetExecutor().PutProgressMsg(job);
+        if (IsOptionSet(eExtendLifetime))
+            executor.JobDelayExpiration(m_Opts.id,
+                    (unsigned) m_Opts.extend_lifetime_by);
+
+        if (IsOptionSet(eProgressMessage)) {
+            CNetScheduleJob job;
+            job.job_id = m_Opts.id;
+            job.progress_msg = m_Opts.progress_message;
+            executor.PutProgressMsg(job);
+        }
     }
 
     return 0;

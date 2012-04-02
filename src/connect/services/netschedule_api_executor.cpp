@@ -155,14 +155,14 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job, const string& affinity)
 
 static string s_MakeRequestJobCmd(
         const CNetScheduleNotificationHandler& notification_handler,
-        const string& affinity)
+        const string& affinity,
+        CAbsTimeout& timeout)
 {
-    string cmd = "WGET ";
-
-    cmd += " port=";
+    string cmd = "WGET port=";
     cmd += NStr::UIntToString(notification_handler.GetPort());
+
     cmd += " timeout=";
-    cmd += NStr::UIntToString(notification_handler.GetRemainingSeconds());
+    cmd += NStr::UIntToString(s_GetRemainingSeconds(timeout));
 
     if (!affinity.empty()) {
         SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
@@ -174,16 +174,21 @@ static string s_MakeRequestJobCmd(
 }
 
 bool CNetScheduleNotificationHandler::RequestJob(
-        CNetScheduleExecutor::TInstance executor, const string& affinity)
+        CNetScheduleExecutor::TInstance executor,
+        const string& affinity,
+        CNetScheduleJob& job,
+        CAbsTimeout& timeout)
 {
-    CNetServiceIterator it(executor->GetJobImpl(s_MakeRequestJobCmd(*this,
-            affinity), GetJobRef()));
+    string cmd(s_MakeRequestJobCmd(*this, affinity, timeout));
+
+    CNetServiceIterator it(executor->GetJobImpl(cmd, job));
+
 
     if (!it)
         return false;
 
-    while (--it)
-        (*it).ExecWithRetry("CWGET");
+    /*while (--it)
+        (*it).ExecWithRetry("CWGET");*/
 
     return true;
 }
@@ -207,13 +212,17 @@ bool CNetScheduleExecutor::WaitJob(CNetScheduleJob& job,
                                    unsigned wait_time,
                                    const string& affinity)
 {
-    CNetScheduleNotificationHandler wait_job_handler(job, wait_time);
+    CAbsTimeout abs_timeout(wait_time, 0);
 
-    if (wait_job_handler.RequestJob(m_Impl, affinity))
+    if (m_Impl->m_NotificationHandler.RequestJob(m_Impl,
+            affinity, job, abs_timeout))
         return true;
 
-    while (wait_job_handler.WaitForNotification() &&
-            !wait_job_handler.CheckRequestJobNotification(m_Impl))
+    string server;
+
+    while (m_Impl->m_NotificationHandler.WaitForNotification(
+                abs_timeout, &server) &&
+            !m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl))
         ;
 
     // Regardless of what g_WaitNotification returned,

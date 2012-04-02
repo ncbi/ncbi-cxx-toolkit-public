@@ -248,11 +248,11 @@ int CNSSubmitRemoteJobApp::Run(void)
             jmask |= CNetScheduleAPI::eExclusiveJob;
         }
 
-        CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
-        job_submitter.SetJobAffinity(affinity);
-        job_submitter.SetJobMask(jmask);
-        request.Send(job_submitter.GetOStream());
-        string job_key = job_submitter.Submit();
+        CGridClient& grid_client = GetGridClient();
+        grid_client.SetJobAffinity(affinity);
+        grid_client.SetJobMask(jmask);
+        request.Send(grid_client.GetOStream());
+        string job_key = grid_client.Submit();
         if (out)
             *out << job_key << NcbiEndl;
         return 0;
@@ -306,11 +306,11 @@ int CNSSubmitRemoteJobApp::Run(void)
                     jmask |= CNetScheduleAPI::eExclusiveJob;
             }
             if (!job_batch_submitter ) {
-                CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
-                request.Send(job_submitter.GetOStream());
-                job_submitter.SetJobAffinity(affinity);
-                job_submitter.SetJobMask(jmask);
-                string job_key = job_submitter.Submit();
+                CGridClient& grid_client = GetGridClient();
+                request.Send(grid_client.GetOStream());
+                grid_client.SetJobAffinity(affinity);
+                grid_client.SetJobMask(jmask);
+                string job_key = grid_client.Submit();
                 if (out)
                     *out << job_key << NcbiEndl;
             } else {

@@ -48,10 +48,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CNetScheduleNotificationHandler::CNetScheduleNotificationHandler(
-        CNetScheduleJob& job, unsigned wait_time) :
-    m_Job(job),
-    m_Timeout(wait_time, 0)
+CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
 {
     m_UDPSocket.SetReuseAddress(eOn);
 
@@ -69,37 +66,36 @@ CNetScheduleNotificationHandler::CNetScheduleNotificationHandler(
 }
 
 bool CNetScheduleNotificationHandler::ParseNotification(
-        const CTempString& expected_prefix,
-        const string& attr_name,
-        string* attr_value)
+        const string& attr1_name, string* attr1_value,
+        const string& attr2_name, string* attr2_value)
 {
-    CTempString prefix;
-    CTempString attrs;
-
-    if (NStr::SplitInTwo(m_Message, " ", prefix, attrs, NStr::eMergeDelims) &&
-            prefix == expected_prefix)
-        try {
-            CUrlArgs attr_parser(attrs);
-            const CUrlArgs::TArgs& attr_list = attr_parser.GetArgs();
-            CUrlArgs::const_iterator attr_it = attr_parser.FindFirst(attr_name);
+    try {
+        CUrlArgs attr_parser(m_Message);
+        const CUrlArgs::TArgs& attr_list = attr_parser.GetArgs();
+        CUrlArgs::const_iterator attr_it = attr_parser.FindFirst(attr1_name);
+        if (attr_it != attr_list.end()) {
+            *attr1_value = attr_it->value;
+            attr_it = attr_parser.FindFirst(attr2_name);
             if (attr_it != attr_list.end()) {
-                *attr_value = attr_it->value;
+                *attr2_value = attr_it->value;
                 return true;
             }
         }
-        catch (CUrlParserException&) {
-        }
+    }
+    catch (CUrlParserException&) {
+    }
 
     return false;
 }
 
-bool CNetScheduleNotificationHandler::WaitForNotification()
+bool CNetScheduleNotificationHandler::WaitForNotification(
+        CAbsTimeout& abs_timeout, string* server_host)
 {
     STimeout timeout;
     size_t msg_len;
 
     for (;;) {
-        m_Timeout.GetRemainingTime().Get(&timeout.sec, &timeout.usec);
+        abs_timeout.GetRemainingTime().Get(&timeout.sec, &timeout.usec);
 
         if (timeout.sec == 0 && timeout.usec == 0)
             return false;
@@ -110,7 +106,7 @@ bool CNetScheduleNotificationHandler::WaitForNotification()
 
         case eIO_Success:
             if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
-                    &m_ServerHost, &m_ServerPort) == eIO_Success) {
+                    server_host, NULL) == eIO_Success) {
                 m_Message.assign(m_Buffer, msg_len);
 
                 return true;

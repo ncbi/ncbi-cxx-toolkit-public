@@ -66,7 +66,7 @@ public:
     }
     void Init(void);
     int Run(void);
-    int Run(CNetScheduleAPI& nc_client);
+    int Run(CNetScheduleAPI nc_client);
 };
 
 
@@ -154,18 +154,18 @@ int CNetScheduleCheck::Run(void)
     queue = "netschedule_check_queue";
     admin.CreateQueue(queue, qclass);
 
-    CNetScheduleAPI cln(service, "netschedule_admin", queue);
+    CNetScheduleAPI cln2(service, "netschedule_admin", queue);
 
-    int ret = Run(cln);
+    int ret = Run(cln2);
     admin.DeleteQueue(queue);
 
     return ret;
 }
 
-int CNetScheduleCheck::Run(CNetScheduleAPI& nc)
+int CNetScheduleCheck::Run(CNetScheduleAPI ns)
 {
-    CNetScheduleSubmitter submitter = nc.GetSubmitter();
-    CNetScheduleExecutor executor = nc.GetExecutor();
+    CNetScheduleSubmitter submitter = ns.GetSubmitter();
+    CNetScheduleExecutor executor = ns.GetExecutor();
 
     const string input = "Hello ";
     const string output = "DONE ";

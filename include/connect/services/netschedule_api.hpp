@@ -459,8 +459,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key);
 
     CNetScheduleAPI::EJobStatus GetJobDetails(CNetScheduleJob& job);
-
-    const CNetScheduleAPI::SServerParams& GetServerParams();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -773,51 +771,46 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(
 class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 {
 public:
-    CNetScheduleNotificationHandler(CNetScheduleJob& job, unsigned wait_time);
+    CNetScheduleNotificationHandler();
 
-    bool ParseNotification(
-            const CTempString& expected_prefix,
-            const string& attr_name,
-            string* attr_value);
+    bool ParseNotification(const string& attr1_name, string* attr1_value,
+            const string& attr2_name, string* attr2_value);
 
-    bool WaitForNotification();
+    bool WaitForNotification(CAbsTimeout& timeout, string* server_host);
 
-    CNetScheduleJob& GetJobRef() {return m_Job;}
-    unsigned GetRemainingSeconds() const;
-    unsigned GetPort() const {return m_UDPPort;}
-
-    const string& GetServerHost() const {return m_ServerHost;}
-    unsigned GetServerPort() const {return m_ServerPort;}
+    unsigned short GetPort() const {return m_UDPPort;}
 
     const CTempString& GetMessage() const {return m_Message;}
 
 // Utility methods.
 public:
-    void SubmitJob(CNetScheduleSubmitter::TInstance submitter);
-    bool CheckSubmitJobNotification();
+    void SubmitJob(CNetScheduleSubmitter::TInstance submitter,
+            CNetScheduleJob& job,
+            CAbsTimeout& abs_timeout);
+    bool CheckSubmitJobNotification(CNetScheduleAPI::EJobStatus* status,
+            CNetScheduleJob& job);
 
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
-        const string& affinity);
+            const string& affinity,
+            CNetScheduleJob& job,
+            CAbsTimeout& timeout);
     bool CheckRequestJobNotification(CNetScheduleExecutor::TInstance executor);
 
 protected:
-    CNetScheduleJob& m_Job;
-    CAbsTimeout m_Timeout;
     CDatagramSocket m_UDPSocket;
     unsigned short m_UDPPort;
-    string m_ServerHost;
-    unsigned short m_ServerPort;
 
     char m_Buffer[1024];
     CTempString m_Message;
 };
 
-inline unsigned CNetScheduleNotificationHandler::GetRemainingSeconds() const
+/// @internal
+inline unsigned s_GetRemainingSeconds(CAbsTimeout& timeout)
 {
     unsigned sec;
     unsigned nanosec;
 
-    m_Timeout.GetRemainingTime().GetNano(&sec, &nanosec);
+    timeout.GetRemainingTime().GetNano(&sec, &nanosec);
 
     if (nanosec > 0)
         ++sec;

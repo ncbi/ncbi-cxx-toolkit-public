@@ -131,7 +131,7 @@ private:
     string                        m_JobOutput;
     bool                          m_NeedRenderPage;
 
-    /// A copy constructor and an assignemt operator
+    /// A copy constructor and an assignment operator
     /// are prohibited
     ///
     CGridCgiContext(const CGridCgiContext&);
@@ -145,7 +145,7 @@ private:
 ///
 ///  Base class for CGI applications starting background jobs using 
 ///  NetSchedule. Implements pattern for job submission, status check, 
-///  error processing, etc.  All request procesing is done on the back end.
+///  error processing, etc.  All request processing is done on the back end.
 ///  CGI application is responsible for UI rendering.
 ///
 class NCBI_XGRIDCGI_EXPORT CGridCgiApplication : public CCgiApplicationCached
@@ -189,7 +189,7 @@ protected:
     /// This method is called when a job is ready to be send to a the queue.
     /// Override this method to prepare input data for the worker node.
     /// 
-    virtual void PrepareJobData(CGridJobSubmitter& submitter) = 0;
+    virtual void PrepareJobData(CGridClient& grid_client) = 0;
 
     /// This method is called just after a job has been submitted.
     /// Override this method to render information HTML page.
@@ -201,16 +201,16 @@ protected:
     /// Override this method to get a result from a worker node 
     /// and render a result HTML page
     ///
-    virtual void OnJobDone(CGridJobStatus& status, CGridCgiContext& ctx) = 0;
+    virtual void OnJobDone(CGridClient& grid_client, CGridCgiContext& ctx) = 0;
 
-    /// This method is called when worker node repored a failure.
+    /// This method is called when worker node reported a failure.
     /// Override this method to get a error message and render 
     /// a error HTML page.
     ///
     virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx) {}
 
     /// This method is called if job was canceled during its execution.
-    /// Override this message to show a job cancelation message.
+    /// Override this message to show a job cancellation message.
     ///
     virtual void OnJobCanceled(CGridCgiContext& ctx) {}
 
@@ -228,26 +228,26 @@ protected:
     ///
     virtual void OnEndProcessRequest(CGridCgiContext&) {}
 
-    /// This method is call at the very beginnig of the request processing
+    /// This method is call at the very beginning of the request processing
     ///
     virtual void OnBeginProcessRequest(CGridCgiContext&) {}
 
-    /// This method is call when a job couldn't be submittd
+    /// This method is call when a job couldn't be submitted
     /// because of NetSchedule queue is full
     ///
     virtual void OnQueueIsBusy(CGridCgiContext&);
 
-    /// Return page name. It is used when an inctance of CHTMLPage
+    /// Return page name. It is used when an instance of CHTMLPage
     /// class is created.
     ///
     virtual string GetPageTitle(void) const = 0;
 
     /// Return a name of a file this HTML page template. It is used when
-    /// an inctance of CHTMLPage class is created.
+    /// an instance of CHTMLPage class is created.
     ///
     virtual string GetPageTemplate(void) const = 0;
 
-    /// When job is still runnig this method is called to check if
+    /// When job is still running this method is called to check if
     /// cancel has been requested via the user interface(HTML). 
     /// If so the job will be canceled.
     ///

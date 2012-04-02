@@ -111,7 +111,7 @@ int CGridClientTestApp::Run(void)
     CNetScheduleAPI::EJobStatus status;
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
-    CGridJobSubmitter& job_submitter = GetGridClient().GetJobSubmitter();
+    CGridClient& grid_client = GetGridClient();
 
     string job_key;
     string input1 = "Hello ";
@@ -120,7 +120,7 @@ int CGridClientTestApp::Run(void)
     for (unsigned i = 0; i < jcount; ++i) {
         string ns_key;
         vector<double>* dvec = new vector<double>;
-        CNcbiOstream& os = job_submitter.GetOStream();
+        CNcbiOstream& os = grid_client.GetOStream();
         os << "doubles " << vsize << ' ';
         srand( (unsigned)time( NULL ) );
         for (int j = 0; j < vsize; ++j) {
@@ -128,7 +128,7 @@ int CGridClientTestApp::Run(void)
             os << d << ' ';
             dvec->push_back(d);
         }
-        string job_key = job_submitter.Submit();
+        string job_key = grid_client.Submit();
         sort(dvec->begin(),dvec->end());
         jobs[job_key] = dvec;
 
@@ -145,13 +145,14 @@ int CGridClientTestApp::Run(void)
     while (jobs.size()) {
         NON_CONST_ITERATE(TJobs, it, jobs) {
             const string& jk = it->first;
-            CGridJobStatus& job_status = GetGridClient().GetJobStatus(jk);
+            CGridClient& grid_client = GetGridClient();
+            grid_client.SetJobKey(jk);
             vector<double>* dvec = it->second;
 
-            status = job_status.GetStatus();
+            status = grid_client.GetStatus();
 
             if (status == CNetScheduleAPI::eDone) {
-                CNcbiIstream& is = job_status.GetIStream();
+                CNcbiIstream& is = grid_client.GetIStream();
                 if (!is.good()) {
                     LOG_POST("Input stream error while reading the "
                         "size of the resulting vector");
@@ -190,7 +191,7 @@ int CGridClientTestApp::Run(void)
                 break;
             } 
             else if (status == CNetScheduleAPI::eFailed) {
-                LOG_POST( "Job " << jk << " failed : " << job_status.GetErrorMessage() );
+                LOG_POST( "Job " << jk << " failed : " << grid_client.GetErrorMessage() );
                 delete dvec;
                 jobs.erase(it);
                 ++cnt;

@@ -88,13 +88,13 @@ protected:
     virtual bool CollectParams(CGridCgiContext&);
 
     // Prepare the job's input data
-    virtual void PrepareJobData(CGridJobSubmitter& submitter);
+    virtual void PrepareJobData(CGridClient& grid_client);
 
     // Show an information page
     virtual void OnJobSubmitted(CGridCgiContext& ctx);
 
     // Get the job's result.
-    virtual void OnJobDone(CGridJobStatus& status, CGridCgiContext& ctx);
+    virtual void OnJobDone(CGridClient& grid_client, CGridCgiContext& ctx);
     
     // Report the job's failure.
     virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx);
@@ -108,7 +108,7 @@ protected:
     // the job is in the Netschedule Queue 
     virtual void OnJobPending(CGridCgiContext& ctx);
 
-    // Return a job cancelation status.
+    // Return a job cancelation grid_client.
     virtual bool JobStopRequested(void) const;
 
     virtual void OnQueueIsBusy(CGridCgiContext&);
@@ -308,13 +308,13 @@ bool CCgiTunnel2Grid::CollectParams(CGridCgiContext& ctx)
 }
 
 
-void CCgiTunnel2Grid::PrepareJobData(CGridJobSubmitter& submitter)
-{   
+void CCgiTunnel2Grid::PrepareJobData(CGridClient& grid_client)
+{
     if ( !m_UserBlobId.empty() ) {
-        submitter.SetJobInput(m_UserBlobId);
+        grid_client.SetJobInput(m_UserBlobId);
         return;
     }
-    CNcbiOstream& os = submitter.GetOStream();
+    CNcbiOstream& os = grid_client.GetOStream();
     // Send jobs input data
     if (m_CgiContext) {
         m_CgiContext->GetRequest().Serialize(os);
@@ -336,12 +336,12 @@ void CCgiTunnel2Grid::OnJobSubmitted(CGridCgiContext& ctx)
 
 
 
-void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status, 
+void CCgiTunnel2Grid::OnJobDone(CGridClient& grid_client,
                                 CGridCgiContext& ctx)
 {
 
-    CNcbiIstream& is = status.GetIStream();
-    size_t blob_size = status.GetBlobSize();
+    CNcbiIstream& is = grid_client.GetIStream();
+    size_t blob_size = grid_client.GetBlobSize();
     if (blob_size <= 0) {
         x_RenderView(ctx.GetHTMLPage(), "<@VIEW_EMPTY_RESULT@>");
         string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
@@ -367,8 +367,8 @@ void CCgiTunnel2Grid::OnJobDone(CGridJobStatus& status,
         break;
         
     default:
-        m_StrPage = "<html><head><title>Unsuppoted renderer</title></head>"
-                    "<body>Unsuppoted renderer.</body></html>";
+        m_StrPage = "<html><head><title>Unsupported renderer</title></head>"
+                    "<body>Unsupported renderer.</body></html>";
         ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
     }
 }
@@ -392,7 +392,7 @@ void CCgiTunnel2Grid::OnJobFailed(const string& msg,
 void CCgiTunnel2Grid::OnJobCanceled(CGridCgiContext& ctx)
 {
     ctx.DefinePersistentEntry(kElapsedTime,"");   
-   // Render a job cancelation page
+   // Render a job cancellation page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_CANCELED@>");
 
     string fall_back_url = ctx.GetEntryValue(kErrorUrlParamName);
@@ -413,13 +413,13 @@ void CCgiTunnel2Grid::OnQueueIsBusy(CGridCgiContext& ctx)
 
 void CCgiTunnel2Grid::OnJobPending(CGridCgiContext& ctx)
 {
-    // Render a status report page
+    // Render a grid_client report page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_PENDING@>");
 }
 
 void CCgiTunnel2Grid::OnJobRunning(CGridCgiContext& ctx)
 {
-    // Render a status report page
+    // Render a grid_client report page
     x_RenderView(ctx.GetHTMLPage(), "<@VIEW_JOB_RUNNING@>");
     CHTMLText* err = new CHTMLText(ctx.GetJobProgressMessage());
     ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",err);

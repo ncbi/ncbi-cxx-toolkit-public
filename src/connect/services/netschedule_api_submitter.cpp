@@ -323,7 +323,7 @@ bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
     CReadCmdExecutor read_executor(cmd, *job_id, *auth_token, *job_status);
 
     return m_Impl->m_API->m_Service.FindServer(&read_executor,
-        CNetService::eRandomize);
+        CNetService::eRandomize) != NULL;
 }
 
 void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
@@ -368,41 +368,68 @@ void CNetScheduleSubmitter::ReadFail(const string& job_id,
 }
 
 void CNetScheduleNotificationHandler::SubmitJob(
-        CNetScheduleSubmitter::TInstance submitter)
+        CNetScheduleSubmitter::TInstance submitter,
+        CNetScheduleJob& job,
+        CAbsTimeout& abs_timeout)
 {
-    submitter->SubmitJobImpl(GetJobRef(), GetPort(), GetRemainingSeconds());
+    submitter->SubmitJobImpl(job, GetPort(),
+            s_GetRemainingSeconds(abs_timeout));
 }
 
-bool CNetScheduleNotificationHandler::CheckSubmitJobNotification()
+bool CNetScheduleNotificationHandler::CheckSubmitJobNotification(
+        CNetScheduleAPI::EJobStatus* status, CNetScheduleJob& job)
 {
-    static const CTempString s_JNTFPrefix("JNTF");
-    static const string s_KeyAttrName("key");
+    static const string s_KeyAttrName("job_key");
+    static const string s_StatusAttrName("job_status");
 
     string job_key;
+    string job_status;
 
-    return ParseNotification(s_JNTFPrefix, s_KeyAttrName, &job_key) &&
-            GetJobRef().job_id == job_key;
+    if (!ParseNotification(s_KeyAttrName, &job_key,
+            s_StatusAttrName, &job_status) || job_key != job.job_id)
+        return false;
+
+    return (*status = CNetScheduleAPI::StringToStatus(job_status)) !=
+            CNetScheduleAPI::eJobNotFound;
 }
 
 CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
                                         unsigned       wait_time)
 {
-    CNetScheduleNotificationHandler submit_job_handler(job, wait_time);
+    CAbsTimeout abs_timeout(wait_time, 0);
 
-    submit_job_handler.SubmitJob(m_Impl);
+    CNetScheduleNotificationHandler submit_job_handler;
+
+    submit_job_handler.SubmitJob(m_Impl, job, abs_timeout);
 
     CNetScheduleAPI::EJobStatus status;
 
-    if (submit_job_handler.WaitForNotification() &&
-            submit_job_handler.CheckSubmitJobNotification()) {
-        status = CNetScheduleAPI::eDone;
-        m_Impl->m_API.GetJobDetails(job);
-    } else {
-        status = GetJobStatus(job.job_id);
-        if (status == CNetScheduleAPI::eFailed)
-            m_Impl->m_API.GetJobDetails(job);
+/*
+    unsigned long wait_time = m_FirstDelay*1000;
+    unsigned long sleep_time = 6;
+    unsigned long total_sleep_time = 0;
+    for (;;) {
+        if (total_sleep_time >= wait_time)
+            ;
+        SleepMilliSec(sleep_time);
+
+        phase = x_CheckJobStatus(grid_ctx, job_status);
+        if (phase == eTerminated)
+            break;
+
+        total_sleep_time += sleep_time;
+        sleep_time += sleep_time/3;
     }
+*/
+    string server;
+
+    if (!submit_job_handler.WaitForNotification(abs_timeout, &server) ||
+            !submit_job_handler.CheckSubmitJobNotification(&status, job))
+        status = GetJobStatus(job.job_id);
+
+    if (status == CNetScheduleAPI::eDone)
+        m_Impl->m_API.GetJobDetails(job);
 
     return status;
 }
@@ -433,11 +460,6 @@ CNetScheduleAPI::EJobStatus
 void CNetScheduleSubmitter::GetProgressMsg(CNetScheduleJob& job)
 {
     m_Impl->m_API.GetProgressMsg(job);
-}
-
-const CNetScheduleAPI::SServerParams& CNetScheduleSubmitter::GetServerParams()
-{
-    return m_Impl->m_API->GetServerParams();
 }
 
 END_NCBI_SCOPE

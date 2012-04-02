@@ -53,62 +53,11 @@ BEGIN_NCBI_SCOPE
 
 class CGridClient;
 
-/// Grid Job Submitter
-///
-class NCBI_XCONNECT_EXPORT CGridJobSubmitter
-{
-public:
-    /// Set a job's input This string will be sent to
-    /// then the job is submitted.
-    ///
-    /// This method can be used to send a short data to the worker node.
-    /// To send a large data use GetOStream method. Don't call this
-    /// method after GetOStream method is called.
-    ///
-    void SetJobInput(const string& input) {m_Job.input = input;}
-
-    /// Get a stream where a client can write an input
-    /// data for the remote job
-    ///
-    CNcbiOstream& GetOStream();
-
-    void CloseStream();
-
-    void SetJobMask(CNetScheduleAPI::TJobMask mask) {m_Job.mask = mask;}
-
-    void SetJobGroup(const string& group) {m_Job.group = group;}
-
-    void SetJobAffinity(const string& affinity) {m_Job.affinity = affinity;}
-
-    /// Submit a job to the queue
-    ///
-    /// @return a job key
-    string Submit(const string& affinity = kEmptyStr);
-
-    CGridJobSubmitter(CGridClient& grid_client) : m_GridClient(grid_client) {}
-
-    CNetScheduleJob& GetJob() {return m_Job;}
-
-private:
-    CGridClient& m_GridClient;
-    CNetScheduleJob m_Job;
-    auto_ptr<IEmbeddedStreamWriter> m_Writer;
-    auto_ptr<CNcbiOstream> m_WStream;
-
-    /// The copy constructor and the assignment operator
-    /// are prohibited
-    CGridJobSubmitter(const CGridJobSubmitter&);
-    CGridJobSubmitter& operator=(CGridJobSubmitter&);
-};
-
 /// Grid Job Batch  Submitter
 ///
 class NCBI_XCONNECT_EXPORT CGridJobBatchSubmitter
 {
 public:
-
-    ~CGridJobBatchSubmitter();
-
     /// Set a job's input This string will be sent to
     /// then the job is submitted.
     ///
@@ -145,7 +94,8 @@ private:
     /// Only CGridClient can create an instance of this class
     friend class CGridClient;
 
-    void CheckIfAlreadySubmitted();
+    void CheckIfBatchAlreadySubmitted();
+    void CheckIfBatchSubmittedAndPrepareNextJob();
 
     explicit CGridJobBatchSubmitter(CGridClient&);
 
@@ -162,13 +112,56 @@ private:
     CGridJobBatchSubmitter& operator=(CGridJobBatchSubmitter&);
 };
 
-/// Grid Job Status checker
+/// Grid Client (the submitter).
 ///
-class NCBI_XCONNECT_EXPORT CGridJobStatus
+class NCBI_XCONNECT_EXPORT CGridClient
 {
 public:
+    enum ECleanUp {
+        eAutomaticCleanup = 0,
+        eManualCleanup
+    };
 
-    ~CGridJobStatus();
+    enum EProgressMsg {
+        eProgressMsgOn = 0,
+        eProgressMsgOff
+    };
+
+    /// Constructor
+    ///
+    /// @param ns_client
+    ///     NetSchedule client - an instance of CNetScheduleSubmitter.
+    /// @param storage
+    ///     NetSchedule storage
+    /// @param cleanup
+    ///     if true the grid client will automatically remove
+    ///     a job's input data from a storage when the job is
+    ///     done or canceled
+    ///
+    CGridClient(CNetScheduleSubmitter::TInstance ns_submitter,
+                IBlobStorage& storage,
+                ECleanUp cleanup,
+                EProgressMsg progress_msg);
+
+    /// Constructor
+    ///
+    /// @param ns_client
+    ///     NetSchedule client - an instance of CNetScheduleSubmitter.
+    /// @param nc_client
+    ///     NetCache client - an instance of CNetCacheAPI.
+    /// @param cleanup
+    ///     if true the grid client will automatically remove
+    ///     a job's input data from a storage when the job is
+    ///     done or canceled
+    ///
+    CGridClient(CNetScheduleSubmitter::TInstance ns_submitter,
+                CNetCacheAPI::TInstance nc_client,
+                ECleanUp cleanup,
+                EProgressMsg progress_msg);
+
+    /// Get a job submitter
+    /// @deprecated
+    NCBI_DEPRECATED CGridClient& GetJobSubmitter() {return *this;}
 
     /// Get a job's output string.
     ///
@@ -214,78 +207,38 @@ public:
     ///
     string GetProgressMessage();
 
-private:
-    /// Only CGridClient can create an instance of this class
-    friend class CGridClient;
-    CGridJobStatus(CGridClient&, bool auto_cleanup, bool use_progress);
-    void x_SetJobKey(const string& job_key);
-    void x_GetJobDetails();
-
-    CGridClient& m_GridClient;
-    CNetScheduleJob m_Job;
-    size_t       m_BlobSize;
-    bool         m_AutoCleanUp;
-    bool         m_UseProgress;
-    auto_ptr<CNcbiIstream> m_RStream;
-    bool         m_JobDetailsRead;
-
-    /// The copy constructor and the assignment operator
-    /// are prohibited
-    CGridJobStatus(const CGridJobStatus&);
-    CGridJobStatus& operator=(const CGridJobStatus&);
-};
-
-/// Grid Client (the submitter).
-///
-class NCBI_XCONNECT_EXPORT CGridClient
-{
-public:
-
-    enum ECleanUp {
-        eAutomaticCleanup = 0,
-        eManualCleanup
-    };
-
-    enum EProgressMsg {
-        eProgressMsgOn = 0,
-        eProgressMsgOff
-    };
-
-    /// Constructor
+    /// Set a job's input This string will be sent to
+    /// then the job is submitted.
     ///
-    /// @param ns_client
-    ///     NetSchedule client - an instance of CNetScheduleSubmitter.
-    /// @param storage
-    ///     NetSchedule storage
-    /// @param cleanup
-    ///     if true the grid client will automatically remove
-    ///     a job's input data from a storage when the job is
-    ///     done or canceled
+    /// This method can be used to send a short data to the worker node.
+    /// To send a large data use GetOStream method. Don't call this
+    /// method after GetOStream method is called.
     ///
-    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
-                IBlobStorage& storage,
-                ECleanUp cleanup,
-                EProgressMsg progress_msg);
+    void SetJobInput(const string& input) {m_Job.input = input;}
 
-    /// Constructor
+    /// Get a stream where a client can write an input
+    /// data for the remote job
     ///
-    /// @param ns_client
-    ///     NetSchedule client - an instance of CNetScheduleSubmitter.
-    /// @param nc_client
-    ///     NetCache client - an instance of CNetCacheAPI.
-    /// @param cleanup
-    ///     if true the grid client will automatically remove
-    ///     a job's input data from a storage when the job is
-    ///     done or canceled
-    ///
-    CGridClient(CNetScheduleSubmitter::TInstance ns_client,
-                CNetCacheAPI::TInstance nc_client,
-                ECleanUp cleanup,
-                EProgressMsg progress_msg);
+    CNcbiOstream& GetOStream();
 
-    /// Get a job submitter
+    void CloseStream();
+
+    void SetJobMask(CNetScheduleAPI::TJobMask mask) {m_Job.mask = mask;}
+
+    void SetJobGroup(const string& group) {m_Job.group = group;}
+
+    void SetJobAffinity(const string& affinity) {m_Job.affinity = affinity;}
+
+    /// Submit a job to the queue
     ///
-    CGridJobSubmitter& GetJobSubmitter();
+    /// @return a job key
+    string Submit(const string& affinity = kEmptyStr);
+
+    /// Submit a job to the queue
+    ///
+    CNetScheduleAPI::EJobStatus SubmitAndWait(unsigned wait_time);
+
+    CNetScheduleJob& GetJob() {return m_Job;}
 
     /// Get a job submitter
     ///
@@ -293,10 +246,18 @@ public:
 
     /// Get a job status checker
     ///
+    /// @deprecated
+    ///
     /// @param job_key
     ///     Job key
     ///
-    CGridJobStatus&   GetJobStatus(const string& job_key);
+    NCBI_DEPRECATED CGridClient& GetJobStatus(const string& job_key)
+    {
+        SetJobKey(job_key);
+        return *this;
+    }
+
+    void SetJobKey(const string& job_key);
 
     /// Cancel Job
     ///
@@ -312,7 +273,10 @@ public:
     ///
     void RemoveDataBlob(const string& data_key);
 
-    CNetScheduleSubmitter&  GetNSClient() { return m_NSClient; }
+    CNetScheduleSubmitter GetNetScheduleSubmitter()
+    {
+        return m_NetScheduleSubmitter;
+    }
     CNetCacheAPI& GetNetCacheAPI()  { return m_NetCacheAPI; }
 
     size_t GetMaxServerInputSize();
@@ -320,18 +284,32 @@ public:
 private:
     void Init(ECleanUp cleanup, EProgressMsg progress_msg);
 
-    CNetScheduleSubmitter m_NSClient;
+    CNetScheduleSubmitter m_NetScheduleSubmitter;
     CNetCacheAPI m_NetCacheAPI;
 
-    auto_ptr<CGridJobSubmitter> m_JobSubmitter;
+    CNetScheduleJob m_Job;
+    auto_ptr<IEmbeddedStreamWriter> m_Writer;
+    auto_ptr<CNcbiOstream> m_WStream;
+
     auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
-    auto_ptr<CGridJobStatus> m_JobStatus;
+
+    void x_GetJobDetails();
+
+    size_t       m_BlobSize;
+    bool         m_AutoCleanUp;
+    bool         m_UseProgress;
+    auto_ptr<CNcbiIstream> m_RStream;
+    bool         m_JobDetailsRead;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
     CGridClient(const CGridClient&);
     CGridClient& operator=(const CGridClient&);
 };
+
+NCBI_DEPRECATED typedef CGridClient CGridJobSubmitter;
+
+NCBI_DEPRECATED typedef CGridClient CGridJobStatus;
 
 /// Grid Client exception
 ///
