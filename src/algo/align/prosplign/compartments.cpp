@@ -118,6 +118,11 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
     
     compartment.SetType(CSeq_align::eType_partial);
     CSeq_align::TSegs::TStd& std_segs = compartment.SetSegs().SetStd();
+
+    TSeqPos subj_leftmost = 0;
+    TSeqPos subj_rightmost = 0;
+
+
     ITERATE (THitRefs, h, hitrefs) {
 
         bool strand = (*h)->GetSubjStrand();
@@ -127,6 +132,9 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
         TSeqPos qry_max = (*h)->GetQueryMax()/3;
         double pct_identity = 0;
         double bit_score = 0;
+
+        subj_leftmost = min(subj_leftmost, subj_min);
+        subj_rightmost = min(subj_rightmost, subj_max);
 
         ITERATE(THitRefs, oh, orig_hitrefs) {
             if ((*oh)->GetSubjStrand() == strand &&
@@ -160,6 +168,26 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
 
     CRef<CSeq_annot> result(new CSeq_annot);
     result->SetData().SetAlign().push_back(seq_align);
+
+    CRef<CUser_object> uo(new CUser_object);
+    uo->SetType().SetStr("Compart Scores");
+    uo->AddField("bit_score", TotalScore(hitrefs));
+    uo->AddField("num_covered_aa", CountQueryCoverage(hitrefs)/3);
+    result->AddUserObject( *uo );
+
+    CRef<CSeq_id> qry_id(new CSeq_id);
+    qry_id->Assign(*hitrefs.front()->GetQueryId());
+    CRef<CAnnotdesc> align(new CAnnotdesc);
+    align->SetAlign().SetAlign_type(CAlign_def::eAlign_type_ref);
+    align->SetAlign().SetIds().push_back( qry_id );
+    result->SetDesc().Set().push_back( align );
+
+    CRef<CSeq_id> subj_id(new CSeq_id);
+    subj_id->Assign(*hitrefs.front()->GetSubjId());
+    CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id, subj_leftmost, subj_rightmost, hitrefs.front()->GetSubjStrand()?eNa_strand_plus:eNa_strand_minus));
+    CRef<CAnnotdesc> region(new CAnnotdesc);
+    region->SetRegion(*subj_loc);
+    result->SetDesc().Set().push_back(region);
 
     return result;
 }
@@ -205,47 +233,33 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
 
             CRef<CSeq_annot> compartment = MakeCompartment(comphits,orig_hitrefs);
 
-            CRef<CUser_object> uo(new CUser_object);
-            uo->SetType().SetStr("Compart Scores");
-            uo->AddField("bit_score", TotalScore(comphits));
-            uo->AddField("num_covered_aa", CountQueryCoverage(comphits)/3);
-            compartment->AddUserObject( *uo );
+            const TSeqPos* boxPtr = comps.GetBox(i);
+            TSeqPos cur_begin = boxPtr[2];
+            TSeqPos cur_end = boxPtr[3];
+            TSeqPos cur_begin_extended = cur_begin < max_extent ? 0 : cur_begin - max_extent;
+            TSeqPos cur_end_extended = cur_end + max_extent;
 
-            const THit::TCoord* boxPtr = comps.GetBox(i);
-
-            CRef<CSeq_id> qry_id(new CSeq_id);
-            qry_id->Assign(*hitrefs.front()->GetQueryId());
-            CRef<CAnnotdesc> align(new CAnnotdesc);
-            align->SetAlign().SetAlign_type(CAlign_def::eAlign_type_ref);
-            align->SetAlign().SetIds().push_back( qry_id );
-            compartment->SetDesc().Set().push_back( align );
-
-
-            CRef<CSeq_id> subj_id(new CSeq_id);
-            subj_id->Assign(*hitrefs.front()->GetSubjId());
-            THit::TCoord b = boxPtr[2] < max_extent ? 0 : boxPtr[2] - max_extent;
-            THit::TCoord e = boxPtr[3] + max_extent;
-            CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id,b,e,comps.GetStrand(i)?eNa_strand_plus:eNa_strand_minus));
-            CRef<CAnnotdesc> region(new CAnnotdesc);
-            region->SetRegion(*subj_loc);
-            compartment->SetDesc().Set().push_back(region);
+            CRef<CSeq_loc> cur_compartment_loc(&compartment->SetDesc().Set().front()->SetRegion());
+            cur_compartment_loc->SetInt().SetFrom(cur_begin_extended);
+            cur_compartment_loc->SetInt().SetTo(cur_end_extended);
 
             if (prev_compartment_loc.NotEmpty() &&
-                prev_compartment_loc->GetId()->Match(*subj_id) &&
-                prev_compartment_loc->GetStrand()==subj_loc->GetStrand()
+                prev_compartment_loc->GetId()->Match(*cur_compartment_loc->GetId()) &&
+                prev_compartment_loc->GetStrand()==cur_compartment_loc->GetStrand()
                ) {
-                TSeqPos prev_e = prev_compartment_loc->GetStop(eExtreme_Positional);
-                _ASSERT(prev_e - max_extent < boxPtr[2]);
-                if (prev_e >= b) {
-                    prev_e = (prev_e - max_extent + boxPtr[2])/2;
-                    b = prev_e+1;
-                    _ASSERT(b <= boxPtr[2]);
+                TSeqPos prev_end_extended = prev_compartment_loc->GetStop(eExtreme_Positional);
+                TSeqPos prev_end = prev_end_extended - max_extent;
+                _ASSERT(prev_end < cur_begin);
+                if (prev_end_extended >= cur_begin_extended) {
+                    prev_end_extended = (prev_end + cur_begin)/2;
+                    cur_begin_extended = prev_end_extended+1;
+                    _ASSERT(cur_begin_extended <= cur_begin);
 
-                    prev_compartment_loc->SetInt().SetTo(prev_e);
-                    subj_loc->SetInt().SetFrom(b);
+                    prev_compartment_loc->SetInt().SetTo(prev_end_extended);
+                    cur_compartment_loc->SetInt().SetFrom(cur_end_extended);
                 }
             }
-            prev_compartment_loc=subj_loc;
+            prev_compartment_loc=cur_compartment_loc;
 
             results.push_back(compartment);
             ++i;
