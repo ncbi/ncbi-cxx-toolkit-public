@@ -48,7 +48,7 @@ class CGridThreadContext
 public:
     explicit CGridThreadContext(CGridWorkerNode& node);
 
-    void RunJobs(CWorkerNodeJobContext& job_context);
+    void RunJob(CWorkerNodeJobContext& job_context);
     void CloseStreams();
 
     CNcbiIstream& GetIStream();
@@ -57,7 +57,7 @@ public:
 
     void JobDelayExpiration(unsigned runtime_inc);
 
-    bool PutResult(CNetScheduleJob& new_job);
+    void PutResult();
     void ReturnJob();
     void PutFailure();
     void PutFailureAndIgnoreErrors(const char* error_message);

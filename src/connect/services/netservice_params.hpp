@@ -133,10 +133,6 @@ NCBI_PARAM_DECL(bool, server, allow_implicit_job_return);
 typedef NCBI_PARAM_TYPE(server, allow_implicit_job_return)
     TWorkerNode_AllowImplicitJobReturn;
 
-NCBI_PARAM_DECL(bool, server, do_not_rebalance);
-typedef NCBI_PARAM_TYPE(server, do_not_rebalance)
-    TWorkerNode_DoNotRebalance;
-
 #define SECONDS_DOUBLE_TO_MS_UL(seconds) ((unsigned long) (seconds * 1000.0))
 
 NCBI_XCONNECT_EXPORT unsigned long s_SecondsToMilliseconds(

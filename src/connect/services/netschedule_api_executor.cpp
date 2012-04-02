@@ -252,28 +252,6 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
         job.job_id, job.ret_code, job.output);
 }
 
-
-bool CNetScheduleExecutor::PutResultGetJob(const CNetScheduleJob& done_job,
-                                           CNetScheduleJob& new_job,
-                                           const string& affinity)
-{
-    if (done_job.job_id.empty())
-        return GetJob(new_job);
-
-    s_CheckOutputSize(done_job.output,
-        m_Impl->m_API->GetServerParams().max_output_size);
-
-    string response(affinity.empty() ?
-        m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
-            done_job.job_id, done_job.ret_code, done_job.output) :
-        m_Impl->m_API->x_SendJobCmdWaitResponse("JXCG",
-            done_job.job_id, done_job.ret_code,
-            done_job.output, affinity));
-
-    return s_ParseGetJobResponse(new_job, response);
-}
-
-
 void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
 {
     if (job.progress_msg.length() >= kNetScheduleMaxDataSize) {

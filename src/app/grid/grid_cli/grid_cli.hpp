@@ -51,7 +51,6 @@
 #define AFFINITY_OPTION "affinity"
 #define ANY_AFFINITY_OPTION "any-affinity"
 #define JOB_OUTPUT_OPTION "job-output"
-#define GET_NEXT_JOB_OPTION "get-next-job"
 #define LIMIT_OPTION "limit"
 #define TIMEOUT_OPTION "timeout"
 #define RELIABLE_READ_OPTION "reliable-read"
@@ -65,7 +64,6 @@
 #define DIE_OPTION "die"
 
 #define READJOB_COMMAND "readjob"
-#define REQUESTJOB_COMMAND "requestjob"
 
 BEGIN_NCBI_SCOPE
 
@@ -97,7 +95,6 @@ enum EOption {
     eExclusiveJob,
     eJobOutput,
     eReturnCode,
-    eGetNextJob,
     eLimit,
     eTimeout,
     eReliableRead,

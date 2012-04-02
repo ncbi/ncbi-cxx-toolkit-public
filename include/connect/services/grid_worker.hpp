@@ -539,7 +539,6 @@ class CWorkerNodeJobWatchers;
 class CWorkerNodeIdleThread;
 class IGridWorkerNodeApp_Listener;
 class CWNJobsWatcher;
-class CSimpleRebalanceStrategy;
 /// Grid Worker Node
 ///
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -618,10 +617,7 @@ public:
     CNetScheduleAPI GetNetScheduleAPI() const { return m_NetScheduleAPI; }
     CNetScheduleExecutor GetNSExecutor() const { return m_NSExecutor; }
 
-    bool IsTimeToRebalance();
-
     bool EnterExclusiveMode();
-    bool EnterExclusiveModeOrReturnJob(CNetScheduleJob& exclusive_job);
     void LeaveExclusiveMode();
     bool IsExclusiveMode();
     bool WaitForExclusiveJobToFinish();
@@ -652,7 +648,6 @@ private:
     CFastMutex                   m_StorageFactoryMutex;
     CFastMutex                   m_JobWatcherMutex;
     unsigned int                 m_CheckStatusPeriod;
-    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
     CSemaphore                   m_ExclusiveJobSemaphore;
     bool                         m_IsProcessingExclusiveJob;
     Uint8                        m_TotalMemoryLimit;

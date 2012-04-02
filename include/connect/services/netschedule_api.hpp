@@ -535,14 +535,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///
     void PutResult(const CNetScheduleJob& job);
 
-    /// Put job result, get new job from the queue
-    /// If this is the first call and there is no previous job
-    /// (done_job.job_id is empty) this is equivalent to GetJob
-    ///
-    /// @sa PutResult, GetJob
-    bool PutResultGetJob(const CNetScheduleJob& done_job,
-        CNetScheduleJob& new_job, const string& affinity = kEmptyStr);
-
     /// Put job interim (progress) message
     ///
     /// @param job

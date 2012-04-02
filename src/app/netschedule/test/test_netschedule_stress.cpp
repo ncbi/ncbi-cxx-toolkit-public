@@ -153,10 +153,11 @@ void TestBatchSubmit(const string& service,
     CNetScheduleExecutor executor = cl.GetExecutor();
 
     for (;1;++cnt) {
-        bool job_exists = executor.PutResultGetJob(job, job);
-        if (!job_exists) {
+        job.output = "DONE";
+        job.ret_code = 0;
+        executor.PutResult(job);
+        if (!executor.GetJob(job))
             break;
-        }
     }
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     double elapsed = sw.Elapsed();
@@ -321,9 +322,7 @@ int CTestNetScheduleStress::Run(void)
     unsigned cnt = 0;
     for (; cnt < jcount/2; ++cnt) {
         CNetScheduleJob job;
-        bool job_exists = executor.WaitJob(job, 60);
-//        bool job_exists = cl.GetJob(&job_key, &input);
-        if (!job_exists)
+        if (!executor.WaitJob(job, 60))
             break;
         executor.ReturnJob(job.job_id);
         jobs_returned.push_back(job.job_id);
@@ -361,8 +360,8 @@ int CTestNetScheduleStress::Run(void)
 
     for (; 1; ++cnt) {
         CNetScheduleJob job;
-        bool job_exists = executor.GetJob(job);
-        if (!job_exists)
+
+        if (!executor.GetJob(job))
             break;
 
         jobs_processed.push_back(job.job_id);

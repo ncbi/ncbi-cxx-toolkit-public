@@ -391,118 +391,107 @@ CRequestStateGuard::~CRequestStateGuard()
     }
 }
 
-void CGridThreadContext::RunJobs(CWorkerNodeJobContext& job_context)
+void CGridThreadContext::RunJob(CWorkerNodeJobContext& job_context)
 {
     _ASSERT(!m_JobContext);
     m_JobContext = &job_context;
     job_context.SetThreadContext(this);
 
-    bool more_jobs;
+    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+    if (debug_context) {
+        debug_context->DumpInput(m_JobContext->GetJobInput(),
+            m_JobContext->GetJobNumber());
+    }
+    m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
+        IWorkerNodeJobWatcher::eJobStarted);
 
-    do {
-        more_jobs = false;
+    {{ // CRequestStateGuard scope.
 
-        CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-        if (debug_context) {
-            debug_context->DumpInput(m_JobContext->GetJobInput(),
-                m_JobContext->GetJobNumber());
-        }
-        m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
-            IWorkerNodeJobWatcher::eJobStarted);
+    CRequestStateGuard request_state_guard(job_context);
 
-        CNetScheduleJob new_job;
-
-        {{ // CRequestStateGuard scope.
-
-        CRequestStateGuard request_state_guard(job_context);
-
+    try {
+        CRef<IWorkerNodeJob> job(GetJob());
         try {
-            CRef<IWorkerNodeJob> job(GetJob());
-            try {
-                job_context.SetJobRetCode(job->Do(job_context));
-            } catch (CGridWorkerNodeException& ex) {
-                if (ex.GetErrCode() !=
-                        CGridWorkerNodeException::eExclusiveModeIsAlreadySet) {
-                    try {
-                        CloseStreams();
-                    }
-                    NCBI_CATCH_ALL_X(11, "Could not close IO streams");
-                    throw;
-                }
-
-                if (job_context.IsLogRequested()) {
-                    LOG_POST_X(21, "Job " << job_context.GetJobKey() <<
-                        " has been returned back to the queue "
-                        "because it requested exclusive mode but "
-                        "another job already has the exclusive status.");
-                }
-            }
-            CloseStreams();
-            unsigned try_count = 0;
-            for (;;) {
+            job_context.SetJobRetCode(job->Do(job_context));
+        } catch (CGridWorkerNodeException& ex) {
+            if (ex.GetErrCode() !=
+                    CGridWorkerNodeException::eExclusiveModeIsAlreadySet) {
                 try {
-                    switch (job_context.GetCommitStatus()) {
-                        case CWorkerNodeJobContext::eDone:
-                            more_jobs = PutResult(new_job);
-                            break;
+                    CloseStreams();
+                }
+                NCBI_CATCH_ALL_X(11, "Could not close IO streams");
+                throw;
+            }
 
-                        case CWorkerNodeJobContext::eFailure:
+            if (job_context.IsLogRequested()) {
+                LOG_POST_X(21, "Job " << job_context.GetJobKey() <<
+                    " has been returned back to the queue "
+                    "because it requested exclusive mode but "
+                    "another job already has the exclusive status.");
+            }
+        }
+        CloseStreams();
+        unsigned try_count = 0;
+        for (;;) {
+            try {
+                switch (job_context.GetCommitStatus()) {
+                    case CWorkerNodeJobContext::eDone:
+                        PutResult();
+                        break;
+
+                    case CWorkerNodeJobContext::eFailure:
+                        PutFailure();
+                        break;
+
+                    case CWorkerNodeJobContext::eNotCommitted:
+                        if (!TWorkerNode_AllowImplicitJobReturn::
+                                    GetDefault() &&
+                                job_context.GetShutdownLevel() ==
+                                    CNetScheduleAdmin::eNoShutdown) {
+                            job_context.m_Job.error_msg =
+                                "Job was not explicitly committed";
                             PutFailure();
                             break;
+                        }
+                        /* FALL THROUGH */
 
-                        case CWorkerNodeJobContext::eNotCommitted:
-                            if (!TWorkerNode_AllowImplicitJobReturn::
-                                        GetDefault() &&
-                                    job_context.GetShutdownLevel() ==
-                                        CNetScheduleAdmin::eNoShutdown) {
-                                job_context.m_Job.error_msg =
-                                    "Job was not explicitly committed";
-                                PutFailure();
-                                break;
-                            }
-                            /* FALL THROUGH */
+                    case CWorkerNodeJobContext::eReturn:
+                        ReturnJob();
+                        break;
 
-                        case CWorkerNodeJobContext::eReturn:
-                            ReturnJob();
-                            break;
-
-                        case CWorkerNodeJobContext::eCanceled:
-                            ERR_POST("Job " << job_context.GetJobKey() <<
-                                " has been canceled");
-                    }
-                    break;
-                } catch (CNetServiceException& ex) {
-                    if (++try_count >= TServConn_ConnMaxRetries::GetDefault())
-                        throw;
-                    ERR_POST_X(22, "Communication Error : " << ex.what());
-                    SleepMilliSec(s_GetRetryDelay());
+                    case CWorkerNodeJobContext::eCanceled:
+                        ERR_POST("Job " << job_context.GetJobKey() <<
+                            " has been canceled");
                 }
+                break;
+            } catch (CNetServiceException& ex) {
+                if (++try_count >= TServConn_ConnMaxRetries::GetDefault())
+                    throw;
+                ERR_POST_X(22, "Communication Error : " << ex.what());
+                SleepMilliSec(s_GetRetryDelay());
             }
-
-            if (!CGridGlobals::GetInstance().IsShuttingDown())
-                static_cast<CWorkerNodeJobCleanup*>(
-                    job_context.GetCleanupEventSource())->CallEventHandlers();
-        }
-        catch (CNetScheduleException& e) {
-            ERR_POST_X(20, m_JobContext->GetJobKey() <<
-                " Error in Job execution: " << e.what());
-            if (e.GetErrCode() != CNetScheduleException::eJobNotFound)
-                PutFailureAndIgnoreErrors(e.what());
-        }
-        catch (exception& ex) {
-            ERR_POST_X(18, m_JobContext->GetJobKey() <<
-                " Error in Job execution: " << ex.what());
-            PutFailureAndIgnoreErrors(ex.what());
         }
 
-        m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
-            IWorkerNodeJobWatcher::eJobStopped);
+        if (!CGridGlobals::GetInstance().IsShuttingDown())
+            static_cast<CWorkerNodeJobCleanup*>(
+                job_context.GetCleanupEventSource())->CallEventHandlers();
+    }
+    catch (CNetScheduleException& e) {
+        ERR_POST_X(20, m_JobContext->GetJobKey() <<
+            " Error in Job execution: " << e.what());
+        if (e.GetErrCode() != CNetScheduleException::eJobNotFound)
+            PutFailureAndIgnoreErrors(e.what());
+    }
+    catch (exception& ex) {
+        ERR_POST_X(18, m_JobContext->GetJobKey() <<
+            " Error in Job execution: " << ex.what());
+        PutFailureAndIgnoreErrors(ex.what());
+    }
 
-        }} // Call CRequestStateGuard destructor before job_context is reset.
+    m_JobContext->GetWorkerNode().x_NotifyJobWatcher(*m_JobContext,
+        IWorkerNodeJobWatcher::eJobStopped);
 
-        if (more_jobs)
-            job_context.Reset(new_job);
-    } while (more_jobs);
+    }} // Call CRequestStateGuard destructor before job_context is reset.
 
     m_JobContext->SetThreadContext(NULL);
     m_JobContext = NULL;
@@ -532,7 +521,7 @@ void CWorkerNodeRequest::Process()
                 new CGridThreadContext(m_JobContext->GetWorkerNode());
             s_tls.SetValue(thread_context, s_TlsCleanup);
         }
-        thread_context->RunJobs(*m_JobContext);
+        thread_context->RunJob(*m_JobContext);
     }
     catch (exception& ex) { x_HandleProcessError(&ex);  }
 }
@@ -1066,8 +1055,6 @@ int CGridWorkerNode::Run()
         m_NetScheduleAPI.SetClientSession(GetDiagContext().GetStringUID());
     }
 
-    m_RebalanceStrategy = CreateSimpleRebalanceStrategy(conf, "server");
-
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();
 
     m_NetScheduleAPI.SetProgramVersion(m_JobFactory->GetJobVersion());
@@ -1143,11 +1130,10 @@ int CGridWorkerNode::Run()
                                                           job,
                                                           log_requested));
                 job_context->Reset(job);
-                if (m_MaxThreads > 1 ) {
-                    CRef<CStdRequest> job_req(
-                                    new CWorkerNodeRequest(job_context));
+                if (m_MaxThreads > 1) {
                     try {
-                        thread_pool->AcceptRequest(job_req);
+                        thread_pool->AcceptRequest(CRef<CStdRequest>(
+                                new CWorkerNodeRequest(job_context)));
                     } catch (CBlockingQueueException& ex) {
                         ERR_POST_X(28, ex.what());
                         // that must not happen after CBlockingQueue is fixed
@@ -1156,7 +1142,7 @@ int CGridWorkerNode::Run()
                     }
                 } else {
                     try {
-                        single_thread_context->RunJobs(*job_context);
+                        single_thread_context->RunJob(*job_context);
                     } catch (exception&) {
                         x_ReturnJob(job_context->GetJobKey());
                         throw;
@@ -1299,8 +1285,14 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
 
         job_exists = GetNSExecutor().WaitJob(job, m_NSTimeout);
 
-        if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob)
-            job_exists = EnterExclusiveModeOrReturnJob(job);
+        if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob) {
+            if (EnterExclusiveMode())
+                job_exists = true;
+            else {
+                x_ReturnJob(job.job_id);
+                job_exists = false;
+            }
+        }
     }
     if (job_exists && CGridGlobals::GetInstance().IsShuttingDown()) {
         x_ReturnJob(job.job_id);
@@ -1393,16 +1385,6 @@ bool CGridWorkerNode::x_AreMastersBusy() const
     return true;
 }
 
-bool CGridWorkerNode::IsTimeToRebalance()
-{
-    if (!m_NetScheduleAPI.GetService().IsLoadBalanced() ||
-            TWorkerNode_DoNotRebalance::GetDefault())
-        return false;
-
-    m_RebalanceStrategy->OnResourceRequested();
-    return m_RebalanceStrategy->NeedRebalance();
-}
-
 bool CGridWorkerNode::EnterExclusiveMode()
 {
     if (m_ExclusiveJobSemaphore.TryWait()) {
@@ -1412,18 +1394,6 @@ bool CGridWorkerNode::EnterExclusiveMode()
         return true;
     }
     return false;
-}
-
-bool CGridWorkerNode::EnterExclusiveModeOrReturnJob(
-    CNetScheduleJob& exclusive_job)
-{
-    _ASSERT(exclusive_job.mask & CNetScheduleAPI::eExclusiveJob);
-
-    if (!EnterExclusiveMode()) {
-        x_ReturnJob(exclusive_job.job_id);
-        return false;
-    }
-    return true;
 }
 
 void CGridWorkerNode::LeaveExclusiveMode()

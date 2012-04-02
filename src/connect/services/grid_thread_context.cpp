@@ -148,26 +148,13 @@ void CGridThreadContext::JobDelayExpiration(unsigned time_to_run)
     }
 }
 
-#define OTHER_JOB_IS_EXCLUSIVE (1 << 0)
-#define PREV_JOB_WAS_EXCLUSIVE (1 << 1)
-#define NEW_JOB_IS_EXCLUSIVE (1 << 2)
-
-
 /// @internal
-bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
+void CGridThreadContext::PutResult()
 {
     _ASSERT(m_JobContext);
-    bool more_jobs = false;
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (!debug_context ||
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-
-        int decision_mask = m_Worker.IsExclusiveMode() ?
-            OTHER_JOB_IS_EXCLUSIVE : 0;
-
-        if (m_JobContext->IsJobExclusive())
-            // Set PREV_JOB_WAS_EXCLUSIVE and reset OTHER_JOB_IS_EXCLUSIVE.
-            decision_mask ^= PREV_JOB_WAS_EXCLUSIVE | OTHER_JOB_IS_EXCLUSIVE;
 
         Uint8 total_memory_limit = m_Worker.GetTotalMemoryLimit();
         if (total_memory_limit > 0) {  // memory check requested
@@ -191,31 +178,14 @@ bool CGridThreadContext::PutResult(CNetScheduleJob& new_job)
             CGridGlobals::GetInstance().RequestShutdown(
                 CNetScheduleAdmin::eNormalShutdown, RESOURCE_OVERUSE_EXIT_CODE);
 
-        if (CGridGlobals::GetInstance().IsShuttingDown() ||
-                m_Worker.IsTimeToRebalance() ||
-                decision_mask & OTHER_JOB_IS_EXCLUSIVE)
-            m_NetScheduleExecutor.PutResult(m_JobContext->m_Job);
-        else {
-            more_jobs = m_NetScheduleExecutor.PutResultGetJob(
-                m_JobContext->m_Job, new_job);
+        m_NetScheduleExecutor.PutResult(m_JobContext->m_Job);
 
-            if (more_jobs && (new_job.mask & CNetScheduleAPI::eExclusiveJob))
-                decision_mask |= NEW_JOB_IS_EXCLUSIVE;
-        }
-
-        switch (decision_mask) {
-        case PREV_JOB_WAS_EXCLUSIVE:
+        if (m_Worker.IsExclusiveMode() && m_JobContext->IsJobExclusive())
             m_Worker.LeaveExclusiveMode();
-            break;
-
-        case NEW_JOB_IS_EXCLUSIVE:
-            more_jobs = m_Worker.EnterExclusiveModeOrReturnJob(new_job);
-        }
     }
     m_JobContext->GetWorkerNode()
         .x_NotifyJobWatcher(*m_JobContext,
                             IWorkerNodeJobWatcher::eJobSucceed);
-    return more_jobs;
 }
 /// @internal
 void CGridThreadContext::ReturnJob()

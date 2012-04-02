@@ -147,9 +147,6 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eReturnCode,
         "return-code", "Job return code."},
 
-    {CCommandLineParser::eSwitch, eGetNextJob,
-        GET_NEXT_JOB_OPTION, "Request another job for execution."},
-
     {CCommandLineParser::eOptionWithParameter, eLimit,
         LIMIT_OPTION, "Maximum number of records to return."},
 
@@ -532,7 +529,7 @@ struct SCommandDefinition {
 */
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_RequestJob,
-        REQUESTJOB_COMMAND, "Get a job from NetSchedule for processing.",
+        "requestjob", "Get a job from NetSchedule for processing.",
         "Return a job pending for execution. The status of the job is changed "
         "from \"Pending\" to \"Running\" before the job is returned. "
         "This command makes it possible for " PROGRAM_NAME " to emulate a "
@@ -565,14 +562,10 @@ struct SCommandDefinition {
         "output is read from the standard input stream or a file.\n\n"
         "If the job is being reported as failed, an error message "
         "must be provided with the '--" FAIL_JOB_OPTION "' command "
-        "line option.\n\n"
-        "If the '--" GET_NEXT_JOB_OPTION "' option is given, this "
-        "command makes an attempt to acquire another pending job and "
-        "if it succeeds, its output is identical to that of the "
-        REQUESTJOB_COMMAND " command. Otherwise, no output is produced.",
+        "line option.",
         {eID, eNetSchedule, eQueue,
             eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
-            eGetNextJob, eAffinity, eOutputFile, eAuth,
+            eAffinity, eOutputFile, eAuth,
             eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_ReturnJob,

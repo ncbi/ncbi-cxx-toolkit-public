@@ -81,7 +81,7 @@ public:
 
 protected:
 
-    // Render the job input paramers HTML page
+    // Render the job input parameters HTML page
     virtual void ShowParamsPage(CGridCgiContext& ctx) const {}
 
     // Collect parameters from the HTML page.
@@ -105,10 +105,10 @@ protected:
     // the job is being processed by a worker node
     virtual void OnJobRunning(CGridCgiContext& ctx);
 
-    // the job is in the Netschedule Queue 
+    // the job is in the NetSchedule Queue 
     virtual void OnJobPending(CGridCgiContext& ctx);
 
-    // Return a job cancelation grid_client.
+    // Return a job cancellation grid_client.
     virtual bool JobStopRequested(void) const;
 
     virtual void OnQueueIsBusy(CGridCgiContext&);
