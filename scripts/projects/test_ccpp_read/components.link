@@ -1,3 +1,3 @@
 [components]
-core            9.0
-objects         9.0
+core            7.0 -r211538
+objects         7.0 -r211538
