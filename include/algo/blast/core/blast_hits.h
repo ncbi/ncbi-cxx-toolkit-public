@@ -808,6 +808,15 @@ Blast_HSPResultsFromHSPStreamWithLimit(struct BlastHSPStream* hsp_stream,
                                    Uint4 max_num_hsps,
                                    Boolean* removed_hsps);
 
+BlastHSPResults*
+/** As Blast_HSPResultsFromHSPStreamWithLimit, except accept and return 
+ * array of Boolen flags specifying which query exceeded HSP limits.
+ */
+Blast_HSPResultsFromHSPStreamWithLimitEx(struct BlastHSPStream* hsp_stream, 
+                                   Uint4 num_queries, 
+                                   SBlastHitsParameters* hit_param,
+                                   Uint4 max_num_hsps,
+                                   Boolean* removed_hsps);
 /** Splits the BlastHSPResults structure for a PHI BLAST search into an array of
  * BlastHSPResults structures, corresponding to different pattern occurrences in
  * query. All HSPs are copied, so it is safe to free the returned 

@@ -3401,6 +3401,69 @@ s_TrimResultsByTotalHSPLimit(BlastHSPResults* results, Uint4 total_hsp_limit)
 
     return hsp_limit_exceeded;
 }
+/* extended version of the above function. Provides information about query number
+ * which exceeded number of HSP.
+ * The hsp_limit_exceeded is of results->num_queries size guarantied.
+ */
+static Boolean
+s_TrimResultsByTotalHSPLimitEx(BlastHSPResults* results,
+	                       Uint4 total_hsp_limit,
+			       Boolean *hsp_limit_exceeded)
+{
+    int query_index;
+    Boolean  any_hsp_limit_exceeded = FALSE;
+    
+    if (total_hsp_limit == 0) {
+        return any_hsp_limit_exceeded;
+    }
+
+    for (query_index = 0; query_index < results->num_queries; ++query_index) {
+        BlastHitList* hit_list = NULL;
+        BlastHSPList** hsplist_array = NULL;
+        Int4 hsplist_count = 0;
+        int subj_index;
+        if( hsp_limit_exceeded) hsp_limit_exceeded[query_index]  = FALSE;
+
+        if ( !(hit_list = results->hitlist_array[query_index]) )
+            continue;
+        /* The count of HSPs is separate for each query. */
+        hsplist_count = hit_list->hsplist_count;
+
+        hsplist_array = (BlastHSPList**) 
+            malloc(hsplist_count*sizeof(BlastHSPList*));
+        
+        for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
+            hsplist_array[subj_index] = hit_list->hsplist_array[subj_index];
+        }
+ 
+        qsort((void*)hsplist_array, hsplist_count,
+              sizeof(BlastHSPList*), s_CompareHsplistHspcnt);
+        
+        {
+            Int4 tot_hsps = 0;  /* total number of HSPs */
+            Uint4 hsp_per_seq = MAX(1, total_hsp_limit/hsplist_count);
+            for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
+                Int4 allowed_hsp_num = ((subj_index+1)*hsp_per_seq) - tot_hsps;
+                BlastHSPList* hsp_list = hsplist_array[subj_index];
+                if (hsp_list->hspcnt > allowed_hsp_num) {
+                    /* Free the extra HSPs */
+                    int hsp_index;
+                    for (hsp_index = allowed_hsp_num; 
+                         hsp_index < hsp_list->hspcnt; ++hsp_index) {
+                        Blast_HSPFree(hsp_list->hsp_array[hsp_index]);
+                    }
+                    hsp_list->hspcnt = allowed_hsp_num;
+                    any_hsp_limit_exceeded = TRUE;
+        	    if( hsp_limit_exceeded ) hsp_limit_exceeded[query_index]  = FALSE;
+                }
+                tot_hsps += hsp_list->hspcnt;
+            }
+        }
+        sfree(hsplist_array);
+    }
+
+    return any_hsp_limit_exceeded;
+}
 
 BlastHSPResults*
 Blast_HSPResultsFromHSPStreamWithLimit(BlastHSPStream* hsp_stream, 
@@ -3418,5 +3481,20 @@ Blast_HSPResultsFromHSPStreamWithLimit(BlastHSPStream* hsp_stream,
     if (removed_hsps) {
         *removed_hsps = rm_hsps;
     }
+    return retval;
+}
+BlastHSPResults*
+Blast_HSPResultsFromHSPStreamWithLimitEx(BlastHSPStream* hsp_stream, 
+                                   Uint4 num_queries, 
+                                   SBlastHitsParameters* hit_param,
+                                   Uint4 max_num_hsps,
+				   Boolean *removed_hsps)
+{
+    Boolean rm_hsps = FALSE;
+    BlastHSPResults* retval = Blast_HSPResultsFromHSPStream(hsp_stream,
+                                                            num_queries,
+                                                            hit_param);
+
+    rm_hsps = s_TrimResultsByTotalHSPLimitEx(retval, max_num_hsps,removed_hsps);
     return retval;
 }
