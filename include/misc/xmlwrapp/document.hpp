@@ -487,6 +487,10 @@ public:
      *
      * @return A xml::node::iterator that points to the first child node.
      * @return An end iterator if there are no children in this document
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -500,6 +504,10 @@ public:
      *
      * @return A xml::node::const_iterator that points to the first child node.
      * @return An end const_iterator if there are no children in this document.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -553,6 +561,10 @@ public:
      * @param n The node to insert as a child of this document.
      * @return An iterator that points to the newly inserted node.
      * @see xml::document::push_back
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -570,6 +582,10 @@ public:
      * @param n The node to insert as a child of this document.
      * @return An iterator that points to the newly inserted node.
      * @see xml::document::push_back
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -591,6 +607,10 @@ public:
      * @param new_node The node to put in old_node's place.
      * @return An iterator that points to the new node.
      * @see xml::document::push_back
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -610,6 +630,10 @@ public:
      * @param to_erase An iterator that points to the node to be erased.
      * @return An iterator that points to the node after the one being erased.
      * @see xml::document::push_back
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -629,6 +653,10 @@ public:
      * @param last An iterator that points one past the last node to erase. Think xml::node::end().
      * @return An iterator that points to the node after the last one being erased.
      * @see xml::document::push_back
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################

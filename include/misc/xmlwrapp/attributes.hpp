@@ -262,6 +262,11 @@ public:
 
     /**
      * Iterator class for accessing attribute pairs.
+     *
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      */
     class iterator {
     public:
@@ -276,7 +281,18 @@ public:
         iterator& operator= (const iterator& other);
         ~iterator (void);
 
+        /**
+         * @warning  The provided reference to the xml::attributes::attr
+         *           becomes invalid when the iterator is destroyed or changed
+         *           (e.g. advanced or re-assigned).
+         */
         reference operator*  (void) const;
+
+        /**
+         * @warning  The provided pointer to the xml::attributes::attr
+         *           becomes invalid when the iterator is destroyed or changed
+         *           (e.g. advanced or re-assigned).
+         */
         pointer   operator-> (void) const;
 
         /// prefix increment
@@ -297,6 +313,11 @@ public:
 
     /**
      * Const Iterator class for accessing attribute pairs.
+     *
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      */
     class const_iterator {
     public:
@@ -312,7 +333,18 @@ public:
         const_iterator& operator= (const const_iterator& other);
         ~const_iterator (void);
 
+        /**
+         * @warning  The provided reference to the xml::attributes::attr
+         *           becomes invalid when the iterator is destroyed or changed
+         *           (e.g. advanced or re-assigned).
+         */
         reference operator*  (void) const;
+
+        /**
+         * @warning  The provided pointer to the xml::attributes::attr
+         *           becomes invalid when the iterator is destroyed or changed
+         *           (e.g. advanced or re-assigned).
+         */
         pointer   operator-> (void) const;
 
         /// prefix increment
@@ -338,6 +370,10 @@ public:
      * @return An iterator equal to end() if there are no attributes.
      * @see xml::attributes::iterator
      * @see xml::attributes::attr
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -351,6 +387,10 @@ public:
      * @return A const_iterator equal to end() if there are no attributes.
      * @see xml::attributes::const_iterator
      * @see xml::attributes::attr
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -422,6 +462,10 @@ public:
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::iterator
      * @see xml::attributes::attr
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -451,6 +495,10 @@ public:
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::const_iterator
      * @see xml::attributes::attr
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -466,6 +514,10 @@ public:
      * @return An iterator that points to the attribute after the one to be erased.
      * @see xml::attributes::iterator
      * @see xml::attributes::attr
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################

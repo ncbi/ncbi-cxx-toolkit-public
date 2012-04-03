@@ -399,6 +399,10 @@ public:
      * @return iterator to the found attribute. If there is no such an
      *         attribute then the provided iterator equals to
      *         attributes::end().
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      * @author Sergey Satskiy, NCBI
     **/
     attributes::iterator find_attribute (const char* name,
@@ -423,6 +427,10 @@ public:
      * @return const iterator to the found attribute. If there is no such an
      *         attribute then the provided iterator equals to
      *         attributes::end().
+     * @warning  A reference and/or a pointer to the xml::attributes::attr
+     *           provided by the iterator's "operator *" and "operator ->"
+     *           becomes invalid when the iterator is destroyed or changed
+     *           (e.g. advanced or re-assigned).
      * @author Sergey Satskiy, NCBI
     **/
     attributes::const_iterator find_attribute (const char* name,
@@ -648,6 +656,11 @@ public:
      * The xml::node::iterator provides a way to access children nodes
      * similar to a standard C++ container. The nodes that are pointed to by
      * the iterator can be changed.
+     *
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      */
     class iterator {
     public:
@@ -662,7 +675,18 @@ public:
         iterator& operator= (const iterator& other);
         ~iterator (void);
 
+        /**
+         * @warning The provided reference to the xml::node becomes invalid
+         *          when the iterator is destroyed or changed
+         *          (e.g. advanced or re-assigned).
+         */
         reference operator*  (void) const;
+
+        /**
+         * @warning The provided pointer to the xml::node becomes invalid
+         *          when the iterator is destroyed or changed
+         *          (e.g. advanced or re-assigned).
+         */
         pointer   operator-> (void) const;
 
         /// prefix increment
@@ -690,6 +714,11 @@ public:
      * The xml::node::const_iterator provides a way to access children nodes
      * similar to a standard C++ container. The nodes that are pointed to by
      * the const_iterator cannot be changed.
+     *
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      */
     class const_iterator {
     public:
@@ -705,7 +734,18 @@ public:
         const_iterator& operator= (const const_iterator& other);
         ~const_iterator (void);
 
+        /**
+         * @warning The provided reference to the xml::node becomes invalid
+         *          when the iterator is destroyed or changed
+         *          (e.g. advanced or re-assigned).
+         */
         reference operator*  (void) const;
+
+        /**
+         * @warning The provided pointer to the xml::node becomes invalid
+         *          when the iterator is destroyed or changed
+         *          (e.g. advanced or re-assigned).
+         */
         pointer   operator-> (void) const;
 
         /// prefix increment
@@ -756,6 +796,10 @@ public:
      * Get an iterator that points to the beginning of this node's children.
      *
      * @return An iterator that points to the beginning of the children.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -767,6 +811,10 @@ public:
      * children.
      *
      * @return A const_iterator that points to the beginning of the children.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -798,6 +846,10 @@ public:
      * Get an iterator that points back at this node.
      *
      * @return An iterator that points at this node.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -808,6 +860,10 @@ public:
      * Get a const_iterator that points back at this node.
      *
      * @return A const_iterator that points at this node.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -821,6 +877,10 @@ public:
      *
      * @return An iterator that points to this nodes parent.
      * @return If no parent, returns the same iterator that xml::node::end() returns.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -834,6 +894,10 @@ public:
      *
      * @return A const_iterator that points to this nodes parent.
      * @return If no parent, returns the same const_iterator that xml::node::end() returns.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -855,6 +919,10 @@ public:
      *               namespace set.
      * @return An iterator that points to the node if found.
      * @return An end() iterator if the node was not found.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*), find(const char*, iterator)
@@ -878,6 +946,10 @@ public:
      *               namespace set.
      * @return A const_iterator that points to the node if found.
      * @return An end() const_iterator if the node was not found.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*) const, find(const char*, const_iterator) const
@@ -903,6 +975,10 @@ public:
      *               namespace set.
      * @return An iterator that points to the node if found.
      * @return An end() iterator if the node was not found.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*)
@@ -929,6 +1005,10 @@ public:
      *               namespace set.
      * @return A const_iterator that points to the node if found.
      * @return An end() const_iterator if the node was not found.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones; Sergey Satskiy, NCBI
      *
      * @see elements(const char*) const
@@ -1090,6 +1170,10 @@ public:
      *
      * @param n The node to insert as a child of this node.
      * @return An iterator that points to the newly inserted node.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -1103,6 +1187,10 @@ public:
      * @param position An iterator that points to the location where the new node should be inserted (before it).
      * @param n The node to insert as a child of this node.
      * @return An iterator that points to the newly inserted node.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -1119,6 +1207,10 @@ public:
      * @param old_node An iterator that points to the node that should be removed.
      * @param new_node The node to put in old_node's place.
      * @return An iterator that points to the new node.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
@@ -1133,6 +1225,10 @@ public:
      *
      * @param to_erase An iterator that points to the node to be erased.
      * @return An iterator that points to the node after the one being erased.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
      * @author Gary A. Passero
     **/
@@ -1148,6 +1244,10 @@ public:
      * @param first The first node in the range to be removed.
      * @param last An iterator that points one past the last node to erase. Think xml::node::end().
      * @return An iterator that points to the node after the last one being erased.
+     * @warning A reference and/or a pointer to the xml::node provided by
+     *          iterator's "operator *" and "operator ->" becomes invalid
+     *          when the iterator is destroyed or changed
+     *          (e.g. advanced or re-assigned).
      * @author Peter Jones
     **/
     //####################################################################
