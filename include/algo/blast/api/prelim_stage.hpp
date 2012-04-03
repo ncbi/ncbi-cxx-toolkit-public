@@ -96,9 +96,14 @@ public:
 
     /// Return HSPs in a structure other than the HSPStream? Provide
     /// conversion? How to combine this with CBlastTracebackStage?
+    //  if rm_hsps passed, retrun true if hsp exceeded max_num_hsps limit 
+    //  for any query.
+    //  if rm_hsps_info passed return array of boolen flags for every query 
+    //  true if hsp exceeded max_num_hsps :w
     BlastHSPResults* ComputeBlastHSPResults(BlastHSPStream* stream,
                                             Uint4 max_num_hsps = 0,
-                                            bool* rm_hsps = NULL) const;
+                                            bool* rm_hsps = NULL,
+					    vector<bool> *rm_hsps_info = NULL) const;
 
     /// Retrieve any error/warning messages that occurred during the search
     TSearchMessages GetSearchMessages() const;

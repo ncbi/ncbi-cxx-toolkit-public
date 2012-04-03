@@ -308,30 +308,40 @@ CBlastPrelimSearch::CheckInternalData()
     return retval;
 }
 
+
 BlastHSPResults*
 CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
                                            Uint4 max_num_hsps,
-                                           bool* rm_hsps) const
+					   bool* rm_hsps,
+					   vector<bool> *rm_hsps_info) const
 {
+    bool any_query_hsp_limited = false;
     auto_ptr<const CBlastOptionsMemento> opts_memento
         (m_Options->CreateSnapshot());
 
     _ASSERT(m_InternalData->m_QueryInfo->num_queries > 0);
-    Boolean removed_hsps = FALSE;
+    Boolean any_query_removed_hsps = FALSE;
+    Boolean *removed_hsps = new Boolean [ m_InternalData->m_QueryInfo->num_queries ];
     SBlastHitsParameters* hit_param = NULL;
     SBlastHitsParametersNew(opts_memento->m_HitSaveOpts,
                             opts_memento->m_ExtnOpts,
                             opts_memento->m_ScoringOpts,
                             &hit_param);
     BlastHSPResults* retval =
-        Blast_HSPResultsFromHSPStreamWithLimit(stream,
+        Blast_HSPResultsFromHSPStreamWithLimitEx(stream,
            (Uint4) m_InternalData->m_QueryInfo->num_queries,
            hit_param,
            max_num_hsps,
-           &removed_hsps);
-    if (rm_hsps) {
-        *rm_hsps = removed_hsps == FALSE ? false : true;
+           removed_hsps);
+    if( rm_hsps_info){ 
+	rm_hsps_info->reserve(m_InternalData->m_QueryInfo->num_queries );
+        for( int query_index = 0 ; query_index < m_InternalData->m_QueryInfo->num_queries ; query_index ++ ){
+	  (*rm_hsps_info)[ query_index ] = removed_hsps[query_index] == FALSE ? false : true;
+	  if( (*rm_hsps_info)[ query_index ] ) any_query_hsp_limited = true;
+        }
     }
+    delete [] removed_hsps;
+    if( rm_hsps ) *rm_hsps = any_query_hsp_limited ;
     // applications assume the HSPLists in the HSPResults are
     // sorted in order of worsening best e-value
     Blast_HSPResultsSortByEvalue(retval);
