@@ -698,7 +698,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
              break;
          }
 
-         // -RMH- testing complexity adjustment
+         // -RMH- Complexity adjusted scoring
          if ( sbp->complexity_adjusted_scoring &&
               sbp->matrix->freqs &&
               gap_align->edit_script ) {
@@ -740,33 +740,48 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
 
               if ( adj_score < 0 )
                   adj_score = 0;
-             //printf("Score = %d, Complexity Adjusted = %d\n", gap_align->score, (Int4)adj_score );
              gap_align->score = adj_score;
+             
+             // Due to a recent change in blast/core we need to free up
+             // the hit here now.  
+             if (gap_align->score < cutoff)
+             {
+               /* Score is below threshold */
+               gap_align->edit_script = 
+                     GapEditScriptDelete(gap_align->edit_script);
+               hsp_array[index] = Blast_HSPFree(hsp);
+             }
          }
-         // -RMH-: Done
          
-         Blast_HSPUpdateWithTraceback(gap_align, hsp);
+         // RMH: The complexity adjustment/thresholding code in the
+         //      above block may now remove the current hit.  Only
+         //      consider the following if we haven't freed the 
+         //      hit
+         if ( hsp_array[index] )
+         {
+           Blast_HSPUpdateWithTraceback(gap_align, hsp);
 
-         if (!delete_hsp && !kGreedyTraceback) {
-             /* Calculate number of identities and check if this HSP meets the
-                percent identity and length criteria. */
-             Int4 align_length = 0;
-             Blast_HSPGetNumIdentitiesAndPositives(query_nomask,
-                     							   adjusted_subject,
-                     							   hsp,
-                     							   score_options,
-                     							   &align_length,
-                     							   sbp);
-
-             delete_hsp = Blast_HSPTest(hsp, hit_options, align_length);
-         }
-         if (!delete_hsp) {
-            Blast_HSPAdjustSubjectOffset(hsp, start_shift);
-            status = BlastIntervalTreeAddHSP(hsp, tree, query_info, 
-                                       eQueryAndSubject);
-            if (status) return status;
-         } else {
-            hsp_array[index] = Blast_HSPFree(hsp);
+           if (!delete_hsp && !kGreedyTraceback) {
+               /* Calculate number of identities and check if this HSP meets the
+                  percent identity and length criteria. */
+               Int4 align_length = 0;
+               Blast_HSPGetNumIdentitiesAndPositives(query_nomask,
+                       							   adjusted_subject,
+                       							   hsp,
+                       							   score_options,
+                       							   &align_length,
+                       							   sbp);
+  
+               delete_hsp = Blast_HSPTest(hsp, hit_options, align_length);
+           }
+           if (!delete_hsp) {
+              Blast_HSPAdjustSubjectOffset(hsp, start_shift);
+              status = BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+                                         eQueryAndSubject);
+              if (status) return status;
+           } else {
+              hsp_array[index] = Blast_HSPFree(hsp);
+           }
          }
       } else {
          /* Contained within another HSP, delete. */

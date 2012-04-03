@@ -111,9 +111,8 @@ int CRMBlastnApp::Run(void)
         // Initialize the megablast database index now so we can know whether an indexed search will be run.
         // This is only important for the reference in the report, but would be done anyway.
         if (opt.GetUseIndex() && !m_CmdLineArgs->ExecuteRemotely()) {
-            BlastSeqSrc* seqsrc = db_adapter->MakeSeqSrc();
             CRef<CBlastOptions> my_options(&(opts_hndl->SetOptions()));
-            CSetupFactory::InitializeMegablastDbIndex(seqsrc, my_options);
+            CSetupFactory::InitializeMegablastDbIndex(my_options);
         }
 
         /*** Get the formatting options ***/

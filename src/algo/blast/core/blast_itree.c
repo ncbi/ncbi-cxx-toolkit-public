@@ -1071,8 +1071,6 @@ s_HSPQueryRangeIsMasklevelContained(Int4 in_offset,
     Int4 overlapEnd;
     Int4 percOverlap;
 
-    tree_q_start = s_GetQueryStrandOffset(query_info, tree_hsp->context);
-
     /* check if alignments are from different query sequences 
        or query strands. Also check if tree_hsp has score strictly
        higher than in_hsp */
@@ -1082,6 +1080,8 @@ s_HSPQueryRangeIsMasklevelContained(Int4 in_offset,
     {
         return 0;
     }
+
+    tree_q_start = s_GetQueryStrandOffset(query_info, tree_hsp->context);
 
     if ( query_info->contexts[tree_hsp->context].frame == -1 )
     {

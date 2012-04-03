@@ -2185,30 +2185,36 @@ s_CutOffGapEditScript(BlastHSP* hsp, Int4 q_cut, Int4 s_cut, Boolean cut_begin)
        if (found) break;
    }
    
-   if (cut_begin) {
-       int new_index = 0;
-       if (opid < esp->num[index]) {
-          ASSERT(esp->op_type[index] == eGapAlignSub);
-          esp->op_type[0] = esp->op_type[index];
-          esp->num[0] = esp->num[index] - opid;
-          new_index++;
-       } 
-       ++index;
-       for (; index < esp->size; index++, new_index++) {
-          esp->op_type[new_index] = esp->op_type[index];
-          esp->num[new_index] = esp->num[index];
-       }
-       esp->size = new_index;
-       hsp->query.offset += qid;
-       hsp->subject.offset += sid;
-   } else {
-       if (opid < esp->num[index]) {
-          ASSERT(esp->op_type[index] == eGapAlignSub);
-          esp->num[index] = opid;
-       } 
-       esp->size = index+1;
-       hsp->query.end = hsp->query.offset + qid;
-       hsp->subject.end = hsp->subject.offset + sid;
+   // RMH: Unless both cut sites where found the following
+   //      block would access memory outside the GapEditScript
+   //      array.
+   if ( found )
+   {
+     if (cut_begin) {
+         int new_index = 0;
+         if (opid < esp->num[index]) {
+            ASSERT(esp->op_type[index] == eGapAlignSub);
+            esp->op_type[0] = esp->op_type[index];
+            esp->num[0] = esp->num[index] - opid;
+            new_index++;
+         } 
+         ++index;
+         for (; index < esp->size; index++, new_index++) {
+            esp->op_type[new_index] = esp->op_type[index];
+            esp->num[new_index] = esp->num[index];
+         }
+         esp->size = new_index;
+         hsp->query.offset += qid;
+         hsp->subject.offset += sid;
+     } else {
+         if (opid < esp->num[index]) {
+            ASSERT(esp->op_type[index] == eGapAlignSub);
+            esp->num[index] = opid;
+         } 
+         esp->size = index+1;
+         hsp->query.end = hsp->query.offset + qid;
+         hsp->subject.end = hsp->subject.offset + sid;
+     }
    }
 }
 
