@@ -194,6 +194,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_Listener(listener),
         m_ServerPool(new SNetServerPoolImpl(api_name, client_name))
     {
+        ZeroInit();
     }
 
     // Constructors for 'spawning'.
@@ -202,6 +203,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ServerPool(parent->m_ServerPool),
         m_ServiceName(server->m_Address.AsString())
     {
+        ZeroInit();
         Construct(server);
     }
     SNetServiceImpl(const string& service_name, SNetServiceImpl* parent) :
@@ -209,8 +211,11 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ServerPool(parent->m_ServerPool),
         m_ServiceName(service_name)
     {
+        ZeroInit();
         Construct();
     }
+
+    void ZeroInit();
 
     void Construct(SNetServerInPool* server);
     void Construct();

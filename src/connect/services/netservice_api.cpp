@@ -195,11 +195,17 @@ SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
 {
 }
 
+void SNetServiceImpl::ZeroInit()
+{
+    m_ServiceType = eServiceNotDefined;
+    m_DiscoveredServers = NULL;
+    m_ServerGroupPool = NULL;
+    m_LatestDiscoveryIteration = 0;
+}
+
 void SNetServiceImpl::Construct(SNetServerInPool* server)
 {
     m_ServiceType = eSingleServerService;
-    m_ServerGroupPool = NULL;
-    m_LatestDiscoveryIteration = 0;
     m_DiscoveredServers = AllocServerGroup(0);
     CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
     m_DiscoveredServers->m_Servers.push_back(TServerRate(server, 1));
@@ -209,9 +215,7 @@ void SNetServiceImpl::Construct(SNetServerInPool* server)
 
 void SNetServiceImpl::Construct()
 {
-    if (m_ServiceName.empty()) {
-        m_ServiceType = eServiceNotDefined;
-    } else {
+    if (!m_ServiceName.empty()) {
         string host, port;
 
         if (!NStr::SplitInTwo(m_ServiceName, ":", host, port))
@@ -223,9 +227,6 @@ void SNetServiceImpl::Construct()
             return;
         }
     }
-    m_DiscoveredServers = NULL;
-    m_ServerGroupPool = NULL;
-    m_LatestDiscoveryIteration = 0;
 }
 
 void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
@@ -925,7 +926,7 @@ SNetServerPoolImpl::~SNetServerPoolImpl()
 SNetServiceImpl::~SNetServiceImpl()
 {
     // Delete fake server "groups" in single-server "services".
-    // See SNetServiceImpl::Construct().
+    // See SNetServiceImpl::Construct(SNetServerInPool* server).
     if (m_ServiceType == eSingleServerService)
         delete m_DiscoveredServers;
 
