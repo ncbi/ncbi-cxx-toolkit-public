@@ -67,7 +67,7 @@ public:
 
 protected:
 
-    // Render the job input paramers HTML page
+    // Render the job input parameters HTML page
     virtual void ShowParamsPage(CGridCgiContext& ctx) const ;
 
     // Collect parameters from the HTML page.
@@ -92,7 +92,7 @@ protected:
 
     virtual void OnJobRunning(CGridCgiContext& ctx);
 
-    // Return a job cancelation status.
+    // Return job cancellation status.
     virtual bool JobStopRequested(void) const;
 
     void OnEndProcessRequest(CGridCgiContext& ctx);
@@ -261,7 +261,7 @@ void CGridCgiSampleApplication::OnJobFailed(const string& msg,
 
 void CGridCgiSampleApplication::OnJobCanceled(CGridCgiContext& ctx)
 {
-    // Render a job cancelation page
+    // Render a job cancellation page
     CHTMLText* inp_text = new CHTMLText(
                "<p/>Job is canceled.<br/>"
                "<INPUT TYPE=\"submit\" NAME=\"Submit new Data\" "
@@ -285,8 +285,8 @@ void CGridCgiSampleApplication::OnJobRunning(CGridCgiContext& ctx)
 {
     // Render a status report page
     CHTMLText* inp_text = new CHTMLText(
-                  "<p/>Job is still runnig.<br/>"
-                  "Proress message: <@PROGRESS_MSG@><br/>"
+                  "<p/>Job is still running.<br/>"
+                  "Progress message: <@PROGRESS_MSG@><br/>"
                   "<INPUT TYPE=\"submit\" NAME=\"Check Status\" VALUE=\"Check\">"
                   "<INPUT TYPE=\"submit\" NAME=\"Cancel\" "
                                          "VALUE=\"Cancel the job\">");
@@ -305,7 +305,7 @@ bool CGridCgiSampleApplication::JobStopRequested(void) const
 {
     const CArgs& args = GetArgs();
 
-    // Check if job cancelation has been requested.
+    // Check if job cancellation has been requested.
     if ( args["Cancel"] )
         return true;
     return false;
@@ -365,6 +365,6 @@ string CGridCgiSampleApplication::VectorToString( const vector<double>& vec)
 int main(int argc, const char* argv[])
 {
     int result = CGridCgiSampleApplication().AppMain(argc, argv);
-    _TRACE("back to normal diags");
+    _TRACE("back to normal diagnostics");
     return result;
 }

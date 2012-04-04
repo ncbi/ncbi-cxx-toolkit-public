@@ -119,11 +119,11 @@ int CGridClientSampleApp::Run(void)
         // Get a job submitter
         CGridClient& grid_client(GetGridClient());
 
-        // Get an ouptut stream
+        // Get the output stream
         CNcbiOstream& os = grid_client.GetOStream();
 
         // Send jobs input data
-        os << "doubles ";  // output_type - just a list of doubels
+        os << "doubles ";  // output_type - just a list of doubles
         os << vsize << ' ';
         srand( (unsigned)time( NULL ) );
         for (int j = 0; j < vsize; ++j) {

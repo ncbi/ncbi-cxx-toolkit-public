@@ -257,7 +257,6 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         else {
             if (CollectParams(grid_ctx)) {
                 bool finished = false;
-                // Get a job submiter
                 CGridClient& grid_client(GetGridClient());
                 // Submit a job
                 try {
