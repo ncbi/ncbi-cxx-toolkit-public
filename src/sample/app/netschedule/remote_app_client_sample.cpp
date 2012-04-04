@@ -146,13 +146,13 @@ int CRemoteAppClientSampleApp::Run(void)
         request.AddFileForTransfer("/tmp/dddd.f1");
 
         // Get a job submitter
-        CGridJobSubmitter& job_submiter = GetGridClient().GetJobSubmitter();
+        CGridClient& grid_client = GetGridClient();
 
         // Serialize the request;
-        request.Send(job_submiter.GetOStream());
+        request.Send(grid_client.GetOStream());
 
         // Submit a job
-        job_keys.push_back(job_submiter.Submit());
+        job_keys.push_back(grid_client.Submit());
     }
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
      
