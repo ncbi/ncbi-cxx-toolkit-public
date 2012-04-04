@@ -316,6 +316,16 @@ int CCgiApplication::Run(void)
                                                e.GetStatusMessage());
             result = 0;
         }
+
+#ifdef NCBI_OS_MSWIN
+        // Logging - on MSWin this must be done before flushing the output.
+        if ( is_stat_log  &&  !skip_stat_log ) {
+            stat->Reset(start_time, result);
+            stat->Submit(stat->Compose());
+        }
+        is_stat_log = false;
+#endif
+
         _TRACE("CCgiApplication::Run: flushing");
         m_Context->GetResponse().Flush();
         _TRACE("CCgiApplication::Run: return " << result);
@@ -355,12 +365,13 @@ int CCgiApplication::Run(void)
         }
     }
 
+#ifndef NCBI_OS_MSWIN
     // Logging
     if ( is_stat_log  &&  !skip_stat_log ) {
         stat->Reset(start_time, result);
-        string msg = stat->Compose();
-        stat->Submit(msg);
+        stat->Submit(stat->Compose());
     }
+#endif
 
     x_OnEvent(eEndRequest, 120);
     x_OnEvent(eExit, result);
