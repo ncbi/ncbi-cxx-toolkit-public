@@ -256,7 +256,7 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
                     _ASSERT(cur_begin_extended <= cur_begin);
 
                     prev_compartment_loc->SetInt().SetTo(prev_end_extended);
-                    cur_compartment_loc->SetInt().SetFrom(cur_end_extended);
+                    cur_compartment_loc->SetInt().SetFrom(cur_begin_extended);
                 }
             }
             prev_compartment_loc=cur_compartment_loc;
