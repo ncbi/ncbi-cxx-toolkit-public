@@ -15,6 +15,7 @@ internal/align_model$
 internal/contigdb$
 internal/blast
 internal/asn_cache
+internal/txserver
 internal/gpipe/align_db
 internal/gpipe/common$
 internal/gpipe/gencoll/src/gcaccess$
