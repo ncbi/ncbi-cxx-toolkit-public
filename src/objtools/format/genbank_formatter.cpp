@@ -1258,7 +1258,7 @@ string s_GetLinkFeatureKey(
 
     // location
     string strLocation;
-    if( item.GetFeat().GetLocation().IsInt() ) {
+    if( item.GetFeat().GetLocation().IsInt() || item.GetFeat().GetLocation().IsPnt() ) {
         strLocation += "?from=";
         strLocation += NStr::IntToString( iFrom );
         strLocation += "&amp;to=";
