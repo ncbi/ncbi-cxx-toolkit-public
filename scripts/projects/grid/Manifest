@@ -41,7 +41,7 @@ IntelMAC : Release : GCC.sh --without-debug --with-optimization --with-mt --with
 IntelMAC : Debug : GCC.sh --with-debug --with-mt --without-bdb
 SunOSx86 : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
 SunOSx86 : Debug : GCC.sh --with-debug --with-mt --without-bdb
-SunOSSparc : Release : GCC.sh --without-debug --with-optimization --with-mt --without-bdb
-SunOSSparc : Debug : GCC.sh --with-debug --with-mt --without-bdb
+SunOSSparc : Release : GCC.sh 4.5.3 --without-debug --with-optimization --with-mt --without-bdb
+SunOSSparc : Debug : GCC.sh 4.5.3 --with-debug --with-mt --without-bdb
 Win32_9 : Release : static 32 ReleaseDLL
 Win32_9 : Debug : static 32 DebugDLL
