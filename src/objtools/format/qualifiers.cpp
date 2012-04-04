@@ -264,21 +264,6 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
     return size;
 }
 
-// makes sure str is of the pattern "[number]..[number]" (e.g. "34..405" )
-bool s_RangeStringIsPlainNumber( const string & str ) {
-
-    // join in anticodon quarantined pending collab approval
-    if( str.find("join") != string::npos ||
-        str.find("order") != string::npos ||
-        str.find("complement") != string::npos )
-    {
-            return false;
-    }
-
-    return true;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CFormatQual - low-level formatted qualifier
 
@@ -588,14 +573,13 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
         }
 
         if( ctx.Config().IsModeRelease() ) {
-            // in release mode multi-interval code-breaks are broken up,
+            // in release mode multi-interval code-breaks are removed,
             // pending end of quarantine
-
-            // Example accession where we have to iterate due to multiple pieces:
-            // NW_001468136
-            CSeq_loc_CI loc_ci( (*it)->GetLoc() );
-            for( ; loc_ci; ++loc_ci ) {
-                string pos = CFlatSeqLoc( *loc_ci.GetRangeAsSeq_loc(), ctx).GetString();
+            
+            string pos = CFlatSeqLoc( (*it)->GetLoc(), ctx).GetString();
+            if( pos.find("join(") == string::npos &&
+                pos.find("order(") == string::npos ) 
+            {
                 x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
                     CFormatQual::eUnquoted);
             }
@@ -1577,13 +1561,7 @@ void CFlatAnticodonQVal::Format
         return;
     }
 
-    // anticodons with complement, join, etc. ( e.g. L15362 ) are not supported in release mode, until collab approval
     string locationString = CFlatSeqLoc(*m_Anticodon, ctx).GetString();
-    if( ctx.Config().IsModeRelease() ) {
-        if( ! s_RangeStringIsPlainNumber(locationString) ) {
-            return;
-        }
-    }
 
     CNcbiOstrstream text;
     text << "(pos:" ;
