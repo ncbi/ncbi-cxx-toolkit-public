@@ -57,6 +57,9 @@
 
 #define NCBI_USE_ERRCODE_X   Objtools_Fmt_GFF
 
+//#define GFF3_USE_CIGAR_FORMATTER 1
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
@@ -123,6 +126,7 @@ protected:
                             TSeqPos seg_len);
 
 private:
+    const CAlignmentItem&       m_Alignment;
     IFlatTextOStream&           m_Out;
     CGFF3_Formatter&            m_GFF3_Fmt;
     auto_ptr<CNcbiOstrstream>   m_Attrs;
@@ -131,9 +135,11 @@ private:
 
 
 CGFF3_CIGAR_Formatter::CGFF3_CIGAR_Formatter(CGFF3_Formatter&       gff3,
-                                             const CAlignmentItem& aln,
-                                             IFlatTextOStream&     text_os)
-    : CCIGAR_Formatter(aln),
+                                             const CAlignmentItem&  aln,
+                                             IFlatTextOStream&      text_os)
+    : CCIGAR_Formatter(aln.GetAlign(),
+                       &aln.GetContext()->GetScope()),
+      m_Alignment(aln),
       m_Out(text_os),
       m_GFF3_Fmt(gff3),
       m_Attrs(new CNcbiOstrstream)
@@ -143,7 +149,8 @@ CGFF3_CIGAR_Formatter::CGFF3_CIGAR_Formatter(CGFF3_Formatter&       gff3,
 
 void CGFF3_CIGAR_Formatter::EndSubAlignment(void)
 {
-    if (GetSeq_align().GetSegs().IsDisc() && GetConfig().GffGenerateIdTags()) {
+    if (GetSeq_align().GetSegs().IsDisc() &&
+        m_Alignment.GetContext()->Config().GffGenerateIdTags()) {
         ++m_GFF3_Fmt.m_CurrentId; // ?????
     }
 }
@@ -151,7 +158,7 @@ void CGFF3_CIGAR_Formatter::EndSubAlignment(void)
 
 void CGFF3_CIGAR_Formatter::StartRow(void)
 {
-    const CFlatFileConfig& config = GetConfig();
+    const CFlatFileConfig& config = m_Alignment.GetContext()->Config();
 
     // We can't use x_FormatAttr because we seem to need a mix
     // of literal pluses, which we otherwise avoid due to ambiguity,
@@ -210,7 +217,7 @@ void CGFF3_CIGAR_Formatter::AddRow(const string& cigar)
 
 void CGFF3_CIGAR_Formatter::EndRow(void)
 {
-    CBioseqContext ctx = GetContext();
+    CBioseqContext& ctx = *m_Alignment.GetContext();
     // XXX - should supply appropriate score, if any
     CSeq_loc loc(*ctx.GetPrimaryId(),
         GetRefRange().GetFrom(), GetRefRange().GetTo(),
@@ -368,7 +375,7 @@ void CGFF3_Formatter::FormatAlignment(const CAlignmentItem& aln,
 {
 #ifdef GFF3_USE_CIGAR_FORMATTER
     CGFF3_CIGAR_Formatter cigar(*this, aln, text_os);
-    cigar.FormatAlignmentRows();
+    cigar.FormatByReferenceId(*aln.GetContext()->GetPrimaryId());
 #else
     x_FormatAlignment(aln, text_os, aln.GetAlign(), true, false);
 #endif

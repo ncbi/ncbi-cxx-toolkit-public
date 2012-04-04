@@ -34,7 +34,7 @@
 /// Flat formatter for Sequence Alignment/Map (SAM).
 
 
-#include <objtools/format/formatter.hpp>
+#include <objtools/format/item_formatter.hpp>
 
 
 /** @addtogroup Miscellaneous
@@ -47,44 +47,49 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_FORMAT_EXPORT CSAM_Formatter : public IFormatter
+class NCBI_FORMAT_EXPORT CSAM_Formatter
 {
 public:
-    CSAM_Formatter(void) {}
-    virtual ~CSAM_Formatter(void) {}
+    enum EFlags {
+        fSAM_AlignmentScore     = 1 << 0,  ///< Generate AS tags
+        fSAM_ExpectationValue   = 1 << 1,  ///< Generate EV tags
+        fSAM_NumNucDiff         = 1 << 2,  ///< Generate NM tags
+        fSAM_PercentageIdentity = 1 << 3,  ///< Generate PI tags
+        fSAM_BitScore           = 1 << 4,  ///< Generate BS tags
 
-    // control methods
-    virtual void Start       (IFlatTextOStream& text_os);
-    virtual void StartSection(const CStartSectionItem& ssec, IFlatTextOStream& text_os) {}
-    virtual void EndSection  (const CEndSectionItem& esec, IFlatTextOStream& text_os) {}
-    virtual void End         (IFlatTextOStream& text_os);
+        //? Include all tags by default
+        fSAM_Default            = fSAM_AlignmentScore     |
+                                  fSAM_ExpectationValue   |
+                                  fSAM_NumNucDiff         |
+                                  fSAM_PercentageIdentity |
+                                  fSAM_BitScore
+    };
+    typedef int TFlags;  ///< bitwise OR of EFlags
 
-    // format methods
-    virtual void Format(const IFlatItem& item, IFlatTextOStream& text_os);
+    CSAM_Formatter(CNcbiOstream& out,
+                   CScope& scope,
+                   TFlags flags = fSAM_Default);
+    ~CSAM_Formatter(void) {}
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) {}
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) {}
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) {}
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) {}
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) {}
-    virtual void FormatSource(const CSourceItem& keys, IFlatTextOStream& text_os) {}
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) {}
-    virtual void FormatComment(const CCommentItem& comment, IFlatTextOStream& text_os) {}
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) {}
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) {}
-    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) {}
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) {}
-    virtual void FormatAlignment(const CAlignmentItem& aln, IFlatTextOStream& text_os);
-    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) {}
-    virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os) {}
-    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) {}
-    virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os) {}
-    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) {}
-    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) {}
-    virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) {}
-    virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os) {}
-    virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os) {}
-    virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&) {}
+    void SetOutputStream(CNcbiOstream& out) { m_Out = &out; }
+    void SetScope(CScope& scope) { m_Scope.Reset(&scope); }
+    void SetFlags (TFlags flags) { m_Flags = flags; }
+    void SetFlag  (EFlags flag)  { m_Flags |= flag; }
+    void UnsetFlag(EFlags flag)  { m_Flags &= ~flag; }
+
+    CSAM_Formatter& Print(const CSeq_align&     aln,
+                          const CSeq_id&        query_id);
+    CSAM_Formatter& Print(const CSeq_align&     aln,
+                          CSeq_align::TDim      query_row);
+    CSAM_Formatter& Print(const CSeq_align_set& aln,
+                          const CSeq_id&        query_id);
+    CSAM_Formatter& Print(const CSeq_align_set& aln,
+                          CSeq_align::TDim      query_row);
+
+private:
+    CNcbiOstream* m_Out;
+    CRef<CScope>  m_Scope;
+    TFlags        m_Flags;
 };
 
 

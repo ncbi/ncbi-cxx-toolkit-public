@@ -48,8 +48,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CCIGAR_Formatter::CCIGAR_Formatter(const CAlignmentItem& aln)
-    : m_Alignment(aln),
+CCIGAR_Formatter::CCIGAR_Formatter(const CSeq_align&    aln,
+                                   CScope*              scope,
+                                   TCIGARFlags          flags)
+    : m_Align(aln),
+      m_CurAlign(NULL),
+      m_Scope(scope),
+      m_Flags(flags),
       m_IsFirstSubalign(true),
       m_IsTrivial(true),
       m_LastType(0),
@@ -57,9 +62,9 @@ CCIGAR_Formatter::CCIGAR_Formatter(const CAlignmentItem& aln)
       m_RefRow(-1),
       m_RefSign(1),
       m_TargetRow(-1),
-      m_TargetSign(1)
+      m_TargetSign(1),
+      m_FormatBy(eFormatBy_NotSet)
 {
-    m_RefId.Reset(GetContext().GetPrimaryId());
 }
 
 
@@ -68,19 +73,11 @@ CCIGAR_Formatter::~CCIGAR_Formatter(void)
 }
 
 
-void CCIGAR_Formatter::FormatAlignmentRows(void)
+void CCIGAR_Formatter::x_FormatAlignmentRows(void)
 {
     StartAlignment();
     x_FormatAlignmentRows(GetSeq_align(), false);
     EndAlignment();
-}
-
-
-void CCIGAR_Formatter::AddSegment(CNcbiOstream& cigar,
-                                  char seg_type,
-                                  TSeqPos seg_len)
-{
-    cigar << seg_len << seg_type;
 }
 
 
@@ -126,9 +123,11 @@ void CCIGAR_Formatter::x_FormatAlignmentRows(const CSeq_align& sa,
     case CSeq_align::TSegs::e_Disc:
         {
             ITERATE (CSeq_align_set::Tdata, it, sa.GetSegs().GetDisc().Get()) {
+                m_CurAlign = (*it).GetPointer();
                 StartSubAlignment();
                 x_FormatAlignmentRows(**it, width_inverted);
                 EndSubAlignment();
+                m_CurAlign = NULL;
                 m_IsFirstSubalign = false;
             }
             break;
@@ -139,6 +138,225 @@ void CCIGAR_Formatter::x_FormatAlignmentRows(const CSeq_align& sa,
             "Conversion of alignments of type dendiag and packed "
             "not supported in current CIGAR output");
     }
+}
+
+
+CCIGAR_Formatter::TNumrow CCIGAR_Formatter::x_GetRowById(const CSeq_id& id)
+{
+    CScope* scope = GetScope();
+    for (TNumrow row = 0; row < m_AlnMap->GetNumRows(); ++row) {
+        if (sequence::IsSameBioseq(m_AlnMap->GetSeqId(row), id, scope)) {
+            return row;
+        }
+    }
+    ERR_POST_X(1, "CCIGAR_Formatter::x_GetRowById: "
+        "no row with a matching ID found: " << id.AsFastaString());
+    return -1;
+}
+
+
+void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
+{
+    if (m_TargetRow == m_RefRow) {
+        return;
+    }
+    CNcbiOstrstream cigar;
+    m_LastType = 0;
+    TSeqPos last_count = 0;
+
+    if ( !m_RefId ) {
+        m_RefId.Reset(&m_AlnMap->GetSeqId(m_RefRow));
+    }
+    if ( !m_TargetId ) {
+        m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
+    }
+
+    m_RefWidth =
+        (static_cast<size_t>(m_RefRow) < m_DenseSeg->GetWidths().size()) ?
+        m_DenseSeg->GetWidths()[m_RefRow] : 1;
+    m_RefSign = m_AlnMap->StrandSign(m_RefRow);
+    m_TargetWidth =
+        (static_cast<size_t>(m_TargetRow) < m_DenseSeg->GetWidths().size()) ?
+        m_DenseSeg->GetWidths()[m_TargetRow] : 1;
+    m_TargetSign = m_AlnMap->StrandSign(m_TargetRow);
+    m_IsTrivial = true;
+    TSignedSeqPos last_frameshift = 0;
+
+    if (! width_inverted  &&  (m_RefWidth != 1  ||  m_TargetWidth != 1)) {
+        // Supporting widths ONLY in the unamiguous case when we
+        // know they are WRONG and put there incorrectly from conversion
+        // from Spliced-seg. If we didn't get widths that way, we don't
+        // know what they mean, so punt if not all widths are 1.
+        NCBI_THROW(CFlatException, eNotSupported,
+            "Widths in alignments do not have clear semantics, "
+            "and thus are not supported in current CIGAR output");
+    }
+
+    // HACK HACK HACK
+    // Is the following correct???
+    //
+    // Expecting all coordinates to be normalized relative to
+    // some reference width, which might be the
+    // Least Common Multiple of length in nucleotide bases of
+    // the coordinate system used for each row, e.g. using
+    // LCM of 3 if either row is protein. The Least Common Multiple
+    // would allow accurately representing frameshifts in either
+    // sequence.
+    //
+    // What does width for an alignment really mean, biologically?
+    // It can't have arbitrary meaning, because CIGAR has fixed
+    // semantics that M/I/D/F/R are in 3-bp units (i.e. one aa) for
+    // proteins and 1-bp units for cDNA.
+    //
+    // Thus, in practice, I think we are expecting widths to be
+    // one of (1, 1) for nuc-nuc, (1, 3) for nuc-prot,
+    // (3, 1) for prot-nuc, and (3, 3) for prot-prot.
+    TSeqPos width = max(m_RefWidth, m_TargetWidth);
+
+    for (CAlnMap::TNumchunk i0 = 0; i0 < m_AlnMap->GetNumSegs(); ++i0) {
+        TRange ref_piece = m_AlnMap->GetRange(m_RefRow, i0);
+        TRange tgt_piece = m_AlnMap->GetRange(m_TargetRow, i0);
+        CAlnMap::TSegTypeFlags ref_flags = m_AlnMap->GetSegType(m_RefRow, i0);
+        CAlnMap::TSegTypeFlags tgt_flags = m_AlnMap->GetSegType(m_TargetRow, i0);
+        //The type and count are guaranteed set by one of the if/else cases below.  
+        char type = 'X'; // Guaranteed set. Pacify compiler.
+        TSeqPos count = 0;  // Guaranteed set. Pacify compiler.
+        TSignedSeqPos frameshift = 0;
+
+        if ( (tgt_flags & CAlnMap::fSeq)  &&
+            !(ref_flags & CAlnMap::fSeq) ) {
+            // TODO: Handle non-initial protein gap that does not start
+            //       on an aa boundary.
+            //
+            type = 'I';
+            if (i0 == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)  &&  m_TargetWidth == 3) {
+                // See comments about frame and phase, below.
+                m_Frame = tgt_piece.GetFrom() % m_TargetWidth;
+            }
+            count = tgt_piece.GetLength()/width;
+            frameshift = -(tgt_piece.GetLength()%TSignedSeqPos(width));
+            tgt_piece.SetFrom(tgt_piece.GetFrom()/m_TargetWidth);
+            tgt_piece.SetTo(tgt_piece.GetTo()/m_TargetWidth);
+            m_TargetRange += tgt_piece;
+        }
+        else if (! (tgt_flags & CAlnMap::fSeq)  &&
+            (ref_flags & CAlnMap::fSeq)) {
+            // TODO: Handle gap that does not start on an aa boundary.
+            //
+            type = 'D';
+            if (i0 == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)  &&  m_RefWidth == 3) {
+                // See comments about frame and phase, below.
+                m_Frame = ref_piece.GetFrom() % m_RefWidth;
+            }
+            count = ref_piece.GetLength()/width;
+            frameshift = +(ref_piece.GetLength()%width);
+            // Adjusting for start position, converting to natural cordinates
+            // (aa for protein locations, which would imply divide by 3).
+            ref_piece.SetFrom(ref_piece.GetFrom()/m_RefWidth);
+            ref_piece.SetTo(ref_piece.GetTo()/m_RefWidth);
+            m_RefRange += ref_piece;
+        }
+        else if ((tgt_flags & CAlnMap::fSeq)  &&
+            (ref_flags & CAlnMap::fSeq)) {
+            // Hanlde case when sequences aligned.
+            // The remaining case is when both don't align at all,
+            // which shouldn't happen in a pairwise alignment. If we
+            // happen to have a multiple alignment, the remaining case
+            // would be one that aligns unrelated sequences, thus has
+            // no affect on the current GFF3 output.
+            // TODO: Resolve why the following implementation is different
+            //       from the above historic implementation. The difference
+            //       will be in rounding down vs up on single or last
+            //       segment.
+            //
+            type = 'M';
+            if (ref_piece.GetLength()  !=  tgt_piece.GetLength()) {
+                // There's a frameshift.. somewhere. Is this valid? Bail.
+                NCBI_THROW(CFlatException, eNotSupported,
+                    "Frameshift(s) in Spliced-exon-chunk's diag "
+                    "not supported in current CIGAR output");
+            }
+            if (i0 == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)) {
+                // Semantics of the phase aren't defined in GFF3 for
+                // feature types other than a CDS, and this is an alignment.
+                //
+                // Since phase is not required for alignment features, don't
+                // emit one, unless we have been requested with the special
+                // Flybase variant of GFF3 -- they did ask for phase.
+                //
+                // Also, phase can only be interpreted if we have an alignment
+                // in terms of protein aa, and a width of 3 for one or
+                // the other.
+                //
+                // For an alignment, the meaning of phase is ambiguous,
+                // particularly in dealing with a protein-protein
+                // alignment (if ever it allowed alignment to parts of
+                // a codon), and when the seqid is the protein, rather
+                // than the target.
+                //
+                // A protein won't be "reverse complemented" thus,
+                // can assume that it's plus-strand and look at start
+                // position.
+                //
+                // The computation below is actually for the frame.
+                // The phase is not the same, and will be derived from
+                // the frame.
+                if (m_RefWidth == 3) {
+                    m_Frame = ref_piece.GetFrom() % m_RefWidth;
+                } else if (m_TargetWidth == 3) {
+                    m_Frame = tgt_piece.GetFrom() % m_TargetWidth;
+                }
+            }
+            // Adjusting for start position, converting to natural cordinates
+            // (aa for protein locations, which would imply divide by 3).
+            count = ref_piece.GetLength()/width;
+            ref_piece.SetFrom(ref_piece.GetFrom()/m_RefWidth);
+            ref_piece.SetTo(ref_piece.GetTo()/m_RefWidth);
+            m_RefRange += ref_piece;
+            tgt_piece.SetFrom(tgt_piece.GetFrom()/m_TargetWidth);
+            tgt_piece.SetTo(tgt_piece.GetTo()/m_TargetWidth);
+            m_TargetRange += tgt_piece;
+        }
+        if (type == m_LastType) {
+            last_count += count;
+            last_frameshift += frameshift;
+        } else {
+            if (m_LastType) {
+                if (last_count) {
+                    m_IsTrivial = false;
+                    AddSegment(cigar, m_LastType, last_count);
+                }
+                if (last_frameshift) {
+                    m_IsTrivial = false;
+                    AddSegment(cigar,
+                        (last_frameshift < 0 ? 'F' : 'R'),
+                        abs(last_frameshift));
+                }
+            }
+            m_LastType = type;
+            last_count = count;
+            last_frameshift = frameshift;
+        }
+    }
+    CNcbiOstrstream aln_out;
+    m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
+    if ( m_Scope ) {
+        try {
+            m_TargetId.Reset(sequence::GetId(
+                *m_TargetId, *m_Scope, sequence::eGetId_ForceAcc).
+                GetSeqId());
+        }
+        catch (CException&) {
+        }
+    }
+    StartRow();
+
+    AddSegment(cigar, m_LastType, last_count);
+    string cigar_string = CNcbiOstrstreamToString(cigar);
+
+    AddRow(cigar_string);
+
+    EndRow();
 }
 
 
@@ -180,219 +398,60 @@ void CCIGAR_Formatter::x_FormatDensegRows(const CDense_seg& ds,
         ds_for_alnmix = &ds_no_widths;
     }
 
-    typedef CAlnMap::TNumchunk    TNumchunk;
-
     m_AlnMap.Reset(new CAlnMap(*ds_for_alnmix));
-    m_RefRow = -1;
-    CScope& scope = GetScope();
-    const CFlatFileConfig& config = GetConfig();
+    CScope* scope = GetScope();
 
-    for (TNumrow row = 0; row < m_AlnMap->GetNumRows(); ++row) {
-        if (sequence::IsSameBioseq(m_AlnMap->GetSeqId(row), *m_RefId, &scope)) {
-            m_RefRow = row;
+    switch ( m_FormatBy ) {
+    case eFormatBy_ReferenceId:
+        {
+            bool by_id = m_RefId.NotNull();
+            if ( by_id ) {
+                m_RefRow = x_GetRowById(*m_RefId);
+            }
+            else {
+                _ASSERT(m_RefRow >= 0);
+                m_RefId.Reset(&m_AlnMap->GetSeqId(m_RefRow));
+            }
+            StartRows();
+            for (m_TargetRow = 0; m_TargetRow < m_AlnMap->GetNumRows(); ++m_TargetRow) {
+                x_FormatLine(width_inverted);
+                m_TargetId.Reset();
+            }
+            m_TargetRow = -1;
+            if ( by_id ) {
+                m_RefRow = -1;
+            }
+            else {
+                m_RefId.Reset();
+            }
             break;
         }
-    }
-    if (m_RefRow < 0) {
-        ERR_POST_X(1, "CCIGAR_Formatter::x_FormatDensegRows: "
-            "no row with a matching ID found!");
-        return;
-    }
-
-    m_RefWidth =
-        (static_cast<size_t>(m_RefRow) < ds.GetWidths().size()) ?
-        ds.GetWidths()[m_RefRow] : 1;
-    m_RefSign = m_AlnMap->StrandSign(m_RefRow);
-
-    StartRows();
-
-    for (m_TargetRow = 0; m_TargetRow < m_AlnMap->GetNumRows(); ++m_TargetRow) {
-        if (m_TargetRow == m_RefRow) {
-            continue;
-        }
-        CNcbiOstrstream cigar;
-        m_LastType = 0;
-        TSeqPos last_count = 0;
-        m_TargetWidth =
-            (static_cast<size_t>(m_TargetRow) < ds.GetWidths().size()) ?
-            ds.GetWidths()[m_TargetRow] : 1;
-        m_TargetSign = m_AlnMap->StrandSign(m_TargetRow);
-        m_IsTrivial = true;
-        TSignedSeqPos last_frameshift = 0;
-
-        if (! width_inverted  &&  (m_RefWidth != 1  ||  m_TargetWidth != 1)) {
-            // Supporting widths ONLY in the unamiguous case when we
-            // know they are WRONG and put there incorrectly from conversion
-            // from Spliced-seg. If we didn't get widths that way, we don't
-            // know what they mean, so punt if not all widths are 1.
-            NCBI_THROW(CFlatException, eNotSupported,
-                "Widths in alignments do not have clear semantics, "
-                "and thus are not supported in current CIGAR output");
-        }
-
-        // HACK HACK HACK
-        // Is the following correct???
-        //
-        // Expecting all coordinates to be normalized relative to
-        // some reference width, which might be the
-        // Least Common Multiple of length in nucleotide bases of
-        // the coordinate system used for each row, e.g. using
-        // LCM of 3 if either row is protein. The Least Common Multiple
-        // would allow accurately representing frameshifts in either
-        // sequence.
-        //
-        // What does width for an alignment really mean, biologically?
-        // It can't have arbitrary meaning, because CIGAR has fixed
-        // semantics that M/I/D/F/R are in 3-bp units (i.e. one aa) for
-        // proteins and 1-bp units for cDNA.
-        //
-        // Thus, in practice, I think we are expecting widths to be
-        // one of (1, 1) for nuc-nuc, (1, 3) for nuc-prot,
-        // (3, 1) for prot-nuc, and (3, 3) for prot-prot.
-        TSeqPos width = max(m_RefWidth, m_TargetWidth);
-
-        for (TNumchunk i0 = 0; i0 < m_AlnMap->GetNumSegs(); ++i0) {
-            TRange ref_piece = m_AlnMap->GetRange(m_RefRow, i0);
-            TRange tgt_piece = m_AlnMap->GetRange(m_TargetRow, i0);
-            CAlnMap::TSegTypeFlags ref_flags = m_AlnMap->GetSegType(m_RefRow, i0);
-            CAlnMap::TSegTypeFlags tgt_flags = m_AlnMap->GetSegType(m_TargetRow, i0);
-            //The type and count are guaranteed set by one of the if/else cases below.  
-            char type = 'X'; // Guaranteed set. Pacify compiler.
-            TSeqPos count = 0;  // Guaranteed set. Pacify compiler.
-            TSignedSeqPos frameshift = 0;
-
-            if ( (tgt_flags & CAlnMap::fSeq)  &&
-                !(ref_flags & CAlnMap::fSeq) ) {
-                // TODO: Handle non-initial protein gap that does not start
-                //       on an aa boundary.
-                //
-                type = 'I';
-                if (i0 == 0  &&  config.GffForFlybase()  &&  m_TargetWidth == 3) {
-                    // See comments about frame and phase, below.
-                    m_Frame = tgt_piece.GetFrom() % m_TargetWidth;
-                }
-                count = tgt_piece.GetLength()/width;
-                frameshift = -(tgt_piece.GetLength()%TSignedSeqPos(width));
-                tgt_piece.SetFrom(tgt_piece.GetFrom()/m_TargetWidth);
-                tgt_piece.SetTo(tgt_piece.GetTo()/m_TargetWidth);
-                m_TargetRange += tgt_piece;
+    case eFormatBy_TargetId:
+        {
+            bool by_id = m_TargetId.NotNull();
+            if ( by_id ) {
+                m_TargetRow = x_GetRowById(*m_TargetId);
             }
-            else if (! (tgt_flags & CAlnMap::fSeq)  &&
-                (ref_flags & CAlnMap::fSeq)) {
-                // TODO: Handle gap that does not start on an aa boundary.
-                //
-                type = 'D';
-                if (i0 == 0  &&  config.GffForFlybase()  &&  m_RefWidth == 3) {
-                    // See comments about frame and phase, below.
-                    m_Frame = ref_piece.GetFrom() % m_RefWidth;
-                }
-                count = ref_piece.GetLength()/width;
-                frameshift = +(ref_piece.GetLength()%width);
-                // Adjusting for start position, converting to natural cordinates
-                // (aa for protein locations, which would imply divide by 3).
-                ref_piece.SetFrom(ref_piece.GetFrom()/m_RefWidth);
-                ref_piece.SetTo(ref_piece.GetTo()/m_RefWidth);
-                m_RefRange += ref_piece;
+            else {
+                _ASSERT(m_TargetRow >= 0);
+                m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
             }
-            else if ((tgt_flags & CAlnMap::fSeq)  &&
-                (ref_flags & CAlnMap::fSeq)) {
-                // Hanlde case when sequences aligned.
-                // The remaining case is when both don't align at all,
-                // which shouldn't happen in a pairwise alignment. If we
-                // happen to have a multiple alignment, the remaining case
-                // would be one that aligns unrelated sequences, thus has
-                // no affect on the current GFF3 output.
-                // TODO: Resolve why the following implementation is different
-                //       from the above historic implementation. The difference
-                //       will be in rounding down vs up on single or last
-                //       segment.
-                //
-                type = 'M';
-                if (ref_piece.GetLength()  !=  tgt_piece.GetLength()) {
-                    // There's a frameshift.. somewhere. Is this valid? Bail.
-                    NCBI_THROW(CFlatException, eNotSupported,
-                        "Frameshift(s) in Spliced-exon-chunk's diag "
-                        "not supported in current CIGAR output");
-                }
-                if (i0 == 0  &&  config.GffForFlybase()) {
-                    // Semantics of the phase aren't defined in GFF3 for
-                    // feature types other than a CDS, and this is an alignment.
-                    //
-                    // Since phase is not required for alignment features, don't
-                    // emit one, unless we have been requested with the special
-                    // Flybase variant of GFF3 -- they did ask for phase.
-                    //
-                    // Also, phase can only be interpreted if we have an alignment
-                    // in terms of protein aa, and a width of 3 for one or
-                    // the other.
-                    //
-                    // For an alignment, the meaning of phase is ambiguous,
-                    // particularly in dealing with a protein-protein
-                    // alignment (if ever it allowed alignment to parts of
-                    // a codon), and when the seqid is the protein, rather
-                    // than the target.
-                    //
-                    // A protein won't be "reverse complemented" thus,
-                    // can assume that it's plus-strand and look at start
-                    // position.
-                    //
-                    // The computation below is actually for the frame.
-                    // The phase is not the same, and will be derived from
-                    // the frame.
-                    if (m_RefWidth == 3) {
-                        m_Frame = ref_piece.GetFrom() % m_RefWidth;
-                    } else if (m_TargetWidth == 3) {
-                        m_Frame = tgt_piece.GetFrom() % m_TargetWidth;
-                    }
-                }
-                // Adjusting for start position, converting to natural cordinates
-                // (aa for protein locations, which would imply divide by 3).
-                count = ref_piece.GetLength()/width;
-                ref_piece.SetFrom(ref_piece.GetFrom()/m_RefWidth);
-                ref_piece.SetTo(ref_piece.GetTo()/m_RefWidth);
-                m_RefRange += ref_piece;
-                tgt_piece.SetFrom(tgt_piece.GetFrom()/m_TargetWidth);
-                tgt_piece.SetTo(tgt_piece.GetTo()/m_TargetWidth);
-                m_TargetRange += tgt_piece;
+            StartRows();
+            for (m_RefRow = 0; m_RefRow < m_AlnMap->GetNumRows(); ++m_RefRow) {
+                x_FormatLine(width_inverted);
+                m_RefId.Reset();
             }
-            if (type == m_LastType) {
-                last_count += count;
-                last_frameshift += frameshift;
-            } else {
-                if (m_LastType) {
-                    if (last_count) {
-                        m_IsTrivial = false;
-                        AddSegment(cigar, m_LastType, last_count);
-                    }
-                    if (last_frameshift) {
-                        m_IsTrivial = false;
-                        AddSegment(cigar,
-                            (last_frameshift < 0 ? 'F' : 'R'),
-                            abs(last_frameshift));
-                    }
-                }
-                m_LastType = type;
-                last_count = count;
-                last_frameshift = frameshift;
+            m_RefRow = -1;
+            if ( by_id ) {
+                m_TargetRow = -1;
             }
+            else {
+                m_TargetId.Reset();
+            }
+            break;
         }
-        CNcbiOstrstream aln_out;
-        m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
-        try {
-            m_TargetId.Reset(sequence::GetId(
-                *m_TargetId, scope, sequence::eGetId_ForceAcc).
-                GetSeqId());
-        }
-        catch (CException&) {
-        }
-        StartRow();
-
-        AddSegment(cigar, m_LastType, last_count);
-        string cigar_string = CNcbiOstrstreamToString(cigar);
-
-        AddRow(cigar_string);
-
-        EndRow();
+    default:
+        break;
     }
 
     EndRows();
@@ -403,13 +462,62 @@ void CCIGAR_Formatter::x_FormatDensegRows(const CDense_seg& ds,
     m_IsTrivial = true;
     m_LastType = 0;
     m_Frame = -1;
-    m_RefRow = -1;
     m_RefRange = TRange::GetEmpty();
     m_RefSign = 1;
-    m_TargetRow = -1;
-    m_TargetId.Reset();
     m_TargetRange = TRange::GetEmpty();
     m_TargetSign = 1;
+}
+
+
+void CCIGAR_Formatter::FormatByReferenceId(const CSeq_id& ref_id)
+{
+    m_FormatBy = eFormatBy_ReferenceId;
+    m_RefId.Reset(&ref_id);
+    m_TargetId.Reset();
+    m_RefRow = -1;
+    m_TargetRow = -1;
+    x_FormatAlignmentRows();
+}
+
+
+void CCIGAR_Formatter::FormatByTargetId(const CSeq_id& target_id)
+{
+    m_FormatBy = eFormatBy_TargetId;
+    m_RefId.Reset();
+    m_TargetId.Reset(&target_id);
+    m_RefRow = -1;
+    m_TargetRow = -1;
+    x_FormatAlignmentRows();
+}
+
+
+void CCIGAR_Formatter::FormatByReferenceRow(TNumrow ref_row)
+{
+    m_FormatBy = eFormatBy_ReferenceId;
+    m_RefId.Reset();
+    m_TargetId.Reset();
+    m_RefRow = ref_row;
+    m_TargetRow = -1;
+    x_FormatAlignmentRows();
+}
+
+
+void CCIGAR_Formatter::FormatByTargetRow(TNumrow target_row)
+{
+    m_FormatBy = eFormatBy_TargetId;
+    m_RefId.Reset();
+    m_TargetId.Reset();
+    m_RefRow = -1;
+    m_TargetRow = target_row;
+    x_FormatAlignmentRows();
+}
+
+
+void CCIGAR_Formatter::AddSegment(CNcbiOstream& cigar,
+                                  char seg_type,
+                                  TSeqPos seg_len)
+{
+    cigar << seg_len << seg_type;
 }
 
 

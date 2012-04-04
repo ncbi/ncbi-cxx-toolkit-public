@@ -38,10 +38,6 @@
 
 
 #include <objtools/alnmgr/alnmap.hpp>
-#include <objtools/format/items/alignment_item.hpp>
-#include <objtools/format/flat_file_config.hpp>
-#include <objtools/format/context.hpp>
-
 
 /** @addtogroup Miscellaneous
  *
@@ -57,15 +53,29 @@ BEGIN_SCOPE(objects)
 class NCBI_FORMAT_EXPORT CCIGAR_Formatter
 {
 public:
-    CCIGAR_Formatter(const CAlignmentItem& aln);
-    virtual ~CCIGAR_Formatter(void);
+    enum ECIGARFlags {
+        fCIGAR_GffForFlybase = 1, ///< Flybase flavour of GFF3.
+        fCIGAR_Default = 0
+    };
+    typedef int TCIGARFlags;
 
-    void FormatAlignmentRows(void);
-
-protected:
     typedef CAlnMap::TNumrow      TNumrow;
     typedef CAlnMap::TSignedRange TRange;
 
+    CCIGAR_Formatter(const CSeq_align&  aln,
+                     CScope*            scope = 0,
+                     TCIGARFlags        flags = fCIGAR_Default);
+    virtual ~CCIGAR_Formatter(void);
+
+    void FormatByReferenceId(const CSeq_id& ref_id);
+    void FormatByTargetId(const CSeq_id& target_id);
+
+    void FormatByReferenceRow(TNumrow ref_row);
+    void FormatByTargetRow(TNumrow target_row);
+
+    bool IsSetFlag(ECIGARFlags flag) const { return (m_Flags & flag) != 0; }
+
+protected:
     virtual void StartAlignment(void) {}
     virtual void EndAlignment(void) {}
     virtual void StartSubAlignment(void) {}
@@ -79,11 +89,11 @@ protected:
                             char seg_type,
                             TSeqPos seg_len);
 
-    const CAlignmentItem& GetAlignmentItem(void) const;
-    const CSeq_align& GetSeq_align(void) const;
-    CBioseqContext& GetContext(void) const;
-    CScope& GetScope(void) const;
-    const CFlatFileConfig& GetConfig(void) const;
+    // Get top level alignment
+    const CSeq_align& GetSeq_align(void) const { return m_Align; }
+    // Get the alignment wich is currently being formatted
+    const CSeq_align& GetCurrentSeq_align(void) const;
+    CScope* GetScope(void) const { return m_Scope.GetPointerOrNull(); }
 
     bool IsFirstSubalign(void) const { return m_IsFirstSubalign; }
     bool IsTrivial(void) const { return m_IsTrivial; }
@@ -105,66 +115,51 @@ protected:
     TSeqPos GetTargetWidth(void) const { return m_TargetWidth; }
 
 private:
+    enum EFormatBy {
+        eFormatBy_NotSet,
+        eFormatBy_ReferenceId,
+        eFormatBy_TargetId
+    };
+
+    TNumrow x_GetRowById(const CSeq_id& id);
+
+    void x_FormatAlignmentRows(void);
     void x_FormatAlignmentRows(const CSeq_align& sa,
                                bool              width_inverted);
     void x_FormatDensegRows(const CDense_seg& ds,
                             bool              width_inverted);
+    void x_FormatLine(bool width_inverted);
 
-    const CAlignmentItem& m_Alignment;
-    CConstRef<CDense_seg> m_DenseSeg;
-    CRef<CAlnMap>         m_AlnMap;
+    const CSeq_align&       m_Align;
+    const CSeq_align*       m_CurAlign;
+    mutable CRef<CScope>    m_Scope;
+    TCIGARFlags             m_Flags;
+    CConstRef<CDense_seg>   m_DenseSeg;
+    CRef<CAlnMap>           m_AlnMap;
 
-    bool                m_IsFirstSubalign;
-    bool                m_IsTrivial;
-    char                m_LastType;
-    int                 m_Frame;
-    TNumrow             m_RefRow;
-    CConstRef<CSeq_id>  m_RefId;
-    TRange              m_RefRange;
-    int                 m_RefSign;
-    TSeqPos             m_RefWidth;
-    TNumrow             m_TargetRow;
-    CConstRef<CSeq_id>  m_TargetId;
-    TRange              m_TargetRange;
-    int                 m_TargetSign;
-    TSeqPos             m_TargetWidth;
+    bool                    m_IsFirstSubalign;
+    bool                    m_IsTrivial;
+    char                    m_LastType;
+    int                     m_Frame;
+    TNumrow                 m_RefRow;
+    CConstRef<CSeq_id>      m_RefId;
+    TRange                  m_RefRange;
+    int                     m_RefSign;
+    TSeqPos                 m_RefWidth;
+    TNumrow                 m_TargetRow;
+    CConstRef<CSeq_id>      m_TargetId;
+    TRange                  m_TargetRange;
+    int                     m_TargetSign;
+    TSeqPos                 m_TargetWidth;
+    EFormatBy               m_FormatBy;
 };
 
 
 inline
-const CAlignmentItem& CCIGAR_Formatter::GetAlignmentItem(void) const
+const CSeq_align& CCIGAR_Formatter::GetCurrentSeq_align(void) const
 {
-    return m_Alignment;
+    return m_CurAlign ? *m_CurAlign : m_Align;
 }
-
-
-inline
-const CSeq_align& CCIGAR_Formatter::GetSeq_align(void) const
-{
-    return GetAlignmentItem().GetAlign();
-}
-
-
-inline
-CBioseqContext& CCIGAR_Formatter::GetContext(void) const
-{
-    return *GetAlignmentItem().GetContext();
-}
-
-
-inline
-CScope& CCIGAR_Formatter::GetScope(void) const
-{
-    return GetContext().GetScope();
-}
-
-
-inline
-const CFlatFileConfig& CCIGAR_Formatter::GetConfig(void) const
-{
-    return GetContext().Config();
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
