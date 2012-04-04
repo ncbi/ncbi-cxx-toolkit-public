@@ -68,6 +68,7 @@ CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
     string::size_type pos = exec_result.response.find("SIZE=");
 
     if (pos == string::npos) {
+        exec_result.conn->Abort();
         NCBI_THROW(CNetCacheException, eInvalidServerResponse,
             "No SIZE field in reply to the blob reading command");
     }

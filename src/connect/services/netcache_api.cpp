@@ -389,12 +389,14 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
     exec_result.response.erase(0, 3);
 
     if (exec_result.response.empty()) {
+        exec_result.conn->Abort();
         NCBI_THROW(CNetServiceException, eCommunicationError,
             "Invalid server response. Empty key.");
     }
 
     if (write_existing_blob) {
         if (exec_result.response != stripped_blob_id) {
+            exec_result.conn->Abort();
             NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
                 "Server created " << exec_result.response <<
                 " in response to PUT3 \"" << stripped_blob_id << "\"");
