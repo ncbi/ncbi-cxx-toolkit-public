@@ -661,7 +661,9 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 
                 if(i != j) {
 
-                    if(phcbox[1] < hbox[1] && phcbox[0] < hbox[0]) {
+                    if( ( phcbox[1] < hbox[1] && phcbox[0] < hbox[0] )
+                        && phcbox[2] <= hbox[2] //prohibit to extend if previous hit is inside the current in genomic coordinates
+                    ) {
 
                         if(hbox[0] <= phcbox[1] && 
                            hbox[2] + phcbox[1] - hbox[0] >= phcbox[3]) {
