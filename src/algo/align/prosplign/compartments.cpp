@@ -119,7 +119,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
     compartment.SetType(CSeq_align::eType_partial);
     CSeq_align::TSegs::TStd& std_segs = compartment.SetSegs().SetStd();
 
-    TSeqPos subj_leftmost = 0;
+    TSeqPos subj_leftmost = hitrefs.front()->GetSubjMin();
     TSeqPos subj_rightmost = 0;
 
 
@@ -134,7 +134,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
         double bit_score = 0;
 
         subj_leftmost = min(subj_leftmost, subj_min);
-        subj_rightmost = min(subj_rightmost, subj_max);
+        subj_rightmost = max(subj_rightmost, subj_max);
 
         ITERATE(THitRefs, oh, orig_hitrefs) {
             if ((*oh)->GetSubjStrand() == strand &&
@@ -239,7 +239,7 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
             TSeqPos cur_begin_extended = cur_begin < max_extent ? 0 : cur_begin - max_extent;
             TSeqPos cur_end_extended = cur_end + max_extent;
 
-            CRef<CSeq_loc> cur_compartment_loc(&compartment->SetDesc().Set().front()->SetRegion());
+            CRef<CSeq_loc> cur_compartment_loc(&compartment->SetDesc().Set().back()->SetRegion());
             cur_compartment_loc->SetInt().SetFrom(cur_begin_extended);
             cur_compartment_loc->SetInt().SetTo(cur_end_extended);
 
