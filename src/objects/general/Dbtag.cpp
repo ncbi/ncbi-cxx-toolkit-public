@@ -72,6 +72,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
     TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
     TDbxrefPair("BEETLEBASE", CDbtag::eDbtagType_BEETLEBASE),
+    TDbxrefPair("BGD", CDbtag::eDbtagType_BGD),
     TDbxrefPair("BOLD", CDbtag::eDbtagType_BoLD),
     TDbxrefPair("CDD", CDbtag::eDbtagType_CDD),
     TDbxrefPair("CK", CDbtag::eDbtagType_CK),
@@ -167,7 +168,6 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("BEEBASE", CDbtag::eDbtagType_BEEBASE),
-    TDbxrefPair("BGD", CDbtag::eDbtagType_BGD),
     TDbxrefPair("BioProject", CDbtag::eDbtagType_BioProject),
     TDbxrefPair("CCDS", CDbtag::eDbtagType_CCDS),
     TDbxrefPair("CGNC", CDbtag::eDbtagType_CGNC),
