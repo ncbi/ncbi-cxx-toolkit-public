@@ -487,13 +487,13 @@ const char* s_GetCookieNameBannedSymbols(void)
 
 void CCgiCookies::Add(const string& str, EOnBadCookie on_bad_cookie)
 {
-    bool need_decode = true;
     NStr::EUrlDecode dec_flag = m_EncodeFlag == NStr::eUrlEnc_PercentOnly ?
         NStr::eUrlDec_Percent : NStr::eUrlDec_All;
     const char* banned_symbols = s_GetCookieNameBannedSymbols();
 
     SIZE_TYPE pos = str.find_first_not_of(" \t\n");
     for (;;) {
+        bool need_decode = true;
         SIZE_TYPE pos_beg = str.find_first_not_of(' ', pos);
         if (pos_beg == NPOS)
             return; // done
