@@ -73,7 +73,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheReader : public IReader
 public:
     CNetCacheReader(SNetCacheAPIImpl* impl,
         const string& blob_id,
-        const CNetServer::SExecResult& exec_result,
+        CNetServer::SExecResult& exec_result,
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode);
 

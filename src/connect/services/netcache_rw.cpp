@@ -57,7 +57,7 @@ static const string s_OutputBlobCachePrefix = ".nc_cache_output.";
 
 CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
         const string& blob_id,
-        const CNetServer::SExecResult& exec_result,
+        CNetServer::SExecResult& exec_result,
         size_t* blob_size_ptr,
         CNetCacheAPI::ECachingMode caching_mode) :
     m_BlobID(blob_id),

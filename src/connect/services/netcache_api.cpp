@@ -578,8 +578,10 @@ IReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
 
     AppendClientIPSessionIDPassword(&cmd);
 
+    CNetServer::SExecResult exec_result(ExecMirrorAware(key, cmd));
+
     return new CNetCacheReader(this, blob_id,
-        ExecMirrorAware(key, cmd), blob_size_ptr, caching_mode);
+        exec_result, blob_size_ptr, caching_mode);
 }
 
 CNetCacheAPI::EReadResult CNetCacheAPI::GetData(const string&  key,

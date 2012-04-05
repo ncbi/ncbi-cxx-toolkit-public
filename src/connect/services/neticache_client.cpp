@@ -423,8 +423,10 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
                 ' ' + NStr::UInt8ToString((Uint8) offset) +
                 ' ' + NStr::UInt8ToString((Uint8) part_size)));
 
+        CNetServer::SExecResult exec_result(StickToServerAndExec(cmd));
+
         return new CNetCacheReader(this, blob_id,
-            StickToServerAndExec(cmd), blob_size_ptr, caching_mode);
+            exec_result, blob_size_ptr, caching_mode);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
