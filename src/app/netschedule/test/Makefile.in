@@ -1,5 +1,4 @@
-APP_PROJ = test_netschedule_client test_netschedule_node \
-           test_netschedule_stress test_netschedule_crash
+APP_PROJ = test_netschedule_crash
 PROJ_TAG = test
 
 srcdir = @srcdir@

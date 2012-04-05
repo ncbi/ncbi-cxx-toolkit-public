@@ -18,8 +18,12 @@ ETC: src/app/grid/remote_app/remote_cgi.ini src/app/grid/cgi2rcgi/cgi2rcgi.ini
 APP: cgi_tunnel2grid.cgi$exe
 ETC: src/app/grid/cgi_tunnel2grid/sample/sample.ini
 
-APP: test_gridclient_stress
+APP: test_gridclient_stress test_grid_worker
 ETC: src/app/grid/test/test_gridclient_stress.ini
+ETC: src/app/grid/test/test_grid_worker.ini
+
+APP: test_netschedule_client test_netschedule_node test_netschedule_stress
+ETC: src/app/grid/test/test_netschedule_node.ini
 
 APP: grid_cli netschedule_check netschedule_control
 APP: netcache_check netcache_control ncfetch.cgi$exe save_to_nc

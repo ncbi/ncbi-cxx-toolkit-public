@@ -1,4 +1,6 @@
-APP_PROJ = test_gridclient_stress test_grid_worker
+APP_PROJ = test_gridclient_stress test_grid_worker \
+           test_netschedule_client test_netschedule_node \
+           test_netschedule_stress
 PROJ_TAG = test
 
 srcdir = @srcdir@
