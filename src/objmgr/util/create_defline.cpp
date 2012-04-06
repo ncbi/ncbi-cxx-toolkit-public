@@ -1669,6 +1669,13 @@ string CDeflineGenerator::x_SetSuffix (
                 suffix += ", whole genome shotgun sequence";
             }
             break;
+        case NCBI_TECH(tsa):
+            if (m_MIBiomol == NCBI_BIOMOL(mRNA)) {
+                if (title.find ("mRNA sequence") == NPOS){
+                    suffix = ", mRNA sequence";
+                }            
+            }
+            break;
         default:
             break;
     }
