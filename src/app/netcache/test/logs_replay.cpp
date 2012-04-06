@@ -39,6 +39,7 @@
 #include <connect/services/netcache_api.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <util/md5.hpp>
+#include <util/random_gen.hpp>
 
 #ifdef NCBI_OS_LINUX
 # include <signal.h>
@@ -89,6 +90,7 @@ private:
     Uint8 m_TotalRead;
     char m_InBuf[1024 * 1024];
     char m_GetBuf[1024 * 1024];
+    char m_LastChunkBuf[1024 * 1024];
 
 public:
     Uint8 m_ReqTime;
@@ -107,6 +109,7 @@ public:
 };
 
 
+static bool s_SelfGen = false;
 static string s_InFile;
 static string s_NCService;
 static Uint8 s_StartTime = 0;
@@ -114,6 +117,10 @@ static bool s_NeedConfReload = false;
 static CAtomicCounter s_ThreadsFinished;
 static CFastMutex s_ReloadMutex;
 static vector< CRef<CReplayThread> > s_Threads;
+
+static CAtomicCounter s_BlobId;
+static CFastMutex s_RndLock;
+static CRandom s_Rnd((CRandom::TValue)CProcess::GetCurrentPid());
 
 
 static Uint4
@@ -353,6 +360,13 @@ retry:
     return true;
 }
 
+static inline Uint4
+s_GetRandom(void)
+{
+    CFastMutexGuard guard(s_RndLock);
+    return s_Rnd.GetRand() * 2;
+}
+
 void
 CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
 {
@@ -369,6 +383,11 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
             key = key_info->key;
         }
     }
+    if (gen_key  &&  s_SelfGen) {
+        CNetCacheKey::GenerateBlobKey(&key, s_BlobId.Add(1), "130.14.24.171", 9000, 1, s_GetRandom());
+        CNetCacheKey::AddExtensions(key, s_NCService);
+    }
+
     Uint4 size_index = s_GetSizeIndex(size);
     ++m_CntWrites[size_index];
     try {
@@ -379,20 +398,19 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
 #endif
 
         auto_ptr<IEmbeddedStreamWriter> writer(m_NC.PutData(&key));
-        CMD5 md5;
+        Uint8 orig_size = size;
         while (size > sizeof(m_InBuf)) {
-            md5.Update(m_InBuf, sizeof(m_InBuf));
             writer->Write(m_InBuf, sizeof(m_InBuf));
             size -= sizeof(m_InBuf);
         }
+        size_t last_pos = 0;
         if (size != 0) {
             Uint4 cnt_chunks = Uint4(sizeof(m_InBuf) / size);
-            size_t pos = size_t((key_id % cnt_chunks) * size);
-            md5.Update(m_InBuf + pos, size);
-            writer->Write(m_InBuf + pos, size);
+            last_pos = size_t((key_id % cnt_chunks) * size);
+            writer->Write(m_InBuf + last_pos, size);
         }
-
         writer->Close();
+
 #ifdef NCBI_OS_LINUX
         clock_gettime(CLOCK_REALTIME, &ts);
         Uint8 end_time = Uint8(ts.tv_sec) * 1000000 + ts.tv_nsec / 1000;
@@ -400,6 +418,15 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
         m_SumWrites[size_index] += pass_time;
         m_SizeWrites[size_index] += blob_size;
 #endif
+
+        size = orig_size;
+        CMD5 md5;
+        while (size > sizeof(m_InBuf)) {
+            md5.Update(m_InBuf, sizeof(m_InBuf));
+            size -= sizeof(m_InBuf);
+        }
+        if (size != 0)
+            md5.Update(m_InBuf + last_pos, size);
 
         if (key_info) {
             if (!key_info->md5.empty()) {
@@ -456,20 +483,38 @@ CReplayThread::x_GetBlob(Uint8 key_id)
             ++m_CntBadReads[size_index];
             return;
         }
-        CMD5 md5;
+        Uint8 orig_size = blob_size;
+        size_t last_size = 0;
         while (blob_size > sizeof(m_GetBuf)) {
-            size_t n_read = 0;
-            reader->Read(m_GetBuf, sizeof(m_GetBuf), &n_read);
-            md5.Update(m_GetBuf, n_read);
-            blob_size -= n_read;
+            while (last_size != sizeof(m_GetBuf)) {
+                size_t n_read = 0;
+                reader->Read(m_GetBuf + last_size,
+                             sizeof(m_GetBuf) - last_size, &n_read);
+                blob_size -= n_read;
+                last_size += n_read;
+            }
+            last_size = 0;
         }
         while (blob_size != 0) {
             size_t n_read = 0;
-            reader->Read(m_GetBuf, blob_size, &n_read);
-            md5.Update(m_GetBuf, n_read);
+            reader->Read(m_LastChunkBuf + last_size, blob_size, &n_read);
+            last_size += n_read;
             blob_size -= n_read;
         }
 
+#ifdef NCBI_OS_LINUX
+        clock_gettime(CLOCK_REALTIME, &ts);
+        Uint8 end_time = Uint8(ts.tv_sec) * 1000000 + ts.tv_nsec / 1000;
+        Uint8 pass_time = end_time - start_time;
+#endif
+
+        CMD5 md5;
+        blob_size = orig_size;
+        while (blob_size > sizeof(m_GetBuf)) {
+            md5.Update(m_GetBuf, sizeof(m_GetBuf));
+            blob_size -= sizeof(m_GetBuf);
+        }
+        md5.Update(m_LastChunkBuf, last_size);
         string hash = md5.GetHexSum();
         if (key_info->size != Uint8(-1)  &&  hash != key_info->md5) {
             ERR_POST(Critical << "Blob " << key_info->key << " has wrong md5 hash");
@@ -477,9 +522,6 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         }
         else {
 #ifdef NCBI_OS_LINUX
-            clock_gettime(CLOCK_REALTIME, &ts);
-            Uint8 end_time = Uint8(ts.tv_sec) * 1000000 + ts.tv_nsec / 1000;
-            Uint8 pass_time = end_time - start_time;
             m_SumReads[size_index] += pass_time;
             m_SizeReads[size_index] += key_info->size;
 #endif
@@ -583,6 +625,10 @@ CLogsReplayApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Split NetCache logs for testing");
 
+    arg_desc->AddFlag("self_gen",
+                      "Generate all keys, forces NC randomly to process"
+                      " commands locally and to proxy commands to other"
+                      " instances");
     arg_desc->AddPositional("in_file_prefix",
                             "Prefix for input files with test commands",
                             CArgDescriptions::eString);
@@ -607,6 +653,8 @@ CLogsReplayApp::Run(void)
     SetDiagPostLevel(eDiag_Warning);
 
     const CArgs& args = GetArgs();
+    s_BlobId.Set(0);
+    s_SelfGen = args["self_gen"].HasValue();
     s_InFile = args["in_file_prefix"].AsString();
     int n_files = args["n_files"].AsInteger();
     s_NCService = args["service"].AsString();
