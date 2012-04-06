@@ -486,6 +486,14 @@
             var modelname = filename + ".old";
             var samplename = "";
             var sourcename = "";
+            var subtype = oTask.ProjectType.split("/");
+            if (subtype.length > 1) {
+                subtype = subtype[1];
+            } else {
+                subtype = "basic";
+            }
+            var standard_sample_found = false;
+
 
             // Makefile.in
             VerboseEcho("Modifying      " + filename);
@@ -498,8 +506,9 @@
                     var subproj = old_line.split(" ");
                     var new_line = "";
                     for (var i = 0; i < subproj.length; i++) {
-                        if (i == 2) {
-                            sourcename = subproj[2];
+                        if (subproj[i] == subtype + "_sample") {
+                            standard_sample_found = true;
+                            sourcename = subproj[i];
                             new_line += oTask.ProjectName + " ";
                         } else {
                             new_line += subproj[i] + " ";
@@ -513,6 +522,10 @@
             old_file.Close();
             new_file.Close();
             oFso.DeleteFile(modelname, true);
+
+            if (!standard_sample_found) {
+                return;
+            }
             
             modelname = oTree.SrcProjectBranch + "\\" + "Makefile." + sourcename + "." + XX_EXT;
             if (sourcename == "" || !oFso.FileExists(modelname)) {
