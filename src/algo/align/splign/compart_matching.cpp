@@ -927,7 +927,7 @@ void CElementaryMatching::x_CreateIndex(ISequenceSource *m_qsrc, EIndexMode mode
     for(m_qsrc->ResetIndex(); m_qsrc->GetNext(); ) {
 
         const char * pcb (0);
-        const Uint4 bases (m_qsrc->GetSequence(&pcb));
+        const Uint4 bases (m_qsrc->GetSeq(&pcb));
         const char * pce (pcb + bases/4);
         uintptr_t npcb (reinterpret_cast<uintptr_t>(pcb)), npcb0 (npcb);
         npcb -= npcb % 8;
@@ -1192,7 +1192,7 @@ size_t CElementaryMatching::x_WriteIndexFile(
     else {
         basename = m_lbn_q;
     }
-    basename += string(strand? ".p": ".m") + ".v" + NStr::IntToString(volume);
+    basename += string(strand? ".p": ".m") + ".v" + NStr::NumericToString(volume);
 
     const string filename_offs (basename + kFileExt_Offsets);
     CNcbiOfstream ofstr_offs   (filename_offs.data(), IOS_BASE::binary);
@@ -1566,7 +1566,7 @@ void CElementaryMatching::x_CompartVolume(vector<Uint8>* phits)
                 if(kN * (jdx - jdx0) >= min_matches / 2) {
 
                     // preload genomic sequence
-                    m_qsrc->GetSequence(ii_cdna->m_Oid, &m_CurSeq_cDNA);
+                    m_qsrc->GetSeq(ii_cdna->m_Oid, &m_CurSeq_cDNA);
                     x_CompartPair(phits, ii_cdna, ii_genomic,
                                   jdx0, jdx, &idx_compacted);
                     m_qsrc->RetSequence(&m_CurSeq_cDNA);
@@ -1608,7 +1608,7 @@ void CElementaryMatching::x_CompartVolume(vector<Uint8>* phits)
 
         if(kN * (jdx - jdx0) >= min_matches / 2) {
 
-            m_qsrc->GetSequence(ii_cdna->m_Oid, &m_CurSeq_cDNA);
+            m_qsrc->GetSeq(ii_cdna->m_Oid, &m_CurSeq_cDNA);
 
             x_CompartPair(phits, ii_cdna, ii_genomic,
                           jdx0, jdx, &idx_compacted);
@@ -2065,7 +2065,7 @@ CRandom::TValue GenerateSeed(const string & str)
 void CElementaryMatching::x_InitBasic(void)
 {
     CRandom rand (GenerateSeed("qq" + m_sdb));
-    const string base_sfx ( NStr::IntToString(rand.GetRand()));
+    const string base_sfx ( NStr::NumericToString(rand.GetRand()));
     m_lbn_q = GetLocalBaseName("qq", base_sfx);
     m_lbn_s = GetLocalBaseName(m_sdb, base_sfx);
 

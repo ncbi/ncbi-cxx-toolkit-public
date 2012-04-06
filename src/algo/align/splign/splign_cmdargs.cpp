@@ -106,7 +106,7 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          "max_intron",
          "The upper bound on intron length, in base pairs.",
          CArgDescriptions::eInteger,
-         NStr::IntToString(CCompartmentFinder<CSplign::THit>::
+         NStr::NumericToString(CCompartmentFinder<CSplign::THit>::
                            s_GetDefaultMaxIntron()));
 
     argdescr->AddDefaultKey
