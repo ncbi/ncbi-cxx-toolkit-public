@@ -1,3 +1,31 @@
+2012-04-05 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* all: Support for NetSchedule client identification.
+	* grid_cli (readjob): New job "reading" semantics.
+	* grid_cli (submitjob): New option to wait for job completion.
+	* grid_cli (getconf): Now works for NetSchedule as well.
+	* all: Support for server initiated warnings (NetSchedule).
+	* grid_cli (stats): New option to retrieve client registry (NetSchedule).
+	* grid_cli (stats): Option to print current notification subscribers (NS).
+	* grid_cli (stats): New option to print information on affinities (NS).
+	* grid_cli (dumpqueue): Options for pagination and selection by status.
+	* grid_cli: Support for NetSchedule job groups.
+	* grid_cli (canceljob): Options to cancel all jobs or job group.
+	* grid_cli: Support for NetSchedule extended version output.
+	* grid_cli: Multiple options for NetSchedule testing and debugging.
+
+	* all: Better support of NetCache mirroring.
+	* grid_cli (jobinfo): Pretty-printing of NetSchedule job events.
+	* all: Dropped support for NetSchedule tags and deprecated commands.
+	* grid_cli (help): Separation of command synopses by topic.
+	* grid_cli (serverinfo): Now works for LBSM services too.
+	* grid_cli: Alphabet for affinity tokens: alphanumerics + '.' + '_'
+
+	* all: Fixed a bug in iteration over mirrored NetCache servers.
+	* grid_cli (deletequeue): Fixed argument parsing.
+	* grid_cli (blobinfo): Now works in ICache mode.
+	* grid_cli: Fixed a race condition in saving job progress message.
+
 2011-06-22 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* grid_cli: Support for worker nodes (serverinfo, stats, shutdown).
