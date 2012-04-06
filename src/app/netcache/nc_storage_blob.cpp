@@ -80,12 +80,12 @@ s_IsCurVerOlder(const SNCBlobVerData* cur_ver, const SNCBlobVerData* new_ver)
             return cur_ver->create_server < new_ver->create_server;
         else if (cur_ver->create_id != new_ver->create_id)
             return cur_ver->create_id < new_ver->create_id;
-        else if (cur_ver->dead_time != new_ver->dead_time)
-            return cur_ver->dead_time < new_ver->dead_time;
         else if (cur_ver->expire != new_ver->expire)
             return cur_ver->expire < new_ver->expire;
-        else
+        else if (cur_ver->ver_expire != new_ver->ver_expire)
             return cur_ver->ver_expire < new_ver->ver_expire;
+        else
+            return cur_ver->dead_time < new_ver->dead_time;
     }
     return true;
 }

@@ -149,6 +149,13 @@ public:
                     int version,
                     Uint4 ttl,
                     Uint1 quorum);
+    void ProxyProlong(CRequestContext* cmd_ctx,
+                      const string& raw_key,
+                      const string& password,
+                      unsigned int add_time,
+                      Uint1 quorum,
+                      bool search,
+                      bool force_local);
 
     CBufferedSockReaderWriter& GetSockBuffer(void);
     void ForceBufferFlush(void);

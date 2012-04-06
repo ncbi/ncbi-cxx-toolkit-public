@@ -661,6 +661,50 @@ CNCActiveHandler::ProxyWrite(CRequestContext* cmd_ctx,
 }
 
 void
+CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
+                               const string& raw_key,
+                               const string& password,
+                               unsigned int add_time,
+                               Uint1 quorum,
+                               bool search,
+                               bool force_local)
+{
+    m_CmdCtx = cmd_ctx;
+    m_CurCmd = eNeedOnlyConfirm;
+
+    string cache_name, key, subkey;
+    g_NCStorage->UnpackBlobKey(raw_key, cache_name, key, subkey);
+
+    m_CmdToSend.resize(0);
+    m_CmdToSend += "PROXY_PROLONG \"";
+    m_CmdToSend += cache_name;
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += key;
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += subkey;
+    m_CmdToSend += "\" ";
+    m_CmdToSend += NStr::IntToString(add_time);
+    m_CmdToSend.append(1, ' ');
+    m_CmdToSend += NStr::UIntToString(quorum);
+    m_CmdToSend.append(1, ' ');
+    m_CmdToSend += NStr::UIntToString(Uint1(search));
+    m_CmdToSend.append(1, ' ');
+    m_CmdToSend += NStr::UIntToString(Uint1(force_local));
+    m_CmdToSend += " \"";
+    m_CmdToSend += cmd_ctx->GetClientIP();
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += cmd_ctx->GetSessionID();
+    m_CmdToSend.append(1, '"');
+    if (!password.empty()) {
+        m_CmdToSend += " \"";
+        m_CmdToSend += password;
+        m_CmdToSend.append(1, '"');
+    }
+
+    x_SendCmdToExecute();
+}
+
+void
 CNCActiveHandler::CopyProlong(const string& key,
                               Uint2 slot,
                               Uint8 orig_rec_no,

@@ -154,12 +154,12 @@ struct SNCBlobSummary
             return create_server < other.create_server;
         else if (create_id != other.create_id)
             return create_id < other.create_id;
-        else if (dead_time != other.dead_time)
-            return dead_time < other.dead_time;
         else if (expire != other.expire)
             return expire < other.expire;
-        else
+        else if (ver_expire != other.ver_expire)
             return ver_expire < other.ver_expire;
+        else
+            return dead_time < other.dead_time;
     }
 
     bool isSameData(const SNCBlobSummary& other) const

@@ -180,16 +180,64 @@ private:
 };
 
 
-/// Type of access to storage each NetCache command can have
-enum ENCStorageAccess {
-    eWithoutBlob     = 1,  ///< Storage existence is a must but no blob lock is
-                           ///< necessary
-    eWithBlob        = 2,  ///< Command must obtain lock on blob before
-                           ///< execution, but doesn't need to generate blob
-                           ///< key if it's empty
-    eWithAutoBlobKey = 3   ///< Command needs lock on blob and needs to
-                           ///< generate blob key if none provided
+enum ENCCmdFlags {
+    fWorksWithBlob      = 1 <<  0,
+    fNeedsBlobAccess    = 1 <<  1,
+    fCanGenerateKey     = 1 <<  2,
+    fNeedsStorageCache  = 1 <<  3,
+    fDoNotCheckPassword = 1 <<  4,
+    fDoNotProxyToPeers  = 1 <<  5,
+    fUsesPeerSearch     = 1 <<  6,
+    fPeerFindExistsOnly = 1 <<  7,
+    fNeedsSpaceAsClient = 1 <<  8,
+    fNeedsSpaceAsPeer   = 1 <<  9,
+    fSwapLengthBytes    = 1 << 10,  ///< Byte order should be swapped when
+                                    ///< reading length of chunks in blob
+                                    ///< transfer protocol
+    fConfirmOnFinish    = 1 << 11,
+    fReadExactBlobSize  = 1 << 12,  ///< There is exact size of the blob
+                                    ///< transferred to NetCache
+    fSkipBlobEOF        = 1 << 13,
+    fCopyLogEvent       = 1 << 14,
+    fNeedsAdminClient   = 1 << 15,
+    fRunsInStartedSync  = 1 << 16,
+    fProhibitsSyncAbort = 1 << 17,
+    fNeedsLowerPriority = 1 << 18,
+    fNoBlobVersionCheck = 1 << 19,
+    fNoBlobAccessStats  = 1 << 20,
+    fSyncCmdSuccessful  = 1 << 21,
+    fCursedPUT2Cmd      = 1 << 22,
+    fCommandStarted     = 1 << 23,  ///< Command startup code is executed
+    fCommandPrinted     = 1 << 24,  ///< "request-start" message was
+                                    ///< printed to diagnostics
+    fWaitForBlockedOp   = 1 << 25,
+    fWaitForActive      = 1 << 26,
+
+
+    eNeedsBlobAccess    = fWorksWithBlob + fNeedsBlobAccess,
+    eClientBlobRead     = eNeedsBlobAccess + fUsesPeerSearch,
+    eClientBlobWrite    = eNeedsBlobAccess + fNeedsSpaceAsClient,
+    eCopyBlobFromPeer   = eNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
+                          + fDoNotCheckPassword + fNeedsAdminClient + fConfirmOnFinish,
+    eRunsInStartedSync  = fRunsInStartedSync + fNeedsAdminClient + fNeedsLowerPriority
+                          + fNeedsStorageCache,
+    eSyncBlobCmd        = eRunsInStartedSync + eNeedsBlobAccess + fDoNotProxyToPeers
+                          + fDoNotCheckPassword
 };
+typedef Uint4 TNCCmdFlags;
+
+enum ENCProxyCmd {
+    eProxyRead = 1,
+    eProxyWrite,
+    eProxyHasBlob,
+    eProxyGetSize,
+    eProxyReadLast,
+    eProxySetValid,
+    eProxyRemove,
+    eProxyGetMeta,
+    eProxyProlong
+} NCBI_PACKED_ENUM_END();
+
 
 /// Handler of all NetCache incoming requests.
 /// Handler written to be reusable object so that if one connection to
@@ -240,13 +288,13 @@ public:
     /// Extra information about each NetCache command
     struct SCommandExtra {
         /// Which method will process the command
-        TProcessor       processor;
+        TProcessor      processor;
         /// Command name to present to user in statistics
-        const char*      cmd_name;
-        /// Type of access to storage command should have
-        ENCStorageAccess storage_access;
+        const char*     cmd_name;
+        TNCCmdFlags     cmd_flags;
         /// What access to the blob command should receive
-        ENCAccessType    blob_access;
+        ENCAccessType   blob_access;
+        ENCProxyCmd     proxy_cmd;
     };
     /// Type definitions for NetCache protocol parser
     typedef SNSProtoCmdDef<SCommandExtra>      SCommandDef;
@@ -262,30 +310,27 @@ public:
     bool x_DoCmd_GetServerStats(void);
     bool x_DoCmd_Reinit(void);
     bool x_DoCmd_Reconf(void);
-    bool x_DoCmd_Put2(void);
-    bool x_DoCmd_Put3(void);
+    bool x_DoCmd_Put(void);
     bool x_DoCmd_Get(void);
     bool x_DoCmd_GetLast(void);
     bool x_DoCmd_SetValid(void);
     bool x_DoCmd_GetSize(void);
+    bool x_DoCmd_Prolong(void);
     bool x_DoCmd_HasBlob(void);
     bool x_DoCmd_HasBlobImpl(void);
     bool x_DoCmd_Remove(void);
-    bool x_DoCmd_Remove2(void);
     bool x_DoCmd_IC_Store(void);
     bool x_DoCmd_SyncStart(void);
     bool x_DoCmd_SyncBlobsList(void);
     bool x_DoCmd_CopyPut(void);
-    bool x_DoCmd_SyncPut(void);
     bool x_DoCmd_CopyProlong(void);
-    bool x_DoCmd_SyncProlong(void);
     bool x_DoCmd_SyncGet(void);
     bool x_DoCmd_SyncProlongInfo(void);
     bool x_DoCmd_SyncCommit(void);
     bool x_DoCmd_SyncCancel(void);
     bool x_DoCmd_GetMeta(void);
     bool x_DoCmd_ProxyMeta(void);
-    bool x_DoCmd_GetBlobsList(void);
+    //bool x_DoCmd_GetBlobsList(void);
     /// Universal processor for all commands not implemented now (because they
     /// are not used by anybody and the very fact of introducing them was
     /// foolish).
@@ -332,6 +377,7 @@ private:
         eWaitForBlobAccess,    ///< Locking of blob needed for command is in
                                ///< progress
         ePasswordFailed,       ///< Processing of bad password is needed
+        eReportBlobNotFound,
         eReadBlobSignature,    ///< Reading of signature in blob transfer
                                ///< protocol
         eReadBlobChunkLength,  ///< Reading chunk length in blob transfer
@@ -349,33 +395,13 @@ private:
         eReadMetaNextPeer,
         eSendGetMetaCmd,
         eReadMetaResults,
+        eExecuteOnLatestSrvId,
         ePutToNextPeer,
         eSendPutToPeerCmd,
         eReadPutResults,
         eSocketClosed          ///< Connection closed or not opened yet
     };
-    /// Additional flags that could be applied to object states
-    enum EFlags {
-        fCommandStarted    = 0x0010000,  ///< Command startup code is executed
-        fCommandPrinted    = 0x0020000,  ///< "request-start" message was
-                                         ///< printed to diagnostics
-        fConnStartPrinted  = 0x0040000,  ///< 
-        fSwapLengthBytes   = 0x0080000,  ///< Byte order should be swapped when
-                                         ///< reading length of chunks in blob
-                                         ///< transfer protocol
-        fConfirmBlobPut    = 0x0100000,  ///< After blob is written to storage
-                                         ///< "OK" message should be written to
-                                         ///< socket
-        fReadExactBlobSize = 0x0200000,  ///< There is exact size of the blob
-                                         ///< transferred to NetCache
-        fWaitForBlockedOp  = 0x0400000,  ///< 
-        fSkipBlobEOF       = 0x0800000,
-        fCopyLogEvent      = 0x1000000,
-        fNeedSyncFinish    = 0x2000000,
-        fWaitForActive     = 0x4000000,
-        eAllFlagsMask      = 0x7FF0000   ///< Sum of all flags above
-    };
-    /// Bit mask of EFlags plus one of EStates
+    /// One of EStates
     typedef int TStateFlags;
 
     ///
@@ -387,11 +413,11 @@ private:
     EStates x_GetState(void) const;
 
     /// Set additional machine state flag
-    void x_SetFlag  (EFlags  flag);
+    void x_SetFlag  (ENCCmdFlags flag);
     /// Remove additional machine state flag
-    void x_UnsetFlag(EFlags  flag);
+    void x_UnsetFlag(ENCCmdFlags flag);
     /// Check if additional machine state flag is set
-    bool x_IsFlagSet(EFlags  flag) const;
+    bool x_IsFlagSet(ENCCmdFlags flag) const;
     ///
     unsigned int x_GetBlobTTL(void);
 
@@ -401,13 +427,11 @@ private:
     void x_ManageCmdPipeline(void);
     /// Read authentication message from client
     bool x_ReadAuthMessage(void);
-    /// Check whether current client name is administrative client, throw
-    /// exception if not.
-    bool x_CheckAdminClient(void);
     /// Read command and start it if it's available
     bool x_ReadCommand(void);
     /// Process current command
     bool x_DoCommand(void);
+    bool x_ReportBlobNotFound(void);
     /// Process "waiting" for blob locking. In fact just shift to next state
     /// if lock is acquired and just return if not.
     bool x_WaitForBlobAccess(void);
@@ -431,6 +455,7 @@ private:
     bool x_ReadMetaNextPeer(void);
     bool x_SendGetMetaCmd(void);
     bool x_ReadMetaResults(void);
+    bool x_ExecuteOnLatestSrvId(void);
     bool x_PutToNextPeer(void);
     bool x_SendPutToPeerCmd(void);
     bool x_ReadPutResults(void);
@@ -443,14 +468,14 @@ private:
     void x_AssignCmdParams(TNSProtoParams& params);
     /// Print "request_start" message into diagnostics with all parameters of
     /// the current command.
-    void x_PrintRequestStart(const SParsedCmd& cmd,
-                             auto_ptr<CDiagContext_Extra>& diag_extra);
+    void x_PrintRequestStart(AutoPtr<CDiagContext_Extra>& diag_extra);
+    void x_FlushDiagExtra(const AutoPtr<CDiagContext_Extra>& diag_extra);
     /// Start command returned by protocol parser
-    bool x_StartCommand(SParsedCmd& cmd);
+    bool x_StartCommand(void);
     ///
     void x_WaitForWouldBlock(void);
     /// Command execution is finished, do cleanup work
-    void x_FinishCommand(bool do_sock_write);
+    void x_FinishCommand(void);
     /// Start reading blob from socket
     void x_StartReadingBlob(void);
     /// Client finished sending blob, do cleanup
@@ -462,9 +487,8 @@ private:
     /// connection closed also inside this method.
     AutoPtr<CConn_SocketStream> x_PrepareSockStream(void);
 
-    void x_ProlongBlobDeadTime(void);
+    void x_ProlongBlobDeadTime(int add_time);
     void x_ProlongVersionLife(void);
-    bool x_CanStartSyncCommand(bool can_abort = true);
     void x_ReadFullBlobsList(void);
     void x_GetCurSlotServers(void);
 
@@ -486,12 +510,12 @@ private:
     CSocket*                  m_Socket;
     /// Handler state and state flags
     TStateFlags               m_State;
+    TNCCmdFlags               m_Flags;
     /// Socket reader/writer
     CBufferedSockReaderWriter m_SockBuffer;
     /// NetCache protocol parser
     TProtoParser              m_Parser;
-    /// Name of currently executing command as it can presented in stats
-    const char*               m_CurCmd;
+    SParsedCmd                m_ParsedCmd;
     /// Processor for the currently executed NetCache command
     TProcessor                m_CmdProcessor;
     /// Diagnostics context for the currently executed command
@@ -562,10 +586,8 @@ private:
     bool                      m_SearchOnRead;
     bool                      m_ThisServerIsMain;
     bool                      m_LatestExist;
-    bool                      m_InSyncCmd;
     bool                      m_WaitForThrottle;
     bool                      m_ForceLocal;
-    bool                      m_ConfirmPut;
     bool                      m_GotInitialAnswer;
     bool                      m_NeedFlushBuff;
     Uint1                     m_SrvsIndex;
