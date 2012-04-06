@@ -79,8 +79,8 @@ public:
     virtual int GetSeqLength(void) { return GetSeqLength(m_idx); }
 //for stand alone splign  performance sake the following functions added for straightforward implementation based on CSeqDB 
     virtual void SetMemoryBound(Uint8 membound) {}
-    virtual int GetSequence(const char ** buffer) { return GetSequence(m_idx, buffer); }
-    virtual int GetSequence(int idx, const char ** buffer) {
+    virtual int GetSeq(const char ** buffer) { return GetSeq(m_idx, buffer); }
+    virtual int GetSeq(int idx, const char ** buffer) {
         CSeqVector vec = GetSequence(GetIds()[idx]).GetSeqVector();
         vec.SetRandomizeAmbiguities();
         vec.SetCoding(CSeq_data::e_Ncbi2na);
@@ -109,6 +109,11 @@ private:
     virtual const vector<CSeq_id_Handle>& GetIds(void) const { return s_ids; } //never called
     virtual CBioseq_Handle GetSequence(const CSeq_id_Handle&) { return CBioseq_Handle(); } // never called
 public:
+
+    using ISequenceSource::GetSeq;
+    using ISequenceSource::GetSeqLength;
+    using ISequenceSource::GetSeqID;
+
     CBlastSequenceSource(const string& db) : m_seqdb( new CSeqDB(db, CSeqDB::eNucleotide) ) {}
     virtual ~CBlastSequenceSource(void) {}
 
@@ -120,7 +125,7 @@ public:
     }
     virtual int GetSeqLength(int idx) { return  m_seqdb->GetSeqLength(idx); }
     virtual void SetMemoryBound(Uint8 membound) { return m_seqdb->SetMemoryBound(membound); }
-    virtual int GetSequence(int idx, const char ** buffer) {return m_seqdb->GetSequence(idx, buffer); }
+    virtual int GetSeq(int idx, const char ** buffer) {return m_seqdb->GetSequence(idx, buffer); }
     virtual void RetSequence(const char ** buffer) {  m_seqdb->RetSequence(buffer); }
     virtual CConstRef<CSeq_id> GetSeqID(int idx) { return m_seqdb->GetSeqIDs(idx).back(); }
 
