@@ -1025,6 +1025,7 @@ CNCMessageHandler::CDiagnosticsGuard::~CDiagnosticsGuard(void)
 CNCMessageHandler::CNCMessageHandler(void)
     : m_Socket(NULL),
       m_State(eSocketClosed),
+      m_Flags(0),
       m_Parser(s_CommandMap),
       m_CmdProcessor(NULL),
       m_BlobAccess(NULL),
