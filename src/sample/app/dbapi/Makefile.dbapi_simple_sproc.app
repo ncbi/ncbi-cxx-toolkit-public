@@ -1,6 +1,6 @@
 # $Id$
 
-REQUIRES = dbapi
+REQUIRES = dbapi FreeTDS
 
 APP = dbapi_simple_sproc
 SRC = dbapi_simple_sproc
