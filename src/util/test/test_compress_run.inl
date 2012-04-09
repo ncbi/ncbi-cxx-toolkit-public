@@ -259,43 +259,10 @@
 
         // Transparent read from this file
         assert(zf.Open(kFileName, TCompressionFile::eMode_Read)); 
-       
-        // temporary debug code: CXX-2491
-//        assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
-        {{
-            int n = zf.Read(cmp_buf, kDataLen);
-            if (n != (int)kDataLen) {
-#  ifdef NCBI_OS_MSWIN
-                string new_file_name = string("s:\\") + kFileName;
-#  else
-                string new_file_name = string("/tmp/") + kFileName;
-#  endif
-                CFile(kFileName).Copy(new_file_name);
-                ERR_POST("Debug: nread = " << n << 
-                    ", errcode = " << zf.GetErrorCode() <<
-                    " -- " << zf.GetErrorDescription() <<
-                    ". File saved as: " << new_file_name);
-            }
-            assert(n == (int)kDataLen);
-        }}
-
+        assert(zf.Read(cmp_buf, kDataLen) == (int)kDataLen);
         assert(zf.Close()); 
 
         // Compare original and "decompressed" data
-        if (memcmp(src_buf, cmp_buf, kDataLen) != 0) {
-#  ifdef NCBI_OS_MSWIN
-            string new_file_name = string("s:\\") + kFileName;
-#  else
-            string new_file_name = string("/tmp/") + kFileName;
-#  endif
-            string new_file_name_cmp = new_file_name + ".cmp";
-            CFile(kFileName).Copy(new_file_name);
-            CNcbiOfstream os(new_file_name_cmp.c_str(), IOS_BASE::out | IOS_BASE::binary);
-            os.write(cmp_buf, kDataLen);
-            os.close();
-            ERR_POST("Original data file: " << new_file_name << 
-                     ", cmp_buf dumped into: " << new_file_name_cmp);
-        }
         assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
 
         CFile(kFileName).Remove();
@@ -523,9 +490,9 @@
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
                                           new TStreamCompressor(),
                                           CCompressionStream::fOwnProcessor);
-            assert((bool)zip  &&  zip.good()  &&  stm.good());
+            assert(zip.good()  &&  stm.good());
             zip.write(src_buf, kDataLen);
-            assert((bool)zip  &&  zip.good()  &&  stm.good());
+            assert(zip.good()  &&  stm.good());
             zip.Finalize(CCompressionStream::eWrite);
             assert(!zip.eof()  &&  zip.good());
             assert(!stm.eof()  &&  stm.good());
