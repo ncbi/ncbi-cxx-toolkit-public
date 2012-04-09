@@ -293,7 +293,7 @@ function CheckoutSubDir(oShell, oTree, sub_dir)
     var dir_local_path  = oTree.TreeRoot + "\\" + sub_dir;
     var repository_path = GetRepository(oShell, sub_dir);
     var dir_local_path_parent = oFso.GetParentFolderName(dir_local_path);
-    var base_name = oFso.GetBaseName(dir_local_path);
+    var base_name = oFso.GetFileName(dir_local_path);
 
     oFso.DeleteFolder(dir_local_path, true);
     var cmd_checkout = "svn checkout " + ForwardSlashes(repository_path) + " " + base_name;
