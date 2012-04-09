@@ -93,7 +93,7 @@
         {
             var err = false;
             // Project name
-            var oRe = /^[a-z]([a-z]|\d|[_])*$/g;
+            var oRe = /^[a-zA-Z]([a-zA-Z]|\d|[_]|[-]|[\.])*$/g;
             if (oTask.ProjectName.match(oRe) == null) {
                 WScript.Echo("ERROR: Invalid project name: \"" + oTask.ProjectName + "\"");
                 WScript.Echo("       Project name should start with a lower-case character");
