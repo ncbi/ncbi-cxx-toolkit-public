@@ -18,7 +18,6 @@ internal/asn_cache
 internal/txserver
 internal/gpipe/align_db
 internal/gpipe/common$
-internal/gpipe/gencoll/src/gcaccess$
 internal/ID/utils$
 internal/mapview/objects
 misc/grid_cgi$
