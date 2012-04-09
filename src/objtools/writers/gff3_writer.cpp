@@ -201,11 +201,13 @@ bool CGff3Writer::x_WriteAlignDenseg(
     const CSeq_id& productId = align.GetSeq_id( 0 );
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle( productId );
     CSeq_id_Handle pTargetId = bsh.GetSeq_id_Handle();
-    CSeq_id_Handle best = sequence::GetId(bsh, sequence::eGetId_Best);
-    if (best) {
-        pTargetId = best;
+    try {
+        CSeq_id_Handle best = sequence::GetId(bsh, sequence::eGetId_Best);
+        if (best) {
+            pTargetId = best;
+        }
     }
-
+    catch(...) {};
     const CDense_seg& ds = align.GetSegs().GetDenseg();
     CRef<CDense_seg> ds_filled = ds.FillUnaligned();
 //    if ( bInvertWidth ) {
