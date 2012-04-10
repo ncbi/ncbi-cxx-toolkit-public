@@ -599,7 +599,7 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
             --base_frame;
         }
         if (frame) {
-            *frame = 3 - (rl.m_Ranges.front()->GetFrom() + 2 - base_frame) % 3;
+            *frame = (3 + rl.m_Ranges.front()->GetFrom() - base_frame) % 3 + 1;
         }
         TSeqPos prot_length;
         try {
