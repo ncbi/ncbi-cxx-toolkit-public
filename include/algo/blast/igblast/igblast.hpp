@@ -67,6 +67,7 @@ public:
     string m_Origin;                 // the origin of species
     string m_DomainSystem;           // domain system for annotation
     string m_AuxFilename;            // auxulary file name
+    string m_IgDataPath;             // internal data path
     CRef<CLocalDbAdapter> m_Db[4];   // user specified germline database
                                      // 0-2: - user specified V, D, J
                                      // 3:   - the default V gl db

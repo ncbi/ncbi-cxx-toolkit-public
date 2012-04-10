@@ -1346,6 +1346,14 @@ void
 CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
                                       CBlastOptions& opts)
 {
+    string paths[3];
+    CNcbiEnvironment env;
+    CMetaRegistry::SEntry sentry = 
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    paths[0] = CDirEntry::NormalizePath(CDir::GetCwd(), eFollowLinks);
+    paths[1] = CDirEntry::NormalizePath(env.Get("IGDATA"), eFollowLinks);
+    paths[2] = CDirEntry::NormalizePath(sentry.registry->Get("BLAST","IGDATA"), eFollowLinks);
+
     m_IgOptions.Reset(new CIgBlastOptions());
     
     CBlastDatabaseArgs::EMoleculeType mol_type = Blast_SubjectIsNucleotide(opts.GetProgramType())
@@ -1358,9 +1366,18 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
     if (!m_IsProtein) {
-        m_IgOptions->m_AuxFilename = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
+        string aux_file = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
                              ? args[kArgGLChainType].AsString()
                              : m_IgOptions->m_Origin + "_gl.aux";
+        m_IgOptions->m_AuxFilename = aux_file;
+        for (int i=0; i<3; i++) {
+            string aux_path = CDirEntry::ConcatPath(paths[i], aux_file);
+            CDirEntry entry(aux_path);
+            if (entry.Exists() && entry.IsFile()) {
+                m_IgOptions->m_AuxFilename = aux_path;
+                break;
+            }
+        }
     }
 
     _ASSERT(m_IsProtein == m_IgOptions->m_IsProtein);
@@ -1368,7 +1385,17 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
 
     // default germline database name for annotation
-    string df_db_name = "internal_data/" + m_IgOptions->m_Origin + "/" + m_IgOptions->m_Origin + "_V";
+    for (int i=0; i<3; i++) {
+        string int_data = CDirEntry::ConcatPath(paths[i], "internal_data");
+        CDirEntry entry(int_data);
+        if (entry.Exists() && entry.IsDir()) {
+            m_IgOptions->m_IgDataPath = int_data;
+            break;
+        }
+    }
+    string df_db_name = CDirEntry::ConcatPath(
+                        CDirEntry::ConcatPath(m_IgOptions->m_IgDataPath, 
+                           m_IgOptions->m_Origin), m_IgOptions->m_Origin + "_V");
     CRef<CSearchDatabase> db(new CSearchDatabase(df_db_name, mol_type));
     m_IgOptions->m_Db[3].Reset(new CLocalDbAdapter(*db));
     try {

@@ -78,7 +78,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
 
     // read domain info from pdm or ndm file
     const string suffix = (ig_opt->m_IsProtein) ? ".pdm." : ".ndm.";
-    string fn(SeqDB_ResolveDbPath("internal_data/" + ig_opt->m_Origin + "/" 
+    string fn(SeqDB_ResolveDbPath(ig_opt->m_IgDataPath + "/" + ig_opt->m_Origin + "/" 
                                + ig_opt->m_Origin + suffix + ig_opt->m_DomainSystem));
     if (fn == "") {
         NCBI_THROW(CBlastException,  eInvalidArgument, 
