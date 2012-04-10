@@ -17,7 +17,28 @@ version  1 # of file format
 3+5  J??  gb_tsa_prot
 3+5  ???  unreserved_prot
 
+# Genome pipeline accessions
+4+9  GPC_  gpipe_chromosome
+4+9  GPG_  gpipe_genomic
+4+9  GPM_  gpipe_mrna
+4+9  GPN_  gpipe_other_nuc
+4+9  GPP_  gpipe_prot
+4+9  GPR_  gpipe_ncrna
+4+9  GPS_  gpipe_scaffold
+4+9  ZPC_  gpipe_chromosome
+4+9  ZPG_  gpipe_genomic
+4+9  ZPM_  gpipe_mrna
+4+9  ZPN_  gpipe_other_nuc
+4+9  ZPP_  gpipe_prot
+4+9  ZPR_  gpipe_ncrna
+4+9  ZPS_  gpipe_scaffold
+4+9  GP?_  gpipe_unreserved
+4+9  ZP?_  gpipe_unreserved
+
 # whole genome shotgun accessions
+4+8   ???_  unknown
+4+9   ???_  unknown
+4+10  ???_  unknown
 4+8   A???  gb_wgs_nuc
 4+9   A???  gb_wgs_nuc
 4+10  A???  gb_wgs_nuc
@@ -83,24 +104,6 @@ version  1 # of file format
 3+7  ??_      refseq_unreserved
 3+8  ??_      refseq_unreserved
 3+9  ??_      refseq_unreserved
-
-# Genome pipeline accessions
-4+9  GPC_  gpipe_chromosome
-4+9  GPG_  gpipe_genomic
-4+9  GPM_  gpipe_mrna
-4+9  GPN_  gpipe_other_nuc
-4+9  GPP_  gpipe_prot
-4+9  GPR_  gpipe_ncrna
-4+9  GPS_  gpipe_scaffold
-4+9  ZPC_  gpipe_chromosome
-4+9  ZPG_  gpipe_genomic
-4+9  ZPM_  gpipe_mrna
-4+9  ZPN_  gpipe_other_nuc
-4+9  ZPP_  gpipe_prot
-4+9  ZPR_  gpipe_ncrna
-4+9  ZPS_  gpipe_scaffold
-4+9  GP?_  gpipe_unreserved
-4+9  ZP?_  gpipe_unreserved
 
 # 6-character accessions (mixed, but generally nucleotide)
 1+5  A  embl_patent
