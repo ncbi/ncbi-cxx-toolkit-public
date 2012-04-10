@@ -611,12 +611,13 @@ CAsn2FlatApp::TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
         return CFlatFileConfig::eFormat_GBSeq;
     } else if ( format == "ftable" ) {
         return CFlatFileConfig::eFormat_FTable;
-    } else if ( format == "gff" ) {
-        return CFlatFileConfig::eFormat_GFF;
-    } else if ( format == "gff3" ) {
-        return CFlatFileConfig::eFormat_GFF3;
     }
-
+    if (format == "gff"  ||  format == "gff3") {
+        string msg = 
+            "Asn2flat no longer supports GFF and GFF3 generation. "
+            "For state-of-the-art GFF output, use annotwriter.";
+        NCBI_THROW(CException, eInvalid, msg);
+    }
     // default
     return CFlatFileConfig::eFormat_GenBank;
 }
