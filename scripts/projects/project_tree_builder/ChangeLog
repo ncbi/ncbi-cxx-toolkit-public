@@ -209,4 +209,10 @@ Corrected MSVC2010 project generation to correctly pick up target name and exten
 Enhanced MSVC2010 file filter comparison to avoid re-generating them too often.
 In UNIX flat makefile, added help and project lists targets.
 
+April 10, 2012
+version 3.7.3
+Added support of UNIX_PROJ on Unix.
+Corrected generation of project watchers list on MSVC2010.
+
+
 
