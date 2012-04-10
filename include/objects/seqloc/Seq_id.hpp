@@ -199,6 +199,7 @@ public:
         // Internal values combinining a division and a flag for convenience.
         eAcc_wgs_master          = eAcc_wgs          | fAcc_master,
         eAcc_wgs_intermed_master = eAcc_wgs_intermed | fAcc_master,
+        eAcc_tsa_master          = eAcc_tsa          | fAcc_master,
 
         // Actual return values with EXAMPLE prefixes (to be followed
         // by digits) or IDs, grouped by Seq-id type.  In most cases,
@@ -235,7 +236,9 @@ public:
         eAcc_gb_gsdb        = e_Genbank | eAcc_gsdb       | fAcc_nuc,  // AD
         eAcc_gb_backbone    = e_Genbank | eAcc_backbone   | fAcc_nuc,  // S
         eAcc_gb_tsa_nuc     = e_Genbank | eAcc_tsa        | fAcc_nuc,  // EZ
-        eAcc_gb_tsa_prot    = e_Genbank | eAcc_tsa        | fAcc_prot,
+        eAcc_gb_tsa_prot    = e_Genbank | eAcc_tsa        | fAcc_prot, // JAA
+        eAcc_gb_tsam_nuc    = e_Genbank | eAcc_tsa_master | fAcc_nuc,
+        eAcc_gb_tsam_prot   = e_Genbank | eAcc_tsa_master | fAcc_prot,
         eAcc_gb_segset      = e_Genbank | eAcc_segset  /* | fAcc_nuc */, // AH
         eAcc_gb_gss         = e_Genbank | eAcc_gss        | fAcc_nuc,  // B
         eAcc_gb_genome      = e_Genbank | eAcc_genome     | fAcc_nuc,  // AE
@@ -322,8 +325,12 @@ public:
         eAcc_gb_tpa_wgsm_prot  = e_Tpg | eAcc_wgs_master | fAcc_prot,
         eAcc_gb_tpa_chromosome = e_Tpg | eAcc_chromosome | fAcc_nuc,  // GK
 
-        eAcc_embl_tpa_nuc  = e_Tpe | eAcc_other | fAcc_nuc,  // BN
-        eAcc_embl_tpa_prot = e_Tpe | eAcc_other | fAcc_prot, // CAD29848
+        eAcc_embl_tpa_nuc        = e_Tpe | eAcc_other      | fAcc_nuc,  // BN
+        eAcc_embl_tpa_prot       = e_Tpe | eAcc_other | fAcc_prot, // CAD29848
+        eAcc_embl_tpa_wgs_nuc    = e_Tpe | eAcc_wgs        | fAcc_nuc,  // FAAA
+        eAcc_embl_tpa_wgs_prot   = e_Tpe | eAcc_wgs        | fAcc_prot,
+        eAcc_embl_tpa_wgsm_nuc   = e_Tpe | eAcc_wgs_master | fAcc_nuc,
+        eAcc_embl_tpa_wgsm_prot  = e_Tpe | eAcc_wgs_master | fAcc_prot,
 
         eAcc_ddbj_tpa_nuc        = e_Tpd | eAcc_other      | fAcc_nuc,  // BR
         eAcc_ddbj_tpa_prot       = e_Tpd | eAcc_other      | fAcc_prot, // FAA

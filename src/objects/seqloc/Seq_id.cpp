@@ -552,6 +552,8 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     TAccInfoMapEntry("ddbj_tpa_prot",           CSeq_id::eAcc_ddbj_tpa_prot),
     TAccInfoMapEntry("ddbj_tpa_wgs_nuc",        CSeq_id::eAcc_ddbj_tpa_wgs_nuc),
     TAccInfoMapEntry("ddbj_tpa_wgs_prot",       CSeq_id::eAcc_ddbj_tpa_wgs_prot),
+    TAccInfoMapEntry("ddbj_tpa_wgsm_nuc",       CSeq_id::eAcc_ddbj_tpa_wgsm_nuc),
+    TAccInfoMapEntry("ddbj_tpa_wgsm_prot",      CSeq_id::eAcc_ddbj_tpa_wgsm_prot),
     TAccInfoMapEntry("ddbj_tsa_nuc",            CSeq_id::eAcc_ddbj_tsa_nuc),
     TAccInfoMapEntry("ddbj_tsa_prot",           CSeq_id::eAcc_ddbj_tsa_prot),
     TAccInfoMapEntry("ddbj_wgs_nuc",            CSeq_id::eAcc_ddbj_wgs_nuc),
@@ -570,6 +572,10 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     TAccInfoMapEntry("embl_prot",               CSeq_id::eAcc_embl_prot),
     TAccInfoMapEntry("embl_tpa_nuc",            CSeq_id::eAcc_embl_tpa_nuc),
     TAccInfoMapEntry("embl_tpa_prot",           CSeq_id::eAcc_embl_tpa_prot),
+    TAccInfoMapEntry("embl_tpa_wgs_nuc",        CSeq_id::eAcc_embl_tpa_wgs_nuc),
+    TAccInfoMapEntry("embl_tpa_wgs_prot",       CSeq_id::eAcc_embl_tpa_wgs_prot),
+    TAccInfoMapEntry("embl_tpa_wgsm_nuc",       CSeq_id::eAcc_embl_tpa_wgsm_nuc),
+    TAccInfoMapEntry("embl_tpa_wgsm_prot",      CSeq_id::eAcc_embl_tpa_wgsm_prot),
     TAccInfoMapEntry("embl_tsa_nuc",            CSeq_id::eAcc_embl_tsa_nuc),
     TAccInfoMapEntry("embl_tsa_prot",           CSeq_id::eAcc_embl_tsa_prot),
     TAccInfoMapEntry("embl_wgs_nuc",            CSeq_id::eAcc_embl_wgs_nuc),
@@ -605,6 +611,8 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     TAccInfoMapEntry("gb_tpa_wgsm_prot",        CSeq_id::eAcc_gb_tpa_wgsm_prot),
     TAccInfoMapEntry("gb_tsa_nuc",              CSeq_id::eAcc_gb_tsa_nuc),
     TAccInfoMapEntry("gb_tsa_prot",             CSeq_id::eAcc_gb_tsa_prot),
+    TAccInfoMapEntry("gb_tsam_nuc",             CSeq_id::eAcc_gb_tsam_nuc),
+    TAccInfoMapEntry("gb_tsam_prot",            CSeq_id::eAcc_gb_tsam_prot),
     TAccInfoMapEntry("gb_wgs_nuc",              CSeq_id::eAcc_gb_wgs_nuc),
     TAccInfoMapEntry("gb_wgs_prot",             CSeq_id::eAcc_gb_wgs_prot),
     TAccInfoMapEntry("gb_wgsm_nuc",             CSeq_id::eAcc_gb_wgsm_nuc),
@@ -979,9 +987,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
     EAccessionInfo ai = s_Guide.Find
         (SAccGuide::s_Key(digit_pos, main_size - digit_pos), main_acc);
     switch (ai & eAcc_division_mask) {
+    case eAcc_tsa:
     case eAcc_wgs:
     case eAcc_wgs_intermed:
-        if (main_acc.find_first_not_of("0", digit_pos + 2) == NPOS) {
+        if (digit_pos >= 4
+            &&  main_acc.find_first_not_of("0", digit_pos + 2) == NPOS) {
             return EAccessionInfo(ai | fAcc_master);
         }
     default:
