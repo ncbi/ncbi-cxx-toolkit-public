@@ -51,13 +51,22 @@ BEGIN_SCOPE(objects)
 
 class CDense_seg;
 
-class NCBI_FORMAT_EXPORT CGFF3_Formatter : public CGFFFormatter
+//  ============================================================================
+/// Flat file generator support for generating GFF3 output has been deprecated,
+/// and therefore, class CGFF3_Formatter has been deprecated as well. DO NOT USE
+/// this class for future projects as it is no longer maintained and produces
+/// bad GFF.
+/// For future projects (or to upgrade your existing project), use CGff3Writer 
+/// (or an appropriate derivative) instead.
+//  ============================================================================
+NCBI_DEPRECATED_CLASS NCBI_FORMAT_EXPORT CGFF3_Formatter : public CGFFFormatter
 {
 public:
+    NCBI_DEPRECATED_CTOR(
     CGFF3_Formatter()
     {
         m_CurrentId = 1;
-    }
+    })
 
     void Start       (IFlatTextOStream& text_os);
     void EndSection  (const CEndSectionItem& esec, IFlatTextOStream& text_os);

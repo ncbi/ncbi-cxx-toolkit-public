@@ -60,8 +60,15 @@ BEGIN_SCOPE(objects)
 
 class CFlatFeature;
 
-
-class NCBI_FORMAT_EXPORT CGFFFormatter : public CFlatItemFormatter
+//  ============================================================================
+/// Flat file generator support for generating GFF output has been deprecated,
+/// and therefore, class CGFFFormatter has been deprecated as well. DO NOT USE
+/// this class for future projects as it is no longer maintained and produces
+/// bad GFF.
+/// For future projects (or to upgrade your existing project), use CGff2Writer 
+/// (or an appropriate derivative) instead.
+//  ============================================================================
+NCBI_DEPRECATED_CLASS NCBI_FORMAT_EXPORT CGFFFormatter : public CFlatItemFormatter
 {
 public:
 
@@ -79,7 +86,7 @@ public:
     };
     typedef int TGFFFlags; ///< Binary OR of EGFFFlags
 
-    CGFFFormatter(void);
+    NCBI_DEPRECATED_CTOR(CGFFFormatter(void));
 
     void Start       (IFlatTextOStream& text_os);
     void StartSection(const CStartSectionItem&, IFlatTextOStream& text_os);
