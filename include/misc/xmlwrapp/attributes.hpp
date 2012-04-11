@@ -262,6 +262,7 @@ public:
         friend bool impl::operator== (const impl::ait_impl &lhs, const impl::ait_impl &rhs);
         friend class impl::ait_impl;
         friend class iterator;
+        friend class const_iterator;
         friend class attributes;
         friend struct xml::attributes::pimpl;
     }; // end xml::attributes::attr class
