@@ -6356,7 +6356,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VNC	s	Los Angeles Valley College, Life Sciences Department",
 "VNGA	s	Vorarlberger Naturschau",
 "VNIRO	s	Institute of Oceanography",
-"VNMN<VNM >	s	Vietnam National Museum of Nature",
+"VNMN<VNM>	s	Vietnam National Museum of Nature",
 "VOA	s	Ostrobothnian Museum",
 "VOR	s	Voronezh State University, Biology and Plant Ecology Department",
 "VORG	s	Voronezh State University, Faculty of Geography and Geoecology",
