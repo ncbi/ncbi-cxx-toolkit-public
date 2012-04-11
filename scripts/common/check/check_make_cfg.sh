@@ -40,8 +40,10 @@ x_cfg=$5
 x_build_dir=$6
 
 
+is_msvc=false
 case "$x_compiler" in
-   MSVC | XCODE ) ;;
+   MSVC  ) is_msvc=true ;;
+   XCODE ) ;;
    * ) echo "Unknown compiler name \"$x_compiler\"."; exit 1 ;;
 esac
 
@@ -556,7 +558,12 @@ for x_row in $x_tests; do
       for i in $x_files ; do
          x_copy="$x_src_dir/$i"
          if test -f "$x_copy"  -o  -d "$x_copy" ; then
-            cp -prf "$x_copy" "$x_path"
+            if $is_msvc; then
+               # Do not preserve permissions, it is not always possible for NTFS
+               cp -rf "$x_copy" "$x_path"
+            else
+               cp -prf "$x_copy" "$x_path"
+            fi
             find "$x_path/$i" -name .svn -print 2> /dev/null | xargs rm -rf
          else
             echo "Warning:  \"$x_copy\" must be file or directory!"
