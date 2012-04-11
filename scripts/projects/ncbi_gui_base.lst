@@ -15,8 +15,10 @@ internal/align_model$
 internal/contigdb$
 internal/blast
 internal/asn_cache
-internal/gpipe
--internal/gpipe/gpinit/src/gpinit_asn_factory
+internal/gpipe/common$
+internal/gpipe/gencoll/src/gc_load_utils$
+internal/gpipe/gpinit/src/api$
+internal/gpipe/gpinit/src/gpinit_compare$
 internal/txserver
 internal/ID/utils$
 internal/mapview/objects
