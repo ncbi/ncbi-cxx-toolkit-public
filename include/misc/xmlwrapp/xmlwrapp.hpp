@@ -41,7 +41,6 @@
 #define _xmlwrapp_xmlwrapp_h_
 
 #include <misc/xmlwrapp/xml_init.hpp>
-#include <misc/xmlwrapp/nodes_view.hpp>
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/document.hpp>

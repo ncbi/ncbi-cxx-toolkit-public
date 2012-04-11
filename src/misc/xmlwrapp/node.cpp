@@ -45,7 +45,6 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
-#include <misc/xmlwrapp/nodes_view.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/node_set.hpp>
 #include <misc/xmlwrapp/exception.hpp>
@@ -216,26 +215,6 @@ namespace {
 
         return 0;
     }
-
-    // Include this functionality only if it is explicitly requested
-    #ifdef XMLWRAPP_USE_NODE_VIEW
-    class next_element_functor : public iter_advance_functor
-    {
-    public:
-        virtual xmlNodePtr operator()(xmlNodePtr node) const
-            { return find_element(node->next); }
-    };
-
-    class next_named_element_functor : public iter_advance_functor
-    {
-    public:
-        next_named_element_functor(const char *name) : name_(name) {}
-        virtual xmlNodePtr operator()(xmlNodePtr node) const
-            { return find_element(name_.c_str(), node->next); }
-    private:
-        std::string name_;
-    };
-    #endif // XMLWRAPP_USE_NODE_VIEW
 }
 //####################################################################
 xml::node::node (int) {
@@ -754,46 +733,6 @@ xml::node::const_iterator xml::node::find (const char *name,
     if ( (n = find_element(name, n, nspace))) return const_iterator(n);
     return end();
 }
-
-// Include this functionality only if it is explicitly requested
-#ifdef XMLWRAPP_USE_NODE_VIEW
-xml::nodes_view xml::node::elements()
-{
-    return nodes_view
-           (
-               find_element(pimpl_->xmlnode_->children),
-               new next_element_functor
-           );
-}
-
-xml::const_nodes_view xml::node::elements() const
-{
-    return const_nodes_view
-           (
-               find_element(pimpl_->xmlnode_->children),
-               new next_element_functor
-           );
-}
-
-xml::nodes_view xml::node::elements(const char *name)
-{
-    return nodes_view
-           (
-               find_element(name, pimpl_->xmlnode_->children, NULL),
-               new next_named_element_functor(name)
-           );
-}
-
-xml::const_nodes_view xml::node::elements(const char *name) const
-{
-    return const_nodes_view
-           (
-               find_element(name, pimpl_->xmlnode_->children, NULL),
-               new next_named_element_functor(name)
-           );
-}
-#endif // XMLWRAPP_USE_NODE_VIEW
-
 //####################################################################
 xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& expr) {
     xmlXPathContextPtr      xpath_context(reinterpret_cast<xmlXPathContextPtr>(create_xpath_context(expr)));

@@ -71,12 +71,6 @@ class document;
 class xpath_expression;
 class node_set;
 
-// Include this functionality only if it is explicitly requested
-#ifdef XMLWRAPP_USE_NODE_VIEW
-class nodes_view;
-class const_nodes_view;
-#endif // XMLWRAPP_USE_NODE_VIEW
-
 namespace impl {
 class node_iterator;
 class iter_advance_functor;
@@ -1016,95 +1010,6 @@ public:
     //####################################################################
     const_iterator find (const char *name, const const_iterator& start,
                          const ns *nspace=NULL) const;
-
-    // Include this functionality only if it is explicitly requested
-    #ifdef XMLWRAPP_USE_NODE_VIEW
-    /**
-     * Returns view of child nodes of type type_element. If no such node
-     * can be found, returns empty view.
-     *
-     * Example:
-     * @code
-     * xml::nodes_view view(root.elements());
-     * for (xml::nodes_view::iterator i = view.begin(); i != view.end(); ++i)
-     * {
-     *   ...
-     * }
-     * @endcode
-     *
-     * @return View with all child elements or empty view if there aren't any.
-     * @author Vaclav Slavik
-     * @since  0.6.0
-     *
-     * @see nodes_view
-    **/
-    nodes_view elements();
-
-    /**
-     * Returns view of child nodes of type type_element. If no such node
-     * can be found, returns empty view.
-     *
-     * Example:
-     * @code
-     * xml::const_nodes_view view(root.elements());
-     * for (xml::const_nodes_view::const_iterator i = view.begin();
-     *      i != view.end();
-     *      ++i)
-     * {
-     *   ...
-     * }
-     * @endcode
-     *
-     * @return View with all child elements or empty view if there aren't any.
-     * @author Vaclav Slavik
-     * @since  0.6.0
-     *
-     * @see const_nodes_view
-    **/
-    const_nodes_view elements() const;
-
-    /**
-     * Returns view of child nodes of type type_element with name @a name.
-     * If no such node can be found, returns empty view.
-     *
-     * Example:
-     * @code
-     * xml::nodes_view persons(root.elements("person"));
-     * for (xml::nodes_view::iterator i = view.begin(); i != view.end(); ++i)
-     * {
-     *   ...
-     * }
-     * @endcode
-     *
-     * @param  name Name of the elements to return.
-     * @return View that contains only elements @a name.
-     * @author Vaclav Slavik
-     * @since  0.6.0
-    **/
-    nodes_view elements(const char *name);
-
-    /**
-     * Returns view of child nodes of type type_element with name @a name.
-     * If no such node can be found, returns empty view.
-     *
-     * Example:
-     * @code
-     * xml::const_nodes_view persons(root.elements("person"));
-     * for (xml::const_nodes_view::const_iterator i = view.begin();
-     *      i != view.end();
-     *      ++i)
-     * {
-     *   ...
-     * }
-     * @endcode
-     *
-     * @param  name Name of the elements to return.
-     * @return View that contains only elements @a name.
-     * @author Vaclav Slavik
-     * @since  0.6.0
-    **/
-    const_nodes_view elements(const char *name) const;
-    #endif // XMLWRAPP_USE_NODE_VIEW
 
     /**
      * Run the given XPath query.
