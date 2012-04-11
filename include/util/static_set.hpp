@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Mike DiCuccio
+ * Authors:  Mike DiCuccio, Eugene Vasilchenko
  *
  * File Description:
  *     CStaticArraySet<> -- template class to provide convenient access to
@@ -38,12 +38,50 @@
 
 #include <util/error_codes.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <utility>
+#include <typeinfo>
 #include <algorithm>
 #include <functional>
 
 
 BEGIN_NCBI_SCOPE
+
+
+///
+/// Template structure SStaticPair is simlified replacement of STL pair<>
+/// Main reason of introducing this structure is o allow static initialization
+/// by { xxx } construct.
+/// It's main use is for static const structures which do not need constructors
+///
+template<class FirstType, class SecondType>
+struct SStaticPair
+{
+    typedef FirstType first_type;
+    typedef SecondType second_type;
+
+    first_type first;
+    second_type second;
+};
+
+
+/// Parameter to control printing diagnostic message about conversion
+/// of static array data from a different type.
+/// Default value is "off".
+NCBI_PARAM_DECL_EXPORT(NCBI_XUTIL_EXPORT, bool, NCBI, STATIC_ARRAY_COPY_WARNING);
+typedef NCBI_PARAM_TYPE(NCBI, STATIC_ARRAY_COPY_WARNING) TParamStaticArrayCopyWarning;
+
+
+/// Parameter to control printing diagnostic message about unsafe static type.
+/// Default value is "off".
+NCBI_PARAM_DECL_EXPORT(NCBI_XUTIL_EXPORT, bool, NCBI, STATIC_ARRAY_UNSAFE_TYPE_WARNING);
+typedef NCBI_PARAM_TYPE(NCBI, STATIC_ARRAY_UNSAFE_TYPE_WARNING) TParamStaticArrayUnsafeTypeWarning;
+
+
+/// Namespace for static array templates' implementation.
+BEGIN_NAMESPACE(NStaticArray);
+
 
 template<class KeyValueGetter, class KeyCompare>
 struct PLessByKey : public KeyCompare
@@ -125,6 +163,347 @@ public:
 };
 
 
+/// Helper class for single object conversion from static type to work type.
+class NCBI_XUTIL_EXPORT IObjectConverter
+{
+public:
+    virtual ~IObjectConverter(void) THROWS_NONE;
+    virtual const type_info& GetSrcTypeInfo(void) const THROWS_NONE = 0;
+    virtual const type_info& GetDstTypeInfo(void) const THROWS_NONE = 0;
+    virtual size_t GetSrcTypeSize(void) const THROWS_NONE = 0;
+    virtual size_t GetDstTypeSize(void) const THROWS_NONE = 0;
+    virtual void Convert(void* dst, const void* src) const = 0;
+    virtual void Destroy(void* dst) const THROWS_NONE = 0;
+    
+    DECLARE_CLASS_STATIC_FAST_MUTEX(sx_InitMutex);
+};
+
+
+/// Helper class for holding and correct destruction of static array copy.
+class NCBI_XUTIL_EXPORT CArrayHolder
+{
+public:
+    CArrayHolder(IObjectConverter* converter) THROWS_NONE;
+    ~CArrayHolder(void) THROWS_NONE;
+    
+    void* GetArrayPtr(void) const
+    {
+        return m_ArrayPtr;
+    }
+    size_t GetElementCount(void) const
+    {
+        return m_ElementCount;
+    }
+    void* ReleaseArrayPtr(void)
+    {
+        void* ret = m_ArrayPtr;
+        m_ArrayPtr = 0;
+        m_ElementCount = 0;
+        return ret;
+    }
+
+    /// Convert data from static array of different type using
+    /// the holder's converter. The result is stored in the holder.
+    /// @param src_array
+    ///   Pointer to the source static array.
+    /// @param size
+    ///   Number of elements in the array.
+    /// @param file
+    ///   Source file name of the static array declaration for diagnostics.
+    /// @param line
+    ///   Source line number of the static array declaration for diagnostics.
+    void Convert(const void* src_array,
+                 size_t size,
+                 const char* file,
+                 int line);
+    
+private:
+    auto_ptr<IObjectConverter> m_Converter;
+    void* m_ArrayPtr;
+    size_t m_ElementCount;
+    
+private:
+    CArrayHolder(const CArrayHolder&);
+    void operator=(const CArrayHolder&);
+};
+
+
+/// Helper class for destruction of field 'first' in pair<> if exception
+/// is thrown while constructing 'second'. 
+class CObjectDestroyerGuard
+{
+public:
+    CObjectDestroyerGuard(void* ptr,
+                          IObjectConverter* converter) THROWS_NONE
+        : m_Ptr(ptr),
+          m_Converter(converter)
+    {
+    }
+    ~CObjectDestroyerGuard(void) THROWS_NONE
+    {
+        if ( m_Ptr ) {
+            m_Converter->Destroy(m_Ptr);
+        }
+    }
+    void EndOfConversion(void) THROWS_NONE
+    {
+        m_Ptr = 0;
+    }
+
+private:
+    void* m_Ptr;
+    IObjectConverter* m_Converter;
+    
+private:
+    CObjectDestroyerGuard(const CObjectDestroyerGuard&);
+    void operator=(const CObjectDestroyerGuard&);
+};
+
+
+template<typename DstType, typename SrcType>
+class CObjectConverterBase : public IObjectConverter
+{
+public:
+    const type_info& GetSrcTypeInfo(void) const THROWS_NONE
+    {
+        return typeid(SrcType);
+    }
+    const type_info& GetDstTypeInfo(void) const THROWS_NONE
+    {
+        return typeid(DstType);
+    }
+    size_t GetSrcTypeSize(void) const THROWS_NONE
+    {
+        return sizeof(SrcType);
+    }
+    size_t GetDstTypeSize(void) const THROWS_NONE
+    {
+        return sizeof(DstType);
+    }
+    void Destroy(void* dst) const THROWS_NONE
+    {
+        static_cast<DstType*>(dst)->~DstType();
+    }
+};
+
+
+/// Implementation of converter for a single-object conversion.
+template<typename DstType, typename SrcType>
+class CSimpleConverter : public IObjectConverter
+{
+public:
+    const type_info& GetSrcTypeInfo(void) const THROWS_NONE
+    {
+        return typeid(SrcType);
+    }
+    const type_info& GetDstTypeInfo(void) const THROWS_NONE
+    {
+        return typeid(DstType);
+    }
+    size_t GetSrcTypeSize(void) const THROWS_NONE
+    {
+        return sizeof(SrcType);
+    }
+    size_t GetDstTypeSize(void) const THROWS_NONE
+    {
+        return sizeof(DstType);
+    }
+    void Destroy(void* dst) const THROWS_NONE
+    {
+        static_cast<DstType*>(dst)->~DstType();
+    }
+    void Convert(void* dst, const void* src) const
+    {
+        new (dst)DstType(*static_cast<const SrcType*>(src));
+    }
+};
+
+
+template<typename DstType, typename SrcType>
+inline
+IObjectConverter* MakeConverter(DstType* /*dst_ptr*/,
+                                SrcType* /*src_ptr*/)
+{
+    return new CSimpleConverter<DstType, SrcType>();
+}
+
+
+template<typename DstType, typename SrcType>
+IObjectConverter* MakePairConverter(DstType* /*dst_ptr*/,
+                                    SrcType* /*src_ptr*/);
+
+
+template<typename DstType1, typename DstType2,
+         typename SrcType1, typename SrcType2>
+inline
+IObjectConverter* MakeConverter(pair<DstType1, DstType2>* dst_ptr,
+                                pair<SrcType1, SrcType2>* src_ptr)
+{
+    return MakePairConverter(dst_ptr, src_ptr);
+}
+
+
+template<typename DstType1, typename DstType2,
+         typename SrcType1, typename SrcType2>
+inline
+IObjectConverter* MakeConverter(pair<DstType1, DstType2>* dst_ptr,
+                                SStaticPair<SrcType1, SrcType2>* src_ptr)
+{
+    return MakePairConverter(dst_ptr, src_ptr);
+}
+
+
+template<typename DstType1, typename DstType2,
+         typename SrcType1, typename SrcType2>
+inline
+IObjectConverter* MakeConverter(SStaticPair<DstType1, DstType2>* dst_ptr,
+                                SStaticPair<SrcType1, SrcType2>* src_ptr)
+{
+    return MakePairConverter(dst_ptr, src_ptr);
+}
+
+
+/// Implementation of converter for pair<> conversion.
+template<typename DstType, typename SrcType>
+class CPairConverter : public CObjectConverterBase<DstType, SrcType>
+{
+public:
+    const type_info& GetSrcTypeInfo(void) const THROWS_NONE
+    {
+        return typeid(SrcType);
+    }
+    const type_info& GetDstTypeInfo(void) const THROWS_NONE
+    {
+        return typeid(DstType);
+    }
+    size_t GetSrcTypeSize(void) const THROWS_NONE
+    {
+        return sizeof(SrcType);
+    }
+    size_t GetDstTypeSize(void) const THROWS_NONE
+    {
+        return sizeof(DstType);
+    }
+    void Destroy(void* dst) const THROWS_NONE
+    {
+        static_cast<DstType*>(dst)->~DstType();
+    }
+    void Convert(void* dst_ptr, const void* src_ptr) const
+    {
+        auto_ptr<IObjectConverter> conv1
+            (MakeConverter(static_cast<typename DstType::first_type*>(0),
+                           static_cast<typename SrcType::first_type*>(0)));
+        auto_ptr<IObjectConverter> conv2
+            (MakeConverter(static_cast<typename DstType::second_type*>(0),
+                           static_cast<typename SrcType::second_type*>(0)));
+        DstType& dst = *static_cast<DstType*>(dst_ptr);
+        const SrcType& src = *static_cast<const SrcType*>(src_ptr);
+        conv1->Convert((void*)&dst.first, &src.first);
+        CObjectDestroyerGuard guard((void*)&dst.first, conv1.get());
+        conv2->Convert((void*)&dst.second, &src.second);
+        guard.EndOfConversion();
+    }
+};
+
+
+template<typename DstType, typename SrcType>
+inline
+IObjectConverter* MakePairConverter(DstType* /*dst_ptr*/,
+                                    SrcType* /*src_ptr*/)
+{
+    return new CPairConverter<DstType, SrcType>();
+}
+
+
+/// Log error message about non-MT-safe static type (string, pair<>) if it's
+/// configured by TParamStaticArrayUnsafeTypeWarning parameter.
+NCBI_XUTIL_EXPORT
+void ReportUnsafeStaticType(const char* type_name,
+                            const char* file,
+                            int line);
+
+
+/// Log error message about wrong order of elements in array and abort.
+NCBI_XUTIL_EXPORT
+void ReportIncorrectOrder(size_t curr_index,
+                          const char* file,
+                          int line);
+
+
+/// Template for checking if the static array type is MT-safe,
+/// i.e. doesn't have a constructor.
+/// Only few standard types are detected - std::string, and std::pair<>.
+template<typename Type>
+inline
+void CheckStaticType(const Type* /*type_ptr*/,
+                     const char* /*file*/,
+                     int /*line*/)
+{
+    // By default all types are allowed in static variables
+}
+
+
+template<typename Type1, typename Type2>
+inline
+void CheckStaticType(const pair<Type1, Type2>* type_ptr,
+                     const char* file,
+                     int line);
+
+
+template<typename Type1, typename Type2>
+inline
+void CheckStaticType(const SStaticPair<Type1, Type2>* type_ptr,
+                     const char* file,
+                     int line);
+
+
+inline
+void CheckStaticType(const string* /*type_ptr*/,
+                     const char* file,
+                     int line)
+{
+    // Strings are bad in static variables
+    NStaticArray::ReportUnsafeStaticType("std::string", file, line);
+}
+
+
+template<typename Type1, typename Type2>
+inline
+void CheckStaticType(const pair<Type1, Type2>* /*type_ptr*/,
+                     const char* file,
+                     int line)
+{
+    // The std::pair<> is not good for static variables
+    NStaticArray::ReportUnsafeStaticType("std::pair<>", file, line);
+    // check types of both members of the pair
+    CheckStaticType(static_cast<const Type1*>(0), file, line);
+    CheckStaticType(static_cast<const Type2*>(0), file, line);
+}
+
+
+template<typename Type1, typename Type2>
+inline
+void CheckStaticType(const SStaticPair<Type1, Type2>* /*type_ptr*/,
+                     const char* file,
+                     int line)
+{
+    // check types of both members of the pair
+    CheckStaticType(static_cast<const Type1*>(0), file, line);
+    CheckStaticType(static_cast<const Type2*>(0), file, line);
+}
+
+
+template<typename Type>
+inline
+void CheckStaticType(const char* file,
+                     int line)
+{
+    CheckStaticType(static_cast<const Type*>(0), file, line);
+}
+
+
+END_NAMESPACE(NStaticArray);
+
 ///
 /// class CStaticArraySet<> is an array adaptor that provides an STLish
 /// interface to statically-defined arrays, while making efficient use
@@ -182,7 +561,7 @@ public:
     typedef typename getter::key_type     key_type;
     typedef typename getter::mapped_type  mapped_type;
     typedef KeyCompare          key_compare;
-    typedef PLessByKey<getter, key_compare> value_compare;
+    typedef NStaticArray::PLessByKey<getter, key_compare> value_compare;
     typedef const value_type&   const_reference;
     typedef const value_type*   const_iterator;
     typedef size_t              size_type;
@@ -194,9 +573,8 @@ public:
     template<size_t Size>
     CStaticArraySearchBase(const value_type (&arr)[Size],
                            const char* file, int line)
-        : m_Begin(arr), m_End(arr + Size)
     {
-        x_Validate(file, line);
+        x_Set(arr, sizeof(arr), file, line);
     }
 
     /// Constructor to initialize comparator object.
@@ -204,28 +582,37 @@ public:
     CStaticArraySearchBase(const value_type (&arr)[Size],
                            const key_compare& comp,
                            const char* file, int line)
-        : m_Begin(comp, arr), m_End(arr + Size)
+        : m_Begin(comp)
     {
-        x_Validate(file, line);
+        x_Set(arr, sizeof(arr), file, line);
     }
 
     /// Default constructor.  This will build a set around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArraySearchBase(const_iterator obj, size_type array_size,
+    template<typename Type>
+    CStaticArraySearchBase(const Type* array_ptr, size_type array_size,
                            const char* file, int line)
-        : m_Begin(obj), m_End(obj + array_size / sizeof(value_type))
     {
-        x_Validate(file, line);
+        x_Set(array_ptr, array_size, file, line);
     }
 
     /// Constructor to initialize comparator object.
-    CStaticArraySearchBase(const_iterator obj, size_type array_size,
+    template<typename Type>
+    CStaticArraySearchBase(const Type* array_ptr, size_type array_size,
                            const key_compare& comp,
                            const char* file, int line)
-        : m_Begin(comp, obj), m_End(obj + array_size / sizeof(value_type))
+        : m_Begin(comp)
     {
-        x_Validate(file, line);
+        x_Set(array_ptr, array_size, file, line);
+    }
+
+    /// Destructor
+    ~CStaticArraySearchBase(void)
+    {
+        if ( m_DeallocateFunc ) {
+            m_DeallocateFunc(m_Begin.second(), m_End);
+        }
     }
 
     const value_compare& value_comp() const
@@ -313,36 +700,102 @@ public:
     }
 
 protected:
+
     /// Perform sort-order validation.  This is a no-op in release mode.
-    void x_Validate(const char* _DEBUG_ARG(file), int _DEBUG_ARG(line)) const
+    static void x_Validate(const value_type* _DEBUG_ARG(array),
+                           size_t _DEBUG_ARG(size),
+                           const value_compare& _DEBUG_ARG(comp),
+                           const char* _DEBUG_ARG(file),
+                           int _DEBUG_ARG(line))
     {
+        using namespace NStaticArray;
 #ifdef _DEBUG
-        const_iterator curr = begin(), prev = curr;
-        if ( curr != end() ) {
-            while ( ++curr != end() ) {
-                if ( !value_comp()(*prev, *curr) ) {
-                    NCBI_NS_NCBI::CDiagCompileInfo diag_compile_info
-                        (file? file: __FILE__,
-                         line? line: __LINE__,
-                         NCBI_CURRENT_FUNCTION,
-                         NCBI_MAKE_MODULE(NCBI_MODULE));
-                    NCBI_NS_NCBI::CNcbiDiag(diag_compile_info).GetRef()
-                        << NCBI_NS_NCBI::ErrCode(
-                                 NCBI_ERRCODE_X_NAME(Util_StaticArray), 1)
-                        << NCBI_NS_NCBI::Fatal << "keys out of order: " <<
-                        getter::get_key(*prev) << " vs. " <<
-                        getter::get_key(*curr)
-                        << NCBI_NS_NCBI::Endm;
-                }
-                prev = curr;
+        for ( size_t i = 1; i < size; ++i ) {
+            if ( !comp(array[i-1], array[i]) ) {
+                ReportIncorrectOrder(i, file, line);
             }
         }
 #endif
     }
 
+    /// Assign array pointer and end pointer without conversion.
+    void x_Set(const value_type* array_ptr, size_t array_size,
+               const char* file, int line)
+    {
+        using namespace NStaticArray;
+        CheckStaticType<value_type>(file, line);
+        _ASSERT(array_size % sizeof(value_type) == 0);
+        size_t size = array_size / sizeof(value_type);
+        if ( m_Begin.second() ) {
+            _ASSERT(m_Begin.second() == array_ptr);
+            _ASSERT(m_End == array_ptr + size);
+            _ASSERT(!m_DeallocateFunc);
+        }
+        else {
+            x_Validate(array_ptr, size, value_comp(), file, line);
+        }
+        m_DeallocateFunc = 0;
+        m_Begin.second() = array_ptr;
+        m_End = array_ptr + size;
+    }
+
+    /// Assign array pointer and end pointer from differently typed array.
+    /// Allocate necessarily typed array and copy its content.
+    template<typename Type>
+    void x_Set(const Type* array2_ptr, size_t array2_size,
+               const char* file, int line)
+    {
+        using namespace NStaticArray;
+        CheckStaticType<Type>(file, line);
+        _ASSERT(array2_size % sizeof(Type) == 0);
+        size_t size = array2_size / sizeof(Type);
+        CArrayHolder holder(MakeConverter(static_cast<value_type*>(0),
+                                          static_cast<Type*>(0)));
+        holder.Convert(array2_ptr, size, file, line);
+        if ( !m_Begin.second() ) {
+            x_Validate(static_cast<const value_type*>(holder.GetArrayPtr()),
+                       holder.GetElementCount(), value_comp(), file, line);
+        }
+        {{
+            CFastMutexGuard guard(IObjectConverter::sx_InitMutex);
+            if ( !m_Begin.second() ) {
+                m_Begin.second() =
+                    static_cast<const value_type*>(holder.ReleaseArrayPtr());
+                m_End = m_Begin.second() + size;
+                m_DeallocateFunc = x_DeallocateFunc;
+            }
+        }}
+    }
+
+    /// Function used for array destruction and deallocation if it
+    /// was created from a differently typed static array.
+    static void x_DeallocateFunc(const_iterator& begin_ref,
+                                 const_iterator& end_ref)
+    {
+        using namespace NStaticArray;
+        const_iterator begin, end;
+        {{
+            CFastMutexGuard guard(IObjectConverter::sx_InitMutex);
+            begin = begin_ref;
+            end = end_ref;
+            begin_ref = 0;
+            end_ref = 0;
+        }}
+        if ( begin ) {
+            for ( ; end != begin; ) { // destruct in reverse order
+                (--end)->~value_type();
+            }
+            free((void*)begin);
+        }
+    }
+
+    typedef void (*TDeallocateFunc)(const_iterator& begin,
+                                    const_iterator& end);
+
 private:
     pair_base_member<value_compare, const_iterator> m_Begin;
     const_iterator m_End;
+    TDeallocateFunc m_DeallocateFunc;
 
     bool x_Bad(const key_type& key, const_iterator iter) const
     {
@@ -353,9 +806,9 @@ private:
 
 template <class KeyType, class KeyCompare = less<KeyType> >
 class CStaticArraySet
-    : public CStaticArraySearchBase<PKeyValueSelf<KeyType>, KeyCompare>
+    : public CStaticArraySearchBase<NStaticArray::PKeyValueSelf<KeyType>, KeyCompare>
 {
-    typedef CStaticArraySearchBase<PKeyValueSelf<KeyType>, KeyCompare> TBase;
+    typedef CStaticArraySearchBase<NStaticArray::PKeyValueSelf<KeyType>, KeyCompare> TBase;
 public:
     typedef typename TBase::value_type value_type;
     typedef typename TBase::const_iterator const_iterator;
@@ -384,19 +837,19 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArraySet(const_iterator obj,
-                    size_type array_size,
+    template<class Type>
+    CStaticArraySet(const Type* array_ptr, size_t array_size,
                     const char* file, int line)
-        : TBase(obj, array_size, file, line)
+        : TBase(array_ptr, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
-    CStaticArraySet(const_iterator obj,
-                    size_type array_size,
-                    key_compare& comp,
+    template<class Type>
+    CStaticArraySet(const Type* array_ptr, size_t array_size,
+                    const key_compare& comp,
                     const char* file, int line)
-        : TBase(obj, array_size, comp, file, line)
+        : TBase(array_ptr, array_size, comp, file, line)
     {
     }
 
@@ -424,6 +877,7 @@ public:
 // Deprecated constructors (defined here to avoid GCC 3.3 parse errors)
 
 template <class KeyType, class KeyCompare>
+inline
 CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
 (const_iterator obj,
  size_type array_size)
@@ -432,6 +886,7 @@ CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
 }
 
 template <class KeyType, class KeyCompare>
+inline
 CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
 (const_iterator obj,
  size_type array_size,

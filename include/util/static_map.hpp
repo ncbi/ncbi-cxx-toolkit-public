@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Mike DiCuccio
+ * Authors:  Mike DiCuccio, Eugene Vasilchenko
  *
  * File Description:
  *     CStaticArrayMap<> -- template class to provide convenient access to
@@ -41,23 +41,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-
-///
-/// Template structure SStaticPair is simlified replacement of STL pair<>
-/// Main reason of introducing this structure is o allow static initialization
-/// by { xxx } construct.
-/// It's main use is for static const structures which do not need constructors
-///
-template<class FirstType, class SecondType>
-struct SStaticPair
-{
-    typedef FirstType first_type;
-    typedef SecondType second_type;
-
-    first_type first;
-    second_type second;
-};
 
 
 ///
@@ -116,12 +99,11 @@ struct SStaticPair
 /// 2. it must have two data members: first and second.
 ///
 
-template <class PairType,
-          class KeyCompare = less<typename PairType::first_type> >
+template <class KeyType, class ValueType, class KeyCompare = less<KeyType> >
 class CStaticPairArrayMap
-    : public CStaticArraySearchBase<PKeyValuePair<PairType>, KeyCompare>
+    : public CStaticArraySearchBase<NStaticArray::PKeyValuePair< SStaticPair<KeyType, ValueType> >, KeyCompare>
 {
-    typedef CStaticArraySearchBase<PKeyValuePair<PairType>, KeyCompare> TBase;
+    typedef CStaticArraySearchBase<NStaticArray::PKeyValuePair< SStaticPair<KeyType, ValueType> >, KeyCompare> TBase;
 public:
     typedef typename TBase::value_type value_type;
     typedef typename TBase::const_iterator const_iterator;
@@ -150,19 +132,19 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticPairArrayMap(const_iterator obj,
-                        size_type array_size,
+    template<class Type>
+    CStaticPairArrayMap(const Type* array_ptr, size_t array_size,
                         const char* file, int line)
-        : TBase(obj, array_size, file, line)
+        : TBase(array_ptr, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
-    CStaticPairArrayMap(const_iterator obj,
-                        size_type array_size,
+    template<class Type>
+    CStaticPairArrayMap(const Type* array_ptr, size_t array_size,
                         const key_compare& comp,
                         const char* file, int line)
-        : TBase(obj, array_size, comp, file, line)
+        : TBase(array_ptr, array_size, comp, file, line)
     {
     }
 
@@ -185,11 +167,9 @@ public:
 
 template <class KeyType, class ValueType, class KeyCompare = less<KeyType> >
 class CStaticArrayMap
-    : public CStaticArraySearchBase<PKeyValuePair<pair<KeyType, ValueType> >,
-                                    KeyCompare>
+    : public CStaticArraySearchBase<NStaticArray::PKeyValuePair< pair<KeyType, ValueType> >, KeyCompare>
 {
-    typedef CStaticArraySearchBase<PKeyValuePair<pair<KeyType, ValueType> >,
-                                   KeyCompare> TBase;
+    typedef CStaticArraySearchBase<NStaticArray::PKeyValuePair< pair<KeyType, ValueType> >, KeyCompare> TBase;
 public:
     typedef typename TBase::value_type value_type;
     typedef typename TBase::const_iterator const_iterator;
@@ -218,19 +198,19 @@ public:
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArrayMap(const_iterator obj,
-                    size_type array_size,
+    template<class Type>
+    CStaticArrayMap(const Type* array_ptr, size_t array_size,
                     const char* file, int line)
-        : TBase(obj, array_size, file, line)
+        : TBase(array_ptr, array_size, file, line)
     {
     }
 
     /// Constructor to initialize comparator object.
-    CStaticArrayMap(const_iterator obj,
-                    size_type array_size,
+    template<class Type>
+    CStaticArrayMap(const Type* array_ptr, size_t array_size,
                     const key_compare& comp,
                     const char* file, int line)
-        : TBase(obj, array_size, comp, file, line)
+        : TBase(array_ptr, array_size, comp, file, line)
     {
     }
 
@@ -248,16 +228,18 @@ public:
 // Deprecated constructors (defined here to avoid GCC 3.3 parse errors)
 
 
-template <class PairType, class KeyCompare>
-CStaticPairArrayMap<PairType, KeyCompare>::CStaticPairArrayMap
+template <class KeyType, class ValueType, class KeyCompare>
+inline
+CStaticPairArrayMap<KeyType, ValueType, KeyCompare>::CStaticPairArrayMap
 (const_iterator obj,
  size_type array_size)
     : TBase(obj, array_size, 0, 0)
 {
 }
 
-template <class PairType, class KeyCompare>
-CStaticPairArrayMap<PairType, KeyCompare>::CStaticPairArrayMap
+template <class KeyType, class ValueType, class KeyCompare>
+inline
+CStaticPairArrayMap<KeyType, ValueType, KeyCompare>::CStaticPairArrayMap
 (const_iterator obj,
  size_type array_size,
  const key_compare& comp)
@@ -266,6 +248,7 @@ CStaticPairArrayMap<PairType, KeyCompare>::CStaticPairArrayMap
 }
 
 template <class KeyType, class ValueType, class KeyCompare>
+inline
 CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
 (const_iterator obj,
  size_type array_size)
@@ -274,6 +257,7 @@ CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
 }
 
 template <class KeyType, class ValueType, class KeyCompare>
+inline
 CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
 (const_iterator obj,
  size_type array_size,
