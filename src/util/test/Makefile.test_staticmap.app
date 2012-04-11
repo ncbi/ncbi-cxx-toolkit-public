@@ -8,7 +8,7 @@
 
 APP = test_staticmap
 SRC = test_staticmap
-LIB = xncbi
+LIB = xutil xncbi
 
 CHECK_CMD = test_staticmap
 
