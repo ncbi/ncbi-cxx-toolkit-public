@@ -15,9 +15,9 @@ internal/align_model$
 internal/contigdb$
 internal/blast
 internal/asn_cache
+internal/gpipe
+-internal/gpipe/gpinit/src/gpinit_asn_factory
 internal/txserver
-internal/gpipe/align_db
-internal/gpipe/common$
 internal/ID/utils$
 internal/mapview/objects
 misc/grid_cgi$
