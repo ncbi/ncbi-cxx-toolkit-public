@@ -61,6 +61,7 @@ public:
     void Init(void);
     int Run(void);
 
+    template<class MapType, class StaticType>
     void TestStaticMap(void) const;
     void TestStaticSet(void) const;
 
@@ -82,39 +83,107 @@ public:
 };
 
 
-void CheckValue(int value1, int value2)
+template<class Type1, class Type2>
+void CheckValue(const Type1& value1, const Type2& value2)
 {
     _ASSERT(value1 == value2);
 }
 
 
-void CheckValue(const pair<int, int>& value1, const pair<int, int>& value2)
+template<class Type11, class Type12, class Type21, class Type22>
+void CheckValue(const pair<Type11, Type12>& value1,
+                const pair<Type21, Type22>& value2)
 {
     CheckValue(value1.first, value2.first);
     CheckValue(value1.second, value2.second);
 }
 
 
-void CheckValue(const pair<const int, int>& value1, 
-                const pair<int, int>& value2)
+template<class Type11, class Type12, class Type21, class Type22>
+void CheckValue(const pair<Type11, Type12>& value1,
+                const SStaticPair<Type21, Type22>& value2)
 {
     CheckValue(value1.first, value2.first);
     CheckValue(value1.second, value2.second);
 }
 
 
+template<class Type11, class Type12, class Type21, class Type22>
+void CheckValue(const SStaticPair<Type11, Type12>& value1,
+                const SStaticPair<Type21, Type22>& value2)
+{
+    CheckValue(value1.first, value2.first);
+    CheckValue(value1.second, value2.second);
+}
+
+
+template<class Type>
 inline
-int distance(const int* p1, const int* p2)
+int distance(const Type* p1, const Type* p2)
 {
     return int(p2 - p1);
 }
 
 
-inline
-int distance(const pair<int, int>* p1, const pair<int, int>* p2)
+class CZeroClearer
 {
-    return int(p2 - p1);
-}
+public:
+    CZeroClearer(size_t size)
+    {
+        memset(this, 0, size);
+    }
+};
+
+
+template<class Type>
+class CZeroCreator : CZeroClearer
+{
+public:
+    CZeroCreator(void)
+        : CZeroClearer(sizeof(*this)),
+          m_Object()
+    {
+    }
+    template<class Arg1>
+    CZeroCreator(Arg1 arg1)
+        : CZeroClearer(sizeof(*this)),
+          m_Object(arg1)
+    {
+    }
+    template<class Arg1, class Arg2>
+    CZeroCreator(Arg1 arg1, Arg2 arg2)
+        : CZeroClearer(sizeof(*this)),
+          m_Object(arg1, arg2)
+    {
+    }
+    template<class Arg1, class Arg2, class Arg3>
+    CZeroCreator(Arg1 arg1, Arg2 arg2, Arg3 arg3)
+        : CZeroClearer(sizeof(*this)),
+          m_Object(arg1, arg2, arg3)
+    {
+    }
+    template<class Arg1, class Arg2, class Arg3, class Arg4>
+    CZeroCreator(Arg1 arg1, Arg2 arg2, Arg3 arg3, Arg4 arg4)
+        : CZeroClearer(sizeof(*this)),
+          m_Object(arg1, arg2, arg3, arg4)
+    {
+    }
+
+    Type& Get(void)
+    {
+        return m_Object;
+    }
+    Type& operator*(void)
+    {
+        return Get();
+    }
+    Type* operator->(void)
+    {
+        return &Get();
+    }
+private:
+    Type m_Object;
+};
 
 
 template<class TRef, class TTst>
@@ -129,9 +198,9 @@ void CheckIter(const TRef& ref, const TTst& tst,
 }
 
 
-template<class TRef, class TTst>
+template<class TRef, class TTst, class TArrValue>
 void TestAll(const typename TRef::key_type& key, const TRef& ref,
-             const TTst& tst, const typename TTst::value_type arr[])
+             const TTst& tst, const TArrValue arr[])
 {
     CheckIter(ref, tst, ref.find(key), tst.find(key));
 
@@ -165,16 +234,108 @@ void TestAll(const typename TRef::key_type& key, const TRef& ref,
                                             tst.upper_bound(key)));
 }
 
-namespace {
-    class abort_exception : public exception
-    {
-    };
-    
-    void AbortThrow()
-    {
-        throw abort_exception();
-    }
+
+// convert Abort() call to throwing abort_exception
+// to verify that Abort() is actually called
+class abort_exception : public exception
+{
+};
+
+
+static void AbortThrow(void)
+{
+    throw abort_exception();
 }
+
+
+// verify that the error message is a
+
+class CExpectDiagHandler : public CDiagHandler
+{
+public:
+    CExpectDiagHandler(void)
+        : m_ExpectOrder(0),
+          m_ExpectUnsafe(0),
+          m_ExpectConvert(0),
+          m_Active(false)
+    {
+    }
+    ~CExpectDiagHandler(void)
+    {
+    }
+    virtual void Post(const SDiagMessage& mess)
+    {
+        PostToConsole(mess);
+        if ( !m_Active ) {
+            return;
+        }
+
+        string s;
+        mess.Write(s);
+        if ( s.find("keys are out of order") != NPOS ) {
+            if ( m_ExpectOrder ) {
+                --m_ExpectOrder;
+                return;
+            }
+        }
+        if ( s.find("static array type is not MT-safe") != NPOS ) {
+            if ( m_ExpectUnsafe ) {
+                --m_ExpectUnsafe;
+                return;
+            }
+        }
+        if ( s.find("converting static array") != NPOS ) {
+            if ( m_ExpectConvert ) {
+                --m_ExpectConvert;
+                return;
+            }
+        }
+        m_UnexpectedMessages.push_back(s);
+    }
+
+    void Check(void)
+    {
+        m_Active = false;
+        try {
+            if ( m_ExpectOrder ) {
+                ERR_POST(Fatal<<
+                         "Didn't get expected message about key order");
+            }
+            if ( m_ExpectUnsafe ) {
+                ERR_POST(Fatal<<
+                         "Didn't get expected message about MT-safety");
+            }
+            if ( m_ExpectConvert ) {
+                ERR_POST(Fatal<<
+                         "Didn't get expected message about conversion");
+            }
+            if ( !m_UnexpectedMessages.empty() ) {
+                ITERATE ( vector<string>, it, m_UnexpectedMessages ) {
+                    ERR_POST("Unexpected message: "<<*it);
+                }
+                ERR_POST(Fatal<<"Got unexpected messages.");
+            }
+        }
+        catch ( exception& ) {
+            throw;
+        }
+    }
+    void Start(void)
+    {
+        m_Active = true;
+        SetDiagHandler(this, false);
+    }
+    void Stop(void)
+    {
+        SetDiagStream(&cerr);
+    }
+    
+    int m_ExpectOrder, m_ExpectUnsafe, m_ExpectConvert;
+    bool m_Active;
+
+    vector<string> m_UnexpectedMessages;
+};
+
 
 void CTestStaticMap::TestStaticSet(void) const
 {
@@ -192,7 +353,7 @@ void CTestStaticMap::TestStaticSet(void) const
     value_type* arr;
     AutoPtr<value_type, ArrayDeleter<value_type> > arr_del
         (arr = new value_type[m_NumberOfElements]);
-    
+
     bool error = false;
     {{
         {{
@@ -242,45 +403,86 @@ void CTestStaticMap::TestStaticSet(void) const
         }
     }}
 
+    CExpectDiagHandler expect;
+
     if ( error ) {
+        expect.m_ExpectOrder = 1;
+        ERR_POST("The following fatal error message about key order is expected.");
         SetAbortHandler(AbortThrow);
+        expect.Start();
         try {
-            TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
+            CZeroCreator<TTst> tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
         }
         catch ( abort_exception& /*exc*/ ) {
+            SetAbortHandler(0);
+            expect.Stop();
             LOG_POST(Info << "Test CStaticArraySet correctly detected error");
+            expect.Check();
             return;
         }
+        catch ( exception& /*exc*/ ) {
+            SetAbortHandler(0);
+            expect.Stop();
+            throw;
+        }
         SetAbortHandler(0);
+        expect.Stop();
         ERR_POST(Fatal << "Test CStaticArraySet failed to detected error");
     }
-    TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
+    expect.Start();
+    CZeroCreator<TTst> tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
+    expect.Stop();
+    expect.Check();
 
-    _ASSERT(ref.empty() == tst.empty());
-    _ASSERT(ref.size() == tst.size());
+    _ASSERT(ref.empty() == tst->empty());
+    _ASSERT(ref.size() == tst->size());
 
     for ( int i = 0; i < m_LookupCount; ++i ) {
         int key = rand();
 
-        TestAll(key, ref, tst, arr);
+        TestAll(key, ref, *tst, arr);
     }
 
     LOG_POST(Info << "Test CStaticArraySet passed");
 }
 
+void assign(string& dst, const string& src)
+{
+    dst = src;
+}
+
+void assign(const char*& dst, const string& src)
+{
+    dst = src.c_str();
+}
+
+template<class MapType, class StaticType>
 void CTestStaticMap::TestStaticMap(void) const
 {
-    LOG_POST(Info << "Testing CStaticArrayMap<int, int>");
+    typedef StaticType value_type;
+    typedef MapType TTst;
 
-    typedef map<int, int, greater<int> > TRef;
-    typedef CStaticArrayMap<int, int, greater<int> > TTst;
-
+    const bool is_map2 =
+        typeid(typename TTst::value_type) == typeid(SStaticPair<int, string>);
+    const bool is_map1 = !is_map2;
+    const bool is_val2 =
+        typeid(value_type) == typeid(SStaticPair<int, string>);
+    const bool is_val3 =
+        typeid(value_type) == typeid(SStaticPair<int, const char*>);
+    const bool is_val1 = !is_val2 && !is_val3;
+    LOG_POST(Info<<"Testing CStatic"<<
+             (is_map2? "Pair": "")<<"ArrayMap<int, string>("<<
+             (is_val1? "std::pair<int, string>":
+              (is_val2? "SStaticPair<int, string>":
+               "SStaticPair<int, const char*>"))<<")");
+    
+    typedef map<int, string, greater<int> > TRef;
     TRef ref;
     while ( int(ref.size()) < m_NumberOfElements ) {
-        ref.insert(TRef::value_type(rand(), rand()));
+        string s(rand()%10, '?');
+        ref.insert(TRef::value_type(rand(), s));
     }
 
-    typedef pair<int, int> value_type;
     value_type* arr;
     AutoPtr<value_type, ArrayDeleter<value_type> > arr_del
         (arr = new value_type[m_NumberOfElements]);
@@ -290,7 +492,9 @@ void CTestStaticMap::TestStaticMap(void) const
         {{
             int index = 0;
             ITERATE ( TRef, it, ref ) {
-                arr[index++] = TTst::value_type(it->first, it->second);
+                arr[index].first = it->first;
+                assign(arr[index].second, it->second);
+                ++index;
             }
         }}
         if ( m_TestBadData != eBad_none && m_NumberOfElements >= 2 ) {
@@ -334,27 +538,57 @@ void CTestStaticMap::TestStaticMap(void) const
         }
     }}
 
+    CExpectDiagHandler expect;
+
+    if ( is_val1 ) {
+        expect.m_ExpectUnsafe = 2;
+        ERR_POST("The following two error messages about non-MT-safe type is expected.");
+    }
+    else if ( is_val2 ) {
+        expect.m_ExpectUnsafe = 1;
+        ERR_POST("The following error message about non-MT-safe type is expected.");
+    }
+    if ( !(is_map1 && is_val1) && !(is_map2 && is_val2) ) {
+        expect.m_ExpectConvert = 1;
+        ERR_POST("The following error message about conversion is expected.");
+    }
+
     if ( error ) {
+        expect.m_ExpectOrder = 1;
+        ERR_POST("The following fatal error message about key order is expected.");
         SetAbortHandler(AbortThrow);
+        expect.Start();
         try {
-            TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
+            CZeroCreator<TTst> tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
         }
         catch ( abort_exception& /*exc*/ ) {
+            SetAbortHandler(0);
+            expect.Stop();
             LOG_POST(Info << "Test CStaticArrayMap correctly detected error");
+            expect.Check();
             return;
         }
+        catch ( exception& /*exc*/ ) {
+            SetAbortHandler(0);
+            expect.Stop();
+            throw;
+        }
         SetAbortHandler(0);
+        expect.Stop();
         ERR_POST(Fatal << "Test CStaticArrayMap failed to detected error");
     }
-    TTst tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
+    expect.Start();
+    CZeroCreator<TTst> tst(arr, sizeof(*arr)*m_NumberOfElements, __FILE__, __LINE__);
+    expect.Stop();
+    expect.Check();
 
-    _ASSERT(ref.empty() == tst.empty());
-    _ASSERT(ref.size() == tst.size());
+    _ASSERT(ref.empty() == tst->empty());
+    _ASSERT(ref.size() == tst->size());
 
     for ( int i = 0; i < m_LookupCount; ++i ) {
         int key = rand();
 
-        TestAll(key, ref, tst, arr);
+        TestAll(key, ref, *tst, arr);
     }
 
     LOG_POST(Info << "Test CStaticArrayMap passed");
@@ -363,6 +597,8 @@ void CTestStaticMap::TestStaticMap(void) const
 void CTestStaticMap::Init(void)
 {
     SetDiagPostLevel(eDiag_Info);
+    TParamStaticArrayCopyWarning::SetDefault(true);
+    TParamStaticArrayUnsafeTypeWarning::SetDefault(true);
 
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
 
@@ -421,7 +657,16 @@ int CTestStaticMap::Run(void)
                 TestStaticSet();
             }
             if ( type == "map" || type == "both" ) {
-                TestStaticMap();
+                typedef CStaticArrayMap<int, string, greater<int> > TMap1;
+                typedef CStaticPairArrayMap<int, string, greater<int> > TMap2;
+                typedef pair<int, string> TVal1;
+                typedef SStaticPair<int, string> TVal2;
+                typedef SStaticPair<int, const char*> TVal3;
+                TestStaticMap<TMap1, TVal1>();
+                TestStaticMap<TMap1, TVal2>();
+                TestStaticMap<TMap1, TVal3>();
+                TestStaticMap<TMap2, TVal2>();
+                TestStaticMap<TMap2, TVal3>();
             }
         }
         m_TestBadData = eBad_none;
@@ -447,7 +692,16 @@ int CTestStaticMap::Run(void)
         TestStaticSet();
     }
     if ( type == "map" || type == "both" ) {
-        TestStaticMap();
+        typedef CStaticArrayMap<int, string, greater<int> > TMap1;
+        typedef CStaticPairArrayMap<int, string, greater<int> > TMap2;
+        typedef pair<int, string> TVal1;
+        typedef SStaticPair<int, string> TVal2;
+        typedef SStaticPair<int, const char*> TVal3;
+        TestStaticMap<TMap1, TVal1>();
+        TestStaticMap<TMap1, TVal2>();
+        TestStaticMap<TMap1, TVal3>();
+        TestStaticMap<TMap2, TVal2>();
+        TestStaticMap<TMap2, TVal3>();
     }
 
     LOG_POST("All tests passed.");
