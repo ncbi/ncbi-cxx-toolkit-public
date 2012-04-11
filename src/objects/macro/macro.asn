@@ -1205,9 +1205,14 @@ Autodef-list-type ::= ENUMERATED {
   complete-genome (3) ,
   sequence (4) }
   
+Autodef-misc-feat-parse-rule ::= ENUMERATED {
+  use-comment-before-first-semicolon (1) ,
+  look-for-noncoding-products (2) }
+
 Autodef-action ::= SEQUENCE {
   modifiers SET OF Source-qual OPTIONAL ,
-  clause-list-type Autodef-list-type }
+  clause-list-type Autodef-list-type ,
+  misc-feat-parse-rule Autodef-misc-feat-parse-rule DEFAULT look-for-noncoding-products }
 
 Fix-pub-caps-action ::= SEQUENCE {
   title BOOLEAN OPTIONAL ,
