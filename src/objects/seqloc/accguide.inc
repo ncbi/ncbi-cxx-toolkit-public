@@ -397,6 +397,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  JS  gb_gss",
     "2+6  JT  gb_tsa_nuc",
     "2+6  JU  gb_tsa_nuc",
+    "2+6  JV  gb_tsa_nuc",
     "2+6  J?  gb_other_nuc",
     "2+6  K?  gb_other_nuc",
     "2+6  LA  ddbj_other_nuc",
