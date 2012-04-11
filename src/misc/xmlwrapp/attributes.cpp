@@ -52,6 +52,7 @@
 #include <string.h>
 #include <new>
 #include <algorithm>
+#include <set>
 
 // libxml2 includes
 #include <libxml/tree.h>
@@ -71,7 +72,7 @@ struct xml::attributes::pimpl : public pimpl_base<xml::attributes::pimpl> {
     }
     //####################################################################
     pimpl (xmlNodePtr node) : xmlnode_(node), owner_(false)
-    { }
+    {}
     //####################################################################
     pimpl (const pimpl &other) : owner_(true) {
         xmlnode_ = xmlCopyNode(other.xmlnode_, 2);
@@ -79,14 +80,40 @@ struct xml::attributes::pimpl : public pimpl_base<xml::attributes::pimpl> {
     }
     //####################################################################
     ~pimpl (void)
-    { release(); }
+    {
+        release();
+        clear_references();
+    }
+    //####################################################################
+    void clear_references(void) {
+        for (std::set<xml::attributes::attr*>::iterator  k = references_.begin();
+             k != references_.end(); ++k)
+            delete *k;
+        references_.clear();
+    }
     //####################################################################
     void release (void)
     { if (owner_ && xmlnode_) xmlFreeNode(xmlnode_); }
     //####################################################################
+    xml::attributes::attr *  get_pointer_to_copy(const xml::attributes::attr &  pattern) {
+        for (std::set<xml::attributes::attr*>::iterator  k = references_.begin();
+             k != references_.end(); ++k)
+            if (**k == pattern)
+                return *k;
+
+        // Not found, create a new one
+        std::pair< std::set<xml::attributes::attr*>::iterator,
+                   bool >   inserted = references_.insert(new xml::attributes::attr(pattern));
+        return *(inserted.first);
+    }
 
     xmlNodePtr xmlnode_;
     bool owner_;
+    std::set<xml::attributes::attr*>   references_; // references to the nodes,
+                                                    // received via * or ->
+                                                    // iterators operations
+    private:
+        pimpl &  operator=(const pimpl &);
 };
 //####################################################################
 xml::attributes::attributes (void) {
@@ -127,6 +154,11 @@ void * xml::attributes::getUnsafeNamespacePointer (const xml::ns &name_space) {
     return name_space.unsafe_ns_;
 }
 //####################################################################
+xml::attributes::attr *
+xml::attributes::get_pointer_to_copy(const xml::attributes::attr &  att) const {
+    return pimpl_->get_pointer_to_copy(att);
+}
+//####################################################################
 void xml::attributes::set_data (void *node) {
     xmlNodePtr x = static_cast<xmlNodePtr>(node);
 
@@ -136,28 +168,32 @@ void xml::attributes::set_data (void *node) {
 }
 //####################################################################
 xml::attributes::iterator xml::attributes::begin (void) {
-    return iterator(pimpl_->xmlnode_,
+    return iterator(this,
+                    pimpl_->xmlnode_,
                     pimpl_->xmlnode_->properties,
                     false,  // not default
                     false); // not from find
 }
 //####################################################################
 xml::attributes::const_iterator xml::attributes::begin (void) const {
-    return const_iterator(pimpl_->xmlnode_,
+    return const_iterator(this,
+                          pimpl_->xmlnode_,
                           pimpl_->xmlnode_->properties,
                           false,    // not default
                           false);   // not from find
 }
 //####################################################################
 xml::attributes::iterator xml::attributes::end (void) {
-    return iterator(pimpl_->xmlnode_,
+    return iterator(this,
+                    pimpl_->xmlnode_,
                     NULL,
                     false,
                     false);
 }
 //####################################################################
 xml::attributes::const_iterator xml::attributes::end (void) const {
-    return const_iterator(pimpl_->xmlnode_,
+    return const_iterator(this,
+                          pimpl_->xmlnode_,
                           NULL,
                           false,
                           false);
@@ -251,26 +287,26 @@ xml::attributes::iterator xml::attributes::find(const char *name,
                                                 const ns *nspace) {
     xmlAttrPtr prop = find_prop(pimpl_->xmlnode_, name, nspace);
     if (prop != 0)
-        return iterator(pimpl_->xmlnode_, prop, false, true);
+        return iterator(this, pimpl_->xmlnode_, prop, false, true);
 
     phantom_attr* dtd_prop = find_default_prop(pimpl_->xmlnode_, name, nspace);
     if (dtd_prop != 0)
-        return iterator(pimpl_->xmlnode_, dtd_prop, true, true);
+        return iterator(this, pimpl_->xmlnode_, dtd_prop, true, true);
 
-    return iterator(pimpl_->xmlnode_, NULL, false, true);
+    return iterator(this, pimpl_->xmlnode_, NULL, false, true);
 }
 //####################################################################
 xml::attributes::const_iterator xml::attributes::find (const char *name,
                                                        const ns *nspace) const {
     xmlAttrPtr prop = find_prop(pimpl_->xmlnode_, name, nspace);
     if (prop != 0)
-        return const_iterator(pimpl_->xmlnode_, prop, false, true);
+        return const_iterator(this, pimpl_->xmlnode_, prop, false, true);
 
     phantom_attr * dtd_prop = find_default_prop(pimpl_->xmlnode_, name, nspace);
     if (dtd_prop != 0)
-        return const_iterator(pimpl_->xmlnode_, dtd_prop, true, true);
+        return const_iterator(this, pimpl_->xmlnode_, dtd_prop, true, true);
 
-    return const_iterator(pimpl_->xmlnode_, NULL, false, true);
+    return const_iterator(this, pimpl_->xmlnode_, NULL, false, true);
 }
 //####################################################################
 xml::attributes::iterator xml::attributes::erase (iterator to_erase) {

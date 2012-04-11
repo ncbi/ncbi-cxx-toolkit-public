@@ -74,6 +74,10 @@ bool operator== (const ait_impl &lhs, const ait_impl &rhs);
  * using the xml::attributes::attr class interface.
 **/
 class attributes {
+private:
+    // Forward declaration
+    struct pimpl;
+
 public:
     typedef std::size_t size_type; ///< size type
 
@@ -251,6 +255,7 @@ public:
 
         void set_data (void *node, void *prop, bool def_prop);
         void *normalize (void) const;
+        bool operator==(const attr &other) const;
         void convert (void);
         void *resolve_default_attr_ns (void) const;
 
@@ -258,6 +263,7 @@ public:
         friend class impl::ait_impl;
         friend class iterator;
         friend class attributes;
+        friend struct xml::attributes::pimpl;
     }; // end xml::attributes::attr class
 
     /**
@@ -304,8 +310,10 @@ public:
         friend bool operator== (const iterator &lhs, const iterator &rhs);
         friend bool operator!= (const iterator &lhs, const iterator &rhs);
     private:
+        attributes *parent_;
         impl::ait_impl *pimpl_;
-        iterator (void *node, void *prop, bool def_prop, bool from_find);
+        iterator (attributes *parent, void *node,
+                  void *prop, bool def_prop, bool from_find);
         void swap (iterator &other);
         friend class attributes;
         friend class const_iterator;
@@ -356,8 +364,10 @@ public:
         friend bool operator== (const const_iterator &lhs, const const_iterator &rhs);
         friend bool operator!= (const const_iterator &lhs, const const_iterator &rhs);
     private:
+        const attributes *parent_;
         impl::ait_impl *pimpl_;
-        const_iterator (void *node, void *prop, bool def_prop, bool from_find);
+        const_iterator (const attributes *parent, void *node,
+                        void *prop, bool def_prop, bool from_find);
         void swap (const_iterator &other);
         friend class attributes;
     }; // end xml::attributes::const_iterator class
@@ -583,6 +593,7 @@ private:
     // Similar to the above
     static void * getUnsafeNamespacePointer (const xml::ns &name_space);
 
+    attr *  get_pointer_to_copy(const attr &) const;
     void set_data (void *node);
     void* get_data (void);
     friend struct impl::node_impl;

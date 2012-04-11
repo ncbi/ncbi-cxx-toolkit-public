@@ -125,11 +125,13 @@ ait_impl ait_impl::operator++ (int) {
 
 //####################################################################
 xml::attributes::iterator::iterator (void) {
+    parent_ = NULL;
     pimpl_ = new ait_impl(0, static_cast<xmlAttrPtr>(0), false);
 }
 //####################################################################
-xml::attributes::iterator::iterator (void *node, void *prop,
+xml::attributes::iterator::iterator (attributes *parent, void *node, void *prop,
                                      bool def_prop, bool from_find) {
+    parent_ = parent;
     if (def_prop)
         pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
                               static_cast<phantom_attr*>(prop), from_find);
@@ -139,6 +141,7 @@ xml::attributes::iterator::iterator (void *node, void *prop,
 }
 //####################################################################
 xml::attributes::iterator::iterator (const iterator &other) {
+    parent_ = other.parent_;
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
@@ -150,6 +153,7 @@ xml::attributes::iterator::operator= (const iterator &other) {
 }
 //####################################################################
 void xml::attributes::iterator::swap (iterator &other) {
+    std::swap(parent_, other.parent_);
     std::swap(pimpl_, other.pimpl_);
 }
 //####################################################################
@@ -161,7 +165,7 @@ xml::attributes::iterator::reference
 xml::attributes::iterator::operator* (void) const {
     xml::attributes::attr*  att = pimpl_->get();
     if (att->normalize())
-        return *att;
+        return *parent_->get_pointer_to_copy(*att);
     throw xml::exception(kDerefError);
 }
 //####################################################################
@@ -169,7 +173,7 @@ xml::attributes::iterator::pointer
 xml::attributes::iterator::operator-> (void) const {
     xml::attributes::attr*  att = pimpl_->get();
     if (att->normalize())
-        return att;
+        return parent_->get_pointer_to_copy(*att);
     throw xml::exception(kRefError);
 }
 //####################################################################
@@ -191,12 +195,15 @@ xml::attributes::iterator xml::attributes::iterator::operator++ (int) {
 
 //####################################################################
 xml::attributes::const_iterator::const_iterator (void) {
+    parent_ = NULL;
     pimpl_ = new ait_impl(0, static_cast<xmlAttrPtr>(0), false);
 }
 //####################################################################
-xml::attributes::const_iterator::const_iterator (void *node, void *prop,
+xml::attributes::const_iterator::const_iterator (const attributes *parent,
+                                                 void *node, void *prop,
                                                  bool def_prop,
                                                  bool from_find) {
+    parent_ = parent;
     if (def_prop)
         pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
                               static_cast<phantom_attr*>(prop), from_find);
@@ -206,10 +213,12 @@ xml::attributes::const_iterator::const_iterator (void *node, void *prop,
 }
 //####################################################################
 xml::attributes::const_iterator::const_iterator (const const_iterator &other) {
+    parent_ = other.parent_;
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
 xml::attributes::const_iterator::const_iterator (const iterator &other) {
+    parent_ = other.parent_;
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
@@ -221,6 +230,7 @@ xml::attributes::const_iterator::operator= (const const_iterator &other) {
 }
 //####################################################################
 void xml::attributes::const_iterator::swap (const_iterator &other) {
+    std::swap(parent_, other.parent_);
     std::swap(pimpl_, other.pimpl_);
 }
 //####################################################################
@@ -230,12 +240,18 @@ xml::attributes::const_iterator::~const_iterator (void) {
 //####################################################################
 xml::attributes::const_iterator::reference
 xml::attributes::const_iterator::operator* (void) const {
-    return *(pimpl_->get());
+    xml::attributes::attr*  att = pimpl_->get();
+    if (att->normalize())
+        return *parent_->get_pointer_to_copy(*att);
+    throw xml::exception(kDerefError);
 }
 //####################################################################
 xml::attributes::const_iterator::pointer
 xml::attributes::const_iterator::operator-> (void) const {
-    return pimpl_->get();
+    xml::attributes::attr*  att = pimpl_->get();
+    if (att->normalize())
+        return parent_->get_pointer_to_copy(*att);
+    throw xml::exception(kRefError);
 }
 //####################################################################
 xml::attributes::const_iterator&
@@ -304,6 +320,11 @@ void * xml::attributes::attr::normalize (void) const {
     return NULL;
 }
 //####################################################################
+bool xml::attributes::attr::operator==
+(const xml::attributes::attr &  other) const {
+    return normalize() == other.normalize();
+}
+//####################################################################
 bool xml::attributes::attr::is_default (void) const {
     if (phantom_prop_ && (!static_cast<phantom_attr*>(phantom_prop_)->prop_))
         return true;
@@ -342,10 +363,11 @@ const char* xml::attributes::attr::get_value (void) const {
                                       reinterpret_cast<phantom_attr*>(phantom_prop_)->prop_->children,
                                       1);
     }
-    if (tmpstr == 0) return "";
+    if (tmpstr == 0)
+        return "";
 
     xmlchar_helper helper(tmpstr);
-    value_.assign(helper.get());
+    value_.assign(reinterpret_cast<const char*>(tmpstr));
     return value_.c_str();
 }
 //####################################################################
