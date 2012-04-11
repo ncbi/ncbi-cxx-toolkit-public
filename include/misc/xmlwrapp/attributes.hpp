@@ -271,8 +271,8 @@ public:
      *
      * @warning  A reference and/or a pointer to the xml::attributes::attr
      *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the iterator is destroyed or changed
-     *           (e.g. advanced or re-assigned).
+     *           becomes invalid when the parent attributes container is
+     *           destroyed.
      */
     class iterator {
     public:
@@ -289,15 +289,15 @@ public:
 
         /**
          * @warning  The provided reference to the xml::attributes::attr
-         *           becomes invalid when the iterator is destroyed or changed
-         *           (e.g. advanced or re-assigned).
+         *           becomes invalid when the parent attributes container
+         *           is destroyed.
          */
         reference operator*  (void) const;
 
         /**
          * @warning  The provided pointer to the xml::attributes::attr
-         *           becomes invalid when the iterator is destroyed or changed
-         *           (e.g. advanced or re-assigned).
+         *           becomes invalid when the parent attributes container
+         *           is destroyed.
          */
         pointer   operator-> (void) const;
 
@@ -324,8 +324,8 @@ public:
      *
      * @warning  A reference and/or a pointer to the xml::attributes::attr
      *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the iterator is destroyed or changed
-     *           (e.g. advanced or re-assigned).
+     *           becomes invalid when the parent attributes container is
+     *           destroyed.
      */
     class const_iterator {
     public:
@@ -343,15 +343,15 @@ public:
 
         /**
          * @warning  The provided reference to the xml::attributes::attr
-         *           becomes invalid when the iterator is destroyed or changed
-         *           (e.g. advanced or re-assigned).
+         *           becomes invalid when the parent attributes container
+         *           is destroyed.
          */
         reference operator*  (void) const;
 
         /**
          * @warning  The provided pointer to the xml::attributes::attr
-         *           becomes invalid when the iterator is destroyed or changed
-         *           (e.g. advanced or re-assigned).
+         *           becomes invalid when the parent attributes container
+         *           is destroyed.
          */
         pointer   operator-> (void) const;
 
@@ -382,8 +382,8 @@ public:
      * @see xml::attributes::attr
      * @warning  A reference and/or a pointer to the xml::attributes::attr
      *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the iterator is destroyed or changed
-     *           (e.g. advanced or re-assigned).
+     *           becomes invalid when the attributes container is
+     *           destroyed.
      * @author Peter Jones
     **/
     //####################################################################
@@ -399,8 +399,8 @@ public:
      * @see xml::attributes::attr
      * @warning  A reference and/or a pointer to the xml::attributes::attr
      *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the iterator is destroyed or changed
-     *           (e.g. advanced or re-assigned).
+     *           becomes invalid when the attributes container is
+     *           destroyed.
      * @author Peter Jones
     **/
     //####################################################################
@@ -474,8 +474,8 @@ public:
      * @see xml::attributes::attr
      * @warning  A reference and/or a pointer to the xml::attributes::attr
      *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the iterator is destroyed or changed
-     *           (e.g. advanced or re-assigned).
+     *           becomes invalid when the attributes container is
+     *           destroyed.
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -507,8 +507,8 @@ public:
      * @see xml::attributes::attr
      * @warning  A reference and/or a pointer to the xml::attributes::attr
      *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the iterator is destroyed or changed
-     *           (e.g. advanced or re-assigned).
+     *           becomes invalid when the attributes container is
+     *           destroyed.
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -526,8 +526,8 @@ public:
      * @see xml::attributes::attr
      * @warning  A reference and/or a pointer to the xml::attributes::attr
      *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the iterator is destroyed or changed
-     *           (e.g. advanced or re-assigned).
+     *           becomes invalid when the attributes container is
+     *           destroyed.
      * @author Peter Jones
     **/
     //####################################################################
