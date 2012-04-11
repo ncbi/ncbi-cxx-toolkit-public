@@ -4068,6 +4068,8 @@ vector<string> CValidError_feat::GetAccessionsFromInferenceString (string infere
         || NStr::Equal(prefix, "similar to RNA sequence, EST")
         || NStr::Equal(prefix, "similar to RNA sequence, other RNA")) {
         NStr::Tokenize(remainder, ",", accessions);
+    } else if (NStr::Equal(prefix, "alignment")) {
+        NStr::Tokenize(remainder, ",", accessions);
     }
     return accessions;
 }
@@ -4488,6 +4490,7 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
 static const string sc_BypassMrnaTransCheckText[] = {
     "RNA editing",
     "adjusted for low-quality genome",
+    "annotated by transcript or proteomic data",
     "artificial frameshift",
     "mismatches in transcription"
     "reasons given in citation",
