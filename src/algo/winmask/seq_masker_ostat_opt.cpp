@@ -112,8 +112,12 @@ void CSeqMaskerOstatOpt::createCacheBitArray( Uint4 ** cba )
     {
         *cba = new Uint4[size];
     }
-    catch( ... )
-    { size = 0; }
+    catch( std::exception & e )
+    { 
+        ERR_POST( Warning << "cache bit array could not be allocated: " 
+                          << e.what() );
+        size = 0;
+    }
 
     if( size > 0 )
     {

@@ -76,11 +76,16 @@ CSeqMaskerOstat * CSeqMaskerOstatFactory::create(
                          eBadName,
                          "unkown unit counts format" );
     }
-    catch( ... )
+    catch( CException & e ) {
+        NCBI_RETHROW( e, CSeqMaskerOstatFactoryException, eCreateFail,
+                      "could not create a unit counts container" );
+    }
+    catch( std::exception & e )
     {
         NCBI_THROW( CSeqMaskerOstatFactoryException,
                     eCreateFail,
-                    "could not create a unit counts container" );
+                    std::string( "could not create a unit counts container" ) +
+                        e.what() );
     }
 }
     
@@ -108,11 +113,16 @@ CSeqMaskerOstat * CSeqMaskerOstatFactory::create(
                          eBadName,
                          "unkown unit counts format" );
     }
-    catch( ... )
+    catch( CException & e ) {
+        NCBI_RETHROW( e, CSeqMaskerOstatFactoryException, eCreateFail,
+                      "could not create a unit counts container" );
+    }
+    catch( std::exception & e )
     {
         NCBI_THROW( CSeqMaskerOstatFactoryException,
                     eCreateFail,
-                    "could not create a unit counts container" );
+                    std::string( "could not create a unit counts container" ) +
+                        e.what() );
     }
 }
     

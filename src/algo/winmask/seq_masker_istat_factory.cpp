@@ -97,12 +97,16 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                          max_count, use_max_count,
                                          min_count, use_min_count );
     }
-    catch( CException & )
-    { throw; }
-    catch( ... )
+    catch( CException & e)
+    {
+        NCBI_RETHROW( e, Exception, eCreateFail,
+                      "could not create a unit counts container" );
+    }
+    catch( std::exception & e )
     {
         NCBI_THROW( Exception, eCreateFail,
-                    "could not create a unit counts container" );
+                    std::string( "could not create a unit counts container: " ) +
+                    e.what() );
     }
 }
 

@@ -63,8 +63,8 @@ CSeqMaskerOstatBin::~CSeqMaskerOstatBin()
          i != pvalues.end(); ++i )
          write_word( *i );
   }
-  catch( ... )
-  { LOG_POST( Error<< "Error writing trailer." ); }
+  catch( std::exception & e )
+  { LOG_POST( Error<< "Error writing trailer: " << e.what() ); }
 
   out_stream.flush();
 }
