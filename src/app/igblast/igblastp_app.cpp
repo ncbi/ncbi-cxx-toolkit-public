@@ -124,15 +124,25 @@ int CIgBlastpApp::Run(void)
         bool db_is_remote = true;
         CRef<CScope> scope;
         CRef<CLocalDbAdapter> blastdb;
+        CRef<CLocalDbAdapter> blastdb_full;
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         if (db_args->GetDatabaseName() == kEmptyStr && 
             db_args->GetSubjects().Empty()) {
             blastdb.Reset(&(*(ig_opts->m_Db[0])));
             scope.Reset(new CScope(*CObjectManager::GetInstance()));
             db_is_remote = false;
+            blastdb_full.Reset(&(*blastdb));
         } else {
             InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
                               blastdb, scope);
+            if (m_CmdLineArgs->ExecuteRemotely()) {
+                blastdb_full.Reset(&(*blastdb));
+            } else {
+                CSearchDatabase sdb(ig_opts->m_Db[0]->GetDatabaseName() + " " +
+                       blastdb->GetDatabaseName(),
+                       CSearchDatabase::eBlastDbIsProtein);
+                blastdb_full.Reset(new CLocalDbAdapter(sdb));
+            }
         }
         _ASSERT(blastdb && scope);
 
@@ -141,7 +151,7 @@ int CIgBlastpApp::Run(void)
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
-        CBlastFormat formatter(opt, *blastdb,
+        CBlastFormat formatter(opt, *blastdb_full,
                                fmt_args->GetFormattedOutputChoice(),
                                query_opts->GetParseDeflines(),
                                m_CmdLineArgs->GetOutputStream(),
