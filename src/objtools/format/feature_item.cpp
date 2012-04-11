@@ -1217,8 +1217,17 @@ void CFeatureItem::x_AddQualSeqfeatNote()
         ITERATE (CSeq_annot::TDesc::Tdata, it,
                  m_Feat.GetAnnot().Seq_annot_GetDesc().Get()) {
             if ((*it)->IsComment()) {
+                const string & comment = (*it)->GetComment();
+                // certain comments require special handling
+                const static string ktRNAscanSE = "tRNA features were annotated by tRNAscan-SE";
+                if( NStr::StartsWith(comment, ktRNAscanSE, NStr::eNocase) && 
+                    ! x_HasMethodtRNAscanSE() ) 
+                {
+                    // don't propagate tRNAscan-SE comments to irrelevant features
+                    continue;
+                }
                 x_AddQual(eFQ_seqfeat_note,
-                          new CFlatStringQVal((*it)->GetComment()));
+                          new CFlatStringQVal(comment));
             }
         }
     }
@@ -6524,6 +6533,65 @@ bool CFeatureItem::x_GetGbValue(
             return true;
         }          
     }
+    return false;
+}
+
+bool CFeatureItem::x_HasMethodtRNAscanSE(void) const
+{
+    // try to make this fast, since it could be checked by every feature.
+
+    // try to do cheap checks first
+
+    if( ! m_Feat.IsSetExt() ) {
+        return false;
+    }
+    const CUser_object & ext = m_Feat.GetExt();
+    if( ! ext.IsSetType() || ! ext.IsSetData() ) {
+        return false;
+    }
+    const CUser_object_Base::TType & ext_type = ext.GetType();
+    if( ! ext_type.IsStr() || ext_type.GetStr() != "CombinedFeatureUserObjects" ) {
+        return false;
+    }
+    const CUser_object::TData & ext_data = ext.GetData();
+    ITERATE( CUser_object::TData, field_iter, ext_data ) {
+        const CUser_field & field = **field_iter;
+        if( ! field.IsSetLabel() || ! field.IsSetData()  ) {
+            continue;
+        }
+        const CUser_field::TLabel & field_label = field.GetLabel();
+        const CUser_field::TData & field_data = field.GetData();
+        if( ! field_label.IsStr() || ! field_data.IsObject() || 
+            field_label.GetStr() != "ModelEvidence" ) 
+        {
+            continue;
+        }
+        const CUser_object & evidence_object = field_data.GetObject();
+        if( ! evidence_object.IsSetData() ||
+            ! evidence_object.IsSetType() || 
+            ! evidence_object.GetType().IsStr() || 
+            evidence_object.GetType().GetStr() != "ModelEvidence" ) 
+        {
+            continue;
+        }
+        const CUser_object::TData & evidence_data = evidence_object.GetData();
+        ITERATE( CUser_object::TData, evidence_iter, evidence_data ) {
+            const CUser_field & evidence_field = **evidence_iter;
+            if( ! evidence_field.IsSetLabel() ||  
+                ! evidence_field.GetLabel().IsStr() || 
+                evidence_field.GetLabel().GetStr() != "Method" ||
+                ! evidence_field.IsSetData() || 
+                ! evidence_field.GetData().IsStr() ||
+                evidence_field.GetData().GetStr() != "tRNAscan-SE" )
+            {
+                continue;
+            }
+            // we found proof of method tRNAscan-SE, so we return true
+            return true;
+        }
+    }
+
+    // didn't find any proof of method tRNAscan-SE
     return false;
 }
 

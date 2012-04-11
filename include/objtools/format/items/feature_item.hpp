@@ -311,6 +311,7 @@ protected:
     bool x_GetGbValue(
         const string&,
         string& ) const;
+    bool x_HasMethodtRNAscanSE(void) const;
 
     // format
     void x_FormatQuals(CFlatFeature& ff) const;
@@ -442,8 +443,6 @@ private:
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const {
         x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote);
     }
-    
-    
 
     bool           m_WasDesc;
     mutable TQuals m_Quals;

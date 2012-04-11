@@ -550,10 +550,10 @@ static void s_FixPages( string& pages )
             ++it;
         }
 
-        const bool firstNumberEmpty = (firstNumber[0]   == '\0');
-        const bool firstTextEmpty = (firstText[0]   == '\0');
-        const bool lastNumberEmpty = (lastNumber[0]   == '\0');
-        const bool lastTextEmpty = (lastText[0]   == '\0');
+        const bool firstNumberEmpty = firstNumber.empty();
+        const bool firstTextEmpty = firstText.empty();
+        const bool lastNumberEmpty = lastNumber.empty();
+        const bool lastTextEmpty = lastText.empty();
         
         if( (lastNumberEmpty  && firstTextEmpty) ||
             (firstNumberEmpty && lastTextEmpty) ) {
