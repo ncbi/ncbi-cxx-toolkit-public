@@ -524,7 +524,30 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n";
          BOOST_CHECK_EQUAL(s, string(sc_Expected));
-     }}
+    }}
+
+    // check with topology circular
+    {{
+        seh.GetEditHandle().SetSeq().SetInst_Topology( CSeq_inst::eTopology_circular );
+
+        CNcbiOstrstream os;
+        {{
+            CFastaOstream fasta_os(os);
+            /// FIXME: this should be the default!!
+            //fasta_os.SetFlag(CFastaOstream::fInstantiateGaps);
+            fasta_os.SetFlag(CFastaOstream::fShowModifiers);
+            fasta_os.Write(seh);
+        }}
+        os.flush();
+        string s = string(CNcbiOstrstreamToString(os));
+        static const char* sc_Expected = 
+            ">lcl|test-seq [topology=circular] [organism=Sarcophilus harrisii] [strain=some strain] [gcode=1] [tech=physical map]\n"
+            "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
+            "GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
+            "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
+            "ATCGAAAT\n";
+        BOOST_CHECK_EQUAL(s, string(sc_Expected));
+    }}
 }
 
 #if 0

@@ -2516,6 +2516,14 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
 
 void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
 {
+    // print [topology=...], if necessary
+    if( handle.CanGetInst_Topology() ) {
+        CSeq_inst::ETopology topology = handle.GetInst_Topology();
+        if( topology == CSeq_inst::eTopology_circular ) {
+            m_Out << " [topology=circular]";
+        }
+    }
+
     // handle modifiers retrieved from Biosource.Org-ref
     // [organism=...], etc.
 
