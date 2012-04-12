@@ -572,71 +572,71 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
 }
 
 
-typedef pair<const char*, CMolInfo::TBiomol> TBiomolMapEntry;
+typedef SStaticPair<const char*, CMolInfo::TBiomol> TBiomolMapEntry;
 static const TBiomolMapEntry sc_BiomolArray[] = {
-    TBiomolMapEntry("?",               CMolInfo::eBiomol_unknown),
-    TBiomolMapEntry("cRNA",            CMolInfo::eBiomol_cRNA),
-    TBiomolMapEntry("genomic",         CMolInfo::eBiomol_genomic),
-    TBiomolMapEntry("genomic-mRNA",    CMolInfo::eBiomol_genomic_mRNA),
-    TBiomolMapEntry("mRNA",            CMolInfo::eBiomol_mRNA),
-    TBiomolMapEntry("non-coding RNA",  CMolInfo::eBiomol_ncRNA),
-    TBiomolMapEntry("other-genetic",   CMolInfo::eBiomol_other_genetic),
-    TBiomolMapEntry("peptide",         CMolInfo::eBiomol_peptide),
-    TBiomolMapEntry("precursor RNA",   CMolInfo::eBiomol_pre_RNA),
-    TBiomolMapEntry("rRNA",            CMolInfo::eBiomol_rRNA),
-    TBiomolMapEntry("scRNA",           CMolInfo::eBiomol_scRNA),
-    TBiomolMapEntry("snoRNA",          CMolInfo::eBiomol_snoRNA),
-    TBiomolMapEntry("snRNA",           CMolInfo::eBiomol_snRNA),
-    TBiomolMapEntry("transcribed-RNA", CMolInfo::eBiomol_transcribed_RNA),
-    TBiomolMapEntry("transfer-messenger RNA", CMolInfo::eBiomol_tmRNA),
-    TBiomolMapEntry("tRNA",            CMolInfo::eBiomol_tRNA)
+    { "?",               CMolInfo::eBiomol_unknown },
+    { "cRNA",            CMolInfo::eBiomol_cRNA },
+    { "genomic",         CMolInfo::eBiomol_genomic },
+    { "genomic-mRNA",    CMolInfo::eBiomol_genomic_mRNA },
+    { "mRNA",            CMolInfo::eBiomol_mRNA },
+    { "non-coding RNA",  CMolInfo::eBiomol_ncRNA },
+    { "other-genetic",   CMolInfo::eBiomol_other_genetic },
+    { "peptide",         CMolInfo::eBiomol_peptide },
+    { "precursor RNA",   CMolInfo::eBiomol_pre_RNA },
+    { "rRNA",            CMolInfo::eBiomol_rRNA },
+    { "scRNA",           CMolInfo::eBiomol_scRNA },
+    { "snoRNA",          CMolInfo::eBiomol_snoRNA },
+    { "snRNA",           CMolInfo::eBiomol_snRNA },
+    { "transcribed-RNA", CMolInfo::eBiomol_transcribed_RNA },
+    { "transfer-messenger RNA", CMolInfo::eBiomol_tmRNA },
+    { "tRNA",            CMolInfo::eBiomol_tRNA }
 };
-typedef CStaticArrayMap<const char*, CMolInfo::TBiomol,
+typedef CStaticPairArrayMap<const char*, CMolInfo::TBiomol,
                         CSourceModParser::PKeyCompare>  TBiomolMap;
 DEFINE_STATIC_ARRAY_MAP(TBiomolMap, sc_BiomolMap, sc_BiomolArray);
 
-typedef pair<const char*, CMolInfo::TTech> TTechMapEntry;
+typedef SStaticPair<const char*, CMolInfo::TTech> TTechMapEntry;
 static const TTechMapEntry sc_TechArray[] = {
-    TTechMapEntry("?",                  CMolInfo::eTech_unknown),
-    TTechMapEntry("barcode",            CMolInfo::eTech_barcode),
-    TTechMapEntry("both",               CMolInfo::eTech_both),
-    TTechMapEntry("composite-wgs-htgs", CMolInfo::eTech_composite_wgs_htgs),
-    TTechMapEntry("concept-trans",      CMolInfo::eTech_concept_trans),
-    TTechMapEntry("concept-trans-a",    CMolInfo::eTech_concept_trans_a),
-    TTechMapEntry("derived",            CMolInfo::eTech_derived),
-    TTechMapEntry("EST",                CMolInfo::eTech_est),
-    TTechMapEntry("fli cDNA",           CMolInfo::eTech_fli_cdna),
-    TTechMapEntry("genetic map",        CMolInfo::eTech_genemap),
-    TTechMapEntry("htc",                CMolInfo::eTech_htc),
-    TTechMapEntry("htgs 0",             CMolInfo::eTech_htgs_0),
-    TTechMapEntry("htgs 1",             CMolInfo::eTech_htgs_1),
-    TTechMapEntry("htgs 2",             CMolInfo::eTech_htgs_2),
-    TTechMapEntry("htgs 3",             CMolInfo::eTech_htgs_3),
-    TTechMapEntry("physical map",       CMolInfo::eTech_physmap),
-    TTechMapEntry("seq-pept",           CMolInfo::eTech_seq_pept),
-    TTechMapEntry("seq-pept-homol",     CMolInfo::eTech_seq_pept_homol),
-    TTechMapEntry("seq-pept-overlap",   CMolInfo::eTech_seq_pept_overlap),
-    TTechMapEntry("standard",           CMolInfo::eTech_standard),
-    TTechMapEntry("STS",                CMolInfo::eTech_sts),
-    TTechMapEntry("survey",             CMolInfo::eTech_survey),
-    TTechMapEntry("tsa",                CMolInfo::eTech_tsa),
-    TTechMapEntry("wgs",                CMolInfo::eTech_wgs)
+    { "?",                  CMolInfo::eTech_unknown },
+    { "barcode",            CMolInfo::eTech_barcode },
+    { "both",               CMolInfo::eTech_both },
+    { "composite-wgs-htgs", CMolInfo::eTech_composite_wgs_htgs },
+    { "concept-trans",      CMolInfo::eTech_concept_trans },
+    { "concept-trans-a",    CMolInfo::eTech_concept_trans_a },
+    { "derived",            CMolInfo::eTech_derived },
+    { "EST",                CMolInfo::eTech_est },
+    { "fli cDNA",           CMolInfo::eTech_fli_cdna },
+    { "genetic map",        CMolInfo::eTech_genemap },
+    { "htc",                CMolInfo::eTech_htc },
+    { "htgs 0",             CMolInfo::eTech_htgs_0 },
+    { "htgs 1",             CMolInfo::eTech_htgs_1 },
+    { "htgs 2",             CMolInfo::eTech_htgs_2 },
+    { "htgs 3",             CMolInfo::eTech_htgs_3 },
+    { "physical map",       CMolInfo::eTech_physmap },
+    { "seq-pept",           CMolInfo::eTech_seq_pept },
+    { "seq-pept-homol",     CMolInfo::eTech_seq_pept_homol },
+    { "seq-pept-overlap",   CMolInfo::eTech_seq_pept_overlap },
+    { "standard",           CMolInfo::eTech_standard },
+    { "STS",                CMolInfo::eTech_sts },
+    { "survey",             CMolInfo::eTech_survey },
+    { "tsa",                CMolInfo::eTech_tsa },
+    { "wgs",                CMolInfo::eTech_wgs }
 };
-typedef CStaticArrayMap<const char*, CMolInfo::TTech,
+typedef CStaticPairArrayMap<const char*, CMolInfo::TTech,
 CSourceModParser::PKeyCompare>  TTechMap;
 DEFINE_STATIC_ARRAY_MAP(TTechMap, sc_TechMap, sc_TechArray);
 
-typedef pair<const char*, CMolInfo::TCompleteness> TCompletenessMapEntry;
+typedef SStaticPair<const char*, CMolInfo::TCompleteness> TCompletenessMapEntry;
 static const TCompletenessMapEntry sc_CompletenessArray[] = {
-    TCompletenessMapEntry("complete",  CMolInfo::eCompleteness_complete ),
-    TCompletenessMapEntry("has-left",  CMolInfo::eCompleteness_has_left ),
-    TCompletenessMapEntry("has-right", CMolInfo::eCompleteness_has_right ),
-    TCompletenessMapEntry("no-ends",   CMolInfo::eCompleteness_no_ends ),
-    TCompletenessMapEntry("no-left",   CMolInfo::eCompleteness_no_left ),
-    TCompletenessMapEntry("no-right",  CMolInfo::eCompleteness_no_right ),
-    TCompletenessMapEntry("partial",   CMolInfo::eCompleteness_partial )
+    { "complete",  CMolInfo::eCompleteness_complete  },
+    { "has-left",  CMolInfo::eCompleteness_has_left  },
+    { "has-right", CMolInfo::eCompleteness_has_right  },
+    { "no-ends",   CMolInfo::eCompleteness_no_ends  },
+    { "no-left",   CMolInfo::eCompleteness_no_left  },
+    { "no-right",  CMolInfo::eCompleteness_no_right  },
+    { "partial",   CMolInfo::eCompleteness_partial  }
 };
-typedef CStaticArrayMap<const char*, CMolInfo::TCompleteness,
+typedef CStaticPairArrayMap<const char*, CMolInfo::TCompleteness,
 CSourceModParser::PKeyCompare>  TCompletenessMap;
 DEFINE_STATIC_ARRAY_MAP(TCompletenessMap, sc_CompletenessMap, sc_CompletenessArray);
 
