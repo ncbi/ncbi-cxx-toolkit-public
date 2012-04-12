@@ -1205,7 +1205,7 @@ void CReferenceItem::x_CapitalizeTitleIfNecessary()
 
 // these must be in "ASCIIbetical" order; beware of the fact that
 // closing quotes sort after spaces.
-static const string sc_RemarkText[] = {
+static const char* const sc_RemarkText[] = {
   "full automatic",
   "full staff_entry",
   "full staff_review",

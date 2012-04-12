@@ -83,7 +83,7 @@ enum ETechFlags {
 
 
 // EST keywords
-static const string sc_EST[] = {
+static const char* const sc_EST[] = {
   "EST", "EST (expressed sequence tag)", "EST PROTO((expressed sequence tag)",
   "EST(expressed sequence tag)", "TSR", "UK putts", "expressed sequence tag",
   "partial cDNA sequence", "putatively transcribed partial sequence",
@@ -93,13 +93,13 @@ DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_EST_kw, sc_EST);
 
 
 // GSS keywords
-static const string sc_GSS[] = {
+static const char* const sc_GSS[] = {
   "GSS", "trapped exon"
 };
 DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_GSS_kw, sc_GSS);
 
 // STS keywords
-static const string sc_STS[] = {
+static const char* const sc_STS[] = {
   "STS", "STS (sequence tagged site)", "STS sequence", 
   "STS(sequence tagged site)", "sequence tagged site"
 };

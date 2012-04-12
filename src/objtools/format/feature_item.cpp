@@ -843,7 +843,7 @@ static void s_SplitCommaSeparatedStringInParens( vector<string> &output_vec, con
     NStr::Tokenize( string_to_split.substr( 1, string_to_split.length() - amount_to_chop_off_end - 1), ",", output_vec );
 }
 
-static const string sc_ValidExceptionText[] = {
+static const char* const sc_ValidExceptionText[] = {
     "annotated by transcript or proteomic data",
     "rearrangement required for product",
     "reasons given in citation",
@@ -858,7 +858,7 @@ static bool s_IsValidExceptionText(const string& text)
 }
 
 
-static const string sc_ValidRefSeqExceptionText[] = {
+static const char* const sc_ValidRefSeqExceptionText[] = {
     "adjusted for low-quality genome",
     "alternative processing",
     "alternative start codon",
@@ -4052,10 +4052,10 @@ void CFeatureItem::x_ImportQuals(
 {
     _ASSERT(m_Feat.IsSetQual());
 
-    typedef pair<const char*, EFeatureQualifier> TLegalImport;
+    typedef SStaticPair<const char*, EFeatureQualifier> TLegalImport;
     static const TLegalImport kLegalImports[] = {
         // Must be in case-insensitive alphabetical order!
-#define DO_IMPORT(x) TLegalImport(#x, eFQ_##x)
+#define DO_IMPORT(x) { #x, eFQ_##x }
         DO_IMPORT(allele),
         DO_IMPORT(bound_moiety),
         DO_IMPORT(clone),
@@ -4103,7 +4103,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(usedin)
 #undef DO_IMPORT
     };
-    typedef const CStaticArrayMap<const char*, EFeatureQualifier, PNocase_CStr> TLegalImportMap;
+    typedef const CStaticPairArrayMap<const char*, EFeatureQualifier, PNocase_CStr> TLegalImportMap;
     DEFINE_STATIC_ARRAY_MAP(TLegalImportMap, kLegalImportMap, kLegalImports);
 
     bool check_qual_syntax = ctx.Config().CheckQualSyntax();
@@ -4349,7 +4349,7 @@ void CFeatureItem::x_AddRptUnitQual(
 
 static bool s_IsValidRptType(const string& type)
 {
-    static const string valid_rpt[] = {
+    static const char* const valid_rpt[] = {
         "direct", "dispersed", "flanking", "inverted", "other",
         "tandem", "terminal"
     };
@@ -4763,21 +4763,20 @@ CFlatProductNamesQVal * CFeatureItem::x_GetFlatProductNamesQual(EFeatureQualifie
 
 // maps each valid mobile_element_type prefix to whether it
 // must have more info after the prefix
-typedef pair <const char *, bool> TMobileElemTypeKey;
-
+typedef SStaticPair<const char *, bool> TMobileElemTypeKey;
 static const TMobileElemTypeKey mobile_element_key_to_suffix_required [] = {
-    TMobileElemTypeKey ( "LINE",                     false ),
-    TMobileElemTypeKey ( "MITE",                     false ),
-    TMobileElemTypeKey ( "SINE",                     false ),
-    TMobileElemTypeKey ( "insertion sequence",       false ),
-    TMobileElemTypeKey ( "integron",                 false ),
-    TMobileElemTypeKey ( "non-LTR retrotransposon",  false ),
-    TMobileElemTypeKey ( "other",                    true  ),
-    TMobileElemTypeKey ( "retrotransposon",          false ),
-    TMobileElemTypeKey ( "transposon",               false )
+    {  "LINE",                     false  },
+    {  "MITE",                     false  },
+    {  "SINE",                     false  },
+    {  "insertion sequence",       false  },
+    {  "integron",                 false  },
+    {  "non-LTR retrotransposon",  false  },
+    {  "other",                    true   },
+    {  "retrotransposon",          false  },
+    {  "transposon",               false  }
 };
 
-typedef CStaticArrayMap <const char*, bool, PCase_CStr> TMobileElemTypeMap;
+typedef CStaticPairArrayMap <const char*, bool, PCase_CStr> TMobileElemTypeMap;
 DEFINE_STATIC_ARRAY_MAP(TMobileElemTypeMap, sm_MobileElemTypeKeys, mobile_element_key_to_suffix_required);
 
 // returns whether or not it's valid
@@ -5018,117 +5017,117 @@ void CFeatureItem::x_CleanQuals(
 }
 
 
-typedef pair<EFeatureQualifier, CSeqFeatData::EQualifier> TQualPair;
+typedef SStaticPair<EFeatureQualifier, CSeqFeatData::EQualifier> TQualPair;
 static const TQualPair sc_GbToFeatQualMap[] = {
-    TQualPair(eFQ_none, CSeqFeatData::eQual_bad),
-    TQualPair(eFQ_allele, CSeqFeatData::eQual_allele),
-    TQualPair(eFQ_anticodon, CSeqFeatData::eQual_anticodon),
-    TQualPair(eFQ_artificial_location, CSeqFeatData::eQual_artificial_location),
-    TQualPair(eFQ_bond, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_bond_type, CSeqFeatData::eQual_bond_type),
-    TQualPair(eFQ_bound_moiety, CSeqFeatData::eQual_bound_moiety),
-    TQualPair(eFQ_calculated_mol_wt, CSeqFeatData::eQual_calculated_mol_wt),
-    TQualPair(eFQ_cds_product, CSeqFeatData::eQual_product),
-    TQualPair(eFQ_citation, CSeqFeatData::eQual_citation),
-    TQualPair(eFQ_clone, CSeqFeatData::eQual_clone),
-    TQualPair(eFQ_coded_by, CSeqFeatData::eQual_coded_by),
-    TQualPair(eFQ_codon, CSeqFeatData::eQual_codon),
-    TQualPair(eFQ_codon_start, CSeqFeatData::eQual_codon_start),
-    TQualPair(eFQ_compare, CSeqFeatData::eQual_compare),
-    TQualPair(eFQ_cons_splice, CSeqFeatData::eQual_cons_splice),
-    TQualPair(eFQ_cyt_map, CSeqFeatData::eQual_map),
-    TQualPair(eFQ_db_xref, CSeqFeatData::eQual_db_xref),
-    TQualPair(eFQ_derived_from, CSeqFeatData::eQual_derived_from),
-    TQualPair(eFQ_direction, CSeqFeatData::eQual_direction),
-    TQualPair(eFQ_EC_number, CSeqFeatData::eQual_EC_number),
-    TQualPair(eFQ_encodes, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_estimated_length, CSeqFeatData::eQual_estimated_length),
-    TQualPair(eFQ_experiment, CSeqFeatData::eQual_experiment),
-    TQualPair(eFQ_exception, CSeqFeatData::eQual_exception),
-    TQualPair(eFQ_exception_note, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_figure, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_frequency, CSeqFeatData::eQual_frequency),
-    TQualPair(eFQ_function, CSeqFeatData::eQual_function),
-    TQualPair(eFQ_gene, CSeqFeatData::eQual_gene),
-    TQualPair(eFQ_gene_desc, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_gene_allele, CSeqFeatData::eQual_allele),
-    TQualPair(eFQ_gene_map, CSeqFeatData::eQual_map),
-    TQualPair(eFQ_gene_syn, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_gene_syn_refseq, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_gene_note, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_gene_xref, CSeqFeatData::eQual_db_xref),
-    TQualPair(eFQ_go_component, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_go_function, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_go_process, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_heterogen, CSeqFeatData::eQual_heterogen),
-    TQualPair(eFQ_illegal_qual, CSeqFeatData::eQual_bad),
-    TQualPair(eFQ_inference, CSeqFeatData::eQual_inference),
-    TQualPair(eFQ_label, CSeqFeatData::eQual_label),
-    TQualPair(eFQ_locus_tag, CSeqFeatData::eQual_locus_tag),
-    TQualPair(eFQ_map, CSeqFeatData::eQual_map),
-    TQualPair(eFQ_maploc, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_mobile_element, CSeqFeatData::eQual_mobile_element),
-    TQualPair(eFQ_mobile_element_type, CSeqFeatData::eQual_mobile_element_type),
-    TQualPair(eFQ_mod_base, CSeqFeatData::eQual_mod_base),
-    TQualPair(eFQ_modelev, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_mol_wt, CSeqFeatData::eQual_calculated_mol_wt),
-    TQualPair(eFQ_ncRNA_class, CSeqFeatData::eQual_ncRNA_class),
-    TQualPair(eFQ_nomenclature, CSeqFeatData::eQual_nomenclature),
-    TQualPair(eFQ_number, CSeqFeatData::eQual_number),
-    TQualPair(eFQ_old_locus_tag, CSeqFeatData::eQual_old_locus_tag),
-    TQualPair(eFQ_operon, CSeqFeatData::eQual_operon),
-    TQualPair(eFQ_organism, CSeqFeatData::eQual_organism),
-    TQualPair(eFQ_partial, CSeqFeatData::eQual_partial),
-    TQualPair(eFQ_PCR_conditions, CSeqFeatData::eQual_PCR_conditions),
-    TQualPair(eFQ_peptide, CSeqFeatData::eQual_bad),
-    TQualPair(eFQ_phenotype, CSeqFeatData::eQual_phenotype),
-    TQualPair(eFQ_product, CSeqFeatData::eQual_product),
-    TQualPair(eFQ_product_quals, CSeqFeatData::eQual_product),
-    TQualPair(eFQ_prot_activity, CSeqFeatData::eQual_function),
-    TQualPair(eFQ_prot_comment, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_prot_EC_number, CSeqFeatData::eQual_EC_number),
-    TQualPair(eFQ_prot_note, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_prot_method, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_prot_conflict, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_prot_desc, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_prot_missing, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_prot_name, CSeqFeatData::eQual_name),
-    TQualPair(eFQ_prot_names, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_protein_id, CSeqFeatData::eQual_protein_id),
-    TQualPair(eFQ_pseudo, CSeqFeatData::eQual_pseudo),
-    TQualPair(eFQ_region, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_region_name, CSeqFeatData::eQual_region_name),
-    TQualPair(eFQ_replace, CSeqFeatData::eQual_replace),
-    TQualPair(eFQ_ribosomal_slippage, CSeqFeatData::eQual_ribosomal_slippage),
-    TQualPair(eFQ_rpt_family, CSeqFeatData::eQual_rpt_family),
-    TQualPair(eFQ_rpt_type, CSeqFeatData::eQual_rpt_type),
-    TQualPair(eFQ_rpt_unit, CSeqFeatData::eQual_rpt_unit),
-    TQualPair(eFQ_rpt_unit_range, CSeqFeatData::eQual_rpt_unit_range),
-    TQualPair(eFQ_rpt_unit_seq, CSeqFeatData::eQual_rpt_unit_seq),
-    TQualPair(eFQ_rrna_its, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_satellite, CSeqFeatData::eQual_satellite),
-    TQualPair(eFQ_sec_str_type, CSeqFeatData::eQual_sec_str_type),
-//    TQualPair(eFQ_selenocysteine, CSeqFeatData::eQual_note),
-//    TQualPair(eFQ_selenocysteine_note, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_seqfeat_note, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_site, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_site_type, CSeqFeatData::eQual_site_type),
-    TQualPair(eFQ_standard_name, CSeqFeatData::eQual_standard_name),
-    TQualPair(eFQ_tag_peptide, CSeqFeatData::eQual_tag_peptide),
-    TQualPair(eFQ_trans_splicing, CSeqFeatData::eQual_trans_splicing),
-    TQualPair(eFQ_transcription, CSeqFeatData::eQual_bad),
-    TQualPair(eFQ_transcript_id, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_transcript_id_note, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_transl_except, CSeqFeatData::eQual_transl_except),
-    TQualPair(eFQ_transl_table, CSeqFeatData::eQual_transl_table),
-    TQualPair(eFQ_translation, CSeqFeatData::eQual_translation),
-    TQualPair(eFQ_trna_aa, CSeqFeatData::eQual_bad),
-    TQualPair(eFQ_trna_codons, CSeqFeatData::eQual_note),
-    TQualPair(eFQ_UniProtKB_evidence, CSeqFeatData::eQual_UniProtKB_evidence),
-    TQualPair(eFQ_usedin, CSeqFeatData::eQual_usedin),
-    TQualPair(eFQ_xtra_prod_quals, CSeqFeatData::eQual_note)
+    { eFQ_none, CSeqFeatData::eQual_bad },
+    { eFQ_allele, CSeqFeatData::eQual_allele },
+    { eFQ_anticodon, CSeqFeatData::eQual_anticodon },
+    { eFQ_artificial_location, CSeqFeatData::eQual_artificial_location },
+    { eFQ_bond, CSeqFeatData::eQual_note },
+    { eFQ_bond_type, CSeqFeatData::eQual_bond_type },
+    { eFQ_bound_moiety, CSeqFeatData::eQual_bound_moiety },
+    { eFQ_calculated_mol_wt, CSeqFeatData::eQual_calculated_mol_wt },
+    { eFQ_cds_product, CSeqFeatData::eQual_product },
+    { eFQ_citation, CSeqFeatData::eQual_citation },
+    { eFQ_clone, CSeqFeatData::eQual_clone },
+    { eFQ_coded_by, CSeqFeatData::eQual_coded_by },
+    { eFQ_codon, CSeqFeatData::eQual_codon },
+    { eFQ_codon_start, CSeqFeatData::eQual_codon_start },
+    { eFQ_compare, CSeqFeatData::eQual_compare },
+    { eFQ_cons_splice, CSeqFeatData::eQual_cons_splice },
+    { eFQ_cyt_map, CSeqFeatData::eQual_map },
+    { eFQ_db_xref, CSeqFeatData::eQual_db_xref },
+    { eFQ_derived_from, CSeqFeatData::eQual_derived_from },
+    { eFQ_direction, CSeqFeatData::eQual_direction },
+    { eFQ_EC_number, CSeqFeatData::eQual_EC_number },
+    { eFQ_encodes, CSeqFeatData::eQual_note },
+    { eFQ_estimated_length, CSeqFeatData::eQual_estimated_length },
+    { eFQ_experiment, CSeqFeatData::eQual_experiment },
+    { eFQ_exception, CSeqFeatData::eQual_exception },
+    { eFQ_exception_note, CSeqFeatData::eQual_note },
+    { eFQ_figure, CSeqFeatData::eQual_note },
+    { eFQ_frequency, CSeqFeatData::eQual_frequency },
+    { eFQ_function, CSeqFeatData::eQual_function },
+    { eFQ_gene, CSeqFeatData::eQual_gene },
+    { eFQ_gene_desc, CSeqFeatData::eQual_note },
+    { eFQ_gene_allele, CSeqFeatData::eQual_allele },
+    { eFQ_gene_map, CSeqFeatData::eQual_map },
+    { eFQ_gene_syn, CSeqFeatData::eQual_note },
+    { eFQ_gene_syn_refseq, CSeqFeatData::eQual_note },
+    { eFQ_gene_note, CSeqFeatData::eQual_note },
+    { eFQ_gene_xref, CSeqFeatData::eQual_db_xref },
+    { eFQ_go_component, CSeqFeatData::eQual_note },
+    { eFQ_go_function, CSeqFeatData::eQual_note },
+    { eFQ_go_process, CSeqFeatData::eQual_note },
+    { eFQ_heterogen, CSeqFeatData::eQual_heterogen },
+    { eFQ_illegal_qual, CSeqFeatData::eQual_bad },
+    { eFQ_inference, CSeqFeatData::eQual_inference },
+    { eFQ_label, CSeqFeatData::eQual_label },
+    { eFQ_locus_tag, CSeqFeatData::eQual_locus_tag },
+    { eFQ_map, CSeqFeatData::eQual_map },
+    { eFQ_maploc, CSeqFeatData::eQual_note },
+    { eFQ_mobile_element, CSeqFeatData::eQual_mobile_element },
+    { eFQ_mobile_element_type, CSeqFeatData::eQual_mobile_element_type },
+    { eFQ_mod_base, CSeqFeatData::eQual_mod_base },
+    { eFQ_modelev, CSeqFeatData::eQual_note },
+    { eFQ_mol_wt, CSeqFeatData::eQual_calculated_mol_wt },
+    { eFQ_ncRNA_class, CSeqFeatData::eQual_ncRNA_class },
+    { eFQ_nomenclature, CSeqFeatData::eQual_nomenclature },
+    { eFQ_number, CSeqFeatData::eQual_number },
+    { eFQ_old_locus_tag, CSeqFeatData::eQual_old_locus_tag },
+    { eFQ_operon, CSeqFeatData::eQual_operon },
+    { eFQ_organism, CSeqFeatData::eQual_organism },
+    { eFQ_partial, CSeqFeatData::eQual_partial },
+    { eFQ_PCR_conditions, CSeqFeatData::eQual_PCR_conditions },
+    { eFQ_peptide, CSeqFeatData::eQual_bad },
+    { eFQ_phenotype, CSeqFeatData::eQual_phenotype },
+    { eFQ_product, CSeqFeatData::eQual_product },
+    { eFQ_product_quals, CSeqFeatData::eQual_product },
+    { eFQ_prot_activity, CSeqFeatData::eQual_function },
+    { eFQ_prot_comment, CSeqFeatData::eQual_note },
+    { eFQ_prot_EC_number, CSeqFeatData::eQual_EC_number },
+    { eFQ_prot_note, CSeqFeatData::eQual_note },
+    { eFQ_prot_method, CSeqFeatData::eQual_note },
+    { eFQ_prot_conflict, CSeqFeatData::eQual_note },
+    { eFQ_prot_desc, CSeqFeatData::eQual_note },
+    { eFQ_prot_missing, CSeqFeatData::eQual_note },
+    { eFQ_prot_name, CSeqFeatData::eQual_name },
+    { eFQ_prot_names, CSeqFeatData::eQual_note },
+    { eFQ_protein_id, CSeqFeatData::eQual_protein_id },
+    { eFQ_pseudo, CSeqFeatData::eQual_pseudo },
+    { eFQ_region, CSeqFeatData::eQual_note },
+    { eFQ_region_name, CSeqFeatData::eQual_region_name },
+    { eFQ_replace, CSeqFeatData::eQual_replace },
+    { eFQ_ribosomal_slippage, CSeqFeatData::eQual_ribosomal_slippage },
+    { eFQ_rpt_family, CSeqFeatData::eQual_rpt_family },
+    { eFQ_rpt_type, CSeqFeatData::eQual_rpt_type },
+    { eFQ_rpt_unit, CSeqFeatData::eQual_rpt_unit },
+    { eFQ_rpt_unit_range, CSeqFeatData::eQual_rpt_unit_range },
+    { eFQ_rpt_unit_seq, CSeqFeatData::eQual_rpt_unit_seq },
+    { eFQ_rrna_its, CSeqFeatData::eQual_note },
+    { eFQ_satellite, CSeqFeatData::eQual_satellite },
+    { eFQ_sec_str_type, CSeqFeatData::eQual_sec_str_type },
+//    { eFQ_selenocysteine, CSeqFeatData::eQual_note },
+//    { eFQ_selenocysteine_note, CSeqFeatData::eQual_note },
+    { eFQ_seqfeat_note, CSeqFeatData::eQual_note },
+    { eFQ_site, CSeqFeatData::eQual_note },
+    { eFQ_site_type, CSeqFeatData::eQual_site_type },
+    { eFQ_standard_name, CSeqFeatData::eQual_standard_name },
+    { eFQ_tag_peptide, CSeqFeatData::eQual_tag_peptide },
+    { eFQ_trans_splicing, CSeqFeatData::eQual_trans_splicing },
+    { eFQ_transcription, CSeqFeatData::eQual_bad },
+    { eFQ_transcript_id, CSeqFeatData::eQual_note },
+    { eFQ_transcript_id_note, CSeqFeatData::eQual_note },
+    { eFQ_transl_except, CSeqFeatData::eQual_transl_except },
+    { eFQ_transl_table, CSeqFeatData::eQual_transl_table },
+    { eFQ_translation, CSeqFeatData::eQual_translation },
+    { eFQ_trna_aa, CSeqFeatData::eQual_bad },
+    { eFQ_trna_codons, CSeqFeatData::eQual_note },
+    { eFQ_UniProtKB_evidence, CSeqFeatData::eQual_UniProtKB_evidence },
+    { eFQ_usedin, CSeqFeatData::eQual_usedin },
+    { eFQ_xtra_prod_quals, CSeqFeatData::eQual_note }
 };
-typedef CStaticArrayMap<EFeatureQualifier, CSeqFeatData::EQualifier> TQualMap;
+typedef CStaticPairArrayMap<EFeatureQualifier, CSeqFeatData::EQualifier> TQualMap;
 DEFINE_STATIC_ARRAY_MAP(TQualMap, sc_QualMap, sc_GbToFeatQualMap);
 
 static CSeqFeatData::EQualifier s_GbToSeqFeatQual(EFeatureQualifier qual)

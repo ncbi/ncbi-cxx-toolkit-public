@@ -322,13 +322,13 @@ CFlatStringQVal::CFlatStringQVal(const string& value,
 }
 
 
-typedef pair<const char*, ETildeStyle> TNameTildeStylePair;
-typedef CStaticArrayMap<const char*, ETildeStyle, PCase_CStr > TNameTildeStyleMap;
+typedef SStaticPair<const char*, ETildeStyle> TNameTildeStylePair;
+typedef CStaticPairArrayMap<const char*, ETildeStyle, PCase_CStr > TNameTildeStyleMap;
 static const TNameTildeStylePair kNameTildeStyleMap[] = {
-    TNameTildeStylePair("function",     eTilde_tilde),
-    TNameTildeStylePair("prot_desc",    eTilde_note),
-    TNameTildeStylePair("prot_note",    eTilde_note),
-    TNameTildeStylePair("seqfeat_note", eTilde_note)
+    { "function",     eTilde_tilde },
+    { "prot_desc",    eTilde_note },
+    { "prot_note",    eTilde_note },
+    { "seqfeat_note", eTilde_note }
 };
 DEFINE_STATIC_ARRAY_MAP(TNameTildeStyleMap, sc_NameTildeStyleMap, kNameTildeStyleMap);
 
