@@ -916,16 +916,6 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, kIsTabularOutput,
                                             results.GetRID());
-    if (m_IsBl2Seq) {
-        m_Outfile << "\n";
-        // FIXME: this might be configurable in the future
-        const bool kBelieveSubject = false; 
-        CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
-        CBlastFormatUtil::AcknowledgeBlastSubject(*subject_bioseq, 
-                                                  kFormatLineLength, 
-                                                  m_Outfile, kBelieveSubject, 
-                                                  m_IsHTML, kIsTabularOutput);
-    }
 
     // quit early if there are no hits
     if ( !results.HasAlignments() ) {
