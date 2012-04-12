@@ -426,13 +426,13 @@ public:
     static const TQualifiers& GetMandatoryQualifiers(ESubtype subtype);
     
     /// Convert a qualifier from an enumerated value to a string representation.
-    static const string& GetQualifierAsString(EQualifier qual);
+    static string GetQualifierAsString(EQualifier qual);
 
     // convert string to enumerated value
     static EQualifier GetQualifierType(const string& qual);
 
     NCBI_DEPRECATED
-    static const string& GetQulifierAsString(EQualifier qual)
+    static string GetQulifierAsString(EQualifier qual)
     { return GetQualifierAsString(qual); }
 
     static const CFeatList* GetFeatList();
@@ -442,17 +442,9 @@ public:
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {
-        SFeatDataInfo(void) : m_Subtype(CSeqFeatData::eSubtype_any) {}
-        SFeatDataInfo(CSeqFeatData::ESubtype subtype,
-                      const char*            key_full,
-                      const char*            key_gb)
-                      : m_Subtype(subtype),
-                        m_Key_full(key_full),
-                        m_Key_gb(key_gb) {}
-
         CSeqFeatData::ESubtype m_Subtype;
-        string                 m_Key_full;
-        string                 m_Key_gb;
+        const char*            m_Key_full;
+        const char*            m_Key_gb;
     };
 
 private:
@@ -472,13 +464,6 @@ private:
 
 
 /////////////////// CSeqFeatData inline methods
-
-// constructor
-inline
-CSeqFeatData::CSeqFeatData(void)
-{
-}
-
 
 inline
 void CSeqFeatData::InvalidateSubtype(void) const
@@ -658,10 +643,10 @@ CFeatList::const_iterator CFeatList::end() const
 class NCBI_SEQFEAT_EXPORT CBondList
 {
 public:
-    typedef pair <const char *, const CSeqFeatData::EBond> TBondKey;
+    typedef SStaticPair<const char *, CSeqFeatData::EBond> TBondKey;
 
 private:
-    typedef CStaticArrayMap <const char*, const CSeqFeatData::EBond, PNocase_CStr> TBondMap;
+    typedef CStaticPairArrayMap<const char*, CSeqFeatData::EBond, PNocase_CStr> TBondMap;
     
 public:
     
@@ -713,10 +698,10 @@ CBondList::const_iterator CBondList::end() const
 class NCBI_SEQFEAT_EXPORT CSiteList
 {
 public:
-    typedef pair <const char *, const CSeqFeatData::ESite> TSiteKey;
+    typedef SStaticPair<const char *, CSeqFeatData::ESite> TSiteKey;
 
 private:
-    typedef CStaticArrayMap <const char*, const CSeqFeatData::ESite, PNocase_CStr> TSiteMap;
+    typedef CStaticPairArrayMap<const char*, CSeqFeatData::ESite, PNocase_CStr> TSiteMap;
     
 public:
     

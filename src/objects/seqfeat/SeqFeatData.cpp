@@ -54,6 +54,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
+// constructor
+CSeqFeatData::CSeqFeatData(void)
+{
+    InvalidateCache();
+}
+
+
 struct SImportEntry {
     const char*            m_Name;
     CSeqFeatData::ESubtype m_Subtype;
@@ -137,11 +144,11 @@ static const SImportEntry* const kImportTableEnd
     = kImportTable + sizeof(kImportTable)/sizeof(SImportEntry);
 
 // Feat info table
-typedef pair<CSeqFeatData::E_Choice, CSeqFeatData::SFeatDataInfo> TInfoPair;
+typedef SStaticPair<CSeqFeatData::E_Choice, CSeqFeatData::SFeatDataInfo> TInfoPair;
 
-#define FEAT_INFO_PAIR(type, subtype, key_full, key_gb) \
-    TInfoPair(CSeqFeatData::e_##type, CSeqFeatData::SFeatDataInfo( \
-              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+#define FEAT_INFO_PAIR(type, subtype, key_full, key_gb)                 \
+    { CSeqFeatData::e_##type,                                           \
+            { CSeqFeatData::eSubtype_##subtype, key_full, key_gb } }
 
 static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(Gene, gene, "Gene", "gene"),
@@ -164,17 +171,17 @@ static const TInfoPair kInfoPairs[] = {
     FEAT_INFO_PAIR(Variation, variation_ref, "Variation", "variation")
 };
 
-typedef CStaticArrayMap<CSeqFeatData::E_Choice,
-                        CSeqFeatData::SFeatDataInfo> TInfoMap;
+typedef CStaticPairArrayMap<CSeqFeatData::E_Choice,
+                            CSeqFeatData::SFeatDataInfo> TInfoMap;
 DEFINE_STATIC_ARRAY_MAP(TInfoMap, sc_InfoPairs, kInfoPairs);
 
 
 // e_Prot info table
-typedef pair<CProt_ref::EProcessed, CSeqFeatData::SFeatDataInfo> TProtInfoPair;
+typedef SStaticPair<CProt_ref::EProcessed, CSeqFeatData::SFeatDataInfo> TProtInfoPair;
 
-#define PROT_INFO_PAIR(proc, subtype, key_full, key_gb) \
-    TProtInfoPair(CProt_ref::eProcessed_##proc, CSeqFeatData::SFeatDataInfo( \
-              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+#define PROT_INFO_PAIR(proc, subtype, key_full, key_gb)                 \
+    { CProt_ref::eProcessed_##proc,                                     \
+            { CSeqFeatData::eSubtype_##subtype, key_full, key_gb } }
 
 static const TProtInfoPair kProtInfoPairs[] = {
     PROT_INFO_PAIR(preprotein, preprotein, "Prot", "proprotein"),
@@ -183,17 +190,17 @@ static const TProtInfoPair kProtInfoPairs[] = {
     PROT_INFO_PAIR(transit_peptide, transit_peptide_aa, "Prot", "transit_peptide")
 };
 
-typedef CStaticArrayMap<CProt_ref::EProcessed,
-                        CSeqFeatData::SFeatDataInfo> TProtInfoMap;
+typedef CStaticPairArrayMap<CProt_ref::EProcessed,
+                            CSeqFeatData::SFeatDataInfo> TProtInfoMap;
 DEFINE_STATIC_ARRAY_MAP(TProtInfoMap, sc_ProtInfoPairs, kProtInfoPairs);
 
 
 // e_Site info table
-typedef pair<CSeqFeatData::ESite, CSeqFeatData::SFeatDataInfo> TSiteInfoPair;
+typedef SStaticPair<CSeqFeatData::ESite, CSeqFeatData::SFeatDataInfo> TSiteInfoPair;
 
-#define SITE_INFO_PAIR(site, subtype, key_full, key_gb) \
-    TSiteInfoPair(CSeqFeatData::eSite_##site, CSeqFeatData::SFeatDataInfo( \
-              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+#define SITE_INFO_PAIR(site, subtype, key_full, key_gb)                 \
+    { CSeqFeatData::eSite_##site,                                       \
+            { CSeqFeatData::eSubtype_##subtype, key_full, key_gb } }
 
 static const TSiteInfoPair kSiteInfoPairs[] = {
     SITE_INFO_PAIR(binding, site, "Site", "misc_binding"),
@@ -205,17 +212,17 @@ static const TSiteInfoPair kSiteInfoPairs[] = {
     SITE_INFO_PAIR(transit_peptide, site, "Site", "transit_peptide")
 };
 
-typedef CStaticArrayMap<CSeqFeatData::ESite,
-                        CSeqFeatData::SFeatDataInfo> TSiteInfoMap;
+typedef CStaticPairArrayMap<CSeqFeatData::ESite,
+                            CSeqFeatData::SFeatDataInfo> TSiteInfoMap;
 DEFINE_STATIC_ARRAY_MAP(TSiteInfoMap, sc_SiteInfoPairs, kSiteInfoPairs);
 
 
 // e_Rna info table
-typedef pair<CRNA_ref::EType, CSeqFeatData::SFeatDataInfo> TRnaInfoPair;
+typedef SStaticPair<CRNA_ref::EType, CSeqFeatData::SFeatDataInfo> TRnaInfoPair;
 
-#define RNA_INFO_PAIR(rna, subtype, key_full, key_gb) \
-    TRnaInfoPair(CRNA_ref::eType_##rna, CSeqFeatData::SFeatDataInfo( \
-              CSeqFeatData::eSubtype_##subtype, key_full, key_gb))
+#define RNA_INFO_PAIR(rna, subtype, key_full, key_gb)                   \
+    { CRNA_ref::eType_##rna,                                            \
+            { CSeqFeatData::eSubtype_##subtype, key_full, key_gb } }
 
 static const TRnaInfoPair kRnaInfoPairs[] = {
     RNA_INFO_PAIR(premsg, preRNA, "precursor_RNA", "precursor_RNA"),
@@ -229,8 +236,8 @@ static const TRnaInfoPair kRnaInfoPairs[] = {
     RNA_INFO_PAIR(tmRNA, tmRNA, "tmRNA", "tmRNA")
 };
 
-typedef CStaticArrayMap<CRNA_ref::EType,
-                        CSeqFeatData::SFeatDataInfo> TRnaInfoMap;
+typedef CStaticPairArrayMap<CRNA_ref::EType,
+                            CSeqFeatData::SFeatDataInfo> TRnaInfoMap;
 DEFINE_STATIC_ARRAY_MAP(TRnaInfoMap, sc_RnaInfoPairs, kRnaInfoPairs);
 
 
@@ -282,10 +289,10 @@ void CSeqFeatData::x_InitFeatDataInfo(void) const
                                         : kEmptyStr);
                 if (ext_name == "ncRNA") {
                     m_FeatDataInfo.m_Subtype = eSubtype_ncRNA;
-                    m_FeatDataInfo.m_Key_full = ext_name;
+                    m_FeatDataInfo.m_Key_full = "ncRNA";
                 } else if (ext_name == "tmRNA") {
                     m_FeatDataInfo.m_Subtype = eSubtype_tmRNA;
-                    m_FeatDataInfo.m_Key_full = ext_name;
+                    m_FeatDataInfo.m_Key_full = "tmRNA";
                 } else {
                     m_FeatDataInfo.m_Subtype = eSubtype_otherRNA;
                     bool other = GetRna().GetType() == CRNA_ref::eType_other;
@@ -308,8 +315,8 @@ void CSeqFeatData::x_InitFeatDataInfo(void) const
         } else {
             m_FeatDataInfo.m_Subtype = result->m_Subtype;
         }
-        m_FeatDataInfo.m_Key_gb = key; // "Imp"?;
-        m_FeatDataInfo.m_Key_full = key;
+        m_FeatDataInfo.m_Key_gb = key.c_str(); // "Imp"?;
+        m_FeatDataInfo.m_Key_full = key.c_str();
         break;
     }
     default:
@@ -2572,137 +2579,137 @@ void CSeqFeatData::s_InitMandatoryQuals(void)
 }
 
 
-typedef pair<CSeqFeatData::EQualifier, string> TQualPair;
+typedef SStaticPair<CSeqFeatData::EQualifier, const char*> TQualPair;
 static const TQualPair kQualPairs[] = {
-    TQualPair(CSeqFeatData::eQual_bad, "bad"),
-    TQualPair(CSeqFeatData::eQual_allele, "allele"),
-    TQualPair(CSeqFeatData::eQual_anticodon, "anticodon"),
-    TQualPair(CSeqFeatData::eQual_artificial_location, "artificial_location"),
-    TQualPair(CSeqFeatData::eQual_bio_material, "bio_material"),
-    TQualPair(CSeqFeatData::eQual_bond_type, "bond_type"),
-    TQualPair(CSeqFeatData::eQual_bound_moiety, "bound_moiety"),
-    TQualPair(CSeqFeatData::eQual_calculated_mol_wt, "calculated_mol_wt"),
-    TQualPair(CSeqFeatData::eQual_cell_line, "cell_line"),
-    TQualPair(CSeqFeatData::eQual_cell_type, "cell_type"),
-    TQualPair(CSeqFeatData::eQual_chloroplast, "chloroplast"),
-    TQualPair(CSeqFeatData::eQual_chromoplast, "chromoplast"),
-    TQualPair(CSeqFeatData::eQual_chromosome, "chromosome"),
-    TQualPair(CSeqFeatData::eQual_citation, "citation"),
-    TQualPair(CSeqFeatData::eQual_clone, "clone"),
-    TQualPair(CSeqFeatData::eQual_clone_lib, "clone_lib"),
-    TQualPair(CSeqFeatData::eQual_coded_by, "coded_by"),
-    TQualPair(CSeqFeatData::eQual_codon, "codon"),
-    TQualPair(CSeqFeatData::eQual_codon_start, "codon_start"),
-    TQualPair(CSeqFeatData::eQual_collected_by, "collected_by"),
-    TQualPair(CSeqFeatData::eQual_collection_date, "collection_date"),
-    TQualPair(CSeqFeatData::eQual_compare, "compare"),
-    TQualPair(CSeqFeatData::eQual_cons_splice, "cons_splice"),
-    TQualPair(CSeqFeatData::eQual_country, "country"),
-    TQualPair(CSeqFeatData::eQual_cultivar, "cultivar"),
-    TQualPair(CSeqFeatData::eQual_culture_collection, "culture_collection"),
-    TQualPair(CSeqFeatData::eQual_cyanelle, "cyanelle"),
-    TQualPair(CSeqFeatData::eQual_db_xref, "db_xref"),
-    TQualPair(CSeqFeatData::eQual_dev_stage, "dev_stage"),
-    TQualPair(CSeqFeatData::eQual_direction, "direction"),
-    TQualPair(CSeqFeatData::eQual_EC_number, "EC_number"),
-    TQualPair(CSeqFeatData::eQual_ecotype, "ecotype"),
-    TQualPair(CSeqFeatData::eQual_environmental_sample, "environmental_sample"),
-    TQualPair(CSeqFeatData::eQual_estimated_length, "estimated_length"),
-    TQualPair(CSeqFeatData::eQual_evidence, "evidence"),
-    TQualPair(CSeqFeatData::eQual_exception, "exception"),
-    TQualPair(CSeqFeatData::eQual_experiment, "experiment"),
-    TQualPair(CSeqFeatData::eQual_focus, "focus"),
-    TQualPair(CSeqFeatData::eQual_frequency, "frequency"),
-    TQualPair(CSeqFeatData::eQual_function, "function"),
-    TQualPair(CSeqFeatData::eQual_gdb_xref, "gdb_xref"),
-    TQualPair(CSeqFeatData::eQual_gene, "gene"),
-    TQualPair(CSeqFeatData::eQual_gene_synonym, "gene_synonym"),
-    TQualPair(CSeqFeatData::eQual_germline, "germline"),
-    TQualPair(CSeqFeatData::eQual_haplogroup, "haplogroup"),
-    TQualPair(CSeqFeatData::eQual_haplotype, "haplotype"),
-    TQualPair(CSeqFeatData::eQual_host, "host"),
-    TQualPair(CSeqFeatData::eQual_identified_by, "identified_by"),
-    TQualPair(CSeqFeatData::eQual_inference, "inference"),
-    TQualPair(CSeqFeatData::eQual_insertion_seq, "insertion_seq"),
-    TQualPair(CSeqFeatData::eQual_isolate, "isolate"),
-    TQualPair(CSeqFeatData::eQual_isolation_source, "isolation_source"),
-    TQualPair(CSeqFeatData::eQual_kinetoplast, "kinetoplast"),
-    TQualPair(CSeqFeatData::eQual_lab_host, "lab_host"),
-    TQualPair(CSeqFeatData::eQual_label, "label"),
-    TQualPair(CSeqFeatData::eQual_lat_lon, "lat_lon"),
-    TQualPair(CSeqFeatData::eQual_locus_tag, "locus_tag"),
-    TQualPair(CSeqFeatData::eQual_macronuclear, "macronuclear"),
-    TQualPair(CSeqFeatData::eQual_map, "map"),
-    TQualPair(CSeqFeatData::eQual_mating_type, "mating_type"),
-    TQualPair(CSeqFeatData::eQual_metagenomic, "metagenomic"),
-    TQualPair(CSeqFeatData::eQual_mitochondrion, "mitochondrion"),
-    TQualPair(CSeqFeatData::eQual_mobile_element, "mobile_element"),
-    TQualPair(CSeqFeatData::eQual_mobile_element_type, "mobile_element_type"),
-    TQualPair(CSeqFeatData::eQual_mod_base, "mod_base"),
-    TQualPair(CSeqFeatData::eQual_mol_type, "mol_type"),
-    TQualPair(CSeqFeatData::eQual_name, "name"),
-    TQualPair(CSeqFeatData::eQual_ncRNA_class, "ncRNA_class"),
-    TQualPair(CSeqFeatData::eQual_note, "note"),
-    TQualPair(CSeqFeatData::eQual_number, "number"),
-    TQualPair(CSeqFeatData::eQual_old_locus_tag, "old_locus_tag"),
-    TQualPair(CSeqFeatData::eQual_operon, "operon"),
-    TQualPair(CSeqFeatData::eQual_organelle, "organelle"),
-    TQualPair(CSeqFeatData::eQual_organism, "organism"),
-    TQualPair(CSeqFeatData::eQual_partial, "partial"),
-    TQualPair(CSeqFeatData::eQual_PCR_conditions, "PCR_conditions"),
-    TQualPair(CSeqFeatData::eQual_PCR_primers, "PCR_primers"),
-    TQualPair(CSeqFeatData::eQual_phenotype, "phenotype"),
-    TQualPair(CSeqFeatData::eQual_plasmid, "plasmid"),
-    TQualPair(CSeqFeatData::eQual_pop_variant, "pop_variant"),
-    TQualPair(CSeqFeatData::eQual_product, "product"),
-    TQualPair(CSeqFeatData::eQual_protein_id, "protein_id"),
-    TQualPair(CSeqFeatData::eQual_proviral, "proviral"),
-    TQualPair(CSeqFeatData::eQual_pseudo, "pseudo"),
-    TQualPair(CSeqFeatData::eQual_rearranged, "rearranged"),
-    TQualPair(CSeqFeatData::eQual_region_name, "region_name"),
-    TQualPair(CSeqFeatData::eQual_replace, "replace"),
-    TQualPair(CSeqFeatData::eQual_ribosomal_slippage, "ribosomal_slippage"),
-    TQualPair(CSeqFeatData::eQual_rpt_family, "rpt_family"),
-    TQualPair(CSeqFeatData::eQual_rpt_type, "rpt_type"),
-    TQualPair(CSeqFeatData::eQual_rpt_unit, "rpt_unit"),
-    TQualPair(CSeqFeatData::eQual_rpt_unit_range, "rpt_unit_range" ),
-    TQualPair(CSeqFeatData::eQual_rpt_unit_seq, "rpt_unit_seq" ),
-    TQualPair(CSeqFeatData::eQual_satellite, "satellite"),
-    TQualPair(CSeqFeatData::eQual_segment, "segment"),
-    TQualPair(CSeqFeatData::eQual_sequenced_mol, "sequenced_mol"),
-    TQualPair(CSeqFeatData::eQual_serotype, "serotype"),
-    TQualPair(CSeqFeatData::eQual_serovar, "serovar"),
-    TQualPair(CSeqFeatData::eQual_sex, "sex"),
-    TQualPair(CSeqFeatData::eQual_site_type, "site_type"),
-    TQualPair(CSeqFeatData::eQual_specimen_voucher, "specimen_voucher"),
-    TQualPair(CSeqFeatData::eQual_standard_name, "standard_name"),
-    TQualPair(CSeqFeatData::eQual_strain, "strain"),
-    TQualPair(CSeqFeatData::eQual_sub_clone, "sub_clone"),
-    TQualPair(CSeqFeatData::eQual_sub_species, "sub_species"),
-    TQualPair(CSeqFeatData::eQual_sub_strain, "sub_strain"),
-    TQualPair(CSeqFeatData::eQual_tag_peptide, "tag_peptide"),
-    TQualPair(CSeqFeatData::eQual_tissue_lib, "tissue_lib"),
-    TQualPair(CSeqFeatData::eQual_tissue_type, "tissue_type"),
-    TQualPair(CSeqFeatData::eQual_trans_splicing, "trans_splicing"),
-    TQualPair(CSeqFeatData::eQual_transcript_id, "transcript_id"),
-    TQualPair(CSeqFeatData::eQual_transgenic, "transgenic"),
-    TQualPair(CSeqFeatData::eQual_translation, "translation"),
-    TQualPair(CSeqFeatData::eQual_transl_except, "transl_except"),
-    TQualPair(CSeqFeatData::eQual_transl_table, "transl_table"),
-    TQualPair(CSeqFeatData::eQual_transposon, "transposon"),
-    TQualPair(CSeqFeatData::eQual_UniProtKB_evidence, "UniProtKB_evidence"),
-    TQualPair(CSeqFeatData::eQual_usedin, "usedin"),
-    TQualPair(CSeqFeatData::eQual_variety, "variety"),
-    TQualPair(CSeqFeatData::eQual_virion, "virion")
+    { CSeqFeatData::eQual_bad, "bad" },
+    { CSeqFeatData::eQual_allele, "allele" },
+    { CSeqFeatData::eQual_anticodon, "anticodon" },
+    { CSeqFeatData::eQual_artificial_location, "artificial_location" },
+    { CSeqFeatData::eQual_bio_material, "bio_material" },
+    { CSeqFeatData::eQual_bond_type, "bond_type" },
+    { CSeqFeatData::eQual_bound_moiety, "bound_moiety" },
+    { CSeqFeatData::eQual_calculated_mol_wt, "calculated_mol_wt" },
+    { CSeqFeatData::eQual_cell_line, "cell_line" },
+    { CSeqFeatData::eQual_cell_type, "cell_type" },
+    { CSeqFeatData::eQual_chloroplast, "chloroplast" },
+    { CSeqFeatData::eQual_chromoplast, "chromoplast" },
+    { CSeqFeatData::eQual_chromosome, "chromosome" },
+    { CSeqFeatData::eQual_citation, "citation" },
+    { CSeqFeatData::eQual_clone, "clone" },
+    { CSeqFeatData::eQual_clone_lib, "clone_lib" },
+    { CSeqFeatData::eQual_coded_by, "coded_by" },
+    { CSeqFeatData::eQual_codon, "codon" },
+    { CSeqFeatData::eQual_codon_start, "codon_start" },
+    { CSeqFeatData::eQual_collected_by, "collected_by" },
+    { CSeqFeatData::eQual_collection_date, "collection_date" },
+    { CSeqFeatData::eQual_compare, "compare" },
+    { CSeqFeatData::eQual_cons_splice, "cons_splice" },
+    { CSeqFeatData::eQual_country, "country" },
+    { CSeqFeatData::eQual_cultivar, "cultivar" },
+    { CSeqFeatData::eQual_culture_collection, "culture_collection" },
+    { CSeqFeatData::eQual_cyanelle, "cyanelle" },
+    { CSeqFeatData::eQual_db_xref, "db_xref" },
+    { CSeqFeatData::eQual_dev_stage, "dev_stage" },
+    { CSeqFeatData::eQual_direction, "direction" },
+    { CSeqFeatData::eQual_EC_number, "EC_number" },
+    { CSeqFeatData::eQual_ecotype, "ecotype" },
+    { CSeqFeatData::eQual_environmental_sample, "environmental_sample" },
+    { CSeqFeatData::eQual_estimated_length, "estimated_length" },
+    { CSeqFeatData::eQual_evidence, "evidence" },
+    { CSeqFeatData::eQual_exception, "exception" },
+    { CSeqFeatData::eQual_experiment, "experiment" },
+    { CSeqFeatData::eQual_focus, "focus" },
+    { CSeqFeatData::eQual_frequency, "frequency" },
+    { CSeqFeatData::eQual_function, "function" },
+    { CSeqFeatData::eQual_gdb_xref, "gdb_xref" },
+    { CSeqFeatData::eQual_gene, "gene" },
+    { CSeqFeatData::eQual_gene_synonym, "gene_synonym" },
+    { CSeqFeatData::eQual_germline, "germline" },
+    { CSeqFeatData::eQual_haplogroup, "haplogroup" },
+    { CSeqFeatData::eQual_haplotype, "haplotype" },
+    { CSeqFeatData::eQual_host, "host" },
+    { CSeqFeatData::eQual_identified_by, "identified_by" },
+    { CSeqFeatData::eQual_inference, "inference" },
+    { CSeqFeatData::eQual_insertion_seq, "insertion_seq" },
+    { CSeqFeatData::eQual_isolate, "isolate" },
+    { CSeqFeatData::eQual_isolation_source, "isolation_source" },
+    { CSeqFeatData::eQual_kinetoplast, "kinetoplast" },
+    { CSeqFeatData::eQual_lab_host, "lab_host" },
+    { CSeqFeatData::eQual_label, "label" },
+    { CSeqFeatData::eQual_lat_lon, "lat_lon" },
+    { CSeqFeatData::eQual_locus_tag, "locus_tag" },
+    { CSeqFeatData::eQual_macronuclear, "macronuclear" },
+    { CSeqFeatData::eQual_map, "map" },
+    { CSeqFeatData::eQual_mating_type, "mating_type" },
+    { CSeqFeatData::eQual_metagenomic, "metagenomic" },
+    { CSeqFeatData::eQual_mitochondrion, "mitochondrion" },
+    { CSeqFeatData::eQual_mobile_element, "mobile_element" },
+    { CSeqFeatData::eQual_mobile_element_type, "mobile_element_type" },
+    { CSeqFeatData::eQual_mod_base, "mod_base" },
+    { CSeqFeatData::eQual_mol_type, "mol_type" },
+    { CSeqFeatData::eQual_name, "name" },
+    { CSeqFeatData::eQual_ncRNA_class, "ncRNA_class" },
+    { CSeqFeatData::eQual_note, "note" },
+    { CSeqFeatData::eQual_number, "number" },
+    { CSeqFeatData::eQual_old_locus_tag, "old_locus_tag" },
+    { CSeqFeatData::eQual_operon, "operon" },
+    { CSeqFeatData::eQual_organelle, "organelle" },
+    { CSeqFeatData::eQual_organism, "organism" },
+    { CSeqFeatData::eQual_partial, "partial" },
+    { CSeqFeatData::eQual_PCR_conditions, "PCR_conditions" },
+    { CSeqFeatData::eQual_PCR_primers, "PCR_primers" },
+    { CSeqFeatData::eQual_phenotype, "phenotype" },
+    { CSeqFeatData::eQual_plasmid, "plasmid" },
+    { CSeqFeatData::eQual_pop_variant, "pop_variant" },
+    { CSeqFeatData::eQual_product, "product" },
+    { CSeqFeatData::eQual_protein_id, "protein_id" },
+    { CSeqFeatData::eQual_proviral, "proviral" },
+    { CSeqFeatData::eQual_pseudo, "pseudo" },
+    { CSeqFeatData::eQual_rearranged, "rearranged" },
+    { CSeqFeatData::eQual_region_name, "region_name" },
+    { CSeqFeatData::eQual_replace, "replace" },
+    { CSeqFeatData::eQual_ribosomal_slippage, "ribosomal_slippage" },
+    { CSeqFeatData::eQual_rpt_family, "rpt_family" },
+    { CSeqFeatData::eQual_rpt_type, "rpt_type" },
+    { CSeqFeatData::eQual_rpt_unit, "rpt_unit" },
+    { CSeqFeatData::eQual_rpt_unit_range, "rpt_unit_range"  },
+    { CSeqFeatData::eQual_rpt_unit_seq, "rpt_unit_seq"  },
+    { CSeqFeatData::eQual_satellite, "satellite" },
+    { CSeqFeatData::eQual_segment, "segment" },
+    { CSeqFeatData::eQual_sequenced_mol, "sequenced_mol" },
+    { CSeqFeatData::eQual_serotype, "serotype" },
+    { CSeqFeatData::eQual_serovar, "serovar" },
+    { CSeqFeatData::eQual_sex, "sex" },
+    { CSeqFeatData::eQual_site_type, "site_type" },
+    { CSeqFeatData::eQual_specimen_voucher, "specimen_voucher" },
+    { CSeqFeatData::eQual_standard_name, "standard_name" },
+    { CSeqFeatData::eQual_strain, "strain" },
+    { CSeqFeatData::eQual_sub_clone, "sub_clone" },
+    { CSeqFeatData::eQual_sub_species, "sub_species" },
+    { CSeqFeatData::eQual_sub_strain, "sub_strain" },
+    { CSeqFeatData::eQual_tag_peptide, "tag_peptide" },
+    { CSeqFeatData::eQual_tissue_lib, "tissue_lib" },
+    { CSeqFeatData::eQual_tissue_type, "tissue_type" },
+    { CSeqFeatData::eQual_trans_splicing, "trans_splicing" },
+    { CSeqFeatData::eQual_transcript_id, "transcript_id" },
+    { CSeqFeatData::eQual_transgenic, "transgenic" },
+    { CSeqFeatData::eQual_translation, "translation" },
+    { CSeqFeatData::eQual_transl_except, "transl_except" },
+    { CSeqFeatData::eQual_transl_table, "transl_table" },
+    { CSeqFeatData::eQual_transposon, "transposon" },
+    { CSeqFeatData::eQual_UniProtKB_evidence, "UniProtKB_evidence" },
+    { CSeqFeatData::eQual_usedin, "usedin" },
+    { CSeqFeatData::eQual_variety, "variety" },
+    { CSeqFeatData::eQual_virion, "virion" }
 };
 
-typedef CStaticArrayMap<CSeqFeatData::EQualifier, string> TQualsMap;
+typedef CStaticPairArrayMap<CSeqFeatData::EQualifier, const char*> TQualsMap;
 DEFINE_STATIC_ARRAY_MAP(TQualsMap, sc_QualPairs, kQualPairs);
 
-const string& CSeqFeatData::GetQualifierAsString(EQualifier qual)
+string CSeqFeatData::GetQualifierAsString(EQualifier qual)
 {
     TQualsMap::const_iterator iter = sc_QualPairs.find(qual);
-    return (iter != sc_QualPairs.end()) ? iter->second : kEmptyStr;
+    return (iter != sc_QualPairs.end()) ? iter->second : "";
 }
 
 
@@ -2773,50 +2780,58 @@ const CSiteList* CSeqFeatData::GetSiteList()
 
 //////////////////////////////////////////////////////////////////////////////
 
-static CFeatListItem sc_ConfigItemInit[] = {
-    CFeatListItem( CSeqFeatData::e_not_set,  CSeqFeatData::eSubtype_any,   "All",  "Master" ),
-    CFeatListItem( CSeqFeatData::e_Gene,     CSeqFeatData::eSubtype_gene,  "Gene", "Gene" ),
-    CFeatListItem( CSeqFeatData::e_Org,      CSeqFeatData::eSubtype_org,   "Org",  "Org" ),
-    CFeatListItem( CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion,  "CDS",  "CDS" ),
 
-    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_any,   "Protein, All",  "Prot Master" ),
-    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_prot,  "Protein", "Prot" ),
-    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_preprotein,    "PreProtein", "PreProtein" ),
-    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_mat_peptide_aa,    "Mature Peptide AA", "Mat-Peptide AA" ),
-    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_sig_peptide_aa,    "Signal Peptide AA", "Sig-Peptide AA" ),
-    CFeatListItem( CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_transit_peptide_aa,    "Transit Peptide AA", "Transit-Peptide AA" ),
+struct SFeatListItem {
+    CSeqFeatData::E_Choice m_Type;
+    CSeqFeatData::ESubtype m_Subtype;
+    const char* m_Description;
+    const char* m_StorageKey;
+};
 
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_any,   "RNA, All" , "RNA Master" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_preRNA,  "precursor_RNA",   "precursor_RNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_mRNA,  "mRNA", "mRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_tRNA,  "tRNA", "tRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_rRNA,  "rRNA", "rRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snRNA,  "snRNA", "snRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_scRNA,  "scRNA", "scRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snoRNA,  "sno_RNA", "sno_RNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_ncRNA,  "ncRNA", "ncRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_tmRNA,  "tmRNA", "tmRNA" ),
-    CFeatListItem( CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_otherRNA,  "misc_RNA",  "misc_RNA" ),
+static const SFeatListItem sc_ConfigItemInit[] = {
+    {  CSeqFeatData::e_not_set,  CSeqFeatData::eSubtype_any,   "All",  "Master"  },
+    {  CSeqFeatData::e_Gene,     CSeqFeatData::eSubtype_gene,  "Gene", "Gene"  },
+    {  CSeqFeatData::e_Org,      CSeqFeatData::eSubtype_org,   "Org",  "Org"  },
+    {  CSeqFeatData::e_Cdregion, CSeqFeatData::eSubtype_cdregion,  "CDS",  "CDS"  },
 
-    CFeatListItem( CSeqFeatData::e_Pub,     CSeqFeatData::eSubtype_pub,   "Pub", "Pub" ),
-    CFeatListItem( CSeqFeatData::e_Seq,     CSeqFeatData::eSubtype_seq,   "Seq", "Seq" ),
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_any,   "Protein, All",  "Prot Master"  },
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_prot,  "Protein", "Prot"  },
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_preprotein,    "PreProtein", "PreProtein"  },
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_mat_peptide_aa,    "Mature Peptide AA", "Mat-Peptide AA"  },
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_sig_peptide_aa,    "Signal Peptide AA", "Sig-Peptide AA"  },
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_transit_peptide_aa,    "Transit Peptide AA", "Transit-Peptide AA"  },
 
-    CFeatListItem( CSeqFeatData::e_Imp,      CSeqFeatData::eSubtype_any,   "Import All", "Import Master" ),
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_any,   "RNA, All" , "RNA Master"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_preRNA,  "precursor_RNA",   "precursor_RNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_mRNA,  "mRNA", "mRNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_tRNA,  "tRNA", "tRNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_rRNA,  "rRNA", "rRNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snRNA,  "snRNA", "snRNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_scRNA,  "scRNA", "scRNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_snoRNA,  "sno_RNA", "sno_RNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_ncRNA,  "ncRNA", "ncRNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_tmRNA,  "tmRNA", "tmRNA"  },
+    {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_otherRNA,  "misc_RNA",  "misc_RNA"  },
 
-    CFeatListItem( CSeqFeatData::e_Region,   CSeqFeatData::eSubtype_region,    "region",     "region" ),
-    CFeatListItem( CSeqFeatData::e_Comment,  CSeqFeatData::eSubtype_comment,    "comment",     "comment" ),
-    CFeatListItem( CSeqFeatData::e_Bond,     CSeqFeatData::eSubtype_bond,    "bond",     "bond" ),
-    CFeatListItem( CSeqFeatData::e_Site,     CSeqFeatData::eSubtype_site,    "site",     "site" ),
-    CFeatListItem( CSeqFeatData::e_Rsite,    CSeqFeatData::eSubtype_rsite,    "rsite",     "rsite" ),
-    CFeatListItem( CSeqFeatData::e_User,     CSeqFeatData::eSubtype_user,    "user",     "user" ),
-    CFeatListItem( CSeqFeatData::e_Txinit,   CSeqFeatData::eSubtype_txinit,    "txinit",     "txinit" ),
-    CFeatListItem( CSeqFeatData::e_Num,      CSeqFeatData::eSubtype_num,    "num",     "num" ),
-    CFeatListItem( CSeqFeatData::e_Psec_str, CSeqFeatData::eSubtype_psec_str,    "psec_str",     "psec_str" ),
-    CFeatListItem( CSeqFeatData::e_Non_std_residue,     CSeqFeatData::eSubtype_non_std_residue,    "non_std_residue",     "non_std_residue" ),
-    CFeatListItem( CSeqFeatData::e_Het,      CSeqFeatData::eSubtype_het,    "het",     "het" ),
-    CFeatListItem( CSeqFeatData::e_Biosrc,   CSeqFeatData::eSubtype_biosrc,    "biosrc",     "biosrc" ),
-    CFeatListItem( CSeqFeatData::e_Clone,    CSeqFeatData::eSubtype_clone,     "clone",      "clone" ),
-    CFeatListItem( CSeqFeatData::e_Variation, CSeqFeatData::eSubtype_variation_ref, "variation",  "variation" ),
+    {  CSeqFeatData::e_Pub,     CSeqFeatData::eSubtype_pub,   "Pub", "Pub"  },
+    {  CSeqFeatData::e_Seq,     CSeqFeatData::eSubtype_seq,   "Seq", "Seq"  },
+
+    {  CSeqFeatData::e_Imp,      CSeqFeatData::eSubtype_any,   "Import All", "Import Master"  },
+
+    {  CSeqFeatData::e_Region,   CSeqFeatData::eSubtype_region,    "region",     "region"  },
+    {  CSeqFeatData::e_Comment,  CSeqFeatData::eSubtype_comment,    "comment",     "comment"  },
+    {  CSeqFeatData::e_Bond,     CSeqFeatData::eSubtype_bond,    "bond",     "bond"  },
+    {  CSeqFeatData::e_Site,     CSeqFeatData::eSubtype_site,    "site",     "site"  },
+    {  CSeqFeatData::e_Rsite,    CSeqFeatData::eSubtype_rsite,    "rsite",     "rsite"  },
+    {  CSeqFeatData::e_User,     CSeqFeatData::eSubtype_user,    "user",     "user"  },
+    {  CSeqFeatData::e_Txinit,   CSeqFeatData::eSubtype_txinit,    "txinit",     "txinit"  },
+    {  CSeqFeatData::e_Num,      CSeqFeatData::eSubtype_num,    "num",     "num"  },
+    {  CSeqFeatData::e_Psec_str, CSeqFeatData::eSubtype_psec_str,    "psec_str",     "psec_str"  },
+    {  CSeqFeatData::e_Non_std_residue,     CSeqFeatData::eSubtype_non_std_residue,    "non_std_residue",     "non_std_residue"  },
+    {  CSeqFeatData::e_Het,      CSeqFeatData::eSubtype_het,    "het",     "het"  },
+    {  CSeqFeatData::e_Biosrc,   CSeqFeatData::eSubtype_biosrc,    "biosrc",     "biosrc"  },
+    {  CSeqFeatData::e_Clone,    CSeqFeatData::eSubtype_clone,     "clone",      "clone"  },
+    {  CSeqFeatData::e_Variation, CSeqFeatData::eSubtype_variation_ref, "variation",  "variation"  }
 };
 
 
@@ -2975,17 +2990,17 @@ void CFeatList::x_Init()
 {
     size_t  config_item_size = sizeof(sc_ConfigItemInit)/sizeof(CFeatListItem);
     for (size_t i = 0; i < config_item_size; ++i ) {
-        bool feat_items_init_no_dups =
-           m_FeatTypes.insert(sc_ConfigItemInit[i]).second;
-        _VERIFY(feat_items_init_no_dups);
+        CFeatListItem item(sc_ConfigItemInit[i].m_Type,
+                           sc_ConfigItemInit[i].m_Subtype,
+                           sc_ConfigItemInit[i].m_Description,
+                           sc_ConfigItemInit[i].m_StorageKey);
+        _VERIFY(m_FeatTypes.insert(item).second);
     }
     
     for (const SImportEntry* iep = kImportTable; iep < kImportTableEnd; ++iep) {
         CFeatListItem item(CSeqFeatData::GetTypeFromSubtype(iep->m_Subtype), 
                            iep->m_Subtype, iep->m_Name, iep->m_Name);
-        bool import_items_init_no_dups =
-            m_FeatTypes.insert(item).second;
-        _VERIFY(import_items_init_no_dups);
+        _VERIFY(m_FeatTypes.insert(item).second);
     }
 
     ITERATE(CFeatList, it, m_FeatTypes) {
@@ -3038,11 +3053,11 @@ string x_SpaceToDash(string str1)
 /////////////////////////////////////////////////////////////////////////////
 
 static const CBondList::TBondKey bond_key_to_subtype [] = {
-    CBondList::TBondKey ( "disulfide",  CSeqFeatData::eBond_disulfide  ),
-    CBondList::TBondKey ( "other",      CSeqFeatData::eBond_other      ),
-    CBondList::TBondKey ( "thioether",  CSeqFeatData::eBond_thioether  ),
-    CBondList::TBondKey ( "thiolester", CSeqFeatData::eBond_thiolester ),
-    CBondList::TBondKey ( "xlink",      CSeqFeatData::eBond_xlink      )
+    { "disulfide",  CSeqFeatData::eBond_disulfide  },
+    { "other",      CSeqFeatData::eBond_other      },
+    { "thioether",  CSeqFeatData::eBond_thioether  },
+    { "thiolester", CSeqFeatData::eBond_thiolester },
+    { "xlink",      CSeqFeatData::eBond_xlink      }
 };
 DEFINE_CLASS_STATIC_ARRAY_MAP(CBondList::TBondMap, CBondList::sm_BondKeys, bond_key_to_subtype);
 
@@ -3090,35 +3105,36 @@ CSeqFeatData::EBond CBondList::GetBondType(string str) const
 }
 /////////////////////////////////////////////////////////////////////////////
 
+
 static const CSiteList::TSiteKey site_key_to_subtype [] = {
-    CSiteList::TSiteKey ( "acetylation",                 CSeqFeatData::eSite_acetylation                 ),
-    CSiteList::TSiteKey ( "active",                      CSeqFeatData::eSite_active                      ),
-    CSiteList::TSiteKey ( "amidation",                   CSeqFeatData::eSite_amidation                   ),
-    CSiteList::TSiteKey ( "binding",                     CSeqFeatData::eSite_binding                     ),
-    CSiteList::TSiteKey ( "blocked",                     CSeqFeatData::eSite_blocked                     ),
-    CSiteList::TSiteKey ( "cleavage",                    CSeqFeatData::eSite_cleavage                    ),
-    CSiteList::TSiteKey ( "DNA binding",                 CSeqFeatData::eSite_dna_binding                 ),
-    CSiteList::TSiteKey ( "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  ),
-    CSiteList::TSiteKey ( "glycosylation",               CSeqFeatData::eSite_glycosylation               ),
-    CSiteList::TSiteKey ( "hydroxylation",               CSeqFeatData::eSite_hydroxylation               ),
-    CSiteList::TSiteKey ( "inhibit",                     CSeqFeatData::eSite_inhibit                     ),
-    CSiteList::TSiteKey ( "lipid binding",               CSeqFeatData::eSite_lipid_binding               ),
-    CSiteList::TSiteKey ( "metal binding",               CSeqFeatData::eSite_metal_binding               ),
-    CSiteList::TSiteKey ( "methylation",                 CSeqFeatData::eSite_methylation                 ),
-    CSiteList::TSiteKey ( "modified",                    CSeqFeatData::eSite_modified                    ),
-    CSiteList::TSiteKey ( "mutagenized",                 CSeqFeatData::eSite_mutagenized                 ),
-    CSiteList::TSiteKey ( "myristoylation",              CSeqFeatData::eSite_myristoylation              ),
-    CSiteList::TSiteKey ( "nitrosylation",               CSeqFeatData::eSite_nitrosylation               ),
-    CSiteList::TSiteKey ( "np binding",                  CSeqFeatData::eSite_np_binding                  ),
-    CSiteList::TSiteKey ( "other",                       CSeqFeatData::eSite_other                       ),
-    CSiteList::TSiteKey ( "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       ),
-    CSiteList::TSiteKey ( "phosphorylation",             CSeqFeatData::eSite_phosphorylation             ),
-    CSiteList::TSiteKey ( "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid ),
-    CSiteList::TSiteKey ( "signal peptide",              CSeqFeatData::eSite_signal_peptide              ),
-    CSiteList::TSiteKey ( "sulfatation",                 CSeqFeatData::eSite_sulfatation                 ),
-    CSiteList::TSiteKey ( "transit peptide",             CSeqFeatData::eSite_transit_peptide             ),
-    CSiteList::TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        ),
-    CSiteList::TSiteKey ( "unclassified",                CSeqFeatData::eSite_other                       ),
+    { "acetylation",                 CSeqFeatData::eSite_acetylation                 },
+    { "active",                      CSeqFeatData::eSite_active                      },
+    { "amidation",                   CSeqFeatData::eSite_amidation                   },
+    { "binding",                     CSeqFeatData::eSite_binding                     },
+    { "blocked",                     CSeqFeatData::eSite_blocked                     },
+    { "cleavage",                    CSeqFeatData::eSite_cleavage                    },
+    { "DNA binding",                 CSeqFeatData::eSite_dna_binding                 },
+    { "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  },
+    { "glycosylation",               CSeqFeatData::eSite_glycosylation               },
+    { "hydroxylation",               CSeqFeatData::eSite_hydroxylation               },
+    { "inhibit",                     CSeqFeatData::eSite_inhibit                     },
+    { "lipid binding",               CSeqFeatData::eSite_lipid_binding               },
+    { "metal binding",               CSeqFeatData::eSite_metal_binding               },
+    { "methylation",                 CSeqFeatData::eSite_methylation                 },
+    { "modified",                    CSeqFeatData::eSite_modified                    },
+    { "mutagenized",                 CSeqFeatData::eSite_mutagenized                 },
+    { "myristoylation",              CSeqFeatData::eSite_myristoylation              },
+    { "nitrosylation",               CSeqFeatData::eSite_nitrosylation               },
+    { "np binding",                  CSeqFeatData::eSite_np_binding                  },
+    { "other",                       CSeqFeatData::eSite_other                       },
+    { "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       },
+    { "phosphorylation",             CSeqFeatData::eSite_phosphorylation             },
+    { "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid },
+    { "signal peptide",              CSeqFeatData::eSite_signal_peptide              },
+    { "sulfatation",                 CSeqFeatData::eSite_sulfatation                 },
+    { "transit peptide",             CSeqFeatData::eSite_transit_peptide             },
+    { "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        },
+    { "unclassified",                CSeqFeatData::eSite_other                       }
 };
 
 DEFINE_CLASS_STATIC_ARRAY_MAP(CSiteList::TSiteMap, CSiteList::sm_SiteKeys, site_key_to_subtype);
