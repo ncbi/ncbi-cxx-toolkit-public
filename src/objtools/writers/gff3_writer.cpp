@@ -539,11 +539,6 @@ bool CGff3Writer::x_WriteFeatureGene(
     }
     m_GeneMap[mf] = pRecord;
 
-    unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
-        fc.BioseqHandle() ) {
-        seqLength = fc.BioseqHandle().GetInst().GetLength();
-    }
     return x_WriteFeatureRecords(*pRecord, *pRecord->GetCircularLocation(), 0);
 }
 
