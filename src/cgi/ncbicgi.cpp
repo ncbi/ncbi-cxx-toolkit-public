@@ -853,17 +853,16 @@ CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
 
 void CTrackingEnvHolder::x_Destroy(void)
 {
-    if ( !m_TrackingEnv )
+    char** env;
+    if (!(env = m_TrackingEnv))
         return;
+    m_TrackingEnv = 0;
 
-    char** ptr;
-    for (ptr = m_TrackingEnv;  *ptr;  ++ptr) {
+    for (char** ptr = env;  *ptr;  ++ptr) {
+        *ptr = 0;
         delete[] *ptr;
     }
-
-    ptr = m_TrackingEnv;
-    m_TrackingEnv = 0;
-    delete[] ptr;
+    delete[] env;
 }
 
 
