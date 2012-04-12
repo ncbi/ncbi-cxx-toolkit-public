@@ -742,19 +742,26 @@ static string s_DumpSparseMap(const SHeader* h, const char* sparse,
                 if (ok_off & ok_gap) {
                     dump += "[gnu.map]:" + string(5, ' ');
                     if (ok_off > 0) {
-                        dump += '"' + s_Printable(sparse, 12, ex) + "\" ";
+                        dump += '"';
+                        dump += s_Printable(sparse, 12, ex);
+                        dump += "\" ";
                     } else {
                         dump += string(14, ' ');
                     }
                     sparse += 12;
                     if (ok_gap > 0) {
-                        dump += '"' + s_Printable(sparse, 12, ex) + "\" ";
+                        dump += '"';
+                        dump += s_Printable(sparse, 12, ex);
+                        dump += "\" ";
                     } else {
                         dump += string(14, ' ');
                     }
                     sparse += 12;
-                    dump += " [" + NStr::UInt8ToString(off) + ", ";
-                    dump +=        NStr::UInt8ToString(gap) + ']';
+                    dump += " [";
+                    dump += NStr::UInt8ToString(off);
+                    dump += ", ";
+                    dump += NStr::UInt8ToString(gap);
+                    dump += ']';
                     continue;
                 }
                 done = true;
@@ -999,7 +1006,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
     dump += '\n';
 
     switch (fmt) {
-    case eTar_Legacy:  // NCBI does not ever write this header
+    case eTar_Legacy:  // NCBI never writes this header
         tname = "legacy (V7)";
         break;
     case eTar_OldGNU:
@@ -1023,7 +1030,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
             tname = "posix";
         }
         break;
-    case eTar_Star:
+    case eTar_Star:  // NCBI never writes this header
         tname = "star";
         break;
     default:
@@ -3565,7 +3572,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             entries->push_back(m_Current);
         }
         if (type == CDirEntry::eDir) {
-            // Append/Update all files from that directory
+            // Append/update all files from that directory
             CDir::TEntries dir = CDir(path).GetEntries("*",
                                                        CDir::eIgnoreRecursive);
             ITERATE(CDir::TEntries, e, dir) {
@@ -3577,7 +3584,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
     case CDirEntry::eDoor:
     case CDirEntry::eSocket:
-        // Tar does not have any provisions to store this kind of entry
+        // Tar does not have any provisions to store this kind of entries
         TAR_POST(3, Warning,
                  "Skipping non-archiveable "
                  + string(type == CDirEntry::eSocket ? "socket" : "door")
