@@ -54,42 +54,57 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+/// Helper class for reading seq-align objects from a CObjectIStream.
 class CAlnAsnReader
 {
 public:
-    CAlnAsnReader(CScope* scope = NULL) :
-        m_Scope(scope),
-        m_Verbose(false)
+    /// Create alignment reader. If the scope is not null, the loaded seq-entry
+    /// objects are added to the scope.
+    CAlnAsnReader(CScope* scope = NULL)
+        : m_Scope(scope),
+          m_Verbose(false)
     {
     }
 
-    void SetVerbose(bool verbose = true) {
+    /// Switch verbose report about loaded objects on/off.
+    void SetVerbose(bool verbose = true)
+    {
         m_Verbose = verbose;
     }
 
+    /// Read all seq-align objects from the stream.
+    /// @param obj_in_stream
+    ///   The object stream to read from.
+    /// @param callback
+    ///   Callback receiving the loaded seq-aligns. The callback must accept
+    ///   const CSeq_align*.
+    /// @param top_level_asn_object
+    ///   Name of the top level object type. Required for binary ASN.1 files
+    ///   to force the type.
     template <class TCallback>
-    void Read(CObjectIStream * obj_in_stream, ///< The object stream to read from
-              TCallback callback,             ///< Callback for each const CSeq_align*
-              const string& top_level_asn_object = kEmptyStr) ///< In case of binary ASN.1 or need to force the type
+    void Read(CObjectIStream* obj_in_stream,
+              TCallback callback,
+              const string& top_level_asn_object = kEmptyStr)
     {
         while ( !obj_in_stream->EndOfData() ) {
-
-            /// determine the ASN.1 object type
+            // determine the ASN.1 object type
             string obj = obj_in_stream->ReadFileHeader();
-            if (obj.empty()) {
-                /// auto-detection is not possible in ASN.1 binary mode
-                /// hopefully top_level_asn_object was specified by the user
-                if (top_level_asn_object.empty()) {
+            if ( obj.empty() ) {
+                // auto-detection is not possible in ASN.1 binary mode
+                // hopefully top_level_asn_object was specified by the user
+                if ( top_level_asn_object.empty() ) {
                     NCBI_THROW(CException, eUnknown,
-                               "ReadFileHeader() returned empty.  "
-                               "Binary ASN.1 file?  "
-                               "Please supply the top_level_asn_object.");
-                } else {
+                        "ReadFileHeader() returned empty.  "
+                        "Binary ASN.1 file?  "
+                        "Please supply the top_level_asn_object.");
+                }
+                else {
                     obj = top_level_asn_object;
                 }
-            } else {
-                if ( !top_level_asn_object.empty()  &&  obj != top_level_asn_object) {
-                    /// object differs from the specified, skip it
+            }
+            else {
+                if (!top_level_asn_object.empty()  &&  obj != top_level_asn_object) {
+                    // object differs from the specified, skip it
                     continue;
                 }
             }
@@ -100,69 +115,76 @@ public:
             if (obj == "Seq-entry") {
                 CRef<CSeq_entry> se(new CSeq_entry);
                 obj_in_stream->Read(Begin(*se), CObjectIStream::eNoFileHeader);
-                if (m_Scope) {
+                if ( m_Scope ) {
                     m_Scope->AddTopLevelSeqEntry(*se);
                 }
                 for (i = Begin(*se); i; ++i) {
-                    if (CType<CSeq_align>::Match(i)) {
+                    if ( CType<CSeq_align>::Match(i) ) {
                         callback(CType<CSeq_align>::Get(i));
                     }
                 }
-            } else if (obj == "Seq-submit") {
+            }
+            else if (obj == "Seq-submit") {
                 CRef<CSeq_submit> ss(new CSeq_submit);
                 obj_in_stream->Read(Begin(*ss), CObjectIStream::eNoFileHeader);
                 CType<CSeq_entry>::AddTo(i);
                 int tse_cnt = 0;
                 for (i = Begin(*ss); i; ++i) {
-                    if (CType<CSeq_align>::Match(i)) {
+                    if ( CType<CSeq_align>::Match(i) ) {
                         callback(CType<CSeq_align>::Get(i));
-                    } else if (CType<CSeq_entry>::Match(i)) {
+                    }
+                    else if ( CType<CSeq_entry>::Match(i) ) {
                         if ( !(tse_cnt++) ) {
                             //m_Scope.AddTopLevelSeqEntry
                             (*(CType<CSeq_entry>::Get(i)));
                         }
                     }
                 }
-            } else if (obj == "Seq-align") {
+            }
+            else if (obj == "Seq-align") {
                 CRef<CSeq_align> sa(new CSeq_align);
                 obj_in_stream->Read(Begin(*sa), CObjectIStream::eNoFileHeader);
                 for (i = Begin(*sa); i; ++i) {
-                    if (CType<CSeq_align>::Match(i)) {
+                    if ( CType<CSeq_align>::Match(i) ) {
                         callback(CType<CSeq_align>::Get(i));
                     }
                 }
-            } else if (obj == "Seq-align-set") {
+            }
+            else if (obj == "Seq-align-set") {
                 CRef<CSeq_align_set> sas(new CSeq_align_set);
                 obj_in_stream->Read(Begin(*sas), CObjectIStream::eNoFileHeader);
                 for (i = Begin(*sas); i; ++i) {
-                    if (CType<CSeq_align>::Match(i)) {
+                    if ( CType<CSeq_align>::Match(i) ) {
                         callback(CType<CSeq_align>::Get(i));
                     }
                 }
-            } else if (obj == "Seq-annot") {
+            }
+            else if (obj == "Seq-annot") {
                 CRef<CSeq_annot> san(new CSeq_annot);
                 obj_in_stream->Read(Begin(*san), CObjectIStream::eNoFileHeader);
                 for (i = Begin(*san); i; ++i) {
-                    if (CType<CSeq_align>::Match(i)) {
+                    if ( CType<CSeq_align>::Match(i) ) {
                         callback(CType<CSeq_align>::Get(i));
                     }
                 }
-            } else if (obj == "Dense-seg") {
+            }
+            else if (obj == "Dense-seg") {
                 CRef<CDense_seg> ds(new CDense_seg);
                 obj_in_stream->Read(Begin(*ds), CObjectIStream::eNoFileHeader);
-
                 CRef<CSeq_align> sa(new CSeq_align);
                 sa->SetType(CSeq_align::eType_not_set);
                 sa->SetSegs().SetDenseg(*ds);
                 sa->SetDim(ds->GetDim());
                 callback(sa);
-            } else {
-                if (obj.empty()) {
+            }
+            else {
+                if ( obj.empty() ) {
                     NCBI_THROW(CException, eUnknown,
-                               "ReadFileHeader() returned empty.  "
-                               "Binary ASN.1 file?  "
-                               "Please supply the top_level_asn_object.");
-                } else {
+                        "ReadFileHeader() returned empty.  "
+                        "Binary ASN.1 file?  "
+                        "Please supply the top_level_asn_object.");
+                }
+                else {
                     cerr << "Don't know how to extract alignments from: " << obj << endl;
                     cerr << "Do you know?  Please contact us at aln-mgr@ncbi.nlm.nih.gov." << endl;
                 }

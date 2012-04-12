@@ -34,7 +34,6 @@
 */
 
 
-
 #include <corelib/ncbistd.hpp>
 
 #include <util/range.hpp>
@@ -44,6 +43,9 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Alignment explorer interface. Base class for CAlnMap and CSparseAln.
+/// @sa CAlnMap
+/// @sa CSparseAln
 class IAlnExplorer
 {
 public:
@@ -58,6 +60,7 @@ public:
         fInvalid    = 0x80000000
     };
 
+    /// Position search options.
     enum ESearchDirection {
         eNone,      ///< No search
         eBackwards, ///< Towards lower seq coord (to the left if plus strand, right if minus)
@@ -78,63 +81,92 @@ public:
 };
 
 
+/// Alignment segment interface.
+/// @sa CAlnChunkSegment
+/// @sa CSparseSegment
 class IAlnSegment
 {
 public:
     typedef IAlnExplorer::TSignedRange TSignedRange;
 
-    typedef unsigned TSegTypeFlags; // binary OR of ESegTypeFlags
+    typedef unsigned TSegTypeFlags; /// binary OR of ESegTypeFlags
+    /// Segment type flags.
     enum ESegTypeFlags  {
-        fAligned   = 1 << 0,
-        fGap       = 1 << 1,
-        fReversed  = 1 << 2,
-        fIndel     = 1 << 3,
-        fUnaligned = 1 << 4,
-        fInvalid   = (TSegTypeFlags) 0x80000000,
+        fAligned   = 1 << 0, ///< Aligned segment.
+
+        fGap       = 1 << 1, ///< Both anchor row and the selected row are not
+                             ///  included in the segment (some other row is
+                             ///  present and the alignment range of this
+                             ///  segment is not empty).
+
+        fReversed  = 1 << 2, ///< The selected row is reversed (relative to
+                             ///  the anchor).
+
+        fIndel     = 1 << 3, ///< Either anchor or the selected row is not
+                             ///  present in the segment.
+
+        fUnaligned = 1 << 4, ///< The range on the selected sequence does not
+                             ///  participate in the alignment (the alignment
+                             ///  range of the segment is empty).
+
+        fInvalid   = (TSegTypeFlags) 0x80000000, ///< The iterator is in bad state.
 
         fSegTypeMask = fAligned | fGap | fIndel | fUnaligned
     };
 
-    virtual ~IAlnSegment()  {}
+    virtual ~IAlnSegment(void) {}
 
-    virtual TSegTypeFlags GetType() const = 0;
-    virtual const TSignedRange& GetAlnRange() const = 0;
-    virtual const TSignedRange& GetRange() const = 0;
+    /// Get current segment type.
+    virtual TSegTypeFlags GetType(void) const = 0;
 
-    inline bool IsInvalidType() const { return (GetType() & fInvalid) != 0; }
-    inline bool IsAligned() const { return (GetType() & fAligned) != 0; }
-    inline bool IsGap() const { return (GetType() & fGap) != 0; }
-    inline bool IsReversed() const { return (GetType() & fReversed) != 0; }
+    /// Get alignment range for the segment.
+    virtual const TSignedRange& GetAlnRange(void) const = 0;
+
+    /// Get the selected row range.
+    virtual const TSignedRange& GetRange(void) const = 0;
+
+    inline bool IsInvalidType(void) const { return (GetType() & fInvalid) != 0; }
+    inline bool IsAligned(void) const { return (GetType() & fAligned) != 0; }
+    inline bool IsGap(void) const { return (GetType() & fGap) != 0; }
+    inline bool IsReversed(void) const { return (GetType() & fReversed) != 0; }
 };
 
 
+/// Alignment segment iterator interface.
+/// @sa CAlnVecIterator
+/// @sa CSparse_CI
 class IAlnSegmentIterator
 {
 public:
     typedef IAlnSegment value_type;
 
+    /// Iterator options
     enum EFlags {
-        eAllSegments,
-        eSkipGaps,
-        eInsertsOnly,
-        eSkipInserts
+        eAllSegments, ///< Iterate all segments
+        eSkipGaps,    ///< Skip gap segments (show only aligned ranges)
+        eInsertsOnly, ///< Iterate only ranges not participating in the
+                      ///  alignment (unaligned segments)
+        eSkipInserts  ///< Iterate segments where at least some rows are
+                      ///  aligned (including gap segments)
     };
 
-public:
-    virtual ~IAlnSegmentIterator() {};
+    virtual ~IAlnSegmentIterator(void) {}
 
-    virtual IAlnSegmentIterator* Clone() const = 0;
+    /// Create a copy of the iterator.
+    virtual IAlnSegmentIterator* Clone(void) const = 0;
 
-    // returns true if iterator points to a valid segment
-    virtual operator bool() const = 0;
+    /// Returns true if iterator points to a valid segment.
+    virtual operator bool(void) const = 0;
 
-    virtual IAlnSegmentIterator& operator++() = 0;
+    /// Advance to the next segment.
+    virtual IAlnSegmentIterator& operator++(void) = 0;
 
+    /// Compare iterators.
     virtual bool operator==(const IAlnSegmentIterator& it) const = 0;
     virtual bool operator!=(const IAlnSegmentIterator& it) const = 0;
 
-    virtual const value_type& operator*() const = 0;
-    virtual const value_type* operator->() const = 0;
+    virtual const value_type& operator*(void) const = 0;
+    virtual const value_type* operator->(void) const = 0;
 };
 
 

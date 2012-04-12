@@ -47,48 +47,59 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-/// A pairwise aln is a collection of ranges for a pair of rows
-class CPairwiseAln : 
+/// A pairwise aln is a collection of ranges for a pair of rows.
+class CPairwiseAln :
     public CObject,
-    public CAlignRangeCollection<CAlignRange<TSignedSeqPos> >
+    public CAlignRangeCollection< CAlignRange<TSignedSeqPos> >
 {
 public:
     // Types
     typedef TSignedSeqPos                  TPos;
-    typedef CRange<TPos>                   TRng; 
+    typedef CRange<TPos>                   TRng;
     typedef CAlignRange<TPos>              TAlnRng;
     typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
 
-
-    /// Constructor
+    /// Constructor - creates an empty pairwise alignment.
+    /// @sa ConvertSeqAlignToPairwiseAln
+    /// @sa CreatePairwiseAlnFromSeqAlign
     CPairwiseAln(const TAlnSeqIdIRef& first_id,
                  const TAlnSeqIdIRef& second_id,
                  int flags = fDefaultPolicy)
         : TAlnRngColl(flags),
           m_FirstId(first_id),
-          m_SecondId(second_id) {}
-
+          m_SecondId(second_id)
+    {
+    }
 
     /// Base width of the first row
-    int GetFirstBaseWidth() const {
+    int GetFirstBaseWidth(void) const
+    {
         return m_FirstId->GetBaseWidth();
     }
 
     /// Base width of the second row
-    int GetSecondBaseWidth() const {
+    int GetSecondBaseWidth(void) const
+    {
         return m_SecondId->GetBaseWidth();
     }
 
-    const TAlnSeqIdIRef& GetFirstId() const {
+    /// Get first sequence id
+    const TAlnSeqIdIRef& GetFirstId(void) const
+    {
         return m_FirstId;
     }
 
-    const TAlnSeqIdIRef& GetSecondId() const {
+    /// Get second sequence id
+    const TAlnSeqIdIRef& GetSecondId(void) const
+    {
         return m_SecondId;
     }
 
-    // If both sequences are proteins, convert coordinates to genomic anyway.
-    void ForceGenomicCoords(void) {
+    /// If both sequences are proteins, convert coordinates to genomic anyway.
+    /// This may be required if the pairwise alignment is participating in a
+    /// multi-row alignment with some rows referencing genomic sequences.
+    void ForceGenomicCoords(void)
+    {
         if (!m_FirstId->IsProtein()  ||  !m_SecondId->IsProtein()) {
             return; // already genomic
         }
@@ -141,6 +152,7 @@ public:
         x_Init();
     }
 
+    /// Check if the iterator is in valid state.
     operator bool(void) const
     {
         return m_Aln  &&
@@ -184,6 +196,7 @@ public:
         return m_It->IsDirect();
     }
 
+    /// Absolute direction of the first sequence.
     bool IsFirstDirect(void) const
     {
         _ASSERT(*this);
@@ -207,17 +220,18 @@ private:
 };
 
 
-/// Query-anchored alignment can be 2 or multi-dimentional
+/// Query-anchored alignment can be 2 or multi-dimentional.
+/// @sa CreateAnchoredAlnFromAln
+/// @sa CreateAnchoredAlnVec
 class NCBI_XALNMGR_EXPORT CAnchoredAln : public CObject
 {
 public:
     // Types
     typedef int TDim;
-    typedef vector<CRef<CPairwiseAln> > TPairwiseAlnVector;
-
+    typedef vector< CRef<CPairwiseAln> > TPairwiseAlnVector;
 
     /// Default constructor
-    CAnchoredAln()
+    CAnchoredAln(void)
         : m_AnchorRow(kInvalidAnchorRow),
           m_Score(0)
     {
@@ -229,14 +243,8 @@ public:
         : m_AnchorRow(c.m_AnchorRow),
           m_Score(c.m_Score)
     {
-        m_PairwiseAlns.resize(c.GetDim());
-        for (TDim row = 0;  row < c.GetDim();  ++row) {
-            CRef<CPairwiseAln> pairwise_aln
-                (new CPairwiseAln(*c.m_PairwiseAlns[row]));
-            m_PairwiseAlns[row].Reset(pairwise_aln);
-        }
+        *this = c;
     }
-        
 
     /// NB: Assignment operator is deep on pairwise_alns so that
     /// pairwise_alns can be modified
@@ -248,58 +256,64 @@ public:
         m_AnchorRow = c.m_AnchorRow;
         m_Score = c.m_Score;
         m_PairwiseAlns.resize(c.GetDim());
-        for (TDim row = 0;  row < c.GetDim();  ++row) {
-            CRef<CPairwiseAln> pairwise_aln
-                (new CPairwiseAln(*c.m_PairwiseAlns[row]));
+        for (TDim row = 0; row < c.GetDim(); ++row) {
+            CRef<CPairwiseAln> pairwise_aln(
+                new CPairwiseAln(*c.m_PairwiseAlns[row]));
             m_PairwiseAlns[row].Reset(pairwise_aln);
         }
         return *this;
     }
-        
 
     /// How many rows
-    TDim GetDim() const {
+    TDim GetDim(void) const
+    {
         return (TDim)m_PairwiseAlns.size();
     }
 
     /// Seq ids of the rows
-    const TAlnSeqIdIRef& GetId(TDim row) const { 
+    const TAlnSeqIdIRef& GetId(TDim row) const
+    {
         return GetPairwiseAlns()[row]->GetSecondId();
     }
 
     /// The vector of pairwise alns
-    const TPairwiseAlnVector& GetPairwiseAlns() const {
+    const TPairwiseAlnVector& GetPairwiseAlns(void) const
+    {
         return m_PairwiseAlns;
     }
 
     /// Which is the anchor row?
-    TDim GetAnchorRow() const {
+    TDim GetAnchorRow(void) const
+    {
         _ASSERT(m_AnchorRow != kInvalidAnchorRow);
         _ASSERT(m_AnchorRow < GetDim());
         return m_AnchorRow;
     }
 
     /// What is the seq id of the anchor?
-    const TAlnSeqIdIRef& GetAnchorId() const {
+    const TAlnSeqIdIRef& GetAnchorId(void) const
+    {
         return GetId(m_AnchorRow);
     }
 
     /// What is the total score?
-    int GetScore() const {
+    int GetScore(void) const
+    {
         return m_Score;
     }
-
 
     /// Modify the number of rows.  NB: This resizes the vectors and
     /// potentially invalidates the anchor row.  Never do this unless
     /// you know what you're doing)
-    void SetDim(TDim dim) {
+    void SetDim(TDim dim)
+    {
         _ASSERT(m_AnchorRow == kInvalidAnchorRow); // make sure anchor is not set yet
         m_PairwiseAlns.resize(dim);
     }
 
     /// Modify pairwise alns
-    TPairwiseAlnVector& SetPairwiseAlns() {
+    TPairwiseAlnVector& SetPairwiseAlns(void)
+    {
         return m_PairwiseAlns;
     }
 
@@ -307,25 +321,26 @@ public:
     /// alignment and know what you're doing). Setting the anchor row
     /// does not update the insertions - they are still aligned to the
     /// old anchor.
-    void SetAnchorRow(TDim anchor_row) {
+    void SetAnchorRow(TDim anchor_row)
+    {
         m_AnchorRow = anchor_row;
     }
 
     /// Set the total score
-    void SetScore(int score) {
+    void SetScore(int score)
+    {
         m_Score = score;
     }
 
     /// Non-const access to the total score
-    int& SetScore() {
+    int& SetScore(void)
+    {
         return m_Score;
     }
 
-
     /// Split rows with mixed dir into separate rows
     /// returns true if the operation was performed
-    bool SplitStrands();
-
+    bool SplitStrands(void);
 
 private:
     static const TDim  kInvalidAnchorRow = -1;
@@ -335,9 +350,12 @@ private:
 };
 
 
-typedef vector<CRef<CAnchoredAln> > TAnchoredAlnVec;
+/// Collection of anchored alignments.
+/// @sa CreateAnchoredAlnVec
+typedef vector< CRef<CAnchoredAln> > TAnchoredAlnVec;
 
 
+/// Compare alignments by score.
 template<class C>
 struct PScoreGreater
 {

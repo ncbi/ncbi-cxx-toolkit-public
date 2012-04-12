@@ -520,7 +520,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
 
     buffer.erase();
 
-    if (aln_range.GetLength() > 0)   {
+    if (aln_range.GetLength() > 0) {
         const CPairwiseAln& pairwise_aln = *m_Aln->GetPairwiseAlns()[row];
         _ASSERT( !pairwise_aln.empty() );
         if (pairwise_aln.empty()) {
@@ -585,9 +585,6 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
                 }
                 off = (aln_r.GetFrom() - aln_range.GetFrom()) / 3;
             }
-            /*if(it->IsReversed())    {
-                std::reverse(s.begin(), s.end());
-            }*/
 
             if (prev_to_open == string::npos) {
                 // we have a gap at the start position
@@ -608,10 +605,15 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
             ++it;
         }
         int fill_len = size - prev_to_open;
-        if (prev_to_open != string::npos  &&  fill_len > 0  &&
-            pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
-            // there is gap on the right
-            buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
+        if (prev_to_open != string::npos  &&  fill_len > 0) {
+            if (pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
+                // there is gap on the right
+                buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
+            }
+            else {
+                // adjust buffer length
+                buffer.resize(prev_to_open);
+            }
         }
         //LOG_POST_X(3, buffer);
     }

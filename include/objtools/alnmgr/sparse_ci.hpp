@@ -38,9 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-////////////////////////////////////////////////////////////////////////////////
-/// CSparseSegment - IAlnSegment implementation for CAlnMap::CAlnChunk
-
+/// Implementation of IAlnSegment for CSparseAln.
 class NCBI_XALNMGR_EXPORT CSparseSegment : public  IAlnSegment
 {
 public:
@@ -70,33 +68,38 @@ private:
 };
 
 
-////////////////////////////////////////////////////////////////////////////////
-/// CSparseIterator - IAlnSegmentIterator implementation for CAlnMap::CAlnChunkVec
-
+/// Implementation of IAlnSegmentIterator for CSparseAln.
 class NCBI_XALNMGR_EXPORT CSparse_CI : public IAlnSegmentIterator
 {
 public:
     typedef CPairwise_CI::TSignedRange TSignedRange;
     typedef CSparseAln::TDim           TDim;
 
+    /// Create 'empty' iterator.
     CSparse_CI(void);
-    CSparse_CI(const CSparseAln&   anchored,
+
+    /// Iterate the specified row of the alignment.
+    CSparse_CI(const CSparseAln&   aln,
                TDim                row,
                EFlags              flags);
-    CSparse_CI(const CSparseAln&   anchored,
+
+    /// Iterate the selected range on the alignment row.
+    CSparse_CI(const CSparseAln&   aln,
                TDim                row,
                EFlags              flags,
                const TSignedRange& range);
+
     CSparse_CI(const CSparse_CI& orig);
 
-    virtual ~CSparse_CI();
+    virtual ~CSparse_CI(void);
 
+    /// Create a copy of the iterator.
     virtual IAlnSegmentIterator* Clone(void) const;
 
-    // returns true if iterator points to a valid segment
+    /// Return true if iterator points to a valid segment
     virtual operator bool(void) const;
 
-    /// postfix operators are not defined to avoid performance overhead
+    // Postfix operators are not defined to avoid performance overhead.
     virtual IAlnSegmentIterator& operator++(void);
 
     virtual bool operator==(const IAlnSegmentIterator& it) const;
@@ -105,6 +108,7 @@ public:
     virtual const value_type& operator*(void) const;
     virtual const value_type* operator->(void) const;
 
+    /// Check if the anchor row coordinates are on plus strand.
     bool IsAnchorDirect(void) const { return m_AnchorDirect; }
 
 private:

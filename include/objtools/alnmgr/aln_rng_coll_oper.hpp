@@ -41,15 +41,19 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Subtract one range collection from another. Both first and second
+/// sequences are checked, so that the result does not intersect with
+/// any row of the minuend.
 template<class TAlnRng>
-void SubtractAlnRngCollections(const CAlignRangeCollection<TAlnRng>& minuend,
-                               const CAlignRangeCollection<TAlnRng>& subtrahend,
-                               CAlignRangeCollection<TAlnRng>& difference)
+void SubtractAlnRngCollections(
+    const CAlignRangeCollection<TAlnRng>& minuend,
+    const CAlignRangeCollection<TAlnRng>& subtrahend,
+    CAlignRangeCollection<TAlnRng>&       difference)
 {
     typedef CAlignRangeCollection<TAlnRng> TAlnRngColl;
     _ASSERT( !subtrahend.empty() );
 
-    /// Calc differece on the first row
+    // Calc differece on the first row
     TAlnRngColl difference_on_first(minuend.GetPolicyFlags());
     {
         typename TAlnRngColl::const_iterator subtrahend_it = subtrahend.begin();
@@ -61,7 +65,7 @@ void SubtractAlnRngCollections(const CAlignRangeCollection<TAlnRng>& minuend,
         }
     }
 
-    /// Second row
+    // Second row
     typedef CAlignRangeCollExtender<TAlnRngColl> TAlnRngCollExt;
     TAlnRngCollExt subtrahend_ext(subtrahend);
     subtrahend_ext.UpdateIndex();
@@ -69,9 +73,7 @@ void SubtractAlnRngCollections(const CAlignRangeCollection<TAlnRng>& minuend,
     typename TAlnRngCollExt::const_iterator subtrahend_ext_it = subtrahend_ext.begin();
     TAlnRngCollExt diff_on_first_ext(difference_on_first);
     diff_on_first_ext.UpdateIndex();
-    ITERATE (typename TAlnRngCollExt,
-             minuend_it,
-             diff_on_first_ext) {
+    ITERATE (typename TAlnRngCollExt, minuend_it, diff_on_first_ext) {
         SubtractOnSecond(*(minuend_it->second),
                          subtrahend_ext,
                          difference,
@@ -84,38 +86,39 @@ template<class Range>
 struct PRangeLess
 {
     typedef typename Range::position_type   position_type;
-    bool    operator()(const Range& r, position_type pos)  
-    { 
+    bool    operator()(const Range& r, position_type pos)
+    {
         return r.GetFirstToOpen() <= pos;
-    }    
-    bool    operator()(position_type pos, const Range& r)  
-    { 
-        return pos < r.GetFirstToOpen();
-    }    
-    bool    operator()(const Range& r1, const Range& r2)  
-    { 
-        return r1.GetFirstToOpen() <= r2.GetFirstToOpen();
-    }    
-    bool    operator()(const Range* r, position_type pos)  
-    { 
-        return r->GetFirstToOpen() <= pos;  
     }
-    bool    operator()(position_type pos, const Range* r)  
-    { 
+    bool    operator()(position_type pos, const Range& r)
+    {
+        return pos < r.GetFirstToOpen();
+    }
+    bool    operator()(const Range& r1, const Range& r2)
+    {
+        return r1.GetFirstToOpen() <= r2.GetFirstToOpen();
+    }
+    bool    operator()(const Range* r, position_type pos)
+    {
+        return r->GetFirstToOpen() <= pos;
+    }
+    bool    operator()(position_type pos, const Range* r)
+    {
         return pos < r->GetFirstToOpen();
     }
-    bool    operator()(const Range* r1, const Range* r2)  
-    { 
-        return r1->GetFirstToOpen() <= r2->GetFirstToOpen();  
+    bool    operator()(const Range* r1, const Range* r2)
+    {
+        return r1->GetFirstToOpen() <= r2->GetFirstToOpen();
     }
 };
 
 
 template<class TAlnRng>
-void SubtractOnFirst(const TAlnRng& minuend,
-                     const CAlignRangeCollection<TAlnRng>& subtrahend,
-                     CAlignRangeCollection<TAlnRng>& difference,
-                     typename CAlignRangeCollection<TAlnRng>::const_iterator& r_it) 
+void SubtractOnFirst(
+    const TAlnRng&                                           minuend,
+    const CAlignRangeCollection<TAlnRng>&                    subtrahend,
+    CAlignRangeCollection<TAlnRng>&                          difference,
+    typename CAlignRangeCollection<TAlnRng>::const_iterator& r_it) 
 {
     PRangeLess<TAlnRng> p;
 
@@ -161,7 +164,8 @@ void SubtractOnFirst(const TAlnRng& minuend,
             // x--)
             difference.insert(r);
             return;
-        } else {
+        }
+        else {
             //     x----)
             // x----...
             tmp_r = r;
@@ -177,32 +181,30 @@ struct PItLess
 {
     typedef typename TAlnRng::position_type position_type;
     typedef typename CAlignRangeCollExtender<CAlignRangeCollection<TAlnRng> >::TFrom2Range::value_type value_type;
-    bool operator()
-        (const value_type& p,
-         position_type pos)
-    { 
-        return p.second->GetSecondTo() < pos;  
-    }    
-    bool operator()
-        (position_type pos,
-         const value_type& p)
-    { 
-        return pos < p.second->GetSecondTo();  
-    }    
-    bool operator()
-        (const value_type& p1,
-         const value_type& p2)
-    { 
-        return p1.second->GetSecondTo() < p2.second->GetSecondTo();  
-    }    
+    bool operator() (const value_type& p,
+                     position_type pos)
+    {
+        return p.second->GetSecondTo() < pos;
+    }
+    bool operator() (position_type pos,
+                     const value_type& p)
+    {
+        return pos < p.second->GetSecondTo();
+    }
+    bool operator() (const value_type& p1,
+                     const value_type& p2)
+    {
+        return p1.second->GetSecondTo() < p2.second->GetSecondTo();
+    }
 };
 
 
 template<class TAlnRng>
-void SubtractOnSecond(const TAlnRng& minuend,
-                      const CAlignRangeCollExtender<CAlignRangeCollection<TAlnRng> >& subtrahend_ext,
-                      CAlignRangeCollection<TAlnRng>& difference,
-                      typename CAlignRangeCollExtender<CAlignRangeCollection<TAlnRng> >::const_iterator& r_it)
+void SubtractOnSecond(
+    const TAlnRng& minuend,
+    const CAlignRangeCollExtender<CAlignRangeCollection<TAlnRng> >& subtrahend_ext,
+    CAlignRangeCollection<TAlnRng>& difference,
+    typename CAlignRangeCollExtender<CAlignRangeCollection<TAlnRng> >::const_iterator& r_it)
 {
     if (minuend.GetSecondFrom() < 0) {
         difference.insert(minuend);
@@ -212,7 +214,7 @@ void SubtractOnSecond(const TAlnRng& minuend,
     PItLess<TAlnRng> p;
 
     r_it = std::lower_bound(r_it,
-                            subtrahend_ext.end(), 
+                            subtrahend_ext.end(),
                             minuend.GetSecondFrom(),
                             p); /* NCBI_FAKE_WARNING: WorkShop */
 
@@ -253,7 +255,8 @@ void SubtractOnSecond(const TAlnRng& minuend,
             // x--)
             difference.insert(r);
             return;
-        } else {
+        }
+        else {
             //     x----)
             // x----...
             tmp_r = r;

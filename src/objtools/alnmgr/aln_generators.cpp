@@ -64,8 +64,8 @@ USING_SCOPE(objects);
 
 
 CRef<CSeq_align>
-CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
-                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                              CSeq_align::TSegs::E_Choice choice,
                               CScope* scope)
 {
     CRef<CSeq_align> sa(new CSeq_align);
@@ -102,8 +102,8 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
 
 
 CRef<CSeq_align>
-CreateSeqAlignFromPairwiseAln(const CPairwiseAln& pairwise_aln,   ///< input
-                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+CreateSeqAlignFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                              CSeq_align::TSegs::E_Choice choice,
                               CScope* scope)
 {
     CRef<CSeq_align> sa(new CSeq_align);
@@ -339,20 +339,20 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln,
         }
     }
 
-    /// Create a dense-seg
+    // Create a dense-seg
     CRef<CDense_seg> ds(new CDense_seg);
 
-    /// Determine dimensions
+    // Determine dimensions
     CDense_seg::TNumseg& numseg = ds->SetNumseg();
     numseg = anchor_segments.size();
     CDense_seg::TDim& dim = ds->SetDim();
     dim = anchored_aln.GetDim();
 
-    /// Tmp vars
+    // Tmp vars
     CDense_seg::TDim row;
     CDense_seg::TNumseg seg;
 
-    /// Ids
+    // Ids
     CDense_seg::TIds& ids = ds->SetIds();
     ids.resize(dim);
     for (row = 0;  row < dim;  ++row) {
@@ -360,7 +360,7 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln,
         SerialAssign<CSeq_id>(*ids[row], anchored_aln.GetId(dim - row - 1)->GetSeqId());
     }
 
-    /// Lens
+    // Lens
     CDense_seg::TLens& lens = ds->SetLens();
     lens.resize(numseg);
     TAnchorSegments::const_iterator seg_i = anchor_segments.begin();
@@ -370,11 +370,11 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln,
 
     int matrix_size = dim * numseg;
 
-    /// Strands (just resize, will set while setting starts)
+    // Strands (just resize, will set while setting starts)
     CDense_seg::TStrands& strands = ds->SetStrands();
     strands.resize(matrix_size, eNa_strand_unknown);
 
-    /// Starts and strands
+    // Starts and strands
     CDense_seg::TStarts& starts = ds->SetStarts();
     starts.resize(matrix_size, -1);
     for (row = 0;  row < dim;  ++row) {
@@ -439,11 +439,11 @@ CRef<CDense_seg>
 CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
                             CScope* scope)
 {
-    /// Create a dense-seg
+    // Create a dense-seg
     CRef<CDense_seg> ds(new CDense_seg);
 
 
-    /// Determine dimensions
+    // Determine dimensions
     CDense_seg::TNumseg& numseg = ds->SetNumseg();
     numseg = pairwise_aln.size();
     ds->SetDim(2);
@@ -459,19 +459,19 @@ CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
     ids.resize(2);
 
 
-    /// Ids
+    // Ids
     ids[0].Reset(new CSeq_id);
     SerialAssign<CSeq_id>(*ids[0], pairwise_aln.GetFirstId()->GetSeqId());
     ids[1].Reset(new CSeq_id);
     SerialAssign<CSeq_id>(*ids[1], pairwise_aln.GetSecondId()->GetSeqId());
 
 
-    /// Tmp vars
+    // Tmp vars
     CDense_seg::TNumseg seg = 0;
     int matrix_pos = 0;
 
 
-    /// Main loop to set all values
+    // Main loop to set all values
     ITERATE(CPairwiseAln::TAlnRngColl, aln_rng_i, pairwise_aln) {
         starts[matrix_pos++] = aln_rng_i->GetFirstFrom();
         if ( !aln_rng_i->IsDirect() ) {
@@ -516,7 +516,7 @@ void InitSplicedsegFromPairwiseAln(CSpliced_seg& spliced_seg,
     // The other row is genomic.
     _ASSERT(pairwise_aln.GetSecondBaseWidth() == 1);
 
-    /// Ids
+    // Ids
     CRef<CSeq_id> product_id(new CSeq_id);
     product_id->Assign(pairwise_aln.GetFirstId()->GetSeqId());
     spliced_seg.SetProduct_id(*product_id);
@@ -552,7 +552,7 @@ void InitSplicedsegFromPairwiseAln(CSpliced_seg& spliced_seg,
     TRng ex_prod_rg;
     TRng ex_gen_rg;
 
-    /// Main loop to set all values
+    // Main loop to set all values
     ITERATE(CPairwiseAln::TAlnRngColl, rg_it, pairwise_aln) {
         const CPairwiseAln::TAlnRng& rg = *rg_it;
 
@@ -742,17 +742,17 @@ CRef<CSpliced_seg>
 CreateSplicedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
                                 CScope* scope)
 {
-    /// Create a dense-seg
+    // Create a dense-seg
     CRef<CSpliced_seg> ss(new CSpliced_seg);
     InitSplicedsegFromPairwiseAln(*ss, pairwise_aln, scope);
     return ss;
 }
 
 
-void
-s_TranslatePairwise(CPairwiseAln& out_pw,   ///< output pairwise (needs to be empty)
-                    const CPairwiseAln& pw, ///< input pairwise to translate from
-                    const CPairwiseAln& tr) ///< translating pairwise
+void s_TranslatePairwise(
+    CPairwiseAln& out_pw,   // output pairwise (needs to be empty)
+    const CPairwiseAln& pw, // input pairwise to translate from
+    const CPairwiseAln& tr) // translating pairwise
 {
     ITERATE (CPairwiseAln, it, pw) {
         CPairwiseAln::TAlnRng ar = *it;
@@ -765,13 +765,12 @@ s_TranslatePairwise(CPairwiseAln& out_pw,   ///< output pairwise (needs to be em
 typedef CAnchoredAln::TDim TDim;
 
 
-void
-CreateSeqAlignFromEachPairwiseAln
-(const CAnchoredAln::TPairwiseAlnVector pairwises, ///< input
- TDim anchor,                                      ///< choice of anchor
- vector<CRef<CSeq_align> >& out_seqaligns,         ///< output
- CSeq_align::TSegs::E_Choice choice,      ///< choice of alignment 'segs'
- CScope* scope)
+void CreateSeqAlignFromEachPairwiseAln(
+    const CAnchoredAln::TPairwiseAlnVector pairwises,
+    TDim                                   anchor,
+    vector<CRef<CSeq_align> >&             out_seqaligns,
+    CSeq_align::TSegs::E_Choice            choice,
+    CScope*                                scope)
 {
     out_seqaligns.resize(pairwises.size() - 1);
     for (TDim row = 0, sa_idx = 0;

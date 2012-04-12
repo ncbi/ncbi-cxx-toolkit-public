@@ -46,18 +46,23 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+/// CSeq_align container. Stores a list of alignments, prevents insertion of
+/// duplicate objects, splits align-sets if necessary (on by default).
 class CAlnContainer
 {
 public:
-    CAlnContainer() :
-        m_SplitDisc(true)
-    {};
+    CAlnContainer()
+        : m_SplitDisc(true)
+    {
+    }
 
-    virtual ~CAlnContainer() {};
+    virtual ~CAlnContainer(void)
+    {
+    }
 
 private:
     typedef CSeq_align::TSegs TSegs;
-    typedef list<CConstRef<CSeq_align> > TAlnSet;
+    typedef list< CConstRef<CSeq_align> > TAlnSet;
 	TAlnSet m_AlnSet;
 
 public:
@@ -65,27 +70,33 @@ public:
     typedef TAlnSet::const_iterator const_iterator;
     typedef TAlnSet::const_reverse_iterator const_reverse_iterator;
 
-
-    /// Split Disc alignments?
-    void SetSplitDisc() {
+    /// Enable/disable splitting disc alignments.
+    void SetSplitDisc(void)
+    {
         m_SplitDisc = true;
     }
-    void UnsetSplitDisc() {
+    void UnsetSplitDisc(void)
+    {
         m_SplitDisc = false;
     }
-    bool IsSetSplitDisc() {
+    bool IsSetSplitDisc(void)
+    {
         return m_SplitDisc;
     }
 
+    /// Insert new CSeq_align into the list. Don't insert multiple pointers to
+    /// the same object.
+    /// @return
+    ///   Return iterator poiting to the inserted (or the existing) object.
     const_iterator insert(const CSeq_align& seq_align)
     {
 #if _DEBUG
         seq_align.Validate(true);
 #endif
         const_iterator ret_it = end();
-        switch (seq_align.GetSegs().Which()) {
+        switch ( seq_align.GetSegs().Which() ) {
         case TSegs::e_Disc:
-            if (m_SplitDisc) {
+            if ( m_SplitDisc ) {
                 ITERATE(CSeq_align_set::Tdata,
                         seq_align_it,
                         seq_align.GetSegs().GetDisc().Get()) {
@@ -93,6 +104,7 @@ public:
                 }
                 break;
             }
+            // If not splitting disc aligns, proceed to the common case.
         case TSegs::e_Dendiag:
         case TSegs::e_Denseg:
         case TSegs::e_Std:
@@ -100,43 +112,51 @@ public:
         case TSegs::e_Spliced:
         case TSegs::e_Sparse:
 			NON_CONST_ITERATE(TAlnSet, iter, m_AlnSet) {
-				if( *iter == &seq_align )
+				if (*iter == &seq_align) {
+                    // Return the existing object.
 					return iter;
+                }
 			}
-            ret_it =
-                m_AlnSet.insert(m_AlnSet.end(), CConstRef<CSeq_align>(&seq_align));
+            ret_it = m_AlnSet.insert(m_AlnSet.end(),
+                CConstRef<CSeq_align>(&seq_align));
             break;
         case TSegs::e_not_set:
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "Seq-align.segs not set.");
+                "Seq-align.segs not set.");
         default:
             NCBI_THROW(CSeqalignException, eUnsupported,
-                       "Unsupported alignment type.");
+                "Unsupported alignment type.");
         }
         return ret_it;
     }
 
-    const_iterator begin() const {
+    const_iterator begin(void) const
+    {
         return m_AlnSet.begin();
     }
 
-    const_iterator end() const {
+    const_iterator end(void) const
+    {
         return m_AlnSet.end();
     }
 
-    const_reverse_iterator rbegin() const {
+    const_reverse_iterator rbegin(void) const
+    {
         return m_AlnSet.rbegin();
     }
 
-    const_reverse_iterator rend() const {
+    const_reverse_iterator rend(void) const
+    {
         return m_AlnSet.rend();
     }
 
-    size_type size() const {
+    size_type size(void) const
+    {
         return m_AlnSet.size();
     }
 
-    bool empty() const {
+    bool empty(void) const
+    {
         return m_AlnSet.empty();
     }
 

@@ -46,30 +46,40 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+/// Wrapper interface for seq-ids used in alignments. In addition to seq-id
+/// must provide the corresponding sequence type and base width.
+/// For implementation see CAlnSeqId.
+/// @sa CAlnSeqId
 class NCBI_XALNMGR_EXPORT IAlnSeqId
 {
 public:
-    // Comparison operators
+    /// Comparison operators
     virtual bool operator== (const IAlnSeqId& id) const = 0;
     virtual bool operator!= (const IAlnSeqId& id) const = 0;
     virtual bool operator<  (const IAlnSeqId& id) const = 0;
 
-    virtual const CSeq_id& GetSeqId() const = 0;
+    /// Get CSeq_id
+    virtual const CSeq_id& GetSeqId(void) const = 0;
 
+    /// Get string representation of the seq-id
     virtual string AsString(void) const = 0;
 
-    // Check sequence type
     typedef CSeq_inst::TMol TMol;
+    /// Check sequence type
     virtual TMol GetSequenceType(void) const = 0;
     bool IsProtein(void) const;
     bool IsNucleotide(void) const;
 
-    /// Base width
-    virtual int GetBaseWidth() const = 0;
+    /// Get base width for the sequence.
+    /// @return 1 for nucleotides, 3 for proteins
+    virtual int GetBaseWidth(void) const = 0;
+    /// Set base width for the sequence.
     virtual void SetBaseWidth(int base_width) = 0;
 
     /// Virtual destructor
-    virtual ~IAlnSeqId() {};
+    virtual ~IAlnSeqId(void)
+    {
+    }
 };
 
 
@@ -80,8 +90,9 @@ struct SAlnSeqIdIRefComp :
     public binary_function<TAlnSeqIdIRef, TAlnSeqIdIRef, bool>
 {
     bool operator()(const TAlnSeqIdIRef& l_id_ref,
-                    const TAlnSeqIdIRef& r_id_ref) const {
-        return *l_id_ref < *r_id_ref; 
+                        const TAlnSeqIdIRef& r_id_ref) const
+    {
+        return *l_id_ref < *r_id_ref;
     }
 };
 
@@ -90,51 +101,56 @@ struct SAlnSeqIdRefEqual :
     public binary_function<TAlnSeqIdIRef, TAlnSeqIdIRef, bool>
 {
     bool operator()(const TAlnSeqIdIRef& l_id_ref,
-                    const TAlnSeqIdIRef& r_id_ref) const {
-        return *l_id_ref == *r_id_ref; 
+                        const TAlnSeqIdIRef& r_id_ref) const
+    {
+        return *l_id_ref == *r_id_ref;
     }
 };
 
 
-class NCBI_XALNMGR_EXPORT CAlnSeqId : 
-    public CObject, 
+/// Default IAlnSeqId implementation based on CSeq_id_Handle.
+/// @sa CAlnSeqIdConverter
+/// @sa CAlnSeqIdsExtract
+class NCBI_XALNMGR_EXPORT CAlnSeqId :
+    public CObject,
     public CSeq_id_Handle,
     public IAlnSeqId
 {
 public:
     /// Constructor
-    CAlnSeqId(const CSeq_id& id) :
-        CSeq_id_Handle(CSeq_id_Handle::GetHandle(id)),
-        m_Seq_id(&id),
-        m_Mol(CSeq_inst::eMol_not_set),
-        m_BaseWidth(1)
-    {};
+    CAlnSeqId(const CSeq_id& id)
+        : CSeq_id_Handle(CSeq_id_Handle::GetHandle(id)),
+          m_Seq_id(&id),
+          m_Mol(CSeq_inst::eMol_not_set),
+          m_BaseWidth(1)
+    {
+    }
 
-    virtual const CSeq_id& GetSeqId() const;
+    virtual const CSeq_id& GetSeqId(void) const;
 
-    // Sequence label
+    /// Sequence label - same as CSeq_id_Handle::AsString()
     virtual string AsString(void) const;
 
-    // Comparison operators
+    /// Comparison operators
     virtual bool operator== (const IAlnSeqId& id) const;
     virtual bool operator!= (const IAlnSeqId& id) const;
     virtual bool operator<  (const IAlnSeqId& id) const;
 
-    // Bioseq handle
+    /// Store bioseq handle for the id.
     virtual void SetBioseqHandle(const CBioseq_Handle& handle);
 
-    // Check sequence type
+    /// Check sequence type
     virtual TMol GetSequenceType(void) const;
 
-    // Base Width
+    /// Base Width - 1 = nucleotide, 3 = protein.
     virtual int GetBaseWidth(void) const;
     virtual void SetBaseWidth(int base_width);
 
 private:
     CConstRef<CSeq_id> m_Seq_id;
-    CBioseq_Handle m_BioseqHandle;
-    mutable TMol m_Mol;
-    int m_BaseWidth;
+    CBioseq_Handle     m_BioseqHandle;
+    mutable TMol       m_Mol;
+    int                m_BaseWidth;
 };
 
 

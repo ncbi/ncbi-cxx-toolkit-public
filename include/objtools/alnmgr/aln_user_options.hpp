@@ -44,79 +44,87 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Options for different alignment manager operations.
 class CAlnUserOptions : public CObject
 {
 public:
     typedef CPairwiseAln::TPos TPos;
 
+    /// Row direction flags.
+    /// NOTE: in most cases directions are relative to the anchor row.
     enum EDirection {
-        eBothDirections   = 0, ///< No filtering: use both direct and
-                               ///  reverse sequences.
+        /// No filtering: use both direct and reverse sequences.
+        eBothDirections   = 0,
 
-        eDirect           = 1, ///< Use only sequences whose strand is
-                               ///  the same as that of the anchor
+        /// Use only sequences whose strand is the same as that of the anchor.
+        eDirect           = 1,
 
-        eReverse          = 2,  ///< Use only sequences whose strand
-                                ///  is opposite to that of the anchor
+        /// Use only sequences whose strand is opposite to that of the anchor.
+        eReverse          = 2,
 
+        /// By default don't filter by direction.
         eDefaultDirection = eBothDirections
     };
     EDirection m_Direction;
 
+    /// Alignment merging algorithm.
     enum EMergeAlgo {
-        eMergeAllSeqs      = 0, ///< Merge all sequences [greedy algo]
+        /// Merge all sequences (greedy algo).
+        eMergeAllSeqs      = 0,
 
-        eQuerySeqMergeOnly = 1, ///< Only put the query seq on same
-                                ///  row [input order is not
-                                ///  significant]
+        /// Only put the query seq on same row (input order is not significant).
+        eQuerySeqMergeOnly = 1,
 
-        ePreserveRows      = 2, ///< Preserve all rows as they were in
-                                ///  the input (e.g. self-align a
-                                ///  sequence) (coresponds to separate
-                                ///  alignments) [greedy algo]
+        /// Preserve all rows as they were in the input (e.g. self-align a
+        /// sequence). Greedy algo.
+        ePreserveRows      = 2,
 
         eDefaultMergeAlgo  = eMergeAllSeqs
     };
     EMergeAlgo m_MergeAlgo;
 
+    /// Additional merge flags.
     enum EMergeFlags {
-        fTruncateOverlaps   = 1 << 0, ///< Otherwise put on separate
-                                      ///  rows
+        /// Truncate overlapping ranges. If not set, the overlaps are put
+        /// on separate rows.
+        fTruncateOverlaps   = 1 << 0,
 
-        fAllowMixedStrand   = 1 << 1, ///< Allow mixed strand on the
-                                      ///  same row.  An experimental
-                                      ///  feature for advance users.
-                                      ///  Not supported for all
-                                      ///  alignment types.
+        /// Allow mixed strands on the same row. Experimental feature,
+        /// not supported for all alignment types.
+        fAllowMixedStrand   = 1 << 1,
 
-        fAllowTranslocation = 1 << 2, ///< Allow translocations on the
-                                      ///  same row
+        /// Allow translocations on the same row.
+        fAllowTranslocation = 1 << 2,
 
-        fSkipSortByScore    = 1 << 3, ///< In greedy algos, skip
-                                      ///  sorting input alignments by
-                                      ///  score thus allowing for
-                                      ///  user-defined sort order.
+        /// In greedy algos, skip sorting input alignments by score thus
+        /// allowing for user-defined sort order.
+        fSkipSortByScore    = 1 << 3,
 
-        fUseAnchorAsAlnSeq  = 1 << 4, ///< (Not recommended!) Use the
-                                      ///  anchor sequence as the
-                                      ///  alignment sequence.
-                                      ///  Otherwise (the default) a
-                                      ///  pseudo sequence is created
-                                      ///  whose coordinates are the
-                                      ///  alignment coordinates.
-                                      ///  WARNING: This will make all
-                                      ///  CSparseAln::*AlnPos*
-                                      ///  methods incosistent with
-                                      ///  CAlnVec::*AlnPos*.
+        /// Use the anchor sequence as the alignment sequence. Otherwise
+        /// (by default) a pseudo sequence is created whose coordinates are
+        /// the alignment coordinates.
+        /// NOTE: Setting this flag is not recommended. Using it will make
+        /// all CSparseAln::*AlnPos* methods inconsistent with
+        /// CAlnVec::*AlnPos* methods.
+        fUseAnchorAsAlnSeq  = 1 << 4,
 
-        fAnchorRowFirst     = 1 << 5, ///< Anchor row is stored in the first
-                                      ///  pairwise alignment, not the last
-                                      ///  one.
+        /// Store anchor row in the first pairwise alignment (by default it's
+        /// stored in the last one).
+        fAnchorRowFirst     = 1 << 5,
 
-        fIgnoreInsertions   = 1 << 6  ///< Do not store insertions
+        /// Do not collect and store insertions (gaps on the anchor).
+        fIgnoreInsertions   = 1 << 6
     };
     typedef int TMergeFlags;
-    TMergeFlags  m_MergeFlags;
+    TMergeFlags m_MergeFlags;
+
+    bool m_ClipAlignment;
+    objects::CBioseq_Handle m_ClipSeq;
+    TPos m_ClipStart;
+    TPos m_ClipEnd;
+
+    bool m_ExtendAlignment;
+    TPos m_Extension; 
 
     enum EShowUnalignedOption {
         eHideUnaligned,
@@ -124,18 +132,10 @@ public:
         eShowAllUnaligned
     };
 
-    bool    m_ClipAlignment;
-    objects::CBioseq_Handle  m_ClipSeq;
-    TPos m_ClipStart;
-    TPos m_ClipEnd;
-
-    bool m_ExtendAlignment;
-    TPos m_Extension; 
-
-    EShowUnalignedOption  m_UnalignedOption;
+    EShowUnalignedOption m_UnalignedOption;
     TPos m_ShowUnalignedN;
 
-    CAlnUserOptions()
+    CAlnUserOptions(void)
     :   m_Direction(eDefaultDirection),
         m_MergeAlgo(eDefaultMergeAlgo),
         m_MergeFlags(0),
@@ -148,30 +148,34 @@ public:
     {
     }
 
-    void SetAnchorId(const TAlnSeqIdIRef& anchor_id) {
+    /// Set anchor id.
+    void SetAnchorId(const TAlnSeqIdIRef& anchor_id)
+    {
         m_AnchorId = anchor_id;
     }
 
-
-    const TAlnSeqIdIRef& GetAnchorId() const {
+    /// Get anchor id.
+    const TAlnSeqIdIRef& GetAnchorId(void) const
+    {
         return m_AnchorId;
     }
 
-
-    void    SetMergeFlags(TMergeFlags flags, bool set)  {
-        if(set) {
+    /// Set/clear merge flags.
+    void SetMergeFlags(TMergeFlags flags, bool set)
+    {
+        if (set) {
             m_MergeFlags |= flags;
-        } else {
+        }
+        else {
             m_MergeFlags &= ~flags;
         }
     }
 
+    /// Anchor bioseq - if null then a multiple alignment shall be built.
+    objects::CBioseq_Handle m_Anchor;
 
-    objects::CBioseq_Handle  m_Anchor; // if null then a multiple alignment shall be built    
 private:
     TAlnSeqIdIRef m_AnchorId;
-    
-
 
 //     enum EAddFlags {
 //         // Determine score of each aligned segment in the process of mixing
@@ -184,7 +188,7 @@ private:
 //         fForceTranslation     = 0x02,
 
 //         // Used for mapping sequence to itself
-//         fPreserveRows         = 0x04 
+//         fPreserveRows         = 0x04
 //     };
 
 //     enum EMergeFlags {
@@ -195,12 +199,12 @@ private:
 //         fRemoveLeadTrailGaps  = 0x0010, // Remove all leading or trailing gaps
 //         fSortSeqsByScore      = 0x0020, // Better scoring seqs go towards the top
 //         fSortInputByScore     = 0x0040, // Process better scoring input alignments first
-//         fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row, 
+//         fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row,
 //                                         // other seqs from diff densegs go to diff rows
 //         fFillUnalignedRegions = 0x0100,
 //         fAllowTranslocation   = 0x0200  // allow translocations when truncating overlaps
 //     };
-    
+
 };
 
 

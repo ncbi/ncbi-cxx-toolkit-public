@@ -45,17 +45,19 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+/// Convert CAnchoredAln to seq-align of the selected type.
 NCBI_XALNMGR_EXPORT
 CRef<CSeq_align>
-CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,   ///< input
-                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                              CSeq_align::TSegs::E_Choice choice,
                               CScope* scope = NULL);
 
 
+/// Convert CPairwiseAln to seq-align of the selected type.
 NCBI_XALNMGR_EXPORT
 CRef<CSeq_align>
-CreateSeqAlignFromPairwiseAln(const CPairwiseAln& pairwise_aln,   ///< input
-                              CSeq_align::TSegs::E_Choice choice, ///< choice of alignment 'segs'
+CreateSeqAlignFromPairwiseAln(const CPairwiseAln& pairwise_aln,
+                              CSeq_align::TSegs::E_Choice choice,
                               CScope* scope = NULL);
 
 
@@ -81,6 +83,11 @@ CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
                                CScope* scope = NULL);
 
 NCBI_XALNMGR_EXPORT
+CRef<CSpliced_seg>
+CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
+                                CScope* scope = NULL);
+
+NCBI_XALNMGR_EXPORT
 CRef<CDense_seg>
 CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
                             CScope* scope = NULL);
@@ -97,28 +104,36 @@ CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 
 NCBI_XALNMGR_EXPORT
 CRef<CSpliced_seg>
-CreateSplicedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
-                                CScope* scope = NULL);
-
-
-NCBI_XALNMGR_EXPORT
-CRef<CSpliced_seg>
 CreateSplicedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
                                 CScope* scope = NULL);
 
 
+/// Create seq-align from each of the pairwise alignments vs the selected
+/// anchor row. Each pairwise alignment's second sequence is aligned to the
+/// anchor pairwise alignment's second sequence.
+/// @param pariwises
+///   Input vector of CPairwiseAln.
+/// @param anchor
+///   Index of the pairwise alignment to be used as the anchor.
+/// @param out_seqaligns
+///   Output vector of seq-aligns. Number of objects put in the vector
+///   is size of the input vector less one (the anchor is not aligned to
+///   itself).
+/// @param choice
+///   Type of the output seq-aligns.
+/// @param scope
+///   Optional scope (not required to build most seq-align types).
 NCBI_XALNMGR_EXPORT
-void
-CreateSeqAlignFromEachPairwiseAln
-(const CAnchoredAln::TPairwiseAlnVector pairwises, ///< input
- CAnchoredAln::TDim anchor,                        ///< choice of anchor
- vector<CRef<CSeq_align> >& out_seqaligns,         ///< output
- CSeq_align::TSegs::E_Choice choice,      ///< choice of alignment 'segs'
- CScope* scope = NULL);
+void CreateSeqAlignFromEachPairwiseAln(
+    const CAnchoredAln::TPairwiseAlnVector pairwises,
+    CAnchoredAln::TDim                     anchor,
+    vector<CRef<CSeq_align> >&             out_seqaligns,
+    CSeq_align::TSegs::E_Choice            choice,
+    CScope*                                scope = NULL);
 
 
-/// Convert source alignment to a new type. For spliced-segs
-/// the anchor_row is used as product row.
+/// Convert source alignment to a new type. For spliced-segs the anchor_row
+/// is used as product row.
 NCBI_XALNMGR_EXPORT
 CRef<CSeq_align>
 ConvertSeq_align(const CSeq_align& src,

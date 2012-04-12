@@ -46,67 +46,83 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Sparse alignment
 class NCBI_XALNMGR_EXPORT CSparseAln : public CObject, public IAlnExplorer
 {
 public:
-    /// Types
     typedef CPairwiseAln::TRng TRng;
     typedef CPairwiseAln::TAlnRng TAlnRng;
     typedef CPairwiseAln::TAlnRngColl TAlnRngColl;
     typedef CAnchoredAln::TDim TDim; ///< Synonym of TNumrow
 
     /// Constructor
+    /// @param anchored_aln
+    ///   Input CAnchoredAln object. Should be built using BuildAln function
+    ///   for the alignment coordinates to be correct.
+    /// @param scope
+    ///   CScope used to fetch sequence data.
+    /// @sa BuildAln
     CSparseAln(const CAnchoredAln& anchored_aln,
                objects::CScope& scope);
 
     /// Destructor
-    virtual ~CSparseAln();
+    virtual ~CSparseAln(void);
 
     /// Gap character modifier
     void SetGapChar(TResidue gap_char);
 
     /// Scope accessor
-    CRef<objects::CScope> GetScope() const;
+    CRef<objects::CScope> GetScope(void) const;
 
     /// Alignment dimension (number of sequence rows in the alignment)
-    TDim GetDim() const;
+    TDim GetDim(void) const;
     /// Synonym of the above
-    TNumrow GetNumRows() const {
-        return GetDim();
-    }
+    TNumrow GetNumRows(void) const { return GetDim(); }
 
-    /// Seq ids
-    const objects::CSeq_id&  GetSeqId(TNumrow row) const;
+    /// Get seq-id for the row.
+    const objects::CSeq_id& GetSeqId(TNumrow row) const;
 
+    /// Get whole alignment range.
+    TRng GetAlnRange(void) const;
 
-    /// Alignment Range
-    TRng GetAlnRange() const;
+    /// Get pairwise alignment for the row.
+    const TAlnRngColl& GetAlignCollection(TNumrow row);
 
-    const TAlnRngColl&  GetAlignCollection(TNumrow row);
+    /// Check if anchor is set - always true for sparse alignments.
+    bool IsSetAnchor(void) const { return true; }
 
-    /// Anchor
-    bool    IsSetAnchor() const {
-        return true; /// Always true for sparse alignments
-    }
-    TNumrow GetAnchor() const {
+    /// Get anchor row index.
+    TNumrow GetAnchor(void) const
+    {
         return m_Aln->GetAnchorRow();
     }
 
-    /// Sequence range in alignment coords (strand ignored)
+    /// Get sequence range in alignment coords (strand ignored).
+    TSignedRange GetSeqAlnRange(TNumrow row) const;
     TSignedSeqPos GetSeqAlnStart(TNumrow row) const;
     TSignedSeqPos GetSeqAlnStop(TNumrow row) const;
-    TSignedRange  GetSeqAlnRange (TNumrow row) const;
 
-    /// Sequence range in sequence coords
+    /// Get sequence range in sequence coords.
+    TRange GetSeqRange(TNumrow row) const;
     TSeqPos GetSeqStart(TNumrow row) const;
     TSeqPos GetSeqStop(TNumrow row) const;
-    TRange  GetSeqRange(TNumrow row) const;
 
-    /// Strands
+    /// Check direction of the row.
     bool IsPositiveStrand(TNumrow row) const;
     bool IsNegativeStrand(TNumrow row) const;
 
-    /// Position mapping functions
+    /// Map sequence position to alignment coordinates.
+    /// @param row
+    ///   Alignment row where the input position is defined.
+    /// @param seq_pos
+    ///   Input position
+    /// @param dir
+    ///   In case the input position can not be mapped to the alignment
+    ///   coordinates (e.g. the position is inside an unaligned range),
+    ///   try to search for the neares alignment position in the specified
+    ///   direction.
+    /// @param try_reverse_dir
+    ///   Not implemented
     TSignedSeqPos GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
                                       ESearchDirection dir = eNone,
                                       bool try_reverse_dir = true) const;
@@ -114,43 +130,89 @@ public:
                                       ESearchDirection dir = eNone,
                                       bool try_reverse_dir = true) const;
 
-    // Sequence coding. If not set (default), Iupac[na/aa] coding is used.
-    // If set to a value conflicting with the sequence type
     typedef CSeq_data::E_Choice TCoding;
+    /// Get sequence coding for nucleotides.
     TCoding GetNaCoding(void) const { return m_NaCoding; }
+    /// Get sequence coding for proteins.
     TCoding GetAaCoding(void) const { return m_AaCoding; }
+    /// Set sequence coding for nucleotides. If not set, Iupacna coding is used.
     void SetNaCoding(TCoding coding) { m_NaCoding = coding; }
+    /// Set sequence coding for proteins. If not set, Iupacaa coding is used.
     void SetAaCoding(TCoding coding) { m_AaCoding = coding; }
 
-    /// Fetch sequence
-    string& GetSeqString   (TNumrow row,                           //< which row
-                            string &buffer,                        //< provide an empty buffer for the output
-                            TSeqPos seq_from, TSeqPos seq_to,      //< what range
-                            bool force_translation = false) const; //< optional na2aa translation (na only!)
+    /// Fetch sequence data for the given row and range.
+    /// @param row
+    ///   Alignment row to fetch sequence for.
+    /// @param buffer
+    ///   Output buffer.
+    /// @param seq_from
+    ///   Start sequence position.
+    /// @param seq_to
+    ///   End sequence position.
+    /// @param force_translation
+    ///   Force nucleotide to protein sequence translation.
+    /// @return
+    ///   Reference to the output buffer.
+    string& GetSeqString(TNumrow row,
+                         string& buffer,
+                         TSeqPos seq_from,
+                         TSeqPos seq_to,
+                         bool    force_translation = false) const;
 
-    string& GetSeqString   (TNumrow row,                           //< which row
-                            string &buffer,                        //< provide an empty buffer for the output
-                            const TRange &seq_rng,                 //< what range
-                            bool force_translation = false) const; //< optional na2aa translation (na only!)
+    /// Fetch sequence data for the given row and range.
+    /// @param row
+    ///   Alignment row to fetch sequence for.
+    /// @param buffer
+    ///   Output buffer.
+    /// @param seq_rng
+    ///   Sequence range.
+    /// @param force_translation
+    ///   Force nucleotide to protein sequence translation.
+    /// @return
+    ///   Reference to the output buffer.
+    string& GetSeqString(TNumrow       row,
+                         string&       buffer,
+                         const TRange& seq_rng,
+                         bool          force_translation = false) const;
 
-    string& GetAlnSeqString(TNumrow row,                           //< which row
-                            string &buffer,                        //< an empty buffer for the output
-                            const TSignedRange &aln_rng,           //< what range (in aln coords)
-                            bool force_translation = false) const; //< optional na2aa translation (na only!)
+    /// Fetch alignment sequence data. Unaligned ranges of the selected row
+    /// are filled with gap char.
+    /// @param row
+    ///   Alignment row to fetch sequence for.
+    /// @param buffer
+    ///   Output buffer.
+    /// @param aln_rng
+    ///   Alignment range.
+    /// @param force_translation
+    ///   Force nucleotide to protein sequence translation.
+    /// @return
+    ///   Reference to the output buffer.
+    string& GetAlnSeqString(TNumrow             row,
+                            string&             buffer,
+                            const TSignedRange& aln_rng,
+                            bool                force_translation = false) const;
 
-    /// Bioseq handle accessor
-    const objects::CBioseq_Handle&  GetBioseqHandle(TNumrow row) const;
+    /// Get bioseq handle for the row. Throw exception if the handle can not be
+    /// obtained.
+    const objects::CBioseq_Handle& GetBioseqHandle(TNumrow row) const;
 
+    /// Create segment iterator.
+    /// @param row
+    ///   Row to iterate segments for.
+    /// @param range
+    ///   Range to iterate.
+    /// @param flags
+    ///   Iterator flags.
+    /// @sa CSparse_CI
+    /// @sa IAlnSegmentIterator
     virtual IAlnSegmentIterator*
-    CreateSegmentIterator(TNumrow row,
-                          const TSignedRange& range,
-                          IAlnSegmentIterator::EFlags flags) const;
+        CreateSegmentIterator(TNumrow                     row,
+                              const TSignedRange&         range,
+                              IAlnSegmentIterator::EFlags flags) const;
 
-    /// Wheather the alignment is translated (heterogenous), e.g. nuc-prot
-    bool IsTranslated() const;
+    /// Wheather the alignment is translated (heterogenous), e.g. nuc-prot.
+    bool IsTranslated(void) const;
 
-
-    // genetic code
     enum EConstants {
         kDefaultGenCode = 1
     };
@@ -169,7 +231,7 @@ protected:
 
     CRef<CAnchoredAln> m_Aln;
     mutable CRef<objects::CScope> m_Scope;
-    TRng m_FirstRange; ///< the extent of all segments in aln coords
+    TRng m_FirstRange; // the extent of all segments in aln coords
     vector<TRng> m_SecondRanges;
     TResidue m_GapChar;
     mutable vector<objects::CBioseq_Handle> m_BioseqHandles;
