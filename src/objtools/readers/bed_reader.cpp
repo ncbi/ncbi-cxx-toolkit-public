@@ -100,9 +100,9 @@ CBedReader::CBedReader(
     unsigned int flags ) :
 //  ----------------------------------------------------------------------------
     CReaderBase(flags),
+    m_currentId(""),
     m_columncount(0),
-    m_usescore(false),
-    m_currentId("")
+    m_usescore(false)
 {
 }
 
