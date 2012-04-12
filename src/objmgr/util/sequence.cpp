@@ -2563,36 +2563,36 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
         // ignore exception; it probably just means there's no org-ref
     }
 
-    typedef pair<CMolInfo::TTech, const char*> TTechMapEntry;
+    typedef SStaticPair<CMolInfo::TTech, const char*> TTechMapEntry;
     static const TTechMapEntry sc_TechArray[] = {
         // note that the text values do *NOT* precisely correspond with
         // the names in the ASN.1 schema files
-        TTechMapEntry(CMolInfo::eTech_unknown,            "?"),
-        TTechMapEntry(CMolInfo::eTech_standard,           "standard"),
-        TTechMapEntry(CMolInfo::eTech_est,                "EST"),
-        TTechMapEntry(CMolInfo::eTech_sts,                "STS"),
-        TTechMapEntry(CMolInfo::eTech_survey,             "survey"),
-        TTechMapEntry(CMolInfo::eTech_genemap,            "genetic map"),
-        TTechMapEntry(CMolInfo::eTech_physmap,            "physical map"),
-        TTechMapEntry(CMolInfo::eTech_derived,            "derived"),
-        TTechMapEntry(CMolInfo::eTech_concept_trans,      "concept-trans"),
-        TTechMapEntry(CMolInfo::eTech_seq_pept,           "seq-pept"),
-        TTechMapEntry(CMolInfo::eTech_both,               "both"),
-        TTechMapEntry(CMolInfo::eTech_seq_pept_overlap,   "seq-pept-overlap"),
-        TTechMapEntry(CMolInfo::eTech_seq_pept_homol,     "seq-pept-homol"),
-        TTechMapEntry(CMolInfo::eTech_concept_trans_a,    "concept-trans-a"),
-        TTechMapEntry(CMolInfo::eTech_htgs_1,             "htgs 1"),
-        TTechMapEntry(CMolInfo::eTech_htgs_2,             "htgs 2"),
-        TTechMapEntry(CMolInfo::eTech_htgs_3,             "htgs 3"),
-        TTechMapEntry(CMolInfo::eTech_fli_cdna,           "fli cDNA"),
-        TTechMapEntry(CMolInfo::eTech_htgs_0,             "htgs 0"),
-        TTechMapEntry(CMolInfo::eTech_htc,                "htc"),
-        TTechMapEntry(CMolInfo::eTech_wgs,                "wgs"),
-        TTechMapEntry(CMolInfo::eTech_barcode,            "barcode"),
-        TTechMapEntry(CMolInfo::eTech_composite_wgs_htgs, "composite-wgs-htgs"),
-        TTechMapEntry(CMolInfo::eTech_tsa,                "tsa")
+        { CMolInfo::eTech_unknown,            "?" },
+        { CMolInfo::eTech_standard,           "standard" },
+        { CMolInfo::eTech_est,                "EST" },
+        { CMolInfo::eTech_sts,                "STS" },
+        { CMolInfo::eTech_survey,             "survey" },
+        { CMolInfo::eTech_genemap,            "genetic map" },
+        { CMolInfo::eTech_physmap,            "physical map" },
+        { CMolInfo::eTech_derived,            "derived" },
+        { CMolInfo::eTech_concept_trans,      "concept-trans" },
+        { CMolInfo::eTech_seq_pept,           "seq-pept" },
+        { CMolInfo::eTech_both,               "both" },
+        { CMolInfo::eTech_seq_pept_overlap,   "seq-pept-overlap" },
+        { CMolInfo::eTech_seq_pept_homol,     "seq-pept-homol" },
+        { CMolInfo::eTech_concept_trans_a,    "concept-trans-a" },
+        { CMolInfo::eTech_htgs_1,             "htgs 1" },
+        { CMolInfo::eTech_htgs_2,             "htgs 2" },
+        { CMolInfo::eTech_htgs_3,             "htgs 3" },
+        { CMolInfo::eTech_fli_cdna,           "fli cDNA" },
+        { CMolInfo::eTech_htgs_0,             "htgs 0" },
+        { CMolInfo::eTech_htc,                "htc" },
+        { CMolInfo::eTech_wgs,                "wgs" },
+        { CMolInfo::eTech_barcode,            "barcode" },
+        { CMolInfo::eTech_composite_wgs_htgs, "composite-wgs-htgs" },
+        { CMolInfo::eTech_tsa,                "tsa" }
     };
-    typedef CStaticArrayMap<CMolInfo::TTech, const char*>  TTechMap;
+    typedef CStaticPairArrayMap<CMolInfo::TTech, const char*>  TTechMap;
     DEFINE_STATIC_ARRAY_MAP(TTechMap, sc_TechMap, sc_TechArray);
 
     // print some key-value pairs
@@ -4038,44 +4038,44 @@ CSeqSearch::~CSeqSearch(void)
 }
 
 
-typedef pair<Char, Char> TCharPair;
+typedef SStaticPair<Char, Char> TCharPair;
 static const TCharPair sc_comp_tbl[32] = {
     // uppercase
-    TCharPair('A', 'T'),
-    TCharPair('B', 'V'),
-    TCharPair('C', 'G'),
-    TCharPair('D', 'H'),
-    TCharPair('G', 'C'),
-    TCharPair('H', 'D'),
-    TCharPair('K', 'M'),
-    TCharPair('M', 'K'),
-    TCharPair('N', 'N'),
-    TCharPair('R', 'Y'),
-    TCharPair('S', 'S'),
-    TCharPair('T', 'A'),
-    TCharPair('U', 'A'),
-    TCharPair('V', 'B'),
-    TCharPair('W', 'W'),
-    TCharPair('Y', 'R'),
+    { 'A', 'T' },
+    { 'B', 'V' },
+    { 'C', 'G' },
+    { 'D', 'H' },
+    { 'G', 'C' },
+    { 'H', 'D' },
+    { 'K', 'M' },
+    { 'M', 'K' },
+    { 'N', 'N' },
+    { 'R', 'Y' },
+    { 'S', 'S' },
+    { 'T', 'A' },
+    { 'U', 'A' },
+    { 'V', 'B' },
+    { 'W', 'W' },
+    { 'Y', 'R' },
     // lowercase
-    TCharPair('a', 'T'),
-    TCharPair('b', 'V'),
-    TCharPair('c', 'G'),
-    TCharPair('d', 'H'),
-    TCharPair('g', 'C'),
-    TCharPair('h', 'D'),
-    TCharPair('k', 'M'),
-    TCharPair('m', 'K'),
-    TCharPair('n', 'N'),
-    TCharPair('r', 'Y'),
-    TCharPair('s', 'S'),
-    TCharPair('t', 'A'),
-    TCharPair('u', 'A'),
-    TCharPair('v', 'B'),
-    TCharPair('w', 'W'),
-    TCharPair('y', 'R'),
+    { 'a', 'T' },
+    { 'b', 'V' },
+    { 'c', 'G' },
+    { 'd', 'H' },
+    { 'g', 'C' },
+    { 'h', 'D' },
+    { 'k', 'M' },
+    { 'm', 'K' },
+    { 'n', 'N' },
+    { 'r', 'Y' },
+    { 's', 'S' },
+    { 't', 'A' },
+    { 'u', 'A' },
+    { 'v', 'B' },
+    { 'w', 'W' },
+    { 'y', 'R' },
 };
-typedef CStaticArrayMap<Char, Char> TComplement;
+typedef CStaticPairArrayMap<Char, Char> TComplement;
 DEFINE_STATIC_ARRAY_MAP(TComplement, sc_Complement, sc_comp_tbl);
 
 
