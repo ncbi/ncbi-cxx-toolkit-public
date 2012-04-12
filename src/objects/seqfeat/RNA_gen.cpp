@@ -55,7 +55,7 @@ CRNA_gen::~CRNA_gen(void)
 bool CRNA_gen::IsLegalClass() const
 {
     if (IsSetClass()) {
-        static const char* kAcceptedClasses[] = {
+        static const char* const kAcceptedClasses[] = {
             "antisense_RNA",
             "autocatalytically_spliced_intron",
             "guide_RNA",
@@ -76,7 +76,7 @@ bool CRNA_gen::IsLegalClass() const
             "vault_RNA",
             "Y_RNA",
         };
-        typedef CStaticArraySet<const char*, PNocase> TAcceptedClasses;
+        typedef CStaticArraySet<const char*, PNocase_CStr> TAcceptedClasses;
         DEFINE_STATIC_ARRAY_MAP(TAcceptedClasses,
                                 sc_AcceptedClasses, kAcceptedClasses);
 

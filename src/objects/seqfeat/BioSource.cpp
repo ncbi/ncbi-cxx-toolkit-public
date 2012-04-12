@@ -108,41 +108,41 @@ int CBioSource::GetGenCode(void) const
     }
 }
 
-typedef pair <const char *, const CBioSource::EGenome> TGenomeKey;
+typedef SStaticPair<const char *, const CBioSource::EGenome> TGenomeKey;
 
 static const TGenomeKey genome_key_to_subtype [] = {
-    TGenomeKey ( "apicoplast",                CBioSource::eGenome_apicoplast       ),
-    TGenomeKey ( "chloroplast",               CBioSource::eGenome_chloroplast      ),
-    TGenomeKey ( "chromoplast",               CBioSource::eGenome_chromoplast      ),
-    TGenomeKey ( "cyanelle",                  CBioSource::eGenome_cyanelle         ),
-    TGenomeKey ( "endogenous_virus",          CBioSource::eGenome_endogenous_virus ),
-    TGenomeKey ( "extrachrom",                CBioSource::eGenome_extrachrom       ),
-    TGenomeKey ( "genomic",                   CBioSource::eGenome_genomic          ),
-    TGenomeKey ( "hydrogenosome",             CBioSource::eGenome_hydrogenosome    ),
-    TGenomeKey ( "insertion_seq",             CBioSource::eGenome_insertion_seq    ),
-    TGenomeKey ( "kinetoplast",               CBioSource::eGenome_kinetoplast      ),
-    TGenomeKey ( "leucoplast",                CBioSource::eGenome_leucoplast       ),
-    TGenomeKey ( "macronuclear",              CBioSource::eGenome_macronuclear     ),
-    TGenomeKey ( "mitochondrion",             CBioSource::eGenome_mitochondrion    ),
-    TGenomeKey ( "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast      ),
-    TGenomeKey ( "nucleomorph",               CBioSource::eGenome_nucleomorph      ),
-    TGenomeKey ( "plasmid",                   CBioSource::eGenome_plasmid          ),
-    TGenomeKey ( "plastid",                   CBioSource::eGenome_plastid          ),
-    TGenomeKey ( "plastid:apicoplast",        CBioSource::eGenome_apicoplast       ),
-    TGenomeKey ( "plastid:chloroplast",       CBioSource::eGenome_chloroplast      ),
-    TGenomeKey ( "plastid:chromoplast",       CBioSource::eGenome_chromoplast      ),
-    TGenomeKey ( "plastid:cyanelle",          CBioSource::eGenome_cyanelle         ),
-    TGenomeKey ( "plastid:leucoplast",        CBioSource::eGenome_leucoplast       ),
-    TGenomeKey ( "plastid:proplastid",        CBioSource::eGenome_proplastid       ),
-    TGenomeKey ( "proplastid",                CBioSource::eGenome_proplastid       ),
-    TGenomeKey ( "proviral",                  CBioSource::eGenome_proviral         ),
-    TGenomeKey ( "transposon",                CBioSource::eGenome_transposon       ),
-    TGenomeKey ( "unknown",                   CBioSource::eGenome_unknown          ),
-    TGenomeKey ( "virion",                    CBioSource::eGenome_virion           )
+    {  "apicoplast",                CBioSource::eGenome_apicoplast        },
+    {  "chloroplast",               CBioSource::eGenome_chloroplast       },
+    {  "chromoplast",               CBioSource::eGenome_chromoplast       },
+    {  "cyanelle",                  CBioSource::eGenome_cyanelle          },
+    {  "endogenous_virus",          CBioSource::eGenome_endogenous_virus  },
+    {  "extrachrom",                CBioSource::eGenome_extrachrom        },
+    {  "genomic",                   CBioSource::eGenome_genomic           },
+    {  "hydrogenosome",             CBioSource::eGenome_hydrogenosome     },
+    {  "insertion_seq",             CBioSource::eGenome_insertion_seq     },
+    {  "kinetoplast",               CBioSource::eGenome_kinetoplast       },
+    {  "leucoplast",                CBioSource::eGenome_leucoplast        },
+    {  "macronuclear",              CBioSource::eGenome_macronuclear      },
+    {  "mitochondrion",             CBioSource::eGenome_mitochondrion     },
+    {  "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast       },
+    {  "nucleomorph",               CBioSource::eGenome_nucleomorph       },
+    {  "plasmid",                   CBioSource::eGenome_plasmid           },
+    {  "plastid",                   CBioSource::eGenome_plastid           },
+    {  "plastid:apicoplast",        CBioSource::eGenome_apicoplast        },
+    {  "plastid:chloroplast",       CBioSource::eGenome_chloroplast       },
+    {  "plastid:chromoplast",       CBioSource::eGenome_chromoplast       },
+    {  "plastid:cyanelle",          CBioSource::eGenome_cyanelle          },
+    {  "plastid:leucoplast",        CBioSource::eGenome_leucoplast        },
+    {  "plastid:proplastid",        CBioSource::eGenome_proplastid        },
+    {  "proplastid",                CBioSource::eGenome_proplastid        },
+    {  "proviral",                  CBioSource::eGenome_proviral          },
+    {  "transposon",                CBioSource::eGenome_transposon        },
+    {  "unknown",                   CBioSource::eGenome_unknown           },
+    {  "virion",                    CBioSource::eGenome_virion            }
 };
 
 
-typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
+typedef CStaticPairArrayMap <const char*, const CBioSource::EGenome, PNocase_CStr> TGenomeMap;
 DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 
 CBioSource::EGenome CBioSource::GetGenomeByOrganelle (string organelle, NStr::ECase use_case, bool starts_with)
