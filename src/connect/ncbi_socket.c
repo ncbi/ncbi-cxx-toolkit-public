@@ -3644,7 +3644,7 @@ static EIO_Status s_Connect(SOCK            sock,
         addrlen = (TSOCK_socklen_t) sizeof(addr.un);
 #  ifdef HAVE_SIN_LEN
         addr.un.sun_len    = addrlen;
-#  endif /*HASE_SIN_LEN*/
+#  endif /*HAVE_SIN_LEN*/
         addr.un.sun_family = AF_UNIX;
         memcpy(addr.un.sun_path, sock->path, pathlen);
         assert(!sock->port);
