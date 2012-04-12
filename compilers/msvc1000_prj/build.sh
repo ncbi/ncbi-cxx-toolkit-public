@@ -59,6 +59,9 @@ generate_msvc10_error_check_file()
 
 generate_simple_log()
 {
+    echo Parallel project build detected! Creating simplified log.
+    echo
+       
     log=$1
     tree=$2
     sol=$3
@@ -75,7 +78,6 @@ generate_simple_log()
 
     for p in $projects ; do
         echo "------$p" | awk '{gsub(/[#]/," "); print}'
-        echo
         prj_name=`echo $p | awk '{gsub(/[#,]/," "); print $2}'`
 ###        cfg=`echo $p | awk '{gsub(/[#,]/," "); print $4}'`
 
@@ -99,6 +101,8 @@ generate_simple_log()
         cat $prj_log | tr -d '\357\273\277'
         echo
     done
+    grep '.*========== Build:' $log
+    echo
 }
 
 
@@ -165,11 +169,13 @@ for tree in $build_trees ; do
         fi
         if $is_ppb; then
             generate_simple_log $out $tree "$sol" $cfg_configure > $out.simple
+            cp $out $cfg.configure.log
             rm $out  &&  out="$out.simple"
         fi 
         cat $out
         cat $out >> ${log_dir}/${tree}_${cfg_configure}.log
         echo "Build time: $start - `eval $timer`"
+        echo STATUS = $status
         if [ $status -ne 0 ] ; then
             echo "FAILED: Configure $tree\\build\\$sol, $cfg_configure"
         fi
@@ -215,11 +221,13 @@ for tree in $build_trees ; do
             sleep 20
             if $is_ppb; then
                 generate_simple_log $out $tree "$sol" $cfg > $out.simple
+                cp $out $cfg.build.log
                 rm $out  &&  out="$out.simple"
             fi 
             cat $out
             cat $out >> ${log_dir}/${tree}_${cfg}.log
             echo "Build time: $start - `eval $timer`"
+            echo STATUS = $status
             if [ $status -ne 0 ] ; then
                 # Check on errors (skip expendable projects)
                 failed="1"
