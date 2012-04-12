@@ -267,24 +267,24 @@ void CId1Reader::x_ConnectAtSlot(TConn conn)
 
 
 typedef CId1ReaderBase TRDR;
-typedef pair<TRDR::ESat, TRDR::ESubSat> TSK;
-typedef pair<const char*, TSK> TSI;
+typedef SStaticPair<TRDR::ESat, TRDR::ESubSat> TSK;
+typedef SStaticPair<const char*, TSK> TSI;
 static const TSI sc_SatIndex[] = {
-    TSI("ANNOT:CDD",  TSK(TRDR::eSat_ANNOT_CDD,  TRDR::eSubSat_CDD)),
-    TSI("ANNOT:EXON", TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_Exon)),
-    TSI("ANNOT:HPRD", TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_HPRD)),
-    TSI("ANNOT:MGC",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC)),
-    TSI("ANNOT:microRNA", TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_microRNA)),
-    TSI("ANNOT:SNP",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP)),
-    TSI("ANNOT:SNP GRAPH",TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_SNP_graph)),
-    TSI("ANNOT:STS",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_STS)),
-    TSI("ANNOT:TRNA", TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_tRNA)),
-    TSI("ti",         TSK(TRDR::eSat_TRACE,      TRDR::eSubSat_main)),
-    TSI("TR_ASSM_CH", TSK(TRDR::eSat_TR_ASSM_CH, TRDR::eSubSat_main)),
-    TSI("TRACE_ASSM", TSK(TRDR::eSat_TRACE_ASSM, TRDR::eSubSat_main)),
-    TSI("TRACE_CHGR", TSK(TRDR::eSat_TRACE_CHGR, TRDR::eSubSat_main))
+    { "ANNOT:CDD",  { TRDR::eSat_ANNOT_CDD,  TRDR::eSubSat_CDD } },
+    { "ANNOT:EXON", { TRDR::eSat_ANNOT,      TRDR::eSubSat_Exon } },
+    { "ANNOT:HPRD", { TRDR::eSat_ANNOT,      TRDR::eSubSat_HPRD } },
+    { "ANNOT:MGC",  { TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC } },
+    { "ANNOT:microRNA", { TRDR::eSat_ANNOT,  TRDR::eSubSat_microRNA } },
+    { "ANNOT:SNP",  { TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP } },
+    { "ANNOT:SNP GRAPH",{ TRDR::eSat_ANNOT,  TRDR::eSubSat_SNP_graph } },
+    { "ANNOT:STS",  { TRDR::eSat_ANNOT,      TRDR::eSubSat_STS } },
+    { "ANNOT:TRNA", { TRDR::eSat_ANNOT,      TRDR::eSubSat_tRNA } },
+    { "ti",         { TRDR::eSat_TRACE,      TRDR::eSubSat_main } },
+    { "TR_ASSM_CH", { TRDR::eSat_TR_ASSM_CH, TRDR::eSubSat_main } },
+    { "TRACE_ASSM", { TRDR::eSat_TRACE_ASSM, TRDR::eSubSat_main } },
+    { "TRACE_CHGR", { TRDR::eSat_TRACE_CHGR, TRDR::eSubSat_main } }
 };
-typedef CStaticArrayMap<const char*, TSK, PNocase_CStr> TSatMap;
+typedef CStaticPairArrayMap<const char*, TSK, PNocase_CStr> TSatMap;
 DEFINE_STATIC_ARRAY_MAP(TSatMap, sc_SatMap, sc_SatIndex);
 
 
