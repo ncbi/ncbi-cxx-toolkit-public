@@ -54,7 +54,7 @@ CName_std::~CName_std(void)
 
 const CName_std::TSuffixes& CName_std::GetStandardSuffixes(void)
 {
-    static const string sfxs[] = {"II", "III", "IV", "Jr.", "Sr.", "V", "VI"};
+    static const char* sfxs[] = {"II", "III", "IV", "Jr.", "Sr.", "V", "VI"};
     DEFINE_STATIC_ARRAY_MAP(TSuffixes, suffixes, sfxs);
 
     return suffixes;

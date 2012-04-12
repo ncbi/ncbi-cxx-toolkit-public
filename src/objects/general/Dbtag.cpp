@@ -54,168 +54,168 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // When adding to these lists, please take care to keep them in
 // case-sensitive sorted order (lowercase entries last).
 
-typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
+typedef SStaticPair<const char*, CDbtag::EDbtagType> TDbxrefPair;
 static const TDbxrefPair kApprovedDbXrefs[] = {
-    TDbxrefPair("AFTOL", CDbtag::eDbtagType_AFTOL),
-    TDbxrefPair("APHIDBASE", CDbtag::eDbtagType_APHIDBASE),
-    TDbxrefPair("ASAP", CDbtag::eDbtagType_ASAP),
-    TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
-    TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
-    TDbxrefPair("ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host),
-    TDbxrefPair("AceView/WormGenes", CDbtag::eDbtagType_AceView_WormGenes),
-    TDbxrefPair("AntWeb", CDbtag::eDbtagType_AntWeb),
-    TDbxrefPair("ApiDB", CDbtag::eDbtagType_ApiDB),
-    TDbxrefPair("ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB),
-    TDbxrefPair("ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB),
-    TDbxrefPair("ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB),
-    TDbxrefPair("Axeldb", CDbtag::eDbtagType_axeldb),
-    TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
-    TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
-    TDbxrefPair("BEETLEBASE", CDbtag::eDbtagType_BEETLEBASE),
-    TDbxrefPair("BGD", CDbtag::eDbtagType_BGD),
-    TDbxrefPair("BOLD", CDbtag::eDbtagType_BoLD),
-    TDbxrefPair("CDD", CDbtag::eDbtagType_CDD),
-    TDbxrefPair("CK", CDbtag::eDbtagType_CK),
-    TDbxrefPair("COG", CDbtag::eDbtagType_COG),
-    TDbxrefPair("ENSEMBL", CDbtag::eDbtagType_ENSEMBL),
-    TDbxrefPair("ERIC", CDbtag::eDbtagType_ERIC),
-    TDbxrefPair("ESTLIB", CDbtag::eDbtagType_ESTLIB),
-    TDbxrefPair("EcoGene", CDbtag::eDbtagType_EcoGene),
-    TDbxrefPair("FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB),
-    TDbxrefPair("FBOL", CDbtag::eDbtagType_FBOL),
-    TDbxrefPair("FLYBASE", CDbtag::eDbtagType_FLYBASE),
-    TDbxrefPair("GABI", CDbtag::eDbtagType_GABI),
-    TDbxrefPair("GDB", CDbtag::eDbtagType_GDB),
-    TDbxrefPair("GI", CDbtag::eDbtagType_GI),
-    TDbxrefPair("GO", CDbtag::eDbtagType_GO),
-    TDbxrefPair("GOA", CDbtag::eDbtagType_GOA),
-    TDbxrefPair("GRIN", CDbtag::eDbtagType_GRIN),
-    TDbxrefPair("GeneDB", CDbtag::eDbtagType_GeneDB),
-    TDbxrefPair("GeneID", CDbtag::eDbtagType_GeneID),
-    TDbxrefPair("Greengenes", CDbtag::eDbtagType_Greengenes),
-    TDbxrefPair("H-InvDB", CDbtag::eDbtagType_H_InvDB),
-    TDbxrefPair("HGNC", CDbtag::eDbtagType_HGNC),
-    TDbxrefPair("HMP", CDbtag::eDbtagType_HMP),
-    TDbxrefPair("HOMD", CDbtag::eDbtagType_HOMD),
-    TDbxrefPair("HSSP", CDbtag::eDbtagType_HSSP),
-    TDbxrefPair("IKMC", CDbtag::eDbtagType_IKMC),
-    TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
-    TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
-    TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
-    TDbxrefPair("IRD", CDbtag::eDbtagType_IRD),
-    TDbxrefPair("ISD", CDbtag::eDbtagType_ISD),
-    TDbxrefPair("ISFinder", CDbtag::eDbtagType_ISFinder),
-    TDbxrefPair("InterPro", CDbtag::eDbtagType_Interpro),
-    TDbxrefPair("InterimID", CDbtag::eDbtagType_InterimID),
-    TDbxrefPair("JCM", CDbtag::eDbtagType_JCM),
-    TDbxrefPair("JGIDB", CDbtag::eDbtagType_JGIDB),
-    TDbxrefPair("LocusID", CDbtag::eDbtagType_LocusID),
-    TDbxrefPair("MGI", CDbtag::eDbtagType_MGI),
-    TDbxrefPair("MIM", CDbtag::eDbtagType_MIM),
-    TDbxrefPair("MaizeGDB", CDbtag::eDbtagType_MaizeGDB),
-    TDbxrefPair("MycoBank", CDbtag::eDbtagType_MycoBank),
-    TDbxrefPair("NBRC", CDbtag::eDbtagType_IFO),
-    TDbxrefPair("NMPDR", CDbtag::eDbtagType_NMPDR),
-    TDbxrefPair("NRESTdb", CDbtag::eDbtagType_NRESTdb),
-    TDbxrefPair("NextDB", CDbtag::eDbtagType_NextDB),
-    TDbxrefPair("Osa1", CDbtag::eDbtagType_Osa1),
-    TDbxrefPair("PBmice", CDbtag::eDbtagType_PBmice),
-    TDbxrefPair("PDB", CDbtag::eDbtagType_PDB),
-    TDbxrefPair("PFAM", CDbtag::eDbtagType_PFAM),
-    TDbxrefPair("PGN", CDbtag::eDbtagType_PGN),
-    TDbxrefPair("PIR", CDbtag::eDbtagType_PIR),
-    TDbxrefPair("PSEUDO", CDbtag::eDbtagType_PSEUDO),
-    TDbxrefPair("Pathema", CDbtag::eDbtagType_Pathema),
-    TDbxrefPair("PomBase", CDbtag::eDbtagType_PomBase),
-    TDbxrefPair("PseudoCap", CDbtag::eDbtagType_PseudoCap),
-    TDbxrefPair("RAP-DB", CDbtag::eDbtagType_RAP_DB),
-    TDbxrefPair("RATMAP", CDbtag::eDbtagType_RATMAP),
-    TDbxrefPair("RFAM", CDbtag::eDbtagType_RFAM),
-    TDbxrefPair("RGD", CDbtag::eDbtagType_RGD),
-    TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
-    TDbxrefPair("RiceGenes", CDbtag::eDbtagType_RiceGenes),
-    TDbxrefPair("SEED", CDbtag::eDbtagType_SEED),
-    TDbxrefPair("SGD", CDbtag::eDbtagType_SGD),
-    TDbxrefPair("SGN", CDbtag::eDbtagType_SGN),
-    TDbxrefPair("SoyBase", CDbtag::eDbtagType_SoyBase),
-    TDbxrefPair("SubtiList", CDbtag::eDbtagType_SubtiList),
-    TDbxrefPair("TAIR", CDbtag::eDbtagType_TAIR),
-    TDbxrefPair("TIGRFAM", CDbtag::eDbtagType_TIGRFAM),
-    TDbxrefPair("UNILIB", CDbtag::eDbtagType_UNILIB),
-    TDbxrefPair("UNITE", CDbtag::eDbtagType_UNITE),
-    TDbxrefPair("UniGene", CDbtag::eDbtagType_UniGene),
-    TDbxrefPair("UniProtKB/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt),
-    TDbxrefPair("UniProtKB/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL),
-    TDbxrefPair("UniSTS", CDbtag::eDbtagType_UniSTS),
-    TDbxrefPair("VBASE2", CDbtag::eDbtagType_VBASE2),
-    TDbxrefPair("VectorBase", CDbtag::eDbtagType_VectorBase),
-    TDbxrefPair("ViPR", CDbtag::eDbtagType_ViPR),
-    TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
-    TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
-    TDbxrefPair("Xenbase", CDbtag::eDbtagType_Xenbase),
-    TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
-    TDbxrefPair("dbClone", CDbtag::eDbtagType_dbClone),
-    TDbxrefPair("dbCloneLib", CDbtag::eDbtagType_dbCloneLib),
-    TDbxrefPair("dbEST", CDbtag::eDbtagType_dbEST),
-    TDbxrefPair("dbProbe", CDbtag::eDbtagType_dbProbe),
-    TDbxrefPair("dbSNP", CDbtag::eDbtagType_dbSNP),
-    TDbxrefPair("dbSTS", CDbtag::eDbtagType_dbSTS),
-    TDbxrefPair("dictyBase", CDbtag::eDbtagType_dictyBase),
-    TDbxrefPair("miRBase", CDbtag::eDbtagType_miRBase),
-    TDbxrefPair("niaEST", CDbtag::eDbtagType_niaEST), 
-    TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
+    { "AFTOL", CDbtag::eDbtagType_AFTOL },
+    { "APHIDBASE", CDbtag::eDbtagType_APHIDBASE },
+    { "ASAP", CDbtag::eDbtagType_ASAP },
+    { "ATCC", CDbtag::eDbtagType_ATCC },
+    { "ATCC(dna)", CDbtag::eDbtagType_ATCC_dna },
+    { "ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host },
+    { "AceView/WormGenes", CDbtag::eDbtagType_AceView_WormGenes },
+    { "AntWeb", CDbtag::eDbtagType_AntWeb },
+    { "ApiDB", CDbtag::eDbtagType_ApiDB },
+    { "ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB },
+    { "ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB },
+    { "ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB },
+    { "Axeldb", CDbtag::eDbtagType_axeldb },
+    { "BDGP_EST", CDbtag::eDbtagType_BDGP_EST },
+    { "BDGP_INS", CDbtag::eDbtagType_BDGP_INS },
+    { "BEETLEBASE", CDbtag::eDbtagType_BEETLEBASE },
+    { "BGD", CDbtag::eDbtagType_BGD },
+    { "BOLD", CDbtag::eDbtagType_BoLD },
+    { "CDD", CDbtag::eDbtagType_CDD },
+    { "CK", CDbtag::eDbtagType_CK },
+    { "COG", CDbtag::eDbtagType_COG },
+    { "ENSEMBL", CDbtag::eDbtagType_ENSEMBL },
+    { "ERIC", CDbtag::eDbtagType_ERIC },
+    { "ESTLIB", CDbtag::eDbtagType_ESTLIB },
+    { "EcoGene", CDbtag::eDbtagType_EcoGene },
+    { "FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB },
+    { "FBOL", CDbtag::eDbtagType_FBOL },
+    { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
+    { "GABI", CDbtag::eDbtagType_GABI },
+    { "GDB", CDbtag::eDbtagType_GDB },
+    { "GI", CDbtag::eDbtagType_GI },
+    { "GO", CDbtag::eDbtagType_GO },
+    { "GOA", CDbtag::eDbtagType_GOA },
+    { "GRIN", CDbtag::eDbtagType_GRIN },
+    { "GeneDB", CDbtag::eDbtagType_GeneDB },
+    { "GeneID", CDbtag::eDbtagType_GeneID },
+    { "Greengenes", CDbtag::eDbtagType_Greengenes },
+    { "H-InvDB", CDbtag::eDbtagType_H_InvDB },
+    { "HGNC", CDbtag::eDbtagType_HGNC },
+    { "HMP", CDbtag::eDbtagType_HMP },
+    { "HOMD", CDbtag::eDbtagType_HOMD },
+    { "HSSP", CDbtag::eDbtagType_HSSP },
+    { "IKMC", CDbtag::eDbtagType_IKMC },
+    { "IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB },
+    { "IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA },
+    { "IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM },
+    { "IRD", CDbtag::eDbtagType_IRD },
+    { "ISD", CDbtag::eDbtagType_ISD },
+    { "ISFinder", CDbtag::eDbtagType_ISFinder },
+    { "InterPro", CDbtag::eDbtagType_Interpro },
+    { "InterimID", CDbtag::eDbtagType_InterimID },
+    { "JCM", CDbtag::eDbtagType_JCM },
+    { "JGIDB", CDbtag::eDbtagType_JGIDB },
+    { "LocusID", CDbtag::eDbtagType_LocusID },
+    { "MGI", CDbtag::eDbtagType_MGI },
+    { "MIM", CDbtag::eDbtagType_MIM },
+    { "MaizeGDB", CDbtag::eDbtagType_MaizeGDB },
+    { "MycoBank", CDbtag::eDbtagType_MycoBank },
+    { "NBRC", CDbtag::eDbtagType_IFO },
+    { "NMPDR", CDbtag::eDbtagType_NMPDR },
+    { "NRESTdb", CDbtag::eDbtagType_NRESTdb },
+    { "NextDB", CDbtag::eDbtagType_NextDB },
+    { "Osa1", CDbtag::eDbtagType_Osa1 },
+    { "PBmice", CDbtag::eDbtagType_PBmice },
+    { "PDB", CDbtag::eDbtagType_PDB },
+    { "PFAM", CDbtag::eDbtagType_PFAM },
+    { "PGN", CDbtag::eDbtagType_PGN },
+    { "PIR", CDbtag::eDbtagType_PIR },
+    { "PSEUDO", CDbtag::eDbtagType_PSEUDO },
+    { "Pathema", CDbtag::eDbtagType_Pathema },
+    { "PomBase", CDbtag::eDbtagType_PomBase },
+    { "PseudoCap", CDbtag::eDbtagType_PseudoCap },
+    { "RAP-DB", CDbtag::eDbtagType_RAP_DB },
+    { "RATMAP", CDbtag::eDbtagType_RATMAP },
+    { "RFAM", CDbtag::eDbtagType_RFAM },
+    { "RGD", CDbtag::eDbtagType_RGD },
+    { "RZPD", CDbtag::eDbtagType_RZPD },
+    { "RiceGenes", CDbtag::eDbtagType_RiceGenes },
+    { "SEED", CDbtag::eDbtagType_SEED },
+    { "SGD", CDbtag::eDbtagType_SGD },
+    { "SGN", CDbtag::eDbtagType_SGN },
+    { "SoyBase", CDbtag::eDbtagType_SoyBase },
+    { "SubtiList", CDbtag::eDbtagType_SubtiList },
+    { "TAIR", CDbtag::eDbtagType_TAIR },
+    { "TIGRFAM", CDbtag::eDbtagType_TIGRFAM },
+    { "UNILIB", CDbtag::eDbtagType_UNILIB },
+    { "UNITE", CDbtag::eDbtagType_UNITE },
+    { "UniGene", CDbtag::eDbtagType_UniGene },
+    { "UniProtKB/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt },
+    { "UniProtKB/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL },
+    { "UniSTS", CDbtag::eDbtagType_UniSTS },
+    { "VBASE2", CDbtag::eDbtagType_VBASE2 },
+    { "VectorBase", CDbtag::eDbtagType_VectorBase },
+    { "ViPR", CDbtag::eDbtagType_ViPR },
+    { "WorfDB", CDbtag::eDbtagType_WorfDB },
+    { "WormBase", CDbtag::eDbtagType_WormBase },
+    { "Xenbase", CDbtag::eDbtagType_Xenbase },
+    { "ZFIN", CDbtag::eDbtagType_ZFIN },
+    { "dbClone", CDbtag::eDbtagType_dbClone },
+    { "dbCloneLib", CDbtag::eDbtagType_dbCloneLib },
+    { "dbEST", CDbtag::eDbtagType_dbEST },
+    { "dbProbe", CDbtag::eDbtagType_dbProbe },
+    { "dbSNP", CDbtag::eDbtagType_dbSNP },
+    { "dbSTS", CDbtag::eDbtagType_dbSTS },
+    { "dictyBase", CDbtag::eDbtagType_dictyBase },
+    { "miRBase", CDbtag::eDbtagType_miRBase },
+    { "niaEST", CDbtag::eDbtagType_niaEST }, 
+    { "taxon", CDbtag::eDbtagType_taxon }
 };
 
 static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
-    TDbxrefPair("BEEBASE", CDbtag::eDbtagType_BEEBASE),
-    TDbxrefPair("BioProject", CDbtag::eDbtagType_BioProject),
-    TDbxrefPair("CCDS", CDbtag::eDbtagType_CCDS),
-    TDbxrefPair("CGNC", CDbtag::eDbtagType_CGNC),
-    TDbxrefPair("CloneID", CDbtag::eDbtagType_CloneID),
-    TDbxrefPair("ECOCYC", CDbtag::eDbtagType_ECOCYC),
-    TDbxrefPair("HPRD", CDbtag::eDbtagType_HPRD),
-    TDbxrefPair("LRG", CDbtag::eDbtagType_LRG),
-    TDbxrefPair("NASONIABASE", CDbtag::eDbtagType_NASONIABASE),
-    TDbxrefPair("PBR", CDbtag::eDbtagType_PBR),
-    TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE),
-    TDbxrefPair("SK-FST", CDbtag::eDbtagType_SK_FST),
-    TDbxrefPair("VBRC", CDbtag::eDbtagType_VBRC)
+    { "BEEBASE", CDbtag::eDbtagType_BEEBASE },
+    { "BioProject", CDbtag::eDbtagType_BioProject },
+    { "CCDS", CDbtag::eDbtagType_CCDS },
+    { "CGNC", CDbtag::eDbtagType_CGNC },
+    { "CloneID", CDbtag::eDbtagType_CloneID },
+    { "ECOCYC", CDbtag::eDbtagType_ECOCYC },
+    { "HPRD", CDbtag::eDbtagType_HPRD },
+    { "LRG", CDbtag::eDbtagType_LRG },
+    { "NASONIABASE", CDbtag::eDbtagType_NASONIABASE },
+    { "PBR", CDbtag::eDbtagType_PBR },
+    { "REBASE", CDbtag::eDbtagType_REBASE },
+    { "SK-FST", CDbtag::eDbtagType_SK_FST },
+    { "VBRC", CDbtag::eDbtagType_VBRC }
 };
 
 static const TDbxrefPair kApprovedSrcDbXrefs[] = {
-    TDbxrefPair("AFTOL", CDbtag::eDbtagType_AFTOL),
-    TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
-    TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
-    TDbxrefPair("ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host),
-    TDbxrefPair("AntWeb", CDbtag::eDbtagType_AntWeb),
-    TDbxrefPair("BOLD", CDbtag::eDbtagType_BoLD),
-    TDbxrefPair("FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB),
-    TDbxrefPair("FBOL", CDbtag::eDbtagType_FBOL),
-    TDbxrefPair("FLYBASE", CDbtag::eDbtagType_FLYBASE),
-    TDbxrefPair("GRIN", CDbtag::eDbtagType_GRIN),
-    TDbxrefPair("Greengenes", CDbtag::eDbtagType_Greengenes),
-    TDbxrefPair("HMP", CDbtag::eDbtagType_HMP),
-    TDbxrefPair("HOMD", CDbtag::eDbtagType_HOMD),
-    TDbxrefPair("IKMC", CDbtag::eDbtagType_IKMC),
-    TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
-    TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
-    TDbxrefPair("JCM", CDbtag::eDbtagType_JCM),
-    TDbxrefPair("MGI", CDbtag::eDbtagType_MGI),
-    TDbxrefPair("MycoBank", CDbtag::eDbtagType_MycoBank),
-    TDbxrefPair("NBRC", CDbtag::eDbtagType_IFO),
-    TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
-    TDbxrefPair("UNILIB", CDbtag::eDbtagType_UNILIB),
-    TDbxrefPair("UNITE", CDbtag::eDbtagType_UNITE), 
-    TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
+    { "AFTOL", CDbtag::eDbtagType_AFTOL },
+    { "ATCC", CDbtag::eDbtagType_ATCC },
+    { "ATCC(dna)", CDbtag::eDbtagType_ATCC_dna },
+    { "ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host },
+    { "AntWeb", CDbtag::eDbtagType_AntWeb },
+    { "BOLD", CDbtag::eDbtagType_BoLD },
+    { "FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB },
+    { "FBOL", CDbtag::eDbtagType_FBOL },
+    { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
+    { "GRIN", CDbtag::eDbtagType_GRIN },
+    { "Greengenes", CDbtag::eDbtagType_Greengenes },
+    { "HMP", CDbtag::eDbtagType_HMP },
+    { "HOMD", CDbtag::eDbtagType_HOMD },
+    { "IKMC", CDbtag::eDbtagType_IKMC },
+    { "IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA },
+    { "IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM },
+    { "JCM", CDbtag::eDbtagType_JCM },
+    { "MGI", CDbtag::eDbtagType_MGI },
+    { "MycoBank", CDbtag::eDbtagType_MycoBank },
+    { "NBRC", CDbtag::eDbtagType_IFO },
+    { "RZPD", CDbtag::eDbtagType_RZPD },
+    { "UNILIB", CDbtag::eDbtagType_UNILIB },
+    { "UNITE", CDbtag::eDbtagType_UNITE }, 
+    { "taxon", CDbtag::eDbtagType_taxon }
 };
 
 static const TDbxrefPair kApprovedProbeDbXrefs[] = {
-    TDbxrefPair("BB", CDbtag::eDbtagType_BB),
-    TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
-    TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
-    TDbxrefPair("GEO", CDbtag::eDbtagType_GEO),
-    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
-    TDbxrefPair("GrainGenes", CDbtag::eDbtagType_GrainGenes)
+    { "BB", CDbtag::eDbtagType_BB },
+    { "DDBJ", CDbtag::eDbtagType_DDBJ },
+    { "EMBL", CDbtag::eDbtagType_EMBL },
+    { "GEO", CDbtag::eDbtagType_GEO },
+    { "GenBank", CDbtag::eDbtagType_GenBank },
+    { "GrainGenes", CDbtag::eDbtagType_GrainGenes }
 };
 
 
@@ -226,7 +226,7 @@ static const char* const kSkippableDbXrefs[] = {
 };
 
 // case sensetive
-typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefTypeMap;
+typedef CStaticPairArrayMap<const char*, CDbtag::EDbtagType, PCase_CStr> TDbxrefTypeMap;
 // case insensitive, per the C Toolkit
 typedef CStaticArraySet<const char*, PNocase_CStr> TDbxrefSet;
 
@@ -248,26 +248,26 @@ struct STaxidTaxname {
     string m_subspecies;
 };
 // Is hard-coding this here the best way to do this?
-typedef pair<int, STaxidTaxname> TTaxIdTaxnamePair;
+typedef SStaticPair<int, STaxidTaxname> TTaxIdTaxnamePair;
 static const TTaxIdTaxnamePair sc_taxid_taxname_pair[] = {
-    TTaxIdTaxnamePair(7955, STaxidTaxname("Danio", "rerio", kEmptyStr) ),
-    TTaxIdTaxnamePair(8022, STaxidTaxname("Oncorhynchus", "mykiss", kEmptyStr) ),
-    TTaxIdTaxnamePair(9606, STaxidTaxname("Homo", "sapiens", kEmptyStr) ),
-    TTaxIdTaxnamePair(9615, STaxidTaxname("Canis", "lupus", "familiaris") ),
-    TTaxIdTaxnamePair(9838, STaxidTaxname("Camelus", "dromedarius", kEmptyStr) ),
-    TTaxIdTaxnamePair(9913, STaxidTaxname("Bos", "taurus", kEmptyStr) ),
-    TTaxIdTaxnamePair(9986, STaxidTaxname("Oryctolagus", "cuniculus", kEmptyStr) ),
-    TTaxIdTaxnamePair(10090, STaxidTaxname("Mus", "musculus", kEmptyStr) ),
-    TTaxIdTaxnamePair(10093, STaxidTaxname("Mus", "pahari", kEmptyStr) ),
-    TTaxIdTaxnamePair(10094, STaxidTaxname("Mus", "saxicola", kEmptyStr) ),
-    TTaxIdTaxnamePair(10096, STaxidTaxname("Mus", "spretus", kEmptyStr) ),
-    TTaxIdTaxnamePair(10098, STaxidTaxname("Mus", "cookii", kEmptyStr) ),
-    TTaxIdTaxnamePair(10105, STaxidTaxname("Mus", "minutoides", kEmptyStr) ),
-    TTaxIdTaxnamePair(10116, STaxidTaxname("Rattus", "norvegicus", kEmptyStr) ),
-    TTaxIdTaxnamePair(10117, STaxidTaxname("Rattus", "rattus", kEmptyStr) )
+    { 7955, STaxidTaxname("Danio", "rerio", kEmptyStr)  },
+    { 8022, STaxidTaxname("Oncorhynchus", "mykiss", kEmptyStr)  },
+    { 9606, STaxidTaxname("Homo", "sapiens", kEmptyStr)  },
+    { 9615, STaxidTaxname("Canis", "lupus", "familiaris")  },
+    { 9838, STaxidTaxname("Camelus", "dromedarius", kEmptyStr)  },
+    { 9913, STaxidTaxname("Bos", "taurus", kEmptyStr)  },
+    { 9986, STaxidTaxname("Oryctolagus", "cuniculus", kEmptyStr)  },
+    { 10090, STaxidTaxname("Mus", "musculus", kEmptyStr)  },
+    { 10093, STaxidTaxname("Mus", "pahari", kEmptyStr)  },
+    { 10094, STaxidTaxname("Mus", "saxicola", kEmptyStr)  },
+    { 10096, STaxidTaxname("Mus", "spretus", kEmptyStr)  },
+    { 10098, STaxidTaxname("Mus", "cookii", kEmptyStr)  },
+    { 10105, STaxidTaxname("Mus", "minutoides", kEmptyStr)  },
+    { 10116, STaxidTaxname("Rattus", "norvegicus", kEmptyStr)  },
+    { 10117, STaxidTaxname("Rattus", "rattus", kEmptyStr)  }
 };
 
-typedef CStaticArrayMap<int, STaxidTaxname> TTaxIdTaxnameMap;
+typedef CStaticPairArrayMap<int, STaxidTaxname> TTaxIdTaxnameMap;
 DEFINE_STATIC_ARRAY_MAP(TTaxIdTaxnameMap, sc_TaxIdTaxnameMap, sc_taxid_taxname_pair);
 
 // destructor
@@ -508,131 +508,131 @@ void CDbtag::InvalidateType(void)
 //=========================================================================//
 
 // special case URLs
-static const string kFBan = "http://www.fruitfly.org/cgi-bin/annot/fban?";
-static const string kHInvDbHIT = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR=";
-static const string kHInvDbHIX = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";
-static const string kDictyPrim = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";
-static const string kMiRBaseMat = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc=";
-static const string kMaizeGDBInt = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
-static const string kMaizeGDBStr = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?term=";
-static const string kHomdTax = "http://www.homd.org/taxon=";
-static const string kHomdSeq = "http://www.homd.org/seq=";
+static const char kFBan[] = "http://www.fruitfly.org/cgi-bin/annot/fban?";
+static const char kHInvDbHIT[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=30&KEN_STR=";
+static const char kHInvDbHIX[] = "http://www.jbirc.aist.go.jp/hinv/hinvsys/servlet/ExecServlet?KEN_INDEX=0&KEN_TYPE=31&KEN_STR=";
+static const char kDictyPrim[] = "http://dictybase.org/db/cgi-bin/gene_page.pl?primary_id=";
+static const char kMiRBaseMat[] = "http://www.mirbase.org/cgi-bin/mature.pl?mature_acc=";
+static const char kMaizeGDBInt[] = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?id=";
+static const char kMaizeGDBStr[] = "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?term=";
+static const char kHomdTax[] = "http://www.homd.org/taxon=";
+static const char kHomdSeq[] = "http://www.homd.org/seq=";
 
 // mapping of DB to its URL; please sort these by tag name (mostly,
 // but NOT entirely, in case-sensitive ASCII-betical order as above)
-typedef pair<CDbtag::EDbtagType, string>    TDbtUrl;
+typedef SStaticPair<CDbtag::EDbtagType, const char*>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
-    TDbtUrl(CDbtag::eDbtagType_AFTOL, "http://aftol1.biology.duke.edu/pub/displayTaxonInfo?aftol_id="),
-    TDbtUrl(CDbtag::eDbtagType_APHIDBASE, "http://webapps1.genouest.org/grs-1.0/grs?reportID=chado_genome_report&objectID="),
-    TDbtUrl(CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID="),
-    TDbtUrl(CDbtag::eDbtagType_ATCC, "http://www.atcc.org/SearchCatalogs/linkin?id="),
-    TDbtUrl(CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q="),
-    TDbtUrl(CDbtag::eDbtagType_AntWeb, "http://www.antweb.org/specimen.do?name="),
-    TDbtUrl(CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key="),
-    TDbtUrl(CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
-    TDbtUrl(CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
-    TDbtUrl(CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key="),
-    TDbtUrl(CDbtag::eDbtagType_BB, "http://beetlebase.org/cgi-bin/cmap/feature_search?features="),
-    TDbtUrl(CDbtag::eDbtagType_BEETLEBASE, "http://www.beetlebase.org/cgi-bin/report.cgi?name="),
-    TDbtUrl(CDbtag::eDbtagType_BGD, "http://genomes.arc.georgetown.edu/bovine/genepages/genes/"),
-    TDbtUrl(CDbtag::eDbtagType_BoLD, "http://www.boldsystems.org/connectivity/specimenlookup.php?processid="),
-    TDbtUrl(CDbtag::eDbtagType_CCDS, "http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA="),
-    TDbtUrl(CDbtag::eDbtagType_CDD, "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid="),
-    TDbtUrl(CDbtag::eDbtagType_CGNC, "http://www.agnc.msstate.edu/GeneReport.aspx?a="),
-    TDbtUrl(CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid="),
-    TDbtUrl(CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog="),
-    TDbtUrl(CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object="),
-    TDbtUrl(CDbtag::eDbtagType_ENSEMBL, "http://www.ensembl.org/id/"),
-    TDbtUrl(CDbtag::eDbtagType_ERIC, "http://www.ericbrc.org/genbank/dbxref/"),
-    TDbtUrl(CDbtag::eDbtagType_EcoGene, "http://ecogene.org/geneInfo.php?eg_id="),
-    TDbtUrl(CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid="),
-    TDbtUrl(CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec="),
-    TDbtUrl(CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?"),
-    TDbtUrl(CDbtag::eDbtagType_GABI, "http://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId="),
-    TDbtUrl(CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:"),
-    TDbtUrl(CDbtag::eDbtagType_GOA, "http://www.ebi.ac.uk/ego/GProtein?ac="),
-    TDbtUrl(CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?"),
-    TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://old.genedb.org/genedb/Search?organism=All%3A*&name="),
-    TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/gene/"),
-    TDbtUrl(CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name="),
-    TDbtUrl(CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id="),
-    TDbtUrl(CDbtag::eDbtagType_HGNC, "http://www.genenames.org/data/hgnc_data.php?hgnc_id="),
-    TDbtUrl(CDbtag::eDbtagType_HMP, "http://www.hmpdacc-resources.org/cgi-bin/hmp_catalog/main.cgi?section=HmpSummary&page=displayHmpProject&hmp_id="),
-    TDbtUrl(CDbtag::eDbtagType_HOMD, "http://www.homd.org/"),
-    TDbtUrl(CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/"),
-    TDbtUrl(CDbtag::eDbtagType_HSSP, "http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-newId+-e+hssp-ID:"),
-    TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
-    TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT="),
-    TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://www.imgt.org/IMGT_GENE-DB/GENElect?species=Homo+sapiens&query=2+"),
-    TDbtUrl(CDbtag::eDbtagType_IMGT_LIGM, "http://www.imgt.org/cgi-bin/IMGTlect.jv?query=201+"),
-    TDbtUrl(CDbtag::eDbtagType_IRD, "http://www.fludb.org/brc/fluSegmentDetails.do?irdSubmissionId="),
-    TDbtUrl(CDbtag::eDbtagType_ISD, "http://www.flu.lanl.gov/search/view_record.html?accession="),
-    TDbtUrl(CDbtag::eDbtagType_ISFinder, "http://www-is.biotoul.fr/scripts/is/is_spec.idc?name="),
-    TDbtUrl(CDbtag::eDbtagType_InterimID, "http://www.ncbi.nlm.nih.gov/gene/"),
-    TDbtUrl(CDbtag::eDbtagType_Interpro, "http://www.ebi.ac.uk/interpro/ISearch?mode=ipr&query="),
-    TDbtUrl(CDbtag::eDbtagType_JCM, "http://www.jcm.riken.go.jp/cgi-bin/jcm/jcm_number?JCM="),
-    TDbtUrl(CDbtag::eDbtagType_JGIDB, "http://genome.jgi-psf.org/cgi-bin/jgrs?id="),
-    TDbtUrl(CDbtag::eDbtagType_LocusID, "http://www.ncbi.nlm.nih.gov/gene/"),
-    TDbtUrl(CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/searches/accession_report.cgi?id=MGI:"),
-    TDbtUrl(CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/omim/"),
-    TDbtUrl(CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?"),
-    TDbtUrl(CDbtag::eDbtagType_MycoBank, "http://www.mycobank.org/MycoTaxo.aspx?Link=T&Rec="),
-    TDbtUrl(CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id="),
-    TDbtUrl(CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id="),
-    TDbtUrl(CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk="),
-    TDbtUrl(CDbtag::eDbtagType_Osa1, "http://rice.plantbiology.msu.edu/cgi-bin/gbrowse/rice/?name="),
-    TDbtUrl(CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/query.asp?web_id="),
-    TDbtUrl(CDbtag::eDbtagType_PBmice, "http://www.idmshanghai.cn/PBmice/DetailedSearch.do?type=insert&id="),
-    TDbtUrl(CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId="),
-    TDbtUrl(CDbtag::eDbtagType_PFAM, "http://pfam.sanger.ac.uk/family?acc="),
-    TDbtUrl(CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier="),
-    TDbtUrl(CDbtag::eDbtagType_Pathema, "http://pathema.jcvi.org/cgi-bin/Burkholderia/shared/GenePage.cgi?all=1&locus="),
-    TDbtUrl(CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/"),
-    TDbtUrl(CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/getAnnotation.do?locusID="),
-    TDbtUrl(CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name="),
-    TDbtUrl(CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno="),
-    TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/"),
-    TDbtUrl(CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?"),
-    TDbtUrl(CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/generalSearch/RgdSearch.jsp?quickSearch=1&searchKeyword="),
-    TDbtUrl(CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object="),
-    TDbtUrl(CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id="),
-    TDbtUrl(CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus="),
-    TDbtUrl(CDbtag::eDbtagType_SGN, "http://www.sgn.cornell.edu/search/est.pl?request_type=7&request_id="),
-    TDbtUrl(CDbtag::eDbtagType_SK_FST, "http://aafc-aac.usask.ca/fst/"),
-    TDbtUrl(CDbtag::eDbtagType_SubtiList, "http://genolist.pasteur.fr/SubtiList/genome.cgi?external_query+"),
-    TDbtUrl(CDbtag::eDbtagType_TAIR, "http://www.arabidopsis.org/servlets/TairObject?type=locus&name="),
-    TDbtUrl(CDbtag::eDbtagType_TIGRFAM, "http://cmr.tigr.org/tigr-scripts/CMR/HmmReport.cgi?hmm_acc="),
-    TDbtUrl(CDbtag::eDbtagType_UNITE, "http://unite.ut.ee/bl_forw.php?nimi="),
-    TDbtUrl(CDbtag::eDbtagType_UniGene, "http://www.ncbi.nlm.nih.gov/unigene?term="),
-    TDbtUrl(CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/uniprot/"),
-    TDbtUrl(CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/uniprot/"),
-    TDbtUrl(CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/genome/sts/sts.cgi?uid="),
-    TDbtUrl(CDbtag::eDbtagType_VBASE2, "http://www.dnaplot.de/vbase2/vgene.php?id="),
-    TDbtUrl(CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id="),
-    TDbtUrl(CDbtag::eDbtagType_VectorBase, "http://www.vectorbase.org/Genome/BRCGene/?feature="),
-    TDbtUrl(CDbtag::eDbtagType_Vega, "http://vega.sanger.ac.uk/id/" ),
-    TDbtUrl(CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search="),
-    TDbtUrl(CDbtag::eDbtagType_WormBase, "http://www.wormbase.org/db/gene/gene?class=CDS;name="),
-    TDbtUrl(CDbtag::eDbtagType_Xenbase, "http://www.xenbase.org/gene/showgene.do?method=display&geneId="),
-    TDbtUrl(CDbtag::eDbtagType_ZFIN, "http://zfin.org/cgi-bin/webdriver?MIval=aa-markerview.apg&OID="),
-    TDbtUrl(CDbtag::eDbtagType_axeldb, "http://www.dkfz-heidelberg.de/tbi/services/axeldb/clone/xenopus?name="),
-    TDbtUrl(CDbtag::eDbtagType_dbClone, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=clone&cmd=Retrieve&list_uids="),
-    TDbtUrl(CDbtag::eDbtagType_dbCloneLib, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=clonelib&cmd=Retrieve&list_uids="),
-    TDbtUrl(CDbtag::eDbtagType_dbEST, "http://www.ncbi.nlm.nih.gov/nucest/"),
-    TDbtUrl(CDbtag::eDbtagType_dbProbe, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=probe&cmd=Retrieve&list_uids="),
-    TDbtUrl(CDbtag::eDbtagType_dbSNP, "http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?type=rs&rs="),
-    TDbtUrl(CDbtag::eDbtagType_dbSTS, "http://www.ncbi.nlm.nih.gov/nuccore/"),
-    TDbtUrl(CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid="),
-    TDbtUrl(CDbtag::eDbtagType_miRBase, "http://www.mirbase.org/cgi-bin/mirna_entry.pl?acc="),
-    TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
-    TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
-    TDbtUrl(CDbtag::eDbtagType_BEEBASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/bee_genome4/?name="),
-    TDbtUrl(CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name="),
-    TDbtUrl(CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/"),
-    TDbtUrl(CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=")
+    { CDbtag::eDbtagType_AFTOL, "http://aftol1.biology.duke.edu/pub/displayTaxonInfo?aftol_id=" },
+    { CDbtag::eDbtagType_APHIDBASE, "http://webapps1.genouest.org/grs-1.0/grs?reportID=chado_genome_report&objectID=" },
+    { CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID=" },
+    { CDbtag::eDbtagType_ATCC, "http://www.atcc.org/SearchCatalogs/linkin?id=" },
+    { CDbtag::eDbtagType_AceView_WormGenes, "http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/av.cgi?db=worm&c=gene&q=" },
+    { CDbtag::eDbtagType_AntWeb, "http://www.antweb.org/specimen.do?name=" },
+    { CDbtag::eDbtagType_ApiDB, "http://www.apidb.org/apidb/showRecord.do?name=GeneRecordClasses.ApiDBGeneRecordClass&primary_key=" },
+    { CDbtag::eDbtagType_ApiDB_CryptoDB, "http://cryptodb.org/cryptodb/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key=" },
+    { CDbtag::eDbtagType_ApiDB_PlasmoDB, "http://www.plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key=" },
+    { CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key=" },
+    { CDbtag::eDbtagType_BB, "http://beetlebase.org/cgi-bin/cmap/feature_search?features=" },
+    { CDbtag::eDbtagType_BEETLEBASE, "http://www.beetlebase.org/cgi-bin/report.cgi?name=" },
+    { CDbtag::eDbtagType_BGD, "http://genomes.arc.georgetown.edu/bovine/genepages/genes/" },
+    { CDbtag::eDbtagType_BoLD, "http://www.boldsystems.org/connectivity/specimenlookup.php?processid=" },
+    { CDbtag::eDbtagType_CCDS, "http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=" },
+    { CDbtag::eDbtagType_CDD, "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=" },
+    { CDbtag::eDbtagType_CGNC, "http://www.agnc.msstate.edu/GeneReport.aspx?a=" },
+    { CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid=" },
+    { CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog=" },
+    { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" },
+    { CDbtag::eDbtagType_ENSEMBL, "http://www.ensembl.org/id/" },
+    { CDbtag::eDbtagType_ERIC, "http://www.ericbrc.org/genbank/dbxref/" },
+    { CDbtag::eDbtagType_EcoGene, "http://ecogene.org/geneInfo.php?eg_id=" },
+    { CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
+    { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" },
+    { CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?" },
+    { CDbtag::eDbtagType_GABI, "http://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId=" },
+    { CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:" },
+    { CDbtag::eDbtagType_GOA, "http://www.ebi.ac.uk/ego/GProtein?ac=" },
+    { CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?" },
+    { CDbtag::eDbtagType_GeneDB, "http://old.genedb.org/genedb/Search?organism=All%3A*&name=" },
+    { CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/gene/" },
+    { CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name=" },
+    { CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id=" },
+    { CDbtag::eDbtagType_HGNC, "http://www.genenames.org/data/hgnc_data.php?hgnc_id=" },
+    { CDbtag::eDbtagType_HMP, "http://www.hmpdacc-resources.org/cgi-bin/hmp_catalog/main.cgi?section=HmpSummary&page=displayHmpProject&hmp_id=" },
+    { CDbtag::eDbtagType_HOMD, "http://www.homd.org/" },
+    { CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/" },
+    { CDbtag::eDbtagType_HSSP, "http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-newId+-e+hssp-ID:" },
+    { CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp" },
+    { CDbtag::eDbtagType_IFO, "http://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT=" },
+    { CDbtag::eDbtagType_IMGT_GENEDB, "http://www.imgt.org/IMGT_GENE-DB/GENElect?species=Homo+sapiens&query=2+" },
+    { CDbtag::eDbtagType_IMGT_LIGM, "http://www.imgt.org/cgi-bin/IMGTlect.jv?query=201+" },
+    { CDbtag::eDbtagType_IRD, "http://www.fludb.org/brc/fluSegmentDetails.do?irdSubmissionId=" },
+    { CDbtag::eDbtagType_ISD, "http://www.flu.lanl.gov/search/view_record.html?accession=" },
+    { CDbtag::eDbtagType_ISFinder, "http://www-is.biotoul.fr/scripts/is/is_spec.idc?name=" },
+    { CDbtag::eDbtagType_InterimID, "http://www.ncbi.nlm.nih.gov/gene/" },
+    { CDbtag::eDbtagType_Interpro, "http://www.ebi.ac.uk/interpro/ISearch?mode=ipr&query=" },
+    { CDbtag::eDbtagType_JCM, "http://www.jcm.riken.go.jp/cgi-bin/jcm/jcm_number?JCM=" },
+    { CDbtag::eDbtagType_JGIDB, "http://genome.jgi-psf.org/cgi-bin/jgrs?id=" },
+    { CDbtag::eDbtagType_LocusID, "http://www.ncbi.nlm.nih.gov/gene/" },
+    { CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/searches/accession_report.cgi?id=MGI:" },
+    { CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/omim/" },
+    { CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?" },
+    { CDbtag::eDbtagType_MycoBank, "http://www.mycobank.org/MycoTaxo.aspx?Link=T&Rec=" },
+    { CDbtag::eDbtagType_NMPDR, "http://www.nmpdr.org/linkin.cgi?id=" },
+    { CDbtag::eDbtagType_NRESTdb, "http://genome.ukm.my/nrestdb/db/single_view_est.php?id=" },
+    { CDbtag::eDbtagType_NextDB, "http://nematode.lab.nig.ac.jp/cgi-bin/db/ShowGeneInfo.sh?celk=" },
+    { CDbtag::eDbtagType_Osa1, "http://rice.plantbiology.msu.edu/cgi-bin/gbrowse/rice/?name=" },
+    { CDbtag::eDbtagType_PBR, "http://www.poxvirus.org/query.asp?web_id=" },
+    { CDbtag::eDbtagType_PBmice, "http://www.idmshanghai.cn/PBmice/DetailedSearch.do?type=insert&id=" },
+    { CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId=" },
+    { CDbtag::eDbtagType_PFAM, "http://pfam.sanger.ac.uk/family?acc=" },
+    { CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier=" },
+    { CDbtag::eDbtagType_Pathema, "http://pathema.jcvi.org/cgi-bin/Burkholderia/shared/GenePage.cgi?all=1&locus=" },
+    { CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/" },
+    { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/getAnnotation.do?locusID=" },
+    { CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name=" },
+    { CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
+    { CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/" },
+    { CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?" },
+    { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/generalSearch/RgdSearch.jsp?quickSearch=1&searchKeyword=" },
+    { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" },
+    { CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id=" },
+    { CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus=" },
+    { CDbtag::eDbtagType_SGN, "http://www.sgn.cornell.edu/search/est.pl?request_type=7&request_id=" },
+    { CDbtag::eDbtagType_SK_FST, "http://aafc-aac.usask.ca/fst/" },
+    { CDbtag::eDbtagType_SubtiList, "http://genolist.pasteur.fr/SubtiList/genome.cgi?external_query+" },
+    { CDbtag::eDbtagType_TAIR, "http://www.arabidopsis.org/servlets/TairObject?type=locus&name=" },
+    { CDbtag::eDbtagType_TIGRFAM, "http://cmr.tigr.org/tigr-scripts/CMR/HmmReport.cgi?hmm_acc=" },
+    { CDbtag::eDbtagType_UNITE, "http://unite.ut.ee/bl_forw.php?nimi=" },
+    { CDbtag::eDbtagType_UniGene, "http://www.ncbi.nlm.nih.gov/unigene?term=" },
+    { CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/uniprot/" },
+    { CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/uniprot/" },
+    { CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/genome/sts/sts.cgi?uid=" },
+    { CDbtag::eDbtagType_VBASE2, "http://www.dnaplot.de/vbase2/vgene.php?id=" },
+    { CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=" },
+    { CDbtag::eDbtagType_VectorBase, "http://www.vectorbase.org/Genome/BRCGene/?feature=" },
+    { CDbtag::eDbtagType_Vega, "http://vega.sanger.ac.uk/id/"  },
+    { CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search=" },
+    { CDbtag::eDbtagType_WormBase, "http://www.wormbase.org/db/gene/gene?class=CDS;name=" },
+    { CDbtag::eDbtagType_Xenbase, "http://www.xenbase.org/gene/showgene.do?method=display&geneId=" },
+    { CDbtag::eDbtagType_ZFIN, "http://zfin.org/cgi-bin/webdriver?MIval=aa-markerview.apg&OID=" },
+    { CDbtag::eDbtagType_axeldb, "http://www.dkfz-heidelberg.de/tbi/services/axeldb/clone/xenopus?name=" },
+    { CDbtag::eDbtagType_dbClone, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=clone&cmd=Retrieve&list_uids=" },
+    { CDbtag::eDbtagType_dbCloneLib, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=clonelib&cmd=Retrieve&list_uids=" },
+    { CDbtag::eDbtagType_dbEST, "http://www.ncbi.nlm.nih.gov/nucest/" },
+    { CDbtag::eDbtagType_dbProbe, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=probe&cmd=Retrieve&list_uids=" },
+    { CDbtag::eDbtagType_dbSNP, "http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?type=rs&rs=" },
+    { CDbtag::eDbtagType_dbSTS, "http://www.ncbi.nlm.nih.gov/nuccore/" },
+    { CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid=" },
+    { CDbtag::eDbtagType_miRBase, "http://www.mirbase.org/cgi-bin/mirna_entry.pl?acc=" },
+    { CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1=" },
+    { CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" },
+    { CDbtag::eDbtagType_BEEBASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/bee_genome4/?name=" },
+    { CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name=" },
+    { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
+    { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" }
 };
 
-typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
+typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
 DEFINE_STATIC_ARRAY_MAP(TUrlPrefixMap, sc_UrlMap, sc_url_prefix);
 
 string CDbtag::GetUrl(void) const
@@ -707,7 +707,7 @@ string CDbtag::GetUrl(const string & genus,
     if (it == sc_UrlMap.end()) {
         return kEmptyStr;
     }
-    const string* prefix = &(it->second);
+    const char* prefix = it->second;
 
     string tag;
     if (GetTag().IsStr()) {
@@ -724,7 +724,7 @@ string CDbtag::GetUrl(const string & genus,
     switch (GetType()) {
         case CDbtag::eDbtagType_FLYBASE:
             if (NStr::Find(tag, "FBan") != NPOS) {
-                prefix = &kFBan;
+                prefix = kFBan;
             }
             break;
 
@@ -751,9 +751,9 @@ string CDbtag::GetUrl(const string & genus,
 
         case eDbtagType_MaizeGDB:
             if (GetTag().IsId()) {
-                prefix = &kMaizeGDBInt;
+                prefix = kMaizeGDBInt;
             } else if (GetTag().IsStr()) {
-                prefix = &kMaizeGDBStr;
+                prefix = kMaizeGDBStr;
             }
             break;
 
@@ -773,14 +773,14 @@ string CDbtag::GetUrl(const string & genus,
             break;
         case eDbtagType_H_InvDB:
             if (NStr::Find(tag, "HIT")) {
-                prefix = &kHInvDbHIT;
+                prefix = kHInvDbHIT;
             } else if (NStr::Find(tag, "HIX")) {
-                prefix = &kHInvDbHIX;
+                prefix = kHInvDbHIX;
             }
             break;
 
         case eDbtagType_SK_FST:
-            return *prefix;
+            return prefix;
             break;
 
         case CDbtag::eDbtagType_taxon:
@@ -793,23 +793,23 @@ string CDbtag::GetUrl(const string & genus,
 
         case CDbtag::eDbtagType_dictyBase:
             if (NStr::Find(tag, "_") != NPOS) {
-                prefix = &kDictyPrim;
+                prefix = kDictyPrim;
             }
             break;
 
 
         case CDbtag::eDbtagType_miRBase:
             if (NStr::Find(tag, "MIMAT") != NPOS) {
-                prefix = &kMiRBaseMat;
+                prefix = kMiRBaseMat;
             }
             break;
 
         case CDbtag::eDbtagType_HOMD:
             if( NStr::StartsWith(tag, "tax_") ) {
-                prefix = &kHomdTax;
+                prefix = kHomdTax;
                 tag = tag.substr(4);
             } else if( NStr::StartsWith(tag, "seq_") ) {
-                prefix = &kHomdSeq;
+                prefix = kHomdSeq;
                 tag = tag.substr(4);
             }
             break;
@@ -828,7 +828,8 @@ string CDbtag::GetUrl(const string & genus,
             if( ! subspecies.empty() ) {
                 taxname_url_piece += "+" + subspecies;
             }
-            return NStr::Replace( *prefix,
+            string ret = prefix;
+            return NStr::Replace( ret,
                                   "species=Homo+sapiens&",
                                   "species=" + taxname_url_piece + "&" ) +
                 tag;
@@ -839,7 +840,7 @@ string CDbtag::GetUrl(const string & genus,
             break;
     }
 
-    return *prefix + tag;
+    return string(prefix) + tag;
 }
 
 
