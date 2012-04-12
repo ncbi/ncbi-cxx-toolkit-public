@@ -859,8 +859,9 @@ void CTrackingEnvHolder::x_Destroy(void)
     m_TrackingEnv = 0;
 
     for (char** ptr = env;  *ptr;  ++ptr) {
+        char* del = *ptr;
         *ptr = 0;
-        delete[] *ptr;
+        delete[] del;
     }
     delete[] env;
 }
