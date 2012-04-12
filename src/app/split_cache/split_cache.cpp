@@ -1312,7 +1312,7 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
             for (CBioseq_CI seq(handle.GetTopLevelEntry()); seq; ++seq) {
                 for (CSeqdesc_CI desc_ci(*seq, choices); desc_ci; ++desc_ci);
             }
-            pair<size_t, size_t> counts = CollectDescriptors(*tse_core);
+            pair<size_t, size_t> counts(CollectDescriptors(*tse_core));
             if ( !check_set_desc ) {
                 _ASSERT(counts.first + counts.second < content.GetDescCount());
             }
@@ -1341,7 +1341,7 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
         CConstRef<CSeq_entry> complete_tse =
             handle.GetTopLevelEntry().GetCompleteSeq_entry();
         _ASSERT(tse_core == complete_tse);
-        pair<size_t, size_t> desc_counts = CollectDescriptors(*complete_tse);
+        pair<size_t, size_t> desc_counts(CollectDescriptors(*complete_tse));
         _ASSERT(desc_counts.first == content.GetSeqDescCount());
         _ASSERT(desc_counts.second == content.GetSetDescCount());
     }}
