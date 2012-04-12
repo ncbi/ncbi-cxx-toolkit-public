@@ -156,51 +156,60 @@ public:
 
     static const char* GetFormatName(EFormat format);
 
-    //  ------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------
     //  "Stateless" interface:
     //  Useful for checking for all formats in one simple call.
     //  May go away; use object interface instead.
-    //  ------------------------------------------------------------------------
-public:
-    /// Guess file format structure.
+    //  ----------------------------------------------------------------------
+
+    /// Guess file format
     static
     EFormat Format(const string& path, EOnError onerror = eDefault);
 
     /// Format prediction based on an input stream
+    /// @note On completion, the function pushes whatever data it had to read
+    ///       (in order to detect data format) back to the stream -- using
+    ///       CStreamUtils::Stepback()
     static
     EFormat Format(CNcbiIstream& input, EOnError onerror = eDefault);
 
-    //  ------------------------------------------------------------------------
+
+    //  ----------------------------------------------------------------------
     //  "Object" interface:
     //  Use when interested only in a limited number of formats, in excluding
     //  certain tests, a specific order in which formats are tested, ...
-    //  ------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------
 
-    //  Construction, destruction
-public:
     CFormatGuess();
 
-    CFormatGuess(
-        const string& /* file name */ );
+    CFormatGuess(const string& fname);
 
-    CFormatGuess(
-        CNcbiIstream& );
+    /// @note Data format detection methods GuessFormat() and TestFormat()
+    ///       take care to push whatever data they read back to the stream
+    ///       using CStreamUtils::Stepback()
+    CFormatGuess(CNcbiIstream& input);
 
     ~CFormatGuess();
 
-    //  Interface:
-public:
-
     NCBI_DEPRECATED EFormat GuessFormat(EMode);
-    NCBI_DEPRECATED bool TestFormat(EFormat,EMode);
+    NCBI_DEPRECATED bool TestFormat(EFormat, EMode);
 
+    /// @note If the instance of the class is built upon std::istream, then
+    ///       on completion this function pushes whatever data it had to read
+    ///       (in order to detect data format) back to the stream -- using
+    ///       CStreamUtils::Stepback()
     EFormat GuessFormat(EOnError onerror = eDefault);
-    bool TestFormat(EFormat,EOnError onerror = eDefault);
+
+
+    /// @note If the instance of the class is built upon std::istream, then
+    ///       on completion this function pushes whatever data it had to read
+    ///       (in order to detect data format) back to the stream -- using
+    ///       CStreamUtils::Stepback()
+    bool TestFormat(EFormat, EOnError onerror = eDefault);
 
     /// Get format hints
     CFormatHints& GetFormatHints(void) { return m_Hints; }
 
-    // helpers:
 protected:
     void Initialize();
 
