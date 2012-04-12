@@ -912,8 +912,8 @@ int CId2FetchApp::Run(void)
         if ( vv.size() != 2 ) {
             ERR_POST(Fatal<<"Bad blob_id format: "<<args["blob_id"]);
         }
-        int sat = NStr::StringToNumeric(vv[0]);
-        int sat_key = NStr::StringToNumeric(vv[1]);
+        int sat = NStr::StringToInt(vv[0]);
+        int sat_key = NStr::StringToInt(vv[1]);
         CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
         reqs.push_back(packet);
         CRef<CID2_Request> req(new CID2_Request);
