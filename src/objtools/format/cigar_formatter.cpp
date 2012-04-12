@@ -399,7 +399,6 @@ void CCIGAR_Formatter::x_FormatDensegRows(const CDense_seg& ds,
     }
 
     m_AlnMap.Reset(new CAlnMap(*ds_for_alnmix));
-    CScope* scope = GetScope();
 
     switch ( m_FormatBy ) {
     case eFormatBy_ReferenceId:
