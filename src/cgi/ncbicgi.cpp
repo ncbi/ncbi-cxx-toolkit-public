@@ -796,7 +796,7 @@ public:
     const char* const* GetTrackingEnv(void) const { return m_TrackingEnv; }
 
 private:
-    void x_Destroy();
+    void x_Destroy(void);
     const CNcbiEnvironment* m_Env;
     char**                  m_TrackingEnv;
 };
@@ -822,24 +822,26 @@ static const char* s_TrackingVars[] =
 CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
 	: m_Env(env), m_TrackingEnv(NULL)
 {
-    if ( !m_Env )
+    if (!m_Env)
         return;
 
     try {
-        int array_size = sizeof(s_TrackingVars) / sizeof(s_TrackingVars[0]);
-        m_TrackingEnv = new char*[array_size];
-        memset(m_TrackingEnv, 0, sizeof(char*) * array_size);
+        size_t size = sizeof(s_TrackingVars) / sizeof(s_TrackingVars[0]);
+        m_TrackingEnv = new char*[size];
+        memset(m_TrackingEnv, 0, sizeof(m_TrackingEnv[0]) * size);
 
         int i = 0;
         for (const char* const* name = s_TrackingVars;  *name;  ++name) {
             const string& value = m_Env->Get(*name);
-            if ( value.empty() )
+            if (value.empty())
                 continue;
 
-            string str( *name );
-            str += '=' + value;
-            m_TrackingEnv[i] = new char[str.length() + 1];
-            strcpy( m_TrackingEnv[i++], str.c_str() );
+            string str(*name);
+            str += '=';
+            str += value;
+            size = str.length() + 1;
+            m_TrackingEnv[i] = new char[size];
+            memcpy(m_TrackingEnv[i++], str.c_str(), size);
         }
     }
     catch (...) {
@@ -849,16 +851,19 @@ CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
 }
 
 
-void CTrackingEnvHolder::x_Destroy()
+void CTrackingEnvHolder::x_Destroy(void)
 {
     if ( !m_TrackingEnv )
         return;
 
-    for (char** ptr = m_TrackingEnv;  *ptr;  ++ptr) {
+    char** ptr;
+    for (ptr = m_TrackingEnv;  *ptr;  ++ptr) {
         delete[] *ptr;
     }
 
-    delete[] m_TrackingEnv;
+    ptr = m_TrackingEnv;
+    m_TrackingEnv = 0;
+    delete[] ptr;
 }
 
 
