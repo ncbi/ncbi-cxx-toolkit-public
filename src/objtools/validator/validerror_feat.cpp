@@ -1231,7 +1231,7 @@ static bool s_IsLocDirSub (const CSeq_loc& loc, CScope& scope)
 }
 
 
-static const string sc_BadGeneSynText [] = {
+static const char* const sc_BadGeneSynText [] = {
   "HLA",
   "alpha",
   "alternative",
@@ -2254,7 +2254,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 
 // note - list bad protein names in lower case, as search term is converted to lower case
 // before looking for exact match
-static const string sc_BadProtNameText [] = {
+static const char* const sc_BadProtNameText [] = {
   "'hypothetical protein",
   "alpha",
   "alternative",
@@ -4487,7 +4487,7 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
 }
 
 
-static const string sc_BypassMrnaTransCheckText[] = {
+static const char* const sc_BypassMrnaTransCheckText[] = {
     "RNA editing",
     "adjusted for low-quality genome",
     "annotated by transcript or proteomic data",
@@ -5550,7 +5550,7 @@ void CValidError_feat::ReportCdTransErrors
 }
 
 
-static const string sc_BypassCdsTransCheckText[] = {
+static const char* const sc_BypassCdsTransCheckText[] = {
   "RNA editing",
   "adjusted for low-quality genome",
   "annotated by transcript or proteomic data",
