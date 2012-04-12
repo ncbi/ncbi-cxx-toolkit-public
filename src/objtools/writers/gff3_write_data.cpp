@@ -214,6 +214,25 @@ bool CGff3WriteRecordFeature::x_AssignStart(
     if ( m_pLoc ) {
         m_uSeqStart = m_pLoc->GetStart( eExtreme_Positional );;
     }
+    CBioseq_Handle bsh = m_fc.BioseqHandle();
+    if (!CWriteUtil::IsSequenceCircular(bsh)) {
+        return true;
+    }
+
+    unsigned int bstart = m_pLoc->GetStart( eExtreme_Biological );
+    unsigned int bstop = m_pLoc->GetStop( eExtreme_Biological );
+
+    ENa_strand strand = m_pLoc->GetStrand();
+    if (strand == eNa_strand_minus) {
+        if (m_uSeqStart < bstop) {
+            m_uSeqStart += bsh.GetInst().GetLength();
+        }
+        return true;
+    }
+    //everything else considered eNa_strand_plus
+    if (m_uSeqStart < bstart) {
+        m_uSeqStart += bsh.GetInst().GetLength();
+    }
     return true;
 }
 
@@ -224,12 +243,25 @@ bool CGff3WriteRecordFeature::x_AssignStop(
 {
     if ( m_pLoc ) {
         m_uSeqStop = m_pLoc->GetStop( eExtreme_Positional );
-        if (m_uSeqStop < m_pLoc->GetStart(eExtreme_Positional)) {
-            CBioseq_Handle bsh = m_fc.BioseqHandle();
-            if (CWriteUtil::IsSequenceCircular(bsh)) {
-                m_uSeqStop += bsh.GetInst().GetLength();
-            }
+    }
+    CBioseq_Handle bsh = m_fc.BioseqHandle();
+    if (!CWriteUtil::IsSequenceCircular(bsh)) {
+        return true;
+    }
+
+    unsigned int bstart = m_pLoc->GetStart( eExtreme_Biological );
+    unsigned int bstop = m_pLoc->GetStop( eExtreme_Biological );
+
+    ENa_strand strand = m_pLoc->GetStrand();
+    if (strand == eNa_strand_minus) {
+        if (m_uSeqStop < bstop) {
+            m_uSeqStop += bsh.GetInst().GetLength();
         }
+        return true;
+    }
+    //everything else considered eNa_strand_plus
+    if (m_uSeqStop < bstart) {
+        m_uSeqStop += bsh.GetInst().GetLength();
     }
     return true;
 }
