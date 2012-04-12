@@ -16,6 +16,7 @@ internal/contigdb$
 internal/blast
 internal/asn_cache
 internal/gpipe/common$
+internal/gpipe/objects/gencoll_load$
 internal/gpipe/gencoll/src/gc_load_utils$
 internal/gpipe/gpinit/src/api$
 internal/gpipe/gpinit/src/gpinit_compare$
