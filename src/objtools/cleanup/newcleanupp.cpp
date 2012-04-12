@@ -498,99 +498,99 @@ void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
     }
 }
 
-typedef pair<const string, TORGMOD_SUBTYPE>  TOrgModElem;
+typedef SStaticPair<const char*, TORGMOD_SUBTYPE>  TOrgModElem;
 static const TOrgModElem sc_orgmod_map[] = {
-    TOrgModElem("Acronym",            NCBI_ORGMOD(acronym)),
-    TOrgModElem("Anamorph",           NCBI_ORGMOD(anamorph)),
-    TOrgModElem("Authority",          NCBI_ORGMOD(authority)),
-    TOrgModElem("Bio-material",       NCBI_ORGMOD(bio_material)),
-    TOrgModElem("Biotype",            NCBI_ORGMOD(biotype)),
-    TOrgModElem("Biovar",             NCBI_ORGMOD(biovar)),
-    TOrgModElem("Breed",              NCBI_ORGMOD(breed)),
-    TOrgModElem("Chemovar",           NCBI_ORGMOD(chemovar)),
-    TOrgModElem("Common",             NCBI_ORGMOD(common)),
-    TOrgModElem("Cultivar",           NCBI_ORGMOD(cultivar)),
-    TOrgModElem("Culture-collection", NCBI_ORGMOD(culture_collection) ),
-    TOrgModElem("Ecotype",            NCBI_ORGMOD(ecotype)),
-    TOrgModElem("Forma",              NCBI_ORGMOD(forma)),
-    TOrgModElem("Forma-specialis",    NCBI_ORGMOD(forma_specialis)),
-    TOrgModElem("Group",              NCBI_ORGMOD(group)),
-    TOrgModElem("Host",               NCBI_ORGMOD(nat_host)),
-    TOrgModElem("Isolate",            NCBI_ORGMOD(isolate)),
-    TOrgModElem("Metagenome-source",  NCBI_ORGMOD(metagenome_source)),
-    TOrgModElem("Pathovar",           NCBI_ORGMOD(pathovar)),
-    TOrgModElem("Serogroup",          NCBI_ORGMOD(serogroup)),
-    TOrgModElem("Serotype",           NCBI_ORGMOD(serotype)),
-    TOrgModElem("Serovar",            NCBI_ORGMOD(serovar)),
-    TOrgModElem("Specimen-voucher",   NCBI_ORGMOD(specimen_voucher)),
-    TOrgModElem("Strain",             NCBI_ORGMOD(strain)),
-    TOrgModElem("Sub-species",        NCBI_ORGMOD(sub_species)),
-    TOrgModElem("Subgroup",           NCBI_ORGMOD(subgroup)),
-    TOrgModElem("Substrain",          NCBI_ORGMOD(substrain)),
-    TOrgModElem("Subtype",            NCBI_ORGMOD(subtype)),
-    TOrgModElem("Synonym",            NCBI_ORGMOD(synonym)),
-    TOrgModElem("Teleomorph",         NCBI_ORGMOD(teleomorph)),
-    TOrgModElem("Type",               NCBI_ORGMOD(type)),
-    TOrgModElem("Variety",            NCBI_ORGMOD(variety))
+    { "Acronym",            NCBI_ORGMOD(acronym) },
+    { "Anamorph",           NCBI_ORGMOD(anamorph) },
+    { "Authority",          NCBI_ORGMOD(authority) },
+    { "Bio-material",       NCBI_ORGMOD(bio_material) },
+    { "Biotype",            NCBI_ORGMOD(biotype) },
+    { "Biovar",             NCBI_ORGMOD(biovar) },
+    { "Breed",              NCBI_ORGMOD(breed) },
+    { "Chemovar",           NCBI_ORGMOD(chemovar) },
+    { "Common",             NCBI_ORGMOD(common) },
+    { "Cultivar",           NCBI_ORGMOD(cultivar) },
+    { "Culture-collection", NCBI_ORGMOD(culture_collection)  },
+    { "Ecotype",            NCBI_ORGMOD(ecotype) },
+    { "Forma",              NCBI_ORGMOD(forma) },
+    { "Forma-specialis",    NCBI_ORGMOD(forma_specialis) },
+    { "Group",              NCBI_ORGMOD(group) },
+    { "Host",               NCBI_ORGMOD(nat_host) },
+    { "Isolate",            NCBI_ORGMOD(isolate) },
+    { "Metagenome-source",  NCBI_ORGMOD(metagenome_source) },
+    { "Pathovar",           NCBI_ORGMOD(pathovar) },
+    { "Serogroup",          NCBI_ORGMOD(serogroup) },
+    { "Serotype",           NCBI_ORGMOD(serotype) },
+    { "Serovar",            NCBI_ORGMOD(serovar) },
+    { "Specimen-voucher",   NCBI_ORGMOD(specimen_voucher) },
+    { "Strain",             NCBI_ORGMOD(strain) },
+    { "Sub-species",        NCBI_ORGMOD(sub_species) },
+    { "Subgroup",           NCBI_ORGMOD(subgroup) },
+    { "Substrain",          NCBI_ORGMOD(substrain) },
+    { "Subtype",            NCBI_ORGMOD(subtype) },
+    { "Synonym",            NCBI_ORGMOD(synonym) },
+    { "Teleomorph",         NCBI_ORGMOD(teleomorph) },
+    { "Type",               NCBI_ORGMOD(type) },
+    { "Variety",            NCBI_ORGMOD(variety) }
 };
-typedef CStaticArrayMap<const string, TORGMOD_SUBTYPE, PNocase> TOrgModMap;
+typedef CStaticArrayMap<string, TORGMOD_SUBTYPE, PNocase> TOrgModMap;
 DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModMap, sc_orgmod_map);
 
 static const TOrgModElem sc_orgmodalias_map[] = {
-    TOrgModElem("nat-host",      NCBI_ORGMOD(nat_host)),
-    TOrgModElem("specific-host", NCBI_ORGMOD(nat_host)),
-    TOrgModElem("sub-strain",     NCBI_ORGMOD(substrain)),
-    TOrgModElem("subspecies",    NCBI_ORGMOD(sub_species))
+    { "nat-host",      NCBI_ORGMOD(nat_host) },
+    { "specific-host", NCBI_ORGMOD(nat_host) },
+    { "sub-strain",     NCBI_ORGMOD(substrain) },
+    { "subspecies",    NCBI_ORGMOD(sub_species) }
 };
 DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModAliasMap, sc_orgmodalias_map);
 
-typedef pair<const string, TORGMOD_SUBTYPE>  TSubsourceElem;
+typedef SStaticPair<const char*, TORGMOD_SUBTYPE>  TSubsourceElem;
 static const TSubsourceElem sc_subsource_map[] = {
-    TSubsourceElem("Cell-line",             NCBI_SUBSOURCE(cell_line)),
-    TSubsourceElem("Cell-type",             NCBI_SUBSOURCE(cell_type)),
-    TSubsourceElem("Chromosome",            NCBI_SUBSOURCE(chromosome)),
-    TSubsourceElem("Clone",                 NCBI_SUBSOURCE(clone)),
-    TSubsourceElem("Clone-lib",             NCBI_SUBSOURCE(clone_lib)),
-    TSubsourceElem("Collected-by",          NCBI_SUBSOURCE(collected_by)),
-    TSubsourceElem("Collection-date",       NCBI_SUBSOURCE(collection_date)),
-    TSubsourceElem("Country",               NCBI_SUBSOURCE(country)),
-    TSubsourceElem("Dev-stage",             NCBI_SUBSOURCE(dev_stage)),
-    TSubsourceElem("Endogenous-virus-name", NCBI_SUBSOURCE(endogenous_virus_name)),
-    TSubsourceElem("Environmental-sample",  NCBI_SUBSOURCE(environmental_sample)),
-    TSubsourceElem("Frequency",             NCBI_SUBSOURCE(frequency)),
-    TSubsourceElem("Genotype",              NCBI_SUBSOURCE(genotype)),
-    TSubsourceElem("Germline",              NCBI_SUBSOURCE(germline)),
-    TSubsourceElem("Haplogroup",            NCBI_SUBSOURCE(haplogroup)),
-    TSubsourceElem("Haplotype",             NCBI_SUBSOURCE(haplotype)),
-    TSubsourceElem("Identified-by",         NCBI_SUBSOURCE(identified_by)),
-    TSubsourceElem("Isolation-source",      NCBI_SUBSOURCE(isolation_source)),
-    TSubsourceElem("Lab-host",              NCBI_SUBSOURCE(lab_host)),
-    TSubsourceElem("Lat-Lon",               NCBI_SUBSOURCE(lat_lon)),
-    TSubsourceElem("Linkage-group",         NCBI_SUBSOURCE(linkage_group)),
-    TSubsourceElem("Map",                   NCBI_SUBSOURCE(map)),
-    TSubsourceElem("Mating-type",           NCBI_SUBSOURCE(mating_type)),
-    TSubsourceElem("Metagenomic",           NCBI_SUBSOURCE(metagenomic)),
-    TSubsourceElem("Plasmid-name",          NCBI_SUBSOURCE(plasmid_name)),
-    TSubsourceElem("Pop-variant",           NCBI_SUBSOURCE(pop_variant)),
-    TSubsourceElem("Rearranged",            NCBI_SUBSOURCE(rearranged)),
-    TSubsourceElem("Segment",               NCBI_SUBSOURCE(segment)),
-    TSubsourceElem("Sex",                   NCBI_SUBSOURCE(sex)),
-    TSubsourceElem("Subclone",              NCBI_SUBSOURCE(subclone)),
-    TSubsourceElem("Tissue-lib",            NCBI_SUBSOURCE(tissue_lib)),
-    TSubsourceElem("Tissue-type",           NCBI_SUBSOURCE(tissue_type)),
-    TSubsourceElem("Transgenic",            NCBI_SUBSOURCE(transgenic))
+    { "Cell-line",             NCBI_SUBSOURCE(cell_line) },
+    { "Cell-type",             NCBI_SUBSOURCE(cell_type) },
+    { "Chromosome",            NCBI_SUBSOURCE(chromosome) },
+    { "Clone",                 NCBI_SUBSOURCE(clone) },
+    { "Clone-lib",             NCBI_SUBSOURCE(clone_lib) },
+    { "Collected-by",          NCBI_SUBSOURCE(collected_by) },
+    { "Collection-date",       NCBI_SUBSOURCE(collection_date) },
+    { "Country",               NCBI_SUBSOURCE(country) },
+    { "Dev-stage",             NCBI_SUBSOURCE(dev_stage) },
+    { "Endogenous-virus-name", NCBI_SUBSOURCE(endogenous_virus_name) },
+    { "Environmental-sample",  NCBI_SUBSOURCE(environmental_sample) },
+    { "Frequency",             NCBI_SUBSOURCE(frequency) },
+    { "Genotype",              NCBI_SUBSOURCE(genotype) },
+    { "Germline",              NCBI_SUBSOURCE(germline) },
+    { "Haplogroup",            NCBI_SUBSOURCE(haplogroup) },
+    { "Haplotype",             NCBI_SUBSOURCE(haplotype) },
+    { "Identified-by",         NCBI_SUBSOURCE(identified_by) },
+    { "Isolation-source",      NCBI_SUBSOURCE(isolation_source) },
+    { "Lab-host",              NCBI_SUBSOURCE(lab_host) },
+    { "Lat-Lon",               NCBI_SUBSOURCE(lat_lon) },
+    { "Linkage-group",         NCBI_SUBSOURCE(linkage_group) },
+    { "Map",                   NCBI_SUBSOURCE(map) },
+    { "Mating-type",           NCBI_SUBSOURCE(mating_type) },
+    { "Metagenomic",           NCBI_SUBSOURCE(metagenomic) },
+    { "Plasmid-name",          NCBI_SUBSOURCE(plasmid_name) },
+    { "Pop-variant",           NCBI_SUBSOURCE(pop_variant) },
+    { "Rearranged",            NCBI_SUBSOURCE(rearranged) },
+    { "Segment",               NCBI_SUBSOURCE(segment) },
+    { "Sex",                   NCBI_SUBSOURCE(sex) },
+    { "Subclone",              NCBI_SUBSOURCE(subclone) },
+    { "Tissue-lib",            NCBI_SUBSOURCE(tissue_lib) },
+    { "Tissue-type",           NCBI_SUBSOURCE(tissue_type) },
+    { "Transgenic",            NCBI_SUBSOURCE(transgenic) }
 };
-typedef CStaticArrayMap<const string, TSUBSOURCE_SUBTYPE, PNocase> TSubsourceMap;
+typedef CStaticArrayMap<string, TSUBSOURCE_SUBTYPE, PNocase> TSubsourceMap;
 DEFINE_STATIC_ARRAY_MAP(TSubsourceMap, sc_SubsourceMap, sc_subsource_map);
 
 static const TSubsourceElem sc_subsourcealias_map[] = {
-    TSubsourceElem("fwd-primer-name",    NCBI_SUBSOURCE(fwd_primer_name)),
-    TSubsourceElem("fwd-primer-seq",     NCBI_SUBSOURCE(fwd_primer_seq)),
-    TSubsourceElem("Lat-long",           NCBI_SUBSOURCE(lat_lon)),
-    TSubsourceElem("Latitude-Longitude", NCBI_SUBSOURCE(lat_lon)),
-    TSubsourceElem("rev-primer-name",    NCBI_SUBSOURCE(rev_primer_name)),
-    TSubsourceElem("rev-primer-seq",     NCBI_SUBSOURCE(rev_primer_seq)),
-    TSubsourceElem("sub-clone",          NCBI_SUBSOURCE(subclone))
+    { "fwd-primer-name",    NCBI_SUBSOURCE(fwd_primer_name) },
+    { "fwd-primer-seq",     NCBI_SUBSOURCE(fwd_primer_seq) },
+    { "Lat-long",           NCBI_SUBSOURCE(lat_lon) },
+    { "Latitude-Longitude", NCBI_SUBSOURCE(lat_lon) },
+    { "rev-primer-name",    NCBI_SUBSOURCE(rev_primer_name) },
+    { "rev-primer-seq",     NCBI_SUBSOURCE(rev_primer_seq) },
+    { "sub-clone",          NCBI_SUBSOURCE(subclone) }
 };
 DEFINE_STATIC_ARRAY_MAP(TSubsourceMap, sc_SubsourceAliasMap, sc_subsourcealias_map);
 
@@ -2488,46 +2488,46 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
 }
 
 
-typedef pair<const string, CSeqFeatData::TSite>  TSiteElem;
+typedef SStaticPair<const char*, CSeqFeatData::TSite>  TSiteElem;
 static const TSiteElem sc_site_map[] = {
-    TSiteElem("acetylation", CSeqFeatData::eSite_acetylation),
-    TSiteElem("active", CSeqFeatData::eSite_active),
-    TSiteElem("amidation", CSeqFeatData::eSite_amidation),
-    TSiteElem("binding", CSeqFeatData::eSite_binding),
-    TSiteElem("blocked", CSeqFeatData::eSite_blocked),
-    TSiteElem("cleavage", CSeqFeatData::eSite_cleavage),
-    TSiteElem("dna binding", CSeqFeatData::eSite_dna_binding),
-    TSiteElem("dna-binding", CSeqFeatData::eSite_dna_binding),
-    TSiteElem("gamma carboxyglutamic acid", CSeqFeatData::eSite_gamma_carboxyglutamic_acid),
-    TSiteElem("gamma-carboxyglutamic-acid", CSeqFeatData::eSite_gamma_carboxyglutamic_acid),
-    TSiteElem("glycosylation", CSeqFeatData::eSite_glycosylation),
-    TSiteElem("hydroxylation", CSeqFeatData::eSite_hydroxylation),
-    TSiteElem("inhibit", CSeqFeatData::eSite_inhibit),
-    TSiteElem("lipid binding", CSeqFeatData::eSite_lipid_binding),
-    TSiteElem("lipid-binding", CSeqFeatData::eSite_lipid_binding),
-    TSiteElem("metal binding", CSeqFeatData::eSite_metal_binding),
-    TSiteElem("metal-binding", CSeqFeatData::eSite_metal_binding),
-    TSiteElem("methylation", CSeqFeatData::eSite_methylation),
-    TSiteElem("modifi", CSeqFeatData::eSite_modified),
-    TSiteElem("mutagenized", CSeqFeatData::eSite_mutagenized),
-    TSiteElem("myristoylation", CSeqFeatData::eSite_myristoylation),
-    TSiteElem("nitrosylation", CSeqFeatData::eSite_nitrosylation),
-    TSiteElem("np binding", CSeqFeatData::eSite_np_binding),
-    TSiteElem("np-binding", CSeqFeatData::eSite_np_binding),
-    TSiteElem("oxidative deamination", CSeqFeatData::eSite_oxidative_deamination),
-    TSiteElem("oxidative-deamination", CSeqFeatData::eSite_oxidative_deamination),
-    TSiteElem("phosphorylation", CSeqFeatData::eSite_phosphorylation),
-    TSiteElem("pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid),
-    TSiteElem("pyrrolidone-carboxylic-acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid),
-    TSiteElem("signal peptide", CSeqFeatData::eSite_signal_peptide),
-    TSiteElem("signal-peptide", CSeqFeatData::eSite_signal_peptide),
-    TSiteElem("sulfatation", CSeqFeatData::eSite_sulfatation),
-    TSiteElem("transit peptide", CSeqFeatData::eSite_transit_peptide),
-    TSiteElem("transit-peptide", CSeqFeatData::eSite_transit_peptide),
-    TSiteElem("transmembrane region", CSeqFeatData::eSite_transmembrane_region),
-    TSiteElem("transmembrane-region", CSeqFeatData::eSite_transmembrane_region)
+    { "acetylation", CSeqFeatData::eSite_acetylation },
+    { "active", CSeqFeatData::eSite_active },
+    { "amidation", CSeqFeatData::eSite_amidation },
+    { "binding", CSeqFeatData::eSite_binding },
+    { "blocked", CSeqFeatData::eSite_blocked },
+    { "cleavage", CSeqFeatData::eSite_cleavage },
+    { "dna binding", CSeqFeatData::eSite_dna_binding },
+    { "dna-binding", CSeqFeatData::eSite_dna_binding },
+    { "gamma carboxyglutamic acid", CSeqFeatData::eSite_gamma_carboxyglutamic_acid },
+    { "gamma-carboxyglutamic-acid", CSeqFeatData::eSite_gamma_carboxyglutamic_acid },
+    { "glycosylation", CSeqFeatData::eSite_glycosylation },
+    { "hydroxylation", CSeqFeatData::eSite_hydroxylation },
+    { "inhibit", CSeqFeatData::eSite_inhibit },
+    { "lipid binding", CSeqFeatData::eSite_lipid_binding },
+    { "lipid-binding", CSeqFeatData::eSite_lipid_binding },
+    { "metal binding", CSeqFeatData::eSite_metal_binding },
+    { "metal-binding", CSeqFeatData::eSite_metal_binding },
+    { "methylation", CSeqFeatData::eSite_methylation },
+    { "modifi", CSeqFeatData::eSite_modified },
+    { "mutagenized", CSeqFeatData::eSite_mutagenized },
+    { "myristoylation", CSeqFeatData::eSite_myristoylation },
+    { "nitrosylation", CSeqFeatData::eSite_nitrosylation },
+    { "np binding", CSeqFeatData::eSite_np_binding },
+    { "np-binding", CSeqFeatData::eSite_np_binding },
+    { "oxidative deamination", CSeqFeatData::eSite_oxidative_deamination },
+    { "oxidative-deamination", CSeqFeatData::eSite_oxidative_deamination },
+    { "phosphorylation", CSeqFeatData::eSite_phosphorylation },
+    { "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid },
+    { "pyrrolidone-carboxylic-acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid },
+    { "signal peptide", CSeqFeatData::eSite_signal_peptide },
+    { "signal-peptide", CSeqFeatData::eSite_signal_peptide },
+    { "sulfatation", CSeqFeatData::eSite_sulfatation },
+    { "transit peptide", CSeqFeatData::eSite_transit_peptide },
+    { "transit-peptide", CSeqFeatData::eSite_transit_peptide },
+    { "transmembrane region", CSeqFeatData::eSite_transmembrane_region },
+    { "transmembrane-region", CSeqFeatData::eSite_transmembrane_region }
 };
-typedef CStaticArrayMap<const string, CSeqFeatData::TSite, PNocase> TSiteMap;
+typedef CStaticArrayMap<string, CSeqFeatData::TSite, PNocase> TSiteMap;
 DEFINE_STATIC_ARRAY_MAP(TSiteMap, sc_SiteMap, sc_site_map);
 
 void CNewCleanup_imp::SiteFeatBC( CSeqFeatData::ESite &site, CSeq_feat& feat )
@@ -3654,70 +3654,70 @@ CNewCleanup_imp::x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb
     return eAction_Nothing;
 }
 
-typedef pair <const char *, const int> TTrnaKey;
+typedef SStaticPair<const char *, const int> TTrnaKey;
 
 static const TTrnaKey trna_key_to_subtype [] = {
-    TTrnaKey ( "Ala",            'A' ),
-    TTrnaKey ( "Alanine",        'A' ),
-    TTrnaKey ( "Arg",            'R' ),
-    TTrnaKey ( "Arginine",       'R' ),
-    TTrnaKey ( "Asn",            'N' ),
-    TTrnaKey ( "Asp",            'D' ),
-    TTrnaKey ( "Asp or Asn",     'B' ),
-    TTrnaKey ( "Asparagine",     'N' ),
-    TTrnaKey ( "Aspartate",      'D' ),
-    TTrnaKey ( "Aspartic Acid",  'D' ),
-    TTrnaKey ( "Asx",            'B' ),
-    TTrnaKey ( "Cys",            'C' ),
-    TTrnaKey ( "Cysteine",       'C' ),
-    TTrnaKey ( "fMet",           'M' ),
-    TTrnaKey ( "Gln",            'Q' ),
-    TTrnaKey ( "Glu",            'E' ),
-    TTrnaKey ( "Glu or Gln",     'Z' ),
-    TTrnaKey ( "Glutamate",      'E' ),
-    TTrnaKey ( "Glutamic Acid",  'E' ),
-    TTrnaKey ( "Glutamine",      'Q' ),
-    TTrnaKey ( "Glx",            'Z' ),
-    TTrnaKey ( "Gly",            'G' ),
-    TTrnaKey ( "Glycine",        'G' ),
-    TTrnaKey ( "His",            'H' ),
-    TTrnaKey ( "Histidine",      'H' ),
-    TTrnaKey ( "Ile",            'I' ),
-    TTrnaKey ( "Isoleucine",     'I' ),
-    TTrnaKey ( "Leu",            'L' ),
-    TTrnaKey ( "Leu or Ile",     'J' ),
-    TTrnaKey ( "Leucine",        'L' ),
-    TTrnaKey ( "Lys",            'K' ),
-    TTrnaKey ( "Lysine",         'K' ),
-    TTrnaKey ( "Met",            'M' ),
-    TTrnaKey ( "Methionine",     'M' ),
-    TTrnaKey ( "OTHER",          'X' ),
-    TTrnaKey ( "Phe",            'F' ),
-    TTrnaKey ( "Phenylalanine",  'F' ),
-    TTrnaKey ( "Pro",            'P' ),
-    TTrnaKey ( "Proline",        'P' ),
-    TTrnaKey ( "Pyl",            'O' ),
-    TTrnaKey ( "Pyrrolysine",    'O' ),
-    TTrnaKey ( "Sec",            'U' ),
-    TTrnaKey ( "Selenocysteine", 'U' ),
-    TTrnaKey ( "Ser",            'S' ),
-    TTrnaKey ( "Serine",         'S' ),
-    TTrnaKey ( "Ter",            '*' ),
-    TTrnaKey ( "TERM",           '*' ),
-    TTrnaKey ( "Termination",    '*' ),
-    TTrnaKey ( "Thr",            'T' ),
-    TTrnaKey ( "Threonine",      'T' ),
-    TTrnaKey ( "Trp",            'W' ),
-    TTrnaKey ( "Tryptophan",     'W' ),
-    TTrnaKey ( "Tyr",            'Y' ),
-    TTrnaKey ( "Tyrosine",       'Y' ),
-    TTrnaKey ( "Val",            'V' ),
-    TTrnaKey ( "Valine",         'V' ),
-    TTrnaKey ( "Xle",            'J' ),
-    TTrnaKey ( "Xxx",            'X' )
+    {  "Ala",            'A'  },
+    {  "Alanine",        'A'  },
+    {  "Arg",            'R'  },
+    {  "Arginine",       'R'  },
+    {  "Asn",            'N'  },
+    {  "Asp",            'D'  },
+    {  "Asp or Asn",     'B'  },
+    {  "Asparagine",     'N'  },
+    {  "Aspartate",      'D'  },
+    {  "Aspartic Acid",  'D'  },
+    {  "Asx",            'B'  },
+    {  "Cys",            'C'  },
+    {  "Cysteine",       'C'  },
+    {  "fMet",           'M'  },
+    {  "Gln",            'Q'  },
+    {  "Glu",            'E'  },
+    {  "Glu or Gln",     'Z'  },
+    {  "Glutamate",      'E'  },
+    {  "Glutamic Acid",  'E'  },
+    {  "Glutamine",      'Q'  },
+    {  "Glx",            'Z'  },
+    {  "Gly",            'G'  },
+    {  "Glycine",        'G'  },
+    {  "His",            'H'  },
+    {  "Histidine",      'H'  },
+    {  "Ile",            'I'  },
+    {  "Isoleucine",     'I'  },
+    {  "Leu",            'L'  },
+    {  "Leu or Ile",     'J'  },
+    {  "Leucine",        'L'  },
+    {  "Lys",            'K'  },
+    {  "Lysine",         'K'  },
+    {  "Met",            'M'  },
+    {  "Methionine",     'M'  },
+    {  "OTHER",          'X'  },
+    {  "Phe",            'F'  },
+    {  "Phenylalanine",  'F'  },
+    {  "Pro",            'P'  },
+    {  "Proline",        'P'  },
+    {  "Pyl",            'O'  },
+    {  "Pyrrolysine",    'O'  },
+    {  "Sec",            'U'  },
+    {  "Selenocysteine", 'U'  },
+    {  "Ser",            'S'  },
+    {  "Serine",         'S'  },
+    {  "Ter",            '*'  },
+    {  "TERM",           '*'  },
+    {  "Termination",    '*'  },
+    {  "Thr",            'T'  },
+    {  "Threonine",      'T'  },
+    {  "Trp",            'W'  },
+    {  "Tryptophan",     'W'  },
+    {  "Tyr",            'Y'  },
+    {  "Tyrosine",       'Y'  },
+    {  "Val",            'V'  },
+    {  "Valine",         'V'  },
+    {  "Xle",            'J'  },
+    {  "Xxx",            'X'  }
 };
 
-typedef CStaticArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
+typedef CStaticPairArrayMap <const char*, const int, PNocase_CStr> TTrnaMap;
 DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 
 // This maps in the opposite direction of sm_TrnaKeys
@@ -4684,25 +4684,25 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
 }
 
 // mapping of wrong suffixes to the correct ones.
-typedef pair<string, string> TStringPair;
+typedef SStaticPair<const char*, const char*> TStringPair;
 static const TStringPair bad_sfxs[] = {
-    TStringPair("1d"  , "I"),
-    TStringPair("1st" , "I"),
-    TStringPair("2d"  , "II"),
-    TStringPair("2nd" , "II"),
-    TStringPair("3d"  , "III"),
-    TStringPair("3rd" , "III"),
-    TStringPair("4th" , "IV"),
-    TStringPair("5th" , "V"),
-    TStringPair("6th" , "VI"),
-    //TStringPair("I."  , "I"), // presumably commented out since it resembles initials
-    TStringPair("II." , "II"),
-    TStringPair("III.", "III"),
-    TStringPair("IV." , "IV"),
-    TStringPair("Jr"  , "Jr."),
-    TStringPair("Sr"  , "Sr."),    
-    //TStringPair("V."  , "V"), // presumably commented out since it resembles initials
-    TStringPair("VI." , "VI")
+    { "1d"  , "I" },
+    { "1st" , "I" },
+    { "2d"  , "II" },
+    { "2nd" , "II" },
+    { "3d"  , "III" },
+    { "3rd" , "III" },
+    { "4th" , "IV" },
+    { "5th" , "V" },
+    { "6th" , "VI" },
+    //{ "I."  , "I" }, // presumably commented out since it resembles initials
+    { "II." , "II" },
+    { "III.", "III" },
+    { "IV." , "IV" },
+    { "Jr"  , "Jr." },
+    { "Sr"  , "Sr." },    
+    //{ "V."  , "V" }, // presumably commented out since it resembles initials
+    { "VI." , "VI" }
 };
 typedef CStaticArrayMap<string, string> TSuffixMap;
 DEFINE_STATIC_ARRAY_MAP(TSuffixMap, sc_BadSuffixes, bad_sfxs);
@@ -6151,21 +6151,21 @@ void CNewCleanup_imp::x_CleanupAndRepairInference( string &inference )
 static
 void s_MatchesOfficialStructuredCommentDbname( string &tmp, string dbname )
 {
-    typedef pair<const string, const string>  TOfficialPrefixElem;
+    typedef SStaticPair<const char*, const char*>  TOfficialPrefixElem;
     static const TOfficialPrefixElem sc_official_prefix_map[] = {
-        TOfficialPrefixElem("Assembly", "Assembly-Data"),
-        TOfficialPrefixElem("Epiflu", "EpifluData"),
-        TOfficialPrefixElem("Flu", "FluData"),
-        TOfficialPrefixElem("Genome-Assembly", "Genome-Assembly-Data"),
-        TOfficialPrefixElem("GISAID_EpiFlu(TM)", "GISAID_EpiFlu(TM)Data"),
-        TOfficialPrefixElem("HIV-DataBase", "HIVDatabase"),
-        TOfficialPrefixElem("HIVDataBase", "HIVDataBaseData"),
-        TOfficialPrefixElem("International Barcode of Life (iBOL)",  "International Barcode of Life (iBOL)Data"),
-        TOfficialPrefixElem("MIENS", "MIENS-Data"),
-        TOfficialPrefixElem("MIGS", "MIGS-Data"),
-        TOfficialPrefixElem("MIMS", "MIMS-Data")
+        { "Assembly", "Assembly-Data" },
+        { "Epiflu", "EpifluData" },
+        { "Flu", "FluData" },
+        { "Genome-Assembly", "Genome-Assembly-Data" },
+        { "GISAID_EpiFlu(TM)", "GISAID_EpiFlu(TM)Data" },
+        { "HIV-DataBase", "HIVDatabase" },
+        { "HIVDataBase", "HIVDataBaseData" },
+        { "International Barcode of Life (iBOL)",  "International Barcode of Life (iBOL)Data" },
+        { "MIENS", "MIENS-Data" },
+        { "MIGS", "MIGS-Data" },
+        { "MIMS", "MIMS-Data" }
     };
-    typedef CStaticArrayMap<const string, const string, PNocase> TOfficialPrefixMap;
+    typedef CStaticArrayMap<string, string, PNocase> TOfficialPrefixMap;
     DEFINE_STATIC_ARRAY_MAP(TOfficialPrefixMap, sc_OfficialPrefixMap, sc_official_prefix_map);
 
     tmp.clear();
@@ -6208,16 +6208,16 @@ void s_StructuredCommentDbnameFromString( string &out_dbname, const string &fiel
 static
 int s_GetBarcodeOrder( const CRef<CUser_field> &field )
 {
-    typedef pair<const string, int>  TBarcodeOrderElem;
+    typedef SStaticPair<const char*, int>  TBarcodeOrderElem;
     static const TBarcodeOrderElem sc_barcode_order_map[] = {
-        TBarcodeOrderElem("Barcode Index Number", 2),
-        TBarcodeOrderElem("Order Assignment", 3),
-        TBarcodeOrderElem("StructuredCommentPrefix", 1),
-        TBarcodeOrderElem("StructuredCommentSuffix", 6),
-        TBarcodeOrderElem("iBOL Release Status", 5),
-        TBarcodeOrderElem("iBOL Working Group", 4)
+        { "Barcode Index Number", 2 },
+        { "Order Assignment", 3 },
+        { "StructuredCommentPrefix", 1 },
+        { "StructuredCommentSuffix", 6 },
+        { "iBOL Release Status", 5 },
+        { "iBOL Working Group", 4 }
     };
-    typedef CStaticArrayMap<const string, int, PCase> TBarcodeOrderMap;
+    typedef CStaticArrayMap<string, int, PCase> TBarcodeOrderMap;
     DEFINE_STATIC_ARRAY_MAP(TBarcodeOrderMap, sc_BarcodeOrderMap, sc_barcode_order_map);
 
     if( ! field || ! field->IsSetLabel() || ! field->GetLabel().IsStr() ) {
@@ -6397,7 +6397,7 @@ void CNewCleanup_imp::x_RemoveFlankingQuotes( string &val )
 static
 bool s_IsIllegalQual( const string &qual )
 {
-    static const char *sc_Illegal_qual_array[] = {
+    static const char * const sc_Illegal_qual_array[] = {
         "anticodon",
         "citation",
         "codon_start",
@@ -7117,7 +7117,7 @@ void CNewCleanup_imp::ProtrefBC (
     }
 }
 
-static const string uninf_names [] = {
+static const char* const uninf_names [] = {
     "peptide",
     "putative",
     "signal",
@@ -7285,22 +7285,22 @@ void CNewCleanup_imp::PostProtFeatfBC (
 }
 
 
-typedef pair<const string, const string>  TInTrSpElem;
+typedef SStaticPair<const char*, const char*>  TInTrSpElem;
 static const TInTrSpElem sc_its_map[] = {
-    TInTrSpElem("internal transcribed spacer 1 (ITS1)", "internal transcribed spacer 1"),
-    TInTrSpElem("internal transcribed spacer 2 (ITS2)", "internal transcribed spacer 2"),
-    TInTrSpElem("internal transcribed spacer 3 (ITS3)", "internal transcribed spacer 3"),
-    TInTrSpElem("its 1", "internal transcribed spacer 1"),
-    TInTrSpElem("its 2", "internal transcribed spacer 2"),
-    TInTrSpElem("its 3", "internal transcribed spacer 3"),
-    TInTrSpElem("its1", "internal transcribed spacer 1"),
-    TInTrSpElem("its2", "internal transcribed spacer 2"),
-    TInTrSpElem("its3", "internal transcribed spacer 3"),
-    TInTrSpElem("Ribosomal DNA internal transcribed spacer 1", "internal transcribed spacer 1"),
-    TInTrSpElem("Ribosomal DNA internal transcribed spacer 2", "internal transcribed spacer 2"),
-    TInTrSpElem("Ribosomal DNA internal transcribed spacer 3", "internal transcribed spacer 3")
+    { "internal transcribed spacer 1 (ITS1)", "internal transcribed spacer 1" },
+    { "internal transcribed spacer 2 (ITS2)", "internal transcribed spacer 2" },
+    { "internal transcribed spacer 3 (ITS3)", "internal transcribed spacer 3" },
+    { "its 1", "internal transcribed spacer 1" },
+    { "its 2", "internal transcribed spacer 2" },
+    { "its 3", "internal transcribed spacer 3" },
+    { "its1", "internal transcribed spacer 1" },
+    { "its2", "internal transcribed spacer 2" },
+    { "its3", "internal transcribed spacer 3" },
+    { "Ribosomal DNA internal transcribed spacer 1", "internal transcribed spacer 1" },
+    { "Ribosomal DNA internal transcribed spacer 2", "internal transcribed spacer 2" },
+    { "Ribosomal DNA internal transcribed spacer 3", "internal transcribed spacer 3" }
 };
-typedef CStaticArrayMap<const string, const string, PNocase> TInTrSpMap;
+typedef CStaticArrayMap<string, string, PNocase> TInTrSpMap;
 DEFINE_STATIC_ARRAY_MAP(TInTrSpMap, sc_ITSMap, sc_its_map);
 
 void CNewCleanup_imp::x_TranslateITSName( string &in_out_name )
@@ -7312,7 +7312,7 @@ void CNewCleanup_imp::x_TranslateITSName( string &in_out_name )
     }
 }
 
-static const string ncrna_names [] = {
+static const char* const ncrna_names [] = {
     "antisense_RNA",
     "autocatalytically_spliced_intron",
     "guide_RNA",
@@ -8545,7 +8545,7 @@ void CNewCleanup_imp::DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst )
 
 void CNewCleanup_imp::x_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_terms )
 {
-    static const char *sc_bsecGoFieldType[] = {
+    static const char * const sc_bsecGoFieldType[] = {
         "", "evidence", "go id", "go ref", "pubmed id", "text string"
     };
     typedef CStaticArraySet<const char*, PNocase_CStr> TGoFieldTypeSet;
@@ -8579,7 +8579,7 @@ void CNewCleanup_imp::x_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_t
 
 void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
 {    
-    static const char *sc_bsecGoQualType[] = {
+    static const char * const sc_bsecGoQualType[] = {
         "", "Component", "Function", "Process"
     };
     typedef CStaticArraySet<const char*, PNocase_CStr> TGoQualTypeSet;
@@ -9049,37 +9049,37 @@ void CNewCleanup_imp::x_DecodeXMLMarkChanged( std::string & str )
 
 // maps the type of seqdesc to the order it should be in 
 // (lowest to highest)
-typedef pair<CSeqdesc::E_Choice, int>  TSeqdescOrderElem;
+typedef SStaticPair<CSeqdesc::E_Choice, int>  TSeqdescOrderElem;
 static const TSeqdescOrderElem sc_seqdesc_order_map[] = {
     // Note that ordering must match ordering
     // in CSeqdesc::E_Choice
-    TSeqdescOrderElem(CSeqdesc::e_Mol_type,    13),
-    TSeqdescOrderElem(CSeqdesc::e_Modif,       14),
-    TSeqdescOrderElem(CSeqdesc::e_Method,      15),
-    TSeqdescOrderElem(CSeqdesc::e_Name,         7),
-    TSeqdescOrderElem(CSeqdesc::e_Title,        1),
-    TSeqdescOrderElem(CSeqdesc::e_Org,         16),
-    TSeqdescOrderElem(CSeqdesc::e_Comment,      6),
-    TSeqdescOrderElem(CSeqdesc::e_Num,         11),
-    TSeqdescOrderElem(CSeqdesc::e_Maploc,       9),
-    TSeqdescOrderElem(CSeqdesc::e_Pir,         18),
-    TSeqdescOrderElem(CSeqdesc::e_Genbank,     22),
-    TSeqdescOrderElem(CSeqdesc::e_Pub,          5),
-    TSeqdescOrderElem(CSeqdesc::e_Region,      10),
-    TSeqdescOrderElem(CSeqdesc::e_User,         8),
-    TSeqdescOrderElem(CSeqdesc::e_Sp,          17),
-    TSeqdescOrderElem(CSeqdesc::e_Dbxref,      12),
-    TSeqdescOrderElem(CSeqdesc::e_Embl,        21),
-    TSeqdescOrderElem(CSeqdesc::e_Create_date, 24),
-    TSeqdescOrderElem(CSeqdesc::e_Update_date, 25),
-    TSeqdescOrderElem(CSeqdesc::e_Prf,         19),
-    TSeqdescOrderElem(CSeqdesc::e_Pdb,         20),
-    TSeqdescOrderElem(CSeqdesc::e_Het,          4),
-    TSeqdescOrderElem(CSeqdesc::e_Source,       2),
-    TSeqdescOrderElem(CSeqdesc::e_Molinfo,      3),
-    TSeqdescOrderElem(CSeqdesc::e_Modelev,     23)
+    { CSeqdesc::e_Mol_type,    13 },
+    { CSeqdesc::e_Modif,       14 },
+    { CSeqdesc::e_Method,      15 },
+    { CSeqdesc::e_Name,         7 },
+    { CSeqdesc::e_Title,        1 },
+    { CSeqdesc::e_Org,         16 },
+    { CSeqdesc::e_Comment,      6 },
+    { CSeqdesc::e_Num,         11 },
+    { CSeqdesc::e_Maploc,       9 },
+    { CSeqdesc::e_Pir,         18 },
+    { CSeqdesc::e_Genbank,     22 },
+    { CSeqdesc::e_Pub,          5 },
+    { CSeqdesc::e_Region,      10 },
+    { CSeqdesc::e_User,         8 },
+    { CSeqdesc::e_Sp,          17 },
+    { CSeqdesc::e_Dbxref,      12 },
+    { CSeqdesc::e_Embl,        21 },
+    { CSeqdesc::e_Create_date, 24 },
+    { CSeqdesc::e_Update_date, 25 },
+    { CSeqdesc::e_Prf,         19 },
+    { CSeqdesc::e_Pdb,         20 },
+    { CSeqdesc::e_Het,          4 },
+    { CSeqdesc::e_Source,       2 },
+    { CSeqdesc::e_Molinfo,      3 },
+    { CSeqdesc::e_Modelev,     23 }
 };
-typedef CStaticArrayMap<CSeqdesc::E_Choice, int> TSeqdescOrderMap;
+typedef CStaticPairArrayMap<CSeqdesc::E_Choice, int> TSeqdescOrderMap;
 DEFINE_STATIC_ARRAY_MAP(TSeqdescOrderMap, sc_SeqdescOrderMap, sc_seqdesc_order_map);
 
 static
