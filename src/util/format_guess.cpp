@@ -1637,13 +1637,21 @@ bool CFormatGuess::IsInputRepeatMaskerWithoutHeader()
 bool
 CFormatGuess::IsSampleNewick(
     const string& cline )
+//  ----------------------------------------------------------------------------
 {
-    //
+    //  NOTE:
     //  See http://evolution.genetics.washington.edu/phylip/newick_doc.html
     //
     //  Note that Newick tree tend to be written out as a single long line. Thus,
     //  we are most likely only seeing the first part of a tree.
     //
+
+    //  NOTE:
+    //  MSS-112 introduced the concept of multitree files is which after the ";" 
+    //  another tree may start. The new logic accepts files as Newick if they 
+    //  are Newick up to and including the first semicolon. It does not look
+    //  beyond.
+
     string line = NStr::TruncateSpaces( cline );
     if ( line.empty()  ||  line[0] != '(') {
         return false;
@@ -1742,9 +1750,9 @@ CFormatGuess::IsSampleNewick(
                     }
                     break;
                 case ';':
-                    if ( line[ii+1] != 0 ) {
-                        return false;
-                    }
+//                    if ( line[ii+1] != 0 ) {
+//                        return false;
+//                    }
                     break;
             }
         }
