@@ -1965,7 +1965,7 @@ void CSeq_id_General_Tree::FindMatch(const CSeq_id_Handle& id,
     }
     else {
         const string& s = obj_id.GetStr();
-        int n = NStr::StringToNumeric(s);
+        int n = NStr::StringToNonNegativeInt(s);
         if ( n >= 0 && NStr::IntToString(n) == s ) {
             CSeq_id seq_id2;
             CDbtag& dbtag2 = seq_id2.SetGeneral();
