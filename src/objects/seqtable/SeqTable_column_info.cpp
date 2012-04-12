@@ -53,40 +53,40 @@ CSeqTable_column_info::~CSeqTable_column_info(void)
 }
 
 
-typedef pair<const char*, CSeqTable_column_info::EField_id> TNameToIdPair;
+typedef SStaticPair<const char*, CSeqTable_column_info::EField_id> TNameToIdPair;
 static const TNameToIdPair s_NameToIdArr[] = {
-    TNameToIdPair("comment", CSeqTable_column_info::eField_id_comment),
-    TNameToIdPair("data.cdregion.frame", CSeqTable_column_info::eField_id_data_cdregion_frame),
-    TNameToIdPair("data.imp.key", CSeqTable_column_info::eField_id_data_imp_key),
-    TNameToIdPair("data.region", CSeqTable_column_info::eField_id_data_region),
-    TNameToIdPair("dbxref.db", CSeqTable_column_info::eField_id_dbxref_db),
-    TNameToIdPair("dbxref.tag", CSeqTable_column_info::eField_id_dbxref_tag),
-    TNameToIdPair("ext.type", CSeqTable_column_info::eField_id_ext_type),
-    TNameToIdPair("id.local", CSeqTable_column_info::eField_id_id_local),
-    TNameToIdPair("location", CSeqTable_column_info::eField_id_location),
-    TNameToIdPair("location.from", CSeqTable_column_info::eField_id_location_from),
-    TNameToIdPair("location.fuzz.from.lim", CSeqTable_column_info::eField_id_location_fuzz_from_lim),
-    TNameToIdPair("location.fuzz.to.lim", CSeqTable_column_info::eField_id_location_fuzz_to_lim),
-    TNameToIdPair("location.gi", CSeqTable_column_info::eField_id_location_gi),
-    TNameToIdPair("location.id", CSeqTable_column_info::eField_id_location_id),
-    TNameToIdPair("location.strand", CSeqTable_column_info::eField_id_location_strand),
-    TNameToIdPair("location.to", CSeqTable_column_info::eField_id_location_to),
-    TNameToIdPair("partial", CSeqTable_column_info::eField_id_partial),
-    TNameToIdPair("product", CSeqTable_column_info::eField_id_product),
-    TNameToIdPair("product.from", CSeqTable_column_info::eField_id_product_from),
-    TNameToIdPair("product.fuzz.from.lim", CSeqTable_column_info::eField_id_product_fuzz_from_lim),
-    TNameToIdPair("product.fuzz.to.lim", CSeqTable_column_info::eField_id_product_fuzz_to_lim),
-    TNameToIdPair("product.gi", CSeqTable_column_info::eField_id_product_gi),
-    TNameToIdPair("product.id", CSeqTable_column_info::eField_id_product_id),
-    TNameToIdPair("product.strand", CSeqTable_column_info::eField_id_product_strand),
-    TNameToIdPair("product.to", CSeqTable_column_info::eField_id_product_to),
-    TNameToIdPair("qual.qual", CSeqTable_column_info::eField_id_qual_qual),
-    TNameToIdPair("qual.val", CSeqTable_column_info::eField_id_qual_val),
-    TNameToIdPair("title", CSeqTable_column_info::eField_id_title),
-    TNameToIdPair("xref.id.local", CSeqTable_column_info::eField_id_xref_id_local)
+    { "comment", CSeqTable_column_info::eField_id_comment },
+    { "data.cdregion.frame", CSeqTable_column_info::eField_id_data_cdregion_frame },
+    { "data.imp.key", CSeqTable_column_info::eField_id_data_imp_key },
+    { "data.region", CSeqTable_column_info::eField_id_data_region },
+    { "dbxref.db", CSeqTable_column_info::eField_id_dbxref_db },
+    { "dbxref.tag", CSeqTable_column_info::eField_id_dbxref_tag },
+    { "ext.type", CSeqTable_column_info::eField_id_ext_type },
+    { "id.local", CSeqTable_column_info::eField_id_id_local },
+    { "location", CSeqTable_column_info::eField_id_location },
+    { "location.from", CSeqTable_column_info::eField_id_location_from },
+    { "location.fuzz.from.lim", CSeqTable_column_info::eField_id_location_fuzz_from_lim },
+    { "location.fuzz.to.lim", CSeqTable_column_info::eField_id_location_fuzz_to_lim },
+    { "location.gi", CSeqTable_column_info::eField_id_location_gi },
+    { "location.id", CSeqTable_column_info::eField_id_location_id },
+    { "location.strand", CSeqTable_column_info::eField_id_location_strand },
+    { "location.to", CSeqTable_column_info::eField_id_location_to },
+    { "partial", CSeqTable_column_info::eField_id_partial },
+    { "product", CSeqTable_column_info::eField_id_product },
+    { "product.from", CSeqTable_column_info::eField_id_product_from },
+    { "product.fuzz.from.lim", CSeqTable_column_info::eField_id_product_fuzz_from_lim },
+    { "product.fuzz.to.lim", CSeqTable_column_info::eField_id_product_fuzz_to_lim },
+    { "product.gi", CSeqTable_column_info::eField_id_product_gi },
+    { "product.id", CSeqTable_column_info::eField_id_product_id },
+    { "product.strand", CSeqTable_column_info::eField_id_product_strand },
+    { "product.to", CSeqTable_column_info::eField_id_product_to },
+    { "qual.qual", CSeqTable_column_info::eField_id_qual_qual },
+    { "qual.val", CSeqTable_column_info::eField_id_qual_val },
+    { "title", CSeqTable_column_info::eField_id_title },
+    { "xref.id.local", CSeqTable_column_info::eField_id_xref_id_local }
 };
 
-typedef CStaticArrayMap<const char*, CSeqTable_column_info::EField_id, PCase_CStr> TNameToIdMap;
+typedef CStaticPairArrayMap<const char*, CSeqTable_column_info::EField_id, PCase_CStr> TNameToIdMap;
 
 DEFINE_STATIC_ARRAY_MAP(TNameToIdMap, s_NameToIdMap, s_NameToIdArr);
 
