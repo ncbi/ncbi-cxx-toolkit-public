@@ -43,7 +43,7 @@ namespace {
         bool operator()(const CRange<TSeqPos>& a,
                         const CRange<TSeqPos>& b) const {
             return a.GetFrom() < b.GetFrom() ||
-                a.GetFrom() == b.GetFrom() && a.GetToOpen() < b.GetToOpen();
+                (a.GetFrom() == b.GetFrom() && a.GetToOpen() < b.GetToOpen());
         }
     };
 
