@@ -572,9 +572,19 @@ void CMultiReaderApp::xProcessNewick(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<TPhyTreeNode>  pTree(ReadNewickTree(istr) );
-    CRef<CBioTreeContainer> btc = MakeBioTreeContainer(pTree.get());
-    xWriteObject(*btc, ostr);
+    string strTree;
+    char c = istr.get();
+    while (!istr.eof()) {
+        strTree += c;
+        if (c == ';') {
+            CNcbiIstrstream istrstr(strTree.c_str());
+            auto_ptr<TPhyTreeNode>  pTree(ReadNewickTree(istrstr) );
+            CRef<CBioTreeContainer> btc = MakeBioTreeContainer(pTree.get());
+            xWriteObject(*btc, ostr);
+            strTree.clear();
+        }
+        c = istr.get();
+    }
 }
 
 //  ----------------------------------------------------------------------------
