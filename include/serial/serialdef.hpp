@@ -76,6 +76,28 @@ enum ESerialDataFormat {
     eSerial_Json         = 4       ///< JSON
 };
 
+/// Formatting flags
+enum ESerial_AsnText_Flags {
+    fSerial_AsnText_NoIndentation = 1<<7, ///< do not use indentation
+    fSerial_AsnText_NoEol         = 1<<6  ///< do not write end-of-line symbol
+};
+typedef unsigned int TSerial_AsnText_Flags;
+
+enum ESerial_Xml_Flags {
+    fSerial_Xml_NoIndentation = 1<<7, ///< do not use indentation
+    fSerial_Xml_NoEol         = 1<<6, ///< do not write end-of-line symbol
+    fSerial_Xml_NoXmlDecl     = 1<<5, ///< do not write XMLDecl
+    fSerial_Xml_NoRefDTD      = 1<<4, ///< do not use reference to a DTD
+    fSerial_Xml_RefSchema     = 1<<3, ///< use reference to a Schema
+    fSerial_Xml_NoSchemaLoc   = 1<<2  ///< do not write schemaLocation data
+};
+typedef unsigned int TSerial_Xml_Flags;
+
+enum ESerial_Json_Flags {
+    fSerial_Json_NoIndentation = 1<<7, ///< do not use indentation
+    fSerial_Json_NoEol         = 1<<6  ///< do not write end-of-line symbol
+};
+typedef unsigned int TSerial_Json_Flags;
 
 #define SERIAL_VERIFY_DATA_GET    "SERIAL_VERIFY_DATA_GET"
 #define SERIAL_VERIFY_DATA_WRITE  "SERIAL_VERIFY_DATA_WRITE"

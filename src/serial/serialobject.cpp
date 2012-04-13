@@ -479,6 +479,7 @@ CAnyContentObject::GetAttributes(void) const
 #define  eVerify_DefValue (1l << 10)
 #define  eVerify_All      (eVerify_No | eVerify_Yes | eVerify_DefValue)
 #define  eEncoding_All    (255l << 16)
+#define  eFmtFlags_All    (255l << 24)
 
 static
 long& s_SerFlags(CNcbiIos& io)
@@ -573,6 +574,19 @@ long s_EncodingToFlags(EEncoding fmt)
     return (enc << 16);
 }
 
+static
+TSerial_Format_Flags s_FlagsToFormatFlags(CNcbiIos& io)
+{
+    TSerial_Format_Flags t = (TSerial_Format_Flags)(s_SerFlags(io) & eFmtFlags_All);
+    return t >> 24;
+}
+
+static
+long s_FormatFlagsToFlags(unsigned long flags)
+{
+    return flags << 24;
+}
+
 bool MSerial_Flags::HasSerialFormatting(CNcbiIos& io)
 {
     return s_FlagsToFormat(io) != eSerial_None;
@@ -582,9 +596,36 @@ MSerial_Flags::MSerial_Flags(unsigned long all, unsigned long flags)
     : m_All(all), m_Flags(flags)
 {
 }
-MSerial_Format::MSerial_Format(ESerialDataFormat fmt)
-    : MSerial_Flags(eFmt_All, s_FormatToFlags(fmt))
+void MSerial_Flags::SetFlags(CNcbiIos& io) const
 {
+    s_SerFlags(io) = (s_SerFlags(io) & ~m_All) | m_Flags;
+}
+
+void MSerial_Flags::SetFormatFlags(unsigned long flags)
+{
+    m_Flags = (m_Flags & ~eFmtFlags_All) | s_FormatFlagsToFlags(flags);
+}
+
+MSerial_Format::MSerial_Format(ESerialDataFormat fmt, TSerial_Format_Flags flags)
+    : MSerial_Flags(eFmt_All | eFmtFlags_All,
+        s_FormatToFlags(fmt) | s_FormatFlagsToFlags(flags))
+{
+}
+
+MSerial_Format& MSerial_Format_AsnText::operator()(TSerial_AsnText_Flags flags)
+{
+    SetFormatFlags(flags);
+    return *this;
+}
+MSerial_Format& MSerial_Format_Xml::operator()(TSerial_Xml_Flags flags)
+{
+    SetFormatFlags(flags);
+    return *this;
+}
+MSerial_Format& MSerial_Format_Json::operator()(TSerial_Json_Flags flags)
+{
+    SetFormatFlags(flags);
+    return *this;
 }
 
 MSerial_VerifyData::MSerial_VerifyData(ESerialVerifyData fmt)
@@ -596,36 +637,11 @@ MSerialXml_DefaultStringEncoding::MSerialXml_DefaultStringEncoding(EEncoding fmt
     : MSerial_Flags(eEncoding_All, s_EncodingToFlags(fmt))
 {
 }
-void MSerial_Flags::SetFlags(CNcbiIos& io) const
-{
-    s_SerFlags(io) = (s_SerFlags(io) & ~m_All) | m_Flags;
-}
-
-// Formatting
-CNcbiIos& MSerial_AsnText(CNcbiIos& io)
-{
-    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_AsnText;
-    return io;
-}
-CNcbiIos& MSerial_AsnBinary(CNcbiIos& io)
-{
-    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_AsnBinary;
-    return io;
-}
-CNcbiIos& MSerial_Xml(CNcbiIos& io)
-{
-    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_Xml;
-    return io;
-}
-CNcbiIos& MSerial_Json(CNcbiIos& io)
-{
-    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_Json;
-    return io;
-}
 
 CNcbiIos& MSerial_None(CNcbiIos& io)
 {
-    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All);
+//    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All);
+    s_SerFlags(io) = 0;
     return io;
 }
 
@@ -678,6 +694,7 @@ CNcbiOstream& WriteObject(CNcbiOstream& os, TConstObjectPtr ptr, TTypeInfo info)
 {
     auto_ptr<CObjectOStream> ostr( CObjectOStream::Open( s_FlagsToFormat(os), os) );
     ostr->SetVerifyData( s_FlagsToVerify(os) );
+    ostr->SetFormattingFlags( s_FlagsToFormatFlags(os) );
     if (ostr->GetDataFormat() == eSerial_Xml) {
         dynamic_cast<CObjectOStreamXml*>(ostr.get())->
             SetDefaultStringEncoding( s_FlagsToEncoding(os) );
@@ -689,6 +706,11 @@ CNcbiIstream& ReadObject(CNcbiIstream& is, TObjectPtr ptr, TTypeInfo info)
 {
     auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
     istr->SetVerifyData(s_FlagsToVerify(is));
+    TSerial_Format_Flags f = s_FlagsToFormatFlags(is);
+    if (f != 0) {
+        ERR_POST_XX_ONCE(Serial_IStream, 8, Warning <<
+            "ReadObject: ignoring unknown formatting flags");
+    }
     if (istr->GetDataFormat() == eSerial_Xml) {
         dynamic_cast<CObjectIStreamXml*>(istr.get())->
             SetDefaultStringEncoding( s_FlagsToEncoding(is) );

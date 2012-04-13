@@ -74,6 +74,7 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
       m_RealFmt( eRealScientificFormat ),
       m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_Unknown ),
+      m_UseXmlDecl(true),
       m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
       m_SkipIndent( false )
 {
@@ -142,12 +143,32 @@ void CObjectOStreamXml::SetRealValueFormat(
 {
     m_RealFmt = fmt;
 }
+
 void CObjectOStreamXml::SetEnforcedStdXml(bool set)
 {
     m_EnforcedStdXml = set;
     if (m_EnforcedStdXml) {
         m_StdXml = false;
     }
+}
+
+void CObjectOStreamXml::SetFormattingFlags(TSerial_Format_Flags flags)
+{
+    TSerial_Format_Flags accepted =
+        fSerial_Xml_NoIndentation | fSerial_Xml_NoEol    |
+        fSerial_Xml_NoXmlDecl     | fSerial_Xml_NoRefDTD |
+        fSerial_Xml_RefSchema     | fSerial_Xml_NoSchemaLoc;
+    if (flags & ~accepted) {
+        ERR_POST_X_ONCE(12, Warning <<
+            "CObjectOStreamXml::SetFormattingFlags: ignoring unknown formatting flags");
+    }
+    m_UseXmlDecl   = (flags & fSerial_Xml_NoXmlDecl)   == 0;
+    m_UseDTDRef    = (flags & fSerial_Xml_NoRefDTD)    == 0;
+    m_UseSchemaRef = (flags & fSerial_Xml_RefSchema)   != 0;
+    m_UseSchemaLoc = (flags & fSerial_Xml_NoSchemaLoc) == 0;
+
+    CObjectOStream::SetFormattingFlags(
+        flags & (fSerial_Xml_NoIndentation | fSerial_Xml_NoEol));
 }
 
 
@@ -191,24 +212,28 @@ string CObjectOStreamXml::GetModuleName(TTypeInfo type)
 
 void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
 {
-    m_Output.PutString("<?xml version=\"1.0");
-    switch (m_Encoding) {
-    default:
-        break;
-    case eEncoding_UTF8:
-        m_Output.PutString("\" encoding=\"UTF-8");
-        break;
-    case eEncoding_ISO8859_1:
-        m_Output.PutString("\" encoding=\"ISO-8859-1");   
-        break;
-    case eEncoding_Windows_1252:
-        m_Output.PutString("\" encoding=\"Windows-1252");   
-        break;
+    if (m_UseXmlDecl) {
+        m_Output.PutString("<?xml version=\"1.0");
+        switch (m_Encoding) {
+        default:
+            break;
+        case eEncoding_UTF8:
+            m_Output.PutString("\" encoding=\"UTF-8");
+            break;
+        case eEncoding_ISO8859_1:
+            m_Output.PutString("\" encoding=\"ISO-8859-1");   
+            break;
+        case eEncoding_Windows_1252:
+            m_Output.PutString("\" encoding=\"Windows-1252");   
+            break;
+        }
+        m_Output.PutString("\"?>");
     }
-    m_Output.PutString("\"?>");
 
     if (!m_UseSchemaRef && m_UseDTDRef) {
-        m_Output.PutEol();
+        if (m_UseXmlDecl) {
+            m_Output.PutEol();
+        }
         m_Output.PutString("<!DOCTYPE ");
         m_Output.PutString(type->GetName());
     
@@ -228,6 +253,8 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_Output.PutString(" \"");
         m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
         m_Output.PutString(".dtd\">");
+    } else if (!m_UseXmlDecl) {
+        m_SkipIndent = true;
     }
     m_LastTagAction = eTagClose;
 }

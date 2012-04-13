@@ -118,11 +118,15 @@ public:
     /// @param deleteOutStream
     ///   When eTakeOwnership, the output stream will be deleted automatically
     ///   when the writer is deleted
+    /// @param formatFlags
+    ///   Formatting flags (see ESerial_xxx_Flags)
     /// @return
     ///   Writer (created on heap)
+    /// @sa ESerial_AsnText_Flags, ESerial_Xml_Flags, ESerial_Json_Flags
     static CObjectOStream* Open(ESerialDataFormat format,
                                 CNcbiOstream& outStream,
-                                EOwnership deleteOutStream = eNoOwnership);
+                                EOwnership deleteOutStream = eNoOwnership,
+                                TSerial_Format_Flags formatFlags = 0);
 
     /// Create serial object writer and attach it to a file stream.
     ///
@@ -132,12 +136,15 @@ public:
     ///   Output file name
     /// @param openFlags
     ///   File open flags
+    /// @param formatFlags
+    ///   Formatting flags (see ESerial_xxx_Flags)
     /// @return
     ///   Writer (created on heap)
-    /// @sa ESerialOpenFlags
+    /// @sa ESerialOpenFlags, ESerial_AsnText_Flags, ESerial_Xml_Flags, ESerial_Json_Flags
     static CObjectOStream* Open(ESerialDataFormat format,
                                 const string& fileName,
-                                TSerialOpenFlags openFlags = 0);
+                                TSerialOpenFlags openFlags = 0,
+                                TSerial_Format_Flags formatFlags = 0);
 
     /// Create serial object writer and attach it to a file stream.
     ///
@@ -145,10 +152,14 @@ public:
     ///   Output file name
     /// @param format
     ///   Format of the output data
+    /// @param formatFlags
+    ///   Formatting flags (see ESerial_xxx_Flags)
     /// @return
     ///   Writer (created on heap)
+    /// @sa ESerial_AsnText_Flags, ESerial_Xml_Flags, ESerial_Json_Flags
     static CObjectOStream* Open(const string& fileName,
-                                ESerialDataFormat format);
+                                ESerialDataFormat format,
+                                TSerial_Format_Flags formatFlags = 0);
 
     /// Get data format
     ///
@@ -271,6 +282,12 @@ public:
     /// @param value
     ///   TRUE or FALSE
     void SetAutoSeparator(bool value);
+
+    /// Set output formatting flags
+    ///
+    /// @param flags
+    ///   Formatting flag
+    virtual void SetFormattingFlags(TSerial_Format_Flags flags);
 
 //---------------------------------------------------------------------------
 // Stream state

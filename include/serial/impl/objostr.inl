@@ -42,9 +42,10 @@ ESerialDataFormat CObjectOStream::GetDataFormat(void) const
 
 inline
 CObjectOStream* CObjectOStream::Open(const string& fileName,
-                                     ESerialDataFormat format)
+                                     ESerialDataFormat format,
+                                     TSerial_Format_Flags formatFlags)
 {
-    return Open(format, fileName);
+    return Open(format, fileName, 0, formatFlags);
 }
 
 inline

@@ -476,11 +476,13 @@ private:
     MSerial_Flags& operator= (const MSerial_Flags&) {return *this;}
 
     void SetFlags(CNcbiIos& io) const;
-    unsigned long m_All;
-    unsigned long m_Flags;
-
     friend CNcbiOstream& operator<< (CNcbiOstream& io, const MSerial_Flags& obj);
     friend CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_Flags& obj);
+protected:
+    void SetFormatFlags(unsigned long flags);
+private:
+    unsigned long m_All;
+    unsigned long m_Flags;
 };
 
 inline
@@ -496,35 +498,93 @@ CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_Flags& obj)
     return io;
 }
 
-// Formatting
+/// MSerial_Format --
+///
+///   I/O stream manipulator. Set the format of output or input.
+///   Makes it possible to insert or extract serializable objects directly
+///   into standard I/O streams, hiding the creation of object streams.
+///   For example:
+///     cout << MSerial_Format(eSerial_Xml) << obj;
+///   @sa ESerialDataFormat
+typedef unsigned int TSerial_Format_Flags;
 class NCBI_XSERIAL_EXPORT MSerial_Format : public MSerial_Flags
 {
 public:
-    explicit MSerial_Format(ESerialDataFormat fmt);
+    explicit MSerial_Format(ESerialDataFormat fmt, TSerial_Format_Flags flags = 0);
 };
 
-// Class member assignment verification
+class NCBI_XSERIAL_EXPORT MSerial_Format_AsnText : public MSerial_Format
+{
+public:
+    MSerial_Format_AsnText(void) : MSerial_Format(eSerial_AsnText) {}
+    MSerial_Format& operator()(TSerial_AsnText_Flags flags);
+};
+
+class NCBI_XSERIAL_EXPORT MSerial_Format_AsnBinary : public MSerial_Format
+{
+public:
+    MSerial_Format_AsnBinary(void) : MSerial_Format(eSerial_AsnBinary) {}
+};
+
+class NCBI_XSERIAL_EXPORT MSerial_Format_Xml : public MSerial_Format
+{
+public:
+    MSerial_Format_Xml(void) : MSerial_Format(eSerial_Xml) {}
+    MSerial_Format& operator()(TSerial_Xml_Flags flags);
+};
+
+class NCBI_XSERIAL_EXPORT MSerial_Format_Json : public MSerial_Format
+{
+public:
+    MSerial_Format_Json(void) : MSerial_Format(eSerial_Json) {}
+    MSerial_Format& operator()(TSerial_Json_Flags flags);
+};
+
+/// MSerial_VerifyData --
+///
+///   I/O stream manipulator. Defines verification of un-initialized data members.
+///   For example:
+///     cout << MSerial_Format(eSerial_Xml)
+///          << MSerial_VerifyData(eSerialVerifyData_No) << obj;
+///   @sa ESerialVerifyData
 class NCBI_XSERIAL_EXPORT MSerial_VerifyData : public MSerial_Flags
 {
 public:
     explicit MSerial_VerifyData(ESerialVerifyData fmt);
 };
 
-// Default string encoding in XML streams
+/// MSerialXml_DefaultStringEncoding --
+///
+///   I/O stream manipulator. Defines default string encoding in XML stream.
+///   For example:
+///     cout << MSerial_Format(eSerial_Xml)
+///          << MSerialXml_DefaultStringEncoding(eEncoding_UTF8) << obj;
+///   @sa EEncoding, CObjectOStreamXml, CObjectIStreamXml
 class NCBI_XSERIAL_EXPORT MSerialXml_DefaultStringEncoding : public MSerial_Flags
 {
 public:
     explicit MSerialXml_DefaultStringEncoding(EEncoding fmt);
 };
 
-// Formatting
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnText(  CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnBinary(CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Xml(      CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Json(     CNcbiIos& io);
-NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_None(     CNcbiIos& io);
+/// I/O stream manipulators --
+///
+///   Set the format of output or input.
+///   Make it possible to insert or extract serializable objects directly
+///   into standard I/O streams, hiding the creation of object streams.
+///   For example:
+///     cout << MSerial_Xml << obj;
+///     cout << MSerial_Xml(fSerial_Xml_NoXmlDecl) << obj;
+///     cin  >> MSerial_AsnText >> obj;
 
-// Class member assignment verification
+#define MSerial_AsnText   MSerial_Format_AsnText()
+#define MSerial_AsnBinary MSerial_Format_AsnBinary()
+#define MSerial_Xml       MSerial_Format_Xml()
+#define MSerial_Json      MSerial_Format_Json()
+
+/// Reset all formatting flags for the I/O stream
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_None(CNcbiIos& io);
+
+/// Define verification of un-initialized data members.
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefault( CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyNo(      CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyYes(     CNcbiIos& io);

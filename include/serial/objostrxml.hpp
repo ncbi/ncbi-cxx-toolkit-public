@@ -251,6 +251,12 @@ public:
     /// @param fmt
     ///   Formatting flag
     void SetRealValueFormat(ERealValueFormat fmt);
+    
+    /// Set output formatting flags
+    ///
+    /// @param flags
+    ///   Formatting flag
+    virtual void SetFormattingFlags(TSerial_Format_Flags flags);
 
     virtual void WriteFileHeader(TTypeInfo type);
     virtual void EndOfWrite(void);
@@ -434,6 +440,7 @@ private:
     ERealValueFormat m_RealFmt;
     EEncoding m_Encoding;
     EEncoding m_StringEncoding;
+    bool m_UseXmlDecl;
     bool m_UseSchemaRef;
     bool m_UseSchemaLoc;
     bool m_UseDTDRef;

@@ -82,7 +82,8 @@ static NCBI_PARAM_TYPE(SERIAL, FastWriteDouble) s_FastWriteDouble;
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      const string& fileName,
-                                     TSerialOpenFlags openFlags)
+                                     TSerialOpenFlags openFlags,
+                                     TSerial_Format_Flags formatFlags)
 {
     CNcbiOstream* outStream = 0;
     bool deleteStream;
@@ -117,7 +118,8 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
         deleteStream = true;
     }
 
-    return Open(format, *outStream, deleteStream ? eTakeOwnership : eNoOwnership);
+    return Open(format, *outStream,
+        deleteStream ? eTakeOwnership : eNoOwnership, formatFlags);
 }
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
@@ -142,20 +144,30 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      CNcbiOstream& outStream,
-                                     EOwnership edeleteStream)
+                                     EOwnership edeleteStream,
+                                     TSerial_Format_Flags formatFlags)
 {
+    CObjectOStream* os = NULL;
     bool deleteStream = edeleteStream == eTakeOwnership;
     switch ( format ) {
     case eSerial_AsnText:
-        return OpenObjectOStreamAsn(outStream, deleteStream);
+        os = OpenObjectOStreamAsn(outStream, deleteStream);
+        break;
     case eSerial_AsnBinary:
-        return OpenObjectOStreamAsnBinary(outStream, deleteStream);
+        os = OpenObjectOStreamAsnBinary(outStream, deleteStream);
+        break;
     case eSerial_Xml:
-        return OpenObjectOStreamXml(outStream, deleteStream);
+        os = OpenObjectOStreamXml(outStream, deleteStream);
+        break;
     case eSerial_Json:
-        return OpenObjectOStreamJson(outStream, deleteStream);
+        os = OpenObjectOStreamJson(outStream, deleteStream);
+        break;
     default:
         break;
+    }
+    if (os != NULL) {
+        os->SetFormattingFlags(formatFlags);
+        return os;
     }
     NCBI_THROW(CSerialException,eNotImplemented,
                "CObjectOStream::Open: unsupported format");
@@ -1105,5 +1117,16 @@ void CObjectOStream::SetCanceledCallback(const ICanceled* callback)
     m_Output.SetCanceledCallback(callback);
 }
 
+void CObjectOStream::SetFormattingFlags(TSerial_Format_Flags flags)
+{
+    TSerial_Format_Flags accepted =
+        fSerial_AsnText_NoIndentation | fSerial_AsnText_NoEol;
+    if (flags & ~accepted) {
+        ERR_POST_X_ONCE(12, Warning <<
+            "CObjectOStream::SetFormattingFlags: ignoring unknown formatting flags");
+    }
+    SetUseIndentation((flags & fSerial_AsnText_NoIndentation) == 0);
+    SetUseEol(        (flags & fSerial_AsnText_NoEol)         == 0);
+}
 
 END_NCBI_SCOPE

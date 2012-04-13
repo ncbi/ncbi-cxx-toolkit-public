@@ -43,8 +43,8 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_DEFINE_ERRCODE_X(Serial_Core,       801,  5);
-NCBI_DEFINE_ERRCODE_X(Serial_OStream,    802, 12);
-NCBI_DEFINE_ERRCODE_X(Serial_IStream,    803,  8);
+NCBI_DEFINE_ERRCODE_X(Serial_OStream,    802, 13);
+NCBI_DEFINE_ERRCODE_X(Serial_IStream,    803,  9);
 NCBI_DEFINE_ERRCODE_X(Serial_TypeInfo,   804,  3);
 NCBI_DEFINE_ERRCODE_X(Serial_MemberInfo, 805,  2);
 NCBI_DEFINE_ERRCODE_X(Serial_ASNTypes,   806,  3);
