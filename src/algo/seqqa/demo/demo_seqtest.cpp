@@ -120,8 +120,12 @@ int CDemoSeqQaApp::Run()
             CRef<CSeqTestResults> results_container(new CSeqTestResults);
             results_container->SetSource().SetSeq_id(*id);
             results_container->SetResults(*results);
-
-            ostr << (args["b"] ? MSerial_AsnBinary: MSerial_AsnText) << *results_container;
+            
+            if(args["b"]) {
+                ostr << MSerial_AsnBinary << *results_container;
+            } else {
+                ostr << MSerial_AsnText << *results_container;
+            }
         }
     } else {
         while(true) {
@@ -157,8 +161,12 @@ int CDemoSeqQaApp::Run()
                 uo->AddField("results", results_vector);
                 aln.SetExt().push_back(uo);
             }
-            
-            ostr <<  (args["b"] ? MSerial_AsnBinary : MSerial_AsnText) << aln;
+        
+            if(args["b"]) {
+                ostr << MSerial_AsnBinary << aln;
+            } else {
+                ostr << MSerial_AsnText << aln;
+            }
         }
     }
 
