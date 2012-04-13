@@ -129,17 +129,14 @@ ERW_Result CCGIStreamReader::Read(void*   buf,
 {
     size_t x_read = (size_t)CStreamUtils::Readsome(m_IStr, (char*)buf, count);
     ERW_Result result;
-    if (x_read < 0) {
-        result = eRW_Error;
-    }
-    else if (x_read > 0) {
+    if (x_read > 0  ||  count == 0) {
         result = eRW_Success;
     }
     else {
-        result = eRW_Eof;
+        result = m_IStr.eof() ? eRW_Eof : eRW_Error;
     }
     if (bytes_read) {
-        *bytes_read = x_read < 0 ? 0 : x_read;
+        *bytes_read = x_read;
     }
     return result;
 }
