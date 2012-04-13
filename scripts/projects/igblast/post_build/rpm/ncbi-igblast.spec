@@ -24,8 +24,10 @@ cd c++/*/build
 
 %install
 %__mkdir_p $RPM_BUILD_ROOT/%_bindir
-cd c++/*/bin
-%__install -m755 igblastp igblastn $RPM_BUILD_ROOT/%_bindir
+%__install -m755 c++/*/bin/igblast[pn] $RPM_BUILD_ROOT/%_bindir
+%__mkdir_p $RPM_BUILD_ROOT/%_bindir/../data
+cp -R c++/src/app/igblast/internal_data $RPM_BUILD_ROOT/%_bindir/data
+cp -R c++/src/app/igblast/optional_file $RPM_BUILD_ROOT/%_bindir/data
 
 %clean
 rm -rf $RPM_BUILD_ROOT
