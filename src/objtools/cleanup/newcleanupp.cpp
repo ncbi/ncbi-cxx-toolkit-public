@@ -334,13 +334,16 @@ void CNewCleanup_imp::SetupBC (
     // for cleanup Seq-entry and Seq-submit, set scope and parentize.
     // We use exceptions for AddTopLevelSeqEntry because we need to detect
     // if we've already processed the given Seq-entry.
-    try {
-        m_Scope->AddTopLevelSeqEntry (se);
-        se.Parentize();
-    } catch(const CObjMgrException &) {
-        // Looks like we already did this one, so we don't reset.
-        return;
-    }
+    {{
+         CSeq_entry_Handle seh =
+             m_Scope->GetSeq_entryHandle(se, CScope::eMissing_Null);
+         if (seh) {
+             return;
+         }
+
+         m_Scope->AddTopLevelSeqEntry (se);
+         se.Parentize();
+     }}
 
     // a few differences based on sequence identifier type
     m_IsEmblOrDdbj = false;
@@ -5713,10 +5716,10 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
  
     // Bail if record is swissprot
     FOR_EACH_SEQID_ON_BIOSEQ (seqid_itr, bioseq) {
-            const CSeq_id& seqid = **seqid_itr;
-            if( FIELD_IS(seqid, Swissprot) ) {
-                return;
-            }
+        const CSeq_id& seqid = **seqid_itr;
+        if( FIELD_IS(seqid, Swissprot) ) {
+            return;
+        }
     }
 
     static const char *kProteinOrganellePrefixes[] = {
@@ -5879,7 +5882,9 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
 
     // if ", partial [" was indeed just before the [genus species], it will now be ", partial"
     // Note: 9 is length of ", partial"
-    if ( ! bPartial && (partialPos == (sTitle.length() - 9)) ) 
+    if ( !bPartial  &&
+         partialPos != string::npos  &&
+         (partialPos == (sTitle.length() - 9)) ) 
     {
         sTitle.resize( partialPos );
     }
