@@ -470,9 +470,9 @@ public:
     static bool HasSerialFormatting(CNcbiIos& io);
 protected:
     MSerial_Flags(unsigned long all, unsigned long flags);
+    MSerial_Flags(const MSerial_Flags& o) {m_All=o.m_All; m_Flags=o.m_Flags;}
 private:
     MSerial_Flags(void) {}
-    MSerial_Flags(const MSerial_Flags&) {}
     MSerial_Flags& operator= (const MSerial_Flags&) {return *this;}
 
     void SetFlags(CNcbiIos& io) const;
