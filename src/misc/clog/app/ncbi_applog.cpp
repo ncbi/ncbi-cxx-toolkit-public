@@ -32,7 +32,9 @@
  *         single-thread scripts or application only.
  *      2) This utility tries to log locally (to /log). If it can't do that
  *         then it can call a CGI that does the logging (on other machine).
- *         CGI can be specified in the .ini file.
+ *         CGI can be specified in the .ini file. If not specified, default
+ *         http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi
+ *         will be used.
  *
  */
 
@@ -56,6 +58,11 @@
 #include "../ncbi_c_log_p.h"
 
 USING_NCBI_SCOPE;
+
+
+/// Default CGI used by default if /log directory is not writable on current machine.
+/// Can be redefined in the configuration file.
+const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -167,10 +174,9 @@ typedef struct {
 int CNcbiApplogApp::Redirect(void) 
 {
     const CNcbiRegistry& reg = GetConfig();
-
     string url = reg.Get("config", "CGI", IRegistry::fTruncate);
     if (url.empty()) {
-        throw "Cannot use redirect mode, external CGI is not specified in the configuration file";
+        url = kDefaultCGI;
     }
     string s_args;
     bool need_hostname = true;
