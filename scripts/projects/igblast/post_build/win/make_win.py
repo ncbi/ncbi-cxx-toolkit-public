@@ -59,9 +59,23 @@ def main():
     # Copy the README file from the parent directory
     readme_file = os.path.join(SCRIPT_DIR, "..", "..", "README")
     shutil.copy(readme_file, cwd)
-    shutil.move("README", "README.txt")
 
-    for aux_file in ("EnvVarUpdate.nsh", "ncbilogo.ico"):
+    # Copy the data directories, make sure there are no .svn directories
+    for directory in ("internal_data", "optional_file"):
+        src = os.path.join(SCRIPT_DIR, "..", "..", "..", ".." \
+                           "src", "app", "igblast", directory)
+        if VERBOSE:
+            print "Copying", src, "to", cwd
+        shutil.copytree(src, cwd)
+    for root, dirs, files in os.walk(cwd):
+        for subdir in dirs:
+            path = os.path.join(root, subdir)
+            if subdir == ".svn":
+                if VERBOSE:
+                    print "Removing ", path
+                shutil.rmtree(path)
+
+    for aux_file in ("EnvVarUpdate.nsh", "unix2dos.nsh", "ncbilogo.ico"):
         src = os.path.join(SCRIPT_DIR, aux_file)
         if VERBOSE:
             print "Copying", src, "to", cwd

@@ -25,9 +25,9 @@ cd c++/*/build
 %install
 %__mkdir_p $RPM_BUILD_ROOT/%_bindir
 %__install -m755 c++/*/bin/igblast[pn] $RPM_BUILD_ROOT/%_bindir
-%__mkdir_p $RPM_BUILD_ROOT/%_bindir/../data
-cp -R c++/src/app/igblast/internal_data $RPM_BUILD_ROOT/%_bindir/data
-cp -R c++/src/app/igblast/optional_file $RPM_BUILD_ROOT/%_bindir/data
+%__mkdir_p $RPM_BUILD_ROOT/%{_prefix}/share/igblast
+cp -R c++/src/app/igblast/internal_data $RPM_BUILD_ROOT/%{_prefix}/share/igblast
+cp -R c++/src/app/igblast/optional_file $RPM_BUILD_ROOT/%{_prefix}/share/igblast
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -35,6 +35,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %_bindir/*
+%{_prefix}/share/igblast/*
 
 %changelog
 * Tue Mar 20 2012 Christiam Camacho <camacho@ncbi.nlm.nih.gov>

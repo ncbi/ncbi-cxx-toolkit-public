@@ -6,6 +6,7 @@
   !include "MUI.nsh"
   !include "EnvVarUpdate.nsh"
   !include "x64.nsh"
+  !include "unix2dos.nsh"
   
 ;--------------------------------
 ; Initialization function to properly set the installation directory
@@ -63,7 +64,14 @@ Section "DefaultSection" SecDflt
   File "igblastp.exe"
   
   SetOutPath "$INSTDIR\doc"
-  File "README.txt"
+  File "README"
+  Push "$INSTDIR\doc\README"
+  Push "$INSTDIR\doc\README.txt"
+  Call unix2dos
+
+  SetOutPath "$INSTDIR\data"
+  File /r "optional_file"
+  File /r "internal_data"
   
   ;Store installation folder
   WriteRegStr HKCU "Software\NCBI\igblast-BLAST_VERSION" "" $INSTDIR
@@ -73,6 +81,8 @@ Section "DefaultSection" SecDflt
   
   ;Update PATH
   ${EnvVarUpdate} $0 "PATH" "P" "HKCU" "$INSTDIR\bin"
+  ;Create the IGDATA environment variable
+  ${EnvVarUpdate} $0 "IGDATA" "P" "HKCU" "$INSTDIR\data"
   
 SectionEnd
 
@@ -81,17 +91,13 @@ SectionEnd
 
 Section "Uninstall"
   Delete "$INSTDIR\Uninstall-ncbi-igblast-BLAST_VERSION.exe"
-  
-  Delete "$INSTDIR\bin\igblastn.exe"
-  Delete "$INSTDIR\bin\igblastp.exe"
-  Delete "$INSTDIR\doc\README.txt"
-  RmDir "$INSTDIR\bin"
-  RmDir "$INSTDIR\doc"
-  RMDir "$INSTDIR"
+  RMDir /r "$INSTDIR"
 
   DeleteRegKey /ifempty HKCU "Software\NCBI\igblast-BLAST_VERSION"
   
   ; Remove installation directory from PATH
-  ${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR\bin" 
+  ${un.EnvVarUpdate} $0 "PATH" "R" "HKCU" "$INSTDIR\bin"
+  ; Remove the IGDATA environment variable 
+  ${un.EnvVarUpdate} $0 "IGDATA" "R" "HKCU" "$INSTDIR\data"
 
 SectionEnd

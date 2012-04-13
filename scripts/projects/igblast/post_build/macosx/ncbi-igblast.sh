@@ -11,20 +11,20 @@ if [ $# -ne 3 ] ; then
 fi
 
 BLAST_BINS="igblastn igblastp"
+DATA_DIRS="optional_file internal_data"
 ALL_BINS="$BLAST_BINS"
 
 rm -rf $PRODUCT.dmg $PRODUCT _stage $INSTALLDIR/installer
-mkdir -p _stage/usr/local/ncbi/igblast/bin _stage/usr/local/ncbi/igblast/doc _stage/private/etc/paths.d
+mkdir -p _stage/usr/local/ncbi/igblast/bin _stage/usr/local/ncbi/igblast/doc \
+         _stage/usr/local/ncbi/igblast/data _stage/private/etc/paths.d
 if [ $? -ne 0 ]; then
     echo FAILURE
     exit 1;
 fi
 
-cat > _stage/usr/local/ncbi/igblast/doc/README.txt <<EOF
-Documentation available in http://www.ncbi.nlm.nih.gov/books/NBK1762
-EOF
+cp $INSTALLDIR/README _stage/usr/local/ncbi/igblast/doc/README.txt
 if [ $? -ne 0 ]; then
-    echo FAILURE
+    echo "FAILED to copy $INSTALLDIR/README"
     exit 1;
 fi
 
@@ -49,6 +49,15 @@ done
 for bin in $ALL_BINS; do
     echo copying $bin
     cp -p $INSTALLDIR/bin/$bin _stage/usr/local/ncbi/igblast/bin
+    if [ $? -ne 0 ]; then
+        echo FAILURE
+        exit 1;
+    fi
+done
+
+for dir in $DATA_DIRS; do
+    echo copying $INSTALLDIR/$dir
+    cp -R $INSTALLDIR/data/$dir _stage/usr/local/ncbi/igblast/data
     if [ $? -ne 0 ]; then
         echo FAILURE
         exit 1;
