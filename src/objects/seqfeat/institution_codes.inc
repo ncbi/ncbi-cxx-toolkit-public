@@ -6098,6 +6098,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNPSJB-Pv	s	Universidad Nacional de la Patagonia",
 "UNR<ARG>	s	Universidad Nacional de Rosario, Botanica y Ecologia Vegetal",
 "UNR<USA-NV>	s	University of Nevada, Museum of Biology",
+"UNS	s	University of Science, Ho Chi Minh City, Vietnam",
 "UNSA	s	University of Natal",
 "UNSL	s	Universidad Nacional de San Luis",
 "UNSM	s	University of Nebraska State Museum",
