@@ -58,10 +58,10 @@ namespace impl {
 // base iterator class
 class node_iterator {
 public:
-    node_iterator (void) : fake_node_(0), node_(0) {}
-    node_iterator (node &parent) : fake_node_(0), node_(reinterpret_cast<xmlNodePtr>(parent.get_node_data())) {}
-    node_iterator (xmlNodePtr xmlnode) : fake_node_(0), node_(xmlnode) {}
-    node_iterator (const node_iterator &other) : fake_node_(0), node_(other.node_) {}
+    node_iterator (void) : node_(0) {}
+    node_iterator (node &parent) : node_(reinterpret_cast<xmlNodePtr>(parent.get_node_data())) {}
+    node_iterator (xmlNodePtr xmlnode) : node_(xmlnode) {}
+    node_iterator (const node_iterator &other) : node_(other.node_) {}
     node_iterator& operator= (const node_iterator &other) { node_ = other.node_; return *this;}
 
     node* get (void) const;
@@ -70,7 +70,6 @@ public:
     void advance() { node_ = node_->next; }
 
 private:
-    mutable node fake_node_;
     xmlNodePtr node_;
 }; // end xml::impl::node_iterator class
 

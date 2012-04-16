@@ -49,6 +49,8 @@
 #include <misc/xmlwrapp/namespace.hpp>
 
 #include "pimpl_base.hpp"
+#include "deref_impl.hpp"
+
 
 // libxml2 includes
 #include <libxml/tree.h>
@@ -56,18 +58,6 @@
 namespace xml {
 
 namespace impl {
-
-/*
- * The struct is used to keep a list of the default attributes proxies
- * which help to track attributes conversions from default to non default ones
- */
-struct phantom_attr
-{
-    xmlAttributePtr         def_prop_;  // Must always be set correspondingly
-    xmlAttrPtr              prop_;      // Set if only this default attribute has been converted
-    struct phantom_attr *   next;       // The next phantom attribute
-};
-
 
 /**
  * the class that does all the work behind xml::attributes::iterator and
@@ -94,12 +84,6 @@ class ait_impl : public pimpl_base<ait_impl>
         bool                from_find_;
 }; // end xml::ait_impl class
 
-
-/* libxml2 will call it each time a node is destroyed.
- * The function cleans up the linked list of the
- * phantom_attrs attached to the node
- */
-void cleanup_phantom_attributes (xmlNodePtr xmlnode);
 
 // a couple helper functions
 xmlAttrPtr find_prop (xmlNodePtr xmlnode, const char *name, const ns *nspace);

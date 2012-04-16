@@ -2,11 +2,11 @@
  * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
  *               2009      Vaclav Slavik <vslavik@fastmail.fm>
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
@@ -46,6 +46,7 @@
 // definition include
 #include "node_iterator.hpp"
 #include "pimpl_base.hpp"
+#include "deref_impl.hpp"
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
@@ -75,8 +76,8 @@ struct xml::impl::nipimpl : public pimpl_base<xml::impl::nipimpl> {
 
 //####################################################################
 xml::node* xml::impl::node_iterator::get (void) const {
-    fake_node_.set_node_data(node_);
-    return &fake_node_;
+    node_private_data *     node_data = attach_node_private_data(node_);
+    return &(node_data->node_instance_);
 }
 //####################################################################
 

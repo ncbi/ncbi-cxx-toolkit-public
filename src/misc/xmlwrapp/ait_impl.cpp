@@ -45,6 +45,7 @@
 
 // xmlwrapp includes
 #include "ait_impl.hpp"
+#include "deref_impl.hpp"
 #include "utility.hpp"
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/exception.hpp>
@@ -125,13 +126,11 @@ ait_impl ait_impl::operator++ (int) {
 
 //####################################################################
 xml::attributes::iterator::iterator (void) {
-    parent_ = NULL;
     pimpl_ = new ait_impl(0, static_cast<xmlAttrPtr>(0), false);
 }
 //####################################################################
-xml::attributes::iterator::iterator (attributes *parent, void *node, void *prop,
+xml::attributes::iterator::iterator (void *node, void *prop,
                                      bool def_prop, bool from_find) {
-    parent_ = parent;
     if (def_prop)
         pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
                               static_cast<phantom_attr*>(prop), from_find);
@@ -141,7 +140,6 @@ xml::attributes::iterator::iterator (attributes *parent, void *node, void *prop,
 }
 //####################################################################
 xml::attributes::iterator::iterator (const iterator &other) {
-    parent_ = other.parent_;
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
@@ -153,7 +151,6 @@ xml::attributes::iterator::operator= (const iterator &other) {
 }
 //####################################################################
 void xml::attributes::iterator::swap (iterator &other) {
-    std::swap(parent_, other.parent_);
     std::swap(pimpl_, other.pimpl_);
 }
 //####################################################################
@@ -165,7 +162,8 @@ xml::attributes::iterator::reference
 xml::attributes::iterator::operator* (void) const {
     xml::attributes::attr*  att = pimpl_->get();
     if (att->normalize())
-        return *parent_->get_pointer_to_copy(*att);
+        return * static_cast<xml::attributes::attr*>
+                            (get_ptr_to_attr_instance(att));
     throw xml::exception(kDerefError);
 }
 //####################################################################
@@ -173,7 +171,8 @@ xml::attributes::iterator::pointer
 xml::attributes::iterator::operator-> (void) const {
     xml::attributes::attr*  att = pimpl_->get();
     if (att->normalize())
-        return parent_->get_pointer_to_copy(*att);
+        return static_cast<xml::attributes::attr*>
+                            (get_ptr_to_attr_instance(att));
     throw xml::exception(kRefError);
 }
 //####################################################################
@@ -195,15 +194,12 @@ xml::attributes::iterator xml::attributes::iterator::operator++ (int) {
 
 //####################################################################
 xml::attributes::const_iterator::const_iterator (void) {
-    parent_ = NULL;
     pimpl_ = new ait_impl(0, static_cast<xmlAttrPtr>(0), false);
 }
 //####################################################################
-xml::attributes::const_iterator::const_iterator (const attributes *parent,
-                                                 void *node, void *prop,
+xml::attributes::const_iterator::const_iterator (void *node, void *prop,
                                                  bool def_prop,
                                                  bool from_find) {
-    parent_ = parent;
     if (def_prop)
         pimpl_ = new ait_impl(static_cast<xmlNodePtr>(node),
                               static_cast<phantom_attr*>(prop), from_find);
@@ -213,12 +209,10 @@ xml::attributes::const_iterator::const_iterator (const attributes *parent,
 }
 //####################################################################
 xml::attributes::const_iterator::const_iterator (const const_iterator &other) {
-    parent_ = other.parent_;
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
 xml::attributes::const_iterator::const_iterator (const iterator &other) {
-    parent_ = other.parent_;
     pimpl_ = new ait_impl(*other.pimpl_);
 }
 //####################################################################
@@ -230,7 +224,6 @@ xml::attributes::const_iterator::operator= (const const_iterator &other) {
 }
 //####################################################################
 void xml::attributes::const_iterator::swap (const_iterator &other) {
-    std::swap(parent_, other.parent_);
     std::swap(pimpl_, other.pimpl_);
 }
 //####################################################################
@@ -242,7 +235,8 @@ xml::attributes::const_iterator::reference
 xml::attributes::const_iterator::operator* (void) const {
     xml::attributes::attr*  att = pimpl_->get();
     if (att->normalize())
-        return *parent_->get_pointer_to_copy(*att);
+        return * static_cast<xml::attributes::attr*>
+                            (get_ptr_to_attr_instance(att));
     throw xml::exception(kDerefError);
 }
 //####################################################################
@@ -250,7 +244,8 @@ xml::attributes::const_iterator::pointer
 xml::attributes::const_iterator::operator-> (void) const {
     xml::attributes::attr*  att = pimpl_->get();
     if (att->normalize())
-        return parent_->get_pointer_to_copy(*att);
+        return static_cast<xml::attributes::attr*>
+                            (get_ptr_to_attr_instance(att));
     throw xml::exception(kRefError);
 }
 //####################################################################
@@ -318,6 +313,10 @@ void * xml::attributes::attr::normalize (void) const {
             return static_cast<phantom_attr*>(phantom_prop_)->def_prop_;
     }
     return NULL;
+}
+//####################################################################
+void * xml::attributes::attr::get_node(void) const {
+    return xmlnode_;
 }
 //####################################################################
 bool xml::attributes::attr::operator==
@@ -590,9 +589,12 @@ namespace impl {
 
             if (dtd_attr != 0 && dtd_attr->defaultValue != 0) {
 
+                node_private_data *  node_data = attach_node_private_data(xmlnode);
+
+
                 // Found, now check the phantom attributes list attached to the
                 // node
-                phantom_attr *  current = static_cast<phantom_attr*>(xmlnode->_private);
+                phantom_attr *  current = node_data->phantom_attrs_;
                 while (current != NULL) {
                     if (current->def_prop_ == dtd_attr)
                         return current;
@@ -604,9 +606,9 @@ namespace impl {
                 memset( new_phantom, 0, sizeof( phantom_attr ) );
                 new_phantom->def_prop_ = dtd_attr;
 
-                current = static_cast<phantom_attr*>(xmlnode->_private);
+                current = node_data->phantom_attrs_;
                 new_phantom->next = current;
-                xmlnode->_private = new_phantom;
+                node_data->phantom_attrs_ = new_phantom;
                 return new_phantom;
             }
         }
@@ -643,16 +645,6 @@ namespace impl {
     //####################################################################
     bool operator!= (const ait_impl &lhs, const ait_impl &rhs) {
         return !(lhs == rhs);
-    }
-    //####################################################################
-    void cleanup_phantom_attributes (xmlNodePtr xmlnode) {
-        phantom_attr* current = static_cast<phantom_attr*>(xmlnode->_private);
-        phantom_attr* next = NULL;
-        while (current != NULL) {
-            next = current->next;
-            delete current;
-            current = next;
-        }
     }
 }
     //####################################################################

@@ -62,7 +62,9 @@ class node;
 namespace impl {
 class ait_impl;
 struct node_impl;
+struct attr_instance;
 bool operator== (const ait_impl &lhs, const ait_impl &rhs);
+void *  get_ptr_to_attr_instance(void *);
 }
 
 /**
@@ -255,6 +257,7 @@ public:
 
         void set_data (void *node, void *prop, bool def_prop);
         void *normalize (void) const;
+        void *get_node (void) const;
         bool operator==(const attr &other) const;
         void convert (void);
         void *resolve_default_attr_ns (void) const;
@@ -265,15 +268,12 @@ public:
         friend class const_iterator;
         friend class attributes;
         friend struct xml::attributes::pimpl;
+        friend struct xml::impl::attr_instance;
+        friend void *  xml::impl::get_ptr_to_attr_instance(void *);
     }; // end xml::attributes::attr class
 
     /**
      * Iterator class for accessing attribute pairs.
-     *
-     * @warning  A reference and/or a pointer to the xml::attributes::attr
-     *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the parent attributes container is
-     *           destroyed.
      */
     class iterator {
     public:
@@ -288,18 +288,7 @@ public:
         iterator& operator= (const iterator& other);
         ~iterator (void);
 
-        /**
-         * @warning  The provided reference to the xml::attributes::attr
-         *           becomes invalid when the parent attributes container
-         *           is destroyed.
-         */
         reference operator*  (void) const;
-
-        /**
-         * @warning  The provided pointer to the xml::attributes::attr
-         *           becomes invalid when the parent attributes container
-         *           is destroyed.
-         */
         pointer   operator-> (void) const;
 
         /// prefix increment
@@ -311,10 +300,8 @@ public:
         friend bool operator== (const iterator &lhs, const iterator &rhs);
         friend bool operator!= (const iterator &lhs, const iterator &rhs);
     private:
-        attributes *parent_;
         impl::ait_impl *pimpl_;
-        iterator (attributes *parent, void *node,
-                  void *prop, bool def_prop, bool from_find);
+        iterator (void *node, void *prop, bool def_prop, bool from_find);
         void swap (iterator &other);
         friend class attributes;
         friend class const_iterator;
@@ -322,11 +309,6 @@ public:
 
     /**
      * Const Iterator class for accessing attribute pairs.
-     *
-     * @warning  A reference and/or a pointer to the xml::attributes::attr
-     *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the parent attributes container is
-     *           destroyed.
      */
     class const_iterator {
     public:
@@ -342,18 +324,7 @@ public:
         const_iterator& operator= (const const_iterator& other);
         ~const_iterator (void);
 
-        /**
-         * @warning  The provided reference to the xml::attributes::attr
-         *           becomes invalid when the parent attributes container
-         *           is destroyed.
-         */
         reference operator*  (void) const;
-
-        /**
-         * @warning  The provided pointer to the xml::attributes::attr
-         *           becomes invalid when the parent attributes container
-         *           is destroyed.
-         */
         pointer   operator-> (void) const;
 
         /// prefix increment
@@ -365,10 +336,8 @@ public:
         friend bool operator== (const const_iterator &lhs, const const_iterator &rhs);
         friend bool operator!= (const const_iterator &lhs, const const_iterator &rhs);
     private:
-        const attributes *parent_;
         impl::ait_impl *pimpl_;
-        const_iterator (const attributes *parent, void *node,
-                        void *prop, bool def_prop, bool from_find);
+        const_iterator (void *node, void *prop, bool def_prop, bool from_find);
         void swap (const_iterator &other);
         friend class attributes;
     }; // end xml::attributes::const_iterator class
@@ -381,10 +350,6 @@ public:
      * @return An iterator equal to end() if there are no attributes.
      * @see xml::attributes::iterator
      * @see xml::attributes::attr
-     * @warning  A reference and/or a pointer to the xml::attributes::attr
-     *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the attributes container is
-     *           destroyed.
      * @author Peter Jones
     **/
     //####################################################################
@@ -398,10 +363,6 @@ public:
      * @return A const_iterator equal to end() if there are no attributes.
      * @see xml::attributes::const_iterator
      * @see xml::attributes::attr
-     * @warning  A reference and/or a pointer to the xml::attributes::attr
-     *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the attributes container is
-     *           destroyed.
      * @author Peter Jones
     **/
     //####################################################################
@@ -473,10 +434,6 @@ public:
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::iterator
      * @see xml::attributes::attr
-     * @warning  A reference and/or a pointer to the xml::attributes::attr
-     *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the attributes container is
-     *           destroyed.
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -506,10 +463,6 @@ public:
      * @return If the attribute was not found, find will return end().
      * @see xml::attributes::const_iterator
      * @see xml::attributes::attr
-     * @warning  A reference and/or a pointer to the xml::attributes::attr
-     *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the attributes container is
-     *           destroyed.
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -525,10 +478,6 @@ public:
      * @return An iterator that points to the attribute after the one to be erased.
      * @see xml::attributes::iterator
      * @see xml::attributes::attr
-     * @warning  A reference and/or a pointer to the xml::attributes::attr
-     *           provided by the iterator's "operator *" and "operator ->"
-     *           becomes invalid when the attributes container is
-     *           destroyed.
      * @author Peter Jones
     **/
     //####################################################################
@@ -594,7 +543,6 @@ private:
     // Similar to the above
     static void * getUnsafeNamespacePointer (const xml::ns &name_space);
 
-    attr *  get_pointer_to_copy(const attr &) const;
     void set_data (void *node);
     void* get_data (void);
     friend struct impl::node_impl;

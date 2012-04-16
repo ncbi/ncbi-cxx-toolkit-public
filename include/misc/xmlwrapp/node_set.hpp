@@ -416,9 +416,8 @@ public:
     size_t size() const;
 
 private:
-    // relay to create a fake node basing on the libxml2 row pointer
+    // relay to create a fake node basing on the libxml2 raw pointer
     node_set(void* result_set);
-    void set_node_data(node& nd, void* data) const;
 
     impl::nset_impl*    pimpl_;     // private implementation
 

@@ -39,9 +39,10 @@
 #include <misc/xmlwrapp/node_set.hpp>
 #include <misc/xmlwrapp/exception.hpp>
 
+#include "deref_impl.hpp"
+
 // standard includes
 #include <stdexcept>
-#include <map>
 
 // libxml2
 #include <libxml/xpath.h>
@@ -58,9 +59,8 @@ namespace xml
             // XPath query results
             xmlXPathObjectPtr   results_;
 
-            nset_impl(void* results, node_set* ns) :
+            nset_impl(void* results) :
                 results_(reinterpret_cast<xmlXPathObjectPtr>(results)),
-                parent_(ns),
                 refcnt_(1)
             {}
             void inc_ref() { ++refcnt_; }
@@ -74,23 +74,15 @@ namespace xml
             node &  get_reference( int  index ) {
                 /* The index range is checked by the caller */
 
-                std::map<int, node>::iterator   element = references_.find(index);
-                if (element != references_.end())
-                    return element->second;
-
-                xml::node &     ref( references_[index] = node() ); /* NCBI_FAKE_WARNING */
-                parent_->set_node_data(ref, results_->nodesetval->nodeTab[index]);
-                return ref;
+                node_private_data *  node_data = attach_node_private_data(results_->nodesetval->nodeTab[index]);
+                return node_data->node_instance_;
             }
 
         protected:
             ~nset_impl() {}
 
         private:
-            node_set *              parent_;    // pointer to the parent
-            size_t                  refcnt_;    // reference counter
-            std::map< int, node >   references_;// refrences to the nodes received
-                                                // via * and -> iterators operators
+            size_t  refcnt_;    // reference counter
         };
     }
 
@@ -106,14 +98,14 @@ namespace xml
         pimpl_(NULL)
     {
         /* Avoid compiler warnings */
-        pimpl_ = new impl::nset_impl(0, this);
+        pimpl_ = new impl::nset_impl(0);
     }
 
     node_set::node_set(void* result_set) :
         pimpl_(NULL)
     {
         /* Avoid compiler warnings */
-        pimpl_ = new impl::nset_impl(result_set, this);
+        pimpl_ = new impl::nset_impl(result_set);
     }
 
     node_set::node_set(const node_set& other) :
@@ -168,11 +160,6 @@ namespace xml
     node_set::const_iterator node_set::end() const
     {
         return const_iterator(this, -1);
-    }
-
-    void node_set::set_node_data(node& nd, void* data) const
-    {
-        nd.set_node_data(data);
     }
 
     //

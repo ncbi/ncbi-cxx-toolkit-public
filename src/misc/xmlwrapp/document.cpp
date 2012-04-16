@@ -114,12 +114,10 @@ xml::document::document (void) :
 xml::document::document (const char *               filename,
                          error_messages *           messages,
                          warnings_as_errors_type    how) :
-    pimpl_(0)
+    pimpl_(NULL)
 {
     if (!filename)
         throw xml::exception("invalid file name");
-
-    pimpl_ = new doc_impl;
 
     xmlSAXHandler   sax;
     memset(&sax, 0, sizeof(sax));
@@ -146,6 +144,8 @@ xml::document::document (const char *               filename,
         if (tmpdoc) xmlFreeDoc(tmpdoc);
         throw parser_exception(*temp);
     }
+
+    pimpl_ = new doc_impl;
     set_doc_data(tmpdoc);
 }
 //####################################################################
@@ -153,12 +153,10 @@ xml::document::document (const char *               data,
                          size_type                  size,
                          error_messages *           messages,
                          warnings_as_errors_type    how) :
-    pimpl_(0)
+    pimpl_(NULL)
 {
     if (!data)
         throw xml::exception("invalid data pointer");
-
-    pimpl_ = new doc_impl;
 
     xmlParserCtxtPtr    ctxt = xmlCreateMemoryParserCtxt(
                                     data, static_cast<int>(size));
@@ -191,14 +189,15 @@ xml::document::document (const char *               data,
     int ret(xmlParseDocument(ctxt));
 
     if (!ctxt->wellFormed || ret != 0 || is_failure(temp, how)) {
-        xmlFreeDoc(ctxt->myDoc);
-        ctxt->myDoc = 0;
+        if (ctxt->myDoc)
+            xmlFreeDoc(ctxt->myDoc);
         ctxt->sax = 0;
         xmlFreeParserCtxt(ctxt);
 
         throw parser_exception(*temp);
     }
 
+    pimpl_ = new doc_impl;
     set_doc_data(ctxt->myDoc);
     ctxt->sax = 0;
 
@@ -230,7 +229,7 @@ static const std::size_t   const_buffer_size = 4096;
 xml::document::document (std::istream &           stream,
                          error_messages *         messages,
                          warnings_as_errors_type  how) :
-    pimpl_(new doc_impl)
+    pimpl_(NULL)
 {
     /* Deal with the SAX handler first */
     xmlSAXHandler       sax;
@@ -284,8 +283,6 @@ xml::document::document (std::istream &           stream,
     {
         if (ctxt->myDoc)
             xmlFreeDoc(ctxt->myDoc);
-        ctxt->myDoc = 0;
-        ctxt->sax = 0;
         xmlFreeParserCtxt(ctxt);
 
         throw parser_exception(*temp);
@@ -293,10 +290,8 @@ xml::document::document (std::istream &           stream,
 
     /* Fine, the doc is OK */
 
+    pimpl_ = new doc_impl;
     set_doc_data(ctxt->myDoc);
-    ctxt->myDoc = 0;
-    ctxt->sax = 0;
-
     xmlFreeParserCtxt(ctxt);
 }
 //####################################################################
