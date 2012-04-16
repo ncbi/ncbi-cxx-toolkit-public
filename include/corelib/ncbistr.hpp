@@ -210,32 +210,39 @@ public:
     ///   If specified base in the *ToString() methods is not default 10,
     ///   that some flags like fWithSign and fWithCommas will be ignored.
     enum ENumToStringFlags {
-        fWithSign        = (1 <<  9), ///< Prefix the output value with a sign
-        fWithCommas      = (1 << 10), ///< Use commas as thousands separator
-        fDoubleFixed     = (1 << 11), ///< Use n.nnnn format for double
-        fDoubleScientific= (1 << 12), ///< Use scientific format for double
-        fDoublePosix     = (1 << 13), ///< Use C locale
-        fDoubleGeneral   = fDoubleFixed | fDoubleScientific
+        fWithSign        = (1 <<  6), ///< Prefix the output value with a sign
+        fWithCommas      = (1 <<  7), ///< Use commas as thousands separator
+        fDoubleFixed     = (1 <<  8), ///< Use n.nnnn format for double
+        fDoubleScientific= (1 <<  9), ///< Use scientific format for double
+        fDoublePosix     = (1 << 10), ///< Use C locale
+        fDoubleGeneral   = fDoubleFixed | fDoubleScientific,
+        fDS_Binary       = (1 << 11),
+        fDS_NoDecimalPoint = (1 << 12),
+        fDS_PutSpaceBeforeSuffix = (1 << 13),
+        fDS_ShortSuffix  = (1 << 14),
+        fDS_PutBSuffixToo = (1 << 15)
     };
     typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
 
     /// String to number conversion flags.
     enum EStringToNumFlags {
-        fConvErr_NoThrow      = (1 <<  9),   ///< Return "natural null"
+        fConvErr_NoThrow      = (1 << 16),   ///< Return "natural null"
         // value on error, instead of throwing (by default) an exception
         
-        fMandatorySign        = (1 << 10),   ///< See 'fWithSign'
-        fAllowCommas          = (1 << 11),   ///< See 'fWithCommas'
-        fAllowLeadingSpaces   = (1 << 12),   ///< Can have leading spaces
-        fAllowLeadingSymbols  = (1 << 13) | fAllowLeadingSpaces,
+        fMandatorySign        = (1 << 17),   ///< See 'fWithSign'
+        fAllowCommas          = (1 << 18),   ///< See 'fWithCommas'
+        fAllowLeadingSpaces   = (1 << 19),   ///< Can have leading spaces
+        fAllowLeadingSymbols  = (1 << 20) | fAllowLeadingSpaces,
                                              ///< Can have leading non-nums
-        fAllowTrailingSpaces  = (1 << 14),   ///< Can have trailing spaces
-        fAllowTrailingSymbols = (1 << 15) | fAllowTrailingSpaces,
+        fAllowTrailingSpaces  = (1 << 21),   ///< Can have trailing spaces
+        fAllowTrailingSymbols = (1 << 22) | fAllowTrailingSpaces,
                                              ///< Can have trailing non-nums
-        fDecimalPosix         = (1 << 16),   ///< For decimal point, use C locale
-        fDecimalPosixOrLocal  = (1 << 17),   ///< For decimal point, try both C and current locale
-        fIgnoreErrno          = (1 << 18),   ///< Do not throw exception when errno != 0
-        fAllStringToNumFlags  = 0x7F00
+        fDecimalPosix         = (1 << 23),   ///< For decimal point, use C locale
+        fDecimalPosixOrLocal  = (1 << 24),   ///< For decimal point, try both C and current locale
+        fIgnoreErrno          = (1 << 25),   ///< Do not throw exception when errno != 0
+        fDS_ForceBinary       = (1 << 26),
+        fDS_ProhibitFractions = (1 << 27),
+        fDS_ProhibitSpaceBeforeSuffix = (1 << 28)
     };
     typedef int TStringToNumFlags;   ///< Bitwise OR of "EStringToNumFlags"
 
@@ -430,6 +437,32 @@ public:
                                TStringToNumFlags  flags = 0,
                                int                base  = 10);
 
+    /// Convert string that can contain "software qualifiers to Uint8. 
+    ///
+    /// String can contain "software" qualifiers: G(giga-), MB(mega-),
+    /// KiB (kibi-) etc.
+    /// Example: 100MB, 1024KiB, 5.7G.
+    /// Meaning of qualifiers depends on flags and by default is 1000-based
+    /// (i.e. K=1000, M=10^6 etc.) except in cases when qualifiers with "iB"
+    /// are used, i.e. KiB=1024, MiB=1024^2 etc. When flags parameter contains
+    /// fDS_ForceBinary then qualifiers without "iB" (i.e. "K" or "MB") will
+    /// also be 1024-based.
+    /// String can contain a decimal fraction (except when fDS_ProhibitFractions
+    /// flag is used), in this case the resultant Uint8 number will be rounded
+    /// to fit into integer value.
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param flags
+    ///   How to convert string to value.
+    /// @return
+    ///   - Convert "str" to "Uint8" value and return it.
+    ///   - 0 if "str" contains illegal symbols, or if it represents a number
+    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
+    ///   - Throw an exception otherwise.
+    static Uint8 StringToUInt8_DataSize(const CTempString& str,
+                                        TStringToNumFlags  flags = 0);
+
     /// Convert string to number of bytes. 
     ///
     /// String can contain "software" qualifiers: MB(megabyte), KB (kilobyte)..
@@ -449,9 +482,10 @@ public:
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
+    NCBI_DEPRECATED
     static Uint8 StringToUInt8_DataSize(const CTempString& str,
-                                        TStringToNumFlags  flags = 0,
-                                        int                base  = 10);
+                                        TStringToNumFlags  flags,
+                                        int                base);
 
     /// Convert string to size_t.
     ///
@@ -812,6 +846,54 @@ public:
                               TNumToStringFlags flags = 0,
                               int               base  = 10);
 
+    /// Convert UInt8 to string using "software" qualifiers.
+    /// 
+    /// Result of conversion will be limited to max_digits digits so that e.g.
+    /// 1024 will be converted to 1.02KB. Conversion will be made using
+    /// rounding so that 1025 will be converted to 1.03KB. By default function
+    /// uses 1000-based qualifiers (as in examples above) but with fDS_Binary
+    /// flag it will use 1024-based qualifiers, e.g. 1100 will be converted to
+    /// 1.07KiB. With fDS_ShortSuffix flag function will omit "B" in 1000-based
+    /// and "iB" in 1024-based qualifiers. When the result of conversion doesn't
+    /// need any qualifiers then the result of this function will be equivalent
+    /// to result of UInt8ToString() above except if fDS_PutBSuffixToo flag
+    /// is passed. In the latter case "B" will be added to the number.
+    /// 
+    /// Function will always try to use a maximum possible qualifier and
+    /// a number with decimal point except if fDS_NoDecimalPoint flag is passed.
+    /// In that case function will return only whole number and try to use a
+    /// minimum possible qualifier (which makes difference only if
+    /// max_digits > 3).
+    ///
+    /// @param value
+    ///   Integer value (UInt8) to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param max_digits
+    ///   Maximum number of digits to use (cannot be less than 3)
+    /// @return
+    ///   Converted string value.
+    static string UInt8ToString_DataSize(Uint8 value,
+                                         TNumToStringFlags flags = 0,
+                                         unsigned int max_digits = 3);
+
+    /// Convert UInt8 to string using "software" qualifiers.
+    /// 
+    /// See notes and details of how function works in the comments to 
+    /// UInt8ToString_DataSize() above.
+    ///
+    /// @param out_str
+    ///   Output string variable
+    /// @param value
+    ///   Integer value (UInt8) to be converted.
+    /// @param flags
+    ///   How to convert value to string.
+    /// @param max_digits
+    ///   Maximum number of digits to use (cannot be less than 3)
+    static void UInt8ToString_DataSize(string& out_str,
+                                       Uint8 value,
+                                       TNumToStringFlags flags = 0,
+                                       unsigned int max_digits = 3);
     /// Convert double to string.
     ///
     /// @param value
@@ -4631,6 +4713,16 @@ string NStr::UInt8ToString(Uint8 value,
 {
     string ret;
     NStr::UInt8ToString(ret, value, flags, base);
+    return ret;
+}
+
+inline
+string NStr::UInt8ToString_DataSize(Uint8 value,
+                                    TNumToStringFlags flags /* = 0 */,
+                                    unsigned int max_digits /* = 3 */)
+{
+    string ret;
+    NStr::UInt8ToString_DataSize(ret, value, flags, max_digits);
     return ret;
 }
 

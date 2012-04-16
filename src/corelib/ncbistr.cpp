@@ -1328,6 +1328,231 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 }
 
 
+Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
+                                   TStringToNumFlags flags /* = 0 */)
+{
+    TStringToNumFlags allowed_flags
+            = fConvErr_NoThrow + fMandatorySign + fAllowCommas
+              + fAllowLeadingSymbols + fAllowTrailingSymbols
+              + fDS_ForceBinary + fDS_ProhibitFractions
+              + fDS_ProhibitSpaceBeforeSuffix;
+    if ((flags & allowed_flags) != flags) {
+        NCBI_THROW2(CStringException, eConvert, "Wrong set of flags", 0);
+    }
+
+    const char* str_ptr = str.data();
+    const char* str_end = str_ptr + str.size();
+    if (flags & fAllowLeadingSymbols) {
+        bool allow_all = (flags & fAllowLeadingSymbols) != fAllowLeadingSpaces;
+        for (; str_ptr < str_end; ++str_ptr) {
+            char c = *str_ptr;
+            if (isdigit(c))
+                break;
+            if (isspace(c))
+                continue;
+            if ((c == '+'  ||  c == '-')  &&  (flags & fMandatorySign)
+                &&  str_ptr + 1 < str_end  &&  isdigit(*(str_ptr + 1)))
+            {
+                break;
+            }
+            if (!allow_all)
+                break;
+        }
+    }
+
+    if (str_ptr < str_end  &&  *str_ptr == '+') {
+        ++str_ptr;
+    }
+    else if ((str_ptr < str_end  &&  *str_ptr == '-')
+             ||  (flags & fMandatorySign))
+    {
+        S2N_CONVERT_ERROR(Uint8, kEmptyStr, EINVAL, true, str_ptr - str.data());
+    }
+
+    const char* num_start = str_ptr;
+    bool have_dot = false;
+    bool allow_commas = (flags & fAllowCommas) != 0;
+    bool allow_dot = (flags & fDS_ProhibitFractions) == 0;
+    Uint4 digs_pre_dot = 0, digs_post_dot = 0;
+    for (; str_ptr < str_end; ++str_ptr) {
+        char c = *str_ptr;
+        if (isdigit(c)) {
+            if (have_dot)
+                ++digs_post_dot;
+            else
+                ++digs_pre_dot;
+        }
+        else if (c == '.'  &&  allow_dot) {
+            if (have_dot  ||  str_ptr == num_start)
+                break;
+            if (*(str_ptr - 1) == ',') {
+                --str_ptr;
+                break;
+            }
+            have_dot = true;
+        }
+        else if (c == ','  &&  allow_commas) {
+            if (have_dot  ||  str_ptr == num_start)
+                break;
+            if (*(str_ptr - 1) == ',') {
+                --str_ptr;
+                break;
+            }
+        }
+        else
+            break;
+    }
+    if (have_dot  &&  digs_post_dot == 0)
+        --str_ptr;
+    else if (str_ptr > num_start  &&  *(str_ptr - 1) == ',')
+        --str_ptr;
+
+    const char* num_end = str_ptr;
+    if (num_start == num_end) {
+        S2N_CONVERT_ERROR(Uint8, kEmptyStr, EINVAL, true, str_ptr - str.data());
+    }
+    if (str_ptr < str_end  &&  *str_ptr == ' '
+        &&  !(flags & fDS_ProhibitSpaceBeforeSuffix))
+    {
+        ++str_ptr;
+    }
+    char suff_c = 0;
+    if (str_ptr < str_end)
+        suff_c = toupper(*str_ptr);
+
+    static const char s_Suffixes[] = {'K', 'M', 'G', 'T', 'P', 'E'};
+    static const char* const s_BinCoefs[] = {"1024", "1048576", "1073741824",
+                                             "1099511627776",
+                                             "1125899906842624",
+                                             "1152921504606846976"};
+    static const Uint4 s_NumSuffixes = sizeof(s_Suffixes) / sizeof(s_Suffixes[0]);
+
+    bool binary_suff = (flags & fDS_ForceBinary) != 0;
+    Uint4 suff_idx = 0;
+    for (; suff_idx < s_NumSuffixes; ++suff_idx) {
+        if (suff_c == s_Suffixes[suff_idx])
+            break;
+    }
+    if (suff_idx < s_NumSuffixes) {
+        ++str_ptr;
+        if (str_ptr + 1 < str_end  &&  toupper(*str_ptr) == 'I'
+            &&  toupper(*(str_ptr + 1)) == 'B')
+        {
+            str_ptr += 2;
+            binary_suff = true;
+        }
+        else if (str_ptr < str_end  &&  toupper(*str_ptr) == 'B')
+            ++str_ptr;
+    }
+    else if (suff_c == 'B') {
+        ++str_ptr;
+    }
+    else if (*(str_ptr - 1) == ' ')
+        --str_ptr;
+
+    if (flags & fAllowTrailingSymbols) {
+        bool allow_all = (flags & fAllowTrailingSymbols) != fAllowTrailingSpaces;
+        for (; str_ptr < str_end; ++str_ptr) {
+            char c = *str_ptr;
+            if (isspace(c))
+                continue;
+            if (!allow_all)
+                break;
+        }
+    }
+    if (str_ptr != str_end) {
+        S2N_CONVERT_ERROR(Uint8, kEmptyStr, EINVAL, true, str_ptr - str.data());
+    }
+
+    Uint4 orig_digs = digs_pre_dot + digs_post_dot;
+    AutoArray<Uint1> orig_num(orig_digs);
+    str_ptr = num_start;
+    for (Uint4 i = 0; str_ptr < num_end; ++str_ptr) {
+        if (*str_ptr == ','  ||  *str_ptr == '.')
+            continue;
+        orig_num[i++] = *str_ptr - '0';
+    }
+
+    Uint1* num_to_conv = orig_num.get();
+    Uint4 digs_to_conv = digs_pre_dot;
+    AutoArray<Uint1> mul_num;
+    if (binary_suff  &&  suff_idx < s_NumSuffixes) {
+        const char* coef = s_BinCoefs[suff_idx];
+        Uint4 coef_size = Uint4(strlen(coef));
+        mul_num = new Uint1[orig_digs + coef_size];
+        memset(mul_num.get(), 0, orig_digs + coef_size);
+        for (Uint4 coef_i = 0; coef_i < coef_size; ++coef_i) {
+            Uint1 coef_d = Uint1(coef[coef_i] - '0');
+            Uint1 carry = 0;
+            Uint4 res_idx = orig_digs + coef_i;
+            for (int orig_i = orig_digs - 1; orig_i >= 0; --orig_i, --res_idx) {
+                Uint1 orig_d = orig_num[orig_i];
+                Uint1 res_d = coef_d * orig_d + carry + mul_num[res_idx];
+                carry = 0;
+                while (res_d >= 10) {
+                    res_d -= 10;
+                    ++carry;
+                }
+                mul_num[res_idx] = res_d;
+            }
+            _ASSERT(carry <= 9);
+            for (; carry != 0; --res_idx) {
+                Uint1 res_d = mul_num[res_idx] + carry;
+                carry = 0;
+                while (res_d >= 10) {
+                    res_d -= 10;
+                    ++carry;
+                }
+                mul_num[res_idx] = res_d;
+            }
+        }
+        digs_to_conv = orig_digs + coef_size - digs_post_dot;
+        num_to_conv = mul_num.get();
+        while (digs_to_conv > 1  &&  *num_to_conv == 0) {
+            --digs_to_conv;
+            ++num_to_conv;
+        }
+    }
+    else if (suff_idx < s_NumSuffixes) {
+        Uint4 coef_size = (suff_idx + 1) * 3;
+        if (coef_size <= digs_post_dot) {
+            digs_to_conv += coef_size;
+            digs_post_dot -= coef_size;
+        }
+        else {
+            digs_to_conv += digs_post_dot;
+            coef_size -= digs_post_dot;
+            digs_post_dot = 0;
+            mul_num = new Uint1[digs_to_conv + coef_size];
+            memmove(mul_num.get(), num_to_conv, digs_to_conv);
+            memset(mul_num.get() + digs_to_conv, 0, coef_size);
+            num_to_conv = mul_num.get();
+            digs_to_conv += coef_size;
+        }
+    }
+
+    const Uint8 limdiv = kMax_UI8/10;
+    const int   limoff = int(kMax_UI8 % 10);
+    Uint8 n = 0;
+    for (Uint4 i = 0; i < digs_to_conv; ++i) {
+        Uint1 d = num_to_conv[i];
+        if (n >= limdiv  &&  (n > limdiv  ||  d > limoff)) {
+            S2N_CONVERT_ERROR(Uint8, kEmptyStr, ERANGE, true, i);
+        }
+        n *= 10;
+        n += d;
+    }
+    if (digs_post_dot != 0  &&  num_to_conv[digs_to_conv] >= 5) {
+        if (n == kMax_UI8) {
+            S2N_CONVERT_ERROR(Uint8, kEmptyStr, ERANGE, true, digs_to_conv);
+        }
+        ++n;
+    }
+
+    return n;
+}
+
+
 size_t NStr::StringToSizet(const CTempString& str,
                            TStringToNumFlags flags, int base)
 {
@@ -1638,6 +1863,224 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
         *--pos = '+';
     }
     out_str.assign(pos, buffer + kBufSize - pos);
+}
+
+
+void NStr::UInt8ToString_DataSize(string& out_str,
+                                  Uint8 value,
+                                  TNumToStringFlags flags /* = 0 */,
+                                  unsigned int max_digits /* = 3 */)
+{
+    TNumToStringFlags allowed_flags
+            = fWithSign + fWithCommas + fDS_Binary + fDS_NoDecimalPoint
+              + fDS_PutSpaceBeforeSuffix + fDS_ShortSuffix + fDS_PutBSuffixToo;
+    if ((flags & allowed_flags) != flags) {
+        NCBI_THROW2(CStringException, eConvert, "Wrong set of flags", 0);
+    }
+    if (max_digits < 3)
+        max_digits = 3;
+
+    static const char s_Suffixes[] = {'K', 'M', 'G', 'T', 'P', 'E'};
+    static const Uint4 s_NumSuffixes = sizeof(s_Suffixes) / sizeof(s_Suffixes[0]);
+
+    static const SIZE_TYPE kBufSize = 50;
+    char buffer[kBufSize];
+
+    char* num_start;
+    char* dot_ptr;
+    char* num_end;
+    Uint4 digs_pre_dot, suff_idx;
+    if (!(flags &fDS_Binary)) {
+        static const Uint8 s_Coefs[] = {1000, 1000000, 1000000000,
+                                        NCBI_CONST_UINT8(1000000000000),
+                                        NCBI_CONST_UINT8(1000000000000000),
+                                        NCBI_CONST_UINT8(1000000000000000000)};
+
+        suff_idx = 0;
+        for (; suff_idx < s_NumSuffixes; ++suff_idx) {
+            if (value < s_Coefs[suff_idx])
+                break;
+        }
+        num_start = s_PrintUint8(buffer + kBufSize, value, 0, 10);
+        num_start[-1] = '0';
+        dot_ptr = buffer + kBufSize - 3 * suff_idx;
+        digs_pre_dot = dot_ptr - num_start;
+        if (!(flags & fDS_NoDecimalPoint)) {
+            num_end = min(buffer + kBufSize, dot_ptr + (max_digits - digs_pre_dot));
+        }
+        else {
+            while (suff_idx > 0  &&  max_digits - digs_pre_dot >= 3) {
+                --suff_idx;
+                digs_pre_dot += 3;
+                dot_ptr += 3;
+            }
+            num_end = dot_ptr;
+        }
+        char* round_dig = num_end - 1;
+        if (num_end < buffer + kBufSize  &&  *num_end >= '5')
+            ++(*round_dig);
+        while (*round_dig == '0' + 10) {
+            *round_dig = '0';
+            --round_dig;
+            ++(*round_dig);
+        }
+        if (round_dig < num_start) {
+            _ASSERT(num_start - round_dig == 1);
+            num_start = round_dig;
+            ++digs_pre_dot;
+            if (!(flags & fDS_NoDecimalPoint)) {
+                if (digs_pre_dot > 3) {
+                    ++suff_idx;
+                    digs_pre_dot -= 3;
+                    dot_ptr -= 3;
+                }
+                --num_end;
+            }
+            else {
+                if (digs_pre_dot > max_digits) {
+                    ++suff_idx;
+                    digs_pre_dot -= 3;
+                    dot_ptr -= 3;
+                    num_end = dot_ptr;
+                }
+            }
+        }
+    }
+    else {
+        static const Uint8 s_Coefs[] = {1, 1024, 1048576, 1073741824,
+                                        NCBI_CONST_UINT8(1099511627776),
+                                        NCBI_CONST_UINT8(1125899906842624),
+                                        NCBI_CONST_UINT8(1152921504606846976)};
+
+        suff_idx = 1;
+        for (; suff_idx < s_NumSuffixes; ++suff_idx) {
+            if (value < s_Coefs[suff_idx])
+                break;
+        }
+        bool can_try_another = true;
+try_another_suffix:
+        Uint8 mul_coef = s_Coefs[suff_idx - 1];
+        Uint8 whole_num = value / mul_coef;
+        if (max_digits == 3  &&  whole_num >= 1000) {
+            ++suff_idx;
+            goto try_another_suffix;
+        }
+        num_start = s_PrintUint8(buffer + kBufSize, whole_num, 0, 10);
+        num_start[-1] = '0';
+        digs_pre_dot = buffer + kBufSize - num_start;
+        if (max_digits - digs_pre_dot >= 3  &&  (flags & fDS_NoDecimalPoint)
+            &&  suff_idx != 1  &&  can_try_another)
+        {
+            Uint4 new_suff = suff_idx - 1;
+try_even_more_suffix:
+            Uint8 new_num = value / s_Coefs[new_suff - 1];
+            char* new_start = s_PrintUint8(buffer + kBufSize / 2, new_num, 0, 10);
+            Uint4 new_digs = buffer + kBufSize / 2 - new_start;
+            if (new_digs <= max_digits) {
+                if (max_digits - digs_pre_dot >= 3  &&  new_suff != 1) {
+                    --new_suff;
+                    goto try_even_more_suffix;
+                }
+                suff_idx = new_suff;
+                can_try_another = false;
+                goto try_another_suffix;
+            }
+            if (new_suff != suff_idx - 1) {
+                suff_idx = new_suff + 1;
+                can_try_another = false;
+                goto try_another_suffix;
+            }
+        }
+        memcpy(buffer, num_start - 1, digs_pre_dot + 1);
+        num_start = buffer + 1;
+        dot_ptr = num_start + digs_pre_dot;
+        Uint4 cnt_more_digs = 1;
+        if (!(flags & fDS_NoDecimalPoint))
+            cnt_more_digs += min(max_digits - digs_pre_dot, 3 * (suff_idx - 1));
+        num_end = dot_ptr;
+        Uint8 left_val = value - whole_num * mul_coef;
+        do {
+            left_val *= 10;
+            Uint1 d = Uint1(left_val / mul_coef);
+            *num_end = d + '0';
+            ++num_end;
+            left_val -= d * mul_coef;
+            --cnt_more_digs;
+        }
+        while (cnt_more_digs != 0);
+        --num_end;
+
+        char* round_dig = num_end - 1;
+        if (*num_end >= '5')
+            ++(*round_dig);
+        while (*round_dig == '0' + 10) {
+            *round_dig = '0';
+            --round_dig;
+            ++(*round_dig);
+        }
+        if (round_dig < num_start) {
+            _ASSERT(round_dig == buffer);
+            num_start = round_dig;
+            ++digs_pre_dot;
+            if (digs_pre_dot > max_digits) {
+                ++suff_idx;
+                goto try_another_suffix;
+            }
+            if (num_end != dot_ptr)
+                --num_end;
+        }
+        if (!(flags & fDS_NoDecimalPoint)  &&  digs_pre_dot == 4
+            &&  num_start[0] == '1'  &&  num_start[1] == '0'
+            &&  num_start[2] == '2'  &&  num_start[3] == '4')
+        {
+            ++suff_idx;
+            goto try_another_suffix;
+        }
+
+        --suff_idx;
+    }
+
+    out_str.clear();
+    if (flags & fWithSign)
+        out_str.append(1, '+');
+    if (!(flags & fWithCommas)  ||  digs_pre_dot <= 3) {
+        out_str.append(num_start, digs_pre_dot);
+    }
+    else {
+        Uint4 digs_first = digs_pre_dot % 3;
+        out_str.append(num_start, digs_first);
+        char* left_ptr = num_start + digs_first;
+        Uint4 digs_left = digs_pre_dot - digs_first;
+        while (digs_left != 0) {
+            out_str.append(1, ',');
+            out_str.append(left_ptr, 3);
+            left_ptr += 3;
+            digs_left -= 3;
+        }
+    }
+    if (num_end != dot_ptr) {
+        out_str.append(1, '.');
+        out_str.append(dot_ptr, num_end - dot_ptr);
+    }
+
+    if (suff_idx == 0) {
+        if (flags & fDS_PutBSuffixToo) {
+            if (flags & fDS_PutSpaceBeforeSuffix)
+                out_str.append(1, ' ');
+            out_str.append(1, 'B');
+        }
+    }
+    else {
+        --suff_idx;
+        if (flags & fDS_PutSpaceBeforeSuffix)
+            out_str.append(1, ' ');
+        out_str.append(1, s_Suffixes[suff_idx]);
+        if (!(flags & fDS_ShortSuffix)) {
+            if (flags & fDS_Binary)
+                out_str.append(1, 'i');
+            out_str.append(1, 'B');
+        }
+    }
 }
 
 

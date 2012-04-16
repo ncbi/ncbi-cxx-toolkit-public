@@ -1314,7 +1314,6 @@ struct SStringDataSizeValues
 {
     const char*             str;
     NStr::TStringToNumFlags flags;
-    int                     base;
     Uint8                   expected;
 
     bool IsGood(void) const {
@@ -1323,36 +1322,146 @@ struct SStringDataSizeValues
 };
 
 static const SStringDataSizeValues s_Str2DataSizeTests[] = {
-    // str  flags  base  num
-    { "10",    0, 10,      10 },
-    { "10k",   0, 10, 10*1024 },
-    { "10K",   0, 10, 10*1024 },
-    { "10KB",  0, 10, 10*1024 },
-    { "10M",   0, 10, 10*1024*1024 },
-    { "10MB",  0, 10, 10*1024*1024 },
-    { "10K",   0,  2,  2*1024 },
-    { "10K",   0,  8,  8*1024 },
-    { "AK",    0, 16, 10*1024 },
-    { "10K",   0,  0, 10*1024 },
-    { "+10K",  0,  0, 10*1024 },
-    { "-10K",  0,  0, kBad },
-    { "1GBx",  0, 10, kBad },
-    { "10000000000000GB", 0, 10, kBad },
-    { " 10K",  0, 10, kBad },
-    { " 10K",  (1<<12)/*NStr::fAllowLeadingSpaces*/,  10, 10*1024 },
-    { "10K ",  0, 10, kBad },
-    { "10K ",  (1<<14)/*NStr::fAllowTrailingSpaces*/,  10, 10*1024 },
-    { "10K",   (1<<10)/*NStr::fMandatorySign*/, 10, kBad },
-    { "+10K",  0, 10, 10*1024 },
-    { "+10K",  (1<<10)/*NStr::fMandatorySign*/, 10, 10*1024 },
-    { "-10K",  0, 10, kBad },
-    { "-10K",  (1<<10)/*NStr::fMandatorySign*/, 10, kBad },
-    { "1,000K", 0, 10, kBad },
-    { "1,000K",(1<<11)/*NStr::fAllowCommas*/,   10, 1000*1024 },
-    { "K10K",  0, 10, kBad },
-    { "K10K",  (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/, 10, 10*1024 },
-    { "K10K",  (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/, 10, 10*1024 },
-    { "10KG",  (1<<14)|(1<<15)/*NStr::fAllowTrailingSymbols*/,10, 10*1024 }
+    // str  flags     num
+    { "10",    0,      10 },
+    { "10b",   0,      10 },
+    { "10k",   0, 10*1000 },
+    { "10K",   0, 10*1000 },
+    { "10KB",  0, 10*1000 },
+    { "10KiB", 0, 10*1024 },
+    { "10KIB", 0, 10*1024 },
+    { "10K",   NStr::fDS_ForceBinary, 10*1024 },
+    { "10KB",  NStr::fDS_ForceBinary, 10*1024 },
+    { "10M",   0, 10*1000*1000 },
+    { "10MB",  0, 10*1000*1000 },
+    { "10MiB", 0, 10*1024*1024 },
+    { "10M",   NStr::fDS_ForceBinary, 10*1024*1024 },
+    { "10MB",  NStr::fDS_ForceBinary, 10*1024*1024 },
+    { "10G",   0, Uint8(10)*1000*1000*1000 },
+    { "10GB",  0, Uint8(10)*1000*1000*1000 },
+    { "10GiB", 0, Uint8(10)*1024*1024*1024 },
+    { "10G",   NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024 },
+    { "10GB",  NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024 },
+    { "10T",   0, Uint8(10)*1000*1000*1000*1000 },
+    { "10TB",  0, Uint8(10)*1000*1000*1000*1000 },
+    { "10TiB", 0, Uint8(10)*1024*1024*1024*1024 },
+    { "10T",   NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024*1024 },
+    { "10TB",  NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024*1024 },
+    { "10P",   0, Uint8(10)*1000*1000*1000*1000*1000 },
+    { "10PB",  0, Uint8(10)*1000*1000*1000*1000*1000 },
+    { "10PiB", 0, Uint8(10)*1024*1024*1024*1024*1024 },
+    { "10P",   NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024*1024*1024 },
+    { "10PB",  NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024*1024*1024 },
+    { "10E",   0, Uint8(10)*1000*1000*1000*1000*1000*1000 },
+    { "10EB",  0, Uint8(10)*1000*1000*1000*1000*1000*1000 },
+    { "10EiB", 0, Uint8(10)*1024*1024*1024*1024*1024*1024 },
+    { "10E",   NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024*1024*1024*1024 },
+    { "10EB",  NStr::fDS_ForceBinary, Uint8(10)*1024*1024*1024*1024*1024*1024 },
+    { "+10K",  0, 10*1000 },
+    { "-10K",  0, kBad },
+    { "1GBx",  0, kBad },
+    { "1Gi",   0, kBad },
+    { "10000000000000GB", 0, kBad },
+    { " 10K",  0, kBad },
+    { " 10K",  NStr::fAllowLeadingSpaces, 10*1000 },
+    { "10K ",  0, kBad },
+    { "10K ",  NStr::fAllowTrailingSpaces, 10*1000 },
+    { "10 K",  0, 10*1000 },
+    { "10 K",  NStr::fDS_ProhibitSpaceBeforeSuffix, kBad },
+    { "10K",   NStr::fMandatorySign, kBad },
+    { "+10K",  NStr::fMandatorySign, 10*1000 },
+    { "-10K",  NStr::fMandatorySign, kBad },
+    { "1,000K", 0, kBad },
+    { "1,000K", NStr::fAllowCommas, 1000*1000 },
+    { "K10K",  0, kBad },
+    { "K10K",  NStr::fAllowLeadingSymbols, 10*1000 },
+    { "K10K",  NStr::fAllowLeadingSymbols, 10*1000 },
+    { "10KG",  NStr::fAllowTrailingSymbols, 10*1000 },
+    { "0.123",  0, 0 },
+    { "0.567",  0, 1 },
+    { "0.123456 K",  0, 123 },
+    { "0.123567 K",  0, 124 },
+    { "0.123456 KiB",  0, 126 },
+    { "0.123567 KiB",  0, 127 },
+    { "0.123 MB",  0, 123000 },
+    { "0.123 MiB", 0, 128975 },
+    { "0.123456 GiB",  0, 132559871 },
+    { "123abc",  NStr::fAllowTrailingSymbols, 123 },
+    { "123klm",  NStr::fAllowTrailingSymbols, 123000 },
+    { "123klm",  NStr::fAllowTrailingSymbols + NStr::fDS_ForceBinary, 125952 },
+    { "123kbc",  NStr::fAllowTrailingSymbols, 123000 },
+    { "123kic",  NStr::fAllowTrailingSymbols, 123000 },
+    { "123kibc", NStr::fAllowTrailingSymbols, 125952 },
+    { "123.abc", NStr::fAllowTrailingSymbols, 123 },
+    { "123.kic", NStr::fAllowTrailingSymbols, 123 },
+    { "123.001 kib", 0, 125953 },
+    { "12.3456 pib", 0, NCBI_CONST_UINT8(13899909889916299) },
+    { "abc.123.abc",  NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols, 123 },
+    { "abc.+123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols, 123 },
+    { "abc+.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols, 123 },
+    { "abc-.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols, 123 },
+    { "abc.-123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols, 123 },
+    { "abc.123.abc",  NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign, kBad },
+    { "abc.+123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign, 123 },
+    { "abc+.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign, kBad },
+    { "abc-.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign, kBad },
+    { "abc.-123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign, kBad },
+    { "abc.123.abc",  NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fDS_ProhibitFractions, 123 },
+    { "abc.+123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fDS_ProhibitFractions, 123 },
+    { "abc+.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fDS_ProhibitFractions, 123 },
+    { "abc-.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fDS_ProhibitFractions, 123 },
+    { "abc.-123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fDS_ProhibitFractions, 123 },
+    { "abc.123.abc",  NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign + NStr::fDS_ProhibitFractions, kBad },
+    { "abc.+123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign + NStr::fDS_ProhibitFractions, 123 },
+    { "abc+.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign + NStr::fDS_ProhibitFractions, kBad },
+    { "abc-.123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign + NStr::fDS_ProhibitFractions, kBad },
+    { "abc.-123.abc", NStr::fAllowLeadingSymbols + NStr::fAllowTrailingSymbols
+                      + NStr::fMandatorySign + NStr::fDS_ProhibitFractions, kBad },
+    { "123.456", 0, 123 },
+    { "123.567", 0, 124 },
+    { "123.567",   NStr::fAllowTrailingSymbols + NStr::fDS_ProhibitFractions, 123 },
+    { "123.567MB", NStr::fAllowTrailingSymbols + NStr::fDS_ProhibitFractions, 123 },
+    { "123.567MB", NStr::fDS_ProhibitFractions, kBad },
+    { ".34KB",   0, kBad },
+    { ".34KB",   NStr::fAllowLeadingSymbols, 34000 },
+    { "k.5.6m",  NStr::fAllowLeadingSymbols, 5600000 },
+    { "k.5.6m",  NStr::fAllowLeadingSymbols + NStr::fDS_ProhibitFractions, kBad },
+    { "k.5.6m",  NStr::fAllowLeadingSymbols + NStr::fDS_ProhibitFractions
+                 + NStr::fAllowTrailingSymbols, 5 },
+    { "123,4,56789,0", NStr::fAllowCommas, 1234567890 },
+    { "123,4,", NStr::fAllowCommas, kBad },
+    { "123,4,", NStr::fAllowCommas + NStr::fAllowTrailingSymbols, 1234 },
+    { "123,4,,56", NStr::fAllowCommas, kBad },
+    { "123,4,,56", NStr::fAllowCommas + NStr::fAllowTrailingSymbols, 1234 },
+    { ",123,4", NStr::fAllowCommas, kBad },
+    { ",123,4", NStr::fAllowCommas + NStr::fAllowLeadingSymbols, 1234 },
+    { "10", NStr::fDecimalPosix + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDecimalPosixOrLocal + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fIgnoreErrno + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fWithSign + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fWithCommas + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDoubleFixed + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDoubleScientific + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDoublePosix + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDS_Binary + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDS_NoDecimalPoint + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDS_PutSpaceBeforeSuffix + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDS_ShortSuffix + NStr::fConvErr_NoThrow, kBad },
+    { "10", NStr::fDS_PutBSuffixToo + NStr::fConvErr_NoThrow, kBad }
 };
 
 BOOST_AUTO_TEST_CASE(s_StringToNumDataSize)
@@ -1370,7 +1479,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumDataSize)
         NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
 
         try {
-            Uint8 value = NStr::StringToUInt8_DataSize(str, flags,test->base);
+            Uint8 value = NStr::StringToUInt8_DataSize(str, flags);
             NcbiCout << "value: " << value << NcbiEndl;
             BOOST_CHECK(test->IsGood());
             BOOST_CHECK_EQUAL(value, test->expected);
@@ -1380,6 +1489,297 @@ BOOST_AUTO_TEST_CASE(s_StringToNumDataSize)
                 ERR_POST("Cannot convert '" << str << "' to data size");
             } else {
                 NcbiCout << "value: bad" << NcbiEndl;
+            }
+            BOOST_CHECK(!test->IsGood());
+        }
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// NStr::Uint8ToString_DataSize()
+//----------------------------------------------------------------------------
+
+struct SUint8DataSizeValues
+{
+    Uint8                   num;
+    NStr::TNumToStringFlags flags;
+    unsigned int            max_digits;
+    const char*             expected;
+
+    bool IsGood(void) const {
+        return expected != NULL;
+    }
+};
+
+static const SUint8DataSizeValues s_Num2StrDataSizeTests[] = {
+    // num  flags    str
+    { 10, 0, 3, "10" },
+    { 10, NStr::fDS_PutBSuffixToo, 3, "10B" },
+    { 10, NStr::fDS_PutBSuffixToo + NStr::fDS_PutSpaceBeforeSuffix, 3, "10 B" },
+    { 10*1000, 0, 3, "10.0KB" },
+    { 10*1000, NStr::fDS_ShortSuffix, 3, "10.0K" },
+    { 10*1024, NStr::fDS_Binary, 3, "10.0KiB" },
+    { 10*1024, NStr::fDS_Binary + NStr::fDS_ShortSuffix, 3, "10.0K" },
+    { 10*1000*1000, 0, 3, "10.0MB" },
+    { 10*1000*1000, NStr::fDS_ShortSuffix, 3, "10.0M" },
+    { 10*1024*1024, NStr::fDS_Binary, 3, "10.0MiB" },
+    { 10*1024*1024, NStr::fDS_Binary + NStr::fDS_ShortSuffix, 3, "10.0M" },
+    { Uint8(10)*1000*1000*1000, 0, 3, "10.0GB" },
+    { Uint8(10)*1000*1000*1000, NStr::fDS_ShortSuffix, 3, "10.0G" },
+    { Uint8(10)*1024*1024*1024, NStr::fDS_Binary, 3, "10.0GiB" },
+    { Uint8(10)*1024*1024*1024, NStr::fDS_Binary + NStr::fDS_ShortSuffix, 3, "10.0G" },
+    { Uint8(10)*1000*1000*1000*1000, 0, 3, "10.0TB" },
+    { Uint8(10)*1000*1000*1000*1000, NStr::fDS_ShortSuffix, 3, "10.0T" },
+    { Uint8(10)*1024*1024*1024*1024, NStr::fDS_Binary, 3, "10.0TiB" },
+    { Uint8(10)*1024*1024*1024*1024, NStr::fDS_Binary + NStr::fDS_ShortSuffix, 3, "10.0T" },
+    { Uint8(10)*1000*1000*1000*1000*1000, 0, 3, "10.0PB" },
+    { Uint8(10)*1000*1000*1000*1000*1000, NStr::fDS_ShortSuffix, 3, "10.0P" },
+    { Uint8(10)*1024*1024*1024*1024*1024, NStr::fDS_Binary, 3, "10.0PiB" },
+    { Uint8(10)*1024*1024*1024*1024*1024, NStr::fDS_Binary + NStr::fDS_ShortSuffix, 3, "10.0P" },
+    { Uint8(10)*1000*1000*1000*1000*1000*1000, 0, 3, "10.0EB" },
+    { Uint8(10)*1000*1000*1000*1000*1000*1000, NStr::fDS_ShortSuffix, 3, "10.0E" },
+    { Uint8(10)*1024*1024*1024*1024*1024*1024, NStr::fDS_Binary, 3, "10.0EiB" },
+    { Uint8(10)*1024*1024*1024*1024*1024*1024, NStr::fDS_Binary + NStr::fDS_ShortSuffix, 3, "10.0E" },
+    { 10*1000, NStr::fWithSign, 3, "+10.0KB" },
+    { 10*1000, NStr::fDS_NoDecimalPoint, 3, "10KB" },
+    { 10*1000, NStr::fDS_PutSpaceBeforeSuffix, 3, "10.0 KB" },
+    { 1000, NStr::fDS_NoDecimalPoint, 4, "1000" },
+    { 1000, NStr::fDS_NoDecimalPoint + NStr::fWithCommas, 4, "1,000" },
+    { 123456789, 0, 6, "123.457MB" },
+    { 3456789, 0, 6, "3.45679MB" },
+    { 456789, 0, 6, "456.789KB" },
+    { 123456789, 0, 4, "123.5MB" },
+    { 123456789, NStr::fDS_NoDecimalPoint, 6, "123457KB" },
+    { 3456789, NStr::fDS_NoDecimalPoint, 6, "3457KB" },
+    { 456789, NStr::fDS_NoDecimalPoint, 6, "456789" },
+    { 123456789, NStr::fDS_NoDecimalPoint, 4, "123MB" },
+    { 23456789, NStr::fDS_NoDecimalPoint, 4, "23MB" },
+    { 3456789, NStr::fDS_NoDecimalPoint, 4, "3457KB" },
+    { 123456789, 0, 1, "123MB" },
+    { 123456789, 0, 2, "123MB" },
+    { 12345, 0, 1, "12.3KB" },
+    { NCBI_CONST_UINT8(13899853594920957), NStr::fDS_Binary, 6, "12.3456PiB" },
+    { 1000, NStr::fDS_Binary, 3, "0.98KiB" },
+    { 1000, NStr::fDS_Binary, 4, "1000" },
+    { 1000, NStr::fDS_Binary, 5, "1000" },
+    { 1000, NStr::fDS_Binary, 6, "1000" },
+    { 1023, NStr::fDS_Binary, 3, "1.00KiB" },
+    { 1023, NStr::fDS_Binary, 4, "1023" },
+    { 1023, NStr::fDS_Binary, 5, "1023" },
+    { 1023, NStr::fDS_Binary, 6, "1023" },
+    { 1024, NStr::fDS_Binary, 3, "1.00KiB" },
+    { 1024, NStr::fDS_Binary, 4, "1.000KiB" },
+    { 1024, NStr::fDS_Binary, 5, "1.000KiB" },
+    { 1024, NStr::fDS_Binary, 6, "1.000KiB" },
+    { 99999, NStr::fDS_Binary, 3, "97.7KiB" },
+    { 99999, NStr::fDS_Binary, 4, "97.66KiB" },
+    { 99999, NStr::fDS_Binary, 5, "97.655KiB" },
+    { 99999, NStr::fDS_Binary, 6, "97.655KiB" },
+    { 999930, NStr::fDS_Binary, 3, "976KiB" },
+    { 999930, NStr::fDS_Binary, 4, "976.5KiB" },
+    { 999930, NStr::fDS_Binary, 5, "976.49KiB" },
+    { 999930, NStr::fDS_Binary, 6, "976.494KiB" },
+    { 1000000, NStr::fDS_Binary, 3, "977KiB" },
+    { 1000000, NStr::fDS_Binary, 4, "976.6KiB" },
+    { 1000000, NStr::fDS_Binary, 5, "976.56KiB" },
+    { 1000000, NStr::fDS_Binary, 6, "976.563KiB" },
+    { 1023993, NStr::fDS_Binary, 3, "0.98MiB" },
+    { 1023993, NStr::fDS_Binary, 4, "1000KiB" },
+    { 1023993, NStr::fDS_Binary, 5, "999.99KiB" },
+    { 1023993, NStr::fDS_Binary, 6, "999.993KiB" },
+    { 1047552, NStr::fDS_Binary, 3, "1.00MiB" },
+    { 1047552, NStr::fDS_Binary, 4, "1023KiB" },
+    { 1047552, NStr::fDS_Binary, 5, "1023.0KiB" },
+    { 1047552, NStr::fDS_Binary, 6, "1023.00KiB" },
+    { 1048064, NStr::fDS_Binary, 3, "1.00MiB" },
+    { 1048064, NStr::fDS_Binary, 4, "1.000MiB" },
+    { 1048064, NStr::fDS_Binary, 5, "1023.5KiB" },
+    { 1048064, NStr::fDS_Binary, 6, "1023.50KiB" },
+    { 1048576, NStr::fDS_Binary, 3, "1.00MiB" },
+    { 1048576, NStr::fDS_Binary, 4, "1.000MiB" },
+    { 1048576, NStr::fDS_Binary, 5, "1.0000MiB" },
+    { 1048576, NStr::fDS_Binary, 6, "1.00000MiB" },
+    { 1572864, NStr::fDS_Binary, 3, "1.50MiB" },
+    { 1572864, NStr::fDS_Binary, 4, "1.500MiB" },
+    { 1572864, NStr::fDS_Binary, 5, "1.5000MiB" },
+    { 1572864, NStr::fDS_Binary, 6, "1.50000MiB" },
+    { 1000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "1KiB" },
+    { 1000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1000" },
+    { 1000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1000" },
+    { 1000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1000" },
+    { 1023, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "1KiB" },
+    { 1023, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1023" },
+    { 1023, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1023" },
+    { 1023, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1023" },
+    { 1024, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "1KiB" },
+    { 1024, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1024" },
+    { 1024, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1024" },
+    { 1024, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1024" },
+    { 99999, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "98KiB" },
+    { 99999, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "98KiB" },
+    { 99999, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "99999" },
+    { 99999, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "99999" },
+    { 999930, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "976KiB" },
+    { 999930, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "976KiB" },
+    { 999930, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "976KiB" },
+    { 999930, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "999930" },
+    { 1000000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "977KiB" },
+    { 1000000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "977KiB" },
+    { 1000000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "977KiB" },
+    { 1000000, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "977KiB" },
+    { 1023993, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "1MiB" },
+    { 1023993, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1000KiB" },
+    { 1023993, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1000KiB" },
+    { 1023993, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1000KiB" },
+    { 1047552, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "1MiB" },
+    { 1047552, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1023KiB" },
+    { 1047552, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1023KiB" },
+    { 1047552, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1023KiB" },
+    { 1048064, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "1MiB" },
+    { 1048064, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1024KiB" },
+    { 1048064, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1024KiB" },
+    { 1048064, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1024KiB" },
+    { 1048576, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "1MiB" },
+    { 1048576, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1024KiB" },
+    { 1048576, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1024KiB" },
+    { 1048576, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1024KiB" },
+    { 1572864, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 3, "2MiB" },
+    { 1572864, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 4, "1536KiB" },
+    { 1572864, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 5, "1536KiB" },
+    { 1572864, NStr::fDS_Binary + NStr::fDS_NoDecimalPoint, 6, "1536KiB" },
+    { 1000, 0, 3, "1.00KB" },
+    { 1000, 0, 4, "1.000KB" },
+    { 1000, 0, 5, "1.000KB" },
+    { 1000, 0, 6, "1.000KB" },
+    { 1023, 0, 3, "1.02KB" },
+    { 1023, 0, 4, "1.023KB" },
+    { 1023, 0, 5, "1.023KB" },
+    { 1023, 0, 6, "1.023KB" },
+    { 1024, 0, 3, "1.02KB" },
+    { 1024, 0, 4, "1.024KB" },
+    { 1024, 0, 5, "1.024KB" },
+    { 1024, 0, 6, "1.024KB" },
+    { 99999, 0, 3, "100KB" },
+    { 99999, 0, 4, "100.0KB" },
+    { 99999, 0, 5, "99.999KB" },
+    { 99999, 0, 6, "99.999KB" },
+    { 999930, 0, 3, "1.00MB" },
+    { 999930, 0, 4, "999.9KB" },
+    { 999930, 0, 5, "999.93KB" },
+    { 999930, 0, 6, "999.930KB" },
+    { 1000000, 0, 3, "1.00MB" },
+    { 1000000, 0, 4, "1.000MB" },
+    { 1000000, 0, 5, "1.0000MB" },
+    { 1000000, 0, 6, "1.00000MB" },
+    { 1023993, 0, 3, "1.02MB" },
+    { 1023993, 0, 4, "1.024MB" },
+    { 1023993, 0, 5, "1.0240MB" },
+    { 1023993, 0, 6, "1.02399MB" },
+    { 1047552, 0, 3, "1.05MB" },
+    { 1047552, 0, 4, "1.048MB" },
+    { 1047552, 0, 5, "1.0476MB" },
+    { 1047552, 0, 6, "1.04755MB" },
+    { 1048064, 0, 3, "1.05MB" },
+    { 1048064, 0, 4, "1.048MB" },
+    { 1048064, 0, 5, "1.0481MB" },
+    { 1048064, 0, 6, "1.04806MB" },
+    { 1048576, 0, 3, "1.05MB" },
+    { 1048576, 0, 4, "1.049MB" },
+    { 1048576, 0, 5, "1.0486MB" },
+    { 1048576, 0, 6, "1.04858MB" },
+    { 1572864, 0, 3, "1.57MB" },
+    { 1572864, 0, 4, "1.573MB" },
+    { 1572864, 0, 5, "1.5729MB" },
+    { 1572864, 0, 6, "1.57286MB" },
+    { 1000, NStr::fDS_NoDecimalPoint, 3, "1KB" },
+    { 1000, NStr::fDS_NoDecimalPoint, 4, "1000" },
+    { 1000, NStr::fDS_NoDecimalPoint, 5, "1000" },
+    { 1000, NStr::fDS_NoDecimalPoint, 6, "1000" },
+    { 1023, NStr::fDS_NoDecimalPoint, 3, "1KB" },
+    { 1023, NStr::fDS_NoDecimalPoint, 4, "1023" },
+    { 1023, NStr::fDS_NoDecimalPoint, 5, "1023" },
+    { 1023, NStr::fDS_NoDecimalPoint, 6, "1023" },
+    { 1024, NStr::fDS_NoDecimalPoint, 3, "1KB" },
+    { 1024, NStr::fDS_NoDecimalPoint, 4, "1024" },
+    { 1024, NStr::fDS_NoDecimalPoint, 5, "1024" },
+    { 1024, NStr::fDS_NoDecimalPoint, 6, "1024" },
+    { 99999, NStr::fDS_NoDecimalPoint, 3, "100KB" },
+    { 99999, NStr::fDS_NoDecimalPoint, 4, "100KB" },
+    { 99999, NStr::fDS_NoDecimalPoint, 5, "99999" },
+    { 99999, NStr::fDS_NoDecimalPoint, 6, "99999" },
+    { 999930, NStr::fDS_NoDecimalPoint, 3, "1MB" },
+    { 999930, NStr::fDS_NoDecimalPoint, 4, "1000KB" },
+    { 999930, NStr::fDS_NoDecimalPoint, 5, "1000KB" },
+    { 999930, NStr::fDS_NoDecimalPoint, 6, "999930" },
+    { 1000000, NStr::fDS_NoDecimalPoint, 3, "1MB" },
+    { 1000000, NStr::fDS_NoDecimalPoint, 4, "1000KB" },
+    { 1000000, NStr::fDS_NoDecimalPoint, 5, "1000KB" },
+    { 1000000, NStr::fDS_NoDecimalPoint, 6, "1000KB" },
+    { 1023993, NStr::fDS_NoDecimalPoint, 3, "1MB" },
+    { 1023993, NStr::fDS_NoDecimalPoint, 4, "1024KB" },
+    { 1023993, NStr::fDS_NoDecimalPoint, 5, "1024KB" },
+    { 1023993, NStr::fDS_NoDecimalPoint, 6, "1024KB" },
+    { 1047552, NStr::fDS_NoDecimalPoint, 3, "1MB" },
+    { 1047552, NStr::fDS_NoDecimalPoint, 4, "1048KB" },
+    { 1047552, NStr::fDS_NoDecimalPoint, 5, "1048KB" },
+    { 1047552, NStr::fDS_NoDecimalPoint, 6, "1048KB" },
+    { 1048064, NStr::fDS_NoDecimalPoint, 3, "1MB" },
+    { 1048064, NStr::fDS_NoDecimalPoint, 4, "1048KB" },
+    { 1048064, NStr::fDS_NoDecimalPoint, 5, "1048KB" },
+    { 1048064, NStr::fDS_NoDecimalPoint, 6, "1048KB" },
+    { 1048576, NStr::fDS_NoDecimalPoint, 3, "1MB" },
+    { 1048576, NStr::fDS_NoDecimalPoint, 4, "1049KB" },
+    { 1048576, NStr::fDS_NoDecimalPoint, 5, "1049KB" },
+    { 1048576, NStr::fDS_NoDecimalPoint, 6, "1049KB" },
+    { 1572864, NStr::fDS_NoDecimalPoint, 3, "2MB" },
+    { 1572864, NStr::fDS_NoDecimalPoint, 4, "1573KB" },
+    { 1572864, NStr::fDS_NoDecimalPoint, 5, "1573KB" },
+    { 1572864, NStr::fDS_NoDecimalPoint, 6, "1573KB" },
+    { 2000, NStr::fDS_Binary, 3, "1.95KiB" },
+    { 2047, NStr::fDS_Binary, 3, "2.00KiB" },
+    { 2000, NStr::fDS_Binary, 6, "1.953KiB" },
+    { 2047, NStr::fDS_Binary, 6, "1.999KiB" },
+    { 1048575, NStr::fDS_Binary, 6, "1.00000MiB" },
+    { 2000000, NStr::fDS_Binary, 6, "1.90735MiB" },
+    { 2097146, NStr::fDS_Binary, 6, "1.99999MiB" },
+    { 10, NStr::fConvErr_NoThrow, 3, NULL },
+    { 10, NStr::fMandatorySign, 3, NULL },
+    { 10, NStr::fAllowCommas, 3, NULL },
+    { 10, NStr::fAllowLeadingSpaces, 3, NULL },
+    { 10, NStr::fAllowLeadingSymbols, 3, NULL },
+    { 10, NStr::fAllowTrailingSpaces, 3, NULL },
+    { 10, NStr::fAllowTrailingSymbols, 3, NULL },
+    { 10, NStr::fDecimalPosix, 3, NULL },
+    { 10, NStr::fDecimalPosixOrLocal, 3, NULL },
+    { 10, NStr::fIgnoreErrno, 3, NULL },
+    { 10, NStr::fDS_ForceBinary, 3, NULL },
+    { 10, NStr::fDS_ProhibitFractions, 3, NULL },
+    { 10, NStr::fDS_ProhibitSpaceBeforeSuffix, 3, NULL }
+};
+
+BOOST_AUTO_TEST_CASE(s_NumToStringDataSize)
+{
+    NcbiCout << NcbiEndl << "NStr::UInt8ToString_DataSize() tests...";
+
+    const size_t count = sizeof(s_Num2StrDataSizeTests) /
+                         sizeof(s_Num2StrDataSizeTests[0]);
+
+    for (size_t i = 0;  i < count;  ++i)
+    {
+        const SUint8DataSizeValues* test = &s_Num2StrDataSizeTests[i];
+        Uint8 num = test->num;
+        NStr::TNumToStringFlags flags = test->flags;
+        unsigned int max_digits = test->max_digits;
+
+        try {
+            string value = NStr::UInt8ToString_DataSize(num, flags, max_digits);
+            BOOST_CHECK(test->IsGood());
+            BOOST_CHECK_EQUAL(value, test->expected);
+        }
+        catch (CException&) {
+            if ( test->IsGood() ) {
+                ERR_POST("Cannot convert " << num << " to data size string");
             }
             BOOST_CHECK(!test->IsGood());
         }
