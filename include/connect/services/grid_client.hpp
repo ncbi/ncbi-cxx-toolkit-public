@@ -160,7 +160,7 @@ public:
                 EProgressMsg progress_msg);
 
     /// Get a job submitter
-    /// @deprecated
+    /// @deprecated Use the CGridClient object itself instead.
     NCBI_DEPRECATED CGridClient& GetJobSubmitter() {return *this;}
 
     /// Get a job's output string.
@@ -246,7 +246,7 @@ public:
 
     /// Get a job status checker
     ///
-    /// @deprecated
+    /// @deprecated Use SetJobKey() and the CGridClient object itself instead.
     ///
     /// @param job_key
     ///     Job key
@@ -307,8 +307,10 @@ private:
     CGridClient& operator=(const CGridClient&);
 };
 
+/// @deprecated Use GetGridClient() instead.
 NCBI_DEPRECATED typedef CGridClient CGridJobSubmitter;
 
+/// @deprecated Use GetGridClient() instead.
 NCBI_DEPRECATED typedef CGridClient CGridJobStatus;
 
 /// Grid Client exception
