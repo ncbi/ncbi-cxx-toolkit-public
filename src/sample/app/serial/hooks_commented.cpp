@@ -27,7 +27,7 @@
 *
 * File Description:
 *   A commented demo program to illustrate how to use a serial hook.
-* 
+*
 * ===========================================================================
 */
 
@@ -47,7 +47,6 @@ USING_SCOPE(ncbi::objects);
 // are:
 //     SetGlobalReadHook()
 //     SetLocalReadHook()
-// Note: Global hooks are deprecated, so please use local hooks if possible.
 //
 // This class must override the virtual method ReadClassMember().  See the
 // comment for the ReadClassMember() method below for more details.
