@@ -1157,6 +1157,11 @@ Convert-location-type ::= ENUMERATED {
   order (2) ,
   merge (3) }
 
+Extend-to-feature ::= SEQUENCE {
+  type Macro-feature-type ,
+  include-feat BOOLEAN ,
+  distance Quantity-constraint }
+  
 Location-edit-type ::= CHOICE {
   strand Edit-location-strand ,
   set-5-partial Partial-5-set-action ,
@@ -1167,7 +1172,9 @@ Location-edit-type ::= CHOICE {
   clear-both-partial Partial-both-clear-constraint ,
   convert Convert-location-type ,
   extend-5 NULL ,
-  extend-3 NULL }
+  extend-3 NULL ,
+  extend-5-to-feat Extend-to-feature ,
+  extend-3-to-feat Extend-to-feature }
 
 Edit-feature-location-action ::= SEQUENCE {
   type Macro-feature-type ,
