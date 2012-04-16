@@ -573,7 +573,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_JCM, "http://www.jcm.riken.go.jp/cgi-bin/jcm/jcm_number?JCM=" },
     { CDbtag::eDbtagType_JGIDB, "http://genome.jgi-psf.org/cgi-bin/jgrs?id=" },
     { CDbtag::eDbtagType_LocusID, "http://www.ncbi.nlm.nih.gov/gene/" },
-    { CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/searches/accession_report.cgi?id=MGI:" },
+    { CDbtag::eDbtagType_MGI, "http://www.informatics.jax.org/accession/MGI:" },
     { CDbtag::eDbtagType_MIM, "http://www.ncbi.nlm.nih.gov/omim/" },
     { CDbtag::eDbtagType_MaizeGDB, "http://www.maizegdb.org/cgi-bin/displaylocusrecord.cgi?" },
     { CDbtag::eDbtagType_MycoBank, "http://www.mycobank.org/MycoTaxo.aspx?Link=T&Rec=" },
