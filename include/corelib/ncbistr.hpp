@@ -195,6 +195,7 @@ public:
     ///   - -1 if "str" contains negative value,
     ///        or any symbols strtoul() cannot accept, 
     ///        or if it represents a number that does not fit into int.
+    ///   Note: If -1 is returned, errno will also be set.
     static int StringToNonNegativeInt(const string& str);
 
     /// @deprecated
