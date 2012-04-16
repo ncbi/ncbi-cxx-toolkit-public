@@ -221,6 +221,51 @@ public:
     static void TranslateNAToAA(const string& na, string& aa,
                                 int gen_code = kDefaultGenCode); //< per http://www.ncbi.nlm.nih.gov/collab/FT/#7.5.5
 
+    /// Get base width for the sequence (1 for nucleotides, 3 for proteins).
+    int GetBaseWidth(TNumrow row) const
+    {
+        _ASSERT(row >= 0 && row < GetDim());
+        int w = m_Aln->GetPairwiseAlns()[row]->GetSecondBaseWidth();
+        _ASSERT(w == 1  ||  w == 3);
+        return w;
+    }
+
+    /// Convert alignment (genomic) coordinate on the selected row to real
+    /// sequence position.
+    TSignedSeqPos AlnPosToSeqPos(TNumrow row, TSignedSeqPos aln_pos) const
+    {
+        return aln_pos/GetBaseWidth(row);
+    }
+
+    /// Convert sequence position to alignment (genomic) coordinate.
+    TSignedSeqPos SeqPosToAlnPos(TNumrow row, TSignedSeqPos seq_pos) const
+    {
+        return seq_pos*GetBaseWidth(row);
+    }
+
+    /// Convert alignment range (genomic coordinates) on the selected row
+    /// to reas sequence range.
+    /// NOTE: Need to use template since there are many range types:
+    /// TRng, TAlnRng, TRange, TSignedRange etc.
+    template<class _TRange>
+    _TRange AlnRangeToSeqRange(TNumrow row, _TRange aln_range) const
+    {
+        if (aln_range.Empty()  ||  aln_range.IsWhole()) return aln_range;
+        int w = GetBaseWidth(row);
+        return _TRange(aln_range.GetFrom()/w, aln_range.GetToOpen()/w - 1);
+    }
+
+    /// Convert sequence range to alignment range (genomic coordinates).
+    /// NOTE: Need to use template since there are many range types:
+    /// TRng, TAlnRng, TRange, TSignedRange etc.
+    template<class _TRange>
+    _TRange SeqRangeToAlnRange(TNumrow row, _TRange seq_range) const
+    {
+        if (seq_range.Empty()  ||  seq_range.IsWhole()) return seq_range;
+        int w = GetBaseWidth(row);
+        return _TRange(seq_range.GetFrom()*w, seq_range.GetToOpen()*w - 1);
+    }
+
 protected:
     friend class CSparse_CI;
 
