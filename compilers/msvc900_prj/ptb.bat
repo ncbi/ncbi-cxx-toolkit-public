@@ -132,6 +132,7 @@ REM PTB will read PTB_PROJECT from the saved settings
 REM -------------------------------------------------------------------------
 REM Identify PTB_EXE
 
+echo PREBUILT_PTB_EXE=%PREBUILT_PTB_EXE%
 if "%PREBUILT_PTB_EXE%"=="bootstrap" (
   set DEF_PTB=%PTB_PATH%\project_tree_builder.exe
 ) else if not "%PREBUILT_PTB_EXE%"=="" (
