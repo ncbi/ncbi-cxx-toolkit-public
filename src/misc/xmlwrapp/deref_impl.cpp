@@ -49,6 +49,12 @@ namespace xml
     {
         void cleanup_node(xmlNodePtr  xmlnode)
         {
+            // XMLWrapp attaches private data to nodes only while libxml2 calls
+            // this handler for documents and dtds as well
+            if (xmlnode->type == XML_DOCUMENT_NODE ||
+                xmlnode->type == XML_DTD_NODE)
+                return;
+
             if (xmlnode->_private == NULL)
                 return;
 
