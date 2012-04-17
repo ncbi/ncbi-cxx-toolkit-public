@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaRaw)
          static const char* sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
-"GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
+"GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n";
          BOOST_CHECK_EQUAL(s, string(sc_Expected));
@@ -194,6 +194,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SimpleSoft)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, loc);
               fasta_os.Write(seh);
           }}
@@ -249,7 +250,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SimpleHard)
          static const char* sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGNNNNNNNNNNCATCAGTCAGTGACAGGNNNNNNNNNNGTTGCCCTGTTCAACAANNNNNN\n"
-"NNNNCCTTTGGCCACCAAAATNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNATTAAATAATTC\n"
+"NNNNCCTTTGGCCACCAAAATNNNNNNNN--------------------NNNNNNNNNATTAAATAATTC\n"
 "GAATANNNNNNNNNNCCAGTAACCTACGCAGCNNNNNNNNNNAACCGATATCTAGTATANNNNNNNNNNC\n"
 "ATCGAAAT\n";
          BOOST_CHECK_EQUAL(s, string(sc_Expected));
@@ -294,10 +295,12 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoft)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, loc);
               fasta_os.Write(seh);
               fasta_os.SetMask(CFastaOstream::eSoftMask, CConstRef<CSeq_loc>());
-              fasta_os.Write(seh);
+              CSeq_loc loc2(*id, (TSeqPos)0, 24);
+              fasta_os.Write(seh, &loc2);
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
@@ -307,11 +310,8 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoft)
 "gctgCCTTTGGCCACCAAAATcccaaactnnnnnnnnnnnnnnnnnnnnaattaaagaattaaataattc\n"
 "gaataataattaagcCCAGTAACCTACGCAGCttgagtgcgtAACCGATATCTAGTATAcatttcgataC\n"
 "ATCGAAAT\n"
-">lcl|test-seq test sequence\n"
-"CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
-"GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
-"GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
-"ATCGAAAT\n";
+">lcl|test-seq:1-25 test sequence\n"
+"CGGTTGCTTGGGTTTTATAACATCA\n";
          BOOST_CHECK_EQUAL(s, string(sc_Expected));
      }}
 }
@@ -359,6 +359,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, soft_loc);
               fasta_os.SetMask(CFastaOstream::eHardMask, hard_loc);
               fasta_os.Write(seh);
@@ -402,15 +403,17 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, soft_loc);
               fasta_os.SetMask(CFastaOstream::eHardMask, hard_loc);
               fasta_os.Write(seh);
               fasta_os.SetMask(CFastaOstream::eSoftMask, CConstRef<CSeq_loc>());
-              fasta_os.Write(seh);
+              CSeq_loc loc2(*id, (TSeqPos)0, 217);
+              fasta_os.Write(seh, &loc2);
               fasta_os.SetMask(CFastaOstream::eHardMask, CConstRef<CSeq_loc>());
-              fasta_os.Write(seh);
+              fasta_os.Write(seh, &loc2);
               fasta_os.SetMask(CFastaOstream::eSoftMask, soft_loc);
-              fasta_os.Write(seh);
+              fasta_os.Write(seh, &loc2);
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
@@ -420,17 +423,17 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
 "gctgCCTTTGGCCACCAAAATcccaaactnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\n"
 "nnnnnntaattaagcCCAGTAACCTACGCAGCttgagtgcgtAACCGATATCTAGTATAcatttcgataC\n"
 "ATCGAAAT\n"
-">lcl|test-seq test sequence\n"
+">lcl|test-seq:1-218 test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN\n"
 "NNNNNNTAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n"
-">lcl|test-seq test sequence\n"
+">lcl|test-seq:1-218 test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n"
-">lcl|test-seq test sequence\n"
+">lcl|test-seq:1-218 test sequence\n"
 "CGGTTGCTTGggttttataaCATCAGTCAGTGACAGGcatttccagaGTTGCCCTGTTCAACAAtcgata\n"
 "gctgCCTTTGGCCACCAAAATcccaaactnnnnnnnnnnnnnnnnnnnnaattaaagaattaaataattc\n"
 "gaataataattaagcCCAGTAACCTACGCAGCttgagtgcgtAACCGATATCTAGTATAcatttcgataC\n"
@@ -474,6 +477,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SoftHardSimpleOverlap)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, soft_loc);
               fasta_os.SetMask(CFastaOstream::eHardMask, hard_loc);
               fasta_os.Write(seh);
@@ -520,7 +524,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
          static const char* sc_Expected = 
 ">lcl|test-seq [organism=Sarcophilus harrisii] [strain=some strain] [gcode=1] [tech=physical map]\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
-"GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
+"GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n";
          BOOST_CHECK_EQUAL(s, string(sc_Expected));
@@ -543,7 +547,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
         static const char* sc_Expected = 
             ">lcl|test-seq [topology=circular] [organism=Sarcophilus harrisii] [strain=some strain] [gcode=1] [tech=physical map]\n"
             "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
-            "GCTGCCTTTGGCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
+            "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
             "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
             "ATCGAAAT\n";
         BOOST_CHECK_EQUAL(s, string(sc_Expected));
