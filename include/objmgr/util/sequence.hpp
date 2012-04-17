@@ -43,7 +43,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <util/strsearch.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/scope.hpp>
@@ -722,8 +722,8 @@ END_SCOPE(sequence)
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
-        fAssembleParts   = 0x001, ///< assemble FAR delta sequences
-        fInstantiateGaps = 0x002, ///< with Ns or Xs as appropriate, vs. one -
+        fAssembleParts   = 0x001, ///< assemble FAR delta sequences; on by dflt
+        fInstantiateGaps = 0x002, ///< honor specifed gap mode; on by default
         fSuppressRange   = 0x004, ///< never include location details in defline
         fReverseStrand   = 0x008, ///< flip the (implicit) location
         fKeepGTSigns     = 0x010, ///< don't convert '>' to '_' in title
@@ -736,6 +736,16 @@ public:
         eInstantiateGaps = fInstantiateGaps
     };
     typedef int TFlags; ///< binary OR of EFlags
+
+    /// How to represent gaps with fInstantiateGaps enabled, as it is
+    /// by default.  (Disabling fInstantiateGaps is equivalent to
+    /// requesting eGM_one_dash.)
+    enum EGapMode {
+        eGM_one_dash, ///< A single dash, followed by a line break.
+        eGM_dashes,   ///< Multiple inline dashes (default).
+        eGM_letters,  ///< Multiple inline N or X characters as appropriate.
+        eGM_count     ///< >?N or >?unk100, as appropriate.
+    };
 
     CFastaOstream(CNcbiOstream& out);
     virtual ~CFastaOstream();
@@ -786,6 +796,8 @@ public:
     void    SetAllFlags(TFlags flags)  { m_Flags = flags;  }
     void    SetFlag    (EFlags flag)   { m_Flags |=  flag; }
     void    ResetFlag  (EFlags flag)   { m_Flags &= ~flag; }
+    void    SetGapMode (EGapMode mode) { m_GapMode = mode; }
+    EGapMode GetGapMode(void) const    { return m_GapMode; }
 
 private:
     CNcbiOstream&       m_Out;
@@ -794,6 +806,8 @@ private:
     CConstRef<CSeq_loc> m_HardMask;
     TSeqPos             m_Width;
     TFlags              m_Flags;
+    EGapMode            m_GapMode;
+    TSeq_id_HandleSet   m_PreviousWholeIds;
 
     void x_WriteSeqIds    ( const CBioseq& bioseq,
                             const CSeq_loc* location);

@@ -2450,7 +2450,8 @@ END_SCOPE(sequence)
 CFastaOstream::CFastaOstream(CNcbiOstream& out)
     : m_Out(out),
       m_Width(70),
-      m_Flags(fInstantiateGaps | fAssembleParts)
+      m_Flags(fInstantiateGaps | fAssembleParts),
+      m_GapMode(eGM_dashes)
 {
     m_Gen.reset(new sequence::CDeflineGenerator);
 }
@@ -2493,11 +2494,26 @@ void CFastaOstream::Write(const CBioseq_Handle& handle,
 void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
                                   const CSeq_loc* location)
 {
+    bool have_range = (location != NULL  &&  !location->IsWhole()
+                       &&  !(m_Flags & fSuppressRange) );
+
+    if ( !have_range ) {
+        ITERATE (CBioseq::TId, id, bioseq.GetId()) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(**id);
+            pair<TSeq_id_HandleSet::iterator, bool> p
+                = m_PreviousWholeIds.insert(idh);
+            if ( !p.second ) {
+                NCBI_THROW(CObjmgrUtilException, eBadLocation,
+                           "Duplicate Seq-id " + (*id)->AsFastaString()
+                           + " in FASTA output");
+            }
+        }
+    }
+
     m_Out << '>';
     CSeq_id::WriteAsFasta(m_Out, bioseq);
 
-    if (location != NULL  &&  !location->IsWhole()
-        &&  !(m_Flags & fSuppressRange) ) {
+    if (have_range) {
         char delim = ':';
         for (CSeq_loc_CI it(*location);  it;  ++it) {
             CSeq_loc::TRange range = it.GetRange();
@@ -2837,6 +2853,11 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
     CSeqVector_CI::TResidue hard_mask_char = vec.IsProtein() ? 'X' : 'N';
     string                  uc_hard_mask_str(m_Width, hard_mask_char);
     string                  lc_hard_mask_str(m_Width, tolower(hard_mask_char));
+    EGapMode                native_gap_mode
+        = ((vec.GetGapChar() == '-') ? eGM_dashes : eGM_letters);
+    CSeqVector_CI::TResidue alt_gap_char
+        = ((vec.GetGapChar() == '-') ? hard_mask_char : '-');
+    string                  alt_gap_str(m_Width, alt_gap_char);
 
     if ((m_Flags & fReverseStrand) != 0) {
         it.SetStrand(Reverse(it.GetStrand()));
@@ -2852,10 +2873,40 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 rem_state = ms_it->first - it.GetPos();
             }
         }
-        if ( !(m_Flags & fInstantiateGaps)  &&  it.GetGapSizeForward() ) {
+        if ((m_GapMode != native_gap_mode || (m_Flags & fInstantiateGaps) == 0)
+            &&  it.GetGapSizeForward()) {
             TSeqPos gap_size = it.SkipGap();
-            m_Out << "-\n";
-            rem_line = m_Width;
+            if (m_GapMode == eGM_one_dash
+                ||  (m_Flags & fInstantiateGaps) == 0) {
+                m_Out << "-\n";
+                rem_line = m_Width;
+            } else if (m_GapMode == eGM_count) {
+                if (rem_line < m_Width) {
+                    m_Out << '\n';
+                }
+                CSeqMap_CI smci = vec.GetSeqMap().FindSegment
+                    (it.GetPos() - gap_size, &vec.GetScope());
+                _ASSERT(smci.GetType() == CSeqMap::eSeqGap);
+                if (smci.IsUnknownLength()) {
+                    // conventional designation, regardless of nominal length
+                    m_Out << ">?unk100\n";
+                } else {
+                    m_Out << ">?" << gap_size << "\n";
+                }
+                rem_line = m_Width;
+            } else {
+                TSeqPos rem_gap = gap_size;
+                while (rem_gap >= rem_line) {
+                    m_Out.write(alt_gap_str.data(), rem_line);
+                    m_Out << '\n';
+                    rem_gap -= rem_line;
+                    rem_line = m_Width;
+                }
+                if (rem_gap > 0) {
+                    m_Out.write(alt_gap_str.data(), rem_gap);
+                    rem_line -= rem_gap;
+                }
+            }
             if (rem_state >= gap_size) {
                 rem_state -= gap_size;
             } else {
@@ -2869,6 +2920,14 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                     rem_state = ms_it->first - it.GetPos();
                 }
             }
+        } else if (it.HasZeroGapBefore()) {
+            if (m_GapMode == eGM_one_dash
+                ||  (m_Flags & fInstantiateGaps) == 0) {
+                m_Out << "-\n";
+            } else {
+                m_Out << "\n>?unk100\n";
+            }
+            rem_line = m_Width;
         } else {
             TSeqPos     count   = min(TSeqPos(it.GetBufferSize()), rem_state);
             TSeqPos     new_pos = it.GetPos() + count;
