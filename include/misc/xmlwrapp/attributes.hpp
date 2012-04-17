@@ -76,10 +76,6 @@ void *  get_ptr_to_attr_instance(void *);
  * using the xml::attributes::attr class interface.
 **/
 class attributes {
-private:
-    // Forward declaration
-    struct pimpl;
-
 public:
     typedef std::size_t size_type; ///< size type
 
@@ -267,7 +263,6 @@ public:
         friend class iterator;
         friend class const_iterator;
         friend class attributes;
-        friend struct xml::attributes::pimpl;
         friend struct xml::impl::attr_instance;
         friend void *  xml::impl::get_ptr_to_attr_instance(void *);
     }; // end xml::attributes::attr class
