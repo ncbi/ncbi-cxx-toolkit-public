@@ -1160,7 +1160,7 @@ Convert-location-type ::= ENUMERATED {
 Extend-to-feature ::= SEQUENCE {
   type Macro-feature-type ,
   include-feat BOOLEAN ,
-  distance Quantity-constraint }
+  distance Quantity-constraint OPTIONAL }
   
 Location-edit-type ::= CHOICE {
   strand Edit-location-strand ,
