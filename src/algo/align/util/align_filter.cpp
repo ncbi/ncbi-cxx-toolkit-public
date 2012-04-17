@@ -329,7 +329,7 @@ bool CAlignFilter::x_IsUnique(const CSeq_align& align)
     CChecksumStreamWriter md5(CChecksum::eMD5);
     {{
         CWStream wstr(&md5);
-        wstr << MSerial_AsnBinary << align;
+        wstr << MSerial_AsnBinary << align.GetSegs();
      }}
 
     string md5_str;
