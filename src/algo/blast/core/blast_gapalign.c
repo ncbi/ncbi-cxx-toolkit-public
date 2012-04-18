@@ -2544,6 +2544,78 @@ s_BlastGreedyGapAlignStructFill(BlastGapAlignStruct* gap_align,
    return 0;
 }
 
+static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s){
+   int i, j, k, nm1, nm2, d;
+   const Uint1 *q1, *s1;
+   for (i=0; i<esp->size; i++) {
+       if (esp->op_type[i] == eGapAlignSub) {
+           q += esp->num[i];
+           s += esp->num[i];
+           continue;
+       } 
+       if (i>1 && esp->op_type[i] != esp->op_type[i-2] 
+               && esp->num[i-2] > 0) {
+           d = esp->num[i] + esp->num[i-1] + esp->num[i-2];
+           if (d == 3) {
+               /* special case, no need to do further testing */
+               (esp->num[i-2]) = 0;
+               (esp->num[i-1]) = 2;
+               (esp->num[i]) = 0;
+               if (esp->op_type[i] == eGapAlignIns) {
+                   ++q;
+               } else {
+                   ++s;
+               }
+           } else if (d < 12) {
+               /* Try reducing this sub... */
+               nm1 = 0;
+               nm2 = 0;
+               d = MIN(esp->num[i], esp->num[i-2]);
+               q -= esp->num[i-1];
+               s -= esp->num[i-1];
+               q1 = q;
+               s1 = s;
+               if (esp->op_type[i] == eGapAlignIns) {
+                   s -= d;
+               } else {
+                   q -= d;
+               }
+               for (j=0; j<esp->num[i-1]; ++j, ++q1, ++s1, ++q, ++s) {
+                   if (*q1 == *s1) nm1++;
+                   if (*q == *s) nm2++;
+               }
+               for (j=0; j<d; ++j, ++q, ++s) {
+                   if (*q == *s) nm2++;
+               }
+               if (nm2 >= nm1 - d) {
+                   (esp->num[i-2]) -= d;
+                   (esp->num[i-1]) += d;
+                   (esp->num[i]) -= d;
+               } else {
+                   q = q1;
+                   s = s1;
+               }
+           }
+       }
+       if (esp->op_type[i] == eGapAlignIns) {
+           q += esp->num[i];
+       } else {
+           s += esp->num[i];
+       }
+   }
+   /* rebuild the esp */
+   for (i=0, j=0; i<esp->size; i++) {
+       if (esp->num[i] > 0) {
+           esp->num[j] = esp->num[i];
+           esp->op_type[j] = esp->op_type[i];
+           ++j;
+       } else if (++i < esp->size) {
+           esp->num[j-1] += esp->num[i];
+       }
+   }
+   esp->size = j;
+}
+
 Int2 
 BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject, 
    Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
@@ -2619,6 +2691,9 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
    if (do_traceback) {
       esp = Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback, 
                                              fwd_prelim_tback);
+      //TODO check for possible gap elimination
+      ASSERT(!compressed_subject);
+      s_ReduceGaps(esp, query+q_off-q_ext_l, subject+s_off-s_ext_l);
    }
    else {
        /* estimate the best alignment start point. This is the middle
