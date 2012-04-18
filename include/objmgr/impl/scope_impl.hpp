@@ -361,6 +361,9 @@ public:
    
     bool IsTransactionActive() const;
 
+    TSeqPos GetSequenceLength(const CSeq_id_Handle& id, int get_flag);
+    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id, int get_flag);
+
 private:
     // constructor/destructor visible from CScope
     CScope_Impl(CObjectManager& objmgr);

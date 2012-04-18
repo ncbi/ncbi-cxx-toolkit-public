@@ -677,5 +677,33 @@ void CScope::GetTaxIds(TTaxIds* results,
 }
 
 
+TSeqPos CScope::GetSequenceLength(const CSeq_id& id,
+                                  EGetBioseqFlag get_flag)
+{
+    return GetSequenceLength(CSeq_id_Handle::GetHandle(id), get_flag);
+}
+
+
+TSeqPos CScope::GetSequenceLength(const CSeq_id_Handle& id,
+                                  EGetBioseqFlag get_flag)
+{
+    return m_Impl->GetSequenceLength(id, get_flag);
+}
+
+
+CSeq_inst::TMol CScope::GetSequenceType(const CSeq_id& id,
+                                        EGetBioseqFlag get_flag)
+{
+    return GetSequenceType(CSeq_id_Handle::GetHandle(id), get_flag);
+}
+
+
+CSeq_inst::TMol CScope::GetSequenceType(const CSeq_id_Handle& id,
+                                        EGetBioseqFlag get_flag)
+{
+    return m_Impl->GetSequenceType(id, get_flag);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

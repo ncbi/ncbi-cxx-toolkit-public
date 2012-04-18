@@ -2954,6 +2954,22 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
         }
     }
 }
+
+
+TSeqPos CScope_Impl::GetSequenceLength(const CSeq_id_Handle& id,
+                                       int get_flag)
+{
+    CBioseq_Handle bh = GetBioseqHandle(id, get_flag);
+    return bh? bh.GetBioseqLength(): kInvalidSeqPos;
+}
+                                  
+
+CSeq_inst::TMol CScope_Impl::GetSequenceType(const CSeq_id_Handle& id,
+                                             int get_flag)
+{
+    CBioseq_Handle bh = GetBioseqHandle(id, get_flag);
+    return bh? bh.GetSequenceType(): CSeq_inst::eMol_not_set;
+}
                                   
 
 END_SCOPE(objects)

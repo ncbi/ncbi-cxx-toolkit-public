@@ -429,6 +429,17 @@ public:
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CSeq_entry& tse);
 
+    // returns kInvalidSeqPos if sequence is not known
+    TSeqPos GetSequenceLength(const CSeq_id& id,
+                              EGetBioseqFlag get_flag = eGetBioseq_All);
+    TSeqPos GetSequenceLength(const CSeq_id_Handle& id,
+                              EGetBioseqFlag get_flag = eGetBioseq_All);
+    // returns CSeq_inst::eMol_not_set if sequence is not known
+    CSeq_inst::TMol GetSequenceType(const CSeq_id& id,
+                                    EGetBioseqFlag get_flag = eGetBioseq_All);
+    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id,
+                                    EGetBioseqFlag get_flag = eGetBioseq_All);
+
     enum ETSEKind {
         eManualTSEs,
         eAllTSEs
