@@ -1513,6 +1513,11 @@ CThreadPool_Impl::SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle)
 {
     CThreadPool_Guard guard(this);
 
+    if (is_idle  &&  !m_Suspended  &&  m_Queue.GetSize() != 0) {
+        thread->WakeUp();
+        return;
+    }
+
     TThreadsList* to_del;
     TThreadsList* to_ins;
     if (is_idle) {
