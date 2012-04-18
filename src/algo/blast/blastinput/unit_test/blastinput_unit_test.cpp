@@ -419,7 +419,8 @@ BOOST_AUTO_TEST_CASE(ReadProteinWithGaps)
     const TSeqPos length(91); // it's actually 103 with gaps
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
-    CBioseq_Handle bh = scope.GetBioseqHandle(*ssl.seqloc);
+    const CSeq_id * seqid = ssl.seqloc->GetId();
+    CBioseq_Handle bh = scope.GetBioseqHandle(*seqid);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {

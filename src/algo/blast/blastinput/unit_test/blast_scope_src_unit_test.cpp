@@ -138,8 +138,7 @@ BOOST_AUTO_TEST_SUITE(blast_scope_src)
 
 BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData) 
 {
-    CSeq_loc seqloc;
-    seqloc.SetWhole().SetGi(129295);
+    CSeq_id seqid(CSeq_id::e_Gi, 129295);
 
     const char* seq =
 "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
@@ -157,7 +156,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData)
     BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqid);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
@@ -168,8 +167,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDb_TestSequenceData)
 // This is supposed to similate the absence of a .ncbirc file
 BOOST_AUTO_TEST_CASE(RetrieveFromDefaultBlastDb_NoNcbirc) 
 {
-    CSeq_loc seqloc;
-    seqloc.SetWhole().SetGi(129295);
+    CSeq_id seqid(CSeq_id::e_Gi, 129295);
 
     const char* seq =
 "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
@@ -190,7 +188,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromDefaultBlastDb_NoNcbirc)
     BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqid);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
@@ -220,9 +218,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromBlastDbOnly_TestSequenceDataWithAccession)
                         scope_source.GetBlastDbLoaderName());
 
     ITERATE(vector<string>, acc, accessions) {
-    CSeq_loc seqloc;
-        CSeq_id id(*acc);
-    seqloc.SetWhole().Assign(id);
+    CSeq_id id(*acc);
 
     const char* seq ="\
 MADDSENFVLTVDIGTTTIRSVVYDSKCKERGSYQEKVNTIYTTRNDDEVLVEIEPEQLFLQFLRVIKKAYETLPPNAHV\
@@ -233,7 +229,7 @@ ETDFIAEGNAHDTAVILHWAQSIGLFNDVTETSDIALSVNDSNGVVFIPAFCGIQTPINDETACSGFMCIRPDTTKVHMV
 RAILESIAFRVYQIYAAAESEVNINKNSPVRICGGVSNNNFICQCIADLLGRKVERMTDSDHVAARGVALLTGFSSGIWT\
 KEKLRELVTVEDIFTPNYESRKGLLKTFQTWKKAVDRCLGFYH";
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(id);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
         CNcbiOstrstream os;
@@ -247,8 +243,7 @@ KEKLRELVTVEDIFTPNYESRKGLLKTFQTWKKAVDRCLGFYH";
 
 BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData) 
 {
-    CSeq_loc seqloc;
-    seqloc.SetWhole().SetGi(129295);
+    CSeq_id seqid(CSeq_id::e_Gi, 129295);
 
     const char* seq =
 "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
@@ -269,7 +264,7 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData)
     BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqid);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
@@ -280,8 +275,7 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromBlastDb_TestSequenceData)
 BOOST_AUTO_TEST_CASE
     (ConfigFileTest_RetrieveFromNonStandardBlastDb_Config_TestSequenceData) 
 {
-    CSeq_loc seqloc;
-    seqloc.SetWhole().SetGi(1787519);
+    CSeq_id seqid(CSeq_id::e_Gi, 1787519);
 
     const char* seq = "MKAIFVLKGWWRTS";
 
@@ -299,7 +293,7 @@ BOOST_AUTO_TEST_CASE
     BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqid);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
@@ -312,8 +306,7 @@ BOOST_AUTO_TEST_CASE
 BOOST_AUTO_TEST_CASE
     (ConfigFileTest_RetrieveFromNonStandardBlastDb_ForcedDb_TestSequenceData) 
 {
-    CSeq_loc seqloc;
-    seqloc.SetWhole().SetGi(1787519);
+    CSeq_id seqid(CSeq_id::e_Gi, 1787519);
 
     const char* seq = "MKAIFVLKGWWRTS";
 
@@ -332,7 +325,7 @@ BOOST_AUTO_TEST_CASE
     BOOST_REQUIRE_EQUAL(data_loader_name,
                         scope_source.GetBlastDbLoaderName());
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqid);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
@@ -342,8 +335,7 @@ BOOST_AUTO_TEST_CASE
 
 BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromGenbank_TestSequenceData) 
 {
-    CSeq_loc seqloc;
-    seqloc.SetWhole().SetGi(129295);
+    CSeq_id seqid(CSeq_id::e_Gi, 129295);
 
     const char* seq =
 "QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP";
@@ -358,7 +350,7 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromGenbank_TestSequenceData)
     CRef<CScope> scope = scope_source.NewScope();
     BOOST_REQUIRE(scope_source.GetBlastDbLoaderName() == kEmptyStr);
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqid);
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
@@ -369,8 +361,7 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_RetrieveFromGenbank_TestSequenceData)
 // not the best thing to do, but supported nonetheless...
 BOOST_AUTO_TEST_CASE(ConfigFileTest_UseNoDataLoaders) 
 {
-    CSeq_loc seqloc;
-    seqloc.SetWhole().SetGi(129295);
+    CSeq_id seqid(CSeq_id::e_Gi, 129295);
 
     CAutoNcbiConfigFile acf(SDataLoaderConfig::eUseNoDataLoaders);
     SDataLoaderConfig dlconfig("pdbaa", true);
@@ -381,7 +372,7 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_UseNoDataLoaders)
     CRef<CScope> scope = scope_source.NewScope();
     BOOST_REQUIRE(scope_source.GetBlastDbLoaderName() == kEmptyStr);
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(seqloc);
+    CBioseq_Handle bh = scope->GetBioseqHandle(seqid);
     BOOST_CHECK(bh.State_NoData());
 }
 
