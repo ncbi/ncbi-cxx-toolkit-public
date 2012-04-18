@@ -74,7 +74,7 @@ typedef NCBI_PARAM_TYPE(NCBI, STATIC_ARRAY_COPY_WARNING) TParamStaticArrayCopyWa
 
 
 /// Parameter to control printing diagnostic message about unsafe static type.
-/// Default value is "off".
+/// Default value is "on".
 NCBI_PARAM_DECL_EXPORT(NCBI_XUTIL_EXPORT, bool, NCBI, STATIC_ARRAY_UNSAFE_TYPE_WARNING);
 typedef NCBI_PARAM_TYPE(NCBI, STATIC_ARRAY_UNSAFE_TYPE_WARNING) TParamStaticArrayUnsafeTypeWarning;
 
