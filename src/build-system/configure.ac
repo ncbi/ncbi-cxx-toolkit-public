@@ -360,7 +360,7 @@ AC_ARG_WITH(libxml_,
 AC_ARG_WITH(libxslt,
    [ --with-libxslt=DIR      use libxslt installation in DIR])
 AC_ARG_WITH(libxslt2,
-   [ --without-libxslt       do not use libxstl])
+   [ --without-libxslt       do not use libxslt])
 AC_ARG_WITH(xerces,
    [ --with-xerces=DIR       use Xerces-C++ installation in DIR])
 AC_ARG_WITH(xerces2,

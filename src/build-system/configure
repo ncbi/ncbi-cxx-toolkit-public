@@ -992,7 +992,7 @@ Optional Packages:
  --with-libxml=DIR       use libxml2 installation in DIR
  --without-libxml        do not use libxml2
  --with-libxslt=DIR      use libxslt installation in DIR
- --without-libxslt       do not use libxstl
+ --without-libxslt       do not use libxslt
  --with-xerces=DIR       use Xerces-C++ installation in DIR
  --without-xerces,       do not use Xerces-C++
  --with-xalan=DIR        use Xalan-C++ installation in DIR
