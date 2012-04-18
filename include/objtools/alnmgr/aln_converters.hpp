@@ -318,7 +318,6 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(
     }
     _ALNMGR_ASSERT(empty_rows >= 0  &&  empty_rows < dim);
     if (empty_rows == dim - 1) {
-        _ALNMGR_ASSERT(options.m_Direction != CAlnUserOptions::eBothDirections);
         return CRef<CAnchoredAln>();
         // Alternatively, perhaps we can continue processing here
         // which would result in a CAnchoredAln that only contains
