@@ -9,8 +9,8 @@
 #          It is used by release configurator.
 #
 
-LIB: libconnect.a libconnext.a liblbsmdapi.a
+LIB: libconnect.a liblbsmdapi.a
 
 POSTBUILD: $srcdir/src/connect/daemons/mod/pull_prepare_release.sh `readlink -f $srcdir` `readlink -f $installdir`
 
-Linux64-Centos  : gcc : GCC.sh           --without-debug --with-mt --with-64 --with-static --without-runpath --with-flat-makefile
+Linux64-Centos  : gcc : GCC.sh --without-debug --with-mt --with-64 --with-static --without-runpath --with-flat-makefile
