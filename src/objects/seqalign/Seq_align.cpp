@@ -1934,6 +1934,7 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
              }
 
              /// pass 2: determine shortest length
+             if ( sizes.empty() ) return 0;
              vector<TSeqPos>::iterator iter = sizes.begin();
              vector<TSeqPos>::iterator smallest = iter;
              for (++iter;  iter != sizes.end();  ++iter) {
