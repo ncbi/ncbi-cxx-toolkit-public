@@ -116,6 +116,7 @@ private:
     CNcbiIstream& m_In;
     TCgiEntries&  m_Out;
     EContentType  m_ContentType;
+    bool          m_ContentTypeDeclared;
     size_t        m_ContentLength;
     string        m_Boundary;
     string*       m_ContentLog;

@@ -180,9 +180,9 @@ CCgiEntryReaderContext::CCgiEntryReaderContext(CNcbiIstream& in,
                                                const string& content_type,
                                                size_t content_length,
                                                string* content_log)
-    : m_In(in), m_Out(out), m_ContentLength(content_length),
-      m_ContentLog(content_log), m_Position(0), m_BytePos(0),
-      m_CurrentEntry(NULL), m_CurrentReader(NULL)
+    : m_In(in), m_Out(out), m_ContentTypeDeclared(!content_type.empty()),
+      m_ContentLength(content_length), m_ContentLog(content_log),
+      m_Position(0), m_BytePos(0), m_CurrentEntry(NULL), m_CurrentReader(NULL)
 {
     if (NStr::StartsWith(content_type, "multipart/form-data")) {
         SIZE_TYPE pos = content_type.find(kBoundaryTag);
@@ -376,6 +376,18 @@ void CCgiEntryReaderContext::x_ReadURLEncodedEntry(string& name, string& value)
 {
     if (x_DelimitedRead(name) == eRT_EOF  ||  m_In.eof()) {
         m_ContentType = eCT_Null;
+    }
+    ITERATE (string, it, name) {
+        if (*it < ' '  ||  *it > '~') {
+            if (m_ContentTypeDeclared) {
+                ERR_POST(Warning << "Unescaped binary content in"
+                         " URL-encoded form data: "
+                         << NStr::PrintableString(string(1, *it)));
+            }
+            name.clear();
+            m_ContentType = eCT_Null;
+            return;
+        }
     }
     SIZE_TYPE name_len = name.find('=');
     if (name_len != NPOS) {
