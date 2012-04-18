@@ -79,8 +79,9 @@ bool CPub_equiv::GetLabel(string* label, TLabelFlags flags,
         case CPub::e_Gen:
             if ((**it).GetGen().IsSetSerial_number()) {
                 pubs[4] = *it;
+                break;
             }
-            break;
+            // otherwise fall through
         default:
             if (i < 5) {
                 if (!pubs[i]) {
