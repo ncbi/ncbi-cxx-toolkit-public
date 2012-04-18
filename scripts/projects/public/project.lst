@@ -40,4 +40,6 @@ util
 -objtools/data_loaders/genbank/pubseq
 -objtools/data_loaders/genbank/pubseq2
 -./scripts/internal
-
+-ctools/test
+-objects/seq/unit_test/Makefile.seq_c_compat_unit_test.app 
+-objects/seq/unit_test/seq_c_compat_unit_test.cpp 
