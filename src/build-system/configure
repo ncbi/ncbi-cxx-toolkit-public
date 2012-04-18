@@ -318,7 +318,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP DISTCC CCACHE TAIL TOUCH EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS _ACJNI_JAVAC X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS wxconf EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS XSLTPROC SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config MAGIC_INCLUDE MAGIC_LIBS CURL_INCLUDE CURL_LIBS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath c_ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS OBJCXX_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS OBJCXX_LIBS GCCPCH RUNPATH_ORIGIN NO_STRICT_ALIASING D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal sra check CHECK_ARG CHECK_TOOLS CHECK_TIMEOUT_MULT CHECK_OS_NAME FEATURES script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_DRIVER DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS UUID_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB OPENSSL_STATIC_LIBS TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS GLEW_INCLUDE GLEW_LIBS GLEW_STATIC_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sssutils SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 UNLESS_PUBSEQOS JDK_PATH JDK_INCLUDE ncbi_java NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP DISTCC CCACHE TAIL TOUCH EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS _ACJNI_JAVAC X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS wxconf EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS XSLTPROC SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config MAGIC_INCLUDE MAGIC_LIBS CURL_INCLUDE CURL_LIBS MIMETIC_INCLUDE MIMETIC_LIBS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath c_ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS OBJCXX_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS OBJCXX_LIBS GCCPCH RUNPATH_ORIGIN NO_STRICT_ALIASING D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal sra check CHECK_ARG CHECK_TOOLS CHECK_TIMEOUT_MULT CHECK_OS_NAME FEATURES script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_DRIVER DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS UUID_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB OPENSSL_STATIC_LIBS TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS GLEW_INCLUDE GLEW_LIBS GLEW_STATIC_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sssutils SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 UNLESS_PUBSEQOS JDK_PATH JDK_INCLUDE ncbi_java NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1019,6 +1019,8 @@ Optional Packages:
  --without-magic         do not use libmagic
  --with-curl=DIR         use libcurl installation in DIR
  --without-curl          do not use libcurl
+ --with-mimetic=DIR      use libmimetic installation in DIR
+ --without-mimetic       do not use libmimetic
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -1361,6 +1363,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_sqlite3=no
+         fi
+        if test "${with_mimetic-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-mimetic but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_mimetic=no
          fi
         if test "${with_icu-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-icu but --without-3psw" >&2
@@ -2723,6 +2731,18 @@ if test "${with_curl2+set}" = set; then
 
 fi;
 
+# Check whether --with-mimetic or --without-mimetic was given.
+if test "${with_mimetic+set}" = set; then
+  withval="$with_mimetic"
+
+fi;
+
+# Check whether --with-mimetic2 or --without-mimetic2 was given.
+if test "${with_mimetic2+set}" = set; then
+  withval="$with_mimetic2"
+
+fi;
+
 # Check whether --with-3psw or --without-3psw was given.
 if test "${with_3psw+set}" = set; then
   withval="$with_3psw"
@@ -2838,7 +2858,7 @@ z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl 3psw \
+gif jpeg tiff png xpm magic curl mimetic 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -2880,7 +2900,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
       | --with-gnutls=* | --with-openssl=* | --with-curl=* \
-      | --with-sybase-local=* | --with-wxwidgets=* \
+      | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* \
@@ -32451,6 +32471,203 @@ _ACEOF
 
 
 
+# Mimetic
+case "$with_mimetic" in
+   yes | '' ) : ${MIMETIC_PATH=$NCBI/mimetic} ;;
+   *        ) MIMETIC_PATH=$with_mimetic ;;
+esac
+if test -d "$MIMETIC_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $MIMETIC_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $MIMETIC_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            MIMETIC_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$MIMETIC_PATH" in
+               /*) ;;
+               * ) MIMETIC_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) MIMETIC_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+for d in "$MIMETIC_LIBDIR" \
+         "$MIMETIC_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib" \
+         "$MIMETIC_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib" \
+         "$MIMETIC_PATH/lib${bit64_sfx}" \
+         "$MIMETIC_PATH/${compiler_vpfx}${DEBUG_SFX}/lib" \
+         "$MIMETIC_PATH/${compiler_pfx}${DEBUG_SFX}/lib" \
+         "$MIMETIC_PATH/lib"; do
+   if test -d "$d"; then
+      MIMETIC_LIBDIR=$d
+      break
+   fi
+done
+ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $MIMETIC_LIBDIR; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    MIMETIC_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $MIMETIC_LIBDIR; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    MIMETIC_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+
+if test "$with_mimetic" != "no"; then
+    case "$with_mimetic" in
+       yes | "" ) ;;
+       *        ) MIMETIC_PATH=$with_mimetic ;;
+    esac
+    if test -d "$MIMETIC_PATH"; then
+       in_path=" in $MIMETIC_PATH"
+       if test -z "$MIMETIC_INCLUDE" -a -d "$MIMETIC_PATH/include"; then
+          MIMETIC_INCLUDE="-I$MIMETIC_PATH/include"
+       fi
+       if test -n "$MIMETIC_LIBPATH"; then
+          :
+       elif test -d "$MIMETIC_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $MIMETIC_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    MIMETIC_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $MIMETIC_PATH/lib${bit64_sfx}; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    MIMETIC_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$MIMETIC_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $MIMETIC_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    MIMETIC_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $MIMETIC_PATH/lib; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    MIMETIC_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       MIMETIC_LIBS="$MIMETIC_LIBPATH -lmimetic "
+    else
+       MIMETIC_INCLUDE=""
+       MIMETIC_LIBS="-lmimetic "
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libmimetic$in_path" >&5
+echo $ECHO_N "checking for libmimetic$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_mimetic+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $MIMETIC_INCLUDE $orig_CPPFLAGS"
+       LIBS="$MIMETIC_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <mimetic/mimetic.h>
+int
+main ()
+{
+mimetic::MimeEntity me;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_mimetic=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_mimetic=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_mimetic" >&5
+echo "${ECHO_T}$ncbi_cv_lib_mimetic" >&6
+    if test "$ncbi_cv_lib_mimetic" = "no"; then
+       if test "${with_mimetic:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-mimetic explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-mimetic explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_mimetic" = "no"; then
+    MIMETIC_PATH="No_MIMETIC"
+    MIMETIC_INCLUDE=
+    MIMETIC_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}MIMETIC"; WithPackagesSep=" "
+    MIMETIC_INCLUDE=" $MIMETIC_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBMIMETIC 1
+_ACEOF
+
+ fi
+
+
+
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -32867,7 +33084,7 @@ for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT LFS DLL D
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW FLTK wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType MAGIC CURL; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW FLTK wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType MAGIC CURL MIMETIC; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -34031,6 +34248,8 @@ s,@MAGIC_INCLUDE@,$MAGIC_INCLUDE,;t t
 s,@MAGIC_LIBS@,$MAGIC_LIBS,;t t
 s,@CURL_INCLUDE@,$CURL_INCLUDE,;t t
 s,@CURL_LIBS@,$CURL_LIBS,;t t
+s,@MIMETIC_INCLUDE@,$MIMETIC_INCLUDE,;t t
+s,@MIMETIC_LIBS@,$MIMETIC_LIBS,;t t
 s,@signature@,$signature,;t t
 s,@build_root@,$build_root,;t t
 s,@top_srcdir@,$top_srcdir,;t t

@@ -101,6 +101,8 @@ esac
 
 : ${LZO_PATH=$NCBI/lzo-2.05}
 
+: ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi1}
+
 case "$ncbi_platform" in
     SunOS* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;
     *      ) : ${MUPARSER_PATH=$NCBI/muParser-1.30}       ;;

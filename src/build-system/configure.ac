@@ -67,7 +67,7 @@ case "$with_3psw" in
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre, gnutls, openssl,
                      sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
-                     python, jni, boost, sqlite3, icu, expat,
+                     python, jni, boost, sqlite3, mimetic, icu, expat,
                      sablot, libxml, libxslt, xerces, xalan, oechem, sge,
                      muparser, hdf5, gif, jpeg, png, tiff, xpm, magic, curl],
         [if test "${[with_]X-no}" != "no"; then
@@ -413,6 +413,10 @@ AC_ARG_WITH(curl,
    [ --with-curl=DIR         use libcurl installation in DIR])
 AC_ARG_WITH(curl2,
    [ --without-curl          do not use libcurl])
+AC_ARG_WITH(mimetic,
+   [ --with-mimetic=DIR      use libmimetic installation in DIR])
+AC_ARG_WITH(mimetic2,
+   [ --without-mimetic       do not use libmimetic])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -465,7 +469,7 @@ z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl 3psw \
+gif jpeg tiff png xpm magic curl mimetic 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -507,7 +511,7 @@ for x_arg in "$@" ; do
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
       | --with-gnutls=* | --with-openssl=* | --with-curl=* \
-      | --with-sybase-local=* | --with-wxwidgets=* \
+      | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* \
@@ -5963,6 +5967,33 @@ NCBI_CHECK_THIRD_PARTY_LIB(magic,
 NCBI_CHECK_THIRD_PARTY_LIB(curl,
    [AC_LANG_PROGRAM([#include <curl/curl.h>],
        [char* v = curl_version();])])
+
+
+# Mimetic
+case "$with_mimetic" in
+   yes | '' ) : ${MIMETIC_PATH=$NCBI/mimetic} ;;
+   *        ) MIMETIC_PATH=$with_mimetic ;;
+esac
+if test -d "$MIMETIC_PATH"; then
+   NCBI_FIX_DIR(MIMETIC_PATH)
+fi
+for d in "$MIMETIC_LIBDIR" \
+         "$MIMETIC_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib" \
+         "$MIMETIC_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib" \
+         "$MIMETIC_PATH/lib${bit64_sfx}" \
+         "$MIMETIC_PATH/${compiler_vpfx}${DEBUG_SFX}/lib" \
+         "$MIMETIC_PATH/${compiler_pfx}${DEBUG_SFX}/lib" \
+         "$MIMETIC_PATH/lib"; do
+   if test -d "$d"; then
+      MIMETIC_LIBDIR=$d
+      break
+   fi
+done
+NCBI_RPATHIFY(MIMETIC_LIBPATH, $MIMETIC_LIBDIR)
+
+NCBI_CHECK_THIRD_PARTY_LIB(mimetic,
+   [AC_LANG_PROGRAM([#include <mimetic/mimetic.h>],
+       [mimetic::MimeEntity me;])])
 
 
 ### Restore original compiler/linker flags

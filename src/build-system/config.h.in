@@ -248,6 +248,9 @@
 /* Define to 1 if libmagic is available. */
 #undef HAVE_LIBMAGIC
 
+/* Define to 1 if libmimetic is available. */
+#undef HAVE_LIBMIMETIC
+
 /* Define to 1 if libmuparser is available. */
 #undef HAVE_LIBMUPARSER
 
