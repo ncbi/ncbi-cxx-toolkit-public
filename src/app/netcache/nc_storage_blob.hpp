@@ -195,6 +195,7 @@ public:
     /// Lock holder is yet not usable after construction until Prepare()
     /// and InitializeLock() are called.
     CNCBlobAccessor(void);
+    ~CNCBlobAccessor(void);
     /// Add holder to the list with provided head
     void AddToList(CNCBlobAccessor*& list_head);
     /// Remove holder from the list with provided head

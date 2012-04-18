@@ -1631,12 +1631,12 @@ CNCMessageHandler::x_StartCommand(void)
     }
 
     if (x_IsFlagSet(fRunsInStartedSync)) {
-        x_FlushDiagExtra(diag_extra);
         ESyncInitiateResult start_res = CNCPeriodicSync::CanStartSyncCommand(
                                         m_SrvId, m_Slot,
                                         !x_IsFlagSet(fProhibitsSyncAbort),
                                         m_SyncId);
         if (start_res == eNetworkError) {
+            x_FlushDiagExtra(diag_extra);
             m_SockBuffer.WriteMessage("ERR:", "Stale synchronization");
             m_CmdCtx->SetRequestStatus(eStatus_StaleSync);
             m_Flags = 0;
@@ -1644,6 +1644,7 @@ CNCMessageHandler::x_StartCommand(void)
             return false;
         }
         else if (start_res == eServerBusy) {
+            x_FlushDiagExtra(diag_extra);
             m_SockBuffer.WriteMessage("OK:", "SIZE=0, NEED_ABORT1");
             m_CmdCtx->SetRequestStatus(eStatus_SyncAborted);
             bool needs_fake = x_IsFlagSet(fReadExactBlobSize)  &&  m_CmdVersion == 0;
