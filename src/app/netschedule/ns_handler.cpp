@@ -289,17 +289,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "job_return_code", eNSPT_Int, eNSPA_Optchain },
           { "output",          eNSPT_Str, eNSPA_Optional },
           { "aff",             eNSPT_Str, eNSPA_Optional, "" } } },
-    { "JXCG2",    { &CNetScheduleHandler::x_ProcessJobExchange,
-                    eNSCR_Worker },
-        { { "job_key",         eNSPT_Id,  eNSPA_Required },
-          { "auth_token",      eNSPT_Id,  eNSPA_Required },
-          { "job_return_code", eNSPT_Int, eNSPA_Required },
-          { "output",          eNSPT_Str, eNSPA_Required },
-          { "wnode_aff",       eNSPT_Int, eNSPA_Required, 0 },
-          { "any_aff",         eNSPT_Int, eNSPA_Required, 0 },
-          { "aff",             eNSPT_Str, eNSPA_Optional, "" },
-          { "port",            eNSPT_Int, eNSPA_Optional },
-          { "timeout",         eNSPT_Int, eNSPA_Optional } } },
     // JDEX job_key : id timeout : uint
     { "JDEX",     { &CNetScheduleHandler::x_ProcessJobDelayExpiration,
                     eNSCR_Worker },
@@ -1449,19 +1438,12 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 {
-    bool    cmdv2(m_CommandArguments.cmd == "JXCG2");
-
-    if (cmdv2) {
-        x_CheckNonAnonymousClient("use JXCG2 command");
-        x_CheckPortAndTimeout();
-        x_CheckAuthorizationToken();
-        x_CheckGetParameters();
-    }
-    else {
-        // The old clients must have any_affinity set to true
-        // depending on the explicit affinity - to conform the old behavior
-        m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
-    }
+    // The JXCG2 is not supported anymore, so this handler is called for
+    // an old (obsolete) JXCG command only.
+    //
+    // The old clients must have any_affinity set to true
+    // depending on the explicit affinity - to conform the old behavior
+    m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
 
 
     time_t      curr = time(0);
@@ -1474,23 +1456,15 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                                           m_CommandArguments.job_return_code,
                                           &output);
 
-    // cmdv2 has two lines output
     if (old_status == CNetScheduleAPI::eJobNotFound) {
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job is unknown");
-        if (cmdv2)
-            WriteMessage("OK:WARNING:The job is unknown;");
     } else if (old_status != CNetScheduleAPI::ePending &&
-             old_status != CNetScheduleAPI::eRunning) {
+               old_status != CNetScheduleAPI::eRunning) {
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
-        if (cmdv2)
-            WriteMessage("OK:WARNING:The job has already been done;");
-    } else {
-        if (cmdv2)
-            WriteMessage("OK:");
     }
 
 
@@ -1506,10 +1480,10 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                     curr, &aff_list,
                     m_CommandArguments.wnode_affinity,
                     m_CommandArguments.any_affinity,
-                    cmdv2,
+                    false,
                     &job);
 
-    x_PrintGetJobResponse(q, job, cmdv2);
+    x_PrintGetJobResponse(q, job, false);
     x_PrintRequestStop(eStatus_OK);
     return;
 }
