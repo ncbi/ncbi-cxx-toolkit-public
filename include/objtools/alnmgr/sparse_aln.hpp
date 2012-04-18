@@ -232,13 +232,13 @@ public:
 
     /// Convert alignment (genomic) coordinate on the selected row to real
     /// sequence position.
-    TSignedSeqPos AlnPosToSeqPos(TNumrow row, TSignedSeqPos aln_pos) const
+    TSignedSeqPos AlnPosToNativeSeqPos(TNumrow row, TSignedSeqPos aln_pos) const
     {
         return aln_pos/GetBaseWidth(row);
     }
 
     /// Convert sequence position to alignment (genomic) coordinate.
-    TSignedSeqPos SeqPosToAlnPos(TNumrow row, TSignedSeqPos seq_pos) const
+    TSignedSeqPos NativeSeqPosToAlnPos(TNumrow row, TSignedSeqPos seq_pos) const
     {
         return seq_pos*GetBaseWidth(row);
     }
@@ -248,7 +248,7 @@ public:
     /// NOTE: Need to use template since there are many range types:
     /// TRng, TAlnRng, TRange, TSignedRange etc.
     template<class _TRange>
-    _TRange AlnRangeToSeqRange(TNumrow row, _TRange aln_range) const
+    _TRange AlnRangeToNativeSeqRange(TNumrow row, _TRange aln_range) const
     {
         if (aln_range.Empty()  ||  aln_range.IsWhole()) return aln_range;
         int w = GetBaseWidth(row);
@@ -259,7 +259,7 @@ public:
     /// NOTE: Need to use template since there are many range types:
     /// TRng, TAlnRng, TRange, TSignedRange etc.
     template<class _TRange>
-    _TRange SeqRangeToAlnRange(TNumrow row, _TRange seq_range) const
+    _TRange NativeSeqRangeToAlnRange(TNumrow row, _TRange seq_range) const
     {
         if (seq_range.Empty()  ||  seq_range.IsWhole()) return seq_range;
         int w = GetBaseWidth(row);
