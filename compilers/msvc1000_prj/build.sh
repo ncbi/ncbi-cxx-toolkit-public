@@ -169,8 +169,8 @@ for tree in $build_trees ; do
         fi
         if $is_ppb; then
             generate_simple_log $out $tree "$sol" $cfg_configure > $out.simple
-            cp $out $cfg.configure.log
-            rm $out  &&  out="$out.simple"
+            mv $out $cfg.configure.log
+            mv $out.simple $out
         fi 
         cat $out
         cat $out >> ${log_dir}/${tree}_${cfg_configure}.log
@@ -179,7 +179,7 @@ for tree in $build_trees ; do
         if [ $status -ne 0 ] ; then
             echo "FAILED: Configure $tree\\build\\$sol, $cfg_configure"
         fi
-        rm -f $out $out.simple >/dev/null 2>&1
+        rm -f $out >/dev/null 2>&1
         if [ $status -ne 0 ] ; then
             exit 3
         fi
@@ -221,8 +221,8 @@ for tree in $build_trees ; do
             sleep 20
             if $is_ppb; then
                 generate_simple_log $out $tree "$sol" $cfg > $out.simple
-                cp $out $cfg.build.log
-                rm $out  &&  out="$out.simple"
+                mv $out $cfg.build.log
+                mv $out.simple $out
             fi 
             cat $out
             cat $out >> ${log_dir}/${tree}_${cfg}.log
@@ -239,12 +239,12 @@ for tree in $build_trees ; do
                     cat $out >> failed.build.log
                     cat $tree/build/${sol}_watchers.txt > failed.watchers.log
                 fi
-                rm -f $out $out.simple $out.res >/dev/null 2>&1
+                rm -f $out $out.res >/dev/null 2>&1
                 if [ "$failed" = "1" ]; then
                     exit 4
                 fi
             fi
-            rm -f $out $out.simple >/dev/null 2>&1
+            rm -f $out >/dev/null 2>&1
         done
     done
 done
