@@ -9,6 +9,7 @@
 #          It is used by release configurator.
 #
 
+APP: test_lbsmdapi
 LIB: libconnect.a liblbsmdapi.a
 
 POSTBUILD: $srcdir/src/connect/daemons/mod/pull_prepare_release.sh `readlink -f $srcdir` `readlink -f $installdir`
