@@ -42,10 +42,8 @@
 #define TEST_MAX_TRY 2
 #define TEST_TIMEOUT 5.123456
 
-#define MIN_PORT 4096
-
-#define _STR(n)      #n
-#define STRINGIFY(n) _STR(n)
+#define _STR(n)     #n
+#define  STR(n) _STR(n)
 
 
 /*ARGSUSED*/
@@ -56,9 +54,9 @@ static void s_REG_Get(void* unused, const char* section,
         if      (strcasecmp(REG_CONN_HOST,    name) == 0)
             *value = '\0';
         if      (strcasecmp(REG_CONN_MAX_TRY, name) == 0)
-            strncpy0(value, STRINGIFY(TEST_MAX_TRY), value_size);
+            strncpy0(value, STR(TEST_MAX_TRY), value_size);
         else if (strcasecmp(REG_CONN_TIMEOUT, name) == 0)
-            strncpy0(value, STRINGIFY(TEST_TIMEOUT), value_size);
+            strncpy0(value, STR(TEST_TIMEOUT), value_size);
     }
 }
 
@@ -112,11 +110,10 @@ int main(int argc, const char* argv[])
     }
 
     /* bad args? -- Usage */
-    if (!*net_info->host  ||  net_info->port < MIN_PORT) {
+    if (!*net_info->host  ||  !net_info->port) {
         fprintf(stderr,
-                "Usage: %s <host> <port> [max_try [timeout]]\n"
-                "where <port> not less than %s; timeout is a float(in sec)\n",
-                argv[0], STRINGIFY(MIN_PORT));
+                "Usage: %s <host> <port> [max_try [timeout]]\n\n",
+                argv[0]);
         return 1/*error*/;
     }
 

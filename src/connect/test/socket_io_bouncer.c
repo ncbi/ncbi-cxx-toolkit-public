@@ -33,33 +33,44 @@
 
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_util.h>
-#include "../ncbi_ansi_ext.h"
 #include "../ncbi_assert.h"
 /* This header must go last */
 #include "test_assert.h"
-
-#define MIN_PORT 4096
 
 
 static FILE* s_LogFile;
 
 
-/* Listen on the specified "port".
- * Accept connections and bounce the incoming data back to the client
- * (only one client at a time).
- * Perform up to "n_cycle" sessions, then exit.
+/* Accept connections and bounce the incoming data back to the client
+ * (only one client at a time).  Perform up to "n_cycle" sessions, then exit.
  */
-static void s_DoServer(unsigned short port, int n_cycle)
+static void s_DoServer(const char* sport, int n_cycle)
 {
-    LSOCK      lsock;
-    EIO_Status status;
-
-    fprintf(s_LogFile, "DoServer(port = %hu, n_cycle = %u)\n", port, n_cycle);
-    fflush(s_LogFile);
+    int            i;
+    unsigned short nport;
+    LSOCK          lsock;
+    EIO_Status     status;
 
     /* Create listening socket */
-    status = LSOCK_Create(port, 1, &lsock);
-    assert(status == eIO_Success);
+    if (sscanf(sport, "%hu%n", &nport, &i) < 1  ||  sport[i]) {
+        nport = 0;
+        i = 0;
+    }
+    status = LSOCK_Create(nport, 1, &lsock);
+    if (!nport  &&  sport[i]) {
+        FILE* fp;
+        nport = LSOCK_GetPort(lsock, eNH_HostByteOrder);
+        if (nport  &&  (fp = fopen(sport, "w")) != 0) {
+            if (fprintf(fp, "%hu\n", nport) < 1)
+                nport = 0;
+            fclose(fp);
+        } else
+            nport = 0;
+    }
+
+    fprintf(s_LogFile, "DoServer(port = %hu, n_cycle = %u)\n", nport, n_cycle);
+    fflush(s_LogFile);
+    assert(status == eIO_Success  &&  nport);
 
     /* Accept connections from clients and run test sessions */
     while ( n_cycle-- ) {
@@ -72,7 +83,7 @@ static void s_DoServer(unsigned short port, int n_cycle)
         status = LSOCK_Accept(lsock, 0, &sock);
         assert(status == eIO_Success);
 
-        /* Set i/o timeouts for the accepted connection */
+        /* Set some weird I/O timeouts for the accepted connection */
         timeout.sec  = 100;
         timeout.usec = 888;
         status = SOCK_SetTimeout(sock, eIO_Read,  &timeout);
@@ -120,27 +131,14 @@ int main(int argc, const char* argv[])
     assert((net_info = ConnNetInfo_Create(0)) != 0);
 
     /* cmd.-line args */
-    switch ( argc ) {
-    case 3: {
-        if (sscanf(argv[2], "%d", &n_cycle) != 1)
-            n_cycle = -1;
-        if (n_cycle <= 0)
-            break;
-    }
-    case 2: {
-        int port;
-        if (sscanf(argv[1], "%d", &port) == 1  &&  0 <= port && port <= 65535)
-            net_info->port = (unsigned short) port;
-    }
-    } /* switch */
+    if (argc > 3  ||  !argv[1]  ||  !*argv[1])
+        n_cycle = -1;
+    else if (argc == 3  &&  sscanf(argv[2], "%d", &n_cycle) != 1)
+        n_cycle = -1;
 
-    if (net_info->port < MIN_PORT  ||  n_cycle <= 0) {
-        fprintf(stderr,
-                "Usage: %s <port> [n_cycle]\nwhere <port> not less than %d\n",
-                argv[0], (int) MIN_PORT);
-        fprintf(s_LogFile,
-                "Usage: %s <port> [n_cycle]\nwhere <port> not less than %d\n",
-                argv[0], (int) MIN_PORT);
+    if (n_cycle <= 0) {
+        fprintf(stderr,    "Usage: %s <port> [n_cycle]\n\n", argv[0]);
+        fprintf(s_LogFile, "Usage: %s <port> [n_cycle]\n\n", argv[0]);
         return 1/*error*/;
     }
 
@@ -148,7 +146,7 @@ int main(int argc, const char* argv[])
         SOCK_SetDataLoggingAPI(eOn);
 
     /* run */
-    s_DoServer(net_info->port, n_cycle);
+    s_DoServer(argv[1], n_cycle);
 
     /* cleanup */
     verify(SOCK_ShutdownAPI() == eIO_Success);

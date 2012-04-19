@@ -16,22 +16,36 @@ outlog()
   fi
 }
 
+timeout=10
 exit_code=0
+port=/tmp/socket_io_bouncer.$$
 server_log=socket_io_bouncer.log
 client_log=test_ncbi_socket_connector.log
 
-rm -f $server_log $client_log
+rm -f $port $server_log $client_log
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
-port="575`expr $$ % 100`"
-
+# NB: socket_io_bouncer opens the log, too
 socket_io_bouncer $port >>$server_log 2>&1 &
 spid=$!
-trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; echo "`date`."' 0 1 2 3 15
+trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; rm -f $port; echo "`date`."' 0 1 2 3 15
 
-sleep 2
-$CHECK_EXEC test_ncbi_socket_connector localhost $port >>$client_log 2>&1  ||  exit_code=1
+t=0
+while true; do
+  if [ -s "$port" ]; then
+    sleep 1
+    $CHECK_EXEC test_ncbi_socket_connector localhost "`cat $port`" >>$client_log 2>&1  ||  exit_code=1
+    break
+  fi
+  t="`expr $t + 1`"
+  if [ $t -gt $timeout ]; then
+    echo "`date` FATAL: Timed out waiting on server to start." >>$client_log
+    exit_code=1
+    break
+  fi
+  sleep 1
+done
 
 ( kill    $spid ) >/dev/null 2>&1  ||  exit_code=2
 ( kill -9 $spid ) >/dev/null 2>&1
