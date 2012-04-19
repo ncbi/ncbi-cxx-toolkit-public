@@ -522,7 +522,7 @@ static CRef<CSeq_id> s_GetSeqIdByType(const list<CRef<CSeq_id> >& ids,
 ///@param ids: the input ids
 ///@return: the gi if found
 ///
-static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
+int CDisplaySeqalign::x_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
 {
     int gi = 0;
     CRef<CSeq_id> id = s_GetSeqIdByType(ids, CSeq_id::e_Gi);
@@ -1087,7 +1087,7 @@ CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(int giToUse,string
 					CRange<TSeqPos>(0,0);					
     bool flip = (m_AlnLinksParams.count(idString) > 0) ? m_AlnLinksParams[idString].flip : false;	
 	string user_url= (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "TOOL_URL") : "";        		
-    giToUse = (giToUse == 0) ? s_GetGiForSeqIdList(ids):giToUse;    
+    giToUse = (giToUse == 0) ? x_GetGiForSeqIdList(ids):giToUse;    
 	CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = new CAlignFormatUtil::SSeqURLInfo(user_url,m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                              m_QueryNumber,
                                              giToUse,
@@ -1579,7 +1579,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                         gi = m_AV->GetSeqId(row).GetGi();
                     }
                     if(!(gi > 0)){
-                        gi = s_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
+                        gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
                                                  GetBioseqCore()->GetId());
                     }
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
@@ -2214,7 +2214,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
     int seqLength = (int)bsp_handle.GetBioseqLength();    
 
 	const list<CRef<CSeq_id> > ids = bdl->GetSeqid();
-	int gi =  s_GetGiForSeqIdList(ids);
+	int gi =  x_GetGiForSeqIdList(ids);
     int gi_in_use_this_gi = 0;
     
     ITERATE(list<int>, iter_gi, use_this_gi){
@@ -4338,7 +4338,7 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                         gi = m_AV->GetSeqId(row).GetGi();
                     }
                     if(!(gi > 0)){
-                        gi = s_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
+                        gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
                                                  GetBioseqCore()->GetId());
                     }
                     if(gi > 0){
@@ -4366,7 +4366,7 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                 gi = m_AV->GetSeqId(row).GetGi();
             }
             if(!(gi > 0)){
-                gi = s_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
+                gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
                                          GetBioseqCore()->GetId());
             }
             if(gi > 0){

@@ -440,7 +440,9 @@ private:
     CDisplaySeqalign(const CDisplaySeqalign& other);
     /// Prohibit assignment operator
     CDisplaySeqalign& operator=(const CDisplaySeqalign& rhs);
- 
+
+protected: 
+
     ///internal insert information
     ///aln_start. insert right after this position
     struct SInsertInformation : public CObject {
@@ -849,7 +851,7 @@ private:
 
     ///Display pairwise alignment
     ///
-    string x_DisplayRowData(SAlnRowInfo *alnRoInfo);
+    virtual string x_DisplayRowData(SAlnRowInfo *alnRoInfo);
 
     ///Display identities,positives,frames etc
     ///
@@ -913,6 +915,8 @@ private:
 
     void x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>& retval,
                                      vector<string>& sequence) const; 
+
+    static int x_GetGiForSeqIdList(const list< CRef<objects::CSeq_id> >& ids);
 };
 
 
