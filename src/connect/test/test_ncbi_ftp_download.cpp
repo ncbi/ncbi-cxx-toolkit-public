@@ -504,7 +504,7 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         }
         dlcbdata->Mark(pos, time);
         double rate = dlcbdata->GetRate();
-        os << " (" << fixed << setprecision(2) << rate / 1024.0 << "KB/s)";
+        os << " (" << fixed << setprecision(2) << rate / 1024.0 << "KiB/s)";
         double eta = dlcbdata->GetETA();
         if (eta >= 1.0  &&  type != eCONN_OnClose) {
             os << " ETA: "
