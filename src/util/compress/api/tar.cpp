@@ -2610,7 +2610,7 @@ void CTar::x_Backspace(EAction action, Uint8 blocks)
     Uint8 gap = SIZE_OF(blocks);
     if (!m_FileStream) {
         if (gap > m_BufferPos) {
-            if (action & eAppend) {
+            if (action == eAppend  ||  action == eUpdate) {
                 TAR_POST(4, Warning,
                          "In-stream update may result in gapped tar archive");
             }
