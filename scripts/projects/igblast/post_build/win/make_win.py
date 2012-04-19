@@ -62,11 +62,14 @@ def main():
 
     # Copy the data directories, make sure there are no .svn directories
     for directory in ("internal_data", "optional_file"):
-        src = os.path.join(SCRIPT_DIR, "..", "..", "..", ".." \
-                           "src", "app", "igblast", directory)
+        newdir = os.path.join(SCRIPT_DIR, "..", "..", "..", "..", "..", 
+                           "src", "app", "igblast")
+        os.chdir(newdir)
+        dest = os.path.join(cwd, directory)
         if VERBOSE:
-            print "Copying", src, "to", cwd
-        shutil.copytree(src, cwd)
+            print "Copying", directory, "to", dest
+        shutil.copytree(directory, dest)
+    os.chdir(cwd)
     for root, dirs, files in os.walk(cwd):
         for subdir in dirs:
             path = os.path.join(root, subdir)

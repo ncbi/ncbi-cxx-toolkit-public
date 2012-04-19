@@ -69,9 +69,10 @@ Section "DefaultSection" SecDflt
   Push "$INSTDIR\doc\README.txt"
   Call unix2dos
 
-  SetOutPath "$INSTDIR\data"
-  File /r "optional_file"
-  File /r "internal_data"
+  SetOutPath "$INSTDIR\data\optional_file"
+  File /r "optional_file\*.*"
+  SetOutPath "$INSTDIR\data\internal_data"
+  File /r "internal_data\*.*"
   
   ;Store installation folder
   WriteRegStr HKCU "Software\NCBI\igblast-BLAST_VERSION" "" $INSTDIR

@@ -56,8 +56,8 @@ for bin in $ALL_BINS; do
 done
 
 for dir in $DATA_DIRS; do
-    echo copying $INSTALLDIR/$dir
-    cp -R $INSTALLDIR/data/$dir _stage/usr/local/ncbi/igblast/data
+    echo copying $SCRIPTDIR/../../../../../src/app/igblast/$dir
+    cp -R $SCRIPTDIR/../../../../../src/app/igblast/$dir _stage/usr/local/ncbi/igblast/data
     if [ $? -ne 0 ]; then
         echo FAILURE
         exit 1;
