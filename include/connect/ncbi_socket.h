@@ -78,8 +78,8 @@
  *  SOCK_Write
  *  SOCK_Abort
  *  SOCK_GetLocalPort[Ex]
- *  SOCK_GetPeerAddress
  *  SOCK_GetRemotePort
+ *  SOCK_GetPeerAddress
  *  SOCK_GetPeerAddressString[Ex]
  *  SOCK_GetOSHandle
  *  SOCK_SetReadOnWriteAPI
