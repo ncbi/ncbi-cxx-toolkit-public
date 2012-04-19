@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbitime.hpp>
+#include <corelib/rwstream.hpp>
 #include <corelib/test_mt.hpp>
 #define NCBI_CONN_STREAM_EXPERIMENTAL_API
 #include <connect/ncbi_conn_stream.hpp>
@@ -39,14 +41,36 @@
 /* This header must go last */
 #include <common/test_assert.h>
 
-#ifdef NCBI_OS_MSWIN
-#  define DEVNULL  "NUL"
-#else
-#  define DEVNULL  "/dev/null"
-#endif /*NCBI_OS_MSWIN*/
-
 
 BEGIN_NCBI_SCOPE
+
+
+class CSink : public IWriter
+{
+public:
+    CSink(void)
+        : m_Size(0)
+    { }
+
+    virtual ERW_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written);
+    virtual ERW_Result Flush(void) { return eRW_Success; }
+
+    Uint8 Size(void) const { return m_Size; }
+
+private:
+    Uint8 m_Size;
+};
+
+
+ERW_Result CSink::Write(const void*, size_t count, size_t* bytes_written)
+{
+    if ( bytes_written )
+        *bytes_written = count;
+    m_Size += (Uint8) count;
+    return eRW_Success;
+}
 
 
 class CTestApp : public CThreadedApp
@@ -86,7 +110,7 @@ bool CTestApp::TestApp_Init(void)
 #endif //HAVE_LIBGNUTLS
 
     sm_URL = GetArgs()["url"].AsString();
-    ERR_POST(Info << "URL to test: " << sm_URL);
+    ERR_POST(Info << "URL=" << sm_URL);
     return !sm_URL.empty();
 }
 
@@ -97,11 +121,21 @@ bool CTestApp::Thread_Run(int idx)
 
     PushDiagPostPrefix(("@" + id).c_str());
 
+    CSink      sink;
+    CWStream   out(&sink, 1 << 20);
+    CStopWatch sw(CStopWatch::eStart);
     auto_ptr<CConn_IOStream> inp(NcbiOpenURL(sm_URL));
-    CNcbiOfstream out(DEVNULL, IOS_BASE::out | IOS_BASE::binary);
 
     bool retval = inp.get()  &&  out ? NcbiStreamCopy(out, *inp) : false;
-        
+
+    double time = sw.Elapsed();
+    Uint8  size = sink.Size();
+
+    ERR_POST((retval ? Info : Error) << size << " byte" << &"s"[size == 1]
+             << " in " << CTimeSpan(time + 0.5).AsString("h:m:s") << " ("
+             << fixed << setprecision(2)
+             << (time ? size / (time * 1024.0) : 0.0) << " KiB/s)");
+
     PopDiagPostPrefix();
 
     return retval;
