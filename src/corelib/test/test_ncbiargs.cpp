@@ -355,6 +355,7 @@ static void s_RunTest3(const CArgs& args, ostream& os)
 // Data types
 static void s_InitTest2(CArgDescriptions& arg_desc)
 {
+    arg_desc.AddOpening("first", "First opening arg", CArgDescriptions::eInteger);
     arg_desc.AddKey("ka",
                     "alphaNumericKey", "This is a test alpha-num key argument",
                     CArgDescriptions::eString);
@@ -374,6 +375,7 @@ static void s_InitTest2(CArgDescriptions& arg_desc)
 
 static void s_RunTest2(const CArgs& args, ostream& os)
 {
+    os << "first=" << args["first"].AsInteger() << endl;
     os << "ka=" << args["ka"].AsString() << endl;
     os << "kb=" << NStr::BoolToString( args["kb"].AsBoolean() ) << endl;
     os << "ki=" << args["ki"].AsInteger() << endl;
@@ -384,6 +386,7 @@ static void s_RunTest2(const CArgs& args, ostream& os)
 // The simplest test
 static void s_InitTest1(CArgDescriptions& arg_desc)
 {
+    arg_desc.AddOpening("first", "First opening arg", CArgDescriptions::eString);
     arg_desc.AddKey("k",
                     "key", "This is a key argument",
                     CArgDescriptions::eString);
@@ -391,6 +394,7 @@ static void s_InitTest1(CArgDescriptions& arg_desc)
 
 static void s_RunTest1(const CArgs& args, ostream& os)
 {
+    os << "first=" << args["first"].AsString() << endl;
     os << "k=" << args["k"].AsString() << endl;
 }
 
@@ -475,6 +479,7 @@ void CArgTestApplication::Init(void)
     if ( !s_Test[m_TestNo].init )
         return;
 
+#if 0
     // Create cmd-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -490,9 +495,38 @@ void CArgTestApplication::Init(void)
 
     // Describe cmd-line arguments according to the chosen test #
     s_Test[m_TestNo].init(*arg_desc);
-
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
+#else
+    // Create cmd-line argument descriptions class
+    auto_ptr<CCommandArgDescriptions> cmd_desc(new CCommandArgDescriptions);
+
+    // Specify USAGE context
+    string prog_description =
+        "This is a test program for command-line argument processing.\n"
+        "TEST #" + NStr::SizetToString(m_TestNo) +
+        "    (To run another test, set env.variable $TEST_NO to 0.." +
+        NStr::SizetToString(max_test) + ")";
+    bool usage_sort_args = (m_TestNo == 10);
+    cmd_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              prog_description, usage_sort_args);
+
+    // Describe cmd-line arguments according to the chosen test #
+    s_Test[m_TestNo].init(*cmd_desc);
+
+    // add few commands
+    for (int a=0; a<4; ++a) {
+
+        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions(false));
+        arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+            "Testing CCommandArgDescriptions: RunTest" + NStr::IntToString(a));
+        s_Test[a].init(*arg_desc);
+        cmd_desc->AddCommand("runtest" + NStr::IntToString(a), arg_desc.release());
+
+    }
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(cmd_desc.release());
+#endif
 }
 
 
@@ -507,8 +541,22 @@ int CArgTestApplication::Run(void)
         return 0;
     }
 
+    string command( GetArgs().GetCommand());
+    if (!command.empty()) {
+        cout << "command: " << command << endl;
+    }
     // Do run
-    s_Test[m_TestNo].run(GetArgs(), cout);
+    if (command == "runtest0") {
+        s_Test[0].run(GetArgs(), cout);
+    } else if (command == "runtest1") {
+        s_Test[1].run(GetArgs(), cout);
+    } else if (command == "runtest2") {
+        s_Test[2].run(GetArgs(), cout);
+    } else if (command == "runtest3") {
+        s_Test[3].run(GetArgs(), cout);
+    } else {
+        s_Test[m_TestNo].run(GetArgs(), cout);
+    }
 
     // Printout obtained argument values
     string str;

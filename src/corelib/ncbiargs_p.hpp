@@ -406,6 +406,19 @@ public:
 
 
 
+class CArgDesc_Opening : virtual public CArgDescMandatory
+{
+public:
+    CArgDesc_Opening(const string&            name,
+                 const string&            comment,
+                 CArgDescriptions::EType  type,
+                 CArgDescriptions::TFlags flags);
+    virtual ~CArgDesc_Opening(void);
+    virtual string GetUsageSynopsis(bool name_only = false) const;
+};
+
+
+
 class CArgDesc_PosOpt : virtual public CArgDescOptional,
                         public CArgDesc_Pos
 {

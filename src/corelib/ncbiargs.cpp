@@ -730,6 +730,12 @@ inline bool s_IsPositional(const CArgDesc& arg)
 }
 
 
+inline bool s_IsOpening(const CArgDesc& arg)
+{
+    return dynamic_cast<const CArgDesc_Opening*> (&arg) != NULL;
+}
+
+
 inline bool s_IsOptional(const CArgDesc& arg)
 {
     return (dynamic_cast<const CArgDescOptional*> (&arg) != 0);
@@ -1289,6 +1295,32 @@ CArgDesc_Pos::~CArgDesc_Pos(void)
 
 
 string CArgDesc_Pos::GetUsageSynopsis(bool /*name_only*/) const
+{
+    return GetName().empty() ? s_ExtraName : GetName();
+}
+
+
+///////////////////////////////////////////////////////
+//  CArgDesc_Opening::
+
+
+CArgDesc_Opening::CArgDesc_Opening(const string&            name,
+                           const string&            comment,
+                           CArgDescriptions::EType  type,
+                           CArgDescriptions::TFlags flags)
+    : CArgDescMandatory(name, comment, type, flags)
+{
+    return;
+}
+
+
+CArgDesc_Opening::~CArgDesc_Opening(void)
+{
+    return;
+}
+
+
+string CArgDesc_Opening::GetUsageSynopsis(bool /*name_only*/) const
 {
     return GetName().empty() ? s_ExtraName : GetName();
 }
@@ -1896,6 +1928,19 @@ void CArgDescriptions::AddPositional
 }
 
 
+void CArgDescriptions::AddOpening
+(const string& name,
+ const string& comment,
+ EType         type,
+ TFlags        flags)
+{
+    auto_ptr<CArgDesc_Opening> arg(new CArgDesc_Opening(name, comment, type, flags));
+
+    x_AddDesc(*arg);
+    arg.release();
+}
+
+
 void CArgDescriptions::AddOptionalPositional
 (const string& name,
  const string& comment,
@@ -2241,6 +2286,13 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
 {
     // Argument name
     string name;
+
+    if (*n_plain == kMax_UInt) {
+        size_t  argssofar = args.GetAll().size();
+        if (m_OpeningArgs.size() > argssofar) {
+            return x_CreateArg(arg1, m_OpeningArgs[argssofar], have_arg2, arg2, *n_plain, args);
+        }
+    }
 
     // Check if to start processing the args as positional
     if (*n_plain == kMax_UInt) {
@@ -2628,17 +2680,18 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
                 == m_KeyFlagArgs.end());
         m_KeyFlagArgs.push_back(name);
     } else if ( !s_IsAlias(arg)  &&  !name.empty() ) {
-        _ASSERT(find(m_PosArgs.begin(), m_PosArgs.end(), name)
-                == m_PosArgs.end());
+        TPosArgs& container = s_IsOpening(arg) ? m_OpeningArgs : m_PosArgs;
+        _ASSERT(find(container.begin(), container.end(), name)
+                == container.end());
         if ( s_IsOptional(arg) ) {
-            m_PosArgs.push_back(name);
+            container.push_back(name);
         } else {
             TPosArgs::iterator it;
-            for (it = m_PosArgs.begin();  it != m_PosArgs.end();  ++it) {
+            for (it = container.begin();  it != container.end();  ++it) {
                 if ( s_IsOptional(**x_Find(*it)) )
                     break;
             }
-            m_PosArgs.insert(it, name);
+            container.insert(it, name);
         }
     }
     
@@ -3096,7 +3149,76 @@ void CArgDescriptions::x_PrintAliasesAsXml( CNcbiOstream& out,
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// CCommandArgDescriptions
 
+CCommandArgDescriptions::CCommandArgDescriptions(
+    bool auto_help, CArgErrorHandler* err_handler)
+    : CArgDescriptions(auto_help,err_handler)
+{
+}
+CCommandArgDescriptions::~CCommandArgDescriptions(void)
+{
+}
+
+void CCommandArgDescriptions::AddCommand(
+    const string& cmd, CArgDescriptions* description)
+{
+
+    string command( NStr::TruncateSpaces(cmd));
+    if (command.empty()) {
+        NCBI_THROW(CArgException,eSynopsis,
+            "Command cannot be empty: "+ cmd);
+    }
+    if (description) {
+        if (description->Exist(s_AutoHelpFull)) {
+            description->Delete(s_AutoHelpFull);
+        }
+        if (description->Exist(s_AutoHelpXml)) {
+            description->Delete(s_AutoHelpXml);
+        }
+        m_Description[command] = description;
+    } else {
+        m_Description.erase(command);
+    }
+}
+
+CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
+{
+    if (argv.Size() > 1) {
+        string command( argv[1]);
+        map<string, AutoPtr<CArgDescriptions> >::const_iterator d;
+        d = m_Description.find(command);
+        if (d != m_Description.end()) {
+            CNcbiArguments argv2(argv);
+            argv2.Shift();
+            m_Command = command;
+            return d->second->CreateArgs(argv2)->SetCommand(command);
+        }
+        m_Command.clear();
+    }
+    return CArgDescriptions::CreateArgs(argv)->SetCommand(kEmptyStr);
+}
+
+string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
+{
+    CArgDescriptions::PrintUsage(str, detailed);
+    map<string, AutoPtr<CArgDescriptions> >::const_iterator d;
+    d = m_Description.find(m_Command);
+    if (d != m_Description.end()) {
+        d->second->PrintUsage(str, detailed);
+    }
+    return str;
+}
+
+void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
+{
+    map<string, AutoPtr<CArgDescriptions> >::const_iterator d;
+    d = m_Description.find(m_Command);
+    if (d != m_Description.end()) {
+        d->second->PrintUsageXml(out);
+    }
+}
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 // CArgAllow::

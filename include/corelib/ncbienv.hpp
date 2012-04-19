@@ -259,6 +259,9 @@ public:
     /// Add a new argument.
     void Add(const string& arg);
 
+    /// Delete arguments from 1 to n.
+    void Shift(int n=1);
+
     /// Get program name.
     const string& GetProgramName(EFollowLinks follow_links = eIgnoreLinks)
         const;

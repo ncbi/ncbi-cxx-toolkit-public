@@ -376,6 +376,22 @@ public:
     /// Remove all arguments
     void Reset(void);
 
+    /// Get current command
+    /// @sa CCommandArgDescriptions
+    string GetCommand(void) const
+    {
+        return m_Command;
+    }
+
+protected:
+    /// Set current command
+    /// @sa CCommandArgDescriptions
+    CArgs* SetCommand(const string& command)
+    {
+        m_Command = command;
+        return this;
+    }
+
 private:
     typedef set< CRef<CArgValue> >  TArgs;   ///< Type for arguments
     typedef TArgs::iterator         TArgsI;  ///< Type for iterator
@@ -383,10 +399,12 @@ private:
 
     TArgs  m_Args;    ///< Assoc. map of arguments' name/value
     size_t m_nExtra;  ///< Cached # of unnamed positional arguments 
+    string m_Command;
 
     /// Find argument value with name "name".
     TArgsCI x_Find(const string& name) const;
     TArgsI  x_Find(const string& name);
+    friend class CCommandArgDescriptions;
 };
 
 
@@ -631,6 +649,30 @@ public:
                  bool          set_value = true ///< Is value set or not?
                 );
 
+
+    /// Add description of mandatory opening positional argument.
+    ///
+    /// Mandatory opening argument has the following syntax:
+    ///   arg_pos := <value>
+    ///
+    /// NOTE:
+    ///   In command line, mandatory opening arguments must go first,
+    ///   before any other arguments; their order is defined by the order
+    ///   in which they were described and added into CArgDescriptions.
+    ///
+    /// Will throw exception CArgException if:
+    ///  - description with name "name" already exists
+    ///  - "name" contains symbols other than {alnum, '-', '_'}
+    ///  - "name" starts with more than one '-'
+    ///  - "flags" are inconsistent with "type"
+    ///
+    /// Any argument can be later referenced using its unique name "name".
+    void AddOpening(const string& name,     ///< Name of argument
+                    const string& comment,  ///< Argument description
+                    EType         type,     ///< Argument type
+                    TFlags        flags = 0 ///< Optional file flags
+                    );
+
     /// Add description for mandatory postional argument.
     ///
     /// Mandatory positional argument has the following syntax:
@@ -834,7 +876,7 @@ public:
     ///
     /// @param out
     ///   Print into this output stream
-    void PrintUsageXml(CNcbiOstream& out) const;
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
 
     /// Verify if argument "name" is spelled correctly.
     ///
@@ -872,7 +914,8 @@ private:
 private:
     EArgSetType  m_ArgsType;     ///< Type of arguments
     TArgs        m_Args;         ///< Assoc.map of arguments' name/descr
-    TPosArgs     m_PosArgs;    ///< Pos. args, ordered by position in cmd.-line
+    TPosArgs     m_PosArgs;      ///< Pos. args, ordered by position in cmd.-line
+    TPosArgs     m_OpeningArgs;  ///< Opening args, ordered by position in cmd.-line
     TKeyFlagArgs m_KeyFlagArgs;  ///< Key/flag args, in order of insertion
     string       m_NoSeparator;  ///< Arguments allowed to use no separator
     unsigned     m_nExtra;       ///> # of mandatory extra args
@@ -1021,7 +1064,7 @@ public:
     }
 
     /// Parse command-line arguments 'argv'
-    CArgs* CreateArgs(const CNcbiArguments& argv) const;
+    virtual CArgs* CreateArgs(const CNcbiArguments& argv) const;
 
     /// Convert argument map (key-value pairs) into arguments in accordance
     /// with the argument descriptions
@@ -1066,6 +1109,54 @@ public:
         // Extra checks for the consistency of resultant argument values
         x_PostCheck(*args, 0, eConvertKeys);
     }
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCommandArgDescriptions --
+///
+/// Container for several CArgDescriptions objects.
+///
+/// Sometimes, it is convenient to use a command line tool as follows:
+///    tool <command> [options] [args]
+/// Here, <command> is an alphanumeric string,
+/// and options and arguments are different for each command.
+/// With this mechanism, it is possible to describe arguments for
+/// each command separately. At run time, argument parser will choose
+/// proper CArgDescriptions object based on the value of the first argument.
+
+class NCBI_XNCBI_EXPORT CCommandArgDescriptions : public CArgDescriptions
+{
+public:
+    /// Constructor.
+    ///
+    /// If "auto_help" is passed TRUE, then a special flag "-h" will be added
+    /// to the list of accepted arguments. Passing "-h" in the command line
+    /// will printout USAGE and ignore all other passed arguments.
+    /// Error handler is used to process errors when parsing arguments.
+    /// If not set the default handler is used.
+    CCommandArgDescriptions(bool auto_help = true,
+                          CArgErrorHandler* err_handler = 0);
+    /// Destructor.
+    virtual ~CCommandArgDescriptions(void);
+
+    /// Add command argument descriptions
+    ///
+    /// @param cmd
+    ///    Command string
+    /// @param description
+    ///    Argument description
+    void AddCommand(const string& cmd, CArgDescriptions* description);
+
+    /// Parse command-line arguments 'argv'
+    virtual CArgs* CreateArgs(const CNcbiArguments& argv) const;
+
+    virtual string& PrintUsage(string& str, bool detailed = false) const;
+    virtual void PrintUsageXml(CNcbiOstream& out) const;
+
+private:
+    map<string, AutoPtr<CArgDescriptions> > m_Description;
+    mutable string m_Command;
 };
 
 

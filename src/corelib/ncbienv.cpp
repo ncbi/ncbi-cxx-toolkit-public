@@ -409,6 +409,15 @@ void CNcbiArguments::Add(const string& arg)
     m_Args.push_back(arg);
 }
 
+void CNcbiArguments::Shift(int n)
+{
+    while (n-- > 0) {
+        if (m_Args.size() > 1) {
+            m_Args.erase( ++m_Args.begin());
+        }
+    }
+}
+
 const char* CArgumentsException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
