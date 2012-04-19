@@ -92,7 +92,6 @@ generate_simple_log()
         prj_log="$tree/build/$sol_dir/$target_dir/$cfg/$prj_name/$target_name.log"
 
         # Add it to new combined log
-        if [ "$alive" != "1" -o -f alive ]; then
         if test ! -f "$prj_log" ; then
             # Not all projects have a log file in the ${prj_name} sub-directory
             prj_log_short="$tree/build/$sol_dir/$target_dir/$cfg/$target_name.log"
@@ -101,6 +100,7 @@ generate_simple_log()
                 echo
                 continue
             fi
+            prj_log=$prj_log_short
         fi
         # Remove 3 first bytes from logfile (EF BB BF)
         cat $prj_log | tr -d '\357\273\277'
