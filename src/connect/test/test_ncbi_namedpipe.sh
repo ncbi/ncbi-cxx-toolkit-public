@@ -36,7 +36,7 @@ while true; do
   fi
   t="`expr $t + 1`"
   if [ $t -gt $timeout ]; then
-    echo "FATAL:  Timed out waiting on server to start." >$client_log
+    echo "`date` FATAL:  Timed out waiting on server to start." >$client_log
     exit_code=1
     break
   fi
