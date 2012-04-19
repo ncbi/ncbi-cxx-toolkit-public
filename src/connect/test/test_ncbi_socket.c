@@ -52,17 +52,10 @@
 #  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
 #endif
 
-#define MIN_PORT 4096
 #define DEF_PORT 5555
 #define DEF_HOST "localhost"
 
-/* #define DO_CLIENT */
-/* #define DO_SERVER */
-
 #define TEST_BUFSIZE 8192
-
-/* test SOCK_Reconnect() */
-#define DO_RECONNECT
 
 
 /* The simplest randezvous (a plain request-reply) test functions
@@ -326,7 +319,6 @@ static void TEST__client_2(SOCK sock)
         status = SOCK_SetTimeout(sock, eIO_Write, w_timeout_on ? &w_to : 0);
         assert(status == eIO_Success);
 
-#ifdef DO_RECONNECT
         /* reconnect */
         if ((i % N_RECONNECT) == 0) {
             size_t j = i / N_RECONNECT;
@@ -347,7 +339,6 @@ static void TEST__client_2(SOCK sock)
                 X_SLEEP(1);
             } while ( j-- );
         }
-#endif
 
         /* send */
         x_buf = buf;
@@ -602,16 +593,33 @@ static void TEST__client(const char*     server_host,
 }
 
 
-static void TEST__server(unsigned short port)
+static void TEST__server(const char* sport)
 {
-    LSOCK      lsock;
-    EIO_Status status;
-
-    CORE_LOGF(eLOG_Note, ("TEST__server(port = %hu)", port));
+    int            i;
+    unsigned short nport;
+    LSOCK          lsock;
+    EIO_Status     status;
 
     /* Create listening socket */
-    status = LSOCK_CreateEx(port, N_RECONNECT * 10, &lsock, fSOCK_LogOn);
-    assert(status == eIO_Success);
+    if (sscanf(sport, "%hu%n", &nport, &i) < 1  ||  sport[i]) {
+        nport = 0;
+        i = 0;
+    }
+    status = LSOCK_CreateEx(nport, N_RECONNECT * 10, &lsock, fSOCK_LogOn);
+    if (!nport  &&  sport[i]) {
+        FILE* fp;
+        nport = LSOCK_GetPort(lsock, eNH_HostByteOrder);
+        if (nport  &&  (fp = fopen(sport, "w")) != 0) {
+            if (fprintf(fp, "%hu\n", nport) < 1)
+                nport = 0;
+            fclose(fp);
+        } else
+            nport = 0;
+    }
+
+    CORE_LOGF(eLOG_Note, ("TEST__server(port = %hu)", nport));
+
+    assert(status == eIO_Success  &&  nport);
 
     /* Accept connections from clients and run test sessions */
     for (;;) {
@@ -641,20 +649,9 @@ static void TEST__server(unsigned short port)
          * The two peer functions are:
          *      "TEST__[client|server]_2(SOCK sock)"
          */
-#ifdef DO_RECONNECT
         TEST__server_2(sock, lsock);
-#else
-        TEST__server_2(sock, 0);
-#endif
-    } /* for */
+    }
 }
-
-
-/* Consistency...
- */
-#if defined(DO_SERVER)  &&  defined(DO_CLIENT)
-#  error "Only one of DO_SERVER, DO_CLIENT can be defined!"
-#endif
 
 
 /* Fake (printout only) MT critical section callback and data
@@ -889,13 +886,6 @@ extern int main(int argc, char** argv)
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    /* Test client or server using hard-coded parameters */
-#if   defined(DO_SERVER)
-    argc = 2;
-#elif defined(DO_CLIENT)
-    argc = 3;
-#endif
-
     /* Parse cmd.-line args and decide whether it's a client or a server
      */
     switch ( argc ) {
@@ -930,16 +920,7 @@ extern int main(int argc, char** argv)
 
     case 2: {
         /*** SERVER ***/
-        int port;
-
-#if defined(DO_SERVER)
-        port = DEF_PORT;
-#else
-        if (sscanf(argv[1], "%d", &port) != 1  ||  port < MIN_PORT)
-            break;
-#endif /* DO_SERVER */
-
-        TEST__server((unsigned short) port);
+        TEST__server(argv[1]);
         assert(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
         return 0;
@@ -947,21 +928,16 @@ extern int main(int argc, char** argv)
 
     case 3: case 4: {
         /*** CLIENT ***/
-        const char* host;
-        int         port;
-        STimeout*   tmo;
+        const char*    host;
+        unsigned short port;
+        STimeout*      tmo;
+        STimeout     x_tmo;
 
-#if defined(DO_CLIENT)
-        host = DEF_HOST;
-        port = DEF_PORT;
-        tmo  = 0/*infinite*/;
-#else
-        STimeout    x_tmo;
         /* host */
         host = argv[1];
 
         /* port */
-        if (sscanf(argv[2], "%d", &port) != 1  ||  port < MIN_PORT)
+        if (sscanf(argv[2], "%hu", &port) != 1)
             break;
 
         /* timeout */
@@ -974,9 +950,8 @@ extern int main(int argc, char** argv)
             tmo = &x_tmo;
         } else
             tmo = 0/*infinite*/;
-#endif /* DO_CLIENT */
 
-        TEST__client(host, (unsigned short) port, tmo);
+        TEST__client(host, port, tmo);
         assert(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
         return 0;
@@ -987,9 +962,8 @@ extern int main(int argc, char** argv)
     fprintf(stderr,
             "\nClient/Server USAGE:\n"
             "Client: %s <host> <port> [timeout]\n"
-            "Server: %s <port>\n"
-            "where <port> is greater than %d, and [timeout] is a double\n\n",
-            argv[0], argv[0], MIN_PORT);
+            "Server: %s <port>\n\n",
+            argv[0], argv[0]);
     CORE_SetLOG(0);
     return argc == 1 ? 0 : 1;
 }
