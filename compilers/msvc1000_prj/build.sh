@@ -92,10 +92,15 @@ generate_simple_log()
         prj_log="$tree/build/$sol_dir/$target_dir/$cfg/$prj_name/$target_name.log"
 
         # Add it to new combined log
+        if [ "$alive" != "1" -o -f alive ]; then
         if test ! -f "$prj_log" ; then
-            echo "BUILD_SYSTEM_ERROR: Cannot find log file for this project: $prj_log"
-            echo
-            continue
+            # Not all projects have a log file in the ${prj_name} sub-directory
+            prj_log_short="$tree/build/$sol_dir/$target_dir/$cfg/$target_name.log"
+            if test ! -f "$prj_log_short" ; then
+                echo "BUILD_SYSTEM_ERROR: Cannot find log file for this project: $prj_log"
+                echo
+                continue
+            fi
         fi
         # Remove 3 first bytes from logfile (EF BB BF)
         cat $prj_log | tr -d '\357\273\277'
