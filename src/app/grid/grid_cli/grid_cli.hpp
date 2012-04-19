@@ -130,6 +130,7 @@ enum EOption {
     eNow,
     eDie,
     eCompatMode,
+    eDumpCGIEnv,
     eExtendedOptionDelimiter,
     eClientNode,
     eClientSession,
@@ -280,6 +281,8 @@ public:
     int Cmd_CreateQueue();
     int Cmd_GetQueueList();
     int Cmd_DeleteQueue();
+
+    int Cmd_Replay();
 
 // Miscellaneous commands.
 public:

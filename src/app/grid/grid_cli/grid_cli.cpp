@@ -278,6 +278,9 @@ struct SOptionDefinition {
     {CCommandLineParser::eSwitch, eCompatMode,
         "compat-mode", "Enable backward compatibility tweaks."},
 
+    {CCommandLineParser::eSwitch, eDumpCGIEnv,
+        "dump-cgi-env", "Dump CGI environment prepared by cgi2rcgi."},
+
     {CCommandLineParser::eSwitch, eExtendedOptionDelimiter,
         NULL, NULL},
 
@@ -308,6 +311,7 @@ enum ECommandCategory {
     eGeneralCommand,
     eNetCacheCommand,
     eNetScheduleCommand,
+    eWorkerNodeCommand,
     eExtendedCLICommand,
     eNumberOfCommandCategories
 };
@@ -319,6 +323,7 @@ struct SCommandCategoryDefinition {
     {eGeneralCommand, "General commands"},
     {eNetCacheCommand, "NetCache commands"},
     {eNetScheduleCommand, "NetSchedule commands"},
+    {eWorkerNodeCommand, "Worker node commands"},
     {eExtendedCLICommand, "Extended commands"},
 };
 
@@ -628,6 +633,13 @@ struct SCommandDefinition {
         "Static queues cannot be deleted, although it is "
         "possible to cancel all jobs in a static queue.",
         {eQueueArg, eNetSchedule, eAuth, eClientNode, eClientSession, -1}},
+
+    {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_Replay,
+        "replay", "Rerun a job in debugging environment.",
+        "This command facilitates debugging of remote_cgi and "
+        "remote_app jobs.",
+        {eID, eQueue, eDumpCGIEnv, eCompatMode,
+            eAuth, eClientNode, eClientSession, -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
