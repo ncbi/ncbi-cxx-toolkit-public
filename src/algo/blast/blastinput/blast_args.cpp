@@ -1961,7 +1961,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     TSeqPos hitlist_size =0; // opt.GetHitlistSize();
     if (args[kArgMaxTargetSequences]) {
         hitlist_size = args[kArgMaxTargetSequences].AsInteger();
-        if (hitlist_size > 0 && m_OutputFormat == ePairwise) {
+        if (hitlist_size > 0 && m_OutputFormat <= eFlatQueryAnchoredNoIdentities) {
             /* Only non-default values will be overriden */
             string warnings = CalculateFormattingParams(hitlist_size,
                       m_NumDescriptions != kDfltArgNumDescriptions 
