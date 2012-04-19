@@ -48,23 +48,23 @@ if [ -f "$huge_tar" ]; then
   fi
 fi
 
-echo
-echo "`date` *** Preparing file staging area"
-echo
-
-test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
-
 test_base="${TMPDIR:-/tmp}/test_tar.$$"
-mkdir $test_base.1  ||  exit 1
-trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
-
-cp -rp . $test_base.1/ 2>/dev/null
+test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
 if [ -f test_tar${exe} ]; then
   test_exe=./test_tar${exe}
 else
   test_exe=$CFG_BIN/test_tar${exe}
-  cp -p $test_exe $test_base.1/ 2>/dev/null
 fi
+trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
+
+echo
+echo "`date` *** Preparing file staging area"
+echo
+
+mkdir $test_base.1  ||  exit 1
+
+cp -rp . $test_base.1/ 2>/dev/null
+test -f test_tar${exe}  ||  cp -p $test_exe $test_base.1/ 2>/dev/null
 
 mkdir $test_base.1/testdir 2>/dev/null
 
@@ -191,8 +191,8 @@ echo
 echo "`date` *** Checking in-stream append"
 echo
 
-ncat="`expr $$     % 512`"
-ndog="`expr $$ / 2 % 512`"
+ncat="`expr 1 + $$     % 512`"
+ndog="`expr 1 + $$ / 2 % 512`"
 dd if=/dev/zero bs=1 count="$ncat" >$test_base.cat 2>/dev/null
 dd if=/dev/zero bs=1 count="$ndog" >$test_base.dog 2>/dev/null
 test_tar -c -v -f - $test_base.cat $test_base.dog | $tar tvf - | tee $test_base.lst     ||  exit 1
@@ -251,7 +251,7 @@ if [ "`uname`" = "Linux" ]; then
       echo "`date` *** ${free}KiB available in /tmp:  Checking 4GiB barrier"
       echo
 
-      dd of=$test_base.1/newdir/huge-file bs=1 count="`expr $$ % 10000`" seek=4G if=/dev/urandom        ||  exit 1
+      dd of=$test_base.1/newdir/huge-file bs=1 count="`expr 1 + $$ % 10000`" seek=4G if=/dev/urandom    ||  exit 1
       real="`ls -l $test_base.1/newdir/huge-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
       test_tar -r -v -f $test_base.tar -C $test_base.1/newdir pre-sparse huge-file post-sparse          ||  exit 1
       size="`test_tar -t -v -f $test_base.tar huge-file 2>&1 | grep huge-file | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
