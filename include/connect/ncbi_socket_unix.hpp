@@ -71,7 +71,7 @@ class NCBI_XCONNECT_EXPORT CUNIXListeningSocket : public CListeningSocket
 {
 public:
     // Create unbound socket
-    CUNIXListeningSocket(void) { };
+    CUNIXListeningSocket(void) { }
 
     CUNIXListeningSocket(const string&  filename,
                          unsigned short backlog = 64,
@@ -89,6 +89,39 @@ private:
 
 
 /* @} */
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+///  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// CUNIXListeningSocket::
+///
+
+inline CUNIXListeningSocket::CUNIXListeningSocket(const string&  path,
+                                                  unsigned short backlog,
+                                                  TSOCK_Flags    flags)
+{
+    LSOCK_CreateUNIX(path.c_str(), backlog, &m_Socket, flags);
+}
+
+
+inline EIO_Status CUNIXListeningSocket::Listen(const string&  path,
+                                               unsigned short backlog,
+                                               TSOCK_Flags    flags)
+{
+    return m_Socket
+        ? eIO_Unknown
+        : LSOCK_CreateUNIX(path.c_str(), backlog, &m_Socket, flags);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 
 END_NCBI_SCOPE

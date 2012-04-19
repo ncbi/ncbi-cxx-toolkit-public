@@ -46,15 +46,6 @@ BEGIN_NCBI_SCOPE
 //  CTrigger::
 //
 
-
-CTrigger::CTrigger(ESwitch log)
-    : m_Trigger(0)
-{
-    if (TRIGGER_Create(&m_Trigger, log) != eIO_Success)
-        m_Trigger = 0;
-}
-
-
 CTrigger::~CTrigger()
 {
     if (m_Trigger)
@@ -66,15 +57,6 @@ CTrigger::~CTrigger()
 /////////////////////////////////////////////////////////////////////////////
 //  CSocket::
 //
-
-
-CSocket::CSocket(void)
-    : m_Socket(0),
-      m_IsOwned(eTakeOwnership),
-      o_timeout(0), r_timeout(0), w_timeout(0), c_timeout(0)
-{
-    return;
-}
 
 
 CSocket::CSocket(const string&   host,
@@ -89,10 +71,7 @@ CSocket::CSocket(const string&   host,
         o_timeout  = &oo_timeout;
     } else
         o_timeout  = 0;
-    if (SOCK_CreateEx(host.c_str(), port, o_timeout, &m_Socket, 0, 0, flags)
-        != eIO_Success) {
-        m_Socket = 0;
-    }
+    SOCK_CreateEx(host.c_str(), port, o_timeout, &m_Socket, 0, 0, flags);
 }
 
 
@@ -109,28 +88,24 @@ CSocket::CSocket(unsigned int    host,
         o_timeout = &oo_timeout;
     } else
         o_timeout = 0;
-    if (SOCK_ntoa(host, x_host, sizeof(x_host)) != 0  ||
-        SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, 0, 0, flags)
-        != eIO_Success) {
+    if (SOCK_ntoa(host, x_host, sizeof(x_host)) != 0)
         m_Socket = 0;
-    }
+    else
+        SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, 0, 0, flags);
+
 }
 
 
 CUNIXSocket::CUNIXSocket(const string&   path,
                          const STimeout* timeout,
                          TSOCK_Flags     flags)
-    : CSocket()
 {
     if (timeout && timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout = &oo_timeout;
     } else
         o_timeout = 0;
-    if (SOCK_CreateUNIX(path.c_str(), o_timeout, &m_Socket, 0, 0, flags)
-        != eIO_Success) {
-        m_Socket = 0;
-    }
+    SOCK_CreateUNIX(path.c_str(), o_timeout, &m_Socket, 0, 0, flags);
 }
 
 
@@ -167,7 +142,7 @@ EIO_Status CSocket::Connect(const string&   host,
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
     } else
-        m_Socket = 0;
+        _ASSERT(!m_Socket);
     return status;
 }
 
@@ -192,12 +167,12 @@ EIO_Status CUNIXSocket::Connect(const string&   path,
     }
     EIO_Status status = SOCK_CreateUNIX(path.c_str(), o_timeout,
                                         &m_Socket, 0, 0, flags);
-    if (status != eIO_Success) {
+    if (status == eIO_Success) {
         SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
     } else
-        m_Socket = 0;
+        _ASSERT(!m_Socket);
     return status;
 }
 
@@ -288,8 +263,8 @@ const STimeout* CSocket::GetTimeout(EIO_Event event) const
             return w_timeout;
         if ( !w_timeout )
             return r_timeout;
-        return ((unsigned long) r_timeout->sec*1000000 + r_timeout->usec >
-                (unsigned long) w_timeout->sec*1000000 + w_timeout->usec)
+        return ((unsigned long) r_timeout->sec * 1000000 + r_timeout->usec >
+                (unsigned long) w_timeout->sec * 1000000 + w_timeout->usec)
             ? w_timeout : r_timeout;
     case eIO_Close:
         return c_timeout;
@@ -412,13 +387,6 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 //
 
 
-CDatagramSocket::CDatagramSocket(TSOCK_Flags flags)
-{
-    if (DSOCK_CreateEx(&m_Socket, flags) != eIO_Success)
-        m_Socket = 0;
-}
-
-
 EIO_Status CDatagramSocket::Connect(unsigned int   host,
                                     unsigned short port)
 {
@@ -427,17 +395,6 @@ EIO_Status CDatagramSocket::Connect(unsigned int   host,
         return eIO_Unknown;
     return m_Socket
         ? DSOCK_Connect(m_Socket, host ? addr : 0, port)
-        : eIO_Closed;
-}
-
-
-EIO_Status CDatagramSocket::Send(const void*    data,
-                                 size_t         datalen,
-                                 const string&  host,
-                                 unsigned short port)
-{
-    return m_Socket
-        ? DSOCK_SendMsg(m_Socket, host.c_str(), port, data, datalen)
         : eIO_Closed;
 }
 
@@ -468,67 +425,9 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
 //
 
 
-CListeningSocket::CListeningSocket(void)
-    : m_Socket(0),
-      m_IsOwned(eTakeOwnership)
-{
-    return;
-}
-
-
-CListeningSocket::CListeningSocket(unsigned short port,
-                                   unsigned short backlog,
-                                   TSOCK_Flags    flags)
-    : m_Socket(0),
-      m_IsOwned(eTakeOwnership)
-{
-    if (LSOCK_CreateEx(port, backlog, &m_Socket, flags) != eIO_Success)
-        m_Socket = 0;
-}
-
-
-CUNIXListeningSocket::CUNIXListeningSocket(const string&  path,
-                                           unsigned short backlog,
-                                           TSOCK_Flags    flags)
-    : CListeningSocket()
-{
-    if (LSOCK_CreateUNIX(path.c_str(), backlog,
-                         &m_Socket, flags) != eIO_Success) {
-        m_Socket = 0;
-    }
-}
-
-
 CListeningSocket::~CListeningSocket()
 {
     Close();
-}
-
-
-EIO_Status CListeningSocket::Listen(unsigned short port,
-                                    unsigned short backlog,
-                                    TSOCK_Flags    flags)
-{
-    if ( m_Socket )
-        return eIO_Unknown;
-    EIO_Status status = LSOCK_CreateEx(port, backlog, &m_Socket, flags);
-    if (status != eIO_Success)
-        m_Socket = 0;
-    return status;
-}
-
-
-EIO_Status CUNIXListeningSocket::Listen(const string&  path,
-                                        unsigned short backlog,
-                                        TSOCK_Flags    flags)
-{
-    if ( m_Socket )
-        return eIO_Unknown;
-    EIO_Status status = LSOCK_CreateUNIX(path.c_str(), backlog,
-                                         &m_Socket, flags);
-    if (status != eIO_Success)
-        m_Socket = 0;
-    return status;
 }
 
 

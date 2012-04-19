@@ -795,6 +795,12 @@ public:
 /// CTrigger::
 ///
 
+inline CTrigger::CTrigger(ESwitch log)
+{
+    TRIGGER_Create(&m_Trigger, log);
+}
+
+
 inline EIO_Status CTrigger::GetStatus(void) const
 {
     return m_Trigger ? eIO_Success : eIO_Closed;
@@ -835,6 +841,14 @@ inline TRIGGER    CTrigger::GetTRIGGER(void) const
 /////////////////////////////////////////////////////////////////////////////
 /// CSocket::
 ///
+
+inline CSocket::CSocket(void)
+    : m_Socket(0), m_IsOwned(eTakeOwnership),
+      o_timeout(0), r_timeout(0), w_timeout(0), c_timeout(0)
+{
+    return;
+}
+
 
 inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
 {
@@ -1005,6 +1019,12 @@ inline SOCK CSocket::GetSOCK(void) const
 ///
 
 
+inline CDatagramSocket::CDatagramSocket(TSOCK_Flags flags)
+{
+    DSOCK_CreateEx(&m_Socket, flags);
+}
+
+
 inline EIO_Status CDatagramSocket::Bind(unsigned short port)
 {
     return m_Socket ? DSOCK_Bind(m_Socket, port) : eIO_Closed;
@@ -1012,9 +1032,20 @@ inline EIO_Status CDatagramSocket::Bind(unsigned short port)
 
 
 inline EIO_Status CDatagramSocket::Connect(const string&  host,
-                                    unsigned short port)
+                                           unsigned short port)
 {
     return m_Socket ? DSOCK_Connect(m_Socket, host.c_str(), port) : eIO_Closed;
+}
+
+
+inline EIO_Status CDatagramSocket::Send(const void*    data,
+                                        size_t         datalen,
+                                        const string&  host,
+                                        unsigned short port)
+{
+    return m_Socket
+        ? DSOCK_SendMsg(m_Socket, host.c_str(), port, data, datalen)
+        : eIO_Closed;
 }
 
 
@@ -1046,6 +1077,31 @@ inline TNCBI_BigCount CDatagramSocket::GetMessageCount(EIO_Event dir) const
 /////////////////////////////////////////////////////////////////////////////
 ///  CListeningSocket::
 ///
+
+inline CListeningSocket::CListeningSocket(void)
+    : m_Socket(0), m_IsOwned(eTakeOwnership)
+{
+    return;
+}
+
+
+inline CListeningSocket::CListeningSocket(unsigned short port,
+                                          unsigned short backlog,
+                                          TSOCK_Flags    flags)
+    : m_IsOwned(eTakeOwnership)
+{
+    LSOCK_CreateEx(port, backlog, &m_Socket, flags);
+}
+
+
+inline EIO_Status CListeningSocket::Listen(unsigned short port,
+                                           unsigned short backlog,
+                                           TSOCK_Flags    flags)
+{
+    return m_Socket
+        ? eIO_Unknown : LSOCK_CreateEx(port, backlog, &m_Socket, flags);
+}
+
 
 inline EIO_Status CListeningSocket::GetStatus(void) const
 {
