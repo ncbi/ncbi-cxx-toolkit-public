@@ -618,7 +618,6 @@ static void TEST__server(const char* sport)
     }
 
     CORE_LOGF(eLOG_Note, ("TEST__server(port = %hu)", nport));
-
     assert(status == eIO_Success  &&  nport);
 
     /* Accept connections from clients and run test sessions */
