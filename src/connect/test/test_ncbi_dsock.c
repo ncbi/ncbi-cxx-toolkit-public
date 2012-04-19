@@ -74,10 +74,11 @@ static int s_Usage(const char* prog)
 }
 
 
-static int s_Server(int x_port)
+static int s_Server(const char* sport)
 {
-    char           addr[32];
+    int            i;
     char*          buf;
+    char           addr[32];
     SOCK           server;
     EIO_Status     status;
     STimeout       timeout;
@@ -86,25 +87,32 @@ static int s_Server(int x_port)
     size_t         msglen, n, len;
     char           minibuf[255];
 
-    if (x_port <= 0) {
-        CORE_LOGF(eLOG_Error, ("[Server]  Port malformed (%d)", x_port));
-        return 1;
-    }
-
-    port = (unsigned short) x_port;
-    CORE_LOGF(eLOG_Note, ("[Server]  Opening DSOCK on port %hu", port));
-
     if ((status = DSOCK_Create(&server)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Server]  Cannot create DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
-
+    if (sscanf(sport, "%hu%n", &port, &i) < 1  ||  sport[i]) {
+        port = 0;
+        i = 0;
+    }
     if ((status = DSOCK_Bind(server, port)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Server]  Cannot bind DSOCK to port %hu: %s",
                                port, IO_StatusStr(status)));
         return 1;
     }
+    if (!port  &&  sport[i]) {
+        FILE* fp;
+        port = SOCK_GetLocalPort(server, eNH_HostByteOrder);
+        if (port  &&  (fp = fopen(sport, "w")) != 0) {
+            if (fprintf(fp, "%hu\n", port) < 1)
+                port = 0;
+            fclose(fp);
+        } else
+            port = 0;
+    }
+
+    CORE_LOGF(eLOG_Note, ("[Server]  DSOCK on port %hu", port));
 
     for (;;) {
         if ((status = DSOCK_WaitMsg(server, 0/*infinite*/)) != eIO_Success) {
@@ -117,7 +125,7 @@ static int s_Server(int x_port)
         timeout.usec = 0;
         if ((status = SOCK_SetTimeout(server, eIO_Read, &timeout))
             != eIO_Success) {
-            CORE_LOGF(eLOG_Error, ("[Server] Cannot set zero read timeout: %s",
+            CORE_LOGF(eLOG_Error,("[Server]  Cannot set zero read timeout: %s",
                                    IO_StatusStr(status)));
             break;
         }
@@ -174,7 +182,7 @@ static int s_Server(int x_port)
         }
 
         msglen -= 10;
-        for (len = 0; len < msglen; len += n) {
+        for (len = 0;  len < msglen;  len += n) {
             n = (size_t)(((double)rand()/(double)RAND_MAX)*(msglen-len) + 0.5);
             if ((status = SOCK_Write(server, buf + len, n, &n, eIO_WritePlain))
                 != eIO_Success) {
@@ -220,14 +228,14 @@ static int s_Client(int x_port, unsigned int max_try)
         return 1;
     }
  
-    port = (unsigned short) x_port;
-    CORE_LOGF(eLOG_Note, ("[Client]  Opening DSOCK on port %hu", port));
-
     if ((status = DSOCK_Create(&client)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Client]  Cannot create DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
+    port = (unsigned short) x_port;
+
+    CORE_LOGF(eLOG_Note, ("[Client]  DSOCK on port %hu", port));
 
     msglen = (size_t)(((double)rand()/(double)RAND_MAX) * s_MTU);
     if (msglen < sizeof(time_t) + 10)
@@ -339,6 +347,10 @@ static int s_Client(int x_port, unsigned int max_try)
 }
 
 
+#define _STR(x)     #x
+#define  STR(x) _STR(x)
+
+
 int main(int argc, const char* argv[])
 {
     SConnNetInfo* net_info;
@@ -373,7 +385,7 @@ int main(int argc, const char* argv[])
                         net_info->max_try);
     }
     if (strcasecmp(argv[1], "server") == 0)
-        return s_Server(argv[2] ? atoi(argv[2]) : DEFAULT_PORT);
+        return s_Server(argv[2] ? argv[2] : STR(DEFAULT_PORT));
 
     return s_Usage(argv[0]);
 }
