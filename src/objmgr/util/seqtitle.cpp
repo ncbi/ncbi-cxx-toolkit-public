@@ -121,6 +121,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     bool                      is_nr       = false;
     bool                      is_tsa      = false;
     bool                      wgs_master  = false;
+    bool                      tsa_master  = false;
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
     bool                      htgs_draft  = false;
@@ -148,6 +149,9 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                 if ((type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs
                     &&  NStr::EndsWith(acc, "000000")) {
                     wgs_master = true;
+                } else if ((type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa
+                    &&  NStr::EndsWith(acc, "000000")) {
+                    tsa_master = true;
                 } else if (type == CSeq_id::eAcc_refseq_chromosome) {
                     is_nc = true;
                 } else if (type == CSeq_id::eAcc_refseq_mrna) {
@@ -508,6 +512,16 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             suffix += ", whole genome shotgun sequence";
         }
         break;
+
+    case CMolInfo::eTech_tsa:
+        if (tsa_master) {
+            if (title.find("transcriptome shotgun assembly project") == NPOS){
+                suffix = ", transcriptome shotgun assembly project";
+            }            
+        } else if (title.find("transcriptome shotgun assembly project") == NPOS) {
+            suffix += ", transcriptome shotgun assembly project";
+        }
+        break;
     }
 
     if (flags & fGetTitle_Organism) {
@@ -552,6 +566,7 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
     bool                      is_nr       = false;
     bool                      is_tsa      = false;
     bool                      wgs_master  = false;
+    bool                      tsa_master  = false;
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
     bool                      htgs_draft  = false;
@@ -578,6 +593,9 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
                 if ((type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs
                     &&  NStr::EndsWith(acc, "000000")) {
                     wgs_master = true;
+                } else if ((type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa
+                    &&  NStr::EndsWith(acc, "000000")) {
+                    tsa_master = true;
                 } else if (type == CSeq_id::eAcc_refseq_chromosome) {
                     is_nc = true;
                 } else if (type == CSeq_id::eAcc_refseq_mrna) {
@@ -813,6 +831,16 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
                 }
             }
             suffix += ", whole genome shotgun sequence";
+        }
+        break;
+
+    case CMolInfo::eTech_tsa:
+        if (tsa_master) {
+            if (title.find("transcriptome shotgun assembly project") == NPOS){
+                suffix = ", transcriptome shotgun assembly project";
+            }            
+        } else if (title.find("transcriptome shotgun assembly project") == NPOS) {
+            suffix += ", transcriptome shotgun assembly project";
         }
         break;
     }

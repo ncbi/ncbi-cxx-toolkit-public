@@ -178,6 +178,7 @@ private:
     bool m_IsPDB;
     bool m_ThirdParty;
     bool m_WGSMaster;
+    bool m_TSAMaster;
 
     string m_GeneralStr;
     string m_PatentCountry;

@@ -134,6 +134,7 @@ protected:
     void x_RefSeqComments(CBioseqContext& ctx) const;
     void x_HistoryComments(CBioseqContext& ctx) const;
     void x_WGSComment(CBioseqContext& ctx) const;
+    void x_TSAComment(CBioseqContext& ctx) const;
     void x_GBBSourceComment(CBioseqContext& ctx) const;
     void x_BarcodeComment(CBioseqContext& ctx) const;
     void x_DescComments(CBioseqContext& ctx) const;

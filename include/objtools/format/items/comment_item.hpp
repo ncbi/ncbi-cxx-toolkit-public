@@ -81,7 +81,8 @@ public:
         eRefTrackStatus_Validated,
         eRefTrackStatus_Reviewed,
         eRefTrackStatus_Model,
-        eRefTrackStatus_WGS
+        eRefTrackStatus_WGS,
+        eRefTrackStatus_TSA
     };
 
     // typedefs
@@ -121,6 +122,7 @@ public:
     static string GetStringForRefTrack(const CUser_object& uo,
         const CBioseq_Handle& seq, ECommentFormat format = eFormat_Text);
     static string GetStringForWGS(CBioseqContext& ctx);
+    static string GetStringForTSA(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
     static string GetStringForModelEvidance(const SModelEvidance& me,

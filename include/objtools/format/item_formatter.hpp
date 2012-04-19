@@ -62,6 +62,7 @@ class CPrimaryItem;
 class CFeatHeaderItem;
 class CContigItem;
 class CWGSItem;
+class CTSAItem;
 class CGenomeItem;
 class CFlatTextOStream;
 class CDateItem;
@@ -105,6 +106,7 @@ public:
     virtual void FormatPrimary   (const CPrimaryItem&, IFlatTextOStream&)     {}
     virtual void FormatContig    (const CContigItem&, IFlatTextOStream&)      {}
     virtual void FormatWGS       (const CWGSItem&, IFlatTextOStream&)         {}
+    virtual void FormatTSA       (const CTSAItem&, IFlatTextOStream&)         {}
     virtual void FormatGenome    (const CGenomeItem&, IFlatTextOStream&)      {}
     virtual void FormatOrigin    (const COriginItem&, IFlatTextOStream&)      {}
     virtual void FormatGap       (const CGapItem&, IFlatTextOStream&)         {}

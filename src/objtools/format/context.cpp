@@ -101,6 +101,8 @@ CBioseqContext::CBioseqContext
     m_IsGI(false),
     m_IsWGS(false),
     m_IsWGSMaster(false),
+    m_IsTSA(false),
+    m_IsTSAMaster(false),
     m_IsHup(false),
     m_Gi(0),
     m_ShowGBBSource(false),
@@ -152,6 +154,8 @@ CBioseqContext::CBioseqContext
     m_IsGI(false),
     m_IsWGS(false),
     m_IsWGSMaster(false),
+    m_IsTSA(false),
+    m_IsTSAMaster(false),
     m_IsHup(false),
     m_Gi(0),
     m_ShowGBBSource(false),
@@ -565,6 +569,20 @@ void CBioseqContext::x_SetId(void)
             if ( m_IsWGSMaster ) {
                 m_WGSMasterAccn = acc;
                 m_WGSMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;
+            }
+        } 
+
+        // TSA
+        m_IsTSA = m_IsTSA  ||  (acc_div == CSeq_id::eAcc_tsa);
+        
+        if ( m_IsTSA  &&  !acc.empty() ) {
+            size_t len = acc.length();
+            m_IsTSAMaster = 
+                ((len == 12  ||  len == 15)  &&  NStr::EndsWith(acc, "000000"))  ||
+                (len == 13  &&  NStr::EndsWith(acc, "0000000"));
+            if ( m_IsTSAMaster ) {
+                m_TSAMasterAccn = acc;
+                m_TSAMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;
             }
         } 
 

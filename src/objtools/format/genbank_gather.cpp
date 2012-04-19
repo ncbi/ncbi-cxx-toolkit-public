@@ -55,6 +55,7 @@
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/items/primary_item.hpp>
 #include <objtools/format/items/wgs_item.hpp>
+#include <objtools/format/items/tsa_item.hpp>
 #include <objtools/format/items/genome_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/origin_item.hpp>
@@ -136,6 +137,11 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     }
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
         x_GatherWGS(ctx);
+    } else if( ctx.IsTSAMaster()  &&
+               ctx.GetTech() == CMolInfo::eTech_tsa &&
+               ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) 
+    {
+        x_GatherTSA(ctx);
     } else if ( ctx.DoContigStyle() ) {
         if ( cfg.ShowContigFeatures() ) {
             x_GatherFeatures();
@@ -226,6 +232,47 @@ void CGenbankGatherer::x_GatherWGS(CBioseqContext& ctx) const
     }    
 }
 
+void CGenbankGatherer::x_GatherTSA(CBioseqContext& ctx) const
+{
+    const string* first = 0;
+    const string* last  = 0;
+
+    for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
+        const CUser_object& uo = desc->GetUser();
+        CTSAItem::ETSAType tsa_type = CTSAItem::eTSA_not_set;
+
+        if ( !uo.GetType().IsStr() ) {
+            continue;
+        }
+        const string& type = uo.GetType().GetStr();
+        if ( NStr::CompareNocase(type, "TSA-mRNA-List") == 0 ) {
+            tsa_type = CTSAItem::eTSA_Projects;
+        }
+
+        if ( tsa_type == CTSAItem::eTSA_not_set ) {
+            continue;
+        }
+
+        ITERATE (CUser_object::TData, it, uo.GetData()) {
+            if ( !(*it)->GetLabel().IsStr() ) {
+                continue;
+            }
+            const string& label = (*it)->GetLabel().GetStr();
+            if ( NStr::CompareNocase(label, "TSA_accession_first") == 0  ||
+                 NStr::CompareNocase(label, "Accession_first") == 0 ) {
+                first = &((*it)->GetData().GetStr());
+            } else if ( NStr::CompareNocase(label, "TSA_accession_last") == 0 ||
+                        NStr::CompareNocase(label, "Accession_last") == 0 ) {
+                last = &((*it)->GetData().GetStr());
+            }
+        }
+
+        if ( (first != 0)  &&  (last != 0) ) {
+            CConstRef<IFlatItem> item( new CTSAItem(tsa_type, *first, *last, uo, ctx) );  
+            ItemOS() << item;
+        }
+    }    
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

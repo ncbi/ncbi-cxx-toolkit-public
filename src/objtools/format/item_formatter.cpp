@@ -222,6 +222,16 @@ string  CFlatItemFormatter::x_FormatAccession
         }
     }
 
+    if ( ctx.IsTSA() && ! acc.GetTSAAccession().empty() ) {
+        const bool is_html = ctx.Config().DoHTML();
+        if( is_html ) {
+            acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetTSAAccession() << 
+                "\">" << acc.GetTSAAccession() << "</a>";
+        } else {
+            acc_line << separator << acc.GetTSAAccession();
+        }
+    }
+
     if (!acc.GetExtraAccessions().empty()) {
         s_FormatSecondaryAccessions(acc_line, acc.GetExtraAccessions(), separator);
     }

@@ -173,6 +173,7 @@ void CDeflineGenerator::x_SetFlags (
     m_IsPDB = false;
     m_ThirdParty = false;
     m_WGSMaster = false;
+    m_TSAMaster = false;
 
     m_GeneralStr.clear();
     m_PatentCountry.clear();
@@ -250,6 +251,11 @@ void CDeflineGenerator::x_SetFlags (
                     {
                         if( (type & CSeq_id::fAcc_master) != 0 ) {
                             m_WGSMaster = true;
+                        }
+                    } else if ( (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(tsa) ) 
+                    {
+                        if( (type & CSeq_id::fAcc_master) != 0 ) {
+                            m_TSAMaster = true;
                         }
                     } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_chromosome)) {
                         m_IsNC = true;

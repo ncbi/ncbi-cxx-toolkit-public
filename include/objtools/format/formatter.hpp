@@ -60,6 +60,7 @@ class CSegmentItem;
 class CFeatureItemBase;
 class CContigItem;
 class CWGSItem;
+class CTSAItem;
 class CGenomeItem;
 class CEndSectionItem;
 class CFlatTextOStream;
@@ -104,6 +105,7 @@ public:
     virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os) = 0;
     virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) = 0;
     virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) = 0;
+    virtual void FormatTSA(const CTSAItem& wgs, IFlatTextOStream& text_os) = 0;
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) = 0;
     virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os) = 0;
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os) = 0;

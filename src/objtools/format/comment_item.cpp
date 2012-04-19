@@ -408,6 +408,8 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
             retval = eRefTrackStatus_Model;
         } else if (NStr::EqualNocase(status, "WGS")) {
             retval = eRefTrackStatus_WGS;
+        } else if (NStr::EqualNocase(status, "TSA")) {
+            retval = eRefTrackStatus_TSA;
         }
 
         if ( st != 0  &&  retval != eRefTrackStatus_Unknown ) {
@@ -554,6 +556,10 @@ string CCommentItem::GetStringForRefTrack
         oss << "This record is provided to represent a collection of "
             << "whole genome shotgun sequences.";
         break;
+    case eRefTrackStatus_TSA:
+        oss << "This record is provided to represent a collection of "
+            << "transcriptome shotgun assembly sequences.";
+        break;
     default:
         break;
     }
@@ -676,6 +682,80 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
     return CNcbiOstrstreamToString(text);
 }
 
+string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
+{
+    static const string default_str = "?";
+
+    if (!ctx.IsTSAMaster()) {
+        return kEmptyStr;
+    }
+
+    const string& tsaaccn = ctx.GetTSAMasterAccn();
+    const string& tsaname = ctx.GetTSAMasterName();
+
+    if (NStr::IsBlank(tsaaccn)  ||  NStr::IsBlank(tsaname)) {
+        return kEmptyStr;
+    }
+
+    const string* taxname = &default_str;
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source); it; ++it) {
+        const CBioSource& src = it->GetSource();
+        if (src.IsSetOrg()  &&  src.GetOrg().IsSetTaxname()  &&
+            !NStr::IsBlank(src.GetOrg().GetTaxname()) ) {
+            taxname = &(src.GetOrg().GetTaxname());
+        }
+    }
+
+    const string* first = &default_str, *last = &default_str;
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
+        const CUser_object& uo = it->GetUser();
+        if (uo.IsSetType()  &&  uo.GetType().IsStr()  &&
+            NStr::EqualNocase(uo.GetType().GetStr(), "TSA-mRNA-List")) {
+            if (uo.HasField("Accession_first")) {
+                const CUser_field& uf = uo.GetField("Accession_first");
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr()) ) {
+                    first = &(uf.GetData().GetStr());
+                }
+            } else if (uo.HasField("TSA_accession_first")) {
+                const CUser_field& uf = uo.GetField("TSA_accession_first");
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr()) ) {
+                    first = &(uf.GetData().GetStr());
+                }
+            }
+            if (uo.HasField("Accession_last")) {
+                const CUser_field& uf = uo.GetField("Accession_last");
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr())) {
+                    last = &(uf.GetData().GetStr());
+                }
+            } else if (uo.HasField("TSA_accession_last")) {
+                const CUser_field& uf = uo.GetField("TSA_accession_last");
+                if (uf.IsSetData()  &&  uf.GetData().IsStr()  &&
+                    !NStr::IsBlank(uf.GetData().GetStr())) {
+                    last = &(uf.GetData().GetStr());
+                }
+            }
+        }
+    }
+
+    string version = (tsaname.length() == 15) ? 
+        tsaname.substr(7, 2) : tsaname.substr(4, 2);
+
+    CNcbiOstrstream text;
+    text << "The " << *taxname 
+         << " transcriptome shortgun assembly (TSA) project has the project accession " 
+         << tsaaccn << ".  This version of the project (" << version 
+         << ") has the accession number " << tsaname << ",";
+    if (*first != *last) {
+        text << " and consists of sequences " << *first << "-" << *last << ".";
+    } else {
+        text << " and consists of sequence " << *first << ".";
+    }
+
+    return CNcbiOstrstreamToString(text);
+}
 
 string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx)
 {
@@ -766,7 +846,7 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
                  << "* are represented as runs of N. The order of the pieces~"
                  << "* is believed to be correct as given, however the sizes~"
                  << "* of the gaps between them are based on estimates that have~"
-                 << "* provided by the submittor.";
+                 << "* provided by the submitter.";
         }
         text << "~* This sequence will be replaced~"
              << "* by the finished sequence as soon as it is available and~"
@@ -1381,7 +1461,7 @@ void CHistComment::x_GatherInfo(CBioseqContext& ctx)
 
     switch ( m_Type ) {
     case eReplaced_by:
-        if( ctx.IsWGSMaster() ) {
+        if( ctx.IsWGSMaster() || ctx.IsTSAMaster() ) {
             x_SetComment(s_CreateHistCommentString(
                 "[WARNING] On",
                 "this project was updated. The new version is",

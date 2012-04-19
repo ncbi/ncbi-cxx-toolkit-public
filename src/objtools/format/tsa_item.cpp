@@ -1,6 +1,3 @@
-#ifndef OBJTOOLS_FORMAT___GENBANK_GATHER__HPP
-#define OBJTOOLS_FORMAT___GENBANK_GATHER__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -26,39 +23,53 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, NCBI
-*          Mati Shomrat
+* Author:  Michael Kornbluh (heavily based on code by Mati Shomrat), NCBI
 *
 * File Description:
+*   TSA item for flat-file
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <objtools/format/gather_items.hpp>
+#include <objects/general/User_object.hpp>
+
+#include <objtools/format/formatter.hpp>
+#include <objtools/format/text_ostream.hpp>
+#include <objtools/format/items/tsa_item.hpp>
+#include <objtools/format/context.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CBioseqContext;
-class CBioseq;
-
-
-class NCBI_FORMAT_EXPORT CGenbankGatherer : public CFlatGatherer
+CTSAItem::CTSAItem
+(TTSAType type,
+ const string& first,
+ const string& last,
+ const CUser_object& uo,
+ CBioseqContext& ctx) :
+    CFlatItem(&ctx),
+    m_Type(type), m_First(first), m_Last(last)
 {
-public:
-    CGenbankGatherer(void);
+    x_SetObject(uo);
+}
 
-    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
 
-private:
-    void x_GatherWGS(CBioseqContext& ctx) const;
-    void x_GatherTSA(CBioseqContext& ctx) const;
-};
+void CTSAItem::Format
+(IFormatter& formatter,
+ IFlatTextOStream& text_os) const
+
+{
+    formatter.FormatTSA(*this, text_os);
+}
+
+
+void CTSAItem::x_GatherInfo(CBioseqContext& ctx)
+{
+}
 
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-#endif  /* OBJTOOLS_FORMAT___GENBANK_GATHER__HPP */

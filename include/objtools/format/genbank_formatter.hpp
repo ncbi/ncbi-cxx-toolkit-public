@@ -58,6 +58,7 @@ class CSegmentItem;
 class IFlattishFeature;
 class CContigItem;
 class CWGSItem;
+class CTSAItem;
 class CGenomeItem;
 class CFlatTextOStream;
 class CDateItem;
@@ -94,6 +95,7 @@ public:
     virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os);
     virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
     virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
+    virtual void FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os);
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os);
     virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os);
     virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);

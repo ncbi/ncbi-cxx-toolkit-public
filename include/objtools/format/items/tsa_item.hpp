@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_FORMAT___GENBANK_GATHER__HPP
-#define OBJTOOLS_FORMAT___GENBANK_GATHER__HPP
+#ifndef OBJTOOLS_FORMAT_ITEMS___TSA_ITEM__HPP
+#define OBJTOOLS_FORMAT_ITEMS___TSA_ITEM__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -26,39 +26,61 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, NCBI
-*          Mati Shomrat
+* Author: Michael Kornbluh (heavily based on code by Mati Shomrat)
 *
 * File Description:
-*
+*   item representing TSA
+*   
 */
 #include <corelib/ncbistd.hpp>
 
-#include <objtools/format/gather_items.hpp>
+#include <objtools/format/items/item_base.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CUser_object;
 class CBioseqContext;
-class CBioseq;
+class IFormatter;
 
 
-class NCBI_FORMAT_EXPORT CGenbankGatherer : public CFlatGatherer
+///////////////////////////////////////////////////////////////////////////
+//
+// TSA
+
+class NCBI_FORMAT_EXPORT CTSAItem : public CFlatItem
 {
 public:
-    CGenbankGatherer(void);
+    enum ETSAType {
+        eTSA_not_set,
+        eTSA_Projects
+        /*eTSA_ScaffoldList,
+        eTSA_ContigList*/
+    };
+    typedef ETSAType    TTSAType;
 
-    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
+    CTSAItem(TTSAType type, const string& first, const string& last,
+        const CUser_object& uo, CBioseqContext& ctx);
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    
+    TTSAType      GetType   (void) const { return m_Type;  }
+    const string& GetFirstID(void) const { return m_First; }
+    const string& GetLastID (void) const { return m_Last;  }
 
 private:
-    void x_GatherWGS(CBioseqContext& ctx) const;
-    void x_GatherTSA(CBioseqContext& ctx) const;
+
+    void x_GatherInfo(CBioseqContext& ctx);
+
+    // data
+    TTSAType    m_Type;
+    string      m_First;
+    string      m_Last;
 };
 
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  /* OBJTOOLS_FORMAT___GENBANK_GATHER__HPP */
+#endif  /* OBJTOOLS_FORMAT_ITEMS___TSA_ITEM__HPP */

@@ -65,6 +65,7 @@ public:
     
     const string& GetAccession(void) const;
     const string& GetWGSAccession(void) const;
+    const string& GetTSAAccession(void) const;
     const TExtra_accessions& GetExtraAccessions(void) const;
     bool  IsSetRegion(void) const;
     const CSeq_loc& GetRegion(void) const;
@@ -74,6 +75,7 @@ private:
     // data
     string              m_Accession;
     string              m_WGSAccession;
+    string              m_TSAAccession;
     TExtra_accessions   m_ExtraAccessions;
     CConstRef<CSeq_loc> m_Region;
     bool                m_IsSetRegion;
@@ -97,6 +99,11 @@ const string& CAccessionItem::GetWGSAccession(void) const
     return m_WGSAccession;
 }
 
+inline
+const string& CAccessionItem::GetTSAAccession(void) const
+{
+    return m_TSAAccession;
+}
 
 inline
 const CAccessionItem::TExtra_accessions& CAccessionItem::GetExtraAccessions(void) const

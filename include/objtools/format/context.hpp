@@ -143,6 +143,12 @@ public:
     const string& GetWGSMasterAccn(void) const { return m_WGSMasterAccn; }
     const string& GetWGSMasterName(void) const { return m_WGSMasterName; }
 
+    // Transcriptome Shotgun Assembly 
+    bool IsTSA      (void) const { return m_IsTSA;       }
+    bool IsTSAMaster(void) const { return m_IsTSAMaster; }
+    const string& GetTSAMasterAccn(void) const { return m_TSAMasterAccn; }
+    const string& GetTSAMasterName(void) const { return m_TSAMasterName; }
+
     TReferences& SetReferences(void) { return m_References; }
     const TReferences& GetReferences(void) const { return m_References; }
 
@@ -254,6 +260,8 @@ private:
     string                m_Accession;
     string                m_WGSMasterAccn;
     string                m_WGSMasterName;
+    string                m_TSAMasterAccn;
+    string                m_TSAMasterName;
     string                m_FinishingStatus;
     string                m_Taxname;
 
@@ -288,6 +296,8 @@ private:
     bool m_IsGI;
     bool m_IsWGS;
     bool m_IsWGSMaster;
+    bool m_IsTSA;
+    bool m_IsTSAMaster;
     bool m_IsHup;
     int  m_Gi;
     bool m_ShowGBBSource;

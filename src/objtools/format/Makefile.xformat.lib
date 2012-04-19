@@ -9,7 +9,7 @@ LIB = xformat
 SRC = accession_item basecount_item comment_item contig_item date_item \
       dbsource_item defline_item feature_item genome_item ctrl_items \
       keywords_item locus_item primary_item reference_item segment_item \
-      sequence_item source_item version_item wgs_item flat_seqloc qualifiers \
+      sequence_item source_item version_item wgs_item tsa_item flat_seqloc qualifiers \
       context utils gather_items embl_gather genbank_gather \
       flat_file_generator item_formatter embl_formatter genbank_formatter \
       format_item_ostream item_ostream ostream_text_ostream \

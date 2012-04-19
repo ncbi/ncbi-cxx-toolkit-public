@@ -703,7 +703,7 @@ static bool s_NsAreGaps(const CBioseq_Handle& seq, CBioseqContext& ctx)
         return false;
     }
 
-    if (ctx.IsDelta()  &&  ctx.IsWGS()  &&  seq.GetInst_Ext().IsDelta()) {
+    if (ctx.IsDelta()  &&  ( ctx.IsWGS() || ctx.IsTSA() ) &&  seq.GetInst_Ext().IsDelta()) {
         ITERATE (CDelta_ext::Tdata, iter, seq.GetInst_Ext().GetDelta().Get()) {
             const CDelta_seq& dseg = **iter;
             if (dseg.IsLiteral()) {
@@ -736,6 +736,7 @@ void CFlatGatherer::x_GatherComments(void) const
 
     x_HistoryComments(ctx);
     x_WGSComment(ctx);
+    x_TSAComment(ctx);
     if ( ctx.ShowGBBSource() ) {
         x_GBBSourceComment(ctx);
     }
@@ -890,7 +891,8 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
                 if ( ctx.IsRSPredictedProtein()  ||
                      ctx.IsRSPredictedMRna()     ||
                      ctx.IsRSPredictedNCRna()    ||
-                     ctx.IsRSWGSProt() ) {
+                     ctx.IsRSWGSProt() ) 
+                {
                     SModelEvidance me;
                     if ( GetModelEvidance(ctx.GetHandle(), me) ) {
                         string str = CCommentItem::GetStringForModelEvidance(me, format);
@@ -1039,6 +1041,21 @@ void CFlatGatherer::x_WGSComment(CBioseqContext& ctx) const
     }
 }
 
+void CFlatGatherer::x_TSAComment(CBioseqContext& ctx) const
+{
+    if ( !ctx.IsTSAMaster()  ||  ctx.GetTSAMasterName().empty() ) {
+        return;
+    }
+
+    if ( ctx.GetTech() == CMolInfo::eTech_tsa &&
+         ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) 
+    {
+        string str = CCommentItem::GetStringForTSA(ctx);
+        if ( !str.empty() ) {
+            x_AddComment(new CCommentItem(str, ctx));
+        }
+    }
+}
 
 void CFlatGatherer::x_GBBSourceComment(CBioseqContext& ctx) const
 {

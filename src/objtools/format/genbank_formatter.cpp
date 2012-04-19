@@ -58,6 +58,7 @@
 #include <objtools/format/items/basecount_item.hpp>
 #include <objtools/format/items/sequence_item.hpp>
 #include <objtools/format/items/wgs_item.hpp>
+#include <objtools/format/items/tsa_item.hpp>
 #include <objtools/format/items/primary_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/genome_item.hpp>
@@ -232,7 +233,7 @@ void CGenbankFormatter::FormatLocus
 
     string units = "bp";
     if ( !ctx.IsProt() ) {
-        if ( ctx.IsWGSMaster()  && ! ctx.IsRSWGSNuc() ) {
+        if ( ( ctx.IsWGSMaster() || ctx.IsTSAMaster() )  && ! ctx.IsRSWGSNuc() ) {
             units = "rc";
         }
     } else {
@@ -949,10 +950,11 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     {{
         // we split the if-statement into little local vars for ease of reading
         const bool is_wgs_master = ( ctx.IsWGSMaster() && ctx.GetTech() == CMolInfo::eTech_wgs );
+        const bool is_tsa_master = ( ctx.IsTSAMaster() && ctx.GetTech() == CMolInfo::eTech_tsa && ctx.GetBiomol() == CMolInfo::eBiomol_mRNA );
         const bool do_contig_style = ctx.DoContigStyle();
         const bool show_contig = ( (ctx.IsSegmented()  &&  ctx.HasParts())  ||
                                    (ctx.IsDelta()  &&  ! ctx.IsDeltaLitOnly()) );
-        if( ! is_wgs_master && (do_contig_style || ( ctx.Config().ShowContigAndSeq() && show_contig )) ) {
+        if( ! is_wgs_master && ! is_tsa_master && (do_contig_style || ( ctx.Config().ShowContigAndSeq() && show_contig )) ) {
             has_contig = true;
         }
     }}
@@ -1763,6 +1765,45 @@ void CGenbankFormatter::FormatWGS
     }
     text_os.AddParagraph(l, wgs.GetObject());
 }
+
+///////////////////////////////////////////////////////////////////////////
+//
+// TSA
+
+void CGenbankFormatter::FormatTSA
+(const CTSAItem& tsa,
+ IFlatTextOStream& text_os)
+{
+    string tag;
+
+    switch ( tsa.GetType() ) {
+    case CTSAItem::eTSA_Projects:
+        tag = "TSA";
+        break;
+
+    default:
+        return;
+    }
+
+    const bool bHtml = tsa.GetContext()->Config().DoHTML();
+
+    list<string> l;
+    string first_id = tsa.GetFirstID();
+    if( bHtml ) {
+        TryToSanitizeHtml( first_id );
+    }
+    if ( tsa.GetFirstID() == tsa.GetLastID() ) {
+        Wrap(l, tag, first_id);
+    } else {
+        string last_id = tsa.GetLastID();
+        if( bHtml ) {
+            TryToSanitizeHtml( last_id );
+        }
+        Wrap(l, tag, first_id + "-" + last_id);
+    }
+    text_os.AddParagraph(l, tsa.GetObject());
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////
