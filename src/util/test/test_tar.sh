@@ -34,7 +34,7 @@ case ${CHECK_SIGNATURE:-Unknown} in
 
 esac
 
-huge_tar="/am/ftp-geo/DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
+huge_tar="/panfs/traces01/ftp-geo-pub/public/DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
 if [ -f "$huge_tar" ]; then
   if $okay ; then
     echo
