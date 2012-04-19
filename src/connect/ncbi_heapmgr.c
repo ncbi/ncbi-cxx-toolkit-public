@@ -164,8 +164,7 @@ struct SHEAP_tag {
 };
 
 
-static int/*bool*/ s_HEAP_fast   = 1/*true*/;
-static int/*bool*/ s_HEAP_newalk = 0/*false*/;
+static int/*bool*/ s_HEAP_fast = 1/*true*/;
 
 
 #define _HEAP_ALIGN_EX(a, b)  ((((unsigned long)(a) + ((b) - 1)) / (b)) * (b))
@@ -730,84 +729,134 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     SHEAP_HeapBlock* b;
     char _id[32];
 
-    if (!p  ||  (p >= heap->base  &&  p < heap->base + heap->size)) {
-        b = p ? HEAP_NEXT(p) : heap->base;
-        if (b < heap->base + heap->size  &&  b->head.size > sizeof(SHEAP_Block)
-            &&  HEAP_NEXT(b) <= heap->base + heap->size) {
-            if ((HEAP_ISFREE(b) || HEAP_ISUSED(b))  &&
-                (!s_HEAP_newalk || HEAP_ALIGN(b->head.size) == b->head.size)) {
-                if (s_HEAP_newalk) {
-                    if (HEAP_ISUSED(b)  &&  heap->chunk/*RW heap*/  &&
-                        heap->base + heap->free == b) {
-                        CORE_LOGF_X(20, eLOG_Warning,
-                                    ("Heap Walk%s: Used block @ free ptr %u",
-                                     s_HEAP_Id(_id, heap), heap->free));
-                    } else if (HEAP_ISFREE(b)
-                               &&  (b->prevfree >= heap->size  ||
-                                    b->nextfree >= heap->size  ||
-                                    !HEAP_ISFREE(heap->base + b->prevfree)  ||
-                                    !HEAP_ISFREE(heap->base + b->nextfree)  ||
-                                    (b->prevfree != b->nextfree
-                                     &&  (heap->base + b->prevfree == b  ||
-                                          heap->base + b->nextfree == b)))) {
-                        CORE_LOGF_X(21, eLOG_Warning,
-                                    ("Heap Walk%s: Free list corrupt @%u/%u"
-                                     " (%u, <-%u, %u->)", s_HEAP_Id(_id, heap),
-                                     HEAP_INDEX(b, heap->base), heap->size,
-                                     b->head.size, b->prevfree, b->nextfree));
-                    }
-                }
-                /* Block 'b' seems okay for walking onto, but... */
-                if (!p)
-                    return &b->head;
-                if (HEAP_ISLAST(p)) {
-                    CORE_LOGF_X(22, eLOG_Error,
-                                ("Heap Walk%s: Misplaced last block @%u",
-                                 s_HEAP_Id(_id,heap),
-                                 HEAP_INDEX(p, heap->base)));
-                } else if (s_HEAP_newalk  &&  heap->chunk/*RW heap*/  &&
-                           HEAP_ISLAST(b)  &&  heap->base + heap->last != b) {
-                    CORE_LOGF_X(23, eLOG_Error,
-                                ("Heap Walk%s: Last block @%u "
-                                 "not @ last ptr %u",
-                                 s_HEAP_Id(_id, heap),
-                                 HEAP_INDEX(b, heap->base), heap->last));
-                } else if (HEAP_ISFREE(p)  &&  HEAP_ISFREE(b)) {
-                    const SHEAP_HeapBlock* c = heap->base;
-                    while (c < p) {
-                        if (HEAP_ISFREE(c)  &&  HEAP_NEXT(c) >= HEAP_NEXT(b))
-                            break;
-                        c = HEAP_NEXT(c);
-                    }
-                    if (c < p)
-                        return &b->head;
-                    CORE_LOGF_X(24, eLOG_Error,
-                                ("Heap Walk%s: Adjacent free blocks "
-                                 "@%u and @%u",
-                                 s_HEAP_Id(_id, heap),
-                                 HEAP_INDEX(p, heap->base),
-                                 HEAP_INDEX(b, heap->base)));
-                } else
-                    return &b->head;
-            } else {
-                CORE_LOGF_X(25, eLOG_Error,
-                            ("Heap Walk%s: Heap corrupt @%u/%u (0x%08X, %u)",
-                             s_HEAP_Id(_id, heap), HEAP_INDEX(b, heap->base),
-                             heap->size, b->head.flag, b->head.size));
-            }
-        } else if (b > heap->base + heap->size) {
+    if (p  &&  (p < heap->base  ||  p >= heap->base + heap->size
+                ||  p->head.size <= sizeof(SHEAP_Block)
+                ||  HEAP_ALIGN(p->head.size) != p->head.size
+                ||  (!HEAP_ISFREE(p)  &&  !HEAP_ISUSED(p)))) {
+        CORE_LOGF_X(28, eLOG_Error,
+                    ("Heap Walk%s: Alien pointer",
+                     s_HEAP_Id(_id, heap)));
+        return 0;
+    }
+    b = p ? HEAP_NEXT(p) : heap->base;
+
+    if (b >= heap->base + heap->size
+        ||  b->head.size <= sizeof(SHEAP_Block)
+        ||  HEAP_ALIGN(b->head.size) != b->head.size
+        ||  (!HEAP_ISFREE(b)  &&  !HEAP_ISUSED(b))
+        ||  HEAP_NEXT(b) > heap->base + heap->size) {
+        if (b != heap->base + heap->size  ||  (b  &&  !p)) {
             CORE_LOGF_X(26, eLOG_Error,
-                        ("Heap Walk%s: Heap corrupt", s_HEAP_Id(_id, heap)));
+                        ("Heap Walk%s: Heap corrupt",
+                         s_HEAP_Id(_id, heap)));
         } else if (b  &&  !HEAP_ISLAST(p)) {
             CORE_LOGF_X(27, eLOG_Error,
                         ("Heap Walk%s: Last block lost",
                          s_HEAP_Id(_id, heap)));
         }
-    } else {
-        CORE_LOGF_X(28, eLOG_Error,
-                    ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
+        return 0;
     }
-    return 0;
+
+    if (HEAP_ISFREE(b)) {
+        const SHEAP_HeapBlock* c = b;
+        if (c->prevfree >= heap->size  ||
+            c->nextfree >= heap->size  ||
+            !HEAP_ISFREE(heap->base + c->prevfree)  ||
+            !HEAP_ISFREE(heap->base + c->nextfree)) {
+            c = 0;
+        } else if (c->prevfree == c->nextfree  &&
+                   heap->base  +  c->nextfree == c) {
+            if (heap->chunk/*RW heap*/  &&  heap->base + heap->free != c)
+                c = 0;
+        } else {
+            int/*bool*/ origin = !heap->chunk/*RW: false, RO: true*/;
+            size_t n;
+            for (n = 0;  n < heap->size;  n++) {
+                const SHEAP_HeapBlock* s = c;
+                c = heap->base + c->nextfree;
+                if (!HEAP_ISFREE(c)  ||  c == s
+                    ||  c->nextfree >= heap->size
+                    ||  c->prevfree != s->nextfree) {
+                    c = 0;
+                    break;
+                }
+                if (c == heap->base + heap->free)
+                    origin = 1/*true*/;
+                if (c == b) {
+                    if (!origin)
+                        c = s/*NB: != c => != b*/;
+                    break;
+                }
+            }
+        }
+        if (!c  ||  c != b) {
+            CORE_LOGF_X(21, eLOG_Error,
+                        ("Heap Walk%s: Free list %s @%u/%u"
+                         " (%u, <-%u, %u->)",
+                         s_HEAP_Id(_id, heap),
+                         c ? "broken" : "corrupt",
+                         HEAP_INDEX(b, heap->base), heap->size,
+                         b->head.size, b->prevfree, b->nextfree));
+            return 0;
+        }
+    }
+    if (HEAP_ISUSED(b)  &&  heap->chunk/*RW heap*/) {
+        size_t n;
+        /* check that a used block is not within the free chain but
+           ignoring any inconsistencies in the free chain here */
+        const SHEAP_HeapBlock* c = heap->base + heap->free;
+        for (n = 0;  c < heap->base + heap->size  &&  n < heap->size;  ++n) {
+            if (!HEAP_ISFREE(c))
+                break;
+            if (c <= b  &&  b < HEAP_NEXT(c)) {
+                CORE_LOGF_X(20, eLOG_Error,
+                            ("Heap Walk%s: Used block @%u within"
+                             " the free one @%u",
+                             s_HEAP_Id(_id, heap),
+                             HEAP_INDEX(b, heap->base),
+                             HEAP_INDEX(c, heap->base)));
+                return 0;
+            }
+            if (c == heap->base + c->nextfree)
+                break;
+            c = heap->base + c->nextfree;
+            if (c == heap->base + heap->free)
+                break;
+        }
+    }
+
+    /* Block 'b' seems okay for walking onto, but... */
+    if (p) {
+        if (HEAP_ISLAST(p)) {
+            CORE_LOGF_X(22, eLOG_Error,
+                        ("Heap Walk%s: Misplaced last block @%u",
+                         s_HEAP_Id(_id,heap),
+                         HEAP_INDEX(p, heap->base)));
+        } else if (heap->chunk/*RW heap*/
+                   &&  HEAP_ISLAST(b)  &&  heap->base + heap->last != b) {
+            CORE_LOGF_X(23, eLOG_Error,
+                        ("Heap Walk%s: Last block @%u "
+                         "not @ last ptr %u",
+                         s_HEAP_Id(_id, heap),
+                         HEAP_INDEX(b, heap->base), heap->last));
+        } else if (HEAP_ISFREE(p)  &&  HEAP_ISFREE(b)) {
+            const SHEAP_HeapBlock* c = heap->base;
+            while (c < p) {
+                if (HEAP_ISFREE(c)  &&  HEAP_NEXT(c) >= HEAP_NEXT(b))
+                    break;
+                c = HEAP_NEXT(c);
+            }
+            if (c >= p) {
+                CORE_LOGF_X(24, eLOG_Error,
+                            ("Heap Walk%s: Adjacent free blocks "
+                             "@%u and @%u",
+                             s_HEAP_Id(_id, heap),
+                             HEAP_INDEX(p, heap->base),
+                             HEAP_INDEX(b, heap->base)));
+            }
+        }
+    }
+    return &b->head;
 }
 
 
@@ -1006,7 +1055,8 @@ int HEAP_Serial(const HEAP heap)
 }
 
 
-void HEAP_Options(ESwitch fast, ESwitch newalk)
+/*ARGSUSED*/
+void HEAP_Options(ESwitch fast, ESwitch ignored)
 {
     switch (fast) {
     case eOff:
@@ -1014,15 +1064,6 @@ void HEAP_Options(ESwitch fast, ESwitch newalk)
     case eOn:
         s_HEAP_fast = 1/*true*/;
         break;
-    default:
-        break;
-    }
-    switch (newalk) {
-    case eOff:
-        s_HEAP_newalk = 0/*false*/;
-        break;
-    case eOn:
-        s_HEAP_newalk = 1/*true*/;
     default:
         break;
     }

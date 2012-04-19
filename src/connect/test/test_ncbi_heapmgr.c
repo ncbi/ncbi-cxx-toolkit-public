@@ -91,6 +91,8 @@ static void s_Walk(HEAP heap, const char* which)
     }
     CORE_LOGF(eLOG_Note,
               ("%d block%s total; total size %u", i, &"s"[i == 1], total));
+    if (HEAP_Size(heap) != total)
+        CORE_LOG(eLOG_Fatal, "Heap size mismatch");
 }
 
 
@@ -109,7 +111,7 @@ int main(int argc, const char* argv[])
     else
         g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     CORE_LOGF(eLOG_Note, ("Using seed %d", g_NCBI_ConnectRandomSeed));
-    HEAP_Options(eOff/*slow*/, eOn/*newalk*/);
+    HEAP_Options(eOff/*slow*/, eDefault);
     srand(g_NCBI_ConnectRandomSeed);
     for (j = 1;  j <= 3;  j++) {
         CORE_LOGF(eLOG_Note, ("Creating heap %d", j));
@@ -225,7 +227,7 @@ int main(int argc, const char* argv[])
 
                 CORE_LOG(eLOG_Note, "Trimming heap");
                 newheap = HEAP_Trim(heap);
-                CORE_LOGF(eLOG_Note,
+                CORE_LOGF(newheap ? eLOG_Note : eLOG_Error,
                           ("Heap %strimmed: %u -> %u", newheap ? "" : "NOT ",
                            size, HEAP_Size(newheap)));
                 if (newheap) {
