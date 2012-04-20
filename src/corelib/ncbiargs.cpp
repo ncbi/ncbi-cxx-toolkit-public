@@ -2287,13 +2287,6 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     // Argument name
     string name;
 
-    if (*n_plain == kMax_UInt) {
-        size_t  argssofar = args.GetAll().size();
-        if (m_OpeningArgs.size() > argssofar) {
-            return x_CreateArg(arg1, m_OpeningArgs[argssofar], have_arg2, arg2, *n_plain, args);
-        }
-    }
-
     // Check if to start processing the args as positional
     if (*n_plain == kMax_UInt) {
         // Check for the "--" delimiter
@@ -2301,9 +2294,16 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
             *n_plain = 0;  // pos.args started
             return false;
         }
+        size_t  argssofar = args.GetAll().size();
         // Check if argument has not a key/flag syntax
         if ((arg1.length() > 1)  &&  arg1[0] == '-') {
             name = arg1.substr(1);
+            TArgsCI it = x_Find(name);
+            if (it == m_Args.end()) {
+                if (m_OpeningArgs.size() > argssofar) {
+                    return x_CreateArg(arg1, m_OpeningArgs[argssofar], have_arg2, arg2, *n_plain, args);
+                }
+            }
             // Check for '=' in the arg1
             size_t eq = name.find('=');
             if (eq != NPOS) {
@@ -2316,6 +2316,9 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
                 }
             }
         } else {
+            if (m_OpeningArgs.size() > argssofar) {
+                return x_CreateArg(arg1, m_OpeningArgs[argssofar], have_arg2, arg2, *n_plain, args);
+            }
             *n_plain = 0;  // pos.args started
         }
     }
@@ -2548,6 +2551,13 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
             }
             exclude.insert(dep->second.m_Arg);
             break;
+        }
+    }
+
+    // Check that all opening args are provided
+    ITERATE (TPosArgs, it, m_OpeningArgs) {
+        if (!args.Exist(*it)) {
+            NCBI_THROW(CArgException,eNoArg, "Opening argument not provided: " + *it);
         }
     }
 
@@ -2854,6 +2864,15 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
     args.push_front(0);
     TListI it_pos = args.begin();
 
+    // Opening
+    for (TPosArgs::const_iterator name = m_OpeningArgs.begin();
+         name != m_OpeningArgs.end();  ++name) {
+        TArgsCI it = x_Find(*name);
+        _ASSERT(it != m_Args.end());
+        const CArgDesc* arg = it->get();
+        args.insert(it_pos, it->get());
+    }
+
     // Keys and Flags
     if ( m_UsageSortArgs ) {
         // Alphabetically ordered,
@@ -2946,7 +2965,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
         for (it = args.begin();  it != args.end();  ++it) {
             if ( s_IsOptional(**it) || s_IsFlag(**it) ) {
                 syn.push_back('[' + (*it)->GetUsageSynopsis() + ']');
-            } else if ( s_IsPositional(**it) ) {
+            } else if ( s_IsPositional(**it) || s_IsOpening(**it) ) {
                 syn.push_back('<' + (*it)->GetUsageSynopsis() + '>');
             } else {
                 syn.push_back((*it)->GetUsageSynopsis());
