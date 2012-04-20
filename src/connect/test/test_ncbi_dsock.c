@@ -78,14 +78,14 @@ static int s_Server(const char* sport)
 {
     int            i;
     char*          buf;
+    unsigned int   host;
+    unsigned short port;
     char           addr[32];
     SOCK           server;
     EIO_Status     status;
     STimeout       timeout;
-    unsigned int   peeraddr;
-    unsigned short peerport, port;
-    size_t         msglen, n, len;
     char           minibuf[255];
+    size_t         msglen, n, len;
 
     if ((status = DSOCK_Create(&server)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Server]  Cannot create DSOCK: %s",
@@ -105,14 +105,15 @@ static int s_Server(const char* sport)
         FILE* fp;
         port = SOCK_GetLocalPort(server, eNH_HostByteOrder);
         if (port  &&  (fp = fopen(sport, "w")) != 0) {
-            if (fprintf(fp, "%hu\n", port) < 1)
-                port = 0;
+            if (fprintf(fp, "%hu\n", port) < 1  ||  fflush(fp) != 0)
+                status = eIO_Unknown;
             fclose(fp);
         } else
-            port = 0;
+            status = eIO_Unknown;
     }
 
     CORE_LOGF(eLOG_Note, ("[Server]  DSOCK on port %hu", port));
+    assert(status == eIO_Success);
 
     for (;;) {
         if ((status = DSOCK_WaitMsg(server, 0/*infinite*/)) != eIO_Success) {
@@ -132,7 +133,7 @@ static int s_Server(const char* sport)
 
         len = (size_t)(((double) rand()/(double) RAND_MAX)*sizeof(minibuf));
         if ((status = DSOCK_RecvMsg(server, minibuf, len, 0, &msglen,
-                                    &peeraddr, &peerport)) != eIO_Success) {
+                                    &host, &port)) != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Server]  Cannot read from DSOCK: %s",
                                    IO_StatusStr(status)));
             continue;
@@ -140,12 +141,12 @@ static int s_Server(const char* sport)
         if (len > msglen)
             len = msglen;
 
-        if (SOCK_ntoa(peeraddr, addr, sizeof(addr)) != 0)
+        if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
             strcpy(addr, "<unknown>");
 
         CORE_LOGF(eLOG_Note, ("[Server]  Message received from %s:%hu, "
                               "%lu bytes",
-                              addr, peerport, (unsigned long) msglen));
+                              addr, port, (unsigned long) msglen));
 
         if (!(buf = (char*) malloc(msglen < 10 ? 10 : msglen))) {
             CORE_LOG_ERRNO(eLOG_Error, errno,
@@ -195,7 +196,7 @@ static int s_Server(const char* sport)
 
         free(buf);
 
-        if ((status = DSOCK_SendMsg(server, addr, peerport, "--Reply--", 10))
+        if ((status = DSOCK_SendMsg(server, addr, port, "--Reply--", 10))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Server]  Cannot send to DSOCK: %s",
                                    IO_StatusStr(status)));

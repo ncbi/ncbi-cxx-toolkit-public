@@ -57,20 +57,20 @@ static void s_DoServer(const char* sport, int n_cycle)
         i = 0;
     }
     status = LSOCK_Create(nport, 1, &lsock);
-    if (!nport  &&  sport[i]) {
+    if (status == eIO_Success  &&  !nport  &&  sport[i]) {
         FILE* fp;
         nport = LSOCK_GetPort(lsock, eNH_HostByteOrder);
         if (nport  &&  (fp = fopen(sport, "w")) != 0) {
-            if (fprintf(fp, "%hu\n", nport) < 1)
-                nport = 0;
+            if (fprintf(fp, "%hu\n", nport) < 1  ||  fflush(fp) != 0)
+                status = eIO_Unknown;
             fclose(fp);
         } else
-            nport = 0;
+            status = eIO_Unknown;
     }
 
     fprintf(s_LogFile, "DoServer(port = %hu, n_cycle = %u)\n", nport, n_cycle);
     fflush(s_LogFile);
-    assert(status == eIO_Success  &&  nport);
+    assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */
     while ( n_cycle-- ) {

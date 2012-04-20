@@ -38,9 +38,8 @@
 #include <stdlib.h>
 #include <common/test_assert.h>  // This header must go last
 
-
-#define _STR(s)      #s
-#define STRINGIFY(s) _STR(s)
+#define _STR(s)     #s
+#define  STR(s) _STR(s)
 
 #define DEFAULT_PORT    5001
 #define DEFAULT_TIMEOUT 30
@@ -70,13 +69,13 @@ protected:
     void Server(void);
 
 private:
-    unsigned short m_Port;
-    unsigned int   m_Delay;
+    string       m_Port;
+    unsigned int m_Delay;
 };
 
 
 CTest::CTest()
-    : m_Port(DEFAULT_PORT), m_Delay(0)
+    : m_Delay(0)
 {
     // Set error posting and tracing on maximum
     //SetDiagTrace(eDT_Enable);
@@ -113,11 +112,8 @@ void CTest::Init(void)
     // Describe expected command-line arguments
     arg_desc->AddDefaultKey("port", "port_no",
                             "Port to listen on / connect to",
-                            CArgDescriptions::eInteger,
-                            STRINGIFY(DEFAULT_PORT));
-    arg_desc->SetConstraint("port",
-                            new CArgAllow_Integers(DEFAULT_PORT,
-                                                   (1 << 16) - 1));
+                            CArgDescriptions::eString,
+                            STR(DEFAULT_PORT));
     arg_desc->AddOptionalKey("delay", "delay_time_ms",
                              "Delay (ms) before flipping the trigger",
                              CArgDescriptions::eInteger);
@@ -137,7 +133,7 @@ int CTest::Run(void)
 {
     CArgs args = GetArgs();
 
-    m_Port = (unsigned short) args["port"].AsInteger();
+    m_Port = args["port"].AsString();
 
     if (args["delay"].HasValue()) {
         m_Delay = args["delay"].AsInteger();
@@ -195,7 +191,7 @@ void CTest::Client()
 {
     ERR_POST(Info << "Client started...");
 
-    CSocket socket("localhost", m_Port);
+    CSocket socket("localhost", NStr::StringToNumeric<unsigned short>(m_Port));
 
     size_t n_read = 0;
     // the client is greedy but slow
@@ -219,15 +215,29 @@ void CTest::Client()
 
 void CTest::Server(void)
 {
-    // Create listening socket
-    CListeningSocket lsock;
     CDatagramSocket  dsock; /*dummy*/
 
-    EIO_Status status = lsock.Listen(m_Port);
-    if (status == eIO_Closed)
-        ERR_POST("Cannot start server on port " << m_Port << " (port busy)");
-    else
-        ERR_POST(Info << "Server started on port " << m_Port << "...");
+    // Create listening socket
+    CListeningSocket lsock;
+    unsigned short port =
+        NStr::StringToNumeric<unsigned short>(m_Port,NStr::fConvErr_NoThrow);
+    EIO_Status status = lsock.Listen(port);
+    if (status == eIO_Success  &&  !port) {
+        port = lsock.GetPort(eNH_HostByteOrder);
+        if (port) {
+            ofstream of(m_Port.c_str());
+            if (!(of << port << NcbiEndl))
+                status = eIO_Unknown;
+        } else
+            status = eIO_Unknown;
+    }
+    if (status != eIO_Success) {
+        ERR_POST("Cannot start server on port " << port
+                 << " ("  << (status == eIO_Closed
+                              ? "  port busy "
+                              : IO_StatusStr(status)) << ')');
+    } else
+        ERR_POST(Info << "Server started on port " << port << "...");
     _ASSERT(status == eIO_Success);
 
     // Spawn test thread to activate the trigger

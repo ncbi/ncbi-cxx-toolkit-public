@@ -606,19 +606,19 @@ static void TEST__server(const char* sport)
         i = 0;
     }
     status = LSOCK_CreateEx(nport, N_RECONNECT * 10, &lsock, fSOCK_LogOn);
-    if (!nport  &&  sport[i]) {
+    if (status == eIO_Success  &&  !nport  &&  sport[i]) {
         FILE* fp;
         nport = LSOCK_GetPort(lsock, eNH_HostByteOrder);
         if (nport  &&  (fp = fopen(sport, "w")) != 0) {
-            if (fprintf(fp, "%hu\n", nport) < 1)
-                nport = 0;
+            if (fprintf(fp, "%hu\n", nport) < 1  ||  fflush(fp) != 0)
+                status = eIO_Unknown;
             fclose(fp);
         } else
-            nport = 0;
+            status = eIO_Unknown;
     }
 
     CORE_LOGF(eLOG_Note, ("TEST__server(port = %hu)", nport));
-    assert(status == eIO_Success  &&  nport);
+    assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */
     for (;;) {
