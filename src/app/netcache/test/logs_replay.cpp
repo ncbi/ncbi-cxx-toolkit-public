@@ -443,7 +443,8 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
         key_info->md5 = md5.GetHexSum();
     }
     catch (CException& ex) {
-        ERR_POST("Error while writing blob with key '" << key << "': " << ex);
+        ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
+                 << " Error while writing blob with key '" << key << "': " << ex);
         ++m_CntErrWrites[size_index];
         if (key_info)
             key_info->size = Uint8(-1);
@@ -478,7 +479,8 @@ CReplayThread::x_GetBlob(Uint8 key_id)
             return;
         }
         if (key_info->size != Uint8(-1)  &&  blob_size != key_info->size) {
-            ERR_POST(Critical << "Blob " << key_info->key << " has incorrect size "
+            ERR_POST(Critical << CTime(CTime::eCurrent).AsString("h:m:s.r")
+                     << " Blob " << key_info->key << " has incorrect size "
                      << blob_size << " (expected " << key_info->size << ")");
             ++m_CntBadReads[size_index];
             return;
@@ -517,7 +519,9 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         md5.Update(m_LastChunkBuf, last_size);
         string hash = md5.GetHexSum();
         if (key_info->size != Uint8(-1)  &&  hash != key_info->md5) {
-            ERR_POST(Critical << "Blob " << key_info->key << " has wrong md5 hash");
+            ERR_POST(Critical << CTime(CTime::eCurrent).AsString("h:m:s.r")
+                     << " Blob " << key_info->key << " has wrong md5 hash: "
+                     << hash << ", should be " << key_info->md5);
             ++m_CntBadReads[size_index];
         }
         else {
@@ -528,7 +532,8 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         }
     }
     catch (CException& ex) {
-        ERR_POST("Error while reading blob with key '" << key_info->key << "': " << ex);
+        ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
+                 << " Error while reading blob with key '" << key_info->key << "': " << ex);
         ++m_CntErrReads[size_index];
     }
 }
