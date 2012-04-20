@@ -206,8 +206,9 @@ typedef int
 get_range_type(const BlastCompo_MatchingSequence * sequence,
                const BlastCompo_SequenceRange * range,
                BlastCompo_SequenceData * data,
-	       const BlastCompo_SequenceData * queryData,
-	       const int queryOffset,
+	       const BlastCompo_SequenceData * origQuery,
+               const BlastCompo_SequenceRange * q_range,
+               BlastCompo_SequenceData * q_data,
 	       const BlastCompo_Alignment *align,
 	       const Boolean shouldTestIdentical);
 
@@ -324,6 +325,7 @@ typedef struct Blast_RedoAlignParams {
                                  relative-entropy based composition
                                  adjustment. */
     int subject_is_translated; /**< true if the subject is translated */
+    int query_is_translated; /**< true if the query is translated */
     int ccat_query_length;  /**< length of the concatenated query, or
                                 just the length of the query if not
                                 concatenated */
@@ -350,6 +352,7 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          ECompoAdjustModes compo_adjust_mode,
                          int positionBased,
                          int subject_is_translated,
+                         int query_is_translated,
                          int ccat_query_length, int cutoff_s,
                          double cutoff_e, int do_link_hsps,
                          const Blast_RedoAlignCallbacks * callbacks);

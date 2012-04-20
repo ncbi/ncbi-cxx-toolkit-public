@@ -236,8 +236,8 @@ s_HitlistReapContained(BlastHSP * hsp_array[], Int4 * hspcnt)
             if( hsp2 == NULL ) {  /* hsp2 was deleted in a prior iteration. */
                 continue;
             }
-            if (SIGN(hsp2->query.frame)   == SIGN(hsp1->query.frame) &&
-                SIGN(hsp2->subject.frame) == SIGN(hsp1->subject.frame)) {
+            if (hsp2->query.frame == hsp1->query.frame &&
+                hsp2->subject.frame == hsp1->subject.frame) {
                 /* hsp1 and hsp2 are in the same query/subject frame. */
                 if (CONTAINED_IN_HSP
                     (hsp2->query.offset, hsp2->query.end, hsp1->query.offset,
@@ -285,43 +285,40 @@ static void s_FreeEditScript(void * edit_script)
  * freed to ensure that there is no aliasing of fields between the
  * list of BlastCompo_Alignments and the new hitlist.
  *
+ * @param hsp_list   The hsp_list to populate
  * @param alignments A list of distinct alignments; freed before return [in]
  * @param oid        Ordinal id of a database sequence [in]
  * @param queryInfo  information about all queries in this search [in]
+ * @param frame     query frame
  * @return Allocated and filled BlastHSPList structure.
  */
-static BlastHSPList *
-s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
+static int
+s_HSPListFromDistinctAlignments(BlastHSPList *hsp_list,
+                                BlastCompo_Alignment ** alignments,
                                 int oid,
-                                BlastQueryInfo* queryInfo)
+                                BlastQueryInfo* queryInfo,
+                                int frame)
 {
     int status = 0;                    /* return code for any routine called */
     static const int unknown_value = 0;   /* dummy constant to use when a
-                                      parameter value is not known */
+                                             parameter value is not known */
     BlastCompo_Alignment * align;  /* an alignment in the list */
-    BlastHSPList * hsp_list;       /* the new HSP list */
 
-    hsp_list = Blast_HSPListNew(0);
     if (hsp_list == NULL) {
-        return NULL;
+        return -1;
     }
     hsp_list->oid = oid;
 
     for (align = *alignments;  NULL != align;  align = align->next) {
         BlastHSP * new_hsp = NULL;
         GapEditScript * editScript = align->context;
-        int query_offset, queryStart, queryEnd;
         align->context = NULL;
         
-        query_offset = queryInfo->contexts[align->queryIndex].query_offset;
-        queryStart = align->queryStart - query_offset;
-        queryEnd = align->queryEnd - query_offset;
-
-        status = Blast_HSPInit(queryStart, queryEnd,
+        status = Blast_HSPInit(align->queryStart, align->queryEnd,
                                align->matchStart, align->matchEnd,
                                unknown_value, unknown_value,
                                align->queryIndex, 
-                               0, (Int2) align->frame, align->score,
+                               frame, (Int2) align->frame, align->score,
                                &editScript, &new_hsp);
         switch (align->matrix_adjust_rule) {
         case eDontAdjustMatrix:
@@ -352,7 +349,7 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
     } else {
         hsp_list = Blast_HSPListFree(hsp_list);
     }
-    return hsp_list;
+    return 0;
 }
 
 
@@ -367,7 +364,7 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
  * @param subject_length   length of the subject sequence
  * @param program_number   the type of BLAST search being performed
  * @param queryInfo        information about the queries
- * @param query_index      the index of the query corresponding to 
+ * @param context_index      the index of the query corresponding to 
  *                         the HSPs in hsp_list
  * @param sbp              the score block for this search
  * @param hitParams        parameters used to assign evalues and
@@ -386,7 +383,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                           int subject_length,
                           EBlastProgramType program_number,
                           BlastQueryInfo* queryInfo,
-                          int query_index,
+                          int context_index,
                           BlastScoreBlk* sbp,
                           const BlastHitSavingParameters* hitParams,
                           double pvalueForThisPair,
@@ -410,11 +407,12 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                                              Lambda are scaled, so they
                                              will cancel each other. */
     }
-    if (eBlastTypeBlastp == program_number) {
+    if (eBlastTypeBlastp == program_number ||
+        eBlastTypeBlastx == program_number) {
         if ((0 <= pvalueForThisPair) && (pvalueForThisPair <= 1)) {
             s_AdjustEvaluesForComposition(hsp_list, pvalueForThisPair, seqSrc,
                                           subject_length,
-                                          &queryInfo->contexts[query_index],
+                                          &queryInfo->contexts[context_index],
                                           LambdaRatio, subject_id);
         }
     }
@@ -727,60 +725,62 @@ cleanup:
  * The context field of each BlastCompo_Alignment is set to point to the
  * corresponding HSP.
  *
+ * @param self                 the array of alignment to be filled
+ * @param numAligns            number of alignments
  * @param hsp_array             an array of HSPs
  * @param hspcnt                the length of hsp_array
+ * @param init_context          the initial context to process
  * @param queryInfo            information about the concatenated query
  * @param localScalingFactor    the amount by which this search is scaled
  *
  * @return the new list of alignments; or NULL if there is an out-of-memory
  *         error (or if the original array is empty)
  */
-static BlastCompo_Alignment *
-s_ResultHspToDistinctAlign(BlastHSP * hsp_array[], Int4 hspcnt,
+static int
+s_ResultHspToDistinctAlign(BlastCompo_Alignment **self,
+                           int *numAligns,
+                           BlastHSP * hsp_array[], Int4 hspcnt,
+                           int init_context,
                            BlastQueryInfo* queryInfo,
                            double localScalingFactor)
 {
-    BlastCompo_Alignment * aligns = NULL;      /* new list of alignments */
-    BlastCompo_Alignment * tail = NULL;        /* last element in aligns */
+    BlastCompo_Alignment * tail[6];        /* last element in aligns */
     int hsp_index;                             /* loop index */
+    int frame_index;
+
+    for (frame_index = 0; frame_index < 6; frame_index++) {
+        tail[frame_index] = NULL;
+        numAligns[frame_index] = 0;
+    } 
     
     for (hsp_index = 0;  hsp_index < hspcnt;  hsp_index++) {
         BlastHSP * hsp = hsp_array[hsp_index]; /* current HSP */
         BlastCompo_Alignment * new_align;      /* newly-created alignment */
-        int queryStart;                        /* start of the query context
-                                                  in the concatenated query */
-        int queryOffset, queryEnd;             /* coordinates of the
-                                                  query portion of the
-                                                  concatenated query */
+        frame_index = hsp->context - init_context;
+        ASSERT(frame_index < 6 && frame_index >= 0);
         /* Incoming alignments will have coordinates of the query
            portion relative to a particular query context; they must
            be shifted for used in the composition_adjustment library.
         */
-        queryStart = queryInfo->contexts[hsp->context].query_offset;
-        queryOffset = hsp->query.offset + queryStart;
-        queryEnd = hsp->query.end + queryStart;
         new_align =
             BlastCompo_AlignmentNew((int) (hsp->score * localScalingFactor),
                                     eDontAdjustMatrix,
-                                    queryOffset, queryEnd, hsp->context,
-                                    hsp->subject.offset, hsp->subject.end,
+                                    hsp->query.offset, hsp->query.end, hsp->context,
+                                    hsp->subject.offset, hsp->subject.end, 
                                     hsp->subject.frame, hsp);
         if (new_align == NULL) /* out of memory */
-            goto error_return;
-        if (tail == NULL) { /* if the list aligns is empty; */
+            return -1;
+        if (tail[frame_index] == NULL) { /* if the list aligns is empty; */
             /* make new_align the first element in the list */
-            aligns = new_align;
+            self[frame_index] = new_align;
         } else {
             /* otherwise add new_align to the end of the list */
-            tail->next = new_align;
+            tail[frame_index]->next = new_align;
         }
-        tail = new_align;
+        tail[frame_index] = new_align;
+        numAligns[frame_index]++;
     }
-    goto normal_return;
- error_return:
-    BlastCompo_AlignmentsFree(&aligns, NULL);
- normal_return:
-    return aligns;
+    return 0;
 }
 
 
@@ -901,10 +901,10 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
  */
 static Boolean 
 s_TestNearIdentical(const BlastCompo_SequenceData *seqData, 
-		 const BlastCompo_SequenceData *queryData, 
-		    const int queryOffset,   
-		 const BlastCompo_Alignment *align,
-		 const int rangeOffset)
+                    const int seqOffset,
+                    const BlastCompo_SequenceData *queryData, 
+                    const int queryOffset, 
+                    const BlastCompo_Alignment *align)
 {
   int numIdentical = 0;
   double fractionIdentical;
@@ -913,8 +913,8 @@ s_TestNearIdentical(const BlastCompo_SequenceData *seqData,
   const double kMinFractionNearIdentical = 0.98; /* cutoff for this check. */
 
   qPos = align->queryStart - queryOffset;
-  qEnd = align->queryEnd - queryOffset;
-  sPos = align->matchStart - rangeOffset;
+  qEnd = align->queryEnd   - queryOffset;
+  sPos = align->matchStart - seqOffset;
   while (qPos < qEnd)  {
       if (queryData->data[qPos] == seqData->data[sPos])
 	numIdentical++;
@@ -1060,8 +1060,8 @@ static int
 s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
                              const BlastCompo_SequenceRange * range,
                              BlastCompo_SequenceData * seqData,
-			     const BlastCompo_SequenceData * queryData,
-			     const int queryOffset,
+                             const BlastCompo_SequenceRange * q_range,
+			     BlastCompo_SequenceData * queryData,
 			     const BlastCompo_Alignment *align,
 			     const Boolean shouldTestIdentical)
 {
@@ -1111,7 +1111,7 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
         if ( !(KAPPA_TBLASTN_NO_SEG_SEQUENCE) ) {
 	  if ((!shouldTestIdentical) || 
             (shouldTestIdentical && 
-	     (!s_TestNearIdentical(seqData, queryData, queryOffset, align, range->begin)))) {
+	     (!s_TestNearIdentical(seqData, range->begin, queryData, q_range->begin, align)))) {
             status = s_DoSegSequenceData(seqData, eBlastTypeTblastn);
             if (status != 0) {
                 free(seqData->buffer);
@@ -1146,8 +1146,8 @@ static int
 s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
                           const BlastCompo_SequenceRange * range,
                           BlastCompo_SequenceData * seqData,
-			  const BlastCompo_SequenceData * queryData,
-			  const int queryOffset,
+                          const BlastCompo_SequenceRange * q_range,
+			  BlastCompo_SequenceData * queryData,
 			  const BlastCompo_Alignment *align,
 			  const Boolean shouldTestIdentical)
 
@@ -1187,9 +1187,8 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
     if ( !(KAPPA_BLASTP_NO_SEG_SEQUENCE) ) {
       if ((!shouldTestIdentical) || 
 	  (shouldTestIdentical && 
-	   (!s_TestNearIdentical(seqData, queryData, queryOffset, align, 0)))) {
-	status = -1;
-        status = s_DoSegSequenceData(seqData, eBlastTypeBlastp);
+	   (!s_TestNearIdentical(seqData, 0, queryData, q_range->begin, align)))) {
+        status = s_DoSegSequenceData(seqData, eBlastTypeBlastp); 
       }
     }
     /* Fit the data to the range. */
@@ -1224,20 +1223,35 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
  */
 static int
 s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
-                   const BlastCompo_SequenceRange * range,
+                   const BlastCompo_SequenceRange * s_range,
                    BlastCompo_SequenceData * seqData,
-		   const BlastCompo_SequenceData * queryData,
-		   const int queryOffset,
+		   const BlastCompo_SequenceData * query,
+                   const BlastCompo_SequenceRange * q_range,
+                   BlastCompo_SequenceData * queryData,
 		   const BlastCompo_Alignment *align,
 		   const Boolean shouldTestIdentical)
 {
+    Int4 idx;
     BlastKappa_SequenceInfo * seq_info = self->local_data;
+    Uint1 *origData = query->data + q_range->begin;
+    /* Copy the query sequence (necessary for SEG filtering.) */
+    queryData->length = q_range->end - q_range->begin;
+    queryData->buffer = calloc((queryData->length + 2), sizeof(Uint1));
+    queryData->data   = queryData->buffer + 1;
+
+    for (idx = 0;  idx < queryData->length;  idx++) {
+        /* Copy the sequence data, replacing occurrences of amino acid
+         * number 24 (Selenocysteine) with number 21 (Undetermined or
+         * atypical). */
+        queryData->data[idx] = (origData[idx] != 24) ? origData[idx] : 21;
+    }
     if (seq_info->prog_number ==  eBlastTypeTblastn) {
         /* The sequence must be translated. */
-      return s_SequenceGetTranslatedRange(self, range, seqData,
-					  queryData, queryOffset, align, shouldTestIdentical);
+      return s_SequenceGetTranslatedRange(self, s_range, seqData,
+                q_range, queryData, align, shouldTestIdentical);
     } else {
-      return s_SequenceGetProteinRange(self, range, seqData, queryData, queryOffset, align, shouldTestIdentical);
+      return s_SequenceGetProteinRange(self, s_range, seqData, 
+                q_range, queryData, align, shouldTestIdentical);
     }
 }
 
@@ -1459,7 +1473,9 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     hsp->subject.offset       -= subject_range->begin;
     hsp->subject.end          -= subject_range->begin;
     hsp->subject.gapped_start -= subject_range->begin;
-
+    hsp->query.offset         -= query_range->begin;
+    hsp->query.end            -= query_range->begin;
+    hsp->query.gapped_start   -= query_range->begin;
     if(BLAST_CheckStartForGappedAlignment(hsp, query_data->data,
                                           subject_data->data, sbp)) {
         /* We may use the starting point supplied by the HSP. */
@@ -1483,6 +1499,9 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     hsp->subject.offset       += subject_range->begin;
     hsp->subject.end          += subject_range->begin;
     hsp->subject.gapped_start += subject_range->begin;
+    hsp->query.offset         += query_range->begin;
+    hsp->query.end            += query_range->begin;
+    hsp->query.gapped_start   += query_range->begin;
 
     gapAlign->gap_x_dropoff = gapping_params->x_dropoff;
 
@@ -1803,7 +1822,7 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
  * @return the new array on success, or NULL on error
  */
 static BlastCompo_QueryInfo *
-s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info)
+s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info, Boolean skip)
 {
     int i;                   /* loop index */
     BlastCompo_QueryInfo *
@@ -1811,7 +1830,7 @@ s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info)
     int num_queries;         /* the number of queries/elements in
                                 compo_query_info */
 
-    num_queries = blast_query_info->num_queries;
+    num_queries = blast_query_info->last_context + 1;
     compo_query_info = calloc(num_queries, sizeof(BlastCompo_QueryInfo));
     if (compo_query_info != NULL) {
         for (i = 0;  i < num_queries;  i++) {
@@ -1824,9 +1843,11 @@ s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info)
             query_info->seq.data = &query_data[query_info->origin];
             query_info->seq.length = query_context->query_length;
 
-            Blast_ReadAaComposition(&query_info->composition, BLASTAA_SIZE,
+            if (! skip) {
+                Blast_ReadAaComposition(&query_info->composition, BLASTAA_SIZE,
                                     query_info->seq.data,
                                     query_info->seq.length);
+            }
         }
     }
     return compo_query_info;
@@ -1908,6 +1929,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
         scaledMatrixInfo;         /* information about the scoring matrix */
     /* does this kind of search translate the database sequence */
     int subject_is_translated = context->prog_number == eBlastTypeTblastn;
+    int query_is_translated   = context->prog_number == eBlastTypeBlastx;
     /* is this a positiion-based search */
     Boolean positionBased = (Boolean) (context->sbp->psi_matrix != NULL);
     /* will BLAST_LinkHsps be called to assign e-values */
@@ -1933,13 +1955,14 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
         return NULL;
     }
     gapping_params = s_GappingParamsNew(context, extendParams,
-                                        queryInfo->num_queries);
+                                        queryInfo->last_context + 1);
     if (gapping_params == NULL) {
         return NULL;
     } else {
         return
             Blast_RedoAlignParamsNew(&scaledMatrixInfo, &gapping_params,
                                      compo_adjust_mode, positionBased,
+                                     query_is_translated,
                                      subject_is_translated,
                                      queryInfo->max_length, cutoff_s, cutoff_e,
                                      do_link_hsps, &redo_align_callbacks);
@@ -2033,8 +2056,16 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     Blast_CompositionWorkspace *NRrecord = NULL;
     /* loop index */
     int query_index;
+    /* context number */
+    int context_index;
+    /* frame number */
+    int frame_index;
     /* number of queries in the concatenated query */
     int numQueries = queryInfo->num_queries;
+    /* number of contexts in the concatenated query */
+    int numContexts = queryInfo->last_context + 1;
+    /* number of contexts within a query */
+    int numFrames = (program_number == eBlastTypeBlastx) ? 6:1;
     /* keeps track of gapped alignment params */
     BlastGapAlignStruct* gapAlign = NULL;
     /* All alignments above this value will be reported, no matter how
@@ -2053,6 +2084,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     /* alignment data for the current query-subject match */
     BlastHSPList* thisMatch = NULL;
     /* existing alignments for a match */
+    BlastCompo_Alignment ** incoming_align_set = NULL;
     BlastCompo_Alignment * incoming_aligns = NULL;
     Int4      **matrix;                   /* score matrix */
     BlastKappa_GappingParamsContext gapping_params_context;
@@ -2068,7 +2100,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
 
     ASSERT(program_number == eBlastTypeBlastp ||
            program_number == eBlastTypeTblastn ||
-           program_number == eBlastTypePsiBlast);
+           program_number == eBlastTypePsiBlast ||
+           program_number == eBlastTypeBlastx);
 
     if (positionBased) {
         matrix = sbp->psi_matrix->pssm->data;
@@ -2106,7 +2139,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
 
     /* Initialize savedParams */
     savedParams =
-        s_SavedParametersNew(queryInfo->max_length, queryInfo->num_queries,
+        s_SavedParametersNew(queryInfo->max_length, numContexts,
                              compo_adjust_mode, positionBased);
     if (savedParams == NULL) {
         status_code = -1;
@@ -2128,8 +2161,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     } else {
         localScalingFactor = 1.0;
     }
-    s_RescaleSearch(sbp, scoringParams, queryInfo->num_queries,
-                    localScalingFactor);
+    s_RescaleSearch(sbp, scoringParams, numContexts, localScalingFactor);
     status_code =
         BLAST_GapAlignStructNew(scoringParams, extendParams,
                                 BlastSeqSrcGetMaxSeqLen(seqSrc), sbp,
@@ -2149,11 +2181,14 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         status_code = -1;
         goto function_cleanup;
     }
-    query_info = s_GetQueryInfo(queryBlk->sequence, queryInfo);
+
+    query_info = s_GetQueryInfo(queryBlk->sequence, queryInfo, 
+                                (program_number == eBlastTypeBlastx));
     if (query_info == NULL) {
         status_code = -1;
         goto function_cleanup;
     }
+
     if(smithWaterman) {
         status_code =
             Blast_ForbiddenRangesInitialize(&forbidden, queryInfo->max_length);
@@ -2184,25 +2219,32 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             goto function_cleanup;
         }
     }
-    alignments = calloc(numQueries, sizeof(BlastCompo_Alignment *));
-    if (alignments == NULL) {
+    alignments = calloc(numContexts, sizeof(BlastCompo_Alignment *));
+    incoming_align_set = calloc(numFrames, sizeof(BlastCompo_Alignment *));
+    if (alignments == NULL || incoming_align_set == NULL) {
         status_code = -1;
         goto function_cleanup;
     }
     while (BlastHSPStreamRead(hsp_stream, &thisMatch) != kBlastHSPStream_Eof) {
-        /* for all matching sequences */
+        int numAligns[6];
         Blast_KarlinBlk * kbp;
-
-        /* the data for a matching database sequence */
         BlastCompo_MatchingSequence matchingSeq = {0,};
+        BlastHSPList * hsp_list = Blast_HSPListNew(0);
+        double best_evalue;   
+        Int4 best_score;
+        void * discarded_aligns = NULL;
+     
         if(thisMatch->hsp_array == NULL) {
             continue;
         }
         if (BlastCompo_EarlyTermination(thisMatch->best_evalue,
                                         redoneMatches, numQueries)) {
             Blast_HSPListFree(thisMatch);
-            break;
+            continue;
         }
+
+        query_index = thisMatch->query_index;
+        context_index = query_index * numFrames;
         /* Get the sequence for this match */
         if (perform_partial_fetch) {
             BLAST_SetupPartialFetching(program_number, (BlastSeqSrc*)seqSrc, 
@@ -2216,21 +2258,26 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         if (status_code != 0) {
             goto match_loop_cleanup;
         }
-        incoming_aligns =
-            s_ResultHspToDistinctAlign(thisMatch->hsp_array, thisMatch->hspcnt,
+        status_code =
+            s_ResultHspToDistinctAlign(incoming_align_set, numAligns,
+                                       thisMatch->hsp_array, 
+                                       thisMatch->hspcnt, context_index,
                                        queryInfo, localScalingFactor);
-        if (incoming_aligns == NULL) {
-            status_code = -1;
+        if (status_code != 0) {
             goto match_loop_cleanup;
         }
-        /* All alignments in thisMatch should be to the same query */
-        kbp = sbp->kbp_gap[thisMatch->query_index];
-        if (smithWaterman) {
-            status_code =
-                Blast_RedoOneMatchSmithWaterman(alignments,
+
+        for (frame_index=0; frame_index<numFrames; frame_index++, context_index++) {
+            incoming_aligns = incoming_align_set[frame_index];
+            if (!incoming_aligns) continue;
+            /* All alignments in thisMatch should be to the same query */
+            kbp = sbp->kbp_gap[context_index];
+            if (smithWaterman) {
+                status_code =
+                    Blast_RedoOneMatchSmithWaterman(alignments,
                                                 redo_align_params,
                                                 incoming_aligns,
-                                                thisMatch->hspcnt,
+                                                numAligns[frame_index],
                                                 kbp->Lambda, kbp->logK,
                                                 &matchingSeq, query_info,
                                                 numQueries,
@@ -2240,90 +2287,86 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                                 &pvalueForThisPair,
                                                 compositionTestIndex,
                                                 &LambdaRatio);
-        } else {
-            status_code =
-                Blast_RedoOneMatch(alignments, redo_align_params,
-                                   incoming_aligns, thisMatch->hspcnt,
+            } else {
+                status_code =
+                    Blast_RedoOneMatch(alignments, redo_align_params,
+                                   incoming_aligns, numAligns[frame_index],
                                    kbp->Lambda, &matchingSeq,
-                                   queryInfo->max_length, query_info,
-                                   numQueries, matrix, BLASTAA_SIZE,
+                                   -1, query_info,
+                                   numContexts, matrix, BLASTAA_SIZE,
                                    NRrecord, &pvalueForThisPair,
                                    compositionTestIndex,
                                    &LambdaRatio);
-        }
-        if (status_code != 0) {
-            goto match_loop_cleanup;
-        }
-        for (query_index = 0;  query_index < numQueries;  query_index++) {
-            /* Loop over queries */
-            if( alignments[query_index] != NULL) { /* alignments were found */
-                double bestEvalue;   /* best e-value among alignments in the
-                                        hitlist */
-                Int4 bestScore;      /* best score among alignments in
-                                        the hitlist */
-                /* a hitlist containing the newly-computed alignments */
-                BlastHSPList * hsp_list = NULL;
-                void * discardedAligns = NULL;
-                hsp_list =
-                    s_HSPListFromDistinctAlignments(&alignments[query_index],
-                                                    matchingSeq.index,
-                                                    queryInfo);
-                if (hsp_list == NULL) {
-                    status_code = -1;
+            }
+
+            if (status_code != 0) {
+                goto match_loop_cleanup;
+            }
+
+            if (alignments[context_index] != NULL) {
+                Int2 qframe = frame_index;
+                if (program_number == eBlastTypeBlastx) {
+                    if (qframe < 3) qframe++;
+                    else qframe = 2-qframe;
+                }
+                status_code =             
+                    s_HSPListFromDistinctAlignments(hsp_list,
+                                          &alignments[context_index],
+                                          matchingSeq.index,
+                                          queryInfo, qframe);
+                if (status_code) {
                     goto match_loop_cleanup;
                 }
-                if (hsp_list->hspcnt > 1) {
-                    s_HitlistReapContained(hsp_list->hsp_array,
-                                           &hsp_list->hspcnt);
-                }
-                status_code =
-                    s_HitlistEvaluateAndPurge(&bestScore, &bestEvalue,
+            }
+            BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
+            incoming_align_set[frame_index] = NULL;
+        }
+
+        if (hsp_list->hspcnt > 1) {
+            s_HitlistReapContained(hsp_list->hsp_array,
+                                   &hsp_list->hspcnt);
+        }
+        status_code =
+            s_HitlistEvaluateAndPurge(&best_score, &best_evalue,
                                               hsp_list,
                                               seqSrc,
                                               matchingSeq.length,
                                               program_number,
-                                              queryInfo, query_index,
+                                              queryInfo, context_index,
                                               sbp, hitParams,
                                               pvalueForThisPair, LambdaRatio,
                                               matchingSeq.index);
-                if (status_code != 0) {
-                    goto query_loop_cleanup;
-                }
-                if (bestEvalue <= hitParams->options->expect_value &&
-                    BlastCompo_HeapWouldInsert(&redoneMatches[query_index],
-                                               bestEvalue, bestScore,
+        if (status_code != 0) {
+            goto query_loop_cleanup;
+        }
+        if (best_evalue <= hitParams->options->expect_value &&
+            BlastCompo_HeapWouldInsert(&redoneMatches[query_index],
+                                               best_evalue, best_score,
                                                thisMatch->oid)) {
-                    /* The best alignment is significant */
-                    s_HSPListNormalizeScores(hsp_list,
-                                             kbp->Lambda, kbp->logK,
+            /* The best alignment is significant */
+            s_HSPListNormalizeScores(hsp_list, kbp->Lambda, kbp->logK,
                                              localScalingFactor);
-                     s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
+            s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
                                            hsp_list, scoringParams->options,
                                            genetic_code_string, sbp);
-                    status_code =
-                        BlastCompo_HeapInsert(&redoneMatches[query_index],
-                                              hsp_list, bestEvalue,
-                                              bestScore, thisMatch->oid,
-                                              &discardedAligns);
-                    if (status_code == 0) {
-                        hsp_list = NULL;
-                    } else {
-                        goto query_loop_cleanup;
-                    }
-                    if (discardedAligns != NULL) {
-                        Blast_HSPListFree(discardedAligns);
-                    }
-                }
+            status_code = BlastCompo_HeapInsert(&redoneMatches[query_index],
+                                              hsp_list, best_evalue,
+                                              best_score, thisMatch->oid,
+                                              &discarded_aligns);
+            if (status_code == 0) {
+                hsp_list = NULL;
+            } else {
+                goto query_loop_cleanup;
+            }
+            if (discarded_aligns != NULL) {
+                Blast_HSPListFree(discarded_aligns);
+            }
+        }
 query_loop_cleanup:
-                Blast_HSPListFree(hsp_list);
-                if (status_code != 0) {
-                    goto match_loop_cleanup;
-                }
-            } /* end if any alignments were found */
-        } /* end loop over queries */
 match_loop_cleanup:
+        hsp_list = Blast_HSPListFree(hsp_list);
         if (status_code != 0) {
-            for (query_index = 0;  query_index < numQueries;  query_index++) {
+            for (query_index = 0;  query_index < numContexts;  query_index++) {
                 BlastCompo_AlignmentsFree(&alignments[query_index],
                                           s_FreeEditScript);
             }
@@ -2338,6 +2381,7 @@ match_loop_cleanup:
     /* end for all matching sequences */
 function_cleanup:
     sfree(alignments);
+    sfree(incoming_align_set);
     if (status_code == 0) {
         s_FillResultsFromCompoHeaps(results, redoneMatches,
                                     hitParams->options->hitlist_size);
