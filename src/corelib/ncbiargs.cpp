@@ -2298,7 +2298,11 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
         // Check if argument has not a key/flag syntax
         if ((arg1.length() > 1)  &&  arg1[0] == '-') {
             name = arg1.substr(1);
-            TArgsCI it = x_Find(name);
+            TArgsCI it = m_Args.end();
+            try {
+                it = x_Find(name);
+            } catch (CArgException&) {
+            }
             if (it == m_Args.end()) {
                 if (m_OpeningArgs.size() > argssofar) {
                     return x_CreateArg(arg1, m_OpeningArgs[argssofar], have_arg2, arg2, *n_plain, args);
