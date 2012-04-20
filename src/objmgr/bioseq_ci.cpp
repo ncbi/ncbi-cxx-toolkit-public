@@ -170,6 +170,7 @@ void CBioseq_CI::x_Settle(void)
                          m_EntryStack.back().GetParentBioseq_set().GetClass()
                          == CBioseq_set::eClass_nuc_prot ) {
                         // Skip only the same level nuc-prot set
+                        found_na = false; // no more skipping
                         if ( x_SkipClass(CBioseq_set::eClass_nuc_prot) ) {
                             continue;
                         }
@@ -187,6 +188,7 @@ void CBioseq_CI::x_Settle(void)
             x_NextEntry();
         }
         else {
+            found_na = false; // no more skipping
             x_PushEntry(m_CurrentEntry);
         }
     }
