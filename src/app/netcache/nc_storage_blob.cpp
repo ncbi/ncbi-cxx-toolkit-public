@@ -449,7 +449,7 @@ CNCBlobAccessor::CNCBlobAccessor(void)
     m_CurMapsSize = (char*)map_info.coords - (char*)&map_info
                     + m_CurChunksInMap * sizeof(map_info.coords[0]);
     for (Uint1 i = 0; i <= kNCMaxBlobMapsDepth; ++i) {
-        m_ChunkMaps[i] = (SNCChunkMapInfo*)calloc(m_CurMapsSize);
+        m_ChunkMaps[i] = (SNCChunkMapInfo*)calloc(m_CurMapsSize, 1);
     }
 }
 

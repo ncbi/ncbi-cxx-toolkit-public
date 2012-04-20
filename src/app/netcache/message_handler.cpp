@@ -1054,13 +1054,13 @@ CNCMessageHandler::OnOpen(void)
     m_ClientParams.clear();
     m_CntCmds = 0;
 
-    m_ClientParams["peer"]  = m_Socket->GetPeerAddress(eSAF_IP);
     m_ClientParams["pport"] = m_Socket->GetPeerAddress(eSAF_Port);
     m_LocalPort             = m_Socket->GetLocalPort(eNH_HostByteOrder);
     m_ClientParams["port"]  = NStr::UIntToString(m_LocalPort);
 
     m_ConnCtx.Reset(new CRequestContext());
     m_ConnReqId = NStr::UInt8ToString(m_ConnCtx->SetRequestID());
+    m_ConnCtx->SetClientIP(m_Socket->GetPeerAddress(eSAF_IP));
 
     CDiagnosticsGuard guard(this);
 
@@ -1073,6 +1073,8 @@ CNCMessageHandler::OnOpen(void)
         diag_extra.Flush();
     }
     m_ConnCtx->SetRequestStatus(eStatus_OK);
+
+    m_ClientParams["peer"] = m_ConnCtx->GetClientIP();
 
     m_ConnTime = GetFastLocalTime();
     x_SetState(ePreAuthenticated);
