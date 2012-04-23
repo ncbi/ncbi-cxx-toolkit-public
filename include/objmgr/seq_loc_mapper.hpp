@@ -85,8 +85,14 @@ public:
     /// @param mapping_ranges
     ///  CMappingRanges filled with the desired source and destination
     ///  ranges. Must be a heap object (will be stored in a CRef<>).
+    ///  NOTE: If the mapper is used with mixed sequence types, the
+    ///  ranges must use genomic coordinates (for ranges on proteins
+    ///  multiply all coordinates by 3).
     /// @param scope
-    ///  Optional scope (required only for mapping alignments).
+    ///  Optional scope (required only for mapping alignments). If any ids
+    ///  from the mapping ranges are not available through this object,
+    ///  they must be registered using SetSeqTypeById.
+    /// @sa SetSeqTypeById
     CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
                     CScope*         scope = 0);
 

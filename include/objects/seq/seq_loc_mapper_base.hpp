@@ -324,6 +324,15 @@ public:
     /// @param mapping_ranges
     ///  CMappingRanges filled with the desired source and destination
     ///  ranges. Must be a heap object (will be stored in a CRef<>).
+    ///  NOTE: If the mapper is used with mixed sequence types, the
+    ///  ranges must use genomic coordinates (for ranges on proteins
+    ///  multiply all coordinates by 3).
+    /// @param seq_info
+    ///  Sequence type, length etc. provider. If any ids from the mapping
+    ///  ranges are not available through this object, they must be
+    ///  registered using SetSeqTypeById.
+    /// @sa IMapper_Sequence_Info
+    /// @sa SetSeqTypeById
     CSeq_loc_Mapper_Base(CMappingRanges*        mapping_ranges,
                          IMapper_Sequence_Info* seq_info = 0);
 
@@ -800,23 +809,25 @@ public:
     // Initialize the mapper with default values
     CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo = 0);
 
-    // Methods for getting sequence types, use cached types (m_SeqTypes)
-    // if possible.
+    /// Methods for getting sequence types, use cached types (m_SeqTypes)
+    /// if possible.
     ESeqType GetSeqTypeById(const CSeq_id_Handle& idh) const;
     ESeqType GetSeqTypeById(const CSeq_id& id) const;
-    // Methods for setting sequence types. May be used to populate the
-    // cache before mapping huge alignments if the types are already
-    // known. Throw exception if the sequence type is already set to
-    // a different value.
+    /// Methods for setting sequence types. May be used to populate the
+    /// cache before mapping huge alignments if the types are already
+    /// known. Throw exception if the sequence type is already set to
+    /// a different value.
+    /// NOTE: setting sequence type does not adjust mapping ranges for this
+    /// id. All mapping ranges must use genomic coordinates.
     void SetSeqTypeById(const CSeq_id_Handle& idh, ESeqType seqtype) const;
     void SetSeqTypeById(const CSeq_id& id, ESeqType seqtype) const;
 
-    // Get sequence width. Return 3 for proteins, 1 for nucleotides and
-    // unknown sequence types.
+    /// Get sequence width. Return 3 for proteins, 1 for nucleotides and
+    /// unknown sequence types.
     int GetWidthById(const CSeq_id_Handle& idh) const;
     int GetWidthById(const CSeq_id& id) const;
 
-    // Get mapping ranges.
+    /// Get mapping ranges.
     const CMappingRanges& GetMappingRanges(void) const { return *m_Mappings; }
 };
 
