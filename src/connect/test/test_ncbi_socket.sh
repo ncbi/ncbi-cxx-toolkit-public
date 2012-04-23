@@ -18,8 +18,8 @@ outlog()
 
 timeout=10
 exit_code=0
+port=test_ncbi_socket.$$
 log=test_ncbi_socket.log
-port=/tmp/test_ncbi_socket.$$
 server_log=test_ncbi_socket_server.log
 client_log=test_ncbi_socket_client.log
 

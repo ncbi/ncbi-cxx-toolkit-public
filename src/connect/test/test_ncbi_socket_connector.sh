@@ -18,7 +18,7 @@ outlog()
 
 timeout=10
 exit_code=0
-port=/tmp/socket_io_bouncer.$$
+port=socket_io_bouncer.$$
 server_log=socket_io_bouncer.log
 client_log=test_ncbi_socket_connector.log
 

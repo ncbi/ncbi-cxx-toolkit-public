@@ -18,7 +18,7 @@ outlog()
 
 timeout=10
 exit_code=0
-port=/tmp/test_ncbi_dsock.$$
+port=test_ncbi_dsock.$$
 server_log=test_ncbi_dsock_server.log
 client_log=test_ncbi_dsock_client.log
 

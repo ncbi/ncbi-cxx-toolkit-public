@@ -18,7 +18,7 @@ outlog()
 
 timeout=10
 exit_code=0
-port=/tmp/test_ncbi_trigger.$$
+port=test_ncbi_trigger.$$
 server_log=test_ncbi_trigger_server.log
 client_log=test_ncbi_trigger_client.log
 
