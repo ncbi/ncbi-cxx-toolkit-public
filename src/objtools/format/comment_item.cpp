@@ -745,7 +745,7 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
 
     CNcbiOstrstream text;
     text << "The " << *taxname 
-         << " transcriptome shortgun assembly (TSA) project has the project accession " 
+         << " transcriptome shotgun assembly (TSA) project has the project accession " 
          << tsaaccn << ".  This version of the project (" << version 
          << ") has the accession number " << tsaname << ",";
     if (*first != *last) {
