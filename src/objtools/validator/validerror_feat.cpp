@@ -3700,15 +3700,14 @@ static bool s_IsValidRpt_typeQual (string val)
 
 void CValidError_feat::ValidateRptUnitVal (const string& val, const string& key, const CSeq_feat& feat)
 {
-    bool /* found = false, */ multiple_rpt_unit = true;
+    bool /* found = false, */ multiple_rpt_unit = false;
     ITERATE(string, it, val) {
         if ( *it <= ' ' ) {
             /* found = true; */
         } else if ( *it == '('  ||  *it == ')'  ||
             *it == ','  ||  *it == '.'  ||
             isdigit((unsigned char)(*it)) ) {
-        } else {
-            multiple_rpt_unit = false;
+            multiple_rpt_unit = true;
         }
     }
     /*
