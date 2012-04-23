@@ -2545,7 +2545,7 @@ s_BlastGreedyGapAlignStructFill(BlastGapAlignStruct* gap_align,
 }
 
 static void s_ReduceGaps(GapEditScript* esp, const Uint1 *q, const Uint1 *s){
-   int i, j, k, nm1, nm2, d;
+   int i, j, nm1, nm2, d;
    const Uint1 *q1, *s1;
    for (i=0; i<esp->size; i++) {
        if (esp->op_type[i] == eGapAlignSub) {
