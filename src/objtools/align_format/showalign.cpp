@@ -2657,7 +2657,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
                 TSeqPos feat_aln_to = 0;
                 TSeqPos actual_feat_seq_start = 0, actual_feat_seq_stop = 0;
                 feature::GetLabel(feat->GetOriginalFeature(), &featLable, 
-                                  feature::eBoth, &scope);
+                                  feature::fFGL_Both, &scope);
                 featId = featLable.substr(0, k_FeatureIdLen); //default
                 TSeqPos aln_stop = m_AV->GetAlnStop();  
                 CRef<SAlnFeatureInfo> featInfo;

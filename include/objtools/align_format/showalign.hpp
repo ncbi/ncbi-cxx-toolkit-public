@@ -238,7 +238,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
                      const char* matrix_name = BLAST_DEFAULT_MATRIX);
     
     /// Destructor
-    ~CDisplaySeqalign();
+    virtual ~CDisplaySeqalign();
     
     ///call this to display seqalign
     ///@param out: stream for display
