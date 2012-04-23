@@ -149,10 +149,6 @@ CGFF3_CIGAR_Formatter::CGFF3_CIGAR_Formatter(CGFF3_Formatter&       gff3,
 
 void CGFF3_CIGAR_Formatter::EndSubAlignment(void)
 {
-    if (GetSeq_align().GetSegs().IsDisc() &&
-        m_Alignment.GetContext()->Config().GffGenerateIdTags()) {
-        ++m_GFF3_Fmt.m_CurrentId; // ?????
-    }
 }
 
 
@@ -378,6 +374,9 @@ void CGFF3_Formatter::FormatAlignment(const CAlignmentItem& aln,
     cigar.FormatByReferenceId(*aln.GetContext()->GetPrimaryId());
 #else
     x_FormatAlignment(aln, text_os, aln.GetAlign(), true, false);
+    if ( aln.GetContext()->Config().GffGenerateIdTags() ) {
+        ++m_CurrentId;
+    }
 #endif
 }
 
@@ -441,9 +440,6 @@ void CGFF3_Formatter::x_FormatAlignment(const CAlignmentItem& aln,
         NCBI_THROW(CFlatException, eNotSupported,
                    "Conversion of alignments of type dendiag and packed "
                    "not supported in current GFF3 CIGAR output");
-    }
-    if ( config.GffGenerateIdTags() ) {
-        ++m_CurrentId;
     }
 }
 
@@ -753,7 +749,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         CConstRef<CSeq_id> tgt_id =
             s_GetTargetId(alnmap.GetSeqId(tgt_row), scope);
         if ( config.GffGenerateIdTags() ) {
-            attrs << "ID=" << m_CurrentId++ << ";";
+            attrs << "ID=" << m_CurrentId << ";";
         }
         attrs << "Target=";
         // GFF3 specs require %09 escape for spaces in the Target,
