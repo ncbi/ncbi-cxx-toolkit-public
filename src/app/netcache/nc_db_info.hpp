@@ -229,6 +229,7 @@ struct SNCDBFileInfo : public CObject
     TFileHandle  fd;
     int          create_time;
     int          next_shrink_time;
+    CAtomicCounter cnt_unfinished;
     ENCDBFileType file_type;
     EDBFileIndex type_index;
     string       file_name;

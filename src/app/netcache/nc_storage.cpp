@@ -403,12 +403,12 @@ CNCBlobStorage::x_GetIndOrDeleted(SNCDBFileInfo* file_info, Uint4 rec_num)
                      << " which is not in the range between " << (void*)min_ptr
                      << " and " << (void*)file_info->index_head << ".");
     }
-    if ((ind_rec->next_num != 0  &&  ind_rec->next_num < rec_num)
-        ||  ind_rec->prev_num > rec_num)
+    Uint4 next_num = *(volatile Uint4*)(&ind_rec->next_num);
+    if ((next_num != 0  &&  next_num < rec_num)  ||  ind_rec->prev_num > rec_num)
     {
         DB_CORRUPTED("Index record " << rec_num
                      << " in file " << file_info->file_name
-                     << " contains bad next_num " << ind_rec->next_num
+                     << " contains bad next_num " << next_num
                      << " and/or prev_num " << ind_rec->prev_num << ".");
     }
     return ind_rec;
@@ -756,7 +756,9 @@ SNCDBFileInfo::SNCDBFileInfo(void)
       fd(0),
       create_time(0),
       next_shrink_time(0)
-{}
+{
+    cnt_unfinished.Set(0);
+}
 
 SNCDBFileInfo::~SNCDBFileInfo(void)
 {
@@ -1179,6 +1181,8 @@ CNCBlobStorage::x_GetNextWriteCoord(EDBFileIndex file_index,
     w_info.left_file_size -= reserve_size;
     m_CurDBSize += reserve_size;
 
+    file_info->cnt_unfinished.Add(1);
+
     file_info->info_lock.Lock();
 
     file_info->used_size += reserve_size;
@@ -1271,6 +1275,8 @@ CNCBlobStorage::x_SaveOneMapImpl(SNCChunkMapInfo* save_map,
     ++save_map->map_idx;
     memset(save_map->coords, 0, map_size * sizeof(save_map->coords[0]));
     x_UpdateUpCoords(map_rec, map_ind, map_coord);
+
+    map_file->cnt_unfinished.Add(-1);
 
     return true;
 }
@@ -1388,6 +1394,8 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
         x_CalcMetaAddress(old_file, old_ind);
         x_MoveRecToGarbage(old_file, old_ind);
     }
+
+    meta_file->cnt_unfinished.Add(-1);
 
     return true;
 }
@@ -1572,6 +1580,8 @@ CNCBlobStorage::WriteChunkData(SNCBlobVerData* ver_data,
 
     maps[0]->coords[map_idx[0]] = data_coord;
     CNCStat::AddChunkWritten(data->GetSize());
+
+    data_file->cnt_unfinished.Add(-1);
 
     return true;
 }
@@ -2475,13 +2485,17 @@ CNCBlobStorage::x_MoveRecord(SNCDBFileInfo* rec_file,
     SNCCacheData* cache_data = rec_ind->cache_data;
     new_ind->cache_data = cache_data;
     new_ind->rec_type = rec_ind->rec_type;
-    new_ind->chain_coord = rec_ind->chain_coord;
+    SNCDataCoord chain_coord = rec_ind->chain_coord;
+    new_ind->chain_coord = chain_coord;
 
-    if (!rec_ind->chain_coord.empty()) {
-        chain_file = x_GetDBFile(rec_ind->chain_coord.file_id);
-        chain_ind = x_GetIndOrDeleted(chain_file, rec_ind->chain_coord.rec_num);
-        if (x_IsIndexDeleted(chain_file, chain_ind))
+    if (!chain_coord.empty()) {
+        chain_file = x_GetDBFile(chain_coord.file_id);
+        chain_ind = x_GetIndOrDeleted(chain_file, chain_coord.rec_num);
+        if (x_IsIndexDeleted(chain_file, chain_ind)
+            ||  chain_file->cnt_unfinished.Get() != 0)
+        {
             goto wipe_new_record;
+        }
 
         SNCDataCoord old_coord;
         old_coord.file_id = rec_file->file_id;
@@ -2547,7 +2561,11 @@ CNCBlobStorage::x_MoveRecord(SNCDBFileInfo* rec_file,
     }
 
     cache_data->lock.Lock();
-    if (cache_data->ver_mgr) {
+    if (cache_data->ver_mgr
+        ||  rec_ind->chain_coord != chain_coord
+        ||  (!chain_coord.empty()  &&  x_IsIndexDeleted(chain_file, chain_ind)
+             &&  !x_IsIndexDeleted(rec_file, rec_ind)))
+    {
         result = false;
         goto unlock_and_wipe;
     }
@@ -2577,6 +2595,7 @@ CNCBlobStorage::x_MoveRecord(SNCDBFileInfo* rec_file,
 
     cache_data->lock.Unlock();
     move_done = true;
+    new_file->cnt_unfinished.Add(-1);
     return true;
 
 unlock_and_wipe:
@@ -2585,6 +2604,7 @@ wipe_new_record:
     new_ind->rec_type = eFileRecChunkData;
     x_MoveRecToGarbage(new_file, new_ind);
     move_done = false;
+    new_file->cnt_unfinished.Add(-1);
 
     return result;
 }
@@ -2617,7 +2637,7 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
             }
         }
         m_NextWriteLock.Unlock();
-        if (is_current)
+        if (is_current  ||  this_file->cnt_unfinished.Get() != 0)
             continue;
 
         if (this_file->used_size == 0) {
