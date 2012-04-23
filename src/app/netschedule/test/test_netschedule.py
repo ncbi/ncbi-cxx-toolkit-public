@@ -15,7 +15,7 @@ from optparse import OptionParser
 from netschedule import NetSchedule
 import netschedule_tests_pack as pack
 import netschedule_tests_pack_4_10 as pack_4_10
-
+import netschedule_tests_pack_4_11 as pack_4_11
 
 defaultGridCliPath = ""
 defaultNetschedulePath = "netscheduled"
@@ -27,7 +27,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.10.0"
+latestNetscheduleVersion = "4.11.0"
 
 
 # The map below describes what tests should be excluded for a certain
@@ -50,7 +50,8 @@ excludeTestsMap = \
                   230, 231, 232, 233, 234, 235, 236, 238, 239,
                   240, 241, 242, 243, 244, 245, 246, 247, 248, 249,
                   250, 251, 252, 253, 254, 255, 256, 257, 258, 259,
-                  260, 261, 262, 263, 264, 265, 266, 267 ],
+                  260, 261, 262, 263, 264, 265, 266, 267,
+                  300, 301 ],
     "4.9.0":    [ 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
                   110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
                   120, 121, 122, 123, 124, 125, 126, 127, 128, 129,
@@ -67,8 +68,10 @@ excludeTestsMap = \
                   230, 231, 232, 233, 234, 235, 236, 238, 239,
                   240, 241, 242, 243, 244, 245, 246, 247, 248, 249,
                   250, 251, 252, 253, 254, 255, 256, 257, 258, 259,
-                  260, 261, 262, 263, 264, 265, 266, 267 ],
-    "4.10.0":   [ 28, 29, 35, 44, 47, 48, 49, 51 ],
+                  260, 261, 262, 263, 264, 265, 266, 267,
+                  300, 301 ],
+    "4.10.0":   [ 28, 29, 35, 44, 47, 48, 49, 51,
+                  300, 301 ],
     "4.11.0":   [ 28, 29, 35, 44, 47, 48, 49, 51, 250, 255 ]
 }
 
@@ -429,6 +432,9 @@ def main():
               pack_4_10.Scenario265( netschedule ),
               pack_4_10.Scenario266( netschedule ),
               pack_4_10.Scenario267( netschedule ),
+
+              pack_4_11.Scenario300( netschedule ),
+              pack_4_11.Scenario301( netschedule ),
             ]
 
     # Calculate the start test index
