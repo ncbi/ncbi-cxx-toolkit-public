@@ -17,8 +17,6 @@ internal/algo/align/prosplign
 internal/algo/align/splign
 internal/aligndb
 internal/align_model$
-internal/align_model/am2gff3
-internal/align_model/loader
 internal/align_toolbox
 internal/asn_cache
 internal/blast
