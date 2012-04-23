@@ -1904,7 +1904,7 @@ void NStr::UInt8ToString_DataSize(string& out_str,
         num_start = s_PrintUint8(buffer + kBufSize, value, 0, 10);
         num_start[-1] = '0';
         dot_ptr = buffer + kBufSize - 3 * suff_idx;
-        digs_pre_dot = dot_ptr - num_start;
+        digs_pre_dot = Uint4(dot_ptr - num_start);
         if (!(flags & fDS_NoDecimalPoint)) {
             num_end = min(buffer + kBufSize, dot_ptr + (max_digits - digs_pre_dot));
         }
@@ -1967,7 +1967,7 @@ try_another_suffix:
         }
         num_start = s_PrintUint8(buffer + kBufSize, whole_num, 0, 10);
         num_start[-1] = '0';
-        digs_pre_dot = buffer + kBufSize - num_start;
+        digs_pre_dot = Uint4(buffer + kBufSize - num_start);
         if (max_digits - digs_pre_dot >= 3  &&  (flags & fDS_NoDecimalPoint)
             &&  suff_idx != 1  &&  can_try_another)
         {
@@ -1975,7 +1975,7 @@ try_another_suffix:
 try_even_more_suffix:
             Uint8 new_num = value / s_Coefs[new_suff - 1];
             char* new_start = s_PrintUint8(buffer + kBufSize / 2, new_num, 0, 10);
-            Uint4 new_digs = buffer + kBufSize / 2 - new_start;
+            Uint4 new_digs = Uint4(buffer + kBufSize / 2 - new_start);
             if (new_digs <= max_digits) {
                 if (max_digits - digs_pre_dot >= 3  &&  new_suff != 1) {
                     --new_suff;
