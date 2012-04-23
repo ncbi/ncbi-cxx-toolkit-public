@@ -382,14 +382,12 @@ void CNetScheduleHandler::OnOpen(void)
     // Log the fact of opened connection
     m_ConnContext.Reset(new CRequestContext());
     m_ConnContext->SetRequestID();
+    m_ConnContext->SetClientIP(socket.GetPeerAddress(eSAF_IP));
 
     CDiagnosticsGuard   guard(this);
     if (m_Server->IsLog()) {
         GetDiagContext().PrintRequestStart()
                         .Print("_type", "conn")
-                        .Print("peer", socket.GetPeerAddress(eSAF_IP))
-                        .Print("pport", socket.GetPeerAddress(eSAF_Port))
-                        .Print("port", socket.GetLocalPort(eNH_HostByteOrder))
                         .Flush();
     }
     m_ConnContext->SetRequestStatus(eStatus_OK);
