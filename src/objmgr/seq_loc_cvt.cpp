@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
 
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/impl/seq_align_mapper.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/impl/scope_impl.hpp>
@@ -2091,7 +2092,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
 void CSeq_loc_Conversion_Set::Convert(const CSeq_align& src,
                                       CRef<CSeq_align>* dst)
 {
-    CSeq_loc_Mapper_Base loc_mapper;
+    CSeq_loc_Mapper loc_mapper(0, &m_Scope.GetScope());
     CSeq_align_Mapper mapper(src, loc_mapper);
     mapper.Convert(*this);
     *dst = mapper.GetDstAlign();
