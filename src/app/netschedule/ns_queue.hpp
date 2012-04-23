@@ -182,6 +182,10 @@ public:
     TJobStatus  JobDelayExpiration(unsigned        job_id,
                                    time_t          tm);
 
+    TJobStatus  GetStatusAndLifetime(unsigned int  job_id,
+                                     bool          need_touch,
+                                     time_t *      lifetime);
+
     // Worker node-specific methods
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
@@ -191,10 +195,9 @@ public:
                           const string &          auth_token,
                           string &                warning);
 
-    /// 0 - job not found
-    unsigned int  ReadJobFromDB(unsigned int  job_id, CJob &  job);
-
-    void  TouchJob(const CJob &  job);
+    TJobStatus  ReadAndTouchJob(unsigned int  job_id,
+                                CJob &        job,
+                                time_t *      lifetime);
 
     /// Remove all jobs
     void Truncate(void);
@@ -418,6 +421,8 @@ private:
                     unsigned int           count);
     void x_CancelJobs(const CNSClientId &   client,
                       const TNSBitVector &  jobs_to_cancel);
+    time_t x_GetEstimatedJobLifetime(unsigned int   job_id,
+                                     TJobStatus     status) const;
 
 private:
     friend class CJob;

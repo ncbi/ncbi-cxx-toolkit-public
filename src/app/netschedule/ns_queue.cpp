@@ -888,24 +888,70 @@ TJobStatus  CQueue::JobDelayExpiration(unsigned int     job_id,
 }
 
 
+TJobStatus  CQueue::GetStatusAndLifetime(unsigned int  job_id,
+                                         bool          need_touch,
+                                         time_t *      lifetime)
+{
+    CFastMutexGuard     guard(m_OperationLock);
+    TJobStatus          status = GetJobStatus(job_id);
+
+    if (status == CNetScheduleAPI::eJobNotFound)
+        return status;
+
+    if (need_touch) {
+        CJob                job;
+        time_t              curr = time(0);
+
+        {{
+            CNSTransaction      transaction(this);
+
+            if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+                NCBI_THROW(CNetScheduleException, eInternalError,
+                           "Error fetching job: " + DecorateJobId(job_id));
+
+            job.SetLastTouch(curr);
+            job.Flush(this);
+            transaction.Commit();
+        }}
+
+        m_GCRegistry.UpdateLifetime(job_id,
+                                    job.GetExpirationTime(m_Timeout,
+                                                          m_RunTimeout,
+                                                          curr));
+    }
+
+    *lifetime = x_GetEstimatedJobLifetime(job_id, status);
+    return status;
+}
+
+
 bool CQueue::PutProgressMessage(unsigned int    job_id,
                                 const string &  msg)
 {
     CJob                job;
+    time_t              curr = time(0);
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
-        CNSTransaction      transaction(this);
 
-        if (job.Fetch(this, job_id) != CJob::eJF_Ok)
-            return false;
+        {{
+            CNSTransaction      transaction(this);
 
-        job.SetProgressMsg(msg);
-        job.Flush(this);
-        transaction.Commit();
+            if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+                return false;
+
+            job.SetProgressMsg(msg);
+            job.SetLastTouch(curr);
+            job.Flush(this);
+            transaction.Commit();
+        }}
+
+        m_GCRegistry.UpdateLifetime(job_id,
+                                    job.GetExpirationTime(m_Timeout,
+                                                          m_RunTimeout,
+                                                          curr));
     }}
 
-    TouchJob(job);
     return true;
 }
 
@@ -992,42 +1038,35 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
 }
 
 
-unsigned int  CQueue::ReadJobFromDB(unsigned int  job_id, CJob &  job)
+TJobStatus  CQueue::ReadAndTouchJob(unsigned int  job_id,
+                                    CJob &        job,
+                                    time_t *      lifetime)
 {
-    // Check first that the job has not been deleted yet
+    CFastMutexGuard         guard(m_OperationLock);
+    TJobStatus              status = GetJobStatus(job_id);
+
+    if (status == CNetScheduleAPI::eJobNotFound)
+        return status;
+
+    time_t                  curr = time(0);
     {{
-        CFastMutexGuard     guard(m_JobsToDeleteLock);
-        if (m_JobsToDelete[job_id])
-            return 0;
+        CNSTransaction      transaction(this);
+
+        if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error fetching job: " + DecorateJobId(job_id));
+
+        job.SetLastTouch(curr);
+        job.Flush(this);
+        transaction.Commit();
     }}
 
-
-    CJob::EJobFetchResult   res;
-
-    {{
-        CFastMutexGuard     guard(m_OperationLock);
-
-        m_QueueDbBlock->job_db.SetTransaction(NULL);
-        m_QueueDbBlock->events_db.SetTransaction(NULL);
-        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
-        res = job.Fetch(this, job_id);
-    }}
-
-    if (res == CJob::eJF_Ok)
-        return job_id;
-    return 0;
-}
-
-
-void CQueue::TouchJob(const CJob &  job)
-{
-    CFastMutexGuard     guard(m_OperationLock);
-
-    m_GCRegistry.UpdateLifetime( job.GetId(),
-                                 job.GetExpirationTime(m_Timeout,
-                                                       m_RunTimeout,
-                                                       time(0)));
-    return;
+    m_GCRegistry.UpdateLifetime(job_id,
+                                job.GetExpirationTime(m_Timeout,
+                                                      m_RunTimeout,
+                                                      curr));
+    *lifetime = x_GetEstimatedJobLifetime(job_id, status);
+    return status;
 }
 
 
@@ -1224,6 +1263,19 @@ void CQueue::x_CancelJobs(const CNSClientId &   client,
     }
 
     return;
+}
+
+
+// This function must be called under the operations lock.
+// If called for not existing job then an exception is generated
+time_t
+CQueue::x_GetEstimatedJobLifetime(unsigned int   job_id,
+                                  TJobStatus     status) const
+{
+    if (status == CNetScheduleAPI::eRunning ||
+        status == CNetScheduleAPI::eReading)
+        return time(0) + GetTimeout();
+    return m_GCRegistry.GetLifetime(job_id);
 }
 
 

@@ -83,9 +83,10 @@ class CJobGCRegistry
                               unsigned int *  group_id);    // out: if deleted
         void UpdateLifetime(unsigned int  job_id,
                             time_t        life_time);
+        time_t  GetLifetime(unsigned int  job_id) const;
 
     private:
-        CFastMutex                      m_Lock;         // Lock for the operations
+        mutable CFastMutex              m_Lock;         // Lock for the operations
         map<unsigned int, SJobGCInfo>   m_JobsAttrs;    // Jobs with attributes
 
     private:

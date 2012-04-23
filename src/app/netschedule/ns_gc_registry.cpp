@@ -105,5 +105,20 @@ void CJobGCRegistry::UpdateLifetime(unsigned int  job_id,
 }
 
 
+time_t  CJobGCRegistry::GetLifetime(unsigned int  job_id) const
+{
+    CFastMutexGuard                     guard(m_Lock);
+    map<unsigned int,
+        SJobGCInfo>::const_iterator     attrs = m_JobsAttrs.find(job_id);
+
+    if (attrs == m_JobsAttrs.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Retreiving life time of non-registered job (ID: " +
+                   NStr::UIntToString(job_id) + ")");
+
+    return attrs->second.m_LifeTime;
+}
+
+
 END_NCBI_SCOPE
 

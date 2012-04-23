@@ -317,8 +317,6 @@ public:
     time_t          GetSubmitTime(void) const
     { return m_Events[0].m_Timestamp; }
 
-    // This one called very often to test job expiration so it needs to be as
-    // fast as possible. Lets make it inline
     time_t          GetExpirationTime(time_t  queue_timeout,
                                       time_t  queue_run_timeout,
                                       time_t  event_time = 0) const

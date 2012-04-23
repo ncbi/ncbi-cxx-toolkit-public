@@ -1122,42 +1122,63 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
 
 void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
 {
-    TJobStatus      status = q->GetJobStatus(m_CommandArguments.job_id);
-    // TODO: update timestamp
+    bool            cmdv2(m_CommandArguments.cmd == "SST2");
+    time_t          lifetime;
+    TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
+                                                     true, &lifetime);
 
-    if (m_CommandArguments.cmd == "SST2")
-        WriteMessage("OK:job_status=",
-                     CNetScheduleAPI::StatusToString(status));
-    else
-        WriteMessage("OK:", NStr::IntToString((int) status));
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        ERR_POST(Warning << "SST for unknown job: "
+        if (cmdv2)
+            WriteMessage("ERR:eJobNotFound:");
+        else
+            WriteMessage("OK:", NStr::IntToString((int) status));
+
+        ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
-        return;
+    } else {
+        if (cmdv2)
+            WriteMessage(
+                    "OK:job_status=" +
+                    CNetScheduleAPI::StatusToString(status) +
+                    "&job_exptime=" + NStr::NumericToString(lifetime)
+                    );
+        else
+            WriteMessage("OK:", NStr::IntToString((int) status));
+        x_PrintRequestStop(eStatus_OK);
     }
-    x_PrintRequestStop(eStatus_OK);
 }
 
 
 void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 {
-    TJobStatus      status = q->GetJobStatus(m_CommandArguments.job_id);
+    bool            cmdv2(m_CommandArguments.cmd == "WST2");
+    time_t          lifetime;
+    TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
+                                                     false, &lifetime);
 
-    if (m_CommandArguments.cmd == "WST2")
-        WriteMessage("OK:job_status=",
-                     CNetScheduleAPI::StatusToString(status));
-    else
-        WriteMessage("OK:", NStr::IntToString((int) status));
 
     if (status == CNetScheduleAPI::eJobNotFound) {
-        ERR_POST(Warning << "WST for unknown job: "
+        if (cmdv2)
+            WriteMessage("ERR:eJobNotFound:");
+        else
+            WriteMessage("OK:", NStr::IntToString((int) status));
+
+        ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
-        return;
+    } else {
+        if (cmdv2)
+            WriteMessage(
+                    "OK:job_status=" +
+                    CNetScheduleAPI::StatusToString(status) +
+                    "&job_exptime=" + NStr::NumericToString(lifetime)
+                    );
+        else
+            WriteMessage("OK:", NStr::IntToString((int) status));
+        x_PrintRequestStop(eStatus_OK);
     }
-    x_PrintRequestStop(eStatus_OK);
 }
 
 
@@ -1305,23 +1326,28 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
 {
     CJob            job;
-    unsigned int    job_id = q->ReadJobFromDB(m_CommandArguments.job_id, job);
+    bool            cmdv2 = (m_CommandArguments.cmd == "STATUS2");
+    time_t          lifetime;
 
-    if (job_id == 0) {
+    if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) ==
+                CNetScheduleAPI::eJobNotFound) {
         // Here: there is no such a job
-        x_WriteMessageNoThrow("OK:",
+        if (cmdv2)
+            x_WriteMessageNoThrow("ERR:eJobNotFound:");
+        else
+            x_WriteMessageNoThrow("OK:",
                      NStr::IntToString((int) CNetScheduleAPI::eJobNotFound));
-        ERR_POST(Warning << "STATUS for unknown job: "
+        ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
         return;
     }
 
     // Here: the job was found
-    q->TouchJob(job);
-    if (m_CommandArguments.cmd == "STATUS2")
+    if (cmdv2)
         WriteMessage("OK:",
                      "job_status=" + CNetScheduleAPI::StatusToString(job.GetStatus()) +
+                     "&job_exptime=" + NStr::NumericToString(lifetime) +
                      "&ret_code=" + NStr::IntToString(job.GetRetCode()) +
                      "&output=" + NStr::URLEncode(job.GetOutput()) +
                      "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
@@ -1508,14 +1534,16 @@ void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
 void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
 {
     CJob        job;
+    time_t      lifetime;
 
-    if (q->ReadJobFromDB(m_CommandArguments.job_id, job) != 0) {
-        q->TouchJob(job);
+    if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) !=
+            CNetScheduleAPI::eJobNotFound) {
         WriteMessage("OK:", job.GetProgressMsg());
         x_PrintRequestStop(eStatus_OK);
     } else {
         x_WriteMessageNoThrow("ERR:eJobNotFound:");
-        ERR_POST(Warning << "MGET for unknown job "
+        ERR_POST(Warning << m_CommandArguments.cmd
+                         << "MGET for unknown job "
                          << m_CommandArguments.job_key);
         x_PrintRequestStop(eStatus_NotFound);
     }
