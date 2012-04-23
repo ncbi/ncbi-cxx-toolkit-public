@@ -230,6 +230,7 @@ void CDeflineGenerator::x_SetFlags (
             TSEQ_REPR repr = bsh.GetInst_Repr();
             m_IsSeg = (repr == CSeq_inst::eRepr_seg);
             m_IsDelta = (repr == CSeq_inst::eRepr_delta);
+            m_IsVirtual = (repr == CSeq_inst::eRepr_virtual);
         }
     }
 
@@ -254,7 +255,7 @@ void CDeflineGenerator::x_SetFlags (
                         }
                     } else if ( (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(tsa) ) 
                     {
-                        if( (type & CSeq_id::fAcc_master) != 0 ) {
+                        if( (type & CSeq_id::fAcc_master) != 0 && m_IsVirtual ) {
                             m_TSAMaster = true;
                         }
                     } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_chromosome)) {
@@ -1677,9 +1678,16 @@ string CDeflineGenerator::x_SetSuffix (
             break;
         case NCBI_TECH(tsa):
             if (m_MIBiomol == NCBI_BIOMOL(mRNA)) {
-                if (title.find ("mRNA sequence") == NPOS){
-                    suffix = ", mRNA sequence";
-                }            
+                if (m_TSAMaster) {
+                    if (title.find ("whole genome shotgun sequencing project")
+                        == NPOS){
+                        suffix = ", whole genome shotgun sequencing project";
+                    }            
+                } else {
+                    if (title.find ("mRNA sequence") == NPOS){
+                        suffix = ", mRNA sequence";
+                    }            
+                }
             }
             break;
         default:

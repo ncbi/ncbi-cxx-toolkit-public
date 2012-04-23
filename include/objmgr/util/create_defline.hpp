@@ -169,6 +169,7 @@ private:
 
     bool m_IsSeg;
     bool m_IsDelta;
+    bool m_IsVirtual;
 
     /// seq-id fields
     bool m_IsNC;
