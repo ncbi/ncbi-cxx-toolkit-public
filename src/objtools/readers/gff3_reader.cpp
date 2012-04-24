@@ -191,6 +191,13 @@ bool CGff3Reader::x_UpdateAnnot(
     pQual->SetVal( record.Type() );
     pFeature->SetQual().push_back( pQual );
 
+    if ( record.IsSetScore() ) {
+        pQual.Reset( new CGb_qual );
+        pQual->SetQual( "gff_score" );
+        pQual->SetVal( NStr::DoubleToString( record.Score() ) );
+        pFeature->SetQual().push_back( pQual );
+    }
+
     //  Special case: exon feature belonging to an RNA we have already seen
     if (record.Type() == "exon") {
         string parent;
