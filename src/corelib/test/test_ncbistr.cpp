@@ -3060,7 +3060,7 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
         out << "#! /bin/bash" << endl;
 
         for (size_t i = 0;  i < sizeof(s_ShellStr) / sizeof(s_ShellStr[0]);  i++) {
-            string cmd = "echo ";
+            string cmd = "echo -E ";
             cmd += NStr::ShellEncode(s_ShellStr[i]);
             cmd += " >> ";
             cmd += echo_file;
