@@ -51,7 +51,8 @@ CSparseAln::CSparseAln(const CAnchoredAln& anchored_aln,
     : m_Scope(&scope),
       m_GapChar('-'),
       m_NaCoding(CSeq_data::e_not_set),
-      m_AaCoding(CSeq_data::e_not_set)
+      m_AaCoding(CSeq_data::e_not_set),
+      m_AnchorDirect(true)
 {
     x_Build(anchored_aln);
 }
@@ -217,6 +218,9 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
         ext.UpdateIndex();
         m_SecondRanges[row] = ext.GetSecondRange();
     }
+
+    const CPairwiseAln& anch_pw = *m_Aln->GetPairwiseAlns()[m_Aln->GetAnchorRow()];
+    m_AnchorDirect = anch_pw.empty() || anch_pw.begin()->IsFirstDirect();
 }
 
 
@@ -299,7 +303,7 @@ bool CSparseAln::IsPositiveStrand(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
     _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fMixedDir) );
-    return m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fDirect);
+    return m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fDirect) == m_AnchorDirect;
 }
 
 
@@ -307,7 +311,7 @@ bool CSparseAln::IsNegativeStrand(TNumrow row) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
     _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fMixedDir) );
-    return m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fReversed);
+    return m_Aln->GetPairwiseAlns()[row]->IsSet(CPairwiseAln::fReversed) == m_AnchorDirect;
 }
 
 

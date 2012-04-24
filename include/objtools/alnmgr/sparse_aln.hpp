@@ -284,6 +284,8 @@ protected:
 
     TCoding m_NaCoding;
     TCoding m_AaCoding;
+
+    bool m_AnchorDirect;
 };
 
 
