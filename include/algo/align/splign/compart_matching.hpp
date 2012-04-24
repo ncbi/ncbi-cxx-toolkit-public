@@ -160,6 +160,11 @@ public:
     /// SetHitsOnly must be set to false
     vector<vector<CRef<CBlastTabular> > > GetResults(void) { return m_Results; }
 
+    /// returns other representation of the compartments
+    /// SetOutputMethod must be set to false 
+    /// SetHitsOnly must be set to false
+    auto_ptr<CCompartmentAccessor<CBlastTabular> > ReleaseResults(void) { return m_CompResults; }
+
     void   SetPenalty(const double & penalty) { m_Penalty = penalty; }
     double GetPenalty(void) const { return m_Penalty; }
 
@@ -385,6 +390,8 @@ private:
 
     bool m_OutputMethod;
     vector<vector<CRef<CBlastTabular> > > m_Results;
+
+    auto_ptr<CCompartmentAccessor<THit> > m_CompResults; // other representation of the results 
 
     // explicit default construction not supported
     CElementaryMatching(void) {}
