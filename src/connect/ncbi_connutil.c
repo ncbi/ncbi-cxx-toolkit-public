@@ -333,6 +333,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
             dbl = DEF_CONN_TIMEOUT;
         info->tmo.sec  = (unsigned int)  dbl;
         info->tmo.usec = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
+        if (dbl  &&  !(info->tmo.sec | info->tmo.usec)
+            info->tmo.usec = 1/*protect underflow*/;
         info->timeout  = &info->tmo;
     } else
         info->timeout  = kInfiniteTimeout/*0*/;
