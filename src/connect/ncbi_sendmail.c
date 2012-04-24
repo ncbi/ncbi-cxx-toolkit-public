@@ -222,7 +222,7 @@ static void x_Sendmail_InitEnv(void)
         return;
 
     if (!ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)
-        ||  (tmo = atof(buf)) <= 0.0) {
+        ||  (tmo = atof(buf)) < 0.000001) {
         tmo = 120.0;
     }
     if (!ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
