@@ -757,6 +757,7 @@ void s_TranslatePairwise(
     ITERATE (CPairwiseAln, it, pw) {
         CPairwiseAln::TAlnRng ar = *it;
         ar.SetFirstFrom(tr.GetSecondPosByFirstPos(ar.GetFirstFrom()));
+        if (ar.GetFirstFrom() < 0) continue; // skip unaligned ranges
         out_pw.insert(ar);
     }
 }
@@ -775,51 +776,50 @@ void CreateSeqAlignFromEachPairwiseAln(
     out_seqaligns.resize(pairwises.size() - 1);
     for (TDim row = 0, sa_idx = 0;
          row < (TDim) pairwises.size();
-         ++row, ++sa_idx) {
-        if (row != anchor) {
-            CRef<CSeq_align> sa(new CSeq_align);
-            sa->SetType(CSeq_align::eType_partial);
-            sa->SetDim(2);
+         ++row) {
+        if (row == anchor) continue;
+        CRef<CSeq_align> sa(new CSeq_align);
+        sa->SetType(CSeq_align::eType_partial);
+        sa->SetDim(2);
 
-            const CPairwiseAln& pw = *pairwises[row];
-            CRef<CPairwiseAln> p(new CPairwiseAln(pairwises[anchor]->GetSecondId(),
-                                                  pw.GetSecondId(),
-                                                  pw.GetFlags()));
-            s_TranslatePairwise(*p, pw, *pairwises[anchor]);
+        const CPairwiseAln& pw = *pairwises[row];
+        CRef<CPairwiseAln> p(new CPairwiseAln(pairwises[anchor]->GetSecondId(),
+            pw.GetSecondId(),
+            pw.GetFlags()));
+        s_TranslatePairwise(*p, pw, *pairwises[anchor]);
 
-            switch(choice)    {
-            case CSeq_align::TSegs::e_Denseg: {
-                CRef<CDense_seg> ds = CreateDensegFromPairwiseAln(*p, scope);
-                sa->SetSegs().SetDenseg(*ds);
-                break;
-            }
-            case CSeq_align::TSegs::e_Disc: {
-                CRef<CSeq_align_set> disc = CreateAlignSetFromPairwiseAln(*p, scope);
-                sa->SetSegs().SetDisc(*disc);
-                break;
-            }
-            case CSeq_align::TSegs::e_Packed: {
-                CRef<CPacked_seg> ps = CreatePackedsegFromPairwiseAln(*p, scope);
-                sa->SetSegs().SetPacked(*ps);
-                break;
-            }
-            case CSeq_align::TSegs::e_Spliced: {
-                CRef<CSpliced_seg> ss = CreateSplicedsegFromPairwiseAln(*p, scope);
-                sa->SetSegs().SetSpliced(*ss);
-                break;
-            }
-            case CSeq_align::TSegs::e_Dendiag:
-            case CSeq_align::TSegs::e_Std:
-            case CSeq_align::TSegs::e_Sparse:
-                NCBI_THROW(CAlnException, eInvalidRequest,
-                           "Unsupported CSeq_align::TSegs type.");
-            case CSeq_align::TSegs::e_not_set:
-            default:
-                NCBI_THROW(CAlnException, eInvalidRequest,
-                           "Invalid CSeq_align::TSegs type.");
-            }
-            out_seqaligns[sa_idx].Reset(sa);
+        switch(choice)    {
+        case CSeq_align::TSegs::e_Denseg: {
+            CRef<CDense_seg> ds = CreateDensegFromPairwiseAln(*p, scope);
+            sa->SetSegs().SetDenseg(*ds);
+            break;
         }
+        case CSeq_align::TSegs::e_Disc: {
+            CRef<CSeq_align_set> disc = CreateAlignSetFromPairwiseAln(*p, scope);
+            sa->SetSegs().SetDisc(*disc);
+            break;
+        }
+        case CSeq_align::TSegs::e_Packed: {
+            CRef<CPacked_seg> ps = CreatePackedsegFromPairwiseAln(*p, scope);
+            sa->SetSegs().SetPacked(*ps);
+            break;
+        }
+        case CSeq_align::TSegs::e_Spliced: {
+            CRef<CSpliced_seg> ss = CreateSplicedsegFromPairwiseAln(*p, scope);
+            sa->SetSegs().SetSpliced(*ss);
+            break;
+        }
+        case CSeq_align::TSegs::e_Dendiag:
+        case CSeq_align::TSegs::e_Std:
+        case CSeq_align::TSegs::e_Sparse:
+            NCBI_THROW(CAlnException, eInvalidRequest,
+                        "Unsupported CSeq_align::TSegs type.");
+        case CSeq_align::TSegs::e_not_set:
+        default:
+            NCBI_THROW(CAlnException, eInvalidRequest,
+                        "Invalid CSeq_align::TSegs type.");
+        }
+        out_seqaligns[sa_idx++].Reset(sa);
     }
 }
 

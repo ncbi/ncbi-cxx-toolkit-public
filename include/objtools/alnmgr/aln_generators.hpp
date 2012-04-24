@@ -110,7 +110,8 @@ CreateSplicedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 
 /// Create seq-align from each of the pairwise alignments vs the selected
 /// anchor row. Each pairwise alignment's second sequence is aligned to the
-/// anchor pairwise alignment's second sequence.
+/// anchor pairwise alignment's second sequence. The output alignments contain
+/// only aligned segments, no gaps are included.
 /// @param pariwises
 ///   Input vector of CPairwiseAln.
 /// @param anchor
