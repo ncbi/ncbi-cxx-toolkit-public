@@ -112,6 +112,10 @@ bool PortalBookURLToCCddBookRef(const string& portalBookUrl, CRef< CCdd_book_ref
 NCBI_CDUTILS_EXPORT
 string CCddBookRefToPortalString(const CCdd_book_ref& bookRef);
 
+//  Construct the 'term' parameter for an esearch.fcgi eUtils call to the books 
+//  database for the given book reference object.
+NCBI_CDUTILS_EXPORT
+string CCddBookRefToEsearchTerm(const CCdd_book_ref& bookRef);
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

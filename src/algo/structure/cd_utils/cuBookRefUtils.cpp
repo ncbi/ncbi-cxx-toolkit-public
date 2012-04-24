@@ -59,6 +59,111 @@ string CCddBookRefToString(const CCdd_book_ref& bookRef)
     }
 }
 
+
+//  Adapted from CDTree.
+//  Notes on doing esearch queries of the bookshelf:
+//  1)  when have subelement, term is something like this:
+//          eurekah/A17112/sec/A17113/pmc[rid]
+//  2)  when there is no m_parsedSubelementId (or it is equal to m_parsedElement),
+//  a slightly different format is used:
+//          eurekah/chapter/A17112/pmc
+//  3)  the esearch.fcgi 'term' allows 'OR' constructs for when it's not clear 
+//  what the esearchType should be.   E.g., with '%20' being a URL-encoded space,
+//          cmed6/sec/A41564/pmc[rid]%20OR%20cmed6/chapter/A41564/pmc[rid]%20or%20cmed6/part/A41564/pmc[rid]
+string BrFcgiBookTermToEutilsTerm(const string& brfcgiBookTerm, bool forceOR)
+{
+    static const string section("section");
+    static const string slash("/"), suffix("/pmc[rid]"), orString("%20OR%20"), dummyElement("DUMMY_ELEMENT");
+
+    bool distinctSubelement;
+    string term = kEmptyStr;
+    string baseTerm;
+    string bookname, elementType, elementId, subelementId;
+    bookname = elementType = elementId = subelementId = kEmptyStr;
+
+    //  Assumed format for a 'br.fcgi' derived book reference:
+    //  figure/table
+    //  bookname&part=part&rendertype=rendertype&id=id;
+    //
+    //  everything else is treated as a 'section'
+    //  bookname&part=part[#id]
+
+    CRegexp regexpSection("(.*)&part=(.*)$");
+    CRegexp regexpSectionWithSubelement("(.*)&part=(.*)#(.*)");
+    CRegexp regexpRendertype("(.*)&part=(.*)&rendertype=(.*)&id=(.*)");
+
+    if (regexpRendertype.GetMatch(brfcgiBookTerm).length() > 0) {
+        bookname = regexpRendertype.GetSub(brfcgiBookTerm, 1);
+        elementType = regexpRendertype.GetSub(brfcgiBookTerm, 3);  // element type
+        elementId = regexpRendertype.GetSub(brfcgiBookTerm, 2);  // element id
+        subelementId = regexpRendertype.GetSub(brfcgiBookTerm, 4);
+    } else if (regexpSectionWithSubelement.GetMatch(brfcgiBookTerm).length() > 0) {
+        bookname = regexpSectionWithSubelement.GetSub(brfcgiBookTerm, 1);
+        elementType = section;
+        elementId = regexpSectionWithSubelement.GetSub(brfcgiBookTerm, 2);  // element id
+        subelementId = regexpSectionWithSubelement.GetSub(brfcgiBookTerm, 3);
+    } else if (regexpSection.GetMatch(brfcgiBookTerm).length() > 0) {
+        bookname = regexpSection.GetSub(brfcgiBookTerm, 1);
+        elementType = section;
+        elementId = regexpSection.GetSub(brfcgiBookTerm, 2);  // element id
+    }
+
+    distinctSubelement = (subelementId.length() > 0 && subelementId != elementId);
+
+    if (elementType == "glossary") {
+        elementType = "def-item";
+    } else if (elementType.substr(0, 3) == "app") {
+        elementType = "appendix";
+    } else if (elementType.substr(0, 3) == "box") {
+        elementType = "box";
+    } else if (elementType.substr(0, 3) == "fig") {
+        elementType = "figgrp";
+    } else if (elementType.substr(0, 3) == "sec" || elementType == "unassigned") {
+        elementType = "sec";
+    } else if (elementType.substr(0, 5) == "table") {
+        elementType = "table";
+    } 
+
+
+    if (elementType.length() > 0) {
+
+        if (distinctSubelement) {
+            baseTerm = bookname + slash + elementId + slash + dummyElement + slash + subelementId + suffix;
+        } else {
+            baseTerm = bookname + slash + dummyElement + slash + elementId + suffix;
+        }
+
+        //  need to use the 'OR' syntax since we don't know what this is; 
+        //  try 'sec', 'chapter', 'part', 'figgrp', 'table'
+        if (forceOR || elementType == "book-part") {
+            term = NStr::Replace(baseTerm, dummyElement, "sec") + orString;
+            term += NStr::Replace(baseTerm, dummyElement, "chapter") + orString;
+            term += NStr::Replace(baseTerm, dummyElement, "figgrp") + orString;
+            term += NStr::Replace(baseTerm, dummyElement, "table") + orString;
+            term += NStr::Replace(baseTerm, dummyElement, "part");
+        } else {
+            term = NStr::Replace(baseTerm, dummyElement, elementType);
+        }
+
+    }
+
+    return term;
+}
+
+string CCddBookRefToEsearchTerm(const CCdd_book_ref& bookRef)
+{
+    string term;
+    if (IsPortalDerivedBookRef(bookRef)) {
+        string portalBookTerm = CCddBookRefToPortalString(bookRef);
+        term = NStr::Replace(portalBookTerm, "/#", "/");
+    } else {
+        // transform brBookTerm (as per CDTree's BrFcgiBookTermToXMLViaEutils)
+        string brBookTerm = CCddBookRefToBrString(bookRef);
+        term = BrFcgiBookTermToEutilsTerm(brBookTerm, false);
+    }
+    return term;
+}
+
 string CCddBookRefToBvString(const CCdd_book_ref& bookRef)
 {
     string result;
