@@ -13,6 +13,9 @@ from netschedule_tests_pack import TestBase
 import grid_v01
 import ncbi.grid.ns as grid
 
+# Works for python 2.5. Python 2.7 has it in urlparse module
+from cgi import parse_qs
+
 
 NON_EXISTED_JOB = "JSID_01_777_130.14.24.83_9101"
 
@@ -1091,8 +1094,13 @@ class Scenario126( TestBase ):
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
 
         output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1154,8 +1162,13 @@ class Scenario128( TestBase ):
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
 
         output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1219,8 +1232,13 @@ class Scenario131( TestBase ):
         changeAffinity( ns_client, [ 'a2' ], [] )
 
         output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1256,8 +1274,13 @@ class Scenario132( TestBase ):
         changeAffinity( ns_client, [ 'a2' ], [] )
 
         output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1 aff=a1' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID2 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1293,8 +1316,13 @@ class Scenario133( TestBase ):
         changeAffinity( ns_client, [ 'a2' ], [] )
 
         output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1 aff=a5' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID2 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1330,8 +1358,13 @@ class Scenario134( TestBase ):
         changeAffinity( ns_client, [ 'a2' ], [] )
 
         output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1 aff=a5' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID1 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1400,8 +1433,13 @@ class Scenario136( TestBase ):
         changeAffinity( ns_client, [ 'a7' ], [] )
 
         output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1 aff=a5' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID1 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1445,8 +1483,13 @@ class Scenario137( TestBase ):
         changeAffinity( ns_client, [ 'a1' ], [] )
 
         output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID1 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -5486,8 +5529,13 @@ class Scenario251( TestBase ):
                                              'TEST', 'scenario251' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Inconsistency" )
@@ -5518,8 +5566,13 @@ class Scenario252( TestBase ):
                                              'TEST', 'scenario252' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Inconsistency" )
@@ -5561,8 +5614,13 @@ class Scenario253( TestBase ):
                                              'TEST', 'scenario253' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Inconsistency" )
@@ -5605,8 +5663,13 @@ class Scenario254( TestBase ):
                                              'TEST', 'scenario254' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Inconsistency" )
@@ -5648,8 +5711,13 @@ class Scenario255( TestBase ):
                                              'TEST', 'scenario255' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
-        receivedJobID = output.split()[ 0 ].strip()
-        passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+        if '&' in output:
+            values = parse_qs( output, True, True )
+            receivedJobID = values[ 'job_key' ][ 0 ]
+            passport = values[ 'auth_token' ][ 0 ]
+        else:
+            receivedJobID = output.split()[ 0 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
 
         if jobID != receivedJobID:
             raise Exception( "Inconsistency" )
