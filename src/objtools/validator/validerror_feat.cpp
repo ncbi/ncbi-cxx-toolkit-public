@@ -2084,12 +2084,17 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
     
     // suppress for specific biological exceptions
     if (feat.IsSetExcept() && feat.IsSetExcept_text()
+        && (NStr::FindNoCase (feat.GetExcept_text(), "low-quality sequence region") != string::npos)) {
+        return;
+    }
+    if (feat.IsSetExcept() && feat.IsSetExcept_text()
         && (NStr::FindNoCase (feat.GetExcept_text(), "ribosomal slippage") != string::npos
             || NStr::FindNoCase (feat.GetExcept_text(), "artificial frameshift") != string::npos
             || NStr::FindNoCase (feat.GetExcept_text(), "nonconsensus splice site") != string::npos
             || NStr::FindNoCase (feat.GetExcept_text(), "adjusted for low-quality genome") != string::npos
             || NStr::FindNoCase (feat.GetExcept_text(), "heterogeneous population sequenced") != string::npos
-            || NStr::FindNoCase (feat.GetExcept_text(), "low-quality sequence region") != string::npos)) {
+            || NStr::FindNoCase (feat.GetExcept_text(), "low-quality sequence region") != string::npos
+            || NStr::FindNoCase (feat.GetExcept_text(), "artificial location") != string::npos)) {
         report_errors = false;
     }
 
