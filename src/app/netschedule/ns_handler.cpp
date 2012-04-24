@@ -2264,7 +2264,7 @@ void CNetScheduleHandler::x_CloseConnection(void)
 void
 CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                                            const CJob &    job,
-                                           bool            security_token)
+                                           bool            cmdv2)
 {
     if (!job.GetId()) {
         // No suitable job found
@@ -2274,25 +2274,31 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
         return;
     }
 
-    // Here: a suitable job found
-    string      response = q->MakeKey(job.GetId());
-
+    string      job_key = q->MakeKey(job.GetId());
     if (m_Server->IsLog()) {
         // The only piece required for logging is the job key
-        GetDiagContext().Extra().Print("job_key", response);
+        GetDiagContext().Extra().Print("job_key", job_key);
     }
 
-    // We can re-use old jout and jerr job parameters for affinity and
-    // session id/client ip respectively.
-    response += " \"" + NStr::PrintableString(job.GetInput()) + "\""
-                " \"" + NStr::PrintableString(
-                            q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
-                " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
-                " " + NStr::UIntToString(job.GetMask());
-    if (security_token)
-        response += " " + job.GetAuthToken();
+    string          output;
+    if (cmdv2)
+        output = "job_key=" + job_key +
+                 "&input=" + NStr::URLEncode(job.GetInput()) +
+                 "&affinity=" + NStr::URLEncode(q->GetAffinityTokenByID(job.GetAffinityId())) +
+                 "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
+                 "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
+                 "&mask=" + NStr::UIntToString(job.GetMask()) +
+                 "&auth_token=" + job.GetAuthToken();
+    else
+        output = job_key +
+                 " \"" + NStr::PrintableString(job.GetInput()) + "\""
+                 " \"" + NStr::PrintableString(
+                           q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
+                 " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
+                 " " + NStr::UIntToString(job.GetMask());
 
-    WriteMessage("OK:", response);
+
+    WriteMessage("OK:", output);
     return;
 }
 
