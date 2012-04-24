@@ -1966,10 +1966,13 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
 
         const THit::TCoord penalty = THit::TCoord(round(m_Penalty * qlen));
 
-        CCompartmentAccessor<THit> ca (penalty,
-                                       min_matches1,
-                                       min_matches2,
-                                       true);
+        m_CompResults.reset(new CCompartmentAccessor<THit>(penalty,
+                                                           min_matches1,
+                                                           min_matches2,
+                                                           true));
+
+        CCompartmentAccessor<THit>& ca = *m_CompResults;
+
         ca.SetMaxIntron(m_MaxIntron);
         ca.Run(hitrefs.begin(), hitrefs.end());
 
