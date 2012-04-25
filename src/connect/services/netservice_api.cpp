@@ -892,10 +892,7 @@ SNetServerPoolImpl::~SNetServerPoolImpl()
 
 SNetServiceImpl::~SNetServiceImpl()
 {
-    // Delete fake server "groups" in single-server "services".
-    // See SNetServiceImpl::Construct(SNetServerInPool* server).
-    if (m_ServiceType == eSingleServerService)
-        delete m_DiscoveredServers;
+    delete m_DiscoveredServers;
 
     // Clean up m_ServerGroupPool
     SDiscoveredServers* server_group = m_ServerGroupPool;
