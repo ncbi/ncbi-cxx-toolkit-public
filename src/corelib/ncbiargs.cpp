@@ -835,6 +835,8 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
     string role;
     if (s_IsKey(*this)) {
         role = "key";
+    } else if (s_IsOpening(*this)) {
+        role = "opening";
     } else if (s_IsPositional(*this)) {
         role = GetName().empty() ? "extra" : "positional";
     } else if (s_IsFlag(*this)) {
@@ -2856,101 +2858,98 @@ void CArgDescriptions::x_PrintComment(list<string>&   arr,
     }
 }
 
-
-string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
+CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
+    : m_desc(desc)
 {
     typedef list<const CArgDesc*> TList;
     typedef TList::iterator       TListI;
-    typedef TList::const_iterator TListCI;
 
-    TList args;
-
-    args.push_front(0);
-    TListI it_pos = args.begin();
+    m_args.push_front(0);
+    TListI it_pos = m_args.begin();
 
     // Opening
-    for (TPosArgs::const_iterator name = m_OpeningArgs.begin();
-         name != m_OpeningArgs.end();  ++name) {
-        TArgsCI it = x_Find(*name);
-        _ASSERT(it != m_Args.end());
+    for (TPosArgs::const_iterator name = desc.m_OpeningArgs.begin();
+         name != desc.m_OpeningArgs.end();  ++name) {
+        TArgsCI it = desc.x_Find(*name);
+        _ASSERT(it != desc.m_Args.end());
         const CArgDesc* arg = it->get();
-        args.insert(it_pos, it->get());
+        m_args.insert(it_pos, it->get());
     }
 
     // Keys and Flags
-    if ( m_UsageSortArgs ) {
+    if ( desc.m_UsageSortArgs ) {
         // Alphabetically ordered,
         // mandatory keys to go first, then flags, then optional keys
         TListI& it_opt_keys = it_pos;
-        args.push_front(0);
-        TListI it_flags = args.begin();
-        args.push_front(0);
-        TListI it_keys  = args.begin();
+        TListI it_keys  = m_args.insert(it_pos,nullptr);
+        TListI it_flags = m_args.insert(it_pos,nullptr);
 
-        for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
+        for (TArgsCI it = desc.m_Args.begin();  it != desc.m_Args.end();  ++it) {
             const CArgDesc* arg = it->get();
 
             if (dynamic_cast<const CArgDesc_KeyOpt*> (arg)  ||
                 dynamic_cast<const CArgDesc_KeyDef*> (arg)) {
-                args.insert(it_opt_keys, arg);
+                m_args.insert(it_opt_keys, arg);
             } else if (dynamic_cast<const CArgDesc_Key*> (arg)) {
-                args.insert(it_keys, arg);
+                m_args.insert(it_keys, arg);
             } else if (dynamic_cast<const CArgDesc_Flag*> (arg)) {
-                if ((m_AutoHelp &&
+                if ((desc.m_AutoHelp &&
                     strcmp(s_AutoHelp,     (arg->GetName()).c_str()) == 0) ||
                     strcmp(s_AutoHelpFull, (arg->GetName()).c_str()) == 0)
-                    args.push_front(arg);
+                    m_args.push_front(arg);
                 else
-                    args.insert(it_flags, arg);
+                    m_args.insert(it_flags, arg);
             }
         }
-        args.erase(it_keys);
-        args.erase(it_flags);
+        m_args.erase(it_keys);
+        m_args.erase(it_flags);
     } else {
         // Unsorted, just the order they were described by user
-        for (TKeyFlagArgs::const_iterator name = m_KeyFlagArgs.begin();
-             name != m_KeyFlagArgs.end();  ++name) {
-            TArgsCI it = x_Find(*name);
-            _ASSERT(it != m_Args.end());
+        for (TKeyFlagArgs::const_iterator name = desc.m_KeyFlagArgs.begin();
+             name != desc.m_KeyFlagArgs.end();  ++name) {
+            TArgsCI it = desc.x_Find(*name);
+            _ASSERT(it != desc.m_Args.end());
 
-            args.insert(it_pos, it->get());
+            m_args.insert(it_pos, it->get());
         }
     }
 
     // Positional
-    for (TPosArgs::const_iterator name = m_PosArgs.begin();
-         name != m_PosArgs.end();  ++name) {
-        TArgsCI it = x_Find(*name);
-        _ASSERT(it != m_Args.end());
+    for (TPosArgs::const_iterator name = desc.m_PosArgs.begin();
+         name != desc.m_PosArgs.end();  ++name) {
+        TArgsCI it = desc.x_Find(*name);
+        _ASSERT(it != desc.m_Args.end());
         const CArgDesc* arg = it->get();
 
         // Mandatory args to go first, then go optional ones
         if (dynamic_cast<const CArgDesc_PosOpt*> (arg)) {
-            args.push_back(arg);
+            m_args.push_back(arg);
         } else if (dynamic_cast<const CArgDesc_Pos*> (arg)) {
-            args.insert(it_pos, arg);
+            m_args.insert(it_pos, arg);
         }
     }
-    args.erase(it_pos);
+    m_args.erase(it_pos);
 
     // Extra
     {{
-        TArgsCI it = x_Find(kEmptyStr);
-        if (it != m_Args.end()) {
-            args.push_back(it->get());
+        TArgsCI it = desc.x_Find(kEmptyStr);
+        if (it != desc.m_Args.end()) {
+            m_args.push_back(it->get());
         }
     }}
+}
 
-    // Do Printout
-    TListCI      it;
-    list<string> arr;
+CArgDescriptions::CPrintUsage::~CPrintUsage()
+{
+}
 
-    // SYNOPSIS
-    arr.push_back("USAGE");
-
-    if (m_ArgsType == eCgiArgs) {
-        list<string> syn;
-        for (it = args.begin();  it != args.end();  ++it) {
+void CArgDescriptions::CPrintUsage::AddSynopsis(list<string>& arr,
+    const string& intro, const string& prefix) const
+{
+    list<const CArgDesc*>::const_iterator it;
+    list<string> syn;
+    if (m_desc.GetArgsType() == eCgiArgs) {
+        for (it = m_args.begin();  it != m_args.end();  ++it) {
             const CArgDescSynopsis* as = 
                 dynamic_cast<const CArgDescSynopsis*>(&**it);
 
@@ -2961,12 +2960,13 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
             }
         } // for
         NStr::WrapList(
-            syn, m_UsageWidth, "&", arr, 0, "?", "  "+m_UsageName+"?");
+            syn, m_desc.m_UsageWidth, "&", arr, 0, "?", "  "+m_desc.m_UsageName+"?");
 
     } else { // regular application
-        list<string> syn;
-        syn.push_back(m_UsageName);
-        for (it = args.begin();  it != args.end();  ++it) {
+        if (!intro.empty()) {
+            syn.push_back(intro);
+        }
+        for (it = m_args.begin();  it != m_args.end();  ++it) {
             if ( s_IsOptional(**it) || s_IsFlag(**it) ) {
                 syn.push_back('[' + (*it)->GetUsageSynopsis() + ']');
             } else if ( s_IsPositional(**it) || s_IsOpening(**it) ) {
@@ -2975,86 +2975,130 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
                 syn.push_back((*it)->GetUsageSynopsis());
             }
         } // for
-        NStr::WrapList(syn, m_UsageWidth, " ", arr, 0, "    ", "  ");
+        NStr::WrapList(syn, m_desc.m_UsageWidth, " ", arr, 0, prefix, "  ");
     }
+}
 
-    // DESCRIPTION
-    arr.push_back(kEmptyStr);
-    if ( m_UsageDescription.empty() ) {
+void CArgDescriptions::CPrintUsage::AddDescription(list<string>& arr) const
+{
+    if ( m_desc.m_UsageDescription.empty() ) {
         arr.push_back("DESCRIPTION    -- none");
     } else {
         arr.push_back("DESCRIPTION");
-        s_PrintCommentBody(arr, m_UsageDescription, m_UsageWidth);
+        s_PrintCommentBody(arr, m_desc.m_UsageDescription, m_desc.m_UsageWidth);
     }
+}
 
-    // REQUIRED & OPTIONAL ARGUMENTS
+void CArgDescriptions::CPrintUsage::AddCommandDescription(list<string>& arr,
+    const string& cmd, const map<string,string>* aliases,
+    size_t max_cmd_len, bool detailed) const
+{
     if (detailed) {
-        list<string> req;
-        list<string> opt;
-        // Collect mandatory args
-        for (it = args.begin();  it != args.end();  ++it) {
-            if (s_IsOptional(**it)  ||  s_IsFlag(**it)) {
+        arr.push_back(kEmptyStr);
+    }
+    string cmd_full(cmd);
+    if (aliases) {
+        map<string,string>::const_iterator a = aliases->find(cmd);
+        if (a != aliases->end()) {
+            cmd_full += " (" + a->second + ")";
+        }
+    }
+    cmd_full += string( max_cmd_len - cmd_full.size(), ' ');
+    cmd_full += "- ";
+    cmd_full += m_desc.m_UsageDescription;
+    arr.push_back(string("    ")+ cmd_full);
+    if (detailed) {
+        AddSynopsis(arr,string(max_cmd_len+3+3,' '),string(max_cmd_len+6+3,' '));
+    }
+}
+
+void CArgDescriptions::CPrintUsage::AddDetails(list<string>& arr) const
+{
+    list<const CArgDesc*>::const_iterator it;
+    list<string> req;
+    list<string> opt;
+    // Collect mandatory args
+    for (it = m_args.begin();  it != m_args.end();  ++it) {
+        if (s_IsOptional(**it)  ||  s_IsFlag(**it)) {
+            continue;
+        }
+        m_desc.x_PrintComment(req, **it, m_desc.m_UsageWidth);
+    }
+    // Collect optional args
+    for (size_t grp = 0;  grp < m_desc.m_ArgGroups.size();  ++grp) {
+        list<string> grp_opt;
+        bool group_not_empty = false;
+        if ( !m_desc.m_ArgGroups[grp].empty() ) {
+            NStr::Wrap(m_desc.m_ArgGroups[grp], m_desc.m_UsageWidth, grp_opt,
+                NStr::fWrap_Hyphenate, " *** ");
+        }
+        for (it = m_args.begin();  it != m_args.end();  ++it) {
+            if (!s_IsOptional(**it)  &&  !s_IsFlag(**it)) {
                 continue;
             }
-            x_PrintComment(req, **it, m_UsageWidth);
-        }
-        // Collect optional args
-        for (size_t grp = 0;  grp < m_ArgGroups.size();  ++grp) {
-            list<string> grp_opt;
-            bool group_not_empty = false;
-            if ( !m_ArgGroups[grp].empty() ) {
-                NStr::Wrap(m_ArgGroups[grp], m_UsageWidth, grp_opt,
-                    NStr::fWrap_Hyphenate, " *** ");
-            }
-            for (it = args.begin();  it != args.end();  ++it) {
-                if (!s_IsOptional(**it)  &&  !s_IsFlag(**it)) {
-                    continue;
-                }
-                if ((*it)->GetGroup() == grp) {
-                    x_PrintComment(grp_opt, **it, m_UsageWidth);
-                    group_not_empty = true;
-                }
-            }
-            if ( group_not_empty ) {
-                opt.insert(opt.end(), grp_opt.begin(), grp_opt.end());
-                opt.push_back(kEmptyStr);
+            if ((*it)->GetGroup() == grp) {
+                m_desc.x_PrintComment(grp_opt, **it, m_desc.m_UsageWidth);
+                group_not_empty = true;
             }
         }
-        if ( !req.empty() ) {
-            arr.push_back(kEmptyStr);
-            arr.push_back("REQUIRED ARGUMENTS");
-            arr.splice(arr.end(), req);
+        if ( group_not_empty ) {
+            opt.insert(opt.end(), grp_opt.begin(), grp_opt.end());
+            opt.push_back(kEmptyStr);
         }
-        if ( !m_nExtra  &&  !opt.empty() ) {
-            arr.push_back(kEmptyStr);
-            arr.push_back("OPTIONAL ARGUMENTS");
-            arr.splice(arr.end(), opt);
-        }
+    }
+    if ( !req.empty() ) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("REQUIRED ARGUMENTS");
+        arr.splice(arr.end(), req);
+    }
+    if ( !m_desc.m_nExtra  &&  !opt.empty() ) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("OPTIONAL ARGUMENTS");
+        arr.splice(arr.end(), opt);
+    }
 
-        // # of extra arguments
-        if (m_nExtra  ||  (m_nExtraOpt != 0  &&  m_nExtraOpt != kMax_UInt)) {
-            string str_extra = "NOTE:  Specify ";
-            if ( m_nExtra ) {
-                str_extra += "at least ";
-                str_extra += NStr::UIntToString(m_nExtra);
-                if (m_nExtraOpt != kMax_UInt) {
-                    str_extra += ", and ";
-                }
+    // # of extra arguments
+    if (m_desc.m_nExtra  ||  (m_desc.m_nExtraOpt != 0  && m_desc.m_nExtraOpt != kMax_UInt)) {
+        string str_extra = "NOTE:  Specify ";
+        if ( m_desc.m_nExtra ) {
+            str_extra += "at least ";
+            str_extra += NStr::UIntToString(m_desc.m_nExtra);
+            if (m_desc.m_nExtraOpt != kMax_UInt) {
+                str_extra += ", and ";
             }
-            if (m_nExtraOpt != kMax_UInt) {
-                str_extra += "no more than ";
-                str_extra += NStr::UIntToString(m_nExtra + m_nExtraOpt);
-            }
-            str_extra +=
-                " argument" + string(&"s"[m_nExtra + m_nExtraOpt == 1]) +
-                " in \"....\"";
-            s_PrintCommentBody(arr, str_extra, m_UsageWidth);
         }
-        if ( m_nExtra  &&  !opt.empty() ) {
-            arr.push_back(kEmptyStr);
-            arr.push_back("OPTIONAL ARGUMENTS");
-            arr.splice(arr.end(), opt);
+        if (m_desc.m_nExtraOpt != kMax_UInt) {
+            str_extra += "no more than ";
+            str_extra += NStr::UIntToString(m_desc.m_nExtra + m_desc.m_nExtraOpt);
         }
+        str_extra +=
+            " argument" + string(&"s"[m_desc.m_nExtra + m_desc.m_nExtraOpt == 1]) +
+            " in \"....\"";
+        s_PrintCommentBody(arr, str_extra, m_desc.m_UsageWidth);
+    }
+    if ( m_desc.m_nExtra  &&  !opt.empty() ) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("OPTIONAL ARGUMENTS");
+        arr.splice(arr.end(), opt);
+    }
+}
+
+string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
+{
+    CPrintUsage x(*this);
+    list<string> arr;
+
+    // SYNOPSIS
+    arr.push_back("USAGE");
+    x.AddSynopsis(arr, m_UsageName,"    ");
+
+    // DESCRIPTION
+    arr.push_back(kEmptyStr);
+    x.AddDescription(arr);
+
+    // details
+    if (detailed) {
+        x.AddDetails(arr);
     } else {
         arr.push_back(kEmptyStr);
         arr.push_back("Use '-help' to print detailed descriptions of command line arguments");
@@ -3065,94 +3109,116 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
     return str;
 }
 
-void CArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
+CArgDescriptions::CPrintUsageXml::CPrintUsageXml(const CArgDescriptions& desc, CNcbiOstream& out)
+    : m_out(out)
 {
-    out << "<" << "ncbi_application" << ">" << endl;
-
-    out << "<" << "program" << " type=\"";
-    if (m_ArgsType == eRegularArgs) {
-        out << "regular";
-    } else if (m_ArgsType == eCgiArgs) {
-        out << "cgi";
+    m_out << "<?xml version=\"1.0\"?>" << endl;
+    m_out << "<" << "ncbi_application xmlns=\"ncbi:application\"" << endl
+        << " xmlns:xs=\"http://www.w3.org/2001/XMLSchema-instance\"" << endl
+        << " xs:schemaLocation=\"ncbi:application ncbi_application.xsd\"" << endl
+        << ">" << endl;
+    m_out << "<" << "program" << " type=\"";
+    if (desc.GetArgsType() == eRegularArgs) {
+        m_out << "regular";
+    } else if (desc.GetArgsType() == eCgiArgs) {
+        m_out << "cgi";
     } else {
-        out << "UNKNOWN";
+        m_out << "UNKNOWN";
     }
-    out << "\"" << ">" << endl;    
-    s_WriteXmlLine(out, "name", m_UsageName);
-    s_WriteXmlLine(out, "version", 
+    m_out << "\"" << ">" << endl;    
+    s_WriteXmlLine(m_out, "name", desc.m_UsageName);
+    s_WriteXmlLine(m_out, "version", 
         CNcbiApplication::Instance()->GetVersion().Print());
-    s_WriteXmlLine(out, "description", m_UsageDescription);
-    out << "</" << "program" << ">" << endl;
+    s_WriteXmlLine(m_out, "description", desc.m_UsageDescription);
+    m_out << "</" << "program" << ">" << endl;
+}
+CArgDescriptions::CPrintUsageXml::~CPrintUsageXml()
+{
+    m_out << "</" << "ncbi_application" << ">" << endl;
+}
 
-    out << "<" << "arguments";
-    if (GetPositionalMode() == ePositionalMode_Loose) {
-        out << " positional_mode=\"loose\"";
+void CArgDescriptions::CPrintUsageXml::PrintArguments(const CArgDescriptions& desc) const
+{
+    m_out << "<" << "arguments";
+    if (desc.GetPositionalMode() == ePositionalMode_Loose) {
+        m_out << " positional_mode=\"loose\"";
     }
-    out << ">" << endl;
+    m_out << ">" << endl;
 
     string tag;
-// positional
-    ITERATE(TPosArgs, p, m_PosArgs) {
-        ITERATE (TArgs, a, m_Args) {
+
+// opening
+    ITERATE(TPosArgs, p, desc.m_OpeningArgs) {
+        ITERATE (TArgs, a, desc.m_Args) {
             if ((**a).GetName() == *p) {
-                tag = (*a)->PrintXml(out);
-                x_PrintAliasesAsXml(out, (*a)->GetName());
-                out << "</" << tag << ">" << endl;
+                tag = (*a)->PrintXml(m_out);
+                m_out << "</" << tag << ">" << endl;
+            }
+        }
+    }
+// positional
+    ITERATE(TPosArgs, p, desc.m_PosArgs) {
+        ITERATE (TArgs, a, desc.m_Args) {
+            if ((**a).GetName() == *p) {
+                tag = (*a)->PrintXml(m_out);
+                desc.x_PrintAliasesAsXml(m_out, (*a)->GetName());
+                m_out << "</" << tag << ">" << endl;
             }
         }
     }
 // keys
-    ITERATE (TArgs, a, m_Args) {
+    ITERATE (TArgs, a, desc.m_Args) {
         if (s_IsKey(**a)) {
-            tag = (*a)->PrintXml(out);
-            x_PrintAliasesAsXml(out, (*a)->GetName());
-            out << "</" << tag << ">" << endl;
+            tag = (*a)->PrintXml(m_out);
+            desc.x_PrintAliasesAsXml(m_out, (*a)->GetName());
+            m_out << "</" << tag << ">" << endl;
         }
     }
 // flags
-    ITERATE (TArgs, a, m_Args) {
+    ITERATE (TArgs, a, desc.m_Args) {
         if (s_IsFlag(**a)) {
-            tag = (*a)->PrintXml(out);
-            x_PrintAliasesAsXml(out, (*a)->GetName());
-            x_PrintAliasesAsXml(out, (*a)->GetName(), true);
-            out << "</" << tag << ">" << endl;
+            tag = (*a)->PrintXml(m_out);
+            desc.x_PrintAliasesAsXml(m_out, (*a)->GetName());
+            desc.x_PrintAliasesAsXml(m_out, (*a)->GetName(), true);
+            m_out << "</" << tag << ">" << endl;
         }
     }
 // extra positional
-    ITERATE (TArgs, a, m_Args) {
+    ITERATE (TArgs, a, desc.m_Args) {
         if (s_IsPositional(**a) && (**a).GetName().empty()) {
-            tag = (*a)->PrintXml(out);
-            s_WriteXmlLine(out, "min_occurs", NStr::UIntToString(m_nExtra));
-            s_WriteXmlLine(out, "max_occurs", NStr::UIntToString(m_nExtraOpt));
-            out << "</" << tag << ">" << endl;
+            tag = (*a)->PrintXml(m_out);
+            s_WriteXmlLine(m_out, "min_occurs", NStr::UIntToString(desc.m_nExtra));
+            s_WriteXmlLine(m_out, "max_occurs", NStr::UIntToString(desc.m_nExtraOpt));
+            m_out << "</" << tag << ">" << endl;
         }
     }
-    if (!m_Dependencies.empty()) {
-        out << "<" << "dependencies" << ">" << endl;
-        ITERATE(TDependencies, dep, m_Dependencies) {
+    if (!desc.m_Dependencies.empty()) {
+        m_out << "<" << "dependencies" << ">" << endl;
+        ITERATE(TDependencies, dep, desc.m_Dependencies) {
             if (dep->second.m_Dep == eRequires) {
-                out << "<" << "first_requires_second" << ">" << endl;
-                s_WriteXmlLine(out, "arg1", dep->first);
-                s_WriteXmlLine(out, "arg2", dep->second.m_Arg);
-                out << "</" << "first_requires_second" << ">" << endl;
+                m_out << "<" << "first_requires_second" << ">" << endl;
+                s_WriteXmlLine(m_out, "arg1", dep->first);
+                s_WriteXmlLine(m_out, "arg2", dep->second.m_Arg);
+                m_out << "</" << "first_requires_second" << ">" << endl;
             }
         }
-        ITERATE(TDependencies, dep, m_Dependencies) {
+        ITERATE(TDependencies, dep, desc.m_Dependencies) {
             if (dep->second.m_Dep == eExcludes) {
-                out << "<" << "first_excludes_second" << ">" << endl;
-                s_WriteXmlLine(out, "arg1", dep->first);
-                s_WriteXmlLine(out, "arg2", dep->second.m_Arg);
-                out << "</" << "first_excludes_second" << ">" << endl;
+                m_out << "<" << "first_excludes_second" << ">" << endl;
+                s_WriteXmlLine(m_out, "arg1", dep->first);
+                s_WriteXmlLine(m_out, "arg2", dep->second.m_Arg);
+                m_out << "</" << "first_excludes_second" << ">" << endl;
             }
         }
-        out << "</" << "dependencies" << ">" << endl;
+        m_out << "</" << "dependencies" << ">" << endl;
     }
+    m_out << "</" << "arguments" << ">" << endl;
+}
 
-
-
-    out << "</" << "arguments" << ">" << endl;
-
-    out << "</" << "ncbi_application" << ">" << endl;
+void CArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
+{
+    CPrintUsageXml x(*this,out);
+    x.PrintArguments(*this);
 }
 
 void CArgDescriptions::x_PrintAliasesAsXml( CNcbiOstream& out,
@@ -3179,13 +3245,32 @@ CCommandArgDescriptions::CCommandArgDescriptions(
     bool auto_help, CArgErrorHandler* err_handler)
     : CArgDescriptions(auto_help,err_handler)
 {
+    SetCurrentCommandGroup(kEmptyStr);
 }
+
 CCommandArgDescriptions::~CCommandArgDescriptions(void)
 {
 }
 
+void CCommandArgDescriptions::SetCurrentCommandGroup(const string& group)
+{
+    m_CurrentGroup = x_GetCommandGroupIndex(group);
+}
+
+size_t CCommandArgDescriptions::x_GetCommandGroupIndex(const string& group)
+{
+    for (size_t i = 1; i < m_CmdGroups.size(); ++i) {
+        if ( NStr::EqualNocase(m_CmdGroups[i], group) ) {
+            return i;
+        }
+    }
+    m_CmdGroups.push_back(group);
+    return m_CmdGroups.size()-1;
+}
+
 void CCommandArgDescriptions::AddCommand(
-    const string& cmd, CArgDescriptions* description)
+    const string& cmd, CArgDescriptions* description,
+    const string& alias)
 {
 
     string command( NStr::TruncateSpaces(cmd));
@@ -3201,16 +3286,57 @@ void CCommandArgDescriptions::AddCommand(
             description->Delete(s_AutoHelpXml);
         }
         m_Description[command] = description;
+        m_Groups[command] = m_CurrentGroup;
+        if (!alias.empty()) {
+            m_Aliases[command] = alias;
+        } else {
+            m_Aliases.erase(command);
+        }
     } else {
         m_Description.erase(command);
+        m_Groups.erase(command);
+        m_Aliases.erase(command);
     }
+}
+
+string CCommandArgDescriptions::x_IdentifyCommand(const string& command) const
+{
+    if (m_Description.find(command) != m_Description.end()) {
+        return command;
+    }
+    map<string,string>::const_iterator a = m_Aliases.begin();
+    for ( ; a != m_Aliases.end(); ++a) {
+        if (a->second == command) {
+            return a->first;
+        }
+    }
+    string cmd(command);
+    while (cmd.size() > 1) {
+        cmd.erase( cmd.size()-1);
+        if (cmd != "-") {
+            vector<string> candidates;
+            TDescriptions::const_iterator d;
+            for (d = m_Description.begin(); d != m_Description.end(); ++d) {
+                if (NStr::StartsWith(d->first,cmd)) {
+                    candidates.push_back(d->first);
+                }
+            }
+            if (candidates.size() == 0) {
+                continue;
+            } else if (candidates.size() == 1) {
+                return candidates.front();
+            }
+        }
+        break;
+    }
+    return kEmptyStr;
 }
 
 CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
 {
     if (argv.Size() > 1) {
-        string command( argv[1]);
-        map<string, AutoPtr<CArgDescriptions> >::const_iterator d;
+        string command( x_IdentifyCommand(argv[1]));
+        TDescriptions::const_iterator d;
         d = m_Description.find(command);
         if (d != m_Description.end()) {
             CNcbiArguments argv2(argv);
@@ -3225,21 +3351,137 @@ CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
 
 string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 {
-    CArgDescriptions::PrintUsage(str, detailed);
-    map<string, AutoPtr<CArgDescriptions> >::const_iterator d;
-    d = m_Description.find(m_Command);
-    if (d != m_Description.end()) {
-        d->second->PrintUsage(str, detailed);
+    const CArgDescriptions* argdesc = NULL;
+    string cmd(m_Command);
+    if (cmd.empty())
+    {
+        const CNcbiArguments& cmdargs = CNcbiApplication::Instance()->GetArguments();
+        size_t cmdsize = cmdargs.Size();
+        if (cmdsize > 2) {
+            cmd = cmdargs[ cmdsize-1];
+            if (cmd.empty()) {
+                argdesc = this;
+            } else {
+                cmd = x_IdentifyCommand(cmd);
+            }
+        }
     }
+    TDescriptions::const_iterator d;
+    if (!m_Description.empty()) {
+        d = m_Description.find(cmd);
+        if (d != m_Description.end()) {
+            argdesc = d->second.get();
+        }
+    } else {
+        argdesc = this;
+    }
+
+    if (argdesc) {
+        CPrintUsage x(*argdesc);
+        list<string> arr;
+
+/*
+        if (!cmd.empty()) {
+            arr.push_back("COMMAND");
+            arr.push_back(string("    ")+cmd);
+            arr.push_back(kEmptyStr);
+        }
+*/
+
+        // SYNOPSIS
+        arr.push_back("USAGE");
+        x.AddSynopsis(arr, m_UsageName + " " + cmd,"    ");
+
+        // DESCRIPTION
+        arr.push_back(kEmptyStr);
+        x.AddDescription(arr);
+
+        // details
+        if (detailed) {
+            x.AddDetails(arr);
+        } else {
+            arr.push_back(kEmptyStr);
+            arr.push_back("Use '-help " + cmd + "' to print detailed descriptions of command line arguments");
+        }
+
+        str += NStr::Join(arr, "\n");
+        str += "\n";
+        return str;
+    }
+
+    CPrintUsage x(*this);
+    list<string> arr;
+
+    arr.push_back("USAGE");
+    arr.push_back(string("    ")+ m_UsageName +" <command> [options]");
+
+    arr.push_back(kEmptyStr);
+    x.AddDescription(arr);
+
+// max command name length
+    size_t max_cmd_len = 0;
+    for (d = m_Description.begin(); d != m_Description.end(); ++d) {
+        size_t alias_size=0;
+        map<string,string>::const_iterator a = m_Aliases.find(d->first);
+        if (a != m_Aliases.end()) {
+            alias_size = a->second.size() + 3;
+        }
+        max_cmd_len = max(max_cmd_len, d->first.size() + alias_size);
+    }
+    max_cmd_len += 2;
+
+    if (m_CmdGroups.size() > 1) {
+        size_t group = 0;
+        ITERATE( vector<string>, g, m_CmdGroups) {
+            string grouptitle;
+            bool titleprinted = false;
+            if (g->empty()) {
+                grouptitle = "Commands";
+            } else {
+                grouptitle = *g;
+            }
+            for (d = m_Description.begin(); d != m_Description.end(); ++d) {
+                map<string, size_t >::const_iterator j = m_Groups.find(d->first);
+                if (j != m_Groups.end() && j->second == group) {
+                    if (!titleprinted) {
+                        arr.push_back(kEmptyStr);
+                        arr.push_back(grouptitle);
+                        titleprinted = true;
+                    }
+                    CPrintUsage y(*(d->second));
+                    y.AddCommandDescription(arr, d->first, &m_Aliases, max_cmd_len, detailed);
+                }
+            }
+            ++group;
+        }
+    } else {
+        arr.push_back(kEmptyStr);
+        arr.push_back("AVAILABLE COMMANDS");
+        for (d = m_Description.begin(); d != m_Description.end(); ++d) {
+            CPrintUsage y(*(d->second));
+            y.AddCommandDescription(arr, d->first, &m_Aliases, max_cmd_len, detailed);
+        }
+    }
+
+    arr.push_back(kEmptyStr);
+    arr.push_back("Use '-h command' to print help on a specific command");
+    arr.push_back("Use '-help command' to print detailed descriptions of command line arguments");
+
+    str += NStr::Join(arr, "\n");
+    str += "\n";
     return str;
 }
 
 void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
 {
-    map<string, AutoPtr<CArgDescriptions> >::const_iterator d;
-    d = m_Description.find(m_Command);
-    if (d != m_Description.end()) {
-        d->second->PrintUsageXml(out);
+    CPrintUsageXml x(*this,out);
+    x.PrintArguments(*this);
+    TDescriptions::const_iterator d;
+    for (d = m_Description.begin(); d != m_Description.end(); ++d) {
+        out << "<command>" << endl;
+        out << "<name>" << d->first << "</name>" << endl;
+        x.PrintArguments(*(d->second));
+        out << "</command>" << endl;
     }
 }
 ///////////////////////////////////////////////////////

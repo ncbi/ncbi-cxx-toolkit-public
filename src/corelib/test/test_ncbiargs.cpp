@@ -509,7 +509,7 @@ void CArgTestApplication::Init(void)
         NStr::SizetToString(max_test) + ")";
     bool usage_sort_args = (m_TestNo == 10);
     cmd_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, usage_sort_args);
+                              prog_description, true /*usage_sort_args*/);
 
     // Describe cmd-line arguments according to the chosen test #
     s_Test[m_TestNo].init(*cmd_desc);
@@ -521,9 +521,19 @@ void CArgTestApplication::Init(void)
         arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
             "Testing CCommandArgDescriptions: RunTest" + NStr::IntToString(a));
         s_Test[a].init(*arg_desc);
-        cmd_desc->AddCommand("runtest" + NStr::IntToString(a), arg_desc.release());
+        cmd_desc->SetCurrentCommandGroup(a%2 ? "Second command group" : "Command group #1");
+        cmd_desc->AddCommand("runtest" + NStr::IntToString(a), arg_desc.release(),
+                             "rt" + NStr::IntToString(a));
 
     }
+    {
+        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions(false));
+        arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+            "RunTest4 description");
+        s_Test[4].init(*arg_desc);
+        cmd_desc->AddCommand("r4", arg_desc.release());
+    }
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(cmd_desc.release());
 #endif
@@ -554,6 +564,8 @@ int CArgTestApplication::Run(void)
         s_Test[2].run(GetArgs(), cout);
     } else if (command == "runtest3") {
         s_Test[3].run(GetArgs(), cout);
+    } else if (command == "runtest4") {
+        s_Test[4].run(GetArgs(), cout);
     } else {
         s_Test[m_TestNo].run(GetArgs(), cout);
     }

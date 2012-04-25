@@ -48,6 +48,7 @@
     <xs:sequence>
       <xs:element ref="program"/>
       <xs:element ref="arguments"/>
+      <xs:element ref="command" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
@@ -73,6 +74,7 @@
 <xs:element name="arguments">
   <xs:complexType>
     <xs:sequence>
+      <xs:element ref="opening" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element ref="positional" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element ref="key" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element ref="flag" minOccurs="0" maxOccurs="unbounded"/>
@@ -87,6 +89,15 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="command">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element ref="arguments"/>
+    </xs:sequence>
   </xs:complexType>
 </xs:element>
 
@@ -245,6 +256,8 @@
     </xs:extension>
   </xs:complexContent>
 </xs:complexType>
+
+<xs:element name="opening" type="arg_base"/>
 
 <xs:element name="positional" type="arg_da"/>
 

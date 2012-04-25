@@ -926,12 +926,14 @@ private:
     TDependencies      m_Dependencies;   ///< Arguments' dependencies
 
     // Extra USAGE info
+protected:
     string    m_UsageName;         ///< Program name
     string    m_UsageDescription;  ///< Program description
     bool      m_UsageSortArgs;     ///< Sort alphabetically on usage printout
     SIZE_TYPE m_UsageWidth;        ///< Maximum length of a usage line
     bool      m_AutoHelp;          ///< Special flag "-h" activated
     bool      m_UsageIfNoArgs;     ///< Print usage and exit if no args passed
+private:
 
     CRef<CArgErrorHandler> m_ErrorHandler; ///< Global error handler or NULL
 
@@ -1007,6 +1009,32 @@ private:
 
     /// Returns TRUE if parameter supports multiple arguments
     bool x_IsMultiArg(const string& name) const;
+
+protected:
+// PrintUsage helpers
+    class CPrintUsage
+    {
+    public:
+        CPrintUsage(const CArgDescriptions& desc);
+        ~CPrintUsage();
+        void AddSynopsis(list<string>& arr, const string& intro, const string& prefix) const;
+        void AddDescription(list<string>& arr) const;
+        void AddCommandDescription(list<string>& arr, const string& cmd, 
+            const map<string,string>* aliases, size_t max_cmd_len, bool detailed) const;
+        void AddDetails(list<string>& arr) const;
+    private:
+        const CArgDescriptions& m_desc;
+        list<const CArgDesc*> m_args;
+    };
+    class CPrintUsageXml
+    {
+    public:
+        CPrintUsageXml(const CArgDescriptions& desc, CNcbiOstream& out);
+        ~CPrintUsageXml();
+        void PrintArguments(const CArgDescriptions& desc) const;
+    private:
+        CNcbiOstream& m_out;
+    };
 
 public:
     /// Create parsed arguments in CArgs object.
@@ -1140,23 +1168,49 @@ public:
     /// Destructor.
     virtual ~CCommandArgDescriptions(void);
 
+    /// Set current command group name. When printing help,
+    /// commands will be arranged by group name.
+    void SetCurrentCommandGroup(const string& group);
+
     /// Add command argument descriptions
     ///
     /// @param cmd
     ///    Command string
     /// @param description
     ///    Argument description
-    void AddCommand(const string& cmd, CArgDescriptions* description);
+    /// @param alias
+    ///    Alternative name of the command
+    void AddCommand(const string& cmd, CArgDescriptions* description,
+                    const string& alias = kEmptyStr);
 
     /// Parse command-line arguments 'argv'
     virtual CArgs* CreateArgs(const CNcbiArguments& argv) const;
 
+    /// Print usage message to end of specified string.
+    ///
+    /// Printout USAGE and append to the string "str" using  provided
+    /// argument descriptions and usage context.
+    /// @return
+    ///   Appended "str"
     virtual string& PrintUsage(string& str, bool detailed = false) const;
+
+    /// Print argument description in XML format
+    ///
+    /// @param out
+    ///   Print into this output stream
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
 private:
-    map<string, AutoPtr<CArgDescriptions> > m_Description;
-    mutable string m_Command;
+    size_t x_GetCommandGroupIndex(const string& group);
+    string x_IdentifyCommand(const string& command) const;
+
+    typedef map<string, AutoPtr<CArgDescriptions> > TDescriptions;
+    TDescriptions m_Description;    ///< command to ArgDescriptions
+    map<string, size_t > m_Groups;  ///< command to group #
+    map<string,string> m_Aliases;   ///< command to alias; one alias only
+    vector<string> m_CmdGroups;     ///< group names, and order
+    size_t m_CurrentGroup;          ///< current group #
+    mutable string m_Command;       ///< current command
 };
 
 
