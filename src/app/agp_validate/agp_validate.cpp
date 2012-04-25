@@ -113,8 +113,16 @@ class CArgDesc_agp_validate : public CArgDescriptions
 public:
   string& PrintUsage(string& str, bool detailed) const
   {
+      // use svn's keyword substitution to automatically keep track of
+      // versioning.
+      string version_str = "$Date: UNKNOWN$";
+      version_str = version_str.substr(7); // chop "$Date: " from beginning
+      version_str.resize( version_str.length() - 1 ); // remove final '$'
+
     str="Validate data in the AGP format:\n"
     "http://www.ncbi.nlm.nih.gov/projects/genome/assembly/agp/AGP_Specification.shtml\n"
+    "\n"
+    "Version: " + version_str + "\n"
     "\n"
     "USAGE: agp_validate [-options] [FASTA files...] [AGP files...]\n"
     "\n"
