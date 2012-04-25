@@ -41,10 +41,8 @@ BEGIN_NCBI_SCOPE
 
 void CNetCacheAdmin::ShutdownServer()
 {
-    string cmd(m_Impl->m_API->MakeCmd("SHUTDOWN"));
-
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
-        ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(
+            m_Impl->m_API->MakeCmd("SHUTDOWN"));
 }
 
 void CNetCacheAdmin::ReloadServerConfig()
@@ -54,11 +52,9 @@ void CNetCacheAdmin::ReloadServerConfig()
 
 void CNetCacheAdmin::Reinitialize(const string& cache_name)
 {
-    string cmd(m_Impl->m_API->MakeCmd(cache_name.empty() ? "REINIT" :
-        string("IC(" + cache_name + ") REINIT").c_str()));
-
-    m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
-        ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(
+            m_Impl->m_API->MakeCmd(cache_name.empty() ? "REINIT" :
+                    string("IC(" + cache_name + ") REINIT").c_str()));
 }
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream)
@@ -83,14 +79,6 @@ void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream)
 {
     m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("VERSION"),
         output_stream, CNetService::eSingleLineOutput);
-}
-
-string CNetCacheAdmin::GetServerVersion()
-{
-    string cmd(m_Impl->m_API->MakeCmd("VERSION"));
-
-    return m_Impl->m_API->m_Service->RequireStandAloneServerSpec(cmd).
-        ExecWithRetry(cmd).response;
 }
 
 

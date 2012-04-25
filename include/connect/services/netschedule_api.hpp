@@ -722,8 +722,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     /// Print version string
     void PrintServerVersion(CNcbiOstream& output_stream);
 
-    string GetServerVersion();
-
     struct SWorkerNodeInfo {
         string name;
         string prog;

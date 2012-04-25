@@ -103,8 +103,7 @@ public:
             if (request.find("IMMEDIATE") != NPOS)
                 level = CNetScheduleAdmin::eShutdownImmediate;
             os << "OK:\n";
-            CGridGlobals::GetInstance().
-                RequestShutdown(level);
+            CGridGlobals::GetInstance().RequestShutdown(level);
             LOG_POST_X(13, "Shutdown request has been received from host " <<
                 m_Host);
         }

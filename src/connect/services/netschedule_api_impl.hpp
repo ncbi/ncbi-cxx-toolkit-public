@@ -82,7 +82,7 @@ public:
     string m_Auth;
     CRef<CNetScheduleAPI::IEventHandler> m_EventHandler;
 
-    typedef map<string, SNetServerImpl*> TNodeIdToServerMap;
+    typedef map<string, SNetServerInPool*> TNodeIdToServerMap;
     TNodeIdToServerMap m_ServerByNSNodeId;
     CFastMutex m_FastMutex;
 

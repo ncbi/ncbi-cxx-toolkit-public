@@ -276,7 +276,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
             FindOrCreateService(key.GetServiceName()) : m_Service,
             primary_server);
 
-    m_Service->IterateAndExec(cmd, exec_result, &iteration_beginner);
+    m_Service->IterateUntilExecOK(cmd, exec_result, &iteration_beginner);
 
     return exec_result;
 }

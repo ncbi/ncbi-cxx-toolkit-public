@@ -215,7 +215,7 @@ void CNetScheduleServerListener::OnConnected(
         while (server_info.GetNextAttribute(attr_name, attr_value))
             if (attr_name == "ns_node") {
                 CFastMutexGuard guard(m_FastMutex);
-                m_ServerByNSNodeId[attr_value] = conn->m_Server;
+                m_ServerByNSNodeId[attr_value] = conn->m_Server->m_ServerInPool;
             }
     } else
         conn->WriteLine(m_Auth);

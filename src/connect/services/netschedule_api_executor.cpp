@@ -330,7 +330,7 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
             attr_values[1] != executor->m_API.GetQueueName())
         return false;
 
-    CNetScheduleServerListener::TNodeIdToServerMap server_map(
+    CNetScheduleServerListener::TNodeIdToServerMap& server_map(
             executor->m_API->GetListener()->m_ServerByNSNodeId);
 
     CNetScheduleServerListener::TNodeIdToServerMap::iterator server_it(
@@ -339,7 +339,8 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
     if (server_it == server_map.end())
         return false;
 
-    *server = server_it->second;
+    *server = new SNetServerImpl(executor->m_API->m_Service, executor->
+            m_API->m_Service->m_ServerPool->ReturnServer(server_it->second));
 
     return true;
 }
@@ -371,7 +372,7 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
     cmd.append(" output=\"");
     cmd.append(NStr::PrintableString(job.output));
     cmd.push_back('\"');
-printf("cmd=%s\n", cmd.c_str());
+
     m_Impl->m_API->GetServer(job.job_id).ExecWithRetry(cmd);
 }
 
@@ -455,13 +456,10 @@ void CNetScheduleExecutor::ChangePreferredAffinities(
 {
     string cmd("CHAFF");
 
-    CNetServer server(m_Impl->m_API->m_Service->
-            RequireStandAloneServerSpec(cmd));
-
     s_AppendAffinityTokens(cmd, " add=\"", affs_to_add);
     s_AppendAffinityTokens(cmd, " del=\"", affs_to_delete);
 
-    server.ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
 const string& CNetScheduleExecutor::GetQueueName()

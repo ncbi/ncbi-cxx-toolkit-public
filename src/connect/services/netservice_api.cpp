@@ -594,20 +594,6 @@ CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
     return new SNetServerImpl(this, server);
 }
 
-CNetServer SNetServiceImpl::GetSingleServer(const string& cmd)
-{
-    _ASSERT(m_ServiceType != eLoadBalancedService);
-
-    if (m_ServiceType == eServiceNotDefined) {
-        NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-            m_ServerPool->m_APIName << ": command '" << cmd <<
-                "' requires a server but none specified");
-    }
-
-    return new SNetServerImpl(this, m_ServerPool->ReturnServer(
-            m_DiscoveredServers->m_Servers.front().first));
-}
-
 class SRandomIterationBeginner : public IIterationBeginner
 {
 public:
@@ -628,32 +614,38 @@ CNetServiceIterator SRandomIterationBeginner::BeginIteration()
 
 CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 {
-    if (m_Impl->m_ServiceType != eLoadBalancedService)
-        return m_Impl->GetSingleServer(cmd).ExecWithRetry(cmd);
+    switch (m_Impl->m_ServiceType) {
+    default: // eServiceNotDefined
+        NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+                m_Impl->m_ServerPool->m_APIName << ": command '" << cmd <<
+                        "' requires a server but none specified");
 
-    CNetServer::SExecResult exec_result;
+    case eLoadBalancedService:
+        {
+            CNetServer::SExecResult exec_result;
 
-    SRandomIterationBeginner iteration_beginner(*this);
+            SRandomIterationBeginner iteration_beginner(*this);
 
-    m_Impl->IterateAndExec(cmd, exec_result, &iteration_beginner);
+            m_Impl->IterateUntilExecOK(cmd, exec_result, &iteration_beginner);
 
-    return exec_result;
+            return exec_result;
+        }
+
+    case eSingleServerService:
+        {
+            CNetServer server(new SNetServerImpl(m_Impl,
+                    m_Impl->m_ServerPool->ReturnServer(
+                    m_Impl->m_DiscoveredServers->m_Servers.front().first)));
+
+            return server.ExecWithRetry(cmd);
+        }
+    }
 }
 
 void CNetService::ExecOnAllServers(const string& cmd)
 {
     for (CNetServiceIterator it = Iterate(); it; ++it)
         (*it).ExecWithRetry(cmd);
-}
-
-CNetServer SNetServiceImpl::RequireStandAloneServerSpec(const string& cmd)
-{
-    if (m_ServiceType != eLoadBalancedService)
-        return GetSingleServer(cmd);
-
-    NCBI_THROW_FMT(CNetServiceException, eCommandIsNotAllowed,
-        m_ServerPool->m_APIName << ": command '" << cmd <<
-            "' requires explicit server address (host:port)");
 }
 
 void SNetServiceImpl::DiscoverServersIfNeeded()
@@ -775,31 +767,6 @@ void SNetServiceImpl::GetDiscoveredServers(
     discovered_servers->m_Service = this;
 }
 
-void SNetServiceImpl::Monitor(CNcbiOstream& out, const string& cmd)
-{
-    CNetServer::SExecResult exec_result(
-        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd));
-
-    out << exec_result.response << "\n" << flush;
-
-    STimeout rto = {1, 0};
-
-    CSocket* the_socket = &exec_result.conn->m_Socket;
-
-    the_socket->SetTimeout(eIO_Read, &rto);
-
-    string line;
-
-    for (;;)
-        if (the_socket->ReadLine(line) == eIO_Success)
-            out << line << "\n" << flush;
-        else
-            if (the_socket->GetStatus(eIO_Open) != eIO_Success)
-                break;
-
-    exec_result.conn->Close();
-}
-
 static void SleepUntil(const CTime& time)
 {
     CTime current_time(GetFastLocalTime());
@@ -810,7 +777,7 @@ static void SleepUntil(const CTime& time)
     }
 }
 
-void SNetServiceImpl::IterateAndExec(const string& cmd,
+void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     CNetServer::SExecResult& exec_result,
     IIterationBeginner* iteration_beginner)
 {

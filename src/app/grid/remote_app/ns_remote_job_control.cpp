@@ -349,8 +349,7 @@ int CNSRemoteJobControlApp::Run(void)
         if (NStr::CompareNocase(cmd, "shutdown_nodes") == 0) {
             CWNodeShutdownAction action(CNetScheduleAdmin::eShutdownImmediate);
             info_collector->TraverseNodes(action);
-        }
-        if (NStr::CompareNocase(cmd, "kill_nodes") == 0) {
+        } else if (NStr::CompareNocase(cmd, "kill_nodes") == 0) {
             CWNodeShutdownAction action(CNetScheduleAdmin::eDie);
             info_collector->TraverseNodes(action);
         }

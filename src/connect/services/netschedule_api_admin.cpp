@@ -42,21 +42,10 @@ BEGIN_NCBI_SCOPE
 void CNetScheduleAdmin::ShutdownServer(
     CNetScheduleAdmin::EShutdownLevel level)
 {
-    string cmd;
-
-    switch (level) {
-    case eDie:
-        cmd = "SHUTDOWN SUICIDE ";
-        break;
-    case eShutdownImmediate:
-        cmd = "SHUTDOWN IMMEDIATE ";
-        break;
-    default:
-        cmd = "SHUTDOWN ";
-    }
-
-    m_Impl->m_API->m_Service->
-        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(
+            level == eDie ? "SHUTDOWN SUICIDE" :
+                    level == eShutdownImmediate ? "SHUTDOWN IMMEDIATE" :
+                            "SHUTDOWN");
 }
 
 
@@ -115,15 +104,6 @@ void CNetScheduleAdmin::PrintServerVersion(CNcbiOstream& output_stream)
 }
 
 
-string CNetScheduleAdmin::GetServerVersion()
-{
-    string cmd("VERSION");
-
-    return m_Impl->m_API->m_Service->
-        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd).response;
-}
-
-
 void CNetScheduleAdmin::DumpQueue(
         CNcbiOstream& output_stream,
         const string& start_after_job,
@@ -157,40 +137,35 @@ void CNetScheduleAdmin::DumpQueue(
 void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream,
     const string& queue_name)
 {
+    CTempString queue_info, dyn_queue, model_queue;
+
     string cmd("QINF " + queue_name);
-    string cmd_output(m_Impl->m_API->m_Service->
-        RequireStandAloneServerSpec(cmd).ExecWithRetry(cmd).response);
-    output_stream << "Queue name: " << queue_name << NcbiEndl;
-    switch (cmd_output[0]) {
-    case '0':
-        output_stream << "Type: static" << NcbiEndl;
-        break;
-    case '1':
-        output_stream << "Type: dynamic" << NcbiEndl;
-    }
-    vector<CTempString> tokens;
-    NStr::Tokenize(cmd_output, "\t", tokens);
-    if (tokens.size() == 3 && tokens[0][0] == '1') {
-        output_stream << "Model queue: " << tokens[1] << NcbiEndl;
-        CTempString& description(tokens[2]);
-        CTempString::size_type descr_pos = 0;
-        CTempString::size_type descr_size = description.size();
-        if (descr_size > 1)
-            switch (description[descr_size - 1]) {
-            case '"':
-            case '\'':
-                --descr_size;
-            }
-        if (descr_size > 0)
-            switch (description[0]) {
-            case '"':
-            case '\'':
-                ++descr_pos;
-                --descr_size;
-            }
-        output_stream << "Description: " <<
-            NStr::ParseEscapes(CTempString(tokens[2], descr_pos, descr_size)) <<
-            NcbiEndl;
+
+
+    bool print_headers = m_Impl->m_API->m_Service.IsLoadBalanced();
+
+    for (CNetServiceIterator it =
+            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+        if (print_headers)
+            output_stream << '[' << (*it).GetServerAddress() << ']' << NcbiEndl;
+
+        string cmd_output((*it).ExecWithRetry(cmd).response);
+
+        NStr::SplitInTwo(cmd_output, "\t", queue_info, dyn_queue);
+        switch (queue_info[0]) {
+        case '0':
+            output_stream << "Queue type: static" << NcbiEndl;
+            break;
+        case '1':
+            output_stream << "Queue type: dynamic" << NcbiEndl;
+
+            if (NStr::SplitInTwo(dyn_queue, "\t", model_queue, queue_info))
+                output_stream << "Model queue: " << model_queue << NcbiEndl <<
+                    "Description: " << NStr::ParseQuoted(queue_info) << NcbiEndl;
+        }
+
+        if (print_headers)
+            output_stream << NcbiEndl;
     }
 }
 

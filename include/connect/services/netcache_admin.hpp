@@ -77,8 +77,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     void PrintHealth(CNcbiOstream& output_stream);
 
     void GetServerVersion(CNcbiOstream& output_stream);
-
-    string GetServerVersion();
 };
 
 /* @} */

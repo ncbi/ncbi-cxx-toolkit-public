@@ -229,19 +229,12 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     void DiscoverServersIfNeeded();
     void GetDiscoveredServers(CRef<SDiscoveredServers>& discovered_servers);
 
-    void IterateAndExec(const string& cmd,
+    void IterateUntilExecOK(const string& cmd,
         CNetServer::SExecResult& exec_result,
         IIterationBeginner* iteration_beginner);
 
     CNetServer GetServer(const string& host, unsigned int port);
     CNetServer GetServer(const SServerAddress& server_address);
-
-    CNetServer GetSingleServer(const string& cmd);
-    // Utility method for commands that require a single server (that is,
-    // a host:port pair) to be specified (not a load-balanced service name).
-    CNetServer RequireStandAloneServerSpec(const string& cmd);
-
-    void Monitor(CNcbiOstream& out, const string& cmd);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
 
