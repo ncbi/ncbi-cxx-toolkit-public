@@ -157,11 +157,12 @@ void CWNJobsWatcher::x_KillNode(CGridWorkerNode& worker)
 {
     CMutexGuard guard(m_ActiveJobsMutex);
     NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
+        const CNetScheduleJob& job = it->first->GetJob();
         if (!it->second.flag) {
-            worker.x_ReturnJob(it->first->GetJobKey());
+            worker.x_ReturnJob(job.job_id, job.auth_token);
         } else {
-            worker.x_FailJob(it->first->GetJobKey(),
-                "An infinit loop has been detected after " +
+            worker.x_FailJob(job,
+                "An long running job has been detected after " +
                 NStr::IntToString((int)it->second.elasped_time.Elapsed()) +
                 " seconds of execution.");
         }

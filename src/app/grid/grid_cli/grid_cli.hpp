@@ -97,6 +97,7 @@ enum EOption {
     eReturnCode,
     eLimit,
     eTimeout,
+    eAuthToken,
     eReliableRead,
     eConfirmRead,
     eRollbackRead,

@@ -168,7 +168,7 @@ int CTestNetScheduleNode::Run(void)
     bool done = false;
 
     while (!done) {
-        if (ns_exec.WaitJob(job, 180)) {
+        if (ns_exec.GetJob(job, 180)) {
             if (job.input == "DIE") {
                 LOG_POST(Info << "Got poison pill, exiting.");
                 done = true;

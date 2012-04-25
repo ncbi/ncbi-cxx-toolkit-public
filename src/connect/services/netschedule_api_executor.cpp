@@ -46,14 +46,7 @@ static bool s_DoParseGetJobResponse(
     CNetScheduleJob& job, const string& response)
 {
     // Server message format:
-    //    JOB_KEY "input" ["affinity" ["client_ip session_id"]] [mask]
-
-    job.mask = CNetScheduleAPI::eEmptyMask;
-    job.input.erase();
-    job.job_id.erase();
-    job.affinity.erase();
-    job.client_ip.erase();
-    job.session_id.erase();
+    //    JOB_KEY "input" "affinity" "client_ip session_id" mask auth_token
 
     // 1. Extract job ID.
     const char* response_begin = response.c_str();
@@ -73,7 +66,7 @@ static bool s_DoParseGetJobResponse(
 
     job.job_id.assign(response_begin, ptr - response_begin);
 
-    while (isspace((unsigned char) (*++ptr)))
+    while (isspace((unsigned char) *++ptr))
         ;
 
     try {
@@ -87,32 +80,40 @@ static bool s_DoParseGetJobResponse(
         SKIP_SPACE(ptr);
 
         // 3. Extract optional job affinity.
-        if (*ptr != 0) {
-            job.affinity = NStr::ParseQuoted(CTempString(ptr,
-                response_end - ptr), &field_len);
+        job.affinity = NStr::ParseQuoted(CTempString(ptr,
+            response_end - ptr), &field_len);
 
-            ptr += field_len;
-            SKIP_SPACE(ptr);
+        ptr += field_len;
+        SKIP_SPACE(ptr);
 
-            // 4. Extract optional "client_ip session_id".
-            if (*ptr != 0) {
-                string client_ip_and_session_id(NStr::ParseQuoted(
-                    CTempString(ptr, response_end - ptr), &field_len));
+        // 4. Extract optional "client_ip session_id".
+        string client_ip_and_session_id(NStr::ParseQuoted(
+            CTempString(ptr, response_end - ptr), &field_len));
 
-                NStr::SplitInTwo(client_ip_and_session_id, " ",
-                    job.client_ip, job.session_id);
+        NStr::SplitInTwo(client_ip_and_session_id, " ",
+            job.client_ip, job.session_id);
 
-                ptr += field_len;
-                SKIP_SPACE(ptr);
+        ptr += field_len;
+        SKIP_SPACE(ptr);
 
-                // 5. Parse job mask
-                if (*ptr != 0)
-                    job.mask = atoi(ptr);
-            }
+        // 5. Parse job mask.
+        job.mask = atoi(ptr);
+
+        while (!isspace((unsigned char) *ptr) && *ptr != '\0')
+            ++ptr;
+
+        SKIP_SPACE(ptr);
+
+        if (*ptr == '\0') {
+            ERR_POST("GET2: missing auth_token");
+            return false;
         }
+
+        // 6. Retrieve auth token.
+        job.auth_token = ptr;
     }
     catch (CStringException& e) {
-        ERR_POST("Error while parsing GET/WGET response " << e);
+        ERR_POST("Error while parsing GET2 response " << e);
         return false;
     }
 
@@ -139,99 +140,209 @@ void CNetScheduleExecutor::JobDelayExpiration(const string& job_key,
     m_Impl->m_API->x_SendJobCmdWaitResponse("JDEX" , job_key, runtime_inc);
 }
 
-
-bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job, const string& affinity)
+class CGetJobCmdExecutor : public INetServerFinder
 {
-    string cmd = "GET";
+public:
+    CGetJobCmdExecutor(const string& cmd, CNetScheduleJob& job) :
+      m_Cmd(cmd), m_Job(job)
+      {
+      }
 
-    if (!affinity.empty()) {
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
-        cmd += " aff=";
-        cmd += affinity;
-    }
+      virtual bool Consider(CNetServer server);
 
-    return m_Impl->GetJobImpl(cmd, job) != NULL;
+private:
+    const string& m_Cmd;
+    CNetScheduleJob& m_Job;
+};
+
+bool CGetJobCmdExecutor::Consider(CNetServer server)
+{
+    return s_ParseGetJobResponse(m_Job, server.ExecWithRetry(m_Cmd).response);
 }
 
-static string s_MakeRequestJobCmd(
-        const CNetScheduleNotificationHandler& notification_handler,
-        const string& affinity,
-        CAbsTimeout& timeout)
+const CNetScheduleAPI::SServerParams& CNetScheduleExecutor::GetServerParams()
 {
-    string cmd = "WGET port=";
-    cmd += NStr::UIntToString(notification_handler.GetPort());
+    return m_Impl->m_API->GetServerParams();
+}
 
-    cmd += " timeout=";
-    cmd += NStr::UIntToString(s_GetRemainingSeconds(timeout));
+void CNetScheduleExecutor::UnRegisterClient()
+{
+    string cmd("CLRN");
 
-    if (!affinity.empty()) {
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
+    for (CNetServiceIterator it = m_Impl->m_API->m_Service.
+        Iterate(CNetService::eIncludePenalized); it; ++it) {
+            CNetServer server = *it;
+
+            try {
+                server.ExecWithRetry(cmd);
+            } catch (CNetServiceException& ex) {
+                if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
+                    throw;
+                else {
+                    ERR_POST_X(12, server->m_ServerInPool->m_Address.AsString() <<
+                        ": " << ex.what());
+                }
+            }
+    }
+}
+
+bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
+        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+        const string& affinity_list,
+        CAbsTimeout* timeout)
+{
+    string cmd(m_Impl->m_NotificationHandler.MkBaseGETCmd(
+            affinity_preference, affinity_list));
+
+    m_Impl->m_NotificationHandler.CmdAppendTimeout(cmd, timeout);
+
+    if (m_Impl->m_NotificationHandler.RequestJob(m_Impl,
+            job, cmd, timeout))
+        return true;
+
+    if (timeout == NULL)
+        return false;
+
+    while (m_Impl->m_NotificationHandler.WaitForNotification(*timeout)) {
+        CNetServer server;
+        if (m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl,
+                &server) && s_ParseGetJobResponse(job,
+                        server.ExecWithRetry(cmd).response)) {
+            // Notify the rest of NetSchedule servers that
+            // we are no longer listening on the UDP socket.
+            CNetServiceIterator it(
+                    m_Impl->m_API->m_Service.Iterate(server));
+            while (++it)
+                (*it).ExecWithRetry("CWGET");
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
+        unsigned wait_time,
+        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+        const string& affinity_list)
+{
+    if (wait_time == 0)
+        return GetJob(job, affinity_preference, affinity_list);
+    else {
+        CAbsTimeout abs_timeout(wait_time, 0);
+
+        return GetJob(job, affinity_preference,
+            affinity_list, &abs_timeout);
+    }
+}
+
+string CNetScheduleNotificationHandler::MkBaseGETCmd(
+    CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+    const string& affinity_list)
+{
+    string cmd;
+
+    switch (affinity_preference) {
+    case CNetScheduleExecutor::ePreferredAffsOrAnyJob:
+        cmd = "GET2 wnode_aff=1 any_aff=1";
+        break;
+
+    case CNetScheduleExecutor::ePreferredAffinities:
+        cmd = "GET2 wnode_aff=1 any_aff=0";
+        break;
+
+    case CNetScheduleExecutor::eAnyJob:
+        cmd = "GET2 wnode_aff=0 any_aff=1";
+        break;
+
+    case CNetScheduleExecutor::eExplicitAffinitiesOnly:
+        cmd = "GET2 wnode_aff=0 any_aff=0";
+    }
+
+    if (!affinity_list.empty()) {
+        list<CTempString> affinity_tokens;
+
+        NStr::Split(affinity_list, ",", affinity_tokens);
+
+        ITERATE(list<CTempString>, token, affinity_tokens) {
+            SNetScheduleAPIImpl::VerifyAffinityAlphabet(*token);
+        }
+
         cmd += " aff=";
-        cmd += affinity;
+        cmd += affinity_list;
     }
 
     return cmd;
 }
 
+void CNetScheduleNotificationHandler::CmdAppendTimeout(
+        string& cmd, CAbsTimeout* timeout)
+{
+    if (timeout != NULL) {
+        cmd += " port=";
+        cmd += NStr::UIntToString(GetPort());
+
+        cmd += " timeout=";
+        cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
+    }
+}
+
 bool CNetScheduleNotificationHandler::RequestJob(
         CNetScheduleExecutor::TInstance executor,
-        const string& affinity,
         CNetScheduleJob& job,
-        CAbsTimeout& timeout)
+        string cmd,
+        CAbsTimeout* timeout)
 {
-    string cmd(s_MakeRequestJobCmd(*this, affinity, timeout));
+    if (timeout != NULL) {
+        cmd += " port=";
+        cmd += NStr::UIntToString(GetPort());
 
-    CNetServiceIterator it(executor->GetJobImpl(cmd, job));
+        cmd += " timeout=";
+        cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
+    }
 
+    CGetJobCmdExecutor get_executor(cmd, job);
+
+    CNetServiceIterator it(executor->m_API->m_Service.FindServer(&get_executor,
+            CNetService::eIncludePenalized));
 
     if (!it)
         return false;
 
-    /*while (--it)
-        (*it).ExecWithRetry("CWGET");*/
+    while (--it)
+        (*it).ExecWithRetry("CWGET");
 
     return true;
 }
 
-const char s_WGETNotification[] = "NCBI_JSQ_";
+#define GET2_NOTIF_ATTR_COUNT 2
 
 bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
-        CNetScheduleExecutor::TInstance executor)
+        CNetScheduleExecutor::TInstance executor, CNetServer* server)
 {
-    const string& queue_name(executor->m_API.GetQueueName());
+    static const string attr_names[GET2_NOTIF_ATTR_COUNT] =
+        {"ns_node", "queue"};
 
-    return GetMessage().size() >=
-            sizeof(s_WGETNotification) - 1 + queue_name.length() &&
-        GetMessage()[0] == s_WGETNotification[0] &&
-        GetMessage()[1] == s_WGETNotification[1] &&
-        queue_name == GetMessage().data() +
-            sizeof(s_WGETNotification) - 1;
+    string attr_values[GET2_NOTIF_ATTR_COUNT];
+
+    if (ParseNotification(attr_names, attr_values, GET2_NOTIF_ATTR_COUNT) !=
+                    GET2_NOTIF_ATTR_COUNT ||
+            attr_values[1] != executor->m_API.GetQueueName())
+        return false;
+
+    CNetScheduleServerListener::TNodeIdToServerMap server_map(
+            executor->m_API->GetListener()->m_ServerByNSNodeId);
+
+    CNetScheduleServerListener::TNodeIdToServerMap::iterator server_it(
+            server_map.find(attr_values[0]));
+
+    if (server_it == server_map.end())
+        return false;
+
+    *server = server_it->second;
+
+    return true;
 }
-
-bool CNetScheduleExecutor::WaitJob(CNetScheduleJob& job,
-                                   unsigned wait_time,
-                                   const string& affinity)
-{
-    CAbsTimeout abs_timeout(wait_time, 0);
-
-    if (m_Impl->m_NotificationHandler.RequestJob(m_Impl,
-            affinity, job, abs_timeout))
-        return true;
-
-    string server;
-
-    while (m_Impl->m_NotificationHandler.WaitForNotification(
-                abs_timeout, &server) &&
-            !m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl))
-        ;
-
-    // Regardless of what g_WaitNotification returned,
-    // retry the request using TCP and notify the NetSchedule
-    // servers that we no longer on the UDP socket.
-
-    return GetJob(job, affinity);
-}
-
 
 inline
 void static s_CheckOutputSize(const string& output, size_t max_output_size)
@@ -248,8 +359,20 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
     s_CheckOutputSize(job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
 
-    m_Impl->m_API->x_SendJobCmdWaitResponse("PUT",
-        job.job_id, job.ret_code, job.output);
+    string cmd("PUT2 job_key=" + job.job_id);
+
+    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
+    cmd.append(" auth_token=");
+    cmd.append(job.auth_token);
+
+    cmd.append(" job_return_code=");
+    cmd.append(NStr::NumericToString(job.ret_code));
+
+    cmd.append(" output=\"");
+    cmd.append(NStr::PrintableString(job.output));
+    cmd.push_back('\"');
+printf("cmd=%s\n", cmd.c_str());
+    m_Impl->m_API->GetServer(job.job_id).ExecWithRetry(cmd);
 }
 
 void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
@@ -277,8 +400,22 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
                    "Error message too long");
     }
 
-    m_Impl->m_API->x_SendJobCmdWaitResponse("FPUT",
-        job.job_id, job.error_msg, job.output, job.ret_code);
+    string cmd("FPUT2 job_key=" + job.job_id);
+
+    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
+    cmd.append(" auth_token=");
+    cmd.append(job.auth_token);
+
+    cmd.append(" err_msg=\"");
+    cmd.append(NStr::PrintableString(job.error_msg));
+
+    cmd.append("\" output=\"");
+    cmd.append(NStr::PrintableString(job.output));
+
+    cmd.append("\" job_return_code=");
+    cmd.append(NStr::NumericToString(job.ret_code));
+
+    m_Impl->m_API->GetServer(job.job_id).ExecWithRetry(cmd);
 }
 
 CNetScheduleAPI::EJobStatus
@@ -287,64 +424,16 @@ CNetScheduleAPI::EJobStatus
     return m_Impl->m_API->x_GetJobStatus(job_key, false);
 }
 
-void CNetScheduleExecutor::ReturnJob(const string& job_key)
+void CNetScheduleExecutor::ReturnJob(const string& job_key,
+        const string& auth_token)
 {
-    m_Impl->m_API->x_SendJobCmdWaitResponse("RETURN" , job_key);
-}
+    string cmd("RETURN2 job_key=" + job_key);
 
-class CGetJobCmdExecutor : public INetServerFinder
-{
-public:
-    CGetJobCmdExecutor(const string& cmd, CNetScheduleJob& job) :
-        m_Cmd(cmd), m_Job(job)
-    {
-    }
+    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(auth_token);
+    cmd.append(" auth_token=");
+    cmd.append(auth_token);
 
-    virtual bool Consider(CNetServer server);
-
-private:
-    const string& m_Cmd;
-    CNetScheduleJob& m_Job;
-};
-
-bool CGetJobCmdExecutor::Consider(CNetServer server)
-{
-    return s_ParseGetJobResponse(m_Job, server.ExecWithRetry(m_Cmd).response);
-}
-
-CNetServiceIterator SNetScheduleExecutorImpl::GetJobImpl(
-    const string& cmd, CNetScheduleJob& job)
-{
-    CGetJobCmdExecutor get_executor(cmd, job);
-
-    return m_API->m_Service.FindServer(&get_executor,
-        CNetService::eIncludePenalized);
-}
-
-const CNetScheduleAPI::SServerParams& CNetScheduleExecutor::GetServerParams()
-{
-    return m_Impl->m_API->GetServerParams();
-}
-
-void CNetScheduleExecutor::UnRegisterClient()
-{
-    string cmd("CLRN");
-
-    for (CNetServiceIterator it = m_Impl->m_API->m_Service.
-            Iterate(CNetService::eIncludePenalized); it; ++it) {
-        CNetServer server = *it;
-
-        try {
-            server.ExecWithRetry(cmd);
-        } catch (CNetServiceException& ex) {
-            if (ex.GetErrCode() != CNetServiceException::eCommunicationError)
-                throw;
-            else {
-                ERR_POST_X(12, server->m_ServerInPool->m_Address.AsString() <<
-                        ": " << ex.what());
-            }
-        }
-    }
+    m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd);
 }
 
 static void s_AppendAffinityTokens(string& cmd,
@@ -353,7 +442,8 @@ static void s_AppendAffinityTokens(string& cmd,
     if (!affs.empty()) {
         ITERATE(vector<string>, aff, affs) {
             cmd.append(sep);
-            cmd.append(NStr::PrintableString(*aff));
+            SNetScheduleAPIImpl::VerifyAffinityAlphabet(*aff);
+            cmd.append(*aff);
             sep = ",";
         }
         cmd.push_back('"');

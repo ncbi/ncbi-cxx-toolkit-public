@@ -176,10 +176,10 @@ int CNetScheduleCheck::Run(CNetScheduleAPI ns)
         //SleepSec(1);
 
         CNetScheduleJob job1;
-        bool job_exists = executor.WaitJob(job1, 5);
+        bool job_exists = executor.GetJob(job1, 5);
         if (job_exists) {
             if (job1.job_id != job.job_id)
-                executor.ReturnJob(job1.job_id);
+                executor.ReturnJob(job1.job_id, job1.auth_token);
             else {
                 if (job1.input != job.input) {
                     job1.error_msg = "Job's (" + job1.job_id +

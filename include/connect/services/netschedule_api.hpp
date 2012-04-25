@@ -275,9 +275,15 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 ///
 struct CNetScheduleJob
 {
-    CNetScheduleJob(const string& _input = kEmptyStr, const string& _affinity = kEmptyStr,
-                    CNetScheduleAPI::TJobMask _mask = CNetScheduleAPI::eEmptyMask)
-        : input(_input), affinity(_affinity), mask(_mask), ret_code(0) {}
+    CNetScheduleJob(const string& _input = kEmptyStr,
+            const string& _affinity = kEmptyStr,
+            CNetScheduleAPI::TJobMask _mask = CNetScheduleAPI::eEmptyMask) :
+        input(_input),
+        affinity(_affinity),
+        mask(_mask),
+        ret_code(0)
+    {
+    }
 
     void Reset()
     {
@@ -290,33 +296,34 @@ struct CNetScheduleJob
         error_msg.erase();
         progress_msg.erase();
         group.erase();
+        auth_token.erase();
     }
     // input parameters
 
-    ///    Input data. Arbitrary string (cannot exceed 1K). This string
-    ///    encodes input data for the job. It is suggested to use NetCache
-    ///    to keep the actual data and pass NetCache key as job input.
-    string    input;
+    /// Input data. Arbitrary string that contains input data
+    /// for the job. It is suggested to use NetCache to keep
+    /// the actual data and pass NetCache key as job input.
+    string input;
 
-    string    affinity;
+    string affinity;
 
     string client_ip;
     string session_id;
 
     CNetScheduleAPI::TJobMask  mask;
 
-    // output and error
+    /// Job key.
+    string job_id;
+    /// Job return code.
+    int ret_code;
+    /// Job result data.
+    string output;
+    string error_msg;
+    string progress_msg;
 
-    ///    Job key
-    string    job_id;
-    ///    Job return code.
-    int       ret_code;
-    ///    Job result data.  Arbitrary string (cannot exceed 1K).
-    string    output;
-    string    error_msg;
-    string    progress_msg;
+    string group;
 
-    string    group;
+    string auth_token;
 };
 
 struct SNetScheduleSubmitterImpl;
@@ -475,56 +482,76 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
 {
     NCBI_NET_COMPONENT(NetScheduleExecutor);
 
+    /// Affinity matching modes.
+    /// Explicitly specified affinities are always searched first.
+    enum EJobAffinityPreference {
+        ePreferredAffsOrAnyJob,
+        ePreferredAffinities,
+        eAnyJob,
+        eExplicitAffinitiesOnly,
+    };
+
     /// Get a pending job.
-    /// When function returns TRUE and job_key job receives running status,
-    /// client(worker node) becomes responsible for execution or returning
-    /// the job. If there are no jobs in the queue function returns FALSE
-    /// immediately and you have to repeat the call (after a delay).
-    /// Consider WaitJob method as an alternative.
+    ///
+    /// When function returns TRUE, job information is written to the 'job'
+    /// structure, and job status is changed to eRunning. This client
+    /// (the worker node) becomes responsible for execution or returning of
+    /// the job. If there are no jobs in the queue, the function returns
+    /// FALSE immediately and this call has to be repeated.
     ///
     /// @param job
-    ///     NetSchedule job description structure
+    ///     NetSchedule job description structure.
+    ///
+    /// @param affinity_list
+    ///     Comma-separated list of affinity tokens.
+    ///
+    /// @param wait_time
+    ///     Timeout for waiting for a matching job to appear in the queue.
     ///
     /// @return
     ///     TRUE if job has been returned from the queue and its input
     ///     fields are set.
-    ///     FALSE means queue is empty or for some reason scheduler
-    ///     decided not to grant the job (node is overloaded).
-    ///     In this case worker node should pause and come again later
-    ///     for a new job.
+    ///     FALSE means queue is empty or for some other reason NetSchedule
+    ///     decided not to give a job to this node (e.g. no jobs with
+    ///     matching affinities).
     ///
-    /// @sa WaitJob
-    ///
-    bool GetJob(CNetScheduleJob& job, const string& affinity = kEmptyStr);
+    bool GetJob(CNetScheduleJob& job,
+            EJobAffinityPreference affinity_preference = ePreferredAffsOrAnyJob,
+            const string& affinity_list = kEmptyStr,
+            CAbsTimeout* timeout = NULL);
 
-    /// Wait for a job to come.
-    /// Variant of GetJob method. The difference is that if there no
-    /// pending jobs, method waits for a notification from the server.
+    /// The same as GetJob(CNetScheduleJob&, EJobAffinityPreference,
+    ///     const string&, CAbsTimeout*),
+    ///     only accepts integer wait time in seconds instead of CAbsTimeout.
+    bool GetJob(CNetScheduleJob& job,
+            unsigned wait_time,
+            EJobAffinityPreference affinity_preference = ePreferredAffsOrAnyJob,
+            const string& affinity_list = kEmptyStr);
+
+    /// @deprecated
+    ///     Use GetJob() instead.
     ///
-    /// NetSchedule server sends UDP packets with queue notification
-    /// information. This is unreliable protocol, some notification may be
-    /// lost. WaitJob internally makes an attempt to connect the server using
-    /// reliable stateful TCP/IP, so even if some UDP notifications are
-    /// lost jobs will be still delivered (with a delay).
-    ///
-    /// When new job arrives to the queue server may not send the notification
-    /// to all clients immediately, it depends on specific queue notification
-    /// timeout
+    /// Wait for a new job in the queue.
     ///
     /// @param job
-    ///     NetSchedule job description structure
+    ///    NetSchedule job description structure
+    ///
     /// @param wait_time
-    ///    Time in seconds function waits for new jobs to come.
+    ///    Time in seconds function waits for new jobs to arrive.
     ///    If there are no jobs in the period of time,
     ///    the function returns FALSE.
-    ///    Do not specify too long waiting time because it
-    ///    increases chances of UDP notification loss
-    ///    (60-320 seconds is a reasonable value).
     ///
-    /// @sa GetJob, WaitNotification
+    /// @param affinity_list
+    ///    Comma-separated list of affinity tokens.
     ///
-    bool WaitJob(CNetScheduleJob& job,
-        unsigned wait_time, const string& affinity = kEmptyStr);
+    /// @sa GetJob
+    ///
+    NCBI_DEPRECATED
+    bool WaitJob(CNetScheduleJob& job, unsigned wait_time,
+            const string& affinity_list = kEmptyStr)
+    {
+        return GetJob(job, wait_time, ePreferredAffsOrAnyJob, affinity_list);
+    }
 
 
     /// Put job result (job should be received by GetJob() or WaitJob())
@@ -571,13 +598,13 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key);
 
-    /// Transfer job to the "Returned" status. It will be
-    /// re-executed after a while.
+    /// Switch the job back to the "Pending" status. It will be
+    /// run again on a different worker node.
     ///
     /// Node may decide to return the job if it cannot process it right
     /// now (does not have resources, being asked to shutdown, etc.)
     ///
-    void ReturnJob(const string& job_key);
+    void ReturnJob(const string& job_key, const string& auth_token);
 
     /// Increment job execution timeout
     ///
@@ -765,10 +792,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 public:
     CNetScheduleNotificationHandler();
 
-    bool ParseNotification(const string& attr1_name, string* attr1_value,
-            const string& attr2_name, string* attr2_value);
+    int ParseNotification(const string* attr_names,
+            string* attr_values, int attr_count);
 
-    bool WaitForNotification(CAbsTimeout& timeout, string* server_host);
+    bool WaitForNotification(CAbsTimeout& abs_timeout,
+            string* server_host = NULL);
 
     unsigned short GetPort() const {return m_UDPPort;}
 
@@ -778,15 +806,23 @@ public:
 public:
     void SubmitJob(CNetScheduleSubmitter::TInstance submitter,
             CNetScheduleJob& job,
-            CAbsTimeout& abs_timeout);
-    bool CheckSubmitJobNotification(CNetScheduleAPI::EJobStatus* status,
-            CNetScheduleJob& job);
+            CAbsTimeout& abs_timeout,
+            CNetServer* server = NULL);
+    bool CheckSubmitJobNotification(CNetScheduleJob& job,
+            CNetScheduleAPI::EJobStatus* status);
+    CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
+            CAbsTimeout& abs_timeout, CNetScheduleAPI ns_api);
 
+    static string MkBaseGETCmd(
+        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+        const string& affinity_list);
+    void CmdAppendTimeout(string& cmd, CAbsTimeout* timeout);
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
-            const string& affinity,
             CNetScheduleJob& job,
-            CAbsTimeout& timeout);
-    bool CheckRequestJobNotification(CNetScheduleExecutor::TInstance executor);
+            string cmd,
+            CAbsTimeout* timeout);
+    bool CheckRequestJobNotification(CNetScheduleExecutor::TInstance executor,
+            CNetServer* server);
 
 protected:
     CDatagramSocket m_UDPSocket;

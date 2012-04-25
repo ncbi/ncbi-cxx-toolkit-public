@@ -81,6 +81,11 @@ public:
 
     string m_Auth;
     CRef<CNetScheduleAPI::IEventHandler> m_EventHandler;
+
+    typedef map<string, SNetServerImpl*> TNodeIdToServerMap;
+    TNodeIdToServerMap m_ServerByNSNodeId;
+    CFastMutex m_FastMutex;
+
     bool m_WorkerNodeCompatMode;
 };
 
@@ -93,10 +98,15 @@ struct SNetScheduleAPIImpl : public CObject
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);
 
+    CNetScheduleServerListener* GetListener()
+    {
+        return static_cast<CNetScheduleServerListener*>(
+                m_Service->m_Listener.GetPointer());
+    }
+
     void UpdateAuthString()
     {
-        static_cast<CNetScheduleServerListener*>(
-            m_Service->m_Listener.GetPointer())->SetAuthString(this);
+        GetListener()->SetAuthString(this);
     }
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
@@ -148,6 +158,11 @@ struct SNetScheduleAPIImpl : public CObject
         g_VerifyAlphabet(job_group, "job group name", eCC_BASE64_PI);
     }
 
+    static void VerifyAuthTokenAlphabet(const string& auth_token)
+    {
+        g_VerifyAlphabet(auth_token, "security token", eCC_BASE64_PI);
+    }
+
     static void VerifyAffinityAlphabet(const string& affinity)
     {
         g_VerifyAlphabet(affinity, "affinity token", eCC_BASE64_PI);
@@ -177,8 +192,8 @@ struct SNetScheduleSubmitterImpl : public CObject
 {
     SNetScheduleSubmitterImpl(CNetScheduleAPI::TInstance ns_api_impl);
 
-    string SubmitJobImpl(CNetScheduleJob& job,
-        unsigned short udp_port, unsigned wait_time);
+    string SubmitJobImpl(CNetScheduleJob& job, unsigned short udp_port,
+            unsigned wait_time, CNetServer* server = NULL);
 
     void FinalizeRead(const char* cmd_start,
         const char* cmd_name,
@@ -201,8 +216,6 @@ struct SNetScheduleExecutorImpl : public CObject
         m_API(ns_api_impl)
     {
     }
-
-    CNetServiceIterator GetJobImpl(const string& cmd, CNetScheduleJob& job);
 
     CNetScheduleAPI m_API;
 

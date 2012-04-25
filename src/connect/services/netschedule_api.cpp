@@ -65,27 +65,33 @@ CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
     m_UDPPort = m_UDPSocket.GetLocalPort(eNH_HostByteOrder);
 }
 
-bool CNetScheduleNotificationHandler::ParseNotification(
-        const string& attr1_name, string* attr1_value,
-        const string& attr2_name, string* attr2_value)
+int CNetScheduleNotificationHandler::ParseNotification(
+        const string* attr_names, string* attr_values, int attr_count)
 {
     try {
         CUrlArgs attr_parser(m_Message);
         const CUrlArgs::TArgs& attr_list = attr_parser.GetArgs();
-        CUrlArgs::const_iterator attr_it = attr_parser.FindFirst(attr1_name);
-        if (attr_it != attr_list.end()) {
-            *attr1_value = attr_it->value;
-            attr_it = attr_parser.FindFirst(attr2_name);
-            if (attr_it != attr_list.end()) {
-                *attr2_value = attr_it->value;
-                return true;
+
+        int found_attrs = 0;
+
+        CUrlArgs::const_iterator attr_it;
+
+        do {
+            if ((attr_it = attr_parser.FindFirst(*attr_names)) !=
+                    attr_list.end()) {
+                *attr_values = attr_it->value;
+                ++found_attrs;
             }
-        }
+            ++attr_names;
+            ++attr_values;
+        } while (--attr_count > 0);
+
+        return found_attrs;
     }
     catch (CUrlParserException&) {
     }
 
-    return false;
+    return -1;
 }
 
 bool CNetScheduleNotificationHandler::WaitForNotification(
@@ -107,6 +113,8 @@ bool CNetScheduleNotificationHandler::WaitForNotification(
         case eIO_Success:
             if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
                     server_host, NULL) == eIO_Success) {
+                while (msg_len > 0 && m_Buffer[msg_len - 1] == '\0')
+                    --msg_len;
                 m_Message.assign(m_Buffer, msg_len);
 
                 return true;
@@ -198,9 +206,18 @@ void CNetScheduleServerListener::OnConnected(
 {
     CNetServerConnection conn_object(conn);
 
-    if (!m_WorkerNodeCompatMode)
-        conn_object.Exec(m_Auth);
-    else
+    if (!m_WorkerNodeCompatMode) {
+        CNetServerInfo server_info(
+                new SNetServerInfoImpl(conn_object.Exec(m_Auth)));
+
+        string attr_name, attr_value;
+
+        while (server_info.GetNextAttribute(attr_name, attr_value))
+            if (attr_name == "ns_node") {
+                CFastMutexGuard guard(m_FastMutex);
+                m_ServerByNSNodeId[attr_value] = conn->m_Server;
+            }
+    } else
         conn->WriteLine(m_Auth);
 }
 
@@ -590,9 +607,7 @@ void CNetScheduleAPI::SetClientSession(const string& client_session)
 
 void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 {
-    CNetScheduleServerListener* listener =
-            static_cast<CNetScheduleServerListener*>(
-            m_Impl->m_Service->m_Listener.GetPointer());
+    CNetScheduleServerListener* listener = m_Impl->GetListener();
 
     listener->m_WorkerNodeCompatMode = true;
     listener->SetAuthString(m_Impl);
@@ -612,8 +627,7 @@ CNetScheduleAPI CNetScheduleAPI::GetServer(CNetServer::TInstance server)
 
 void CNetScheduleAPI::SetEventHandler(IEventHandler* event_handler)
 {
-    static_cast<CNetScheduleServerListener*>(m_Impl->m_Service->
-            m_Listener.GetPointer())->m_EventHandler = event_handler;
+    m_Impl->GetListener()->m_EventHandler = event_handler;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

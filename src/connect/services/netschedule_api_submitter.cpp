@@ -43,7 +43,8 @@
 
 BEGIN_NCBI_SCOPE
 
-
+#define FORCED_SST_INTERVAL_SEC 0
+#define FORCED_SST_INTERVAL_NANOSEC 500 * 1000 * 1000
 
 //////////////////////////////////////////////////////////////////////////////
 static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
@@ -104,7 +105,7 @@ string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job)
 }
 
 string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
-    unsigned short udp_port, unsigned wait_time)
+        unsigned short udp_port, unsigned wait_time, CNetServer* server)
 {
     size_t max_input_size = m_API->GetServerParams().max_input_size;
     s_CheckInputSize(job.input, max_input_size);
@@ -121,12 +122,16 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
         cmd.append(job.group);
     }
 
-    job.job_id = m_API->m_Service.FindServerAndExec(cmd).response;
+    CNetServer::SExecResult exec_result(
+            m_API->m_Service.FindServerAndExec(cmd));
 
-    if (job.job_id.empty()) {
+    if ((job.job_id = exec_result.response).empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Invalid server response. Empty key.");
     }
+
+    if (server != NULL)
+        *server = exec_result.conn->m_Server;
 
     return job.job_id;
 }
@@ -370,27 +375,28 @@ void CNetScheduleSubmitter::ReadFail(const string& job_id,
 void CNetScheduleNotificationHandler::SubmitJob(
         CNetScheduleSubmitter::TInstance submitter,
         CNetScheduleJob& job,
-        CAbsTimeout& abs_timeout)
+        CAbsTimeout& abs_timeout,
+        CNetServer* server)
 {
     submitter->SubmitJobImpl(job, GetPort(),
-            s_GetRemainingSeconds(abs_timeout));
+            s_GetRemainingSeconds(abs_timeout), server);
 }
 
+#define SUBM_NOTIF_ATTR_COUNT 2
+
 bool CNetScheduleNotificationHandler::CheckSubmitJobNotification(
-        CNetScheduleAPI::EJobStatus* status, CNetScheduleJob& job)
+        CNetScheduleJob& job, CNetScheduleAPI::EJobStatus* status)
 {
-    static const string s_KeyAttrName("job_key");
-    static const string s_StatusAttrName("job_status");
+    static const string attr_names[SUBM_NOTIF_ATTR_COUNT] =
+            {"job_key", "job_status"};
 
-    string job_key;
-    string job_status;
+    string attr_values[SUBM_NOTIF_ATTR_COUNT];
 
-    if (!ParseNotification(s_KeyAttrName, &job_key,
-            s_StatusAttrName, &job_status) || job_key != job.job_id)
-        return false;
-
-    return (*status = CNetScheduleAPI::StringToStatus(job_status)) !=
-            CNetScheduleAPI::eJobNotFound;
+    return ParseNotification(attr_names, attr_values, SUBM_NOTIF_ATTR_COUNT) ==
+                    SUBM_NOTIF_ATTR_COUNT &&
+            attr_values[0] == job.job_id &&
+            (*status = CNetScheduleAPI::StringToStatus(attr_values[1])) !=
+                    CNetScheduleAPI::eJobNotFound;
 }
 
 CNetScheduleAPI::EJobStatus
@@ -403,33 +409,49 @@ CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
 
     submit_job_handler.SubmitJob(m_Impl, job, abs_timeout);
 
+    return submit_job_handler.WaitForJobCompletion(job,
+            abs_timeout, m_Impl->m_API);
+}
+
+CNetScheduleAPI::EJobStatus
+CNetScheduleNotificationHandler::WaitForJobCompletion(
+        CNetScheduleJob& job,
+        CAbsTimeout& abs_timeout,
+        CNetScheduleAPI ns_api)
+{
     CNetScheduleAPI::EJobStatus status;
 
-/*
-    unsigned long wait_time = m_FirstDelay*1000;
-    unsigned long sleep_time = 6;
-    unsigned long total_sleep_time = 0;
+    unsigned wait_sec = FORCED_SST_INTERVAL_SEC;
+
+    bool last_timeout = false;
     for (;;) {
-        if (total_sleep_time >= wait_time)
-            ;
-        SleepMilliSec(sleep_time);
+        CNanoTimeout abs_timeout_remaining(abs_timeout.GetRemainingTime());
 
-        phase = x_CheckJobStatus(grid_ctx, job_status);
-        if (phase == eTerminated)
+        if (abs_timeout_remaining.IsZero()) {
+            status = ns_api->x_GetJobStatus(job.job_id, true);
             break;
+        }
 
-        total_sleep_time += sleep_time;
-        sleep_time += sleep_time/3;
+        CAbsTimeout timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
+
+        if (timeout.GetRemainingTime() >= abs_timeout_remaining) {
+            timeout = abs_timeout;
+            last_timeout = true;
+        }
+
+        if (WaitForNotification(timeout)) {
+            if (CheckSubmitJobNotification(job, &status))
+                break;
+        } else {
+            status = ns_api->x_GetJobStatus(job.job_id, true);
+            if ((status != CNetScheduleAPI::eRunning &&
+                    status != CNetScheduleAPI::ePending) || last_timeout)
+                break;
+        }
     }
-*/
-    string server;
-
-    if (!submit_job_handler.WaitForNotification(abs_timeout, &server) ||
-            !submit_job_handler.CheckSubmitJobNotification(&status, job))
-        status = GetJobStatus(job.job_id);
 
     if (status == CNetScheduleAPI::eDone)
-        m_Impl->m_API.GetJobDetails(job);
+        ns_api.GetJobDetails(job);
 
     return status;
 }

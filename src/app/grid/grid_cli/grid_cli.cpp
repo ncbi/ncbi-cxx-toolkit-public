@@ -153,6 +153,10 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eTimeout,
         TIMEOUT_OPTION, "Timeout in seconds."},
 
+    {CCommandLineParser::ePositionalArgument, eAuthToken,
+        "AUTH_TOKEN", "Security token that grants the "
+        "caller permission to manipulate the job."},
+
     {CCommandLineParser::eSwitch, eReliableRead,
         RELIABLE_READ_OPTION, "Enable reading confirmation mode."},
 
@@ -432,8 +436,9 @@ struct SCommandDefinition {
         "If the '--" WAIT_TIMEOUT_OPTION "' option is given in single "
         "job submission mode, " PROGRAM_NAME " will wait for the job "
         "to terminate, and if the job terminates within the specified "
-        "number of seconds, its final status will be printed right after "
-        "the job ID. In case the status is 'Done', job output will be "
+        "number of seconds or when this timeout has passed while the "
+        "job is still Pending or Running, job status will be printed right "
+        "after the job ID. And if this status is 'Done', job output will be "
         "printed on the next line (unless the '--" OUTPUT_FILE_OPTION "' "
         "option is given, in which case the output goes to the specified "
         "file).\n\n"
@@ -549,7 +554,7 @@ struct SCommandDefinition {
         OUTPUT_FILE_OPTION "' option is specified, in which case the "
         "input data will be saved to that file.\n\n"
         "The format of the line with job attributes is as follows:\n\n"
-        "[affinity=\"job_affinity\"] [exclusive]\n\n"
+        "auth_token [affinity=\"job_affinity\"] [exclusive]\n\n"
         "If none of the NetSchedule servers has pending jobs in the "
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
@@ -568,7 +573,7 @@ struct SCommandDefinition {
         "If the job is being reported as failed, an error message "
         "must be provided with the '--" FAIL_JOB_OPTION "' command "
         "line option.",
-        {eID, eNetSchedule, eQueue,
+        {eID, eAuthToken, eNetSchedule, eQueue,
             eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
             eAffinity, eOutputFile, eAuth,
             eClientNode, eClientSession, -1}},
@@ -582,7 +587,7 @@ struct SCommandDefinition {
         "Pending, but the information about previous runs will "
         "not be discarded, and the expiration time will not be "
         "advanced.",
-        {eID, eNetSchedule, eQueue, eAuth,
+        {eID, eAuthToken, eNetSchedule, eQueue, eAuth,
             eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_UpdateJob,
@@ -895,6 +900,7 @@ int CGridCommandLineInterfaceApp::Run()
             case eWaitTimeout:
                 m_Opts.timeout = NStr::StringToUInt(opt_value);
                 break;
+            case eAuthToken:
             case eConfirmRead:
             case eRollbackRead:
             case eFailRead:

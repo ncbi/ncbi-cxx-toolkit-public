@@ -506,7 +506,8 @@ void CWorkerNodeRequest::x_HandleProcessError(exception* ex)
     }
     ERR_POST_X(23, msg);
     try {
-        m_JobContext->GetWorkerNode().x_ReturnJob(m_JobContext->GetJobKey());
+        const CNetScheduleJob& job = m_JobContext->GetJob();
+        m_JobContext->GetWorkerNode().x_ReturnJob(job.job_id, job.auth_token);
     } catch (exception& ex1) {
         ERR_POST_X(24, "Could not return job back to queue: " << ex1.what());
     }
@@ -1138,13 +1139,13 @@ int CGridWorkerNode::Run()
                         ERR_POST_X(28, ex.what());
                         // that must not happen after CBlockingQueue is fixed
                         _ASSERT(0);
-                        x_ReturnJob(job.job_id);
+                        x_ReturnJob(job.job_id, job.auth_token);
                     }
                 } else {
                     try {
                         single_thread_context->RunJob(*job_context);
                     } catch (exception&) {
-                        x_ReturnJob(job_context->GetJobKey());
+                        x_ReturnJob(job.job_id, job.auth_token);
                         throw;
                     }
                 }
@@ -1283,40 +1284,42 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         if (!WaitForExclusiveJobToFinish())
             return false;
 
-        job_exists = GetNSExecutor().WaitJob(job, m_NSTimeout);
+        job_exists = GetNSExecutor().GetJob(job, m_NSTimeout);
 
         if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob) {
             if (EnterExclusiveMode())
                 job_exists = true;
             else {
-                x_ReturnJob(job.job_id);
+                x_ReturnJob(job.job_id, job.auth_token);
                 job_exists = false;
             }
         }
     }
     if (job_exists && CGridGlobals::GetInstance().IsShuttingDown()) {
-        x_ReturnJob(job.job_id);
+        x_ReturnJob(job.job_id, job.auth_token);
         return false;
     }
     return job_exists;
 }
 
-void CGridWorkerNode::x_ReturnJob(const string& job_key)
-{
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-    if (!debug_context || debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-         GetNSExecutor().ReturnJob(job_key);
-    }
-}
-
-void CGridWorkerNode::x_FailJob(const string& job_key, const string& reason)
+void CGridWorkerNode::x_ReturnJob(const string& job_key,
+        const string& auth_token)
 {
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (!debug_context ||
             debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-         CNetScheduleJob job(job_key);
-         job.error_msg = reason;
-         GetNSExecutor().PutFailure(job);
+         GetNSExecutor().ReturnJob(job_key, auth_token);
+    }
+}
+
+void CGridWorkerNode::x_FailJob(const CNetScheduleJob& job, const string& reason)
+{
+    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+    if (!debug_context ||
+            debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
+        CNetScheduleJob job_copy(job);
+        job_copy.error_msg = reason;
+        GetNSExecutor().PutFailure(job_copy);
     }
 }
 

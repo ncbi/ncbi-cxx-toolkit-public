@@ -212,7 +212,10 @@ void CGridThreadContext::ReturnJob()
             event = IWorkerNodeJobWatcher::eJobCanceled;
             break;
         case CNetScheduleAPI::eRunning:
-            m_NetScheduleExecutor.ReturnJob(m_JobContext->GetJobKey());
+            {
+                const CNetScheduleJob& job = m_JobContext->GetJob();
+                m_NetScheduleExecutor.ReturnJob(job.job_id, job.auth_token);
+            }
             break;
         default:
             break;

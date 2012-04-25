@@ -674,8 +674,8 @@ private:
 
     friend class CWNJobsWatcher;
     friend class CWorkerNodeRequest;
-    void x_ReturnJob(const string& job_key);
-    void x_FailJob(const string& job_key, const string& reason);
+    void x_ReturnJob(const string& job_key, const string& auth_token);
+    void x_FailJob(const CNetScheduleJob& job, const string& reason);
     bool x_AreMastersBusy() const;
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;

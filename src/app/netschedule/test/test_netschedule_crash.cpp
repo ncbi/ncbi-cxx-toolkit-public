@@ -319,7 +319,8 @@ void  CTestNetScheduleCrash::GetReturn( CNetScheduleExecutor &  executor,
 {
     NcbiCout << NcbiEndl << "Take and Return " << count << " jobs..." << NcbiEndl;
 
-    vector<unsigned int>    jobs_returned;
+    typedef pair<string, string> TJobIdAuthTokenPair;
+    vector<TJobIdAuthTokenPair>    jobs_returned;
     jobs_returned.reserve(count);
 
     unsigned        cnt = 0;
@@ -332,17 +333,17 @@ void  CTestNetScheduleCrash::GetReturn( CNetScheduleExecutor &  executor,
         if (!job_exists)
             continue;
 
-        CNetScheduleKey     key( job.job_id );
-        jobs_returned.push_back(key.id);
+        jobs_returned.push_back(
+                TJobIdAuthTokenPair(job.job_id, job.auth_token));
     }
-    ITERATE(vector<unsigned int>, it, jobs_returned) {
-        unsigned int        job_id = *it;
-
+    ITERATE(vector<TJobIdAuthTokenPair>, it, jobs_returned) {
         try {
-            executor.ReturnJob(m_KeyGenerator->GenerateV1(job_id));
+            executor.ReturnJob(it->first, it->second);
         }
-        catch (...)
-        {}
+        catch (CException& e)
+        {
+            NcbiCout << e.what() << NcbiEndl;
+        }
     }
     double          elapsed = sw.Elapsed();
 
