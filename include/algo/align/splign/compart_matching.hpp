@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <algo/align/util/blast_tabular.hpp>
+#include <algo/align/util/compartment_finder.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
