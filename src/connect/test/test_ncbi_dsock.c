@@ -105,7 +105,7 @@ static int s_Server(const char* sport)
         FILE* fp;
         port = SOCK_GetLocalPort(server, eNH_HostByteOrder);
         if (port  &&  (fp = fopen(sport, "w")) != 0) {
-            if (fprintf(fp, "%hu\n", port) < 1  ||  fflush(fp) != 0)
+            if (fprintf(fp, "%hu", port) < 1  ||  fflush(fp) != 0)
                 status = eIO_Unknown;
             fclose(fp);
         } else

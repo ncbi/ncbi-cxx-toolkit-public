@@ -610,7 +610,7 @@ static void TEST__server(const char* sport)
         FILE* fp;
         nport = LSOCK_GetPort(lsock, eNH_HostByteOrder);
         if (nport  &&  (fp = fopen(sport, "w")) != 0) {
-            if (fprintf(fp, "%hu\n", nport) < 1  ||  fflush(fp) != 0)
+            if (fprintf(fp, "%hu", nport) < 1  ||  fflush(fp) != 0)
                 status = eIO_Unknown;
             fclose(fp);
         } else

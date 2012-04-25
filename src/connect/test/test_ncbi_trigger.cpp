@@ -226,7 +226,7 @@ void CTest::Server(void)
         port = lsock.GetPort(eNH_HostByteOrder);
         if (port) {
             ofstream of(m_Port.c_str());
-            if (!(of << port << NcbiEndl))
+            if (!(of << port << flush))
                 status = eIO_Unknown;
         } else
             status = eIO_Unknown;
