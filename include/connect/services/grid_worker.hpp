@@ -619,7 +619,7 @@ public:
 
     bool EnterExclusiveMode();
     void LeaveExclusiveMode();
-    bool IsExclusiveMode();
+    bool IsExclusiveMode() const;
     bool WaitForExclusiveJobToFinish();
 
     /// Disable the automatic logging of request-start and
@@ -703,7 +703,7 @@ inline const string& CGridWorkerNode::GetServiceName() const
     return GetNetScheduleAPI().GetService().GetServiceName();
 }
 
-inline bool CGridWorkerNode::IsExclusiveMode()
+inline bool CGridWorkerNode::IsExclusiveMode() const
 {
     return m_IsProcessingExclusiveJob;
 }
@@ -740,6 +740,6 @@ public:
 
 END_NCBI_SCOPE
 
-#define WN_BUILD_DATE " build " __DATE__ " " __TIME__ " (Framework version: 4.0.0)"
+#define WN_BUILD_DATE __DATE__ " " __TIME__
 
 #endif //CONNECT_SERVICES__GRID_WOKER_HPP

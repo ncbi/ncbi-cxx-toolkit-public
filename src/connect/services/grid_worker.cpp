@@ -868,7 +868,8 @@ const char* kServerSec = "server";
 
 int CGridWorkerNode::Run()
 {
-    LOG_POST_X(50, Info << GetJobFactory().GetJobVersion() << WN_BUILD_DATE);
+    LOG_POST_X(50, Info << GetJobFactory().GetJobVersion() <<
+            " build " WN_BUILD_DATE);
 
     const IRegistry& reg = m_App.GetConfig();
     CConfig conf(reg);
@@ -1082,7 +1083,8 @@ int CGridWorkerNode::Run()
     LOG_POST_X(54, Info << "\n=================== NEW RUN : " <<
         CGridGlobals::GetInstance().GetStartTime().AsString() <<
             " ===================\n" <<
-        GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
+        GetJobFactory().GetJobVersion() << " build " WN_BUILD_DATE <<
+        " is started.\n"
         "Waiting for control commands on " << CSocketAPI::gethostname() <<
             ":" << control_thread->GetControlPort() << "\n"
         "Queue name: " << GetQueueName() << "\n"

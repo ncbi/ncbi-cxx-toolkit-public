@@ -58,11 +58,14 @@ public:
                                   const string& auth,
                                   const string& queue,
                                   CNcbiOstream& reply,
-                                  const CGridWorkerNode& node) { return true; }
+                                  CWorkerNodeControlServer* control_server)
+        {
+            return true;
+        }
 
         virtual void Process(const string& request,
                              CNcbiOstream& reply,
-                             CGridWorkerNode& node) = 0;
+                             CWorkerNodeControlServer* control_server) = 0;
     };
     CWorkerNodeControlServer(CGridWorkerNode* worker_node,
         unsigned short start_port, unsigned short end_port);

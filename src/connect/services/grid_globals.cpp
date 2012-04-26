@@ -108,23 +108,23 @@ void CWNJobsWatcher::Notify(const CWorkerNodeJobContext& job,
 
 void CWNJobsWatcher::Print(CNcbiOstream& os) const
 {
-    os << "Started: " << CGridGlobals::GetInstance()
-                              .GetStartTime().AsString() << endl;
-    os << "Jobs Succeeded: " << m_JobsSucceed << endl
-       << "Jobs Failed: "  << m_JobsFailed  << endl
-       << "Jobs Returned: "<< m_JobsReturned << endl
-       << "Jobs Canceled: "<< m_JobsCanceled << endl
-       << "Jobs Lost: "    << m_JobsLost << endl;
+    os << "Started: " <<
+                    CGridGlobals::GetInstance().GetStartTime().AsString() <<
+            "\nJobs Succeeded: " << m_JobsSucceed <<
+            "\nJobs Failed: " << m_JobsFailed  <<
+            "\nJobs Returned: " << m_JobsReturned <<
+            "\nJobs Canceled: " << m_JobsCanceled <<
+            "\nJobs Lost: " << m_JobsLost << "\n";
 
     CMutexGuard guard(m_ActiveJobsMutex);
-    os << "Jobs Running: " << m_ActiveJobs.size() << endl;
+    os << "Jobs Running: " << m_ActiveJobs.size() << "\n";
     ITERATE(TActiveJobs, it, m_ActiveJobs) {
         os << it->first->GetJobKey() << " " << it->first->GetJobInput()
            << " -- running for " << (int)it->second.elasped_time.Elapsed()
            << " seconds.";
         if (it->second.flag)
-            os << "!!! INFINITE LOOP !!!";
-        os << endl;
+            os << "!!! LONG RUNNING JOB !!!";
+        os << "\n";
     }
 }
 

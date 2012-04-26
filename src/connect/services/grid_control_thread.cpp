@@ -31,10 +31,11 @@
 
 #include <ncbi_pch.hpp>
 
+#include "netschedule_api_impl.hpp"
+
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_worker.hpp>
-#include <connect/services/error_codes.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -54,33 +55,30 @@ BEGIN_NCBI_SCOPE
 class CGetVersionProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    virtual ~CGetVersionProcessor() {}
-
     virtual void Process(const string& request,
                          CNcbiOstream& os,
-                         CGridWorkerNode& node)
+                         CWorkerNodeControlServer* control_server)
     {
-        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE "\n";
+        os << "OK:" << control_server->GetWorkerNode().GetJobVersion() <<
+                " build " WN_BUILD_DATE "\n";
     }
 };
 
 class CShutdownProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    virtual ~CShutdownProcessor() {}
-
     virtual bool Authenticate(const string& host,
                               const string& auth,
                               const string& queue,
                               CNcbiOstream& os,
-                              const CGridWorkerNode& node)
+                              CWorkerNodeControlServer* control_server)
     {
         m_Host = host;
         size_t pos = m_Host.find_first_of(':');
         if (pos != string::npos) {
             m_Host = m_Host.substr(0, pos);
         }
-        if (node.IsHostInAdminHostsList(m_Host)) {
+        if (control_server->GetWorkerNode().IsHostInAdminHostsList(m_Host)) {
             return true;
         }
         os << "ERR:Shutdown access denied.\n";
@@ -90,7 +88,7 @@ public:
 
     virtual void Process(const string& request,
                          CNcbiOstream& os,
-                         CGridWorkerNode& )
+                         CWorkerNodeControlServer* /*control_server*/)
     {
         if (request.find("SUICIDE") != NPOS) {
             LOG_POST_X(11, Warning <<
@@ -108,29 +106,39 @@ public:
                 m_Host);
         }
     }
+
 private:
     string m_Host;
 };
 
-class CGetStatisticsProcessor : public CWorkerNodeControlServer::IRequestProcessor
+class CGetStatisticsProcessor :
+        public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    CGetStatisticsProcessor() {}
-    virtual ~CGetStatisticsProcessor() {}
-
     virtual void Process(const string& request,
                          CNcbiOstream& os,
-                         CGridWorkerNode& node)
+                         CWorkerNodeControlServer* control_server)
     {
-        os << "OK:" << node.GetJobVersion() << WN_BUILD_DATE "\n";
-        os << "Node started at: " <<
-            CGridGlobals::GetInstance().GetStartTime().AsString() << "\n";
+        const CGridWorkerNode& node = control_server->GetWorkerNode();
+
+        os << "OK:Job class and version: " << node.GetJobVersion() <<
+                "\nBuild date: " WN_BUILD_DATE << "\n";
+
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app)
             os << "Executable path: " << app->GetProgramExecutablePath()
-               << "; PID: " << CProcess::GetCurrentPid() << "\n";
+                    << "\nPID: " << CProcess::GetCurrentPid() << "\n";
 
-        os << "Queue name: " << node.GetQueueName() << "\n";
+        os << "Host name: " << CSocketAPI::gethostname() <<
+                "\nControl port: " << control_server->GetControlPort() <<
+                "\nNetCache client name: " << node.GetNetCacheAPI().
+                        GetService().GetServerPool().GetClientName() <<
+                "\nNetSchedule client name: " << node.GetClientName() <<
+                "\nQueue name: " << node.GetQueueName() <<
+                "\nNode ID: " << node.GetNetScheduleAPI()->m_ClientNode <<
+                "\nNode session: " <<
+                        node.GetNetScheduleAPI()->m_ClientSession << "\n";
+
         if (node.GetMaxThreads() > 1)
             os << "Maximum job threads: " << node.GetMaxThreads() << "\n";
 
@@ -149,40 +157,36 @@ public:
 class CGetLoadProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    CGetLoadProcessor()  {}
-    virtual ~CGetLoadProcessor() {}
-
     virtual bool Authenticate(const string& host,
                               const string& auth,
                               const string& queue,
                               CNcbiOstream& os,
-                              const CGridWorkerNode& node)
+                              CWorkerNodeControlServer* control_server)
     {
-        string cmp = node.GetClientName() + " prog='" + node.GetJobVersion() + '\'';
-        if (auth != cmp) {
-            os <<"ERR:Wrong Program. Required: " << node.GetJobVersion()
-               << "\n" << auth << "\n" << cmp << "\n";
+        const CGridWorkerNode& node = control_server->GetWorkerNode();
+
+        if (NStr::FindCase(auth, node.GetClientName()) == NPOS) {
+            os <<"ERR:Wrong client name. Required: " <<
+                    node.GetClientName() << "\n";
             return false;
         }
-        string qname, connection_info;
+
+        CTempString qname, connection_info;
         NStr::SplitInTwo(queue, ";", qname, connection_info);
         if (qname != node.GetQueueName()) {
-            os << "ERR:Wrong Queue. Required: " << node.GetQueueName() << "\n";
+            os << "ERR:Wrong queue name. Required: " <<
+                    node.GetQueueName() << "\n";
             return false;
         }
-        if (connection_info != node.GetServiceName()) {
-            os << "ERR:Wrong Connection Info. Required: "
-               << node.GetServiceName() << "\n";
-            return false;
-        }
+
         return true;
     }
 
     virtual void Process(const string& request,
                          CNcbiOstream& os,
-                         CGridWorkerNode& node)
+                         CWorkerNodeControlServer* control_server)
     {
-        int load = node.GetMaxThreads() -
+        int load = control_server->GetWorkerNode().GetMaxThreads() -
             CGridGlobals::GetInstance().GetJobsWatcher().GetJobsRunningNumber();
         os << "OK:" << load << "\n";
     }
@@ -191,11 +195,9 @@ public:
 class CUnknownProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    virtual ~CUnknownProcessor() {}
-
     virtual void Process(const string& request,
                          CNcbiOstream& os,
-                         CGridWorkerNode& node)
+                         CWorkerNodeControlServer* /*control_server*/)
     {
         os << "ERR:Unknown command -- " << request << "\n";
     }
@@ -235,7 +237,7 @@ public:
     virtual IServer_ConnectionHandler* Create(void) {
         return new CWNCTConnectionHandler(m_Server);
     }
-    virtual EListenAction OnFailure(unsigned short* port )
+    virtual EListenAction OnFailure(unsigned short* port)
     {
         if (*port >= m_EndPort)
             return eLAFail;
@@ -263,7 +265,7 @@ CWorkerNodeControlServer::CWorkerNodeControlServer(
     params.max_threads = 3;
     params.accept_timeout = &kAcceptTimeout;
     SetParameters(params);
-    AddListener(new CWNCTConnectionFactory(*this, m_Port, end_port),m_Port);
+    AddListener(new CWNCTConnectionFactory(*this, m_Port, end_port), m_Port);
 }
 
 CWorkerNodeControlServer::~CWorkerNodeControlServer()
@@ -341,11 +343,12 @@ void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
     string host = socket.GetPeerAddress();
 
     CNcbiOstrstream os;
+
     auto_ptr<CWorkerNodeControlServer::IRequestProcessor>
-        processor(m_Server.MakeProcessor(request));
-    if (processor->Authenticate(host, m_Auth, m_Queue, os,
-                                m_Server.GetWorkerNode()))
-        processor->Process(request, os, m_Server.GetWorkerNode());
+            processor(m_Server.MakeProcessor(request));
+
+    if (processor->Authenticate(host, m_Auth, m_Queue, os, &m_Server))
+        processor->Process(request, os, &m_Server);
 
     try {
         socket.Write(os.str(), (size_t)os.pcount());
