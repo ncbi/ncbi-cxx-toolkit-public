@@ -423,8 +423,10 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                 return 0/*failure*/;
             info->port = port;
         }
-        if (len)
-            memcpy(info->host, url, ++len);
+        if (len) {
+            memcpy(info->host, url, len);
+            info->host[len] = '\0';
+        }
         return 1/*success*/;
     }
 
@@ -1517,8 +1519,8 @@ extern EIO_Status URL_ConnectEx
         ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
-                          ("[URL_Connect]  Cannot convert HTTP header to"
-                           " string for %s:%hu", host, port));
+                          ("[URL_Connect]  Cannot maintain HTTP header"
+                           " for %s:%hu", host, port));
         if (hdr)
             free(hdr);
         BUF_Destroy(buf);
