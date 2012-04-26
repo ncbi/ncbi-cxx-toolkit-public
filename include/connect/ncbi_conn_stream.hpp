@@ -198,16 +198,16 @@ public:
     const STimeout* GetTimeout(EIO_Event direction) const;
 
     /// @return
-    ///   Status of the last performed I/O in the underlying CONN in
-    ///   the specified "direction" (either eIO_Read or eIO_Write);
-    ///   if "direction" is not specified (eIO_Open), return status
+    ///   Status of the last I/O performed by the underlying CONN in
+    ///   the specified "direction" (either eIO_Open, IO_Read or eIO_Write);
+    ///   if "direction" is not specified (eIO_Close), return status
     ///   of the last CONN I/O performed by the stream.
     /// @sa
     ///   CONN_Status
-    EIO_Status      Status(EIO_Event direction = eIO_Open) const;
+    EIO_Status      Status(EIO_Event direction = eIO_Close) const;
 
     /// Close CONNection, free all internal buffers and underlying structures,
-    /// and render stream unusable for further I/O.
+    /// and render the stream unusable for further I/O.
     /// Can be used at places where reaching end-of-scope for the stream
     /// would be impractical.
     /// @sa
