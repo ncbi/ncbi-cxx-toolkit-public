@@ -277,16 +277,12 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
     }
     os << is.rdbuf();
 #endif
-    if (!os.good())
+    if (!os.good()  ||  !os.flush())
         return false;
-    os.flush();
-    if (!os.good())
-        return false;
-    if (!CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
-        os.clear(NcbiFailbit);
-        return false;
-    }
-    return true;
+    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF))
+        return is.fail() ? false : true;
+    os.clear(NcbiFailbit);
+    return false;
 }
 
 
