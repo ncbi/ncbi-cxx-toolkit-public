@@ -2872,6 +2872,10 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
          name != desc.m_OpeningArgs.end();  ++name) {
         TArgsCI it = desc.x_Find(*name);
         _ASSERT(it != desc.m_Args.end());
+        if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+        {
+            continue;
+        }
         m_args.insert(it_pos, it->get());
     }
 
@@ -2885,6 +2889,10 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
 
         for (TArgsCI it = desc.m_Args.begin();  it != desc.m_Args.end();  ++it) {
             const CArgDesc* arg = it->get();
+            if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+            {
+                continue;
+            }
 
             if (dynamic_cast<const CArgDesc_KeyOpt*> (arg)  ||
                 dynamic_cast<const CArgDesc_KeyDef*> (arg)) {
@@ -2908,6 +2916,10 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
              name != desc.m_KeyFlagArgs.end();  ++name) {
             TArgsCI it = desc.x_Find(*name);
             _ASSERT(it != desc.m_Args.end());
+            if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+            {
+                continue;
+            }
 
             m_args.insert(it_pos, it->get());
         }
@@ -2918,6 +2930,10 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
          name != desc.m_PosArgs.end();  ++name) {
         TArgsCI it = desc.x_Find(*name);
         _ASSERT(it != desc.m_Args.end());
+        if (it->get()->GetFlags() & CArgDescriptions::fHidden)
+        {
+            continue;
+        }
         const CArgDesc* arg = it->get();
 
         // Mandatory args to go first, then go optional ones
@@ -2933,7 +2949,10 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
     {{
         TArgsCI it = desc.x_Find(kEmptyStr);
         if (it != desc.m_Args.end()) {
-            m_args.push_back(it->get());
+            if ((it->get()->GetFlags() & CArgDescriptions::fHidden) == 0)
+            {
+                m_args.push_back(it->get());
+            }
         }
     }}
 }

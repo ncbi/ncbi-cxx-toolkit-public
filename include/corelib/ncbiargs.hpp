@@ -559,7 +559,10 @@ public:
         fOptionalSeparatorAllowConflict = (1 << 9),
         
         /// Require '=' separator
-        fMandatorySeparator = (1 << 7)
+        fMandatorySeparator = (1 << 7),
+
+        /// Hide it in Usage
+        fHidden = (1 << 10)
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
