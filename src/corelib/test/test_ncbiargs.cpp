@@ -499,7 +499,8 @@ void CArgTestApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 #else
     // Create cmd-line argument descriptions class
-    auto_ptr<CCommandArgDescriptions> cmd_desc(new CCommandArgDescriptions);
+    auto_ptr<CCommandArgDescriptions> cmd_desc(
+        new CCommandArgDescriptions(true,0,CCommandArgDescriptions::eCommandOptional));
 
     // Specify USAGE context
     string prog_description =
@@ -509,7 +510,7 @@ void CArgTestApplication::Init(void)
         NStr::SizetToString(max_test) + ")";
     bool usage_sort_args = (m_TestNo == 10);
     cmd_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, true /*usage_sort_args*/);
+                              prog_description, usage_sort_args);
 
     // Describe cmd-line arguments according to the chosen test #
     s_Test[m_TestNo].init(*cmd_desc);
@@ -517,9 +518,9 @@ void CArgTestApplication::Init(void)
     // add few commands
     for (int a=0; a<4; ++a) {
 
-        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions(false));
-        arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-            "Testing CCommandArgDescriptions: RunTest" + NStr::IntToString(a));
+        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
+        arg_desc->SetUsageContext("",
+            "Testing CCommandArgDescriptions: RunTest" + NStr::IntToString(a), true);
         s_Test[a].init(*arg_desc);
         cmd_desc->SetCurrentCommandGroup(a%2 ? "Second command group" : "Command group #1");
         cmd_desc->AddCommand("runtest" + NStr::IntToString(a), arg_desc.release(),
@@ -527,9 +528,8 @@ void CArgTestApplication::Init(void)
 
     }
     {
-        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions(false));
-        arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-            "RunTest4 description");
+        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+        arg_desc->SetUsageContext("","RunTest4 description");
         s_Test[4].init(*arg_desc);
         cmd_desc->AddCommand("r4", arg_desc.release());
     }

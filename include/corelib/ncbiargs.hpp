@@ -1156,6 +1156,13 @@ public:
 class NCBI_XNCBI_EXPORT CCommandArgDescriptions : public CArgDescriptions
 {
 public:
+
+    /// Command presence requirement
+    enum ECommandPresence {
+        eCommandOptional,    ///< Command is not necessary
+        eCommandMandatory    ///< Nonempty command is required
+    };
+
     /// Constructor.
     ///
     /// If "auto_help" is passed TRUE, then a special flag "-h" will be added
@@ -1164,7 +1171,8 @@ public:
     /// Error handler is used to process errors when parsing arguments.
     /// If not set the default handler is used.
     CCommandArgDescriptions(bool auto_help = true,
-                          CArgErrorHandler* err_handler = 0);
+                          CArgErrorHandler* err_handler = 0,
+                          ECommandPresence cmd_req = eCommandMandatory);
     /// Destructor.
     virtual ~CCommandArgDescriptions(void);
 
@@ -1201,10 +1209,14 @@ public:
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
 private:
+    // not allowed
+    void SetArgsType(EArgSetType args_type) {}
+
     size_t x_GetCommandGroupIndex(const string& group);
     string x_IdentifyCommand(const string& command) const;
 
     typedef map<string, AutoPtr<CArgDescriptions> > TDescriptions;
+    ECommandPresence m_Cmd_req;
     TDescriptions m_Description;    ///< command to ArgDescriptions
     map<string, size_t > m_Groups;  ///< command to group #
     map<string,string> m_Aliases;   ///< command to alias; one alias only

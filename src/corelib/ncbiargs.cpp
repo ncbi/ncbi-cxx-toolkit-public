@@ -2872,7 +2872,6 @@ CArgDescriptions::CPrintUsage::CPrintUsage(const CArgDescriptions& desc)
          name != desc.m_OpeningArgs.end();  ++name) {
         TArgsCI it = desc.x_Find(*name);
         _ASSERT(it != desc.m_Args.end());
-        const CArgDesc* arg = it->get();
         m_args.insert(it_pos, it->get());
     }
 
@@ -3006,9 +3005,9 @@ void CArgDescriptions::CPrintUsage::AddCommandDescription(list<string>& arr,
     cmd_full += string( max_cmd_len - cmd_full.size(), ' ');
     cmd_full += "- ";
     cmd_full += m_desc.m_UsageDescription;
-    arr.push_back(string("    ")+ cmd_full);
+    arr.push_back(string("  ")+ cmd_full);
     if (detailed) {
-        AddSynopsis(arr,string(max_cmd_len+3+3,' '),string(max_cmd_len+6+3,' '));
+        AddSynopsis(arr,string(max_cmd_len+3,' '),string(max_cmd_len+6,' '));
     }
 }
 
@@ -3242,8 +3241,9 @@ void CArgDescriptions::x_PrintAliasesAsXml( CNcbiOstream& out,
 // CCommandArgDescriptions
 
 CCommandArgDescriptions::CCommandArgDescriptions(
-    bool auto_help, CArgErrorHandler* err_handler)
-    : CArgDescriptions(auto_help,err_handler)
+    bool auto_help, CArgErrorHandler* err_handler,
+    ECommandPresence cmd_req)
+    : CArgDescriptions(auto_help,err_handler), m_Cmd_req(cmd_req)
 {
     SetCurrentCommandGroup(kEmptyStr);
 }
@@ -3279,6 +3279,11 @@ void CCommandArgDescriptions::AddCommand(
             "Command cannot be empty: "+ cmd);
     }
     if (description) {
+        if ( m_AutoHelp ) {
+            if (description->Exist(s_AutoHelp)) {
+                description->Delete(s_AutoHelp);
+            }
+        }
         if (description->Exist(s_AutoHelpFull)) {
             description->Delete(s_AutoHelpFull);
         }
@@ -3335,6 +3340,9 @@ string CCommandArgDescriptions::x_IdentifyCommand(const string& command) const
 CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
 {
     if (argv.Size() > 1) {
+        if (m_Cmd_req == eCommandMandatory &&  argv[1].empty()) {
+            NCBI_THROW(CArgException,eInvalidArg, "Nonempty command is required");
+        }
         string command( x_IdentifyCommand(argv[1]));
         TDescriptions::const_iterator d;
         d = m_Description.find(command);
@@ -3345,6 +3353,9 @@ CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
             return d->second->CreateArgs(argv2)->SetCommand(command);
         }
         m_Command.clear();
+    } else if (m_Cmd_req != eCommandOptional) {
+//        NCBI_THROW(CArgException,eInvalidArg, "Command is required");
+        NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
     }
     return CArgDescriptions::CreateArgs(argv)->SetCommand(kEmptyStr);
 }
@@ -3358,9 +3369,11 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
         const CNcbiArguments& cmdargs = CNcbiApplication::Instance()->GetArguments();
         size_t cmdsize = cmdargs.Size();
         if (cmdsize > 2) {
-            cmd = cmdargs[ cmdsize-1];
+            cmd = cmdargs[ 2];
             if (cmd.empty()) {
-                argdesc = this;
+                if (m_Cmd_req != eCommandMandatory) {
+                    argdesc = this;
+                }
             } else {
                 cmd = x_IdentifyCommand(cmd);
             }
@@ -3373,7 +3386,9 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
             argdesc = d->second.get();
         }
     } else {
-        argdesc = this;
+        if (m_Cmd_req != eCommandMandatory) {
+            argdesc = this;
+        }
     }
 
     if (argdesc) {
@@ -3413,7 +3428,11 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     list<string> arr;
 
     arr.push_back("USAGE");
-    arr.push_back(string("    ")+ m_UsageName +" <command> [options]");
+    arr.push_back(string("  ")+ m_UsageName +" <command> [options]");
+    if (m_Cmd_req == eCommandOptional) {
+        arr.push_back("or");
+        x.AddSynopsis(arr, m_UsageName,"    ");
+    }
 
     arr.push_back(kEmptyStr);
     x.AddDescription(arr);
@@ -3445,7 +3464,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
                 if (j != m_Groups.end() && j->second == group) {
                     if (!titleprinted) {
                         arr.push_back(kEmptyStr);
-                        arr.push_back(grouptitle);
+                        arr.push_back(grouptitle + ":");
                         titleprinted = true;
                     }
                     CPrintUsage y(*(d->second));
@@ -3456,15 +3475,23 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
         }
     } else {
         arr.push_back(kEmptyStr);
-        arr.push_back("AVAILABLE COMMANDS");
+        arr.push_back("AVAILABLE COMMANDS:");
         for (d = m_Description.begin(); d != m_Description.end(); ++d) {
             CPrintUsage y(*(d->second));
             y.AddCommandDescription(arr, d->first, &m_Aliases, max_cmd_len, detailed);
         }
     }
 
+    if (m_Cmd_req == eCommandOptional && detailed) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("Missing command:");
+        x.AddDetails(arr);
+    }
+
     arr.push_back(kEmptyStr);
-    arr.push_back("Use '-h command' to print help on a specific command");
+    if (m_AutoHelp) {
+        arr.push_back("Use '-h command' to print help on a specific command");
+    }
     arr.push_back("Use '-help command' to print detailed descriptions of command line arguments");
 
     str += NStr::Join(arr, "\n");
@@ -3475,7 +3502,9 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
 {
     CPrintUsageXml x(*this,out);
-    x.PrintArguments(*this);
+    if (m_Cmd_req == eCommandOptional) {
+        x.PrintArguments(*this);
+    }
     TDescriptions::const_iterator d;
     for (d = m_Description.begin(); d != m_Description.end(); ++d) {
         out << "<command>" << endl;
