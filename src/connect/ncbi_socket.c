@@ -7423,7 +7423,7 @@ extern const char* SOCK_StringToHostPort(const char*     str,
     unsigned int h;
     const char* s;
     size_t alen;
-    int n;
+    size_t n;
 
     if (host)
         *host = 0;
@@ -7437,13 +7437,21 @@ extern const char* SOCK_StringToHostPort(const char*     str,
     }
     if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
         return 0;
-    if (*s != ':') {
+    if (*s == ':') {
+        long i;
+        char* e;
+        if (isspace((unsigned char) s[1]))
+            return str;
+        errno = 0;
+        i = strtol(++s, &e, 10);
+        if (errno  ||  i < 0  ||  i > 0xFFFF
+            ||  (*e  &&  !isspace((unsigned char)(*e)))) {
+            return str;
+        }
+        n = (size_t)(e - s);
+    } else {
         p = 0;
         n = 0;
-    } else if (isspace((unsigned char) s[1])
-               ||  sscanf(++s, "%hu%n", &p, &n) < 1
-               ||  (s[n]  &&  !isspace((unsigned char) s[n]))) {
-        return str;
     }
     if (alen) {
         memcpy(abuf, str, alen);

@@ -418,10 +418,12 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         if (len >= sizeof(info->host))
             return 0/*failure*/;
         if (s) {
-            int n;
-            if (sscanf(++s, "%hu%n", &port, &n) < 1  ||  s[n]  ||  !port)
+            long i;
+            errno = 0;
+            i = strtol(++s, &p, 10);
+            if (errno  ||  i < 0  ||  i > 0xFFFF  ||  *p)
                 return 0/*failure*/;
-            info->port = port;
+            info->port = (unsigned short) i;
         }
         if (len) {
             memcpy(info->host, url, len);
@@ -468,12 +470,13 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
             /* port, if any */
             if ((s = (const char*) memchr(host, ':', hostlen)) != 0) {
-                int n;
+                long i;
                 hostlen = (size_t)(s - host);
-                if (sscanf(++s, "%hu%n", &port, &n) < 1
-                    ||  s + n != path  ||  !port) {
+                errno = 0;
+                i = strtol(++s, &p, 10);
+                if (errno  ||  i < 0  ||  i > 0xFFFF  ||  p != path)
                     return 0/*failure*/;
-                }
+                port = (unsigned short) i;
             } else
                 port = 0/*default*/;
 
