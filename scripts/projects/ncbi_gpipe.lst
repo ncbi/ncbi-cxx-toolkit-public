@@ -10,11 +10,9 @@ db
 dbapi
 gui
 html
-internal/algo/align/gpipe-wnodes
+internal/algo/align/blockfind
+internal/algo/align/gmap
 internal/algo/align/pipeline-tools
-internal/algo/align/prosplign
-internal/algo/align/prosplign
-internal/algo/align/splign
 internal/aligndb
 internal/align_model$
 internal/align_toolbox
