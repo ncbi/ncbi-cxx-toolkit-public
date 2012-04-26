@@ -391,6 +391,7 @@ public:
     /// host:port                       -- target server
     /// http_proxy_host:http_proxy_port -- proxy server to tunnel via
     /// http_proxy_user:http_proxy_pass -- credentials for the proxy, if needed
+    /// http_proxy_leak                 -- ignore bad proxy and connect direct
     /// timeout                         -- I/O timeout (NB: no kDefaultTimeout)
     /// firewall                        -- if true then look at proxy_server
     /// proxy_server                    -- use as "host" if non-empty and FW
@@ -550,7 +551,7 @@ private:
 /// (details: <connect/ncbi_server_info.h>).
 ///
 /// Additional specifications can be passed in the SConnNetInfo structure,
-/// otherwise created by using service name as a registry section
+/// otherwise created by using the service name as a registry section
 /// to obtain the information from (details: <connect/ncbi_connutil.h>).
 ///
 /// Provided "timeout" is set at connection level, and if different from
