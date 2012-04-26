@@ -270,7 +270,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  void*          buf,     /* [out] memory buffer to read to           */
  size_t         size,    /* [in]  max. # of bytes to read            */
  size_t*        n_read,  /* [out, non-NULL] # of actually read bytes */
- EIO_ReadMethod how      /* [in]  read/peek | persist                */
+ EIO_ReadMethod how      /* [in]  peek/read/persist                  */
  );
 
 
@@ -298,10 +298,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
 
 
 /** Obtain status of the last I/O operation.  This is NOT a completion
- * code of the last CONN call, but rather a status from the lower level
+ * code of the last CONN call, but rather some status from a lower level
  * connector's layer (if available).
- * Special case: eIO_Open as "dir" checks whether the connection is in open
- * state (this does not assure/check any I/O availability), and returns
+ * Special case:  eIO_Open as "dir" checks whether the connection is in an open
+ * state (which means the underlying connector has been successfully opened,
+ * but does not assure/check availability for any data or I/O), and returns
  * eIO_Success if it is, or an error code otherwise.
  * @sa
  *  CONN_Create, CONN_Read, CONN_Write, CONN_Flush
@@ -312,9 +313,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
  );
 
 
-/** Close the connection, destroy all relevant internal data.
- * @note  Whatever error code is returned, the connection handle "conn"
- *        will have become invalid (so, you should not use it anymore).
+/** Close the connection and destroy all relevant internal data.
+ * @note  Whatever the error code is returned, the connection handle "conn"
+ *        will have become invalid (so, it should not be used it anymore).
  * @sa
  *  CONN_Create
  */
