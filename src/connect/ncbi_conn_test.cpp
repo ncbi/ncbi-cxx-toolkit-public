@@ -137,6 +137,7 @@ string CConnTest::x_TimeoutMsg(void)
 
 EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
 {
+    EIO_Status status;
     string type = io ? io->GetType()        : kEmptyStr;
     string text = io ? io->GetDescription() : kEmptyStr;
     m_CheckPoint = (type
@@ -148,9 +149,10 @@ EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
         return eIO_Unknown;
     if (!io->GetCONN())
         return eIO_Closed;
-    EIO_Status status = io->Status();
-    if (status != eIO_Success)
+    if ((status = io->Status())         != eIO_Success  ||
+        (status = io->Status(eIO_Open)) != eIO_Success) {
         return status;
+    }
     EIO_Status r_status = io->Status(eIO_Read);
     EIO_Status w_status = io->Status(eIO_Write);
     status = r_status > w_status ? r_status : w_status;
