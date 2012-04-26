@@ -131,6 +131,9 @@ bool CTestApp::Thread_Run(int idx)
     double time = sw.Elapsed();
     Uint8  size = sink.Size();
 
+    if (retval  &&  !size  &&  inp->Status(eIO_Open) != eIO_Success)
+        retval = false;
+
     ERR_POST((retval ? Info : Error) << size << " byte" << &"s"[size == 1]
              << " in " << CTimeSpan(time + 0.5).AsString("h:m:s") << " ("
              << fixed << setprecision(2)
