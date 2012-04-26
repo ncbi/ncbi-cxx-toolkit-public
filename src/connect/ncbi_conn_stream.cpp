@@ -33,6 +33,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbiapp.hpp>
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
@@ -40,7 +41,7 @@
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_file_connector.h>
 #include <connect/ncbi_socket.hpp>
-#include <corelib/ncbiapp.hpp>
+#include <connect/ncbi_util.h>
 #include <stdlib.h>
 
 
@@ -256,8 +257,14 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
 {
     EIO_Status status;
     SOCK       sock = 0;
+    bool       logged = false;
 
     _ASSERT(net_info);
+    if ((flags & (fSOCK_LogOn | fSOCK_LogDefault)) == fSOCK_LogDefault
+        &&  net_info->debug_printout == eDebugPrintout_Data) {
+        flags &= ~fSOCK_LogDefault;
+        flags |=  fSOCK_LogOn;
+    }
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_DetachableTunnel
                                    | fHTTP_NoAutoRetry, &sock);
@@ -283,8 +290,11 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
             _ASSERT(!sock);
         if (!sock  &&  !net_info->http_proxy_leak)
             return 0;
+        logged = true;
     }
     if (!sock) {
+        if (!logged  &&  net_info->debug_printout)
+            ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
         status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
@@ -323,12 +333,12 @@ static SOCK s_GrabSOCK(CSocket& socket)
     if (!sock) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_SocketStream::CConn_SocketStream(): "
-                   "Socket may not be empty");
+                   " Socket may not be empty");
     }
     if (socket.SetOwnership(eNoOwnership) == eNoOwnership) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_SocketStream::CConn_SocketStream(): "
-                   "Socket must be owned");
+                   " Socket must be owned");
     }
     socket.Reset(0/*empty*/,
                  eNoOwnership/*irrelevant*/,
@@ -800,12 +810,12 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
         } else
             status  = eIO_Success;
         if (good()  &&  status == eIO_Success) {
-            write("RETR ", 5) << file << '\n';
+            bool directory = NStr::EndsWith(file, '/');
+            write(directory ? "NLST " : "RETR ", 5) << file << '\n';
             status  = Status(eIO_Write);
         }
-        if (status != eIO_Success) {
+        if (status != eIO_Success)
             setstate(NcbiBadbit);
-        }
     }
 }
 
@@ -828,9 +838,8 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
             status = Status(eIO_Write);
         } else
             status = eIO_Success;
-        if (good()  &&  status == eIO_Success) {
+        if (good()  &&  status == eIO_Success)
             write("STOR ", 5) << file << NcbiFlush;
-        }
     }
 }
 
@@ -899,8 +908,12 @@ CConn_IOStream* NcbiOpenURL(const string& url)
         case eURL_File:
             if (*net_info->host  ||  net_info->port)
                 break; /*not supported*/
+            if (net_info->debug_printout)
+                ConnNetInfo_LogEx(net_info.get(), eLOG_Note, CORE_GetLOG());
             return new CConn_FileStream(net_info->path);
         case eURL_Ftp:
+            if (net_info->debug_printout)
+                ConnNetInfo_LogEx(net_info.get(), eLOG_Note, CORE_GetLOG());
             return new CConn_FTPDownloadStream(net_info->host,
                                                net_info->path,
                                                net_info->user,
