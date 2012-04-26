@@ -598,7 +598,7 @@ SIZE_TYPE CSocketAPI::StringToHostPort(const string&   str,
                                        unsigned short* port)
 {
     const char* s = str.c_str();
-    const char* e = SOCK_StringToHostPort(str.c_str(), host, port);
+    const char* e = SOCK_StringToHostPort(s, host, port);
     return e ? (SIZE_TYPE)(e - s) : NPOS;
 }
 

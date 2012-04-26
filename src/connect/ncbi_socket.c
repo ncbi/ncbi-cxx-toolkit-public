@@ -7446,7 +7446,8 @@ extern const char* SOCK_StringToHostPort(const char*     str,
         return str;
     }
     if (alen) {
-        strncpy0(abuf, str, alen);
+        memcpy(abuf, str, alen);
+        abuf[alen] = '\0';
         if (!(h = SOCK_gethostbyname(abuf)))
             return str;
     } else
