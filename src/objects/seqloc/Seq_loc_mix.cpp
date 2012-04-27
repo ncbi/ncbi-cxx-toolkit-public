@@ -54,28 +54,80 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 {
 }
 
-const CSeq_loc* CSeq_loc_mix::GetStartLoc(ESeqLocExtremes ext) const
+const CSeq_loc* CSeq_loc_mix::GetFirstLoc(ENullSegType null_seg) const
 {
-    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
-        Get().back(): Get().front();
+    const Tdata& arr = Get();
+    ITERATE ( Tdata, it, arr ) {
+        const CSeq_loc* ret = *it;
+        if ( null_seg == eNullSegAllow || !ret->IsNull() ) {
+            return ret;
+        }
+    }
+    return 0;
 }
 
-const CSeq_loc* CSeq_loc_mix::GetStopLoc(ESeqLocExtremes ext) const
+const CSeq_loc* CSeq_loc_mix::GetLastLoc(ENullSegType null_seg) const
 {
-    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
-        Get().front(): Get().back();
+    const Tdata& arr = Get();
+    REVERSE_ITERATE ( Tdata, it, arr ) {
+        const CSeq_loc* ret = *it;
+        if ( null_seg == eNullSegAllow || !ret->IsNull() ) {
+            return ret;
+        }
+    }
+    return 0;
 }
 
-CSeq_loc* CSeq_loc_mix::SetStartLoc(ESeqLocExtremes ext)
+CSeq_loc* CSeq_loc_mix::SetFirstLoc(ENullSegType null_seg)
 {
-    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
-        Set().back(): Set().front();
+    Tdata& arr = Set();
+    NON_CONST_ITERATE ( Tdata, it, arr ) {
+        CSeq_loc* ret = *it;
+        if ( null_seg == eNullSegAllow || !ret->IsNull() ) {
+            return ret;
+        }
+    }
+    return 0;
 }
 
-CSeq_loc* CSeq_loc_mix::SetStopLoc(ESeqLocExtremes ext)
+CSeq_loc* CSeq_loc_mix::SetLastLoc(ENullSegType null_seg)
+{
+    Tdata& arr = Set();
+    NON_CONST_REVERSE_ITERATE ( Tdata, it, arr ) {
+        CSeq_loc* ret = *it;
+        if ( null_seg == eNullSegAllow || !ret->IsNull() ) {
+            return ret;
+        }
+    }
+    return 0;
+}
+
+const CSeq_loc* CSeq_loc_mix::GetStartLoc(ESeqLocExtremes ext,
+                                          ENullSegType null_seg) const
 {
     return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
-        Set().front(): Set().back();
+        GetLastLoc(null_seg): GetFirstLoc(null_seg);
+}
+
+const CSeq_loc* CSeq_loc_mix::GetStopLoc(ESeqLocExtremes ext,
+                                         ENullSegType null_seg) const
+{
+    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
+        GetFirstLoc(null_seg): GetLastLoc(null_seg);
+}
+
+CSeq_loc* CSeq_loc_mix::SetStartLoc(ESeqLocExtremes ext,
+                                    ENullSegType null_seg)
+{
+    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
+        SetLastLoc(null_seg): SetFirstLoc(null_seg);
+}
+
+CSeq_loc* CSeq_loc_mix::SetStopLoc(ESeqLocExtremes ext,
+                                   ENullSegType null_seg)
+{
+    return (ext == eExtreme_Positional  &&  IsReverseStrand()) ?
+        SetFirstLoc(null_seg): SetLastLoc(null_seg);
 }
 
 bool CSeq_loc_mix::IsPartialStart(ESeqLocExtremes ext) const
@@ -206,7 +258,7 @@ ENa_strand CSeq_loc_mix::GetStrand(void) const
 TSeqPos CSeq_loc_mix::GetStart(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return GetStartLoc(ext)->GetStart(ext);
+        return GetStartLoc(ext, eNullSegSkip)->GetStart(ext);
     }
     return kInvalidSeqPos;
 }
@@ -215,7 +267,7 @@ TSeqPos CSeq_loc_mix::GetStart(ESeqLocExtremes ext) const
 TSeqPos CSeq_loc_mix::GetStop(ESeqLocExtremes ext) const
 {
     if (!Get().empty()) {
-        return GetStopLoc(ext)->GetStop(ext);
+        return GetStopLoc(ext, eNullSegSkip)->GetStop(ext);
     }
     return kInvalidSeqPos;
 }

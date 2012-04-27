@@ -99,10 +99,24 @@ public:
     TSeqPos GetStart(ESeqLocExtremes ext) const;
     TSeqPos GetStop (ESeqLocExtremes ext) const;
 
-    const CSeq_loc* GetStartLoc(ESeqLocExtremes ext) const;
-    const CSeq_loc* GetStopLoc (ESeqLocExtremes ext) const;
-    CSeq_loc* SetStartLoc(ESeqLocExtremes ext);
-    CSeq_loc* SetStopLoc (ESeqLocExtremes ext);
+    // GetStartLoc/GetStopLoc set of methods is valid only for non-empty
+    // mix location.
+    enum ENullSegType {
+        eNullSegAllow,
+        eNullSegSkip
+    };
+    const CSeq_loc* GetFirstLoc(ENullSegType null_seg = eNullSegAllow) const;
+    const CSeq_loc* GetLastLoc (ENullSegType null_seg = eNullSegAllow) const;
+    CSeq_loc* SetFirstLoc(ENullSegType null_seg = eNullSegAllow);
+    CSeq_loc* SetLastLoc (ENullSegType null_seg = eNullSegAllow);
+    const CSeq_loc* GetStartLoc(ESeqLocExtremes ext,
+                                ENullSegType null_seg = eNullSegAllow) const;
+    const CSeq_loc* GetStopLoc (ESeqLocExtremes ext,
+                                ENullSegType null_seg = eNullSegAllow) const;
+    CSeq_loc* SetStartLoc(ESeqLocExtremes ext,
+                          ENullSegType null_seg = eNullSegAllow);
+    CSeq_loc* SetStopLoc (ESeqLocExtremes ext,
+                          ENullSegType null_seg = eNullSegAllow);
 
     /// Set the strand for all of the location's ranges.
     void SetStrand(ENa_strand strand);

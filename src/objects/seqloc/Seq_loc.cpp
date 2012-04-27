@@ -508,7 +508,7 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 }
 
 
-int CSeq_loc::Compare(const CSeq_loc& loc) const
+int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc) const
 {
     // check first that Seq-ids are the same
     const CSeq_id* id1 = GetId();
@@ -518,10 +518,9 @@ int CSeq_loc::Compare(const CSeq_loc& loc) const
                    "CSeq_loc::Compare(): "
                    "cannot compare locations with several different seq-ids");
     }
-    if ( !id1->Equals(*id2) ) {
-        NCBI_THROW(CException, eUnknown,
-                   "CSeq_loc::Compare(): "
-                   "cannot compare locations with different seq-ids");
+    if ( int diff = id1->CompareOrdered(*id2) ) {
+        // ids are different - order by them
+        return diff;
     }
 
     TSeqPos from1 = GetStart(eExtreme_Positional);
@@ -547,6 +546,83 @@ int CSeq_loc::Compare(const CSeq_loc& loc) const
         return to1 > to2? -1: 1;
     }
 
+    return 0;
+}
+
+
+int CSeq_loc::Compare(const CSeq_loc& loc) const
+{
+    // first try fast single-id comparison
+    try {
+        return x_CompareSingleId(loc);
+    }
+    catch ( CException& /*ignored*/ ) {
+    }
+    // Slow comparison of ranges on each Seq-id separately.
+    CSeq_loc_CI iter1(*this, CSeq_loc_CI::eEmpty_Allow);
+    CSeq_loc_CI iter2(  loc, CSeq_loc_CI::eEmpty_Allow);
+    for ( ; iter1 && iter2; ) {
+        CRef<CSeq_loc> loc1, loc2;
+        for ( int k = 0; k < 2; ++k ) {
+            CSeq_loc_CI& iter = k? iter2: iter1;
+            CRef<CSeq_loc>& loc = k? loc2: loc1;
+            // skip null locations (no Seq-id)
+            while ( iter && iter.GetSeq_id().Which() == CSeq_id::e_not_set ) {
+                ++iter;
+            }
+            if ( !iter ) {
+                // all the remaining segments were null -> end of location
+                loc = null;
+                continue;
+            }
+            const CSeq_id& id = iter.GetSeq_id();
+            loc = const_cast<CSeq_loc*>(&*iter.GetRangeAsSeq_loc());
+            // skip all sub-locations with the same Seq-id
+            while ( ++iter ) {
+                if ( !iter.GetSeq_id().Equals(id) ) {
+                    if ( iter.GetSeq_id().Which() == CSeq_id::e_not_set ) {
+                        // skip null sub-location
+                        continue;
+                    }
+                    else {
+                        // different non-null locations (has Seq-id)
+                        break;
+                    }
+                }
+                if ( !loc->IsMix() ) {
+                    CRef<CSeq_loc> tmp = loc;
+                    loc = new CSeq_loc;
+                    loc->SetMix().AddSeqLoc(*tmp);
+                }
+                loc->SetMix().AddSeqLoc(const_cast<CSeq_loc&>(*iter.GetRangeAsSeq_loc()));
+            }
+        }
+        if ( loc1 && !loc2 ) {
+            // *this location is longer -> *this > loc
+            return 1;
+        }
+        if ( loc2 && !loc1 ) {
+            // second location is longer -> *this < loc
+            return -1;
+        }
+        if ( !loc1 && !loc2 ) {
+            // both locations ended
+            return 0;
+        }
+        if ( int diff = loc1->x_CompareSingleId(*loc2) ) {
+            // next sub-locs are different
+            return diff;
+        }
+    }
+    if ( iter1 && !iter2 ) {
+        // *this location is longer -> *this > loc
+        return 1;
+    }
+    if ( iter2 && !iter1 ) {
+        // second locatio is longer -> *this < loc
+        return -1;
+    }
+    // same-length locations
     return 0;
 }
 

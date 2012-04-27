@@ -210,8 +210,7 @@ public:
     /// Invalidate id/range cache after deserialization.
     void PostRead(void) const;
 
-    /// Compare locations if they are defined on the same single sequence
-    /// or throw exception.
+    /// Compare locations.
     int Compare(const CSeq_loc& loc) const;
 
     /// Used as a helper for determining which pieces of a
@@ -338,6 +337,10 @@ private:
     void x_ChangeToPackedInt(const CSeq_interval& other);
     void x_ChangeToPackedInt(const CSeq_loc& other);
     void x_ChangeToPackedPnt(const CSeq_loc& other);
+
+    /// Compare single-id locations, or throw an exception if any location
+    /// is multi-id.
+    int x_CompareSingleId(const CSeq_loc& loc) const;
 
     enum {
         kDirtyCache = -2,
