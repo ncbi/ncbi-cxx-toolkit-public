@@ -257,7 +257,7 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
 {
     EIO_Status status;
     SOCK       sock = 0;
-    bool       logged = false;
+    bool       proxy = false;
 
     _ASSERT(net_info);
     if ((flags & (fSOCK_LogOn | fSOCK_LogDefault)) == fSOCK_LogDefault
@@ -284,19 +284,18 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
             } else {
                 SOCK_Abort(sock);
                 SOCK_Close(sock);
+                sock = 0;
             }
             delete[] handle;
         } else
             _ASSERT(!sock);
-        if (!sock  &&  !net_info->http_proxy_leak)
-            return 0;
-        logged = true;
+        proxy = true;
     }
-    if (!sock) {
-        if (!logged  &&  net_info->debug_printout)
-            ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+    if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
+        if (!proxy  &&  net_info->debug_printout)
+            ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
         status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
                                init_data, init_size, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
@@ -880,6 +879,19 @@ private:
 };
 
 
+static bool x_IsIdentifier(const string& str)
+{
+    const char* s = str.c_str();
+    if (!isalpha((unsigned char)(*s)))
+        return false;
+    for (++s;  *s;  ++s) {
+        if (!isalnum((unsigned char)(*s))  &&  *s != '_')
+            return false;
+    }
+    return true;
+}
+
+
 extern
 NCBI_XCONNECT_EXPORT  // FIXME: To remove once the API is fully official
 CConn_IOStream* NcbiOpenURL(const string& url)
@@ -891,7 +903,12 @@ CConn_IOStream* NcbiOpenURL(const string& url)
     };
     CPrivateIniter init;
 
-    AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(0);
+    bool svc = x_IsIdentifier(url);
+
+    AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(svc ? url.c_str() : 0);
+
+    if (svc)
+        return new CConn_ServiceStream(url, fSERV_Any, net_info.get());
 
     unsigned int   host;
     unsigned short port;
