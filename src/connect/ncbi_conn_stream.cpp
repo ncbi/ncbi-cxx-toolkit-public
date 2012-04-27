@@ -912,7 +912,7 @@ CConn_IOStream* NcbiOpenURL(const string& url)
 
     unsigned int   host;
     unsigned short port;
-    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port))
+    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port) && port)
         net_info->req_method = eReqMethod_Connect;
 
     if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
