@@ -78,7 +78,7 @@ void g_Diag_Use_RWLock(void)
     if (!diag_mutex_unlocked) {
         _TROUBLE;
         NCBI_THROW(CCoreException, eCore,
-            "Can not switch diagnostic to RW-lock - mutex is locked.");
+                   "Cannot switch diagnostic to RW-lock - mutex is locked.");
     }
     s_DiagUseRWLock = true;
     s_DiagMutex.Unlock();
@@ -1428,7 +1428,7 @@ void CDiagContext::SetAppName(const string& app_name)
 {
     if ( !m_AppName->IsEmpty() ) {
         // AppName can be set only once
-        ERR_POST("Application name can not be changed.");
+        ERR_POST("Application name cannot be changed.");
         return;
     }
     m_AppName->SetString(app_name);
@@ -1537,7 +1537,7 @@ void CDiagContext::SetProperty(const string& name,
         return;
     }
     if (name == kProperty_ReqTime) {
-        // Can not set this property
+        // Cannot set this property
         return;
     }
 
@@ -2838,7 +2838,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             }
             else if ( show_warning ) {
                 // Substitute the original message with the error.
-                // ERR_POST can not be used here since nested posts
+                // ERR_POST cannot be used here since nested posts
                 // are blocked. Have to create the message manually.
                 string limit_name = "error";
                 CDiagContext::ELogRate_Type limit_type =
@@ -2852,10 +2852,11 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
                         limit_name = "trace";
                         limit_type = CDiagContext::eLogRate_Trace;
                 }
-                string txt = "Exceeded maximum logging rate for " + limit_name + " (" +
-                    NStr::UIntToString(ctx.GetLogRate_Limit(limit_type)) + " messages per " +
-                    NStr::UIntToString(ctx.GetLogRate_Period(limit_type)) +
-                    " sec), suspending the output.";
+                string txt = "Maximum logging rate for " + limit_name + " ("
+                    + NStr::UIntToString(ctx.GetLogRate_Limit(limit_type))
+                    + " messages per "
+                    + NStr::UIntToString(ctx.GetLogRate_Period(limit_type))
+                    + " sec) exceeded, suspending the output.";
                 const CNcbiDiag diag(DIAG_COMPILE_INFO);
                 SDiagMessage err_msg(eDiag_Error,
                     txt.c_str(), txt.length(),
