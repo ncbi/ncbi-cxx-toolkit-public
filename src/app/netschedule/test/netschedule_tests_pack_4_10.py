@@ -871,8 +871,8 @@ class Scenario119( TestBase ):
         client = getClientInfo( ns_client, False )
         if client[ 'number_of_preferred_affinities' ] != 2:
             raise Exception( 'Unexpected length of preferred_affinities' )
-        if client[ 'type' ] != 'unknown':
-            raise Exception( 'Unexpected client type' )
+        if client[ 'type' ] not in [ 'unknown', 'worker node' ]:
+            raise Exception( 'Unexpected client type: ' + client[ 'type' ] )
 
         return True
 
@@ -905,8 +905,8 @@ class Scenario120( TestBase ):
             raise Exception( 'Unexpected preferred_affinities[ 0 ]' )
         if client[ 'preferred_affinities' ][ 1 ] != 'a2':
             raise Exception( 'Unexpected preferred_affinities[ 1 ]' )
-        if client[ 'type' ] != 'unknown':
-            raise Exception( 'Unexpected client type' )
+        if client[ 'type' ] not in [ 'unknown', 'worker node' ]:
+            raise Exception( 'Unexpected client type: ' + client[ 'type' ] )
 
         return True
 
@@ -1061,7 +1061,8 @@ class Scenario125( TestBase ):
             ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                                 str( self.ns.getPort() ),
                                                 'TEST', 'scenario125' )
-            output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1' )
+            output = execAny( ns_client,
+                              'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=0' )
         except Exception, exc:
             if "Anonymous client" in str( exc ):
                 return True
@@ -1093,7 +1094,8 @@ class Scenario126( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -1132,7 +1134,8 @@ class Scenario127( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a0', 'a2' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0' )
         if output != "":
             raise Exception( "Expect no jobs, but received one." )
         return True
@@ -1161,7 +1164,8 @@ class Scenario128( TestBase ):
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -1200,7 +1204,8 @@ class Scenario129( TestBase ):
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0' )
 
         if output != "":
             raise Exception( "Expect no jobs, but received one." )
@@ -1231,7 +1236,8 @@ class Scenario131( TestBase ):
 
         changeAffinity( ns_client, [ 'a2' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -1273,7 +1279,8 @@ class Scenario132( TestBase ):
 
         changeAffinity( ns_client, [ 'a2' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1 aff=a1' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=1 aff=a1 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -1315,7 +1322,8 @@ class Scenario133( TestBase ):
 
         changeAffinity( ns_client, [ 'a2' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1 aff=a5' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=1 aff=a5 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -1357,7 +1365,8 @@ class Scenario134( TestBase ):
 
         changeAffinity( ns_client, [ 'a2' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1 aff=a5' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 aff=a5 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -1399,7 +1408,8 @@ class Scenario135( TestBase ):
 
         changeAffinity( ns_client, [ 'a7' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0 aff=a5' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 aff=a5 exclusive_new_aff=0' )
         if output != "":
             raise Exception( "Expect no jobs, but received one." )
         return True
@@ -1432,7 +1442,8 @@ class Scenario136( TestBase ):
 
         changeAffinity( ns_client, [ 'a7' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=1 aff=a5' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=1 aff=a5 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -1482,7 +1493,8 @@ class Scenario137( TestBase ):
 
         changeAffinity( ns_client, [ 'a1' ], [] )
 
-        output = execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -5390,7 +5402,8 @@ class Scenario246( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario246' )
         try:
-            execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+            execAny( ns_client,
+                     'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0' )
         except Exception, exc:
             if "Anonymous client" in str( exc ):
                 return True
@@ -5528,7 +5541,8 @@ class Scenario251( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario251' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -5565,7 +5579,8 @@ class Scenario252( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario252' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -5613,7 +5628,8 @@ class Scenario253( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario253' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -5662,7 +5678,8 @@ class Scenario254( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario254' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
@@ -5710,7 +5727,8 @@ class Scenario255( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario255' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0' )
         if '&' in output:
             values = parse_qs( output, True, True )
             receivedJobID = values[ 'job_key' ][ 0 ]
