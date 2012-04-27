@@ -331,13 +331,13 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     if (len < 3  ||  8 < len  ||  strncasecmp(str, "infinite", len) != 0) {
         if (!*str  ||  (dbl = atof(str)) < 0.0)
             dbl = DEF_CONN_TIMEOUT;
-        info->tmo.sec  = (unsigned int)  dbl;
-        info->tmo.usec = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
+        info->tmo.sec      = (unsigned int)  dbl;
+        info->tmo.usec     = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
         if (dbl  &&  !(info->tmo.sec | info->tmo.usec))
             info->tmo.usec = 1/*protect underflow*/;
-        info->timeout  = &info->tmo;
+        info->timeout      = &info->tmo;
     } else
-        info->timeout  = kInfiniteTimeout/*0*/;
+        info->timeout      = kInfiniteTimeout/*0*/;
 
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
@@ -421,7 +421,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             long i;
             errno = 0;
             i = strtol(++s, &p, 10);
-            if (errno  ||  i < 0  ||  i > 0xFFFF  ||  *p)
+            if (errno  ||  s == p  ||  !i  ||  i ^ (i & 0xFFFF)  ||  *p)
                 return 0/*failure*/;
             info->port = (unsigned short) i;
         }
@@ -474,7 +474,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                 hostlen = (size_t)(s - host);
                 errno = 0;
                 i = strtol(++s, &p, 10);
-                if (errno  ||  i < 0  ||  i > 0xFFFF  ||  p != path)
+                if (errno  ||  s == p  || !i || i ^ (i & 0xFFFF) ||  p != path)
                     return 0/*failure*/;
                 port = (unsigned short) i;
             } else

@@ -7444,10 +7444,11 @@ extern const char* SOCK_StringToHostPort(const char*     str,
             return str;
         errno = 0;
         i = strtol(++s, &e, 10);
-        if (errno  ||  i < 0  ||  i > 0xFFFF
+        if (errno  ||  s == e  ||  i ^ (i & 0xFFFF)
             ||  (*e  &&  !isspace((unsigned char)(*e)))) {
             return str;
         }
+        p = (unsigned short) i;
         n = (size_t)(e - s);
     } else {
         p = 0;
@@ -7458,11 +7459,10 @@ extern const char* SOCK_StringToHostPort(const char*     str,
         abuf[alen] = '\0';
         if (!(h = SOCK_gethostbyname(abuf)))
             return str;
-    } else
-        h = 0;
-    if (host)
-        *host = h;
-    if (port)
+        if (host)
+            *host = h;
+    }
+    if (port  &&  p)
         *port = p;
     return s + n;
 }
@@ -7478,13 +7478,14 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 
     if (!buf  ||  !bufsize)
         return 0;
-    if (!host)
+    if (!host) {
         *x_buf = '\0';
-    else if (SOCK_ntoa(host, x_buf, sizeof(x_buf)) != 0) {
+        n = 0;
+    } else if (SOCK_ntoa(host, x_buf, sizeof(x_buf)) != 0) {
         *buf = '\0';
         return 0;
-    }
-    n = strlen(x_buf);
+    } else
+        n = strlen(x_buf);
     if (port  ||  !host)
         n += sprintf(x_buf + n, ":%hu", port);
     assert(n < sizeof(x_buf));
