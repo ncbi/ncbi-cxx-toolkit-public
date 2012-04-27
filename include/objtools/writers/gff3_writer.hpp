@@ -77,13 +77,13 @@ protected:
     bool x_WriteAlign( 
         const CSeq_align&,
         bool=false );                   // invert width 
-    bool x_WriteAlignDenseg(
+    virtual bool x_WriteAlignDenseg(
         const CSeq_align&,
         bool=false );                   // invert width 
     bool x_WriteAlignSpliced(
         const CSeq_align&,    
         bool=false );                   // invert width 
-    bool x_WriteAlignDisc(
+    virtual bool x_WriteAlignDisc(
         const CSeq_align&,    
         bool=false );                   // invert width 
 
