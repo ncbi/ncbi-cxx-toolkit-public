@@ -1337,9 +1337,13 @@ Table-match ::= SEQUENCE {
 }
 
 
+Apply-table-extra-data ::= CHOICE {
+  table NULL }
+
 Apply-table-action ::= SEQUENCE {
   filename VisibleString ,
-  match-type Table-match
+  match-type Table-match ,
+  in-memory-table Apply-table-extra-data OPTIONAL
 }
 
 Remove-sequences-action ::= SEQUENCE {
