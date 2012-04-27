@@ -134,9 +134,9 @@ ALT	s	Curtis Museum
 ALTA	s	University of Alberta, Biological Sciences Department
 ALTB	s	University of Barnaul, Altai State University
 ALU	s	Alabama Museum of Natural History
-AM	s	Australian Museum
+AM	sb	Australian Museum
 AM:Arachnology	s	Australian Museum, Invertebrate Collections: Arachnology
-AM:EBU	s	Australian Museum, Evolutionary Biology Unit Tissue Collection
+AM:EBU	sb	Australian Museum, Evolutionary Biology Unit Tissue Collection
 AM:Entomology	s	Australian Museum, Invertebrate Collections: Entomology
 AM:Herpetology	s	Australian Museum, Vertebrate Collections: Herpetology
 AM:Ichthyology	s	Australian Museum, Vertebrate Collections: Ichthyology
