@@ -40,10 +40,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_inst.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Giimport_id.hpp>
-#include <objects/seqloc/Patent_seq_id.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
@@ -1059,6 +1056,108 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
             }
             BOOST_CHECK((*it2)->CompareOrdered(**it) < 0);
             BOOST_CHECK((*it)->CompareOrdered(**it2) > 0);
+        }
+    }
+}
+
+BEGIN_LOCAL_NAMESPACE;
+
+static const char* const sc_Ids[] = {
+    "gnl|ti|12312",
+    "gi|3231212",
+    "NC_000001"
+};
+
+CRef<CSeq_loc> GetRandomSegment(CRandom& rnd)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( rnd.GetRand(0, 10) == 0 ) {
+        loc->SetNull();
+    }
+    else {
+        CRef<CSeq_id> id(new CSeq_id(sc_Ids[rnd.GetRand(0, 2)]));
+        TSeqPos from = rnd.GetRand(0, 10);
+        TSeqPos to = rnd.GetRand(0, 10);
+        if ( from == to && rnd.GetRand(0, 1) ) {
+            loc->SetPnt().SetId(*id);
+            loc->SetPnt().SetPoint(from);
+            if ( rnd.GetRand(0, 1) ) {
+                loc->SetPnt().SetStrand(eNa_strand_minus);
+            }
+        }
+        else {
+            loc->SetInt().SetId(*id);
+            if ( from > to || (from == to && rnd.GetRand(0, 1)) ) {
+                swap(from, to);
+                loc->SetInt().SetStrand(eNa_strand_minus);
+            }
+            loc->SetInt().SetFrom(from);
+            loc->SetInt().SetTo(to);
+        }
+    }
+    return loc;
+}
+
+struct PSeq_locLess {
+    bool operator()(const CSeq_loc& a, const CSeq_loc& b) const {
+        if ( 0 && (a.IsNull() || b.IsNull()) ) {
+            cout << "a: "<<MSerial_AsnText<<a;
+            cout << "b: "<<MSerial_AsnText<<b<<endl;
+        }
+        int diff = a.Compare(b);
+        if ( 0 && (a.IsNull() || b.IsNull()) ) {
+            cout << " = " << diff << endl;
+        }
+        //a.GetId();
+        //b.GetId();
+        return diff < 0;
+    }
+    bool operator()(const CRef<CSeq_loc>& a, const CRef<CSeq_loc>& b) const {
+        return (*this)(*a, *b);
+    }
+};
+
+END_LOCAL_NAMESPACE;
+
+BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare_Seq_loc)
+{
+    CRandom rnd(1);
+    for ( int t = 0; t < 1000; ++t ) {
+        vector< CRef<CSeq_loc> > locs;
+        for ( int i = 0; i < 10; ++i ) {
+            size_t segs = rnd.GetRand(1, 10);
+            CRef<CSeq_loc> loc(new CSeq_loc);
+            if ( segs == 1 && rnd.GetRand(0, 1) ) {
+                loc = GetRandomSegment(rnd);
+            }
+            else {
+                for ( size_t j = 0; j < segs; ++j ) {
+                    loc->SetMix().Set().push_back(GetRandomSegment(rnd));
+                }
+            }
+            locs.push_back(loc);
+        }
+        sort(locs.begin(), locs.end(), PSeq_locLess());
+        for ( size_t i = 0; i < locs.size(); ++i ) {
+            //cout << i << ": " << MSerial_AsnText << *locs[i] << endl;
+            BOOST_CHECK(locs[i]->Compare(*locs[i]) == 0);
+            if ( locs[i]->Compare(*locs[i]) != 0 ) {
+                cout << i << ": " << MSerial_AsnText << *locs[i];
+                cout << " = " << locs[i]->Compare(*locs[i]) << endl;
+            }
+            for ( size_t j = 0; j < i; ++j ) {
+                BOOST_CHECK(locs[j]->Compare(*locs[i]) <= 0);
+                BOOST_CHECK(locs[i]->Compare(*locs[j]) >= 0);
+                if ( locs[j]->Compare(*locs[i]) > 0 ||
+                     locs[i]->Compare(*locs[j]) < 0 ) {
+                    cout << j << ": " << MSerial_AsnText << *locs[j];
+                    cout << i << ": " << MSerial_AsnText << *locs[i];
+                    cout << " = " << locs[j]->Compare(*locs[i]) << endl;
+                    cout << i << ": " << MSerial_AsnText << *locs[i];
+                    cout << j << ": " << MSerial_AsnText << *locs[j];
+                    cout << " = " << locs[i]->Compare(*locs[j]) << endl;
+                }
+            }
         }
     }
 }
