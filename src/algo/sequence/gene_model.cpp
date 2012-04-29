@@ -57,6 +57,8 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -1522,6 +1524,38 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
                                          CSeq_loc::fSort,
                                          NULL);
 
+        if (this_loc_mapped->IsMix()) {
+            /// Propagate any internal fuzzy boundaries on the mRNA to the CDS
+            set<TSeqPos> mrna_fuzzy_boundaries;
+            ITERATE (CSeq_loc, subloc_it, *loc) {
+                if (subloc_it.GetRangeAsSeq_loc()->
+                        IsPartialStart(eExtreme_Positional))
+                {
+                    mrna_fuzzy_boundaries.insert(
+                        subloc_it.GetRange().GetFrom());
+                }
+                if (subloc_it.GetRangeAsSeq_loc()->
+                        IsPartialStop(eExtreme_Positional))
+                {
+                    mrna_fuzzy_boundaries.insert(
+                        subloc_it.GetRange().GetTo());
+                }
+            }
+    
+            NON_CONST_ITERATE (CSeq_loc_mix::Tdata, subloc_it,
+                               this_loc_mapped->SetMix().Set())
+            {
+                (*subloc_it)->SetPartialStart(
+                     mrna_fuzzy_boundaries.count(
+                         (*subloc_it)->GetStart(eExtreme_Positional)),
+                     eExtreme_Positional);
+                (*subloc_it)->SetPartialStop(
+                     mrna_fuzzy_boundaries.count(
+                         (*subloc_it)->GetStop(eExtreme_Positional)),
+                     eExtreme_Positional);
+            }
+        }
+
         this_loc_mapped->SetPartialStart(is_partial_5prime, eExtreme_Biological);
         this_loc_mapped->SetPartialStop(is_partial_3prime, eExtreme_Biological);
 
@@ -2072,7 +2106,16 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             }
         }
         seq.GetSeqData(frame, seq.size(), mrna);
-        CSeqTranslator::Translate(mrna, xlate, CSeqTranslator::fIs5PrimePartial);
+        CSeqTranslator::Translate(mrna, xlate, CSeqTranslator::fDefault);
+        if (xlate[0] == '-') {
+            /// First codon couldn't be translated as initial codon; translate
+            /// as mid-sequence codon instead
+            string first_codon = mrna.substr(0,3);
+            string first_aa;
+            CSeqTranslator::Translate(first_codon, first_aa,
+                                      CSeqTranslator::fIs5PrimePartial);
+            xlate[0] = first_aa[0];
+        }
     } else {
         CSeqVector seq(feat.GetLocation(), *m_scope, CBioseq_Handle::eCoding_Iupac);
         CSeqTranslator::Translate(feat, *m_scope, xlate);

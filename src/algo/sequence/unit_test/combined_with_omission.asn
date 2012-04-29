@@ -5659,7 +5659,8 @@ Seq-annot ::= {
           id other {
             accession "NT_007933",
             version 15
-          }
+          },
+          fuzz-to lim gt
         }
       },
       qual {
