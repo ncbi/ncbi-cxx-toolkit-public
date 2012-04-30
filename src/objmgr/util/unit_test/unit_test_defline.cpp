@@ -102,7 +102,7 @@ Seq-entry ::= set {\
           mod {\
             {\
               subtype strain ,\
-              subname \"LT2\" } } } } } } ,\
+              subname \"LT2; SGSC 1412; ATCC 700720\" } } } } } } ,\
   seq-set {\
     seq {\
       id {\

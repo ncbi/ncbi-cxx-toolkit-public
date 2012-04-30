@@ -604,8 +604,9 @@ string CDeflineGenerator::x_TitleFromBioSrc (void)
     string chr, cln, mp, pls, stn, sfx;
 
     if (! m_Strain.empty()) {
-        if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
-            stn = " strain " + m_Strain.substr (0, m_Strain.find(';'));
+        string add = m_Strain.substr (0, m_Strain.find(';'));
+        if (! x_EndsWithStrain (m_Taxname, add)) {
+            stn = " strain " + add;
         }
     }
     if (! m_Chromosome.empty()) {
