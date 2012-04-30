@@ -667,7 +667,7 @@ int CNcbiApplication::AppMain
     }
     catch (CArgException& e) {
         // Print USAGE and the exception error message
-        if ( m_ArgDesc.get() ) {
+        if ( e.GetErrCode() != CArgException::eNoValue &&  m_ArgDesc.get() ) {
             x_AddDefaultArgs();
             string str;
             m_ArgDesc->PrintUsage(str);
