@@ -537,7 +537,7 @@ static const TOrgModElem sc_orgmod_map[] = {
     { "Variety",            NCBI_ORGMOD(variety) }
 };
 typedef CStaticArrayMap<string, TORGMOD_SUBTYPE, PNocase> TOrgModMap;
-DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModMap, sc_orgmod_map);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TOrgModMap, sc_OrgModMap, sc_orgmod_map);
 
 static const TOrgModElem sc_orgmodalias_map[] = {
     { "nat-host",      NCBI_ORGMOD(nat_host) },
@@ -545,7 +545,7 @@ static const TOrgModElem sc_orgmodalias_map[] = {
     { "sub-strain",     NCBI_ORGMOD(substrain) },
     { "subspecies",    NCBI_ORGMOD(sub_species) }
 };
-DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sc_OrgModAliasMap, sc_orgmodalias_map);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TOrgModMap, sc_OrgModAliasMap, sc_orgmodalias_map);
 
 typedef SStaticPair<const char*, TORGMOD_SUBTYPE>  TSubsourceElem;
 static const TSubsourceElem sc_subsource_map[] = {
@@ -584,7 +584,7 @@ static const TSubsourceElem sc_subsource_map[] = {
     { "Transgenic",            NCBI_SUBSOURCE(transgenic) }
 };
 typedef CStaticArrayMap<string, TSUBSOURCE_SUBTYPE, PNocase> TSubsourceMap;
-DEFINE_STATIC_ARRAY_MAP(TSubsourceMap, sc_SubsourceMap, sc_subsource_map);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TSubsourceMap, sc_SubsourceMap, sc_subsource_map);
 
 static const TSubsourceElem sc_subsourcealias_map[] = {
     { "fwd-primer-name",    NCBI_SUBSOURCE(fwd_primer_name) },
@@ -595,7 +595,7 @@ static const TSubsourceElem sc_subsourcealias_map[] = {
     { "rev-primer-seq",     NCBI_SUBSOURCE(rev_primer_seq) },
     { "sub-clone",          NCBI_SUBSOURCE(subclone) }
 };
-DEFINE_STATIC_ARRAY_MAP(TSubsourceMap, sc_SubsourceAliasMap, sc_subsourcealias_map);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TSubsourceMap, sc_SubsourceAliasMap, sc_subsourcealias_map);
 
 // change the target string by searching for the given search_pattern
 // and replacing it with replacement up to max_replace times (0 means unlimited)
@@ -2531,7 +2531,7 @@ static const TSiteElem sc_site_map[] = {
     { "transmembrane-region", CSeqFeatData::eSite_transmembrane_region }
 };
 typedef CStaticArrayMap<string, CSeqFeatData::TSite, PNocase> TSiteMap;
-DEFINE_STATIC_ARRAY_MAP(TSiteMap, sc_SiteMap, sc_site_map);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TSiteMap, sc_SiteMap, sc_site_map);
 
 void CNewCleanup_imp::SiteFeatBC( CSeqFeatData::ESite &site, CSeq_feat& feat )
 {
@@ -4714,7 +4714,7 @@ static const TStringPair bad_sfxs[] = {
     { "VI." , "VI" }
 };
 typedef CStaticArrayMap<string, string> TSuffixMap;
-DEFINE_STATIC_ARRAY_MAP(TSuffixMap, sc_BadSuffixes, bad_sfxs);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TSuffixMap, sc_BadSuffixes, bad_sfxs);
 
 void CNewCleanup_imp::x_ExtractSuffixFromInitials(CName_std& name)
 {
@@ -6177,7 +6177,7 @@ void s_MatchesOfficialStructuredCommentDbname( string &tmp, string dbname )
         { "MIMS", "MIMS-Data" }
     };
     typedef CStaticArrayMap<string, string, PNocase> TOfficialPrefixMap;
-    DEFINE_STATIC_ARRAY_MAP(TOfficialPrefixMap, sc_OfficialPrefixMap, sc_official_prefix_map);
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TOfficialPrefixMap, sc_OfficialPrefixMap, sc_official_prefix_map);
 
     tmp.clear();
 
@@ -6229,7 +6229,7 @@ int s_GetBarcodeOrder( const CRef<CUser_field> &field )
         { "iBOL Working Group", 4 }
     };
     typedef CStaticArrayMap<string, int, PCase> TBarcodeOrderMap;
-    DEFINE_STATIC_ARRAY_MAP(TBarcodeOrderMap, sc_BarcodeOrderMap, sc_barcode_order_map);
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TBarcodeOrderMap, sc_BarcodeOrderMap, sc_barcode_order_map);
 
     if( ! field || ! field->IsSetLabel() || ! field->GetLabel().IsStr() ) {
         return 0;
@@ -7144,7 +7144,7 @@ static const char* const uninf_names [] = {
 };
 
 typedef CStaticArraySet<string, PNocase> TUninformative;
-DEFINE_STATIC_ARRAY_MAP(TUninformative, sc_UninfNames, uninf_names);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TUninformative, sc_UninfNames, uninf_names);
 
 static bool s_IsInformativeName (
     const string& name
@@ -7312,7 +7312,7 @@ static const TInTrSpElem sc_its_map[] = {
     { "Ribosomal DNA internal transcribed spacer 3", "internal transcribed spacer 3" }
 };
 typedef CStaticArrayMap<string, string, PNocase> TInTrSpMap;
-DEFINE_STATIC_ARRAY_MAP(TInTrSpMap, sc_ITSMap, sc_its_map);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TInTrSpMap, sc_ITSMap, sc_its_map);
 
 void CNewCleanup_imp::x_TranslateITSName( string &in_out_name )
 {
@@ -7346,7 +7346,7 @@ static const char* const ncrna_names [] = {
 };
 
 typedef CStaticArraySet<string, PNocase> TNcrna;
-DEFINE_STATIC_ARRAY_MAP(TNcrna, sc_NcrnafNames, ncrna_names);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TNcrna, sc_NcrnafNames, ncrna_names);
 
 static bool s_IsNcrnaName (
     const string& name
