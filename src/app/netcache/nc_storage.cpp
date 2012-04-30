@@ -2730,10 +2730,15 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
         ++m_CntMoveFiles;
         if (max_file->used_size == 0)
             x_DeleteDBFile(max_file);
+        else if (cnt_processed == 0) {
+            ERR_POST(Warning << "Didn't find anything to process in the file");
+            max_file->next_shrink_time = cur_time + max(m_MinMoveLife, 300);
+        }
         else
             max_file->next_shrink_time = cur_time + m_MinMoveLife;
     }
     else {
+        ctx->SetRequestStatus(CNCMessageHandler::eStatus_CmdAborted);
         ++m_CntFailedMoves;
         max_file->next_shrink_time = cur_time + m_FailedMoveDelay;
     }

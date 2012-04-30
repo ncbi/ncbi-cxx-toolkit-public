@@ -1411,6 +1411,12 @@ CNCActiveHandler::x_PrepareSyncProlongCmd(void)
     blob_sum.expire = m_BlobAccess->GetCurBlobExpire();
     blob_sum.ver_expire = m_BlobAccess->GetCurVerExpire();
 
+    // m_BlobAccess is not needed anymore and can be re-created later if
+    // blob won't be found on peer and it will be necessary to execute
+    // SYNC_PUT on this blob
+    m_BlobAccess->Release();
+    m_BlobAccess = NULL;
+
     x_SendCopyProlongCmd(blob_sum);
     return true;
 }
