@@ -235,10 +235,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                     eNSCR_Worker },
         { { "wnode_aff",         eNSPT_Int, eNSPA_Required, 0 },
           { "any_aff",           eNSPT_Int, eNSPA_Required, 0 },
+          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, 0 },
           { "aff",               eNSPT_Str, eNSPA_Optional, "" },
           { "port",              eNSPT_Int, eNSPA_Optional },
-          { "timeout",           eNSPT_Int, eNSPA_Optional },
-          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
+          { "timeout",           eNSPT_Int, eNSPA_Optional } } },
     // PUT job_key : id  job_return_code : int  output : str
     { "PUT",      { &CNetScheduleHandler::x_ProcessPut,
                     eNSCR_Worker },
