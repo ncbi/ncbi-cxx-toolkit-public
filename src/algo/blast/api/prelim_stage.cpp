@@ -320,7 +320,6 @@ CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
         (m_Options->CreateSnapshot());
 
     _ASSERT(m_InternalData->m_QueryInfo->num_queries > 0);
-    Boolean any_query_removed_hsps = FALSE;
     Boolean *removed_hsps = new Boolean [ m_InternalData->m_QueryInfo->num_queries ];
     SBlastHitsParameters* hit_param = NULL;
     SBlastHitsParametersNew(opts_memento->m_HitSaveOpts,
