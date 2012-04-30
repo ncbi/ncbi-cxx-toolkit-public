@@ -95,6 +95,11 @@ public:
 
     bool IsSetOrgMod(void) const;
     
+    // for GenColl
+    string GetRepliconName (void);
+    string GetBioprojectType (void);
+    string GetBioprojectLocation (void);
+
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);

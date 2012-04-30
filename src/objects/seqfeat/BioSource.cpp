@@ -282,6 +282,157 @@ bool CBioSource::IsSetOrgMod(void) const
 }
 
 
+string CBioSource::GetRepliconName(void)
+{
+    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_mitochondrion) {
+        return "MT";
+    }
+
+    ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
+        if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_plasmid_name
+            && (*sit)->IsSetName()) {            
+            return (*sit)->GetName();
+        }
+    }
+
+    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
+        ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
+            if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_linkage_group
+                && (*sit)->IsSetName()) {            
+                return (*sit)->GetName();
+            }
+        }
+    }
+
+    ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
+        if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_chromosome
+            && (*sit)->IsSetName()) {            
+            return (*sit)->GetName();
+        }
+    }
+
+    // no other name found
+    if (IsSetGenome()) {
+        switch (GetGenome()) {
+            case CBioSource::eGenome_plasmid:
+                return "unnamed";
+                break;
+            case CBioSource::eGenome_chromosome:
+                return "ANONYMOUS";
+                break;
+            case CBioSource::eGenome_kinetoplast:
+                return "kinetoplast";
+                break;
+            case CBioSource::eGenome_plastid:
+            case CBioSource::eGenome_chloroplast:
+            case CBioSource::eGenome_chromoplast:
+            case CBioSource::eGenome_apicoplast:
+            case CBioSource::eGenome_leucoplast:
+            case CBioSource::eGenome_proplastid:
+                return "Pltd";
+        }
+    }
+    return "";
+}
+
+
+string CBioSource::GetBioprojectType (void)
+{
+    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_plasmid) {
+        return "ePlasmid";
+    }
+
+    ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
+        if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_plasmid_name) {
+            return "ePlasmid";
+        }
+    }
+    
+    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
+        ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
+            if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_linkage_group) {
+                return "eLinkageGroup";
+            }
+        }
+    }
+
+    return "eChromosome";
+}
+
+
+string CBioSource::GetBioprojectLocation(void)
+{
+    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
+        return "eNuclearProkaryote";
+    }
+    if (NStr::Equal(GetBioprojectType(), "ePlasmid")) {
+        return "eNuclearProkaryote";
+    }
+
+    if (IsSetGenome()) {
+        switch (GetGenome()) {
+            case CBioSource::eGenome_unknown:  
+            case CBioSource::eGenome_genomic:
+                return "eNuclearProkaryote";
+                break;
+            case CBioSource::eGenome_mitochondrion:
+            case CBioSource::eGenome_kinetoplast:
+                return "eMitochondrion";
+                break;
+            case CBioSource::eGenome_chromosome:
+                return "eChromosome";
+                break;
+            case CBioSource::eGenome_chloroplast:
+                return "eChloroplast";
+                break;
+            case CBioSource::eGenome_chromoplast:
+                return "eChromoplast";
+                break;
+            case CBioSource::eGenome_plastid:
+                return "ePlastid";
+                break;
+            case CBioSource::eGenome_macronuclear:
+                return "eMacronuclear";
+                break;
+            case CBioSource::eGenome_extrachrom:
+                return "eExtrachromosomal";
+                break;
+            case CBioSource::eGenome_cyanelle:
+                return "eCyanelle";
+                break;
+            case CBioSource::eGenome_proviral:
+                return "eProviral";
+                break;
+            case CBioSource::eGenome_virion:
+                return "eVirion";
+                break;
+            case CBioSource::eGenome_nucleomorph:
+                return "eNucleomorph";
+                break;
+            case CBioSource::eGenome_apicoplast:
+                return "eApicoplast";
+                break;
+            case CBioSource::eGenome_leucoplast:
+                return "eLeucoplast";
+                break;
+            case CBioSource::eGenome_proplastid:
+                return "eProplastid";
+                break;
+            case CBioSource::eGenome_endogenous_virus:
+                return "eEndogenous-virus";
+                break;
+            case CBioSource::eGenome_hydrogenosome:
+                return "eHydrogenosome";
+                break;
+            case CBioSource::eGenome_chromatophore:
+                return "eChromatophore";
+                break;
+        }
+    }
+
+    return "";
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
