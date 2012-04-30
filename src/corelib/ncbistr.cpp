@@ -2499,7 +2499,7 @@ string NStr::SizetToString(size_t value, TNumToStringFlags flags, int base)
 #if (SIZEOF_SIZE_T > 4)
     return UInt8ToString(value, flags, base);
 #else
-    return UIntToString(value, flags, base);
+    return UIntToString(static_cast<unsigned int>(value), flags, base);
 #endif
 }
 
