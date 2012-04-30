@@ -3143,10 +3143,16 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         feat.SetDbxref().push_back(dbp);
         ChangeMade(CCleanupChange::eChangeDbxrefs);
         return eAction_Erase;  // mark qual for deletion
-    } else if (NStr::EqualNocase(qual, "pseudo")) {
+    } else if ( NStr::EqualNocase(qual, "pseudo") ) {
         feat.SetPseudo(true);
         ChangeMade(CCleanupChange::eChangeQualifiers);
         return eAction_Erase;  // mark qual for deletion
+    } else if ( NStr::EqualNocase(qual, "pseudogene") )
+    {
+        if( ! FIELD_EQUALS(feat, Pseudo, true) ) {
+            feat.SetPseudo(true);
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
     } else if ( FIELD_IS(data, Gene)  &&  x_GeneGBQualBC( GET_MUTABLE(data, Gene), gb_qual) == eAction_Erase) {
         return eAction_Erase;  // mark qual for deletion
     } else if ( FIELD_IS(data, Cdregion)  &&  x_SeqFeatCDSGBQualBC(feat, GET_MUTABLE(data, Cdregion), gb_qual) == eAction_Erase ) {
