@@ -39,6 +39,9 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -468,6 +471,35 @@ bool CGffWriteRecordFeature::x_AssignStop(
 }
 
 //  ----------------------------------------------------------------------------
+CConstRef<CUser_object> sGetUserObjectByType(
+    const CUser_object& uo,
+    const string& strType )
+//  ----------------------------------------------------------------------------
+{
+    if ( uo.IsSetType() && uo.GetType().IsStr() && 
+            uo.GetType().GetStr() == strType ) {
+        return CConstRef<CUser_object>( &uo );
+    }
+    const CUser_object::TData& fields = uo.GetData();
+    for ( CUser_object::TData::const_iterator it = fields.begin(); 
+            it != fields.end(); 
+            ++it ) {
+        const CUser_field& field = **it;
+        if ( field.IsSetData() ) {
+            const CUser_field::TData& data = field.GetData();
+            if ( data.Which() == CUser_field::TData::e_Object ) {
+                CConstRef<CUser_object> recur = sGetUserObjectByType( 
+                    data.GetObject(), strType );
+                if ( recur ) {
+                    return recur;
+                }
+            }
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+    
+//  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignSource(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
@@ -488,11 +520,24 @@ bool CGffWriteRecordFeature::x_AssignSource(
         }
     }
 
+    if ( mf.IsSetExt() ) {
+        CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
+            mf.GetExt(), "ModelEvidence" );
+        if ( model_evidence ) {
+            string strMethod;
+            if ( model_evidence->HasField( "Method" ) ) {
+                m_strSource = model_evidence->GetField( 
+                    "Method" ).GetData().GetStr();
+                    return true;
+            }
+        }
+    }
+
     CScope& scope = mf.GetScope();
     CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
-                                               &mf.GetScope());
+        &mf.GetScope());
     CWriteUtil::GetIdType(scope.GetBioseqHandle(idh),
-                          m_strSource);
+        m_strSource);
     return true;
 }
 
