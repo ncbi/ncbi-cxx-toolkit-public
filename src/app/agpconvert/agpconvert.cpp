@@ -690,7 +690,7 @@ int CAgpconvertApplication::Run(void)
                 }
                 if (source_descs.size() != 1) {
                     throw runtime_error("found " +
-                                        NStr::IntToString(source_descs.size()) +
+                                        NStr::UIntToString(source_descs.size()) +
                                         "Source Desc's; expected exactly one");
                 }
                 CSeqdesc& source_desc = *source_descs[0];
