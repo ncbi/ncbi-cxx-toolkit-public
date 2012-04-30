@@ -153,7 +153,8 @@ struct SJobInfoDB : public CBDB_File
 };
 
 
-const unsigned kMaxWorkerNodeIdSize = 64;
+const unsigned int  kMaxWorkerNodeIdSize = 64;
+const unsigned int  kMaxWorkerNodeErrMsgSize = 2048;
 /// BDB table to store events information
 /// Every instantiation of a job is reflected in this table under
 /// corresponding (id, event) key. In particular, this table stores
@@ -184,7 +185,7 @@ struct SEventsDB : public CBDB_File
         BindData("ret_code",       &ret_code);
         BindData("client_node",    &client_node, kMaxWorkerNodeIdSize);
         BindData("client_session", &client_session, kMaxWorkerNodeIdSize);
-        BindData("err_msg",        &err_msg, kNetScheduleMaxDBErrSize);
+        BindData("err_msg",        &err_msg, kMaxWorkerNodeErrMsgSize);
     }
 };
 

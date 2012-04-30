@@ -153,10 +153,15 @@ void CJobEvent::SetClientSession(const string &  cliet_session)
 }
 
 
+static const string     kTruncatedTail = " MSG_TRUNCATED";
 void CJobEvent::SetErrorMsg(const string &  msg)
 {
     m_Dirty = true;
-    m_ErrorMsg = msg.substr(0, kNetScheduleMaxDBErrSize);
+    if (msg.size() < kMaxWorkerNodeErrMsgSize)
+        m_ErrorMsg = msg;
+    else
+        m_ErrorMsg = msg.substr(0, kMaxWorkerNodeErrMsgSize -
+                                   kTruncatedTail.size() - 1) + kTruncatedTail;
 }
 
 
