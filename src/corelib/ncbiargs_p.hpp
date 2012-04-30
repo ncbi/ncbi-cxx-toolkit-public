@@ -173,6 +173,15 @@ private:
 };
 
 
+
+class CArg_Flag : public CArg_Boolean
+{
+public:
+    CArg_Flag(const string& name, bool value);
+    virtual bool HasValue(void) const;
+};
+
+
 class CArg_Dir : public CArg_String
 {
 public:

@@ -191,7 +191,7 @@ bool CArg_NoValue::HasValue(void) const
 
 #define THROW_CArg_NoValue \
     NCBI_THROW(CArgException,eNoValue, s_ArgExptMsg(GetName(), \
-        "Optional argument must have a default value", "NULL"));
+        "The argument has no value", ""));
 
 const string& CArg_NoValue::AsString    (void) const { THROW_CArg_NoValue; }
 Int8          CArg_NoValue::AsInt8      (void) const { THROW_CArg_NoValue; }
@@ -397,12 +397,23 @@ inline CArg_Boolean::CArg_Boolean(const string& name, const string& value)
     }
 }
 
-
 bool CArg_Boolean::AsBoolean(void) const
 {
     return m_Boolean;
 }
 
+
+///////////////////////////////////////////////////////
+//  CArg_Flag
+
+CArg_Flag::CArg_Flag(const string& name, bool value)
+    : CArg_Boolean(name, value)
+{
+}
+bool CArg_Flag::HasValue(void) const
+{
+    return AsBoolean();
+}
 
 
 ///////////////////////////////////////////////////////
@@ -1257,21 +1268,13 @@ string CArgDesc_Flag::GetUsageCommentAttr(void) const
 
 CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/) const
 {
-    if ( m_SetValue ) {
-        return new CArg_Boolean(GetName(), true);
-    } else {
-        return new CArg_NoValue(GetName());
-    }
+    return new CArg_Flag(GetName(), m_SetValue);
 }
 
 
 CArgValue* CArgDesc_Flag::ProcessDefault(void) const
 {
-    if ( m_SetValue ) {
-        return new CArg_NoValue(GetName());
-    } else {
-        return new CArg_Boolean(GetName(), true);
-    }
+    return new CArg_Flag(GetName(), !m_SetValue);
 }
 
 
@@ -2442,7 +2445,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
                     return arg2_used;
                 }
 
-                NCBI_THROW(CArgException,eNoValue,s_ArgExptMsg(arg1,
+                NCBI_THROW(CArgException,eNoArg,s_ArgExptMsg(arg1,
                     "Value is missing", kEmptyStr));
             }
             value = &arg2;
