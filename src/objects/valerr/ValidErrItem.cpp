@@ -1648,7 +1648,7 @@ delta Bioseq location component." } },
 };
 
 typedef CStaticArrayMap<unsigned int, pair<string, string> > TErrTypeStrsMap;
-DEFINE_STATIC_ARRAY_MAP(TErrTypeStrsMap, sc_ErrStrsMap, sc_ErrStrs);
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TErrTypeStrsMap, sc_ErrStrsMap, sc_ErrStrs);
 
 #undef BEGIN
 #undef END
