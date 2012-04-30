@@ -102,3 +102,345 @@ class Scenario301( TestBase ):
 
         return True
 
+class Scenario302( TestBase ):
+    " Scenario 302 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "GET2 wnode_aff = 0 exclusive_new_aff=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                             str( self.ns.getPort() ),
+                                             'TEST', 'scenario302' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        try:
+            output = execAny( ns_client,
+                              'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=1' )
+        except Exception, exc:
+            if "forbidden" in str( exc ):
+                return True
+            raise
+        raise Exception( "Expected exception, got nothing" )
+
+class Scenario303( TestBase ):
+    " Scenario 303 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "GET2 any_aff = 1 exclusive_new_aff=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                             str( self.ns.getPort() ),
+                                             'TEST', 'scenario303' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        try:
+            output = execAny( ns_client,
+                              'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=1' )
+        except Exception, exc:
+            if "forbidden" in str( exc ):
+                return True
+            raise
+        raise Exception( "Expected exception, got nothing" )
+
+class Scenario304( TestBase ):
+    " Scenario 304 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT without aff, CHAFF as identified (add a0, a1, a2), " \
+               "GET2 wnode_aff = 1 exclusive_new_aff=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla' )
+
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                             str( self.ns.getPort() ),
+                                             'TEST', 'scenario304' )
+        ns_client.set_client_identification( 'node', 'session' )
+        changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [ 'a3', 'a4', 'a5' ] )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        if jobID != receivedJobID:
+            raise Exception( "Received job ID does not match. Expected: " + \
+                             jobID + " Received: " + receivedJobID )
+
+        execAny( ns_client, 'RETURN2 ' + jobID + ' ' + passport )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        if output != "":
+            raise Exception( "Expect no job (it's in the blacklist), " \
+                             "but received one: " + output )
+        return True
+
+class Scenario305( TestBase ):
+    " Scenario 305 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with a7, CHAFF as identified (add a0, a1, a2), " \
+               "GET2 wnode_aff = 1 exclusive_new_aff=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a7' )
+
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                             str( self.ns.getPort() ),
+                                             'TEST', 'scenario305' )
+        ns_client.set_client_identification( 'node', 'session' )
+        changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [ 'a3', 'a4', 'a5' ] )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        if jobID != receivedJobID:
+            raise Exception( "Received job ID does not match. Expected: " + \
+                             jobID + " Received: " + receivedJobID )
+
+        execAny( ns_client, 'RETURN2 ' + jobID + ' ' + passport )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        if output != "":
+            raise Exception( "Expect no job (it's in the blacklist), " \
+                             "but received one: " + output )
+        return True
+
+class Scenario306( TestBase ):
+    " Scenario 306 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with a7, CHAFF as identified (add a0, a1, a2), " \
+               "GET2 wnode_aff = 1 exclusive_new_aff=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a7' )
+
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                             str( self.ns.getPort() ),
+                                             'TEST', 'scenario306' )
+        ns_client.set_client_identification( 'node', 'session' )
+        changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
+
+        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario306' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        changeAffinity( ns_client2, [ 'a7' ], [] )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        if output != "":
+            raise Exception( "Expect no job (non-unique affinity), " \
+                             "but received one: " + output )
+
+        changeAffinity( ns_client2, [], [ 'a7' ] )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        if jobID != receivedJobID:
+            raise Exception( "Received job ID does not match. Expected: " + \
+                             jobID + " Received: " + receivedJobID )
+
+        execAny( ns_client, 'RETURN2 ' + jobID + ' ' + passport )
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        if output != "":
+            raise Exception( "Expect no job (it's in the blacklist), " \
+                             "but received one: " + output )
+        return True
+
+class Scenario307( TestBase ):
+    " Scenario 307 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Notifications and blacklists"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                             str( self.ns.getPort() ),
+                                             'TEST', 'scenario307' )
+        ns_client.set_client_identification( 'node', 'session' )
+        changeAffinity( ns_client, [ 'a0' ], [] )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        if jobID != receivedJobID:
+            raise Exception( "Received job ID does not match. Expected: " + \
+                             jobID + " Received: " + receivedJobID )
+
+        execAny( ns_client, 'RETURN2 ' + jobID + ' ' + passport )
+        # Here: pending job and it is in the client black list
+
+        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario307' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        output = execAny( ns_client2,
+                          'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=0' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        # The first client waits for a job
+        process = self.ns.spawnGet2Wait( 'TEST', 3,
+                                         [ 'a0' ], False, False,
+                                         'node', 'session' )
+
+        # Return the job
+        execAny( ns_client2, 'RETURN2 ' + jobID + ' ' + passport )
+
+        process.wait()
+        if process.returncode != 0:
+            raise Exception( "Error spawning GET2" )
+        processStdout = process.stdout.read()
+        processStderr = process.stderr.read()
+
+        if "NCBI_JSQ_TEST" in processStdout:
+            raise Exception( "Expect no notifications but received one" )
+        return True
+
+class Scenario308( TestBase ):
+    " Scenario 308 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Notifications and exclusive affinities"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                             str( self.ns.getPort() ),
+                                             'TEST', 'scenario307' )
+        ns_client.set_client_identification( 'node', 'session' )
+        changeAffinity( ns_client, [ 'a0' ], [] )
+
+        # The first client waits for a job
+        process = self.ns.spawnGet2Wait( 'TEST', 3,
+                                         [ 'a0' ], False, False,
+                                         'node', 'session' )
+
+
+
+
+
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        if jobID != receivedJobID:
+            raise Exception( "Received job ID does not match. Expected: " + \
+                             jobID + " Received: " + receivedJobID )
+
+        execAny( ns_client, 'RETURN2 ' + jobID + ' ' + passport )
+        # Here: pending job and it is in the client black list
+
+        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario307' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        output = execAny( ns_client2,
+                          'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=0' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        # The first client waits for a job
+        process = self.ns.spawnGet2Wait( 'TEST', 3,
+                                         [ 'a0' ], False, False,
+                                         'node', 'session' )
+
+        # Return the job
+        execAny( ns_client2, 'RETURN2 ' + jobID + ' ' + passport )
+
+        process.wait()
+        if process.returncode != 0:
+            raise Exception( "Error spawning GET2" )
+        processStdout = process.stdout.read()
+        processStderr = process.stderr.read()
+
+        if "NCBI_JSQ_TEST" in processStdout:
+            raise Exception( "Expect no notifications but received one" )
+        return True

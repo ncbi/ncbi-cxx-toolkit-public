@@ -3561,7 +3561,7 @@ class Scenario189( TestBase ):
         processStderr = process.stderr.read()
 
         if "NCBI_JSQ_TEST" in processStdout:
-            raise Exception( "Except no notifications but received one" )
+            raise Exception( "Expect no notifications but received one" )
         return True
 
 class Scenario190( TestBase ):
