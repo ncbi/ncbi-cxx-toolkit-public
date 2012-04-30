@@ -79,9 +79,12 @@ CArrayHolder::~CArrayHolder(void) THROWS_NONE
 void CArrayHolder::Convert(const void* src_array,
                            size_t size,
                            const char* file,
-                           int line)
+                           int line,
+                           ECopyWarn warn)
 {
-    if ( TParamStaticArrayCopyWarning::GetDefault() ) {
+    if ( warn == eCopyWarn_show ||
+         (warn == eCopyWarn_default &&
+          TParamStaticArrayCopyWarning::GetDefault()) ) {
         // report incorrect usage
         CDiagCompileInfo diag_compile_info
             (file? file: __FILE__,

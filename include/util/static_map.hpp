@@ -115,8 +115,9 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<size_t Size>
     CStaticPairArrayMap(const value_type (&arr)[Size],
-                        const char* file, int line)
-        : TBase(arr, file, line)
+                        const char* file, int line,
+                        NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(arr, file, line, warn)
     {
     }
 
@@ -124,8 +125,9 @@ public:
     template<size_t Size>
     CStaticPairArrayMap(const value_type (&arr)[Size],
                         const key_compare& comp,
-                        const char* file, int line)
-        : TBase(arr, comp, file, line)
+                        const char* file, int line,
+                        NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(arr, comp, file, line, warn)
     {
     }
 
@@ -134,8 +136,9 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<class Type>
     CStaticPairArrayMap(const Type* array_ptr, size_t array_size,
-                        const char* file, int line)
-        : TBase(array_ptr, array_size, file, line)
+                        const char* file, int line,
+                        NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(array_ptr, array_size, file, line, warn)
     {
     }
 
@@ -143,8 +146,9 @@ public:
     template<class Type>
     CStaticPairArrayMap(const Type* array_ptr, size_t array_size,
                         const key_compare& comp,
-                        const char* file, int line)
-        : TBase(array_ptr, array_size, comp, file, line)
+                        const char* file, int line,
+                        NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(array_ptr, array_size, comp, file, line, warn)
     {
     }
 
@@ -181,8 +185,9 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<size_t Size>
     CStaticArrayMap(const value_type (&arr)[Size],
-                    const char* file, int line)
-        : TBase(arr, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(arr, file, line, warn)
     {
     }
 
@@ -190,8 +195,9 @@ public:
     template<size_t Size>
     CStaticArrayMap(const value_type (&arr)[Size],
                     const key_compare& comp,
-                    const char* file, int line)
-        : TBase(arr, comp, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(arr, comp, file, line, warn)
     {
     }
 
@@ -200,8 +206,9 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<class Type>
     CStaticArrayMap(const Type* array_ptr, size_t array_size,
-                    const char* file, int line)
-        : TBase(array_ptr, array_size, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(array_ptr, array_size, file, line, warn)
     {
     }
 
@@ -209,8 +216,9 @@ public:
     template<class Type>
     CStaticArrayMap(const Type* array_ptr, size_t array_size,
                     const key_compare& comp,
-                    const char* file, int line)
-        : TBase(array_ptr, array_size, comp, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(array_ptr, array_size, comp, file, line, warn)
     {
     }
 
@@ -233,7 +241,7 @@ inline
 CStaticPairArrayMap<KeyType, ValueType, KeyCompare>::CStaticPairArrayMap
 (const_iterator obj,
  size_type array_size)
-    : TBase(obj, array_size, 0, 0)
+    : TBase(obj, array_size, 0, 0, NStaticArray::eCopyWarn_default)
 {
 }
 
@@ -243,7 +251,7 @@ CStaticPairArrayMap<KeyType, ValueType, KeyCompare>::CStaticPairArrayMap
 (const_iterator obj,
  size_type array_size,
  const key_compare& comp)
- : TBase(obj, array_size, comp, 0, 0)
+    : TBase(obj, array_size, comp, 0, 0, NStaticArray::eCopyWarn_default)
 {
 }
 
@@ -252,7 +260,7 @@ inline
 CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
 (const_iterator obj,
  size_type array_size)
- : TBase(obj, array_size, 0, 0)
+    : TBase(obj, array_size, 0, 0, NStaticArray::eCopyWarn_default)
 {
 }
 
@@ -262,7 +270,7 @@ CStaticArrayMap<KeyType, ValueType, KeyCompare>::CStaticArrayMap
 (const_iterator obj,
  size_type array_size,
  const key_compare& comp)
-    : TBase(obj, array_size, comp, 0, 0)
+    : TBase(obj, array_size, comp, 0, 0, NStaticArray::eCopyWarn_default)
 {
 }
 

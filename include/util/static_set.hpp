@@ -179,6 +179,13 @@ public:
 };
 
 
+enum ECopyWarn {
+    eCopyWarn_default,
+    eCopyWarn_show,
+    eCopyWarn_hide
+};
+
+
 /// Helper class for holding and correct destruction of static array copy.
 class NCBI_XUTIL_EXPORT CArrayHolder
 {
@@ -215,7 +222,8 @@ public:
     void Convert(const void* src_array,
                  size_t size,
                  const char* file,
-                 int line);
+                 int line,
+                 ECopyWarn warn);
     
 private:
     auto_ptr<IObjectConverter> m_Converter;
@@ -572,19 +580,21 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<size_t Size>
     CStaticArraySearchBase(const value_type (&arr)[Size],
-                           const char* file, int line)
+                           const char* file, int line,
+                           NStaticArray::ECopyWarn warn)
     {
-        x_Set(arr, sizeof(arr), file, line);
+        x_Set(arr, sizeof(arr), file, line, warn);
     }
 
     /// Constructor to initialize comparator object.
     template<size_t Size>
     CStaticArraySearchBase(const value_type (&arr)[Size],
                            const key_compare& comp,
-                           const char* file, int line)
+                           const char* file, int line,
+                           NStaticArray::ECopyWarn warn)
         : m_Begin(comp)
     {
-        x_Set(arr, sizeof(arr), file, line);
+        x_Set(arr, sizeof(arr), file, line, warn);
     }
 
     /// Default constructor.  This will build a set around a given array; the
@@ -592,19 +602,21 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<typename Type>
     CStaticArraySearchBase(const Type* array_ptr, size_type array_size,
-                           const char* file, int line)
+                           const char* file, int line,
+                           NStaticArray::ECopyWarn warn)
     {
-        x_Set(array_ptr, array_size, file, line);
+        x_Set(array_ptr, array_size, file, line, warn);
     }
 
     /// Constructor to initialize comparator object.
     template<typename Type>
     CStaticArraySearchBase(const Type* array_ptr, size_type array_size,
                            const key_compare& comp,
-                           const char* file, int line)
+                           const char* file, int line,
+                           NStaticArray::ECopyWarn warn)
         : m_Begin(comp)
     {
-        x_Set(array_ptr, array_size, file, line);
+        x_Set(array_ptr, array_size, file, line, warn);
     }
 
     /// Destructor
@@ -720,7 +732,8 @@ protected:
 
     /// Assign array pointer and end pointer without conversion.
     void x_Set(const value_type* array_ptr, size_t array_size,
-               const char* file, int line)
+               const char* file, int line,
+               NStaticArray::ECopyWarn /*warn*/)
     {
         using namespace NStaticArray;
         CheckStaticType<value_type>(file, line);
@@ -743,7 +756,8 @@ protected:
     /// Allocate necessarily typed array and copy its content.
     template<typename Type>
     void x_Set(const Type* array2_ptr, size_t array2_size,
-               const char* file, int line)
+               const char* file, int line,
+               NStaticArray::ECopyWarn warn)
     {
         using namespace NStaticArray;
         CheckStaticType<Type>(file, line);
@@ -751,7 +765,7 @@ protected:
         size_t size = array2_size / sizeof(Type);
         CArrayHolder holder(MakeConverter(static_cast<value_type*>(0),
                                           static_cast<Type*>(0)));
-        holder.Convert(array2_ptr, size, file, line);
+        holder.Convert(array2_ptr, size, file, line, warn);
         if ( !m_Begin.second() ) {
             x_Validate(static_cast<const value_type*>(holder.GetArrayPtr()),
                        holder.GetElementCount(), value_comp(), file, line);
@@ -820,8 +834,9 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<size_t Size>
     CStaticArraySet(const value_type (&arr)[Size],
-                    const char* file, int line)
-        : TBase(arr, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(arr, file, line, warn)
     {
     }
 
@@ -829,8 +844,9 @@ public:
     template<size_t Size>
     CStaticArraySet(const value_type (&arr)[Size],
                     const key_compare& comp,
-                    const char* file, int line)
-        : TBase(arr, comp, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(arr, comp, file, line, warn)
     {
     }
 
@@ -839,8 +855,9 @@ public:
     /// debug mode, this will verify that the array is sorted.
     template<class Type>
     CStaticArraySet(const Type* array_ptr, size_t array_size,
-                    const char* file, int line)
-        : TBase(array_ptr, array_size, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(array_ptr, array_size, file, line, warn)
     {
     }
 
@@ -848,8 +865,9 @@ public:
     template<class Type>
     CStaticArraySet(const Type* array_ptr, size_t array_size,
                     const key_compare& comp,
-                    const char* file, int line)
-        : TBase(array_ptr, array_size, comp, file, line)
+                    const char* file, int line,
+                    NStaticArray::ECopyWarn warn = NStaticArray::eCopyWarn_default)
+        : TBase(array_ptr, array_size, comp, file, line, warn)
     {
     }
 
@@ -864,14 +882,22 @@ public:
 };
 
 
-#define DEFINE_STATIC_ARRAY_MAP(Type, Var, Array) \
-    static const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__)
-
-#define DECLARE_CLASS_STATIC_ARRAY_MAP(Type, Var) \
+#define DECLARE_CLASS_STATIC_ARRAY_MAP(Type, Var)       \
     static const Type Var
 
-#define DEFINE_CLASS_STATIC_ARRAY_MAP(Type, Var, Array) \
+#define DEFINE_STATIC_ARRAY_MAP(Type, Var, Array)                       \
+    static const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__)
+
+#define DEFINE_CLASS_STATIC_ARRAY_MAP(Type, Var, Array)                 \
     const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__)
+
+#define DEFINE_STATIC_ARRAY_MAP_WITH_COPY(Type, Var, Array)             \
+    static const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__, \
+                            NCBI_NS_NCBI::NStaticArray::eCopyWarn_hide)
+
+#define DEFINE_CLASS_STATIC_ARRAY_MAP_WITH_COPY(Type, Var, Array)       \
+    const Type (Var)((Array), sizeof(Array), __FILE__, __LINE__,        \
+                     NCBI_NS_NCBI::NStaticArray::eCopyWarn_hide)
 
 
 // Deprecated constructors (defined here to avoid GCC 3.3 parse errors)
@@ -881,7 +907,7 @@ inline
 CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
 (const_iterator obj,
  size_type array_size)
-  : TBase(obj, array_size, 0, 0)
+    : TBase(obj, array_size, 0, 0, NStaticArray::eCopyWarn_default)
 {
 }
 
@@ -891,7 +917,7 @@ CStaticArraySet<KeyType, KeyCompare>::CStaticArraySet
 (const_iterator obj,
  size_type array_size,
  const key_compare& comp)
-  : TBase(obj, array_size, comp, 0, 0)
+    : TBase(obj, array_size, comp, 0, 0, NStaticArray::eCopyWarn_default)
 {
 }
 
