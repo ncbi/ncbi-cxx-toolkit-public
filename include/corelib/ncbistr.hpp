@@ -190,12 +190,9 @@ public:
     ///   String containing only digits, representing non-negative 
     ///   decimal value in the int range: [0..kMax_Int].
     /// @return
-    ///   - Convert "str" to a (non-negative) int value and return
-    ///     this value.
-    ///   - -1 if "str" contains negative value,
-    ///        or any symbols strtoul() cannot accept, 
-    ///        or if it represents a number that does not fit into int.
-    ///   Note: If -1 is returned, errno will also be set.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, set errno to non-zero and return -1.
     static int StringToNonNegativeInt(const string& str);
 
     /// @deprecated
@@ -227,8 +224,8 @@ public:
 
     /// String to number conversion flags.
     enum EStringToNumFlags {
-        fConvErr_NoThrow      = (1 << 16),   ///< Return "natural null"
-        // value on error, instead of throwing (by default) an exception
+        fConvErr_NoThrow      = (1 << 16),   ///< On error, return zero and set
+        /// errno to non-zero instead of throwing an exception (the default)
         
         fMandatorySign        = (1 << 17),   ///< See 'fWithSign'
         fAllowCommas          = (1 << 18),   ///< See 'fWithCommas'
@@ -240,7 +237,9 @@ public:
                                              ///< Can have trailing non-nums
         fDecimalPosix         = (1 << 23),   ///< For decimal point, use C locale
         fDecimalPosixOrLocal  = (1 << 24),   ///< For decimal point, try both C and current locale
-        fIgnoreErrno          = (1 << 25),   ///< Do not throw exception when errno != 0
+        fIgnoreErrno          = (1 << 25),   ///< On error, return zero and set
+        /// errno to zero (simulating a successful conversion of zero)
+
         fDS_ForceBinary       = (1 << 26),
         fDS_ProhibitFractions = (1 << 27),
         fDS_ProhibitSpaceBeforeSuffix = (1 << 28)
@@ -255,16 +254,17 @@ public:
     /// @param flags
     ///   Optional flags to tune up how the string is converted to value.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   If conversion succeeded, then -- the numeric value that is
-    ///   represented by "str".
-    ///   On conversion error, depending on whether flag 'fConvErr_NoThrow' is:
-    ///   - Not set -- throw an exception.
-    ///   - Set     -- return zero, and set 'errno' either to EINVAL
-    ///     (if "str" contains illegal symbols) or to ERANGE (if "str"
-    ///     represents a number that does not fit into the target result
-    ///     type's range).
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if TNumeric is float or double and fIgnoreErrno is set,
+    ///     set errno to zero and return zero (simulates successful conversion
+    ///     of zero).
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     template <typename TNumeric>
     static TNumeric StringToNumeric(const CTempString& str,
                                     TStringToNumFlags  flags = 0,
@@ -279,12 +279,18 @@ public:
     /// @param flags [in]
     ///   Optional flags to tune up how the string is converted to value.
     /// @param base [in]
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   If conversion succeeded -- TRUE.
-    ///   On conversion error, depending on whether flag 'fConvErr_NoThrow' is:
-    ///   - Not set -- throw an exception.
-    ///   - Set     -- return FALSE.
+    ///   - If conversion succeeds, set errno to zero, set the value, and
+    ///     return true.
+    ///   - Otherwise, if TNumeric is float or double and fIgnoreErrno is set,
+    ///     set errno to zero, set the value to zero, and return true
+    ///     (simulates successful conversion of zero).
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero, set the value to zero, and
+    ///     return false.
     template <typename TNumeric>
     static bool StringToNumeric(const CTempString& str,
                                 TNumeric*          value, /*[out]*/ 
@@ -298,13 +304,14 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   - Convert "str" to "int" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
-    ///     errno is set to EINVAL or ERANGE in this case.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static int StringToInt(const CTempString& str,
                            TStringToNumFlags  flags = 0,
                            int                base  = 10);
@@ -316,13 +323,14 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   - Convert "str" to "unsigned int" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
-    ///     errno is set to EINVAL or ERANGE in this case.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static unsigned int StringToUInt(const CTempString& str,
                                      TStringToNumFlags  flags = 0,
                                      int                base  = 10);
@@ -334,13 +342,14 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   - Convert "str" to "long" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
-    ///     errno is set to EINVAL or ERANGE in this case.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static long StringToLong(const CTempString& str,
                              TStringToNumFlags  flags = 0,
                              int                base  = 10);
@@ -352,12 +361,14 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Numeric base of the number symbols (default = 10).
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   - Convert "str" to "unsigned long" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static unsigned long StringToULong(const CTempString& str,
                                        TStringToNumFlags  flags = 0,
                                        int                base  = 10);
@@ -378,6 +389,18 @@ public:
     ///   - "NAN", the function returns NaN;
     ///   - "INF" or "INFINITY", the function returns HUGE_VAL;
     ///   - "-INF" or "-INFINITY", the function returns -HUGE_VAL;
+    ///   - In these cases errno is not changed.
+    ///   Otherwise, returns the converted value, leaving errno unchanged.
+    ///
+    ///     IMPORTANT NOTE:
+    ///
+    ///     This function does not set errno=0. Therefore, if errno is
+    ///     non-zero prior to calling this function, you cannot distinguish
+    ///     a failed conversion from a successful conversion of zero based
+    ///     on the return value and errno alone.
+    ///
+    ///     *** Therefore you MUST set errno=0 before calling this function.
+    ///
     static double StringToDoublePosix(const char* str, char** endptr=0);
 
 
@@ -389,16 +412,19 @@ public:
     ///   How to convert string to value.
     ///   Do not support fAllowCommas flag.
     /// @return
-    ///   - Convert "str" to "double" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
-    ///     errno is set to EINVAL or ERANGE in this case.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fIgnoreErrno is set, set errno to zero and return
+    ///     zero (simulates successful conversion of zero).
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static double StringToDouble(const CTempStringEx& str,
                                  TStringToNumFlags    flags = 0);
 
     /// This version accepts zero-terminated string
-    /// It is unsafe to use this method directly, please use StringToDouble().
+    /// @deprecated
+    ///   It is unsafe to use this method directly, please use StringToDouble()
+    ///   instead.
     NCBI_DEPRECATED
     static double StringToDoubleEx(const char* str, size_t size,
                                    TStringToNumFlags flags = 0);
@@ -410,13 +436,14 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   - Convert "str" to "Int8" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
-    ///     errno is set to EINVAL or ERANGE in this case.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static Int8 StringToInt8(const CTempString& str,
                              TStringToNumFlags  flags = 0,
                              int                base  = 10);
@@ -428,17 +455,19 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   - Convert "str" to "UInt8" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static Uint8 StringToUInt8(const CTempString& str,
                                TStringToNumFlags  flags = 0,
                                int                base  = 10);
 
-    /// Convert string that can contain "software qualifiers to Uint8. 
+    /// Convert string that can contain "software" qualifiers to Uint8. 
     ///
     /// String can contain "software" qualifiers: G(giga-), MB(mega-),
     /// KiB (kibi-) etc.
@@ -457,10 +486,20 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @return
-    ///   - Convert "str" to "Uint8" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
-    ///   - Throw an exception otherwise.
+    ///   - If invalid flags are passed, throw an exception.
+    ///   - If conversion succeeds, return the converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
+    ///
+    ///     IMPORTANT NOTE:
+    ///
+    ///     This function does not set errno=0. Therefore, if errno is
+    ///     non-zero prior to calling this function, you cannot distinguish
+    ///     a failed conversion from a successful conversion of zero based
+    ///     on the return value and errno alone.
+    ///
+    ///     *** Therefore you MUST set errno=0 before calling this function.
+    ///
     static Uint8 StringToUInt8_DataSize(const CTempString& str,
                                         TStringToNumFlags  flags = 0);
 
@@ -476,13 +515,18 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Numeric base of the number (before the qualifier).
-    ///   Default is 10. Allowed values are 0, 2..20.
+    ///   Numeric base of the number (before the qualifier). Allowed values
+    ///   are 0, 2..20. Zero means to use the first characters to determine
+    ///   the base - a leading "0x" or "0X" means base 16; otherwise a
+    ///   leading 0 means base 8; otherwise base 10.
+    ///   The base is limited to 20 to prevent 'K' from being interpreted as
+    ///   a digit in the number.
     /// @return
-    ///   - Convert "str" to "Uint8" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
+    /// @deprecated  Use StringToUInt8_DataSize(str,flags) instead.
     NCBI_DEPRECATED
     static Uint8 StringToUInt8_DataSize(const CTempString& str,
                                         TStringToNumFlags  flags,
@@ -495,13 +539,14 @@ public:
     /// @param flags
     ///   How to convert string to value.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
+    ///   Radix base. Allowed values are 0, 2..36. Zero means to use the
+    ///   first characters to determine the base - a leading "0x" or "0X"
+    ///   means base 16; otherwise a leading 0 means base 8; otherwise base 10.
     /// @return
-    ///   - Convert "str" to "size_t" value and return it.
-    ///   - 0 if "str" contains illegal symbols, or if it represents a number
-    ///     that does not fit into range, and flag fConvErr_NoThrow is set,
-    ///     errno is set to EINVAL or ERANGE in this case.
-    ///   - Throw an exception otherwise.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static size_t StringToSizet(const CTempString& str,
                                 TStringToNumFlags  flags = 0,
                                 int                base  = 10);
@@ -512,6 +557,16 @@ public:
     ///   String to be converted.
     /// @return
     ///   Pointer value corresponding to its string representation.
+    ///
+    ///     IMPORTANT NOTE:
+    ///
+    ///     This function does not set errno=0. Therefore, if errno is
+    ///     non-zero prior to calling this function, you cannot distinguish
+    ///     a failed conversion from a successful conversion of zero based
+    ///     on the return value and errno alone.
+    ///
+    ///     *** Therefore you MUST set errno=0 before calling this function.
+    ///
     static const void* StringToPtr(const CTempStringEx& str);
 
     /// Convert character to integer.
@@ -530,7 +585,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     ///   If value is float or double type, the parameter is ignored.
@@ -549,7 +604,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     ///   If value is float or double type, the parameter is ignored.
@@ -564,7 +619,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
@@ -603,7 +658,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     static void IntToString(string& out_str, int value, 
@@ -643,7 +698,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
@@ -687,7 +742,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     static void UIntToString(string& out_str, unsigned int value,
@@ -727,7 +782,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
@@ -744,7 +799,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     static void LongToString(string& out_str, long value, 
@@ -758,7 +813,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
@@ -776,7 +831,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     static void ULongToString(string& out_str, unsigned long value,
@@ -790,7 +845,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
@@ -808,7 +863,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     static void Int8ToString(string& out_str, Int8 value,
@@ -822,7 +877,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
@@ -840,7 +895,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     static void UInt8ToString(string& out_str, Uint8 value,
@@ -1025,7 +1080,7 @@ public:
     /// @param flags
     ///   How to convert value to string.
     /// @param base
-    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
@@ -1065,7 +1120,8 @@ public:
     ///   case-insensitive version as one of:  'true, 't', 'yes', 'y'
     ///   for TRUE; and  'false', 'f', 'no', 'n' for FALSE.
     /// @return
-    ///   TRUE or FALSE.
+    ///   If conversion succeeds, return TRUE or FALSE.
+    ///   Otherwise, throw an exception.
     static bool StringToBool(const CTempString& str);
 
 
@@ -2160,6 +2216,8 @@ public:
     /// Parse C-style escape sequences in the specified string.
     ///
     /// Parse escape sequences including all those produced by PrintableString.
+    /// Note: Escape sequences with a value outside the range of [0-255] will
+    /// be converted to the least significant byte, with no warning.
     /// @sa PrintableString
     static string ParseEscapes(const CTempString& str);
 
