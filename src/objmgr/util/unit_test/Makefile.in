@@ -8,7 +8,7 @@
 # $Id$
 
 APP_PROJ = unit_test_seq_translator unit_test_fasta_ostream \
-		   unit_test_mol_wt unit_test_seq_loc_util
+		   unit_test_mol_wt unit_test_seq_loc_util unit_test_defline
 PROJ_TAG = test
 
 srcdir = @srcdir@
