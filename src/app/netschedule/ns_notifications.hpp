@@ -61,6 +61,7 @@ struct SNSNotificationAttributes
     bool            m_WnodeAff;     // true if I need to consider the node
                                     // preferred affinities.
     bool            m_AnyJob;       // true if any job is suitable.
+    bool            m_ExclusiveNewAff;
 
     bool            m_NewFormat;    // If true, then a new format of
                                     // notifications will be used. New format
@@ -98,6 +99,7 @@ class CNSNotificationList
                               unsigned int          timeout,
                               bool                  wnode_aff,
                               bool                  any_job,
+                              bool                  exclusive_new_affinity,
                               bool                  new_format);
         void UnregisterListener(const CNSClientId &  client,
                                 unsigned short       port);
@@ -113,11 +115,14 @@ class CNSNotificationList
                                 unsigned int           notif_lofreq_mult,
                                 CNSClientsRegistry &   clients_registry,
                                 CNSAffinityRegistry &  aff_registry);
-        void Notify(unsigned int           aff_id,
+        void Notify(unsigned int           job_id,
+                    unsigned int           aff_id,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
                     unsigned int           notif_highfreq_period);
-        void Notify(const TNSBitVector &   affinities,
+        void Notify(const TNSBitVector &   jobs,
+                    const TNSBitVector &   affinities,
+                    bool                   no_aff_jobs,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
                     unsigned int           notif_highfreq_period);
@@ -137,7 +142,7 @@ class CNSNotificationList
 
     private:
         list<SNSNotificationAttributes>     m_Listeners;
-        mutable CFastMutex                  m_ListenersLock;
+        mutable CMutex                      m_ListenersLock;
 
         list<SNSNotificationAttributes>::const_iterator
                                     x_SkipRecords(size_t count) const;

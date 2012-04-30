@@ -60,8 +60,9 @@ class CNSClientsRegistry
         // Called before any command is issued by the client.
         // The client record is created or updated.
         unsigned short  Touch(CNSClientId &          client,
-                              CQueue *               queue,
-                              CNSAffinityRegistry &  aff_registry);
+                              CNSAffinityRegistry &  aff_registry,
+                              TNSBitVector &         running_jobs,
+                              TNSBitVector &         reading_jobs);
 
         // Methods to update the client records.
         void  AddToSubmitted(const CNSClientId &  client,
@@ -81,9 +82,11 @@ class CNSClientsRegistry
         void  ClearExecuting(unsigned int  job_id);
         void  ClearExecutingSetBlacklist(unsigned int  job_id);
         unsigned short  ClearWorkerNode(const CNSClientId &    client,
-                                        CQueue *               queue,
-                                        CNSAffinityRegistry &  aff_registry);
-        TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client);
+                                        CNSAffinityRegistry &  aff_registry,
+                                        TNSBitVector &         running_jobs,
+                                        TNSBitVector &         reading_jobs);
+        TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client) const;
+        TNSBitVector  GetBlacklistedJobs(const string &  client_node) const;
 
         void  PrintClientsList(const CQueue *               queue,
                                CNetScheduleHandler &        handler,
@@ -100,12 +103,16 @@ class CNSClientsRegistry
                                      CNSAffinityRegistry &  aff_registry);
         TNSBitVector  GetPreferredAffinities(const CNSClientId &  client) const;
         TNSBitVector  GetPreferredAffinities(const string &  node) const;
+        TNSBitVector  GetAllPreferredAffinities(void) const;
         TNSBitVector  GetWaitAffinities(const CNSClientId &  client) const;
         TNSBitVector  GetWaitAffinities(const string &  node) const;
         TNSBitVector  GetRegisteredClients(void) const;
         void  UpdatePreferredAffinities(const CNSClientId &   client,
                                         const TNSBitVector &  aff_to_add,
                                         const TNSBitVector &  aff_to_del);
+        void  UpdatePreferredAffinities(const CNSClientId &   client,
+                                        unsigned int          aff_to_add,
+                                        unsigned int          aff_to_del);
         bool  IsRequestedAffinity(const string &         name,
                                   const TNSBitVector &   aff,
                                   bool                   use_preferred) const;
@@ -116,7 +123,7 @@ class CNSClientsRegistry
                                                 // netschedule knows about
                                                 // ClientNode -> struct {}
                                                 // e.g. service10:9300 - > {}
-        mutable CRWLock             m_Lock;     // Lock for the map
+        mutable CMutex              m_Lock;     // Lock for the map
 
         // Client IDs support
         unsigned int                m_LastID;
@@ -125,6 +132,8 @@ class CNSClientsRegistry
                                                          // of all the clients
                                                          // which are currently
                                                          // in the registry
+        TNSBitVector                m_WNAffinities; // Union of all affinities,
+                                                    // assigned to all WNodes.
 
         unsigned int  x_GetNextID(void);
 
@@ -134,6 +143,8 @@ class CNSClientsRegistry
                                const CQueue *               queue,
                                const CNSAffinityRegistry &  aff_registry,
                                bool                         verbose) const;
+
+        void  x_BuildWNAffinities(void);
 };
 
 

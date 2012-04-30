@@ -74,6 +74,7 @@ struct SNSCommandArguments
 
     bool            any_affinity;
     bool            wnode_affinity;
+    bool            exclusive_new_aff;
 
     void AssignValues(const TNSProtoParams &  params,
                       const string &          command = "");

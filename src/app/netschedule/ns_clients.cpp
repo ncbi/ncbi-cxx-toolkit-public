@@ -343,56 +343,22 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
 }
 
 
-void CNSClient::Clear(const CNSClientId &   client,
-                      CQueue *              queue)
+// Returns true if there was at least something in the preferred affinites list
+bool CNSClient::Clear(void)
 {
     m_Cleared = true;
     m_Session = "";
 
-    if (m_RunningJobs.any()) {
-        queue->ResetRunningDueToClear(client, m_RunningJobs);
-        m_RunningJobs.clear();
-    }
+    m_RunningJobs.clear();
+    m_ReadingJobs.clear();
 
-    if (m_ReadingJobs.any()) {
-        queue->ResetReadingDueToClear(client, m_ReadingJobs);
-        m_ReadingJobs.clear();
-    }
-
-    m_Affinities.clear();
     m_WaitAffinities.clear();
-    return;
-}
 
-
-TNSBitVector CNSClient::GetRunningJobs(void) const
-{
-    return m_RunningJobs;
-}
-
-
-TNSBitVector CNSClient::GetReadingJobs(void) const
-{
-    return m_ReadingJobs;
-}
-
-
-TNSBitVector CNSClient::GetBlacklistedJobs(void) const
-{
-    return m_BlacklistedJobs;
-}
-
-
-bool CNSClient::IsJobBlacklisted(unsigned int  job_id) const
-{
-    return m_BlacklistedJobs[job_id];
-}
-
-
-void CNSClient::SetWaitPort(unsigned short  port)
-{
-    m_WaitPort = port;
-    return;
+    if (m_Affinities.any()) {
+        m_Affinities.clear();
+        return true;
+    }
+    return false;
 }
 
 
@@ -402,12 +368,6 @@ unsigned short CNSClient::GetAndResetWaitPort(void)
 
     m_WaitPort = 0;
     return old_port;
-}
-
-
-string CNSClient::GetSession(void) const
-{
-    return m_Session;
 }
 
 
@@ -491,36 +451,45 @@ bool CNSClient::MoveRunningJobToBlacklist(unsigned int  job_id)
 }
 
 
-void CNSClient::Touch(const CNSClientId &  client_id,
-                      CQueue *             queue)
+// It updates running and reading job vectors only in case if the client
+// session has been changed
+// Returns true if the preferred affinities had at least one bit and the
+// session has been changed
+bool CNSClient::Touch(const CNSClientId &  client_id,
+                      TNSBitVector &       running_jobs,
+                      TNSBitVector &       reading_jobs)
 {
     m_LastAccess = time(0);
     m_Cleared = false;
 
     // Check the session id
     if (m_Session == client_id.GetSession())
-        return;     // It's still the same session, nothing to check
+        return false;       // It's still the same session, nothing to check
 
     // Here: new session so check if there are running or reading jobs
     if (m_RunningJobs.any()) {
-        queue->ResetRunningDueToNewSession(client_id, m_RunningJobs);
+        running_jobs = m_RunningJobs;
         m_RunningJobs.clear();
     }
 
     if (m_ReadingJobs.any()) {
-        queue->ResetReadingDueToNewSession(client_id, m_ReadingJobs);
+        reading_jobs = m_ReadingJobs;
         m_ReadingJobs.clear();
     }
 
     // Update the session identifier
     m_Session = client_id.GetSession();
 
-    m_Affinities.clear();
     m_WaitAffinities.clear();
 
     // There is no need to do anything neither with the blacklisted jobs
     // nor submitted jobs
-    return;
+
+    if (m_Affinities.any()) {
+        m_Affinities.clear();
+        return true;
+    }
+    return false;
 }
 
 
@@ -619,49 +588,45 @@ string CNSClient::Print(const string &               node_name,
 }
 
 
-unsigned int  CNSClient::GetID(void) const
+void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
 {
-    return m_ID;
-}
-
-
-void CNSClient::SetID(unsigned int  id)
-{
-    m_ID = id;
+    m_Type |= eWorkerNode;
+    m_Affinities |= aff;
     return;
 }
 
 
-TNSBitVector  CNSClient::GetPreferredAffinities(void) const
+void  CNSClient::AddPreferredAffinity(unsigned int  aff)
 {
-    return m_Affinities;
-}
-
-
-void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
-{
-    m_Affinities |= aff;
+    m_Type |= eWorkerNode;
+    if (aff != 0)
+        m_Affinities.set_bit(aff, true);
     return;
 }
 
 
 void  CNSClient::RemovePreferredAffinities(const TNSBitVector &  aff)
 {
+    m_Type |= eWorkerNode;
     m_Affinities -= aff;
+    return;
+}
+
+
+void  CNSClient::RemovePreferredAffinity(unsigned int  aff)
+{
+    m_Type |= eWorkerNode;
+    if (aff != 0)
+        m_Affinities.set_bit(aff, false);
     return;
 }
 
 
 void  CNSClient::RegisterWaitAffinities(const TNSBitVector &  aff)
 {
+    m_Type |= eWorkerNode;
     m_WaitAffinities = aff;
     return;
-}
-
-
-TNSBitVector  CNSClient::GetWaitAffinities(void) const
-{
-    return m_WaitAffinities;
 }
 
 
@@ -681,10 +646,13 @@ bool  CNSClient::IsRequestedAffinity(const TNSBitVector &  aff,
 }
 
 
-void  CNSClient::ClearWaitAffinities(void)
+bool  CNSClient::ClearPreferredAffinities(void)
 {
-    m_WaitAffinities.clear();
-    return;
+    if (m_Affinities.any()) {
+        m_Affinities.clear();
+        return true;
+    }
+    return false;
 }
 
 

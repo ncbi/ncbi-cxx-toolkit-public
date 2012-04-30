@@ -105,14 +105,14 @@ void  CNSGroupsRegistry::x_InitLastGroupID(unsigned int  value)
 
 size_t        CNSGroupsRegistry::size(void) const
 {
-    CReadLockGuard      guard(m_Lock);
+    CMutexGuard         guard(m_Lock);
     return m_IDToAttr.size();
 }
 
 
 TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group) const
 {
-    CReadLockGuard                          guard(m_Lock);
+    CMutexGuard                             guard(m_Lock);
     TGroupTokenToAttrMap::const_iterator    found = m_TokenToAttr.find(&group);
 
     if (found == m_TokenToAttr.end())
@@ -125,7 +125,7 @@ TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group) const
 
 TNSBitVector  CNSGroupsRegistry::GetRegisteredGroups(void) const
 {
-    CReadLockGuard      guard(m_Lock);
+    CMutexGuard         guard(m_Lock);
     return m_RegisteredGroups;
 }
 
@@ -138,7 +138,7 @@ unsigned int  CNSGroupsRegistry::ResolveGroup(const string &  group)
     if (group.empty())
         return 0;
 
-    CWriteLockGuard                         guard(m_Lock);
+    CMutexGuard                             guard(m_Lock);
     TGroupTokenToAttrMap::const_iterator    found = m_TokenToAttr.find(&group);
 
     if (found != m_TokenToAttr.end())
@@ -151,7 +151,7 @@ unsigned int  CNSGroupsRegistry::ResolveGroup(const string &  group)
 
 string  CNSGroupsRegistry::ResolveGroup(unsigned int  group_id) const
 {
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     TGroupIDToAttrMap::const_iterator   found = m_IDToAttr.find(group_id);
 
     if (found == m_IDToAttr.end())
@@ -171,7 +171,7 @@ unsigned int  CNSGroupsRegistry::AddJobs(unsigned int    group_id,
     if (first_job_id == 0 || count == 0 || group_id == 0)
         return 0;
 
-    CWriteLockGuard                 guard(m_Lock);
+    CMutexGuard                     guard(m_Lock);
     TGroupIDToAttrMap::iterator     found = m_IDToAttr.find(group_id);
 
     if (found != m_IDToAttr.end()) {
@@ -193,7 +193,7 @@ unsigned int  CNSGroupsRegistry::AddJob(const string &  group,
     if (job_id == 0 || group.empty())
         return 0;
 
-    CWriteLockGuard                         guard(m_Lock);
+    CMutexGuard                             guard(m_Lock);
     TGroupTokenToAttrMap::const_iterator    found = m_TokenToAttr.find(&group);
 
     if (found != m_TokenToAttr.end()) {
@@ -216,7 +216,7 @@ void  CNSGroupsRegistry::AddJob(unsigned int    group_id,
     if (group_id == 0 || job_id == 0)
         return;
 
-    CWriteLockGuard                 guard(m_Lock);
+    CMutexGuard                     guard(m_Lock);
     TGroupIDToAttrMap::iterator     found = m_IDToAttr.find(group_id);
 
     if (found != m_IDToAttr.end()) {
@@ -238,7 +238,7 @@ void  CNSGroupsRegistry::RemoveJob(unsigned int  group_id,
     if (group_id == 0 || job_id == 0)
         return;
 
-    CWriteLockGuard                 guard(m_Lock);
+    CMutexGuard                     guard(m_Lock);
     TGroupIDToAttrMap::iterator     found = m_IDToAttr.find(group_id);
 
     if (found != m_IDToAttr.end()) {
@@ -306,7 +306,7 @@ void  CNSGroupsRegistry::Print(const CQueue *         queue,
 // FinalizeGroupDictionaryLoading() call.
 void  CNSGroupsRegistry::LoadGroupDictionary(void)
 {
-    CWriteLockGuard     guard(m_Lock);
+    CMutexGuard         guard(m_Lock);
     CBDB_FileCursor     cur(*m_GroupDictDB);
 
     cur.InitMultiFetch(1024*1024);
@@ -337,7 +337,7 @@ void  CNSGroupsRegistry::LoadGroupDictionary(void)
 void  CNSGroupsRegistry::FinalizeGroupDictionaryLoading(void)
 {
     unsigned int                        max_group_id = 0;
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     TGroupIDToAttrMap::iterator         candidate = m_IDToAttr.begin();
     for ( ; candidate != m_IDToAttr.end(); ++candidate ) {
         if (candidate->first > max_group_id)
@@ -362,7 +362,7 @@ void  CNSGroupsRegistry::FinalizeGroupDictionaryLoading(void)
 unsigned int  CNSGroupsRegistry::CollectGarbage(unsigned int  max_to_del)
 {
     unsigned int                del_count = 0;
-    CWriteLockGuard             guard(m_Lock);
+    CMutexGuard                 guard(m_Lock);
     TNSBitVector::enumerator    en(m_RemoveCandidates.first());
 
     for ( ; en.valid(); ++en) {
@@ -447,7 +447,7 @@ CNSGroupsRegistry::x_PrintSelected(const TNSBitVector &    batch,
     string      buffer;
     size_t      printed = 0;
 
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     TGroupIDToAttrMap::const_iterator   k = m_IDToAttr.begin();
     for ( ; k != m_IDToAttr.end(); ++k ) {
         if (batch[k->first] && k->second->m_Jobs.any()) {
@@ -495,7 +495,7 @@ CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &     group_attr,
 // Cleans up the allocated memory and does not touch the DB
 void  CNSGroupsRegistry::x_Clear(void)
 {
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     TGroupIDToAttrMap::iterator         to_del = m_IDToAttr.begin();
     for ( ; to_del != m_IDToAttr.end(); ++to_del) {
         delete to_del->second->m_GroupToken;

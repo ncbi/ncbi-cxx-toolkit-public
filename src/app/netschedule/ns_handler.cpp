@@ -233,11 +233,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",       eNSPT_Str, eNSPA_Optional, "" } } },
     { "GET2",     { &CNetScheduleHandler::x_ProcessGetJob,
                     eNSCR_Worker },
-        { { "wnode_aff", eNSPT_Int, eNSPA_Required, 0 },
-          { "any_aff",   eNSPT_Int, eNSPA_Required, 0 },
-          { "aff",       eNSPT_Str, eNSPA_Optional, "" },
-          { "port",      eNSPT_Int, eNSPA_Optional },
-          { "timeout",   eNSPT_Int, eNSPA_Optional } } },
+        { { "wnode_aff",         eNSPT_Int, eNSPA_Required, 0 },
+          { "any_aff",           eNSPT_Int, eNSPA_Required, 0 },
+          { "aff",               eNSPT_Str, eNSPA_Optional, "" },
+          { "port",              eNSPT_Int, eNSPA_Optional },
+          { "timeout",           eNSPT_Int, eNSPA_Optional },
+          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, 0 } } },
     // PUT job_key : id  job_return_code : int  output : str
     { "PUT",      { &CNetScheduleHandler::x_ProcessPut,
                     eNSCR_Worker },
@@ -1374,6 +1375,10 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
         x_CheckGetParameters();
     }
     else {
+        // The affinity options are only for the second version of the command
+        m_CommandArguments.wnode_affinity = false;
+        m_CommandArguments.exclusive_new_aff = false;
+
         // The old clients must have any_affinity set to true
         // depending on the explicit affinity - to conform the old behavior
         m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
@@ -1390,6 +1395,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                     time(0), &aff_list,
                     m_CommandArguments.wnode_affinity,
                     m_CommandArguments.any_affinity,
+                    m_CommandArguments.exclusive_new_aff,
                     cmdv2,
                     &job);
 
@@ -1504,6 +1510,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                     curr, &aff_list,
                     m_CommandArguments.wnode_affinity,
                     m_CommandArguments.any_affinity,
+                    false,
                     false,
                     &job);
 
@@ -2189,7 +2196,7 @@ void CNetScheduleHandler::x_CheckAuthorizationToken(void)
 
 void CNetScheduleHandler::x_CheckGetParameters(void)
 {
-    // Checks that the given GETx/JXCGx parameters make sense
+    // Checks that the given GETx/JXCG parameters make sense
     if (m_CommandArguments.wnode_affinity == false &&
         m_CommandArguments.any_affinity == false &&
         m_CommandArguments.affinity_token.empty()) {
@@ -2198,6 +2205,16 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
                             "with any_aff flag set to false "
                             "will never match any job.");
         }
+    if (m_CommandArguments.exclusive_new_aff == true &&
+        m_CommandArguments.any_affinity == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both any_affinity and "
+                   "exclusive_new_aff GET2 flags set to 1.");
+    if (m_CommandArguments.exclusive_new_aff == true &&
+        m_CommandArguments.wnode_affinity == false)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have exclusive_new_aff set "
+                   "to 1 while wnode_aff is set to 0 for GET2.");
     return;
 }
 

@@ -170,7 +170,7 @@ class CNSAffinityRegistry
         map< unsigned int,
              SNSJobsAffinity >  m_JobsAffinity; // Aff id -> aff token and jobs
         TNSBitVector            m_RemoveCandidates;
-        mutable CRWLock         m_Lock;         // Lock for the operations
+        mutable CMutex          m_Lock;         // Lock for the operations
 
     private:
         unsigned int            m_LastAffinityID;

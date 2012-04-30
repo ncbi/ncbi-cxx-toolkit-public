@@ -161,10 +161,11 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
                                            unsigned int          timeout,
                                            bool                  wnode_aff,
                                            bool                  any_job,
+                                           bool                  exclusive_new_affinity,
                                            bool                  new_format)
 {
     unsigned int                address = client.GetAddress();
-    CFastMutexGuard             guard(m_ListenersLock);
+    CMutexGuard                 guard(m_ListenersLock);
 
     for (list<SNSNotificationAttributes>::iterator k = m_Listeners.begin();
          k != m_Listeners.end(); ++k) {
@@ -173,6 +174,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
             k->m_ClientNode = client.GetNode();
             k->m_WnodeAff = wnode_aff;
             k->m_AnyJob = any_job;
+            k->m_ExclusiveNewAff = exclusive_new_affinity;
             k->m_NewFormat = new_format;
             k->m_ShouldNotify = false;
             k->m_HifreqNotifyLifetime = 0;
@@ -198,6 +200,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
     attributes.m_ClientNode = client.GetNode();
     attributes.m_WnodeAff = wnode_aff;
     attributes.m_AnyJob = any_job;
+    attributes.m_ExclusiveNewAff = exclusive_new_affinity;
     attributes.m_NewFormat = new_format;
     attributes.m_ShouldNotify = false;
     attributes.m_HifreqNotifyLifetime = 0;
@@ -217,7 +220,7 @@ void CNSNotificationList::UnregisterListener(const CNSClientId &  client,
                                              unsigned short       port)
 {
     unsigned int                address = client.GetAddress();
-    CFastMutexGuard             guard(m_ListenersLock);
+    CMutexGuard                 guard(m_ListenersLock);
 
     for (list<SNSNotificationAttributes>::iterator k = m_Listeners.begin();
          k != m_Listeners.end(); ++k) {
@@ -263,7 +266,7 @@ void CNSNotificationList::CheckTimeout(time_t                 current_time,
                                        CNSClientsRegistry &   clients_registry,
                                        CNSAffinityRegistry &  aff_registry)
 {
-    CFastMutexGuard                             guard(m_ListenersLock);
+    CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_Listeners.begin();
 
     while (k != m_Listeners.end()) {
@@ -285,7 +288,7 @@ CNSNotificationList::NotifyPeriodically(time_t                 current_time,
                                         CNSClientsRegistry &   clients_registry,
                                         CNSAffinityRegistry &  aff_registry)
 {
-    CFastMutexGuard                             guard(m_ListenersLock);
+    CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_Listeners.begin();
 
     while (k != m_Listeners.end()) {
@@ -320,17 +323,22 @@ CNSNotificationList::NotifyPeriodically(time_t                 current_time,
 
 // Called when a job in pending state has appeared:
 // submit, batch submit, return, timeout, fail etc.
-void CNSNotificationList::Notify(unsigned int           aff_id,
+void CNSNotificationList::Notify(unsigned int           job_id,
+                                 unsigned int           aff_id,
                                  CNSClientsRegistry &   clients_registry,
                                  CNSAffinityRegistry &  aff_registry,
                                  unsigned int           notif_highfreq_period)
 {
     TNSBitVector    aff_ids;
+    TNSBitVector    jobs;
 
     if (aff_id != 0)
         aff_ids.set_bit(aff_id, true);
 
-    Notify(aff_ids, clients_registry, aff_registry, notif_highfreq_period);
+    jobs.set_bit(job_id, true);
+
+    Notify(jobs, aff_ids, aff_id == 0,
+           clients_registry, aff_registry, notif_highfreq_period);
     return;
 }
 
@@ -338,13 +346,18 @@ void CNSNotificationList::Notify(unsigned int           aff_id,
 // Called when a job in pending state has appeared:
 // submit, batch submit, return, timeout, fail etc.
 void
-CNSNotificationList::Notify(const TNSBitVector &   affinities,
+CNSNotificationList::Notify(const TNSBitVector &   jobs,
+                            const TNSBitVector &   affinities,
+                            bool                   no_aff_jobs,
                             CNSClientsRegistry &   clients_registry,
                             CNSAffinityRegistry &  aff_registry,
                             unsigned int           notif_highfreq_period)
 {
-    time_t                                      current_time = time(0);
-    CFastMutexGuard                             guard(m_ListenersLock);
+    time_t          current_time = time(0);
+    TNSBitVector    all_preferred_affs =
+                                clients_registry.GetAllPreferredAffinities();
+
+    CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_Listeners.begin();
 
     while (k != m_Listeners.end()) {
@@ -355,14 +368,34 @@ CNSNotificationList::Notify(const TNSBitVector &   affinities,
         bool        should_send = false;
         if (!k->m_ShouldNotify) {
             // The client has not been notified before
+            // Check if all the jobs are in in its blacklist
+            if ((jobs -
+                 clients_registry.GetBlacklistedJobs(
+                                        k->m_ClientNode)).any() == false) {
+                ++k;
+                continue;
+            }
+
             if (k->m_AnyJob)
                 should_send = true;
             else
+                // Here: the client is new because old clients always have
+                //       m_AnyJob set to true
                 if (affinities.any())
                     should_send = clients_registry.IsRequestedAffinity(
                                                         k->m_ClientNode,
                                                         affinities,
                                                         k->m_WnodeAff);
+            if (should_send == false) {
+                if (k->m_ExclusiveNewAff) {
+                    if (no_aff_jobs)
+                        should_send = true;
+                    else
+                        if (affinities.any())
+                            should_send = (affinities -
+                                           all_preferred_affs).any();
+                }
+            }
         }
 
         if (should_send) {
@@ -391,7 +424,7 @@ CNSNotificationList::Print(CNetScheduleHandler &        handler,
 
     for (;;) {
         {{
-            CFastMutexGuard     guard(m_ListenersLock);
+            CMutexGuard         guard(m_ListenersLock);
 
             current = x_SkipRecords(records_to_skip);
             if (current == m_Listeners.end())

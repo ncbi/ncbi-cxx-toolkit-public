@@ -71,6 +71,7 @@ void SNSCommandArguments::x_Reset()
 
     any_affinity = false;
     wnode_affinity = false;
+    exclusive_new_aff = false;
 
     return;
 }
@@ -126,6 +127,13 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
         case 'e':
             if (key == "err_msg")
                 err_msg = val;
+            else if (key == "exclusive_new_aff") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "exclusive_new_aff accepted values are 0 and 1.");
+                exclusive_new_aff = (tmp == 1);
+            }
             break;
         case 'g':
             if (key == "group")

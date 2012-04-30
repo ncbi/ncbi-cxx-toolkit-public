@@ -139,7 +139,7 @@ class CNSGroupsRegistry
         TGroupIDToAttrMap       m_IDToAttr;
         TGroupTokenToAttrMap    m_TokenToAttr;
 
-        mutable CRWLock         m_Lock;         // Lock for the operations
+        mutable CMutex          m_Lock;         // Lock for the operations
 
     private:
         unsigned int            m_LastGroupID;

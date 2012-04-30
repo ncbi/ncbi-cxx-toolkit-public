@@ -120,5 +120,32 @@ time_t  CJobGCRegistry::GetLifetime(unsigned int  job_id) const
 }
 
 
+unsigned int  CJobGCRegistry::GetAffinityID(unsigned int  job_id) const
+{
+    CFastMutexGuard                     guard(m_Lock);
+    map<unsigned int,
+        SJobGCInfo>::const_iterator     attrs = m_JobsAttrs.find(job_id);
+
+    if (attrs == m_JobsAttrs.end())
+        return 0;
+
+    return attrs->second.m_AffinityID;
+}
+
+
+unsigned int  CJobGCRegistry::GetGroupID(unsigned int  job_id) const
+{
+    CFastMutexGuard                     guard(m_Lock);
+    map<unsigned int,
+        SJobGCInfo>::const_iterator     attrs = m_JobsAttrs.find(job_id);
+
+    if (attrs == m_JobsAttrs.end())
+        return 0;
+
+    return attrs->second.m_GroupID;
+}
+
+
+
 END_NCBI_SCOPE
 

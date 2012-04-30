@@ -415,7 +415,7 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
         m_ClientsRegistry.AddToSubmitted(client, 1);
 
         // Make the decision whether to send or not a notification
-        m_NotificationsList.Notify(aff_id,
+        m_NotificationsList.Notify(job_id, aff_id,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
                                    m_NotifHifreqPeriod);
@@ -443,6 +443,7 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
         unsigned int        job_id_cnt = job_id;
         time_t              curr_time = time(0);
         unsigned int        group_id = 0;
+        bool                no_aff_jobs = false;
 
         CFastMutexGuard     guard(m_OperationLock);
 
@@ -479,6 +480,9 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                     job.SetAffinityId(aff_id);
                     affinities.set_bit(aff_id, true);
                 }
+                else
+                    no_aff_jobs = true;
+
                 job.Flush(this);
                 ++job_id_cnt;
             }
@@ -491,7 +495,9 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
         m_ClientsRegistry.AddToSubmitted(client, batch_size);
 
         // Make a decision whether to notify clients or not
-        m_NotificationsList.Notify(affinities,
+        TNSBitVector        jobs;
+        jobs.set_range(job_id, job_id + batch_size - 1);
+        m_NotificationsList.Notify(jobs, affinities, no_aff_jobs,
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
                                    m_NotifHifreqPeriod);
@@ -609,6 +615,7 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                            const list<string> *    aff_list,
                            bool                    wnode_affinity,
                            bool                    any_affinity,
+                           bool                    exclusive_new_affinity,
                            bool                    new_format,
                            CJob *                  new_job)
 {
@@ -643,7 +650,8 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                 unsigned int        job_id = x_FindPendingJob(client,
                                                               aff_ids,
                                                               wnode_affinity,
-                                                              any_affinity);
+                                                              any_affinity,
+                                                              exclusive_new_affinity);
                 if (!job_id) {
                     if (timeout != 0) {
                         // WGET:
@@ -652,6 +660,7 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                         if (port > 0)
                             x_RegisterGetListener(client, port, timeout, aff_ids,
                                                   wnode_affinity, any_affinity,
+                                                  exclusive_new_affinity,
                                                   new_format);
                     }
                     return;
@@ -1032,7 +1041,8 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
     m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
                                                               m_RunTimeout));
 
-    m_NotificationsList.Notify(job.GetAffinityId(), m_ClientsRegistry,
+    m_NotificationsList.Notify(job_id,
+                               job.GetAffinityId(), m_ClientsRegistry,
                                m_AffinityRegistry, m_NotifHifreqPeriod);
     return old_status;
 }
@@ -1627,14 +1637,15 @@ void CQueue::OptimizeMem()
 unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
                                   const TNSBitVector &  aff_ids,
                                   bool                  wnode_affinity,
-                                  bool                  any_affinity)
+                                  bool                  any_affinity,
+                                  bool                  exclusive_new_affinity)
 {
+    unsigned int    job_id = 0;
     TNSBitVector    blacklisted_jobs =
                             m_ClientsRegistry.GetBlacklistedJobs(client);
 
     if (aff_ids.any()) {
-        unsigned int    job_id = x_FindPendingWithAffinity(aff_ids,
-                                                           blacklisted_jobs);
+        job_id = x_FindPendingWithAffinity(aff_ids, blacklisted_jobs);
 
         if (job_id != 0)
             return job_id;
@@ -1652,12 +1663,27 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
                                 "preferred affinities while the node "
                                 "preferred affinities list is empty.");
 
-        unsigned int    job_id = x_FindPendingWithAffinity(client_aff,
-                                                           blacklisted_jobs);
+        job_id = x_FindPendingWithAffinity(client_aff, blacklisted_jobs);
 
         if (job_id != 0)
             return job_id;
+
+        if (exclusive_new_affinity) {
+            job_id = x_FindPendingWithExclusiveAffinity(client,
+                                                        blacklisted_jobs);
+            if (job_id != 0) {
+                // If the picked job is with affinity, then this affinity must
+                // be added to the preferred list
+                unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
+                if (aff_id != 0)
+                    m_ClientsRegistry.UpdatePreferredAffinities(client,
+                                                                aff_id,
+                                                                0);
+                return job_id;
+            }
+        }
     }
+
 
     if (any_affinity || (!aff_ids.any() && !wnode_affinity))
         return m_StatusTracker.GetJobByStatus(
@@ -1688,6 +1714,22 @@ CQueue::x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
         return 0;
 
     return m_StatusTracker.GetPendingJobFromSet(candidate_jobs);
+}
+
+
+unsigned int
+CQueue::x_FindPendingWithExclusiveAffinity(const CNSClientId &   client,
+                                           const TNSBitVector &  blacklist_ids)
+{
+    TNSBitVector    worker_node_affinities =
+                             m_ClientsRegistry.GetAllPreferredAffinities();
+    TNSBitVector    jobs_to_exclude = blacklist_ids |
+                             m_AffinityRegistry.GetJobsWithAffinity(worker_node_affinities);
+
+    return m_StatusTracker.GetJobByStatus(
+                                CNetScheduleAPI::ePending,
+                                jobs_to_exclude,
+                                TNSBitVector());
 }
 
 
@@ -1851,7 +1893,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
         }
 
         if (rescheduled)
-            m_NotificationsList.Notify(job.GetAffinityId(), m_ClientsRegistry,
+            m_NotificationsList.Notify(job_id,
+                                       job.GetAffinityId(), m_ClientsRegistry,
                                        m_AffinityRegistry, m_NotifHifreqPeriod);
 
     }}
@@ -1880,11 +1923,25 @@ void CQueue::ClearWorkerNode(const CNSClientId &  client)
     // Get the running and reading jobs and move them to the corresponding
     // states (pending and done)
 
-    unsigned short  wait_port = m_ClientsRegistry.ClearWorkerNode(
-                                                        client, this,
-                                                        m_AffinityRegistry);
-    if (wait_port != 0)
-        m_NotificationsList.UnregisterListener(client, wait_port);
+    TNSBitVector    running_jobs;
+    TNSBitVector    reading_jobs;
+
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+        unsigned short      wait_port = m_ClientsRegistry.ClearWorkerNode(
+                                                client,
+                                                m_AffinityRegistry,
+                                                running_jobs,
+                                                reading_jobs);
+
+        if (wait_port != 0)
+            m_NotificationsList.UnregisterListener(client, wait_port);
+    }}
+
+    if (running_jobs.any())
+        x_ResetRunningDueToClear(client, running_jobs);
+    if (reading_jobs.any())
+        x_ResetReadingDueToClear(client, reading_jobs);
     return;
 }
 
@@ -2087,7 +2144,8 @@ void CQueue::x_CheckExecutionTimeout(unsigned   queue_run_timeout,
         }
 
         if (new_status == CNetScheduleAPI::ePending)
-            m_NotificationsList.Notify(job.GetAffinityId(), m_ClientsRegistry,
+            m_NotificationsList.Notify(job_id,
+                                       job.GetAffinityId(), m_ClientsRegistry,
                                        m_AffinityRegistry, m_NotifHifreqPeriod);
 
     }}
@@ -2558,11 +2616,25 @@ void CQueue::StatusStatistics(TJobStatus                status,
 
 void CQueue::TouchClientsRegistry(CNSClientId &  client)
 {
-    unsigned short      wait_port = m_ClientsRegistry.Touch(client,
-                                                            this,
-                                                            m_AffinityRegistry);
-    if (wait_port != 0)
-        m_NotificationsList.UnregisterListener(client, wait_port);
+    TNSBitVector        running_jobs;
+    TNSBitVector        reading_jobs;
+
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+        unsigned short      wait_port = m_ClientsRegistry.Touch(
+                                                client,
+                                                m_AffinityRegistry,
+                                                running_jobs,
+                                                reading_jobs);
+        if (wait_port != 0)
+            m_NotificationsList.UnregisterListener(client, wait_port);
+    }}
+
+
+    if (running_jobs.any())
+        x_ResetRunningDueToNewSession(client, running_jobs);
+    if (reading_jobs.any())
+        x_ResetReadingDueToNewSession(client, reading_jobs);
     return;
 }
 
@@ -2626,12 +2698,20 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &   client,
 
     // remove the job from the time line
     TimeLineRemove(job_id);
+
+    // Notify those who wait for the jobs if needed
+    if (new_status == CNetScheduleAPI::ePending)
+        m_NotificationsList.Notify(job_id, job.GetAffinityId(),
+                                   m_ClientsRegistry,
+                                   m_AffinityRegistry,
+                                   m_NotifHifreqPeriod);
+
     return new_status;
 }
 
 
-void CQueue::ResetRunningDueToClear(const CNSClientId &   client,
-                                    const TNSBitVector &  jobs)
+void CQueue::x_ResetRunningDueToClear(const CNSClientId &   client,
+                                      const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
@@ -2653,8 +2733,8 @@ void CQueue::ResetRunningDueToClear(const CNSClientId &   client,
 }
 
 
-void CQueue::ResetReadingDueToClear(const CNSClientId &   client,
-                                    const TNSBitVector &  jobs)
+void CQueue::x_ResetReadingDueToClear(const CNSClientId &   client,
+                                      const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
@@ -2676,8 +2756,8 @@ void CQueue::ResetReadingDueToClear(const CNSClientId &   client,
 }
 
 
-void CQueue::ResetRunningDueToNewSession(const CNSClientId &   client,
-                                         const TNSBitVector &  jobs)
+void CQueue::x_ResetRunningDueToNewSession(const CNSClientId &   client,
+                                           const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
@@ -2699,8 +2779,8 @@ void CQueue::ResetRunningDueToNewSession(const CNSClientId &   client,
 }
 
 
-void CQueue::ResetReadingDueToNewSession(const CNSClientId &   client,
-                                         const TNSBitVector &  jobs)
+void CQueue::x_ResetReadingDueToNewSession(const CNSClientId &   client,
+                                           const TNSBitVector &  jobs)
 {
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
@@ -2728,11 +2808,13 @@ void CQueue::x_RegisterGetListener(const CNSClientId &   client,
                                    const TNSBitVector &  aff_ids,
                                    bool                  wnode_aff,
                                    bool                  any_aff,
+                                   bool                  exclusive_new_affinity,
                                    bool                  new_format)
 {
     // Add to the notification list and save the wait port
     m_NotificationsList.RegisterListener(client, port, timeout,
-                                         wnode_aff, any_aff, new_format);
+                                         wnode_aff, any_aff,
+                                         exclusive_new_affinity, new_format);
     if (client.IsComplete())
         m_ClientsRegistry.SetWaiting(client, port, aff_ids, m_AffinityRegistry);
     return;

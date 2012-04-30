@@ -53,14 +53,15 @@ size_t  CNSClientsRegistry::size(void) const
 // Called before any command is issued by the client
 // Returns waiting port != 0 if the client has reset waiting on WGET
 unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
-                                          CQueue *               queue,
-                                          CNSAffinityRegistry &  aff_registry)
+                                          CNSAffinityRegistry &  aff_registry,
+                                          TNSBitVector &         running_jobs,
+                                          TNSBitVector &         reading_jobs)
 {
     // Check if it is an old-style client
     if (!client.IsComplete())
         return 0;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  known_client =
                                              m_Clients.find(client.GetNode());
 
@@ -83,7 +84,11 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
         // The client has changed the session => need to reset waiting if so
         wait_port = x_ResetWaiting(known_client->second, aff_registry);
 
-    known_client->second.Touch(client, queue);
+    if (known_client->second.Touch(client, running_jobs, reading_jobs))
+        x_BuildWNAffinities();  // session is changed, i.e. the preferred
+                                // affinities were reset and they had at
+                                // least one bit set
+
     client.SetID(known_client->second.GetID());
     return wait_port;
 }
@@ -98,7 +103,7 @@ void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  submitter = m_Clients.find(client.GetNode());
 
     if (submitter == m_Clients.end())
@@ -120,7 +125,7 @@ void  CNSClientsRegistry::AddToReading(const CNSClientId &  client,
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  reader = m_Clients.find(client.GetNode());
 
     if (reader == m_Clients.end())
@@ -142,7 +147,7 @@ void  CNSClientsRegistry::AddToRunning(const CNSClientId &  client,
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
     if (worker_node == m_Clients.end())
@@ -164,7 +169,7 @@ void  CNSClientsRegistry::AddToBlacklist(const CNSClientId &  client,
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
     if (worker_node == m_Clients.end())
@@ -186,7 +191,7 @@ void  CNSClientsRegistry::ClearReading(const CNSClientId &  client,
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  reader = m_Clients.find(client.GetNode());
 
     if (reader != m_Clients.end())
@@ -202,7 +207,7 @@ void  CNSClientsRegistry::ClearReading(unsigned int  job_id)
 {
     // The container itself is not changed.
     // The changes are in what the element holds.
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k)
@@ -218,7 +223,7 @@ void  CNSClientsRegistry::ClearReadingSetBlacklist(unsigned int  job_id)
 {
     // The container itself is not changed.
     // The changes are in what the element holds.
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k)
@@ -237,7 +242,7 @@ void  CNSClientsRegistry::ClearExecuting(const CNSClientId &  client,
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
     if (worker_node != m_Clients.end())
@@ -253,7 +258,7 @@ void  CNSClientsRegistry::ClearExecuting(unsigned int  job_id)
 {
     // The container itself is not changed.
     // The changes are in what the element holds.
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k)
@@ -269,7 +274,7 @@ void  CNSClientsRegistry::ClearExecutingSetBlacklist(unsigned int  job_id)
 {
     // The container itself is not changed.
     // The changes are in what the element holds.
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k)
@@ -282,19 +287,26 @@ void  CNSClientsRegistry::ClearExecutingSetBlacklist(unsigned int  job_id)
 // Used when CLRN command is received
 // provides WGET port != 0 if there was waiting reset
 unsigned short
-CNSClientsRegistry::ClearWorkerNode(const CNSClientId &  client,
-                                    CQueue *             queue,
-                                    CNSAffinityRegistry &  aff_registry)
+CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
+                                    CNSAffinityRegistry &  aff_registry,
+                                    TNSBitVector &         running_jobs,
+                                    TNSBitVector &         reading_jobs)
 {
     // The container itself is not changed.
     // The changes are in what the element holds.
     unsigned short                      wait_port = 0;
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
     if (worker_node != m_Clients.end()) {
+        running_jobs = worker_node->second.GetRunningJobs();
+        reading_jobs = worker_node->second.GetReadingJobs();
+
         wait_port = x_ResetWaiting(worker_node->second, aff_registry);
-        worker_node->second.Clear(client, queue);
+
+        if (worker_node->second.Clear())
+            x_BuildWNAffinities(); // Rebuild if there was at
+                                   // least one preferred aff
     }
 
     return wait_port;
@@ -341,7 +353,7 @@ CNSClientsRegistry::x_PrintSelected(const TNSBitVector &         batch,
     string      buffer;
     size_t      printed = 0;
 
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< string, CNSClient >::const_iterator    k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k) {
@@ -366,7 +378,7 @@ void  CNSClientsRegistry::SetWaiting(const CNSClientId &          client,
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
 
     if (worker_node == m_Clients.end())
@@ -401,7 +413,7 @@ CNSClientsRegistry::ResetWaiting(const string &         node_name,
     if (node_name.empty())
         return 0;
 
-    CReadLockGuard                      guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node = m_Clients.find(node_name);
 
     if (worker_node == m_Clients.end())
@@ -427,13 +439,21 @@ CNSClientsRegistry::x_ResetWaiting(CNSClient &            client,
 static TNSBitVector     s_empty_vector = TNSBitVector();
 
 TNSBitVector
-CNSClientsRegistry::GetBlacklistedJobs(const CNSClientId &  client)
+CNSClientsRegistry::GetBlacklistedJobs(const CNSClientId &  client) const
 {
     if (!client.IsComplete())
         return s_empty_vector;
 
-    CWriteLockGuard                             guard(m_Lock);
-    map< string, CNSClient >::const_iterator    found = m_Clients.find(client.GetNode());
+    return GetBlacklistedJobs(client.GetNode());
+}
+
+
+TNSBitVector
+CNSClientsRegistry::GetBlacklistedJobs(const string &  client_node) const
+{
+    CMutexGuard                         guard(m_Lock);
+    map< string,
+         CNSClient >::const_iterator    found = m_Clients.find(client_node);
 
     if (found == m_Clients.end())
         return s_empty_vector;
@@ -458,13 +478,20 @@ TNSBitVector  CNSClientsRegistry::GetPreferredAffinities(
     if (node.empty())
         return s_empty_vector;
 
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< string, CNSClient >::const_iterator    found = m_Clients.find(node);
 
     if (found == m_Clients.end())
         return s_empty_vector;
 
     return found->second.GetPreferredAffinities();
+}
+
+
+TNSBitVector  CNSClientsRegistry::GetAllPreferredAffinities(void) const
+{
+    CMutexGuard     guard(m_Lock);
+    return m_WNAffinities;
 }
 
 
@@ -484,7 +511,7 @@ TNSBitVector  CNSClientsRegistry::GetWaitAffinities(
     if (node.empty())
         return s_empty_vector;
 
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< string, CNSClient >::const_iterator    found = m_Clients.find(node);
 
     if (found == m_Clients.end())
@@ -496,7 +523,7 @@ TNSBitVector  CNSClientsRegistry::GetWaitAffinities(
 
 TNSBitVector  CNSClientsRegistry::GetRegisteredClients(void) const
 {
-    CReadLockGuard      guard(m_Lock);
+    CMutexGuard         guard(m_Lock);
     return m_RegisteredClients;
 }
 
@@ -509,7 +536,7 @@ void  CNSClientsRegistry::UpdatePreferredAffinities(
     if (!client.IsComplete())
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  found = m_Clients.find(client.GetNode());
 
     if (found == m_Clients.end())
@@ -519,6 +546,46 @@ void  CNSClientsRegistry::UpdatePreferredAffinities(
 
     found->second.AddPreferredAffinities(aff_to_add);
     found->second.RemovePreferredAffinities(aff_to_del);
+
+    // Update the union bit vector with WN affinities
+    if (aff_to_del.any())
+        x_BuildWNAffinities();
+    else
+        m_WNAffinities |= aff_to_add;
+
+    return;
+}
+
+
+void  CNSClientsRegistry::UpdatePreferredAffinities(
+                                const CNSClientId &   client,
+                                unsigned int          aff_to_add,
+                                unsigned int          aff_to_del)
+{
+    if (aff_to_add + aff_to_del == 0)
+        return;
+
+    if (!client.IsComplete())
+        return;
+
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  found = m_Clients.find(client.GetNode());
+
+    if (found == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to update preferred affinities");
+
+    found->second.AddPreferredAffinity(aff_to_add);
+    found->second.RemovePreferredAffinity(aff_to_del);
+
+    // Update the union bit vector with WN affinities
+    if (aff_to_del != 0)
+        x_BuildWNAffinities();
+    else
+        if (aff_to_add != 0)
+            m_WNAffinities.set_bit(aff_to_add);
+
     return;
 }
 
@@ -531,7 +598,7 @@ CNSClientsRegistry::IsRequestedAffinity(const string &         name,
     if (name.empty())
         return false;
 
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< string, CNSClient >::const_iterator    worker_node = m_Clients.find(name);
 
     if (worker_node == m_Clients.end())
@@ -543,7 +610,7 @@ CNSClientsRegistry::IsRequestedAffinity(const string &         name,
 
 string  CNSClientsRegistry::GetNodeName(unsigned int  id) const
 {
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< string, CNSClient >::const_iterator    k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k )
@@ -562,6 +629,17 @@ unsigned int  CNSClientsRegistry::x_GetNextID(void)
     if (m_LastID == 0)
         m_LastID = 1;
     return m_LastID;
+}
+
+
+// Must be called under the lock
+void  CNSClientsRegistry::x_BuildWNAffinities(void)
+{
+    m_WNAffinities.clear();
+    for (map< string, CNSClient >::const_iterator
+            k = m_Clients.begin(); k != m_Clients.end(); ++k )
+        if (k->second.GetType()  & CNSClient::eWorkerNode)
+            m_WNAffinities &= k->second.GetPreferredAffinities();
 }
 
 END_NCBI_SCOPE

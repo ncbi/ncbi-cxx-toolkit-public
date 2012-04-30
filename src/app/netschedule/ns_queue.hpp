@@ -170,6 +170,7 @@ public:
                       const list<string> *    aff_list,
                       bool                    wnode_affinity,
                       bool                    any_affinity,
+                      bool                    exclusive_new_affinity,
                       bool                    new_format,
                       CJob *                  new_job);
 
@@ -333,14 +334,6 @@ public:
     { return m_KeyGenerator.GenerateV1(job_id); }
 
     void TouchClientsRegistry(CNSClientId &  client);
-    void ResetRunningDueToClear(const CNSClientId &   client,
-                                const TNSBitVector &  jobs);
-    void ResetReadingDueToClear(const CNSClientId &   client,
-                                const TNSBitVector &  jobs);
-    void ResetRunningDueToNewSession(const CNSClientId &   client,
-                                     const TNSBitVector &  jobs);
-    void ResetReadingDueToNewSession(const CNSClientId &   client,
-                                     const TNSBitVector &  jobs);
 
     void PrintStatistics(size_t &  aff_count);
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
@@ -364,11 +357,16 @@ private:
     x_FindPendingJob(const CNSClientId &    client,
                      const TNSBitVector &   aff_ids,
                      bool                   wnode_affinity,
-                     bool                   any_affinity);
+                     bool                   any_affinity,
+                     bool                   exclusive_new_affinity);
 
     unsigned int
     x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
                               const TNSBitVector &  blacklist_ids);
+
+    unsigned int
+    x_FindPendingWithExclusiveAffinity(const CNSClientId &   client,
+                                       const TNSBitVector &  blacklist_ids);
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     const string &          auth_token,
@@ -396,6 +394,14 @@ private:
     void x_UpdateStartFromCounter(void);
     unsigned int x_ReadStartFromCounter(void);
     void x_DeleteJobEvents(unsigned int  job_id);
+    void x_ResetRunningDueToClear(const CNSClientId &   client,
+                                  const TNSBitVector &  jobs);
+    void x_ResetReadingDueToClear(const CNSClientId &   client,
+                                  const TNSBitVector &  jobs);
+    void x_ResetRunningDueToNewSession(const CNSClientId &   client,
+                                       const TNSBitVector &  jobs);
+    void x_ResetReadingDueToNewSession(const CNSClientId &   client,
+                                       const TNSBitVector &  jobs);
     TJobStatus x_ResetDueTo(const CNSClientId &   client,
                             unsigned int          job_id,
                             time_t                current_time,
@@ -408,6 +414,7 @@ private:
                                const TNSBitVector &  aff_ids,
                                bool                  wnode_aff,
                                bool                  any_aff,
+                               bool                  exclusive_new_affinity,
                                bool                  new_format);
     bool x_UnregisterGetListener(const CNSClientId &  client,
                                  unsigned short       port);

@@ -84,6 +84,8 @@ class CJobGCRegistry
         void UpdateLifetime(unsigned int  job_id,
                             time_t        life_time);
         time_t  GetLifetime(unsigned int  job_id) const;
+        unsigned int  GetAffinityID(unsigned int  job_id) const;
+        unsigned int  GetGroupID(unsigned int  job_id) const;
 
     private:
         mutable CFastMutex              m_Lock;         // Lock for the operations

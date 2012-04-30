@@ -128,43 +128,60 @@ class CNSClient
     public:
         CNSClient();
         CNSClient(const CNSClientId &  client_id);
-        void Clear(const CNSClientId &  client_id,
-                   CQueue *             queue);
-        TNSBitVector GetRunningJobs(void) const;
-        TNSBitVector GetReadingJobs(void) const;
-        TNSBitVector GetBlacklistedJobs(void) const;
-        bool IsJobBlacklisted(unsigned int  job_id) const;
-        void SetWaitPort(unsigned short  port);
+        bool Clear(void);
+        TNSBitVector GetRunningJobs(void) const
+        { return m_RunningJobs; }
+        TNSBitVector GetReadingJobs(void) const
+        { return m_ReadingJobs; }
+        TNSBitVector GetBlacklistedJobs(void) const
+        { return m_BlacklistedJobs; }
+        bool IsJobBlacklisted(unsigned int  job_id) const
+        { return m_BlacklistedJobs[job_id]; }
+        void SetWaitPort(unsigned short  port)
+        { m_WaitPort = port; }
+        string GetSession(void) const
+        { return m_Session; }
+
         unsigned short GetAndResetWaitPort(void);
-        string GetSession(void) const;
 
         void RegisterRunningJob(unsigned int  job_id);
         void RegisterReadingJob(unsigned int  job_id);
         void RegisterSubmittedJobs(size_t  count);
         void RegisterBlacklistedJob(unsigned int  job_id);
-        void UnregisterReadingJob(unsigned int  job_id);
         bool MoveReadingJobToBlacklist(unsigned int  job_id);
-        void UnregisterRunningJob(unsigned int  job_id);
         bool MoveRunningJobToBlacklist(unsigned int  job_id);
+        void UnregisterRunningJob(unsigned int  job_id);
+        void UnregisterReadingJob(unsigned int  job_id);
 
-        void Touch(const CNSClientId &  client_id,
-                   CQueue *             queue);
+        bool Touch(const CNSClientId &  client_id,
+                   TNSBitVector &       running_jobs,
+                   TNSBitVector &       reading_jobs);
         string Print(const string &               node_name,
                      const CQueue *               queue,
                      const CNSAffinityRegistry &  aff_registry,
                      bool                         verbose) const;
-        unsigned int GetID(void) const;
-        void SetID(unsigned int  id);
-        TNSBitVector  GetPreferredAffinities(void) const;
+        unsigned int GetID(void) const
+        { return m_ID; }
+        void SetID(unsigned int  id)
+        { m_ID = id; }
+        unsigned int GetType(void) const
+        { return m_Type; }
+        TNSBitVector  GetPreferredAffinities(void) const
+        { return m_Affinities; }
         void  AddPreferredAffinities(const TNSBitVector &  aff);
+        void  AddPreferredAffinity(unsigned int  aff);
         void  RemovePreferredAffinities(const TNSBitVector &  aff);
+        void  RemovePreferredAffinity(unsigned int  aff);
 
         // WGET support
         void  RegisterWaitAffinities(const TNSBitVector &  aff);
-        TNSBitVector  GetWaitAffinities(void) const;
+        TNSBitVector  GetWaitAffinities(void) const
+        { return m_WaitAffinities; }
         bool  IsRequestedAffinity(const TNSBitVector &  aff,
                                   bool                  use_preferred) const;
-        void  ClearWaitAffinities(void);
+        void  ClearWaitAffinities(void)
+        { m_WaitAffinities.clear(); }
+        bool  ClearPreferredAffinities(void);
 
     private:
         bool            m_Cleared;        // Set to true when CLRN is received

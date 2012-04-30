@@ -93,7 +93,7 @@ void  CNSAffinityRegistry::x_InitLastAffinityID(unsigned int  value)
 
 size_t  CNSAffinityRegistry::size(void) const
 {
-    CReadLockGuard      guard(m_Lock);
+    CMutexGuard         guard(m_Lock);
     return m_AffinityIDs.size();
 }
 
@@ -104,7 +104,7 @@ CNSAffinityRegistry::GetIDByToken(const string &  aff_token) const
     if (aff_token.empty())
         return 0;
 
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< const string *,
          unsigned int,
          SNSTokenCompare >::const_iterator      affinity = m_AffinityIDs.find(&aff_token);
@@ -120,7 +120,7 @@ string  CNSAffinityRegistry::GetTokenByID(unsigned int  aff_id) const
     if (aff_id == 0)
         return "";
 
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::const_iterator      found = m_JobsAffinity.find(aff_id);
     if (found == m_JobsAffinity.end())
@@ -139,7 +139,7 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
     if (token.empty())
         return 0;
 
-    CWriteLockGuard         guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
 
     // Search for this affinity token
     map< const string *,
@@ -202,7 +202,7 @@ CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
                                 unsigned int            client_id)
 {
     TNSBitVector            result;
-    CWriteLockGuard         guard(m_Lock);
+    CMutexGuard             guard(m_Lock);
 
     for (list<string>::const_iterator  k(tokens.begin()); k != tokens.end(); ++k) {
         // Search for this affinity token
@@ -261,7 +261,7 @@ TNSBitVector
 CNSAffinityRegistry::GetAffinityIDs(const list< string > &  tokens) const
 {
     TNSBitVector                                result;
-    CReadLockGuard                              guard(m_Lock);
+    CMutexGuard                                 guard(m_Lock);
     map< const string *,
          unsigned int,
          SNSTokenCompare >::const_iterator      found;
@@ -284,7 +284,7 @@ list< SAffinityStatistics >
 CNSAffinityRegistry::GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const
 {
     list< SAffinityStatistics >     result;
-    CReadLockGuard                  guard(m_Lock);
+    CMutexGuard                     guard(m_Lock);
 
     for (map< unsigned int,
               SNSJobsAffinity >::const_iterator  k = m_JobsAffinity.begin();
@@ -322,7 +322,7 @@ CNSAffinityRegistry::GetJobsWithAffinity(const TNSBitVector &  aff_ids) const
     unsigned int                            aff_id;
     map< unsigned int,
          SNSJobsAffinity >::const_iterator  found;
-    CReadLockGuard                          guard(m_Lock);
+    CMutexGuard                             guard(m_Lock);
 
     for (; aff_id_en.valid(); ++aff_id_en) {
         aff_id = *aff_id_en;
@@ -343,7 +343,7 @@ CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
     if (aff_id == 0)
         return TNSBitVector();
 
-    CReadLockGuard                          guard(m_Lock);
+    CMutexGuard                             guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::const_iterator  found = m_JobsAffinity.find(aff_id);
 
@@ -356,7 +356,7 @@ CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 TNSBitVector
 CNSAffinityRegistry::GetRegisteredAffinities(void) const
 {
-    CReadLockGuard      guard(m_Lock);
+    CMutexGuard         guard(m_Lock);
     return m_RegisteredAffinities;
 }
 
@@ -369,7 +369,7 @@ void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
     if (job_id == 0 || aff_id == 0)
         return;
 
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
 
@@ -415,7 +415,7 @@ CNSAffinityRegistry::x_RemoveClientFromAffinities(unsigned int          client_i
         return 0;
 
     size_t                      del_count = 0;
-    CWriteLockGuard             guard(m_Lock);
+    CMutexGuard                 guard(m_Lock);
 
     TNSBitVector::enumerator    en(aff_ids.first());
     for ( ; en.valid(); ++en) {
@@ -447,7 +447,7 @@ void  CNSAffinityRegistry::SetWaitClientForAffinities(unsigned int          clie
     if (client_id == 0 || !aff_ids.any())
         return;
 
-    CWriteLockGuard             guard(m_Lock);
+    CMutexGuard                 guard(m_Lock);
 
     TNSBitVector::enumerator    en(aff_ids.first());
     for ( ; en.valid(); ++en) {
@@ -501,10 +501,10 @@ CNSAffinityRegistry::x_PrintSelected(const TNSBitVector &        batch,
                                      const CNSClientsRegistry &  clients_registry,
                                      bool                        verbose) const
 {
-    string      buffer;
-    size_t      printed = 0;
+    string          buffer;
+    size_t          printed = 0;
 
-    CReadLockGuard              guard(m_Lock);
+    CMutexGuard     guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::const_iterator      k = m_JobsAffinity.begin();
     for ( ; k != m_JobsAffinity.end(); ++k ) {
@@ -590,7 +590,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
 // FinalizeAffinityDictionaryLoading() call.
 void  CNSAffinityRegistry::LoadAffinityDictionary(void)
 {
-    CWriteLockGuard     guard(m_Lock);
+    CMutexGuard         guard(m_Lock);
     CBDB_FileCursor     cur(*m_AffDictDB);
 
     cur.InitMultiFetch(1024*1024);
@@ -618,7 +618,7 @@ void  CNSAffinityRegistry::LoadAffinityDictionary(void)
 void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
                                             unsigned int  aff_id)
 {
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
 
@@ -643,7 +643,7 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
 void  CNSAffinityRegistry::FinalizeAffinityDictionaryLoading(void)
 {
     unsigned int                        max_aff_id = 0;
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::iterator    candidate = m_JobsAffinity.begin();
     for ( ; candidate != m_JobsAffinity.end(); ++candidate ) {
@@ -682,7 +682,7 @@ unsigned int  CNSAffinityRegistry::CollectGarbage(unsigned int  max_to_del)
 {
     unsigned int                del_count = 0;
 
-    CWriteLockGuard             guard(m_Lock);
+    CMutexGuard                 guard(m_Lock);
     TNSBitVector::enumerator    en(m_RemoveCandidates.first());
     for ( ; en.valid(); ++en) {
         unsigned int        aff_id = *en;
@@ -710,7 +710,7 @@ unsigned int  CNSAffinityRegistry::CheckRemoveCandidates(void)
 {
     unsigned int                still_candidate = 0;
 
-    CWriteLockGuard             guard(m_Lock);
+    CMutexGuard                 guard(m_Lock);
     TNSBitVector::enumerator    en(m_RemoveCandidates.first());
     for ( ; en.valid(); ++en) {
         unsigned int                        aff_id = *en;
@@ -734,7 +734,7 @@ unsigned int  CNSAffinityRegistry::CheckRemoveCandidates(void)
 void CNSAffinityRegistry::x_Clear(void)
 {
     // Delete all the allocated strings
-    CWriteLockGuard                     guard(m_Lock);
+    CMutexGuard                         guard(m_Lock);
     map< unsigned int,
          SNSJobsAffinity >::iterator    jobs_affinity = m_JobsAffinity.begin();
     for (; jobs_affinity != m_JobsAffinity.end(); ++jobs_affinity)
