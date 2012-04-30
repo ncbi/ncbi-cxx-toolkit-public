@@ -1216,12 +1216,13 @@ static const char* const sc_RemarkText[] = {
   "unannotated staff_entry",
   "unannotated staff_review"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_Remarks, sc_RemarkText);
+typedef CStaticArraySet<const char*, PCase_CStr> TStaticRemarkSet;
+DEFINE_STATIC_ARRAY_MAP(TStaticRemarkSet, sc_Remarks, sc_RemarkText);
 
 
 void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
 {
-    const static string kDoiLink = "http://dx.doi.org/";
+    static const char* const kDoiLink = "http://dx.doi.org/";
 
     list<string> l;
 
@@ -1230,7 +1231,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
     if ( m_Pubdesc->IsSetComment()  &&  !m_Pubdesc->GetComment().empty() ) {
         const string& comment = m_Pubdesc->GetComment();
         
-        if ( sc_Remarks.find(comment) == sc_Remarks.end() ) {
+        if ( sc_Remarks.find(comment.c_str()) == sc_Remarks.end() ) {
             l.push_back(comment);
         }
     }

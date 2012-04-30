@@ -849,12 +849,12 @@ static const char* const sc_ValidExceptionText[] = {
     "reasons given in citation",
     "RNA editing"
 };
-typedef CStaticArraySet<string, PNocase> TLegalExceptText;
+typedef CStaticArraySet<const char*, PNocase_CStr> TLegalExceptText;
 DEFINE_STATIC_ARRAY_MAP(TLegalExceptText, sc_LegalExceptText, sc_ValidExceptionText);
 
 static bool s_IsValidExceptionText(const string& text)
 {
-    return sc_LegalExceptText.find(text) != sc_LegalExceptText.end();
+    return sc_LegalExceptText.find(text.c_str()) != sc_LegalExceptText.end();
 }
 
 
@@ -875,12 +875,12 @@ static const char* const sc_ValidRefSeqExceptionText[] = {
     "unclassified translation discrepancy",
     "unextendable partial coding region"
 };
-typedef CStaticArraySet<string, PNocase> TLegalRefSeqExceptText;
+typedef CStaticArraySet<const char*, PNocase> TLegalRefSeqExceptText;
 DEFINE_STATIC_ARRAY_MAP(TLegalRefSeqExceptText, sc_LegalRefSeqExceptText, sc_ValidRefSeqExceptionText);
 
 static bool s_IsValidRefSeqExceptionText(const string& text)
 {
-    return sc_LegalRefSeqExceptText.find(text) != sc_LegalRefSeqExceptText.end();
+    return sc_LegalRefSeqExceptText.find(text.c_str()) != sc_LegalRefSeqExceptText.end();
 }
 
 bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )

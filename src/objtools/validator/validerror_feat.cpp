@@ -1258,7 +1258,8 @@ static const char* const sc_BadGeneSynText [] = {
   "unknown protein",
   "unnamed"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BadGeneSyn, sc_BadGeneSynText);
+typedef CStaticArraySet<const char*, PCase_CStr> TBadGeneSynSet;
+DEFINE_STATIC_ARRAY_MAP(TBadGeneSynSet, sc_BadGeneSyn, sc_BadGeneSynText);
 
 
 void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat)
@@ -1328,7 +1329,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
 
     if (m_Imp.IsRefSeq()) {
         FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
-            if (sc_BadGeneSyn.find (*it) != sc_BadGeneSyn.end()) {
+            if (sc_BadGeneSyn.find (it->c_str()) != sc_BadGeneSyn.end()) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym, 
                          "Uninformative gene synonym '" + *it + "'",
                          feat);
@@ -2426,7 +2427,8 @@ static const char* const sc_BadProtNameText [] = {
   "unnamed protein product",
   "very hypothetical protein"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BadProtName, sc_BadProtNameText);
+typedef CStaticArraySet<const char*, PCase_CStr> TBadProtNameSet;
+DEFINE_STATIC_ARRAY_MAP(TBadProtNameSet, sc_BadProtName, sc_BadProtNameText);
 
 void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat) 
 {
@@ -2598,7 +2600,7 @@ void CValidError_feat::x_ReportUninformativeNames(const CProt_ref& prot, const C
     FOR_EACH_NAME_ON_PROTREF (it, prot) {
         string search = *it;
         search = NStr::ToLower(search);
-        if (sc_BadProtName.find (search) != sc_BadProtName.end()
+        if (sc_BadProtName.find (search.c_str()) != sc_BadProtName.end()
             || NStr::Find(search, "=") != string::npos
             || NStr::Find(search, "~") != string::npos
             || NStr::FindNoCase(search, "uniprot") != string::npos
@@ -4501,7 +4503,8 @@ static const char* const sc_BypassMrnaTransCheckText[] = {
     "transcribed product replaced",
     "unclassified transcription discrepancy",    
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BypassMrnaTransCheck, sc_BypassMrnaTransCheckText);
+typedef CStaticArraySet<const char*, PCase_CStr> TBypassMrnaTransCheckSet;
+DEFINE_STATIC_ARRAY_MAP(TBypassMrnaTransCheckSet, sc_BypassMrnaTransCheck, sc_BypassMrnaTransCheckText);
 
 
 static bool s_IsBioseqPartial (CBioseq_Handle bsh)
@@ -4562,7 +4565,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         feat.CanGetExcept()  &&  feat.GetExcept()  &&
         feat.CanGetExcept_text()) {
         const string& except_text = feat.GetExcept_text();
-        ITERATE (CStaticArraySet<string>, it, sc_BypassMrnaTransCheck) {
+        ITERATE (TBypassMrnaTransCheckSet, it, sc_BypassMrnaTransCheck) {
             if (NStr::FindNoCase(except_text, *it) != NPOS) {
                 report_errors = false;  // biological exception
             }
@@ -5565,7 +5568,8 @@ static const char* const sc_BypassCdsTransCheckText[] = {
   "translated product replaced",
   "unclassified translation discrepancy"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_BypassCdsTransCheck, sc_BypassCdsTransCheckText);
+typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsTransCheckSet;
+DEFINE_STATIC_ARRAY_MAP(TBypassCdsTransCheckSet, sc_BypassCdsTransCheck, sc_BypassCdsTransCheckText);
 
 
 static void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& tse,
@@ -5744,7 +5748,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         feat.CanGetExcept()  &&  feat.GetExcept()  &&
         feat.CanGetExcept_text()) {
         const string& except_text = feat.GetExcept_text();
-        ITERATE (CStaticArraySet<string>, it, sc_BypassCdsTransCheck) {
+        ITERATE (TBypassCdsTransCheckSet, it, sc_BypassCdsTransCheck) {
             if (NStr::FindNoCase(except_text, *it) != NPOS) {
                 report_errors = false;  // biological exception
             }

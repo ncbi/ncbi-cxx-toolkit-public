@@ -89,48 +89,49 @@ static const char* const sc_EST[] = {
   "partial cDNA sequence", "putatively transcribed partial sequence",
   "transcribed sequence fragment"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_EST_kw, sc_EST);
+typedef CStaticArraySet<const char*, PCase_CStr> TStaticKeywordSet;
+DEFINE_STATIC_ARRAY_MAP(TStaticKeywordSet, sc_EST_kw, sc_EST);
 
 
 // GSS keywords
 static const char* const sc_GSS[] = {
   "GSS", "trapped exon"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_GSS_kw, sc_GSS);
+DEFINE_STATIC_ARRAY_MAP(TStaticKeywordSet, sc_GSS_kw, sc_GSS);
 
 // STS keywords
 static const char* const sc_STS[] = {
   "STS", "STS (sequence tagged site)", "STS sequence", 
   "STS(sequence tagged site)", "sequence tagged site"
 };
-DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, sc_STS_kw, sc_STS);
+DEFINE_STATIC_ARRAY_MAP(TStaticKeywordSet, sc_STS_kw, sc_STS);
 
 
 static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)
 {
     if (tech == eEST) {
-        if (sc_STS_kw.find(keyword) != sc_STS_kw.end()) {
+        if (sc_STS_kw.find(keyword.c_str()) != sc_STS_kw.end()) {
             return false;
         }
-        if (sc_GSS_kw.find(keyword) != sc_GSS_kw.end()) {
+        if (sc_GSS_kw.find(keyword.c_str()) != sc_GSS_kw.end()) {
             return false;
         }
     }
     
     if (tech == eSTS) {
-        if (sc_EST_kw.find(keyword) != sc_EST_kw.end()) {
+        if (sc_EST_kw.find(keyword.c_str()) != sc_EST_kw.end()) {
             return false;
         }
-        if (sc_GSS_kw.find(keyword) != sc_GSS_kw.end()) {
+        if (sc_GSS_kw.find(keyword.c_str()) != sc_GSS_kw.end()) {
             return false;
         }
     }
     
     if (tech == eGSS) {
-        if (sc_EST_kw.find(keyword) != sc_EST_kw.end()) {
+        if (sc_EST_kw.find(keyword.c_str()) != sc_EST_kw.end()) {
             return false;
         }
-        if (sc_STS_kw.find(keyword) != sc_STS_kw.end()) {
+        if (sc_STS_kw.find(keyword.c_str()) != sc_STS_kw.end()) {
             return false;
         }
     }
