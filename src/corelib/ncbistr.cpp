@@ -811,6 +811,7 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
 double NStr::StringToDoublePosix(const char* ptr, char** endptr)
 {
     const char* start = ptr;
+    errno = 0;
 
     char c = *ptr++;
 // skip leading blanks
