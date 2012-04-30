@@ -2922,7 +2922,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
     };
     double ssr_min[sizeof(ssr)/sizeof(ssr[0])];
     double ssr_max[sizeof(ssr)/sizeof(ssr[0])];
-    const int TESTS = ArraySize(ss);
+    const size_t TESTS = ArraySize(ss);
 
     int flags = NStr::fConvErr_NoThrow|NStr::fAllowLeadingSpaces;
     double v;
