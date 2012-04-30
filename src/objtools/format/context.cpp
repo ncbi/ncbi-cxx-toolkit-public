@@ -201,8 +201,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     _ASSERT(seq.IsSetInst());
 
     // NB: order of execution is important
-    x_SetId();
     m_Repr = x_GetRepr();
+    x_SetId();
     m_Mol  = seq.GetInst_Mol();
     m_Molinfo.Reset(x_GetMolInfo());
 
@@ -578,8 +578,9 @@ void CBioseqContext::x_SetId(void)
         if ( m_IsTSA  &&  !acc.empty() ) {
             size_t len = acc.length();
             m_IsTSAMaster = 
-                ((len == 12  ||  len == 15)  &&  NStr::EndsWith(acc, "000000"))  ||
-                (len == 13  &&  NStr::EndsWith(acc, "0000000"));
+                ( ((len == 12  ||  len == 15)  &&  NStr::EndsWith(acc, "000000"))  ||
+                  (len == 13  &&  NStr::EndsWith(acc, "0000000")) ) &&
+                ( m_Repr == CSeq_inst::eRepr_virtual );
             if ( m_IsTSAMaster ) {
                 m_TSAMasterAccn = acc;
                 m_TSAMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;
