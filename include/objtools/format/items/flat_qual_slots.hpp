@@ -121,6 +121,7 @@ enum EFeatureQualifier {
     eFQ_prot_names,
     eFQ_protein_id,
     eFQ_pseudo,
+    eFQ_pseudogene,
     eFQ_pyrrolysine,
     eFQ_pyrrolysine_note,
     eFQ_rad_map,

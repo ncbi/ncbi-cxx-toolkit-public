@@ -680,6 +680,7 @@ START_SUBTYPE(gene)
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -714,6 +715,7 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(ribosomal_slippage);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
@@ -745,6 +747,7 @@ START_SUBTYPE(prot)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -769,6 +772,7 @@ START_SUBTYPE(preprotein)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -795,6 +799,7 @@ START_SUBTYPE(mat_peptide_aa)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -821,6 +826,7 @@ START_SUBTYPE(sig_peptide_aa)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -845,6 +851,7 @@ START_SUBTYPE(transit_peptide_aa)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -867,6 +874,7 @@ START_SUBTYPE(preRNA)
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -892,6 +900,7 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(transcript_id);
@@ -917,6 +926,7 @@ START_SUBTYPE(tRNA)
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -941,6 +951,7 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -963,6 +974,7 @@ START_SUBTYPE(snRNA)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -985,6 +997,7 @@ START_SUBTYPE(scRNA)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1007,6 +1020,7 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1031,6 +1045,7 @@ START_SUBTYPE(ncRNA)
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -1055,6 +1070,7 @@ START_SUBTYPE(tmRNA)
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(tag_peptide);
     ADD_QUAL(usedin);
@@ -1080,6 +1096,7 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -1133,6 +1150,7 @@ START_SUBTYPE(C_region)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1179,6 +1197,7 @@ START_SUBTYPE(Imp_CDS)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(transl_except);
     ADD_QUAL(transl_table);
@@ -1238,6 +1257,7 @@ START_SUBTYPE(D_segment)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1281,6 +1301,7 @@ START_SUBTYPE(exon)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -1341,6 +1362,7 @@ START_SUBTYPE(intron)
     ADD_QUAL(number);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
@@ -1362,6 +1384,7 @@ START_SUBTYPE(J_segment)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1403,6 +1426,7 @@ START_SUBTYPE(mat_peptide)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1468,6 +1492,7 @@ START_SUBTYPE(misc_feature)
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1590,6 +1615,7 @@ START_SUBTYPE(N_region)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1729,6 +1755,7 @@ START_SUBTYPE(promoter)
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1858,6 +1885,7 @@ START_SUBTYPE(S_region)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1902,6 +1930,7 @@ START_SUBTYPE(sig_peptide)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2060,6 +2089,7 @@ START_SUBTYPE(transit_peptide)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2097,6 +2127,7 @@ START_SUBTYPE(V_region)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2117,6 +2148,7 @@ START_SUBTYPE(V_segment)
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2276,6 +2308,7 @@ START_SUBTYPE(operon)
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2324,6 +2357,7 @@ START_SUBTYPE(region)
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(region_name);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -2347,6 +2381,7 @@ START_SUBTYPE(comment)  // same as misc_feature
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2370,6 +2405,7 @@ START_SUBTYPE(bond)  // same as misc_feature
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2390,6 +2426,7 @@ START_SUBTYPE(site)  //  same as misc_feature
     ADD_QUAL(number);
     ADD_QUAL(phenotype);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(site_type);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -2425,6 +2462,7 @@ START_SUBTYPE(psec_str)  //  same as misc_feature???
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(sec_str_type);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -2452,6 +2490,7 @@ START_SUBTYPE(het)  //  same as misc_feature
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE

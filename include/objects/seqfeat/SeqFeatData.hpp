@@ -372,6 +372,7 @@ public:
         eQual_protein_id,
         eQual_proviral,
         eQual_pseudo,
+        eQual_pseudogene,
         eQual_rearranged,
         eQual_region_name,
         eQual_replace,

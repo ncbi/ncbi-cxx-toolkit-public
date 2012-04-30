@@ -843,6 +843,16 @@ static void s_SplitCommaSeparatedStringInParens( vector<string> &output_vec, con
     NStr::Tokenize( string_to_split.substr( 1, string_to_split.length() - amount_to_chop_off_end - 1), ",", output_vec );
 }
 
+static const char* const sc_ValidPseudoGene[] = {
+    "allelic",
+    "processed",
+    "unitary",
+    "unknown",
+    "unprocessed"
+};
+typedef CStaticArraySet<const char*, PNocase> TLegalPseudoGeneText;
+DEFINE_STATIC_ARRAY_MAP(TLegalPseudoGeneText, sc_ValidPseudoGeneText, sc_ValidPseudoGene );
+
 static const char* const sc_ValidExceptionText[] = {
     "annotated by transcript or proteomic data",
     "rearrangement required for product",
@@ -1117,6 +1127,14 @@ void CFeatureItem::x_AddQualPseudo(
         subtype == CSeqFeatData::eSubtype_mobile_element ||
         subtype == CSeqFeatData::eSubtype_centromere ||
         subtype == CSeqFeatData::eSubtype_telomere ) 
+    {
+        return;
+    }
+
+    // suppress /pseudo if /pseudogene is set
+    const CFlatStringQVal* pseudogene = x_GetStringQual(eFQ_pseudogene);
+    if( pseudogene && 
+        sc_ValidPseudoGeneText.find(pseudogene->GetValue().c_str()) != sc_ValidPseudoGeneText.end() ) 
     {
         return;
     }
@@ -3716,6 +3734,14 @@ void CFeatureItem::x_AddQualsGene(
     if (!from_overlap  &&  gene_ref->IsSetMaploc() && subtype == CSeqFeatData::eSubtype_gene) {
         x_AddQual(eFQ_gene_map, new CFlatStringQVal(gene_ref->GetMaploc()));
     }
+
+    // gene pseudogene qual:
+    if( gene_feat ) {
+        const string & strPseudoGene = gene_feat->GetNamedQual("pseudogene");
+        if( ! strPseudoGene.empty() ) {
+            x_AddQual(eFQ_pseudogene, new CFlatStringQVal(strPseudoGene) );
+        }
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -4086,6 +4112,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(PCR_conditions),
         DO_IMPORT(phenotype),
         DO_IMPORT(product),
+        DO_IMPORT(pseudogene),
         DO_IMPORT(rad_map),
         DO_IMPORT(replace),
         DO_IMPORT(ribosomal_slippage),
@@ -4458,6 +4485,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(number);
 
     DO_QUAL(pseudo);
+    DO_QUAL(pseudogene);
     DO_QUAL(selenocysteine);
     DO_QUAL(pyrrolysine);
 
@@ -5014,6 +5042,17 @@ void CFeatureItem::x_CleanQuals(
         }
 
     }
+
+    // /pseudogene qual suppresses /pseudo qual if /pseudogene fits certain patterns
+    if( x_HasQual(eFQ_pseudo) && x_HasQual(eFQ_pseudogene) ) {
+        const CFlatStringQVal* pseudogene_qual = x_GetStringQual(eFQ_pseudogene);
+
+        if( sc_ValidPseudoGeneText.find(pseudogene_qual->GetValue().c_str()) != 
+            sc_ValidPseudoGeneText.end() )
+        {
+            x_RemoveQuals(eFQ_pseudo);
+        }
+    }
 }
 
 
@@ -5095,6 +5134,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     { eFQ_prot_names, CSeqFeatData::eQual_note },
     { eFQ_protein_id, CSeqFeatData::eQual_protein_id },
     { eFQ_pseudo, CSeqFeatData::eQual_pseudo },
+    { eFQ_pseudogene, CSeqFeatData::eQual_pseudogene },
     { eFQ_region, CSeqFeatData::eQual_note },
     { eFQ_region_name, CSeqFeatData::eQual_region_name },
     { eFQ_replace, CSeqFeatData::eQual_replace },
