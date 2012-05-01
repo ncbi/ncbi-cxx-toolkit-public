@@ -151,14 +151,28 @@ CBioTreeFeatureDictionary::HasFeature(TBioTreeFeatureId id) const
 TBioTreeFeatureId 
 CBioTreeFeatureDictionary::Register(const string& feature_name)
 {
-    Register(++m_IdCounter, feature_name);
+    TFeatureNameIdx::const_iterator it = m_Name2Id.find(feature_name);
+    if (it != m_Name2Id.end()) {
+        /// Feature already exists
+        return it->second;
+    }
 
-    return m_IdCounter;
+    Register(m_IdCounter, feature_name);
+    return m_IdCounter++;
 }
 
 void CBioTreeFeatureDictionary::Register(TBioTreeFeatureId id, 
 										 const string& feature_name)
 {
+    if (m_Dict.count(id)) {
+        NCBI_THROW(CException, eUnknown,
+                   "Duplicate feature id: " + NStr::NumericToString(id));
+    }
+    if (m_Name2Id.count(feature_name)) {
+        NCBI_THROW(CException, eUnknown,
+                   "Duplicate feature name: " + feature_name);
+    }
+    m_IdCounter = max(m_IdCounter, id+1);
     m_Dict.insert(
            pair<TBioTreeFeatureId, string>(id, feature_name));
     m_Name2Id.insert(

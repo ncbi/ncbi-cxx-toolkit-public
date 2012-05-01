@@ -190,9 +190,7 @@ public:
     TBioTreeFeatureId Register(const string& feature_name);
 
 	/// Register new feature.
-	/// @note
-	/// Feature counter remains unchanged.
-	/// Please do not mix auto counted Regsiter and this method.
+	/// Throws an exception if a feature with this id or this name already exists
 	void Register(TBioTreeFeatureId id, const string& feature_name);
 
     /// If feature is already registered returns its id by name.
