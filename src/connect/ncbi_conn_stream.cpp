@@ -35,7 +35,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include "ncbi_conn_streambuf.hpp"
-#include <connect/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #define NCBI_CONN_STREAM_EXPERIMENTAL_API 1  // Pick up MS-Win DLL linkage
 #include <connect/ncbi_conn_stream.hpp>
@@ -43,9 +42,6 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
-
-
-#define NCBI_USE_ERRCODE_X   Connect_Stream
 
 
 BEGIN_NCBI_SCOPE
@@ -565,13 +561,7 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
         net_info->timeout = 0;
-    CONNECTOR c = SERVICE_CreateConnectorEx(service, types,
-                                            net_info.get(), params);
-    if (!c) {
-        ERR_POST_X(1,
-                   Error << "Cannot connect to service \"" << service << '\"');
-    }
-    return c;
+    return SERVICE_CreateConnectorEx(service, types, net_info.get(), params);
 }
 
 
