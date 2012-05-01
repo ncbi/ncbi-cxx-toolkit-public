@@ -5615,7 +5615,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TELA	s	Tel Aviv University, Botany Department",
 "TELY	s	Tate Library",
 "TENHS	s	Toynbee Natural History Society",
-"TENN	s	University of Tennessee, Botany Department",
+"TENN	s	Department of Ecology and Evolutionary Biology, University of Tennessee",
 "TEPB	s	Universidade Federal do Piaui, Departamento de Biologia",
 "TER	s	Indiana State University, Life Science Department",
 "TESC	s	The Evergreen State College",
