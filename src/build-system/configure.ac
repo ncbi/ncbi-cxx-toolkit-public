@@ -5668,7 +5668,7 @@ if test "$with_xerces" != no; then
           ncbi_cv_lib_xerces_c=yes, ncbi_cv_lib_xerces_c=no)])
    if test $ncbi_cv_lib_xerces_c = yes; then
       if test -f "$XERCES_LIBPATH/libxerces-c-static.a"; then
-         XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static"
+         XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static $CURL_LIBS"
       else
          XERCES_STATIC_LIBS=$XERCES_LIBS
       fi

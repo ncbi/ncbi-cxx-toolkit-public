@@ -29874,7 +29874,7 @@ echo "$as_me:$LINENO: result: $ncbi_cv_lib_xerces_c" >&5
 echo "${ECHO_T}$ncbi_cv_lib_xerces_c" >&6
    if test $ncbi_cv_lib_xerces_c = yes; then
       if test -f "$XERCES_LIBPATH/libxerces-c-static.a"; then
-         XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static"
+         XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static $CURL_LIBS"
       else
          XERCES_STATIC_LIBS=$XERCES_LIBS
       fi
