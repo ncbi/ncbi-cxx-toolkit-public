@@ -693,7 +693,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     // composition based statistics, keep in sync with ECompoAdjustModes
     // documentation in composition_constants.h
     arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", 
-              (string)"Use composition-based statistics for blastp / tblastn:\n"
+              (string)"Use composition-based statistics for blastp, blastx, or tblastn:\n"
                       "    D or d: default (equivalent to 2)\n"
                       "    0 or F or f: no composition-based statistics\n"
                       "    1: Composition-based statistics "
