@@ -3721,6 +3721,12 @@ else
    TLS_LIBS=$OPENSSL_LIBS
 fi
 
+
+NCBI_CHECK_THIRD_PARTY_LIB(curl,
+   [AC_LANG_PROGRAM([#include <curl/curl.h>],
+       [char* v = curl_version();])])
+
+
 ## SYBASE libraries
 
 NETWORK_PURE_LIBS="$NETWORK_LIBS"
@@ -5962,11 +5968,6 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(magic,
    [AC_LANG_PROGRAM([#include <magic.h>],
        [magic_t m = magic_open(17);])])
-
-
-NCBI_CHECK_THIRD_PARTY_LIB(curl,
-   [AC_LANG_PROGRAM([#include <curl/curl.h>],
-       [char* v = curl_version();])])
 
 
 # Mimetic
