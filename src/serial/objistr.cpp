@@ -1792,14 +1792,24 @@ void CObjectIStream::ReadCompressedBitString(CBitString& obj)
     bl.End();
 }
 
-char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
+char ReplaceVisibleChar(char c, EFixNonPrint fix_method,
+    const CObjectStack* io, const string& str)
 {
     _ASSERT(fix_method != eFNP_Allow);
     if ( fix_method != eFNP_Replace ) {
-        string message = "Bad char in VisibleString" +
-            ((at_line > 0) ?
-             " starting at line " + NStr::SizetToString(at_line) :
-             string("")) + ": " + NStr::IntToString(int(c) & 0xff);
+        string message;
+        if (io != NULL) {
+            message += io->GetStackTrace() + "\n";
+        }
+        message += "Bad char [0x" +
+                   NStr::NumericToString((unsigned char)c,0,16)+
+                   "] in VisibleString";
+        if (io != NULL) {
+            message += " at " + io->GetPosition();
+        }
+        if (!str.empty()) {
+            message += "\n" + str;
+        }
         switch (fix_method) {
         case eFNP_ReplaceAndWarn:
             CNcbiDiag(eDiag_Error, eDPF_Default)

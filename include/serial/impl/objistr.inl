@@ -448,10 +448,11 @@ bool GoodVisibleChar(char c)
 
 
 inline
-void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
+void FixVisibleChar(char& c, EFixNonPrint fix_method,
+    const CObjectStack* io, const string& str)
 {
     if ( !GoodVisibleChar(c) ) {
-        c = ReplaceVisibleChar(c, fix_method, at_line);
+        c = ReplaceVisibleChar(c, fix_method, io, str);
     }
 }
 

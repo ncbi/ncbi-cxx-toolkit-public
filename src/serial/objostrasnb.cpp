@@ -725,7 +725,7 @@ void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
                 if ( i > done ) {
                     WriteBytes(str.data() + done, i - done);
                 }
-                FixVisibleChar(c, m_FixMethod);
+                FixVisibleChar(c, m_FixMethod, this, str);
                 WriteByte(c);
                 done = i + 1;
             }
@@ -759,7 +759,9 @@ void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
         if ( checkVisible ) {
             // Check the string for non-printable characters
             for (size_t i = 0; i < c; i++) {
-                FixVisibleChar(buffer[i], m_FixMethod);
+                if ( !GoodVisibleChar(buffer[i]) ) {
+                    FixVisibleChar(buffer[i], m_FixMethod, this, string(buffer,c));
+                }
             }
         }
         WriteBytes(buffer, c);
@@ -788,7 +790,9 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in,
         if ( checkVisible ) {
             // Check the string for non-printable characters
             NON_CONST_ITERATE(string, i, str) {
-                FixVisibleChar(*i, m_FixMethod);
+                if ( !GoodVisibleChar(*i) ) {
+                    FixVisibleChar(*i, m_FixMethod, this, str);
+                }
             }
         }
         WriteLength(length);
@@ -832,7 +836,7 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
                     if ( i > done ) {
                         WriteBytes(str + done, i - done);
                     }
-                    FixVisibleChar(c, m_FixMethod);
+                    FixVisibleChar(c, m_FixMethod, this, string(str,length));
                     WriteByte(c);
                     done = i + 1;
                 }
@@ -1273,7 +1277,7 @@ void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
                 if ( i > done ) {
                     WriteBytes(str + done, i - done);
                 }
-                FixVisibleChar(c, m_FixMethod);
+                FixVisibleChar(c, m_FixMethod, this, string(str,length));
                 WriteByte(c);
                 done = i + 1;
             }

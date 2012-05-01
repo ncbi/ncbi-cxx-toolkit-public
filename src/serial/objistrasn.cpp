@@ -847,7 +847,7 @@ void CObjectIStreamAsn::AppendStringData(string& s,
                 if ( i > done ) {
                     s.append(data + done, i - done);
                 }
-                FixVisibleChar(c, fix_method, line);
+                FixVisibleChar(c, fix_method, this, string(data,count));
                 s += c;
                 done = i + 1;
             }
@@ -1063,7 +1063,9 @@ void CObjectIStreamAsn::SkipString(EStringType type)
                 break;
             default:
                 if (type == eStringTypeVisible) {
-                    FixVisibleChar(c, m_FixMethod, startLine);
+                    if ( !GoodVisibleChar(c) ) {
+                        FixVisibleChar(c, m_FixMethod, this, kEmptyStr);
+                    }
                 }
                 // ok: skip char
                 if ( ++i == 128 ) {
@@ -1513,7 +1515,10 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                     if ( fix_method != eFNP_Allow ) {
                         size_t line = m_Input.GetLine();
                         for (size_t i = 0;  i < count;  i++) {
-                            FixVisibleChar(dst[i], fix_method, line);
+                            if ( !GoodVisibleChar(dst[i]) ) {
+                                FixVisibleChar(dst[i], fix_method,
+                                    this, string(dst, count));
+                            }
                         }
                     }
                     block.EndOfBlock();

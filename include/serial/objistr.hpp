@@ -1072,10 +1072,12 @@ inline
 bool GoodVisibleChar(char c);
 
 NCBI_XSERIAL_EXPORT
-char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line);
+char ReplaceVisibleChar(char c, EFixNonPrint fix_method,
+    const CObjectStack* io, const string& str);
 
 inline
-void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line = 0);
+void FixVisibleChar(char& c, EFixNonPrint fix_method,
+    const CObjectStack* io, const string& str);
 
 
 /// Guard class for CObjectIStream::StartDelayBuffer/EndDelayBuffer

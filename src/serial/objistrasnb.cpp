@@ -698,7 +698,7 @@ namespace {
     inline
     void ReplaceVisibleCharMethod(char& c, EFixNonPrint fix_method)
     {
-        c = ReplaceVisibleChar(c, fix_method, 0);
+        c = ReplaceVisibleChar(c, fix_method, 0, kEmptyStr);
     }
 
     inline

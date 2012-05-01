@@ -141,6 +141,8 @@ public:
     void ClearStack(void);
 
     string GetStackTraceASN(void) const;
+    virtual string GetStackTrace(void) const = 0;
+    virtual string GetPosition(void) const = 0;
 
     const TFrame& TopFrame(void) const;
     TFrame& TopFrame(void);

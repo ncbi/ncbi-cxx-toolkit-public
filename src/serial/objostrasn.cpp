@@ -337,7 +337,9 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     while ( length > 0 ) {
         char c = *ptr++;
         if ( m_FixMethod != eFNP_Allow ) {
-            FixVisibleChar(c, m_FixMethod, startLine);
+            if ( !GoodVisibleChar(c) ) {
+                FixVisibleChar(c, m_FixMethod, this, string(ptr,length));
+            }
         }
         --length;
         m_Output.WrapAt(78, true);
@@ -825,7 +827,9 @@ void CObjectOStreamAsn::WriteChars(const CharBlock& ,
 {
     while ( length > 0 ) {
         char c = *chars++;
-        FixVisibleChar(c, m_FixMethod, m_Output.GetLine());
+        if ( !GoodVisibleChar(c) ) {
+            FixVisibleChar(c, m_FixMethod, this, string(chars,length));
+        }
         --length;
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
