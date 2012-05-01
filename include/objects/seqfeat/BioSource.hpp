@@ -94,11 +94,11 @@ public:
     const COrgName& GetOrgname(void) const;
 
     bool IsSetOrgMod(void) const;
-    
+
     // for GenColl
-    string GetRepliconName (void);
-    string GetBioprojectType (void);
-    string GetBioprojectLocation (void);
+    string GetRepliconName (void) const;
+    string GetBioprojectType (void) const;
+    string GetBioprojectLocation (void) const;
 
 private:
     // Prohibit copy constructor and assignment operator

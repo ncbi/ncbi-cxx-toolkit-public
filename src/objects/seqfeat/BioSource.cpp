@@ -148,7 +148,7 @@ DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 CBioSource::EGenome CBioSource::GetGenomeByOrganelle (string organelle, NStr::ECase use_case, bool starts_with)
 {
     CBioSource::EGenome gtype = CBioSource::eGenome_unknown;
-    
+
     if (use_case == NStr::eCase && !starts_with) {
         TGenomeMap::const_iterator g_iter = sm_GenomeKeys.find (organelle.c_str ());
         if (g_iter != sm_GenomeKeys.end ()) {
@@ -282,7 +282,7 @@ bool CBioSource::IsSetOrgMod(void) const
 }
 
 
-string CBioSource::GetRepliconName(void)
+string CBioSource::GetRepliconName(void) const
 {
     if (IsSetGenome() && GetGenome() == CBioSource::eGenome_mitochondrion) {
         return "MT";
@@ -290,7 +290,7 @@ string CBioSource::GetRepliconName(void)
 
     ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
         if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_plasmid_name
-            && (*sit)->IsSetName()) {            
+            && (*sit)->IsSetName()) {
             return (*sit)->GetName();
         }
     }
@@ -298,7 +298,7 @@ string CBioSource::GetRepliconName(void)
     if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
         ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
             if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_linkage_group
-                && (*sit)->IsSetName()) {            
+                && (*sit)->IsSetName()) {
                 return (*sit)->GetName();
             }
         }
@@ -306,7 +306,7 @@ string CBioSource::GetRepliconName(void)
 
     ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
         if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_chromosome
-            && (*sit)->IsSetName()) {            
+            && (*sit)->IsSetName()) {
             return (*sit)->GetName();
         }
     }
@@ -336,7 +336,7 @@ string CBioSource::GetRepliconName(void)
 }
 
 
-string CBioSource::GetBioprojectType (void)
+string CBioSource::GetBioprojectType (void) const
 {
     if (IsSetGenome() && GetGenome() == CBioSource::eGenome_plasmid) {
         return "ePlasmid";
@@ -347,7 +347,7 @@ string CBioSource::GetBioprojectType (void)
             return "ePlasmid";
         }
     }
-    
+
     if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
         ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
             if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_linkage_group) {
@@ -360,7 +360,7 @@ string CBioSource::GetBioprojectType (void)
 }
 
 
-string CBioSource::GetBioprojectLocation(void)
+string CBioSource::GetBioprojectLocation(void) const
 {
     if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
         return "eNuclearProkaryote";
@@ -371,7 +371,7 @@ string CBioSource::GetBioprojectLocation(void)
 
     if (IsSetGenome()) {
         switch (GetGenome()) {
-            case CBioSource::eGenome_unknown:  
+            case CBioSource::eGenome_unknown:
             case CBioSource::eGenome_genomic:
                 return "eNuclearProkaryote";
                 break;
