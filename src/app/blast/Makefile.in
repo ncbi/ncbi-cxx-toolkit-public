@@ -17,7 +17,8 @@ psiblast \
 rpsblast \
 rpstblastn \
 blast_formatter \
-deltablast
+deltablast \
+seedtop
 
 USR_PROJ = legacy_blast update_blastdb
 
