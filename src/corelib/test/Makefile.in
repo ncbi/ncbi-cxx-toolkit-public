@@ -5,7 +5,8 @@
 
 LIB_PROJ = test_dll pbacktest
 
-APP_PROJ = test_ncbitime_mt test_ncbitime test_ncbithr coretest \
+APP_PROJ = test_tls_object \
+	   test_ncbitime_mt test_ncbitime test_ncbithr coretest \
            test_ncbiargs test_ncbiargs_sample test_ncbi_limits test_ncbistr \
            test_ncbidiag_mt test_ncbireg_mt test_ncbi_system test_ncbiutil \
            test_ncbifile test_ncbidll test_semaphore_mt test_ncbiexec \
