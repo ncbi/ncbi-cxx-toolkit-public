@@ -389,14 +389,19 @@ int NStr::StringToNonNegativeInt(const string& str)
         errno_ref = ERANGE;
         return -1;
     }
+    errno_ref = 0;
     return (int) value;
 }
 
 
 #define S2N_CONVERT_ERROR(to_type, msg, errcode, force_errno, delta)        \
+cout<<errno<<endl;cout.flush();\
         if (flags & NStr::fConvErr_NoThrow)  {                              \
-            if ( force_errno || !errno )                                    \
+            if (flags & NStr::fIgnoreErrno) {                               \
+                errno = 0;                                                  \
+            } else if ( force_errno || !errno) {                            \
                 errno = errcode;                                            \
+            }                                                               \
             /* ignore previously converted value -- always return zero */   \
             return 0;                                                       \
         } else {                                                            \
@@ -411,6 +416,8 @@ int NStr::StringToNonNegativeInt(const string& str)
                 smsg += ", ";                                               \
                 smsg += msg;                                                \
             }                                                               \
+            /* We don't set errno here, because it will be changed */       \
+            /* to any unpredictable value below.*/                          \
             NCBI_THROW2(CStringException, eConvert, smsg, delta);           \
         }                                                                   \
 
@@ -663,7 +670,6 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
     int       comma  = -1;  
     SIZE_TYPE numpos = pos;
 
-    errno = 0;
     while (char ch = str[pos]) {
         int  delta;   // corresponding numeric value of 'ch'
 
@@ -695,6 +701,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
     // Assign sign before the end pointer check
     n = sign ? -n : n;
     CHECK_ENDPTR(Int8);
+    errno = 0;
     return n;
 }
 
@@ -705,6 +712,7 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
     _ASSERT(flags == 0  ||  flags > 32);
     const TStringToNumFlags slow_flags =
         fMandatorySign|fAllowCommas|fAllowLeadingSymbols|fAllowTrailingSymbols;
+
     if ( base == 10 && (flags & slow_flags) == 0 ) {
         // fast conversion
 
@@ -737,6 +745,7 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
             }
             n = n*10+delta;
         } while ( ++ptr != end );
+
         errno = 0;
         return n;
     }
@@ -775,9 +784,8 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
     int       comma  = -1;  
     SIZE_TYPE numpos = pos;
 
-    errno = 0;
     while (char ch = str[pos]) {
-        int  delta;         // corresponding numeric value of 'ch'
+        int delta;  // corresponding numeric value of 'ch'
 
         // Check on possible commas
         CHECK_COMMAS;
@@ -805,25 +813,27 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     CHECK_ENDPTR_SIZE(Uint8);
+    errno = 0;
     return n;
 }
+
 
 double NStr::StringToDoublePosix(const char* ptr, char** endptr)
 {
     const char* start = ptr;
-    errno = 0;
-
     char c = *ptr++;
-// skip leading blanks
+
+    // skip leading blanks
     while ( isspace((unsigned char)c) ) {
         c = *ptr++;
     }
     
-// short-cut - single digit
+    // short-cut - single digit
     if ( !*ptr && c >= '0' && c <= '9' ) {
         if (endptr) {
             *endptr = (char*)ptr;
         }
+        errno = 0;
         return c-'0';
     }
 
@@ -837,13 +847,13 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
         c = *ptr++;
     }
 
-    bool dot = false, expn = false, anydigits = false;
-    int digits = 0, dot_position = 0;
+    bool         dot = false, expn = false, anydigits = false;
+    int          digits = 0, dot_position = 0;
     unsigned int first=0, second=0, first_mul=1;
-    long double second_mul=NCBI_CONST_LONGDOUBLE(1.),
-        third    = NCBI_CONST_LONGDOUBLE(0.);
+    long double  second_mul = NCBI_CONST_LONGDOUBLE(1.),
+                 third      = NCBI_CONST_LONGDOUBLE(0.);
 
-// up to exponent
+    // up to exponent
     for ( ; ; c = *ptr++ ) {
         if (c >= '0' && c <= '9') {
             // digits: accumulate
@@ -899,6 +909,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                     if (endptr) {
                         *endptr = (char*)(ptr+3);
                     }
+                    errno = 0;
                     return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
                 }
                 if ( (c == 'i' || c == 'I') ) {
@@ -926,7 +937,8 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
         return 0.;
     }
     int exponent = dot ? dot_position - digits : 0;
-// read exponent
+
+    // read exponent
     if (expn && *ptr) {
         int expvalue = 0;
         bool expsign = false, expnegate= false;
@@ -982,6 +994,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
         ret = first;
     }
     // calculate exponent
+    errno = 0;
     if ( first && exponent ) {
         // multiply by power of 10 only non-zero mantissa
         if (exponent > 2*DBL_MAX_10_EXP) {
@@ -1093,6 +1106,7 @@ static double s_StringToDouble(const char* str, size_t size,
     _ASSERT(flags == 0  ||  flags > 32);
     _ASSERT(str[size] == '\0');
     if ((flags & NStr::fDecimalPosix) && (flags & NStr::fDecimalPosixOrLocal)) {
+        //errno = EINVAL;
         NCBI_THROW2(CStringException, eBadArgs,
                     "NStr::StringToDouble():  mutually exclusive flags specified",0);
     }
@@ -1127,33 +1141,29 @@ static double s_StringToDouble(const char* str, size_t size,
     }
 
     // Conversion
+    errno = 0;
     char* endptr = 0;
     const char* begptr = str + pos;
 
-    int the_errno = 0;
-    errno = 0;
     double n;
     if (flags & NStr::fDecimalPosix) {
         n = NStr::StringToDoublePosix(begptr, &endptr);
     } else {
         n = strtod(begptr, &endptr);
     }
-    the_errno = errno;
     if (flags & NStr::fDecimalPosixOrLocal) {
         char* endptr2 = 0;
         double n2 = NStr::StringToDoublePosix(begptr, &endptr2);
         if (!endptr || (endptr2 && endptr2 > endptr)) {
             n = n2;
             endptr = endptr2;
-            the_errno = errno;
         }
     }
     if (flags & NStr::fIgnoreErrno) {
-        the_errno = 0;
-    }
-    if ( the_errno  ||  !endptr  ||  endptr == begptr ) {
-        S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, false,
-                          s_DiffPtr(endptr, begptr) + pos);
+        errno = 0;
+    };
+    if ( errno  ||  !endptr  ||  endptr == begptr ) {
+        S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, true, s_DiffPtr(endptr, begptr) + pos);
     }
 #if 0
     if ( !s_IsDecimalPoint(*(endptr - 1), flags) && s_IsDecimalPoint(*endptr, flags) ) {
@@ -1261,6 +1271,11 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 {
     // We have a limited base range here
     _ASSERT(flags == 0  ||  flags > 20);
+    if ( base < 2  ||  base > 16 ) {
+        //errno = EINVAL;
+        NCBI_THROW2(CStringException, eConvert,  
+                    "Bad numeric base '" + NStr::IntToString(base)+ "'", 0);
+    }
 
     // Current position in the string
     SIZE_TYPE pos = 0;
@@ -1332,12 +1347,17 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
                                    TStringToNumFlags flags /* = 0 */)
 {
-    TStringToNumFlags allowed_flags
-            = fConvErr_NoThrow + fMandatorySign + fAllowCommas
-              + fAllowLeadingSymbols + fAllowTrailingSymbols
-              + fDS_ForceBinary + fDS_ProhibitFractions
-              + fDS_ProhibitSpaceBeforeSuffix;
+    TStringToNumFlags allowed_flags = fConvErr_NoThrow +
+                                      fMandatorySign +
+                                      fAllowCommas +
+                                      fAllowLeadingSymbols +
+                                      fAllowTrailingSymbols +
+                                      fDS_ForceBinary +
+                                      fDS_ProhibitFractions +
+                                      fDS_ProhibitSpaceBeforeSuffix;
+
     if ((flags & allowed_flags) != flags) {
+        //errno = EINVAL;
         NCBI_THROW2(CStringException, eConvert, "Wrong set of flags", 0);
     }
 
@@ -1375,6 +1395,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
     bool allow_commas = (flags & fAllowCommas) != 0;
     bool allow_dot = (flags & fDS_ProhibitFractions) == 0;
     Uint4 digs_pre_dot = 0, digs_post_dot = 0;
+
     for (; str_ptr < str_end; ++str_ptr) {
         char c = *str_ptr;
         if (isdigit(c)) {
@@ -1549,7 +1570,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
         }
         ++n;
     }
-
+    errno = 0;
     return n;
 }
 
@@ -1629,8 +1650,10 @@ void NStr::IntToString(string& out_str, int svalue,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
+        errno = EINVAL;
         return;
     }
+    errno = 0;
     unsigned int value = static_cast<unsigned int>(svalue);
     
     if ( base == 10  &&  svalue < 0 ) {
@@ -1645,8 +1668,10 @@ void NStr::LongToString(string& out_str, long svalue,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
+        errno = EINVAL;
         return;
     }
+    errno = 0;
     unsigned long value = static_cast<unsigned long>(svalue);
     
     if ( base == 10  &&  svalue < 0 ) {
@@ -1663,8 +1688,10 @@ void NStr::ULongToString(string&          out_str,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
+        errno = EINVAL;
         return;
     }
+    errno = 0;
 
     const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
@@ -1822,8 +1849,10 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
+        errno = EINVAL;
         return;
     }
+    errno = 0;
 
     Uint8 value;
     if (base == 10) {
@@ -1852,8 +1881,10 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
+        errno = EINVAL;
         return;
     }
+    errno = 0;
 
     const SIZE_TYPE kBufSize = CHAR_BIT  * sizeof(value);
     char  buffer[kBufSize];
@@ -1872,12 +1903,19 @@ void NStr::UInt8ToString_DataSize(string& out_str,
                                   TNumToStringFlags flags /* = 0 */,
                                   unsigned int max_digits /* = 3 */)
 {
-    TNumToStringFlags allowed_flags
-            = fWithSign + fWithCommas + fDS_Binary + fDS_NoDecimalPoint
-              + fDS_PutSpaceBeforeSuffix + fDS_ShortSuffix + fDS_PutBSuffixToo;
+    TNumToStringFlags allowed_flags = fWithSign +
+                                      fWithCommas + 
+                                      fDS_Binary + 
+                                      fDS_NoDecimalPoint +
+                                      fDS_PutSpaceBeforeSuffix +
+                                      fDS_ShortSuffix +
+                                      fDS_PutBSuffixToo;
+
     if ((flags & allowed_flags) != flags) {
+        //errno = EINVAL;
         NCBI_THROW2(CStringException, eConvert, "Wrong set of flags", 0);
     }
+
     if (max_digits < 3)
         max_digits = 3;
 
@@ -1885,18 +1923,17 @@ void NStr::UInt8ToString_DataSize(string& out_str,
     static const Uint4 s_NumSuffixes = sizeof(s_Suffixes) / sizeof(s_Suffixes[0]);
 
     static const SIZE_TYPE kBufSize = 50;
-    char buffer[kBufSize];
-
+    char  buffer[kBufSize];
     char* num_start;
     char* dot_ptr;
     char* num_end;
     Uint4 digs_pre_dot, suff_idx;
+
     if (!(flags &fDS_Binary)) {
         static const Uint8 s_Coefs[] = {1000, 1000000, 1000000000,
                                         NCBI_CONST_UINT8(1000000000000),
                                         NCBI_CONST_UINT8(1000000000000000),
                                         NCBI_CONST_UINT8(1000000000000000000)};
-
         suff_idx = 0;
         for (; suff_idx < s_NumSuffixes; ++suff_idx) {
             if (value < s_Coefs[suff_idx])
@@ -2082,6 +2119,7 @@ try_even_more_suffix:
             out_str.append(1, 'B');
         }
     }
+    errno = 0;
 }
 
 
@@ -2099,6 +2137,7 @@ const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
 void NStr::DoubleToString(string& out_str, double value,
                           int precision, TNumToStringFlags flags)
 {
+    errno = 0;
     char buffer[kMaxDoubleStringSize];
     if (precision >= 0 ||
         ((flags & fDoublePosix) && (isnan(value) || !finite(value)))) {
@@ -2170,6 +2209,9 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
                 break;
         }
         n = ::sprintf(buffer, format, (int)precision, value);
+        if (n < 0) {
+            n = 0;
+        }
         if (flags & fDoublePosix) {
             struct lconv* conv = localeconv();
             if ('.' != *(conv->decimal_point)) {
@@ -2182,6 +2224,8 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
     }
     SIZE_TYPE n_copy = min((SIZE_TYPE) n, buf_size);
     memcpy(buf, buffer, n_copy);
+    // This method don't change errno, but we set it to 0 for uniformity
+    errno = 0;
     return n_copy;
 }
 
@@ -2208,11 +2252,14 @@ char* s_ncbi_append_int2str(char* buffer, unsigned int value, size_t digits, boo
     return ++buffer_end;
 }
 
+
 #define __NLG NCBI_CONST_LONGDOUBLE
-SIZE_TYPE NStr::DoubleToString_Ecvt( double val, unsigned int precision,
-                                     char* buffer, SIZE_TYPE bufsize,
-                                     int* dec, int* sign)
+
+SIZE_TYPE NStr::DoubleToString_Ecvt(double val, unsigned int precision,
+                                    char* buffer, SIZE_TYPE bufsize,
+                                    int* dec, int* sign)
 {
+    errno = 0;
     *dec = *sign = 0;
     if (precision==0) {
         return 0;
@@ -2405,6 +2452,7 @@ SIZE_TYPE NStr::DoubleToString_Ecvt( double val, unsigned int precision,
         if (digits_len <= bufsize) {
             strncpy(buffer,digits,digits_len);
         } else {
+            //errno = EINVAL;
             NCBI_THROW2(CStringException, eConvert,
                         "Destination buffer too small", 0);
         }
@@ -2414,10 +2462,11 @@ SIZE_TYPE NStr::DoubleToString_Ecvt( double val, unsigned int precision,
 #undef __NLG
 
 
-SIZE_TYPE NStr::DoubleToStringPosix( double val, unsigned int precision,
-                                     char* buffer, SIZE_TYPE bufsize)
+SIZE_TYPE NStr::DoubleToStringPosix(double val, unsigned int precision,
+                                    char* buffer, SIZE_TYPE bufsize)
 {
     if (bufsize < precision+8) {
+        //errno = EINVAL;
         NCBI_THROW2(CStringException, eConvert,
                     "Destination buffer too small", 0);
     }
@@ -2426,10 +2475,12 @@ SIZE_TYPE NStr::DoubleToStringPosix( double val, unsigned int precision,
     size_t digits_len = DoubleToString_Ecvt(
         val, precision, digits, sizeof(digits), &dec, &sign);
     if (digits_len == 0) {
+        errno = 0;
         return 0;
     }
     if (digits_len == 1 && dec == 0 && sign >=0) {
         *buffer = digits[0];
+        errno = 0;
         return 1;
     }
     bool exp_positive = dec >= 0;
@@ -2491,6 +2542,7 @@ SIZE_TYPE NStr::DoubleToStringPosix( double val, unsigned int precision,
         strncpy(buffer_pos,digits_pos, digits_len);
         buffer_pos += digits_len;
     }
+    errno = 0;
     return buffer_pos - buffer;
 }
 
@@ -2507,6 +2559,7 @@ string NStr::SizetToString(size_t value, TNumToStringFlags flags, int base)
 
 string NStr::PtrToString(const void* value)
 {
+    errno = 0;
     char buffer[64];
     ::sprintf(buffer, "%p", value);
     return buffer;
@@ -2515,6 +2568,7 @@ string NStr::PtrToString(const void* value)
 
 void NStr::PtrToString(string& out_str, const void* value)
 {
+    errno = 0;
     char buffer[64];
     ::sprintf(buffer, "%p", value);
     out_str = buffer;
@@ -2523,6 +2577,7 @@ void NStr::PtrToString(string& out_str, const void* value)
 
 const void* NStr::StringToPtr(const CTempStringEx& str)
 {
+    errno = 0;
     void *ptr = NULL;
     if ( str.HasZeroAtEnd() ) {
         ::sscanf(str.data(), "%p", &ptr);
@@ -2555,14 +2610,17 @@ bool NStr::StringToBool(const CTempString& str)
          AStrEquiv(str, s_kTString,     PNocase())  ||
          AStrEquiv(str, s_kYesString,   PNocase())  ||
          AStrEquiv(str, s_kYString,     PNocase()) )
+        errno = 0;
         return true;
 
     if ( AStrEquiv(str, s_kFalseString, PNocase())  ||
          AStrEquiv(str, s_kFString,     PNocase())  ||
          AStrEquiv(str, s_kNoString,    PNocase())  ||
          AStrEquiv(str, s_kNString,     PNocase()) )
+        errno = 0;
         return false;
 
+    //errno = EINVAL;
     NCBI_THROW2(CStringException, eConvert,
                 "String cannot be converted to bool", 0);
 }

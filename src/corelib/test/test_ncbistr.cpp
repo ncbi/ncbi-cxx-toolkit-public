@@ -98,6 +98,17 @@ struct SStringNumericValues
     }
 };
 
+
+// Test errno value, to check that 'errno' changes inside conversion methods.
+static const int kTestErrno = 555;
+#define CHECK_ERRNO                         \
+    if (flags & NStr::fIgnoreErrno) {       \
+        BOOST_CHECK(errno == 0);            \
+    } else {                                \
+        BOOST_CHECK(errno != kTestErrno);   \
+    }
+
+// Default flags
 #define DF 0
 
 //                str  flags  num   int   uint  Int8  Uint8  double
@@ -109,6 +120,7 @@ struct SStringNumericValues
 #define STRI8(v) { #v, DF, -1, kBad, kBad, NCBI_CONST_INT8(v), kBad, v##., 0.}
 #define STRU8(v) { #v, DF, -1, kBad, kBad, kBad, NCBI_CONST_UINT8(v), v##., 0. }
 #define STRD(v)  { #v, DF, -1, kBad, kBad, kBad, kBad, v##. }
+
 
 static const SStringNumericValues s_Str2NumTests[] = {
     STR(0),
@@ -285,7 +297,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // num
         {{
+            errno = kTestErrno;
             int value = NStr::StringToNonNegativeInt(str);
+            CHECK_ERRNO;
             NcbiCout << "numeric value: " << value << ", toString: '"
                      << NStr::NumericToString(value) << "'" << NcbiEndl;
             BOOST_CHECK_EQUAL(value, test->num);
@@ -293,7 +307,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // int
         try {
+            errno = kTestErrno;
             int value = NStr::StringToInt(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "int value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -306,6 +322,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             }
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGoodInt() ) {
                 ERR_POST("Cannot convert '" << str << "' to int");
             }
@@ -314,7 +331,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // int
         {
+            errno = kTestErrno;
             int value = NStr::StringToInt(str, flags | NStr::fConvErr_NoThrow);
+            CHECK_ERRNO;
             int err = errno;
             NcbiCout << "int value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
@@ -338,7 +357,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // unsigned int
         try {
+            errno = kTestErrno;
             unsigned int value = NStr::StringToUInt(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "unsigned int value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -351,6 +372,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             }
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGoodUInt() ) {
                 ERR_POST("Cannot convert '" << str << "' to unsigned int");
             }
@@ -359,7 +381,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // unsigned int
         {
+            errno = kTestErrno;
             unsigned int value = NStr::StringToUInt(str, flags | NStr::fConvErr_NoThrow);
+            CHECK_ERRNO;
             int err = errno;
             NcbiCout << "unsigned int value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
@@ -383,7 +407,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // long
         try {
+            errno = kTestErrno;
             long value = NStr::StringToLong(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "long value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "', "
                      << "Int8ToString: '"
@@ -408,6 +434,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             #endif
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             #if (SIZEOF_LONG == SIZEOF_INT)
                 if ( test->IsGoodInt() ) {
                     ERR_POST("Cannot convert '" << str << "' to unsigned long");
@@ -423,7 +450,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // long
         {
+            errno = kTestErrno;
             long value = NStr::StringToLong(str, flags | NStr::fConvErr_NoThrow);
+            CHECK_ERRNO;
             int err = errno;
             NcbiCout << "long value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "', "
@@ -462,7 +491,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // unsigned long
         try {
+            errno = kTestErrno;
             unsigned long value = NStr::StringToULong(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "unsigned long value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "', "
                      << "UInt8ToString: '"
@@ -486,6 +517,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             #endif
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             #if (SIZEOF_LONG == SIZEOF_INT)
                 if ( test->IsGoodUInt() ) {
                     ERR_POST("Cannot convert '" << str <<
@@ -503,7 +535,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // unsigned long
         {
+            errno = kTestErrno;
             unsigned long value = NStr::StringToULong(str, flags | NStr::fConvErr_NoThrow);
+            CHECK_ERRNO;
             int err = errno;
             NcbiCout << "unsigned long value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "', "
@@ -542,7 +576,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // Int8
         try {
+            errno = kTestErrno;
             Int8 value = NStr::StringToInt8(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "Int8 value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -555,6 +591,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             }
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGoodInt8() ) {
                 ERR_POST("Cannot convert '" << str << "' to Int8");
             }
@@ -563,7 +600,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // Int8
         {
+            errno = kTestErrno;
             Int8 value = NStr::StringToInt8(str, flags | NStr::fConvErr_NoThrow);
+            BOOST_CHECK(errno != kTestErrno);
             int err = errno;
             NcbiCout << "Int8 value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
@@ -587,7 +626,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // Uint8
         try {
+            errno = kTestErrno;
             Uint8 value = NStr::StringToUInt8(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "Uint8 value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -600,6 +641,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             }
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGoodUInt8() ) {
                 ERR_POST("Cannot convert '" << str << "' to Uint8");
             }
@@ -608,7 +650,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // Uint8
         {
+            errno = kTestErrno;
             Uint8 value = NStr::StringToUInt8(str, flags | NStr::fConvErr_NoThrow);
+            CHECK_ERRNO;
             int err = errno;
             NcbiCout << "Uint8 value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
@@ -632,9 +676,13 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // double
         try {
+            errno = kTestErrno;
             double value = NStr::StringToDouble(str, flags);
+            CHECK_ERRNO;
+            errno = kTestErrno;
             double valueP = NStr::StringToDouble(str, flags | NStr::fDecimalPosix);
-//            BOOST_CHECK_EQUAL(value, valueP);
+            CHECK_ERRNO;
+            //BOOST_CHECK_EQUAL(value, valueP);
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
                      << NcbiEndl;
@@ -647,7 +695,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 NcbiCout << "valueP: " << valueP << NcbiEndl;
                 NcbiCout << setprecision(6);
                 NcbiCout << "diff=" << (valueP-value) << " delta=" << test->delta
-                    << NcbiEndl;
+                         << NcbiEndl;
             }
             BOOST_CHECK_EQUAL(value,  NStr::StringToNumeric<double>(str, flags));
             BOOST_CHECK_EQUAL(valueP, NStr::StringToNumeric<double>(str, flags | NStr::fDecimalPosix));
@@ -657,6 +705,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGoodDouble() ) {
                 ERR_POST("Cannot convert '" << str << "' to double");
             }
@@ -665,7 +714,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // double
         {
+            errno = kTestErrno;
             double value = NStr::StringToDouble(str, flags | NStr::fConvErr_NoThrow);
+            CHECK_ERRNO;
             int err = errno;
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
@@ -685,7 +736,9 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
 
         // double POSIX
         {
+            errno = kTestErrno;
             double value = NStr::StringToDouble(str, flags | NStr::fDecimalPosix | NStr::fConvErr_NoThrow);
+            CHECK_ERRNO;
             int err = errno;
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::NumericToString(value, str_flags) << "'"
@@ -699,7 +752,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                     NcbiCout << "  ref: " << test->d << NcbiEndl;
                     NcbiCout << setprecision(6);
                     NcbiCout << "diff=" << (value-test->d) << " delta=" << test->delta
-                        << NcbiEndl;
+                             << NcbiEndl;
                 }
                 BOOST_CHECK(!err);
                 BOOST_CHECK(test->IsGoodDouble());
@@ -806,9 +859,11 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
         double delta   = finite(result)? fabs(result)*2.22e-16: 0;
         const char* str = s_StrToDoublePosix[i].str;
         NcbiCout << "*** Checking string '" << str << "'*** " << NcbiEndl;
+        errno = kTestErrno;
         double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
         NcbiCout << setprecision(24) << result << " vs " << valuep
-            << setprecision(6) << NcbiEndl;
+                 << setprecision(6)  << NcbiEndl;
+        BOOST_CHECK(errno == 0);
         if ( delta == 0 )
             BOOST_CHECK(valuep == result);
         double min = result-delta, max = result+delta;
@@ -927,49 +982,49 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 }
 
 static const SStringNumericValues s_Str2NumNonPosixTests[] = {
-    {  ",",   DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
-    {  ",,",  DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
-    {  ".,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
-    {  ",.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
-    { ",0",   DF,                         -1, kBad, kBad, kBad, kBad,  .0 , 0. },
-    { ",0.",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
-    { ".0,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
-    { ",01",  DF,                         -1, kBad, kBad, kBad, kBad,  .01, 0. },
-    { "1,",   DF,                         -1, kBad, kBad, kBad, kBad,  1. , 0. },
-    { "1,1",  DF,                         -1, kBad, kBad, kBad, kBad,  1.1, 0. },
-    { "1,1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1, 0. },
-    { "1,1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1.1",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1, 0. },
-    { "1.1",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  1.1, 0. },
-    { "1,1.", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1,1,", DF,                         -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1.1,", NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1.1,", NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1.,",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1.,",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-
-    { "12,34",  DF,                            -1, kBad, kBad, kBad, kBad,  12.34, 0. },
-    { "12,34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34, 0. },
-    { "12.34",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  12.34, 0. },
-    { "12.34",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    {  ",",        DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    {  ",,",       DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    {  ".,",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    {  ",.",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { ",0",        DF,                         -1, kBad, kBad, kBad, kBad,  .0 , 0. },
+    { ",0.",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { ".0,",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { ",01",       DF,                         -1, kBad, kBad, kBad, kBad,  .01, 0. },
+    { "1,",        DF,                         -1, kBad, kBad, kBad, kBad,  1. , 0. },
+    { "1,1",       DF,                         -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1,1",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1,1",       NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.1",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1.1",       NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  1.1, 0. },
+    { "1,1.",      NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1,1,",      DF,                         -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.,",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.1,",      NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.1,",      NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.,",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1.,",       NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "12,34",     DF,                         -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    { "12,34",     NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    { "12.34",     NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  12.34, 0. },
+    { "12.34",     NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  12.34, 0. },
     { "12,34e-2",  DF,                         -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
     { "12,34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
     { "12.34e-2",  NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
     { "12.34e-2",  NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  .1234, 1e-17 },
-    { "1234,",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234., 0. },
-    { "1234.",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  1234., 0. },
-    { "1234",   NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  1234., 0. },
-    { "0,0",    NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0., 0. },
-    { "0,000",  NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  0., 0. },
-    { "0.000",  NStr::fDecimalPosix,           -1, kBad, kBad, kBad, kBad,  0., 0. },
-    { ",,1234", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "1234,,", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "12,,34", NStr::fDecimalPosixOrLocal,    -1, kBad, kBad, kBad, kBad,  kBad, 0. }
-
+    { "1234,",     NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1234., 0. },
+    { "1234.",     NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  1234., 0. },
+    { "1234",      NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  1234., 0. },
+    { "0,0",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  0., 0. },
+    { "0,000",     NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  0., 0. },
+    { "0.000",     NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  0., 0. },
+    { ",,1234",    NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "1234,,",    NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "12,,34",    NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
+    { "",          NStr::fConvErr_NoThrow |
+                   NStr::fIgnoreErrno,         -1, kBad, kBad, kBad, kBad, 0., 0. },
+    { "",          NStr::fIgnoreErrno,         -1, kBad, kBad, kBad, kBad, kBad, 0. },
 };
 
-#if 1
 BOOST_AUTO_TEST_CASE(s_StringToDouble)
 {
     char* prevlocal = strdup( setlocale(LC_NUMERIC,NULL));
@@ -977,7 +1032,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
         if (!setlocale(LC_NUMERIC,"de")) {
             if (!setlocale(LC_NUMERIC,"de_DE")) {
                 if (!setlocale(LC_NUMERIC,"fr")) {
-		    // cannot find suitable locale, skip the test
+		            // cannot find suitable locale, skip the test
                     free(prevlocal);
 		            return;
 		        }
@@ -991,12 +1046,14 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
     for (size_t i = 0;  i < count;  ++i) {
         const SStringNumericValues* test = &s_Str2NumNonPosixTests[i];
         const char*                 str  = test->str;
-        NStr::TStringToNumFlags    flags = test->flags;
+        NStr::TStringToNumFlags     flags = test->flags;
 
         NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
         // double
         try {
+            errno = kTestErrno;
             double value = NStr::StringToDouble(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::NumericToString(value) << "'"
                      << NcbiEndl;
@@ -1004,6 +1061,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
             BOOST_CHECK(value >= test->d-test->delta && value <= test->d+test->delta);
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGoodDouble() ) {
                 ERR_POST("Cannot convert '" << str << "' to double");
             }
@@ -1013,7 +1071,6 @@ BOOST_AUTO_TEST_CASE(s_StringToDouble)
     setlocale(LC_NUMERIC,prevlocal);
     free(prevlocal);
 }
-#endif
 
 
 //----------------------------------------------------------------------------
@@ -1101,10 +1158,14 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
         // Int
         try {
             if ( test->value <= (Uint8)kMax_Int ) {
+                errno = kTestErrno;
                 int val = NStr::StringToInt(test->str, 0, test->base);
+                BOOST_CHECK(errno != kTestErrno);
                 string str;
                 if ( test->base ) {
+                    errno = kTestErrno;
                     NStr::IntToString(str, val, 0, test->base);
+                    BOOST_CHECK(errno != kTestErrno);
                 }
                 NcbiCout << "Int value: " << val 
                          << ", toString: '" << str << "'" 
@@ -1118,6 +1179,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
             }
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
 
@@ -1125,11 +1187,14 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
         // UInt
         try {
             if ( test->value <= kMax_UInt ) {
-                unsigned int val = 
-                    NStr::StringToUInt(test->str, 0, test->base);
+                errno = kTestErrno;
+                unsigned int val = NStr::StringToUInt(test->str, 0, test->base);
+                BOOST_CHECK(errno != kTestErrno);
                 string str;
                 if ( test->base ) {
+                    errno = kTestErrno;
                     NStr::UIntToString(str, val, 0, test->base);
+                    BOOST_CHECK(errno != kTestErrno);
                 }
                 NcbiCout << "UInt value: " << val 
                          << ", toString: '" << str << "'" 
@@ -1143,16 +1208,21 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
             }
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
 
         // Int8
         try {
             if ( test->value <= (Uint8)kMax_I8 ) {
+                errno = kTestErrno;
                 Int8 val = NStr::StringToInt8(test->str, 0, test->base);
+                BOOST_CHECK(errno != kTestErrno);
                 string str;
                 if ( test->base ) {
+                    errno = kTestErrno;
                     NStr::Int8ToString(str, val, 0, test->base);
+                    BOOST_CHECK(errno != kTestErrno);
                 }
                 NcbiCout << "Int8 value: " << val 
                          << ", toString: '" << str << "'" 
@@ -1166,15 +1236,20 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
             }
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
 
         // Uint8
         try {
+            errno = kTestErrno;
             Uint8 val = NStr::StringToUInt8(test->str, 0, test->base);
+            BOOST_CHECK(errno != kTestErrno);
             string str;
             if ( test->base ) {
+                errno = kTestErrno;
                 NStr::UInt8ToString(str, val, 0, test->base);
+                BOOST_CHECK(errno != kTestErrno);
             }
             NcbiCout << "Uint8 value: " << (unsigned)val 
                      << ", toString: '" << str << "'" 
@@ -1187,6 +1262,7 @@ BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
             BOOST_CHECK(test->Same(str));
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             BOOST_CHECK_EQUAL(test->value, (Uint8)kBad);
         }
     } 
@@ -1479,12 +1555,15 @@ BOOST_AUTO_TEST_CASE(s_StringToNumDataSize)
         NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
 
         try {
+            errno = kTestErrno;
             Uint8 value = NStr::StringToUInt8_DataSize(str, flags);
+            CHECK_ERRNO;
             NcbiCout << "value: " << value << NcbiEndl;
             BOOST_CHECK(test->IsGood());
             BOOST_CHECK_EQUAL(value, test->expected);
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGood() ) {
                 ERR_POST("Cannot convert '" << str << "' to data size");
             } else {
@@ -1773,11 +1852,14 @@ BOOST_AUTO_TEST_CASE(s_NumToStringDataSize)
         unsigned int max_digits = test->max_digits;
 
         try {
+            errno = kTestErrno;
             string value = NStr::UInt8ToString_DataSize(num, flags, max_digits);
+            CHECK_ERRNO;
             BOOST_CHECK(test->IsGood());
             BOOST_CHECK_EQUAL(value, test->expected);
         }
         catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
             if ( test->IsGood() ) {
                 ERR_POST("Cannot convert " << num << " to data size string");
             }
@@ -2926,7 +3008,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
 
     int flags = NStr::fConvErr_NoThrow|NStr::fAllowLeadingSpaces;
     double v;
-    for ( int t = 0; t < TESTS; ++t ) {
+    for ( size_t t = 0; t < TESTS; ++t ) {
         if ( 1 ) {
             double r_min = ssr[t], r_max = r_min;
             if ( r_min < 0 ) {
@@ -2974,7 +3056,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
                 ERR_POST(Fatal<<v<<" != "<<ssr[t]<<" for \"" << ss[t] << "\"");
         }
     }
-    for ( int t = 0; t < TESTS; ++t ) {
+    for ( size_t t = 0; t < TESTS; ++t ) {
         string s1 = ss[t];
         CTempStringEx s = ss[t];
         const char* s2 = ss[t].c_str();

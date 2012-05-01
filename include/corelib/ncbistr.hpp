@@ -376,7 +376,7 @@ public:
     /// Convert string to double-precision value (analog of strtod function)
     ///
     /// @param str
-    ///   Null-terminated string to convert.
+    ///   String to be converted.
     /// @param endptr
     ///   Pointer to character that stops scan.
     /// @return
@@ -384,23 +384,15 @@ public:
     ///   This function always uses dot as decimal separator.
     ///   - on overflow, it returns HUGE_VAL and sets errno to ERANGE;
     ///   - on underflow, it returns 0 and sets errno to ERANGE;
-    ///   - if conversion was impossible, it returns 0 and sets errno to EINVAL.
+    ///   - if conversion was impossible, it returns 0 and sets errno.
     ///   Also, when input string equals (case-insensitive) to
     ///   - "NAN", the function returns NaN;
     ///   - "INF" or "INFINITY", the function returns HUGE_VAL;
     ///   - "-INF" or "-INFINITY", the function returns -HUGE_VAL;
-    ///   - In these cases errno is not changed.
-    ///   Otherwise, returns the converted value, leaving errno unchanged.
-    ///
-    ///     IMPORTANT NOTE:
-    ///
-    ///     This function does not set errno=0. Therefore, if errno is
-    ///     non-zero prior to calling this function, you cannot distinguish
-    ///     a failed conversion from a successful conversion of zero based
-    ///     on the return value and errno alone.
-    ///
-    ///     *** Therefore you MUST set errno=0 before calling this function.
-    ///
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, set errno to non-zero and return zero.
     static double StringToDoublePosix(const char* str, char** endptr=0);
 
 
@@ -412,6 +404,7 @@ public:
     ///   How to convert string to value.
     ///   Do not support fAllowCommas flag.
     /// @return
+    ///   - If invalid flags are passed, throw an exception.
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
     ///   - Otherwise, if fIgnoreErrno is set, set errno to zero and return
@@ -490,16 +483,6 @@ public:
     ///   - If conversion succeeds, return the converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    ///
-    ///     IMPORTANT NOTE:
-    ///
-    ///     This function does not set errno=0. Therefore, if errno is
-    ///     non-zero prior to calling this function, you cannot distinguish
-    ///     a failed conversion from a successful conversion of zero based
-    ///     on the return value and errno alone.
-    ///
-    ///     *** Therefore you MUST set errno=0 before calling this function.
-    ///
     static Uint8 StringToUInt8_DataSize(const CTempString& str,
                                         TStringToNumFlags  flags = 0);
 
@@ -557,16 +540,9 @@ public:
     ///   String to be converted.
     /// @return
     ///   Pointer value corresponding to its string representation.
-    ///
-    ///     IMPORTANT NOTE:
-    ///
-    ///     This function does not set errno=0. Therefore, if errno is
-    ///     non-zero prior to calling this function, you cannot distinguish
-    ///     a failed conversion from a successful conversion of zero based
-    ///     on the return value and errno alone.
-    ///
-    ///     *** Therefore you MUST set errno=0 before calling this function.
-    ///
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted value.
+    ///   - Otherwise, set errno to non-zero and return NULL.
     static const void* StringToPtr(const CTempStringEx& str);
 
     /// Convert character to integer.
@@ -590,7 +566,9 @@ public:
     ///   If necessary you should add it yourself.
     ///   If value is float or double type, the parameter is ignored.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     template<typename TNumeric>
     static string NumericToString(TNumeric value,
                                   TNumToStringFlags flags = 0, int base = 10);
@@ -608,6 +586,10 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     ///   If value is float or double type, the parameter is ignored.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     template<typename TNumeric>
     static void NumericToString(string& out_str, TNumeric value,
                                 TNumToStringFlags flags = 0, int base = 10);
@@ -623,7 +605,9 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string IntToString(int value, TNumToStringFlags flags = 0,
                               int base = 10);
 
@@ -661,6 +645,10 @@ public:
     ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void IntToString(string& out_str, int value, 
                             TNumToStringFlags flags = 0,
                             int               base  = 10);
@@ -702,7 +690,9 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string UIntToString(unsigned int      value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
@@ -745,6 +735,10 @@ public:
     ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void UIntToString(string& out_str, unsigned int value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
@@ -786,7 +780,9 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string LongToString(long value, TNumToStringFlags flags = 0,
                                int base = 10);
 
@@ -802,6 +798,10 @@ public:
     ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void LongToString(string& out_str, long value, 
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
@@ -817,7 +817,9 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string ULongToString(unsigned long     value,
                                 TNumToStringFlags flags = 0,
                                 int               base  = 10);
@@ -834,6 +836,10 @@ public:
     ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void ULongToString(string& out_str, unsigned long value,
                               TNumToStringFlags flags = 0,
                               int               base  = 10);
@@ -849,7 +855,9 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string Int8ToString(Int8 value,
                                TNumToStringFlags flags = 0,
                                int               base  = 10);
@@ -866,6 +874,10 @@ public:
     ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void Int8ToString(string& out_str, Int8 value,
                              TNumToStringFlags flags = 0,
                              int               base  = 10);
@@ -881,7 +893,9 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string UInt8ToString(Uint8 value,
                                 TNumToStringFlags flags = 0,
                                 int               base  = 10);
@@ -898,6 +912,10 @@ public:
     ///   Radix base. Default is 10. Allowed values are 2..36.
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void UInt8ToString(string& out_str, Uint8 value,
                               TNumToStringFlags flags = 0,
                               int               base  = 10);
@@ -928,7 +946,8 @@ public:
     /// @param max_digits
     ///   Maximum number of digits to use (cannot be less than 3)
     /// @return
-    ///   Converted string value.
+    ///   - If invalid flags are passed, throw an exception.
+    ///   - If conversion succeeds, return the converted value.
     static string UInt8ToString_DataSize(Uint8 value,
                                          TNumToStringFlags flags = 0,
                                          unsigned int max_digits = 3);
@@ -966,7 +985,9 @@ public:
     ///     - fDoubleFixed,   if 'precision' >= 0.
     ///     - fDoubleGeneral, if 'precision' < 0.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string DoubleToString(double value, int precision = -1,
                                  TNumToStringFlags flags = 0);
 
@@ -987,6 +1008,10 @@ public:
     ///   will be used by default:
     ///     - fDoubleFixed,   if 'precision' >= 0.
     ///     - fDoubleGeneral, if 'precision' < 0.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void DoubleToString(string& out_str, double value,
                                int precision = -1,
                                TNumToStringFlags flags = 0);
@@ -1007,8 +1032,10 @@ public:
     ///   How to convert value to string.
     ///   Default output format is fDoubleFixed.
     /// @return
-    ///   The number of bytes stored in "buf", not counting the
-    ///   terminating '\0'.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     number of bytes stored in "buf", not counting the
+    ///     terminating '\0'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static SIZE_TYPE DoubleToString(double value, unsigned int precision,
                                     char* buf, SIZE_TYPE buf_size,
                                     TNumToStringFlags flags = 0);
@@ -1084,7 +1111,9 @@ public:
     ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
     ///   If necessary you should add it yourself.
     /// @return
-    ///   Converted string value.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string SizetToString(size_t value,
                                 TNumToStringFlags flags = 0,
                                 int               base  = 10);
@@ -1092,9 +1121,13 @@ public:
     /// Convert pointer to string.
     ///
     /// @param out_str
-    ///   Output string variable
+    ///   Output string variable.
     /// @param str
     ///   Pointer to be converted.
+    /// @note
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value in 'out_str'.
+    ///   - Otherwise, set errno to non-zero, value of 'out_str' is undefined.
     static void PtrToString(string& out_str, const void* ptr);
 
     /// Convert pointer to string.
@@ -1102,7 +1135,9 @@ public:
     /// @param str
     ///   Pointer to be converted.
     /// @return
-    ///   String value representing the pointer.
+    ///   - If conversion succeeds, set errno to zero and return the
+    ///     converted string value representing the pointer.
+    ///   - Otherwise, set errno to non-zero and return empty string.
     static string PtrToString(const void* ptr);
 
     /// Convert bool to string.
@@ -1111,6 +1146,8 @@ public:
     ///   Boolean value to be converted.
     /// @return
     ///   One of: 'true, 'false'
+    /// @note
+    ///   Don't change errno.
     static const string BoolToString(bool value);
 
     /// Convert string to bool.
@@ -1120,8 +1157,9 @@ public:
     ///   case-insensitive version as one of:  'true, 't', 'yes', 'y'
     ///   for TRUE; and  'false', 'f', 'no', 'n' for FALSE.
     /// @return
-    ///   If conversion succeeds, return TRUE or FALSE.
-    ///   Otherwise, throw an exception.
+    ///   - If conversion succeeds, set errno to zero and return
+    ///     TRUE or FALSE.
+    ///   - Otherwise, set errno to non-zero and throw an exception.
     static bool StringToBool(const CTempString& str);
 
 
