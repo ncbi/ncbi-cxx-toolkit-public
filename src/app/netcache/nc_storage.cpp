@@ -439,8 +439,10 @@ CNCBlobStorage::x_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_re
         next_rec = file_info->index_head;
     else
         next_rec = x_GetIndexRec(file_info, ind_rec->next_num);
-    prev_rec->next_num = ind_rec->next_num;
-    next_rec->prev_num = ind_rec->prev_num;
+    // These should be in the exactly this order to prevent unrecoverable
+    // corruption.
+    *(volatile Uint4*)&prev_rec->next_num = ind_rec->next_num;
+    *(volatile Uint4*)&next_rec->prev_num = ind_rec->prev_num;
     ind_rec->next_num = ind_rec->prev_num = Uint4(file_info->index_head - ind_rec);
 }
 
@@ -2160,6 +2162,8 @@ CNCBlobStorage::x_PreCacheFileRecNums(SNCDBFileInfo* file_info,
                      << "). This record will be ignored.");
             goto ignore_rec_and_continue;
         }
+        if (next_ind->prev_num != prev_rec_num)
+            next_ind->prev_num = prev_rec_num;
         switch (next_ind->rec_type) {
         case eFileRecChunkData:
             if (file_info->file_type != eDBFileData) {
