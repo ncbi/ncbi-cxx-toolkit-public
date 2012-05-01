@@ -1305,15 +1305,6 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
             }
             // trim
             TrimSpacesAndJunkFromEnds( id, true );
-            // remove initial/final parens
-            if( ! id.empty() ) {
-                if( id[0] == '(' ) {
-                    id = id.substr(1);
-                }
-                if( id[id.length()-1] == ')') {
-                    id.resize( id.length() - 1 );
-                }
-            }
         }
         if (NStr::IsBlank(id)) {
             continue;
