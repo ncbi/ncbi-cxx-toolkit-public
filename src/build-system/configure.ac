@@ -5776,7 +5776,7 @@ if test "$with_zorba" != no; then
          NCBI_FIX_DIR(ZORBA_LIBPATH)
       fi
    fi
-   #ZORBA_CONFIG="$ZORBA_PATH/bin/zorba-config"
+   ZORBA_CONFIG="$ZORBA_PATH/bin/zorba-config"
    if test -x "$ZORBA_CONFIG"; then
       ZORBA_PATH=`$ZORBA_CONFIG --prefix`
       : ${ZORBA_INCLUDE=`$ZORBA_CONFIG --cppflags`}
