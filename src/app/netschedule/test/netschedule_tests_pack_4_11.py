@@ -436,3 +436,81 @@ class Scenario308( TestBase ):
             raise Exception( "Expected notification, received garbage: " + data )
 
         return True
+
+
+class Scenario309( TestBase ):
+    " Scenario 309 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Notifications and exclusive affinities"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+
+        # First client holds a0 affinity
+        ns_client1 = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario309' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+        changeAffinity( ns_client1, [ 'a0' ], [] )
+
+        output = execAny( ns_client1,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected received job ID" )
+
+
+        # Second client holds a100 affinity
+        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario309' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        changeAffinity( ns_client2, [ 'a100' ], [] )
+
+        # Socket to receive notifications
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        # Second client tries to get the pending job - should get nothing
+        output = execAny( ns_client2,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=3' )
+        if output != "":
+            raise Exception( "Expect no jobs, received: " + output )
+
+        time.sleep( 4 )
+        try:
+            # Exception is expected
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            raise Exception( "Expected no notifications, received one: " + data )
+        except Exception, exc:
+            if "Resource temporarily unavailable" not in str( exc ):
+                raise
+
+        # Second client tries to get another pending job
+        output = execAny( ns_client2,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=3' )
+
+        # Should get notifications after this clear because
+        # the a0 affinity becomes available
+        execAny( ns_client1, "CLRN" )
+
+        time.sleep( 4 )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+
+        if "queue=TEST" not in data:
+            raise Exception( "Expected notification, received garbage: " + data )
+
+        return True
