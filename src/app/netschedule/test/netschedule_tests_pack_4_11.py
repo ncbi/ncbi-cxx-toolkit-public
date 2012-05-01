@@ -9,6 +9,7 @@ Netschedule server tests pack for the features appeared in NS-4.11.0
 """
 
 import time
+import socket
 from netschedule_tests_pack import TestBase
 from netschedule_tests_pack_4_10 import getClientInfo, NON_EXISTED_JOB, \
                                         getAffinityInfo, getNotificationInfo, \
@@ -388,59 +389,50 @@ class Scenario308( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario307' )
-        ns_client.set_client_identification( 'node', 'session' )
-        changeAffinity( ns_client, [ 'a0' ], [] )
+        # First client holds a0 affinity
+        ns_client1 = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario308' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+        changeAffinity( ns_client1, [ 'a0' ], [] )
 
-        # The first client waits for a job
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
-                                         [ 'a0' ], False, False,
-                                         'node', 'session' )
-
-
-
-
-
-
-        output = execAny( ns_client,
-                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
-        values = parse_qs( output, True, True )
-        receivedJobID = values[ 'job_key' ][ 0 ]
-        passport = values[ 'auth_token' ][ 0 ]
-
-        if jobID != receivedJobID:
-            raise Exception( "Received job ID does not match. Expected: " + \
-                             jobID + " Received: " + receivedJobID )
-
-        execAny( ns_client, 'RETURN2 ' + jobID + ' ' + passport )
-        # Here: pending job and it is in the client black list
-
+        # Second client holds a100 affinity
         ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                               str( self.ns.getPort() ),
-                                              'TEST', 'scenario307' )
+                                              'TEST', 'scenario308' )
         ns_client2.set_client_identification( 'node2', 'session2' )
+        changeAffinity( ns_client2, [ 'a100' ], [] )
+
+        # Socket to receive notifications
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        # Second client tries to get the pending job - should get nothing
         output = execAny( ns_client2,
-                          'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=0' )
-        values = parse_qs( output, True, True )
-        receivedJobID = values[ 'job_key' ][ 0 ]
-        passport = values[ 'auth_token' ][ 0 ]
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=3' )
+        if output != "":
+            raise Exception( "Expect no jobs, received: " + output )
 
-        # The first client waits for a job
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
-                                         [ 'a0' ], False, False,
-                                         'node', 'session' )
+        time.sleep( 4 )
+        try:
+            # Exception is expected
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            raise Exception( "Expected no notifications, received one: " + data )
+        except Exception, exc:
+            if "Resource temporarily unavailable" not in str( exc ):
+                raise
 
-        # Return the job
-        execAny( ns_client2, 'RETURN2 ' + jobID + ' ' + passport )
+        # Second client tries to get another pending job
+        output = execAny( ns_client2,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=3' )
 
-        process.wait()
-        if process.returncode != 0:
-            raise Exception( "Error spawning GET2" )
-        processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        # Should get notifications after this submit
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )
 
-        if "NCBI_JSQ_TEST" in processStdout:
-            raise Exception( "Expect no notifications but received one" )
+        time.sleep( 4 )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+
+        if "queue=TEST" not in data:
+            raise Exception( "Expected notification, received garbage: " + data )
+
         return True
