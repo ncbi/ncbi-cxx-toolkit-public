@@ -395,7 +395,6 @@ int NStr::StringToNonNegativeInt(const string& str)
 
 
 #define S2N_CONVERT_ERROR(to_type, msg, errcode, force_errno, delta)        \
-cout<<errno<<endl;cout.flush();\
         if (flags & NStr::fConvErr_NoThrow)  {                              \
             if (flags & NStr::fIgnoreErrno) {                               \
                 errno = 0;                                                  \
