@@ -318,7 +318,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP DISTCC CCACHE TAIL TOUCH EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS CURL_INCLUDE CURL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS _ACJNI_JAVAC X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS wxconf EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS XSLTPROC SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config MAGIC_INCLUDE MAGIC_LIBS MIMETIC_INCLUDE MIMETIC_LIBS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath c_ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS OBJCXX_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS OBJCXX_LIBS GCCPCH RUNPATH_ORIGIN NO_STRICT_ALIASING D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal sra check CHECK_ARG CHECK_TOOLS CHECK_TIMEOUT_MULT CHECK_OS_NAME FEATURES script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_DRIVER DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS UUID_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB OPENSSL_STATIC_LIBS TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS GLEW_INCLUDE GLEW_LIBS GLEW_STATIC_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sssutils SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 UNLESS_PUBSEQOS JDK_PATH JDK_INCLUDE ncbi_java NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECTS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX DLL DLL_LIB_SETTING IF_WITH_DLL UNLESS_WITH_DLL STATIC USUAL_AND_DLL USUAL_AND_LIB LN_S RANLIB ac_ct_RANLIB AR STRIP DISTCC CCACHE TAIL TOUCH EGREP VALGRIND_PATH CXXCPP TCHECK_CL AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS LZO_INCLUDE LZO_LIBS PCRE_INCLUDE PCRE_LIBS LIBGNUTLS_CONFIG GNUTLS_INCLUDE GNUTLS_LIBS OPENSSL_INCLUDE OPENSSL_LIBS CURL_INCLUDE CURL_LIBS FTDS64_INCLUDE FTDS64_LIBS FTDS64_LIB FTDS64_CTLIB_INCLUDE FTDS64_CTLIB_LIBS FTDS64_CTLIB_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds64 mysql_config PYTHON PYTHON_INCLUDE PYTHON_LIBS PYTHON23 PYTHON23_INCLUDE PYTHON23_LIBS PYTHON24 PYTHON24_INCLUDE PYTHON24_LIBS PYTHON25 PYTHON25_INCLUDE PYTHON25_LIBS _ACJNI_JAVAC X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS wxconf EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS LIBXSLT_INCLUDE LIBXSLT_LIBS XSLTPROC SQLITE3_INCLUDE SQLITE3_LIBS OECHEM_INCLUDE OECHEM_LIBS SGE_INCLUDE SGE_LIBS MUPARSER_INCLUDE MUPARSER_LIBS HDF5_INCLUDE HDF5_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS freetype_config MAGIC_INCLUDE MAGIC_LIBS MIMETIC_INCLUDE MIMETIC_LIBS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath c_ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS OBJCXX_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS APP_LDFLAGS DLL_LDFLAGS C_LIBS OBJCXX_LIBS GCCPCH RUNPATH_ORIGIN NO_STRICT_ALIASING D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB APP_LIB_SETTING APP_LIBS_SETTING LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL ALLOW_UNDEF FORBID_UNDEF OPT_GROUPS local_lbsm ncbi_crypt CONNEXT XCONNEXT serial bdb dbapi objects gui algo app internal sra check CHECK_ARG CHECK_TOOLS CHECK_TIMEOUT_MULT CHECK_OS_NAME FEATURES script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB DBAPI_DRIVER DBAPI_CTLIB DBAPI_DBLIB DBAPI_MYSQL DBAPI_ODBC THREAD_LIBS NCBIATOMIC_LIB NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS UUID_LIBS DEMANGLE_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB OPENSSL_STATIC_LIBS TLS_INCLUDE TLS_LIBS SYBASE_PATH SYBASE_LCL_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_REGEX_LIBS BOOST_REGEX_STATIC_LIBS BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS BOOST_THREAD_LIBS BOOST_THREAD_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OPENGL_STATIC_LIBS OSMESA_INCLUDE OSMESA_LIBS OSMESA_STATIC_LIBS GLUT_INCLUDE GLUT_LIBS GLEW_INCLUDE GLEW_LIBS GLEW_STATIC_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIDGETS_INCLUDE WXWIDGETS_LIBS WXWIDGETS_STATIC_LIBS WXWIDGETS_GL_LIBS WXWIDGETS_GL_STATIC_LIBS WXWIDGETS_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sssutils SP_INCLUDE SP_LIBS ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS LIBXSLT_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS ZORBA_INCLUDE ZORBA_LIBS ZORBA_STATIC_LIBS SQLITE3_STATIC_LIBS FREETYPE_INCLUDE FREETYPE_LIBS ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 UNLESS_PUBSEQOS JDK_PATH JDK_INCLUDE ncbi_java NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY IF_DEACTIVATING configurables_mfname CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -997,6 +997,8 @@ Optional Packages:
  --without-xerces,       do not use Xerces-C++
  --with-xalan=DIR        use Xalan-C++ installation in DIR
  --without-xalan,        do not use Xalan-C++
+ --with-zorba=DIR        use Zorba installation in DIR
+ --without-zorba,        do not use Zorba
  --with-oechem=DIR       use OpenEye OEChem installation in DIR
  --without-oechem        do not use OEChem
  --with-sge=DIR          use Sun Grid Engine installation in DIR
@@ -1370,6 +1372,12 @@ case "$with_3psw" in
          else
             with_mimetic=no
          fi
+        if test "${with_sge-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sge but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sge=no
+         fi
         if test "${with_icu-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-icu but --without-3psw" >&2
    { (exit 1); exit 1; }; }
@@ -1412,17 +1420,17 @@ case "$with_3psw" in
          else
             with_xalan=no
          fi
+        if test "${with_zorba-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-zorba but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_zorba=no
+         fi
         if test "${with_oechem-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-oechem but --without-3psw" >&2
    { (exit 1); exit 1; }; }
          else
             with_oechem=no
-         fi
-        if test "${with_sge-no}" != "no"; then
-            { echo "$as_me: error: incompatible options: --with-sge but --without-3psw" >&2
-   { (exit 1); exit 1; }; }
-         else
-            with_sge=no
          fi
         if test "${with_muparser-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-muparser but --without-3psw" >&2
@@ -2599,6 +2607,18 @@ if test "${with_xalan2+set}" = set; then
 
 fi;
 
+# Check whether --with-zorba or --without-zorba was given.
+if test "${with_zorba+set}" = set; then
+  withval="$with_zorba"
+
+fi;
+
+# Check whether --with-zorba2 or --without-zorba2 was given.
+if test "${with_zorba2+set}" = set; then
+  withval="$with_zorba2"
+
+fi;
+
 # Check whether --with-oechem or --without-oechem was given.
 if test "${with_oechem+set}" = set; then
   withval="$with_oechem"
@@ -2857,7 +2877,7 @@ geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
-sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
+sp expat sablot libxml libxslt xerces xalan zorba oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl mimetic 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -2903,7 +2923,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
-      | --with-icu=* | --with-xerces=* | --with-xalan=* \
+      | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
       | --with-libxml=* | --with-libxslt=* \
       | --with-bdb=* | --with-odbc | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
@@ -30102,6 +30122,218 @@ fi
 
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
+: ${ZORBA_PATH=$NCBI/zorba}
+if test "$with_zorba" != no; then
+   if test "${with_zorba-yes}" != yes; then
+      ZORBA_PATH=$with_zorba
+   fi
+   if test -d "$ZORBA_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $ZORBA_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $ZORBA_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            ZORBA_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$ZORBA_PATH" in
+               /*) ;;
+               * ) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+   vpath="$ZORBA_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+   if test -d "$vpath/lib"; then
+      ZORBA_PATH=$vpath
+      ncbi_fix_dir_tmp=`if cd $ZORBA_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $ZORBA_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            ZORBA_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$ZORBA_PATH" in
+               /*) ;;
+               * ) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   elif test -d "$vpath"; then
+      : ${ZORBA_LIBPATH=$vpath}
+      ncbi_fix_dir_tmp=`if cd $ZORBA_LIBPATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $ZORBA_LIBPATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            ZORBA_LIBPATH=$ncbi_fix_dir_tmp2
+         else
+            case "$ZORBA_LIBPATH" in
+               /*) ;;
+               * ) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+ esac
+   else
+      vpath="$ZORBA_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      if test -d "$vpath/lib"; then
+         ZORBA_PATH=$vpath
+         ncbi_fix_dir_tmp=`if cd $ZORBA_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $ZORBA_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            ZORBA_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$ZORBA_PATH" in
+               /*) ;;
+               * ) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+      elif test -d "$vpath"; then
+         ZORBA_LIBPATH=$vpath
+         ncbi_fix_dir_tmp=`if cd $ZORBA_LIBPATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $ZORBA_LIBPATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            ZORBA_LIBPATH=$ncbi_fix_dir_tmp2
+         else
+            case "$ZORBA_LIBPATH" in
+               /*) ;;
+               * ) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
+ esac
+      fi
+   fi
+   #ZORBA_CONFIG="$ZORBA_PATH/bin/zorba-config"
+   if test -x "$ZORBA_CONFIG"; then
+      ZORBA_PATH=`$ZORBA_CONFIG --prefix`
+      : ${ZORBA_INCLUDE=`$ZORBA_CONFIG --cppflags`}
+   fi
+   if test -d $ZORBA_PATH; then
+      in_path=" in $ZORBA_PATH"
+      : ${ZORBA_INCLUDE=-I$ZORBA_PATH/include}
+      : ${ZORBA_LIBPATH=$ZORBA_PATH/lib}
+   else
+      in_path=''
+   fi
+   if test -x "$ZORBA_CONFIG"; then
+      ZORBA_LIBS=`$ZORBA_CONFIG --libs`
+   else
+      ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $ZORBA_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ZORBA_LIBPATH_="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $ZORBA_LIBPATH; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ZORBA_LIBPATH_="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+      ZORBA_LIBS="$ZORBA_LIBPATH_ -lzorba_simplestore"
+   fi
+   echo "$as_me:$LINENO: checking for Zorba$in_path" >&5
+echo $ECHO_N "checking for Zorba$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_zorba+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$ZORBA_INCLUDE $orig_CPPFLAGS"
+       LIBS="$ZORBA_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <zorba/zorba.h>
+int
+main ()
+{
+zorba::Version v = zorba::Zorba::version();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_zorba=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_zorba=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_zorba" >&5
+echo "${ECHO_T}$ncbi_cv_lib_zorba" >&6
+   if test $ncbi_cv_lib_zorba = yes; then
+      if test -x "$ZORBA_CONFIG"; then
+         ZORBA_STATIC_LIBS=`$ZORBA_CONFIG --static-libs`
+      elif test -f "$ZORBA_LIBPATH/libzorba_simplestore-static.a"; then
+         ZORBA_STATIC_LIBS="-L$ZORBA_LIBPATH -lzorba_simplestore-static $XERCES_STATIC_LIBS $ICU_STATIC_LIBS $LIBXSLT_STATIC_LIBS $LIBXML_STATIC_LIBS"
+      else
+         ZORBA_STATIC_LIBS=$ZORBA_LIBS
+      fi
+   else
+      if test "${with_zorba:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-zorba explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-zorba explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+   fi
+fi
+if test "$with_zorba" != no; then
+             WithPackages="$WithPackages${WithPackagesSep}Zorba"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ZORBA 1
+_ACEOF
+
+else
+   ZORBA_INCLUDE=
+   ZORBA_LIBS=
+   ZORBA_STATIC_LIBS=
+fi
+
 ### SQLite
 case "$with_sqlite3" in
    yes | '' ) : ${SQLITE3_PATH=$NCBI/sqlite3} ;;
@@ -33085,7 +33317,7 @@ for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT LFS DLL D
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW FLTK wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType MAGIC MIMETIC; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GNUTLS OPENSSL CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 Boost.Regex Boost.Spirit Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW FLTK wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType MAGIC MIMETIC; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -33193,6 +33425,9 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
+
 
 
 
@@ -34439,6 +34674,9 @@ s,@XERCES_STATIC_LIBS@,$XERCES_STATIC_LIBS,;t t
 s,@XALAN_INCLUDE@,$XALAN_INCLUDE,;t t
 s,@XALAN_LIBS@,$XALAN_LIBS,;t t
 s,@XALAN_STATIC_LIBS@,$XALAN_STATIC_LIBS,;t t
+s,@ZORBA_INCLUDE@,$ZORBA_INCLUDE,;t t
+s,@ZORBA_LIBS@,$ZORBA_LIBS,;t t
+s,@ZORBA_STATIC_LIBS@,$ZORBA_STATIC_LIBS,;t t
 s,@SQLITE3_STATIC_LIBS@,$SQLITE3_STATIC_LIBS,;t t
 s,@FREETYPE_INCLUDE@,$FREETYPE_INCLUDE,;t t
 s,@FREETYPE_LIBS@,$FREETYPE_LIBS,;t t

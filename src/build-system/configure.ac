@@ -67,8 +67,8 @@ case "$with_3psw" in
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre, gnutls, openssl,
                      sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
-                     python, jni, boost, sqlite3, mimetic, icu, expat,
-                     sablot, libxml, libxslt, xerces, xalan, oechem, sge,
+                     python, jni, boost, sqlite3, mimetic, sge, icu, expat,
+                     sablot, libxml, libxslt, xerces, xalan, zorba, oechem,
                      muparser, hdf5, gif, jpeg, png, tiff, xpm, magic, curl],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
@@ -369,6 +369,10 @@ AC_ARG_WITH(xalan,
    [ --with-xalan=DIR        use Xalan-C++ installation in DIR])
 AC_ARG_WITH(xalan2,
    [ --without-xalan,        do not use Xalan-C++])
+AC_ARG_WITH(zorba,
+   [ --with-zorba=DIR        use Zorba installation in DIR])
+AC_ARG_WITH(zorba2,
+   [ --without-zorba,        do not use Zorba])
 AC_ARG_WITH(oechem,
    [ --with-oechem=DIR       use OpenEye OEChem installation in DIR])
 AC_ARG_WITH(oechem2,
@@ -468,7 +472,7 @@ geo included-geo \
 z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
-sp expat sablot libxml libxslt xerces xalan oechem sge muparser hdf5 \
+sp expat sablot libxml libxslt xerces xalan zorba oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl mimetic 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -514,7 +518,7 @@ for x_arg in "$@" ; do
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
-      | --with-icu=* | --with-xerces=* | --with-xalan=* \
+      | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
       | --with-libxml=* | --with-libxslt=* \
       | --with-bdb=* | --with-odbc | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
@@ -5747,6 +5751,77 @@ fi
 
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
+: ${ZORBA_PATH=$NCBI/zorba}
+if test "$with_zorba" != no; then
+   if test "${with_zorba-yes}" != yes; then
+      ZORBA_PATH=$with_zorba
+   fi
+   if test -d "$ZORBA_PATH"; then
+      NCBI_FIX_DIR(ZORBA_PATH)
+   fi
+   vpath="$ZORBA_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+   if test -d "$vpath/lib"; then
+      ZORBA_PATH=$vpath
+      NCBI_FIX_DIR(ZORBA_PATH)
+   elif test -d "$vpath"; then
+      : ${ZORBA_LIBPATH=$vpath}
+      NCBI_FIX_DIR(ZORBA_LIBPATH)
+   else
+      vpath="$ZORBA_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      if test -d "$vpath/lib"; then
+         ZORBA_PATH=$vpath
+         NCBI_FIX_DIR(ZORBA_PATH)
+      elif test -d "$vpath"; then
+         ZORBA_LIBPATH=$vpath
+         NCBI_FIX_DIR(ZORBA_LIBPATH)
+      fi
+   fi
+   #ZORBA_CONFIG="$ZORBA_PATH/bin/zorba-config"
+   if test -x "$ZORBA_CONFIG"; then
+      ZORBA_PATH=`$ZORBA_CONFIG --prefix`
+      : ${ZORBA_INCLUDE=`$ZORBA_CONFIG --cppflags`}
+   fi
+   if test -d $ZORBA_PATH; then
+      in_path=" in $ZORBA_PATH"
+      : ${ZORBA_INCLUDE=-I$ZORBA_PATH/include}
+      : ${ZORBA_LIBPATH=$ZORBA_PATH/lib}
+   else
+      in_path=''
+   fi
+   if test -x "$ZORBA_CONFIG"; then
+      ZORBA_LIBS=`$ZORBA_CONFIG --libs`
+   else
+      NCBI_RPATHIFY(ZORBA_LIBPATH_, $ZORBA_LIBPATH)
+      ZORBA_LIBS="$ZORBA_LIBPATH_ -lzorba_simplestore"
+   fi
+   AC_CACHE_CHECK([for Zorba$in_path], ncbi_cv_lib_zorba,
+      [CPPFLAGS="$ZORBA_INCLUDE $orig_CPPFLAGS"
+       LIBS="$ZORBA_LIBS $orig_LIBS"
+       AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <zorba/zorba.h>]],
+             [[zorba::Version v = zorba::Zorba::version();]])],
+          ncbi_cv_lib_zorba=yes, ncbi_cv_lib_zorba=no)])
+   if test $ncbi_cv_lib_zorba = yes; then
+      if test -x "$ZORBA_CONFIG"; then
+         ZORBA_STATIC_LIBS=`$ZORBA_CONFIG --static-libs`
+      elif test -f "$ZORBA_LIBPATH/libzorba_simplestore-static.a"; then
+         ZORBA_STATIC_LIBS="-L$ZORBA_LIBPATH -lzorba_simplestore-static $XERCES_STATIC_LIBS $ICU_STATIC_LIBS $LIBXSLT_STATIC_LIBS $LIBXML_STATIC_LIBS"
+      else
+         ZORBA_STATIC_LIBS=$ZORBA_LIBS
+      fi
+   else
+      NCBI_MISSING_PACKAGE(zorba)
+   fi
+fi
+if test "$with_zorba" != no; then
+   NCBI_PACKAGE(Zorba)
+   AC_DEFINE(HAVE_ZORBA, 1, [Define to 1 if Zorba is available.])
+else
+   ZORBA_INCLUDE=
+   ZORBA_LIBS=
+   ZORBA_STATIC_LIBS=
+fi
+
 ### SQLite
 case "$with_sqlite3" in
    yes | '' ) : ${SQLITE3_PATH=$NCBI/sqlite3} ;;
@@ -6673,6 +6748,9 @@ AC_SUBST(XERCES_STATIC_LIBS)
 AC_SUBST(XALAN_INCLUDE)
 AC_SUBST(XALAN_LIBS)
 AC_SUBST(XALAN_STATIC_LIBS)
+AC_SUBST(ZORBA_INCLUDE)
+AC_SUBST(ZORBA_LIBS)
+AC_SUBST(ZORBA_STATIC_LIBS)
 AC_SUBST(SQLITE3_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)

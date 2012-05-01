@@ -204,3 +204,7 @@ case "$ncbi_platform" in
     FreeBSD32 | *MAC | SunOSx86 ) ;;
     * ) : ${XERCES_PATH=$NCBI/xerces-2.6.0} ;;
 esac
+
+case "$ncbi_platform" in
+    Linux64    ) : ${ZORBA_PATH=$NCBI/zorba-2.2.0} ;;
+esac

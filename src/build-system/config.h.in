@@ -613,6 +613,9 @@
 /* Define to 1 if Xerces-C++ is available. */
 #undef HAVE_XERCES
 
+/* Define to 1 if Zorba is available. */
+#undef HAVE_ZORBA
+
 /* Full GNU-style system type */
 #undef HOST
 
