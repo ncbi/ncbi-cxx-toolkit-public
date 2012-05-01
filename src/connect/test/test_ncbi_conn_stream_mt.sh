@@ -27,7 +27,11 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   fi
   ;;
   1)
-  url='file:///etc/hosts'
+  if [ _"$COMSPEC" != _"" ]; then
+    url='file:////?/c:/windows/system32/drivers/etc/hosts'
+  else
+    url='file:///etc/hosts'
+  fi
   ;;
   2)
   url='ftp://ftp.ncbi.nlm.nih.gov/README.ftp'
