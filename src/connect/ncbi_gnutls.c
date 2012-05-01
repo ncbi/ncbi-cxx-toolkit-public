@@ -432,6 +432,9 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 #ifdef NCBI_POSIX_THREADS
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
         return eIO_NotSupported;
+#else
+    CORE_LOG(eLOG_Error, "GCRYPT may be inited improperly:"
+             " Unknown/unsupported threading model");
 #endif /*NCBI_POSIX_THREADS*/
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
