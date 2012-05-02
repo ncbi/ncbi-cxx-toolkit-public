@@ -37,31 +37,41 @@
 #include <connect/ncbi_gnutls.h>
 #include <stdlib.h>
 
+#if   defined(ENOTSUP)
+#  define NCBI_NOTSUPPORTED  ENOTSUP
+#elif defined(ENOSYS)
+#  define NCBI_NOTSUPPORTED  ENOSYS
+#else
+#  define NCBI_NOTSUPPORTED  EINVAL
+#endif /*not implemented*/
 
 #ifdef HAVE_LIBGNUTLS
 
-#  include <gcrypt.h>
 #  include <gnutls/gnutls.h>
 
-#  ifdef NCBI_POSIX_THREADS
+#  ifdef HAVE_LIBGCRYPT
 
-#    include <pthread.h>
-#    ifdef __cplusplus
+#    include <gcrypt.h>
+
+#    if   defined(NCBI_POSIX_THREADS)
+
+#      include <pthread.h>
+#      ifdef __cplusplus
 extern "C" {
-#    endif /*__cplusplus*/
+#      endif /*__cplusplus*/
     GCRY_THREAD_OPTION_PTHREAD_IMPL;
-#    ifdef __cplusplus
+#      ifdef __cplusplus
 } /* extern "C" */
-#    endif /*__cplusplus*/
+#      endif /*__cplusplus*/
 
-#  else
+#    elif defined(NCBI_THREADS)
 
-#    ifdef __cplusplus
+#      ifdef __cplusplus
 extern "C" {
-#    endif /*__cplusplus*/
+#      endif /*__cplusplus*/
 static int gcry_user_mutex_init(void **priv)
 {
-    return (*priv = CORE_GetLOCK()) != 0 ? 0 : ENOTSUP;
+    return (*priv = CORE_GetLOCK()) != 0 ? 0 : NCBI_NOTSUPPORTED;
 }
 static int gcry_user_mutex_destroy(void **lock)
 {
@@ -70,22 +80,25 @@ static int gcry_user_mutex_destroy(void **lock)
 }
 static int gcry_user_mutex_lock(void **lock)
 {
-    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock) ? 0 : ENOTSUP;
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock) ? 0 : NCBI_NOTSUPPORTED;
 }
 static int gcry_user_mutex_unlock(void **lock)
 {
-    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock) ? 0 : ENOTSUP;
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock) ? 0 : NCBI_NOTSUPPORTED;
 }
 static struct gcry_thread_cbs gcry_threads_user = {
-    GCRY_THREAD_OPTION_USER, NULL,
+    GCRY_THREAD_OPTION_USER, NULL/*gcry_user_init*/,
     gcry_user_mutex_init, gcry_user_mutex_destroy,
-    gcry_user_mutex_lock, gcry_user_mutex_unlock
+    gcry_user_mutex_lock, gcry_user_mutex_unlock,
+    NULL/*all other fields NULL-inited*/
 };
-#    ifdef __cplusplus
+#      ifdef __cplusplus
 } /* extern "C" */
-#    endif /*__cplusplus*/
+#      endif /*__cplusplus*/
 
-#  endif /*NCBI_POSIX_THREADS*/
+#    endif /*NCBI_POSIX_THREADS*/
+
+#  endif /*HAVE_LIBGCRYPT*/
 
 #  ifndef LIBGNUTLS_VERSION_NUMBER
 /* backport support for older gnutls */
@@ -128,8 +141,8 @@ static const int kGnuTlsChiperPrio[] = {
     0
 };
 static const int kGnuTlsProtoPrio[] = {
-  /* These are enum values rather than macros, so direct
-     conditionalization isn't possible. */
+    /* These are all enum values rather than macros,
+     * so direct conditionalization isn't possible. */
 #    ifdef LIBGNUTLS_VERSION_NUMBER
     GNUTLS_TLS1_1,
 #    endif /*LIBGNUTLS_VERSION_NUMBER*/
@@ -206,13 +219,7 @@ static int x_GnuTlsStatusToError(EIO_Status status, int/*bool*/ timeout)
     case eIO_Unknown:
         return 0/*keep*/;
     case eIO_NotSupported:
-#  if   defined(ENOSYS)
-        return ENOSYS;
-#  elif defined(ENOTSUP)
-        return ENOTSUP;
-#  else
-        /*FALLTHRU*/
-#  endif /*not implemented*/
+        return NCBI_NOTSUPPORTED;
     default:
         break;
     }
@@ -460,13 +467,17 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
         }
     }
 
-#ifdef NCBI_POSIX_THREADS
+#ifdef HAVE_LIBGCRYPT
+#  if   defined(NCBI_POSIX_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
         return eIO_NotSupported;
-#else
+#  elif defined(NCBI_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) != 0)
         return eIO_NotSupported;
-#endif /*NCBI_POSIX_THREADS*/
+#  elif defined(_MT)
+    CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
+#  endif /*NCBI_POSIX_THREADS*/
+#endif /*HAVE_LIBGCRYPT*/
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
         ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
