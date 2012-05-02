@@ -181,14 +181,14 @@ CNCBlobStorage::x_ReadVariableParams(void)
                  << ". Assuming it's 65.");
         warn_pct = 65;
     }
-    m_WarnLimitOnPct = warn_pct;
+    m_WarnLimitOnPct = Uint1(warn_pct);
     warn_pct = reg.GetInt(kNCStorage_RegSection, "db_limit_percentage_alert_delta", 5);
     if (warn_pct <= 0  ||  warn_pct >= m_WarnLimitOnPct) {
         ERR_POST("Parameter db_limit_percentage_alert_delta has wrong value "
                  << warn_pct << ". Assuming it's 5.");
         warn_pct = 5;
     }
-    m_WarnLimitOffPct = m_WarnLimitOnPct - warn_pct;
+    m_WarnLimitOffPct = m_WarnLimitOnPct - Uint1(warn_pct);
 
     return true;
 }
@@ -2345,7 +2345,7 @@ CNCBlobStorage::x_HeartBeat(void)
     try {
         Uint8 free_space = CFileUtil::GetFreeDiskSpace(m_Path);
         Uint8 cur_db_size = m_CurDBSize;
-        Uint8 total_space = m_CurDBSize + free_space;
+        Uint8 total_space = cur_db_size + free_space;
         Uint8 allowed_db_size = total_space;
 
         if (total_space < m_DiskCritical)
