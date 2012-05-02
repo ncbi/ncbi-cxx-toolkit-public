@@ -130,8 +130,14 @@ struct SOptionDefinition {
         "affinity-list", "Comma-separated list of affinity tokens."},
 
     {CCommandLineParser::eSwitch, eUsePreferredAffinities,
-        "use-preferred-affinities", "Accept job with any of "
+        "use-preferred-affinities", "Accept a job with any of "
             "the affinities registered earlier as preferred."},
+
+    {CCommandLineParser::eSwitch, eClaimNewAffinities,
+        CLAIM_NEW_AFFINITIES_OPTION, "Accept a job with a preferred "
+            "affinity, without an affinity, or with an affinity "
+            "that is not preferred by any worker (in which case "
+            "it is added to the preferred affinities)."},
 
     {CCommandLineParser::eSwitch, eAnyAffinity,
         ANY_AFFINITY_OPTION, "Accept job with any available affinity."},
@@ -559,7 +565,7 @@ struct SCommandDefinition {
         "specified queue, nothing is printed and the exit code of zero "
         "is returned.",
         {eNetSchedule, eQueue, eAffinityList, eUsePreferredAffinities,
-            eAnyAffinity, eOutputFile, eWaitTimeout,
+            eClaimNewAffinities, eAnyAffinity, eOutputFile, eWaitTimeout,
             eAuth, eClientNode, eClientSession,
             eDumpNSNotifications, -1}},
 
@@ -983,6 +989,7 @@ int CGridCommandLineInterfaceApp::Run()
         } else if (IsOptionSet(eInput) && IsOptionSet(eInputFile)) {
             fprintf(stderr, PROGRAM_NAME ": options '--" INPUT_FILE_OPTION
                 "' and '--" INPUT_OPTION "' are mutually exclusive.\n");
+            return 2;
         }
         if (IsOptionAcceptedButNotSet(eOutputFile)) {
             m_Opts.output_stream = stdout;

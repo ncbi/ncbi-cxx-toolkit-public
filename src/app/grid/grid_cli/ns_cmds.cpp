@@ -877,29 +877,34 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
 
-    CNetScheduleExecutor::EJobAffinityPreference affinity_preference;
+    CNetScheduleExecutor::EJobAffinityPreference affinity_preference =
+            CNetScheduleExecutor::eExplicitAffinitiesOnly;
 
-    switch (IsOptionSet(eAffinityList, OPTION_N(0)) |
-            IsOptionSet(eUsePreferredAffinities, OPTION_N(1)) |
+    switch (IsOptionSet(eUsePreferredAffinities, OPTION_N(0)) |
+            IsOptionSet(eClaimNewAffinities, OPTION_N(1)) |
             IsOptionSet(eAnyAffinity, OPTION_N(2))) {
-    case OPTION_N(2) + OPTION_N(1):
-    case OPTION_N(2) + OPTION_N(1) + OPTION_N(0):
+    case OPTION_N(2) + OPTION_N(0):
         affinity_preference = CNetScheduleExecutor::ePreferredAffsOrAnyJob;
         break;
 
     case OPTION_N(1):
     case OPTION_N(1) + OPTION_N(0):
+        affinity_preference = CNetScheduleExecutor::eClaimNewPreferredAffs;
+        break;
+
+    case OPTION_N(0):
         affinity_preference = CNetScheduleExecutor::ePreferredAffinities;
         break;
 
     case 0:
     case OPTION_N(2):
-    case OPTION_N(2) + OPTION_N(0):
         affinity_preference = CNetScheduleExecutor::eAnyJob;
         break;
 
-    case OPTION_N(0):
-        affinity_preference = CNetScheduleExecutor::eExplicitAffinitiesOnly;
+    default:
+        fprintf(stderr, PROGRAM_NAME ": options '--" CLAIM_NEW_AFFINITIES_OPTION
+            "' and '--" ANY_AFFINITY_OPTION "' are mutually exclusive.\n");
+        return 2;
     }
 
     CNetScheduleJob job;

@@ -49,6 +49,7 @@
 #define QUEUE_OPTION "queue"
 #define BATCH_OPTION "batch"
 #define AFFINITY_OPTION "affinity"
+#define CLAIM_NEW_AFFINITIES_OPTION "claim-new-affinities"
 #define ANY_AFFINITY_OPTION "any-affinity"
 #define JOB_OUTPUT_OPTION "job-output"
 #define LIMIT_OPTION "limit"
@@ -91,6 +92,7 @@ enum EOption {
     eAffinity,
     eAffinityList,
     eUsePreferredAffinities,
+    eClaimNewAffinities,
     eAnyAffinity,
     eExclusiveJob,
     eJobOutput,

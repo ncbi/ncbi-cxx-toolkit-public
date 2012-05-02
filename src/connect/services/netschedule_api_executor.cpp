@@ -42,6 +42,44 @@ BEGIN_NCBI_SCOPE
     while (isspace((unsigned char) *(ptr))) \
         ++ptr;
 
+static bool s_DoParseGet2JobResponse(
+    CNetScheduleJob& job, const string& response)
+{
+    CUrlArgs url_parser(response);
+    ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+        switch (field->name[0]) {
+        case 'j':
+            if (field->name == "job_key")
+                job.job_id = field->value;
+            break;
+
+        case 'i':
+            if (field->name == "input")
+                job.input = field->value;
+            break;
+
+        case 'a':
+            if (field->name == "affinity")
+                job.affinity = field->value;
+            else if (field->name == "auth_token")
+                job.auth_token = field->value;
+            break;
+
+        case 'c':
+            if (field->name == "client_ip")
+                job.client_ip = field->value;
+            else if (field->name == "client_sid")
+                job.session_id = field->value;
+            break;
+
+        case 'm':
+            if (field->name == "mask")
+                job.mask = atoi(field->value.c_str());
+        }
+    }
+    return !job.job_id.empty();
+}
+
 static bool s_DoParseGetJobResponse(
     CNetScheduleJob& job, const string& response)
 {
@@ -125,12 +163,18 @@ static bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
     if (response.empty())
         return false;
 
-    if (s_DoParseGetJobResponse(job, response))
-        return true;
+    try {
+        if (!s_DoParseGet2JobResponse(job, response))
+            return true;
+    }
+    catch (CUrlParserException&) {
+        if (!s_DoParseGetJobResponse(job, response))
+            return true;
+    }
 
     NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
-        "Cannot parse server output for " +
-            job.job_id + ":\n" + response);
+            "Cannot parse server output for " +
+                    job.job_id + ":\n" + response);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -249,6 +293,10 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
 
     case CNetScheduleExecutor::ePreferredAffinities:
         cmd = "GET2 wnode_aff=1 any_aff=0";
+        break;
+
+    case CNetScheduleExecutor::eClaimNewPreferredAffs:
+        cmd = "GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1";
         break;
 
     case CNetScheduleExecutor::eAnyJob:

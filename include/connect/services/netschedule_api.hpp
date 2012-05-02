@@ -487,6 +487,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     enum EJobAffinityPreference {
         ePreferredAffsOrAnyJob,
         ePreferredAffinities,
+        eClaimNewPreferredAffs,
         eAnyJob,
         eExplicitAffinitiesOnly,
     };
