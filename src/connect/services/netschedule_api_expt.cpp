@@ -53,6 +53,7 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eDataTooLong"]         = CNetScheduleException::eDataTooLong;
     m_Map["eInvalidClient"]       = CNetScheduleException::eInvalidClient;
     m_Map["eAccessDenied"]        = CNetScheduleException::eAccessDenied;
+    m_Map["eSubmitsDisabled"]     = CNetScheduleException::eSubmitsDisabled;
     m_Map["eDuplicateName"]       = CNetScheduleException::eDuplicateName;
     m_Map["eCommandIsNotAllowed"] = CNetScheduleException::eCommandIsNotAllowed;
     m_Map["eObsoleteCommand"]     = CNetScheduleException::eObsoleteCommand;
@@ -88,6 +89,7 @@ unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
     case eDataTooLong:                          return 413;
     case eInvalidClient:                        return 400;
     case eAccessDenied:                         return 401;
+    case eSubmitsDisabled:                      return 503;
     case eDuplicateName:                        return 409;
     case eObsoleteCommand:                      return 501;
     case eInvalidParameter:                     return 400;

@@ -82,6 +82,7 @@ public:
         eDataTooLong,
         eInvalidClient,
         eAccessDenied,
+        eSubmitsDisabled,
         eDuplicateName,
         eObsoleteCommand,
         eInvalidParameter,
@@ -107,6 +108,7 @@ public:
         case eDataTooLong:         return "eDataTooLong";
         case eInvalidClient:       return "eInvalidClient";
         case eAccessDenied:        return "eAccessDenied";
+        case eSubmitsDisabled:     return "eSubmitsDisabled";
         case eDuplicateName:       return "eDuplicateName";
         case eObsoleteCommand:     return "eObsoleteCommand";
         case eInvalidParameter:    return "eInvalidParameter";
