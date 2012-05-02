@@ -164,11 +164,11 @@ static bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
         return false;
 
     try {
-        if (!s_DoParseGet2JobResponse(job, response))
+        if (s_DoParseGet2JobResponse(job, response))
             return true;
     }
     catch (CUrlParserException&) {
-        if (!s_DoParseGetJobResponse(job, response))
+        if (s_DoParseGetJobResponse(job, response))
             return true;
     }
 
