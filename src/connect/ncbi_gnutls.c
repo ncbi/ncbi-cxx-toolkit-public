@@ -40,20 +40,51 @@
 
 #ifdef HAVE_LIBGNUTLS
 
+#  include <gcrypt.h>
 #  include <gnutls/gnutls.h>
 
 #  ifdef NCBI_POSIX_THREADS
-#    include <gcrypt.h>
+
 #    include <pthread.h>
 #    ifdef __cplusplus
 extern "C" {
 #    endif /*__cplusplus*/
-
     GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#    ifdef __cplusplus
+} /* extern "C" */
+#    endif /*__cplusplus*/
+
+#  else
 
 #    ifdef __cplusplus
-}
+extern "C" {
 #    endif /*__cplusplus*/
+static int gcry_user_mutex_init(void **priv)
+{
+    return (*priv = CORE_GetLOCK()) != 0 ? 0 : ENOTSUP;
+}
+static int gcry_user_mutex_destroy(void **lock)
+{
+    *lock = NULL;
+    return 0;
+}
+static int gcry_user_mutex_lock(void **lock)
+{
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock) ? 0 : ENOTSUP;
+}
+static int gcry_user_mutex_unlock(void **lock)
+{
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock) ? 0 : ENOTSUP;
+}
+static struct gcry_thread_cbs gcry_threads_user = {
+    GCRY_THREAD_OPTION_USER, NULL,
+    gcry_user_mutex_init, gcry_user_mutex_destroy,
+    gcry_user_mutex_lock, gcry_user_mutex_unlock
+};
+#    ifdef __cplusplus
+} /* extern "C" */
+#    endif /*__cplusplus*/
+
 #  endif /*NCBI_POSIX_THREADS*/
 
 #  ifndef LIBGNUTLS_VERSION_NUMBER
@@ -433,8 +464,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
         return eIO_NotSupported;
 #else
-    CORE_LOG(eLOG_Error, "GCRYPT may be initialized improperly:"
-             " Unknown/unsupported threading model");
+    if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) != 0)
+        return eIO_NotSupported;
 #endif /*NCBI_POSIX_THREADS*/
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
