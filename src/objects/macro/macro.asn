@@ -1346,6 +1346,16 @@ Apply-table-action ::= SEQUENCE {
   in-memory-table Apply-table-extra-data OPTIONAL
 }
 
+Add-file-action ::= SEQUENCE {
+  filename VisibleString ,
+  in-memory-table Apply-table-extra-data OPTIONAL
+} 
+
+Add-descriptor-list-action ::= SEQUENCE {
+  descriptor-list Add-file-action ,
+  constraint Constraint-choice-set OPTIONAL
+}
+
 Remove-sequences-action ::= SEQUENCE {
   constraint Constraint-choice-set
 }
@@ -1386,7 +1396,8 @@ Macro-action-choice ::= CHOICE {
   fix-sets Fix-sets-action ,
   apply-table Apply-table-action ,
   remove-sequences Remove-sequences-action ,
-  propagate-sequence-technology NULL }
+  propagate-sequence-technology NULL ,
+  add-file-descriptors Add-descriptor-list-action }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
