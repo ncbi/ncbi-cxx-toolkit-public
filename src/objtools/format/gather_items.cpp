@@ -2776,7 +2776,12 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
         }
         if (loc) {
             if (loc->IsMix()  ||  loc->IsPacked_int()) {
+                // merge might turn interval into point, so we give it 2 fuzzes to prevent that
+                x_GiveOneResidueIntervalsBogusFuzz(*loc);
+
                 loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);
+                // remove the extra fuzz we've added
+                x_RemoveBogusFuzzFromIntervals(*loc);
             }
         }
         if (!loc  ||  loc->IsNull()) {
@@ -2804,6 +2809,75 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
     }    
 }
 
+// C++ doesn't allow inner functions, so this is the best we can do
+static void s_GiveOneResidueIntervalsBogusFuzz_Helper( CSeq_interval & interval )
+{
+    if( interval.IsSetFrom() && interval.IsSetTo() && 
+        interval.GetFrom() == interval.GetTo() ) 
+    {
+        if( interval.IsSetFuzz_from() && ! interval.IsSetFuzz_to() ) {
+            interval.SetFuzz_to().SetLim( CInt_fuzz::eLim_circle );
+        } else if( ! interval.IsSetFuzz_from() && interval.IsSetFuzz_to() ) {
+            interval.SetFuzz_from().SetLim( CInt_fuzz::eLim_circle );
+        }
+    }
+}
+
+//  ============================================================================
+void CFlatGatherer::x_GiveOneResidueIntervalsBogusFuzz(CSeq_loc & loc)
+//  ============================================================================
+{
+    if( loc.IsInt() ) {
+        s_GiveOneResidueIntervalsBogusFuzz_Helper( loc.SetInt() );
+    } else if ( loc.IsPacked_int() && loc.GetPacked_int().IsSet() ) {
+        CPacked_seqint::Tdata & intervals = loc.SetPacked_int().Set();
+        NON_CONST_ITERATE( CPacked_seqint::Tdata, int_iter, intervals ) {
+            s_GiveOneResidueIntervalsBogusFuzz_Helper( **int_iter );
+        }
+    } else if ( loc.IsMix() && loc.GetMix().IsSet() ) {
+        CSeq_loc_mix::Tdata & pieces = loc.SetMix().Set();
+        NON_CONST_ITERATE(CSeq_loc_mix::Tdata, piece_iter, pieces) {
+            x_GiveOneResidueIntervalsBogusFuzz(**piece_iter);
+        }
+    }
+}
+
+// C++ doesn't allow inner functions, so this is the best we can do
+static void s_RemoveBogusFuzzFromIntervals_Helper( CSeq_interval & interval )
+{
+    if( interval.IsSetFuzz_from() && interval.IsSetFuzz_to() && 
+        interval.IsSetFrom() && interval.IsSetTo() && 
+        interval.GetFrom() == interval.GetTo() ) 
+    {
+        const CInt_fuzz & fuzz_from = interval.GetFuzz_from();
+        const CInt_fuzz & fuzz_to   = interval.GetFuzz_to();
+        if( fuzz_from.IsLim() && fuzz_from.GetLim() == CInt_fuzz::eLim_circle ) {
+            interval.ResetFuzz_from();
+        }
+        if( fuzz_to.IsLim() && fuzz_to.GetLim() == CInt_fuzz::eLim_circle ) {
+            interval.ResetFuzz_to();
+        }
+    }
+}
+
+//  ============================================================================
+void CFlatGatherer::x_RemoveBogusFuzzFromIntervals(CSeq_loc & loc)
+//  ============================================================================
+{
+    if( loc.IsInt() ) {
+        s_RemoveBogusFuzzFromIntervals_Helper( loc.SetInt() );
+    } else if ( loc.IsPacked_int() ) {
+        CPacked_seqint::Tdata & intervals = loc.SetPacked_int().Set();
+        NON_CONST_ITERATE( CPacked_seqint::Tdata, int_iter, intervals ) {
+            s_RemoveBogusFuzzFromIntervals_Helper( **int_iter );
+        }
+    } else if ( loc.IsMix() && loc.GetMix().IsSet() ) {
+        CSeq_loc_mix_Base::Tdata & pieces = loc.SetMix().Set();
+        NON_CONST_ITERATE(CSeq_loc_mix_Base::Tdata, piece_iter, pieces) {
+            x_RemoveBogusFuzzFromIntervals(**piece_iter);
+        }
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //

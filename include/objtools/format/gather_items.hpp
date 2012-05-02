@@ -100,6 +100,8 @@ protected:
     void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, const CSeq_loc& mapped_loc, CBioseqContext& ctx,
         CRef<CSeq_loc_Mapper> slice_mapper,
         CConstRef<CFeatureItem> cdsFeatureItem = CConstRef<CFeatureItem>() ) const;
+    static void x_GiveOneResidueIntervalsBogusFuzz(CSeq_loc & loc);
+    static void x_RemoveBogusFuzzFromIntervals(CSeq_loc & loc);
     void x_CopyCDSFromCDNA(const CSeq_feat& feat, CBioseqContext& ctx) const;
     bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
     virtual void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
