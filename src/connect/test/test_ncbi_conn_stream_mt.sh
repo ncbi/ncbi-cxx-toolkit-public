@@ -11,7 +11,6 @@ if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$ext ]; then
   proxy=1
 fi
 
-
 case "`expr '(' $$ / 10 ')' '%' 3`" in
   0)
   ssl="`expr '(' $$ / 100 ')' '%' 2`"
@@ -27,7 +26,7 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   fi
   ;;
   1)
-  if [ "`echo ${CHECK_SIGNATURE:-Unknown} | grep -c MSVC`" != "0" ]; then 
+  if [ "`echo ${CHECK_SIGNATURE:-Unknown} | grep -c '^MSVC'`" != "0" ]; then 
     url='file:////?/c:/windows/system32/drivers/etc/hosts'
   else
     url='file:///etc/hosts'
