@@ -1948,7 +1948,7 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
         BOOST_CHECK_EQUAL(ptr, &s);
     }}
     {{
-        Uint8       ptr_val = 0x01234D00002fe008;
+        Uint8       ptr_val = NCBI_CONST_UINT8(0x01234D00002fe008);
         const char* ptr_str = "01234D00002FE008";
 
         errno = kTestErrno;
