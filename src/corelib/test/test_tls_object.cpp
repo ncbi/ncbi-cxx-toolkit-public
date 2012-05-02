@@ -214,7 +214,7 @@ class CObjectWithTLS
         _ASSERT(GetNewPtr() == 0);
         SetNewPtr(ptr);
     }
-    static void RegisterDelete(CObjectWithTLS* _DEBUG_ARG(ptr)) {
+    static void RegisterDelete(CObjectWithTLS* ptr) {
         if ( GetNewPtr() == ptr ) {
             SetNewPtr(0);
         }
