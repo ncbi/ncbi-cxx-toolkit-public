@@ -27,7 +27,7 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   fi
   ;;
   1)
-  if [ _"$COMSPEC" != _"" ]; then
+  if [ "`echo ${CHECK_SIGNATURE:-Unknown} | grep -c MSVC`" != "0" ]; then 
     url='file:////?/c:/windows/system32/drivers/etc/hosts'
   else
     url='file:///etc/hosts'
