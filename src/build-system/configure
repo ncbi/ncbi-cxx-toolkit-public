@@ -18420,6 +18420,78 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+echo "$as_me:$LINENO: checking syntax for declaring thread-local variables" >&5
+echo $ECHO_N "checking syntax for declaring thread-local variables... $ECHO_C" >&6
+if test "${ncbi_cv_c_tls_var+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ncbi_cv_c_tls_var=none
+    for tls_var in __thread '__declspec(thread)' _Thread_local; do
+       test "$ncbi_cv_c_tls_var" = "none" || break
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$tls_var int i;
+int
+main ()
+{
+static $tls_var int j;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_c_tls_var=$tls_var
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+    done
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_c_tls_var" >&5
+echo "${ECHO_T}$ncbi_cv_c_tls_var" >&6
+tls_var=$ncbi_cv_c_tls_var
+if test "$tls_var" = "none"; then
+            tls_var=""
+else
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TLS_VAR 1
+_ACEOF
+
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define NCBI_TLS_VAR $tls_var
+_ACEOF
+
+
 # for FreeTDS
 echo "$as_me:$LINENO: checking whether FIONBIO requires BSD_COMP to be defined" >&5
 echo $ECHO_N "checking whether FIONBIO requires BSD_COMP to be defined... $ECHO_C" >&6

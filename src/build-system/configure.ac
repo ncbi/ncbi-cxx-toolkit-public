@@ -3340,6 +3340,29 @@ AC_DEFINE_UNQUOTED(NCBI_NORETURN, $noret,
    [Define to whatever syntax, if any, your compiler supports for marking
     functions that never return.])
 
+AC_CACHE_CHECK([syntax for declaring thread-local variables],
+   ncbi_cv_c_tls_var,
+   [ncbi_cv_c_tls_var=none
+    for tls_var in __thread '__declspec(thread)' _Thread_local; do
+       test "$ncbi_cv_c_tls_var" = "none" || break
+       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([$tls_var int i;],
+          [static $tls_var int j;])],
+          [ncbi_cv_c_tls_var=$tls_var], [])
+    done])
+tls_var=$ncbi_cv_c_tls_var
+if test "$tls_var" = "none"; then
+   dnl if test "$with_mt" = "yes"; then
+   dnl    AC_MSG_WARN([--with-mt may soon require native thread-local variable support.])
+   dnl fi
+   tls_var=""
+else
+   AC_DEFINE(HAVE_TLS_VAR, 1,
+      [Define to 1 if your compiler supports thread-local variables.])
+fi
+AC_DEFINE_UNQUOTED(NCBI_TLS_VAR, $tls_var,
+   [Define to whatever syntax, if any, your compiler supports for
+    declaring thread-local variables.])
+
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],
    ncbi_cv_decl_fionbio_needs_bsd_comp,

@@ -78,6 +78,8 @@
 #define NCBI_FORCEINLINE __forceinline
 #define NCBI_RESTRICT_C
 #define NCBI_RESTRICT_CXX
+#define NCBI_TLS_VAR __declspec(thread)
+#define HAVE_TLS_VAR 1
 
 #ifdef _WIN64
 #  define HOST         "i386-pc-win64"

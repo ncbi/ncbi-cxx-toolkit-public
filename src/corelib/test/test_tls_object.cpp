@@ -40,13 +40,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-#ifdef NCBI_COMPILER_MSVC
-# define NCBI_TLS_VAR __declspec(thread)
-#else
-# define NCBI_TLS_VAR __thread
-#endif
-#ifdef NCBI_OS_DARWIN
-# undef NCBI_TLS_VAR
+#ifndef HAVE_TLS_VAR
 # include <pthread.h>
 #endif
 
@@ -165,7 +159,7 @@ private:
     void operator=(CObjectWithNew&);
 };
 
-#ifdef NCBI_TLS_VAR
+#ifdef HAVE_TLS_VAR
 static NCBI_TLS_VAR void* s_LastNewPtr;
 #else
 static pthread_key_t s_LastNewPtr_key;
@@ -197,21 +191,21 @@ class CObjectWithTLS
     }
 public:
     static void SetNewPtr(void* ptr) {
-#ifdef NCBI_TLS_VAR
+#ifdef HAVE_TLS_VAR
         s_LastNewPtr = ptr;
 #else
         pthread_setspecific(s_LastNewPtr_key, ptr);
 #endif
     }
     static void* GetNewPtr() {
-#ifdef NCBI_TLS_VAR
+#ifdef HAVE_TLS_VAR
         return s_LastNewPtr;
 #else
         return pthread_getspecific(s_LastNewPtr_key);
 #endif
     }
     static void InitNewPtr(void) {
-#ifndef NCBI_TLS_VAR
+#ifndef HAVE_TLS_VAR
         pthread_key_create(&s_LastNewPtr_key, 0);
         SetNewPtr(0);
 #endif
