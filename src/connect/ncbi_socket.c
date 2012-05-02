@@ -3458,10 +3458,9 @@ static EIO_Status s_Close(SOCK sock, int abort)
                     const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
                     CORE_LOGF_ERRNO_EXX(18, eLOG_Trace,
                                         x_error, strerr,
-                                        ("%s[SOCK::%s] "
+                                        ("%s[SOCK::Close] "
                                          " Failed setsockopt(TCP_LINGER2)",
-                                         s_ID(sock, _id),
-                                         abort ? "Abort" : "Close"));
+                                         s_ID(sock, _id)));
                     UTIL_ReleaseBuffer(strerr);
                 }
             }
@@ -3503,7 +3502,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
         sock->session = SESSION_INVALID;
     }
 
-    if (abort >= 0) {
+    if (abort >= -1) {
         if (sock->type != eDatagram) {
             sock->n_in  += sock->n_read;
             sock->n_out += sock->n_written;
@@ -3704,7 +3703,7 @@ static EIO_Status s_Connect(SOCK            sock,
                              " Failed to create IO event",
                              s_ID(sock, _id)));
         UTIL_ReleaseBufferOnHeap(strerr);
-        s_Close(sock, -1/*abort*/);
+        s_Close(sock, -2/*abort*/);
         return eIO_Unknown;
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
@@ -3717,7 +3716,7 @@ static EIO_Status s_Connect(SOCK            sock,
                              " Failed to bind IO event",
                              s_ID(sock, _id)));
         UTIL_ReleaseBuffer(strerr);
-        s_Close(sock, -1/*abort*/);
+        s_Close(sock, -2/*abort*/);
         return eIO_Unknown;
     }
 #else
@@ -3730,7 +3729,7 @@ static EIO_Status s_Connect(SOCK            sock,
                              " Cannot set socket to non-blocking mode",
                              s_ID(sock, _id)));
         UTIL_ReleaseBuffer(strerr);
-        s_Close(sock, -1/*abort*/);
+        s_Close(sock, -2/*abort*/);
         return eIO_Unknown;
     }
 #endif
@@ -4711,8 +4710,8 @@ static EIO_Status s_Accept(LSOCK           lsock,
                              x_id, (unsigned int) x_sock,
                              s_CP(host, port, path, _id, sizeof(_id))));
         UTIL_ReleaseBuffer(strerr);
-        WSACloseEvent(event);
         SOCK_ABORT(x_sock);
+        WSACloseEvent(event);
         return eIO_Unknown;
     }
 #else
@@ -4858,19 +4857,13 @@ extern EIO_Status LSOCK_AcceptEx(LSOCK           lsock,
 }
 
 
-extern EIO_Status LSOCK_Close(LSOCK lsock)
+static EIO_Status s_CloseListening(LSOCK lsock)
 {
     int        x_error;
     EIO_Status status;
 
-    if (lsock->sock == SOCK_INVALID) {
-        CORE_LOGF_X(43, eLOG_Error,
-                    ("LSOCK#%u[?]: [LSOCK::Close] "
-                     " Invalid socket",
-                     lsock->id));
-        assert(0);
-        return eIO_Unknown;
-    }
+    if (lsock->sock == SOCK_INVALID)
+        return eIO_Closed;
 
 #ifdef NCBI_OS_MSWIN
     WSAEventSelect(lsock->sock, lsock->event/*ignored*/, 0/*cancel*/);
@@ -4891,8 +4884,9 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
             c = buf;
         }
         CORE_LOGF_X(44, eLOG_Trace,
-                    ("LSOCK#%u[%u]: Closing at %s (%u accept%s total)",
-                     lsock->id, (unsigned int) lsock->sock, c,
+                    ("LSOCK#%u[%u]: %s at %s (%u accept%s total)",
+                     lsock->id, (unsigned int) lsock->sock,
+                     lsock->keep ? "Leaving" : "Closing", c,
                      lsock->n_accept, lsock->n_accept == 1 ? "" : "s"));
     }
 
@@ -4939,17 +4933,34 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     }
 #elif defined(NCBI_OS_MSWIN)
     WSACloseEvent(lsock->event);
+    lsock->event = 0;
 #endif /*NCBI_OS*/
 
-    free(lsock);
     return status;
 }
 
 
-extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
-                                    void*  handle,
-                                    size_t handle_size)
+extern EIO_Status LSOCK_Close(LSOCK lsock)
 {
+    EIO_Status status;
+
+    if (lsock) {
+        status = s_CloseListening(lsock);
+        free(lsock);
+    } else
+        status = eIO_InvalidArg;
+    return status;
+}
+
+
+extern EIO_Status LSOCK_GetOSHandleEx(LSOCK      lsock,
+                                      void*      handle,
+                                      size_t     handle_size,
+                                      EOwnership ownership)
+{
+    TSOCK_Handle fd;
+    EIO_Status   status;
+
     if (!lsock)
         return eIO_InvalidArg;
     if (!handle  ||  handle_size != sizeof(lsock->sock)) {
@@ -4962,9 +4973,23 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
         assert(0);
         return eIO_InvalidArg;
     }
-    memcpy(handle, &lsock->sock, handle_size);
-    return (s_Initialized <= 0  ||  lsock->sock == SOCK_INVALID
-            ? eIO_Closed : eIO_Success);
+    fd = lsock->sock;
+    memcpy(handle, &fd, handle_size);
+    if (ownership == eTakeOwnership) {
+        lsock->keep = 1/*true*/;
+        status = s_CloseListening(lsock);
+        _ASSERT(lsock->sock == SOCK_INVALID);
+    } else
+        status = eIO_Success;
+    return s_Initialized <= 0  ||  fd == SOCK_INVALID ? eIO_Closed : status;
+}
+
+
+extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
+                                    void*  handle,
+                                    size_t handle_size)
+{
+    return LSOCK_GetOSHandleEx(lsock, handle, handle_size, eNoOwnership);
 }
 
 
@@ -5197,7 +5222,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen))) {
         BUF_Destroy(w_buf);
 #ifdef NCBI_OS_MSWIN
-            WSACloseEvent(event);
+        WSACloseEvent(event);
 #endif /*NCBI_OS_MSWIN*/
         return eIO_Unknown;
     }
@@ -5312,7 +5337,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     memset(&lgr, 0, sizeof(lgr));
     if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*) &lgr, sizeof(lgr)) != 0){
         const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
-        CORE_LOGF_ERRNO_EXX(163, eLOG_Warning,
+        CORE_LOGF_ERRNO_EXX(43, eLOG_Warning,
                             x_error, strerr,
                             ("%s[SOCK::CreateOnTop] "
                              " Failed setsockopt(SO_NOLINGER)",
@@ -6148,10 +6173,14 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
 }
 
 
-extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
-                                   void*  handle,
-                                   size_t handle_size)
+extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
+                                     void*      handle,
+                                     size_t     handle_size,
+                                     EOwnership ownership)
 {
+    EIO_Status   status;
+    TSOCK_Handle fd;
+
     if (!sock)
         return eIO_InvalidArg;
     if (!handle  ||  handle_size != sizeof(sock->sock)) {
@@ -6165,9 +6194,23 @@ extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
         assert(0);
         return eIO_InvalidArg;
     }
-    memcpy(handle, &sock->sock, handle_size);
-    return (s_Initialized <= 0  ||  sock->sock == SOCK_INVALID
-            ? eIO_Closed : eIO_Success);
+    fd = sock->sock;
+    memcpy(handle, &fd, handle_size);
+    if (ownership == eTakeOwnership) {
+        sock->keep = 1/*true*/;
+        status = s_Close(sock, 0/*close*/);
+        _ASSERT(sock->sock == SOCK_INVALID);
+    } else
+        status = eIO_Success;
+    return s_Initialized <= 0  ||  fd == SOCK_INVALID ? eIO_Closed : status;
+}
+
+
+extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
+                                   void*  handle,
+                                   size_t handle_size)
+{
+    return SOCK_GetOSHandleEx(sock, handle, handle_size, eNoOwnership);
 }
 
 

@@ -66,7 +66,7 @@
  *  SOCK_Reconnect
  *  SOCK_Shutdown
  *  SOCK_Close[Ex]
- *  SOCK_CloseOSHandle
+ *  SOCK_CloseOSHandle[Ex]
  *  SOCK_Wait
  *  SOCK_Poll
  *  SOCK_SetTimeout
