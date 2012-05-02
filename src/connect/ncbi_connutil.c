@@ -494,7 +494,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         port    = 0;
     }
 
-    pathlen = scheme == eURL_File ? strlen(path) : strcspn(path, "?#");
+    pathlen = (scheme == eURL_Https  ||  scheme == eURL_Http
+               ? strcspn(path, "?#") : strlen(path));
     args    = path + pathlen;
 
     if (path != url  ||  *path == '/') {
