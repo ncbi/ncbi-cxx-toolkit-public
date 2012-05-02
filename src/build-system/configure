@@ -18497,20 +18497,13 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_c_tls_var" >&5
 echo "${ECHO_T}$ncbi_cv_c_tls_var" >&6
 tls_var=$ncbi_cv_c_tls_var
-if test "$tls_var" = "none"; then
-            tls_var=""
-else
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TLS_VAR 1
-_ACEOF
-
-fi
+if test "$tls_var" != "none"; then
 
 cat >>confdefs.h <<_ACEOF
 #define NCBI_TLS_VAR $tls_var
 _ACEOF
 
+fi
 
 # for FreeTDS
 echo "$as_me:$LINENO: checking whether FIONBIO requires BSD_COMP to be defined" >&5

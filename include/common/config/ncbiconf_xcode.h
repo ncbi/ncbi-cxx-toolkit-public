@@ -555,9 +555,6 @@
 /* Define to 1 if you have the `timegm' function. */
 #define HAVE_TIMEGM 1
 
-/* Define to 1 if your compiler supports thread-local variables. */
-/* #undef HAVE_TLS_VAR */
-
 /* Define to 1 if the system has the type `uintptr_t'. */
 #define HAVE_UINTPTR_T 1
 
@@ -649,9 +646,9 @@
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 /* #undef NCBI_SQLCOLATTRIBUTE_SQLLEN */
 
-/* Define to whatever syntax, if any, your compiler supports for declaring
-   thread-local variables. */
-#define NCBI_TLS_VAR 
+/* Define to whatever syntax your compiler supports for declaring thread-local
+   variables, or leave undefined if it doesn't. */
+/* #undef NCBI_TLS_VAR */
 
 /* Define to 1 if building universal (multi-architecture) binaries. */
 /* (Not necessarily the case, but we shouldn't hardcode anything
