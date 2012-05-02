@@ -3401,6 +3401,7 @@ static EIO_Status s_Close(SOCK sock, int abort)
     int        x_error;
     EIO_Status status;
 
+    assert(sock->sock != SOCK_INVALID);
     BUF_Erase(sock->r_buf);
     if (sock->type == eDatagram) {
         sock->r_len = 0;
@@ -3703,7 +3704,7 @@ static EIO_Status s_Connect(SOCK            sock,
                              " Failed to create IO event",
                              s_ID(sock, _id)));
         UTIL_ReleaseBufferOnHeap(strerr);
-        s_Close(sock, -2/*abort*/);
+        s_Close(sock, -2/*silent abort*/);
         return eIO_Unknown;
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
@@ -3716,7 +3717,7 @@ static EIO_Status s_Connect(SOCK            sock,
                              " Failed to bind IO event",
                              s_ID(sock, _id)));
         UTIL_ReleaseBuffer(strerr);
-        s_Close(sock, -2/*abort*/);
+        s_Close(sock, -2/*silent abort*/);
         return eIO_Unknown;
     }
 #else
@@ -3729,7 +3730,7 @@ static EIO_Status s_Connect(SOCK            sock,
                              " Cannot set socket to non-blocking mode",
                              s_ID(sock, _id)));
         UTIL_ReleaseBuffer(strerr);
-        s_Close(sock, -2/*abort*/);
+        s_Close(sock, -2/*silent abort*/);
         return eIO_Unknown;
     }
 #endif
@@ -4574,7 +4575,7 @@ static void SOCK_ABORT(TSOCK_Handle x_sock)
     temp.side = eSOCK_Server;
     temp.type = eSocket;
     temp.sock = x_sock;
-    s_Close(&temp, -1/*abort*/);
+    s_Close(&temp, -2/*silent abort*/);
 }
 
 
@@ -4862,8 +4863,7 @@ static EIO_Status s_CloseListening(LSOCK lsock)
     int        x_error;
     EIO_Status status;
 
-    if (lsock->sock == SOCK_INVALID)
-        return eIO_Closed;
+    assert(lsock->sock != SOCK_INVALID);
 
 #ifdef NCBI_OS_MSWIN
     WSAEventSelect(lsock->sock, lsock->event/*ignored*/, 0/*cancel*/);
@@ -4945,7 +4945,9 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     EIO_Status status;
 
     if (lsock) {
-        status = s_CloseListening(lsock);
+        status = (lsock->sock != SOCK_INVALID
+                  ? s_CloseListening(lsock)
+                  : eIO_Closed);
         free(lsock);
     } else
         status = eIO_InvalidArg;
@@ -4975,13 +4977,16 @@ extern EIO_Status LSOCK_GetOSHandleEx(LSOCK      lsock,
     }
     fd = lsock->sock;
     memcpy(handle, &fd, handle_size);
-    if (ownership == eTakeOwnership) {
+    if (s_Initialized <= 0  ||  fd == SOCK_INVALID)
+        status = eIO_Closed;
+    else if (ownership != eTakeOwnership)
+        status = eIO_Success;
+    else {
         lsock->keep = 1/*true*/;
         status = s_CloseListening(lsock);
-        _ASSERT(lsock->sock == SOCK_INVALID);
-    } else
-        status = eIO_Success;
-    return s_Initialized <= 0  ||  fd == SOCK_INVALID ? eIO_Closed : status;
+        assert(lsock->sock == SOCK_INVALID);
+    }
+    return status;
 }
 
 
@@ -6196,13 +6201,16 @@ extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
     }
     fd = sock->sock;
     memcpy(handle, &fd, handle_size);
-    if (ownership == eTakeOwnership) {
+    if (s_Initialized <= 0  ||  fd == SOCK_INVALID)
+        status = eIO_Closed;
+    else if (ownership != eTakeOwnership)
+        status = eIO_Success;
+    else {
         sock->keep = 1/*true*/;
         status = s_Close(sock, 0/*close*/);
-        _ASSERT(sock->sock == SOCK_INVALID);
-    } else
-        status = eIO_Success;
-    return s_Initialized <= 0  ||  fd == SOCK_INVALID ? eIO_Closed : status;
+        assert(sock->sock == SOCK_INVALID);
+    }
+    return status;
 }
 
 
