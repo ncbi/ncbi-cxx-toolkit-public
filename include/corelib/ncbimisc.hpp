@@ -112,7 +112,7 @@ enum ENullable {
 };
 
 
-/// Singnedness of a value.
+/// Signedness of a value.
 enum ESign {
     eNegative = -1,     ///< Value is negative
     eZero     =  0,     ///< Value is zero
