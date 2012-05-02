@@ -3644,6 +3644,41 @@ else
 fi
 
 ## SSL/TLS libraries
+case "$with_gcrypt" in
+   no )       ac_cv_path_LIBGCRYPT_CONFIG=no ;;
+   yes | '' ) : ${GCRYPT_PATH=$NCBI/gcrypt}  ;;
+   * )        GCRYPT_PATH=$with_gcrypt       ;;
+esac
+if test -d "$GCRYPT_PATH"; then
+   NCBI_FIX_DIR(GCRYPT_PATH)
+fi
+AC_PATH_PROG(LIBGCRYPT_CONFIG, libgcrypt-config, [], [${GCRYPT_BIN-$GCRYPT_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/bin}:$GCRYPT_PATH/bin${bit64_sfx}:$GCRYPT_PATH/bin:$PATH])
+
+if test "x$with_gcrypt" != xno; then
+   if test -x "$LIBGCRYPT_CONFIG"; then
+      if test -z "$GCRYPT_PATH"; then
+         p=`libgcrypt-config --prefix`
+         test "x$p" = "x/usr"  ||  GCRYPT_PATH=$p
+      fi
+      NCBI_RPATHIFY_OUTPUT(GCRYPT_LIBPATH,
+        [$LIBGCRYPT_CONFIG --exec-prefix], [s,^,-L,; s,$,/lib,;])
+      GCRYPT_INCLUDE=`$LIBGCRYPT_CONFIG --cflags`
+      GCRYPT_CONFIG_LIBS="`$LIBGCRYPT_CONFIG --libs` $Z_LIBS"
+   fi
+else
+   AS_UNSET(GCRYPT_CONFIG_LIBS)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(gcrypt,
+ [[AC_LANG_PROGRAM([[#include <gcrypt.h>
+                     #include <pthread.h>
+                     #include <errno.h>
+                     GCRY_THREAD_OPTION_PTHREAD_IMPL;]],
+   [[gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);]])]],
+ $GCRYPT_CONFIG_LIBS)
+if test -n "$GCRYPT_CONFIG_LIBS"; then
+   NCBI_RPATHIFY_OUTPUT(GCRYPT_LIBS, [echo $GCRYPT_CONFIG_LIBS], [$no_usr_lib])
+fi
+
 case "$with_gnutls" in
    no )       ac_cv_path_LIBGNUTLS_CONFIG=no ;;
    yes | '' ) : ${GNUTLS_PATH=$NCBI/gnutls}  ;;
@@ -3685,20 +3720,19 @@ else
    AS_UNSET(GNUTLS_CONFIG_LIBS)
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
- [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>
-                     #if defined(_MT) && !defined(NCBI_WITHOUT_MT)
-                     #  include <gcrypt.h>
-                     #  include <pthread.h>
-                     #  include <errno.h>
-                     GCRY_THREAD_OPTION_PTHREAD_IMPL;
-                     #endif]],
-   [[#if defined(_MT) && !defined(NCBI_WITHOUT_MT)
-     gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
-     #endif
-     gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
- $GNUTLS_CONFIG_LIBS)
+ [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
+   [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
+ $GNUTLS_CONFIG_LIBS $GCRYPT_LIBS)
 if test -n "$GNUTLS_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS], [$no_usr_lib])
+   case "$GNUTLS_INCLUDE" in
+       *$GCRYPT_INCLUDE* ) ;;
+       *                 ) GNUTLS_INCLUDE="$GNUTLS_INCLUDE $GCRYPT_INCLUDE" ;;
+   esac
+   case "$GNUTLS_LIBS" in
+       *\ -lgcrypt* ) ;;
+       *            ) GNUTLS_LIBS="$GNUTLS_LIBS $GCRYPT_LIBS" ;;
+   esac
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,

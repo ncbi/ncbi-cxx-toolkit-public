@@ -16,6 +16,7 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
         test -x "$d/bin/fltk-config"       &&  : ${FLTK_PATH=$d}
+        test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
         test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
@@ -83,6 +84,10 @@ esac
 : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
 
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
+
+case "$ncbi_platform" in
+    Linux*     ) : ${GCRYPT_PATH=$NCBI/libgcrypt-1.4.3} ;;
+esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${GNUTLS_PATH=$NCBI/gnutls-2.4.2} ;;
