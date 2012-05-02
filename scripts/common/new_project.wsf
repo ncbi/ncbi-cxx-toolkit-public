@@ -169,6 +169,7 @@
             usage_str += "                   app/netschedule   an NCBI GRID (NetSchedule) application\n";
             usage_str += "                   app/objects       an application that uses ASN.1 objects\n";
             usage_str += "                   app/objmgr        an application that uses Object Manager\n";
+            usage_str += "                   app/serial        a data serialization application\n";
             usage_str += "                   app/soap/client   a SOAP client\n";
             usage_str += "                   app/soap/server   a SOAP server\n";
             usage_str += "                   app/unit_test     a Boost-based unit test application\n";
@@ -255,6 +256,7 @@
                 prompt += "\tapp/netschedule\n";
                 prompt += "\tapp/objects\n";
                 prompt += "\tapp/objmgr\n";
+                prompt += "\tapp/serial\n";
                 prompt += "\tapp/soap/client\n";
                 prompt += "\tapp/soap/server\n";
                 prompt += "\tapp/unit_test\n";
@@ -291,6 +293,7 @@
             this.TemplatesDict.Add("app/netschedule", "sample/app/netschedule");
             this.TemplatesDict.Add("app/objects",     "sample/app/objects");
             this.TemplatesDict.Add("app/objmgr",      "sample/app/objmgr");
+            this.TemplatesDict.Add("app/serial",      "sample/app/serial");
             this.TemplatesDict.Add("app/soap/client", "sample/app/soap/client");
             this.TemplatesDict.Add("app/soap/server", "sample/app/soap/server");
             this.TemplatesDict.Add("app/unit_test",   "sample/app/unit_test");
