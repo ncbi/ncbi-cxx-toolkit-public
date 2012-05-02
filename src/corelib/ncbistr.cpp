@@ -396,10 +396,11 @@ int NStr::StringToNonNegativeInt(const string& str)
 
 #define S2N_CONVERT_ERROR(to_type, msg, errcode, force_errno, delta)        \
         if (flags & NStr::fConvErr_NoThrow)  {                              \
+            int& err = errno;                                               \
             if (flags & NStr::fIgnoreErrno) {                               \
-                errno = 0;                                                  \
-            } else if ( force_errno || !errno) {                            \
-                errno = errcode;                                            \
+                err = 0;                                                    \
+            } else if ( force_errno || !err) {                              \
+                err = errcode;                                              \
             }                                                               \
             /* ignore previously converted value -- always return zero */   \
             return 0;                                                       \
@@ -416,7 +417,7 @@ int NStr::StringToNonNegativeInt(const string& str)
                 smsg += msg;                                                \
             }                                                               \
             /* We don't set errno here, because it will be changed */       \
-            /* to any unpredictable value below.*/                          \
+            /* to any unpredictable value in exception below.*/             \
             NCBI_THROW2(CStringException, eConvert, smsg, delta);           \
         }                                                                   \
 
@@ -437,16 +438,6 @@ int NStr::StringToNonNegativeInt(const string& str)
 #define CHECK_ENDPTR_SIZE(to_type)                                          \
     if ( pos < size ) {                                                     \
         S2N_CONVERT_ERROR(to_type, kEmptyStr, EINVAL, true, pos);           \
-    }
-
-#define CHECK_RANGE(nmin, nmax, to_type)                                    \
-    if ( value < nmin  ||  value > nmax  ||  errno ) {                      \
-        S2N_CONVERT_ERROR(to_type, "overflow", ERANGE, false, 0);           \
-    }
-
-#define CHECK_RANGE_U(nmax, to_type)                                        \
-    if ( value > nmax  ||  errno ) {                                        \
-        S2N_CONVERT_ERROR(to_type, "overflow", ERANGE, false, 0);           \
     }
 
 #define CHECK_COMMAS                                                        \
@@ -474,7 +465,9 @@ int NStr::StringToNonNegativeInt(const string& str)
 int NStr::StringToInt(const CTempString& str, TStringToNumFlags flags,int base)
 {
     Int8 value = StringToInt8(str, flags, base);
-    CHECK_RANGE(kMin_Int, kMax_Int, int);
+    if ( value < kMin_Int  ||  value > kMax_Int) {
+        S2N_CONVERT_ERROR(int, "overflow", ERANGE, false, 0);
+    }
     return (int) value;
 }
 
@@ -483,7 +476,9 @@ unsigned int
 NStr::StringToUInt(const CTempString& str, TStringToNumFlags flags, int base)
 {
     Uint8 value = StringToUInt8(str, flags, base);
-    CHECK_RANGE_U(kMax_UInt, unsigned int);
+    if ( value > kMax_UInt ) {
+        S2N_CONVERT_ERROR(unsigned int, "overflow", ERANGE, false, 0);
+    }
     return (unsigned int) value;
 }
 
@@ -492,7 +487,9 @@ long NStr::StringToLong(const CTempString& str, TStringToNumFlags flags,
                         int base)
 {
     Int8 value = StringToInt8(str, flags, base);
-    CHECK_RANGE(kMin_Long, kMax_Long, long);
+    if ( value < kMin_Long  ||  value > kMax_Long) {
+        S2N_CONVERT_ERROR(long, "overflow", ERANGE, false, 0);
+    }
     return (long) value;
 }
 
@@ -501,7 +498,9 @@ unsigned long
 NStr::StringToULong(const CTempString& str, TStringToNumFlags flags, int base)
 {
     Uint8 value = StringToUInt8(str, flags, base);
-    CHECK_RANGE_U(kMax_ULong, long);
+    if ( value > kMax_ULong ) {
+        S2N_CONVERT_ERROR(unsigned long, "overflow", ERANGE, false, 0);
+    }
     return (unsigned long) value;
 }
 
@@ -993,15 +992,16 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
         ret = first;
     }
     // calculate exponent
-    errno = 0;
+    int& errno_ref = errno;
+    errno_ref = 0;
     if ( first && exponent ) {
         // multiply by power of 10 only non-zero mantissa
         if (exponent > 2*DBL_MAX_10_EXP) {
             ret = HUGE_VAL;
-            errno = ERANGE;
+            errno_ref = ERANGE;
         } else if (exponent < 2*DBL_MIN_10_EXP) {
             ret = 0.;
-            errno = ERANGE;
+            errno_ref = ERANGE;
         } else {
             if ( exponent > 0 ) {
                 static const double mul1[16] = {
@@ -1034,7 +1034,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                     }
                 }
                 if (!finite(double(ret))) {
-                    errno = ERANGE;
+                    errno_ref = ERANGE;
                 }
             }
             else {
@@ -1083,7 +1083,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                     }
                 }
                 if ( ret < DBL_MIN ) {
-                    errno = ERANGE;
+                    errno_ref = ERANGE;
                 }
             }
         }
@@ -1098,6 +1098,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
     return ret;
 }
 
+
 /// @internal
 static double s_StringToDouble(const char* str, size_t size,
                                NStr::TStringToNumFlags flags)
@@ -1109,7 +1110,6 @@ static double s_StringToDouble(const char* str, size_t size,
         NCBI_THROW2(CStringException, eBadArgs,
                     "NStr::StringToDouble():  mutually exclusive flags specified",0);
     }
-
     // Current position in the string
     SIZE_TYPE pos  = 0;
 
@@ -1140,7 +1140,8 @@ static double s_StringToDouble(const char* str, size_t size,
     }
 
     // Conversion
-    errno = 0;
+    int& errno_ref = errno;
+    errno_ref = 0;
     char* endptr = 0;
     const char* begptr = str + pos;
 
@@ -1159,9 +1160,9 @@ static double s_StringToDouble(const char* str, size_t size,
         }
     }
     if (flags & NStr::fIgnoreErrno) {
-        errno = 0;
+        errno_ref = 0;
     };
-    if ( errno  ||  !endptr  ||  endptr == begptr ) {
+    if ( errno_ref  ||  !endptr  ||  endptr == begptr ) {
         S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, true, s_DiffPtr(endptr, begptr) + pos);
     }
 #if 0
@@ -1275,7 +1276,6 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
         NCBI_THROW2(CStringException, eConvert,  
                     "Bad numeric base '" + NStr::IntToString(base)+ "'", 0);
     }
-
     // Current position in the string
     SIZE_TYPE pos = 0;
 
@@ -1359,7 +1359,6 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
         //errno = EINVAL;
         NCBI_THROW2(CStringException, eConvert, "Wrong set of flags", 0);
     }
-
     const char* str_ptr = str.data();
     const char* str_end = str_ptr + str.size();
     if (flags & fAllowLeadingSymbols) {
@@ -1652,13 +1651,13 @@ void NStr::IntToString(string& out_str, int svalue,
         errno = EINVAL;
         return;
     }
-    errno = 0;
     unsigned int value = static_cast<unsigned int>(svalue);
     
     if ( base == 10  &&  svalue < 0 ) {
         value = static_cast<unsigned int>(-svalue);
     }
     s_SignedToString(out_str, value, svalue, flags, base);
+    errno = 0;
 }
 
 
@@ -1670,13 +1669,13 @@ void NStr::LongToString(string& out_str, long svalue,
         errno = EINVAL;
         return;
     }
-    errno = 0;
     unsigned long value = static_cast<unsigned long>(svalue);
     
     if ( base == 10  &&  svalue < 0 ) {
         value = static_cast<unsigned long>(-svalue);
     }
     s_SignedToString(out_str, value, svalue, flags, base);
+    errno = 0;
 }
 
 
@@ -1690,7 +1689,6 @@ void NStr::ULongToString(string&          out_str,
         errno = EINVAL;
         return;
     }
-    errno = 0;
 
     const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
@@ -1735,6 +1733,7 @@ void NStr::ULongToString(string&          out_str,
     }
 
     out_str.assign(pos, buffer + kBufSize - pos);
+    errno = 0;
 }
 
 
@@ -1851,15 +1850,12 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
         errno = EINVAL;
         return;
     }
-    errno = 0;
-
     Uint8 value;
     if (base == 10) {
         value = static_cast<Uint8>(svalue<0?-svalue:svalue);
     } else {
         value = static_cast<Uint8>(svalue);
     }
-
     const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
 
@@ -1872,6 +1868,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
             *--pos = '+';
     }
     out_str.assign(pos, buffer + kBufSize - pos);
+    errno = 0;
 }
 
 
@@ -1883,8 +1880,6 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
         errno = EINVAL;
         return;
     }
-    errno = 0;
-
     const SIZE_TYPE kBufSize = CHAR_BIT  * sizeof(value);
     char  buffer[kBufSize];
 
@@ -1894,6 +1889,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
         *--pos = '+';
     }
     out_str.assign(pos, buffer + kBufSize - pos);
+    errno = 0;
 }
 
 
@@ -2612,7 +2608,6 @@ bool NStr::StringToBool(const CTempString& str)
         errno = 0;
         return true;
     }
-
     if ( AStrEquiv(str, s_kFalseString, PNocase())  ||
          AStrEquiv(str, s_kFString,     PNocase())  ||
          AStrEquiv(str, s_kNoString,    PNocase())  ||
@@ -2620,7 +2615,6 @@ bool NStr::StringToBool(const CTempString& str)
         errno = 0;
         return false;
     }
-
     //errno = EINVAL;
     NCBI_THROW2(CStringException, eConvert,
                 "String cannot be converted to bool", 0);
@@ -4791,13 +4785,14 @@ bool s_IsIPAddress(const char* str, size_t size)
     unsigned long val;
     int dots = 0;
 
+    int& errno_ref = errno;
     for (;;) {
         char* e;
         if ( !isdigit((unsigned char)(*c)) )
             return false;
-        errno = 0;
+        errno_ref = 0;
         val = strtoul(c, &e, 10);
-        if (c == e  ||  errno)
+        if (c == e  ||  errno_ref)
             return false;
         c = e;
         if (*c != '.')

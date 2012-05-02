@@ -1870,6 +1870,106 @@ BOOST_AUTO_TEST_CASE(s_NumToStringDataSize)
 
 
 //----------------------------------------------------------------------------
+// NStr::BoolToString()
+//----------------------------------------------------------------------------
+
+struct SStringBoolValues
+{
+    const char* str;        // String input
+    bool        is_good;    // String input is correct
+    bool        expected;   // Expected value 
+};
+
+static const SStringBoolValues s_StrToBoolTests[] = {
+    { "true",   true,   true  },
+    { "false",  true,   false },
+    { "t",      true,   true  },
+    { "f",      true,   false },
+    { "yes",    true,   true  },
+    { "no",     true,   false },
+    { "y",      true,   true  },
+    { "n",      true,   false },
+    { "0",      false,  false },
+    { "1",      false,  false },
+    { "truee",  false,  false },
+};
+
+BOOST_AUTO_TEST_CASE(s_BoolToString)
+{
+    NcbiCout << NcbiEndl << "NStr::BoolToString() tests...";
+
+    // BoolToString()
+
+    BOOST_CHECK_EQUAL(NStr::BoolToString(true), string("true"));
+    BOOST_CHECK_EQUAL(NStr::BoolToString(false), string("false"));
+
+    // StringToBool()
+
+    const size_t count = sizeof(s_StrToBoolTests) / 
+                         sizeof(s_StrToBoolTests[0]);
+    for (size_t i = 0;  i < count;  ++i)
+    {
+        const SStringBoolValues* test = &s_StrToBoolTests[i];
+        try {
+            errno = kTestErrno;
+            bool value = NStr::StringToBool(test->str);
+            BOOST_CHECK(errno != kTestErrno);
+            BOOST_CHECK(test->is_good);
+            BOOST_CHECK_EQUAL(value, test->expected);
+        }
+        catch (CException&) {
+            BOOST_CHECK(errno != kTestErrno);
+            if ( test->is_good ) {
+                ERR_POST("Cannot convert " << test->str << " to bool");
+            }
+            BOOST_CHECK(!test->is_good);
+        }
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// NStr::PtrToString()
+//----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(s_PtrToString)
+{
+    NcbiCout << NcbiEndl << "NStr::PtrToString() tests...";
+
+    string s;
+    {{
+        errno = kTestErrno;
+        NStr::PtrToString(s, &s);
+        BOOST_CHECK(errno != kTestErrno);
+
+        errno = kTestErrno;
+        const void* ptr = NStr::StringToPtr(s);
+        BOOST_CHECK(errno != kTestErrno);
+        BOOST_CHECK_EQUAL(ptr, &s);
+    }}
+    {{
+        Uint8       ptr_val = 0x01234D00002fe008;
+        const char* ptr_str = "01234D00002FE008";
+
+        errno = kTestErrno;
+        s = NStr::PtrToString((void*)ptr_val);
+        BOOST_CHECK(errno != kTestErrno);
+        BOOST_CHECK_EQUAL(s, string(ptr_str));
+
+        errno = kTestErrno;
+        const void* ptr1 = NStr::StringToPtr(s);
+        BOOST_CHECK(errno != kTestErrno);
+        BOOST_CHECK_EQUAL(ptr1, (void*)ptr_val);
+
+        errno = kTestErrno;
+        const void* ptr2 = NStr::StringToPtr(CTempString(ptr_str));
+        BOOST_CHECK(errno != kTestErrno);
+        BOOST_CHECK_EQUAL(ptr2, (void*)ptr_val);
+    }}
+}
+
+
+//----------------------------------------------------------------------------
 // NStr::Replace()
 //----------------------------------------------------------------------------
 
