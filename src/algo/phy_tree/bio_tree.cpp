@@ -157,8 +157,9 @@ CBioTreeFeatureDictionary::Register(const string& feature_name)
         return it->second;
     }
 
+    unsigned id = m_IdCounter;
     Register(m_IdCounter, feature_name);
-    return m_IdCounter++;
+    return id;
 }
 
 void CBioTreeFeatureDictionary::Register(TBioTreeFeatureId id, 
