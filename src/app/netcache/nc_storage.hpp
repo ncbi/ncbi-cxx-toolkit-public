@@ -474,6 +474,7 @@ private:
 
     enum EStopCause {
         eNoStop,
+        eStopWarning,
         eStopDBSize,
         eStopDiskSpace,
         eStopDiskCritical
@@ -553,6 +554,8 @@ private:
     bool                     m_CleanStart;
     bool                     m_NeedSaveLogRecNo;
     bool                     m_DoExtraGC;
+    Uint1                    m_WarnLimitOnPct;
+    Uint1                    m_WarnLimitOffPct;
     int                      m_MinRecNoSavePeriod;
     int                      m_LastRecNoSaveTime;
     Uint4                    m_ExtraGCTime;
@@ -615,7 +618,7 @@ CNCBlobStorage::IsCleanStart(void)
 inline bool
 CNCBlobStorage::NeedStopWrite(void)
 {
-    return m_IsStopWrite != eNoStop;
+    return m_IsStopWrite != eNoStop  &&  m_IsStopWrite != eStopWarning;
 }
 
 inline bool
