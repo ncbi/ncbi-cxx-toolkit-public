@@ -2608,16 +2608,18 @@ bool NStr::StringToBool(const CTempString& str)
     if ( AStrEquiv(str, s_kTrueString,  PNocase())  ||
          AStrEquiv(str, s_kTString,     PNocase())  ||
          AStrEquiv(str, s_kYesString,   PNocase())  ||
-         AStrEquiv(str, s_kYString,     PNocase()) )
+         AStrEquiv(str, s_kYString,     PNocase()) ) {
         errno = 0;
         return true;
+    }
 
     if ( AStrEquiv(str, s_kFalseString, PNocase())  ||
          AStrEquiv(str, s_kFString,     PNocase())  ||
          AStrEquiv(str, s_kNoString,    PNocase())  ||
-         AStrEquiv(str, s_kNString,     PNocase()) )
+         AStrEquiv(str, s_kNString,     PNocase()) ) {
         errno = 0;
         return false;
+    }
 
     //errno = EINVAL;
     NCBI_THROW2(CStringException, eConvert,
