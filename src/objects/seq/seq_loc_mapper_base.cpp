@@ -3158,7 +3158,9 @@ x_RangeToSeq_loc(const CSeq_id_Handle& idh,
 
     CRef<CSeq_loc> loc(new CSeq_loc);
     // If both fuzzes are set, create interval, not point.
-    if (from == to  &&  (!rg_fuzz.first  ||  !rg_fuzz.second)) {
+    if (from == to  &&  (!rg_fuzz.first  ||  !rg_fuzz.second) &&
+        (m_FuzzOption & fFuzzOption_CStyle) == 0 )
+    {
         // point
         loc->SetPnt().SetId().Assign(*idh.GetSeqId());
         loc->SetPnt().SetPoint(from);
