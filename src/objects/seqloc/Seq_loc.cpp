@@ -2731,7 +2731,9 @@ void x_PushRange(CSeq_loc& dst,
             dst.SetEmpty(*id);
         }
     }
-    else if ( rg.GetLength() == 1 ) {
+    else if ( rg.GetLength() == 1 && 
+        ( ! rg.IsSetFuzzFrom() || ! rg.IsSetFuzzTo() ) )
+    {
         // Preserve points
         CRef<CSeq_point> pnt(new CSeq_point);
         pnt->SetId(*id);
