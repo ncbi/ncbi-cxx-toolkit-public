@@ -416,7 +416,8 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
         if (m_DiagContext.NotNull()) {
             m_ConnContext->SetRequestStatus(m_DiagContext->GetRequestStatus());
         } else {
-            if (m_ConnContext->GetRequestStatus() != eStatus_HTTPProbe)
+            if (m_ConnContext->GetRequestStatus() != eStatus_HTTPProbe &&
+                m_ConnContext->GetRequestStatus() != eStatus_BadRequest)
                 m_ConnContext->SetRequestStatus(eStatus_Inactive);
         }
         break;
@@ -694,7 +695,7 @@ void CNetScheduleHandler::x_ProcessMsgAuth(BUF buffer)
         if (m_ConnContext.NotNull())
             m_ConnContext->SetRequestStatus(eStatus_HTTPProbe);
 
-        x_CloseConnection();
+        m_Server->CloseConnection(&GetSocket());
         return;
     }
 
@@ -737,7 +738,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
                 GetDiagContext().PrintRequestStop();
                 m_ConnContext.Reset();
             }
-            x_CloseConnection();
+            m_Server->CloseConnection(&GetSocket());
             return;
         }
         throw;
@@ -780,7 +781,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
                     GetDiagContext().PrintRequestStop();
                     m_ConnContext.Reset();
                 }
-                x_CloseConnection();
+                m_Server->CloseConnection(&GetSocket());
                 return;
             }
             throw;
@@ -817,18 +818,9 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         x_PrintRequestStart(cmd);
     }
     catch (const CNSProtoParserException &  ex) {
-        // Rewrite error in usual terms
-        // To prevent stall due to possible very long message (which
-        // quotes original, arbitrarily long user input) we truncate it here
-        // to the value long enough for diagnostics.
-
         // Parsing is done before PrintRequestStart(...) so a diag context is
         // not created here - create it just to provide an error output
-        x_PrintRequestStart("Invalid command");
-        ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
-                                      ex.GetMsg().substr(0, 128));
+        x_OnCmdParserError(true, ex.GetMsg(), "");
         return;
     }
 
@@ -877,7 +869,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         (extra.processor != &CNetScheduleHandler::x_ProcessFastStatusW))
         if (!m_ClientId.CheckVersion(queue_ptr)) {
             WriteMessage("ERR:eInvalidClientOrVersion:");
-            x_CloseConnection();
+            m_Server->CloseConnection(&GetSocket());
             return;
         }
 
@@ -908,18 +900,8 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
         (this->*cmd.command->extra.processor)(0);
     }
     catch (const CNSProtoParserException &  ex) {
-        // Rewrite error in usual terms
-        // To prevent stall due to possible very long message (which
-        // quotes original, arbitrarily long user input) we truncate it here
-        // to the value long enough for diagnostics.
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
-                                      ex.GetMsg().substr(0, 128) +
-                                      ", BTCH or ENDS expected");
-        ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
-
-        m_BatchJobs.clear();
-        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        x_OnCmdParserError(false, ex.GetMsg(), ", BTCH or ENDS expected");
+        return;
     }
     catch (const CNetScheduleException &  ex) {
         x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
@@ -956,17 +938,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         m_CommandArguments.AssignValues(params);
     }
     catch (const CNSProtoParserException &  ex) {
-        // Rewrite error in usual terms
-        // To prevent stall due to possible very long message (which
-        // quotes original, arbitrarily long user input) we truncate it here
-        // to the value long enough for diagnostics.
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
-                                      ex.GetMsg().substr(0, 128));
-        ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
-
-        m_BatchJobs.clear();
-        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        x_OnCmdParserError(false, ex.GetMsg(), "");
         return;
     }
     catch (const CNetScheduleException &  ex) {
@@ -1027,14 +999,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         m_BatchEndParser.ParseCommand(msg);
     }
     catch (const CNSProtoParserException &  ex) {
-        BUF_Read(buffer, 0, BUF_Size(buffer));
-        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
-                                      ex.GetMsg().substr(0, 128));
-        ERR_POST("Error parsing command: " << ex);
-        x_PrintRequestStop(eStatus_BadRequest);
-
-        m_BatchJobs.clear();
-        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        x_OnCmdParserError(false, ex.GetMsg(), ", ENDB expected");
         return;
     }
     catch (const CException &  ex) {
@@ -1950,7 +1915,7 @@ void CNetScheduleHandler::x_ProcessQList(CQueue*)
 
 void CNetScheduleHandler::x_ProcessQuitSession(CQueue*)
 {
-    x_CloseConnection();
+    m_Server->CloseConnection(&GetSocket());
 
     // Log the close request
     CDiagContext::SetRequestContext(m_DiagContext);
@@ -2263,19 +2228,6 @@ void CNetScheduleHandler::x_PrintRequestStop(unsigned int  status)
 }
 
 
-void CNetScheduleHandler::x_CloseConnection(void)
-{
-    // read trailing input and close the port
-    CSocket &       socket = GetSocket();
-    STimeout        to     = {0, 0};
-
-    socket.SetTimeout(eIO_Read, &to);
-    socket.Read(NULL, 1024);
-    m_Server->CloseConnection(&socket);
-    return;
-}
-
-
 // The function forms a responce for various 'get job' commands and prints
 // extra to the log if required
 void
@@ -2316,6 +2268,42 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
 
 
     WriteMessage("OK:", output);
+    return;
+}
+
+
+static const unsigned int   kMaxParserErrMsgLength = 128;
+
+// Write into socket, logs the message and closes the connection
+void CNetScheduleHandler::x_OnCmdParserError(bool            need_request_start,
+                                             const string &  msg,
+                                             const string &  suffix)
+{
+    // Truncating is done to prevent output of an arbitrary long garbage
+
+    if (need_request_start)
+        x_PrintRequestStart("Invalid command");
+
+    if (msg.size() < kMaxParserErrMsgLength * 2)
+        ERR_POST("Error parsing command: " << msg + suffix);
+    else
+        ERR_POST("Error parsing command: " <<
+                 msg.substr(0, kMaxParserErrMsgLength * 2) <<
+                 " (TRUNCATED)" + suffix);
+    x_PrintRequestStop(eStatus_BadRequest);
+
+    if (msg.size() < kMaxParserErrMsgLength)
+        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" + msg + suffix);
+    else
+        x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:" +
+                                      msg.substr(0, kMaxParserErrMsgLength) +
+                                      " (TRUNCATED)" + suffix);
+
+    // Close the connection
+    if (m_ConnContext.NotNull())
+        m_ConnContext->SetRequestStatus(eStatus_BadRequest);
+
+    m_Server->CloseConnection(&GetSocket());
     return;
 }
 

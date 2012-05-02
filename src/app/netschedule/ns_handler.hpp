@@ -193,13 +193,16 @@ private:
         NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue unknown");
     }
 
+    // Write into socket, logs the message and closes the connection
+    void x_OnCmdParserError(bool  need_request_start,
+                            const string &  msg, const string &  suffix);
+
     // Moved from CNetScheduleServer
     void x_StatisticsNew(CQueue* q, const std::string& what, time_t curr);
 
     void x_PrintRequestStart(const SParsedCmd& cmd);
     void x_PrintRequestStart(CTempString  msg);
     void x_PrintRequestStop(unsigned int  status);
-    void x_CloseConnection(void);
 
     void x_PrintGetJobResponse(const CQueue * q,
                                const CJob &   job,
