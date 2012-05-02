@@ -75,7 +75,7 @@ extern "C" {
  * type, please apply equivalent changes to both definitions.
  */
 
-/** Aux. enum to set/unset/default various features
+/** Aux. enum to set/unset/default various features.
  */
 typedef enum ENcbiSwitch {
     eOff = 0,
