@@ -270,7 +270,7 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(
     bool force_widths = false;
     if ( aln_stats.GetIdVec()[anchor_row]->IsProtein() ) {
         for (size_t i = 0; i < aln_stats.GetIdVec().size(); ++i) {
-            if ( aln_stats.GetIdVec()[i]->IsNucleotide() ) {
+            if ( !aln_stats.GetIdVec()[i]->IsProtein() ) {
                 force_widths = true;
                 break;
             }

@@ -67,7 +67,8 @@ public:
                  int flags = fDefaultPolicy)
         : TAlnRngColl(flags),
           m_FirstId(first_id),
-          m_SecondId(second_id)
+          m_SecondId(second_id),
+          m_UsingGenomic(false)
     {
     }
 
@@ -100,6 +101,9 @@ public:
     /// multi-row alignment with some rows referencing genomic sequences.
     void ForceGenomicCoords(void)
     {
+        if ( m_UsingGenomic ) {
+            return; // already trnaslated
+        }
         if (!m_FirstId->IsProtein()  ||  !m_SecondId->IsProtein()) {
             return; // already genomic
         }
@@ -113,11 +117,20 @@ public:
             rg->SetSecondFrom(rg->GetSecondFrom()*3);
             rg->SetLength(rg->GetLength()*3);
         }
+        m_UsingGenomic = true;
+    }
+
+    /// Tell the pairwise alignment that the coordinates are already tranlated
+    /// to genomic.
+    void SetUsingGenomic(void) {
+        m_UsingGenomic = true;
     }
 
 private:
     TAlnSeqIdIRef m_FirstId;
     TAlnSeqIdIRef m_SecondId;
+    // Both rows translated to genomic coordinates?
+    bool          m_UsingGenomic;
 };
 
 

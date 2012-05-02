@@ -164,7 +164,7 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
         TSignedSeqPos from_2 = starts[pos_2];
         TSeqPos len = lens[seg];
 
-        /// determinte the direction
+        // determinte the direction
         bool direct = true;
         bool first_direct = true;
         if (strands) {
@@ -178,10 +178,14 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
              direction == CAlnUserOptions::eDirect :
              direction == CAlnUserOptions::eReverse)) {
 
-            /// base-width adjustments
+            // base-width adjustments
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
             if (mixed  ||  base_width_1 > 1) {
+                // Tell the pairwise alignment we are already using genomic
+                // coordinates.
+                pairwise_aln.SetUsingGenomic();
+
                 if (base_width_1 > 1) {
                     from_1 *= base_width_1;
                 }
@@ -191,9 +195,9 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
                 len *= 3;
             }
 
-            /// if not a gap, insert it to the collection
+            // if not a gap, insert it to the collection
             if (from_1 >= 0  &&  from_2 >= 0)  {
-                /// insert the range
+                // insert the range
                 pairwise_aln.insert(CPairwiseAln::TAlnRng(
                     from_1, from_2, len, direct, first_direct));
                 last_to_1 = first_direct ? from_1 + len : from_1;
@@ -245,7 +249,7 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
         bool present_2 = presents[pos_2];
         TSeqPos len = lens[seg];
 
-        /// determinte the direction
+        // determinte the direction
         bool direct = true;
         bool first_direct = true;
         if (strands) {
@@ -259,10 +263,14 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
              direction == CAlnUserOptions::eDirect :
              direction == CAlnUserOptions::eReverse)) {
 
-            /// base-width adjustments
+            // base-width adjustments
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
             if (mixed  ||  base_width_1 > 1) {
+                // Tell the pairwise alignment we are already using genomic
+                // coordinates.
+                pairwise_aln.SetUsingGenomic();
+
                 if (base_width_1 > 1) {
                     from_1 *= base_width_1;
                 }
@@ -272,9 +280,9 @@ ConvertPackedsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                 len *= 3;
             }
                 
-            /// if not a gap, insert it to the collection
+            // if not a gap, insert it to the collection
             if (present_1  &&  present_2)  {
-                /// insert the range
+                // insert the range
                 pairwise_aln.insert(CPairwiseAln::TAlnRng(
                     from_1, from_2, len, direct, first_direct));
                 last_to_1 = first_direct ? from_1 + len : from_1;
@@ -348,6 +356,11 @@ ConvertStdsegToPairwiseAln(CPairwiseAln& pairwise_aln,
                     abs((TSignedSeqPos)len_1 - (TSignedSeqPos)len_2*3);
                 bool row_1_is_protein = prot_to_nuc_diff < nuc_to_nuc_diff;
                 bool row_2_is_protein = nuc_to_prot_diff < nuc_to_nuc_diff;
+
+                if (nuc_to_nuc_diff != 0) {
+                    // If the alignment is mixed, using genomic coordinates.
+                    pairwise_aln.SetUsingGenomic();
+                }
 
                 guessed_width_1 = row_1_is_protein ? 3 : 1;
                 guessed_width_2 = row_2_is_protein ? 3 : 1;
@@ -463,7 +476,7 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,
         TSeqPos from_2 = dd.GetStarts()[row_2];
         TSeqPos len = dd.GetLen();
 
-        /// determinte the strands
+        // determinte the strands
         bool direct = true;
         bool first_direct = true;
         if (dd.IsSetStrands()) {
@@ -477,10 +490,14 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,
              direction == CAlnUserOptions::eDirect :
              direction == CAlnUserOptions::eReverse)) {
 
-            /// base-width adjustments
+            // base-width adjustments
             const int& base_width_1 = pairwise_aln.GetFirstBaseWidth();
             const int& base_width_2 = pairwise_aln.GetSecondBaseWidth();
             if (mixed  ||  base_width_1 > 1) {
+                // Tell the pairwise alignment we are already using genomic
+                // coordinates.
+                pairwise_aln.SetUsingGenomic();
+
                 if (base_width_1 > 1) {
                     from_1 *= base_width_1;
                 }
@@ -490,7 +507,7 @@ ConvertDendiagToPairwiseAln(CPairwiseAln& pairwise_aln,
                 len *= 3;
             }
 
-            /// insert the range
+            // insert the range
             pairwise_aln.insert(CPairwiseAln::TAlnRng(
                 from_1, from_2, len, direct, first_direct));
 
@@ -509,9 +526,13 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,
 {
     typedef CPairwiseAln::TAlnRngColl TAlnRngColl;
 
-    _ALNMGR_ASSERT(row_1 == 0); /// TODO: Hanlde case when the anchor is not sparse_aln's anchor.
+    // Sparse-segs are not intended to store mixed alignments.
+    _ALNMGR_ASSERT(pairwise_aln.GetFirstId()->GetBaseWidth() ==
+        pairwise_aln.GetSecondId()->GetBaseWidth());
+
+    _ALNMGR_ASSERT(row_1 == 0); // TODO: Hanlde case when the anchor is not sparse_aln's anchor.
     if (row_1 == 0) {
-        if (row_2 == 0) { /// Anchor aligned to itself
+        if (row_2 == 0) { // Anchor aligned to itself
             bool first_row = true;
             ITERATE(CSparse_seg::TRows, aln_it, sparse_seg.GetRows()) {
                 TAlnRngColl curr_row;
@@ -538,7 +559,7 @@ ConvertSparseToPairwiseAln(CPairwiseAln& pairwise_aln,
                     }
                 }                    
             }
-        } else { /// Regular row
+        } else { // Regular row
             _ALNMGR_ASSERT(row_2 > 0  &&  row_2 <= sparse_seg.CheckNumRows());
 
             const CSparse_align& sa = *sparse_seg.GetRows()[row_2 - 1];
@@ -571,12 +592,15 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
     _ALNMGR_ASSERT((row_1 == 0  ||  row_1 == 1)  &&  (row_2 == 0  ||  row_2 == 1));
 
     bool prot = spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
+    // With spliced-seg we always know how to translate coordinates and use
+    // genomic ones.
+    pairwise_aln.SetUsingGenomic();
 
     ITERATE (CSpliced_seg::TExons, exon_it, spliced_seg.GetExons()) {
 
         const CSpliced_exon& exon = **exon_it;
             
-        /// Determine strands
+        // Determine strands
         if (spliced_seg.CanGetProduct_strand()  &&  exon.CanGetProduct_strand()  &&
             spliced_seg.GetProduct_strand() != exon.GetProduct_strand()) {
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
@@ -604,7 +628,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
         bool direct = product_plus == genomic_plus;
         bool first_direct = row_1 == 0 ? product_plus : genomic_plus;
 
-        /// Determine positions
+        // Determine positions
         TSeqPos product_start;
         if (prot) {
             product_start = exon.GetProduct_start().GetProtpos().GetAmin() * 3;
@@ -674,7 +698,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                     first_direct));
             }
         } else {
-            /// Iterate trhough exon chunks
+            // Iterate trhough exon chunks
             TSeqPos last_product_to = 0;
             TSeqPos last_genomic_to = 0;
             ITERATE (CSpliced_exon::TParts, chunk_it, exon.GetParts()) {
@@ -706,14 +730,14 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                 TSeqPos gpos = genomic_plus ? genomic_pos : genomic_pos - genomic_len + 1;
                 if (row_1 == 0  &&  row_2 == 0) {
                     if (product_len != 0) {
-                        /// insert the range
+                        // insert the range
                         pairwise_aln.insert(CPairwiseAln::TAlnRng(
                             ppos, ppos, product_len, true, first_direct));
                         last_product_to = first_direct ? ppos + product_len : ppos;
                     }
                 } else if (row_1 == 1  &&  row_2 == 1) {
                     if (genomic_len != 0) {
-                        /// insert the range
+                        // insert the range
                         pairwise_aln.insert(CPairwiseAln::TAlnRng(
                             gpos, gpos, genomic_len, true, first_direct));
                         last_genomic_to = first_direct ? gpos + genomic_len : gpos;
@@ -724,7 +748,7 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
                          (direct ?
                           direction == CAlnUserOptions::eDirect :
                           direction == CAlnUserOptions::eReverse))) {
-                        /// insert the range
+                        // insert the range
                         if (row_1 == 0) {
                             pairwise_aln.insert(CPairwiseAln::TAlnRng(
                                 ppos, gpos, genomic_len, direct, first_direct));
@@ -817,6 +841,11 @@ ConvertSeqLocsToPairwiseAln(CPairwiseAln& aln,
     if ( !wid2 ) {
         wid2 = 1;
     }
+    if (wid1 == 3  ||  wid2 == 3) {
+        // We know we are translating everything to genomic coordinates.
+        aln.SetUsingGenomic();
+    }
+
     CSeq_loc_CI it1(loc_1);
     CSeq_loc_CI it2(loc_2);
     TSeqPos lshift1 = 0;
@@ -929,6 +958,7 @@ void SeqLocMapperToPairwiseAligns(const objects::CSeq_loc_Mapper_Base& mapper,
                 TAlnSeqIdIRef dst_id(Ref(new CAlnSeqId(*dst_idh.GetSeqId())));
                 dst_id->SetBaseWidth(mapper.GetWidthById(dst_idh));
                 aln = new CPairwiseAln(src_id, dst_id);
+                aln->SetUsingGenomic(); // All coordinates are already genomic.
                 aln_map[dst_idh] = aln;
                 aligns.push_back(aln);
             }
