@@ -306,9 +306,9 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                              ? "Authorization" : "Proxy authorization",
                              fail < 0 ? "not yet implemented" :
                              fail > 1 ? "prohibited" : "failed",
-                             "(<"[!retry->data],
+                             "(["[!retry->data],
                              retry->data ? retry->data : "NULL",
-                             ")>"[!retry->data]));
+                             ")]"[!retry->data]));
                 if (url)
                     free(url);
                 status = fail < 0 ? eIO_NotSupported : eIO_Closed;
