@@ -935,6 +935,8 @@ Optional Packages:
  --without-lzo           do not use LZO
  --with-pcre=DIR         use PCRE installation in DIR
  --without-pcre          use internal copy of PCRE
+ --with-gcrypt=DIR       use gcrypt installation in DIR
+ --without-gcrypt        do not use gcrypt
  --with-gnutls=DIR       use GNUTLS installation in DIR
  --without-gnutls        do not use GNUTLS
  --with-openssl=DIR      use OpenSSL installation in DIR
@@ -1239,6 +1241,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_pcre=no
+         fi
+        if test "${with_gcrypt-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-gcrypt but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_gcrypt=no
          fi
         if test "${with_gnutls-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-gnutls but --without-3psw" >&2
@@ -2235,6 +2243,18 @@ if test "${with_pcre2+set}" = set; then
 
 fi;
 
+# Check whether --with-gcrypt or --without-gcrypt was given.
+if test "${with_gcrypt+set}" = set; then
+  withval="$with_gcrypt"
+
+fi;
+
+# Check whether --with-gcrypt2 or --without-gcrypt2 was given.
+if test "${with_gcrypt2+set}" = set; then
+  withval="$with_gcrypt2"
+
+fi;
+
 # Check whether --with-gnutls or --without-gnutls was given.
 if test "${with_gnutls+set}" = set; then
   withval="$with_gnutls"
@@ -2874,7 +2894,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
+z bz2 lzo pcre gcrypt gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan zorba oechem sge muparser hdf5 \
@@ -2919,7 +2939,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | [A-Z]*=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
-      | --with-gnutls=* | --with-openssl=* | --with-curl=* \
+      | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* | --with-curl=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \

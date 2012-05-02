@@ -64,7 +64,8 @@ case "$with_3psw" in
       else
          with_ncbi_c=no
       fi
-      m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre, gnutls, openssl,
+      m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre,
+                     gcrypt, gnutls, openssl,
                      sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
                      python, jni, boost, sqlite3, mimetic, sge, icu, expat,
@@ -245,6 +246,10 @@ AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre2,
    [ --without-pcre          use internal copy of PCRE])
+AC_ARG_WITH(gcrypt,
+   [ --with-gcrypt=DIR       use gcrypt installation in DIR])
+AC_ARG_WITH(gcrypt2,
+   [ --without-gcrypt        do not use gcrypt])
 AC_ARG_WITH(gnutls,
    [ --with-gnutls=DIR       use GNUTLS installation in DIR])
 AC_ARG_WITH(gnutls2,
@@ -469,7 +474,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 lzo pcre gnutls openssl sybase sybase-local sybase-new \
+z bz2 lzo pcre gcrypt gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan zorba oechem sge muparser hdf5 \
@@ -514,7 +519,7 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
-      | --with-gnutls=* | --with-openssl=* | --with-curl=* \
+      | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* | --with-curl=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
