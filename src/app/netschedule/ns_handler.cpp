@@ -1701,6 +1701,10 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     if (q == NULL) {
         // Transition counters for all the queues
         WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
+        if (m_Server->GetRefuseSubmits())
+            WriteMessage("OK:SubmitsDisabledEffective: 1");
+        else
+            WriteMessage("OK:SubmitsDisabledEffective: 0");
         m_Server->PrintTransitionCounters(*this);
         WriteMessage("OK:END");
         x_PrintRequestStop(eStatus_OK);
@@ -1715,6 +1719,14 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     }
 
     WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
+    if (m_Server->GetRefuseSubmits() || q->GetRefuseSubmits())
+        WriteMessage("OK:SubmitsDisabledEffective: 1");
+    else
+        WriteMessage("OK:SubmitsDisabledEffective: 0");
+    if (q->GetRefuseSubmits())
+        WriteMessage("OK:SubmitsDisabledPrivate: 1");
+    else
+        WriteMessage("OK:SubmitsDisabledPrivate: 0");
 
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
         TJobStatus      st = g_ValidJobStatuses[k];
