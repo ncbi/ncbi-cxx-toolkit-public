@@ -92,6 +92,9 @@ public:
     void PrintMemStat(CNcbiOstream& out);
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
 
+    bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
+    void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }
+
     unsigned GetInactivityTimeout(void) const   { return m_InactivityTimeout; }
     std::string& GetHost()                      { return m_Host; }
     unsigned GetPort() const                    { return m_Port; }
@@ -144,6 +147,8 @@ private:
     bool                                        m_LogCleaningThreadFlag;
     bool                                        m_LogExecutionWatcherThreadFlag;
     bool                                        m_LogStatisticsThreadFlag;
+
+    bool                                        m_RefuseSubmits;
 
     // Purge() related parameters
     unsigned int                                m_DeleteBatchSize;  // Max # of jobs to be deleted

@@ -73,10 +73,13 @@ SNSProtoArgument s_BatchArgs[] = {
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
 
     /*** Admin role ***/
-    { "SHUTDOWN", { &CNetScheduleHandler::x_ProcessShutdown,
-                    eNSCR_Admin } },
-    { "GETCONF",  { &CNetScheduleHandler::x_ProcessGetConf,
-                    eNSCR_Admin } },
+    { "SHUTDOWN",      { &CNetScheduleHandler::x_ProcessShutdown,
+                         eNSCR_Admin } },
+    { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
+                         eNSCR_Admin } },
+    { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
+                         eNSCR_Admin },
+        { { "mode", eNSPT_Int, eNSPA_Required } } },
 
     /*** Any role ***/
     { "VERSION",  { &CNetScheduleHandler::x_ProcessVersion,
@@ -850,14 +853,16 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         queue_ref.Reset(GetQueue());
         queue_ptr = queue_ref.GetPointer();
     }
-    else if (extra.processor == &CNetScheduleHandler::x_ProcessStatistics) {
-        // The STAT command could be with or without a queue
+    else if (extra.processor == &CNetScheduleHandler::x_ProcessStatistics ||
+             extra.processor == &CNetScheduleHandler::x_ProcessRefuseSubmits) {
+        // The STAT and REFUSESUBMITS commands could be with or without a queue
         try {
             queue_ref.Reset(GetQueue());
             queue_ptr = queue_ref.GetPointer();
         }
         catch (...) {
-            // That means no queue were found. The STAT is for whole server
+            // That means no queue were found, i.e.
+            // the STAT or REFUSESUBMITS is for whole server
         }
     }
 
@@ -1179,6 +1184,12 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 {
+    if (q->GetRefuseSubmits() || m_Server->GetRefuseSubmits()) {
+        WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintRequestStop(eStatus_SubmitRefused);
+        return;
+    }
+
     CJob        job(m_CommandArguments);
 
     // Never leave Client IP empty, if we're not provided with a real one,
@@ -1201,6 +1212,12 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
 {
+    if (q->GetRefuseSubmits() || m_Server->GetRefuseSubmits()) {
+        WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintRequestStop(eStatus_SubmitRefused);
+        return;
+    }
+
     m_BatchSubmPort    = m_CommandArguments.port;
     m_BatchSubmTimeout = m_CommandArguments.timeout;
     if (!m_CommandArguments.ip.empty())
@@ -2109,6 +2126,28 @@ void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 {
     q->CancelAllJobs(m_ClientId);
     WriteMessage("OK:");
+    x_PrintRequestStop(eStatus_OK);
+}
+
+
+void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
+{
+    if (q == NULL) {
+        // This is a whole server scope request
+        m_Server->SetRefuseSubmits(m_CommandArguments.mode);
+        WriteMessage("OK:");
+        x_PrintRequestStop(eStatus_OK);
+        return;
+    }
+
+    // This is a queue scope request.
+    q->SetRefuseSubmits(m_CommandArguments.mode);
+
+    if (m_CommandArguments.mode == false &&
+            m_Server->GetRefuseSubmits() == true)
+        WriteMessage("OK:WARNING:Submits are disabled on the server level;");
+    else
+        WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 

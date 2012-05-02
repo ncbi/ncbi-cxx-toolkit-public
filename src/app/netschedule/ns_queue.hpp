@@ -131,6 +131,9 @@ public:
     void GetMaxIOSizes(unsigned int &  max_input_size,
                        unsigned int &  max_output_size) const;
 
+    bool GetRefuseSubmits(void) const { return m_RefuseSubmits; }
+    void SetRefuseSubmits(bool  val)  { m_RefuseSubmits = val;  }
+
     ////
     // Status matrix related
     unsigned LoadStatusMatrix();
@@ -506,6 +509,8 @@ private:
 
     const bool &                 m_Log;
     const bool &                 m_LogBatchEachJob;
+
+    bool                         m_RefuseSubmits;
 
     CStatisticsCounters          m_StatisticsCounters;
 

@@ -101,7 +101,8 @@ public:
         eStatus_SocketIOError       = 499, ///< Error writing to socket
 
         eStatus_ServerError         = 500, ///< Internal server error
-        eStatus_NotImplemented      = 501  ///< Command is not implemented
+        eStatus_NotImplemented      = 501, ///< Command is not implemented
+        eStatus_SubmitRefused       = 503  ///< In refuse submits mode and received SUBMIT
     };
 
 
@@ -178,6 +179,7 @@ private:
     void x_ProcessGetAffinityList(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);
     void x_ProcessCancelQueue(CQueue*);
+    void x_ProcessRefuseSubmits(CQueue*);
     void x_CmdNotImplemented(CQueue*);
     void x_CmdObsolete(CQueue*);
     void x_CheckNonAnonymousClient(const string &  message);
@@ -210,9 +212,8 @@ private:
 
     // Data
     size_t                          m_MsgBufferSize;
-    char*                           m_MsgBuffer;
+    char *                          m_MsgBuffer;
 
-    // CWorkerNode contains duplicates of m_AuthString and m_PeerAddr
     std::string                     m_RawAuthString;
     CNSClientId                     m_ClientId;
 

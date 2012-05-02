@@ -72,6 +72,7 @@ void SNSCommandArguments::x_Reset()
     any_affinity = false;
     wnode_affinity = false;
     exclusive_new_aff = false;
+    mode = false;
 
     return;
 }
@@ -160,6 +161,13 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
         case 'm':
             if (key == "msk")
                 job_mask = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
+            else if (key == "mode") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "mode accepted values are 0 and 1.");
+                mode = (tmp == 1);
+            }
             break;
         case 'o':
             if (key == "output")
