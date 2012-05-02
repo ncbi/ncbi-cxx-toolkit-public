@@ -392,6 +392,8 @@ public:
 
     TBioTreeNode* GetTreeNodeNonConst() { return m_TreeNode.get(); }
 
+    void DetachTreeNode() { m_TreeNode.release(); }
+
     /// Add node to the tree (node location is defined by the parent id
     TBioTreeNode* AddNode(const TBioNodeType& node_value, 
                           TBioTreeNodeId      parent_id);
