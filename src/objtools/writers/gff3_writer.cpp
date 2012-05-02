@@ -52,6 +52,7 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
@@ -406,12 +407,11 @@ bool CGff3Writer::x_WriteBioseqHandle(
         if (!x_WriteFeature(fc, *feat_iter)) {
             return false;
         }
-    }   
-
-    sel.SetAnnotType(CSeq_annot::C_Data::e_Align);
-    for (CAnnot_CI aci(bsh, sel); aci; ++aci) {
-        x_WriteSeqAnnotHandle(*aci);
     }
+    for (CAlign_CI align_it(bsh, sel);  align_it;  ++ align_it) {
+        x_WriteAlign(*align_it);
+    }
+
     return true;
 }
 
