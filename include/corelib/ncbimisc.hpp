@@ -61,12 +61,11 @@
  * @{
  */
 
+
 #ifndef NCBI_ESWITCH_DEFINED
 #define NCBI_ESWITCH_DEFINED
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * ATTENTION!   Do not change this enumeration!
@@ -78,31 +77,46 @@ extern "C" {
 
 /** Aux. enum to set/unset/default various features
  */
-typedef enum {
+typedef enum ENcbiSwitch {
     eOff = 0,
     eOn,
     eDefault
 } ESwitch;
 
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
+} // extern "C"
 
-#endif  /* !defined(NCBI_ESWITCH_DEFINED) */
+#endif //!NCBI_ESWITCH_DEFINED
+
+
+#ifndef NCBI_EOWNERSHIP_DEFINED
+#define NCBI_EOWNERSHIP_DEFINED
+
+extern "C" {
+
+/*
+ * ATTENTION!   Do not change this enumeration!
+ *
+ * It must always be kept in sync with its plain C counterpart defined in
+ * "connect/ncbi_types.h". If you absolutely(sic!) need to alter this
+ * type, please apply equivalent changes to both definitions.
+ */
+
+/** Ownership relations between objects.
+ *
+ * Can be used to define or transfer ownership of objects.
+ * For example, specify if a CSocket object owns its underlying SOCK object.
+ */
+typedef enum ENcbiOwnership {
+    eNoOwnership,       /** No ownership assumed                    */
+    eTakeOwnership      /** An object can take ownership of another */
+} EOwnership;
+
+} // extern "C"
+
+#endif //!NCBI_EOWNERSHIP_DEFINED
 
 
 BEGIN_NCBI_NAMESPACE;
-
-
-/// Which type of ownership between objects.
-///
-/// Can be used to specify ownership relationship between objects.
-/// For example, specify if a CSocket object owns the underlying
-/// SOCK object. 
-enum EOwnership {
-    eNoOwnership,       ///< No ownership relationship
-    eTakeOwnership      ///< An object can take ownership of another
-};
 
 
 /// Whether a value is nullable.
