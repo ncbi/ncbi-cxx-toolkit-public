@@ -3539,13 +3539,14 @@ string NStr::ShellEncode(const string& str)
 }
 
 
-string NStr::ParseEscapes(const CTempString& str)
+string NStr::ParseEscapes(const CTempString& str, TEscSeqFlags flags, char user_char)
 {
     string out;
-    out.reserve(str.size()); // can only be smaller
+    out.reserve(str.size());  // result string can only be smaller
     SIZE_TYPE pos = 0;
+    bool is_error = false;
 
-    while (pos < str.size()) {
+    while (pos < str.size()  ||  !is_error) {
         SIZE_TYPE pos2 = str.find('\\', pos);
         if (pos2 == NPOS) {
             //~ out += str.substr(pos);
@@ -3576,10 +3577,36 @@ string NStr::ParseEscapes(const CTempString& str)
                     pos++;
                 }
                 if (pos > pos2) {
-                    //~ out += static_cast<char>
-                        //~     (StringToUInt(str.substr(pos2, pos - pos2), 0, 16));
-                    out += static_cast<char>
-                        (StringToUInt(CTempString(str, pos2, pos - pos2), 0, 16));
+                    SIZE_TYPE len = pos-pos2;
+                    if ((flags & fEscSeqRange_First) && (len > 2)) {
+                        // Take only first 2 digits
+                        len = 2;
+                    }
+                    unsigned int value =
+                        StringToUInt(CTempString(str, pos2, len), 0, 16);
+                    if (flags  &&  (value > 255)) {
+                        // fEscSeqRange_LSB by default (flags == 0)
+                        switch (flags) {
+                        case fEscSeqRange_First:
+                            // Already have right value 
+                            break;
+                        case fEscSeqRange_Throw:
+                            NCBI_THROW2(CStringException, eFormat, 
+                                "Escape sequence '" + string(CTempString(str, pos2, len)) +
+                                "' is out of range [0-255]", pos2);
+                            break;
+                        case fEscSeqRange_Errno:
+                            errno = ERANGE;
+                            is_error = true;
+                            continue;
+                        case fEscSeqRange_User:
+                            value = (unsigned)user_char;
+                            break;
+                        default:
+                            NCBI_THROW2(CStringException, eFormat, "Wrong set of flags", pos2);
+                        }
+                    }
+                    out += static_cast<char>(value);
                 } else {
                     NCBI_THROW2(CStringException, eFormat,
                                 "\\x followed by no hexadecimal digits", pos);
@@ -3599,13 +3626,19 @@ string NStr::ParseEscapes(const CTempString& str)
             }}
             continue;
         case '\n':
-            /*quoted EOL means no EOL*/
+            // quoted EOL means no EOL
             break;
         default:
             out += str[pos2];
             break;
         }
         pos = pos2 + 1;
+    }
+    if (flags & fEscSeqRange_Errno) {
+        if (is_error) {
+            return kEmptyStr;
+        }
+        errno = 0;
     }
     return out;
 }

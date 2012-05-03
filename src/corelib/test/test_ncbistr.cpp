@@ -2061,6 +2061,7 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     NcbiCout << NcbiEndl << "NStr::{PrintableString|ParseEscapes}() tests...";
 
     // NStr::PrintableString()
+
     BOOST_CHECK(NStr::PrintableString(kEmptyStr).empty());
     BOOST_CHECK(NStr::PrintableString
                 ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"").compare
@@ -2080,6 +2081,7 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
                 ("A\\n\\\nB\\\\\\n\\\nC") == 0);
 
     // NStr::ParseEscapes
+
     BOOST_CHECK(NStr::ParseEscapes(kEmptyStr).empty());
     BOOST_CHECK(NStr::ParseEscapes
                 ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"").compare
@@ -2090,6 +2092,38 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     BOOST_CHECK(NStr::ParseEscapes
                 ("A\\\nB\\nC\\\\\\n\\\nD").compare
                 ("AB\nC\\\nD") == 0);
+
+    // NStr::ParseEscapes() with out or range sequences
+    {{
+        string s;
+        // fEscSeqRange_Last
+        s=NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Last);
+        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Last), "\x47");
+    
+        // fEscSeqRange_Byte0
+        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_First), "\x45");
+    
+        // fEscSeqRange_Errno
+        errno = kTestErrno;
+        s = NStr::ParseEscapes("\\x45", NStr::fEscSeqRange_Errno);
+        BOOST_CHECK(errno == 0);
+        BOOST_CHECK_EQUAL(s, "\x45");
+        errno = kTestErrno;
+        s = NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Errno);
+        BOOST_CHECK(errno == ERANGE);
+        BOOST_CHECK(s.empty());
+
+        // fEscSeqRange_Throw
+        try {
+            s = NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Throw);
+            _TROUBLE;
+        }
+        catch (CStringException&) {}
+
+        // fEscSeqRange_User
+        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_User, '?'), "?");
+    }}
+
 
     // NStr::PrintableString() vs. Printable()
     size_t size = (size_t)(rand() & 0xFFFF);
@@ -2118,7 +2152,6 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     //NcbiCout << NStr::UInt8ToString(Uint8(s2.size())) << NcbiEndl
     //         << s2 << NcbiEndl;
     BOOST_CHECK(s2.compare(CNcbiOstrstreamToString(os2)) == 0);
-
 }
 
 
