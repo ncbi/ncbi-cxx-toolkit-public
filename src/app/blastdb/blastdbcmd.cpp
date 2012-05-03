@@ -440,7 +440,8 @@ void CBlastDBCmdApp::Init()
     // All other options to this program should be here
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
-        "mask_sequence" };
+        "mask_sequence", "list", "remove_redundant_dbs", "recursive",
+        "list_outfmt" };
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency("info", CArgDescriptions::eExcludes,
                                 string(exclusions[i]));
@@ -523,6 +524,9 @@ void CBlastDBCmdApp::Init()
     arg_desc->AddOptionalKey("list", "directory",
                              "List BLAST databases in the specified directory",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("remove_redundant_dbs", 
+                      "Remove the databases that are referenced by another "
+                      "alias file in the directory in question", true);
     arg_desc->AddFlag("recursive", 
                       "Recursively traverse the directory structure to list "
                       "available BLAST databases", true);
@@ -544,6 +548,8 @@ void CBlastDBCmdApp::Init()
                                 string(exclusions_discovery[i]));
         arg_desc->SetDependency("recursive", CArgDescriptions::eExcludes,
                                 string(exclusions_discovery[i]));
+        arg_desc->SetDependency("remove_redundant_dbs", CArgDescriptions::eExcludes,
+                                string(exclusions_discovery[i]));
         arg_desc->SetDependency("list_outfmt", CArgDescriptions::eExcludes,
                                 string(exclusions_discovery[i]));
         arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
@@ -555,6 +561,8 @@ void CBlastDBCmdApp::Init()
                             "recursive");
     arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
                             "list_outfmt");
+    arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
+                            "remove_redundant_dbs");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -572,12 +580,14 @@ int CBlastDBCmdApp::Run(void)
         } else if (args["list"]) {
             const string& blastdb_dir = args["list"].AsString();
             const bool recurse = args["recursive"];
+            const bool remove_redundant_dbs = args["remove_redundant_dbs"];
             const string dbtype = args[kArgDbType] 
                 ? args[kArgDbType].AsString() 
                 : "guess";
             const string& kOutFmt = args["list_outfmt"].AsString();
             const vector<SSeqDBInitInfo> dbs = 
-                FindBlastDBs(blastdb_dir, dbtype, recurse, true);
+                FindBlastDBs(blastdb_dir, dbtype, recurse, true,
+                             remove_redundant_dbs);
             CBlastDbFormatter blastdb_fmt(kOutFmt);
             ITERATE(vector<SSeqDBInitInfo>, db, dbs) {
                 out << blastdb_fmt.Write(*db) << NcbiEndl;

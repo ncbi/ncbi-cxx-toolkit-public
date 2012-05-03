@@ -76,7 +76,7 @@ public:
     {}
 
     string GetFileName() const {
-        return m_DbInitInfo.m_BlastDbName;
+        return NStr::Replace(m_DbInitInfo.m_BlastDbName, "\"", kEmptyStr);
     }
     string GetMoleculeType() const {
         return CSeqDB::ESeqType2String(m_DbInitInfo.m_MoleculeType);

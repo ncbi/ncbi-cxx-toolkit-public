@@ -1202,17 +1202,80 @@ public:
         SSeqDBInitInfo value;
         // rm extension
         value.m_BlastDbName = de.GetPath().substr(0, de.GetPath().length() - 4);
+        CNcbiOstrstream oss;
+        // Needed for escaping spaces
+        oss << "\"" << value.m_BlastDbName << "\""; 
+        value.m_BlastDbName = CNcbiOstrstreamToString(oss);
         value.m_MoleculeType = 
             (extn == "n" ? CSeqDB::eNucleotide : CSeqDB::eProtein);
         m_DBs.push_back(value);
     }
 
     vector<SSeqDBInitInfo> m_DBs;
+
+    /// Auxiliary function to get the original file name found by this object
+    string GetFileName(size_t idx) {
+        SSeqDBInitInfo& info = m_DBs[idx];
+        string retval = NStr::Replace(info.m_BlastDbName, "\"", kEmptyStr);
+        if (info.m_MoleculeType == CSeqDB::eNucleotide) {
+            string alias = retval + ".nal", index = retval + ".nin";
+            retval = (CFile(alias).Exists() ? alias : index);
+        } else {
+            string alias = retval + ".pal", index = retval + ".pin";
+            retval = (CFile(alias).Exists() ? alias : index);
+        }
+        return retval;
+    }
 };
+
+/** Functor object for s_RemoveAliasComponents where the path name is matched
+ * in SSeqDBInitInfo */
+class PathFinder {
+public:
+    PathFinder(const string& p) : m_Path(p) {}
+    bool operator() (const SSeqDBInitInfo& value) const {
+        return (NStr::Find(value.m_BlastDbName, m_Path) != NPOS);
+    }
+
+private:
+    string m_Path;
+};
+
+static void s_RemoveAliasComponents(CBlastDbFinder& finder)
+{
+    set<string> dbs2remove;
+    for (size_t i = 0; i < finder.m_DBs.size(); i++) {
+        string path = finder.GetFileName(i);
+        if (path[path.size()-1] != 'l') { // not an alias file
+            continue;
+        }
+        CNcbiIfstream in(path.c_str());
+        if (!in) {
+            continue;
+        }
+        string line;
+        while (getline(in, line)) {
+            if (NStr::StartsWith(line, "DBLIST")) {
+                vector<string> tokens;
+                NStr::Tokenize(line, " ", tokens, NStr::eMergeDelims);
+                for (size_t j = 1; j < tokens.size(); j++) {
+                    dbs2remove.insert(tokens[j]);
+                }
+            }
+        }
+    }
+
+    ITERATE(set<string>, i, dbs2remove) {
+        finder.m_DBs.erase(remove_if(finder.m_DBs.begin(), finder.m_DBs.end(),
+                                     PathFinder(*i)),
+                           finder.m_DBs.end());
+    }
+}
 
 vector<SSeqDBInitInfo>
 FindBlastDBs(const string& path, const string& dbtype, bool recurse,
-             bool include_alias_files /* = false */)
+             bool include_alias_files /* = false */,
+             bool remove_redundant_dbs /* = false */)
 {
     // 1. Find every database volume (but not alias files etc).
     vector<string> fmasks, dmasks;
@@ -1238,6 +1301,9 @@ FindBlastDBs(const string& path, const string& dbtype, bool recurse,
     
     CBlastDbFinder dbfinder;
     FindFilesInDir(CDir(path), fmasks, dmasks, dbfinder, flags);
+    if (remove_redundant_dbs) {
+        s_RemoveAliasComponents(dbfinder);
+    }
     sort(dbfinder.m_DBs.begin(), dbfinder.m_DBs.end());
     return dbfinder.m_DBs;
 }

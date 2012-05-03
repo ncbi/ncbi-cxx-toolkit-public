@@ -1411,10 +1411,13 @@ struct NCBI_XOBJREAD_EXPORT SSeqDBInitInfo : public CObject {
 /// and 'guess' (which means any) [in]
 /// @param recurse whether BLAST DBs should be found recursively or not [in]
 /// @param include_alias_files Should alias files be included also? [in]
+/// @param remove_redundant_dbs Should BLASTDBs that are referenced by other
+/// alias files in the return value be removed? [in]
 NCBI_XOBJREAD_EXPORT 
 vector<SSeqDBInitInfo>
 FindBlastDBs(const string& path, const string& dbtype, bool recurse,
-             bool include_alias_files = false);
+             bool include_alias_files = false,
+             bool remove_redundant_dbs = false);
 
 /// CSeqDBSequence --
 ///
