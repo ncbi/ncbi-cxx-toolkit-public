@@ -172,7 +172,7 @@ public:
         RegisterNew(ptr);
         return ptr;
     }
-    static void operator delete(void* ptr, size_t /*s*/) {
+    static void operator delete(void* ptr) {
         alloc_count.Add(-1);
         RegisterDelete((CObjectWithNew*)ptr);
         ::operator delete(ptr);
@@ -257,7 +257,7 @@ public:
         RegisterNew(ptr);
         return ptr;
     }
-    static void operator delete(void* ptr, size_t /*s*/) {
+    static void operator delete(void* ptr) {
         alloc_count.Add(-1);
         RegisterDelete((CObjectWithTLS*)ptr);
         ::operator delete(ptr);
@@ -287,7 +287,7 @@ public:
         }
         return ptr;
     }
-    static void operator delete(void* ptr, size_t /*s*/) {
+    static void operator delete(void* ptr) {
         ::operator delete(ptr);
     }
 
