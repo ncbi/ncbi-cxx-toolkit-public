@@ -69,8 +69,9 @@ case "$with_3psw" in
                      sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
                      python, jni, boost, sqlite3, mimetic, sge, icu, expat,
-                     sablot, libxml, libxslt, xerces, xalan, zorba, oechem,
-                     muparser, hdf5, gif, jpeg, png, tiff, xpm, magic, curl],
+                     sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
+                     oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
+                     magic, curl],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -366,6 +367,10 @@ AC_ARG_WITH(libxslt,
    [ --with-libxslt=DIR      use libxslt installation in DIR])
 AC_ARG_WITH(libxslt2,
    [ --without-libxslt       do not use libxslt])
+AC_ARG_WITH(libexslt,
+   [ --with-libexslt=DIR     use libexslt installation in DIR])
+AC_ARG_WITH(libexslt2,
+   [ --without-libexslt      do not use libexslt])
 AC_ARG_WITH(xerces,
    [ --with-xerces=DIR       use Xerces-C++ installation in DIR])
 AC_ARG_WITH(xerces2,
@@ -477,7 +482,8 @@ geo included-geo \
 z bz2 lzo pcre gcrypt gnutls openssl sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
-sp expat sablot libxml libxslt xerces xalan zorba oechem sge muparser hdf5 \
+sp expat sablot libxml libxslt libexslt xerces xalan zorba \
+oechem sge muparser hdf5 \
 gif jpeg tiff png xpm magic curl mimetic 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
@@ -524,7 +530,7 @@ for x_arg in "$@" ; do
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
-      | --with-libxml=* | --with-libxslt=* \
+      | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
       | --with-bdb=* | --with-odbc | --with-odbc=* \
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
@@ -5682,6 +5688,18 @@ fi
 AC_PATH_PROG(XSLTPROC, xsltproc, :,
    [$LIBXSLT_PATH/bin:`dirname $LIBXML_LIBPATH_ 2>/dev/null`/bin:$PATH])
 
+: ${LIBEXSLT_PATH=$LIBXSLT_PATH}
+NCBI_CHECK_THIRD_PARTY_LIB_EX(libexslt, LIBEXSLT, exslt,
+ [AC_LANG_PROGRAM([#include <libexslt/exslt.h>], [exsltRegisterAll()])],
+ [], [$LIBXSLT_LIBS $LIBXML_LIBS $Z_LIBS], [$LIBXSLT_INCLUDE])
+
+# XXX - they might be in different directories in some setups
+if test -f "${LIBXML_LIBPATH_}/libexslt-static.a"; then
+   LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static"
+else
+   LIBEXSLT_STATIC_LIBS=${LIBEXSLT_LIBS}
+fi
+
 : ${XERCES_PATH=$NCBI/xerces}
 if test "$with_xerces" != no; then
    if test "${with_xerces-yes}" != yes; then
@@ -6797,6 +6815,7 @@ AC_SUBST(EXPAT_STATIC_LIBS)
 AC_SUBST(SABLOT_STATIC_LIBS)
 AC_SUBST(LIBXML_STATIC_LIBS)
 AC_SUBST(LIBXSLT_STATIC_LIBS)
+AC_SUBST(LIBEXSLT_STATIC_LIBS)
 AC_SUBST(XERCES_INCLUDE)
 AC_SUBST(XERCES_LIBS)
 AC_SUBST(XERCES_STATIC_LIBS)

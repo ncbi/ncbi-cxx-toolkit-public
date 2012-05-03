@@ -209,6 +209,9 @@
 /* Define to 1 if libexpat is available. */
 #undef HAVE_LIBEXPAT
 
+/* Define to 1 if libexslt is available. */
+#undef HAVE_LIBEXSLT
+
 /* Define to 1 if FastCGI libraries are available. */
 #undef HAVE_LIBFASTCGI
 
