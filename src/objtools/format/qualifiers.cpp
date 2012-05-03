@@ -572,22 +572,9 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
             return;
         }
 
-        if( ctx.Config().IsModeRelease() ) {
-            // in release mode multi-interval code-breaks are removed,
-            // pending end of quarantine
-            
-            string pos = CFlatSeqLoc( (*it)->GetLoc(), ctx).GetString();
-            if( pos.find("join(") == string::npos &&
-                pos.find("order(") == string::npos ) 
-            {
-                x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
-                    CFormatQual::eUnquoted);
-            }
-        } else {
-            string pos = CFlatSeqLoc( (*it)->GetLoc(), ctx).GetString();
-            x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
-                CFormatQual::eUnquoted);
-        }
+        string pos = CFlatSeqLoc( (*it)->GetLoc(), ctx).GetString();
+        x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
+            CFormatQual::eUnquoted);
     }
 }
 
