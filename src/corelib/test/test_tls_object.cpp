@@ -35,6 +35,7 @@
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiatomic.hpp>
+#include <corelib/ncbi_system.hpp>
 
 //#undef NCBI_TLS_VAR
 #ifndef NCBI_TLS_VAR
@@ -96,6 +97,11 @@ void message(const char* msg,
     LOG_POST(msg
              <<'\n'<<setw(40) << msg1 << ": "<<t1*1e9/COUNT<<" usec"
              <<'\n'<<setw(40) << msg2 << ": "<<t2*1e9/COUNT<<" usec");
+    size_t total, resident, shared;
+    if ( GetMemoryUsage(&total, &resident, &shared) ) {
+        LOG_POST("Alloc: "<<alloc_count.Get()<<" "<<object_count.Get()<<'\n'<<
+                 "Current memory: "<<total<<" "<<resident<<" "<<shared);
+    }
 }
 
 DECLARE_TLS_VAR(s_CurrentInHeap);
@@ -336,6 +342,11 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
         return true;
     }
     NCBI_CATCH_ALL("Test failed");
+    size_t total, resident, shared;
+    if ( GetMemoryUsage(&total, &resident, &shared) ) {
+        ERR_POST("Alloc: "<<alloc_count.Get()<<" "<<object_count.Get()<<'\n'<<
+                 "Memory: "<<total<<" "<<resident<<" "<<shared);
+    }
     return false;
 }
 
@@ -516,7 +527,7 @@ void CTestTlsObjectApp::RunTest(void)
 
 bool CTestTlsObjectApp::TestApp_Init(void)
 {
-    //s_NumThreads = 4;
+    s_NumThreads = 20;
     NcbiCout << "Testing TLS variant of CObject counter init." << NcbiEndl;
     return true;
 }
