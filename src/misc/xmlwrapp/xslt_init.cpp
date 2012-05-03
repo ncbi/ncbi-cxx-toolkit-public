@@ -50,8 +50,9 @@
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 
-// Commented out to get rid of the libexslt dependency
-//#include <libexslt/exslt.h>
+#ifdef HAVE_LIBEXSLT
+    #include <libexslt/exslt.h>
+#endif
 
 //####################################################################
 namespace {
@@ -80,10 +81,10 @@ void xslt::init::init_library() {
     xsltSetGenericErrorFunc(0, xslt_error);
     xsltSetGenericDebugFunc(0, xslt_error);
 
-    // load EXSLT
-    // The line below was commented out to get rid of the libexslt
-    // dependency. At the moment it is the only link to libexslt.
-    //exsltRegisterAll();
+    #ifdef HAVE_LIBEXSLT
+        // load EXSLT
+        exsltRegisterAll();
+    #endif
 }
 //####################################################################
 void xslt::init::shutdown_library() {
