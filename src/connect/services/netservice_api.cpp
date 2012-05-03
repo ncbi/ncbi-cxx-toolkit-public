@@ -37,7 +37,7 @@
 
 #include <connect/services/error_codes.hpp>
 #include <connect/services/srv_connections_expt.hpp>
-#include <connect/services/netservice_api_expt.hpp>
+#include <connect/services/netschedule_api_expt.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -785,22 +785,27 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
     CTime max_connection_time(GetFastLocalTime());
     CTime retry_delay_until(max_connection_time);
+    max_connection_time.AddNanoSecond(
+        m_ServerPool->m_MaxConnectionTime * 1000 * 1000);
 
-    unsigned retry_count;
+    int retry_count = (int) TServConn_ConnMaxRetries::GetDefault();
 
     try {
         (*it)->ConnectAndExec(cmd, exec_result);
         return;
     }
+    catch (CNetScheduleException& ex) {
+        if (ex.GetErrCode() !=
+                CNetScheduleException::eSubmitsDisabled || !++it)
+            throw;
+    }
     catch (CNetSrvConnException& ex) {
         switch (ex.GetErrCode()) {
         case CNetSrvConnException::eConnectionFailure:
         case CNetSrvConnException::eServerThrottle:
-            retry_count = TServConn_ConnMaxRetries::GetDefault();
             if ((++it || retry_count > 0) &&
                     (m_ServerPool->m_MaxConnectionTime == 0 ||
-                        GetFastLocalTime() < max_connection_time.AddNanoSecond(
-                            m_ServerPool->m_MaxConnectionTime * 1000 * 1000)))
+                            GetFastLocalTime() < max_connection_time))
                 break;
             /* else: FALL THROUGH */
 
@@ -827,16 +832,23 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 (*it)->ConnectAndExec(cmd, exec_result);
                 return;
             }
+            catch (CNetScheduleException& ex) {
+                if (ex.GetErrCode() != CNetScheduleException::eSubmitsDisabled)
+                    throw;
+                last_error = ex.what();
+            }
             catch (CNetSrvConnException& ex) {
                 switch (ex.GetErrCode()) {
                 case CNetSrvConnException::eConnectionFailure:
                     last_error = ex.what();
+                    --retry_count;
                     break;
 
                 case CNetSrvConnException::eServerThrottle:
                     throttled = true;
                     if (last_error.empty())
                         last_error = ex.what();
+                    --retry_count;
                     break;
 
                 default:
@@ -845,9 +857,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             }
             ++it;
         }
-        if (retry_count == 0)
+        if (retry_count <= 0)
             break;
-        --retry_count;
 
         if (m_ServerPool->m_MaxConnectionTime > 0 &&
                 GetFastLocalTime() >= max_connection_time) {
