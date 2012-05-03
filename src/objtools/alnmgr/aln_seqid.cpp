@@ -82,6 +82,8 @@ IAlnSeqId::TMol CAlnSeqId::GetSequenceType(void) const {
             m_Mol = CSeq_inst::eMol_aa;
             break;
         default:
+            // Try to be smart and use base-width if nothing else works.
+            m_Mol = m_BaseWidth == 3 ? CSeq_inst::eMol_aa : CSeq_inst::eMol_na;
             break;
         }
     }
@@ -91,11 +93,16 @@ IAlnSeqId::TMol CAlnSeqId::GetSequenceType(void) const {
 
 int CAlnSeqId::GetBaseWidth(void) const {
     return m_BaseWidth;
-} 
+}
 
 
 void CAlnSeqId::SetBaseWidth(int base_width) {
     m_BaseWidth = base_width;
+    if (m_Mol == CSeq_inst::eMol_not_set) {
+        m_Mol = m_BaseWidth == 3 ? CSeq_inst::eMol_aa : CSeq_inst::eMol_na;
+    }
+    _ASSERT((m_BaseWidth == 3) == IsProtein());
+    _ASSERT((m_BaseWidth == 1) == IsNucleotide());
 } 
 
 
