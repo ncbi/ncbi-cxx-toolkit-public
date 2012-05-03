@@ -108,15 +108,22 @@ public:
     ///   The set of signals to check.
     /// @return
     ///   TRUE if any of specified signals is set, FALSE otherwise.
-    /// @sa TrapSignals
+    /// @sa TrapSignals, GetSignals, ClearSignals
     static bool IsSignaled(TSignalMask signals = eSignal_Any);
 
     /// Get signals state.
     ///
     /// @return
     ///   Current signal state. Each bit represent some caught signal.
-    /// @sa TrapSignals
+    /// @sa TrapSignals, ClearSignals, IsSignaled
     static TSignalMask GetSignals(void);
+
+    /// Clear signals state.
+    ///
+    /// @return
+    ///   Current signal state after clearing. Each bit represent some caught signal.
+    /// @sa TrapSignals, GetSignals, IsSignaled
+    static TSignalMask ClearSignals(TSignalMask signals = eSignal_Any);
 
     /// Sends a signal to the current process.
     ///

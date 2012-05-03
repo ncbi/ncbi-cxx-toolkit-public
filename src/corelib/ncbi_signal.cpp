@@ -203,6 +203,13 @@ CSignal::TSignalMask CSignal::GetSignals()
 }
 
 
+CSignal::TSignalMask CSignal::ClearSignals(TSignalMask signals)
+{
+    s_Signals &= (~signals);
+    return s_Signals;
+}
+
+
 bool CSignal::Raise(ESignal signal)
 {
     int signum = 0;
