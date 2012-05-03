@@ -365,7 +365,6 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 		typedef typename TDynamicNodeType::TValueType    TDynamicNodeValueType;
 
 		TDynamicNodeValueType v;
-		v.SetId(uid);
     
 		typedef typename TCNode::TFeatures               TCNodeFeatureSet;
 
@@ -391,15 +390,18 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
             typename TDynamicTree::TBioTreeNode* parent_node = pmap[parent_id];
             if (parent_node != NULL) {              
                 node = dyn_tree.AddNode(v, parent_node);
+                dyn_tree.SetNodeId(node);
             }
             else {
-                node = dyn_tree.AddNode(v, parent_id);
+                NCBI_THROW(CException, eUnknown, "Parent not found");
             }
                       
             pmap[uid] = node;            
 		} else {
 			TDynamicNodeType* dnode = new TDynamicNodeType(v);
 			dyn_tree.SetTreeNode(dnode);
+			dyn_tree.SetNodeId(dnode);
+			pmap[uid] = dnode;            
 		}
 
 
