@@ -3696,7 +3696,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(gcrypt,
                      GCRY_THREAD_OPTION_PTHREAD_IMPL;]],
    [[gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);]])]],
  $GCRYPT_CONFIG_LIBS)
-if test -n "$GCRYPT_CONFIG_LIBS"; then
+if test "x$with_gcrypt" != xno -a -n "$GCRYPT_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GCRYPT_LIBS, [echo $GCRYPT_CONFIG_LIBS], [$no_usr_lib])
 fi
 
@@ -3744,7 +3744,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
  [[AC_LANG_PROGRAM([[#include <gnutls/gnutls.h>]],
    [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])]],
  $GNUTLS_CONFIG_LIBS $GCRYPT_LIBS)
-if test -n "$GNUTLS_CONFIG_LIBS"; then
+if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS], [$no_usr_lib])
    case "$GNUTLS_INCLUDE" in
        *$GCRYPT_INCLUDE* ) ;;

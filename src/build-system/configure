@@ -21754,7 +21754,7 @@ _ACEOF
 
 
 
-if test -n "$GCRYPT_CONFIG_LIBS"; then
+if test "x$with_gcrypt" != xno -a -n "$GCRYPT_CONFIG_LIBS"; then
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     GCRYPT_LIBS=`echo $GCRYPT_CONFIG_LIBS | sed -e "$no_usr_lib"`
  else
@@ -22061,7 +22061,7 @@ _ACEOF
 
 
 
-if test -n "$GNUTLS_CONFIG_LIBS"; then
+if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     GNUTLS_LIBS=`echo $GNUTLS_CONFIG_LIBS | sed -e "$no_usr_lib"`
  else
