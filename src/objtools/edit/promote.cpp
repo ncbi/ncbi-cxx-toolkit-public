@@ -513,20 +513,20 @@ CSeq_id* CPromote::x_GetProteinId(CSeq_feat& feat) const
 }
 
 
-typedef pair<CSeqFeatData::ESubtype, CMolInfo::TBiomol> TBiomolPair;
-typedef CStaticArrayMap<CSeqFeatData::ESubtype, CMolInfo::TBiomol> TBiomolMap;
+typedef SStaticPair<CSeqFeatData::ESubtype, CMolInfo::TBiomol> TBiomolPair;
+typedef CStaticPairArrayMap<CSeqFeatData::ESubtype, CMolInfo::TBiomol> TBiomolMap;
 static const TBiomolPair kBiomolMap[] = {
     // for Cdregion feature
-    TBiomolPair(CSeqFeatData::eSubtype_cdregion, CMolInfo::eBiomol_peptide),
+    { CSeqFeatData::eSubtype_cdregion, CMolInfo::eBiomol_peptide },
     // for RNA features
-    TBiomolPair(CSeqFeatData::eSubtype_preRNA,   CMolInfo::eBiomol_pre_RNA),
-    TBiomolPair(CSeqFeatData::eSubtype_mRNA,     CMolInfo::eBiomol_mRNA),
-    TBiomolPair(CSeqFeatData::eSubtype_tRNA,     CMolInfo::eBiomol_tRNA),
-    TBiomolPair(CSeqFeatData::eSubtype_rRNA,     CMolInfo::eBiomol_rRNA),
-    TBiomolPair(CSeqFeatData::eSubtype_snRNA,    CMolInfo::eBiomol_snRNA),
-    TBiomolPair(CSeqFeatData::eSubtype_scRNA,    CMolInfo::eBiomol_scRNA),
-    TBiomolPair(CSeqFeatData::eSubtype_snoRNA,   CMolInfo::eBiomol_mRNA),
-    TBiomolPair(CSeqFeatData::eSubtype_otherRNA, CMolInfo::eBiomol_transcribed_RNA)
+    { CSeqFeatData::eSubtype_preRNA,   CMolInfo::eBiomol_pre_RNA },
+    { CSeqFeatData::eSubtype_mRNA,     CMolInfo::eBiomol_mRNA },
+    { CSeqFeatData::eSubtype_tRNA,     CMolInfo::eBiomol_tRNA },
+    { CSeqFeatData::eSubtype_rRNA,     CMolInfo::eBiomol_rRNA },
+    { CSeqFeatData::eSubtype_snRNA,    CMolInfo::eBiomol_snRNA },
+    { CSeqFeatData::eSubtype_scRNA,    CMolInfo::eBiomol_scRNA },
+    { CSeqFeatData::eSubtype_snoRNA,   CMolInfo::eBiomol_mRNA },
+    { CSeqFeatData::eSubtype_otherRNA, CMolInfo::eBiomol_transcribed_RNA }
 };
 DEFINE_STATIC_ARRAY_MAP(TBiomolMap, sc_BiomolMap, kBiomolMap);
 
