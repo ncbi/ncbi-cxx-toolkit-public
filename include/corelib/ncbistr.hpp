@@ -393,6 +393,13 @@ public:
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
     ///   - Otherwise, set errno to non-zero and return zero.
+    ///   - This function is meant to be more "low-level" than other
+    ///     StringToXxx functions - for example, it allows trailing characters
+    ///     (and doesn't include a flags parameter for tweaking such behavior).
+    ///     This could result in strings like "nanosecond" being converted to
+    ///     NaN, "-inf=input_file" being converted to -INF, or other unexpected
+    ///     behavior. Therefore, please consider using StringToDouble unless
+    ///     you specifically need this functionality.
     static double StringToDoublePosix(const char* str, char** endptr=0);
 
 
