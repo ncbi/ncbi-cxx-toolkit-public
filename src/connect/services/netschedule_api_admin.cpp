@@ -45,7 +45,7 @@ void CNetScheduleAdmin::ShutdownServer(
     m_Impl->m_API->m_Service.ExecOnAllServers(
             level == eDie ? "SHUTDOWN SUICIDE" :
                     level == eShutdownImmediate ? "SHUTDOWN IMMEDIATE" :
-                            "SHUTDOWN");
+                            level == eDrain ? "SHUTDOWN drain=1" : "SHUTDOWN");
 }
 
 

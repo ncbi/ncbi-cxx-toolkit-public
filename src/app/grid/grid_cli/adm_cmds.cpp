@@ -226,7 +226,8 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
     case eNetScheduleAdmin:
     case eWorkerNodeAdmin:
         switch (IsOptionSet(eNow, OPTION_N(0)) |
-                IsOptionSet(eDie, OPTION_N(1))) {
+                IsOptionSet(eDie, OPTION_N(1)) |
+                IsOptionSet(eDrain, OPTION_N(2))) {
         case 0: // No additional options.
             m_NetScheduleAdmin.ShutdownServer();
             return 0;
@@ -240,9 +241,13 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
             m_NetScheduleAdmin.ShutdownServer(CNetScheduleAdmin::eDie);
             return 0;
 
-        default: // Both eNow and eDie are set
-            fprintf(stderr, "Options '--" NOW_OPTION
-                "' and '--" DIE_OPTION "' are mutually exclusive.\n");
+        case OPTION_N(2): // eDrain is set.
+            m_NetScheduleAdmin.ShutdownServer(CNetScheduleAdmin::eDrain);
+            return 0;
+
+        default: // A combination of the above options.
+            fprintf(stderr, "Options '--" NOW_OPTION "', '--" DIE_OPTION
+                "', and '--" DRAIN_OPTION "' are mutually exclusive.\n");
         }
         /* FALL THROUGH */
 

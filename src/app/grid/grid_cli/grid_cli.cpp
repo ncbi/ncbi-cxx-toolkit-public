@@ -285,6 +285,10 @@ struct SOptionDefinition {
     {CCommandLineParser::eSwitch, eDie,
         DIE_OPTION, "Terminate the server process abruptly."},
 
+    {CCommandLineParser::eSwitch, eDrain,
+        DRAIN_OPTION, "Tell the server to wait until all of its "
+            "data is expired prior to shutting down."},
+
     {CCommandLineParser::eSwitch, eCompatMode,
         "compat-mode", "Enable backward compatibility tweaks."},
 
@@ -711,9 +715,10 @@ struct SCommandDefinition {
         "a shutdown request to a NetCache or NetSchedule server "
         "or a worker node process.\n\n"
         "Additional options '--" NOW_OPTION "' and '--" DIE_OPTION
-        "' are applicable only to NetSchedule servers and worker "
-        "nodes.",
-        {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie,
+        "' are applicable only to worker nodes.\n\n"
+        "The '--" DRAIN_OPTION "' option is supported only by "
+        "NetSchedule servers version 4.11.0 and up.",
+        {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie, eDrain,
             eCompatMode, eAuth, eClientNode, eClientSession, -1}},
 
     {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Exec,

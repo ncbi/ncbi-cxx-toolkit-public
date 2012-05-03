@@ -63,6 +63,7 @@
 #define FAIL_JOB_OPTION "fail-job"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
+#define DRAIN_OPTION "drain"
 
 #define READJOB_COMMAND "readjob"
 
@@ -132,6 +133,7 @@ enum EOption {
     eQueueDescription,
     eNow,
     eDie,
+    eDrain,
     eCompatMode,
     eDumpCGIEnv,
     eExtendedOptionDelimiter,

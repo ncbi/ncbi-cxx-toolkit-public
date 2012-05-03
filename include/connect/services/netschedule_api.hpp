@@ -703,7 +703,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         eNoShutdown = 0,    ///< No Shutdown was requested
         eNormalShutdown,    ///< Normal shutdown was requested
         eShutdownImmediate, ///< Urgent shutdown was requested
-        eDie                ///< A serious error occurred, the server shuts down
+        eDie,               ///< A serious error occurred, the server shuts down
+        eDrain              ///< Wait for all server data to expire.
     };
 
     /// Shutdown the server daemon.
