@@ -257,8 +257,7 @@ static void TEST_ConnNetInfo(void)
     assert(strcmp(net_info->pass, "pass")                    == 0);
     assert(strcmp(net_info->host, "host")                    == 0);
     assert(       net_info->port                             == 8888);
-    assert(strcmp(net_info->path, "/ro.t/p@th")              == 0);
-    assert(strcmp(net_info->args, "arg/arg:arg@arg:arg/arg") == 0);
+    assert(strcmp(net_info->path, "/ro.t/p@th?arg/arg:arg@arg:arg/arg") == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "https://www/path"
                                 "?arg:arg@arg#frag"));
