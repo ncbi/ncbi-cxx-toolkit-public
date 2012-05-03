@@ -168,14 +168,14 @@ public:
 
     static void* operator new(size_t s) {
         alloc_count.Add(1);
-        CObjectWithNew* ptr = (CObjectWithNew*)malloc(s);
+        CObjectWithNew* ptr = (CObjectWithNew*)::operator new(s);
         RegisterNew(ptr);
         return ptr;
     }
     static void operator delete(void* ptr, size_t /*s*/) {
         alloc_count.Add(-1);
         RegisterDelete((CObjectWithNew*)ptr);
-        free(ptr);
+        ::operator delete(ptr);
     }
     
 private:
@@ -253,14 +253,14 @@ public:
 
     static void* operator new(size_t s) {
         alloc_count.Add(1);
-        CObjectWithTLS* ptr = (CObjectWithTLS*)malloc(s);
+        CObjectWithTLS* ptr = (CObjectWithTLS*)::operator new(s);
         RegisterNew(ptr);
         return ptr;
     }
     static void operator delete(void* ptr, size_t /*s*/) {
         alloc_count.Add(-1);
         RegisterDelete((CObjectWithTLS*)ptr);
-        free(ptr);
+        ::operator delete(ptr);
     }
     
 private:
@@ -275,7 +275,7 @@ template<class E, size_t S, bool Zero = true>
 class CArray {
 public:
     static void* operator new(size_t s) {
-        void* ptr = malloc(s);
+        void* ptr = ::operator new(s);
         if ( Zero ) {
             memset(ptr, 0, s);
         }
@@ -288,7 +288,7 @@ public:
         return ptr;
     }
     static void operator delete(void* ptr, size_t /*s*/) {
-        free(ptr);
+        ::operator delete(ptr);
     }
 
     E m_Array[S];
@@ -322,6 +322,7 @@ void check_cnts(size_t expected = 0,
 class CTestTlsObjectApp : public CThreadedApp
 {
 public:
+    void RunTest(void);
     virtual bool Thread_Run(int idx);
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
@@ -330,23 +331,34 @@ public:
 
 bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
 {
+    try {
+        RunTest();
+        return true;
+    }
+    NCBI_CATCH_ALL("Test failed");
+    return false;
+}
+
+
+void CTestTlsObjectApp::RunTest(void)
+{
     const size_t COUNT = 100000;
     const size_t OBJECT_SIZE = sizeof(CObjectWithNew);
     {
         // prealloc
         {
             size_t size = (OBJECT_SIZE+16)*COUNT;
-            void* p = malloc(size);
+            void* p = ::operator new(size);
             memset(p, 1, size);
-            free(p);
+            ::operator delete(p);
         }
         {
             void** p = new void*[COUNT*2];
             for ( size_t i = 0; i < COUNT*2; ++i ) {
-                p[i] = malloc(OBJECT_SIZE);
+                p[i] = ::operator new(OBJECT_SIZE);
             }
             for ( size_t i = 0; i < COUNT*2; ++i ) {
-                free(p[i]);
+                ::operator delete(p[i]);
             }
             delete[] p;
         }
@@ -356,12 +368,12 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
         void** ptr = new void*[COUNT];
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
-            ptr[i] = malloc(OBJECT_SIZE);
+            ptr[i] = ::operator new(OBJECT_SIZE);
         }
         double t1 = sw.Elapsed();
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
-            free(ptr[i]);
+            ::operator delete(ptr[i]);
         }
         double t2 = sw.Elapsed();
         message("plain malloc", "create", t1, "delete", t2, COUNT);
@@ -500,7 +512,6 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
         message("static CObjectWithTLS", "create", t1, "delete", t2, COUNT);
     }
     check_cnts();
-    return true;
 }
 
 bool CTestTlsObjectApp::TestApp_Init(void)
