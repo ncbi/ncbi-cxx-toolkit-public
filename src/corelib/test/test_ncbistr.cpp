@@ -1940,6 +1940,7 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
     {{
         errno = kTestErrno;
         NStr::PtrToString(s, &s);
+        BOOST_CHECK(!s.empty());
         BOOST_CHECK(errno != kTestErrno);
 
         errno = kTestErrno;
@@ -1948,8 +1949,21 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
         BOOST_CHECK_EQUAL(ptr, &s);
     }}
     {{
-        Uint8       ptr_val = NCBI_CONST_UINT8(0x01234D00002fe008);
-        const char* ptr_str = "01234D00002FE008";
+        #if SIZEOF_VOIDP == 8
+            Uint8 ptr_val = NCBI_CONST_UINT8(0x01234d00002fe008);
+            #ifdef NCBI_OS_MSWIN
+                const char* ptr_str = "01234D00002FE008";
+            #else
+                const char* ptr_str = "0x1234d00002fe008";
+            #endif
+        #else
+            unsigned long ptr_val = 0xD02fe008;
+            #ifdef NCBI_OS_MSWIN
+                const char* ptr_str = "D02FE008";
+            #else
+                const char* ptr_str = "0xd02fe008";
+            #endif
+        #endif
 
         errno = kTestErrno;
         s = NStr::PtrToString((void*)ptr_val);
