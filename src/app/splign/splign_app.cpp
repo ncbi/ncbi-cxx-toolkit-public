@@ -29,6 +29,7 @@
  *                   
 */
 
+
 #include <ncbi_pch.hpp>
 
 #include "splign_app.hpp"
@@ -59,10 +60,19 @@
 
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
-#include <objtools/lds/lds_manager.hpp>
-#include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
+// #define SPLIGN_USE_LDS2
+
+#ifndef SPLIGN_USE_LDS2
+#include <objtools/lds/lds.hpp>
+#include <objtools/lds/lds_manager.hpp>
+#include <objtools/data_loaders/lds/lds_dataloader.hpp>
+#else
+#include <objtools/lds2/lds2.hpp>
+#include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
+#endif
+    
 #include <algorithm>
 #include <memory>
 
@@ -504,7 +514,11 @@ enum ERunMode {
 };
 
 
+#ifndef SPLIGN_USE_LDS2
 const string kSplignLdsDb ("splign.ldsdb");
+#else
+const string kSplignLdsDb ("splign.lds2db");
+#endif
 
 string GetLdsDbDir(const string& fasta_dir)
 {
@@ -514,7 +528,11 @@ string GetLdsDbDir(const string& fasta_dir)
     if(fds > 0 && fasta_dir[fds-1] != sep) {
         lds_db_dir += sep;
     }
+#ifndef SPLIGN_USE_LDS2
     lds_db_dir += "_SplignLDS_";
+#else
+    lds_db_dir += "_SplignLDS2_";
+#endif
     return lds_db_dir;
 }
 
@@ -562,8 +580,7 @@ int CSplignApp::Run()
 
     const bool use_disc_megablast (args["disc"]);
 
-    if(is_mklds) {
-
+    if (is_mklds) {
         // create LDS DB and exit
         string fa_dir = args["mklds"].AsString();
         if(CDirEntry::IsAbsolutePath(fa_dir) == false) {
@@ -578,8 +595,9 @@ int CSplignApp::Run()
 
         const string lds_db_dir (GetLdsDbDir(fa_dir));
 
+#ifndef SPLIGN_USE_LDS2
 // #define  CPPTOOLKIT_LDS_MANAGEMENT
-#ifdef   CPPTOOLKIT_LDS_MANAGEMENT
+    #ifdef   CPPTOOLKIT_LDS_MANAGEMENT
 
         CLDS_Database ldsdb (lds_db_dir, kSplignLdsDb);
         CLDS_Management ldsmgt (ldsdb);
@@ -587,10 +605,18 @@ int CSplignApp::Run()
         ldsmgt.SyncWithDir(fa_dir,
                            CLDS_Management::eRecurseSubDirs,
                            CLDS_Management::eNoControlSum);
-#else
+    #else
         CLDS_Manager ldsmgr (fa_dir, lds_db_dir, kSplignLdsDb);
         ldsmgr.Index(CLDS_Manager::eRecurseSubDirs,
                      CLDS_Manager::eNoControlSum);
+    #endif
+#else
+        CDir dir(lds_db_dir);
+        dir.Create();
+        string db_file = CDirEntry::ConcatPath(lds_db_dir, kSplignLdsDb);
+        CLDS2_Manager ldsmgr(db_file);
+        ldsmgr.AddDataDir(fa_dir, CLDS2_Manager::eDir_Recurse);
+        ldsmgr.UpdateData();
 #endif
 
         return 0;
@@ -701,11 +727,16 @@ int CSplignApp::Run()
             db = CDirEntry::CreateAbsolutePath(db);
             db = CDirEntry::NormalizePath(db);
 
+#ifndef SPLIGN_USE_LDS2
             string alias("lds");
             alias += NStr::IntToString(priority);
             AutoPtr<CLDS_Database> lds(new CLDS_Database(db, alias));
             lds->Open(CLDS_Database::eReadOnly);
             CLDS_DataLoader::RegisterInObjectManager(*m_ObjMgr,*lds.release(),CObjectManager::eDefault,priority);
+#else
+            string db_file = CDirEntry::ConcatPath(db, kSplignLdsDb);
+            CLDS2_DataLoader::RegisterInObjectManager(*m_ObjMgr, db_file, -1, CObjectManager::eDefault, priority);
+#endif
             LOG_POST(Info << "added loader: LDS: " << db << " (" << priority << ")");
             ++priority;
         }

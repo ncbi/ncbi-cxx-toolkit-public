@@ -45,7 +45,6 @@
 #include <algo/blast/api/sseqloc.hpp>
 
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
-#include <objtools/lds/lds.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
