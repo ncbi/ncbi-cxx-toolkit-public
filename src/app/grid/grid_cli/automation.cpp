@@ -477,7 +477,7 @@ void SNetScheduleServerAutomationObject::Call(const string& method,
         vector<string> affs_to_del;
         ExtractVectorOfStrings(arg_array, affs_to_del);
         m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(
-                affs_to_add, affs_to_del);
+                &affs_to_add, &affs_to_del);
     } else if (method == "exec") {
         string command(arg_array.NextString());
 

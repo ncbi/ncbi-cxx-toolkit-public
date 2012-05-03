@@ -184,6 +184,7 @@ struct SNetScheduleAPIImpl : public CObject
     long m_ServerParamsAskCount;
     CFastMutex m_FastMutex;
 
+    CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
     bool m_UseEmbeddedStorage;
 };
 
@@ -213,13 +214,26 @@ inline SNetScheduleSubmitterImpl::SNetScheduleSubmitterImpl(
 struct SNetScheduleExecutorImpl : public CObject
 {
     SNetScheduleExecutorImpl(CNetScheduleAPI::TInstance ns_api_impl) :
-        m_API(ns_api_impl)
+        m_API(ns_api_impl),
+        m_AffinityPreference(ns_api_impl->m_AffinityPreference)
     {
     }
 
+    enum EChangeAffAction {
+        eAddAffs,
+        eDeleteAffs
+    };
+    int AppendAffinityTokens(string& cmd,
+            const vector<string>* affs, EChangeAffAction action);
+
     CNetScheduleAPI m_API;
 
+    CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
+
     CNetScheduleNotificationHandler m_NotificationHandler;
+
+    CFastMutex m_PreferredAffMutex;
+    set<string> m_PreferredAffinities;
 };
 
 struct SNetScheduleAdminImpl : public CObject

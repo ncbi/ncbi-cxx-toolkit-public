@@ -907,11 +907,12 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         return 2;
     }
 
+    m_NetScheduleExecutor.SetAffinityPreference(affinity_preference);
+
     CNetScheduleJob job;
 
     if (!IsOptionSet(eDumpNSNotifications)) {
-        if (m_NetScheduleExecutor.GetJob(job, m_Opts.timeout,
-                affinity_preference, m_Opts.affinity))
+        if (m_NetScheduleExecutor.GetJob(job, m_Opts.timeout, m_Opts.affinity))
             return PrintJobAttrsAndDumpInput(job);
     } else {
         CNetScheduleJob job;
@@ -922,10 +923,10 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 
         printf("Using UDP port %hu\n", wait_job_handler.GetPort());
 
-        string get_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
-                affinity_preference, m_Opts.affinity));
-        if (wait_job_handler.RequestJob(m_NetScheduleExecutor,
-                job, get_cmd, &abs_timeout))
+        if (wait_job_handler.RequestJob(m_NetScheduleExecutor, job,
+                wait_job_handler.CmdAppendTimeout(
+                    CNetScheduleNotificationHandler::MkBaseGETCmd(
+                        affinity_preference, m_Opts.affinity), &abs_timeout)))
             printf("%s\nA job has been returned; won't wait.\n",
                 job.job_id.c_str());
         else {

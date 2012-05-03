@@ -492,6 +492,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
         eExplicitAffinitiesOnly,
     };
 
+    /// Set preferred method of requesting jobs with affinities.
+    void SetAffinityPreference(EJobAffinityPreference aff_pref);
+
     /// Get a pending job.
     ///
     /// When function returns TRUE, job information is written to the 'job'
@@ -506,7 +509,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// @param affinity_list
     ///     Comma-separated list of affinity tokens.
     ///
-    /// @param wait_time
+    /// @param timeout
     ///     Timeout for waiting for a matching job to appear in the queue.
     ///
     /// @return
@@ -517,7 +520,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///     matching affinities).
     ///
     bool GetJob(CNetScheduleJob& job,
-            EJobAffinityPreference affinity_preference = ePreferredAffsOrAnyJob,
             const string& affinity_list = kEmptyStr,
             CAbsTimeout* timeout = NULL);
 
@@ -526,7 +528,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///     only accepts integer wait time in seconds instead of CAbsTimeout.
     bool GetJob(CNetScheduleJob& job,
             unsigned wait_time,
-            EJobAffinityPreference affinity_preference = ePreferredAffsOrAnyJob,
             const string& affinity_list = kEmptyStr);
 
     /// @deprecated
@@ -551,7 +552,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     bool WaitJob(CNetScheduleJob& job, unsigned wait_time,
             const string& affinity_list = kEmptyStr)
     {
-        return GetJob(job, wait_time, ePreferredAffsOrAnyJob, affinity_list);
+        return GetJob(job, wait_time, affinity_list);
     }
 
 
@@ -627,8 +628,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// maintain job affinity for the client.
     void UnRegisterClient();
 
-    void ChangePreferredAffinities(const vector<string>& affs_to_add,
-        const vector<string>& affs_to_delete);
+    void ChangePreferredAffinities(const vector<string>* affs_to_add,
+        const vector<string>* affs_to_delete);
 
     /// Return Queue name
     const string& GetQueueName();
@@ -816,11 +817,10 @@ public:
     static string MkBaseGETCmd(
         CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list);
-    void CmdAppendTimeout(string& cmd, CAbsTimeout* timeout);
+    string CmdAppendTimeout(const string& base_cmd, CAbsTimeout* timeout);
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
             CNetScheduleJob& job,
-            string cmd,
-            CAbsTimeout* timeout);
+            const string& cmd);
     bool CheckRequestJobNotification(CNetScheduleExecutor::TInstance executor,
             CNetServer* server);
 

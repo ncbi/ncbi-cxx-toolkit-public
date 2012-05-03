@@ -230,18 +230,22 @@ void CNetScheduleExecutor::UnRegisterClient()
     }
 }
 
+void CNetScheduleExecutor::SetAffinityPreference(
+        CNetScheduleExecutor::EJobAffinityPreference aff_pref)
+{
+    m_Impl->m_AffinityPreference = aff_pref;
+}
+
 bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
-        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list,
         CAbsTimeout* timeout)
 {
-    string cmd(m_Impl->m_NotificationHandler.MkBaseGETCmd(
-            affinity_preference, affinity_list));
+    string base_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
+            m_Impl->m_AffinityPreference, affinity_list));
 
-    m_Impl->m_NotificationHandler.CmdAppendTimeout(cmd, timeout);
-
-    if (m_Impl->m_NotificationHandler.RequestJob(m_Impl,
-            job, cmd, timeout))
+    if (m_Impl->m_NotificationHandler.RequestJob(m_Impl, job,
+            m_Impl->m_NotificationHandler.CmdAppendTimeout(base_cmd,
+                    timeout)))
         return true;
 
     if (timeout == NULL)
@@ -250,14 +254,33 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
     while (m_Impl->m_NotificationHandler.WaitForNotification(*timeout)) {
         CNetServer server;
         if (m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl,
-                &server) && s_ParseGetJobResponse(job,
-                        server.ExecWithRetry(cmd).response)) {
+                &server) && s_ParseGetJobResponse(job, server.ExecWithRetry(
+                    m_Impl->m_NotificationHandler.CmdAppendTimeout(base_cmd,
+                        timeout)).response)) {
             // Notify the rest of NetSchedule servers that
             // we are no longer listening on the UDP socket.
-            CNetServiceIterator it(
-                    m_Impl->m_API->m_Service.Iterate(server));
-            while (++it)
+            // Also, if a new preferred affinity is given by
+            // the server, register it with the rest of servers.
+            string new_preferred_aff_cmd;
+
+            if (m_Impl->m_AffinityPreference == eClaimNewPreferredAffs &&
+                    !job.affinity.empty()) {
+                CFastMutexGuard guard(m_Impl->m_PreferredAffMutex);
+
+                if (m_Impl->m_PreferredAffinities.find(job.affinity) ==
+                        m_Impl->m_PreferredAffinities.end()) {
+                    m_Impl->m_PreferredAffinities.insert(job.affinity);
+                    new_preferred_aff_cmd = "CHAFF add=" + job.affinity;
+                }
+            }
+
+            CNetServiceIterator it(m_Impl->m_API->m_Service.Iterate(server));
+            while (++it) {
                 (*it).ExecWithRetry("CWGET");
+                if (!new_preferred_aff_cmd.empty())
+                    (*it).ExecWithRetry(new_preferred_aff_cmd);
+            }
+
             return true;
         }
     }
@@ -267,16 +290,14 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
 
 bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
         unsigned wait_time,
-        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list)
 {
     if (wait_time == 0)
-        return GetJob(job, affinity_preference, affinity_list);
+        return GetJob(job, affinity_list);
     else {
         CAbsTimeout abs_timeout(wait_time, 0);
 
-        return GetJob(job, affinity_preference,
-            affinity_list, &abs_timeout);
+        return GetJob(job, affinity_list, &abs_timeout);
     }
 }
 
@@ -323,32 +344,28 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
     return cmd;
 }
 
-void CNetScheduleNotificationHandler::CmdAppendTimeout(
-        string& cmd, CAbsTimeout* timeout)
+string CNetScheduleNotificationHandler::CmdAppendTimeout(
+        const string& base_cmd, CAbsTimeout* timeout)
 {
-    if (timeout != NULL) {
-        cmd += " port=";
-        cmd += NStr::UIntToString(GetPort());
+    if (timeout == NULL)
+        return base_cmd;
 
-        cmd += " timeout=";
-        cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
-    }
+    string cmd(base_cmd);
+
+    cmd += " port=";
+    cmd += NStr::UIntToString(GetPort());
+
+    cmd += " timeout=";
+    cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
+
+    return cmd;
 }
 
 bool CNetScheduleNotificationHandler::RequestJob(
         CNetScheduleExecutor::TInstance executor,
         CNetScheduleJob& job,
-        string cmd,
-        CAbsTimeout* timeout)
+        const string& cmd)
 {
-    if (timeout != NULL) {
-        cmd += " port=";
-        cmd += NStr::UIntToString(GetPort());
-
-        cmd += " timeout=";
-        cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
-    }
-
     CGetJobCmdExecutor get_executor(cmd, job);
 
     CNetServiceIterator it(executor->m_API->m_Service.FindServer(&get_executor,
@@ -485,29 +502,47 @@ void CNetScheduleExecutor::ReturnJob(const string& job_key,
     m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd);
 }
 
-static void s_AppendAffinityTokens(string& cmd,
-        const char* sep, const vector<string>& affs)
+int SNetScheduleExecutorImpl::AppendAffinityTokens(string& cmd,
+        const vector<string>* affs,
+        SNetScheduleExecutorImpl::EChangeAffAction action)
 {
-    if (!affs.empty()) {
-        ITERATE(vector<string>, aff, affs) {
-            cmd.append(sep);
-            SNetScheduleAPIImpl::VerifyAffinityAlphabet(*aff);
-            cmd.append(*aff);
-            sep = ",";
-        }
-        cmd.push_back('"');
+    if (affs == NULL || affs->empty())
+        return 0;
+
+    const char* sep = action == eAddAffs ? " add=\"" : " del=\"";
+
+    ITERATE(vector<string>, aff, *affs) {
+        cmd.append(sep);
+        SNetScheduleAPIImpl::VerifyAffinityAlphabet(*aff);
+        cmd.append(*aff);
+        sep = ",";
     }
+    cmd.push_back('"');
+
+    CFastMutexGuard guard(m_PreferredAffMutex);
+
+    if (action == eAddAffs)
+        ITERATE(vector<string>, aff, *affs) {
+            m_PreferredAffinities.insert(*aff);
+        }
+    else
+        ITERATE(vector<string>, aff, *affs) {
+            m_PreferredAffinities.erase(*aff);
+        }
+
+    return 1;
 }
 
 void CNetScheduleExecutor::ChangePreferredAffinities(
-    const vector<string>& affs_to_add, const vector<string>& affs_to_delete)
+    const vector<string>* affs_to_add, const vector<string>* affs_to_delete)
 {
     string cmd("CHAFF");
 
-    s_AppendAffinityTokens(cmd, " add=\"", affs_to_add);
-    s_AppendAffinityTokens(cmd, " del=\"", affs_to_delete);
-
-    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
+    if (m_Impl->AppendAffinityTokens(cmd, affs_to_add,
+                    SNetScheduleExecutorImpl::eAddAffs) |
+            m_Impl->AppendAffinityTokens(cmd, affs_to_delete,
+                    SNetScheduleExecutorImpl::eDeleteAffs))
+        m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
 const string& CNetScheduleExecutor::GetQueueName()

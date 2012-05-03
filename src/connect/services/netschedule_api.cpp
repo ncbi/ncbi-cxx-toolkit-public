@@ -179,9 +179,10 @@ void CNetScheduleServerListener::OnInit(
         ns_impl->m_Queue = config->GetString(config_section,
             "queue_name", CConfig::eErr_Throw, "noname");
     }
-    if (config == NULL)
+    if (config == NULL) {
+        ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
         ns_impl->m_UseEmbeddedStorage = true;
-    else {
+    } else {
         try {
             ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
                 "use_embedded_storage", CConfig::eErr_Throw, true);
@@ -190,6 +191,18 @@ void CNetScheduleServerListener::OnInit(
             ns_impl->m_UseEmbeddedStorage = config->GetBool(config_section,
                 "use_embedded_input", CConfig::eErr_NoThrow, true);
         }
+
+        bool use_affinities = config->GetBool(config_section,
+                "use_affinities", CConfig::eErr_NoThrow, true);
+        bool claim_new_affinities = config->GetBool(config_section,
+                "claim_new_affinities", CConfig::eErr_NoThrow, true);
+
+        ns_impl->m_AffinityPreference =
+                !use_affinities && !claim_new_affinities ?
+                        CNetScheduleExecutor::eAnyJob :
+                claim_new_affinities ?
+                        CNetScheduleExecutor::eClaimNewPreferredAffs :
+                        CNetScheduleExecutor::ePreferredAffsOrAnyJob;
 
         ns_impl->m_ClientNode = config->GetString(config_section,
             "client_node", CConfig::eErr_NoThrow, kEmptyStr);
@@ -295,6 +308,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_ProgramVersion(parent->m_ProgramVersion),
     m_ClientNode(parent->m_ClientNode),
     m_ClientSession(parent->m_ClientSession),
+    m_AffinityPreference(parent->m_AffinityPreference),
     m_UseEmbeddedStorage(parent->m_UseEmbeddedStorage)
 {
 }
