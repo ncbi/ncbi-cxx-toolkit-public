@@ -830,10 +830,10 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
     if(m_StructureLinkout){        
         char buf[512];
         string  mapCDDParams = (NStr::Find(m_CddRid,"data_cache") != NPOS) ? "" : "blast_CD_RID=" + m_CddRid;        
-        sprintf(buf, kStructure_Overview.c_str(), m_Rid.c_str(),
+        sprintf(buf, kStructure_Overview, m_Rid.c_str(),
                         0, 0, mapCDDParams.c_str(), "overview",
                         m_EntrezTerm == NcbiEmptyString ?
-                        m_EntrezTerm.c_str() : "none");
+                        "none": m_EntrezTerm.c_str());
         out << buf <<"\n\n";  
     }
     x_DisplayDefline(out);
@@ -1305,10 +1305,10 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
     x_InitDeflineTable();
     if(m_StructureLinkout){        
         char buf[512];
-        sprintf(buf, kStructure_Overview.c_str(), m_Rid.c_str(),
+        sprintf(buf, kStructure_Overview, m_Rid.c_str(),
                         0, 0, m_CddRid.c_str(), "overview",
                         m_EntrezTerm == NcbiEmptyString ?
-                        m_EntrezTerm.c_str() : "none");
+                        "none": m_EntrezTerm.c_str());
         out << buf <<"\n\n";        
     }    
     x_DisplayDeflineTable(out);

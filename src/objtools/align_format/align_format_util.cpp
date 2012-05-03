@@ -80,7 +80,7 @@ USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
-const string CAlignFormatUtil::kNoHitsFound("No hits found");
+const char CAlignFormatUtil::kNoHitsFound[] = "No hits found";
 
 bool kTranslation;
 CRef<CScope> kScope;
@@ -2807,7 +2807,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
-    string temp_class_info = kClassInfo + " ";
+    string temp_class_info = kClassInfo; temp_class_info += " ";
     if (seqUrlInfo->gi > 0) {
         if(seqUrlInfo->isDbNa) {                
             db = "nucleotide";
