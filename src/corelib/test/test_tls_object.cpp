@@ -236,15 +236,22 @@ public:
         return GetTlsVar(s_LastNewPtr);
     }
 
-    CObjectWithTLS(void) {
+    enum EObjectPlace {
+        eUnknown,
+        eSubObject
+    };
+    static bool IsPlaceHeap(EObjectPlace place) {
+        return place == eUnknown && GetTlsVar(s_CurrentInHeap);
+    }
+    CObjectWithTLS(EObjectPlace place = eUnknown) {
         if ( GetTlsVar(s_CurrentInHeap) ) {
             if ( rand() % 10 == 0 ) {
                 throw runtime_error("CObjectWithTLS");
             }
         }
         m_Counter = IsNewInHeap(this)? eCounter_heap: eCounter_static;
-        _ASSERT((GetTlsVar(s_CurrentInHeap) != 0) == (m_Counter == eCounter_heap));
         object_count.Add(1);
+        _ASSERT(IsPlaceHeap(place) == (m_Counter == eCounter_heap));
     }
     virtual ~CObjectWithTLS() {
         if ( m_Counter != eCounter_heap && m_Counter != eCounter_static ) {
@@ -285,13 +292,30 @@ private:
 class CObjectWithTLS2 : public CObjectWithTLS
 {
 public:
-    CObjectWithTLS2(void) {
-        if ( GetTlsVar(s_CurrentInHeap) ) {
-            if ( rand() % 10 == 0 ) {
-                throw runtime_error("CObjectWithTLS2");
+    CObjectWithTLS2(void)
+        {
+            if ( GetTlsVar(s_CurrentInHeap) ) {
+                if ( rand() % 10 == 0 ) {
+                    throw runtime_error("CObjectWithTLS2");
+                }
             }
         }
-    }
+};
+
+class CObjectWithTLS3 : public CObjectWithTLS
+{
+public:
+    CObjectWithTLS3(void)
+        : m_SubObject(eSubObject)
+        {
+            if ( GetTlsVar(s_CurrentInHeap) ) {
+                if ( rand() % 10 == 0 ) {
+                    throw runtime_error("CObjectWithTLS3");
+                }
+            }
+        }
+
+    CObjectWithTLS m_SubObject;
 };
 
 template<class E, size_t S, bool Zero = true>
@@ -454,11 +478,10 @@ void CTestTlsObjectApp::RunTest(void)
         SetTlsVar(s_CurrentInHeap, ptr);
         for ( size_t i = 0; i < COUNT; ++i ) {
             try {
-                if ( rand()%2 ) {
-                    ptr[i] = new CObjectWithTLS;
-                }
-                else {
-                    ptr[i] = new CObjectWithTLS2;
+                switch ( rand()%3 ) {
+                case 0: ptr[i] = new CObjectWithTLS; break;
+                case 1: ptr[i] = new CObjectWithTLS2; break;
+                case 2: ptr[i] = new CObjectWithTLS3; break;
                 }
             }
             catch ( exception& ) {
@@ -510,11 +533,10 @@ void CTestTlsObjectApp::RunTest(void)
         SetTlsVar(s_CurrentInHeap, ptr);
         for ( size_t i = 0; i < COUNT; ++i ) {
             try {
-                if ( rand()%2 ) {
-                    ptr[i] = new CObjectWithTLS();
-                }
-                else {
-                    ptr[i] = new CObjectWithTLS2();
+                switch ( rand()%3 ) {
+                case 0: ptr[i] = new CObjectWithTLS(); break;
+                case 1: ptr[i] = new CObjectWithTLS2(); break;
+                case 2: ptr[i] = new CObjectWithTLS3(); break;
                 }
             }
             catch ( exception& ) {
