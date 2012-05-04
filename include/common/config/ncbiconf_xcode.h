@@ -295,6 +295,9 @@
    the standard libraries. */
 #define HAVE_LIBICONV 1
 
+/* Define to 1 if libgssapi_krb5 is available. */
+#define HAVE_LIBKRB5 1
+
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
 /* #undef HAVE_LIBKSTAT */

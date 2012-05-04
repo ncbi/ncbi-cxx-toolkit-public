@@ -99,6 +99,7 @@ typedef   int   ssize_t;
 #  define NCBI_PLATFORM_BITS  32
 #endif
 
+#define HAVE_LIBKRB5                    1
 
 /* FreeTDS v0.63 */
 

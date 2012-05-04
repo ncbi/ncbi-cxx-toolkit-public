@@ -244,6 +244,9 @@
 /* Define to 1 if libjpeg is available. */
 #undef HAVE_LIBJPEG
 
+/* Define to 1 if libgssapi_krb5 is available. */
+#undef HAVE_LIBKRB5
+
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBKSTAT

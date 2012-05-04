@@ -65,7 +65,7 @@ case "$with_3psw" in
          with_ncbi_c=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre,
-                     gcrypt, gnutls, openssl,
+                     gcrypt, gnutls, openssl, krb5,
                      sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
                      wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
                      python, jni, boost, sqlite3, mimetic, sge, icu, expat,
@@ -259,6 +259,10 @@ AC_ARG_WITH(openssl,
    [ --with-openssl=DIR      use OpenSSL installation in DIR])
 AC_ARG_WITH(openssl2,
    [ --without-openssl       do not use OpenSSL])
+AC_ARG_WITH(krb5,
+   [ --with-krb5=DIR         use Kerberos 5 installation in DIR])
+AC_ARG_WITH(krb5b,
+   [ --without-krb5          do not use Kerberos 5])
 AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
 AC_ARG_WITH(sybase-local,
@@ -479,7 +483,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
-z bz2 lzo pcre gcrypt gnutls openssl sybase sybase-local sybase-new \
+z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
 ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
@@ -525,7 +529,8 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
-      | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* | --with-curl=* \
+      | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* \
+      | --with-krb5=* | --with-curl=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
@@ -3784,6 +3789,32 @@ if test -n "$GNUTLS_LIBS"; then
 else
    TLS_INCLUDE=$OPENSSL_INCLUDE
    TLS_LIBS=$OPENSSL_LIBS
+fi
+
+
+case "$with_krb5" in
+   no )       ac_cv_path_KRB5_CONFIG=no ;;
+   yes | '' ) : ${KRB5_PATH=/usr}       ;;
+   * )        KRB5_PATH=$with_krb5      ;;
+esac
+AC_PATH_PROG(KRB5_CONFIG, krb5-config, [], [${KRB5_BIN-$KRB5_PATH/bin}:$PATH])
+
+if test "x$with_krb5" != xno; then
+   if test -x "$KRB5_CONFIG"; then
+      KRB5_INCLUDE=`$KRB5_CONFIG --cflags | \
+         sed -e 's/$/ /; s,-I/usr/include ,,'`
+      KRB5_CONFIG_LIBS=`$KRB5_CONFIG --libs gssapi | \
+         sed -e 's/^/ /; s/ -[^Ll][^ ]*//g'`
+   fi
+else
+   AS_UNSET(KRB5_CONFIG_LIBS)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(krb5, KRB5, gssapi_krb5,
+ [[AC_LANG_PROGRAM([[#include <gssapi/gssapi_krb5.h>]],
+   [[krb5_gss_register_acceptor_identity("foo");]])]],
+ $KRB5_CONFIG_LIBS)
+if test "x$with_krb5" != xno -a -n "$KRB5_CONFIG_LIBS"; then
+   NCBI_RPATHIFY_OUTPUT(KRB5_LIBS, [echo $KRB5_CONFIG_LIBS], [$no_usr_lib])
 fi
 
 
