@@ -56,7 +56,7 @@
  *  LSOCK_Create[Ex]
  *  LSOCK_Accept[Ex]
  *  LSOCK_Close
- *  LSOCK_GetOSHandle
+ *  LSOCK_GetOSHandle[Ex]
  *  LSOCK_GetPort
  *
  * I/O Socket (handle SOCK):
@@ -66,7 +66,7 @@
  *  SOCK_Reconnect
  *  SOCK_Shutdown
  *  SOCK_Close[Ex]
- *  SOCK_CloseOSHandle[Ex]
+ *  SOCK_CloseOSHandle
  *  SOCK_Wait
  *  SOCK_Poll
  *  SOCK_SetTimeout
@@ -81,7 +81,7 @@
  *  SOCK_GetRemotePort
  *  SOCK_GetPeerAddress
  *  SOCK_GetPeerAddressString[Ex]
- *  SOCK_GetOSHandle
+ *  SOCK_GetOSHandle[Ex]
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
  *  SOCK_SetCork
@@ -519,8 +519,25 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Close(LSOCK lsock);
  *  [in]  pointer to a memory location to store the OS-dependent handle at
  * @param handle_size
  *  The exact(!) size of the expected OS handle
+ * @param ownership
+ *  eTakeOwnership removes the handle from LSOCK;  eNoOwnership retains it
+ * @note
+ *  If handle ownership is taken, all operations with this LSOCK (except for
+ *  LSOCK_Close) will fail.
  * @sa
- *  SOCK_OSHandleSize, SOCK_GetOSHandle
+ *  SOCK_OSHandleSize, SOCK_GetOSHandle, SOCK_CloseOSHandle, LSOCK_GetOSHandle,
+ *  LSOCK_Close
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandleEx
+(LSOCK      lsock,
+ void*      handle_buf,
+ size_t     handle_size,
+ EOwnership owndership
+ );
+
+/** Same as LSOCK_GetOSHandleEx(lsock, handle_buf, handle_size, eNoOwnership).
+ * @sa
+ *  LSOCK_GetOSHandleEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 (LSOCK  lsock,
@@ -634,7 +651,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  *  does not refer to an open socket [but e.g. to a normal file or a pipe];
  *  other error codes in case of other errors
  * @sa
- *  SOCK_GetOSHandle, SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
+ *  SOCK_GetOSHandleEx, SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
 (const void* handle,
@@ -656,7 +673,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  * @param sock
  *  [out] SOCK built on top of the OS "handle"
  * @sa
- *  SOCK_GetOSHandle, SOCK_CreateOnTopEx, SOCK_Close
+ *  SOCK_GetOSHandleEx, SOCK_CreateOnTopEx, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTop
 (const void* handle,
@@ -773,7 +790,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  * @note  Using this call on a handle that belongs to an active [LD]SOCK object
  *        is undefined.
  * @sa
- *  SOCK_GetOSHandle
+ *  SOCK_GetOSHandleEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseOSHandle
 (const void* handle,
@@ -1244,8 +1261,25 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
  *  [out] pointer to a memory area to put the OS handle at
  * @param handle_size
  *  [in]  the exact(!) size of the expected OS handle
+ * @param ownership
+ *  eTakeOwnership removes the handle from SOCK;  eNoOwnership retains it
+ * @note
+ *  If handle ownership is taken, all operations with this SOCK (except for
+ *  SOCK_Close[Ex]) will fail.
  * @sa
- *  SOCK_OSHandleSize
+ *  SOCK_OSHandleSize, SOCK_GetOSHandle, SOCK_CloseOSHandle, SOCK_CloseEx
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandleEx
+(SOCK       sock,
+ void*      handle_buf,
+ size_t     handle_size,
+ EOwnership ownership
+ );
+
+
+/** Same as SOCK_GetOSHandleEx(sock, handle_buf, handle_size, eNoOwnership).
+ * @sa
+ *  SOCK_GetOSHandleEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
 (SOCK   sock,
