@@ -367,11 +367,11 @@ extern void LOG_WriteInternal
 
     /* unconditional exit/abort on fatal error */
     if (call_data->level == eLOG_Fatal) {
-#if defined(NDEBUG)
+#ifdef NDEBUG
         exit(1);
 #else
         abort();
-#endif
+#endif /*NDEBUG*/
     }
 }
 
