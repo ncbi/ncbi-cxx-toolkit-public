@@ -69,20 +69,20 @@ extern "C" {
 #      ifdef __cplusplus
 extern "C" {
 #      endif /*__cplusplus*/
-static int gcry_user_mutex_init(void **priv)
+static int gcry_user_mutex_init(void** lock)
 {
-    return (*priv = CORE_GetLOCK()) != 0 ? 0 : NCBI_NOTSUPPORTED;
+    return !(*lock = CORE_GetLOCK()) ? NCBI_NOTSUPPORTED : 0;
 }
-static int gcry_user_mutex_destroy(void **lock)
+static int gcry_user_mutex_destroy(void** lock)
 {
-    *lock = NULL;
+    *lock = 0;
     return 0;
 }
-static int gcry_user_mutex_lock(void **lock)
+static int gcry_user_mutex_lock(void** lock)
 {
-    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock) ? 0 : NCBI_NOTSUPPORTED;
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock) > 0 ? 0 : NCBI_NOTSUPPORTED;
 }
-static int gcry_user_mutex_unlock(void **lock)
+static int gcry_user_mutex_unlock(void** lock)
 {
     return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock) ? 0 : NCBI_NOTSUPPORTED;
 }
