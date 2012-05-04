@@ -83,6 +83,7 @@ public:
         eInvalidClient,
         eAccessDenied,
         eSubmitsDisabled,
+        eShuttingDown,
         eDuplicateName,
         eObsoleteCommand,
         eInvalidParameter,
@@ -109,6 +110,7 @@ public:
         case eInvalidClient:       return "eInvalidClient";
         case eAccessDenied:        return "eAccessDenied";
         case eSubmitsDisabled:     return "eSubmitsDisabled";
+        case eShuttingDown:        return "eShuttingDown";
         case eDuplicateName:       return "eDuplicateName";
         case eObsoleteCommand:     return "eObsoleteCommand";
         case eInvalidParameter:    return "eInvalidParameter";
