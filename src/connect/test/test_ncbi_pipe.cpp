@@ -239,11 +239,11 @@ int CTest::Run(void)
     CPipe pipe;
     const CPipe::TCreateFlags share = CPipe::fStdErr_Share;
 
-    static const STimeout io_timeout = {2, 0};
+    static const STimeout iotimeout = {3, 0};
 
-    assert(pipe.SetTimeout(eIO_Read,  &io_timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Write, &io_timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Close, &io_timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Read,  &iotimeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Write, &iotimeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Close, &iotimeout) == eIO_Success);
 
 
     // Check bad executable
@@ -290,7 +290,7 @@ int CTest::Run(void)
     // Unidirectional pipe (read from iostream)
     ERR_POST(Info << "TEST:  Unidirectional stream read");
     CConn_PipeStream ios(cmd.c_str(), args,
-                         CPipe::fStdIn_Close | share, &io_timeout);
+                         CPipe::fStdIn_Close | share, &iotimeout);
     s_ReadStream(ios);
 
     status = ios.GetPipe().Close(&exitcode);
@@ -354,7 +354,7 @@ int CTest::Run(void)
     args.clear();
     args.push_back("3");
     ERR_POST(Info << "TEST:  Bidirectional stream");
-    CConn_PipeStream ps(app.c_str(), args, share, &io_timeout);
+    CConn_PipeStream ps(app.c_str(), args, share, &iotimeout);
 
     NcbiCout << endl;
     for (int i = 5; i<=10; i++) {
@@ -398,7 +398,7 @@ int CTest::Run(void)
     {{
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
-        assert(process.Kill());
+        assert(process.Kill(2000));
         assert(!process.IsAlive());
     }}
 
@@ -433,7 +433,7 @@ int CTest::Run(void)
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
         CProcess::CExitInfo exitinfo;
-        exitcode = process.Wait(6000/*6 sec*/, &exitinfo);
+        exitcode = process.Wait(10000/*10 sec*/, &exitinfo);
         string infostr;
         if (exitinfo.IsPresent()) {
             if (exitinfo.IsExited()) {
@@ -525,7 +525,7 @@ int main(int argc, const char* argv[])
         ::signal(SIGPIPE, SIG_IGN);
 #endif /*NCBI_OS_UNIX*/
         ERR_POST(Info << "--- CPipe sleeping test ---");
-        SleepSec(4);
+        SleepMilliSec(6000);
         ERR_POST(Info << "--- CPipe sleeping test done ---");
         exit(kTestResult);
     }}
