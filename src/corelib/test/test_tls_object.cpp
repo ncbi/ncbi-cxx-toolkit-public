@@ -37,44 +37,65 @@
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbi_system.hpp>
 
+// TLS static variable support in case there is no compiler support
 //#undef NCBI_TLS_VAR
-#ifndef NCBI_TLS_VAR
+#ifdef NCBI_TLS_VAR
+# define DECLARE_TLS_VAR(type, var) static NCBI_TLS_VAR type var
+#else
 # include <pthread.h>
 # include <corelib/ncbimtx.hpp>
+template<class V> class CStaticTLS {
+private:
+    typedef pthread_key_t key_type;
+    mutable key_type m_Key;
+    template<class A> struct SCaster {
+        static A FromVoidP(void* p) {
+            return A(reinterpret_cast<size_t>(p));
+        }
+        static void* ToVoidP(A v) {
+            return reinterpret_cast<void*>(size_t(v));
+        }
+    };
+    template<class A> struct SCaster<A*> {
+        static A* FromVoidP(void* p) {
+            return reinterpret_cast<A*>(p);
+        }
+        static void* ToVoidP(A* v) {
+            return reinterpret_cast<void*>(v);
+        }
+    };
+    key_type x_GetKey(void) const {
+        return m_Key? m_Key: x_GetKeyLong();
+    }
+    key_type x_GetKeyLong(void) const {
+        DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
+        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
+        if ( !m_Key ) {
+            _ASSERT(sizeof(value_type) <= sizeof(void*));
+            key_type new_key = 0;
+            do {
+                _VERIFY(pthread_key_create(&new_key, 0) == 0);
+            } while ( !new_key );
+            pthread_setspecific(new_key, 0);
+            m_Key = new_key;
+        }
+        return m_Key;
+    }
+public:
+    typedef V value_type;
+    operator value_type() const {
+        return SCaster<value_type>::FromVoidP(pthread_getspecific(x_GetKey()));
+    }
+    void operator=(const value_type& v) {
+        pthread_setspecific(x_GetKey(), SCaster<value_type>::ToVoidP(v));
+    }
+};
+# define DECLARE_TLS_VAR(type, var) static CStaticTLS<type> var
 #endif
 
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
-
-#ifdef NCBI_TLS_VAR
-# define DECLARE_TLS_VAR(var)                   \
-    static NCBI_TLS_VAR void* var
-# define SetTlsVar(var, value) ((var) = (value))
-# define GetTlsVar(var) (var)
-#else
-# define DECLARE_TLS_VAR(var)                                   \
-    static pthread_key_t var##_key = pthread_key_t(~0)
-static pthread_key_t GetTlsVarKey(pthread_key_t& key) {
-    if ( key == pthread_key_t(~0) ) {
-        DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
-        CFastMutexGuard guard(s_InitMutex);
-        if ( key == pthread_key_t(~0) ) {
-            pthread_key_t new_key = pthread_key_t(~0);
-            do {
-                _VERIFY(pthread_key_create(&new_key, 0) == 0);
-            } while ( new_key == pthread_key_t(~0) );
-            pthread_setspecific(new_key, 0);
-            key = new_key;
-        }
-    }
-    return key;
-}
-# define SetTlsVar(var, value)                                  \
-    pthread_setspecific(GetTlsVarKey(var##_key), (value))
-# define GetTlsVar(var)                                 \
-    pthread_getspecific(GetTlsVarKey(var##_key))
-#endif
 
 static CAtomicCounter alloc_count;
 static CAtomicCounter object_count;
@@ -104,7 +125,7 @@ void message(const char* msg,
     }
 }
 
-DECLARE_TLS_VAR(s_CurrentInHeap);
+DECLARE_TLS_VAR(bool, s_CurrentInHeap);
 
 class CObjectWithNew
 {
@@ -152,7 +173,7 @@ class CObjectWithNew
 public:
     CObjectWithNew(void) {
         m_Counter = IsNewInHeap(this)? eCounter_heap: eCounter_static;
-        _ASSERT((GetTlsVar(s_CurrentInHeap) != 0) == (m_Counter == eCounter_heap));
+        _ASSERT(s_CurrentInHeap == (m_Counter == eCounter_heap));
         object_count.Add(1);
     }
     virtual ~CObjectWithNew() {
@@ -192,7 +213,7 @@ private:
     void operator=(CObjectWithNew&);
 };
 
-DECLARE_TLS_VAR(s_LastNewPtr);
+DECLARE_TLS_VAR(void*, s_LastNewPtr);
 
 class CObjectWithTLS
 {
@@ -230,10 +251,10 @@ class CObjectWithTLS
     }
 public:
     static void SetNewPtr(void* ptr) {
-        SetTlsVar(s_LastNewPtr, ptr);
+        s_LastNewPtr = ptr;
     }
     static void* GetNewPtr() {
-        return GetTlsVar(s_LastNewPtr);
+        return s_LastNewPtr;
     }
 
     enum EObjectPlace {
@@ -241,10 +262,10 @@ public:
         eSubObject
     };
     static bool IsPlaceHeap(EObjectPlace place) {
-        return place == eUnknown && GetTlsVar(s_CurrentInHeap);
+        return place == eUnknown && s_CurrentInHeap;
     }
     CObjectWithTLS(EObjectPlace place = eUnknown) {
-        if ( GetTlsVar(s_CurrentInHeap) ) {
+        if ( s_CurrentInHeap ) {
             if ( rand() % 10 == 0 ) {
                 throw runtime_error("CObjectWithTLS");
             }
@@ -294,7 +315,7 @@ class CObjectWithTLS2 : public CObjectWithTLS
 public:
     CObjectWithTLS2(void)
         {
-            if ( GetTlsVar(s_CurrentInHeap) ) {
+            if ( s_CurrentInHeap ) {
                 if ( rand() % 10 == 0 ) {
                     throw runtime_error("CObjectWithTLS2");
                 }
@@ -308,7 +329,7 @@ public:
     CObjectWithTLS3(void)
         : m_SubObject(eSubObject)
         {
-            if ( GetTlsVar(s_CurrentInHeap) ) {
+            if ( s_CurrentInHeap ) {
                 if ( rand() % 10 == 0 ) {
                     throw runtime_error("CObjectWithTLS3");
                 }
@@ -453,11 +474,11 @@ void CTestTlsObjectApp::RunTest(void)
             ptr[i] = 0;
         }
         sw.Start();
-        SetTlsVar(s_CurrentInHeap, ptr);
+        s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             ptr[i] = new CObjectWithNew;
         }
-        SetTlsVar(s_CurrentInHeap, 0);
+        s_CurrentInHeap = false;
         double t1 = sw.Elapsed();
         check_cnts(COUNT);
         for ( size_t i = 0; i < COUNT; ++i ) {
@@ -475,7 +496,7 @@ void CTestTlsObjectApp::RunTest(void)
     {
         CObjectWithTLS** ptr = new CObjectWithTLS*[COUNT];
         sw.Start();
-        SetTlsVar(s_CurrentInHeap, ptr);
+        s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             try {
                 switch ( rand()%3 ) {
@@ -490,7 +511,7 @@ void CTestTlsObjectApp::RunTest(void)
             _ASSERT(!CObjectWithTLS::GetNewPtr());
             _ASSERT(!ptr[i] || ptr[i]->IsInHeap());
         }
-        SetTlsVar(s_CurrentInHeap, 0);
+        s_CurrentInHeap = false;
         double t1 = sw.Elapsed();
         check_cnts(COUNT);
         sw.Start();
@@ -508,11 +529,11 @@ void CTestTlsObjectApp::RunTest(void)
             ptr[i] = 0;
         }
         sw.Start();
-        SetTlsVar(s_CurrentInHeap, ptr);
+        s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             ptr[i] = new CObjectWithNew();
         }
-        SetTlsVar(s_CurrentInHeap, 0);
+        s_CurrentInHeap = false;
         double t1 = sw.Elapsed();
         check_cnts(COUNT);
         for ( size_t i = 0; i < COUNT; ++i ) {
@@ -530,7 +551,7 @@ void CTestTlsObjectApp::RunTest(void)
     {
         CObjectWithTLS** ptr = new CObjectWithTLS*[COUNT];
         sw.Start();
-        SetTlsVar(s_CurrentInHeap, ptr);
+        s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             try {
                 switch ( rand()%3 ) {
@@ -545,7 +566,7 @@ void CTestTlsObjectApp::RunTest(void)
             _ASSERT(!CObjectWithTLS::GetNewPtr());
             _ASSERT(!ptr[i] || ptr[i]->IsInHeap());
         }
-        SetTlsVar(s_CurrentInHeap, 0);
+        s_CurrentInHeap = false;
         double t1 = sw.Elapsed();
         check_cnts(COUNT);
         sw.Start();
