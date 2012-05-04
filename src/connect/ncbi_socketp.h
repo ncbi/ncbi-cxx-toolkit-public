@@ -58,6 +58,10 @@
  */
 #include <errno.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /*__cplusplus*/
+
 #ifdef NCBI_OS_MSWIN
 
 typedef SOCKET TSOCK_Handle;    /* NB: same as HANDLE   */
@@ -346,6 +350,14 @@ typedef struct SOCK_tag {
 #if defined(NCBI_OS_MSWIN)  &&  defined(_WIN64)
 #  pragma pack(pop)
 #endif /*NCBI_OS_MSWIN && _WIN64*/
+
+
+extern const char g_kNcbiSockNameAbbr[];
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /*__cplusplus*/
 
 
 #endif /* CONNECT___NCBI_SOCKETP__H */
