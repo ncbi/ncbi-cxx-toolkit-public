@@ -266,7 +266,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 {
     CNetServer primary_server(GetServer(key));
 
-    if (!m_EnableMirroring)
+    if (!m_EnableMirroring || !key.HasExtensions())
         return primary_server.ExecWithRetry(cmd);
 
     CNetServer::SExecResult exec_result;
