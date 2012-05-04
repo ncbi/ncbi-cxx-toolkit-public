@@ -196,6 +196,15 @@ typedef int        TSOCK_socklen_t;
 
 
 /******************************************************************************
+ *  INTERNAL GLOBALS
+ */
+
+
+const char g_kNcbiSockNameAbbr[] = "SOCK";
+
+
+
+/******************************************************************************
  *  STATIC GLOBALS
  */
 
@@ -3912,8 +3921,8 @@ static EIO_Status s_Create(const char*     hostpath,
     /* setup the I/O data buffer properties */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     if (datalen) {
-        BUF_SetChunkSize(&x_sock->w_buf, datalen);
-        if (!BUF_Write(&x_sock->w_buf, data, datalen)) {
+        if (BUF_SetChunkSize(&x_sock->w_buf, datalen) < datalen  ||
+            !BUF_Write(&x_sock->w_buf, data, datalen)) {
             CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
                               ("%s[SOCK::Create] "
                                " Cannot store initial data",
@@ -5209,8 +5218,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
 
     /* store initial data */
     if (datalen) {
-        BUF_SetChunkSize(&w_buf, datalen);
-        if (!BUF_Write(&w_buf, data, datalen)) {
+        if (BUF_SetChunkSize(&w_buf, datalen) < datalen  ||
+            !BUF_Write(&w_buf, data, datalen)) {
             CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
                               ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                                " Cannot store initial data",
