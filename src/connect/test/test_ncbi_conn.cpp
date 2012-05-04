@@ -199,6 +199,7 @@ int CTestApp::Run(void)
     CCanceled canceled;
     CConnTest test(&tmo, &m_Tee);
     test.SetCanceledCallback(&canceled);
+    CSocketAPI::SetInterruptOnSignal(eOn);
 
     CConnTest::EStage everything = CConnTest::eStatefulService;
     EIO_Status status = test.Execute(everything);
