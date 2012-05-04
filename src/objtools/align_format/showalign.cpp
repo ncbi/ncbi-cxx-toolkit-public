@@ -2494,7 +2494,7 @@ void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
                 CRange<int> eachSeqloc(0, 0);
                 //go through each residule and mask it
                 for (int i=max<int>(from, start); 
-                     i<=min<int>(to, start+len); i++){
+                     i<=min<int>(to, start+len -1); i++){
                     //store seqloc start for font tag below
                     if ((m_AlignOption & eHtml) && isFirstChar){         
                         isFirstChar = false;
