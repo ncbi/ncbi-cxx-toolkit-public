@@ -1453,6 +1453,26 @@ static bool s_GeneMatchesXref
         }
     }
 
+    if( xref->IsSetSyn() ) {
+        // make sure all syns in the xref are also set in the gene (other_ref)
+        if( ! other_ref->IsSetSyn() ) {
+            return false;
+        }
+
+        // get set of gene syns so we can quickly check if the gene has the ref'd syns
+        set<string> gene_syns;
+        const CGene_ref::TSyn & gene_syns_list = xref->GetSyn();
+        copy( gene_syns_list.begin(), gene_syns_list.end(),
+            inserter(gene_syns, gene_syns.begin()) );
+
+        const CGene_ref::TSyn & ref_syns = xref->GetSyn();
+        ITERATE( CGene_ref::TSyn, syn_iter, ref_syns ) {
+            if( gene_syns.find(*syn_iter) == gene_syns.end() ) {
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
