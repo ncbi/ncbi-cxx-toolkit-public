@@ -167,7 +167,7 @@ public:
         return IsInHeap(this);
     }
     static void Delete(CObjectWithNew* ptr) {
-        if ( IsInHeap(ptr) ) {
+        if ( ptr && IsInHeap(ptr) ) {
             delete ptr;
         }
     }
@@ -237,6 +237,11 @@ public:
     }
 
     CObjectWithTLS(void) {
+        if ( GetTlsVar(s_CurrentInHeap) ) {
+            if ( rand() % 10 == 0 ) {
+                throw runtime_error("CObjectWithTLS");
+            }
+        }
         m_Counter = IsNewInHeap(this)? eCounter_heap: eCounter_static;
         _ASSERT((GetTlsVar(s_CurrentInHeap) != 0) == (m_Counter == eCounter_heap));
         object_count.Add(1);
@@ -252,7 +257,7 @@ public:
         return IsInHeap(this);
     }
     static void Delete(CObjectWithTLS* ptr) {
-        if ( IsInHeap(ptr) ) {
+        if ( ptr && IsInHeap(ptr) ) {
             delete ptr;
         }
     }
@@ -275,6 +280,18 @@ private:
 private:
     CObjectWithTLS(const CObjectWithTLS&);
     void operator=(CObjectWithTLS&);
+};
+
+class CObjectWithTLS2 : public CObjectWithTLS
+{
+public:
+    CObjectWithTLS2(void) {
+        if ( GetTlsVar(s_CurrentInHeap) ) {
+            if ( rand() % 10 == 0 ) {
+                throw runtime_error("CObjectWithTLS2");
+            }
+        }
+    }
 };
 
 template<class E, size_t S, bool Zero = true>
@@ -338,6 +355,7 @@ public:
 bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
 {
     try {
+        RunTest();
         RunTest();
         return true;
     }
@@ -407,6 +425,9 @@ void CTestTlsObjectApp::RunTest(void)
     check_cnts();
     {
         CObjectWithNew** ptr = new CObjectWithNew*[COUNT];
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            ptr[i] = 0;
+        }
         sw.Start();
         SetTlsVar(s_CurrentInHeap, ptr);
         for ( size_t i = 0; i < COUNT; ++i ) {
@@ -432,14 +453,23 @@ void CTestTlsObjectApp::RunTest(void)
         sw.Start();
         SetTlsVar(s_CurrentInHeap, ptr);
         for ( size_t i = 0; i < COUNT; ++i ) {
-            ptr[i] = new CObjectWithTLS;
+            try {
+                if ( rand()%2 ) {
+                    ptr[i] = new CObjectWithTLS;
+                }
+                else {
+                    ptr[i] = new CObjectWithTLS2;
+                }
+            }
+            catch ( exception& ) {
+                ptr[i] = 0;
+            }
+            _ASSERT(!CObjectWithTLS::GetNewPtr());
+            _ASSERT(!ptr[i] || ptr[i]->IsInHeap());
         }
         SetTlsVar(s_CurrentInHeap, 0);
         double t1 = sw.Elapsed();
         check_cnts(COUNT);
-        for ( size_t i = 0; i < COUNT; ++i ) {
-            _ASSERT(ptr[i]->IsInHeap());
-        }
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
             CObjectWithTLS::Delete(ptr[i]);
@@ -451,6 +481,9 @@ void CTestTlsObjectApp::RunTest(void)
     check_cnts();
     {
         CObjectWithNew** ptr = new CObjectWithNew*[COUNT];
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            ptr[i] = 0;
+        }
         sw.Start();
         SetTlsVar(s_CurrentInHeap, ptr);
         for ( size_t i = 0; i < COUNT; ++i ) {
@@ -476,14 +509,23 @@ void CTestTlsObjectApp::RunTest(void)
         sw.Start();
         SetTlsVar(s_CurrentInHeap, ptr);
         for ( size_t i = 0; i < COUNT; ++i ) {
-            ptr[i] = new CObjectWithTLS();
+            try {
+                if ( rand()%2 ) {
+                    ptr[i] = new CObjectWithTLS();
+                }
+                else {
+                    ptr[i] = new CObjectWithTLS2();
+                }
+            }
+            catch ( exception& ) {
+                ptr[i] = 0;
+            }
+            _ASSERT(!CObjectWithTLS::GetNewPtr());
+            _ASSERT(!ptr[i] || ptr[i]->IsInHeap());
         }
         SetTlsVar(s_CurrentInHeap, 0);
         double t1 = sw.Elapsed();
         check_cnts(COUNT);
-        for ( size_t i = 0; i < COUNT; ++i ) {
-            _ASSERT(ptr[i]->IsInHeap());
-        }
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
             CObjectWithTLS::Delete(ptr[i]);
