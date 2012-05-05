@@ -3659,6 +3659,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MMUS	s	Macleay Museum, University of Sydney",
 "MN	s	Museu Nacional, Universidade Federal do Rio de Janeiro",
 "MNA	s	Museum of Northern Arizona",
+"MNA<ITA>	s	The Museo Nazionale dell'Antartide  (Italian National Antarctic  Museum in Genoa).",
 "MNAV	s	Museo Naturalistico-Archeologico",
 "MNB	s	Museum fuer Naturkunde der Humboldt-Universitaet",
 "MNCE	s	Museu de Historia Natural Capao da Embuia",
