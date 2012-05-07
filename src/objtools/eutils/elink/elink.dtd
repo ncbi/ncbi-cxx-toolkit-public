@@ -82,7 +82,7 @@ $Id$
 
 <!-- Common -->
 <!ELEMENT	LinkSet		(DbFrom, 
-				((IdList?, (LinkSetDb*  |  (LinkSetDbHistory*, WebEnv))) | IdUrlList | IdCheckList | ERROR)  
+				((IdList?, ((ERROR?, LinkSetDb)*  |  (LinkSetDbHistory*, WebEnv))) | IdUrlList | IdCheckList | ERROR), ERROR?  
 				)>
 
 <!ELEMENT	eLinkResult	(LinkSet*, ERROR?)>

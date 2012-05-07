@@ -22,6 +22,8 @@ $Id$
 <!ELEMENT	SingleToken	(#PCDATA)>	<!-- (Y|N) -->
 <!ELEMENT	Hierarchy	(#PCDATA)>	<!-- (Y|N) -->
 <!ELEMENT	IsHidden	(#PCDATA)>	<!-- (Y|N) -->
+<!ELEMENT       IsRangable      (#PCDATA)>      <!-- (Y|N) -->
+<!ELEMENT       IsTruncatable   (#PCDATA)>      <!-- (Y|N) -->
 
 
 <!ELEMENT	DbList		(DbName+)>
@@ -34,7 +36,9 @@ $Id$
 				IsNumerical,
 				SingleToken,
 				Hierarchy,
-                IsHidden)>
+                                IsHidden,
+                                IsRangable,
+                IsTruncatable)>
 
 <!ELEMENT	Link		(Name,Menu,Description,DbTo)>
 
