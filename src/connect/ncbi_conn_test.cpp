@@ -40,8 +40,8 @@
 #include "ncbi_servicep.h"
 #include <iterator>
 
-#define __STR(x)  #x
-#define _STR(x)   __STR(x)
+#define _STR(x)           #x
+#define STRINGIFY(x)  _STR(x)
 
 #define NCBI_HELP_DESK  "NCBI Help Desk info@ncbi.nlm.nih.gov"
 #define NCBI_FW_URL                                                     \
@@ -476,7 +476,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
     if (m_Firewall) {
         temp += "This mode requires your firewall to be configured in such a"
             " way that it allows outbound connections to the port range ["
-            _STR(CONN_FWD_PORT_MIN) ".." _STR(CONN_FWD_PORT_MAX)
+            STRINGIFY(CONN_FWD_PORT_MIN) ".." STRINGIFY(CONN_FWD_PORT_MAX)
             "] (inclusive) at the two fixed NCBI hosts, 130.14.29.112"
             " and 165.112.7.12\n"
             "To set that up correctly, please have your network administrator"
@@ -624,6 +624,13 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
 }
 
 
+static SOCK x_GetSOCK(const CConn_IOStream* fw)
+{
+    SOCK s;
+    return CONN_GetSOCK(fw->GetCONN(), &s) == eIO_Success ? s : 0;
+}
+
+
 EIO_Status CConnTest::CheckFWConnections(string* reason)
 {
     static const STimeout kZeroTmo = { 0, 0 };
@@ -739,7 +746,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 if (!fw  ||  cp->status != eIO_Success)
                     continue;
                 CSocket* s = new CSocket;
-                s->Reset(fw->GetSOCK(), eNoOwnership, eCopyTimeoutsFromSOCK);
+                s->Reset(x_GetSOCK(fw), eNoOwnership, eCopyTimeoutsFromSOCK);
                 sock.push_back(s);
                 poll.push_back(CSocketAPI::SPoll(sock.back().get(), eIO_Read));
             }
