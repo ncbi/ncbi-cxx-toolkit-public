@@ -78,7 +78,7 @@ static void x_SetupDiag(const char* who)
 
     SetDiagPostPrefix(who);
 
-    // Log and data log streams
+    // Set CORE log
     CORE_SetLOG(LOG_cxx2c());
 }
 
