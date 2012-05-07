@@ -246,7 +246,8 @@ void CNetScheduleServerListener::OnError(
         }
         code = err_msg;
         msg = err_msg;
-    }
+    } else if (msg.empty())
+        msg = code;
 
     // Map code into numeric value
     CException::TErrCode err_code =

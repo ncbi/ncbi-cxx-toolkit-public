@@ -824,10 +824,13 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
     string last_error;
     bool throttled;
+    unsigned number_of_servers = 0;
+    unsigned ns_with_submits_disabled = 0;
 
     for (;;) {
         throttled = false;
         while (it) {
+            ++number_of_servers;
             try {
                 (*it)->ConnectAndExec(cmd, exec_result);
                 return;
@@ -836,6 +839,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 if (ex.GetErrCode() != CNetScheduleException::eSubmitsDisabled)
                     throw;
                 last_error = ex.what();
+                ++ns_with_submits_disabled;
             }
             catch (CNetSrvConnException& ex) {
                 switch (ex.GetErrCode()) {
@@ -857,7 +861,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             }
             ++it;
         }
-        if (retry_count <= 0)
+        if (retry_count <= 0 || ns_with_submits_disabled == number_of_servers)
             break;
 
         if (m_ServerPool->m_MaxConnectionTime > 0 &&
