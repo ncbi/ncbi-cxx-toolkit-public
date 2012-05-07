@@ -17,6 +17,9 @@ objtools
 sample
 serial
 util
+internal$
+internal/Makefile.in
+internal/sra
 ./doc/public/LICENSE
 ./doc/public/gpl.txt
 ./doc/public/index_html_files
