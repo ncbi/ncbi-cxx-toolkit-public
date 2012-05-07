@@ -195,21 +195,12 @@ EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
 }
 
 
-static CONNECTOR x_SC(CONNECTOR socket_connector, SOCK*& sockptr)
-{
-    // HACK * HACK * HACK
-    sockptr = socket_connector ? (SOCK*) socket_connector->handle : 0;
-    return socket_connector;
-}
-
-
 CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(x_SC(SOCK_CreateConnector(host.c_str(), port, max_try),
-                          m_SockPtr),
+    : CConn_IOStream(SOCK_CreateConnector(host.c_str(), port, max_try),
                      timeout, buf_size)
 {
     return;
@@ -224,9 +215,8 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(x_SC(SOCK_CreateConnectorEx(host.c_str(), port, max_try,
-                                                 data, size, flags),
-                          m_SockPtr),
+    : CConn_IOStream(SOCK_CreateConnectorEx(host.c_str(), port, max_try,
+                                            data, size, flags),
                      timeout, buf_size)
 {
     return;
@@ -237,9 +227,7 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
                                        EOwnership      if_to_own,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(x_SC(SOCK_CreateConnectorOnTop(sock,
-                                                    if_to_own != eNoOwnership),
-                          m_SockPtr),
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock,if_to_own != eNoOwnership),
                      timeout, buf_size)
 {
     return;
@@ -262,18 +250,19 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
         flags |=  fSOCK_LogOn;
     }
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
-        status = HTTP_CreateTunnel(net_info, fHTTP_DetachableTunnel
-                                   | fHTTP_NoAutoRetry, &sock);
-        if (status == eIO_Success) {
-            size_t handle_size = SOCK_OSHandleSize();
-            char*  handle      = new char[handle_size];
-            status = SOCK_GetOSHandle(sock, handle, handle_size);
+        status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
+        _ASSERT(!sock ^ !(status != eIO_Success));
+        if (status == eIO_Success
+            &&  ((flags & ~(fSOCK_LogOn | fSOCK_LogDefault))  ||  init_size)) {
+            size_t size   = SOCK_OSHandleSize();
+            char*  handle = new char[size];
+            status = SOCK_GetOSHandleEx(sock, handle, size, eTakeOwnership);
             if (status == eIO_Success) {
                 SOCK_Close(sock);
-                status = SOCK_CreateOnTopEx(handle, handle_size, &sock,
+                status = SOCK_CreateOnTopEx(handle, size, &sock,
                                             init_data, init_size, flags);
                 if (status != eIO_Success) {
-                    SOCK_CloseOSHandle(handle, handle_size);
+                    SOCK_CloseOSHandle(handle, size);
                     _ASSERT(!sock);
                 } else
                     _ASSERT(sock);
@@ -283,8 +272,7 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
                 sock = 0;
             }
             delete[] handle;
-        } else
-            _ASSERT(!sock);
+        }
         proxy = true;
     }
     if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
@@ -313,9 +301,7 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        size_t              size,
                                        TSOCK_Flags         flags,
                                        size_t              buf_size)
-    : CConn_IOStream(x_SC(s_TunneledSocketConnector(&net_info,
-                                                    data, size, flags),
-                          m_SockPtr),
+    : CConn_IOStream(s_TunneledSocketConnector(&net_info, data, size, flags),
                      net_info.timeout, buf_size)
 {
     return;
@@ -345,9 +331,7 @@ static SOCK s_GrabSOCK(CSocket& socket)
 CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(x_SC(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket),
-                                                    1/*own*/),
-                          m_SockPtr),
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket), 1/*own*/),
                      timeout, buf_size)
 {
     return;
@@ -737,7 +721,7 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
     : CConn_IOStream(FTP_CreateConnectorSimple(host.c_str(), port,
                                                user.c_str(), pass.c_str(),
                                                path.c_str(), flag, cmcb),
-                     timeout, 0/*must be unbuffered*/, false/*thus,untied*/)
+                     timeout, 0/*must be unbuffered*/, false/*thus untied*/)
 {
     return;
 }
@@ -790,7 +774,7 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
     : CConn_FtpStream(host, user, pass, path, port, flag, cmcb, timeout)
 {
     // Use '\n' here instead of NcbiFlush to avoid (and thus make silent)
-    // flush errors on inexistent files or non-files (e.g. directories)..
+    // flush errors on retrieval of inexistent (or bad) files / directories..
     if (!file.empty()) {
         EIO_Status status;
         if (offset) {

@@ -346,7 +346,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* firewall mode */
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    if (!*str)
+    if (!*str) /*NB: not actually necessary but faster*/
         info->firewall = eFWMode_Legacy;
     else if (strcasecmp(str, "adaptive") == 0  ||  ConnNetInfo_Boolean(str))
         info->firewall = eFWMode_Adaptive;
@@ -685,7 +685,7 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
         /* line & taglen */
         newlinelen = (size_t)
             (eol ? eol - newline + 1 : newhdr + newhdrlen - newline);
-        if (!eot || eot >= newline + newlinelen)
+        if (!eot  ||  eot >= newline + newlinelen)
             goto ignore;
         if (!(newtaglen = (size_t)(eot - newline)))
             goto ignore;
@@ -731,7 +731,7 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
             eot = strchr(line,  ':');
 
             linelen = (size_t)(eol ? eol - line + 1 : hdr + hdrlen - line);
-            if (!eot || eot >= line + linelen)
+            if (!eot  ||  eot >= line + linelen)
                 continue;
 
             taglen = (size_t)(eot - line);
@@ -1348,7 +1348,7 @@ extern void ConnNetInfo_Destroy(SConnNetInfo* info)
  */
 
 
-static EIO_Status x_URLConnectReturn(SOCK sock, EIO_Status status)
+static EIO_Status x_URLConnectErrorReturn(SOCK sock, EIO_Status status)
 {
     if (sock) {
         SOCK_Abort(sock);
@@ -1397,7 +1397,7 @@ extern EIO_Status URL_ConnectEx
             *sock = 0;
         } else
             s = 0;
-        return x_URLConnectReturn(s, eIO_InvalidArg);
+        return x_URLConnectErrorReturn(s, eIO_InvalidArg);
     }
     s = *sock;
     *sock = 0;
@@ -1429,7 +1429,7 @@ extern EIO_Status URL_ConnectEx
                     ("[URL_Connect]  Unrecognized request method (#%u)",
                      (unsigned int) req_method));
         assert(0);
-        return x_URLConnectReturn(s, eIO_InvalidArg);
+        return x_URLConnectErrorReturn(s, eIO_InvalidArg);
     }
 
     hdr_len = 0;
@@ -1459,7 +1459,7 @@ extern EIO_Status URL_ConnectEx
                     CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                       ("[URL_Connect]  Out of memory (%lu)",
                                        (unsigned long) size));
-                    return x_URLConnectReturn(s, eIO_Unknown);
+                    return x_URLConnectErrorReturn(s, eIO_Unknown);
                 }
                 URL_Encode(args, args_len, &rd_len, x_args, size, &wr_len);
                 assert(args_len == rd_len);
@@ -1492,9 +1492,9 @@ extern EIO_Status URL_ConnectEx
 
         /* Content-Length: <content_length>\r\n */
         (req_method == eReqMethod_Post
-         &&  ((add_hdr =
-               sprintf(hdr_buf, "Content-Length: %lu\r\n",
-                       (unsigned long) content_length)) <= 0    ||
+         &&  ((add_hdr
+               = sprintf(hdr_buf, "Content-Length: %lu\r\n",
+                         (unsigned long) content_length)) <= 0  ||
               !BUF_Write(&buf, hdr_buf,  (size_t) add_hdr)))    ||
 
         /* <user_header> */
@@ -1514,7 +1514,7 @@ extern EIO_Status URL_ConnectEx
         BUF_Destroy(buf);
         if (temp  &&  temp != args)
             free((void*) temp);
-        return x_URLConnectReturn(s, eIO_Unknown);
+        return x_URLConnectErrorReturn(s, eIO_Unknown);
     }
     if (temp  &&  temp != args)
         free((void*) temp);
@@ -1523,26 +1523,26 @@ extern EIO_Status URL_ConnectEx
         ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
-                          ("[URL_Connect]  Cannot maintain HTTP header"
-                           " for %s:%hu", host, port));
+                          ("[URL_Connect]  Cannot maintain HTTP header for"
+                           " %s:%hu", host, port));
         if (hdr)
             free(hdr);
         BUF_Destroy(buf);
-        return x_URLConnectReturn(s, eIO_Unknown);
+        return x_URLConnectErrorReturn(s, eIO_Unknown);
     }
     BUF_Destroy(buf);
 
     if (s) {
         /* resuse connection to HTTPD */
-        size_t handle_size = SOCK_OSHandleSize();
-        void*  handle      = malloc(handle_size);
-        status = SOCK_GetOSHandle(s, handle, handle_size);
+        size_t size   = SOCK_OSHandleSize();
+        void*  handle = malloc(size);
+        status = SOCK_GetOSHandleEx(s, handle, size, eTakeOwnership);
         if (status == eIO_Success) {
             SOCK_Close(s);
-            status  = SOCK_CreateOnTopEx(handle, handle_size, sock,
+            status  = SOCK_CreateOnTopEx(handle, size, sock,
                                          hdr, hdr_len, flags);
             if (status != eIO_Success) {
-                SOCK_CloseOSHandle(handle, handle_size);
+                SOCK_CloseOSHandle(handle, size);
                 assert(!sock);
             }
         } else {
