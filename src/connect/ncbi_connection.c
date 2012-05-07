@@ -32,6 +32,7 @@
  */
 
 #include "ncbi_priv.h"
+#include "ncbi_socketp.h"
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connection.h>
 #include <stdlib.h>
@@ -78,7 +79,7 @@
 
 #define CONN_LOG(s_c, f_n, lvl, msg)  CONN_LOG_EX(s_c, f_n, lvl, msg, status)
 
-/* Standard macros to verify that the passed connection handle is not NULL
+/* Standard macros to verify that the connection handle is not NULL and valid.
  * NB: "retval" must be either a valid EIO_Status or 0 (no status logged)
  */
 #define CONN_NOT_NULL_EX(subcode, func_name, retval)                    \
@@ -341,6 +342,7 @@ extern EIO_Status CONN_CreateEx
             conn->c_timeout = kDefaultTimeout;
             conn->magic     = CONNECTION_MAGIC;
             if ((status = x_ReInit(conn, connector)) != eIO_Success) {
+                conn->magic = (unsigned int)(-1);
                 free(conn);
                 conn = 0;
             }
@@ -1078,4 +1080,35 @@ extern EIO_Status CONN_SetCallback
             *oldcb = cb;
     }
     return eIO_Success;
+}
+
+
+extern EIO_Status CONN_GetSOCK(CONN conn, SOCK* sock)
+{
+    EIO_Status status;
+    CONNECTOR  x_conn;
+
+    CONN_NOT_NULL(36, GetSOCK);
+
+    if (!sock)
+        return eIO_InvalidArg;
+    *sock = 0;
+
+    /* perform open, if not opened yet */
+    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
+        return status;
+    assert((conn->state & eCONN_Open)  &&  conn->meta.list);
+
+    x_conn = conn->meta.list;
+    if (x_conn  &&  x_conn->meta  &&  x_conn->meta->get_type  &&
+        x_conn->meta->get_type(x_conn->meta->c_get_type)
+        == g_kNcbiSockNameAbbr) {
+        /* HACK * HACK * HACK */
+        SOCK* x_sock = (SOCK*) x_conn->handle;
+        if (x_sock) {
+            *sock = *x_sock;
+            return eIO_Success;
+        }
+    }
+    return eIO_Closed;
 }
