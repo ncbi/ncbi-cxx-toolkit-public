@@ -101,7 +101,7 @@ void CObjectOStreamJson::SetBinaryDataFormat(CObjectOStreamJson::EBinaryDataForm
 void CObjectOStreamJson::SetJsonpMode(const string& function_name)
 {
     m_JsonpPrefix = function_name + "(";
-    m_JsonpSuffix = ")";
+    m_JsonpSuffix = ");";
 }
 
 void CObjectOStreamJson::SetJsonpMode(const string& prefix, const string& suffix)
@@ -125,23 +125,21 @@ void CObjectOStreamJson::WriteFileHeader(TTypeInfo type)
 {
     if (!m_JsonpPrefix.empty() || !m_JsonpSuffix.empty()) {
         m_Output.PutString(m_JsonpPrefix);
-    } else {
-        StartBlock();
-        if (!type->GetName().empty()) {
-            m_Output.PutEol();
-            WriteKey(type->GetName());
-        }
+    }
+    StartBlock();
+    if (!type->GetName().empty()) {
+        m_Output.PutEol();
+        WriteKey(type->GetName());
     }
 }
 
 void CObjectOStreamJson::EndOfWrite(void)
 {
+    EndBlock();
     if (!m_JsonpPrefix.empty() || !m_JsonpSuffix.empty()) {
         m_Output.PutString(m_JsonpSuffix);
-    } else {
-        EndBlock();
-        m_Output.PutEol();
     }
+    m_Output.PutEol();
     CObjectOStream::EndOfWrite();
 }
 
