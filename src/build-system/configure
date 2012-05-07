@@ -23146,7 +23146,7 @@ if test "$with_ftds" != "no" ; then
       if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
          test "$with_ftds" = 64  &&  FTDS_PATH="<$d>"
          FTDS64_CTLIB_LIB="ct_ftds64${STATIC} tds_ftds64${STATIC}"
-         FTDS64_CTLIB_LIBS='$(ICONV_LIBS)'
+         FTDS64_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS)'
          FTDS64_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then
