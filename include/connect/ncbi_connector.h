@@ -57,14 +57,12 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
 /* Function type definitions for the connector method table.
  * The arguments & the behavior of "FConnector***" functions are mostly just
  * the same as those for their counterparts "CONN_***" in ncbi_connection.h.
- * First argument of these functions accepts a real connector handle
- * rather than a connection handle("CONN").
- * In every call, which has STimeout as an argument, this argument
- * can be either NULL, kDefaultTimeout, or other non-NULL pointer,
- * pointing to a finite timeout structure.
- * NULL (same as kInfiniteTimeout) is treated as an infinite
- * timeout, while kDefaultTimeout means to use any timeout,
- * which is somehow pre-defined by the connector itself.
+ * First argument of these functions accepts a real connector handle rather
+ * than an upper-level connection handle("CONN").
+ * In every call that takes STimeout as an argument, the argument can be either
+ * NULL (for infinite timeout, kInfiniteTimeout) or a valid non-NULL pointer
+ * that points to a finite timeout structure.  Note that kDefaultTimeout gets
+ * resolved at the level of the connection and does not get passed through.
  */
 
 
@@ -231,12 +229,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status METACONN_Remove
 /* Upcall on request to setup virtual function table (called from connection).
  */
 typedef void (*FSetupVTable)
-(SMetaConnector* meta,
- CONNECTOR       connector
+(CONNECTOR       connector
  );
 
 
-/* Destroy connector and its data handle. This is NOT a close request!
+/* Destroy connector and its data handle.  This is NOT a close request!
  * Should not to be used on open connectors (that is, for those
  * FConnectorClose must be called prior to this call).
  */
@@ -248,7 +245,7 @@ typedef void (*FDestroy)
 /* Connector specification.
  */
 typedef struct SConnectorTag {
-    SMetaConnector* meta;     /* back link to CONNECTION      */
+    SMetaConnector* meta;     /* back link to original meta   */
     FSetupVTable    setup;    /* init meta, may not be NULL   */
     FDestroy        destroy;  /* destroys handle, can be NULL */
     void*           handle;   /* data handle of the connector */

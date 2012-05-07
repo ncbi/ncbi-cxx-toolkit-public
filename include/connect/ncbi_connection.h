@@ -46,6 +46,7 @@
  */
 
 #include <connect/ncbi_connector.h>
+#include <connect/ncbi_socket.h>
 
 
 /** @addtogroup Connectors
@@ -235,8 +236,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
  * @note  Connection considered open if underlying connector's "Open" method
  *        has successfully executed;  an actual data link may not yet exist.
  * @note  CONN_Read() always calls CONN_Flush() before proceeding (unless the
- *        connection created with fCONN_Untie);  so does CONN_Close() but
- *        only if the connection has been already open.
+ *        connection was created with fCONN_Untie);  so does CONN_Close() but
+ *        only if the connection is already open.
  * @sa
  *  CONN_Read, CONN_Write, CONN_Close
  */
@@ -373,6 +374,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetCallback
        SCONN_Callback* old_cb   /* [out] to save old callback at (may be 0)  */
 );
 
+
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_GetSOCK
+(CONN  conn,
+ SOCK* sock
+ );
+    
 
 #ifdef __cplusplus
 }  /* extern "C" */

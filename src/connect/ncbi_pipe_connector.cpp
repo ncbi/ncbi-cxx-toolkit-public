@@ -183,9 +183,10 @@ static EIO_Status s_VT_Close
 
 
 static void s_Setup
-(SMetaConnector* meta,
- CONNECTOR       connector)
+(CONNECTOR connector)
 {
+    SMetaConnector* meta = connector->meta;
+
     // Initialize virtual table
     CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
     CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
@@ -200,7 +201,8 @@ static void s_Setup
 }
 
 
-static void s_Destroy(CONNECTOR connector)
+static void s_Destroy
+(CONNECTOR connector)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     connector->handle = 0;

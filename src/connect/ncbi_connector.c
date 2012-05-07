@@ -94,8 +94,8 @@ extern EIO_Status METACONN_Add
         return status;
     }
 
-    connector->setup(meta, connector);
     connector->meta = meta;
+    connector->setup(connector);
     connector->next = meta->list;
     meta->list = connector;
     return eIO_Success;

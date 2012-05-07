@@ -35,6 +35,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_assert.h"
+#include "ncbi_socketp.h"
 #include <connect/ncbi_socket_connector.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,8 +89,7 @@ extern "C" {
                                      EIO_Event       dir);
     static EIO_Status  s_VT_Close   (CONNECTOR       connector,
                                      const STimeout* timeout);
-    static void        s_Setup      (SMetaConnector* meta,
-                                     CONNECTOR       connector);
+    static void        s_Setup      (CONNECTOR       connector);
     static void        s_Destroy    (CONNECTOR       connector);
 #ifdef __cplusplus
 } /* extern "C" */
@@ -100,7 +100,7 @@ extern "C" {
 static const char* s_VT_GetType
 (CONNECTOR connector)
 {
-    return "SOCK";
+    return g_kNcbiSockNameAbbr; /*NB: Important!*/
 }
 
 
@@ -220,9 +220,10 @@ static EIO_Status s_VT_Close
 
 
 static void s_Setup
-(SMetaConnector* meta,
- CONNECTOR       connector)
+(CONNECTOR connector)
 {
+    SMetaConnector* meta = connector->meta;
+
     /* initialize virtual table */
     CONN_SET_METHOD(meta, get_type, s_VT_GetType, connector);
     CONN_SET_METHOD(meta, descr,    s_VT_Descr,   connector);
@@ -294,19 +295,19 @@ static CONNECTOR s_Init
             xxx->host  = addr;
             assert(xxx->port);
         } else {
-            /* this signifies invalid state */
+            /* this denotes invalid state */
             xxx->host  = 0;
             xxx->port  = 0;
         }
-        xxx->try_own   = try_own   ? 1                                  : 0;
+        xxx->try_own   = try_own   ? 1         : 0;
     } else {
         void* data     = (char*) xxx + sizeof(*xxx);
         xxx->sock      = 0;
-        xxx->init_size = init_data ? init_size                          : 0;
+        xxx->init_size = init_data ? init_size : 0;
         xxx->init_data = memcpy(data, init_data, xxx->init_size);
         xxx->host      = strcpy((char*) data + xxx->init_size, host);
         xxx->port      = port;
-        xxx->try_own   = try_own   ? try_own                            : 1;
+        xxx->try_own   = try_own   ? try_own   : 1;
         xxx->flags     = flags;
     }
 
