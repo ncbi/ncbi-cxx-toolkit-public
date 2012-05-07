@@ -166,6 +166,10 @@ void CBioTreeFeatureDictionary::Register(TBioTreeFeatureId id,
 										 const string& feature_name)
 {
     if (m_Dict.count(id)) {
+        if (m_Dict[id] == feature_name) {
+            /// Duplicate registration of the same feature
+            return;
+        }
         NCBI_THROW(CException, eUnknown,
                    "Duplicate feature id: " + NStr::NumericToString(id));
     }
