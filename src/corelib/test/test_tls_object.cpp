@@ -50,10 +50,10 @@ private:
     mutable key_type m_Key;
     template<class A> struct SCaster {
         static A FromVoidP(void* p) {
-            return A(reinterpret_cast<size_t>(p));
+            return A(reinterpret_cast<intptr_t>(p));
         }
         static void* ToVoidP(A v) {
-            return reinterpret_cast<void*>(size_t(v));
+            return reinterpret_cast<void*>(intptr_t(v));
         }
     };
     template<class A> struct SCaster<A*> {
@@ -110,21 +110,32 @@ void message(const char* msg)
     LOG_POST(msg);
 }
 
+size_t max_total, max_resident, max_shared;
+
 void message(const char* msg,
              const char* msg1, double t1,
              const char* msg2, double t2,
              size_t COUNT)
 {
-    LOG_POST(msg
-             <<'\n'<<setw(40) << msg1 << ": "<<t1*1e9/COUNT<<" usec"
-             <<'\n'<<setw(40) << msg2 << ": "<<t2*1e9/COUNT<<" usec");
+    if ( 0 ) {
+        LOG_POST(msg
+                 <<'\n'<<setw(40) << msg1 << ": "<<t1*1e9/COUNT<<" usec"
+                 <<'\n'<<setw(40) << msg2 << ": "<<t2*1e9/COUNT<<" usec");
+    }
     size_t total, resident, shared;
     if ( GetMemoryUsage(&total, &resident, &shared) ) {
-        LOG_POST("Alloc: "<<alloc_count.Get()<<" "<<object_count.Get()<<'\n'<<
-                 "Current memory: "<<total<<" "<<resident<<" "<<shared);
+        max_total = max(max_total, total);
+        max_resident = max(max_resident, resident);
+        max_shared = max(max_shared, shared);
+        if ( 0 ) {
+            LOG_POST("Alloc: "<<alloc_count.Get()<<
+                     " "<<object_count.Get()<<'\n'<<
+                     "Current memory: "<<total<<" "<<resident<<" "<<shared);
+        }
     }
 }
 
+DECLARE_TLS_VAR(const char*, s_CurrentStep);
 DECLARE_TLS_VAR(bool, s_CurrentInHeap);
 
 class CObjectWithNew
@@ -136,7 +147,7 @@ class CObjectWithNew
         eCounter_static   = 0x0
     };
     enum {
-        STACK_THRESHOLD   = 16*1024
+        STACK_THRESHOLD   = 1*1024
     };
     static bool IsNewInHeap(CObjectWithNew* ptr) {
         switch ( ptr->m_Counter ) {
@@ -148,12 +159,23 @@ class CObjectWithNew
             bool inStack =
                 (objectPtr > stackObjectPtr) &&
                 (objectPtr < stackObjectPtr + STACK_THRESHOLD);
+            if ( inStack ) {
+                ERR_POST(Fatal<<"!!!InStack,"
+                         " s_CurrentStep: "<<s_CurrentStep<<
+                         " s_CurrentInHeap: "<<s_CurrentInHeap<<
+                         " stackObjectPtr: "<<(void*)stackObjectPtr<<
+                         " objectPtr: "<<(void*)objectPtr<<
+                         CStackTrace());
+            }
+            _ASSERT(s_CurrentInHeap);
+            _ASSERT(!inStack);
             return !inStack;
         }
         case 0:
+            _ASSERT(!s_CurrentInHeap);
             return false;
         }
-        //error("invalid CObjectWithNew::new");
+        error("invalid CObjectWithNew::new");
         return false;
     }
     static bool IsInHeap(const CObjectWithNew* ptr) {
@@ -173,7 +195,7 @@ class CObjectWithNew
 public:
     CObjectWithNew(void) {
         m_Counter = IsNewInHeap(this)? eCounter_heap: eCounter_static;
-        _ASSERT(s_CurrentInHeap == (m_Counter == eCounter_heap));
+        _ASSERT(s_CurrentInHeap == IsInHeap());
         object_count.Add(1);
     }
     virtual ~CObjectWithNew() {
@@ -271,8 +293,8 @@ public:
             }
         }
         m_Counter = IsNewInHeap(this)? eCounter_heap: eCounter_static;
+        _ASSERT(IsPlaceHeap(place) == IsInHeap());
         object_count.Add(1);
-        _ASSERT(IsPlaceHeap(place) == (m_Counter == eCounter_heap));
     }
     virtual ~CObjectWithTLS() {
         if ( m_Counter != eCounter_heap && m_Counter != eCounter_static ) {
@@ -362,6 +384,7 @@ public:
     E m_Array[S];
 };
 
+
 void check_cnts(size_t expected = 0,
                 size_t expected_static = 0,
                 void* expected_ptr = 0)
@@ -402,6 +425,7 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
     try {
         RunTest();
         RunTest();
+        RunTest();
         return true;
     }
     NCBI_CATCH_ALL("Test failed");
@@ -418,7 +442,7 @@ void CTestTlsObjectApp::RunTest(void)
 {
     const size_t COUNT = 100000;
     const size_t OBJECT_SIZE = sizeof(CObjectWithNew);
-    {
+    for ( int t = 0; t < 1; ++t ) {
         // prealloc
         {
             size_t size = (OBJECT_SIZE+16)*COUNT;
@@ -427,11 +451,12 @@ void CTestTlsObjectApp::RunTest(void)
             ::operator delete(p);
         }
         {
-            void** p = new void*[COUNT*2];
-            for ( size_t i = 0; i < COUNT*2; ++i ) {
+            const size_t COUNT2 = COUNT*2;
+            void** p = new void*[COUNT2];
+            for ( size_t i = 0; i < COUNT2; ++i ) {
                 p[i] = ::operator new(OBJECT_SIZE);
             }
-            for ( size_t i = 0; i < COUNT*2; ++i ) {
+            for ( size_t i = 0; i < COUNT2; ++i ) {
                 ::operator delete(p[i]);
             }
             delete[] p;
@@ -474,6 +499,7 @@ void CTestTlsObjectApp::RunTest(void)
             ptr[i] = 0;
         }
         sw.Start();
+        s_CurrentStep = "new CObjectWithNew";
         s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             ptr[i] = new CObjectWithNew;
@@ -496,6 +522,7 @@ void CTestTlsObjectApp::RunTest(void)
     {
         CObjectWithTLS** ptr = new CObjectWithTLS*[COUNT];
         sw.Start();
+        s_CurrentStep = "new CObjectWithTLS";
         s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             try {
@@ -529,6 +556,7 @@ void CTestTlsObjectApp::RunTest(void)
             ptr[i] = 0;
         }
         sw.Start();
+        s_CurrentStep = "new CObjectWithNew()";
         s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             ptr[i] = new CObjectWithNew();
@@ -551,6 +579,7 @@ void CTestTlsObjectApp::RunTest(void)
     {
         CObjectWithTLS** ptr = new CObjectWithTLS*[COUNT];
         sw.Start();
+        s_CurrentStep = "new CObjectWithTLS()";
         s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             try {
@@ -580,6 +609,7 @@ void CTestTlsObjectApp::RunTest(void)
     check_cnts();
     {
         sw.Start();
+        s_CurrentStep = "CObjectWithNew[]";
         CArray<CObjectWithNew, COUNT>* arr =
             new CArray<CObjectWithNew, COUNT>;
         double t1 = sw.Elapsed();
@@ -595,6 +625,7 @@ void CTestTlsObjectApp::RunTest(void)
     check_cnts();
     {
         sw.Start();
+        s_CurrentStep = "CObjectWithTLS[]";
         CArray<CObjectWithTLS, COUNT, false>* arr =
             new CArray<CObjectWithTLS, COUNT, false>;
         double t1 = sw.Elapsed();
@@ -621,6 +652,9 @@ bool CTestTlsObjectApp::TestApp_Init(void)
 bool CTestTlsObjectApp::TestApp_Exit(void)
 {
     check_cnts(~0u);
+    LOG_POST("Max memory VS: "<<max_total/(1024*1024.)<<" MB"<<
+             " RSS: "<<max_resident/(1024*1024.)<<" MB"<<
+             " SHR: "<<max_shared/(1024*1024.)<<" MB");
     NcbiCout << "Test completed." << NcbiEndl;
     return true;
 }
