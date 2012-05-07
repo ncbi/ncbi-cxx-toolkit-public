@@ -52,7 +52,7 @@ n="`expr $$ % 3`"
 while kill -0 $cpid 2>/dev/null; do
   i=0
   while [ $i -le $n ]; do
-    test_ncbi_socket localhost "`cat $port`" >/dev/null 2>&1 &
+    ( ulimit -c 0;  test_ncbi_socket localhost "`cat $port`" >/dev/null 2>&1 ) 2>/dev/null &
     n="`expr $! % 3`"
     i="`expr $i + 1`"
   done
