@@ -91,6 +91,9 @@ void CTest::Init(void)
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagPostLevel(eDiag_Info);
 
+    // Set CORE log
+    CORE_SetLOG(LOG_cxx2c());
+
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -154,13 +157,8 @@ void CTest::Client(void)
 {
     CONNECTOR connector;
 
-    // Log and data log streams
     FILE* logfile = fopen("test_ncbi_namedpipe_connector_client.log", "ab");
     assert(logfile);
-
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE(logfile, 1/*auto-close*/);
 
     // Tests for NAMEDPIPE CONNECTOR
     ERR_POST(Info << "Starting NAMEDPIPE CONNECTOR test ...");
@@ -180,7 +178,7 @@ void CTest::Client(void)
 
     ERR_POST(Info << "TEST completed successfully");
 
-    CORE_SetLOG(0);
+    fclose(logfile);
 }
 
 
@@ -190,7 +188,7 @@ void CTest::Server(int n_cycle)
     EIO_Status status;
 
 #ifdef NCBI_OS_UNIX
-    // Remove the pipe if it is already exists
+    // Remove the pipe if it already exists
     CFile(m_PipeName).Remove();
 #endif //NCBI_OS_UNIX
 
