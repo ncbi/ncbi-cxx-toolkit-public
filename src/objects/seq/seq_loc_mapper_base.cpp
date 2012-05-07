@@ -1689,13 +1689,13 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
             if ( to_row == eSplicedRow_Prod ) {
                 x_NextMappingRange(
                     *ex_gen_id, gen_from, gen_len, ex_gen_strand,
-                    *ex_prod_id, prod_from, prod_len, prod_strand,
+                    *ex_prod_id, prod_from, prod_len, ex_prod_strand,
                     0, 0);
             }
             else {
                 x_NextMappingRange(
                     *ex_prod_id, prod_from, prod_len, ex_prod_strand,
-                    *ex_gen_id, gen_from, gen_len, gen_strand,
+                    *ex_gen_id, gen_from, gen_len, ex_gen_strand,
                     0, 0);
             }
         }
