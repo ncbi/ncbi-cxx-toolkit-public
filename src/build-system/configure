@@ -22302,9 +22302,9 @@ fi
 
 
 case "$with_krb5" in
-   no )       ac_cv_path_KRB5_CONFIG=no ;;
-   yes | '' ) : ${KRB5_PATH=/usr}       ;;
-   * )        KRB5_PATH=$with_krb5      ;;
+   no )       ac_cv_path_KRB5_CONFIG=no    ;;
+   yes | '' ) : ${KRB5_PATH=/usr/kerberos} ;;
+   * )        KRB5_PATH=$with_krb5         ;;
 esac
 # Extract the first word of "krb5-config", so it can be a program name with args.
 set dummy krb5-config; ac_word=$2
@@ -22349,13 +22349,14 @@ fi
 
 if test "x$with_krb5" != xno; then
    if test -x "$KRB5_CONFIG"; then
+      KRB5_PATH=`$KRB5_CONFIG --prefix`
       KRB5_INCLUDE=`$KRB5_CONFIG --cflags | \
          sed -e 's/$/ /; s,-I/usr/include ,,'`
       KRB5_CONFIG_LIBS=`$KRB5_CONFIG --libs gssapi | \
          sed -e 's/^/ /; s/ -^Ll^ *//g'`
    fi
 else
-   $as_unset KRB5_CONFIG_LIBS || test "${KRB5_CONFIG_LIBS+set}" != set || { KRB5_CONFIG_LIBS=; export KRB5_CONFIG_LIBS; }
+      KRB5_CONFIG_LIBS=$KRB5_LIBS
 fi
 if test "$with_krb5" != "no"; then
     case "$with_krb5" in
@@ -22498,7 +22499,7 @@ _ACEOF
 
 
 
-if test "x$with_krb5" != xno -a -n "$KRB5_CONFIG_LIBS"; then
+if test "x$with_krb5" != xno; then
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     KRB5_LIBS=`echo $KRB5_CONFIG_LIBS | sed -e "$no_usr_lib"`
  else

@@ -3793,27 +3793,29 @@ fi
 
 
 case "$with_krb5" in
-   no )       ac_cv_path_KRB5_CONFIG=no ;;
-   yes | '' ) : ${KRB5_PATH=/usr}       ;;
-   * )        KRB5_PATH=$with_krb5      ;;
+   no )       ac_cv_path_KRB5_CONFIG=no    ;;
+   yes | '' ) : ${KRB5_PATH=/usr/kerberos} ;;
+   * )        KRB5_PATH=$with_krb5         ;;
 esac
 AC_PATH_PROG(KRB5_CONFIG, krb5-config, [], [${KRB5_BIN-$KRB5_PATH/bin}:$PATH])
 
 if test "x$with_krb5" != xno; then
    if test -x "$KRB5_CONFIG"; then
+      KRB5_PATH=`$KRB5_CONFIG --prefix`
       KRB5_INCLUDE=`$KRB5_CONFIG --cflags | \
          sed -e 's/$/ /; s,-I/usr/include ,,'`
       KRB5_CONFIG_LIBS=`$KRB5_CONFIG --libs gssapi | \
          sed -e 's/^/ /; s/ -[^Ll][^ ]*//g'`
    fi
 else
-   AS_UNSET(KRB5_CONFIG_LIBS)
+   dnl AS_UNSET(KRB5_CONFIG_LIBS)
+   KRB5_CONFIG_LIBS=$KRB5_LIBS
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(krb5, KRB5, gssapi_krb5,
  [[AC_LANG_PROGRAM([[#include <gssapi/gssapi_krb5.h>]],
    [[krb5_gss_register_acceptor_identity("foo");]])]],
  $KRB5_CONFIG_LIBS)
-if test "x$with_krb5" != xno -a -n "$KRB5_CONFIG_LIBS"; then
+if test "x$with_krb5" != xno; then
    NCBI_RPATHIFY_OUTPUT(KRB5_LIBS, [echo $KRB5_CONFIG_LIBS], [$no_usr_lib])
 fi
 
