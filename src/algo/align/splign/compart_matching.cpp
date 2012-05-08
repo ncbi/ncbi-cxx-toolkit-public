@@ -275,8 +275,6 @@ string ReplaceExt(const string& extended_name, const string & new_ext)
 }
 
 
-//#define COMPART2_TEMPFILE_USE_MEM_FILE
-
 template <typename VectorT>
 string g_SaveToTemp(const VectorT& v)
 {
@@ -285,26 +283,11 @@ string g_SaveToTemp(const VectorT& v)
     const string filename(CFile::GetTmpNameEx(".", "splqcomp_"));
     const Uint8 len_bytes (v.size() * sizeof(TElem));
 
-#ifndef COMPART2_TEMPFILE_USE_MEM_FILE
     {
         CNcbiOfstream tempcgrfile (filename.data(), IOS_BASE::binary);
         tempcgrfile.write((const char* ) & v.front(), len_bytes);
         tempcgrfile.close();
     }
-#else
-    {
-        CMemoryFile mf (filename, CMemoryFile::eMMP_Write,
-                        CMemoryFile::eMMS_Shared,
-                        0, 0, CMemoryFile::eCreate, len_bytes);
-        void * pvoid (mf.Map());
-        
-        if(v.size() > 0) {
-            TElem * dest (reinterpret_cast<TElem*>(pvoid));
-            const TElem * src (& v.front());
-            copy(src, src + len_bytes / sizeof(TElem), dest);
-        }
-    }
-#endif
 
     CheckWrittenFile(filename, len_bytes);
 
@@ -321,14 +304,8 @@ void g_RestoreFromTemp(const string& filename, VectorT* pvd)
 
     const Uint8 dim (CFile(filename).GetLength() / sizeof(TElem));
 
-#ifndef COMPART2_TEMPFILE_USE_MEM_FILE
     CNcbiIfstream tempcgrfile (filename.data(), IOS_BASE::binary);
     tempcgrfile.read((char* ) & v.front(), dim * sizeof(TElem));
-#else
-    CMemoryFile mf (filename);
-    const TElem * src (reinterpret_cast<TElem*>(mf.Map()));
-    copy(src, src + dim, &v.front());
-#endif
 
     CFile(filename).Remove();
 }
