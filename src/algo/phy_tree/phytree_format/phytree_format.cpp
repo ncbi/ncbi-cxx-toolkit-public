@@ -56,14 +56,36 @@ static const string s_kSubtreeDisplayed = "0";
 
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                                      ELabelType label_type,
-                                     bool mark_query_node) 
+                                     bool mark_query_node)
+{
+    x_Init();
+    
+
+    CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();
+    vector<int> mark_leaves;
+    if (mark_query_node) {
+        mark_leaves.push_back(0);
+    }
+    x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
+                       *guide_tree_calc.GetScope(), 
+                       label_type, mark_leaves,
+                       m_BlastNameColorMap,
+                       m_QueryNodeId);
+
+    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
+}
+
+
+CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
+                                     const vector<int>& mark_leaves,
+                                     ELabelType label_type)
 {
     x_Init();
 
     CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();
     x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
                        *guide_tree_calc.GetScope(), 
-                       label_type, mark_query_node,
+                       label_type, mark_leaves,
                        m_BlastNameColorMap,
                        m_QueryNodeId);
 
@@ -89,7 +111,11 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
                                      bool mark_query_node)
 {
     x_Init();
-    x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_query_node,
+    vector<int> mark_leaves;
+    if (mark_query_node) {
+        mark_leaves.push_back(0);
+    }
+    x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_leaves,
                        m_BlastNameColorMap, m_QueryNodeId);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
@@ -653,7 +679,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                                     const vector< CRef<CSeq_id> >& seqids,
                                     CScope& scope,
                                     CPhyTreeFormatter::ELabelType label_type,
-                                    bool mark_query_node,
+                                    const vector<int>& mark_leaves,
                                     TBlastNameColorMap& bcolormap,
                                     int& query_node_id)
 {
@@ -826,7 +852,10 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                     x_AddFeature(eNodeColorId,
                                  tax_node_colors[seq_number], node);
 
-                    if(seq_number == 0 && mark_query_node) { 
+                    if (!mark_leaves.empty()
+                        && binary_search(mark_leaves.begin(),
+                                         mark_leaves.end(), seq_number)) {
+
                         // color for query node
                         x_AddFeature(eLabelBgColorId,
                                      s_kQueryNodeBgColor, node); 

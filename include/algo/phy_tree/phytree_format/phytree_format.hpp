@@ -101,6 +101,16 @@ public:
                       bool mark_query_node = true);
 
     /// Constructor
+    /// @param guide_tree_calc GuideTreeCalc object [in]
+    /// @param mark_leaves Indeces of sequences to marked in the tree [in]
+    /// @param lbl_type Type of labels to be used for tree leaves [in]
+    ///
+    CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
+                      const vector<int>& mark_leaves,
+                      ELabelType lbl_type = eSeqId);
+
+
+    /// Constructor
     /// @param btc BioTreeContainer object [in]
     /// @param lbl_type ELabelType [in]
     /// @param query_node_id Id of query node [in]
@@ -377,7 +387,7 @@ private:
     /// @param seqids Sequence ids each corresponding to a tree leaf [in]
     /// @param scope Scope [in]
     /// @param label_type Type of labels to for tree leaves [in]
-    /// @param mark_query_node Is query node to be marked [in]
+    /// @param mark_leaves Indeces of sequences to be marked in the tree [in]
     /// @param bcolormap Blast name to node color map [out]
     /// @param query_node_id Id of query node (set only if mark_query_node
     /// equal to true) [out]
@@ -388,7 +398,7 @@ private:
                                  const vector< CRef<CSeq_id> >& seqids,
                                  CScope& scope,
                                  ELabelType label_type,
-                                 bool mark_query_node,
+                                 const vector<int>& mark_leaves,
                                  TBlastNameColorMap& bcolormap,
                                  int& query_node_id);
 

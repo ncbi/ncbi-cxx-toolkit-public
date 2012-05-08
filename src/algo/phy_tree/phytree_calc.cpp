@@ -324,14 +324,18 @@ void CPhyTreeCalc::x_CreateValidAlign(const vector<int>& used_indices)
         ITERATE (vector<int>, it, used_indices) {
             for (; index < *it; index++) {
                 s_RecordSeqId(index, *m_AlignDataSource, m_RemovedSeqIds);
+                m_RemovedSeqIndeces.push_back(index);
             }
             index++;
         }
         for (; index < m_AlignDataSource->GetNumRows();index++) {
             s_RecordSeqId(index, *m_AlignDataSource, m_RemovedSeqIds);
+            m_RemovedSeqIndeces.push_back(index);
         }
         _ASSERT(used_indices.size() + m_RemovedSeqIds.size()
                 == (size_t)m_AlignDataSource->GetNumRows());
+
+        _ASSERT(m_RemovedSeqIndeces.size() == m_RemovedSeqIds.size());
 
         CRef<CDense_seg> new_denseg
             = m_AlignDataSource->GetDenseg().ExtractRows(used_indices);

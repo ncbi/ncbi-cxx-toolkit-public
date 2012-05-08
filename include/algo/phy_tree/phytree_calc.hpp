@@ -218,6 +218,12 @@ public:
     ///
     const vector<string>& GetRemovedSeqIds(void) const {return m_RemovedSeqIds;}
 
+    /// Get indeces of sequences excluded from tree computation
+    /// @return Indeces of excluded sequences
+    ///
+    const vector<int>& GetRemovedSeqIndeces(void) const
+    {return m_RemovedSeqIndeces;}
+
     /// Get error/warning messages
     /// @return List of messages
     ///
@@ -331,6 +337,9 @@ protected:
 
     /// Sequences that are not included in the tree
     vector<string> m_RemovedSeqIds;
+
+    /// Indeces of sequences that are not included in the tree
+    vector<int> m_RemovedSeqIndeces;
 
     /// Computed tree
     TPhyTreeNode* m_Tree;
