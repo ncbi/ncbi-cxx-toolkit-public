@@ -853,6 +853,18 @@ static const char* const sc_ValidPseudoGene[] = {
 typedef CStaticArraySet<const char*, PNocase> TLegalPseudoGeneText;
 DEFINE_STATIC_ARRAY_MAP(TLegalPseudoGeneText, sc_ValidPseudoGeneText, sc_ValidPseudoGene );
 
+static bool s_IsValidPseudoGene( objects::CFlatFileConfig::TMode mode, const string& text)
+{
+    switch(mode)
+    {
+    case objects::CFlatFileConfig::eMode_Release:
+    case objects::CFlatFileConfig::eMode_Entrez:
+        return sc_ValidPseudoGeneText.find(text.c_str()) != sc_ValidPseudoGeneText.end();
+    default:
+        return ! text.empty();
+    }
+}
+
 static const char* const sc_ValidExceptionText[] = {
     "annotated by transcript or proteomic data",
     "rearrangement required for product",
@@ -1127,14 +1139,6 @@ void CFeatureItem::x_AddQualPseudo(
         subtype == CSeqFeatData::eSubtype_mobile_element ||
         subtype == CSeqFeatData::eSubtype_centromere ||
         subtype == CSeqFeatData::eSubtype_telomere ) 
-    {
-        return;
-    }
-
-    // suppress /pseudo if /pseudogene is set
-    const CFlatStringQVal* pseudogene = x_GetStringQual(eFQ_pseudogene);
-    if( pseudogene && 
-        sc_ValidPseudoGeneText.find(pseudogene->GetValue().c_str()) != sc_ValidPseudoGeneText.end() ) 
     {
         return;
     }
@@ -1435,7 +1439,7 @@ static bool s_GeneMatchesXref
     }
 
     // in case we get a weird xref with nothing useful set
-    if( ! xref->IsSetLocus() && ! xref->IsSetLocus_tag() ) {
+    if( ! xref->IsSetLocus() && ! xref->IsSetLocus_tag() && ! xref->IsSetSyn() ) {
         return false;
     }
 
@@ -3756,11 +3760,11 @@ void CFeatureItem::x_AddQualsGene(
     }
 
     // gene pseudogene qual:
-    if( gene_feat ) {
+
+    // inherit pseudogene, if possible
+    if( gene_feat && ! x_HasQual(eFQ_pseudogene) ) {
         const string & strPseudoGene = gene_feat->GetNamedQual("pseudogene");
-        if( ! strPseudoGene.empty() ) {
-            x_AddQual(eFQ_pseudogene, new CFlatStringQVal(strPseudoGene) );
-        }
+        x_AddQual(eFQ_pseudogene, new CFlatStringQVal(strPseudoGene) );
     }
 }
 
@@ -4157,6 +4161,8 @@ void CFeatureItem::x_ImportQuals(
 
     const bool old_locus_tag_added_elsewhere = x_HasQual(eFQ_old_locus_tag);
 
+    bool first_pseudogene = true;
+
     vector<string> replace_quals;
     const CSeq_feat_Base::TQual & qual = m_Feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
     ITERATE( CSeq_feat::TQual, it, qual ) {
@@ -4174,9 +4180,18 @@ void CFeatureItem::x_ImportQuals(
             continue;
         }
 
-        // only replace may have an empty value (e.g. M96433)
-        if( val.empty() && slot != eFQ_replace ) {
-            continue;
+        // only certain slot types may have an empty value (e.g. M96433)
+        switch(slot) {
+        case eFQ_replace:
+        case eFQ_pseudogene:
+            // empty value allowed for these slot types, so we don't check
+            break;
+        default:
+            // empty value forbidden for other slot types
+            if( val.empty() ) {
+                continue;
+            }
+            break;
         }
 
         switch (slot) {
@@ -4336,6 +4351,17 @@ void CFeatureItem::x_ImportQuals(
 
         case eFQ_clone:
             x_AddQual(slot, new CFlatStringQVal(val, CFormatQual::eTrim_WhitespaceOnly));
+            break;
+
+        case eFQ_pseudogene:
+
+            // our pseudogene(s) override(s) any that existed before
+            if( first_pseudogene ) {
+                first_pseudogene = false;
+                x_RemoveQuals(eFQ_pseudogene);
+            }
+            x_AddQual(slot, new CFlatStringQVal(val));
+
             break;
 
         default:
@@ -5063,13 +5089,33 @@ void CFeatureItem::x_CleanQuals(
 
     }
 
-    // /pseudogene qual suppresses /pseudo qual if /pseudogene fits certain patterns
-    if( x_HasQual(eFQ_pseudo) && x_HasQual(eFQ_pseudogene) ) {
-        const CFlatStringQVal* pseudogene_qual = x_GetStringQual(eFQ_pseudogene);
-
-        if( sc_ValidPseudoGeneText.find(pseudogene_qual->GetValue().c_str()) != 
-            sc_ValidPseudoGeneText.end() )
+    // remove invalid pseudogenes:
+    {
+        TQI pseudogene_iter = m_Quals.Find(eFQ_pseudogene);
+        while( pseudogene_iter != m_Quals.end() && 
+            pseudogene_iter->first == eFQ_pseudogene ) 
         {
+            const CFlatStringQVal & qual = dynamic_cast<const CFlatStringQVal &>( *pseudogene_iter->second );
+            if( s_IsValidPseudoGene(GetContext()->Config().GetMode(), qual.GetValue() ) ) {
+                // keep valid pseudogene
+                ++pseudogene_iter;
+            } else {
+                // erase invalid pseudogene
+                TQI pseudogene_iter_to_erase = pseudogene_iter;
+                ++pseudogene_iter;
+
+                m_Quals.Erase(pseudogene_iter_to_erase);
+            }
+        }
+    }
+
+    // /pseudogene qual suppresses /pseudo qual if /pseudogene fits certain patterns
+    if( // ( GetContext()->Config().IsModeRelease() || GetContext()->Config().IsModeEntrez() ) &&
+        x_HasQual(eFQ_pseudo) && x_HasQual(eFQ_pseudogene) ) 
+    {
+        const CFlatStringQVal* qval = x_GetStringQual(eFQ_pseudogene);
+        // in this part, always use release-mode validation logic, regardless of actual mode
+        if( qval && s_IsValidPseudoGene( CFlatFileConfig::eMode_Release, qval->GetValue() ) ) {
             x_RemoveQuals(eFQ_pseudo);
         }
     }
