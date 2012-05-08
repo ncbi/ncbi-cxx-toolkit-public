@@ -48,7 +48,7 @@ class CPrimercheckTest;  //For internal test only
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class COligoSpecificityCheck : public CObject {
+class NCBI_XPRIMER_EXPORT COligoSpecificityCheck : public CObject {
 public:
 
     ///the input primer pair information
