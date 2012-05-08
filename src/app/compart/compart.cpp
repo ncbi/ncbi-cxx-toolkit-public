@@ -289,14 +289,13 @@ int CCompartApp::Run()
         }
 
         /* 
-        //set SetOutputMethod to false before Run to get the results as a vector
-        vector<vector<CRef<CBlastTabular> > > vec = matcher->GetResults();
-        ITERATE(vector<vector<CRef<CBlastTabular> > >, itt, vec) {
-            ITERATE(vector<CRef<CBlastTabular> >, ittt, *itt) {
-                //cerr<<"Here"<<endl;
-                cout<<**ittt<<endl;
-            }
-            cout<<endl;
+        // set SetOutputMethod to false before Run to get the results as
+        // a collection of alignments.
+        CElementaryMatching::TResults results = matcher->GetResults();
+        const CSeq_align_set::Tdata& comp_data(compartments->Get());
+        ITERATE (CSeq_align_set::Tdata, i, comp_data) {
+            const CSeq_align& comp(**i);
+            cout << MSerial_AsnText << comp << endl;
         }
         */
     }

@@ -139,6 +139,10 @@ protected:
 class NCBI_XALGOALIGN_EXPORT CElementaryMatching: public CObject
 {
 public:
+    typedef CBlastTabular        THit;
+    typedef CRef<CBlastTabular>  THitRef;
+    typedef vector<THitRef>      THitRefs;
+    typedef CRef<objects::CSeq_align_set> TResults;
 
     CElementaryMatching(ISequenceSource *qsrc, const string & sdb):
         m_qsrc(qsrc), m_sdb(sdb), m_XDropOff(s_GetDefaultDropOff())
@@ -159,12 +163,7 @@ public:
     /// returns compartments.
     /// SetOutputMethod must be set to false 
     /// SetHitsOnly must be set to false
-    vector<vector<CRef<CBlastTabular> > > GetResults(void) { return m_Results; }
-
-    /// returns other representation of the compartments
-    /// SetOutputMethod must be set to false 
-    /// SetHitsOnly must be set to false
-    auto_ptr<CCompartmentAccessor<CBlastTabular> > ReleaseResults(void) { return m_CompResults; }
+    TResults GetResults(void) { return m_Results; }
 
     void   SetPenalty(const double & penalty) { m_Penalty = penalty; }
     double GetPenalty(void) const { return m_Penalty; }
@@ -209,9 +208,6 @@ public:
     
 private:
 
-    typedef CBlastTabular        THit;
-    typedef CRef<CBlastTabular>  THitRef;
-    typedef vector<THitRef>      THitRefs;
     typedef vector<string>       TStrings;
     typedef THit::TId            TId;
     typedef vector<TId>          TSeqIds;
@@ -390,9 +386,7 @@ private:
     CBoolVector               m_Mers;
 
     bool m_OutputMethod;
-    vector<vector<CRef<CBlastTabular> > > m_Results;
-
-    auto_ptr<CCompartmentAccessor<THit> > m_CompResults; // other representation of the results 
+    TResults m_Results;
 
     // explicit default construction not supported
     CElementaryMatching(void) {}

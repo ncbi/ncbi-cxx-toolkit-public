@@ -1923,37 +1923,36 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
         }
     }
 
-    if(m_HitsOnly) {
+    // Remap hit coordinates.
+    NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
+        THit& h (**ii);
 
-        NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
+        h.SetQueryId (m_cDNASeqIds[m_ii_cdna->m_Oid]);
+        h.SetSubjId  (m_GenomicSeqIds[m_ii_genomic->m_Oid]);
+        
+        const Uint4 * box0 (h.GetBox());
+        Uint4 box [4] = {
+            box0[0] - m_ii_cdna->m_Start,
+            box0[1] - m_ii_cdna->m_Start,
+            box0[2] - m_ii_genomic->m_Start,
+            box0[3] - m_ii_genomic->m_Start
+        };
 
-            THit& h (**ii);
-
-            if(h.GetLength() < m_MinHitLength) continue;
-
-            h.SetQueryId (m_cDNASeqIds[m_ii_cdna->m_Oid]);
-            h.SetSubjId  (m_GenomicSeqIds[m_ii_genomic->m_Oid]);
-            
-            const Uint4 * box0 (h.GetBox());
-            Uint4 box [4] = {
-                box0[0] - m_ii_cdna->m_Start,
-                box0[1] - m_ii_cdna->m_Start,
-                box0[2] - m_ii_genomic->m_Start,
-                box0[3] - m_ii_genomic->m_Start
-            };
-
-            if(m_CurGenomicStrand == false) {
-                box[2] = m_ii_genomic->m_Length - box[2] - 1;
-                box[3] = m_ii_genomic->m_Length - box[3] - 1;
-            }
-
-            h.SetBox(box);
-
-            cout << h << endl;
+        if(m_CurGenomicStrand == false) {
+            box[2] = m_ii_genomic->m_Length - box[2] - 1;
+            box[3] = m_ii_genomic->m_Length - box[3] - 1;
         }
 
+        h.SetBox(box);
     }
-    else {
+    
+    if (m_HitsOnly) {
+        ITERATE(THitRefs, ii, hitrefs) {
+            const THit& h (**ii);
+            if(h.GetLength() < m_MinHitLength) continue;
+            cout << h << endl;
+        }
+    } else {
 
         // identify compartments
         const Uint4 qlen (m_ii_cdna->m_Length);
@@ -1966,48 +1965,33 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
 
         const THit::TCoord penalty = THit::TCoord(round(m_Penalty * qlen));
 
-        m_CompResults.reset(new CCompartmentAccessor<THit>(penalty,
-                                                           min_matches1,
-                                                           min_matches2,
-                                                           true));
-
-        CCompartmentAccessor<THit>& ca = *m_CompResults;
-
+        CCompartmentAccessor<THit> ca(penalty,
+                                      min_matches1,
+                                      min_matches2,
+                                      true);
         ca.SetMaxIntron(m_MaxIntron);
         ca.Run(hitrefs.begin(), hitrefs.end());
 
-        // remap and print individual compartments
-        THitRefs comp;
-        for(bool b0 (ca.GetFirst(comp)); b0; b0 = ca.GetNext(comp)) {
-        
-            NON_CONST_ITERATE(THitRefs, ii, comp) {
-
-                THit& h (**ii);
-            
-                h.SetQueryId (m_cDNASeqIds[m_ii_cdna->m_Oid]);
-                h.SetSubjId  (m_GenomicSeqIds[m_ii_genomic->m_Oid]);
-            
-                const Uint4 * box0 (h.GetBox());
-                Uint4 box [4] = {
-                    box0[0] - m_ii_cdna->m_Start,
-                    box0[1] - m_ii_cdna->m_Start,
-                    box0[2] - m_ii_genomic->m_Start,
-                    box0[3] - m_ii_genomic->m_Start
-                };
-
-                if(m_CurGenomicStrand == false) {
-                    box[2] = m_ii_genomic->m_Length - box[2] - 1;
-                    box[3] = m_ii_genomic->m_Length - box[3] - 1;
+        if (m_OutputMethod) {
+            // print individual compartments
+            THitRefs comp;
+            for(bool b0 (ca.GetFirst(comp)); b0; b0 = ca.GetNext(comp)) {
+                ITERATE(THitRefs, ii, comp) {
+                    const THit& h (**ii);
+                    cout << h << endl;
                 }
-
-                h.SetBox(box);
-
-                if(m_OutputMethod) cout << h << endl;
+                // empty line to separate compartments
+                cout << endl;
             }
-
-            // empty line to separate compartments
-            if(m_OutputMethod) cout << endl;
-            else m_Results.push_back(comp);
+        } else {
+            TResults pair_results = ca.AsSeqAlignSet();
+            if (! m_Results) { // Store first results, or append to existing?
+                m_Results = pair_results;
+            } else {
+                m_Results->Set().insert(m_Results->Set().end(),
+                                        pair_results->Set().begin(),
+                                        pair_results->Set().end());
+            }
         }
     }
 }
@@ -2146,7 +2130,7 @@ void CElementaryMatching::x_Cleanup(void)
     vol_exts.push_back(kFileExt_Remap);
     x_CleanVolumes(m_lbn_q, vol_exts);
     x_CleanVolumes(m_lbn_s, vol_exts);
-    m_Results.clear();
+    m_Results.Reset();
 }
 
 
