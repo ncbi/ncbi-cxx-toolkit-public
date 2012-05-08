@@ -330,10 +330,9 @@ static void s_SingleBounceCheck
 }
 
 
-/*ARGSUSED*/
-static void s_DummySetup(SMetaConnector* meta, CONNECTOR connector)
+static void s_DummySetup(CONNECTOR connector)
 {
-    meta->default_timeout = kInfiniteTimeout;
+    connector->meta->default_timeout = kInfiniteTimeout;
 }
 
 
