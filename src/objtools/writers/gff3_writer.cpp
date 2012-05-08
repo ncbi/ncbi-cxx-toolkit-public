@@ -153,7 +153,6 @@ bool CGff3Writer::x_WriteAlign(
             if (!x_WriteAlignSpliced( align, bInvertWidth )) {
                 return false;
             }
-            m_uRecordId++;
             return true;
 
         case CSeq_align::TSegs::e_Disc:
@@ -245,7 +244,7 @@ bool CGff3Writer::x_WriteAlignDenseg(
         if ( iSourceRow == iTargetRow ) {
             continue;
         }
-        CGffAlignmentRecord record( dummy, m_uFlags, m_uRecordId );
+        CGffAlignmentRecord record(dummy, m_uFlags, m_uRecordId++);
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
