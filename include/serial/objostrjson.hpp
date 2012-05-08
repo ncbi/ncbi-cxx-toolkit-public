@@ -110,11 +110,8 @@ public:
 
     /// Set JSONP mode
     /// JSONP prefix will become "function_name("
-    /// JSONP suffix will become ")"
+    /// JSONP suffix will become ");"
     void SetJsonpMode(const string& function_name);
-
-    /// Set JSONP mode - prefix and suffix
-    void SetJsonpMode(const string& prefix, const string& suffix);
 
     /// Get JSONP padding (prefix and suffix)
     ///
