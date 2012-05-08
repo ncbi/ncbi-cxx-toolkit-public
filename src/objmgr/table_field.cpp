@@ -287,6 +287,9 @@ void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// string
+
 const string*
 CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
                                const string* /*dummy*/,
@@ -367,6 +370,93 @@ void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
     v = *GetPtr(annot, row, ptr, true);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CStringUTF8
+
+const CStringUTF8*
+CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,
+                               const CStringUTF8* /*dummy*/,
+                               bool force) const
+{
+    const CStringUTF8* ret = 0;
+    if ( const CSeqTable_column* column = x_FindColumn(feat_ci) ) {
+        ret = column->GetUtf8StringPtr(x_GetRow(feat_ci));
+    }
+    if ( !ret && force ) {
+        x_ThrowUnsetValue();
+    }
+    return ret;
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CFeat_CI& feat_ci,
+                                    CStringUTF8& v) const
+{
+    const CStringUTF8* ptr = 0;
+    ptr = GetPtr(feat_ci, ptr, false);
+    if ( ptr ) {
+        v = *ptr;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+void CTableFieldHandle_Base::Get(const CFeat_CI& feat_ci,
+                                 CStringUTF8& v) const
+{
+    const CStringUTF8* ptr = 0;
+    v = *GetPtr(feat_ci, ptr, true);
+}
+
+
+const CStringUTF8*
+CTableFieldHandle_Base::GetPtr(const CSeq_annot_Handle& annot,
+                               size_t row,
+                               const CStringUTF8* /*dummy*/,
+                               bool force) const
+{
+    const CStringUTF8* ret = 0;
+    if ( const CSeqTable_column* column = x_FindColumn(annot) ) {
+        ret = column->GetUtf8StringPtr(row);
+    }
+    if ( !ret && force ) {
+        x_ThrowUnsetValue();
+    }
+    return ret;
+}
+
+
+bool CTableFieldHandle_Base::TryGet(const CSeq_annot_Handle& annot,
+                                    size_t row,
+                                    CStringUTF8& v) const
+{
+    const CStringUTF8* ptr = 0;
+    ptr = GetPtr(annot, row, ptr, false);
+    if ( ptr ) {
+        v = *ptr;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+void CTableFieldHandle_Base::Get(const CSeq_annot_Handle& annot,
+                                 size_t row,
+                                 CStringUTF8& v) const
+{
+    const CStringUTF8* ptr = 0;
+    v = *GetPtr(annot, row, ptr, true);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// vector<char>
 
 const vector<char>*
 CTableFieldHandle_Base::GetPtr(const CFeat_CI& feat_ci,

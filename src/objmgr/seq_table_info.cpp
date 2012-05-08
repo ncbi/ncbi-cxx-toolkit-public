@@ -81,6 +81,17 @@ bool CSeqTableColumnInfo::GetString(size_t row, string& v, bool force) const
 }
 
 
+bool CSeqTableColumnInfo::GetUtf8String(size_t row, CStringUTF8& v, bool force) const
+{
+    const CStringUTF8* ptr = GetUtf8StringPtr(row, force);
+    if ( !ptr ) {
+        return false;
+    }
+    v = *ptr;
+    return true;
+}
+
+
 bool CSeqTableColumnInfo::GetBytes(size_t row, vector<char>& v, bool force) const
 {
     const vector<char>* ptr = GetBytesPtr(row, force);
@@ -96,6 +107,17 @@ const string* CSeqTableColumnInfo::GetStringPtr(size_t row,
                                                 bool force) const
 {
     const string* ret = m_Column->GetStringPtr(row);
+    if ( !ret && force ) {
+        x_ThrowUnsetValue();
+    }
+    return ret;
+}
+
+
+const CStringUTF8* CSeqTableColumnInfo::GetUtf8StringPtr(size_t row,
+                                                         bool force) const
+{
+    const CStringUTF8* ret = m_Column->GetUtf8StringPtr(row);
     if ( !ret && force ) {
         x_ThrowUnsetValue();
     }

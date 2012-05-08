@@ -101,8 +101,10 @@ public:
                 (force && x_ThrowUnsetValue());
         }
     bool GetString(size_t row, string& v, bool force = false) const;
+    bool GetUtf8String(size_t row, CStringUTF8& v, bool force = false) const;
     bool GetBytes(size_t row, vector<char>& v, bool force = false) const;
     const string* GetStringPtr(size_t row, bool force = false) const;
+    const CStringUTF8* GetUtf8StringPtr(size_t row, bool force = false) const;
     const vector<char>* GetBytesPtr(size_t row, bool force = false) const;
     CConstRef<CSeq_id> GetSeq_id(size_t row, bool force = false) const;
     CConstRef<CSeq_loc> GetSeq_loc(size_t row, bool force = false) const;
@@ -122,6 +124,10 @@ public:
     bool GetValue(size_t row, string& value, bool force = false) const
         {
             return GetString(row, value, force);
+        }
+    bool GetValue(size_t row, CStringUTF8& value, bool force = false) const
+        {
+            return GetUtf8String(row, value, force);
         }
     bool GetValue(size_t row, vector<char>& value, bool force = false) const
         {
