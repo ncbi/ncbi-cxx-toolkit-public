@@ -423,8 +423,10 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
 
     // Precondition check.
     if (params.GetServerName().empty() ||
-            params.GetUserName().empty() ||
-            params.GetPassword().empty()) {
+        (!TDbapi_CanUseKerberos::GetDefault()
+         &&  (params.GetUserName().empty()
+              ||  params.GetPassword().empty())))
+    {
         string err_msg("Insufficient info/credentials to connect.");
 
         if (params.GetServerName().empty()) {

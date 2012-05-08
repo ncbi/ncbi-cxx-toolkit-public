@@ -610,6 +610,8 @@ tds_alloc_connection(TDSLOCALE * locale)
 	tds_dstr_init(&connection->language);
 	tds_dstr_init(&connection->server_charset);
 	tds_dstr_init(&connection->client_host_name);
+    tds_dstr_init(&connection->server_host_name);
+    tds_dstr_init(&connection->server_realm_name);
 	tds_dstr_init(&connection->app_name);
 	tds_dstr_init(&connection->user_name);
 	tds_dstr_init(&connection->password);
@@ -942,6 +944,9 @@ void
 tds_free_socket(TDSSOCKET * tds)
 {
 	if (tds) {
+        if (tds->authentication)
+            tds->authentication->free(tds, tds->authentication);
+        tds->authentication = NULL;
 		tds_free_all_results(tds);
 		tds_free_env(tds);
 		while (tds->dyns)
@@ -987,6 +992,8 @@ tds_free_connection(TDSCONNECTION * connection)
 {
 	tds_dstr_free(&connection->server_name);
 	tds_dstr_free(&connection->client_host_name);
+    tds_dstr_free(&connection->server_host_name);
+    tds_dstr_init(&connection->server_realm_name);
 	tds_dstr_free(&connection->language);
 	tds_dstr_free(&connection->server_charset);
 	tds_dstr_free(&connection->ip_addr);

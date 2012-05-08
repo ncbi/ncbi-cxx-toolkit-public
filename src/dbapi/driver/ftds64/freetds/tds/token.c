@@ -374,6 +374,11 @@ tds_process_login_tokens(TDSSOCKET * tds)
              */
             if (ack == 5 || ack == 1)
                 succeed = TDS_SUCCEED;
+            /* authentication is now useless */
+            if (tds->authentication) {
+                tds->authentication->free(tds, tds->authentication);
+                tds->authentication = NULL;
+            }
             break;
         default:
             if (tds_process_default_tokens(tds, marker) == TDS_FAIL)
@@ -504,6 +509,9 @@ tds_process_auth(TDSSOCKET * tds)
 
     pdu_size = tds_get_smallint(tds);
     tdsdump_log(TDS_DBG_INFO1, "TDS_AUTH_TOKEN PDU size %d\n", pdu_size);
+
+    if (tds->authentication)
+        return tds->authentication->handle_next(tds, tds->authentication, pdu_size);
 
     /* at least 32 bytes (till context) */
     if (pdu_size < 32)

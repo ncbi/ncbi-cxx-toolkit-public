@@ -583,7 +583,8 @@ typedef enum tds_packet_type
     TDS_RPC = 3,
     TDS_CANCEL = 6,
     TDS_BULK = 7,
-    TDS_NORMAL = 15
+    TDS_NORMAL = 15,
+    TDS7_AUTH = 17
 } TDS_PACKET_TYPE;
 
 
@@ -718,6 +719,10 @@ typedef enum tds_packet_type
 #define TDS_STR_APPENDMODE  "dump file append"
 #define TDS_STR_DATEFMT "date format"
 #define TDS_STR_INSTANCE "instance"
+/* Defines to enable optional GSSAPI delegation */
+#define TDS_GSSAPI_DELEGATION "enable gssapi delegation"
+/* Kerberos realm name */
+#define TDS_STR_REALM   "realm"
 
 /* TODO do a better check for alignment than this */
 typedef union
@@ -767,6 +772,8 @@ typedef struct tds_connection
     DSTR server_charset;    /**< charset of server */
     TDS_INT connect_timeout;
     DSTR client_host_name;
+    DSTR server_host_name;
+    DSTR server_realm_name;     /**< server realm name (in freetds.conf) */
     DSTR app_name;
     DSTR user_name;     /**< account for login */
     DSTR password;      /**< password of account login */
@@ -788,6 +795,7 @@ typedef struct tds_connection
     int broken_dates;
     int broken_money;
     int emul_little_endian;
+    int gssapi_use_delegation;
 } TDSCONNECTION;
 
 typedef struct tds_locale
@@ -1148,6 +1156,14 @@ enum TDS_ICONV_ENTRY
     , initial_char_conv_count   /* keep last */
 };
 
+typedef struct tds_authentication
+{
+    TDS_UCHAR *packet;
+    int packet_len;
+    int (*free)(TDSSOCKET * tds, struct tds_authentication * auth);
+    int (*handle_next)(TDSSOCKET * tds, struct tds_authentication * auth, size_t len);
+} TDSAUTHENTICATION;
+
 struct tds_socket
 {
     /* fixed and connect time */
@@ -1218,6 +1234,7 @@ struct tds_socket
 
     void *tls_session;
     void *tls_credentials;
+    TDSAUTHENTICATION *authentication;
     int option_value;
 };
 
@@ -1258,7 +1275,7 @@ int tds_read_conf_file(TDSCONNECTION * connection, const char *server);
 TDSCONNECTION *tds_read_config_info(TDSSOCKET * tds, TDSLOGIN * login, TDSLOCALE * locale);
 void tds_fix_connection(TDSCONNECTION * connection);
 void tds_config_verstr(const char *tdsver, TDSCONNECTION * connection);
-void tds_lookup_host(const char *servername, char *ip);
+int tds_lookup_host(const char *servername, char *ip);
 int tds_set_interfaces_file_loc(const char *interfloc);
 
 TDSLOCALE *tds_get_locale(void);
@@ -1455,6 +1472,12 @@ TDS_INT tds_numeric_change_prec_scale(TDS_NUMERIC * numeric, unsigned char new_p
 
 /* getmac.c */
 void tds_getmac(int s, unsigned char mac[6]);
+
+#ifdef HAVE_SSPI
+TDSAUTHENTICATION * tds_sspi_get_auth(TDSSOCKET * tds);
+#else
+TDSAUTHENTICATION * tds_gss_get_auth(TDSSOCKET * tds);
+#endif
 
 typedef struct tds_answer
 {

@@ -117,5 +117,10 @@ typedef int socklen_t;
 #  define snprintf _snprintf
 #endif
 
+#ifdef NCBI_COMPILER_MSVC
+#  define HAVE_SSPI 1
+#elif HAVE_LIBKRB5
+#  define ENABLE_KRB5 1
+#endif
 
 #endif  /* DBAPI_DRIVER_FTDS64_FREETDS___CONFIG__H */

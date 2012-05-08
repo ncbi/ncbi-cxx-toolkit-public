@@ -129,7 +129,7 @@ tds_read_config_info(TDSSOCKET * tds, TDSLOGIN * login, TDSLOCALE * locale)
 	char *s;
 	char *path;
 	pid_t pid;
-	int opened = 0;
+	int opened = 0, found;
 
 	/* allocate a new structure with hard coded and build-time defaults */
 	connection = tds_alloc_connection(locale);
@@ -156,16 +156,32 @@ tds_read_config_info(TDSSOCKET * tds, TDSLOGIN * login, TDSLOCALE * locale)
 	}
 
 	tdsdump_log(TDS_DBG_INFO1, "Attempting to read conf files.\n");
-	if (!tds_read_conf_file(connection, tds_dstr_cstr(&login->server_name))) {
-		/* fallback to interfaces file */
-		tdsdump_log(TDS_DBG_INFO1, "Failed in reading conf file.  Trying interface files.\n");
-		tds_read_interfaces(tds_dstr_cstr(&login->server_name), connection);
-	}
+    found = tds_read_conf_file(connection, tds_dstr_cstr(&login->server_name));
+    if (!found) {
+        if (parse_server_name_for_port(connection, login)) {
+            char ip_addr[256];
 
+            found = tds_read_conf_file(connection, tds_dstr_cstr(&connection->server_name));
+            /* do it again to really override what found in freetds.conf */
+            if (found) {
+                parse_server_name_for_port(connection, login);
+            } else if (tds_lookup_host(tds_dstr_cstr(&connection->server_name), ip_addr) == TDS_SUCCEED) {
+                tds_dstr_copy(&connection->server_host_name, tds_dstr_cstr(&connection->server_name));
+                tds_dstr_copy(&connection->ip_addr, ip_addr);
+                found = 1;
+            }
+        }
+    }
+	if (!found) {
+        /* fallback to interfaces file */
+        tdsdump_log(TDS_DBG_INFO1, "Failed in reading conf file.  Trying interface files.\n");
+        tds_read_interfaces(tds_dstr_cstr(&login->server_name), connection);
+	}
+/*
 	if (parse_server_name_for_port(connection, login)) {
 		tdsdump_log(TDS_DBG_INFO1, "Parsed servername, now %s on %d.\n", tds_dstr_cstr(&connection->server_name), login->port);
 	}
-
+  */
 	tds_fix_connection(connection);
 
 	/* And finally the login structure */
@@ -421,6 +437,9 @@ tds_parse_conf_section(const char *option, const char *value, void *param)
 		connection->broken_dates = tds_config_boolean(value);
 	} else if (!strcmp(option, TDS_STR_SWAPMNY)) {
 		connection->broken_money = tds_config_boolean(value);
+    } else if (!strcmp(option, TDS_GSSAPI_DELEGATION)) {
+        /* gssapi flag addition */
+        connection->gssapi_use_delegation = tds_config_boolean(value);
 	} else if (!strcmp(option, TDS_STR_DUMPFILE)) {
 		tds_dstr_copy(&connection->dump_file, value);
 	} else if (!strcmp(option, TDS_STR_DEBUGFLAGS)) {
@@ -438,6 +457,7 @@ tds_parse_conf_section(const char *option, const char *value, void *param)
 			connection->connect_timeout = atoi(value);
 	} else if (!strcmp(option, TDS_STR_HOST)) {
 		tdsdump_log(TDS_DBG_INFO1, "Found host entry %s.\n", value);
+        tds_dstr_copy(&connection->server_host_name, value);
 		tds_lookup_host(value, tmp);
 		tds_dstr_copy(&connection->ip_addr, tmp);
 		tdsdump_log(TDS_DBG_INFO1, "IP addr is %s.\n", tds_dstr_cstr(&connection->ip_addr));
@@ -461,6 +481,8 @@ tds_parse_conf_section(const char *option, const char *value, void *param)
 		tds_g_append_mode = tds_config_boolean(value);
 	} else if (!strcmp(option, TDS_STR_INSTANCE)) {
 		tds_dstr_copy(&connection->instance_name, value);
+    } else if (!strcmp(option, TDS_STR_REALM)) {
+        tds_dstr_copy(&connection->server_realm_name, value);
 	} else {
 		tdsdump_log(TDS_DBG_INFO1, "UNRECOGNIZED option '%s'...ignoring.\n", option);
 	}
@@ -611,6 +633,7 @@ tds_config_env_tdshost(TDSCONNECTION * connection)
 	char tmp[256];
 
 	if ((tdshost = getenv("TDSHOST"))) {
+        tds_dstr_copy(&connection->server_host_name, tdshost);
 		tds_lookup_host(tdshost, tmp);
 		tds_dstr_copy(&connection->ip_addr, tmp);
 		tdsdump_log(TDS_DBG_INFO1, "Setting 'ip_addr' to %s (%s) from $TDSHOST.\n", tmp, tdshost);
@@ -681,7 +704,7 @@ tds_set_interfaces_file_loc(const char *interf)
  * 'ip' and 'port' will be set to empty strings.
  */
 /* TODO callers seem to set always connection info... change it */
-void
+int
 tds_lookup_host(const char *servername,	/* (I) name of the server                  */
 		char *ip	/* (O) dotted-decimal ip address of server */
 	)
@@ -702,7 +725,7 @@ tds_lookup_host(const char *servername,	/* (I) name of the server               
 	ip_addr = inet_addr(servername);
 	if (ip_addr != INADDR_NONE) {
 		tds_strlcpy(ip, servername, 17);
-		return;
+		return TDS_SUCCEED;
 	}
 
 	host = tds_gethostbyname_r(servername, &result, buffer, sizeof(buffer), &h_errnop);
@@ -712,7 +735,9 @@ tds_lookup_host(const char *servername,	/* (I) name of the server               
 		struct in_addr *ptr = (struct in_addr *) host->h_addr;
 
 		tds_inet_ntoa_r(*ptr, ip, 17);
+        return TDS_SUCCEED;
 	}
+    return TDS_FAIL;
 }				/* tds_lookup_host()  */
 
 static int
@@ -862,6 +887,7 @@ search_interface_file(TDSCONNECTION * connection, const char *dir, const char *f
 	 * Look up the host and service
 	 */
 	if (server_found) {
+        tds_dstr_copy(&connection->server_host_name, tmp_ip);
 		tds_lookup_host(tmp_ip, line);
 		tdsdump_log(TDS_DBG_INFO1, "Resolved IP as '%s'.\n", line);
 		tds_dstr_copy(&connection->ip_addr, line);
@@ -977,8 +1003,10 @@ tds_read_interfaces(const char *server, TDSCONNECTION * connection)
 		 * lookup the host
 		 */
 		tds_lookup_host(server, ip_addr);
-		if (ip_addr[0])
+		if (ip_addr[0]) {
+            tds_dstr_copy(&connection->server_host_name, server);
 			tds_dstr_copy(&connection->ip_addr, ip_addr);
+        }
 		if (ip_port)
 			connection->port = ip_port;
 	}

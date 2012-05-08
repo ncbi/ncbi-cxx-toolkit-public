@@ -3,8 +3,8 @@
 LIB = tds_ftds64
 SRC = challenge config convert data des getmac iconv locale login md4 md5 mem net \
       numeric query read tdsstring threadsafe token util vstrbuild write \
-      tds_checks replacements hmac_md5
+      tds_checks replacements hmac_md5 gssapi sspi
 
-CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(KRB5_INCLUDE) $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 
 WATCHERS = ivanovp

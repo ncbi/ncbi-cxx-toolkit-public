@@ -37,6 +37,11 @@
 
 BEGIN_NCBI_SCOPE
 
+
+NCBI_PARAM_DECL_EXPORT(NCBI_DBAPIDRIVER_EXPORT, bool, dbapi, can_use_kerberos);
+typedef NCBI_PARAM_TYPE(dbapi, can_use_kerberos) TDbapi_CanUseKerberos;
+
+
 namespace impl 
 {
 

@@ -852,10 +852,27 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 
     tds->out_flag = 0x10;
 
+    /* discard possible previous authentication */
+    if (tds->authentication) {
+        tds->authentication->free(tds, tds->authentication);
+        tds->authentication = NULL;
+    }
+
     /* avoid overflow limiting password */
     if (password_len > 128)
         password_len = 128;
 
+    packet_size = 86 + (host_name_len + app_name_len + server_name_len + library_len + language_len + database_len) * 2;
+
+    /* check ntlm */
+#ifdef HAVE_SSPI
+    if (strchr(user_name, '\\') != NULL || user_name_len == 0) {
+        tds->authentication = tds_sspi_get_auth(tds);
+        if (!tds->authentication)
+            return TDS_FAIL;
+        auth_len = tds->authentication->packet_len;
+        packet_size += auth_len;
+#else
     /* check override of domain */
     if ((p = strchr(user_name, '\\')) != NULL) {
         domain = user_name;
@@ -865,12 +882,20 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
         user_name_len = strlen(user_name);
 
         domain_login = 1;
-    }
-
-    packet_size = 86 + (host_name_len + app_name_len + server_name_len + library_len + language_len + database_len) * 2;
-    if (domain_login) {
         auth_len = 32 + host_name_len + domain_len;
         packet_size += auth_len;
+    } else if (user_name_len == 0) {
+# ifdef ENABLE_KRB5
+        /* try kerberos */
+        tds->authentication = tds_gss_get_auth(tds);
+        if (!tds->authentication)
+            return TDS_FAIL;
+        auth_len = tds->authentication->packet_len;
+        packet_size += auth_len;
+# else
+        return TDS_FAIL;
+# endif
+#endif
     } else
         packet_size += (user_name_len + password_len) * 2;
 
@@ -901,7 +926,7 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 
     tds_put_byte(tds, option_flag1);
 
-    if (domain_login)
+    if (domain_login  ||  tds->authentication)
         option_flag2 |= 0x80;   /* enable domain login security                     */
 
     tds_put_byte(tds, option_flag2);
@@ -917,7 +942,7 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
     tds_put_smallint(tds, current_pos);
     tds_put_smallint(tds, host_name_len);
     current_pos += host_name_len * 2;
-    if (domain_login) {
+    if (domain_login  ||  tds->authentication) {
         tds_put_smallint(tds, 0);
         tds_put_smallint(tds, 0);
         tds_put_smallint(tds, 0);
@@ -962,7 +987,7 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 
     /* authentication stuff */
     tds_put_smallint(tds, current_pos);
-    if (domain_login) {
+    if (domain_login  ||  tds->authentication) {
         tds_put_smallint(tds, auth_len);    /* this matches numbers at end of packet */
         current_pos += auth_len;
     } else
@@ -974,7 +999,7 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 
     /* FIXME here we assume single byte, do not use *2 to compute bytes, convert before !!! */
     tds_put_string(tds, tds_dstr_cstr(&connection->client_host_name), host_name_len);
-    if (!domain_login) {
+    if (!domain_login  &&  !tds->authentication) {
         TDSICONV *char_conv = tds->char_convs[client2ucs2];
         tds_put_string(tds, tds_dstr_cstr(&connection->user_name), user_name_len);
         p = tds_dstr_cstr(&connection->password);
@@ -1079,6 +1104,8 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
         tds_put_n(tds, tds_dstr_cstr(&connection->client_host_name), host_name_len);
         tds_put_n(tds, domain, domain_len);
     }
+    else if (tds->authentication)
+        tds_put_n(tds, tds->authentication->packet, auth_len);
 
     dump_state = tdsdump_state();
     tdsdump_off();

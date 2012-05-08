@@ -35,6 +35,10 @@
 
 BEGIN_NCBI_SCOPE
 
+
+NCBI_PARAM_DEF(bool, dbapi, can_use_kerberos, false);
+
+
 ///////////////////////////////////////////////////////////////////////////////
 namespace impl {
 
@@ -129,7 +133,7 @@ string CDBConnParamsBase::GetDatabaseName(void) const
 string
 CDBConnParamsBase::GetUserName(void) const
 {
-    if (m_UserName.empty()) {
+    if (m_UserName.empty()  &&  !TDbapi_CanUseKerberos::GetDefault()) {
         return "anyone";
     }
 
@@ -139,7 +143,7 @@ CDBConnParamsBase::GetUserName(void) const
 string
 CDBConnParamsBase::GetPassword(void) const
 {
-    if (m_Password.empty()) {
+    if (m_Password.empty()  &&  !TDbapi_CanUseKerberos::GetDefault()) {
         return "allowed";
     }
 
