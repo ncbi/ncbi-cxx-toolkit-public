@@ -119,6 +119,15 @@ CommonString-table ::= SEQUENCE {
 }
 
 
+CommonUtf8String-table ::= SEQUENCE {
+    -- set of possible values
+    strings     SEQUENCE OF UTF8String,
+
+    -- indexes of values
+    indexes     SEQUENCE OF INTEGER
+}
+
+
 CommonBytes-table ::= SEQUENCE {
     -- set of possible values
     bytes       SEQUENCE OF OCTET STRING,
@@ -154,7 +163,13 @@ SeqTable-multi-data ::= CHOICE {
     -- a set of locations, one per row
     loc         SEQUENCE OF Seq-loc,
     id          SEQUENCE OF Seq-id,
-    interval    SEQUENCE OF Seq-interval
+    interval    SEQUENCE OF Seq-interval,
+
+    -- a set of Unicode strings in UTF8 encoding, one per row
+    utf8-string SEQUENCE OF UTF8String,
+
+    -- a set of string with small set of possible values
+    common-utf8-string   CommonUtf8String-table
 }
 
 
@@ -177,7 +192,10 @@ SeqTable-single-data ::= CHOICE {
     -- location
     loc         Seq-loc,
     id          Seq-id,
-    interval    Seq-interval
+    interval    Seq-interval,
+
+    -- Unicode string in UTF8 encoding
+    utf8-string UTF8String
 }
 
 

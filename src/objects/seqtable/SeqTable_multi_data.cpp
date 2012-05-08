@@ -135,6 +135,9 @@ void CSeqTable_multi_data::CReserveHook::PreReadChoiceVariant(
         case e_Interval:
             data->SetInterval().reserve(size);
             break;
+        case e_Utf8_string:
+            data->SetUtf8_string().reserve(size);
+            break;
         default:
             break;
         }
