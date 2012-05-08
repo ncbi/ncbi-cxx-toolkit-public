@@ -3,22 +3,28 @@
 LOCAL=$1
 VERSION=$2
 
-BASE_URL="https://svn.ncbi.nlm.nih.gov/viewvc/toolkit/release/public/$VERSION/c++"
+BASE_URL="https://svn.ncbi.nlm.nih.gov/repos/toolkit/release/public/$VERSION/c++"
 BASE_DIR="c++"
 
-if [ "$LOCAL"=="True" ]; then
+if [ "$LOCAL" == "True" ]; then
 
-    mv $BASE_DIR/include/internal/sra $BASE_DIR/include
-    mv $BASE_DIR/src/internal/sra $BASE_DIR/src
+    mv -v $BASE_DIR/include/internal/sra $BASE_DIR/include || exit -1
+    mv -v $BASE_DIR/src/internal/sra $BASE_DIR/src || exit -1
     
-    rm -rf $BASE_DIR/{include,src}/internal
+    rm -rf $BASE_DIR/{include,src}/internal || exit -1
     
 else
 
-    svn mv $BASE_URL/include/internal/sra $BASE_URL/include -m'public release internal/include/sra moved to include/sra;NOJIRA'
-    svn mv $BASE_URL/src/internal/sra $BASE_URL/src -m'public release internal/src/sra moved to src/sra;NOJIRA'
+    echo 'moving sra component from internal moved to base directory'
+
+    echo "svn mv $BASE_URL/include/internal/sra $BASE_URL/include"
+    svn mv $BASE_URL/include/internal/sra $BASE_URL/include -m'public release internal/include/sra moved to include/sra;NOJIRA' || exit -1
     
-    svn rm $BASE_URL/{include,src}/internal -m'internal/*/sra removed from public release;NOJIRA'
+    echo "svn mv $BASE_URL/src/internal/sra $BASE_URL/src"
+    svn mv $BASE_URL/src/internal/sra $BASE_URL/src -m'public release internal/src/sra moved to src/sra;NOJIRA' || exit -1
+    
+    echo "svn rm $BASE_URL/{include,src}/internal"
+    svn rm $BASE_URL/{include,src}/internal -m'internal/*/sra removed from public release;NOJIRA' || exit -1
     
 fi
 
