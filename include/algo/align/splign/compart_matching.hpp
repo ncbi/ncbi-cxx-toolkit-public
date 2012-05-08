@@ -35,11 +35,13 @@
 
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbifile.hpp>
 #include <algo/align/util/blast_tabular.hpp>
 #include <algo/align/util/compartment_finder.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
+
 
 
 BEGIN_SCOPE(objects)
@@ -144,8 +146,8 @@ public:
     typedef vector<THitRef>      THitRefs;
     typedef CRef<objects::CSeq_align_set> TResults;
 
-    CElementaryMatching(ISequenceSource *qsrc, const string & sdb):
-        m_qsrc(qsrc), m_sdb(sdb), m_XDropOff(s_GetDefaultDropOff())
+    CElementaryMatching(ISequenceSource *qsrc, const string & sdb, const string& FilePath = "."):
+        m_FilePath(CDirEntry::DeleteTrailingPathSeparator(FilePath)), m_qsrc(qsrc), m_sdb(sdb), m_XDropOff(s_GetDefaultDropOff())
     {
         x_InitBasic();
     }
@@ -357,6 +359,7 @@ private:
 
     string                    m_lbn_q;
     string                    m_lbn_s;
+    string                    m_FilePath; //folder path for index and temporary files
 
     TSeqIds                   m_GenomicSeqIds;
     TSeqIds                   m_cDNASeqIds;
