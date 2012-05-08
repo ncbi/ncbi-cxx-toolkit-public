@@ -14,6 +14,6 @@ LIB = ncbi_xloader_blastdb seqdb blastdb ncbi_xloader_lds lds bdb \
       xobjread xobjutil ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) \
       dbapi_driver$(STATIC) $(OBJMGR_LIBS)
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
+LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
 
 WATCHERS = vasilche
