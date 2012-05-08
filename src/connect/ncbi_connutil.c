@@ -1543,7 +1543,7 @@ extern EIO_Status URL_ConnectEx
                                          hdr, hdr_len, flags);
             if (status != eIO_Success) {
                 SOCK_CloseOSHandle(handle, size);
-                assert(!sock);
+                assert(!*sock);
             }
         } else {
             SOCK_Abort(s);
