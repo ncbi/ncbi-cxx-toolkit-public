@@ -276,15 +276,15 @@ string ReplaceExt(const string& extended_name, const string & new_ext)
 
 
 template <typename VectorT>
-string g_SaveToTemp(const VectorT& v)
+string g_SaveToTemp(const VectorT& v, const string& path)
 {
     typedef typename VectorT::value_type TElem;
 
-    const string filename(CFile::GetTmpNameEx(".", "splqcomp_"));
+    const string filename(CFile::GetTmpNameEx(path, "splqcomp_"));
     const Uint8 len_bytes (v.size() * sizeof(TElem));
 
     {
-        CNcbiOfstream tempcgrfile (filename.data(), IOS_BASE::binary);
+        CNcbiOfstream tempcgrfile (filename.c_str(), IOS_BASE::binary);
         tempcgrfile.write((const char* ) & v.front(), len_bytes);
         tempcgrfile.close();
     }
@@ -304,7 +304,7 @@ void g_RestoreFromTemp(const string& filename, VectorT* pvd)
 
     const Uint8 dim (CFile(filename).GetLength() / sizeof(TElem));
 
-    CNcbiIfstream tempcgrfile (filename.data(), IOS_BASE::binary);
+    CNcbiIfstream tempcgrfile (filename.c_str(), IOS_BASE::binary);
     tempcgrfile.read((char* ) & v.front(), dim * sizeof(TElem));
 
     CFile(filename).Remove();
@@ -317,7 +317,7 @@ void CElementaryMatching::x_InitParticipationVector(bool strand)
 
     m_Mers.Init(kNMersTotal, false);
 
-    CDir dir (CDir::GetCwd());
+    CDir dir (m_FilePath);
     const string sfx (string(strand?".p": ".m") + ".v*");
     const string mask_ofs_q (m_lbn_q + sfx + kFileExt_Offsets);
     CDir::TEntries vols_ofs_q (dir.GetEntries(mask_ofs_q));
@@ -427,7 +427,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
             NrCounts2 = NrCounts;
         }
         catch(...) {
-            filename_temp_01 = g_SaveToTemp(NrCounts);
+            filename_temp_01 = g_SaveToTemp(NrCounts, m_FilePath);
             pNrCounts2.reset(0);
         }
 
@@ -459,7 +459,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
         pNrCounts.reset(0);
 
         // serialize
-        const string masked_filename (m_lbn_s + kFileExt_Masked);
+        const string masked_filename (m_FilePath + CDirEntry::GetPathSeparator() + m_lbn_s + kFileExt_Masked);
         const Uint8 len_bytes (kNrMersTotal / 8);
         {{
             CMemoryFile mf (masked_filename, CMemoryFile::eMMP_Write,
@@ -479,7 +479,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
         cerr << " Reading/transforming FV ... ";
 
         // read the plus strand vector and trasnform
-        const string masked_filename (m_lbn_s + kFileExt_Masked);
+        const string masked_filename (m_FilePath + CDirEntry::GetPathSeparator() + m_lbn_s + kFileExt_Masked);
 
         CMemoryFile mf (masked_filename);
         const Uint8 * p8 (reinterpret_cast<Uint8*>(mf.Map()));
@@ -527,16 +527,18 @@ void CElementaryMatching::x_CreateRemapData(const string& db, EIndexMode mode)
         seq_infos.push_back(SSeqInfo(current_offset, bases, oid));
         current_offset += bases;
     }
-
+    
     const string remap_filename ((mode == eIM_Genomic? m_lbn_s: m_lbn_q) +
                                  kFileExt_Remap);
 
-    CNcbiOfstream ofstr_remap (remap_filename.c_str(), IOS_BASE::binary);
+    const string full_remap_filename = m_FilePath + CDirEntry::GetPathSeparator() + remap_filename;
+
+    CNcbiOfstream ofstr_remap (full_remap_filename.c_str(), IOS_BASE::binary);
     const Uint8 len_bytes (seq_infos.size() * sizeof(SSeqInfo));
     ofstr_remap.write((const char*) &seq_infos.front(), len_bytes);
     ofstr_remap.close();
 
-    CheckWrittenFile(remap_filename, len_bytes);
+    CheckWrittenFile(full_remap_filename, len_bytes);
 
     cerr << " Remap data created for " << db << "; max offset = "
          << current_offset << endl;
@@ -570,12 +572,14 @@ void CElementaryMatching::x_CreateRemapData(ISequenceSource *m_qsrc, EIndexMode 
     const string remap_filename ((mode == eIM_Genomic? m_lbn_s: m_lbn_q) +
                                  kFileExt_Remap);
 
-    CNcbiOfstream ofstr_remap (remap_filename.c_str(), IOS_BASE::binary);
+    const string full_remap_filename = m_FilePath + CDirEntry::GetPathSeparator() + remap_filename;
+
+    CNcbiOfstream ofstr_remap (full_remap_filename.c_str(), IOS_BASE::binary);
     const Uint8 len_bytes (seq_infos.size() * sizeof(SSeqInfo));
     ofstr_remap.write((const char*) &seq_infos.front(), len_bytes);
     ofstr_remap.close();
 
-    CheckWrittenFile(remap_filename, len_bytes);
+    CheckWrittenFile(full_remap_filename, len_bytes);
 
     cerr << " Remap data created for sequences; max offset = "
          << current_offset << endl;
@@ -1170,13 +1174,13 @@ size_t CElementaryMatching::x_WriteIndexFile(
         basename = m_lbn_q;
     }
     basename += string(strand? ".p": ".m") + ".v" + NStr::NumericToString(volume);
+    const string filename_offs ( m_FilePath + CDirEntry::GetPathSeparator() + basename + kFileExt_Offsets );
 
-    const string filename_offs (basename + kFileExt_Offsets);
-    CNcbiOfstream ofstr_offs   (filename_offs.data(), IOS_BASE::binary);
+    CNcbiOfstream ofstr_offs   (filename_offs.c_str(), IOS_BASE::binary);
     Uint8 bytes_offs (0);
    
-    const string filename_positions (basename + kFileExt_Positions);
-    CNcbiOfstream ofstr_positions (filename_positions.data(), IOS_BASE::binary);
+    const string filename_positions (m_FilePath + CDirEntry::GetPathSeparator() + basename + kFileExt_Positions);
+    CNcbiOfstream ofstr_positions (filename_positions.c_str(), IOS_BASE::binary);
     Uint8 bytes_positions (0);    
 
     cerr << " Generating index volume: " << basename << " ... ";
@@ -1240,7 +1244,7 @@ void CElementaryMatching::x_Search(bool strand)
     cerr << " Matching (strand = " << (strand? "plus": "minus") << ") ... ";
     m_CurGenomicStrand = strand;
 
-    CDir dir (CDir::GetCwd());
+    CDir dir (m_FilePath);
 
     const string sfx (string(strand?".p": ".m") + ".v*");
 
@@ -1322,7 +1326,7 @@ void CElementaryMatching::x_Search(bool strand)
             }
 
             // unload offset files; save hit index
-            filename_hit_index = g_SaveToTemp(hit_index);
+            filename_hit_index = g_SaveToTemp(hit_index, m_FilePath);
             hit_index_dim = (hit_index.size());
             elem_hits_total += elem_hits_this_pair;
             }}
@@ -1447,10 +1451,11 @@ bool PDiag(const Uint8& lhs, const Uint8& rhs)
 void CElementaryMatching::x_CleanVolumes(const string& lbn,
                                        const TStrings& vol_extensions)
 {
+    
     // make sure there are no offset or position files left before
     // we generate the new ones
 
-    CDir dir (CDir::GetCwd());
+    CDir dir (m_FilePath);
 
     CFileDeleteList fdl;
     ITERATE(TStrings, ii, vol_extensions) {
@@ -1976,7 +1981,7 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
 
 void CElementaryMatching::x_LoadRemapData(ISequenceSource *m_qsrc, const string& sdb)
 {
-    const string filename_genomic (m_lbn_s + kFileExt_Remap);
+    const string filename_genomic (m_FilePath + CDirEntry::GetPathSeparator() + m_lbn_s + kFileExt_Remap);
     const size_t elems_genomic (CFile(filename_genomic).GetLength()/sizeof(SSeqInfo));
     m_SeqInfos_Genomic.resize(elems_genomic);
     CNcbiIfstream ifstr_genomic (filename_genomic.c_str(), IOS_BASE::binary);
@@ -1984,7 +1989,7 @@ void CElementaryMatching::x_LoadRemapData(ISequenceSource *m_qsrc, const string&
                        elems_genomic * sizeof (SSeqInfo));
     ifstr_genomic.close();
 
-    const string filename_cdna (m_lbn_q + kFileExt_Remap);
+    const string filename_cdna (m_FilePath + CDirEntry::GetPathSeparator() + m_lbn_q + kFileExt_Remap);
     const size_t elems_cdna (CFile(filename_cdna).GetLength()/sizeof(SSeqInfo));
     m_SeqInfos_cdna.resize(elems_cdna);
     CNcbiIfstream ifstr_cdna (filename_cdna.c_str(), IOS_BASE::binary);
