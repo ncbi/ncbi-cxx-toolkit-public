@@ -2403,7 +2403,7 @@ ID	s	University of Idaho, Biological Sciences Department
 IDEA	s	Instituto de Agronomia
 IDF	s	University of Idaho
 IDS	s	Idaho State University, Biological Sciences Department
-IE	c	Cepario de Hongos del Instituto de Ecologia
+IE	sc	Cepario de Hongos del Instituto de Ecologia
 IEA	s	Instituto DI Entomologia Agraria
 IEAB	s	Istituto di Entomologia Agraria dell'Universita
 IEAM	s	Istituto di Entomologia dell'Universita degli Studi [= Istituto di Entomologia Agraria dell'Universita, Milan]
@@ -3943,6 +3943,7 @@ MZUN	s	Museo Zoologico di Universita degli Studi
 MZUP<ITA-Padova>	s	Museo Zoologia
 MZUP<ITA-Parma>	s	Museo Zoologico di Universita degli Studi
 MZUR	s	Museo di Zoologia dell'Universita "La Sapienza"
+MZUR:BAU	s	Museo di Zoologia dell'Universita "La Sapienza", Zoological collection of the Department of Biology and Biotechnology
 MZUS	s	Musee de Zoologie de l'Universite de Strasbourg
 MZUSP	s	Museu de Zoologia da Universidade de Sao Paulo
 MZUT<ITA-Torino>	s	Museo di Zoologia, Instituto di Zoologia e Anatomia Comparata Universita di Torino
@@ -6634,7 +6635,7 @@ ZDEU	s	Zoology Department, Ege University
 ZDKU	s	Kharkiv National University
 ZDM	s	Zigong dinosaur Museum
 ZEA	s	Universidad de Guadalajara, Centro Universitario de la Costa Sur, Departamento de Ecologia y Recursos Naturales
-ZFMK	s	Zoologisches Forschungsinstitut und Museum Alexander Koenig
+ZFMK	s	Zoologisches Forschungsmuseum Alexander Koenig
 ZFSN	s	Laboratoire de Zoologie de la Faculte Des Sciences
 ZGLC	s	Natural History Museum, Limassol
 ZHAN	s	Zhanjiang Teachers College, Biology Department
