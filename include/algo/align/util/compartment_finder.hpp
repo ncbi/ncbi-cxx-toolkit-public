@@ -48,6 +48,7 @@
 
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Na_strand.hpp>
@@ -1436,12 +1437,25 @@ CRef<objects::CSeq_align_set> CCompartmentAccessor<THit>::AsSeqAlignSet(void) co
                 const THit& h (**ii);
                 CRef<CSeq_align> sa3 (new CSeq_align);
                 sa3->SetType(CSeq_align::eType_global);
-                CDense_seg & ds (sa3->SetSegs().SetDenseg());
-                ds.FromTranscript(h.GetQueryStart(), query_strand, 
-                                   h.GetSubjStart(), subj_strand, 
-                                   h.GetTranscript());
-                ds.SetIds().push_back(seqid_query);
-                ds.SetIds().push_back(seqid_subj);
+                const string& transcript(h.GetTranscript());
+                if (transcript.empty()) {
+                    CRef<CStd_seg> sg(new CStd_seg);
+                    sa3->SetSegs().SetStd().push_back(sg);
+                    sg->SetDim(2);
+                    CRef<CSeq_loc> query_loc(new CSeq_loc(
+                            *seqid_query, h.GetQueryMin(), h.GetQueryMax(), query_strand));
+                    CRef<CSeq_loc> subj_loc(new CSeq_loc(
+                            *seqid_subj, h.GetSubjMin(), h.GetSubjMax(), subj_strand));
+                    sg->SetLoc().push_back(query_loc);
+                    sg->SetLoc().push_back(subj_loc);
+                } else {
+                    CDense_seg & ds (sa3->SetSegs().SetDenseg());
+                    ds.FromTranscript(h.GetQueryStart(), query_strand, 
+                                      h.GetSubjStart(), subj_strand, 
+                                      transcript);
+                    ds.SetIds().push_back(seqid_query);
+                    ds.SetIds().push_back(seqid_subj);
+                }
                 sas2_data.push_back(sa3);
             }
 
