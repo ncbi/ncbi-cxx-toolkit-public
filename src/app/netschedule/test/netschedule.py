@@ -450,6 +450,7 @@ class NetSchedule:
                              "while it is not running" )
 
         cmdLine = [ self.__grid_cli, "shutdown",
+                    "--extended-cli",
                     "--auth=" + auth, "--compat-mode",
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         self.verbosePrint( cmdLine )
@@ -520,6 +521,7 @@ class NetSchedule:
             raise Exception( "netschedule is not running" )
 
         cmdLine = [ self.__grid_cli, "reconf",
+                    "--extended-cli",
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         cmdLine = self.__appendNodeSession( cmdLine, node, session )
         if auth != "":
@@ -541,9 +543,13 @@ class NetSchedule:
         result = {}
         for line in self.__safeRun( cmdLine ).split( '\n' ):
             line = line.strip()
-            if line == "":
+            if not line or line.startswith( '[' ):
                 continue
             parts = line.split( ':' )
+            if len( parts ) != 2:
+                raise Exception( "Unexpected output of the 'queueinfo' " \
+                                 "command. 'key=value' format expected, " \
+                                 "received: '" + line + "'" )
             result[ parts[ 0 ].strip() ] = parts[ 1 ].strip()
         return result
 
@@ -737,33 +743,6 @@ class NetSchedule:
         self.__safeRun( cmdLine )
         return
 
-    def getQueueConfiguration( self, qname,
-                               node = "", session = "" ):
-        " Provides the server configuration "
-        if not self.isRunning():
-            raise Exception( "netschedule is not running" )
-
-        cmdLine = [ self.__grid_cli, "getconf",
-                    "--queue=" + qname,
-                    "--ns=" + self.__host + ":" + str( self.__port ) ]
-        cmdLine = self.__appendNodeSession( cmdLine, node, session )
-
-        self.verbosePrint( cmdLine )
-
-        params = {}
-        for line in self.__safeRun( cmdLine ).split( '\n' ):
-            line = line.strip()
-            if ':' in line or line == "":
-                continue
-            parts = line.split( '=' )
-            if len( parts ) != 2:
-                raise Exception( "Unexpected output of the 'getconf' " \
-                                 "command. 'key=value' format expected, " \
-                                 "received: '" + line + "'" )
-            params[ parts[0].strip() ] = parts[1].strip()
-
-        return params
-
     def getServerConfiguration( self, auth = "",
                                       node = "", session = "" ):
         " Provides the server configuration "
@@ -772,6 +751,7 @@ class NetSchedule:
             raise Exception( "netschedule is not running" )
 
         cmdLine = [ self.__grid_cli, "getconf",
+                    "--extended-cli",
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         cmdLine = self.__appendNodeSession( cmdLine, node, session )
 

@@ -330,7 +330,7 @@ class Scenario09( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         qinfo = self.ns.getQueueInfo( 'TEST' )
-        return qinfo[ "Queue name" ] == "TEST" and qinfo[ "Type" ] == "static"
+        return qinfo[ "queue_type" ] == "static"
 
 
 class Scenario10( TestBase ):
@@ -355,10 +355,9 @@ class Scenario10( TestBase ):
 
         self.ns.createQueue( "TEST1", "TEST", "bla" )
         qinfo = self.ns.getQueueInfo( "TEST1" )
-        if qinfo[ "Queue name" ] != "TEST1" or \
-           qinfo[ "Type" ] != "dynamic" or \
-           qinfo[ "Model queue" ] != "TEST" or \
-           qinfo[ "Description" ] != "bla":
+        if qinfo[ "queue_type" ] != "dynamic" or \
+           qinfo[ "model_queue" ] != "TEST" or \
+           qinfo[ "description" ] != "bla":
             print >> sys.stderr, "Unexpected queue info received: " + \
                                  str( qinfo )
             return False
@@ -564,7 +563,7 @@ class Scenario16( TestBase ):
         if not self.ns.isRunning():
             raise Exception( "Cannot start netschedule" )
 
-        params = self.ns.getQueueConfiguration( 'TEST' )
+        params = self.ns.getQueueInfo( 'TEST' )
         return params[ 'timeout' ] == '30' and \
                params[ 'run_timeout' ] == "7" and \
                params[ 'failed_retries' ] == "3"

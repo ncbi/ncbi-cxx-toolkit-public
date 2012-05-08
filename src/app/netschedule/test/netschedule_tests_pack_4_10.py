@@ -4365,12 +4365,12 @@ class Scenario215( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario215' )
-        self.ns.getQueueConfiguration( 'TEST' )
+        self.ns.getQueueInfo( 'TEST' )
         client = getClientInfo( ns_client, False, 0 )
         if client is not None:
             raise Exception( "Expected no client. Received some." )
 
-        self.ns.getQueueConfiguration( 'TEST', 'mynode', 'mysession' )
+        self.ns.getQueueInfo( 'TEST', 'mynode', 'mysession' )
         client = getClientInfo( ns_client, False, 1, 0 )
         if client is None:
             raise Exception( "Expected a client. Received none." )
