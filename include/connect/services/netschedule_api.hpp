@@ -708,6 +708,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         eDrain              ///< Wait for all server data to expire.
     };
 
+    /// Enable server drain mode.
+    ///
+    void SwitchToDrainMode(ESwitch on_off);
+
     /// Shutdown the server daemon.
     ///
     void ShutdownServer(EShutdownLevel level = eNormalShutdown);

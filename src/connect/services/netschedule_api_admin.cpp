@@ -39,6 +39,12 @@
 
 BEGIN_NCBI_SCOPE
 
+void CNetScheduleAdmin::SwitchToDrainMode(ESwitch on_off)
+{
+    m_Impl->m_API->m_Service.ExecOnAllServers(on_off != eOff ?
+            "REFUSESUBMITS mode=1" : "REFUSESUBMITS mode=0");
+}
+
 void CNetScheduleAdmin::ShutdownServer(
     CNetScheduleAdmin::EShutdownLevel level)
 {

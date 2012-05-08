@@ -281,6 +281,8 @@ struct SOptionDefinition {
     {CCommandLineParser::eOptionWithParameter, eQueueDescription,
         "queue-description", "Optional queue description."},
 
+    {CCommandLineParser::eOptionalPositional, eSwitchArg, SWITCH_ARG, NULL},
+
     {CCommandLineParser::eSwitch, eNow,
         NOW_OPTION, "Take action immediately."},
 
@@ -353,6 +355,9 @@ struct SCommandCategoryDefinition {
 #define WN_NOT_NOTIFIED_DISCLAIMER \
     "Worker nodes that may have already " \
     "started job processing will not be notified."
+
+#define ABOUT_SWITCH_ARG \
+    "The " SWITCH_ARG " argument can be either 'on' or 'off'."
 
 struct SCommandDefinition {
     int cat_id;
@@ -710,6 +715,16 @@ struct SCommandDefinition {
         "same location that was used during start-up.",
         {eNetCache, eNetSchedule, eAuth, -1}},
 
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Drain,
+        "drain", "Turn server drain mode on or off.",
+        "When in drain mode, NetSchedule does not accept new jobs. "
+        "As existing jobs expire naturally, the server is drained. "
+        "Drain mode can be enabled for a particular queue or for "
+        "the whole server.\n\n"
+        ABOUT_SWITCH_ARG,
+        {eSwitchArg, eNetSchedule, eQueue,
+            eAuth, eClientNode, eClientSession, -1}},
+
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Shutdown,
         "shutdown", "Send a shutdown request to a remote server.",
         "Depending on the option specified, this command sends "
@@ -963,6 +978,15 @@ int CGridCommandLineInterfaceApp::Run()
             case eQueueDescription:
                 m_Opts.queue_description = opt_value;
                 break;
+            case eSwitchArg:
+                if (NStr::CompareNocase(opt_value, "on") == 0)
+                    m_Opts.on_off_switch = eOn;
+                else if (NStr::CompareNocase(opt_value, "off") == 0)
+                    m_Opts.on_off_switch = eOff;
+                else {
+                    fputs(ABOUT_SWITCH_ARG "\n", stderr);
+                    return 2;
+                }
             case eInput:
                 m_Opts.input = opt_value;
                 break;

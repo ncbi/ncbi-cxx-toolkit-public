@@ -213,6 +213,19 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
     }
 }
 
+int CGridCommandLineInterfaceApp::Cmd_Drain()
+{
+    switch (SetUp_AdminCmd()) {
+    case eNetScheduleAdmin:
+        m_NetScheduleAdmin.SwitchToDrainMode(m_Opts.on_off_switch);
+        return 0;
+
+    default:
+        return 2;
+    }
+    return 0;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_Shutdown()
 {
     switch (SetUp_AdminCmd()) {

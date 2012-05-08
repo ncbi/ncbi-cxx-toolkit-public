@@ -61,6 +61,7 @@
 #define JOB_ID_OPTION "job-id"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
+#define SWITCH_ARG "SWITCH"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
 #define DRAIN_OPTION "drain"
@@ -132,6 +133,7 @@ enum EOption {
     eTargetQueueArg,
     eModelQueue,
     eQueueDescription,
+    eSwitchArg,
     eNow,
     eDie,
     eDrain,
@@ -211,6 +213,7 @@ private:
         string progress_message;
         string job_group;
         string queue_description;
+        ESwitch on_off_switch;
         string error_message;
         string input;
         string command;
@@ -231,6 +234,7 @@ private:
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), job_count(0),
             job_status(CNetScheduleAPI::eJobNotFound), extend_lifetime_by(0),
+            on_off_switch(eDefault),
             input_stream(NULL), output_stream(NULL), protocol_dump(NULL)
         {
             memset(option_flags, 0, eNumberOfOptions);
@@ -298,6 +302,7 @@ public:
     int Cmd_Health();
     int Cmd_GetConf();
     int Cmd_Reconf();
+    int Cmd_Drain();
     int Cmd_Shutdown();
     int Cmd_Exec();
     int Cmd_Automate();
