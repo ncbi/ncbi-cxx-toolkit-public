@@ -200,6 +200,7 @@
 #  define NCBI_XALGOSEGMASK_EXPORTS
 #  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORTS
 #  define NCBI_XBLASTFORMAT_EXPORTS
+#  define NCBI_XPRIMER_EXPORTS
 #endif
 
 
@@ -1222,6 +1223,14 @@
 #  define NCBI_XOMSSA_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_XOMSSA_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library xprimer
+ */
+#ifdef NCBI_XPRIMER_EXPORTS
+#  define NCBI_XPRIMER_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XPRIMER_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library xreader
