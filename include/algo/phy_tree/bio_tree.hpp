@@ -193,6 +193,8 @@ public:
 	/// Throws an exception if a feature with this id or this name already exists
 	void Register(TBioTreeFeatureId id, const string& feature_name);
 
+    void Unregister(TBioTreeFeatureId id);
+
     /// If feature is already registered returns its id by name.
     /// If feature does not exist returns -1.
     TBioTreeFeatureId GetId(const string& feature_name) const;

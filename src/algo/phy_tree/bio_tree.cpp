@@ -185,6 +185,17 @@ void CBioTreeFeatureDictionary::Register(TBioTreeFeatureId id,
 
 }
 
+void
+CBioTreeFeatureDictionary::Unregister(TBioTreeFeatureId id)
+{
+    if (!m_Dict.count(id)) {
+        return;
+    }
+
+    m_Name2Id.erase(m_Dict[id]);
+    m_Dict.erase(id);
+}
+
 
 TBioTreeFeatureId 
 CBioTreeFeatureDictionary::GetId(const string& feature_name) const
