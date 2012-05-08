@@ -755,8 +755,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::eJobNotFound,
         const string& job_group = kEmptyStr);
 
-    void PrintQueueInfo(CNcbiOstream& output_stream,
-        const string& queue_name);
+    void PrintQueueInfo(CNcbiOstream& output_stream);
 
     unsigned CountActiveJobs();
 

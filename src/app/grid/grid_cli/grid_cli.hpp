@@ -129,6 +129,7 @@ enum EOption {
     eWaitTimeout,
     eFailJob,
     eQueueArg,
+    eTargetQueueArg,
     eModelQueue,
     eQueueDescription,
     eNow,

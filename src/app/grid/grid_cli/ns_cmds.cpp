@@ -1038,7 +1038,7 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);
 
-    m_NetScheduleAdmin.PrintQueueInfo(NcbiCout, m_Opts.id);
+    m_NetScheduleAdmin.PrintQueueInfo(NcbiCout);
 
     return 0;
 }

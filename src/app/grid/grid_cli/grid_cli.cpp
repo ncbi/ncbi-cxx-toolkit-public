@@ -274,6 +274,8 @@ struct SOptionDefinition {
 
     {CCommandLineParser::ePositionalArgument, eQueueArg, "QUEUE", NULL},
 
+    {CCommandLineParser::ePositionalArgument, eTargetQueueArg, "QUEUE", NULL},
+
     {CCommandLineParser::ePositionalArgument, eModelQueue, "MODEL_QUEUE", NULL},
 
     {CCommandLineParser::eOptionWithParameter, eQueueDescription,
@@ -326,6 +328,7 @@ enum ECommandCategory {
     eNetCacheCommand,
     eNetScheduleCommand,
     eWorkerNodeCommand,
+    eAdministrativeCommand,
     eExtendedCLICommand,
     eNumberOfCommandCategories
 };
@@ -338,6 +341,7 @@ struct SCommandCategoryDefinition {
     {eNetCacheCommand, "NetCache commands"},
     {eNetScheduleCommand, "NetSchedule commands"},
     {eWorkerNodeCommand, "Worker node commands"},
+    {eAdministrativeCommand, "Administrative commands"},
     {eExtendedCLICommand, "Extended commands"},
 };
 
@@ -399,7 +403,7 @@ struct SCommandDefinition {
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eID, eNetCache, eCache, ePassword, eAuth, -1}},
 
-    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_ReinitNetCache,
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_ReinitNetCache,
         "reinitnc", "Delete all blobs and reset NetCache database.",
         "This command purges and resets the specified NetCache "
         "(or ICache) database. Administrative privileges are "
@@ -610,8 +614,9 @@ struct SCommandDefinition {
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_QueueInfo,
         "queueinfo|qi", "Get information about a NetSchedule queue.",
-        "Print queue type (static or dynamic). For dynamic queues, "
-        "print also their model queue name and description.",
+        "Print queue configuration parameters, queue type (static or "
+        "dynamic), and, if the queue is dynamic, print its description "
+        "and the model queue name.",
         {eQueueArg, eNetSchedule, eAuth,
             eClientNode, eClientSession, -1}},
 
@@ -628,8 +633,8 @@ struct SCommandDefinition {
         "createqueue", "Create a dynamic NetSchedule queue.",
         "This command creates a new NetSchedule queue using "
         "a template known as a model queue.",
-        {eQueueArg, eModelQueue, eNetSchedule, eQueueDescription, eAuth,
-            eClientNode, eClientSession, -1}},
+        {eTargetQueueArg, eModelQueue, eNetSchedule, eQueueDescription,
+            eAuth, eClientNode, eClientSession, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetQueueList,
         "getqueuelist", "Print the list of available NetSchedule queues.",
@@ -647,7 +652,8 @@ struct SCommandDefinition {
         WN_NOT_NOTIFIED_DISCLAIMER "\n\n"
         "Static queues cannot be deleted, although it is "
         "possible to cancel all jobs in a static queue.",
-        {eQueueArg, eNetSchedule, eAuth, eClientNode, eClientSession, -1}},
+        {eTargetQueueArg, eNetSchedule,
+            eAuth, eClientNode, eClientSession, -1}},
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_Replay,
         "replay", "Rerun a job in debugging environment.",
@@ -681,7 +687,7 @@ struct SCommandDefinition {
             eCompatMode, eAuth, eClientNode, eClientSession, -1},
             {eHumanReadable, eRaw, eJSON, -1}},
 
-    {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_Health,
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Health,
         "health", "Evaluate availability of a server.",
         "Retrieve vital parameters of a running NetCache "
         "or NetSchedule server and estimate its availability "
@@ -691,25 +697,20 @@ struct SCommandDefinition {
         "\"raw\" is assumed."*/,
         {eNetCache, /*eOutputFormat,*/ eAuth, -1}},
 
-    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_GetConf,
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_GetConf,
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
-        "running NetCache or NetSchedule server.\n\n"
-        "If the '--" QUEUE_OPTION "' option is specified "
-        "for a NetSchedule server, a reduced number of "
-        "configuration parameters relevant to that queue "
-        "only will be printed.",
-        {eNetCache, eNetSchedule, eQueue, eAuth,
-            eClientNode, eClientSession, -1}},
+        "running NetCache or NetSchedule server.",
+        {eNetCache, eNetSchedule, eAuth, eClientNode, eClientSession, -1}},
 
-    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Reconf,
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Reconf,
         "reconf", "Reload server configuration.",
         "Update configuration parameters of a running server. "
         "The server will look for a configuration file in the "
         "same location that was used during start-up.",
         {eNetCache, eNetSchedule, eAuth, -1}},
 
-    {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Shutdown,
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Shutdown,
         "shutdown", "Send a shutdown request to a remote server.",
         "Depending on the option specified, this command sends "
         "a shutdown request to a NetCache or NetSchedule server "
@@ -763,19 +764,24 @@ int CGridCommandLineInterfaceApp::Run()
 
     {
         bool enable_extended_cli = false;
+        bool admin_mode = false;
 
         int argc = m_ArgC - 1;
         const char** argv = m_ArgV + 1;
 
-        while (--argc >= 0)
-            if (strcmp(*argv, "--extended-cli") != 0)
-                ++argv;
-            else {
+        while (--argc >= 0) {
+            if (strcmp(*argv, "--extended-cli") == 0)
                 enable_extended_cli = true;
-                --m_ArgC;
-                if (argc > 0)
-                    memcpy(argv, argv + 1, argc * sizeof(*argv));
+            else if (strcmp(*argv, "--admin") == 0)
+                admin_mode = true;
+            else {
+                ++argv;
+                continue;
             }
+            --m_ArgC;
+            if (argc > 0)
+                memcpy(argv, argv + 1, argc * sizeof(*argv));
+        }
 
         CCommandLineParser clparser(PROGRAM_NAME, PROGRAM_VERSION,
             "Utility to access and control NCBI Grid services.");
@@ -801,7 +807,9 @@ int CGridCommandLineInterfaceApp::Run()
 
         cmd_def = s_CommandDefinitions;
         for (i = 0; i < TOTAL_NUMBER_OF_COMMANDS; ++i, ++cmd_def) {
-            if (cmd_def->cat_id == eExtendedCLICommand && !enable_extended_cli)
+            if (!enable_extended_cli &&
+                    ((cmd_def->cat_id == eExtendedCLICommand) ||
+                    ((cmd_def->cat_id == eAdministrativeCommand) ^ admin_mode)))
                 continue;
             clparser.AddCommand(i, cmd_def->name_variants,
                 cmd_def->synopsis, cmd_def->usage, cmd_def->cat_id);
@@ -839,7 +847,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.option_flags[eID] = OPTION_SET;
                 /* FALL THROUGH */
             case eID:
-            case eQueueArg:
+            case eTargetQueueArg:
             case eJobId:
                 m_Opts.id = opt_value;
                 break;
@@ -883,6 +891,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.ns_service = opt_value;
                 break;
             case eQueue:
+            case eQueueArg:
             case eModelQueue:
                 m_Opts.queue = opt_value;
                 break;

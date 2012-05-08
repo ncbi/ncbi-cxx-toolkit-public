@@ -134,13 +134,11 @@ void CNetScheduleAdmin::DumpQueue(
 }
 
 
-void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream,
-    const string& queue_name)
+void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
 {
     CTempString queue_info, dyn_queue, model_queue;
 
-    string cmd("QINF " + queue_name);
-
+    string cmd("QINF " + m_Impl->m_API->m_Queue);
 
     bool print_headers = m_Impl->m_API->m_Service.IsLoadBalanced();
 
@@ -154,14 +152,29 @@ void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream,
         NStr::SplitInTwo(cmd_output, "\t", queue_info, dyn_queue);
         switch (queue_info[0]) {
         case '0':
-            output_stream << "Queue type: static" << NcbiEndl;
+            output_stream << "queue type: static" << NcbiEndl;
             break;
         case '1':
-            output_stream << "Queue type: dynamic" << NcbiEndl;
+            output_stream << "queue_type: dynamic" << NcbiEndl;
 
             if (NStr::SplitInTwo(dyn_queue, "\t", model_queue, queue_info))
-                output_stream << "Model queue: " << model_queue << NcbiEndl <<
-                    "Description: " << NStr::ParseQuoted(queue_info) << NcbiEndl;
+                output_stream <<
+                        "model_queue: " << model_queue << NcbiEndl <<
+                        "description: " <<
+                                NStr::ParseQuoted(queue_info) << NcbiEndl;
+        }
+
+        CNetServer::SExecResult exec_result((*it).ExecWithRetry("GETC"));
+
+        CNetServerMultilineCmdOutput output(exec_result);
+
+        string line;
+        static const string eq("=");
+        static const string field_sep(": ");
+
+        while (output.ReadLine(line)) {
+            NStr::ReplaceInPlace(line, eq, field_sep, 0, 1);
+            output_stream << line << NcbiEndl;
         }
 
         if (print_headers)
