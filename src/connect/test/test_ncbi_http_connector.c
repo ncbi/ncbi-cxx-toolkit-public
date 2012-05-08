@@ -128,9 +128,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    /* Printout all socket traffic */
-    /* SOCK_SetDataLoggingAPI(eOn); */
-
     /* Run the tests */
     flags = fHTTP_KeepHeader | fHTTP_UrlCodec | fHTTP_UrlEncodeArgs;
     connector = HTTP_CreateConnector(0, user_header, flags);
