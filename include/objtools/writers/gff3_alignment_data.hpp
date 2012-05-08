@@ -69,6 +69,10 @@ public:
         const CSeq_id&,
         ENa_strand );
 
+    virtual void SetMatchType(
+        const CSeq_id&, //source
+        const CSeq_id&); //target
+
     void SetScore(
         const CScore& );
 

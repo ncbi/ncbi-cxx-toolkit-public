@@ -151,6 +151,39 @@ void CGffAlignmentRecord::SetScore(
 }
 
 //  ----------------------------------------------------------------------------
+void CGffAlignmentRecord::SetMatchType(
+    const CSeq_id& source,
+    const CSeq_id& target)
+//  ----------------------------------------------------------------------------
+{
+    static const string strProtMatch("protein_match");
+    static const string strEstMatch("EST_match");
+    static const string strTransNucMatch("translated_nucleotide_match");
+    static const string strCdnaMatch("cDNA_match");
+
+    CSeq_id::EAccessionInfo source_info = source.IdentifyAccession();
+    CSeq_id::EAccessionInfo target_info = target.IdentifyAccession();
+    if (target_info & CSeq_id::fAcc_prot) {
+        m_strType = strProtMatch;
+        return;
+    }
+    if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
+        m_strType = strEstMatch;
+        return;
+    }
+    if (target_info & (CSeq_id::fAcc_nuc | CSeq_id::eAcc_mrna)) {
+        m_strType = strCdnaMatch;
+        return;
+    }
+    if (source_info & CSeq_id::fAcc_prot  
+            /*  && !(target_info & CSeq_id::fAcc_prot*/) {
+        m_strType = strTransNucMatch;
+        return;
+    }
+    //m_strType = "match";
+}
+
+//  ----------------------------------------------------------------------------
 void CGffAlignmentRecord::SetPhase(
     unsigned int uPhase )
 //  ----------------------------------------------------------------------------
