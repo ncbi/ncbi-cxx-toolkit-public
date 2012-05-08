@@ -52,16 +52,16 @@ private:
         static A FromVoidP(void* p) {
             return A(reinterpret_cast<intptr_t>(p));
         }
-        static void* ToVoidP(A v) {
-            return reinterpret_cast<void*>(intptr_t(v));
+        static const void* ToVoidP(A v) {
+            return reinterpret_cast<const void*>(intptr_t(v));
         }
     };
     template<class A> struct SCaster<A*> {
         static A* FromVoidP(void* p) {
             return reinterpret_cast<A*>(p);
         }
-        static void* ToVoidP(A* v) {
-            return reinterpret_cast<void*>(v);
+        static const void* ToVoidP(A* v) {
+            return reinterpret_cast<const void*>(v);
         }
     };
     key_type x_GetKey(void) const {
