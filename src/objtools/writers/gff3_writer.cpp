@@ -293,6 +293,9 @@ bool CGff3Writer::x_WriteAlignDenseg(
         // Record basic target information:
         record.SetTargetLocation( *pTargetId.GetSeqId(), targetStrand );
 
+        // Refine the match type
+        record.SetMatchType(*pSourceId, *pTargetId.GetSeqId());
+
         // Add scores, if available:
         if (align.IsSetScore()) {
             const vector<CRef<CScore> >& scores = align.GetScore();
