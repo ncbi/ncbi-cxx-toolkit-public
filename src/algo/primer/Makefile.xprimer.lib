@@ -1,5 +1,7 @@
 # $Id$
 
+ASN_DEP = seqset
+
 ###  BASIC PROJECT SETTINGS
 LIB = xprimer
 SRC = primercheck
