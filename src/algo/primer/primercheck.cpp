@@ -54,7 +54,7 @@
 #include <algo/align/nw/nw_aligner.hpp>
 #include <algo/align/nw/nw_formatter.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
-#include <objtools/align/primercheck.hpp>
+#include <algo/primer/primercheck.hpp>
 
 
 BEGIN_NCBI_SCOPE
