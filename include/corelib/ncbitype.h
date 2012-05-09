@@ -77,6 +77,14 @@
 #  error "Unsupported size of int(must be 4 bytes)"
 #endif
 
+#ifdef Int1
+#  undef Int1
+#  undef Uint1
+#  undef Int2
+#  undef Uint2
+#  undef Int4
+#  undef Uint4
+#endif
 
 typedef          char  Char;    /**< Alias for char */
 typedef signed   char  Schar;   /**< Alias for signed char */
