@@ -2870,8 +2870,12 @@ CNCMessageHandler::x_DoCmd_Health(void)
     //m_SockBuffer.WriteMessage("OK:", "MEM_LIMIT=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
     //m_SockBuffer.WriteMessage("OK:", "MEM_USED=" + NStr::UInt8ToString(CNCMemManager::GetMemoryUsed()));
     //m_SockBuffer.WriteMessage("OK:", "DISK_CACHE=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
-    m_SockBuffer.WriteMessage("OK:", "DISK_FREE=" + NStr::UInt8ToString(g_NetcacheServer->GetDiskFree()));
+    Uint8 free_space = g_NCStorage->GetDiskFree();
+    Uint8 allowed_size = g_NCStorage->GetAllowedDBSize(free_space);
+    m_SockBuffer.WriteMessage("OK:", "DISK_FREE=" + NStr::UInt8ToString(free_space));
+    m_SockBuffer.WriteMessage("OK:", "DISK_LIMIT=" + NStr::UInt8ToString(allowed_size));
     m_SockBuffer.WriteMessage("OK:", "DISK_USED=" + NStr::UInt8ToString(g_NCStorage->GetDBSize()));
+    m_SockBuffer.WriteMessage("OK:", string("DISK_LIMIT_ALERT=") + (g_NCStorage->IsDBSizeAlert()? "yes": "no"));
     m_SockBuffer.WriteMessage("OK:", "N_DB_FILES=" + NStr::IntToString(g_NCStorage->GetNDBFiles()));
     m_SockBuffer.WriteMessage("OK:", "COPY_QUEUE_SIZE=" + NStr::UInt8ToString(CNCPeerControl::GetMirrorQueueSize()));
 

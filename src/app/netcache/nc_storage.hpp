@@ -240,6 +240,9 @@ public:
     const string& GetPath(void);
     /// Get total size of database for the storage
     Uint8 GetDBSize(void);
+    Uint8 GetDiskFree(void);
+    Uint8 GetAllowedDBSize(Uint8 free_space);
+    bool IsDBSizeAlert(void);
     void GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst);
     Uint8 GetMaxSyncLogRecNo(void);
     void SaveMaxSyncLogRecNo(void);
@@ -625,6 +628,12 @@ inline bool
 CNCBlobStorage::AcceptWritesFromPeers(void)
 {
     return m_IsStopWrite != eStopDiskCritical;
+}
+
+inline bool
+CNCBlobStorage::IsDBSizeAlert(void)
+{
+    return m_IsStopWrite != eNoStop;
 }
 
 inline Uint4

@@ -604,18 +604,6 @@ CNetCacheServer::IsDebugMode(void)
     return g_NetcacheServer  &&  g_NetcacheServer->m_DebugMode;
 }
 
-Uint8
-CNetCacheServer::GetDiskFree(void)
-{
-    try {
-        return CFileUtil::GetFreeDiskSpace(g_NCStorage->GetPath());
-    }
-    catch (CFileErrnoException& ex) {
-        ERR_POST(Critical << "Cannot read free disk space: " << ex);
-        return 0;
-    }
-}
-
 
 CNetCacheDApp::CNetCacheDApp(void)
 {

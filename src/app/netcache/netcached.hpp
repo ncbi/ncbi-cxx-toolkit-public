@@ -121,8 +121,6 @@ public:
     int GetUpTime(void);
     /// Get maximum number of connections allowed in the server
     int GetMaxConnections(void);
-    /// Get amount of space available on the disk
-    Uint8 GetDiskFree(void);
 
     static Uint8 GetPreciseTime(void);
     static void CachingCompleted(void);
