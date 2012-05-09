@@ -130,7 +130,7 @@ public:
     virtual void SetMemoryBound(Uint8 membound) { return m_seqdb->SetMemoryBound(membound); }
     virtual int GetSeq(int idx, const char ** buffer) {return m_seqdb->GetSequence(idx, buffer); }
     virtual void RetSequence(const char ** buffer) {  m_seqdb->RetSequence(buffer); }
-    virtual CConstRef<CSeq_id> GetSeqID(int idx) { return m_seqdb->GetSeqIDs(idx).back(); }
+    virtual CConstRef<CSeq_id> GetSeqID(int idx) { return m_seqdb->GetSeqIDs(idx).front(); }
 
 protected:
     CRef<CSeqDB> m_seqdb;
