@@ -54,6 +54,9 @@
 #include <ncbiconf.h>
 
 #ifdef HAVE_INTTYPES_H
+#  ifndef   __STDC_CONSTANT_MACROS
+#    define __STDC_CONSTANT_MACROS
+#  endif /*!__STDC_CONSTANT_MACROS*/
 #  ifndef   __STDC_FORMAT_MACROS
 #    define __STDC_FORMAT_MACROS
 #  endif /*!__STDC_FORMAT_MACROS*/
@@ -78,6 +81,26 @@
 typedef          char  Char;    /**< Alias for char */
 typedef signed   char  Schar;   /**< Alias for signed char */
 typedef unsigned char  Uchar;   /**< Alias for unsigned char */
+
+#ifdef HAVE_INTTYPES_H
+typedef int8_t   Int1;  /**< 1-byte  (8-bit)   signed integer */
+typedef uint8_t  Uint1; /**< 1-byte  (8-bit) unsigned integer */
+typedef int16_t  Int2;  /**< 2-byte (16-bit)   signed integer */
+typedef uint16_t Uint2; /**< 2-byte (16-bit) unsigned integer */
+typedef int32_t  Int4;  /**< 4-byte (32-bit)   signed integer */
+typedef uint32_t Uint4; /**< 4-byte (32-bit) unsigned integer */
+typedef int64_t  Int8;  /**< 8-byte (64-bit)   signed integer */
+typedef uint64_t Uint8; /**< 8-byte (64-bit) unsigned integer */
+/* We still need to know (u)int64_t's ultimate type when defining functions
+ * or operators with one variant per distinct integral type. :-/ */
+#  if SIZEOF_LONG == 8  &&  !defined(NCBI_OS_DARWIN)
+#    define NCBI_INT8_IS_LONG      1
+#  elif SIZEOF_LONG_LONG == 8
+#    define NCBI_INT8_IS_LONG_LONG 1
+#  elif SIZEOF___INT64 == 8
+#    define NCBI_INT8_IS_INT64     1
+#  endif
+#else
 typedef signed   char  Int1;    /**< Alias for signed char */
 typedef unsigned char  Uint1;   /**< Alias for unsigned char */
 typedef signed   short Int2;    /**< Alias for signed short */
@@ -89,20 +112,20 @@ typedef unsigned int   Uint4;   /**< Alias for unsigned int */
 /* Int8, Uint8
  */
 
-#if   (SIZEOF_LONG == 8)
-#  define NCBI_INT8_TYPE         long
-#  define NCBI_INT8_IS_LONG      1
-#elif (SIZEOF_LONG_LONG == 8)
-#  define NCBI_INT8_TYPE         long long
-#  define NCBI_INT8_IS_LONG_LONG 1
-#elif (SIZEOF___INT64 == 8)
-#  define NCBI_INT8_TYPE         __int64
-#  define NCBI_INT8_IS_INT64     1
+#  if   (SIZEOF_LONG == 8)
+#    define NCBI_INT8_TYPE         long
+#    define NCBI_INT8_IS_LONG      1
+#  elif (SIZEOF_LONG_LONG == 8)
+#    define NCBI_INT8_TYPE         long long
+#    define NCBI_INT8_IS_LONG_LONG 1
+#  elif (SIZEOF___INT64 == 8)
+#    define NCBI_INT8_TYPE         __int64
+#    define NCBI_INT8_IS_INT64     1
 /** @deprecated  Use NCBI_INT8_IS_INT64 instead */
-#  define NCBI_USE_INT64         1
-#else
-#  error "This platform does not support 8-byte integer"
-#endif
+#    define NCBI_USE_INT64         1
+#  else
+#    error "This platform does not support 8-byte integer"
+#  endif
 
 /** Signed 8 byte sized integer */
 typedef signed   NCBI_INT8_TYPE Int8;    
@@ -110,6 +133,7 @@ typedef signed   NCBI_INT8_TYPE Int8;
 /** Unsigned 8 byte sized integer */
 typedef unsigned NCBI_INT8_TYPE Uint8;
 
+#endif /* HAVE_INTTYPES_H */
 
 /* BigScalar
  */
@@ -172,7 +196,12 @@ typedef unsigned long long uintptr_t;
 /* Macros for constant values definition 
  */
 
-#if (SIZEOF_LONG == 8)
+#ifdef HAVE_INTTYPES_H
+#  define NCBI_CONST_INT8(v)     INT64_C(v)
+#  define NCBI_CONST_UINT8(v)   UINT64_C(v)
+#  define NCBI_INT8_FORMAT_SPEC  PRId64
+#  define NCBI_UINT8_FORMAT_SPEC PRIu64
+#elif (SIZEOF_LONG == 8)
 #  define NCBI_CONST_INT8(v)   v##L
 #  define NCBI_CONST_UINT8(v)  v##UL
 #  define NCBI_INT8_FORMAT_SPEC   "ld"
