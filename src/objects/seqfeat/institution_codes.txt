@@ -2432,6 +2432,7 @@ IFAN	s	Institut Fondamental d'Afrique Noire
 IFBM	c	Streptokokken Sammlung
 IFE	s	Obafemi Awolowo University, Botany Department
 IFFB	s	Institut fuer Forstenentomologie und Forstschutz
+IFG<USA-CA>	s	Institute of Forest Genetics
 IFGD	s	Idaho Fish and Game
 IFGH	s	Idaho Fish and Game Department
 IFGP	s	Pacific Southwest Research Station, USDA Forest Service
