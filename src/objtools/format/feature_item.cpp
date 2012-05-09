@@ -98,6 +98,7 @@
 #include <util/sequtil/sequtil_convert.hpp>
 
 #include <algorithm>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/context.hpp>
@@ -1719,9 +1720,9 @@ public:
             }
         }
 
-        ENa_strand candidate_feat_original_strand = eNa_strand_other;
-
         // determine if the candidate feat location is mixed-strand
+        
+        ENa_strand candidate_feat_original_strand = eNa_strand_other;
         
         const bool candidate_feat_is_mixed = s_IsMixedStrand( m_BioseqHandle, *candidate_feat_loc );
 
@@ -1763,7 +1764,7 @@ public:
                 if( piece_comparison != sequence::eNoOverlap ) 
                 {
                     if( x_StrandsMatch( m_Loc_original_strand, candidate_feat_loc_iter.GetStrand() ) ) {
-                        // mismatched strands; skip this feature
+                        // matching strands; don't skip this feature
                         shouldContinueToNextIteration = false;
                         break;
                     }
@@ -1771,7 +1772,7 @@ public:
             }
 
             if( x_StrandsMatch( m_Loc_original_strand, candidate_feat_original_strand ) ) {
-                // mismatched strands; skip this feature
+                // matching strands; don't skip this feature
                 shouldContinueToNextIteration = false;
             }
         } else {
@@ -1890,6 +1891,15 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
     const CGene_ref* filtering_gene_xref) const
 {
+    const static string kGbLoader = "GBLOADER";
+    bool needToAddGbLoaderBack = false;
+    if( scope && ( ctx.IsEMBL() || ctx.IsDDBJ() ) && 
+        scope->GetObjectManager().FindDataLoader(kGbLoader) ) 
+    {
+        scope->RemoveDataLoader(kGbLoader);
+        needToAddGbLoaderBack = true;
+    }
+
     CConstRef<CSeq_feat> feat;
     feat = x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
         ctx, scope, location, sought_type,
@@ -1898,6 +1908,10 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
         feat = x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
             ctx, scope, location, sought_type,
             filtering_gene_xref );
+    }
+
+    if( needToAddGbLoaderBack ) {
+        scope->AddDataLoader(kGbLoader);
     }
 
     return feat;
