@@ -240,6 +240,12 @@ void CNetScheduleServer::PrintTransitionCounters(CNetScheduleHandler &  handler)
 }
 
 
+void CNetScheduleServer::PrintJobsStat(CNetScheduleHandler &  handler)
+{
+    m_QueueDB->PrintJobsStat(handler);
+}
+
+
 bool CNetScheduleServer::AdminHostValid(unsigned host) const
 {
     return !m_AdminHosts.IsRestrictionSet() ||

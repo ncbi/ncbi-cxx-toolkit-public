@@ -850,6 +850,17 @@ void CQueueDataBase::PrintTransitionCounters(CNetScheduleHandler &  handler)
 }
 
 
+void CQueueDataBase::PrintJobsStat(CNetScheduleHandler &  handler)
+{
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        handler.WriteMessage("OK:[queue " + it.GetName() + "]");
+        // Group and affinity tokens make no sense for the server,
+        // so they are both "".
+        (*it).PrintJobsStat(handler, "", "");
+    }
+}
+
+
 void CQueueDataBase::NotifyListeners(void)
 {
     time_t      current_time = time(0);

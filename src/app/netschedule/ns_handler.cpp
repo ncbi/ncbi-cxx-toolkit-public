@@ -1789,17 +1789,21 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     time_t              curr   = time(0);
 
     if (q == NULL) {
-        // Transition counters for all the queues
-        WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
-        if (m_Server->GetRefuseSubmits())
-            WriteMessage("OK:SubmitsDisabledEffective: 1");
-        else
-            WriteMessage("OK:SubmitsDisabledEffective: 0");
-        if (m_Server->IsDrainShutdown())
-            WriteMessage("OK:DrainedShutdown: 1");
-        else
-            WriteMessage("OK:DrainedShutdown: 0");
-        m_Server->PrintTransitionCounters(*this);
+        if (what == "JOBS")
+            m_Server->PrintJobsStat(*this);
+        else {
+            // Transition counters for all the queues
+            WriteMessage("OK:Started: ", m_Server->GetStartTime().AsString());
+            if (m_Server->GetRefuseSubmits())
+                WriteMessage("OK:SubmitsDisabledEffective: 1");
+            else
+                WriteMessage("OK:SubmitsDisabledEffective: 0");
+            if (m_Server->IsDrainShutdown())
+                WriteMessage("OK:DrainedShutdown: 1");
+            else
+                WriteMessage("OK:DrainedShutdown: 0");
+            m_Server->PrintTransitionCounters(*this);
+        }
         WriteMessage("OK:END");
         x_PrintRequestStop(eStatus_OK);
         return;

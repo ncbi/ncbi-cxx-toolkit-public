@@ -94,6 +94,7 @@ public:
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
+    void PrintJobsStat(CNetScheduleHandler &  handler);
 
     bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }

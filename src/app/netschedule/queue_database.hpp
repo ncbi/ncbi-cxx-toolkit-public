@@ -193,6 +193,7 @@ public:
     }
 
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
+    void PrintJobsStat(CNetScheduleHandler &  handler);
 
 private:
     // No copy
