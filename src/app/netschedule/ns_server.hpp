@@ -44,6 +44,8 @@ BEGIN_NCBI_SCOPE
 class CQueueDataBase;
 class CNetScheduleHandler;
 
+const unsigned int   kSubmitCounterInitialValue = 1000000000;
+
 
 //////////////////////////////////////////////////////////////////////////
 /// NetScheduler threaded server
@@ -64,6 +66,7 @@ public:
     void SetQueueDB(CQueueDataBase* qdb);
 
     void SetShutdownFlag(int signum = 0);
+    bool GetShutdownFlag(void) const { return m_Shutdown; }
 
     const bool &  IsLog() const                       { return m_LogFlag; }
     const bool &  IsLogBatchEachJob() const           { return m_LogBatchEachJobFlag; }
@@ -114,6 +117,11 @@ public:
     unsigned GetAffinityHighRemoval(void) const         { return m_AffinityHighRemoval; }
     unsigned GetAffinityLowRemoval(void) const          { return m_AffinityLowRemoval; }
     unsigned GetAffinityDirtPercentage(void) const      { return m_AffinityDirtPercentage; }
+    bool IsDrainShutdown(void) const                   { return m_CurrentSubmitsCounter.Get() < kSubmitCounterInitialValue; }
+    void SetDrainShutdown(void)                         { m_CurrentSubmitsCounter.Add(-1*kSubmitCounterInitialValue); }
+    unsigned int  GetCurrentSubmitsCounter(void)        { return m_CurrentSubmitsCounter.Get(); }
+    unsigned int  IncrementCurrentSubmitsCounter(void)  { return m_CurrentSubmitsCounter.Add(1); }
+    unsigned int  DecrementCurrentSubmitsCounter(void)  { return m_CurrentSubmitsCounter.Add(-1); }
 
     bool AdminHostValid(unsigned host) const;
     bool IsAdminClientName(const string &  name) const;
@@ -149,6 +157,10 @@ private:
     bool                                        m_LogStatisticsThreadFlag;
 
     bool                                        m_RefuseSubmits;
+
+    // Support for shutdown with drain
+    CAtomicCounter                              m_CurrentSubmitsCounter;
+
 
     // Purge() related parameters
     unsigned int                                m_DeleteBatchSize;  // Max # of jobs to be deleted

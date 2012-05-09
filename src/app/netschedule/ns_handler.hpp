@@ -235,6 +235,7 @@ private:
     unsigned                        m_BatchSubmTimeout;
     std::string                     m_BatchClientIP;
     std::string                     m_BatchClientSID;
+    bool                            m_WithinBatchSubmit;
 
     /// Quick local timer
     CFastLocalTime                  m_LocalTimer;

@@ -254,7 +254,7 @@ int CNetScheduleDApp::Run(void)
         qdb->RunExecutionWatcherThread(min_run_timeout);
         qdb->RunPurgeThread();
         qdb->RunNotifThread();
-        qdb->RunStatisticsThread();
+        qdb->RunServiceThread();
 
         server->SetQueueDB(qdb.release());
 

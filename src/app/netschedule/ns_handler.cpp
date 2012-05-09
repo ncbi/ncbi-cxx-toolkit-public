@@ -74,7 +74,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
 
     /*** Admin role ***/
     { "SHUTDOWN",      { &CNetScheduleHandler::x_ProcessShutdown,
-                         eNSCR_Admin } },
+                         eNSCR_Admin },
+        { { "drain", eNSPT_Int, eNSPA_Optional, 0 } } },
     { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
                          eNSCR_Admin } },
     { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
@@ -360,6 +361,7 @@ CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
       m_Server(server),
       m_BatchSize(0),
       m_BatchPos(0),
+      m_WithinBatchSubmit(false),
       m_SingleCmdParser(sm_CommandMap),
       m_BatchHeaderParser(sm_BatchHeaderMap),
       m_BatchEndParser(sm_BatchEndMap)
@@ -404,6 +406,11 @@ void CNetScheduleHandler::OnWrite()
 
 void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
 {
+    if (m_WithinBatchSubmit) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
+    }
+
     // It's possible that this method will be called before OnOpen - when
     // connection is just created and server is shutting down. In this case
     // OnOpen will never be called.
@@ -905,10 +912,14 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
         (this->*cmd.command->extra.processor)(0);
     }
     catch (const CNSProtoParserException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_OnCmdParserError(false, ex.GetMsg(), ", BTCH or ENDS expected");
         return;
     }
     catch (const CNetScheduleException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
                                       ":" + ex.GetMsg());
         ERR_POST("Server error: " << ex);
@@ -918,9 +929,22 @@ void CNetScheduleHandler::x_ProcessMsgBatchHeader(BUF buffer)
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
     }
     catch (const CException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                                       "Error processing BTCH or ENDS.");
         ERR_POST("Error processing command: " << ex);
+        x_PrintRequestStop(eStatus_BadRequest);
+
+        m_BatchJobs.clear();
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+    }
+    catch (...) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
+        x_WriteMessageNoThrow("ERR:", "eInternalError:Unknown error "
+                                      "while expecting BTCH or ENDS.");
+        ERR_POST("Unknown error while expecting BTCH or ENDS");
         x_PrintRequestStop(eStatus_BadRequest);
 
         m_BatchJobs.clear();
@@ -943,10 +967,14 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         m_CommandArguments.AssignValues(params);
     }
     catch (const CNSProtoParserException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_OnCmdParserError(false, ex.GetMsg(), "");
         return;
     }
     catch (const CNetScheduleException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_WriteMessageNoThrow("ERR:", string(ex.GetErrCodeString()) +
                                       ":" + ex.GetMsg());
         ERR_POST(ex.GetMsg());
@@ -957,6 +985,8 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         return;
     }
     catch (const CException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                                       "Invalid batch submission, syntax error");
         ERR_POST("Error processing command: " << ex);
@@ -967,6 +997,8 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         return;
     }
     catch (...) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                                       "Arguments parsing unknown exception");
         ERR_POST("Arguments parsing unknown exception. Batch submit is rejected.");
@@ -1004,14 +1036,30 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         m_BatchEndParser.ParseCommand(msg);
     }
     catch (const CNSProtoParserException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         x_OnCmdParserError(false, ex.GetMsg(), ", ENDB expected");
         return;
     }
     catch (const CException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         BUF_Read(buffer, 0, BUF_Size(buffer));
         x_WriteMessageNoThrow("ERR:", "eProtocolSyntaxError:"
                               "Batch submit error - unexpected end of batch");
         ERR_POST("Error processing command: " << ex);
+        x_PrintRequestStop(eStatus_BadRequest);
+
+        m_BatchJobs.clear();
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        return;
+    }
+    catch (...) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
+        x_WriteMessageNoThrow("ERR:", "eInternalError:"
+                              "Unknown error while expecting ENDB.");
+        ERR_POST("Unknown error while expecting ENDB.");
         x_PrintRequestStop(eStatus_BadRequest);
 
         m_BatchJobs.clear();
@@ -1057,6 +1105,8 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
 
     }
     catch (const CNetScheduleException &  ex) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         if (m_Server->IsLog()) {
             CDiagContext::GetRequestContext().SetRequestStatus(ex.ErrCodeToHTTPStatusCode());
             GetDiagContext().PrintRequestStop();
@@ -1067,6 +1117,8 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         throw;
     }
     catch (...) {
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
         if (m_Server->IsLog()) {
             CDiagContext::GetRequestContext().SetRequestStatus(eStatus_ServerError);
             GetDiagContext().PrintRequestStop();
@@ -1190,6 +1242,15 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
         return;
     }
 
+    if (m_Server->IncrementCurrentSubmitsCounter() < kSubmitCounterInitialValue) {
+        // This is a drained shutdown mode
+        m_Server->DecrementCurrentSubmitsCounter();
+        WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintRequestStop(eStatus_SubmitRefused);
+        return;
+    }
+
+
     CJob        job(m_CommandArguments);
 
     // Never leave Client IP empty, if we're not provided with a real one,
@@ -1200,9 +1261,15 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
         job.SetClientIP(s_ip);
     }
 
-    WriteMessage("OK:", q->MakeKey(q->Submit(m_ClientId, job,
+    try {
+        WriteMessage("OK:", q->MakeKey(q->Submit(m_ClientId, job,
                                              m_CommandArguments.affinity_token,
                                              m_CommandArguments.group)));
+        m_Server->DecrementCurrentSubmitsCounter();
+    } catch (...) {
+        m_Server->DecrementCurrentSubmitsCounter();
+        throw;
+    }
 
     // There is no need to log the job key, it is logged at lower level
     // together with all the submitted job parameters
@@ -1218,16 +1285,37 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
         return;
     }
 
-    m_BatchSubmPort    = m_CommandArguments.port;
-    m_BatchSubmTimeout = m_CommandArguments.timeout;
-    if (!m_CommandArguments.ip.empty())
-        m_BatchClientIP = m_CommandArguments.ip;
-    else
-        NS_FormatIPAddress(m_ClientId.GetAddress(), m_BatchClientIP);
-    m_BatchClientSID   = m_CommandArguments.sid;
-    m_BatchGroup       = m_CommandArguments.group;
-    WriteMessage("OK:Batch submit ready");
-    m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgBatchHeader;
+    if (m_Server->IncrementCurrentSubmitsCounter() < kSubmitCounterInitialValue) {
+        // This is a drained shutdown mode
+        m_Server->DecrementCurrentSubmitsCounter();
+        WriteMessage("ERR:eSubmitsDisabled:");
+        x_PrintRequestStop(eStatus_SubmitRefused);
+        return;
+    }
+
+    try {
+        // Memorize the fact that batch submit started
+        m_WithinBatchSubmit = true;
+
+        m_BatchSubmPort    = m_CommandArguments.port;
+        m_BatchSubmTimeout = m_CommandArguments.timeout;
+        if (!m_CommandArguments.ip.empty())
+            m_BatchClientIP = m_CommandArguments.ip;
+        else
+            NS_FormatIPAddress(m_ClientId.GetAddress(), m_BatchClientIP);
+        m_BatchClientSID   = m_CommandArguments.sid;
+        m_BatchGroup       = m_CommandArguments.group;
+
+        WriteMessage("OK:Batch submit ready");
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgBatchHeader;
+    }
+    catch (...) {
+        // WriteMessage can generate an exception
+        m_WithinBatchSubmit = false;
+        m_Server->DecrementCurrentSubmitsCounter();
+        m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
+        throw;
+    }
 }
 
 
@@ -1248,6 +1336,8 @@ void CNetScheduleHandler::x_ProcessBatchStart(CQueue*)
 
 void CNetScheduleHandler::x_ProcessBatchSequenceEnd(CQueue*)
 {
+    m_WithinBatchSubmit = false;
+    m_Server->DecrementCurrentSubmitsCounter();
     m_BatchJobs.clear();
     m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgRequest;
     WriteMessage("OK:");
@@ -1705,6 +1795,10 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             WriteMessage("OK:SubmitsDisabledEffective: 1");
         else
             WriteMessage("OK:SubmitsDisabledEffective: 0");
+        if (m_Server->IsDrainShutdown())
+            WriteMessage("OK:DrainedShutdown: 1");
+        else
+            WriteMessage("OK:DrainedShutdown: 0");
         m_Server->PrintTransitionCounters(*this);
         WriteMessage("OK:END");
         x_PrintRequestStop(eStatus_OK);
@@ -1905,9 +1999,25 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
 {
+    if (m_CommandArguments.drain) {
+        if (m_Server->GetShutdownFlag()) {
+            WriteMessage("ERR:eShuttingDown:The server is in shutting down state");
+            x_PrintRequestStop(eStatus_BadRequest);
+            return;
+        }
+        WriteMessage("OK:");
+        x_PrintRequestStop(eStatus_OK);
+        m_Server->SetRefuseSubmits(true);
+        m_Server->SetDrainShutdown();
+        return;
+    }
+
+    // Unconditional immediate shutdown.
     x_PrintRequestStop(eStatus_OK);
     WriteMessage("OK:");
+    m_Server->SetRefuseSubmits(true);
     m_Server->SetShutdownFlag();
+    return;
 }
 
 
@@ -2144,6 +2254,14 @@ void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
 {
+    if (m_CommandArguments.mode == false &&
+            (m_Server->IsDrainShutdown() || m_Server->GetShutdownFlag())) {
+        WriteMessage("ERR:eShuttingDown:"
+                     "Server is in drained shutting down state");
+        x_PrintRequestStop(eStatus_BadRequest);
+        return;
+    }
+
     if (q == NULL) {
         // This is a whole server scope request
         m_Server->SetRefuseSubmits(m_CommandArguments.mode);

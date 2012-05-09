@@ -67,6 +67,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID())
 {
+    m_CurrentSubmitsCounter.Set(kSubmitCounterInitialValue);
     m_AtomicCommandNumber.Set(1);
     sm_netschedule_server = this;
 }
@@ -313,7 +314,7 @@ CNetScheduleServer*  CNetScheduleServer::GetInstance(void)
 
 void CNetScheduleServer::Exit()
 {
-    m_QueueDB->Close();
+    m_QueueDB->Close(IsDrainShutdown());
 }
 
 

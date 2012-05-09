@@ -150,16 +150,16 @@ public:
         TJobStatus status,
         bool       set_clear);
 
-    /// Return number of jobs in specified status
-    unsigned CountStatus(TJobStatus status) const;
+    // Return number of jobs in specified status/statuses
+    unsigned int  CountStatus(TJobStatus  status) const;
+    unsigned int  CountStatus(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
 
-    /// Count all status vectors using candidate_set(optional) as a mask
-    /// (AND_COUNT)
-    void CountStatus(TStatusSummaryMap*  status_map,
-                     const TNSBitVector* candidate_set);
+    // Count all jobs in any status
+    unsigned int  Count(void) const;
 
-    /// Count all jobs in any status
-    unsigned Count(void);
+    bool  AnyJobs(void) const;
+    bool  AnyJobs(TJobStatus  status) const;
+    bool  AnyJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
 
     void StatusStatistics(TJobStatus                status,
                           TNSBitVector::statistics* st) const;

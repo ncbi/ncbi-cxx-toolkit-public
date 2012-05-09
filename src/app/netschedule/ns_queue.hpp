@@ -56,7 +56,7 @@
 #include "ns_clients_registry.hpp"
 #include "ns_notifications.hpp"
 #include "queue_clean_thread.hpp"
-#include "ns_statistics_thread.hpp"
+#include "ns_statistics_counters.hpp"
 #include "ns_group.hpp"
 #include "ns_gc_registry.hpp"
 
@@ -346,6 +346,11 @@ public:
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
+    unsigned int  CountActiveJobs(void) const;
+    unsigned int  CountAllJobs(void) const
+    { return m_StatusTracker.Count(); }
+    bool  AnyJobs(void) const
+    { return m_StatusTracker.AnyJobs(); }
 
 private:
     friend class CNSTransaction;

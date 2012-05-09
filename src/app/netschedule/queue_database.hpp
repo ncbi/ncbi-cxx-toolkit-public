@@ -54,7 +54,7 @@
 #include "queue_vc.hpp"
 #include "background_host.hpp"
 #include "queue_coll.hpp"
-#include "ns_statistics_thread.hpp"
+#include "ns_service_thread.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -121,7 +121,9 @@ public:
     unsigned Configure(const IRegistry& reg);
 
     // Count Pending and Running jobs in all queues
-    unsigned CountActiveJobs() const;
+    unsigned int  CountActiveJobs(void) const;
+    unsigned int  CountAllJobs(void) const;
+    bool  AnyJobs(void) const;
 
     CRef<CQueue> OpenQueue(const string& name);
 
@@ -142,7 +144,7 @@ public:
     void UpdateQueueParameters(const string& qname,
                                const SQueueParameters& params);
 
-    void Close(void);
+    void Close(bool  drained_shutdown);
     bool QueueExists(const string& qname) const
     { return m_QueueCollection.QueueExists(qname); }
 
@@ -163,8 +165,8 @@ public:
 
     // Print statistics
     void PrintStatistics(size_t &  aff_count);
-    void RunStatisticsThread(void);
-    void StopStatisticsThread(void);
+    void RunServiceThread(void);
+    void StopServiceThread(void);
 
     void CheckExecutionTimeout(bool  logging);
     void RunExecutionWatcherThread(unsigned run_delay);
@@ -229,7 +231,7 @@ private:
     CQueueDbBlockArray                      m_QueueDbBlockArray;
 
     CRef<CJobQueueCleanerThread>            m_PurgeThread;
-    CRef<CStatisticsThread>                 m_StatisticsThread;
+    CRef<CServiceThread>                    m_ServiceThread;
 
     bool                 m_StopPurge;         ///< Purge stop flag
     CFastMutex           m_PurgeLock;
@@ -257,6 +259,8 @@ private:
                                              time_t         current_time,
                                              size_t &       total_scanned,
                                              size_t &       total_mark_deleted);
+    void  x_SetSignallingFile(bool  drained);
+    bool  x_IsDBDrained(void) const;
 
 }; // CQueueDataBase
 

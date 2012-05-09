@@ -25,7 +25,7 @@
  *
  * Authors:  Denis Vakatov (design), Sergey Satskiy (implementation)
  *
- * File Description: NetSchedule statistics thread
+ * File Description: NetSchedule statistics counters
  *
  *
  */
@@ -34,7 +34,7 @@
 #include <corelib/request_ctx.hpp>
 
 #include "queue_database.hpp"
-#include "ns_statistics_thread.hpp"
+#include "ns_statistics_counters.hpp"
 #include "ns_handler.hpp"
 
 
@@ -504,42 +504,6 @@ string  CStatisticsCounters::x_GetTransitionCounterName(size_t  index_from,
            s_ValidStatusesNames[index_to];
 }
 
-
-
-
-void CStatisticsThread::DoJob(void)
-{
-    if (!m_Host.ShouldRun())
-        return;
-
-    if (!m_StatisticsLogging)
-        return;
-
-    CRef<CRequestContext>   ctx;
-
-    // Prepare the logging context
-    ctx.Reset(new CRequestContext());
-    ctx->SetRequestID();
-
-
-    CDiagContext &      diag_context = GetDiagContext();
-
-    diag_context.SetRequestContext(ctx);
-    diag_context.PrintRequestStart()
-                .Print("_type", "statistics_thread");
-
-    // Print statistics for all the queues
-    size_t      aff_count = 0;
-    m_QueueDB.PrintStatistics(aff_count);
-    CStatisticsCounters::PrintTotal(aff_count);
-
-    // Close the logging context
-    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
-    diag_context.PrintRequestStop();
-    ctx.Reset();
-    diag_context.SetRequestContext(NULL);
-    return;
-}
 
 END_NCBI_SCOPE
 

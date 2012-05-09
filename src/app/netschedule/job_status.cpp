@@ -89,38 +89,65 @@ unsigned CJobStatusTracker::CountStatus(TJobStatus status) const
 }
 
 
-void CJobStatusTracker::CountStatus(TStatusSummaryMap *     status_map,
-                                    const TNSBitVector *    candidate_set)
+unsigned int
+CJobStatusTracker::CountStatus(const vector<CNetScheduleAPI::EJobStatus> &
+                                                              statuses) const
 {
-    _ASSERT(status_map);
-    status_map->clear();
+    unsigned int    cnt = 0;
+    CReadLockGuard  guard(m_Lock);
 
-    CReadLockGuard      guard(m_Lock);
+    for (vector<CNetScheduleAPI::EJobStatus>::const_iterator  k = statuses.begin();
+         k != statuses.end(); ++k)
+        cnt += m_StatusStor[(int)(*k)]->count();
 
-    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
-        const TNSBitVector &    bv = *m_StatusStor[g_ValidJobStatuses[k]];
-        unsigned                cnt;
-
-        if (candidate_set)
-            cnt = bm::count_and(bv, *candidate_set);
-        else
-            cnt = bv.count();
-
-        (*status_map)[g_ValidJobStatuses[k]] = cnt;
-    }
+    return cnt;
 }
 
 
-unsigned int  CJobStatusTracker::Count(void)
+unsigned int  CJobStatusTracker::Count(void) const
 {
-    CReadLockGuard  guard(m_Lock);
     unsigned int    cnt = 0;
+    CReadLockGuard  guard(m_Lock);
 
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k)
         cnt += m_StatusStor[g_ValidJobStatuses[k]]->count();
 
     return cnt;
 }
+
+
+bool  CJobStatusTracker::AnyJobs(void) const
+{
+    CReadLockGuard  guard(m_Lock);
+
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k)
+        if (m_StatusStor[g_ValidJobStatuses[k]]->any())
+            return true;
+    return false;
+}
+
+
+bool  CJobStatusTracker::AnyJobs(TJobStatus  status) const
+{
+    CReadLockGuard      guard(m_Lock);
+
+    return m_StatusStor[(int)status]->any();
+}
+
+
+bool  CJobStatusTracker::AnyJobs(
+                const vector<CNetScheduleAPI::EJobStatus> &  statuses) const
+{
+    CReadLockGuard  guard(m_Lock);
+
+    for (vector<CNetScheduleAPI::EJobStatus>::const_iterator  k = statuses.begin();
+         k != statuses.end(); ++k)
+        if (m_StatusStor[(int)(*k)]->any())
+            return true;
+
+    return false;
+}
+
 
 
 void CJobStatusTracker::StatusStatistics(TJobStatus                  status,

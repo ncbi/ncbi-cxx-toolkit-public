@@ -182,7 +182,7 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server)
 CQueueDataBase::~CQueueDataBase()
 {
     try {
-        Close();
+        Close(false);
     } catch (exception& )
     {}
 }
@@ -194,7 +194,7 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
     const string&   db_path     = params.db_path;
     const string&   db_log_path = params.db_log_path;
     if (reinit) {
-        CDir dir(db_path);
+        CDir    dir(db_path);
 
         dir.Remove();
         LOG_POST(Message << Warning
@@ -202,6 +202,16 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
     }
 
     m_Path = CDirEntry::AddTrailingPathSeparator(db_path);
+
+    if (x_IsDBDrained()) {
+        CDir    dir(db_path);
+
+        dir.Remove();
+        LOG_POST(Message << Warning
+                         << "Reinitialization due to the DB was drained "
+                            "on last shutdown. " << db_path << " removed.");
+    }
+
     string trailed_log_path = CDirEntry::AddTrailingPathSeparator(db_log_path);
 
     const string* effective_log_path = trailed_log_path.empty() ?
@@ -216,6 +226,7 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
             dir.Create();
         }
     }}
+    x_SetSignallingFile(false);
 
     string      db_storage_ver;
     CFile       ver_file(CFile::MakePath(m_Path, "DB_STORAGE_VER"));
@@ -596,18 +607,39 @@ unsigned CQueueDataBase::Configure(const IRegistry& reg)
 }
 
 
-unsigned CQueueDataBase::CountActiveJobs() const
+unsigned int  CQueueDataBase::CountActiveJobs(void) const
 {
-    unsigned            cnt = 0;
+    unsigned int        cnt = 0;
     CFastMutexGuard     guard(m_ConfigureLock);
 
     ITERATE(CQueueCollection, it, m_QueueCollection) {
-        TNSBitVector bv;
-        (*it).JobsWithStatus(CNetScheduleAPI::ePending, &bv);
-        (*it).JobsWithStatus(CNetScheduleAPI::eRunning, &bv);
-        cnt += bv.count();
+        cnt += (*it).CountActiveJobs();
     }
     return cnt;
+}
+
+
+unsigned int  CQueueDataBase::CountAllJobs(void) const
+{
+    unsigned int        cnt = 0;
+    CFastMutexGuard     guard(m_ConfigureLock);
+
+    ITERATE(CQueueCollection, it, m_QueueCollection) {
+        cnt += (*it).CountAllJobs();
+    }
+    return cnt;
+}
+
+
+bool  CQueueDataBase::AnyJobs(void) const
+{
+    CFastMutexGuard     guard(m_ConfigureLock);
+
+    ITERATE(CQueueCollection, it, m_QueueCollection) {
+        if ((*it).AnyJobs())
+            return true;
+    }
+    return false;
 }
 
 
@@ -746,7 +778,7 @@ void CQueueDataBase::UpdateQueueParameters(const string& qname,
 }
 
 
-void CQueueDataBase::Close()
+void CQueueDataBase::Close(bool  drained_shutdown)
 {
     // Check that we're still open
     if (!m_Env)
@@ -754,8 +786,24 @@ void CQueueDataBase::Close()
 
     StopNotifThread();
     StopPurgeThread();
-    StopStatisticsThread();
+    StopServiceThread();
     StopExecutionWatcherThread();
+
+    if (drained_shutdown) {
+        LOG_POST(Message << Warning <<
+                 "Drained shutdown: DB is not closed gracefully.");
+
+        x_CleanParamMap();
+        m_QueueDescriptionDB.Close();
+
+        delete m_Env;
+        m_Env = 0;
+
+        // Put signalling file
+        x_SetSignallingFile(true);
+        return;
+    }
+
 
     m_Env->ForceTransactionCheckpoint();
     m_Env->CleanLog();
@@ -1029,6 +1077,49 @@ bool  CQueueDataBase::x_PurgeQueue(CQueue &      queue,
 }
 
 
+static const char *     drained_file_name =    "DB_DRAINED_Y";
+static const char *     nondrained_file_name = "DB_DRAINED_N";
+
+void  CQueueDataBase::x_SetSignallingFile(bool  drained)
+{
+    try {
+        const char *    src = NULL;
+        const char *    dst = NULL;
+
+        if (drained) {
+            src = nondrained_file_name;
+            dst = drained_file_name;
+        } else {
+            src = drained_file_name;
+            dst = nondrained_file_name;
+        }
+
+        CFile       src_file(CFile::MakePath(m_Path, src));
+        if (src_file.Exists())
+            src_file.Rename(CFile::MakePath(m_Path, dst));
+        else {
+            CFileIO     f;
+            f.Open(CFile::MakePath(m_Path, dst),
+                   CFileIO_Base::eCreate,
+                   CFileIO_Base::eReadWrite);
+            f.Close();
+        }
+    }
+    catch (...) {
+        ERR_POST("Error creating signalling file. "
+                 "The server might not start correct with this DB.");
+    }
+    return;
+}
+
+
+bool  CQueueDataBase::x_IsDBDrained(void) const
+{
+    CFile       drained_file(CFile::MakePath(m_Path, drained_file_name));
+    return drained_file.Exists();
+}
+
+
 unsigned int  CQueueDataBase::x_PurgeUnconditional(void) {
     // Purge unconditional jobs
     unsigned int        del_rec = 0;
@@ -1155,22 +1246,22 @@ void CQueueDataBase::StopNotifThread(void)
 }
 
 
-void CQueueDataBase::RunStatisticsThread(void)
+void CQueueDataBase::RunServiceThread(void)
 {
     // Once in 100 seconds
-    m_StatisticsThread.Reset(new CStatisticsThread(
-                                m_Host, *this, 100,
+    m_ServiceThread.Reset(new CServiceThread(
+                                *m_Server, m_Host, *this,
                                 m_Server->IsLogStatisticsThread()));
-    m_StatisticsThread->Run();
+    m_ServiceThread->Run();
 }
 
 
-void CQueueDataBase::StopStatisticsThread(void)
+void CQueueDataBase::StopServiceThread(void)
 {
-    if (!m_StatisticsThread.Empty()) {
-        m_StatisticsThread->RequestStop();
-        m_StatisticsThread->Join();
-        m_StatisticsThread.Reset(0);
+    if (!m_ServiceThread.Empty()) {
+        m_ServiceThread->RequestStop();
+        m_ServiceThread->Join();
+        m_ServiceThread.Reset(0);
     }
 }
 

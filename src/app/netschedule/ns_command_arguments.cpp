@@ -73,6 +73,7 @@ void SNSCommandArguments::x_Reset()
     wnode_affinity = false;
     exclusive_new_aff = false;
     mode = false;
+    drain = false;
 
     return;
 }
@@ -124,6 +125,13 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
         case 'd':
             if (key == "del")
                 aff_to_del = val;
+            else if (key == "drain") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "drain accepted values are 0 and 1.");
+                drain = (tmp == 1);
+            }
             break;
         case 'e':
             if (key == "err_msg")

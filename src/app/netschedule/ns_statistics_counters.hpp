@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_STATISTICS_THREAD__HPP
-#define NETSCHEDULE_STATISTICS_THREAD__HPP
+#ifndef NETSCHEDULE_STATISTICS_COUNTERS__HPP
+#define NETSCHEDULE_STATISTICS_COUNTERS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,17 +28,15 @@
  *
  * Authors:  Denis Vakatov (design), Sergey Satskiy (implementation)
  *
- * File Description: NetSchedule statistics thread
+ * File Description: NetSchedule statistics counters
  *
  *
  */
 
-#include <util/thread_nonstop.hpp>
 #include "background_host.hpp"
 
 BEGIN_NCBI_SCOPE
 
-class CQueueDataBase;
 class CDiagContext_Extra;
 class CNetScheduleHandler;
 
@@ -104,37 +102,7 @@ private:
 };
 
 
-
-/// Thread class, prints the statistics counters
-///
-/// @internal
-class CStatisticsThread : public CThreadNonStop
-{
-public:
-    CStatisticsThread(CBackgroundHost &   host,
-                      CQueueDataBase &    qdb,
-                      unsigned            run_delay,
-                      const bool &        logging)
-    : CThreadNonStop(run_delay),
-      m_Host(host),
-      m_QueueDB(qdb),
-      m_StatisticsLogging(logging)
-    {}
-
-    virtual void DoJob(void);
-
-private:
-    CStatisticsThread(const CStatisticsThread &);
-    CStatisticsThread &  operator=(const CStatisticsThread &);
-
-private:
-    CBackgroundHost &       m_Host;
-    CQueueDataBase &        m_QueueDB;
-    const bool &            m_StatisticsLogging;
-};
-
-
 END_NCBI_SCOPE
 
-#endif /* NETSCHEDULE_STATISTICS_THREAD__HPP */
+#endif /* NETSCHEDULE_STATISTICS_COUNTERS__HPP */
 

@@ -2922,6 +2922,16 @@ void CQueue::PrintJobsStat(CNetScheduleHandler &  handler,
 }
 
 
+unsigned int CQueue::CountActiveJobs(void) const
+{
+    vector<CNetScheduleAPI::EJobStatus>     statuses;
+
+    statuses.push_back(CNetScheduleAPI::ePending);
+    statuses.push_back(CNetScheduleAPI::eRunning);
+    return m_StatusTracker.CountStatus(statuses);
+}
+
+
 void CQueue::x_UpdateDB_PutResultNoLock(unsigned             job_id,
                                         const string &       auth_token,
                                         time_t               curr,
