@@ -10,7 +10,7 @@
 # Meta-makefile
 #################################
 
-EXPENDABLE_LIB_PROJ = xprimer
+LIB_PROJ = xprimer
 
 
 srcdir = @srcdir@
