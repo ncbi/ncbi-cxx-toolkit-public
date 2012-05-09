@@ -22432,11 +22432,16 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+#include <time.h>
+extern "C" {
 #include <gssapi/gssapi_krb5.h>
+}
 int
 main ()
 {
-krb5_gss_register_acceptor_identity("foo");
+OM_uint32 min_stat;
+     gss_buffer_desc buf;
+     gss_release_buffer(&min_stat, &buf);
   ;
   return 0;
 }

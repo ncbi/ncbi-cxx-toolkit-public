@@ -3812,8 +3812,13 @@ else
    KRB5_CONFIG_LIBS=$KRB5_LIBS
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(krb5, KRB5, gssapi_krb5,
- [[AC_LANG_PROGRAM([[#include <gssapi/gssapi_krb5.h>]],
-   [[krb5_gss_register_acceptor_identity("foo");]])]],
+ [[AC_LANG_PROGRAM([[#include <time.h>
+extern "C" {
+#include <gssapi/gssapi_krb5.h>
+}]],
+   [[OM_uint32 min_stat;
+     gss_buffer_desc buf;
+     gss_release_buffer(&min_stat, &buf);]])]],
  $KRB5_CONFIG_LIBS)
 if test "x$with_krb5" != xno; then
    NCBI_RPATHIFY_OUTPUT(KRB5_LIBS, [echo $KRB5_CONFIG_LIBS], [$no_usr_lib])
