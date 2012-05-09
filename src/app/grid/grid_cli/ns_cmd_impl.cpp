@@ -214,13 +214,7 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
         PrintNetScheduleStats_Generic(eNetScheduleStatNotifications);
     else if (IsOptionSet(eAffinityInfo))
         PrintNetScheduleStats_Generic(eNetScheduleStatAffinities);
-    else if (IsOptionSet(eActiveJobCount)) {
-        printf(m_Opts.output_format == eHumanReadable ?
-                "Total number of running and pending jobs in all queues: %u\n" :
-                    m_Opts.output_format == eRaw ? "%u\n" :
-                        "{\n\t\"active_job_count\": %u\n}\n",
-                m_NetScheduleAdmin.CountActiveJobs());
-    } else if (IsOptionSet(eJobsByAffinity)) {
+    else if (IsOptionSet(eJobsByAffinity)) {
         CNetScheduleAdmin::TAffinityMap affinity_map;
 
         m_NetScheduleAdmin.AffinitySnapshot(affinity_map);

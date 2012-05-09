@@ -112,7 +112,6 @@ enum EOption {
     eClientInfo,
     eNotificationInfo,
     eAffinityInfo,
-    eActiveJobCount,
     eJobsByAffinity,
     eJobsByStatus,
     eStartAfterJob,

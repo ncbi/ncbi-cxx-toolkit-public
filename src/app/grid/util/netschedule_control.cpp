@@ -168,8 +168,6 @@ void CNetScheduleControl::Init(void)
                              "Cancel a job",
                              CArgDescriptions::eString);
 
-    arg_desc->AddFlag("count_active", "Count active jobs in all queues");
-
     arg_desc->AddOptionalKey("fields",
                              "fields_list",
                              "Fields (separated by ',') which should be returned by query",
@@ -203,9 +201,6 @@ int CNetScheduleControl::Run(void)
         ctl = x_CreateNewClient(false);
         ctl.GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
         os << "Die request has been sent to server" << endl;
-    }
-    else if (args["count_active"]) {
-        os << x_CreateNewClient(false).GetAdmin().CountActiveJobs() << endl;
     }
     else if (args["reconf"]) {
         ctl = x_CreateNewClient(false);

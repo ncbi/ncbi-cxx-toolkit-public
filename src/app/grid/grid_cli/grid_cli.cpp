@@ -200,10 +200,6 @@ struct SOptionDefinition {
         "affinity-info", "Print information on the "
             "currently handled affinities."},
 
-    {CCommandLineParser::eSwitch, eActiveJobCount,
-        "active-job-count", "Only print the total number of "
-            "Pending and Running jobs in all queues combined."},
-
     {CCommandLineParser::eSwitch, eJobsByAffinity,
         "jobs-by-affinity", "For each affinity, print the number "
             "of pending jobs associated with it."},
@@ -687,7 +683,7 @@ struct SCommandDefinition {
         "\"human-readable\" is assumed.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
             eJobGroupInfo, eClientInfo, eNotificationInfo, eAffinityInfo,
-            eActiveJobCount, eJobsByAffinity, eJobsByStatus,
+            eJobsByAffinity, eJobsByStatus,
             eAffinity, eJobGroup, eVerbose, eOutputFormat,
             eCompatMode, eAuth, eClientNode, eClientSession, -1},
             {eHumanReadable, eRaw, eJSON, -1}},

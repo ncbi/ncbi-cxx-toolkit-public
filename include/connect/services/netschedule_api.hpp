@@ -761,8 +761,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     void PrintQueueInfo(CNcbiOstream& output_stream);
 
-    unsigned CountActiveJobs();
-
     struct SServerQueueList {
         CNetServer server;
         list<string> queues;

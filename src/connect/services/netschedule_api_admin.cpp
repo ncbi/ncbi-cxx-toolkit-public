@@ -188,18 +188,6 @@ void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
     }
 }
 
-unsigned CNetScheduleAdmin::CountActiveJobs()
-{
-    static const string cmd("ACNT");
-
-    unsigned counter = 0;
-
-    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(); it; ++it)
-        counter += NStr::StringToUInt((*it).ExecWithRetry(cmd).response);
-
-    return counter;
-}
-
 void CNetScheduleAdmin::GetWorkerNodes(
     list<SWorkerNodeInfo>& worker_nodes)
 {
