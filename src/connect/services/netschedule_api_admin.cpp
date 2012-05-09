@@ -307,16 +307,17 @@ void CNetScheduleAdmin::StatusSnapshot(
         cmd.append(job_group);
     }
 
-    string output_line, st_str, cnt_str;
+    string output_line;
+    CTempString st_str, cnt_str;
 
     for (CNetServiceIterator it =
             m_Impl->m_API->m_Service.Iterate(); it; ++it) {
         CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
 
         while (cmd_output.ReadLine(output_line))
-            if (NStr::SplitInTwo(output_line, ": ",
-                    st_str, cnt_str, NStr::eMergeDelims))
-                status_map[st_str] += NStr::StringToUInt(cnt_str);
+            if (NStr::SplitInTwo(output_line, ":", st_str, cnt_str))
+                status_map[st_str] += NStr::StringToUInt(
+                        NStr::TruncateSpaces(cnt_str, NStr::eTrunc_Begin));
     }
 }
 
