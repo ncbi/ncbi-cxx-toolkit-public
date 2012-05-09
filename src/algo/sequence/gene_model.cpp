@@ -425,7 +425,8 @@ static void s_TransformToNucpos(CProduct_pos &pos)
 string ExtractGnomonModelNum(const CSeq_id& seq_id)
 {
     string model_num;
-    if (seq_id.IsGeneral() && seq_id.GetGeneral().CanGetDb() && seq_id.GetGeneral().GetDb() == "GNOMON") {
+    if (seq_id.IsGeneral() && seq_id.GetGeneral().CanGetDb() &&
+            NStr::EqualNocase(seq_id.GetGeneral().GetDb(), "GNOMON")) {
         model_num = seq_id.GetGeneral().GetTag().GetStr();
         model_num.erase(model_num.size()-2, 2);
     }

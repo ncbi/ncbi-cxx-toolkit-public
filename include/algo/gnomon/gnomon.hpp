@@ -50,7 +50,7 @@ class CEResidueVec;
 class CInputModel;
 
 /// HMM model parameters
-/// just create it and pass to a GNOMON engine
+/// just create it and pass to a Gnomon engine
 class NCBI_XALGOGNOMON_EXPORT CHMMParameters : public CObject {
 public:
     CHMMParameters(const objects::CGnomon_params& hmm_params_asn);

@@ -914,7 +914,7 @@ void CXcompareAnnotsApplication::x_ProcessMappingRanges()
 
 
     CRef<CSeq_loc_Mapper> simple_mapper(new CSeq_loc_Mapper(*m_q_loc, *m_t_loc, m_scope_for_mapper));
-        //when remapping GNOMON ent's loaded from files, must use NULL to remap (or else fails)
+        //when remapping Gnomon ent's loaded from files, must use NULL to remap (or else fails)
         //using m_scope_qt or m_scope_q or m_scqpe_t instead of NULL causes remapping to fail
 
 #if _DEBUG

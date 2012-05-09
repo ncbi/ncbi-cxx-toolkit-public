@@ -8,7 +8,7 @@ User-object ::= {
         data {
           {
             label str "Method",
-            data str "BestRefseq"
+            data str "BestRefSeq"
           }
         }
       }
@@ -147,7 +147,7 @@ User-object ::= {
               data {
                 {
                   label str "Method",
-                  data str "BestRefseq"
+                  data str "BestRefSeq"
                 }
               }
             }
@@ -239,7 +239,7 @@ User-object ::= {
               data {
                 {
                   label str "Method",
-                  data str "BestRefseq,BLAST"
+                  data str "BestRefSeq,BLAST"
                 },
                 {
                   label str "mRNA",

@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(s_TestModelEvidence)
     BOOST_CHECK(uo.GetFieldRef("Method"));
 
     BOOST_CHECK_EQUAL(uo.GetField("Method")
-            .GetData().GetStr(), "BestRefseq");
+            .GetData().GetStr(), "BestRefSeq");
 }
 
 /// Test that spurious fields aren't found.
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeqFeat1)
     //
     // Requirements??? BOOST_CHECK(uo.HasField("ModelEvidence.Method"));
     // Requirements??? BOOST_CHECK_EQUAL(uo.GetField("ModelEvidence.Method")
-    //                         .GetData().GetStr(), "BestRefseq");
+    //                         .GetData().GetStr(), "BestRefSeq");
 }
 
 /// Test that nesting of fields works correctly.
