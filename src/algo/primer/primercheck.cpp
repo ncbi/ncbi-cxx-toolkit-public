@@ -407,8 +407,8 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
 
                 TSeqPos master_letter_len = xcript.size() - num_master_gap;
                 int num_bp = 0;
-                ITERATE(string, ii, xcript) {
-                    switch(*ii) {
+                ITERATE(string, the_iter, xcript) {
+                    switch(*the_iter) {
                         
                     case 'R':
                         if (is_left_primer) {
