@@ -518,7 +518,7 @@ void CElementaryMatching::x_CreateRemapData(const string& db, EIndexMode mode)
         if(seqlen <= 0 || size_t(seqlen) >= 0xFFFFFFFF) {
             CNcbiOstrstream ostr;
             ostr << "Cannot create remap data for:\t" <<
-                blastdb.GetSeqIDs(oid).back()->GetSeqIdString(true);
+                blastdb.GetSeqIDs(oid).front()->GetSeqIdString(true);
             const string err = CNcbiOstrstreamToString(ostr);
             NCBI_THROW(CException, eUnknown, err);
         }
@@ -2001,7 +2001,7 @@ void CElementaryMatching::x_LoadRemapData(ISequenceSource *m_qsrc, const string&
         CSeqDB blastdb (sdb, CSeqDB::eNucleotide);
         m_GenomicSeqIds.clear();
         for(int oid (0); blastdb.CheckOrFindOID(oid); ++oid) {
-            THit::TId id (blastdb.GetSeqIDs(oid).back());
+            THit::TId id (blastdb.GetSeqIDs(oid).front());
             m_GenomicSeqIds.push_back(id);
         }
     }}
