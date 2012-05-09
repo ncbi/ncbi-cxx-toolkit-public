@@ -2022,6 +2022,7 @@ void CSeq_loc::ChangeToPackedInt(void)
 {
     switch ( Which() ) {
     case e_not_set:
+    case e_Null:
         {
             SetPacked_int();
             return;
@@ -2757,24 +2758,27 @@ void x_PushRange(CSeq_loc& dst,
     }
     else {
         if (dst.IsMix()) {
-            dst.SetMix().AddInterval(*id,
-                                    rg.GetFrom(),
-                                    rg.GetTo(),
-                                    strand);
+            CRef<CSeq_loc> int_loc(new CSeq_loc);
+            CSeq_interval& ival = int_loc->SetInt();
+            ival.SetFrom(rg.GetFrom());
+            ival.SetTo(rg.GetTo());
+            ival.SetId().Assign(*id);
+            if (strand != eNa_strand_unknown) {
+                ival.SetStrand(strand);
+            }
             if ( rg.IsSetFuzzFrom() ) {
-                dst.SetMix().Set().back()->SetInt().SetFuzz_from()
-                    .Assign(rg.GetFuzzFrom());
+                ival.SetFuzz_from().Assign(rg.GetFuzzFrom());
             }
             if ( rg.IsSetFuzzTo() ) {
-                dst.SetMix().Set().back()->SetInt().SetFuzz_to()
-                    .Assign(rg.GetFuzzTo());
+                ival.SetFuzz_to().Assign(rg.GetFuzzTo());
             }
+            dst.SetMix().Set().push_back(int_loc);
         }
         else {
             CRef<CSeq_interval> interval(new CSeq_interval(*id,
-                                                           rg.GetFrom(),
-                                                           rg.GetTo(),
-                                                           strand));
+                rg.GetFrom(),
+                rg.GetTo(),
+                strand));
             if ( rg.IsSetFuzzFrom() ) {
                 interval->SetFuzz_from().Assign(rg.GetFuzzFrom());
             }
@@ -2925,6 +2929,9 @@ void x_MergeNoSort(CSeq_loc& dst,
     if ( have_range ) {
         x_PushRange(dst, last_id, last_rg, last_strand);
     }
+    if (dst.Which() == CSeq_loc::e_not_set) {
+        dst.SetNull();
+    }
 }
 
 
@@ -2962,6 +2969,9 @@ void x_MergeAndSort(CSeq_loc& dst,
     x_RangesToSeq_loc(dst, id_map_plus, default_plus, flags);
     if ( use_strand ) {
         x_RangesToSeq_loc(dst, id_map_minus, default_minus, flags);
+    }
+    if (dst.Which() == CSeq_loc::e_not_set) {
+        dst.SetNull();
     }
 }
 
@@ -3111,6 +3121,9 @@ void x_SubNoSort(CSeq_loc& dst,
     if ( have_range ) {
         x_PushRange(dst, last_id, last_rg, last_strand);
     }
+    if (dst.Which() == CSeq_loc::e_not_set) {
+        dst.SetNull();
+    }
 }
 
 
@@ -3176,6 +3189,9 @@ void x_SubAndSort(CSeq_loc& dst,
     x_RangesToSeq_loc(dst, id_map_plus, default_plus, flags);
     if ( use_strand ) {
         x_RangesToSeq_loc(dst, id_map_minus, default_minus, flags);
+    }
+    if (dst.Which() == CSeq_loc::e_not_set) {
+        dst.SetNull();
     }
 }
 
