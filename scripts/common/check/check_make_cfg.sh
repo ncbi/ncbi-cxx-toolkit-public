@@ -426,6 +426,7 @@ RunTest() {
    \$check_exec $x_time \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
    result=\$?
    stop_time="\`date +'$x_date_format'\`"
+   load_avg="\`uptime | sed -e 's/.*average: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
 
    sed -e '/ ["][$][@]["].*\$/ {
        s/^.*: //
@@ -447,6 +448,7 @@ RunTest() {
    # Write result of the test into the his output file
    echo "Start time   : \$start_time"   >> \$x_test_out
    echo "Stop time    : \$stop_time"    >> \$x_test_out
+   echo "Load averages: \$load_avg"     >> \$x_test_out
    echo >> \$x_test_out
    echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
    echo "@@@ EXIT CODE: \$result" >> \$x_test_out
@@ -495,6 +497,7 @@ RunTest() {
       echo "\$result"     >> "\$x_test_rep"
       echo "\$exec_time"  >> "\$x_test_rep"
       echo "\$x_authors"  >> "\$x_test_rep"
+      echo "\$load_avg"   >> "\$x_test_rep"
    fi
 }
 

@@ -545,8 +545,9 @@ EOF_launch
                 chmod a+x \$launch_sh
                 \$launch_sh >\$x_log 2>&1
                 result=\$?
-                rm \$launch_sh
                 stop_time="\`date +'$x_date_format'\`"
+                load_avg="\`uptime | sed -e 's/.*average: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
+                rm \$launch_sh
 
                 sed -e '/ ["][$][@]["].*\$/ {
                         s/^.*: //
@@ -586,6 +587,7 @@ EOF_launch
                 # Write result of the test into the his output file
                 echo "Start time   : \$start_time"   >> \$x_test_out
                 echo "Stop time    : \$stop_time"    >> \$x_test_out
+                echo "Load averages: \$load_avg"     >> \$x_test_out
                 echo >> \$x_test_out
                 echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
                 echo "@@@ EXIT CODE: \$result" >> \$x_test_out
@@ -641,6 +643,7 @@ EOF_launch
                     echo "\$start_time" >> "\$x_test_rep"
                     echo "\$result"     >> "\$x_test_rep"
                     echo "\$exec_time"  >> "\$x_test_rep"
+                    echo "\$load_avg"   >> "\$x_test_rep"
                 fi
 
             else  # Run test if it exist
