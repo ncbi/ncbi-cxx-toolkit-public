@@ -395,8 +395,8 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                 TSeqPos deletion_3end = 0;
                 TSeqPos num_master_gap = 0;
                 
-                ITERATE(string, ii, xcript) {
-                    switch(*ii) {
+                ITERATE(string, iter, xcript) {
+                    switch(*iter) {
                     case 'D':
                         ++ num_master_gap;
                         break;
@@ -596,7 +596,8 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
 }
 
 static bool ContainsId(const CBioseq_Handle& bh, const CSeq_id_Handle& id) {
-    return count(bh.GetId().begin(), bh.GetId().end(), id) != 0; 
+
+    return (find(bh.GetId().begin(), bh.GetId().end(), id) != bh.GetId().end());
 }
 
 void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
@@ -660,7 +661,7 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     bool left_template_aln_overlap = m_TemplateRange.IntersectingWith(left_align.GetSeqRange(1));
     bool right_template_aln_overlap = m_TemplateRange.IntersectingWith(right_align.GetSeqRange(1));
     bool template_hit_same_id = ContainsId(m_TemplateHandle,
-                                           CSeq_id_Handle::CSeq_id_Handle::
+                                           CSeq_id_Handle::
                                            GetHandle(left_align.GetSeq_id(1)));
 
     const CRef<CSeq_id> hit_wid
@@ -973,7 +974,7 @@ x_AnalyzeLeftAndRightPrimer(const vector<SHspInfo*>& hsp_list,
 {
     //save right primer slave range to avoid repeated map lookup which is slow
     
-    CRange<TSeqPos> right_slave_range_array[HspOverlappingWithRightPrimer_size];
+    vector<CRange<TSeqPos> > right_slave_range_array(HspOverlappingWithRightPrimer_size);
     for (int j = 0; HspOverlappingWithLeftPrimer_size > 0 && j < HspOverlappingWithRightPrimer_size; j ++) {
         int right_hsp_index = m_HspOverlappingWithRightPrimer[j].index;
         if (hit_strand == eNa_strand_minus) {
@@ -1161,7 +1162,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
                    int HspOverlappingWithRightPrimerMinusStrand_size,
                    TSeqPos hit_index)  {
     //save right slave range to avoid repeated tree query
-    CRange<TSeqPos>  right_primer_hit_range_array[HspOverlappingWithLeftPrimerMinusStrand_size];
+    vector<CRange<TSeqPos> >  right_primer_hit_range_array(HspOverlappingWithLeftPrimerMinusStrand_size);
     for (int j = 0; HspOverlappingWithLeftPrimer_size > 0 && j < HspOverlappingWithLeftPrimerMinusStrand_size; j ++) {
         int right_hsp_index = m_HspOverlappingWithLeftPrimerMinusStrand[j].index;
         CRange<TSeqPos>  right_master_range = minus_strand_hsp_list[right_hsp_index]->master_range;
@@ -1296,7 +1297,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
     //check right primer
     
     // save right slave range once to avoid repeated slow tree query
-    CRange<TSeqPos>  right_primer_hit_range_array2[HspOverlappingWithRightPrimerMinusStrand_size];
+    vector<CRange<TSeqPos> >  right_primer_hit_range_array2(HspOverlappingWithRightPrimerMinusStrand_size);
     for (int j = 0; HspOverlappingWithRightPrimer_size > 0 && j < HspOverlappingWithRightPrimerMinusStrand_size; j ++) {
         int right_hsp_index = m_HspOverlappingWithRightPrimerMinusStrand[j].index;
             

@@ -508,7 +508,7 @@ private:
 
 
     struct SSlaveRange {
-        uint align_index;
+        unsigned align_index;
         int master_start;
         int master_stop;
     };
