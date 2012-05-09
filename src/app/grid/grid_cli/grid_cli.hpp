@@ -89,8 +89,8 @@ enum EOption {
     eNetSchedule,
     eQueue,
     eWorkerNode,
-    eGroup,
     eBatch,
+    eGroup,
     eAffinity,
     eAffinityList,
     eUsePreferredAffinities,
@@ -246,12 +246,12 @@ private:
         return m_Opts.option_flags[option] == OPTION_ACCEPTED;
     }
 
-    bool IsOptionSet(EOption option)
+    bool IsOptionSet(int option)
     {
         return m_Opts.option_flags[option] == OPTION_SET;
     }
 
-    int IsOptionSet(EOption option, int mask)
+    int IsOptionSet(int option, int mask)
     {
         return m_Opts.option_flags[option] == OPTION_SET ? mask : 0;
     }
@@ -340,7 +340,7 @@ private:
             EOutputFormat* allowed_formats,
             EOutputFormat default_format);
 
-    void PrintNetScheduleStats();
+    int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
 };
 

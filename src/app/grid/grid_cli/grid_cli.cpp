@@ -57,267 +57,275 @@ string CGridCommandLineInterfaceApp::GetProgramVersion() const
     return PROGRAM_NAME " version " PROGRAM_VERSION;
 }
 
+#ifdef _DEBUG
+#define OPT_DEF(opt_type, opt_id) CCommandLineParser::opt_type, opt_id
+#else
+#define OPT_DEF(opt_type, opt_id) CCommandLineParser::opt_type
+#endif
+
 struct SOptionDefinition {
     CCommandLineParser::EOptionType type;
+#ifdef _DEBUG
     int opt_id;
+#endif
     const char* name_variants;
     const char* description;
+    int required_options[2];
 } static const s_OptionDefinitions[eNumberOfOptions] = {
 
-    {CCommandLineParser::ePositionalArgument, eUntypedArg, "ARG", NULL},
+    {OPT_DEF(ePositionalArgument, eUntypedArg), "ARG", NULL, {-1}},
 
-    {CCommandLineParser::eOptionalPositional, eOptionalID, "ID", NULL},
+    {OPT_DEF(eOptionalPositional, eOptionalID), "ID", NULL, {-1}},
 
-    {CCommandLineParser::ePositionalArgument, eID, "ID", NULL},
+    {OPT_DEF(ePositionalArgument, eID), "ID", NULL, {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eAuth,
-        "auth", "Authentication string (\"client_name\")."},
+    {OPT_DEF(eOptionWithParameter, eAuth),
+        "auth", "Authentication string (\"client_name\").", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eInput,
+    {OPT_DEF(eOptionWithParameter, eInput),
         INPUT_OPTION, "Provide input data on the command line. "
-            "The standard input stream will not be read."},
+            "The standard input stream will not be read.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eInputFile,
-        INPUT_FILE_OPTION, "Read input from the specified file."},
+    {OPT_DEF(eOptionWithParameter, eInputFile),
+        INPUT_FILE_OPTION, "Read input from the specified file.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eOutputFile,
-        "o|" OUTPUT_FILE_OPTION, "Save output to the specified file."},
+    {OPT_DEF(eOptionWithParameter, eOutputFile),
+        "o|" OUTPUT_FILE_OPTION, "Save output to the specified file.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eOutputFormat,
+    {OPT_DEF(eOptionWithParameter, eOutputFormat),
         "of|output-format",
-        "One of the output formats supported by this command." },
+        "One of the output formats supported by this command.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eNetCache,
-        "nc|netcache", "NetCache service name or server address."},
+    {OPT_DEF(eOptionWithParameter, eNetCache),
+        "nc|netcache", "NetCache service name or server address.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eCache,
-        "cache", "Enable ICache mode and specify cache name to use."},
+    {OPT_DEF(eOptionWithParameter, eCache),
+        "cache", "Enable ICache mode and specify cache name to use.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, ePassword,
-        "password", "Enable NetCache password protection."},
+    {OPT_DEF(eOptionWithParameter, ePassword),
+        "password", "Enable NetCache password protection.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eOffset,
-        "offset", "Byte offset of the portion of data."},
+    {OPT_DEF(eOptionWithParameter, eOffset),
+        "offset", "Byte offset of the portion of data.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eSize,
-        "size|length", "Length (in bytes) of the portion of data."},
+    {OPT_DEF(eOptionWithParameter, eSize),
+        "size|length", "Length (in bytes) of the portion of data.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eTTL,
-        "ttl", "Override the default time-to-live value."},
+    {OPT_DEF(eOptionWithParameter, eTTL),
+        "ttl", "Override the default time-to-live value.", {-1}},
 
-    {CCommandLineParser::eSwitch, eEnableMirroring,
-        "enable-mirroring", "Enable NetCache mirroring functionality."},
+    {OPT_DEF(eSwitch, eEnableMirroring),
+        "enable-mirroring", "Enable NetCache mirroring functionality.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eNetSchedule,
-        "ns|netschedule", "NetSchedule service name or server address."},
+    {OPT_DEF(eOptionWithParameter, eNetSchedule),
+        "ns|netschedule", "NetSchedule service name or server address.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eQueue,
-        QUEUE_OPTION, "NetSchedule queue."},
+    {OPT_DEF(eOptionWithParameter, eQueue),
+        QUEUE_OPTION, "NetSchedule queue.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eWorkerNode,
-        "wn|worker-node", "Worker node address (a host:port pair)."},
+    {OPT_DEF(eOptionWithParameter, eWorkerNode),
+        "wn|worker-node", "Worker node address (a host:port pair).", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eBatch,
-        BATCH_OPTION, "Enable batch mode and specify batch size."},
+    {OPT_DEF(eOptionWithParameter, eBatch),
+        BATCH_OPTION, "Enable batch mode and specify batch size.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eGroup,
-        "group", "Define group membership for the created job(s)."},
+    {OPT_DEF(eOptionWithParameter, eGroup),
+        "group", "Define group membership for the created job(s).", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eAffinity,
-        AFFINITY_OPTION, "Affinity token."},
+    {OPT_DEF(eOptionWithParameter, eAffinity),
+        AFFINITY_OPTION, "Affinity token.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eAffinityList,
-        "affinity-list", "Comma-separated list of affinity tokens."},
+    {OPT_DEF(eOptionWithParameter, eAffinityList),
+        "affinity-list", "Comma-separated list of affinity tokens.", {-1}},
 
-    {CCommandLineParser::eSwitch, eUsePreferredAffinities,
+    {OPT_DEF(eSwitch, eUsePreferredAffinities),
         "use-preferred-affinities", "Accept a job with any of "
-            "the affinities registered earlier as preferred."},
+            "the affinities registered earlier as preferred.", {-1}},
 
-    {CCommandLineParser::eSwitch, eClaimNewAffinities,
+    {OPT_DEF(eSwitch, eClaimNewAffinities),
         CLAIM_NEW_AFFINITIES_OPTION, "Accept a job with a preferred "
             "affinity, without an affinity, or with an affinity "
             "that is not preferred by any worker (in which case "
-            "it is added to the preferred affinities)."},
+            "it is added to the preferred affinities).", {-1}},
 
-    {CCommandLineParser::eSwitch, eAnyAffinity,
-        ANY_AFFINITY_OPTION, "Accept job with any available affinity."},
+    {OPT_DEF(eSwitch, eAnyAffinity),
+        ANY_AFFINITY_OPTION, "Accept job with any available affinity.", {-1}},
 
-    {CCommandLineParser::eSwitch, eExclusiveJob,
-        "exclusive-job", "Create an exclusive job."},
+    {OPT_DEF(eSwitch, eExclusiveJob),
+        "exclusive-job", "Create an exclusive job.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eJobOutput,
+    {OPT_DEF(eOptionWithParameter, eJobOutput),
         JOB_OUTPUT_OPTION, "Provide job output on the command line "
             "(inhibits reading from the standard input stream or an "
-            "input file)."},
+            "input file).", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eReturnCode,
-        "return-code", "Job return code."},
+    {OPT_DEF(eOptionWithParameter, eReturnCode),
+        "return-code", "Job return code.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eLimit,
-        LIMIT_OPTION, "Maximum number of records to return."},
+    {OPT_DEF(eOptionWithParameter, eLimit),
+        LIMIT_OPTION, "Maximum number of records to return.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eTimeout,
-        TIMEOUT_OPTION, "Timeout in seconds."},
+    {OPT_DEF(eOptionWithParameter, eTimeout),
+        TIMEOUT_OPTION, "Timeout in seconds.", {-1}},
 
-    {CCommandLineParser::ePositionalArgument, eAuthToken,
+    {OPT_DEF(ePositionalArgument, eAuthToken),
         "AUTH_TOKEN", "Security token that grants the "
-        "caller permission to manipulate the job."},
+        "caller permission to manipulate the job.", {-1}},
 
-    {CCommandLineParser::eSwitch, eReliableRead,
-        RELIABLE_READ_OPTION, "Enable reading confirmation mode."},
+    {OPT_DEF(eSwitch, eReliableRead),
+        RELIABLE_READ_OPTION, "Enable reading confirmation mode.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eConfirmRead,
+    {OPT_DEF(eOptionWithParameter, eConfirmRead),
         CONFIRM_READ_OPTION, "For the reading reservation specified as "
             "the argument to this option, mark the job identified by "
-            "'--" JOB_ID_OPTION "' as successfully retrieved."},
+            "'--" JOB_ID_OPTION "' as successfully retrieved.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eRollbackRead,
+    {OPT_DEF(eOptionWithParameter, eRollbackRead),
         ROLLBACK_READ_OPTION, "Release the specified reading "
-            "reservation of the specified job."},
+            "reservation of the specified job.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eFailRead,
+    {OPT_DEF(eOptionWithParameter, eFailRead),
         FAIL_READ_OPTION, "Use the specified reading reservation "
-            "to mark the job as impossible to read."},
+            "to mark the job as impossible to read.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eErrorMessage,
-        "error-message", "Provide an optional error message."},
+    {OPT_DEF(eOptionWithParameter, eErrorMessage),
+        "error-message", "Provide an optional error message.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eJobId,
-        JOB_ID_OPTION, "Job ID to operate on."},
+    {OPT_DEF(eOptionWithParameter, eJobId),
+        JOB_ID_OPTION, "Job ID to operate on.", {-1}},
 
-    {CCommandLineParser::eSwitch, eJobGroupInfo,
-        "job-group-info", "Print information on job groups."},
+    {OPT_DEF(eSwitch, eJobGroupInfo),
+        "job-group-info", "Print information on job groups.", {eQueue, -1}},
 
-    {CCommandLineParser::eSwitch, eClientInfo,
+    {OPT_DEF(eSwitch, eClientInfo),
         "client-info", "Print information on the recently "
-            "connected clients."},
+            "connected clients.", {eQueue, -1}},
 
-    {CCommandLineParser::eSwitch, eNotificationInfo,
+    {OPT_DEF(eSwitch, eNotificationInfo),
         "notification-info", "Print a snapshot of the "
-            "currently subscribed notification listeners."},
+            "currently subscribed notification listeners.", {eQueue, -1}},
 
-    {CCommandLineParser::eSwitch, eAffinityInfo,
+    {OPT_DEF(eSwitch, eAffinityInfo),
         "affinity-info", "Print information on the "
-            "currently handled affinities."},
+            "currently handled affinities.", {eQueue, -1}},
 
-    {CCommandLineParser::eSwitch, eJobsByAffinity,
+    {OPT_DEF(eSwitch, eJobsByAffinity),
         "jobs-by-affinity", "For each affinity, print the number "
-            "of pending jobs associated with it."},
+            "of pending jobs associated with it.", {eQueue, -1}},
 
-    {CCommandLineParser::eSwitch, eJobsByStatus,
+    {OPT_DEF(eSwitch, eJobsByStatus),
         "jobs-by-status", "Print the number of jobs itemized by their "
             "current status. If the '--" AFFINITY_OPTION "' option "
             "is given, only the jobs with the specified affinity "
-            "will be counted."},
+            "will be counted.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eStartAfterJob,
+    {OPT_DEF(eOptionWithParameter, eStartAfterJob),
         "start-after-job", "Specify the key of the last job "
-            "in the previous dump batch."},
+            "in the previous dump batch.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eJobCount,
-        "job-count", "Specify the maximum number of jobs in the output."},
+    {OPT_DEF(eOptionWithParameter, eJobCount),
+        "job-count", "Specify the maximum number of jobs in the output.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eSelectByStatus,
-        "select-by-status", "Filter output by job status."},
+    {OPT_DEF(eOptionWithParameter, eSelectByStatus),
+        "select-by-status", "Filter output by job status.", {-1}},
 
-    {CCommandLineParser::eSwitch, eVerbose,
-        "verbose", "Produce more verbose output."},
+    {OPT_DEF(eSwitch, eVerbose),
+        "verbose", "Produce more verbose output.", {-1}},
 
-    {CCommandLineParser::eSwitch, eBrief,
-        "brief", "Produce less verbose output."},
+    {OPT_DEF(eSwitch, eBrief),
+        "brief", "Produce less verbose output.", {-1}},
 
-    {CCommandLineParser::eSwitch, eStatusOnly,
-        "status-only", "Print job status only."},
+    {OPT_DEF(eSwitch, eStatusOnly),
+        "status-only", "Print job status only.", {-1}},
 
-    {CCommandLineParser::eSwitch, eProgressMessageOnly,
-        "progress-message-only", "Print only the progress message."},
+    {OPT_DEF(eSwitch, eProgressMessageOnly),
+        "progress-message-only", "Print only the progress message.", {-1}},
 
-    {CCommandLineParser::eSwitch, eDeferExpiration,
+    {OPT_DEF(eSwitch, eDeferExpiration),
         "defer-expiration", "Prolong job lifetime by "
-            "updating its last access timestamp."},
+            "updating its last access timestamp.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eExtendLifetime,
+    {OPT_DEF(eOptionWithParameter, eExtendLifetime),
         "extend-lifetime", "Extend job lifetime by "
-            "the specified number of seconds."},
+            "the specified number of seconds.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eProgressMessage,
-        "progress-message", "Set job progress message."},
+    {OPT_DEF(eOptionWithParameter, eProgressMessage),
+        "progress-message", "Set job progress message.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eJobGroup,
-        "job-group", "Select jobs by job group."},
+    {OPT_DEF(eOptionWithParameter, eJobGroup),
+        "job-group", "Select jobs by job group.", {-1}},
 
-    {CCommandLineParser::eSwitch, eAllJobs,
-        "all-jobs", "Apply to all jobs in the queue."},
+    {OPT_DEF(eSwitch, eAllJobs),
+        "all-jobs", "Apply to all jobs in the queue.", {-1}},
 
 /*
-    {CCommandLineParser::eOptionWithParameter, eRegisterWNode,
+    {OPT_DEF(eOptionWithParameter, eRegisterWNode),
         "register-wnode", "Generate and print a new GUID "
             "and register the specified worker node control "
-            "port with the generated GUID."},
+            "port with the generated GUID.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eUnregisterWNode,
+    {OPT_DEF(eOptionWithParameter, eUnregisterWNode),
         "unregister-wnode", "Unregister the worker node "
-            "identified by the specified GUID."},
+            "identified by the specified GUID.", {-1}},
 */
 
-    {CCommandLineParser::eOptionWithParameter, eWaitTimeout,
+    {OPT_DEF(eOptionWithParameter, eWaitTimeout),
         WAIT_TIMEOUT_OPTION, "Wait up to the specified "
-            "number of seconds for a response."},
+            "number of seconds for a response.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eFailJob,
+    {OPT_DEF(eOptionWithParameter, eFailJob),
         FAIL_JOB_OPTION, "Report the job as failed "
-            "and specify an error message."},
+            "and specify an error message.", {-1}},
 
-    {CCommandLineParser::ePositionalArgument, eQueueArg, "QUEUE", NULL},
+    {OPT_DEF(ePositionalArgument, eQueueArg), "QUEUE", NULL, {-1}},
 
-    {CCommandLineParser::ePositionalArgument, eTargetQueueArg, "QUEUE", NULL},
+    {OPT_DEF(ePositionalArgument, eTargetQueueArg), "QUEUE", NULL, {-1}},
 
-    {CCommandLineParser::ePositionalArgument, eModelQueue, "MODEL_QUEUE", NULL},
+    {OPT_DEF(ePositionalArgument, eModelQueue), "MODEL_QUEUE", NULL, {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eQueueDescription,
-        "queue-description", "Optional queue description."},
+    {OPT_DEF(eOptionWithParameter, eQueueDescription),
+        "queue-description", "Optional queue description.", {-1}},
 
-    {CCommandLineParser::eOptionalPositional, eSwitchArg, SWITCH_ARG, NULL},
+    {OPT_DEF(eOptionalPositional, eSwitchArg), SWITCH_ARG, NULL, {-1}},
 
-    {CCommandLineParser::eSwitch, eNow,
-        NOW_OPTION, "Take action immediately."},
+    {OPT_DEF(eSwitch, eNow),
+        NOW_OPTION, "Take action immediately.", {-1}},
 
-    {CCommandLineParser::eSwitch, eDie,
-        DIE_OPTION, "Terminate the server process abruptly."},
+    {OPT_DEF(eSwitch, eDie),
+        DIE_OPTION, "Terminate the server process abruptly.", {-1}},
 
-    {CCommandLineParser::eSwitch, eDrain,
+    {OPT_DEF(eSwitch, eDrain),
         DRAIN_OPTION, "Tell the server to wait until all of its "
-            "data is expired prior to shutting down."},
+            "data is expired prior to shutting down.", {-1}},
 
-    {CCommandLineParser::eSwitch, eCompatMode,
-        "compat-mode", "Enable backward compatibility tweaks."},
+    {OPT_DEF(eSwitch, eCompatMode),
+        "compat-mode", "Enable backward compatibility tweaks.", {-1}},
 
-    {CCommandLineParser::eSwitch, eDumpCGIEnv,
-        "dump-cgi-env", "Dump CGI environment prepared by cgi2rcgi."},
+    {OPT_DEF(eSwitch, eDumpCGIEnv),
+        "dump-cgi-env", "Dump CGI environment prepared by cgi2rcgi.", {-1}},
 
-    {CCommandLineParser::eSwitch, eExtendedOptionDelimiter,
-        NULL, NULL},
+    {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eClientNode,
-        "client-node", "Client application identifier."},
+    {OPT_DEF(eOptionWithParameter, eClientNode),
+        "client-node", "Client application identifier.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eClientSession,
-        "client-session", "Client session identifier."},
+    {OPT_DEF(eOptionWithParameter, eClientSession),
+        "client-session", "Client session identifier.", {-1}},
 
-    {CCommandLineParser::ePositionalArgument, eCommand, "COMMAND", NULL},
+    {OPT_DEF(ePositionalArgument, eCommand), "COMMAND", NULL, {-1}},
 
-    {CCommandLineParser::eSwitch, eMultiline,
-        "multiline", "Expect multiple lines of output."},
+    {OPT_DEF(eSwitch, eMultiline),
+        "multiline", "Expect multiple lines of output.", {-1}},
 
-    {CCommandLineParser::eOptionWithParameter, eProtocolDump,
+    {OPT_DEF(eOptionWithParameter, eProtocolDump),
         "protocol-dump", "Dump input and output messages of "
-            "the automation protocol to the specified file."},
+            "the automation protocol to the specified file.", {-1}},
 
-    {CCommandLineParser::eSwitch, eDumpNSNotifications,
+    {OPT_DEF(eSwitch, eDumpNSNotifications),
         "dump-ns-notifications", "Suppress normal processing "
             "of this command, but print notifications received "
             "from the NetSchedule servers over UDP within "
-            "the specified timeout."},
+            "the specified timeout.", {-1}},
 
 };
 
@@ -772,6 +780,7 @@ int CGridCommandLineInterfaceApp::Run()
         reg.Set(netservice_api_section, connection_max_retries, "0");
 
     const SCommandDefinition* cmd_def;
+    const int* cmd_opt;
 
     {
         bool enable_extended_cli = false;
@@ -798,19 +807,23 @@ int CGridCommandLineInterfaceApp::Run()
             "Utility to access and control NCBI Grid services.");
 
         const SOptionDefinition* opt_def = s_OptionDefinitions;
-        int i = eNumberOfOptions;
+        int opt_id = 0;
         do {
-            if (opt_def->opt_id != eExtendedOptionDelimiter)
-                clparser.AddOption(opt_def->type, opt_def->opt_id,
+#ifdef _DEBUG
+            _ASSERT(opt_def->opt_id == opt_id &&
+                "EOption order must match positions in s_OptionDefinitions.");
+#endif
+            if (opt_id != eExtendedOptionDelimiter)
+                clparser.AddOption(opt_def->type, opt_id,
                     opt_def->name_variants, opt_def->description ?
                         opt_def->description : kEmptyStr);
             else if (!enable_extended_cli)
                 break;
             ++opt_def;
-        } while (--i > 0);
+        } while (++opt_id < eNumberOfOptions);
 
         const SCommandCategoryDefinition* cat_def = s_CategoryDefinitions;
-        i = eNumberOfCommandCategories;
+        int i = eNumberOfCommandCategories;
         do {
             clparser.AddCommandCategory(cat_def->cat_id, cat_def->title);
             ++cat_def;
@@ -824,9 +837,9 @@ int CGridCommandLineInterfaceApp::Run()
                 continue;
             clparser.AddCommand(i, cmd_def->name_variants,
                 cmd_def->synopsis, cmd_def->usage, cmd_def->cat_id);
-            for (const int* opt_id = cmd_def->options; *opt_id >= 0; ++opt_id)
-                if (*opt_id < eExtendedOptionDelimiter || enable_extended_cli)
-                    clparser.AddAssociation(i, *opt_id);
+            for (cmd_opt = cmd_def->options; *cmd_opt >= 0; ++cmd_opt)
+                if (*cmd_opt < eExtendedOptionDelimiter || enable_extended_cli)
+                    clparser.AddAssociation(i, *cmd_opt);
         }
 
         try {
@@ -840,13 +853,12 @@ int CGridCommandLineInterfaceApp::Run()
             return 1;
         }
 
-        for (const int* opt_id = cmd_def->options; *opt_id >= 0; ++opt_id)
-            m_Opts.option_flags[*opt_id] = OPTION_ACCEPTED;
+        for (cmd_opt = cmd_def->options; *cmd_opt >= 0; ++cmd_opt)
+            m_Opts.option_flags[*cmd_opt] = OPTION_ACCEPTED;
 
         if (m_Opts.option_flags[eOutputFormat])
             m_Opts.output_format = (EOutputFormat) *cmd_def->output_formats;
 
-        int opt_id;
         const char* opt_value;
 
         while (clparser.NextOption(&opt_id, &opt_value)) {
@@ -1011,6 +1023,22 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             }
         }
+
+        opt_id = eNumberOfOptions - 1;
+        do
+            if (IsOptionSet(opt_id))
+                for (const int* required_opt =
+                        s_OptionDefinitions[opt_id].required_options;
+                                *required_opt != -1; ++required_opt)
+                    if (!IsOptionSet(*required_opt)) {
+                        fprintf(stderr, PROGRAM_NAME
+                                ": option '--%s' requires option '--%s'.\n",
+                                s_OptionDefinitions[opt_id].name_variants,
+                                s_OptionDefinitions[
+                                        *required_opt].name_variants);
+                        return 2;
+                    }
+        while (--opt_id >= 0);
 
         if (m_Opts.auth.empty())
             m_Opts.auth = PROGRAM_NAME;

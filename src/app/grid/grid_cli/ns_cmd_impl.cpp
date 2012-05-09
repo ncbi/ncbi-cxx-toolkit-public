@@ -204,7 +204,7 @@ CJsonNode LegacyStatToJson(CNetServer server, bool verbose)
     return stat_info;
 }
 
-void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
+int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
 {
     if (IsOptionSet(eJobGroupInfo))
         PrintNetScheduleStats_Generic(eNetScheduleStatJobGroups);
@@ -261,6 +261,12 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
         if (m_Opts.output_format == eJSON)
             printf("\n}\n");
     } else if (IsOptionSet(eJobsByStatus)) {
+        if (!IsOptionSet(eQueue) &&
+                (IsOptionSet(eAffinity) || IsOptionSet(eGroup))) {
+            fprintf(stderr, PROGRAM_NAME ": invalid option combination.\n");
+            return 2;
+        }
+
         if (m_Opts.output_format == eRaw) {
             string cmd = "STAT JOBS";
 
@@ -319,6 +325,8 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats()
             PrintJSON(stdout, result);
         }
     }
+
+    return 0;
 }
 
 void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(

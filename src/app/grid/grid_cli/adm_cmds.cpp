@@ -161,8 +161,7 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
         return 0;
 
     case eNetScheduleAdmin:
-        PrintNetScheduleStats();
-        return 0;
+        return PrintNetScheduleStats();
 
     case eWorkerNodeAdmin:
         m_NetScheduleAdmin.PrintServerStatistics(NcbiCout);
