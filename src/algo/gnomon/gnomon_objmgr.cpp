@@ -399,7 +399,7 @@ CRef<CSeq_annot> CGnomonEngine::GetAnnot(const CSeq_id& id)
 
     CRef<objects::CSeq_annot> annot(new CSeq_annot());
 
-    annot->SetNameDesc("GNOMON gene scan output");
+    annot->SetNameDesc("Gnomon gene scan output");
 
     CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
 

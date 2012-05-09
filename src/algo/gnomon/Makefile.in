@@ -1,6 +1,6 @@
 # $Id$
 
-# Meta-makefile("GNOMON" project)
+# Meta-makefile("Gnomon" project)
 #################################
 
 ASN_PROJ = gnomon
