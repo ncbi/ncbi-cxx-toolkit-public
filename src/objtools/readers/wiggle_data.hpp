@@ -196,27 +196,27 @@ public:
 
     void ParseTrackDefinition( 
         const std::vector<std::string>& );
-    /* throws CLineError */
+    /* throws CObjReaderLineException */
     
     void ParseDeclarationVarstep(
         const std::vector<std::string>& );
-    /* throws CLineError */
+    /* throws CObjReaderLineException */
 
     void ParseDeclarationFixedstep(
         const std::vector<std::string>& );
-    /* throws CLineError */
+    /* throws CObjReaderLineException */
 
     void ParseDataBed(
         const std::vector<std::string>& );
-    /* throws CLineError */
+    /* throws CObjReaderLineException */
 
     void ParseDataVarstep(
         const std::vector<std::string>& );
-    /* throws CLineError */
+    /* throws CObjReaderLineException */
 
     void ParseDataFixedstep(
         const std::vector<std::string>& );
-    /* throws CLineError */
+    /* throws CObjReaderLineException */
 
     const string& Chrom() const { return m_strChrom; };
     const string& Name() const { return m_strName; };

@@ -138,6 +138,12 @@ protected:
     virtual void x_DumpStats(
         CNcbiOstream&,
         CWiggleTrack* );    
+
+    void
+    xProcessError(
+        CObjReaderLineException&,
+        IErrorContainer* );
+
     //
     //  data:
     //

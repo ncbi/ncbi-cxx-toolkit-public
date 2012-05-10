@@ -220,20 +220,25 @@ CWiggleReader::x_ParseSequence(
                 }
             }
         }
-        catch (CLineError& err) {
-            if (err.Line() == 0) {
-                err.PatchLineNumber(m_uLineNumber);
-            }
-            ProcessError(err, pErrorContainer);
+        catch (CObjReaderLineException& err) {
+            xProcessError(err, pErrorContainer);
 
-            CLineError warn( 
-                ILineError::eProblem_MissingContext,
-                eDiag_Warning, 
-                "", 
-                0);
+            CObjReaderLineException warn(
+                eDiag_Warning,
+                0,
+                "",
+                ILineError::eProblem_MissingContext);
+
             while (x_ReadLineData(lr, parts)) {
                 //flush all data lines until we reach firm ground:
-                unsigned int uType = x_GetLineType(parts);
+                unsigned int uType = 0;
+                try {
+                    uType = x_GetLineType(parts);
+                }
+                catch (CObjReaderLineException& err1) {
+                    xProcessError(err1, pErrorContainer);
+                    continue;
+                }
                 if (uType == TYPE_TRACK  ||  uType == TYPE_DECLARATION_VARSTEP  ||
                         uType == TYPE_DECLARATION_FIXEDSTEP) {
                     lr.UngetLine();
@@ -241,8 +246,7 @@ CWiggleReader::x_ParseSequence(
                     break;
                 }
                 else if (uType != TYPE_COMMENT) {
-                    warn.PatchLineNumber(m_uLineNumber);
-                    ProcessError(warn, pErrorContainer);
+                    xProcessError(warn, pErrorContainer);
                 }
             }
         }
@@ -356,21 +360,21 @@ void CWiggleReader::x_ParseDataRecord(
 {  
     unsigned int uLineType = x_GetLineType( parts );
     if ( m_uCurrentRecordType != uLineType ) {
-                CLineError err( 
-                    ILineError::eProblem_GeneralParsingError,
-                    eDiag_Error, 
-                    "", 
-                    m_uLineNumber);
-                throw err;
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_GeneralParsingError);
+        throw err;
     }
     switch ( uLineType ) {
 
         default: {
-                CLineError err( 
-                    ILineError::eProblem_GeneralParsingError,
-                    eDiag_Error, 
-                    "", 
-                    m_uLineNumber);
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "",
+                ILineError::eProblem_GeneralParsingError);
             throw err;
         }
         case TYPE_DATA_BED:
@@ -418,8 +422,11 @@ unsigned int CWiggleReader::x_GetLineType(
         return TYPE_DATA_FIXEDSTEP;
     }
     
-    CLineError err(
-        ILineError::eProblem_GeneralParsingError, eDiag_Error, "", m_uLineNumber);
+    CObjReaderLineException err(
+        eDiag_Error,
+        0,
+        "",
+        ILineError::eProblem_GeneralParsingError);
     throw err;
 }
 
@@ -437,6 +444,17 @@ void CWiggleReader::x_DumpStats(
 //  ----------------------------------------------------------------------------
 {
     out << pTrack->Chrom() << ": " << pTrack->Count() << endl;      
+}
+
+//  ----------------------------------------------------------------------------
+void
+CWiggleReader::xProcessError(
+    CObjReaderLineException& err,
+    IErrorContainer* pContainer)
+//  ----------------------------------------------------------------------------
+{
+    err.SetLineNumber(m_uLineNumber);
+    ProcessError(err, pContainer);
 }
 
 END_objects_SCOPE

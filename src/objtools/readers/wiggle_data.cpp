@@ -130,11 +130,11 @@ void CWiggleRecord::ParseTrackDefinition(
 {
     Reset();
     if ( data.size() < 2 || data[0] != "track" ) {
-        CLineError err( 
-            ILineError::eProblem_GeneralParsingError,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_GeneralParsingError);
         throw(err);
     }
     vector<string>::const_iterator it = data.begin();
@@ -142,11 +142,11 @@ void CWiggleRecord::ParseTrackDefinition(
         string strKey;
         string strValue;
         if ( ! NStr::SplitInTwo( *it, "=", strKey, strValue ) ) {
-            CLineError err( 
-                ILineError::eProblem_GeneralParsingError,
-                eDiag_Error, 
-                "", 
-                0);
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "",
+                ILineError::eProblem_GeneralParsingError);
             throw(err);
         }
         NStr::ReplaceInPlace( strValue, "\"", "" );
@@ -162,11 +162,11 @@ void CWiggleRecord::ParseDataBed(
 //  ----------------------------------------------------------------------------
 {
     if ( data.size() != 4 ) {
-        CLineError err( 
-            ILineError::eProblem_GeneralParsingError,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_GeneralParsingError);
         throw(err);
     }
     m_strChrom = data[0];
@@ -174,33 +174,33 @@ void CWiggleRecord::ParseDataBed(
         m_uSeqStart = NStr::StringToUInt( data[1] );
     }
     catch ( ... ) {
-        CLineError err( 
-            ILineError::eProblem_FeatureBadStartAndOrStop,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_FeatureBadStartAndOrStop);
         throw(err);
     }
     try {
         m_uSeqSpan = NStr::StringToUInt( data[2] ) - m_uSeqStart;
     }
     catch ( ... ) {
-        CLineError err( 
-            ILineError::eProblem_FeatureBadStartAndOrStop,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_FeatureBadStartAndOrStop);
         throw(err);
     }
     try {
         m_dValue = NStr::StringToDouble( data[3] );
     }
     catch ( ... ) {
-        CLineError err( 
-            ILineError::eProblem_BadScoreValue,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_BadScoreValue);
         throw(err);
     }
 }
@@ -214,22 +214,22 @@ void CWiggleRecord::ParseDataVarstep(
         m_uSeqStart = NStr::StringToInt( data[0] ) - 1; // varStep is 1- based
     }
     catch ( ... ) {
-        CLineError err( 
-            ILineError::eProblem_FeatureBadStartAndOrStop,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_FeatureBadStartAndOrStop);
         throw(err);
     }
     try {
         m_dValue = NStr::StringToDouble( data[1] );
     }
     catch ( ... ) {
-        CLineError err( 
-            ILineError::eProblem_BadScoreValue,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_BadScoreValue);
         throw(err);
     }
 }
@@ -244,11 +244,11 @@ void CWiggleRecord::ParseDataFixedstep(
         m_dValue = NStr::StringToDouble( data[0] );
     }
     catch ( ... ) {
-        CLineError err( 
-            ILineError::eProblem_BadScoreValue,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_BadScoreValue);
         throw(err);
     }
 }
@@ -269,11 +269,11 @@ void CWiggleRecord::ParseDeclarationVarstep(
         CReadUtil::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
-            CLineError err( 
-                ILineError::eProblem_GeneralParsingError,
-                eDiag_Error, 
-                "", 
-                0);
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "",
+                ILineError::eProblem_GeneralParsingError);
             throw(err);
         }
         if ( key_value_pair[0] == "chrom" ) {
@@ -284,11 +284,11 @@ void CWiggleRecord::ParseDeclarationVarstep(
             m_uSeqSpan = NStr::StringToUInt( key_value_pair[1] );
             continue;
         }
-        CLineError err( 
-            ILineError::eProblem_UnrecognizedQualifierName,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_UnrecognizedQualifierName);
         throw(err);
     }
 }
@@ -306,11 +306,11 @@ void CWiggleRecord::ParseDeclarationFixedstep(
         CReadUtil::Tokenize( *it, "=", key_value_pair );
 
         if ( key_value_pair.size() != 2 ) {
-            CLineError err( 
-                ILineError::eProblem_GeneralParsingError,
-                eDiag_Error, 
-                "", 
-                0);
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "",
+                ILineError::eProblem_GeneralParsingError);
             throw(err);
         }
         if ( key_value_pair[0] == "chrom" ) {
@@ -329,11 +329,11 @@ void CWiggleRecord::ParseDeclarationFixedstep(
             m_uSeqStep = NStr::StringToUInt( key_value_pair[1] );
             continue;
         }
-        CLineError err( 
-            ILineError::eProblem_UnrecognizedQualifierName,
-            eDiag_Error, 
-            "", 
-            0);
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "",
+            ILineError::eProblem_UnrecognizedQualifierName);
         throw(err);
     }
     m_uSeqStart -= m_uSeqStep;
