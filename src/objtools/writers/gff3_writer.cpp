@@ -244,7 +244,7 @@ bool CGff3Writer::x_WriteAlignDenseg(
         if ( iSourceRow == iTargetRow ) {
             continue;
         }
-        CGffAlignmentRecord record(dummy, m_uFlags, m_uRecordId++);
+        CGffAlignmentRecord record(dummy, m_uFlags, m_uRecordId);
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
@@ -412,6 +412,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
     }
     for (CAlign_CI align_it(bsh, sel);  align_it;  ++ align_it) {
         x_WriteAlign(*align_it);
+        m_uRecordId++;
     }
 
     return true;
