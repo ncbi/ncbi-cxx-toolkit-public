@@ -481,7 +481,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     << endl;
 #endif
 
-                if ( (is_consistent  ||
+                if ( ((is_consistent  &&  !is_intersecting)  ||
                       ( (options & fCompart_AllowIntersections)  &&
                         is_intersecting ))  &&
                      ( ( (options & fCompart_FilterByDiffLen) && 
