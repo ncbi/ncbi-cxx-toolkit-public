@@ -89,6 +89,7 @@ public:
         eInvalidParameter,
         eInvalidAuthToken,
         eTooManyPreferredAffinities,
+        ePrefAffExpired,
         eTryAgain,
     };
 
@@ -117,6 +118,7 @@ public:
         case eInvalidAuthToken:    return "eInvalidAuthToken";
         case eTooManyPreferredAffinities:
             return "eTooManyPreferredAffinities";
+        case ePrefAffExpired:      return "ePrefAffExpired";
         case eTryAgain:            return "eTryAgain";
         default:                   return CNetServiceException::GetErrCodeString();
         }

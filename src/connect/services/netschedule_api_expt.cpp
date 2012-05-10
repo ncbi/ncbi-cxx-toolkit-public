@@ -62,6 +62,7 @@ CNetScheduleExceptionMap::CNetScheduleExceptionMap()
     m_Map["eInvalidAuthToken"]    = CNetScheduleException::eInvalidAuthToken;
     m_Map["eTooManyPreferredAffinities"] =
         CNetScheduleException::eTooManyPreferredAffinities;
+    m_Map["ePrefAffExpired"]      = CNetScheduleException::ePrefAffExpired;
     m_Map["eTryAgain"]            = CNetScheduleException::eTryAgain;
 }
 
@@ -97,6 +98,7 @@ unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
     case eInvalidParameter:                     return 400;
     case eInvalidAuthToken:                     return 401;
     case eTooManyPreferredAffinities:           return 503;
+    case ePrefAffExpired:                       return 404;
     case eTryAgain:                             return 503;
     }
 }
