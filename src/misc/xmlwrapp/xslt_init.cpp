@@ -50,6 +50,9 @@
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 
+// HAVE_LIBEXSLT define is here
+#include <ncbiconf.h>
+
 #ifdef HAVE_LIBEXSLT
     #include <libexslt/exslt.h>
 #endif
