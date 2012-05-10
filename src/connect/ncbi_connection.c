@@ -1100,8 +1100,8 @@ extern EIO_Status CONN_GetSOCK(CONN conn, SOCK* sock)
     assert((conn->state & eCONN_Open)  &&  conn->meta.list);
 
     x_conn = conn->meta.list;
-    if (x_conn  &&  x_conn->meta  &&  x_conn->meta->get_type  &&
-        x_conn->meta->get_type(x_conn->meta->c_get_type)
+    if (x_conn  &&  x_conn->meta  &&  x_conn->meta->get_type
+        &&  x_conn->meta->get_type(x_conn->meta->c_get_type)
         == g_kNcbiSockNameAbbr) {
         /* HACK * HACK * HACK */
         SOCK* x_sock = (SOCK*) x_conn->handle;
