@@ -2370,8 +2370,8 @@ CNCBlobStorage::x_HeartBeat(void)
         &&  cur_db_size * 100 >= allowed_db_size * m_WarnLimitOnPct)
     {
         ERR_POST(Critical << "ALERT! Database is too large. "
-                    << "Current db size is " << g_ToSizeStr(cur_db_size)
-                    << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
+                 << "Current db size is " << g_ToSizeStr(cur_db_size)
+                 << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
         m_IsStopWrite = eStopWarning;
     }
 
@@ -2379,7 +2379,7 @@ CNCBlobStorage::x_HeartBeat(void)
         if (m_StopWriteOnSize != 0  &&  cur_db_size >= m_StopWriteOnSize) {
             m_IsStopWrite = eStopDBSize;
             ERR_POST(Critical << "Database size exceeded its limit. "
-                                    "Will no longer accept any writes from clients.");
+                                 "Will no longer accept any writes from clients.");
         }
     }
     else if (m_IsStopWrite == eStopDBSize  &&  cur_db_size <= m_StopWriteOffSize)
@@ -2389,15 +2389,15 @@ CNCBlobStorage::x_HeartBeat(void)
     if (free_space <= m_DiskCritical) {
         m_IsStopWrite = eStopDiskCritical;
         ERR_POST(Critical << "Free disk space is below CRITICAL threshold. "
-                                "Will no longer accept any writes.");
+                             "Will no longer accept any writes.");
     }
     else if (free_space <= m_DiskFreeLimit) {
         m_IsStopWrite = eStopDiskSpace;
         ERR_POST(Critical << "Free disk space is below threshold. "
-                                "Will no longer accept any writes from clients.");
+                             "Will no longer accept any writes from clients.");
     }
     else if (m_IsStopWrite == eStopDiskSpace
-                ||  m_IsStopWrite == eStopDiskCritical)
+             ||  m_IsStopWrite == eStopDiskCritical)
     {
         m_IsStopWrite = eStopWarning;
     }
@@ -2406,8 +2406,8 @@ CNCBlobStorage::x_HeartBeat(void)
         &&  cur_db_size * 100 < allowed_db_size * m_WarnLimitOffPct)
     {
         ERR_POST(Critical << "OK. Database is back to normal size. "
-                    << "Current db size is " << g_ToSizeStr(cur_db_size)
-                    << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
+                 << "Current db size is " << g_ToSizeStr(cur_db_size)
+                 << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
         m_IsStopWrite = eNoStop;
     }
 }
