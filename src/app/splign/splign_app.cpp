@@ -62,7 +62,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
-// #define SPLIGN_USE_LDS2
+#define SPLIGN_USE_LDS2
 
 #ifndef SPLIGN_USE_LDS2
 #include <objtools/lds/lds.hpp>
