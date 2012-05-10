@@ -212,7 +212,7 @@ void CDebugDumpContext::Log(const string& name, unsigned long value,
     Log(name, NStr::ULongToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
-#if (SIZEOF_LONG < 8)
+#ifndef NCBI_INT8_IS_LONG
 void CDebugDumpContext::Log(const string& name, Int8 value,
                             const string& comment)
 {
