@@ -53,6 +53,8 @@ static const string s_kUnknown = "unknown";
 // initial value for collapsed subtree feature
 static const string s_kSubtreeDisplayed = "0";
 
+// feature value for query nodes
+const string CPhyTreeFormatter::kNodeInfoQuery = "query";
 
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                                      ELabelType label_type,
@@ -69,8 +71,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
     x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
-                       m_BlastNameColorMap,
-                       m_QueryNodeId);
+                       m_BlastNameColorMap);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
 }
@@ -86,18 +87,16 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
     x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
-                       m_BlastNameColorMap,
-                       m_QueryNodeId);
+                       m_BlastNameColorMap);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
 }
 
 CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
-                                     CPhyTreeFormatter::ELabelType lblType,
-                                     int query_node_id)
+                                  CPhyTreeFormatter::ELabelType lblType,
+                                  const vector<int>& query_node_id)
 {
     x_Init();
-    m_QueryNodeId = query_node_id;
 
     x_InitTreeLabels(btc,lblType);
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
@@ -116,7 +115,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
         mark_leaves.push_back(0);
     }
     x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_leaves,
-                       m_BlastNameColorMap, m_QueryNodeId);
+                       m_BlastNameColorMap);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
 }
@@ -250,11 +249,9 @@ bool CPhyTreeFormatter::ExpandCollapseSubtree(int node_id)
         // Track labels in order to select proper color for collapsed node
         CPhyTreeLabelTracker 
             tracker = TreeDepthFirstTraverse(*node, CPhyTreeLabelTracker(
-                                                    GetFeatureTag(eBlastNameId), 
+                                                  GetFeatureTag(eBlastNameId), 
                                                   GetFeatureTag(eNodeColorId),
-                                                  GetFeatureTag(eLabelBgColorId),
-                                                                m_QueryNodeId,
-                                                                m_Dyntree));
+                                                  m_Dyntree));
 
         if (!tracker.GetError().empty()) {
             NCBI_THROW(CPhyTreeFormatterException, eTraverseProblem,
@@ -272,9 +269,8 @@ bool CPhyTreeFormatter::ExpandCollapseSubtree(int node_id)
             node->SetFeature(GetFeatureTag(eNodeColorId),
                              tracker.Begin()->second);
         }
-        // Mark collapsed subtree that contains query node
-        if (IsQueryNodeSet()) {
-            x_MarkCollapsedQueryNode(node);
+        if (tracker.FoundQueryNode()) {
+            x_MarkNode(node);
         }
     }
     else {
@@ -401,7 +397,6 @@ bool CPhyTreeFormatter::IsSingleBlastName(void)
 
 void CPhyTreeFormatter::x_Init(void)
 {
-    m_QueryNodeId = -1;
     m_SimplifyMode = eNone;
 }
 
@@ -452,31 +447,22 @@ void CPhyTreeFormatter::x_CollapseSubtrees(CPhyTreeNodeGroupper& groupper)
         x_Collapse(*it->GetNode());
         it->GetNode()->SetFeature(GetFeatureTag(eLabelId), it->GetLabel());
         it->GetNode()->SetFeature(GetFeatureTag(eNodeColorId), it->GetColor());
-        if (m_QueryNodeId > -1) {
-            x_MarkCollapsedQueryNode(it->GetNode());
+
+        CQueryNodeChecker query_checker
+            = TreeDepthFirstTraverse(*it->GetNode(),
+                                     CQueryNodeChecker(m_Dyntree));
+
+        if (query_checker.HasQueryNode()) {
+            x_MarkNode(it->GetNode());
         }
     }
 }
 
-
-void CPhyTreeFormatter::x_MarkCollapsedQueryNode(CBioTreeDynamic::CBioNode* node)
+void CPhyTreeFormatter::x_MarkNode(CBioTreeDynamic::CBioNode* node)
 {
-    //Check if query node is in the collapsed subtree
-    // and marking query node
-    if (m_QueryNodeId >= 0) {
-        CBioNodeFinder finder = TreeDepthFirstTraverse(*node,
-                                               CBioNodeFinder(m_QueryNodeId));
+    node->SetFeature(GetFeatureTag(eLabelBgColorId), s_kQueryNodeBgColor);
+}
 
-        CBioTreeDynamic::CBioNode* query_node = finder.GetNode();
-        if (query_node) {
-            const string& color = query_node->GetFeature(
-                                             GetFeatureTag(eLabelBgColorId));
-
-            node->SetFeature(GetFeatureTag(eLabelBgColorId), color);
-        }
-    }
-
-} 
 
 //Recusrive
 void CPhyTreeFormatter::x_PrintNewickTree(CNcbiOstream& ostr,
@@ -680,8 +666,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                                     CScope& scope,
                                     CPhyTreeFormatter::ELabelType label_type,
                                     const vector<int>& mark_leaves,
-                                    TBlastNameColorMap& bcolormap,
-                                    int& query_node_id)
+                                    TBlastNameColorMap& bcolormap)
 {
     CTaxon1 tax;
 
@@ -784,6 +769,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     x_AddFeatureDesc(eLabelTagColorId, GetFeatureTag(eLabelTagColorId), btc);
     x_AddFeatureDesc(eTreeSimplificationTagId,
                      GetFeatureTag(eTreeSimplificationTagId), btc);
+    x_AddFeatureDesc(eNodeInfoId, GetFeatureTag(eNodeInfoId), btc);
 
     
     int num_leaves = 0;
@@ -861,12 +847,12 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                                      s_kQueryNodeBgColor, node); 
 
                         x_AddFeature(eLabelTagColorId,
-                                     s_kQueryNodeColor, node); 
+                                     s_kQueryNodeColor, node);
+
+                        x_AddFeature(eNodeInfoId, kNodeInfoQuery, node);
 
                         //Not sure if needed
                         //m_QueryAccessionNbr = accession_nbrs[seq_number];
-
-                        query_node_id = (*node).GetObject().GetId();
                     }
                     
                     // done with this node

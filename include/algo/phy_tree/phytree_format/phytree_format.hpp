@@ -33,10 +33,13 @@
 #include <corelib/ncbiexpt.hpp>
 #include <algo/phy_tree/bio_tree.hpp>
 #include <algo/phy_tree/phytree_calc.hpp>
-#include <algo/phy_tree/phytree_format/phytree_simplify.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+// forward declaration
+class CPhyTreeNodeGroupper;
+
 
 /// Class for adding tree features, maniplating and printing tree in standard
 /// text formats
@@ -83,7 +86,8 @@ public:
         eLabelBgColorId,    ///< Color for backgroud of node label
         eLabelTagColorId,
         eTreeSimplificationTagId, ///< Is subtree collapsed
-        eLastId = eTreeSimplificationTagId ///< Last Id (with largest index)
+        eNodeInfoId,     ///< Used for denoting query nodes
+        eLastId = eNodeInfoId ///< Last Id (with largest index)
     };
 
     
@@ -119,7 +123,7 @@ public:
     /// when tree is rendered. Query node id of -1 denotes that none of tree
     /// nodes is the query node.
     CPhyTreeFormatter(CBioTreeContainer& btc, ELabelType lbl_type = eSeqId,
-                      int query_node_id = -1);
+                      const vector<int>& query_node_id = vector<int>());
 
     /// Constructor with initialization of tree features
     /// @param btc BioTreeContainer object [in]
@@ -149,12 +153,6 @@ public:
 
     // --- Setters ---
 
-    /// Set query node id
-    /// @param id Query node id [in]
-    ///
-    /// Query node is marked by different label color
-    void SetQueryNodeId(int id) {m_QueryNodeId = id;}
-
     /// Set Blast Name to color map
     /// @return Reference to Blast Name to color map
     ///
@@ -163,20 +161,10 @@ public:
 
     // --- Getters ---
 
-    /// Check if query node id is set
-    /// @return True if query node id is set, false otherwise
-    ///
-    bool IsQueryNodeSet(void) {return m_QueryNodeId > -1;}
-
     /// Check whether tree is composed of sequences with the same Blast Name
     /// @return True if all sequences have the same Blast Name, false otherwise
     ///
     bool IsSingleBlastName(void);
-
-    /// Get query node id
-    /// @return Query node id
-    ///
-    int GetQueryNodeId(void) const {return m_QueryNodeId;}
 
     /// Get current tree simplification mode
     /// @return tree simplifcation mode
@@ -232,6 +220,7 @@ public:
         case eLabelBgColorId : return "$LABEL_BG_COLOR";
         case eLabelTagColorId: return "$LABEL_TAG_COLOR";
         case eTreeSimplificationTagId : return "$NODE_COLLAPSED";
+        case eNodeInfoId : return "node-info";
         default: return "";
         }
     }
@@ -357,11 +346,11 @@ protected:
                            bool is_outer_node = true);
         
 
-    /// Mark query node after collapsing subtree. Checks if query node is in
-    /// the collapsed subtree and marks the collapse node.
-    /// @param node Root of the collapsed subtree [in]
+    /// Mark node. The function sets node feature that colors the node label
+    /// background.
+    /// @param node Node to mark
     ///
-    void x_MarkCollapsedQueryNode(CBioTreeDynamic::CBioNode* node);
+    void x_MarkNode(CBioTreeDynamic::CBioNode* node);
 
     /// Collapse given subtrees
     /// @param groupper Object groupping nodes that contains a list of subtrees
@@ -389,8 +378,6 @@ private:
     /// @param label_type Type of labels to for tree leaves [in]
     /// @param mark_leaves Indeces of sequences to be marked in the tree [in]
     /// @param bcolormap Blast name to node color map [out]
-    /// @param query_node_id Id of query node (set only if mark_query_node
-    /// equal to true) [out]
     ///
     /// Tree leaves must have labels as numbers from zero to number of leaves
     /// minus 1. This function does not initialize distance feature.
@@ -399,8 +386,7 @@ private:
                                  CScope& scope,
                                  ELabelType label_type,
                                  const vector<int>& mark_leaves,
-                                 TBlastNameColorMap& bcolormap,
-                                 int& query_node_id);
+                                 TBlastNameColorMap& bcolormap);
 
     /// Add feature descriptor to tree
     /// @param id Feature id [in]
@@ -528,19 +514,71 @@ private:
     };
 
 
+    /// Tree visitor for checking whether a subtree contains a query node.
+    /// A query node has feature node-info set to "query".
+    class CQueryNodeChecker {
+    public:
+
+        /// Constructor
+        CQueryNodeChecker(CBioTreeDynamic& tree)
+            : m_HasQueryNode(false) 
+        {
+            const CBioTreeFeatureDictionary& fdict
+                = tree.GetFeatureDict();
+
+            if (!fdict.HasFeature(eNodeInfoId)) {
+                NCBI_THROW(CException, eInvalid, 
+                           "No NodeInfo feature in CBioTreeFeatureDictionary");
+            }
+        }
+
+        /// Check if an examined subtree has a query node
+        ///
+        /// Meaningless if invoked before tree traversing
+        /// @return True if examined subtree contains a query node,
+        /// false otherwise
+        bool HasQueryNode(void) const {return m_HasQueryNode;}
+
+        /// Expamine node: check if query node. Function invoked on each
+        /// node by traversal function.
+        /// @param node Tree root [in]
+        /// @param delta Direction of tree traversal [in]
+        /// @return Traverse action
+        ETreeTraverseCode operator()(CBioTreeDynamic::CBioNode& node,
+                                     int delta) 
+        {
+            if (delta == 0 || delta == 1) {
+                if (node.IsLeaf()) {
+
+                    if (node.GetFeature(GetFeatureTag(eNodeInfoId))
+                        == kNodeInfoQuery) {
+
+                        m_HasQueryNode = true;
+                        return eTreeTraverseStop;
+                    }
+                }
+            }
+            return eTreeTraverse;
+        }
+
+    private:
+        bool m_HasQueryNode;
+    };
+
 protected:
 
     /// Stores tree data
     CBioTreeDynamic m_Dyntree;
-
-    /// Id of query node
-    int m_QueryNodeId;
 
     /// Current tree simplification mode
     ETreeSimplifyMode m_SimplifyMode;
 
     /// Blast Name to color map
     TBlastNameColorMap m_BlastNameColorMap;
+
+public:
+    /// Node feature "node-info" value for query nodes
+    static const string kNodeInfoQuery;
 };
 
 

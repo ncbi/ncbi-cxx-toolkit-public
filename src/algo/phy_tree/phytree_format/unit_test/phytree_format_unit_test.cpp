@@ -643,6 +643,9 @@ static bool s_TestFeatureDict(const CFeatureDictSet& dict)
     feature_ids[CPhyTreeFormatter::eTreeSimplificationTagId]
         = CPhyTreeFormatter::eTreeSimplificationTagId;
 
+    feature_ids[CPhyTreeFormatter::eNodeInfoId]
+        = CPhyTreeFormatter::eNodeInfoId;
+
     vector<bool> found(CPhyTreeFormatter::eLastId + 1, false);
 
     // for each feature in the dictionary

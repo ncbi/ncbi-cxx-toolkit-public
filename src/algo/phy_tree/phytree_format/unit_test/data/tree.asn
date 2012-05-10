@@ -51,6 +51,10 @@ BioTreeContainer ::= {
     {
       id 12,
       name "$NODE_COLLAPSED"
+    },
+    {
+      id 13,
+      name "node-info"
     }
   },
   nodes {

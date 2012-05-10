@@ -48,7 +48,7 @@ public:
     public:
         CLabeledNode(CBioTreeDynamic::CBioNode* node,
                      const pair<string, string>& label_color)
-                   : m_Node(node), m_LabelColorPair(label_color) {}
+            : m_Node(node), m_LabelColorPair(label_color) {}
 
         CBioTreeDynamic::CBioNode* GetNode(void) const {return m_Node;}
         const string& GetLabel(void) const {return m_LabelColorPair.first;}
@@ -112,8 +112,6 @@ public:
 
 public:
     CPhyTreeLabelTracker(const string& label, const string& color,
-                         const string& query_color,
-                         TBioTreeNodeId query_node_id,
                          CBioTreeDynamic& tree);
 
     ETreeTraverseCode operator() (CBioTreeDynamic::CBioNode& node, int delta);
@@ -121,18 +119,17 @@ public:
     TLabelColorMap_I Begin(void) {return m_LabelsColors.begin();}
     TLabelColorMap_I End(void) {return m_LabelsColors.end();}
     unsigned int GetNumLabels(void) const {return m_LabelsColors.size();}
-    CBioTreeDynamic::CBioNode* GetQueryNode(void) {return m_QueryNode;}
-    const string& GetQueryNodeColor(void) const {return m_QueryNodeColor;}
+    bool FoundQueryNode(void) const {return m_FoundQueryNode;}
+
+protected:
+    bool x_IsQuery(const CBioTreeDynamic::CBioNode& node) const;
 
 protected:
     string m_LabelFeatureTag;
     string m_ColorFeatureTag;
-    string m_QueryNodeColorFeatureTag;
     TLabelColorMap m_LabelsColors;
     string m_Error;
-    TBioTreeNodeId m_QueryNodeId;
-    CBioTreeDynamic::CBioNode* m_QueryNode;
-    string m_QueryNodeColor;
+    bool m_FoundQueryNode;
 };
 
 

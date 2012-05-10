@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <algo/phy_tree/phytree_format/phytree_format.hpp>
 #include <algo/phy_tree/phytree_format/phytree_simplify.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -251,14 +252,10 @@ ETreeTraverseCode CPhyTreeNodeGroupper::x_OnStepLeft(
 
 CPhyTreeLabelTracker::CPhyTreeLabelTracker(const string& label_feature, 
                                            const string& color_feature,
-                                           const string& query_color,
-                                           TBioTreeNodeId query_node_id,
                                            CBioTreeDynamic& tree)
     : m_LabelFeatureTag(label_feature),
       m_ColorFeatureTag(color_feature),
-      m_QueryNodeColorFeatureTag(query_color),
-      m_QueryNodeId(query_node_id),
-      m_QueryNode(NULL)
+      m_FoundQueryNode(false)
 {
     const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
     if (!fdict.HasFeature(label_feature) || !fdict.HasFeature(color_feature)) {
@@ -279,9 +276,8 @@ ETreeTraverseCode CPhyTreeLabelTracker::operator() (
     if (delta == 0 || delta == 1) {
 
         // if query node
-        if ((*node).GetId() == m_QueryNodeId) {
-                m_QueryNode = &node;
-                m_QueryNodeColor = node.GetFeature(m_QueryNodeColorFeatureTag);
+        if (!m_FoundQueryNode && x_IsQuery(node)) {
+            m_FoundQueryNode = true;
         }
 
         if (node.IsLeaf()) {
@@ -296,5 +292,11 @@ ETreeTraverseCode CPhyTreeLabelTracker::operator() (
 }
 
 
+bool CPhyTreeLabelTracker::x_IsQuery(const CBioTreeDynamic::CBioNode& node) const
+{
+    return node.GetFeature(CPhyTreeFormatter::GetFeatureTag(
+                                            CPhyTreeFormatter::eNodeInfoId))
+        == CPhyTreeFormatter::kNodeInfoQuery;
+}
 
 END_NCBI_SCOPE
