@@ -426,7 +426,7 @@ RunTest() {
    \$check_exec $x_time \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
    result=\$?
    stop_time="\`date +'$x_date_format'\`"
-   load_avg="\`uptime | sed -e 's/.*average: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
+   load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
 
    sed -e '/ ["][$][@]["].*\$/ {
        s/^.*: //
