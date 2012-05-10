@@ -1175,8 +1175,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
                                             left_primer_window_right_align_overlap,
                                             hit_index);
     }
-    
-    bool index_filled = false;
+
     for (int i = 0; i < HspOverlappingWithLeftPrimer_size; i ++) {
        
         int left_hsp_index = m_HspOverlappingWithLeftPrimer[i].index;
@@ -1312,7 +1311,6 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
                                             hit_index);
     }
 
-    index_filled = false;
     for (int i = 0; i < HspOverlappingWithRightPrimer_size; i ++) {
         int left_hsp_index = m_HspOverlappingWithRightPrimer[i].index;
         if ((int)(m_PrimerHit.size()) >= m_NumNonSpecificPrimer){
