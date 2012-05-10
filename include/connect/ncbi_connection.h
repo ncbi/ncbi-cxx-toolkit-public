@@ -61,14 +61,14 @@ extern "C" {
 
 
 struct SConnectionTag;
-typedef struct SConnectionTag* CONN;      /* connection handle */
+typedef struct SConnectionTag* CONN;      /**< connection handle */
 
 
 enum ECONN_Flag {
-    fCONN_Untie      = 1,  /* do not call flush method prior to every read */
-    fCONN_Supplement = 2   /* supplement I/O with extended return codes    */
+    fCONN_Untie      = 1,  /**< do not call flush method prior to every read */
+    fCONN_Supplement = 2   /**< supplement I/O with extended return codes    */
 };
-typedef unsigned int TCONN_Flags;  /* bitwise OR of ECONN_Flag */
+typedef unsigned int TCONN_Flags;  /**< bitwise OR of ECONN_Flag */
 
 
 /** Create all data necessary to establish a new connection (merely bind it to
@@ -85,15 +85,15 @@ typedef unsigned int TCONN_Flags;  /* bitwise OR of ECONN_Flag */
  *  CONN_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_CreateEx
-(CONNECTOR   connector,  /* [in]  connector                        */
- TCONN_Flags flags,      /* [in]  connection flags                 */
- CONN*       conn        /* [out] handle of the created connection */
+(CONNECTOR   connector,  /**< [in]  connector                        */
+ TCONN_Flags flags,      /**< [in]  connection flags                 */
+ CONN*       conn        /**< [out] handle of the created connection */
  );
 
 /** Same as CONN_CreateEx() called with 0 in the "flags" parameter */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
-(CONNECTOR   connector,  /* [in]  connector                        */
- CONN*       conn        /* [out] handle of the created connection */
+(CONNECTOR   connector,  /**< [in]  connector                        */
+ CONN*       conn        /**< [out] handle of the created connection */
  );
 
 
@@ -108,8 +108,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
  *  CONN_Create, CONN_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
-(CONN      conn,      /* [in] connection handle */
- CONNECTOR connector  /* [in] new connector     */
+(CONN      conn,      /**< [in] connection handle */
+ CONNECTOR connector  /**< [in] new connector     */
  );
 
 
@@ -118,7 +118,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
  * the connection.  Return value NULL denotes unknown connection type.
  */
 extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
-(CONN conn  /* [in] connection handle */ 
+(CONN conn  /**< [in] connection handle */ 
  );
 
 
@@ -131,8 +131,8 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
  * with 0, and to return 0.
  */
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
-(CONN      conn,  /* [in] connection handle */ 
- EIO_Event event  /* [in] see description   */
+(CONN      conn,  /**< [in] connection handle */ 
+ EIO_Event event  /**< [in] see description   */
  );
 
 
@@ -145,7 +145,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
  * by the returned string when the description is no longer needed.
  */
 extern NCBI_XCONNECT_EXPORT char* CONN_Description
-(CONN conn  /* [in] connection handle */
+(CONN conn  /**< [in] connection handle */
  );
 
 
@@ -156,9 +156,9 @@ extern NCBI_XCONNECT_EXPORT char* CONN_Description
  *         connector-specific value is used (this is the default).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
-(CONN            conn,    /* [in] connection handle */
- EIO_Event       event,   /* [in] I/O direction     */
- const STimeout* timeout  /* [in] new timeout       */
+(CONN            conn,    /**< [in] connection handle */
+ EIO_Event       event,   /**< [in] I/O direction     */
+ const STimeout* timeout  /**< [in] new timeout       */
  );
 
 
@@ -168,8 +168,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
  * or CONN_Close().
  */
 extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
-(CONN      conn,  /* [in] connection handle                  */
- EIO_Event event  /* [in] I/O direction, not "eIO_ReadWrite" */
+(CONN      conn,  /**< [in] connection handle                   */
+ EIO_Event event  /**< [in] I/O direction, not "eIO_ReadWrite"! */
  );
 
 
@@ -181,9 +181,9 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
  *  CONN_Read, CONN_Write
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
-(CONN            conn,    /* [in] connection handle                         */
- EIO_Event       event,   /* [in] can be either eIO_Read or eIO_Write only! */
- const STimeout* timeout  /* [in] the maximal wait time                     */
+(CONN            conn,    /**< [in] connection handle                        */
+ EIO_Event       event,   /**< [in] can only be either of eIO_Read, IO_Write */
+ const STimeout* timeout  /**< [in] the maximal wait time                    */
  );
 
 
@@ -207,11 +207,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
  *  CONN_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
-(CONN            conn,       /* [in]  connection handle                     */ 
- const void*     buf,        /* [in]  pointer to the data buffer to write   */ 
- size_t          size,       /* [in]  # of bytes to write                   */ 
- size_t*         n_written,  /* [out, non-NULL] # of actually written bytes */
- EIO_WriteMethod how         /* [in]  eIO_WritePlain or eIO_WritePersist    */
+(CONN            conn,       /**< [in]  connection handle                    */
+ const void*     buf,        /**< [in]  pointer to the data buffer to write  */
+ size_t          size,       /**< [in]  # of bytes to write                  */
+ size_t*         n_written,  /**< [out] non-NULL, # of actually written bytes*/
+ EIO_WriteMethod how         /**< [in]  eIO_WritePlain or eIO_WritePersist   */
  );
 
 
@@ -225,9 +225,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
  *  CONN_Read, CONN_Write
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
-(CONN        conn,  /* [in] connection handle                     */
- const void* buf,   /* [in] pointer to the data being pushed back */
- size_t      size   /* [in] # of bytes to push back               */
+(CONN        conn,  /**< [in] connection handle                     */
+ const void* buf,   /**< [in] pointer to the data being pushed back */
+ size_t      size   /**< [in] # of bytes to push back               */
  );
 
 
@@ -242,7 +242,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
  *  CONN_Read, CONN_Write, CONN_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
-(CONN        conn  /* [in] connection handle */
+(CONN        conn  /**< [in] connection handle */
  );
 
 
@@ -267,11 +267,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
  *  CONN_SetTimeout, CONN_ReadLine
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
-(CONN           conn,    /* [in]  connection handle                  */
- void*          buf,     /* [out] memory buffer to read to           */
- size_t         size,    /* [in]  max. # of bytes to read            */
- size_t*        n_read,  /* [out, non-NULL] # of actually read bytes */
- EIO_ReadMethod how      /* [in]  peek/read/persist                  */
+(CONN           conn,    /**< [in]  connection handle                  */
+ void*          buf,     /**< [out] memory buffer to read to           */
+ size_t         size,    /**< [in]  max. # of bytes to read            */
+ size_t*        n_read,  /**< [out] non-NULL, # of actually read bytes */
+ EIO_ReadMethod how      /**< [in]  peek/read/persist                  */
  );
 
 
@@ -291,10 +291,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  *  CONN_Read, CONN_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
-(CONN    conn,   /* [in]  connection handle */
- char*   line,   /* [out] buffer to read to */
- size_t  size,   /* [in]  buffer size       */
- size_t* n_read  /* [out] line length       */
+(CONN    conn,   /**< [in]  connection handle */
+ char*   line,   /**< [out] buffer to read to */
+ size_t  size,   /**< [in]  buffer size       */
+ size_t* n_read  /**< [out] line length       */
  );
 
 
@@ -309,19 +309,19 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
  *  CONN_Create, CONN_Read, CONN_Write, CONN_Flush
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
-(CONN      conn,  /* [in] connection handle     */
- EIO_Event dir    /* [in] eIO_Read or eIO_Write */
+(CONN      conn,  /**< [in] connection handle     */
+ EIO_Event dir    /**< [in] eIO_Read or eIO_Write */
  );
 
 
 /** Close the connection and destroy all relevant internal data.
  * @note  Whatever the error code is returned, the connection handle "conn"
- *        will have become invalid (so, it should not be used it anymore).
+ *        will have become invalid (so, it should not be used anymore).
  * @sa
  *  CONN_Create
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
-(CONN conn  /* [in] connection handle */
+(CONN conn  /**< [in] connection handle */
  );
 
 
@@ -352,32 +352,39 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  *  CONN_Read, CONN_Write, CONN_Close
  */
 typedef enum {
-    eCONN_OnClose   = 0,  /** NB: CONN has been flushed prior to the call    */
-    eCONN_OnRead    = 1,  /** Read from connector is about to occur          */
-    eCONN_OnWrite   = 2,  /** Write to connector is about to occur           */
-    eCONN_OnFlush   = 3,  /** Connector is about to be flushed               */
-    eCONN_OnTimeout = 4   /** Connector I/O has timed out                    */
+    eCONN_OnClose   = 0,  /**< NB: CONN has been flushed prior to the call   */
+    eCONN_OnRead    = 1,  /**< Read from connector is about to occur         */
+    eCONN_OnWrite   = 2,  /**< Write to connector is about to occur          */
+    eCONN_OnFlush   = 3,  /**< Connector is about to be flushed              */
+    eCONN_OnTimeout = 4   /**< Connector I/O has timed out                   */
 } ECONN_Callback;
 #define CONN_N_CALLBACKS  5
 
 typedef EIO_Status (*FCONN_Callback)(CONN conn,ECONN_Callback type,void* data);
 
 typedef struct {
-    FCONN_Callback func;  /** Function to call on the event                  */
-    void*          data;  /** Data to pass to the callback as its last arg   */
+    FCONN_Callback func;  /**< function to call on the event                 */
+    void*          data;  /**< data to pass to the callback as its last arg  */
 } SCONN_Callback;
 
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetCallback
-(CONN                  conn,    /* [in]  connection to set callback for      */
- ECONN_Callback        type,    /* [in]  callback type                       */
- const SCONN_Callback* new_cb,  /* [in]  callback to set (may be 0 to reset) */
-       SCONN_Callback* old_cb   /* [out] to save old callback at (may be 0)  */
+(CONN                  conn,    /**< [in]  connection to set callback for    */
+ ECONN_Callback        type,    /**< [in]  callback type                     */
+ const SCONN_Callback* new_cb,  /**< [in]  callback to set (NULL to reset)   */
+       SCONN_Callback* old_cb   /**< [out] to save old callback at (may be 0)*/
 );
 
 
+/** Get an underlying SOCK handle for connection that is implemented as a
+ * socket.  Not a eIO_Success return code guarantees "*sock" is NULL.
+ * Set "*sock" to NULL when no socket handle can be obtained.
+ * @note  The returned SOCK object remains in use by the connection.
+ * @sa
+ *  SOCK, SOCK_GetOSHandleEx
+ */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_GetSOCK
-(CONN  conn,
- SOCK* sock
+(CONN  conn,  /**< [in]  connection handle            */
+ SOCK* sock   /**< [out] non-NULL, to get the SOCK to */
  );
     
 

@@ -58,7 +58,7 @@ extern "C" {
 
 /** HTTP connector flags.
  *
- * @param fHTTP_Flushable
+ * @var fHTTP_Flushable
  *       by default all data written to the connection are kept until read
  *       begins (even though CONN_Flush() might have been called in between the
  *       writes);  with this flag set, CONN_Flush() will result the data to be
@@ -67,37 +67,37 @@ extern "C" {
  *       assures that the connector sends at least an HTTP header on "CLOSE"
  *       and re-"CONNECT", even if no data for HTTP body have been written
  *
- * @param fHTTP_KeepHeader
+ * @var fHTTP_KeepHeader
  *       Do not strip HTTP header (i.e. everything up to the first "\r\n\r\n",
  *       including the "\r\n\r\n") from the CGI script's response (including
  *       any server error, which then is made available for reading as well)
  *       *NOTE* this flag disables automatic authorization, redirection, etc.
  *
- * @param fHTTP_UrlDecodeInput
+ * @var fHTTP_UrlDecodeInput
  *       Assume the response body as single-part, URL-encoded;  perform the
  *       URL-decoding on read, and deliver decoded data to the user.
  *
- * @param fHTTP_NoUpread
+ * @var fHTTP_NoUpread
  *       Do *not* do internal reading into temporary buffer while sending data
  *       to HTTP server;  by default any send operation tries to extract data
  *       as they are coming back from the server in order to prevent stalling
  *       due to data clogging in the connection.
  *
- * @param fHTTP_DropUnread
+ * @var fHTTP_DropUnread
  *       Do not collect incoming data in "Read" mode before switching into
  *       "Write" mode for preparing next request;  by default all data sent by
  *       the server get stored even if not all of it had been requested prior
  *       to a "Write" following a "Read" was issued (stream emulation).
  *
- * @param fHTTP_NoAutoRetry
+ * @var fHTTP_NoAutoRetry
  *       Do not attempt any auto-retries in case of failing connections
  *       (this flag effectively means having SConnNetInfo::max_try set to 1).
 
- * @param fHTTP_InsecureRedirect
+ * @var fHTTP_InsecureRedirect
  *       For security reasons the following redirects comprise security risk
  *       and, thus, are prohibited:  switching from https to http, and
  *       re-posting data (regardless of the transport, either http or https);
- *       this flag allows such redirects (if needed) to be honored.
+ *       this flag allows such redirects (when encountered) to be honored.
  *
  * @note
  *  URL encoding/decoding (in the "fHTTP_Url*" cases and "net_info->args")
@@ -207,11 +207,13 @@ typedef void        (*FHTTP_Cleanup)
  *     (also see fHTTP_Flushable flag below).
  *  2. On the first CONN_Read() or CONN_Wait(on read), compose and send the
  *        whole HTTP request as:
+ *        @verbatim
  *        {POST|GET} <net_info->path>?<net_info->args> HTTP/1.0\r\n
  *        <user_header\r\n>
  *        Content-Length: <accumulated_data_length>\r\n
  *        \r\n
  *        <accumulated_data>
+ *        @endverbatim
  *     @note
  *       If <user_header> is neither a NULL pointer nor an empty string, then:
  *       - it must NOT contain any "empty lines":  "\r\n\r\n";
@@ -272,7 +274,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  *  eIO_Success if the tunnel has been successfully created;
  *  otherwise, return an error code and set "*sock" to NULL upon return.
  * @sa
- *  EHTTP_Flags, SOCK_CreateEx, SOCK_Close
+ *  THTTP_Flags, SOCK_CreateEx, SOCK_Close
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnelEx
 (const SConnNetInfo* net_info,
