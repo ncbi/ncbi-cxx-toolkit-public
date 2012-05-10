@@ -58,7 +58,7 @@ public:
         {
             return false;
         }
-#if SIZEOF_LONG == 4
+#ifndef NCBI_INT8_IS_LONG
     // add variants with long to avoid ambiguity
     static bool IsNegative(long value)
         {
@@ -917,7 +917,7 @@ DECLARE_STD_INT_TYPE(short)
 DECLARE_STD_INT_TYPE(unsigned short)
 DECLARE_STD_INT_TYPE(int)
 DECLARE_STD_INT_TYPE(unsigned)
-#if SIZEOF_LONG == 4
+#ifndef NCBI_INT8_IS_LONG
 DECLARE_STD_INT_TYPE(long)
 DECLARE_STD_INT_TYPE(unsigned long)
 #endif

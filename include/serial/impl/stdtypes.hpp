@@ -238,7 +238,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
-#if SIZEOF_LONG == 4
+#ifndef NCBI_INT8_IS_LONG
 EMPTY_TEMPLATE
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<long>
 {

@@ -312,6 +312,30 @@ void CObjectIStream::SkipStd(const unsigned long& )
 {
     SkipUint4();
 }
+#elif !defined(NCBI_INT8_IS_LONG)
+inline
+void CObjectIStream::ReadStd(long& data)
+{
+    data = ReadInt8();
+}
+
+inline
+void CObjectIStream::ReadStd(unsigned long& data)
+{
+    data = ReadUint8();
+}
+
+inline
+void CObjectIStream::SkipStd(const long& )
+{
+    SkipInt8();
+}
+
+inline
+void CObjectIStream::SkipStd(const unsigned long& )
+{
+    SkipUint8();
+}
 #endif
 
 inline

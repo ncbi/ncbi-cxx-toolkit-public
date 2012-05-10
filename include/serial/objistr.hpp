@@ -642,7 +642,7 @@ public:
     void ReadStd(unsigned& data);
     void SkipStd(const int& );
     void SkipStd(const unsigned& );
-#if SIZEOF_LONG == 4
+#ifndef NCBI_INT8_IS_LONG
     void ReadStd(long& data);
     void ReadStd(unsigned long& data);
     void SkipStd(const long& );

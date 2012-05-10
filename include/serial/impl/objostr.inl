@@ -198,6 +198,18 @@ void CObjectOStream::WriteStd(const unsigned long& data)
 {
     WriteUint4(Uint4(data));
 }
+#elif !defined(NCBI_INT8_IS_LONG)
+inline
+void CObjectOStream::WriteStd(const long& data)
+{
+    WriteInt8(Int8(data));
+}
+
+inline
+void CObjectOStream::WriteStd(const unsigned long& data)
+{
+    WriteUint8(Uint8(data));
+}
 #endif
 
 inline

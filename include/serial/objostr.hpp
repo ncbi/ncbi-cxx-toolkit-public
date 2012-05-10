@@ -463,7 +463,7 @@ public:
     void WriteStd(const unsigned short& data);
     void WriteStd(const int& data);
     void WriteStd(const unsigned int& data);
-#if SIZEOF_LONG == 4
+#ifndef NCBI_INT8_IS_LONG
     void WriteStd(const long& data);
     void WriteStd(const unsigned long& data);
 #endif
