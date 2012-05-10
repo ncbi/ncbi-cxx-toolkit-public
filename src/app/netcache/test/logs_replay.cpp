@@ -340,11 +340,11 @@ retry:
         Uint4 n_read = Uint4(m_InFile.Read(m_InBuf + m_InReadSize,
                                            sizeof(m_InBuf) - m_InReadSize));
         if (n_read == 0) {
-            LOG_POST("Cannot read file " << m_InFile.GetPathname()
+            /*LOG_POST("Cannot read file " << m_InFile.GetPathname()
                      << " (attempted to read "
                      << (sizeof(m_InBuf) - m_InReadSize)
                      << " at position " << m_TotalRead
-                     << " with last req_time=" << m_ReqTime << ")");
+                     << " with last req_time=" << m_ReqTime << ")");*/
             return false;
         }
         m_InReadSize += n_read;
@@ -478,12 +478,21 @@ CReplayThread::x_GetBlob(Uint8 key_id)
             key_info->size = Uint8(-1);
             return;
         }
-        if (key_info->size != Uint8(-1)  &&  blob_size != key_info->size) {
-            ERR_POST(Critical << CTime(CTime::eCurrent).AsString("h:m:s.r")
-                     << " Blob " << key_info->key << " has incorrect size "
-                     << blob_size << " (expected " << key_info->size << ")");
-            ++m_CntBadReads[size_index];
-            return;
+        if (key_info->size != Uint8(-1)) {
+            if (key_info->md5.empty()) {
+                ERR_POST(Critical << CTime(CTime::eCurrent).AsString("h:m:s.r")
+                         << "Blob " << key_info->key
+                         << " found when it shouldn't exist");
+                ++m_CntBadReads[size_index];
+                return;
+            }
+            if (blob_size != key_info->size) {
+                ERR_POST(Critical << CTime(CTime::eCurrent).AsString("h:m:s.r")
+                         << " Blob " << key_info->key << " has incorrect size "
+                         << blob_size << " (expected " << key_info->size << ")");
+                ++m_CntBadReads[size_index];
+                return;
+            }
         }
         Uint8 orig_size = blob_size;
         size_t last_size = 0;
