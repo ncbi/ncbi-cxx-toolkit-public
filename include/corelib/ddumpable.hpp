@@ -106,7 +106,7 @@ public:
              const string& comment = kEmptyStr);
     void Log(const string& name, unsigned long value,
              const string& comment = kEmptyStr);
-#if (SIZEOF_LONG < 8)
+#ifndef NCBI_INT8_IS_LONG
     void Log(const string& name, Int8 value,
              const string& comment = kEmptyStr);
     void Log(const string& name, Uint8 value,

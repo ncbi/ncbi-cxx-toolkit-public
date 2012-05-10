@@ -107,12 +107,12 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
-#if SIZEOF_LONG == 4  &&  \
+#if !defined(NCBI_INT8_IS_LONG)  &&  \
     (defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC)  ||  \
      defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COMPILER_MSVC))
     operator long(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
+        return MakeCP<CP>(NStr::StringToLong(m_Value, NStr::fAllowTrailingSymbols));
     }
 #endif
     operator Uint8(void) const
@@ -228,13 +228,13 @@ public:
     {
         return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
     }
-#if SIZEOF_LONG == 4  &&  \
+#if !defined(NCBI_INT8_IS_LONG)  &&  \
     ((defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 400)  ||  \
      defined(NCBI_COMPILER_ICC)  ||  defined(NCBI_COMPILER_WORKSHOP) || \
      defined(NCBI_COMPILER_MSVC))
     operator long(void) const
     {
-        return MakeCP<CP>(NStr::StringToInt(m_Value, NStr::fAllowTrailingSymbols));
+        return MakeCP<CP>(NStr::StringToLong(m_Value, NStr::fAllowTrailingSymbols));
     }
 #endif
     operator Uint8(void) const
@@ -876,6 +876,68 @@ public:
 private:
     const obj_type  m_Value;
 };
+
+#if SIZEOF_LONG == 8  &&  !defined(NCBI_INT8_IS_LONG)
+template <typename CP>
+class CValueConvert<CP, unsigned long>
+{
+public:
+    typedef unsigned long obj_type;
+
+    CValueConvert(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    template <typename TO>
+    operator TO(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator string(void) const
+    {
+        return NStr::ULongToString(m_Value);
+    }
+    operator CTime(void) const
+    {
+        return CTime(MakeCP<CP>(m_Value));
+    }
+
+private:
+    const obj_type m_Value;
+};
+
+template <typename CP>
+class CValueConvert<CP, long>
+{
+public:
+    typedef long obj_type;
+
+    CValueConvert(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    template <typename TO>
+    operator TO(void) const
+    {
+        return MakeCP<CP>(m_Value);
+    }
+    operator string(void) const
+    {
+        return NStr::LongToString(m_Value);
+    }
+    operator CTime(void) const
+    {
+        return CTime(MakeCP<CP>(m_Value));
+    }
+
+private:
+    const obj_type m_Value;
+};
+#endif
 
 template <typename CP>
 class CValueConvert<CP, Uint8>

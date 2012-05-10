@@ -441,6 +441,30 @@ private:
     obj_type m_Value;
 };
 
+#if SIZEOF_LONG == 8  &&  !defined(NCBI_INT8_IS_LONG)
+template <>
+class CConvPolicy<SRunTimeCP, long>
+{
+public:
+    typedef long obj_type;
+
+    CConvPolicy(obj_type value)
+    : m_Value(value)
+    {
+    }
+
+public:
+    template <typename TO>
+    operator TO(void) const
+    {
+        return ConvertUsingRunTimeCP<TO>(m_Value);
+    }
+
+private:
+    obj_type m_Value;
+};
+#endif
+
 template <>
 class CConvPolicy<SRunTimeCP, Int8>
 {
