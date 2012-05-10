@@ -175,6 +175,7 @@ void CProjItem::Clear(void)
     m_IsBundle = false;
     m_External = false;
     m_StyleObjcpp = false;
+    m_MkName.clear();
 }
 
 
@@ -213,6 +214,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_IsBundle = item.m_IsBundle;
     m_External = item.m_External;
     m_StyleObjcpp = item.m_StyleObjcpp;
+    m_MkName = item.m_MkName;
 }
 
 string CProjItem::GetPath(void) const

@@ -291,6 +291,8 @@ public:
     
     static string    GetConfigNameKeyword(void);
     static string    GetVcprojExt(void);
+
+    static string GetTopBuilddir(void);
 private:
     static EMsvcVersion   sm_MsvcVersion;
     static EMsvcPlatform  sm_MsvcPlatform;

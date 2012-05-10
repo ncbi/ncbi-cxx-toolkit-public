@@ -41,6 +41,43 @@
 BEGIN_NCBI_SCOPE
 
 const char* s_check_separator = " ____ ";
+static map<string,size_t> s_buildOrder_byname;
+static size_t s_BuildOrder=0;
+
+void s_WriteBuildOrder(const string& dir_name, const string& mkname)
+{
+    string name( CDirEntry::ConcatPath(dir_name,mkname));
+    s_buildOrder_byname[name] = ++s_BuildOrder;
+}
+
+bool CProjectTreeBuilder::VerifyBuildOrder(
+    const CProjItem& item, list<string> dependencies, const CProjectItemsTree&  tree)
+{
+    bool res = true;
+    if (item.m_MkName.empty()) {
+// error?
+        return res;
+    }
+    ITERATE(list<string>, d, dependencies) {
+        CProjectItemsTree::TProjects::const_iterator n =
+            tree.m_Projects.find(CreateProjKey(*d));
+            if (n != tree.m_Projects.end()) {
+                const CProjItem& dep_item = n->second;
+                if (dep_item.m_MkName.empty()) {
+                    //error?
+                } else if (s_buildOrder_byname[dep_item.m_MkName] >
+                           s_buildOrder_byname[item.m_MkName]) {
+                    PTB_WARNING_EX(item.m_MkName,
+                        ePTB_InvalidMakefile,
+                        "should be built after: " << dep_item.m_MkName);
+                    res = false;
+                }
+            }
+
+    }
+    return res;
+}
+
 
 struct PLibExclude
 {
@@ -941,6 +978,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     //
     project.m_NcbiCLibs = ncbi_clibs;
     project.m_StyleObjcpp = style_objcpp;
+    project.m_MkName = applib_mfilepath;
 
     //DATATOOL_SRC
     list<CDataToolGeneratedSrc> datatool_sources;
@@ -1296,6 +1334,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
     (tree->m_Projects[proj_key]).m_StyleObjcpp = style_objcpp;
+    (tree->m_Projects[proj_key]).m_MkName = applib_mfilepath;
 
     k = m->second.m_Contents.find("HEADER_EXPORT");
     if (k != m->second.m_Contents.end()) {
@@ -1345,6 +1384,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_IsBundle = isbundle;
         item_dll.m_External = true;
         item_dll.m_StyleObjcpp = style_objcpp;
+        item_dll.m_MkName = applib_mfilepath;
         item_dll.m_ProjTags = tree->m_Projects[proj_key].m_ProjTags;
         item_dll.m_ProjTags.push_back("dll");
         tree->m_Projects[proj_dll] = item_dll;
@@ -1501,6 +1541,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
         IdentifySlnGUID(source_base_dir, proj_key));
     tree->m_Projects[proj_key].m_External = true;
     tree->m_Projects[proj_key].m_StyleObjcpp = style_objcpp;
+    tree->m_Projects[proj_key].m_MkName = applib_mfilepath;
     
     k = m->second.m_Contents.find("HOSTED_LIBS");
     if (k != m->second.m_Contents.end()) {
@@ -1951,6 +1992,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
         CSimpleMakeFileContents::eSortUnique)) {
         project.m_Watchers = NStr::Join(watchers, " ");
     }
+
+    project.m_MkName = applib_mfilepath;
     tree->m_Projects[proj_key] = project;
 
     return proj_key;
@@ -2135,10 +2178,17 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     map<string, EMakeFileType> libprojects;
     map<string, EMakeFileType> dllprojects;
     map<string, EMakeFileType> userprojects;
+    vector<string> ordered_subprojects;
+    string topbuilddir;
+    bool get_order = GetApp().IsScanningWholeTree();
+    if (is_root && get_order) {
+        topbuilddir = GetApp().GetRegSettings().GetTopBuilddir();
+    }
 
-    if ( process_projects || weak ) {
-        ProcessMakeInFile(node_path, makefiles, maketype, parent);
-        TFiles::const_iterator p = makefiles->m_In.find(node_path);
+    if ( process_projects || weak || !topbuilddir.empty()) {
+        string node(topbuilddir.empty() ? node_path : topbuilddir);
+        ProcessMakeInFile(node, makefiles, maketype, parent);
+        TFiles::const_iterator p = makefiles->m_In.find(node);
         if (p != makefiles->m_In.end()) {
         const CSimpleMakeFileContents& makefile = p->second;
         mkin = &makefile;
@@ -2158,63 +2208,11 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                         break;
                     }
                     subprojects[*i] = max(maketype, subtype[j]);
+                    ordered_subprojects.push_back(*i);
                 }
             }
         }
         if ( process_projects ) {
-        string appproj[] = {"APP_PROJ","EXPENDABLE_APP_PROJ","POTENTIAL_APP_PROJ",""};
-        EMakeFileType apptype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
-        if (filter->ExcludePotential()) {
-            apptype[2] = eMakeType_Excluded;
-        }
-        for (j=0; !appproj[j].empty(); ++j) {
-            k = makefile.m_Contents.find(appproj[j]);
-            if (k != makefile.m_Contents.end()) {
-                const list<string>& values = k->second;
-                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
-                    if (i->at(0) == '#') {
-                        break;
-                    }
-                    appprojects["Makefile." + *i + ".app"] = max(maketype, apptype[j]);
-                }
-            }
-        }
-        string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",
-                            "ASN_PROJ","DTD_PROJ","XSD_PROJ","WSDL_PROJ",""};
-        EMakeFileType libtype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential,
-            eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined};
-        if (filter->ExcludePotential()) {
-            libtype[2] = eMakeType_Excluded;
-        }
-        for (j=0; !libproj[j].empty(); ++j) {
-            k = makefile.m_Contents.find(libproj[j]);
-            if (k != makefile.m_Contents.end()) {
-                const list<string>& values = k->second;
-                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
-                    if (i->at(0) == '#') {
-                        break;
-                    }
-                    libprojects["Makefile." + *i + ".lib"] = max(maketype, libtype[j]);
-                }
-            }
-        }
-        string dllproj[] = {"DLL_PROJ","EXPENDABLE_DLL_PROJ","POTENTIAL_DLL_PROJ",""};
-        EMakeFileType dlltype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
-        if (filter->ExcludePotential()) {
-            dlltype[2] = eMakeType_Excluded;
-        }
-        for (j=0; !dllproj[j].empty(); ++j) {
-            k = makefile.m_Contents.find(dllproj[j]);
-            if (k != makefile.m_Contents.end()) {
-                const list<string>& values = k->second;
-                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
-                    if (i->at(0) == '#') {
-                        break;
-                    }
-                    dllprojects["Makefile." + *i + ".dll"] = max(maketype, dlltype[j]);
-                }
-            }
-        }
         string userproj[] = {"UNIX_PROJ","EXPENDABLE_UNIX_PROJ", ""};
         if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
             userproj[0] = "MSVC_PROJ";
@@ -2232,8 +2230,82 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                     if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
                         userprojects["Makefile." + *i] = max(maketype, usertype[j]);
                         userprojects["Makefile." + *i + ".in"] = max(maketype, usertype[j]);
+                        if (get_order) {
+                            s_WriteBuildOrder(dir_name,"Makefile." + *i);
+                            s_WriteBuildOrder(dir_name,"Makefile." + *i + ".in");
+                        }
                     } else {
-                        userprojects["Makefile." + *i + ".msvcproj"] = max(maketype, usertype[j]);
+                        string mkname("Makefile." + *i + ".msvcproj");
+                        userprojects[mkname] = max(maketype, usertype[j]);
+                        if (get_order) {
+                            s_WriteBuildOrder(dir_name,mkname);
+                        }
+                    }
+                }
+            }
+        }
+        string libproj[] = {"ASN_PROJ","DTD_PROJ","XSD_PROJ","WSDL_PROJ",
+            "LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",""};
+        EMakeFileType libtype[] = {
+            eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined,
+            eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
+        if (filter->ExcludePotential()) {
+            libtype[6] = eMakeType_Excluded;
+        }
+        for (j=0; !libproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(libproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
+                    string mkname("Makefile." + *i + ".lib");
+                    libprojects[mkname] = max(maketype, libtype[j]);
+                    if (get_order) {
+                        s_WriteBuildOrder(dir_name,mkname);
+                    }
+                }
+            }
+        }
+        string dllproj[] = {"DLL_PROJ","EXPENDABLE_DLL_PROJ","POTENTIAL_DLL_PROJ",""};
+        EMakeFileType dlltype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
+        if (filter->ExcludePotential()) {
+            dlltype[2] = eMakeType_Excluded;
+        }
+        for (j=0; !dllproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(dllproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
+                    string mkname("Makefile." + *i + ".dll");
+                    dllprojects[mkname] = max(maketype, dlltype[j]);
+                    if (get_order) {
+                        s_WriteBuildOrder(dir_name,mkname);
+                    }
+                }
+            }
+        }
+        string appproj[] = {"APP_PROJ","EXPENDABLE_APP_PROJ","POTENTIAL_APP_PROJ",""};
+        EMakeFileType apptype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
+        if (filter->ExcludePotential()) {
+            apptype[2] = eMakeType_Excluded;
+        }
+        for (j=0; !appproj[j].empty(); ++j) {
+            k = makefile.m_Contents.find(appproj[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
+                    string mkname("Makefile." + *i + ".app");
+                    appprojects[mkname] = max(maketype, apptype[j]);
+                    if (get_order) {
+                        s_WriteBuildOrder(dir_name,mkname);
                     }
                 }
             }
@@ -2312,6 +2384,29 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 
     // Convert subprojects to subdirs
     map<string, EMakeFileType> subprojects_dirs;
+    vector<string> ordered_subprojects_dirs;
+
+    // begin with explicitely requested subprojects
+    ITERATE( vector<string>, p, ordered_subprojects) {
+        string name(*p);
+        CDirEntry dir_entry( CDirEntry::ConcatPath(dir_name, name));
+        if ( dir_entry.IsDir() ) {
+            if (subprojects.find(name) != subprojects.end()) {
+                subprojects_dirs[dir_entry.GetPath()] = subprojects[name];
+            } else {
+                subprojects_dirs[dir_entry.GetPath()] =
+                    is_root ? eMakeType_Undefined : eMakeType_Excluded;
+            }
+            if (find(ordered_subprojects_dirs.begin(), ordered_subprojects_dirs.end(), name) == 
+                     ordered_subprojects_dirs.end()) {
+                ordered_subprojects_dirs.push_back(name);
+            } else {
+                PTB_WARNING_EX(node_path, ePTB_InvalidMakefile,
+                            "Duplicate entry: " << name);
+            }
+        }
+    }
+
 //    if ( is_root || (!process_projects && weak) ) {
         CDir dir(dir_name);
         CDir::TEntries contents = dir.GetEntries("*");
@@ -2323,12 +2418,21 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                  name == string(1,CDir::GetPathSeparator()) ) {
                 continue;
             }
+            if (find(ordered_subprojects_dirs.begin(), ordered_subprojects_dirs.end(), name) != 
+                     ordered_subprojects_dirs.end()) {
+                // already processed
+                continue;
+            }
             if ( dir_entry->IsDir() ) {
                 if (subprojects.find(name) != subprojects.end()) {
                     subprojects_dirs[dir_entry->GetPath()] = subprojects[name];
                 } else {
                     subprojects_dirs[dir_entry->GetPath()] =
                         is_root ? eMakeType_Undefined : eMakeType_Excluded;
+                }
+                if (find(ordered_subprojects_dirs.begin(), ordered_subprojects_dirs.end(), name) == 
+                         ordered_subprojects_dirs.end()) {
+                    ordered_subprojects_dirs.push_back(name);
                 }
             }
         }
@@ -2358,10 +2462,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 */
 
     // Process subproj ( e.t. subdirs )
-    map<string, EMakeFileType>::const_iterator ps;
-    for (ps = subprojects_dirs.begin(); ps != subprojects_dirs.end(); ++ps) {
-        const string& subproject_dir = ps->first;
-        ProcessDir(subproject_dir, false, filter, makefiles, ps->second, mkin);
+    ITERATE( vector<string>, ps, ordered_subprojects_dirs) {
+        const string& subproject_dir = CDirEntry::ConcatPath(dir_name, *ps);
+        ProcessDir(subproject_dir, false, filter, makefiles, subprojects_dirs[subproject_dir], mkin);
     }
 
 }

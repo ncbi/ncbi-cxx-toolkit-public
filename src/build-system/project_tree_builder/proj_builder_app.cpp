@@ -402,7 +402,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,7,3) );
+    SetVersion( CVersionInfo(3,7,4) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1368,6 +1368,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         copy(lib_guid.begin(), lib_guid.end(), back_inserter(dependencies));
         dependencies.sort();
         dependencies.unique();
+        CProjectTreeBuilder::VerifyBuildOrder( p->second, dependencies, projects_tree);
 
         if (isLibrary && !m_AllDllBuild) {
             list<string> new_dependencies;

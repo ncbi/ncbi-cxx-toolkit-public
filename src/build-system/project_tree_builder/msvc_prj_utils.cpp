@@ -747,6 +747,15 @@ string CMsvc7RegSettings::GetVcprojExt(void)
     return "";
 }
 
+string CMsvc7RegSettings::GetTopBuilddir(void)
+{
+    string section(CMsvc7RegSettings::GetMsvcRegSection());
+    string top( GetApp().GetConfig().GetString(section, "TopBuilddir", ""));
+    if (!top.empty()) {
+        top = CDirEntry::ConcatPath(CDirEntry(GetApp().m_Solution).GetDir(), top);
+    }
+    return top;
+}
 
 bool IsSubdir(const string& abs_parent_dir, const string& abs_dir)
 {

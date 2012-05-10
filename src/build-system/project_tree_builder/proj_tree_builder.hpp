@@ -324,6 +324,9 @@ public:
     static void BuildProjectTree(const IProjectFilter* filter,
                                  const string&         root_src_path,
                                  CProjectItemsTree*    tree  );
+    static bool VerifyBuildOrder(const CProjItem& item,
+                                 list<string> dependencies,
+                                 const CProjectItemsTree&  tree);
 private:
     /// Build one project tree and do not resolve (include) depends
     static void BuildOneProjectTree(const IProjectFilter* filter,
