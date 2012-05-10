@@ -441,7 +441,7 @@ private:
     obj_type m_Value;
 };
 
-#if SIZEOF_LONG == 8  &&  !defined(NCBI_INT8_IS_LONG)
+#ifndef NCBI_INT8_IS_LONG
 template <>
 class CConvPolicy<SRunTimeCP, long>
 {
