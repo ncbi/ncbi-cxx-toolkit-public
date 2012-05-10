@@ -229,9 +229,6 @@ public:
                                    const string& key,
                                    const string& password,
                                    Uint2         time_bucket);
-    /// Check if blob with given key and (optionally) subkey exists
-    /// in database. More than one blob with given key/subkey can exist.
-    bool IsBlobExists(Uint2 time_bucket, const string& key);
     Uint4 GetNewBlobId(void);
 
     /// Get number of files in the database

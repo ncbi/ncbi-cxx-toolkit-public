@@ -226,6 +226,7 @@ struct SNCDBFileInfo : public CObject
     Uint4        used_size;
     SFileIndexRec* index_head;
     CMiniMutex   info_lock;
+    bool         is_releasing;
     TFileHandle  fd;
     int          create_time;
     int          next_shrink_time;

@@ -1117,18 +1117,6 @@ CNCBlobStorage::RestoreBlobKey(Uint2 time_bucket,
     cache->lock.Unlock();
 }
 
-bool
-CNCBlobStorage::IsBlobExists(Uint2 time_bucket, const string& key)
-{
-    SBucketCache* cache = x_GetBucketCache(time_bucket);
-    cache->lock.Lock();
-    TKeyMap::const_iterator it = cache->key_map.find(key, SCacheKeyCompare());
-    bool result = it != cache->key_map.end()  &&  !it->coord.empty()
-                  &&  it->expire > int(time(NULL));
-    cache->lock.Unlock();
-    return result;
-}
-
 inline void
 CNCBlobStorage::x_SwitchToNextFile(SWritingInfo& w_info)
 {
@@ -2686,7 +2674,8 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
     bool need_move = m_CurDBSize >= m_MinDBSize
                      &&  m_GarbageSize * 100 > m_CurDBSize * m_MaxGarbagePct;
     double max_pct = 0;
-    double total_pct = double(m_GarbageSize) / m_CurDBSize;
+    Uint8 total_rel_used = 0;
+    Uint8 total_rel_garb = 0;
     CNCRef<SNCDBFileInfo> max_file;
     vector<CNCRef<SNCDBFileInfo> > files_to_del;
 
@@ -2713,6 +2702,7 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
         else if (need_move) {
             if (cur_time >= this_file->next_shrink_time) {
                 this_file->info_lock.Lock();
+                this_file->is_releasing = false;
                 if (this_file->garb_size + this_file->used_size != 0) {
                     double this_pct = double(this_file->garb_size)
                                       / (this_file->garb_size + this_file->used_size);
@@ -2721,6 +2711,12 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
                         max_file = this_file;
                     }
                 }
+                this_file->info_lock.Unlock();
+            }
+            else if (this_file->is_releasing) {
+                this_file->info_lock.Lock();
+                total_rel_used += this_file->used_size;
+                total_rel_garb += this_file->garb_size;
                 this_file->info_lock.Unlock();
             }
         }
@@ -2732,11 +2728,16 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
     }
     files_to_del.clear();
 
-    if (need_move) {
-        need_move = m_CurDBSize >= m_MinDBSize
-                    &&  m_GarbageSize * 100 > m_CurDBSize * m_MaxGarbagePct;
+    Uint8 proj_garbage = m_GarbageSize - total_rel_garb;
+    Uint8 proj_size = m_CurDBSize - (total_rel_garb + total_rel_used);
+    if (need_move
+        &&  (proj_garbage * 100 <= proj_size * m_MaxGarbagePct
+             ||  max_pct * 100 <= m_MaxGarbagePct))
+    {
+        max_file = NULL;
     }
-    if (max_file == NULL  ||  !need_move  ||  max_pct < total_pct)
+
+    if (max_file == NULL)
         return false;
 
     CNCRef<CRequestContext> ctx(new CRequestContext());

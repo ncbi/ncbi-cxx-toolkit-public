@@ -69,7 +69,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "IC_HASB",
-            fWorksWithBlob + fUsesPeerSearch + fPeerFindExistsOnly,
+            eClientBlobRead + fPeerFindExistsOnly,
             eNCRead,
             eProxyHasBlob},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
@@ -144,7 +144,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "IC_SETVALID",
-            eNeedsBlobAccess,
+            fNeedsBlobAccess,
             eNCRead,
             eProxySetValid},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
@@ -223,7 +223,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "HASB",
-            fWorksWithBlob + fUsesPeerSearch + fPeerFindExistsOnly,
+            eClientBlobRead + fPeerFindExistsOnly,
             eNCRead,
             eProxyHasBlob},
         { { "key",     eNSPT_NCID, eNSPA_Required },
@@ -234,7 +234,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "RMV2",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "RMV2",
-            eNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
+            fNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
             eNCCreate,
             eProxyRemove},
         { { "key",     eNSPT_NCID, eNSPA_Required },
@@ -256,7 +256,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "REMO",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "IC_REMOve",
-            eNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
+            fNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
             eNCCreate,
             eProxyRemove},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
@@ -313,7 +313,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_META",
         {&CNCMessageHandler::x_DoCmd_ProxyMeta,
             "PROXY_META",
-            eNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
+            fNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
                              + fDoNotCheckPassword,
             eNCRead},
         { { "cache",   eNSPT_Str,  eNSPA_Required },
@@ -358,7 +358,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "PROXY_HASB",
-            fWorksWithBlob + fUsesPeerSearch + fPeerFindExistsOnly,
+            eClientBlobRead + fPeerFindExistsOnly,
             eNCRead,
             eProxyHasBlob},
         { { "cache",   eNSPT_Str,  eNSPA_Required },
@@ -404,7 +404,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "PROXY_SETVALID",
-            eNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers,
+            fNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers,
             eNCRead,
             eProxySetValid},
         { { "cache",   eNSPT_Str,  eNSPA_Required },
@@ -418,7 +418,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_RMV",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "PROXY_ReMoVe",
-            eNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
+            fNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
             eNCCreate,
             eProxyRemove},
         { { "cache",   eNSPT_Str,  eNSPA_Required },
@@ -1659,7 +1659,7 @@ CNCMessageHandler::x_StartCommand(void)
         }
     }
 
-    if (x_IsFlagSet(fWorksWithBlob)) {
+    if (x_IsFlagSet(fNeedsBlobAccess)) {
         if (((m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithPass)
                 ||  (!m_BlobPass.empty()  &&  m_AppSetup->pass_policy == eNCOnlyWithoutPass))
             &&  !x_IsFlagSet(fDoNotCheckPassword))
@@ -1723,10 +1723,6 @@ CNCMessageHandler::x_StartCommand(void)
                 m_SockBuffer.WriteMessage("ERR:", "Not enough disk space");
                 m_SockBuffer.Flush();
                 x_SetState(eReadyForCommand);
-            }
-            else if (!x_IsFlagSet(fNeedsBlobAccess))
-            {
-                x_SetState(eCommandReceived);
             }
             else {
                 m_BlobAccess = g_NCStorage->GetBlobAccess(m_ParsedCmd.command->extra.blob_access,
@@ -1847,13 +1843,13 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     }
 
     m_LatestExist = m_BlobAccess->IsBlobExists()
-                    &&  !m_BlobAccess->IsCurBlobExpired()
                     &&  (x_IsFlagSet(fNoBlobVersionCheck)
                          ||  m_BlobAccess->GetCurBlobVersion() == m_BlobVersion);
     m_LatestSrvId = CNCDistributionConf::GetSelfID();
     if (x_IsFlagSet(fDoNotProxyToPeers)
         ||  m_ForceLocal
-        ||  (m_Quorum == 1  &&  (m_LatestExist  ||  !m_SearchOnRead)))
+        ||  (m_Quorum == 1  &&  (m_LatestExist  ||  !m_SearchOnRead))
+        ||  (m_LatestExist  &&  x_IsFlagSet(fPeerFindExistsOnly)))
     {
         x_SetState(eExecuteOnLatestSrvId);
         return true;
@@ -2590,8 +2586,7 @@ CNCMessageHandler::x_ReadMetaResults(void)
     const SNCBlobSummary* cur_blob_sum;
     cur_blob_sum = &handler->GetBlobSummary();
     bool cur_exist;
-    cur_exist = handler->IsBlobExists()
-                &&  cur_blob_sum->expire > int(time(NULL));
+    cur_exist = handler->IsBlobExists();
     if (!cur_exist  &&  !x_IsFlagSet(fPeerFindExistsOnly))
         goto results_processed;
 
@@ -2599,9 +2594,7 @@ CNCMessageHandler::x_ReadMetaResults(void)
         m_LatestExist = true;
         goto meta_search_finished;
     }
-    if (cur_exist  &&  (!m_LatestExist
-                        ||  (!cur_blob_sum->isSameData(m_LatestBlobSum)
-                             &&  m_LatestBlobSum.isOlder(*cur_blob_sum))))
+    if (cur_exist  &&  (!m_LatestExist  ||  m_LatestBlobSum.isOlder(*cur_blob_sum)))
     {
         m_LatestExist = true;
         m_LatestSrvId = m_CheckSrvs[m_SrvsIndex - 1];
@@ -2635,7 +2628,7 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
         return true;
     }
     if (m_LatestSrvId == CNCDistributionConf::GetSelfID()) {
-        if (m_LatestExist)
+        if (m_LatestExist  &&  !m_BlobAccess->IsCurBlobExpired())
             x_SetState(eCommandReceived);
         else
             x_SetState(eReportBlobNotFound);
@@ -3096,27 +3089,10 @@ CNCMessageHandler::x_DoCmd_Prolong(void)
 bool
 CNCMessageHandler::x_DoCmd_HasBlob(void)
 {
-    m_LatestExist = g_NCStorage->IsBlobExists(m_TimeBucket, m_BlobKey);
-    if (!m_LatestExist  &&  m_Quorum != 1) {
-        if (m_Quorum != 0)
-            --m_Quorum;
-        x_GetCurSlotServers();
-        if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main) {
-            m_CmdProcessor = &CNCMessageHandler::x_DoCmd_HasBlobImpl;
-            x_SetState(eReadMetaNextPeer);
-            return true;
-        }
-    }
-
-    return x_DoCmd_HasBlobImpl();
-}
-
-bool
-CNCMessageHandler::x_DoCmd_HasBlobImpl(void)
-{
-    if (!m_LatestExist)
+    bool exist = m_LatestExist  &&  m_LatestBlobSum.expire > int(time(NULL));
+    if (!exist)
         m_CmdCtx->SetRequestStatus(eStatus_NotFound);
-    m_SockBuffer.WriteMessage("OK:", NStr::IntToString(int(m_LatestExist)));
+    m_SockBuffer.WriteMessage("OK:", NStr::IntToString(int(exist)));
     return true;
 }
 
@@ -3317,7 +3293,6 @@ CNCMessageHandler::x_DoCmd_CopyProlong(void)
         m_CmdCtx->SetRequestStatus(eStatus_NewerBlob);
         x_SetFlag(fSyncCmdSuccessful);
     }
-    m_SockBuffer.WriteMessage("OK:", "SIZE=0");
     return true;
 }
 
@@ -3518,7 +3493,7 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 bool
 CNCMessageHandler::x_DoCmd_ProxyMeta(void)
 {
-    if (!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired()) {
+    if (!m_BlobAccess->IsBlobExists()) {
         x_SetState(eReportBlobNotFound);
         return true;
     }

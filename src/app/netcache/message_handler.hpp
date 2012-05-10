@@ -181,47 +181,45 @@ private:
 
 
 enum ENCCmdFlags {
-    fWorksWithBlob      = 1 <<  0,
-    fNeedsBlobAccess    = 1 <<  1,
-    fCanGenerateKey     = 1 <<  2,
-    fNeedsStorageCache  = 1 <<  3,
-    fDoNotCheckPassword = 1 <<  4,
-    fDoNotProxyToPeers  = 1 <<  5,
-    fUsesPeerSearch     = 1 <<  6,
-    fPeerFindExistsOnly = 1 <<  7,
-    fNeedsSpaceAsClient = 1 <<  8,
-    fNeedsSpaceAsPeer   = 1 <<  9,
-    fSwapLengthBytes    = 1 << 10,  ///< Byte order should be swapped when
+    fNeedsBlobAccess    = 1 <<  0,
+    fCanGenerateKey     = 1 <<  1,
+    fNeedsStorageCache  = 1 <<  2,
+    fDoNotCheckPassword = 1 <<  3,
+    fDoNotProxyToPeers  = 1 <<  4,
+    fUsesPeerSearch     = 1 <<  5,
+    fPeerFindExistsOnly = 1 <<  6,
+    fNeedsSpaceAsClient = 1 <<  7,
+    fNeedsSpaceAsPeer   = 1 <<  8,
+    fSwapLengthBytes    = 1 <<  9,  ///< Byte order should be swapped when
                                     ///< reading length of chunks in blob
                                     ///< transfer protocol
-    fConfirmOnFinish    = 1 << 11,
-    fReadExactBlobSize  = 1 << 12,  ///< There is exact size of the blob
+    fConfirmOnFinish    = 1 << 10,
+    fReadExactBlobSize  = 1 << 11,  ///< There is exact size of the blob
                                     ///< transferred to NetCache
-    fSkipBlobEOF        = 1 << 13,
-    fCopyLogEvent       = 1 << 14,
-    fNeedsAdminClient   = 1 << 15,
-    fRunsInStartedSync  = 1 << 16,
-    fProhibitsSyncAbort = 1 << 17,
-    fNeedsLowerPriority = 1 << 18,
-    fNoBlobVersionCheck = 1 << 19,
-    fNoBlobAccessStats  = 1 << 20,
-    fSyncCmdSuccessful  = 1 << 21,
-    fCursedPUT2Cmd      = 1 << 22,
-    fCommandStarted     = 1 << 23,  ///< Command startup code is executed
-    fCommandPrinted     = 1 << 24,  ///< "request-start" message was
+    fSkipBlobEOF        = 1 << 12,
+    fCopyLogEvent       = 1 << 13,
+    fNeedsAdminClient   = 1 << 14,
+    fRunsInStartedSync  = 1 << 15,
+    fProhibitsSyncAbort = 1 << 16,
+    fNeedsLowerPriority = 1 << 17,
+    fNoBlobVersionCheck = 1 << 18,
+    fNoBlobAccessStats  = 1 << 19,
+    fSyncCmdSuccessful  = 1 << 20,
+    fCursedPUT2Cmd      = 1 << 21,
+    fCommandStarted     = 1 << 22,  ///< Command startup code is executed
+    fCommandPrinted     = 1 << 23,  ///< "request-start" message was
                                     ///< printed to diagnostics
-    fWaitForBlockedOp   = 1 << 25,
-    fWaitForActive      = 1 << 26,
+    fWaitForBlockedOp   = 1 << 24,
+    fWaitForActive      = 1 << 25,
 
 
-    eNeedsBlobAccess    = fWorksWithBlob + fNeedsBlobAccess,
-    eClientBlobRead     = eNeedsBlobAccess + fUsesPeerSearch,
-    eClientBlobWrite    = eNeedsBlobAccess + fNeedsSpaceAsClient,
-    eCopyBlobFromPeer   = eNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
+    eClientBlobRead     = fNeedsBlobAccess + fUsesPeerSearch,
+    eClientBlobWrite    = fNeedsBlobAccess + fNeedsSpaceAsClient,
+    eCopyBlobFromPeer   = fNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
                           + fDoNotCheckPassword + fNeedsAdminClient + fConfirmOnFinish,
     eRunsInStartedSync  = fRunsInStartedSync + fNeedsAdminClient + fNeedsLowerPriority
                           + fNeedsStorageCache,
-    eSyncBlobCmd        = eRunsInStartedSync + eNeedsBlobAccess + fDoNotProxyToPeers
+    eSyncBlobCmd        = eRunsInStartedSync + fNeedsBlobAccess + fDoNotProxyToPeers
                           + fDoNotCheckPassword
 };
 typedef Uint4 TNCCmdFlags;
@@ -317,7 +315,6 @@ public:
     bool x_DoCmd_GetSize(void);
     bool x_DoCmd_Prolong(void);
     bool x_DoCmd_HasBlob(void);
-    bool x_DoCmd_HasBlobImpl(void);
     bool x_DoCmd_Remove(void);
     bool x_DoCmd_IC_Store(void);
     bool x_DoCmd_SyncStart(void);
