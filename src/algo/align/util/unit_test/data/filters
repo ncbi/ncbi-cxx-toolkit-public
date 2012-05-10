@@ -2,6 +2,10 @@ query = AC144835.3
 0
 subject = NT_011515.12
 1 2
+query >= subject
+
+query < subject
+0 1 2 3 4 5 6 7 8 9
 coalesce(pct_coverage_hiqual,100) > 99.99
 2 5
 5prime_unaligned > 50

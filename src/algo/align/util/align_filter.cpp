@@ -616,29 +616,42 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
         string s = l_node.GetValue().GetStrValue();
         if (NStr::EqualNocase(s, "query")  ||
             NStr::EqualNocase(s, "subject")) {
-            if (type != CQueryParseNode::eEQ) {
-                NCBI_THROW(CException, eUnknown,
-                           "query/subject filter is valid with equality only");
-            }
 
             string val = r_node.GetValue().GetStrValue();
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(val);
+            bool constant_seqid;
+            CSeq_id_Handle idh;
+            if (NStr::EqualNocase(val, "query")) {
+                if (!m_IsDryRun) {
+                    idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+                }
+                constant_seqid = false;
+            } else if (NStr::EqualNocase(val, "subject")) {
+                if (!m_IsDryRun) {
+                    idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+                }
+                constant_seqid = false;
+            } else {
+                idh = CSeq_id_Handle::GetHandle(val);
+                constant_seqid = true;
+            }
 
             if (m_IsDryRun) {
-                (*m_DryRunOutput) << val << ": SeqId, ";
-                CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
-                if (!syns) {
-                    (*m_DryRunOutput) << "No synonyms";
-                } else {
-                    (*m_DryRunOutput) << "synonyms ";
-                    ITERATE (CSynonymsSet::TIdSet, syn_it, *syns) {
-                        if (syn_it != syns->begin()) {
-                            (*m_DryRunOutput) << ",";
+                if (constant_seqid) {
+                    (*m_DryRunOutput) << val << ": SeqId, ";
+                    CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
+                    if (!syns) {
+                        (*m_DryRunOutput) << "No synonyms";
+                    } else {
+                        (*m_DryRunOutput) << "synonyms ";
+                        ITERATE (CSynonymsSet::TIdSet, syn_it, *syns) {
+                            if (syn_it != syns->begin()) {
+                                (*m_DryRunOutput) << ",";
+                            }
+                            (*m_DryRunOutput) << (*syn_it)->first;
                         }
-                        (*m_DryRunOutput) << (*syn_it)->first;
                     }
+                    (*m_DryRunOutput) << endl;
                 }
-                (*m_DryRunOutput) << endl;
                 return false;
             } else {
                 CSeq_id_Handle other_idh;
@@ -648,10 +661,37 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
                     other_idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
                 }
     
-                if ((idh == other_idh) == !is_not) {
-                    return true;
+                switch (type) {
+                case CQueryParseNode::eEQ:
+                    if (other_idh == idh) {
+                        return !is_not;
+                    }
+                    break;
+
+                case CQueryParseNode::eLT:
+                    return ((other_idh.AsString() <  idh.AsString())
+                                ==  !is_not);
+
+                case CQueryParseNode::eLE:
+                    return ((other_idh.AsString() <= idh.AsString())
+                                ==  !is_not);
+
+                case CQueryParseNode::eGT:
+                    return ((other_idh.AsString() >  idh.AsString())
+                                ==  !is_not);
+
+                case CQueryParseNode::eGE:
+                    return ((other_idh.AsString() >= idh.AsString())
+                                ==  !is_not);
+
+                default:
+                    LOG_POST(Warning << "unhandled parse node in expression");
+                    break;
                 }
-    
+
+                NCBI_ASSERT(type == CQueryParseNode::eEQ,
+                            "Should reach this point only with equality");
+
                 CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idh);
                 if ( !syns  ||  syns->empty() ) {
                     return false;
