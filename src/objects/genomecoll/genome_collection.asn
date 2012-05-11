@@ -227,7 +227,7 @@ GC-AssemblyDesc ::= SEQUENCE {
     name VisibleString OPTIONAL,
     submitter-name VisibleString OPTIONAL,
     display-name VisibleString OPTIONAL,
-    long-name VisibleString OPTIONAL,
+    long-name UTF8String OPTIONAL,
     filesafe-name VisibleString OPTIONAL,
     wgs-acc-prefix VisibleString OPTIONAL,
     wgs-acc-number INTEGER OPTIONAL,
@@ -291,7 +291,7 @@ GC-AssemblyDesc ::= SEQUENCE {
 
     -- organization which submitted this assembly.
     -- populated from BioProject
-    submitter-organization  VisibleString OPTIONAL
+    submitter-organization UTF8String OPTIONAL
 }
 
 GC-Replicon ::= SEQUENCE
