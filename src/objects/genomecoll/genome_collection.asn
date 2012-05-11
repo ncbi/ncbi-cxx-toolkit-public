@@ -464,6 +464,12 @@ GC-Scaf-stats ::= SEQUENCE {
         bases-in-unspanned-gaps (29),
         count-contig (30),  -- contig count
         contig-n50 (31),  -- contig N50
+        contig-L50 (32),  -- contig L50
+        contig-n75 (33),  -- contig N75
+        contig-n90 (34),  -- contig N90
+        scaf-L50 (35),  -- scaffold L50
+        scaf-n75 (36),  -- scaffold N75
+        scaf-n90 (37),  -- scaffold N90
         is-there-unplaced-scaf (72), -- 1 means there is unplaced scaffold. 0 means none
         count-singleton-unordered-scaffold (73),
         count-chr-made-of-singleton-ordered-scaffold (74),
@@ -506,6 +512,14 @@ GC-Scaf-stats ::= SEQUENCE {
                     -- 4 - all chromosomes assembled; 5 - complete sequence genome; 6-unlocalized and unplaced scaffolds.
         net-count-scaffold (103),  -- number of scaffolds that are not also chromosomes (22 - 75)
         net-count-component (104), -- number of components that are not also chromosomes or scaffolds (30 - 75 -73)
+        count-regions-contain-alt-loci (105), -- number of regions containing alt-loci
+        count-regions-contain-fix-patch (106), -- number of regions containing fix patch
+        count-regions-contain-novel-patch (107), -- number of regions containing novel patch
+        count-fix-patch-with-alignment (108), -- number of fix patch with alignment to primary assembly
+        count-novel-patch-with-alignment (109), -- number of novel patch with alignment to primary assembly
+        count-alt-scaf-with-alignment (110), -- number of alt scaffolds with alignment to primary assembly
+        count-alt-loci-scaf (111), -- number of alt-loci scaffolds.
+
         other (255) -- catch all
     },
     value INTEGER
