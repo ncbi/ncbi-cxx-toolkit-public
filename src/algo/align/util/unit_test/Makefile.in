@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = score_builder_unit_test align_filter_unit_test
+APP_PROJ = score_builder_unit_test align_filter_unit_test genomic_compart_unit_test
 PROJ_TAG = test
 
 REQUIRES = Boost.Test.Included
