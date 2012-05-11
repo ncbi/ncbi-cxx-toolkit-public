@@ -75,6 +75,7 @@ void CNSClientId::Update(unsigned int            peer_addr,
     m_ClientName     = "";
     m_ClientNode     = "";
     m_ClientSession  = "";
+    m_ClientHost     = "";
     m_ControlPort    = 0;
     m_Capabilities   = 0;
     m_Unreported     = ~0L;
@@ -119,6 +120,10 @@ void CNSClientId::Update(unsigned int            peer_addr,
         }
     }
 
+    found = params.find("client_host");
+    if (found != params.end())
+        m_ClientHost = found->second;
+
     return;
 }
 
@@ -156,6 +161,12 @@ unsigned short  CNSClientId::GetControlPort(void) const
 }
 
 
+const string &  CNSClientId::GetClientHost(void) const
+{
+    return m_ClientHost;
+}
+
+
 const string &  CNSClientId::GetProgramName(void) const
 {
     return m_ProgName;
@@ -187,6 +198,13 @@ void CNSClientId::SetClientName(const string &  client_name)
 void CNSClientId::SetControlPort(unsigned short  port)
 {
     m_ControlPort = port;
+    return;
+}
+
+
+void CNSClientId::SetClientHost(const string &  host)
+{
+    m_ClientHost = host;
     return;
 }
 
@@ -353,6 +371,7 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_Type(0),
     m_Addr(client_id.GetAddress()),
     m_ControlPort(client_id.GetControlPort()),
+    m_ClientHost(client_id.GetClientHost()),
     m_LastAccess(time(0)),
     m_Session(client_id.GetSession()),
     m_RunningJobs(bm::BM_GAP),
@@ -493,6 +512,7 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
     m_LastAccess = time(0);
     m_Cleared = false;
     m_ControlPort = client_id.GetControlPort();
+    m_ClientHost = client_id.GetClientHost();
 
     // Check the session id
     if (m_Session == client_id.GetSession())
@@ -546,8 +566,19 @@ string CNSClient::Print(const string &               node_name,
     access_time.SetTimeT(m_LastAccess);
     access_time.ToLocalTime();
     buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
-    buffer += "OK:  ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
-    buffer += "OK:  CONTROL PORT: " + NStr::NumericToString(m_ControlPort) + "\n";
+    buffer += "OK:  PEER ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
+
+    buffer += "OK:  CLIENT HOST: ";
+    if (m_ClientHost.empty())
+        buffer += "n/a\n";
+    else
+        buffer += m_ClientHost + "\n";
+
+    buffer += "OK:  WORKER NODE CONTROL PORT: ";
+    if (m_ControlPort == 0)
+       buffer += "n/a\n";
+    else
+       buffer += NStr::NumericToString(m_ControlPort) + "\n";
 
     if (m_Session.empty())
         buffer += "OK:  SESSION: n/a\n";

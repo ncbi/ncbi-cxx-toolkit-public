@@ -70,10 +70,12 @@ class CNSClientId
         const string &  GetNode(void) const;
         const string &  GetSession(void) const;
         unsigned short  GetControlPort(void) const;
+        const string &  GetClientHost(void) const;
         const string &  GetProgramName(void) const;
         const string &  GetClientName(void) const;
         unsigned int GetCapabilities(void) const;
         void SetClientName(const string &  client_name);
+        void SetClientHost(const string &  client_host);
         void SetControlPort(unsigned short  port);
         void AddCapability(unsigned int  capabilities);
         void CheckAccess(TNSClientRole  role, const CQueue *  queue);
@@ -95,6 +97,8 @@ class CNSClientId
         string              m_ClientSession;  // Session of working
                                               //  with netschedule.
         unsigned short      m_ControlPort;    // Client control port
+        string              m_ClientHost;     // Client host name if passed in
+                                              // the handshake line.
 
         // Capabilities - that is combination of ENSAccess
         // rights, which can be performed by this connection
@@ -205,6 +209,8 @@ class CNSClient
         unsigned int    m_Type;           // bit mask of ENSClientType
         unsigned int    m_Addr;           // Client peer address
         unsigned short  m_ControlPort;    // Worker node control port
+        string          m_ClientHost;     // Client host as given in the
+                                          // handshake line.
         time_t          m_LastAccess;     // The last time the client accessed
                                           // netschedule
         string          m_Session;        // Client session id
