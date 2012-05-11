@@ -187,21 +187,44 @@ void CNetScheduleExecutor::JobDelayExpiration(const string& job_key,
 class CGetJobCmdExecutor : public INetServerFinder
 {
 public:
-    CGetJobCmdExecutor(const string& cmd, CNetScheduleJob& job) :
-      m_Cmd(cmd), m_Job(job)
-      {
-      }
+    CGetJobCmdExecutor(const string& cmd,
+            CNetScheduleJob& job, SNetScheduleExecutorImpl* executor) :
+        m_Cmd(cmd), m_Job(job), m_Executor(executor)
+    {
+    }
 
-      virtual bool Consider(CNetServer server);
+    virtual bool Consider(CNetServer server);
 
 private:
     const string& m_Cmd;
     CNetScheduleJob& m_Job;
+    SNetScheduleExecutorImpl* m_Executor;
 };
 
 bool CGetJobCmdExecutor::Consider(CNetServer server)
 {
-    return s_ParseGetJobResponse(m_Job, server.ExecWithRetry(m_Cmd).response);
+    try {
+        return s_ParseGetJobResponse(m_Job,
+                server.ExecWithRetry(m_Cmd).response);
+    }
+    catch (CNetScheduleException& e) {
+        if (e.GetErrCode() != CNetScheduleException::ePrefAffExpired)
+            throw;
+
+        CFastMutexGuard guard(m_Executor->m_PreferredAffMutex);
+
+        if (!m_Executor->m_PreferredAffinities.empty()) {
+            string cmd;
+            const char* sep = "CHAFF add=";
+            ITERATE(set<string>, it, m_Executor->m_PreferredAffinities) {
+                cmd.append(sep);
+                cmd.append(*it);
+                sep = ",";
+            }
+            server.ExecWithRetry(cmd);
+        }
+    }
+    return false;
 }
 
 const CNetScheduleAPI::SServerParams& CNetScheduleExecutor::GetServerParams()
@@ -366,10 +389,10 @@ bool CNetScheduleNotificationHandler::RequestJob(
         CNetScheduleJob& job,
         const string& cmd)
 {
-    CGetJobCmdExecutor get_executor(cmd, job);
+    CGetJobCmdExecutor get_cmd_executor(cmd, job, executor);
 
-    CNetServiceIterator it(executor->m_API->m_Service.FindServer(&get_executor,
-            CNetService::eIncludePenalized));
+    CNetServiceIterator it(executor->m_API->m_Service.FindServer(
+            &get_cmd_executor, CNetService::eIncludePenalized));
 
     if (!it)
         return false;
