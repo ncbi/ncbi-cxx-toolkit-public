@@ -35,10 +35,10 @@
  */
 
 #include <connect/ncbi_conn_stream.hpp>
-#include <ctools/asn_connection.h>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
+#include <ctools/asn_connection.h>
 
 
 /** @addtogroup CToolsASNConv
