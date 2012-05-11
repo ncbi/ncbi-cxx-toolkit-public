@@ -75,6 +75,7 @@ void CNSClientId::Update(unsigned int            peer_addr,
     m_ClientName     = "";
     m_ClientNode     = "";
     m_ClientSession  = "";
+    m_ControlPort    = 0;
     m_Capabilities   = 0;
     m_Unreported     = ~0L;
     m_VersionControl = true;
@@ -104,6 +105,19 @@ void CNSClientId::Update(unsigned int            peer_addr,
     found = params.find("client");
     if (found != params.end())
         m_ClientName = found->second;
+
+    found = params.find("control_port");
+    if (found != params.end()) {
+        try {
+            m_ControlPort =
+                NStr::StringToNumeric<unsigned short>(found->second);
+        } catch (...) {
+            ERR_POST("Error converting client control port. "
+                     "Expected control_port=<unsigned short>, "
+                     "received control_port=" << found->second);
+            m_ControlPort = 0;
+        }
+    }
 
     return;
 }
@@ -136,6 +150,12 @@ const string &  CNSClientId::GetSession(void) const
 }
 
 
+unsigned short  CNSClientId::GetControlPort(void) const
+{
+    return m_ControlPort;
+}
+
+
 const string &  CNSClientId::GetProgramName(void) const
 {
     return m_ProgName;
@@ -160,6 +180,13 @@ unsigned int  CNSClientId::GetCapabilities(void) const
 void CNSClientId::SetClientName(const string &  client_name)
 {
     m_ClientName = client_name;
+    return;
+}
+
+
+void CNSClientId::SetControlPort(unsigned short  port)
+{
+    m_ControlPort = port;
     return;
 }
 
@@ -304,6 +331,7 @@ CNSClient::CNSClient() :
     m_Cleared(false),
     m_Type(0),
     m_Addr(0),
+    m_ControlPort(0),
     m_LastAccess(),
     m_Session(),
     m_RunningJobs(bm::BM_GAP),
@@ -324,6 +352,7 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_Cleared(false),
     m_Type(0),
     m_Addr(client_id.GetAddress()),
+    m_ControlPort(client_id.GetControlPort()),
     m_LastAccess(time(0)),
     m_Session(client_id.GetSession()),
     m_RunningJobs(bm::BM_GAP),
@@ -463,6 +492,7 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
 {
     m_LastAccess = time(0);
     m_Cleared = false;
+    m_ControlPort = client_id.GetControlPort();
 
     // Check the session id
     if (m_Session == client_id.GetSession())
@@ -517,6 +547,7 @@ string CNSClient::Print(const string &               node_name,
     access_time.ToLocalTime();
     buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
     buffer += "OK:  ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
+    buffer += "OK:  CONTROL PORT: " + NStr::NumericToString(m_ControlPort) + "\n";
 
     if (m_Session.empty())
         buffer += "OK:  SESSION: n/a\n";
