@@ -526,7 +526,7 @@ class Scenario310( TestBase ):
     @staticmethod
     def getScenario():
         " Provides the scenario "
-        return "Notifications and exclusive affinities"
+        return "Reset client affinity"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -551,3 +551,124 @@ class Scenario310( TestBase ):
                              "received: " + \
                              str( info[ 'preferred_affinities_reset' ] ) )
         return True
+
+class Scenario311( TestBase ):
+    " Scenario 311 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Reset client affinity"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        # First client holds a0 affinity
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario311' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+        changeAffinity( ns_client, [ 'a0' ], [] )
+
+        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                            str( self.ns.getPort() ),
+                                            'TEST', 'scenario310' )
+
+        affInfo = getAffinityInfo( ns_admin )
+        if affInfo[ 'affinity_token' ] != 'a0' or \
+           affInfo[ 'clients__preferred' ] != [ 'node1' ]:
+            raise Exception( "Unexpected affinity registry content "
+                             "after adding 1 preferred affinity" )
+        info = getClientInfo( ns_admin )
+        if info[ 'preferred_affinities_reset' ] != False:
+            raise Exception( "Expected to have preferred affinities non reset, " \
+                             "received: " + \
+                             str( info[ 'preferred_affinities_reset' ] ) )
+
+        # Worker node timeout is 5 sec
+        time.sleep( 7 )
+
+        info = getClientInfo( ns_admin )
+        if info[ 'preferred_affinities_reset' ] != True:
+            raise Exception( "Expected to have preferred affinities reset, " \
+                             "received: " + \
+                             str( info[ 'preferred_affinities_reset' ] ) )
+
+        affInfo = getAffinityInfo( ns_admin )
+        if affInfo[ 'affinity_token' ] != 'a0' or \
+           affInfo[ 'clients__preferred' ] != None:
+            raise Exception( "Unexpected affinity registry content "
+                             "after worker node is expired" )
+
+        try:
+            output = execAny( ns_client,
+                              'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
+        except Exception, excpt:
+            if "ePrefAffExpired" in str( excpt ):
+                return True
+            raise
+
+        raise Exception( "Expected exception in GET2 and did not get it: " + \
+                         output )
+
+
+class Scenario312( TestBase ):
+    " Scenario 312 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Reset client affinity"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        # First client holds a0 affinity
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario312' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+        changeAffinity( ns_client, [ 'a0' ], [] )
+
+        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                            str( self.ns.getPort() ),
+                                            'TEST', 'scenario312' )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0 port=9007 timeout=3000' )
+
+        info = getNotificationInfo( ns_admin )
+        if info[ 'client_node' ] != 'node1':
+            raise Exception( "Unexpected client in the notifications list: " + \
+                             info[ 'client_node' ] )
+
+        # Worker node timeout is 5 sec
+        time.sleep( 7 )
+
+        info = getClientInfo( ns_admin )
+        if info[ 'preferred_affinities_reset' ] != True:
+            raise Exception( "Expected to have preferred affinities reset, " \
+                             "received: " + \
+                             str( info[ 'preferred_affinities_reset' ] ) )
+
+        affInfo = getAffinityInfo( ns_admin )
+        if affInfo[ 'affinity_token' ] != 'a0' or \
+           affInfo[ 'clients__preferred' ] != None:
+            raise Exception( "Unexpected affinity registry content "
+                             "after worker node is expired" )
+
+        if getNotificationInfo( ns_admin, True, 0 ) != None:
+            raise Exception( "Expected no notification, got some" )
+
+        return True
+

@@ -34,48 +34,9 @@ latestNetscheduleVersion = "4.11.0"
 # netschedule version. The test ID is coming from netschedule_tests_pack.py
 excludeTestsMap = \
 {
-    "4.8.1":    [ 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
-                  110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
-                  120, 121, 122, 123, 124, 125, 126, 127, 128, 129,
-                  131, 132, 133, 134, 135, 136, 137, 138, 139,
-                  140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-                  150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
-                  160, 161, 162, 163, 164, 165, 166, 167, 168, 169,
-                  170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
-                  180, 181, 182, 183, 184, 185, 186, 187, 188, 189,
-                  190, 191, 192, 193, 194, 195, 196, 197, 198, 199,
-                  200, 201, 203, 204, 205, 206, 207, 208,
-                  211, 212, 213, 214, 215,
-                  220, 221, 222, 223, 224, 225, 226, 227, 228, 229,
-                  230, 231, 232, 233, 234, 235, 236, 238, 239,
-                  240, 241, 242, 243, 244, 245, 246, 247, 248, 249,
-                  250, 251, 252, 253, 254, 255, 256, 257, 258, 259,
-                  260, 261, 262, 263, 264, 265, 266, 267,
-                  300, 301, 302, 303, 304, 305, 306, 307, 308, 309,
-                  310 ],
-    "4.9.0":    [ 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
-                  110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
-                  120, 121, 122, 123, 124, 125, 126, 127, 128, 129,
-                  131, 132, 133, 134, 135, 136, 137, 138, 139,
-                  140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-                  150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
-                  160, 161, 162, 163, 164, 165, 166, 167, 168, 169,
-                  170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
-                  180, 181, 182, 183, 184, 185, 186, 187, 188, 189,
-                  190, 191, 192, 193, 194, 195, 196, 197, 198, 199,
-                  200, 201, 203, 204, 205, 206, 207, 208,
-                  211, 212, 213, 214, 215,
-                  220, 221, 222, 223, 224, 225, 226, 227, 228, 229,
-                  230, 231, 232, 233, 234, 235, 236, 238, 239,
-                  240, 241, 242, 243, 244, 245, 246, 247, 248, 249,
-                  250, 251, 252, 253, 254, 255, 256, 257, 258, 259,
-                  260, 261, 262, 263, 264, 265, 266, 267,
-                  300, 301, 302, 303, 304, 305, 306, 307, 308, 309,
-                  310 ],
-    "4.10.0":   [ 28, 29, 35, 44, 47, 48, 49, 51,
-                  300, 301, 302, 303, 304, 305, 306, 307, 308, 309,
-                  310 ],
-    "4.11.0":   [ 28, 29, 35, 44, 47, 48, 49, 51, 250, 255 ]
+    "4.10.0":   [ 300, 301, 302, 303, 304, 305, 306, 307, 308, 309,
+                  310, 311, 312 ],
+    "4.11.0":   [ 250, 255 ]
 }
 
 
@@ -222,23 +183,11 @@ def main():
               pack.Scenario09( netschedule ),
               pack.Scenario10( netschedule ),
               pack.Scenario11( netschedule ),
-
-              # BUG in the latest grid_cli
               pack.Scenario12( netschedule ),
               pack.Scenario13( netschedule ),
-
-              # pack.Scenario14( netschedule ),
-              #                             The test 14 is switched off because
-              #                             the DROJ command has been deleted
-              #                             from the latest grid_cli.
-              #                             So the old versions of NS are not
-              #                             able to be tested.
-              # pack.Scenario15( netschedule ),
               pack.Scenario16( netschedule ),
               pack.Scenario17( netschedule ),
               pack.Scenario18( netschedule ),
-              # pack.Scenario19( netschedule ),
-              # pack.Scenario20( netschedule ),
               pack.Scenario21( netschedule ),
               pack.Scenario22( netschedule ),
               pack.Scenario23( netschedule ),
@@ -246,14 +195,11 @@ def main():
               pack.Scenario25( netschedule ),
               pack.Scenario26( netschedule ),
               pack.Scenario27( netschedule ),
-              pack.Scenario28( netschedule ),
-              pack.Scenario29( netschedule ),
               pack.Scenario30( netschedule ),
               pack.Scenario31( netschedule ),
               pack.Scenario32( netschedule ),
               pack.Scenario33( netschedule ),
               # pack.Scenario34( netschedule ),
-              pack.Scenario35( netschedule ),
               pack.Scenario36( netschedule ),
               pack.Scenario37( netschedule ),
               pack.Scenario38( netschedule ),
@@ -262,14 +208,9 @@ def main():
               pack.Scenario41( netschedule ),
               pack.Scenario42( netschedule ),
               # pack.Scenario43( netschedule ),
-              pack.Scenario44( netschedule ),
               # pack.Scenario45( netschedule ),
               pack.Scenario46( netschedule ),
-              pack.Scenario47( netschedule ),
-              pack.Scenario48( netschedule ),
-              pack.Scenario49( netschedule ),
               # pack.Scenario50( netschedule ),
-              pack.Scenario51( netschedule ),
               pack.Scenario52( netschedule ),
               pack.Scenario53( netschedule ),
               pack.Scenario54( netschedule ),
@@ -447,6 +388,8 @@ def main():
               pack_4_11.Scenario308( netschedule ),
               pack_4_11.Scenario309( netschedule ),
               pack_4_11.Scenario310( netschedule ),
+              pack_4_11.Scenario311( netschedule ),
+              pack_4_11.Scenario312( netschedule ),
             ]
 
     # Calculate the start test index
