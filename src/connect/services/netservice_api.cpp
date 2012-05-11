@@ -174,6 +174,23 @@ bool SNetServiceIterator_RandomPivot::Next()
     return true;
 }
 
+bool SNetServiceIterator_Circular::Next()
+{
+    if (++m_Position == m_ServerGroup->m_Servers.end())
+        m_Position = m_ServerGroup->m_Servers.begin();
+    return m_Position != m_Pivot;
+}
+
+bool SNetServiceIterator_Circular::Prev()
+{
+    if (m_Position == m_Pivot)
+        return false;
+    if (m_Position == m_ServerGroup->m_Servers.begin())
+        m_Position = m_ServerGroup->m_Servers.end();
+    --m_Position;
+    return true;
+}
+
 bool SNetServiceIterator_RandomPivot::Prev()
 {
     if (m_RandomIterators.empty() ||
@@ -953,22 +970,21 @@ CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode)
         m_Impl->m_ServiceName + " service.");
 }
 
-CNetServiceIterator CNetService::Iterate(
-        CNetServer::TInstance priority_server)
+CNetServiceIterator CNetService::Iterate(CNetServer::TInstance priority_server)
 {
     CRef<SDiscoveredServers> servers;
     m_Impl->GetDiscoveredServers(servers);
 
     // Find the requested server among the discovered servers.
-    for (TNetServerList::const_iterator it = servers->m_Servers.begin();
-            it != servers->m_SuppressedBegin; ++it)
+    ITERATE(TNetServerList, it, servers->m_Servers) {
         if (it->first == priority_server->m_ServerInPool)
-            return new SNetServiceIterator_RandomPivot(servers, it);
+            return new SNetServiceIterator_Circular(servers, it);
+    }
 
-    if (servers->m_Servers.begin() < servers->m_SuppressedBegin)
+    if (!servers->m_Servers.empty())
         // The requested server is not found in this service,
-        // however there are non-penalized servers, so return them.
-        return new SNetServiceIterator_RandomPivot(servers);
+        // however there are servers, so return them.
+        return new SNetServiceIteratorImpl(servers);
     else {
         // The service is empty, allocate a server group to contain
         // solely the requested server.
@@ -978,8 +994,7 @@ CNetServiceIterator CNetService::Iterate(
             TServerRate(priority_server->m_ServerInPool, 1));
         servers->m_Service = m_Impl;
         servers->m_SuppressedBegin = servers->m_Servers.end();
-        return new SNetServiceIterator_RandomPivot(servers,
-            servers->m_Servers.begin());
+        return new SNetServiceIteratorImpl(servers);
     }
 }
 

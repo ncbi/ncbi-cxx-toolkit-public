@@ -172,6 +172,21 @@ struct SNetServiceIterator_RandomPivot : public SNetServiceIteratorImpl
     TRandomIterators::const_iterator m_RandomIterator;
 };
 
+struct SNetServiceIterator_Circular : public SNetServiceIteratorImpl
+{
+    SNetServiceIterator_Circular(SDiscoveredServers* server_group_impl,
+            TNetServerList::const_iterator pivot) :
+        SNetServiceIteratorImpl(server_group_impl, pivot),
+        m_Pivot(pivot)
+    {
+    }
+
+    virtual bool Next();
+    virtual bool Prev();
+
+    TNetServerList::const_iterator m_Pivot;
+};
+
 class IIterationBeginner
 {
 public:
