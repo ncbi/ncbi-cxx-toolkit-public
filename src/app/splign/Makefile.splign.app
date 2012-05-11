@@ -36,11 +36,9 @@ REQUIRES = algo SQLITE3 objects -Cygwin
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
       $(BLAST_DB_DATA_LOADER_LIBS) \
       ncbi_xloader_lds2 lds2 sqlitewrapp \
-      $(COMPRESS_LIBS) \
       xqueryparse xalgoseq $(PCRE_LIB) \
-      $(BLAST_LIBS:%=%$(STATIC)) \
-      $(OBJMGR_LIBS:%=%$(STATIC)) \
-      submit
+      $(BLAST_LIBS:%=%$(STATIC)) submit \
+      $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(PCRE_LIBS) \
        $(CMPRS_LIBS) \
