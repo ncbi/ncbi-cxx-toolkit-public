@@ -1239,6 +1239,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CT	s	University of Cape Town, Botany Department",
 "CTES	s	Instituto de Botanica del Nordeste",
 "CTESN	s	Universidad Nacional del Nordeste",
+"CTM<TUN>	c	Centre de Biotechnologie de Sfax culture collection",
 "CTN	s	Free Library and Museum",
 "CTS	s	Chongqing Teachers College",
 "CTY	s	Canterbury Literary and Philosophical Institution",
