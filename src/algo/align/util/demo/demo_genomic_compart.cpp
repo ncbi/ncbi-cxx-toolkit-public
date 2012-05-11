@@ -91,6 +91,18 @@ void CTestCompartApplication::Init(void)
                       "Permit compartments to contain intersecting alignments "
                       "provided the alignments are consistent");
 
+    arg_desc->AddFlag("allow-intersect-query",
+                      "Permit compartments to contain intersecting alignments "
+                      "for the query only");
+
+    arg_desc->AddFlag("allow-intersect-subject",
+                      "Permit compartments to contain intersecting alignments "
+                      "for the subject only");
+
+    arg_desc->AddFlag("allow-intersect-both",
+                      "Permit compartments to contain intersecting alignments "
+                      "only if both query and subject intersect");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -123,6 +135,15 @@ int CTestCompartApplication::Run(void)
     TCompartOptions opts = fCompart_Defaults;
     if (args["allow-intersect"]) {
         opts |= fCompart_AllowIntersections;
+    }
+    if (args["allow-intersect-query"]) {
+        opts |= fCompart_AllowIntersectionsQuery;
+    }
+    if (args["allow-intersect-subject"]) {
+        opts |= fCompart_AllowIntersectionsSubject;
+    }
+    if (args["allow-intersect-both"]) {
+        opts |= fCompart_AllowIntersectionsBoth;
     }
 
     list< CRef<CSeq_align_set> > compartments;

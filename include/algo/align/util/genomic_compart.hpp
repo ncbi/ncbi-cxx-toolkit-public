@@ -41,10 +41,15 @@ BEGIN_SCOPE(objects)
 
 
 enum ECompartOptions {
-    fCompart_AllowIntersections = 0x01,
     fCompart_SortByScore = 0x02,
     fCompart_SortByPctIdent = 0x04,
     fCompart_FilterByDiffLen = 0x08,
+    fCompart_AllowIntersectionsQuery = 0x10,
+    fCompart_AllowIntersectionsSubject = 0x20,
+    fCompart_AllowIntersectionsBoth = 0x40,
+
+    fCompart_AllowIntersections = fCompart_AllowIntersectionsQuery
+                                | fCompart_AllowIntersectionsSubject,
 
     fCompart_Defaults = 0
 };

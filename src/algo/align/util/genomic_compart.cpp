@@ -43,22 +43,34 @@ BEGIN_SCOPE(objects)
 //#define _VERBOSE_DEBUG
 
 
-bool IsIntersecting(const pair<TSeqRange, TSeqRange>& r1,
-                    const pair<TSeqRange, TSeqRange>& r2)
+bool IsIntersectingQuery(const pair<TSeqRange, TSeqRange>& r1,
+                         const pair<TSeqRange, TSeqRange>& r2)
 {
     bool is_intersecting =
-        (r1.first.IntersectingWith(r2.first)  ||
-         r1.second.IntersectingWith(r2.second));
+        r1.first.IntersectingWith(r2.first);
 
 #ifdef _VERBOSE_DEBUG
-    cerr << "("
-        << r1.first << ", "
-        << r1.second
-        << ")"
-        << " x ("
-        << r2.first << ", "
+    cerr << r1.first
+        << " x "
+        << r2.first
+        << ": is_intersecting = "
+        << (is_intersecting ? "true" : "false")
+        << endl;
+#endif
+
+    return is_intersecting;
+}
+
+bool IsIntersectingSubject(const pair<TSeqRange, TSeqRange>& r1,
+                           const pair<TSeqRange, TSeqRange>& r2)
+{
+    bool is_intersecting =
+        r1.second.IntersectingWith(r2.second);
+
+#ifdef _VERBOSE_DEBUG
+    cerr << r1.second
+        << " x "
         << r2.second
-        << ")"
         << ": is_intersecting = "
         << (is_intersecting ? "true" : "false")
         << endl;
@@ -412,13 +424,16 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 
                 TSeqPos diff = 0;
                 bool is_consistent = false;
-                bool is_intersecting = false;
+                bool is_intersecting_query = false;
+                bool is_intersecting_subject = false;
                 if (place == compart_it->end()) {
                     // best place is the end; we therefore evaluate whether we
                     // can be appended to this compartment
                     --place;
-                    is_intersecting = IsIntersecting(place->first,
-                                                     it->first);
+                    is_intersecting_query =
+                        IsIntersectingQuery(place->first, it->first);
+                    is_intersecting_subject =
+                        IsIntersectingSubject(place->first, it->first);
                     is_consistent = IsConsistent(place->first,
                                                  it->first,
                                                  q_strand, s_strand);
@@ -430,8 +445,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     if (place == compart_it->begin()) {
                         // best place is the beginning; we therefore evaluate
                         // whether we can be prepended to this compartment
-                        is_intersecting = IsIntersecting(it->first,
-                                                         place->first);
+                        is_intersecting_query =
+                            IsIntersectingQuery(it->first, place->first);
+                        is_intersecting_subject =
+                            IsIntersectingSubject(it->first, place->first);
                         is_consistent = IsConsistent(it->first,
                                                      place->first,
                                                      q_strand, s_strand);
@@ -442,8 +459,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     else {
                         // best place is in the middle; we must evaluate two
                         // positions
-                        is_intersecting = IsIntersecting(it->first,
-                                                         place->first);
+                        is_intersecting_query =
+                            IsIntersectingQuery(it->first, place->first);
+                        is_intersecting_subject =
+                            IsIntersectingSubject(it->first, place->first);
                         is_consistent =
                             IsConsistent(it->first,
                                          place->first,
@@ -453,8 +472,10 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                                           q_strand, s_strand);
 
                         --place;
-                        is_intersecting |= IsIntersecting(place->first,
-                                                          it->first);
+                        is_intersecting_query |=
+                            IsIntersectingQuery(place->first, it->first);
+                        is_intersecting_subject |=
+                            IsIntersectingSubject(place->first, it->first);
                         is_consistent &=
                             IsConsistent(place->first,
                                          it->first,
@@ -470,9 +491,14 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 #ifdef _VERBOSE_DEBUG
                 cerr << "  comp_id=" << comp_id
                     << "  is_consistent=" << (is_consistent ? "true" : "false")
-                    << "  is_intersecting=" << (is_intersecting ? "true" : "false")
-                    << "  allow intersect="
-                    << ((options & fCompart_AllowIntersections) ? "true" : "false")
+                    << "  is_intersecting_query=" << (is_intersecting_query ? "true" : "false")
+                    << "  is_intersecting_subject=" << (is_intersecting_subject ? "true" : "false")
+                    << "  allow intersect_query="
+                    << ((options & fCompart_AllowIntersectionsQuery) ? "true" : "false")
+                    << "  allow intersect_subject="
+                    << ((options & fCompart_AllowIntersectionsSubject) ? "true" : "false")
+                    << "  allow intersect_both="
+                    << ((options & fCompart_AllowIntersectionsBoth) ? "true" : "false")
                     << "  diff=" << diff
                     << "  best_diff=" << best_diff
                     << "  align_len=" << it->second->GetAlignLength(false)
@@ -481,9 +507,13 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     << endl;
 #endif
 
-                if ( ((is_consistent  &&  !is_intersecting)  ||
-                      ( (options & fCompart_AllowIntersections)  &&
-                        is_intersecting ))  &&
+                if ( ((is_consistent  &&  !is_intersecting_query && !is_intersecting_subject)  ||
+                      ( (options & fCompart_AllowIntersectionsQuery)  &&
+                        is_intersecting_query ) ||
+                      ( (options & fCompart_AllowIntersectionsSubject)  &&
+                        is_intersecting_subject ) ||
+                      ( (options & fCompart_AllowIntersectionsBoth)  &&
+                        is_intersecting_query && is_intersecting_subject ))  &&
                      ( ( (options & fCompart_FilterByDiffLen) && 
                          (diff_len_ratio <= diff_len_filter) ) ||
                        !(options & fCompart_FilterByDiffLen) ) &&   
