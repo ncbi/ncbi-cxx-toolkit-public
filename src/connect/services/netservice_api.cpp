@@ -470,7 +470,7 @@ string SNetServiceImpl::MakeAuthString()
     string auth;
     auth.reserve(256);
 
-    auth += '\"';
+    auth += "client=\"";
     auth += NStr::PrintableString(m_ServerPool->m_ClientName);
     auth += '\"';
 

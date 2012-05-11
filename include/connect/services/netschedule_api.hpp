@@ -266,6 +266,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// This method is for use by the grid_cli utility only.
     /// @internal
     void SetEventHandler(IEventHandler* event_handler);
+
+    /// This method is for use by worker nodes.
+    /// @internal
+    void SetAuthParam(const string& param_name, const string& param_value);
 };
 
 

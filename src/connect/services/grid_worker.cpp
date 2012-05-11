@@ -1030,6 +1030,10 @@ int CGridWorkerNode::Run()
     CRef<CGridControlThread> control_thread(
         new CGridControlThread(this, start_port, end_port));
 
+    m_NetScheduleAPI.SetAuthParam("control_port",
+            NStr::NumericToString(control_thread->GetControlPort()));
+    m_NetScheduleAPI.SetAuthParam("client_host", CSocketAPI::gethostname());
+
     try {
         control_thread->Prepare();
     }

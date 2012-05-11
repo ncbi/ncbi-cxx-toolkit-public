@@ -46,6 +46,9 @@
 #include <stdio.h>
 
 
+#define COMPATIBLE_NETSCHEDULE_VERSION "4.10.0"
+
+
 BEGIN_NCBI_SCOPE
 
 CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
@@ -153,7 +156,17 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
         auth += '\"';
     }
 
-    auth += "\r\n";
+    auth += " client_version=\"";
+    auth += CNcbiApplication::Instance()->
+            GetFullVersion().GetVersionInfo().Print();
+    auth += '\"';
+
+    ITERATE(SNetScheduleAPIImpl::TAuthParams, it, impl->m_AuthParams) {
+        auth += it->second;
+    }
+
+    auth += " ns_compat_ver=\"" COMPATIBLE_NETSCHEDULE_VERSION "\""
+        "\r\n";
 
     auth += impl->m_Queue;
 
@@ -643,6 +656,21 @@ CNetScheduleAPI CNetScheduleAPI::GetServer(CNetServer::TInstance server)
 void CNetScheduleAPI::SetEventHandler(IEventHandler* event_handler)
 {
     m_Impl->GetListener()->m_EventHandler = event_handler;
+}
+
+void CNetScheduleAPI::SetAuthParam(const string& param_name,
+        const string& param_value)
+{
+    if (!param_value.empty()) {
+        string auth_param(' ' + param_name);
+        auth_param += "=\"";
+        auth_param += NStr::PrintableString(param_value);
+        auth_param += '"';
+        m_Impl->m_AuthParams[param_name] = auth_param;
+    } else
+        m_Impl->m_AuthParams.erase(param_name);
+
+    m_Impl->UpdateAuthString();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -180,6 +180,9 @@ struct SNetScheduleAPIImpl : public CObject
     string m_ClientNode;
     string m_ClientSession;
 
+    typedef map<string, string> TAuthParams;
+    TAuthParams m_AuthParams;
+
     auto_ptr<CNetScheduleAPI::SServerParams> m_ServerParams;
     long m_ServerParamsAskCount;
     CFastMutex m_FastMutex;
