@@ -120,7 +120,7 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    bool WriteAnnot( 
+    virtual bool WriteAnnot( 
         const CSeq_annot& annot,
         const string& asmblyName="",
         const string& asmblyAccession="" );

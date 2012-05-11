@@ -124,6 +124,49 @@ CGff3Writer::~CGff3Writer()
 };
 
 //  ----------------------------------------------------------------------------
+bool CGff3Writer::WriteAlign(
+    const CSeq_align& align,
+    const string& strAssName,
+    const string& strAssAcc )
+//  ----------------------------------------------------------------------------
+{
+    if (!CGff2Writer::WriteAlign(align, strAssName, strAssAcc)) {
+        return false;
+    }
+    m_uRecordId++;
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteSeqAnnotHandle(
+    CSeq_annot_Handle sah )
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CSeq_annot> pAnnot = sah.GetCompleteSeq_annot();
+
+    if ( pAnnot->IsAlign() ) {
+        for ( CAlign_CI it( sah ); it; ++it ) {
+            if ( ! x_WriteAlign( *it ) ) {
+                return false;
+            }
+        }
+		m_uRecordId++;
+        return true;
+    }
+
+    SAnnotSelector sel = GetAnnotSelector();
+    CFeat_CI feat_iter(sah, sel);
+    CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
+    for ( /*0*/; feat_iter; ++feat_iter ) {
+        if ( ! x_WriteFeature( fc, *feat_iter ) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlign( 
     const CSeq_align& align,
     bool bInvertWidth )

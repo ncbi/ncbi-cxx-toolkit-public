@@ -70,10 +70,18 @@ public:
     virtual bool WriteHeader();
     virtual bool WriteHeader(
         const CSeq_annot& annot) { return CGff2Writer::WriteHeader(annot); };
+    bool WriteAlign(
+        const CSeq_align&,
+        const string& asmblyName="",
+        const string& asmblyAccession="" );
+
 
 protected:
     virtual bool x_WriteBioseqHandle(
         CBioseq_Handle );
+	virtual bool x_WriteSeqAnnotHandle(
+        CSeq_annot_Handle );
+
     bool x_WriteAlign( 
         const CSeq_align&,
         bool=false );                   // invert width 
