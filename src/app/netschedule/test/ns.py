@@ -14,7 +14,7 @@ NSJS_RETURNED = 2
 NSJS_CANCELED = 3
 NSJS_FAILED   = 4
 NSJS_DONE     = 5
-        
+
 class Job:
     def __init__(self, jid, status=NSJS_PENDING, **kw):
         self.jid = jid
@@ -27,7 +27,7 @@ class Job:
         self.affinity = None
         self.tags = []
         self.__dict__.update(kw)
-        
+
 
 class Connection:
     def __init__(self, host, port, queue):
@@ -77,7 +77,7 @@ class Connection:
                 except: pass
                 self.params[key] = val
         self.params['srv_gen'] = srv_gen
-        
+
     def send_cmd(self, *params):
         self.socket.send(" ".join(params)+"\n")
 
@@ -116,7 +116,7 @@ class Connection:
         if parts[0] != "OK":
             return 1, parts
         return 0, None
-        
+
     def submit(self, input='', affinity=None, tags=None, mask=0):
         data = ['"'+input+'"']
         if affinity:
@@ -130,7 +130,7 @@ class Connection:
             return 1, parts
         job = Job(parts[1], NSJS_PENDING, input=input)
         return 0, job
-        
+
     def begin_batch(self, size):
         self.batch = []
         self.batch_size = size
@@ -141,7 +141,7 @@ class Connection:
         self.batch_size = 0
         self.socket.send("ENDS\n")
         return res
-	
+
     re_get = re.compile("([^ ]+) \"([^\"]*)\" \"([^\"]*)\" \"\" (\d+)")
     def get(self):
         self.send_cmd("GET")
@@ -155,20 +155,20 @@ class Connection:
         jid, input, affinity, job_mask = mo.groups()
         job = Job(jid, NSJS_RUNNING, input=input, affinity=affinity, mask=job_mask)
         return 0, job
-	
+
     def put(self, jid, retcode, output):
         pass
 
     def exchange(self, jid, retcode, output):
         pass
-	
+
     def fail(self, jid, retcode, error):
         pass
 
     def cancel(self, jid):
         pass
-	
-	re_status = re.compile("(\d+) (-?\d+) \"([^\"]*)\" \"([^\"]*)\" \"([^\"]*)\"") 
+
+    re_status = re.compile("(\d+) (-?\d+) \"([^\"]*)\" \"([^\"]*)\" \"([^\"]*)\"")
     def check_status(self, jid, fast=1):
         fast = fast and self.params.get('fast_status', 0)
         if fast: self.send_cmd("SST", jid)

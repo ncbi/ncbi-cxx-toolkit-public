@@ -192,9 +192,9 @@ def generateNSConfig( baseDir, numberOfQueues, port, pathDB ):
         content += "\n" \
                    "[queue_CRASH" + str( index ) + "]\n" \
                    "failed_retries=3\n" \
-                   "timeout=9000\n" \
+                   "timeout=300\n" \
                    "notif_timeout=1.0\n" \
-                   "run_timeout=8000\n" \
+                   "run_timeout=600\n" \
                    "run_timeout_precision=30\n" \
                    "delete_done=false\n" \
                    "max_input_size=1M\n" \

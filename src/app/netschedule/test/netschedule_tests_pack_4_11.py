@@ -514,3 +514,40 @@ class Scenario309( TestBase ):
             raise Exception( "Expected notification, received garbage: " + data )
 
         return True
+
+
+class Scenario310( TestBase ):
+    " Scenario 310 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Notifications and exclusive affinities"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        # First client holds a0 affinity
+        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                              str( self.ns.getPort() ),
+                                              'TEST', 'scenario310' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+        changeAffinity( ns_client, [ 'a0' ], [] )
+
+        # Worker node timeout is 5 sec
+        time.sleep( 7 )
+
+        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                            str( self.ns.getPort() ),
+                                            'TEST', 'scenario310' )
+        info = getClientInfo( ns_admin )
+        if info[ 'preferred_affinities_reset' ] != True:
+            raise Exception( "Expected to have preferred affinities reset, " \
+                             "received: " + \
+                             str( info[ 'preferred_affinities_reset' ] ) )
+        return True
