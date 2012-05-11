@@ -165,7 +165,7 @@ public:
                           int                  ret_code,
                           const string *       output);
 
-    void GetJobOrWait(const CNSClientId &     client,
+    bool GetJobOrWait(const CNSClientId &     client,
                       unsigned short          port, // Port the client
                                                     // will wait on
                       unsigned int            timeout,
@@ -312,6 +312,7 @@ public:
     unsigned int  DeleteBatch(unsigned int  max_deleted);
     unsigned int  PurgeAffinities(void);
     unsigned int  PurgeGroups(void);
+    void          PurgeWNodes(time_t  current_time);
 
     CBDB_FileCursor& GetEventsCursor();
 
@@ -503,6 +504,7 @@ private:
     unsigned                     m_MaxInputSize;
     unsigned                     m_MaxOutputSize;
     bool                         m_DenyAccessViolations;
+    time_t                       m_WNodeTimeout;
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -510,7 +512,7 @@ private:
     /// Host access list for job execution (workers)
     CNetSchedule_AccessList      m_WnodeHosts;
 
-    CNetScheduleKeyGenerator        m_KeyGenerator;
+    CNetScheduleKeyGenerator     m_KeyGenerator;
 
     const bool &                 m_Log;
     const bool &                 m_LogBatchEachJob;

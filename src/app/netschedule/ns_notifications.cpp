@@ -219,7 +219,14 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
 void CNSNotificationList::UnregisterListener(const CNSClientId &  client,
                                              unsigned short       port)
 {
-    unsigned int                address = client.GetAddress();
+    UnregisterListener(client.GetAddress(), port);
+    return;
+}
+
+
+void CNSNotificationList::UnregisterListener(unsigned int         address,
+                                             unsigned short       port)
+{
     CMutexGuard                 guard(m_ListenersLock);
 
     for (list<SNSNotificationAttributes>::iterator k = m_Listeners.begin();

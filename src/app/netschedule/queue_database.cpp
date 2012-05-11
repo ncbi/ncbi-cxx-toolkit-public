@@ -1237,6 +1237,26 @@ void CQueueDataBase::PurgeGroups(void)
 }
 
 
+void CQueueDataBase::PurgeWNodes(void)
+{
+    // Worker nodes have the last access time in seconds since 1970
+    // so there is no need to purge them more often than once a second
+    static time_t       last_purge = 0;
+    time_t              current_time = time(0);
+
+    if (current_time == last_purge)
+        return;
+    last_purge = current_time;
+
+    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
+        (*it).PurgeWNodes(current_time);
+        if (x_CheckStopPurge())
+            return;
+    }
+    return;
+}
+
+
 void CQueueDataBase::RunNotifThread(void)
 {
     // 10 times per second

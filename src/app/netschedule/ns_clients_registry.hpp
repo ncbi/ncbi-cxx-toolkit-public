@@ -117,6 +117,11 @@ class CNSClientsRegistry
                                   const TNSBitVector &   aff,
                                   bool                   use_preferred) const;
         string  GetNodeName(unsigned int  id) const;
+        bool  GetAffinityReset(const CNSClientId &   client) const;
+        vector< pair< unsigned int, unsigned short > >
+                Purge(time_t                  current_time,
+                      time_t                  timeout,
+                      CNSAffinityRegistry &   aff_registry);
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients

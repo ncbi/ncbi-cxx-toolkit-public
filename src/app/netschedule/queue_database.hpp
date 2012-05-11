@@ -157,6 +157,7 @@ public:
     // Collect garbage from affinities
     void PurgeAffinities(void);
     void PurgeGroups(void);
+    void PurgeWNodes(void);
 
     // Notify all listeners
     void NotifyListeners(void);

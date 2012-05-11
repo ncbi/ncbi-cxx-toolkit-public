@@ -141,6 +141,8 @@ class CNSClient
         { m_WaitPort = port; }
         string GetSession(void) const
         { return m_Session; }
+        time_t GetLastAccess(void) const
+        { return m_LastAccess; }
 
         unsigned short GetAndResetWaitPort(void);
 
@@ -183,6 +185,17 @@ class CNSClient
         { m_WaitAffinities.clear(); }
         bool  ClearPreferredAffinities(void);
 
+        bool  GetAffinityReset(void) const
+        { return m_AffReset; }
+        void  SetAffinityReset(bool  value)
+        { m_AffReset = value; }
+        bool  AnyAffinity(void) const
+        { return m_Affinities.any(); }
+        bool  AnyWaitAffinity(void) const
+        { return m_WaitAffinities.any(); }
+        unsigned int  GetPeerAddress(void) const
+        { return m_Addr; }
+
     private:
         bool            m_Cleared;        // Set to true when CLRN is received
                                           // If true => m_Session == "n/a"
@@ -209,6 +222,8 @@ class CNSClient
         size_t          m_NumberOfSubmitted;// Number of submitted jobs
         size_t          m_NumberOfRead;     // Number of jobs given for reading
         size_t          m_NumberOfRun;      // Number of jobs given for executing
+        bool            m_AffReset;         // true => affinities were reset due to
+                                            // client inactivity timeout
 
         string  x_TypeAsString(void) const;
 };

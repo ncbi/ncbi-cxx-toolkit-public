@@ -103,6 +103,8 @@ class CNSNotificationList
                               bool                  new_format);
         void UnregisterListener(const CNSClientId &  client,
                                 unsigned short       port);
+        void UnregisterListener(unsigned int         address,
+                                unsigned short       port);
 
         void NotifyJobStatus(unsigned int    address,
                              unsigned short  port,

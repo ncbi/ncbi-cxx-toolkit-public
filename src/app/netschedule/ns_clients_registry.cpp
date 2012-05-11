@@ -80,9 +80,15 @@ unsigned short  CNSClientsRegistry::Touch(CNSClientId &          client,
     unsigned short  wait_port = 0;
 
     // The client has connected before
-    if (client.GetSession() != known_client->second.GetSession())
+    if (client.GetSession() != known_client->second.GetSession()) {
+        // Remove the client from its preferred affinities
+        aff_registry.RemoveClientFromAffinities(
+                                known_client->second.GetID(),
+                                known_client->second.GetPreferredAffinities());
+
         // The client has changed the session => need to reset waiting if so
         wait_port = x_ResetWaiting(known_client->second, aff_registry);
+    }
 
     if (known_client->second.Touch(client, running_jobs, reading_jobs))
         x_BuildWNAffinities();  // session is changed, i.e. the preferred
@@ -296,12 +302,16 @@ CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
     // The changes are in what the element holds.
     unsigned short                      wait_port = 0;
     CMutexGuard                         guard(m_Lock);
-    map< string, CNSClient >::iterator  worker_node = m_Clients.find(client.GetNode());
+    map< string, CNSClient >::iterator  worker_node =
+                                             m_Clients.find(client.GetNode());
 
     if (worker_node != m_Clients.end()) {
         running_jobs = worker_node->second.GetRunningJobs();
         reading_jobs = worker_node->second.GetReadingJobs();
 
+        aff_registry.RemoveClientFromAffinities(
+                                worker_node->second.GetID(),
+                                worker_node->second.GetPreferredAffinities());
         wait_port = x_ResetWaiting(worker_node->second, aff_registry);
 
         if (worker_node->second.Clear())
@@ -429,9 +439,11 @@ CNSClientsRegistry::x_ResetWaiting(CNSClient &            client,
 {
     // We need to reset affinities the client might had been waiting for
     // and reset the waiting port.
-    aff_registry.RemoveWaitClientFromAffinities(client.GetID(),
-                                                client.GetWaitAffinities());
-    client.ClearWaitAffinities();
+    if (client.AnyWaitAffinity()) {
+        aff_registry.RemoveWaitClientFromAffinities(client.GetID(),
+                                                    client.GetWaitAffinities());
+        client.ClearWaitAffinities();
+    }
     return client.GetAndResetWaitPort();
 }
 
@@ -608,6 +620,22 @@ CNSClientsRegistry::IsRequestedAffinity(const string &         name,
 }
 
 
+bool  CNSClientsRegistry::GetAffinityReset(const CNSClientId &   client) const
+{
+    if (!client.IsComplete())
+        return false;
+
+    CMutexGuard                                 guard(m_Lock);
+    map< string, CNSClient >::const_iterator    found =
+                                             m_Clients.find(client.GetNode());
+
+    if (found == m_Clients.end())
+        return false;
+
+    return found->second.GetAffinityReset();
+}
+
+
 string  CNSClientsRegistry::GetNodeName(unsigned int  id) const
 {
     CMutexGuard                                 guard(m_Lock);
@@ -617,6 +645,50 @@ string  CNSClientsRegistry::GetNodeName(unsigned int  id) const
         if (k->second.GetID() == id)
             return k->first;
     return "";
+}
+
+
+vector< pair< unsigned int, unsigned short > >
+CNSClientsRegistry::Purge(time_t                  current_time,
+                          time_t                  timeout,
+                          CNSAffinityRegistry &   aff_registry)
+{
+    // Checks if any of the worker nodes are inactive for too long
+    vector< pair< unsigned int,
+                  unsigned short > >        notif_to_reset;
+    bool                                    need_aff_rebuild = false;
+    unsigned short                          wait_port = 0;
+    CMutexGuard                             guard(m_Lock);
+    map< string, CNSClient >::iterator      k = m_Clients.begin();
+
+    for ( ; k != m_Clients.end(); ++k ) {
+        if (current_time - k->second.GetLastAccess() > timeout) {
+            // The record has expired - clean the preferred affinities
+            if (k->second.GetAffinityReset())
+                continue;   // The preferred affinities have already been reset
+
+            if (k->second.AnyAffinity()) {
+                // Need to reset preferred affinities
+                k->second.SetAffinityReset(true);
+                aff_registry.RemoveClientFromAffinities(
+                                k->second.GetID(),
+                                k->second.GetPreferredAffinities());
+                k->second.ClearPreferredAffinities();
+                need_aff_rebuild = true;
+            }
+
+            wait_port = x_ResetWaiting(k->second, aff_registry);
+            if (wait_port != 0)
+                notif_to_reset.push_back(
+                                pair< unsigned int, unsigned short >(
+                                      k->second.GetPeerAddress(), wait_port));
+        }
+    }
+
+    if (need_aff_rebuild)
+        x_BuildWNAffinities();
+
+    return notif_to_reset;
 }
 
 

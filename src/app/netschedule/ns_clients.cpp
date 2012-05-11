@@ -315,7 +315,8 @@ CNSClient::CNSClient() :
     m_WaitAffinities(bm::BM_GAP),
     m_NumberOfSubmitted(0),
     m_NumberOfRead(0),
-    m_NumberOfRun(0)
+    m_NumberOfRun(0),
+    m_AffReset(false)
 {}
 
 
@@ -334,7 +335,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id) :
     m_WaitAffinities(bm::BM_GAP),
     m_NumberOfSubmitted(0),
     m_NumberOfRead(0),
-    m_NumberOfRun(0)
+    m_NumberOfRun(0),
+    m_AffReset(false)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -506,17 +508,20 @@ string CNSClient::Print(const string &               node_name,
         buffer += "OK:  STATUS: cleared\n";
     else
         buffer += "OK:  STATUS: active\n";
+    buffer += "OK:  PREFERRED AFFINITIES RESET: ";
+    if (m_AffReset) buffer += "TRUE\n";
+    else            buffer += "FALSE\n";
 
-     CTime       access_time;
-     access_time.SetTimeT(m_LastAccess);
-     access_time.ToLocalTime();
-     buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
-     buffer += "OK:  ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
+    CTime       access_time;
+    access_time.SetTimeT(m_LastAccess);
+    access_time.ToLocalTime();
+    buffer += "OK:  LAST ACCESS: " + access_time.AsString() + "\n";
+    buffer += "OK:  ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
 
-     if (m_Session.empty())
-         buffer += "OK:  SESSION: n/a\n";
-     else
-         buffer += "OK:  SESSION: '" + m_Session + "'\n";
+    if (m_Session.empty())
+        buffer += "OK:  SESSION: n/a\n";
+    else
+        buffer += "OK:  SESSION: '" + m_Session + "'\n";
 
     buffer += "OK:  TYPE: " + x_TypeAsString() + "\n";
 
@@ -592,6 +597,7 @@ void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
 {
     m_Type |= eWorkerNode;
     m_Affinities |= aff;
+    m_AffReset = false;
     return;
 }
 
@@ -601,6 +607,7 @@ void  CNSClient::AddPreferredAffinity(unsigned int  aff)
     m_Type |= eWorkerNode;
     if (aff != 0)
         m_Affinities.set_bit(aff, true);
+    m_AffReset = false;
     return;
 }
 
@@ -609,6 +616,7 @@ void  CNSClient::RemovePreferredAffinities(const TNSBitVector &  aff)
 {
     m_Type |= eWorkerNode;
     m_Affinities -= aff;
+    m_AffReset = false;
     return;
 }
 
@@ -618,6 +626,7 @@ void  CNSClient::RemovePreferredAffinity(unsigned int  aff)
     m_Type |= eWorkerNode;
     if (aff != 0)
         m_Affinities.set_bit(aff, false);
+    m_AffReset = false;
     return;
 }
 

@@ -51,6 +51,7 @@ static int              default_failed_retries = 0;
 static time_t           default_empty_lifetime = -1;
 static time_t           default_blacklist_time = 0;
 static int              default_run_timeout_precision = 3600;
+static time_t           default_wnode_timeout = 40;
 
 
 SQueueParameters::SQueueParameters() :
@@ -66,6 +67,7 @@ SQueueParameters::SQueueParameters() :
     max_input_size(kNetScheduleMaxDBDataSize),
     max_output_size(kNetScheduleMaxDBDataSize),
     deny_access_violations(false),
+    wnode_timeout(default_wnode_timeout),
     run_timeout_precision(default_run_timeout_precision)
 {}
 
@@ -139,6 +141,9 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
 
     deny_access_violations = reg.GetBool(sname, "deny_access_violations", false,
                                          0, IRegistry::eReturn);
+    wnode_timeout = GetIntNoErr("wnode_timeout", default_wnode_timeout);
+    if (wnode_timeout <= 0)
+        wnode_timeout = default_wnode_timeout;
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);

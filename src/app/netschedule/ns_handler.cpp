@@ -1461,18 +1461,24 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
-    q->GetJobOrWait(m_ClientId,
-                    m_CommandArguments.port,
-                    m_CommandArguments.timeout,
-                    time(0), &aff_list,
-                    m_CommandArguments.wnode_affinity,
-                    m_CommandArguments.any_affinity,
-                    m_CommandArguments.exclusive_new_aff,
-                    cmdv2,
-                    &job);
-
-    x_PrintGetJobResponse(q, job, cmdv2);
-    x_PrintRequestStop(eStatus_OK);
+    if (q->GetJobOrWait(m_ClientId,
+                        m_CommandArguments.port,
+                        m_CommandArguments.timeout,
+                        time(0), &aff_list,
+                        m_CommandArguments.wnode_affinity,
+                        m_CommandArguments.any_affinity,
+                        m_CommandArguments.exclusive_new_aff,
+                        cmdv2,
+                        &job) == false) {
+        // Preferred affinities were reset for the client, so no job
+        // and bad request
+        WriteMessage("ERR:ePrefAffExpired:");
+        x_PrintRequestStop(eStatus_BadRequest);
+    } else {
+        x_PrintGetJobResponse(q, job, cmdv2);
+        x_PrintRequestStop(eStatus_OK);
+    }
+    return;
 }
 
 
@@ -1576,18 +1582,23 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
-    q->GetJobOrWait(m_ClientId,
-                    m_CommandArguments.port,
-                    m_CommandArguments.timeout,
-                    curr, &aff_list,
-                    m_CommandArguments.wnode_affinity,
-                    m_CommandArguments.any_affinity,
-                    false,
-                    false,
-                    &job);
-
-    x_PrintGetJobResponse(q, job, false);
-    x_PrintRequestStop(eStatus_OK);
+    if (q->GetJobOrWait(m_ClientId,
+                        m_CommandArguments.port,
+                        m_CommandArguments.timeout,
+                        curr, &aff_list,
+                        m_CommandArguments.wnode_affinity,
+                        m_CommandArguments.any_affinity,
+                        false,
+                        false,
+                        &job) == false) {
+        // Preferred affinities were reset for the client, so no job
+        // and bad request
+        WriteMessage("ERR:ePrefAffExpired:");
+        x_PrintRequestStop(eStatus_BadRequest);
+    } else {
+        x_PrintGetJobResponse(q, job, false);
+        x_PrintRequestStop(eStatus_OK);
+    }
     return;
 }
 

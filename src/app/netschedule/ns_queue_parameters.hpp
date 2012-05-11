@@ -61,6 +61,7 @@ struct SQueueParameters
     bool            deny_access_violations;
     string          subm_hosts;
     string          wnode_hosts;
+    time_t          wnode_timeout;
 
     // This parameter is not reconfigurable
     int             run_timeout_precision;

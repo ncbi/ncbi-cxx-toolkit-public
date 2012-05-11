@@ -99,6 +99,7 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
     m_DenyAccessViolations(false),
+    m_WNodeTimeout(40),
     m_KeyGenerator(server->GetHost(), server->GetPort()),
     m_Log(server->IsLog()),
     m_LogBatchEachJob(server->IsLogBatchEachJob()),
@@ -214,6 +215,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_MaxInputSize         = params.max_input_size;
     m_MaxOutputSize        = params.max_output_size;
     m_DenyAccessViolations = params.deny_access_violations;
+    m_WNodeTimeout         = params.wnode_timeout;
     m_NotifHifreqInterval  = params.notif_hifreq_interval;
     m_NotifHifreqPeriod    = params.notif_hifreq_period;
     m_NotifLofreqMult      = params.notif_lofreq_mult;
@@ -608,7 +610,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
 }
 
 
-void  CQueue::GetJobOrWait(const CNSClientId &     client,
+bool  CQueue::GetJobOrWait(const CNSClientId &     client,
                            unsigned short          port, // Port the client
                                                          // will wait on
                            unsigned int            timeout, // If timeout != 0 => WGET
@@ -629,6 +631,13 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
         try {
             TNSBitVector        aff_ids;
             CFastMutexGuard     guard(m_OperationLock);
+
+            if (wnode_affinity) {
+                // Check first that the were no preferred affinities reset for
+                // the client
+                if (m_ClientsRegistry.GetAffinityReset(client))
+                    return false;   // Affinity was reset, so no job for the client
+            }
 
             if (timeout != 0) {
                 // WGET:
@@ -664,7 +673,7 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                                                   exclusive_new_affinity,
                                                   new_format);
                     }
-                    return;
+                    return true;
                 }
 
                 if (x_UpdateDB_GetJobNoLock(client, curr,
@@ -675,7 +684,7 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
                                                                                    m_RunTimeout));
                     TimeLineAdd(job_id, curr + m_RunTimeout);
                     m_ClientsRegistry.AddToRunning(client, job_id);
-                    return;
+                    return true;
                 }
 
                 // Reset job_id and try again
@@ -707,6 +716,7 @@ void  CQueue::GetJobOrWait(const CNSClientId &     client,
             throw;
         }
     }
+    return true;
 }
 
 
@@ -816,7 +826,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
                 continue;
             }
 
-            aff_id_to_add.set(aff_id, true );
+            aff_id_to_add.set(aff_id, true);
             any_to_add = true;
         }
 
@@ -2394,6 +2404,26 @@ unsigned int  CQueue::PurgeGroups(void)
     transaction.Commit();
 
     return del_count;
+}
+
+
+void  CQueue::PurgeWNodes(time_t  current_time)
+{
+    // Clears the worker nodes affinities if the workers are inactive for
+    // certain time
+    CFastMutexGuard     guard(m_OperationLock);
+
+    vector< pair< unsigned int,
+                  unsigned short > >  notif_to_reset =
+                                        m_ClientsRegistry.Purge(
+                                                current_time, m_WNodeTimeout,
+                                                m_AffinityRegistry);
+    for (vector< pair< unsigned int,
+                       unsigned short > >::const_iterator  k = notif_to_reset.begin();
+         k != notif_to_reset.end(); ++k)
+        m_NotificationsList.UnregisterListener(k->first, k->second);
+
+    return;
 }
 
 
