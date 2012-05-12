@@ -2424,7 +2424,7 @@ public:
     /// Wrap the specified string into lines of a specified width.
     ///
     /// Split string "str" into lines of width "width" and add the
-    /// resulting lines to the list "arr". Normally, all
+    /// resulting lines to the list "arr".  Normally, all
     /// lines will begin with "prefix" (counted against "width"),
     /// but the first line will instead begin with "prefix1" if
     /// you supply it.
@@ -2468,7 +2468,7 @@ public:
     /// Wrap the list using the specified criteria.
     ///
     /// WrapList() is similar to Wrap(), but tries to avoid splitting any
-    /// elements of the list to be wrapped. Also, the "delim" only applies
+    /// elements of the list to be wrapped.  Also, the "delim" only applies
     /// between elements on the same line; if you want everything to end with
     /// commas or such, you should add them first.
     ///
@@ -2521,6 +2521,9 @@ public:
     /// all lines in "par" will begin with "pfx" (counted against "width"),
     /// but the first line will instead begin with "pfx1" if provided.
     ///
+    /// @note Words exceeding the specified "width" will not be split between
+    /// lines but occupy individual lines (which will be wider than "width").
+    ///
     /// @param str
     ///   String to be split into justified lines.
     /// @param width
@@ -2554,56 +2557,62 @@ public:
                                  const CTempString& pfx1);
 
 
-    /// Search for a field
+    /// Search for a field.
     ///
     /// @param str
     ///   C or C++ string to search in.
     /// @param field_no
-    ///   Zero based field number.
+    ///   Zero-based field number.
     /// @param delimiters
-    ///   Single character delimiters.
+    ///   A set of single-character delimiters.
     /// @param merge
     ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
     ///   Found field; or empty string if the required field is not found.
+    /// @note
+    ///   Field 0 spans up to the first-found delimiter or the end-of-string.
     static string GetField(const CTempString& str,
                            size_t             field_no,
                            const CTempString& delimiters,
                            EMergeDelims       merge = eNoMergeDelims);
 
-    /// Search for a field
+    /// Search for a field.
     ///
     /// @param str
     ///   C or C++ string to search in.
     /// @param field_no
-    ///   Zero based field number.
+    ///   Zero-based field number.
     /// @param delimiter
-    ///   Single character delimiter.
+    ///   A single-character delimiter.
     /// @param merge
     ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
     ///   Found field; or empty string if the required field is not found.
+    /// @note
+    ///   Field 0 spans up to the delimiter or the end-of-string.
     static string GetField(const CTempString& str,
                            size_t             field_no,
                            char               delimiter,
                            EMergeDelims       merge = eNoMergeDelims);
 
-    /// Search for a field
+    /// Search for a field.
     /// Avoid memory allocation at the expense of some usage safety.
     ///
     /// @param str
     ///   C or C++ string to search in.
     /// @param field_no
-    ///   Zero based field number.
+    ///   Zero-based field number.
     /// @param delimiters
-    ///   Single character delimiters.
+    ///   A set of single-character delimiters.
     /// @param merge
     ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
     ///   Found field; or empty string if the required field is not found.
+    /// @note
+    ///   Field 0 spans up to the first-found delimiter or the end-of-string.
     /// @warning
     ///   The return value stores a pointer to the input string 'str' so
-    ///   the return object validity time matches lifetime of the input 'str'
+    ///   the return object validity time matches lifetime of the input 'str'.
     static
     CTempString GetField_Unsafe(const CTempString& str,
                                 size_t             field_no,
@@ -2617,15 +2626,17 @@ public:
     ///   C or C++ string to search in.
     /// @param field_no
     ///   Zero-based field number.
-    /// @param delimiters
-    ///   Single character delimiter.
+    /// @param delimiter
+    ///   A single-character delimiter.
     /// @param merge
     ///   Whether to merge or not adjacent delimiters. Default: not to merge.
     /// @return
     ///   Found field; or empty string if the required field is not found.
+    /// @note
+    ///   Field 0 spans up to the delimiter or the end-of-string.
     /// @warning
     ///   The return value stores a pointer to the input string 'str' so
-    ///   the return object validity time matches lifetime of the input 'str'
+    ///   the return object validity time matches lifetime of the input 'str'.
     static
     CTempString GetField_Unsafe(const CTempString& str,
                                 size_t             field_no,
