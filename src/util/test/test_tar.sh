@@ -10,6 +10,13 @@ else
 fi
 test -x "$tar"  ||  exit 0
 
+test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
+test_tar=${CFG_BIN:-.}/test_tar${exe}
+if [ ! -x $test_tar ]; then
+  echo "Test binary $test_tar not found.  Stop."
+  exit 1
+fi
+
 # Figure out whether the API is lf64 clean, also exclude notoriously slow platforms
 okay=false
 what='not supported'
@@ -29,7 +36,7 @@ case ${CHECK_SIGNATURE:-Unknown} in
 
   * )
     # NB: Here falls ICC
-    test_tar -lfs -f -  &&  okay=true
+    $test_tar -lfs -f -  &&  okay=true
     ;;
 
 esac
@@ -41,7 +48,7 @@ if [ -f "$huge_tar" ]; then
     echo "`date` *** Checking compatibility with existing NCBI data"
     echo
 
-    test_tar -T -f "$huge_tar"  ||  exit 1
+    $test_tar -T -f "$huge_tar"  ||  exit 1
   else
     echo
     echo "`date` *** LF64 ${what}, skipping data compatibility test"
@@ -49,12 +56,6 @@ if [ -f "$huge_tar" ]; then
 fi
 
 test_base="${TMPDIR:-/tmp}/test_tar.$$"
-test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
-if [ -f test_tar${exe} ]; then
-  test_exe=./test_tar${exe}
-else
-  test_exe=$CFG_BIN/test_tar${exe}
-fi
 trap 'rm -rf $test_base* & echo "`date`."' 0 1 2 15
 
 echo
@@ -63,8 +64,8 @@ echo
 
 mkdir $test_base.1  ||  exit 1
 
-cp -rp . $test_base.1/ 2>/dev/null
-test -f test_tar${exe}  ||  cp -p $test_exe $test_base.1/ 2>/dev/null
+cp -rp .         $test_base.1/ 2>/dev/null
+cp -fp $test_tar $test_base.1/ 2>/dev/null
 
 mkdir $test_base.1/testdir 2>/dev/null
 
@@ -94,7 +95,7 @@ echo
 ( cd $test_base.1  &&  $tar cvf $test_base.tar . )
 
 rm -rf $test_base.1
-mkdir  $test_base.1                                                                     ||  exit 1
+mkdir  $test_base.1                                                                      ||  exit 1
 
 echo
 echo "`date` *** Sanitizing test archive from unsupported features"
@@ -105,7 +106,7 @@ echo
 echo "`date` *** Checking the resultant archive"
 echo
 
-dd if=$test_base.tar bs=123 2>/dev/null | test_tar -T -f -                              ||  exit 1
+dd if=$test_base.tar bs=123 2>/dev/null | $test_tar -T -f -                              ||  exit 1
 
 sleep 1
 mkdir             $test_base.1/newdir 2>/dev/null
@@ -117,7 +118,7 @@ echo
 echo "`date` *** Checking simple update"
 echo
 
-test_tar -C $test_base.1 -u -v -f $test_base.tar ./datefile ./newdir                    ||  exit 1
+$test_tar -C $test_base.1 -u -v -f $test_base.tar ./datefile ./newdir                    ||  exit 1
 
 mv -f $test_base.1/datefile $test_base.1/phonyfile 2>/dev/null
 mkdir $test_base.1/datefile 2>/dev/null
@@ -129,38 +130,38 @@ echo
 echo "`date` *** Checking incremental update"
 echo
 
-test_tar -C $test_base.1 -u -U -v -E -f $test_base.tar ./newdir ./datefile ./phonyfile  ||  exit 1
+$test_tar -C $test_base.1 -u -U -v -E -f $test_base.tar ./newdir ./datefile ./phonyfile  ||  exit 1
 
 rmdir $test_base.1/datefile 2>/dev/null
 mv -f $test_base.1/phonyfile $test_base.1/datefile 2>/dev/null
 
-mkdir $test_base.2                                                                      ||  exit 1
+mkdir $test_base.2                                                                       ||  exit 1
 
 echo
 echo "`date` *** Checking piping in and extraction"
 echo
 
-dd if=$test_base.tar bs=4567 | test_tar -C $test_base.2 -v -x -f -                      ||  exit 1
+dd if=$test_base.tar bs=4567 | $test_tar -C $test_base.2 -v -x -f -                      ||  exit 1
 rm -f $test_base.1/.testfifo $test_base.2/.testfifo
-diff -r $test_base.1 $test_base.2 2>/dev/null                                           ||  exit 1
+diff -r $test_base.1 $test_base.2 2>/dev/null                                            ||  exit 1
 
 echo
 echo "`date` *** Checking piping out and compatibility with native tar utility"
 echo
 
 mkfifo -m 0567 $test_base.2/.testfifo >/dev/null 2>&1
-test_tar -C $test_base.2 -c -f - . 2>/dev/null | $tar tBvf -                            ||  exit 1
+$test_tar -C $test_base.2 -c -f - . 2>/dev/null | $tar tBvf -                            ||  exit 1
 
 echo
 echo "`date` *** Checking safe extraction implementation"
 echo
 
-test_tar -C $test_base.2 -x    -f $test_base.tar                                        ||  exit 1
+$test_tar -C $test_base.2 -x    -f $test_base.tar                                        ||  exit 1
 
 echo "`date` *** Checking backup feature"
 echo
 
-test_tar -C $test_base.2 -x -B -f $test_base.tar '*testdir/?*'                          ||  exit 1
+$test_tar -C $test_base.2 -x -B -f $test_base.tar '*testdir/?*'                          ||  exit 1
 
 echo '+++ Files:'
 echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v '[.]bak'
@@ -171,21 +172,21 @@ echo
 files="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep -v -c '[.]bak'`"
 bkups="`echo $test_base.2/testdir/* | tr ' ' '\n' | grep    -c '[.]bak'`"
 echo "+++ Files: $files --- Backups: $bkups"
-test _"$files" = _"$bkups"                                                              ||  exit 1
+test _"$files" = _"$bkups"                                                               ||  exit 1
 
 echo
 echo "`date` *** Checking single entry streaming feature"
 echo
 
-test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_exe           ||  exit 1
+$test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_tar           ||  exit 1
 
 echo "`date` *** Checking multiple entry streaming feature"
 echo
 
-test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1  ||  exit 1
-head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                               ||  exit 1
-cat $test_exe $test_base.out.temp $test_base.2/newdir/datefile                           > $test_base.out.2  ||  exit 1
-cmp -l $test_base.out.1 $test_base.out.2                                                                     ||  exit 1
+$test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1  ||  exit 1
+head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                                ||  exit 1
+cat $test_tar $test_base.out.temp $test_base.2/newdir/datefile                            > $test_base.out.2  ||  exit 1
+cmp -l $test_base.out.1 $test_base.out.2                                                                      ||  exit 1
 
 echo
 echo "`date` *** Checking in-stream append"
@@ -195,15 +196,15 @@ ncat="`expr 1 + $$     % 512`"
 ndog="`expr 1 + $$ / 2 % 512`"
 dd if=/dev/zero bs=1 count="$ncat" >$test_base.cat 2>/dev/null
 dd if=/dev/zero bs=1 count="$ndog" >$test_base.dog 2>/dev/null
-test_tar -c -v -f - $test_base.cat $test_base.dog | $tar tvf - | tee $test_base.lst     ||  exit 1
-test `cat $test_base.lst | wc -l` = 2                                                   ||  exit 1
+$test_tar -c -v -f - $test_base.cat $test_base.dog | $tar tvf - | tee $test_base.lst     ||  exit 1
+test `cat $test_base.lst | wc -l` = 2                                                    ||  exit 1
 
 echo
 echo "`date` *** Checking stream append"
 echo
 
-test_tar -r -s -v -f $test_base.tar $test_base.out.1 $test_base.out.2                   ||  exit 1
-test_tar -T       -f $test_base.tar                                                     ||  exit 1
+$test_tar -r -s -v -f $test_base.tar $test_base.out.1 $test_base.out.2                   ||  exit 1
+$test_tar -T       -f $test_base.tar                                                     ||  exit 1
 
 if [ "`uname`" = "Linux" ]; then
   # Note that at least gtar 1.15.1 suffers from the following shortcoming:
@@ -242,7 +243,7 @@ if [ "`uname`" = "Linux" ]; then
 
   ( cd $test_base.1/newdir  &&  $tar ${format}Srvf $test_base.tar pre-sparse sparse-file post-sparse )  ||  exit 1
 
-  test_tar -T -f $test_base.tar                                                                         ||  exit 1
+  $test_tar -T -f $test_base.tar                                                                        ||  exit 1
 
   if $okay ; then
     free="`df -k /tmp | tail -1 | sed 's/  */ /g' | cut -f 4 -d ' '`"
@@ -253,8 +254,8 @@ if [ "`uname`" = "Linux" ]; then
 
       dd of=$test_base.1/newdir/huge-file bs=1 count="`expr 1 + $$ % 10000`" seek=4G if=/dev/urandom    ||  exit 1
       real="`ls -l $test_base.1/newdir/huge-file | tail -1 | sed 's/  */ /g' | cut -f 5 -d ' '`"
-      test_tar -r -v -f $test_base.tar -C $test_base.1/newdir pre-sparse huge-file post-sparse          ||  exit 1
-      size="`test_tar -t -v -f $test_base.tar huge-file 2>&1 | grep huge-file | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
+      $test_tar -r -v -f $test_base.tar -C $test_base.1/newdir pre-sparse huge-file post-sparse         ||  exit 1
+      size="`$test_tar -t -v -f $test_base.tar huge-file 2>&1 | grep huge-file | tail -1 | sed 's/  */ /g' | cut -f 3 -d ' '`"
 
       if [ "$size" != "$real" ]; then
         echo "--- Entry size mismatch: $size is expected to be $real"
