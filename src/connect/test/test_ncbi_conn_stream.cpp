@@ -280,21 +280,24 @@ int main(int argc, const char* argv[])
 
 
     LOG_POST("Test 3 of 8: FTP upload");
-    string ftpuser, ftppass, ftpfilename;
+    string ftpuser, ftppass, ftpfile;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
         CTime start(CTime::eCurrent);
-        ftpfilename  = "test_ncbi_conn_stream";
-        ftpfilename += '-' + CSocketAPI::gethostname();
-        ftpfilename += '-' + NStr::UInt8ToString(CProcess::GetCurrentPid());
-        ftpfilename += '-' + start.AsString("YMDhms");
-        ftpfilename += ".tmp";
+        ftpfile  = "test_ncbi_conn_stream";
+        ftpfile += '-';
+        ftpfile += NStr::GetField(CSocketAPI::gethostname(), 0, '.');
+        ftpfile += '-';
+        ftpfile += NStr::UInt8ToString(CProcess::GetCurrentPid());
+        ftpfile += '-';
+        ftpfile += start.AsString("YMDhms");
+        ftpfile += ".tmp";
         // to use advanced xfer modes if available
         if (rand() & 1)
             flag |= fFTP_UseFeatures;
         if (rand() & 1)
             flag |= fFTP_UseActive;
         CConn_FTPUploadStream upload("ftp-private.ncbi.nlm.nih.gov",
-                                     ftpuser, ftppass, ftpfilename,
+                                     ftpuser, ftppass, ftpfile,
                                      "test_upload",
                                      0/*port = default*/, flag,
                                      0/*offset*/, net_info->timeout);
@@ -316,11 +319,11 @@ int main(int argc, const char* argv[])
         if (val == (unsigned long) size) {
             unsigned long filesize = 0;
             upload.clear();
-            upload << "SIZE " << ftpfilename << NcbiEndl;
+            upload << "SIZE " << ftpfile << NcbiEndl;
             upload >> filesize;
             string filetime;
             upload.clear();
-            upload << "MDTM " << ftpfilename << NcbiEndl;
+            upload << "MDTM " << ftpfile << NcbiEndl;
             upload >> filetime;
             string speedstr = (NStr::UInt8ToString(Uint8(size))
                                + " bytes uploaded via FTP");
@@ -344,12 +347,12 @@ int main(int argc, const char* argv[])
                 LOG_POST(speedstr);
         }
         upload.clear();
-        upload << "REN " << ftpfilename << '\t'
-               << '"' << ftpfilename << "~\"" << NcbiEndl;
+        upload << "REN " << ftpfile << '\t'
+               << '"' << ftpfile << "~\"" << NcbiEndl;
         if (!upload  ||  upload.Status(eIO_Write) != eIO_Success)
             LOG_POST("REN failed");
-        upload << "DELE " << ftpfilename        << NcbiEndl;
-        upload << "DELE " << ftpfilename << '~' << NcbiEndl;
+        upload << "DELE " << ftpfile        << NcbiEndl;
+        upload << "DELE " << ftpfile << '~' << NcbiEndl;
         if (val != (unsigned long) size) {
             ERR_POST(Fatal << "FTP upload incomplete: " <<
                      val << " out of " << size << " byte(s) uploaded");
@@ -364,7 +367,7 @@ int main(int argc, const char* argv[])
 
     LOG_POST("Test 4 of 8: FTP peculiarities");
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
-        _ASSERT(!ftpfilename.empty());
+        _ASSERT(!ftpfile.empty());
         // Note that FTP streams are not buffered for the sake of command
         // responses;  for file xfers the use of read() and write() does
         // the adequate buffering at user-level (and FTP connection).
@@ -412,7 +415,7 @@ int main(int argc, const char* argv[])
             << "\270\320\262\320\265\321\202" << NcbiEndl;
         if (!ftp  ||  ftp.Status (eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in RETR UTF-8");
-        ftp << "STOR " << "../test_upload/" << ftpfilename << ".0" << NcbiEndl;
+        ftp << "STOR " << "../test_upload/" << ftpfile << ".0" << NcbiEndl;
         if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in STOR");
         if (ftp.Close() == eIO_Success)
