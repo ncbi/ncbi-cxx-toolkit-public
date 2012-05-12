@@ -118,7 +118,7 @@ protected:
     CT_POS_TYPE    x_GetPPos(void)
     { return x_PPos + (CT_OFF_TYPE)(pptr() ? pbase() - pptr() : 0); }
     int               x_sync(void)
-    { return pbase()  &&  pptr() > pbase() ? sync() : 0; }
+    { return pptr() > pbase() ? sync() : 0; }
 
 protected:
     TFlags         m_Flags;
