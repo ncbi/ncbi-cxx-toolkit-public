@@ -218,6 +218,17 @@ void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
                 f2.IsSetExcept_text() ? f2.GetExcept_text() : kEmptyStr;
             BOOST_CHECK_EQUAL(f1_except_text, f2_except_text);
 
+            BOOST_CHECK(f1.IsSetComment() == f2.IsSetComment());
+            if (f1.IsSetComment() != f2.IsSetComment()) {
+                display = true;
+            }
+            if(f1.IsSetComment() && f2.IsSetComment()){
+                BOOST_CHECK(f1.GetComment() == f2.GetComment());
+                if (f1.GetComment() != f2.GetComment()) {
+                    display = true;
+                }
+            }
+
             if (display) {
                 cerr << "expected: " << MSerial_AsnText << f2;
                 cerr << "got: " << MSerial_AsnText << f1;

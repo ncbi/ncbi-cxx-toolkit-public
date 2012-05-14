@@ -41,6 +41,8 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 
+#include <util/range_coll.hpp>
+
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
@@ -65,6 +67,7 @@ struct CFeatureGenerator::SImplementation {
     TSeqPos m_min_intron;
     TSeqPos m_allowed_unaligned;
     bool m_is_gnomon;
+    bool m_is_best_refseq;
 
     typedef map<int,CRef<CSeq_feat> > TGeneMap;
     TGeneMap genes;
@@ -82,7 +85,8 @@ struct CFeatureGenerator::SImplementation {
                              objects::CSeq_annot &annot,
                              objects::CBioseq_set &seqs);
     void SetFeatureExceptions(objects::CSeq_feat& feat,
-                              const objects::CSeq_align* align);
+                              const objects::CSeq_align* align,
+                              objects::CSeq_feat* cds_feat = NULL);
     void SetPartialFlags(CRef<CSeq_feat> gene_feat,
                          CRef<CSeq_feat> mrna_feat,
                          CRef<CSeq_feat> cds_feat);
@@ -189,11 +193,19 @@ private:
                                   SMapper& mapper,
                                   CSeq_annot& annot);
     void x_HandleRnaExceptions(CSeq_feat& feat,
-                               const CSeq_align* align);
+                               const CSeq_align* align,
+                               CSeq_feat* cds_feat);
     void x_HandleCdsExceptions(CSeq_feat& feat,
                                const CSeq_align* align);
     void x_SetExceptText(CSeq_feat& feat,
                          const string &except_text);
+    void x_SetComment(CSeq_feat &rna_feat,
+                      CSeq_feat *cds_feat,
+                      const CSeq_align *align,
+                      const CRangeCollection<TSeqPos> &mismatch_locs,
+                      const CRangeCollection<TSeqPos> &insert_locs,
+                      const CRangeCollection<TSeqPos> &delete_locs,
+                      const map<TSeqPos,TSeqPos> &delete_sizes);
 
     CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id);
 };

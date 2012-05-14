@@ -268,6 +268,8 @@ Seq-annot ::= {
  transcript variant 2, mRNA"
       },
       except TRUE,
+      comment "The RefSeq transcript has 1 indel compared to this genomic
+ sequence",
       product whole gi 110611232,
       location packed-int {
         {
@@ -835,6 +837,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 2 substitutions and 2 indels compared
+ to this genomic sequence",
       product whole gi 219879766,
       location packed-int {
         {
@@ -1106,6 +1110,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 1 indel compared to this genomic
+ sequence",
       product whole gi 41053665,
       location packed-int {
         {
@@ -1542,6 +1548,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 15 substitutions and 6 indels
+ compared to this genomic sequence",
       product whole gi 47086060,
       location packed-int {
         {
@@ -1621,12 +1629,6 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       },
-      qual {
-        {
-          qual "inference",
-          val "similar to AA sequence:UniProtKB:Q9VPS3"
-        }
-      },
       dbxref {
         {
           db "GOA",
@@ -1651,6 +1653,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 2 indels compared to this genomic
+ sequence",
       product whole gi 110611232,
       location packed-int {
         {
@@ -2229,6 +2233,8 @@ Seq-annot ::= {
  subunit (pold1), mRNA"
       },
       except TRUE,
+      comment "The RefSeq transcript has 17 substitutions and 1 indel compared
+ to this genomic sequence",
       product whole gi 89886292,
       location packed-int {
         {
@@ -2625,6 +2631,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 8 substitutions and 2 indels compared
+ to this genomic sequence",
       product whole other {
         accession "NM_003715",
         version 2
@@ -3104,6 +3112,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 8 substitutions and 2 indels compared
+ to this genomic sequence",
       product whole other {
         accession "NM_003715",
         version 2
@@ -3583,6 +3593,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 3 substitutions and 1 indel compared
+ to this genomic sequence",
       product whole other {
         accession "NM_003715",
         version 2
@@ -4550,6 +4562,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 17 substitutions and 11 indels
+ compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -4973,6 +4987,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 17 substitutions and 11 indels
+ compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -5396,6 +5412,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 3 indels compared to this genomic
+ sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -5702,6 +5720,8 @@ Seq-annot ::= {
         ext name "Bos taurus claudin 2 (CLDN2), mRNA"
       },
       except TRUE,
+      comment "The RefSeq transcript has 54 substitutions and 1 indel compared
+ to this genomic sequence",
       product whole other {
         accession "NM_205781",
         version 2
@@ -5772,6 +5792,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 225 substitutions and 2 indels
+ compared to this genomic sequence",
       product whole gi 55742775,
       location packed-int {
         {
@@ -6568,6 +6590,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq transcript has 30 substitutions and 6 indels
+ compared to this genomic sequence",
       product whole gi 302632519,
       location packed-int {
         {
