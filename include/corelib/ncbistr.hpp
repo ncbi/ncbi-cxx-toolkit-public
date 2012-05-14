@@ -1837,7 +1837,7 @@ public:
     ///   Position in "str" to start search from -- default of 0 means start
     ///   the search from the beginning of the string.
     /// @param end
-    ///   Position in "str" to start search up to -- default of NPOS means
+    ///   Position in "str" to perform search up to -- default of NPOS means
     ///   to search to the end of the string.
     /// @param which
     ///   When set to eFirst, this means to find the first occurrence of 
@@ -1868,7 +1868,7 @@ public:
     ///   Position in "str" to start search from -- default of 0 means start
     ///   the search from the beginning of the string.
     /// @param end
-    ///   Position in "str" to start search up to -- default of NPOS means
+    ///   Position in "str" to perform search up to -- default of NPOS means
     ///   to search to the end of the string.
     /// @param which
     ///   When set to eFirst, this means to find the first occurrence of 
@@ -1895,7 +1895,7 @@ public:
     ///   Position in "str" to start search from -- default of 0 means start
     ///   the search from the beginning of the string.
     /// @param end
-    ///   Position in "str" to start search up to -- default of NPOS means
+    ///   Position in "str" to perform search up to -- default of NPOS means
     ///   to search to the end of the string.
     /// @param which
     ///   When set to eFirst, this means to find the first occurrence of 
