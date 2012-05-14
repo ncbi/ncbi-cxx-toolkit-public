@@ -972,7 +972,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
 
     int flags = CDisplaySeqalign::eMergeAlign
         + CDisplaySeqalign::eShowIdentity
-        // + CDisplaySeqalign::eShowGapOnlyLines
+        + CDisplaySeqalign::eNewTargetWindow
         + CDisplaySeqalign::eShowEndGaps
         + CDisplaySeqalign::eShowAlignStatsForMultiAlignView;
 
