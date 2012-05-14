@@ -580,7 +580,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
         app_name = "DBAPI-ctlib";
 #endif
     }
-    SetApplicationName(NStr::CEncode(app_name));
+    SetApplicationName(NStr::PrintableString(app_name));
 
     CS_RETCODE r = reuse_context ? Check(cs_ctx_global(version, &m_Context)) :
         Check(cs_ctx_alloc(version, &m_Context));
