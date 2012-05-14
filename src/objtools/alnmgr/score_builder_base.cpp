@@ -903,6 +903,9 @@ void CScoreBuilderBase::AddScore(CScope& scope, CSeq_align& align,
                 if (CSeq_align::IsIntegerScore(score)) {
                     align.SetNamedScore(score, (int)score_value);
                 } else {
+                    if (score_value == numeric_limits<double>::infinity()) {
+                        score_value = numeric_limits<double>::max() / 10.0;
+                    }
                     align.SetNamedScore(score, score_value);
                 }
             }}
