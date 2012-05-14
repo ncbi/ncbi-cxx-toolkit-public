@@ -116,7 +116,7 @@ static Uint8 s_StartTime = 0;
 static bool s_NeedConfReload = false;
 static CAtomicCounter s_ThreadsFinished;
 static CFastMutex s_ReloadMutex;
-static vector< CRef<CReplayThread> > s_Threads;
+static vector< CRef<CReplayThread> >* s_Threads;
 
 static CAtomicCounter s_BlobId;
 static CFastMutex s_RndLock;
@@ -210,41 +210,41 @@ s_PrintStats(int elapsed)
 
     Uint8 tot_w = 0, tot_er = 0, tot_r = 0, tot_err = 0, tot_bad = 0, tot_nf = 0;
     Uint8 tot_ws = 0, tot_ers = 0, tot_rs = 0;
-    for (size_t i = 0; i < s_Threads.size(); ++i) {
+    for (size_t i = 0; i < s_Threads->size(); ++i) {
         for (size_t j = 0; j < m_CntWrites.size(); ++j) {
-            Uint8 req_time = s_Threads[i]->m_ReqTime;
+            Uint8 req_time = s_Threads->at(i)->m_ReqTime;
             m_MinReqTime = min(m_MinReqTime, req_time);
             m_MaxReqTime = max(m_MaxReqTime, req_time);
-            Uint8 cnt = s_Threads[i]->m_CntWrites[j];
+            Uint8 cnt = s_Threads->at(i)->m_CntWrites[j];
             m_CntWrites[j] += cnt;
             tot_w += cnt;
-            cnt = s_Threads[i]->m_CntErased[j];
+            cnt = s_Threads->at(i)->m_CntErased[j];
             m_CntErased[j] += cnt;
             tot_er += cnt;
-            cnt = s_Threads[i]->m_CntReads[j];
+            cnt = s_Threads->at(i)->m_CntReads[j];
             m_CntReads[j] += cnt;
             tot_r += cnt;
-            cnt = s_Threads[i]->m_CntErrWrites[j];
+            cnt = s_Threads->at(i)->m_CntErrWrites[j];
             m_CntErrWrites[j] += cnt;
             tot_err += cnt;
-            cnt = s_Threads[i]->m_CntErrReads[j];
+            cnt = s_Threads->at(i)->m_CntErrReads[j];
             m_CntErrReads[j] += cnt;
             tot_err += cnt;
-            cnt = s_Threads[i]->m_CntBadReads[j];
+            cnt = s_Threads->at(i)->m_CntBadReads[j];
             m_CntBadReads[j] += cnt;
             tot_bad += cnt;
-            cnt = s_Threads[i]->m_CntNotFound[j];
+            cnt = s_Threads->at(i)->m_CntNotFound[j];
             m_CntNotFound[j] += cnt;
             tot_nf += cnt;
-            m_SumWrites[j] += s_Threads[i]->m_SumWrites[j];
-            m_SumReads[j] += s_Threads[i]->m_SumReads[j];
-            Uint8 size = s_Threads[i]->m_SizeWrites[j];
+            m_SumWrites[j] += s_Threads->at(i)->m_SumWrites[j];
+            m_SumReads[j] += s_Threads->at(i)->m_SumReads[j];
+            Uint8 size = s_Threads->at(i)->m_SizeWrites[j];
             m_SizeWrites[j] += size;
             tot_ws += size;
-            size = s_Threads[i]->m_SizeErased[j];
+            size = s_Threads->at(i)->m_SizeErased[j];
             m_SizeErased[j] += size;
             tot_ers += size;
-            size = s_Threads[i]->m_SizeReads[j];
+            size = s_Threads->at(i)->m_SizeReads[j];
             m_SizeReads[j] += size;
             tot_rs += size;
         }
@@ -675,10 +675,10 @@ CLogsReplayApp::Run(void)
     s_StartTime = Uint8(args["start_time"].AsInt8());
 
     s_ThreadsFinished.Set(0);
-    s_Threads.resize(n_files);
+    s_Threads = new vector< CRef<CReplayThread> >(n_files);
     for (int i = 0; i < n_files; ++i) {
         CRef<CReplayThread> thr(new CReplayThread(s_InFile, i));
-        s_Threads[i] = thr;
+        s_Threads->at(i) = thr;
         thr->Run();
     }
     CStopWatch watch(CStopWatch::eStart);
@@ -687,7 +687,7 @@ CLogsReplayApp::Run(void)
         s_PrintStats(int(watch.Elapsed()));
     }
     for (int i = 0; i < n_files; ++i) {
-        s_Threads[i]->Join();
+        s_Threads->at(i)->Join();
     }
 
     LOG_POST("All testing is finished. Final statistics.");
