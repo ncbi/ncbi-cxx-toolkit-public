@@ -72,6 +72,11 @@ public:
     void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
                   EScoreType score);
 
+    /// @}
+
+    /// @name Functions to compute scores without adding
+    /// @{
+
     double ComputeScore(CScope& scope, const CSeq_align& align,
                         const CRangeCollection<TSeqPos> &ranges,
                         CSeq_align::EScoreType score);
@@ -100,12 +105,6 @@ public:
     {
         CScoreBuilderBase::AddScore(scope, aligns, score);
     }
-
-
-    /// @}
-
-    /// @name Functions to compute scores without adding
-    /// @{
 
     /// Compute the BLAST score of the alignment
     int GetBlastScore     (CScope& scope, const CSeq_align& align);

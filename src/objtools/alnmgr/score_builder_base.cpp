@@ -38,6 +38,8 @@
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
+
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/feat_ci.hpp>
 
@@ -60,7 +62,8 @@ USING_SCOPE(objects);
 
 /// Default constructor
 CScoreBuilderBase::CScoreBuilderBase()
-: m_SubstMatrixName("BLOSUM62")
+: m_ErrorMode(eError_Report)
+, m_SubstMatrixName("BLOSUM62")
 {
 }
 
@@ -126,7 +129,7 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
     CBioseq_Handle genomic_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
     if ( !prod_bsh  ||  !genomic_bsh ) {
         const CSeq_id &failed_id = align.GetSeq_id(genomic_bsh ? 0 : 1);
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqalignException, eInvalidSeqId,
                    "Can't get sequence data for " + failed_id.AsFastaString() +
                    " in order to count identities/mismatches");
     }
@@ -343,8 +346,8 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
         break;
 
     case CSeq_align::TSegs::e_Std:
-        NCBI_THROW(CSeqalignException, eUnsupported,
-                   "identity + mismatch function unimplemented for std-seg");
+        NCBI_THROW(CSeqalignException, eNotImplemented,
+                   "identity + mismatch function not implemented for std-seg");
         break;
 
     case CSeq_align::TSegs::e_Spliced:
@@ -374,7 +377,7 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                          exon.GetProduct_end().GetProtpos().GetAmin()*3
                              + end_frame - 1);
                  } else {
-                     NCBI_THROW(CException, eUnknown,
+                     NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
                                 "Spliced-exon is neither nuc nor prot");
                  }
                  if (exon.IsSetParts()) {
@@ -433,12 +436,13 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
              try {
                  s_GetSplicedSegIdentityMismatch(scope, align, ranges,
                                                  identities, mismatches);
-             } catch (CLoaderException &) {
-                 NCBI_THROW(CException, eUnknown,
-                            "Can't calculate identities/mismatches for "
-                            "alignment with genomic sequence " +
-                            align.GetSeq_id(1).AsFastaString() +
-                            "; Loader can't load all required components of sequence");
+             } catch (CLoaderException &e) {
+                 NCBI_RETHROW_SAME(e,
+                                   "Can't calculate identities/mismatches for "
+                                   "alignment with genomic sequence " +
+                                   align.GetSeq_id(1).AsFastaString() +
+                                   "; Loader can't load all required "
+                                   "components of sequence");
              }
          }}
         break;
@@ -530,7 +534,7 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         if ( !seq_len ) {
             CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
             if (!bsh) {
-                 NCBI_THROW(CException, eUnknown,
+                 NCBI_THROW(CSeqalignException, eInvalidSeqId,
                             "s_GetPercentCoverage: "
                             "The alignment query bioseq handle could not be "
                             "loaded by the object managerfor seq ID: "
@@ -538,7 +542,7 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
             }
             CBioseq_Handle subject_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
             if (!subject_bsh) {
-                 NCBI_THROW(CException, eUnknown,
+                 NCBI_THROW(CSeqalignException, eInvalidSeqId,
                             "s_GetPercentCoverage: "
                             "The alignment subject bioseq handle could not be "
                             "loaded by the object managerfor seq ID: "
@@ -574,7 +578,7 @@ void CScoreBuilderBase::x_GetMatrixCounts(CScope& scope,
          align.GetSegs().GetSpliced().GetProduct_type() !=
                 CSpliced_seg::eProduct_type_protein)
     {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqalignException, eUnsupported,
                    "num_positives and num_negatives scores only defined "
                    "for protein alignment");
     }
@@ -865,49 +869,66 @@ void CScoreBuilderBase::AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns
                              CSeq_align::EScoreType score)
 {
     NON_CONST_ITERATE (list< CRef<CSeq_align> >, iter, aligns) {
-        try {
-            AddScore(scope, **iter, score);
-        }
-        catch (CException& e) {
-            LOG_POST(Error
-                << "CScoreBuilderBase::AddScore(): error computing score: "
-                << e);
-        }
+        AddScore(scope, **iter, score);
     }
 }
 
 void CScoreBuilderBase::AddScore(CScope& scope, CSeq_align& align,
-                             CSeq_align::EScoreType score)
+                                 CSeq_align::EScoreType score)
 {
-    switch (score) {
-    /// Special cases for the three precent-identity scores, to add
-    /// the num_ident and num_mismatch scores as well
-    case CSeq_align::eScore_PercentIdentity_Gapped:
-    case CSeq_align::eScore_PercentIdentity_Ungapped:
-    case CSeq_align::eScore_PercentIdentity_GapOpeningOnly:
-        {{
-            int identities      = 0;
-            int mismatches      = 0;
-            double pct_identity = 0;
-            s_GetPercentIdentity(scope, align, &identities, &mismatches,
-                &pct_identity,
-                static_cast<EPercentIdentityType>(
-                    score - CSeq_align::eScore_PercentIdentity_Gapped));
-            align.SetNamedScore(score, pct_identity);
-            align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
-            align.SetNamedScore(CSeq_align::eScore_MismatchCount,   mismatches);
-        }}
-        break;
+    try {
+        switch (score) {
+        /// Special cases for the three precent-identity scores, to add
+        /// the num_ident and num_mismatch scores as well
+        case CSeq_align::eScore_PercentIdentity_Gapped:
+        case CSeq_align::eScore_PercentIdentity_Ungapped:
+        case CSeq_align::eScore_PercentIdentity_GapOpeningOnly:
+            {{
+                int identities      = 0;
+                int mismatches      = 0;
+                double pct_identity = 0;
+                s_GetPercentIdentity(scope, align, &identities, &mismatches,
+                    &pct_identity,
+                    static_cast<EPercentIdentityType>(
+                        score - CSeq_align::eScore_PercentIdentity_Gapped));
+                align.SetNamedScore(score, pct_identity);
+                align.SetNamedScore(CSeq_align::eScore_IdentityCount,   identities);
+                align.SetNamedScore(CSeq_align::eScore_MismatchCount,   mismatches);
+            }}
+            break;
 
-    default:
-        {{
-            double score_value = ComputeScore(scope, align, score);
-            if (CSeq_align::IsIntegerScore(score)) {
-                align.SetNamedScore(score, (int)score_value);
-            } else {
-                align.SetNamedScore(score, score_value);
-            }
-        }}
+        default:
+            {{
+                double score_value = ComputeScore(scope, align, score);
+                if (CSeq_align::IsIntegerScore(score)) {
+                    align.SetNamedScore(score, (int)score_value);
+                } else {
+                    align.SetNamedScore(score, score_value);
+                }
+            }}
+        }
+    } catch (CSeqalignException& e) {
+        // Unimplemented (code missing) or unsupported (score cannot be defined)
+        // is handled according to the error handling mode. All other
+        // errors always throw.
+        switch (e.GetErrCode()) {
+        case CSeqalignException::eUnsupported:
+        case CSeqalignException::eNotImplemented:
+            break;
+        default:
+            throw;
+        }
+
+        switch (GetErrorMode()) {
+        case eError_Throw:
+            throw;
+        case eError_Report:
+            LOG_POST(Error
+                << "CScoreBuilderBase::AddScore(): error computing score: "
+                << e);
+        default:
+            break;
+        }
     }
 }
 
@@ -932,7 +953,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
     switch (score) {
     case CSeq_align::eScore_Score:
         {{
-             NCBI_THROW(CException, eUnknown,
+             NCBI_THROW(CSeqalignException, eUnsupported,
                         "CScoreBuilderBase::ComputeScore(): "
                         "generic 'score' computation is undefined");
          }}
@@ -943,7 +964,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
     case CSeq_align::eScore_EValue:
     case CSeq_align::eScore_SumEValue:
     case CSeq_align::eScore_CompAdjMethod:
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqalignException, eNotImplemented,
                    "CScoreBuilderBase::ComputeScore(): "
                    "BLAST scores are available in CScoreBuilder, "
                    "not CScoreBuilderBase");
@@ -954,20 +975,23 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
 
     case CSeq_align::eScore_PositiveCount:
         if (ranges.empty() || !ranges.begin()->IsWhole()) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eNotImplemented,
                        "positive-count score not supported within a range");
         }
         return GetPositiveCount(scope, align);
 
     case CSeq_align::eScore_NegativeCount:
         if (ranges.empty() || !ranges.begin()->IsWhole()) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eNotImplemented,
                        "positive-count score not supported within a range");
         }
         return GetNegativeCount(scope, align);
 
     case CSeq_align::eScore_MismatchCount:
         return GetMismatchCount(scope, align, ranges);
+
+    case CSeq_align::eScore_GapCount:
+        return GetGapCount(align, ranges);
 
     case CSeq_align::eScore_AlignLength:
         return align.GetAlignLengthWithinRanges(ranges, true /* include gaps */);
@@ -1025,7 +1049,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
                             "for standard seg representation");
 
             if (ranges.empty() || !ranges.begin()->IsWhole()) {
-                NCBI_THROW(CException, eUnknown,
+                NCBI_THROW(CSeqalignException, eNotImplemented,
                            "High-quality percent coverage not supported "
                            "within a range");
             }
@@ -1054,7 +1078,7 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
 
     default:
         {{
-            NCBI_THROW(CSeqalignException, eUnsupported,
+            NCBI_THROW(CSeqalignException, eNotImplemented,
                        "Unknown score");
             return 0;
         }}

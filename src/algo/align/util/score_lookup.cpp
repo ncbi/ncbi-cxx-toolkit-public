@@ -112,7 +112,7 @@ public:
     virtual double Get(const CSeq_align& align, CScope*) const
     {
         if (m_ExonSpecific && !align.GetSegs().IsSpliced()) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eUnsupported,
                        "'product_gap_length' and 'genomic_gap_length' scores "
                        "valid only for Spliced-seg alignments");
         }
@@ -332,7 +332,7 @@ public:
             break;
 
         default:
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eNotImplemented,
                        "internal_unaligned not implemented for this "
                        "type of alignment");
         }
@@ -444,7 +444,7 @@ public:
                 if (bsh) {
                     return bsh.GetBioseqLength();
                 } else {
-                    NCBI_THROW(CException, eUnknown,
+                    NCBI_THROW(CSeqalignException, eInvalidSeqId,
                                "Can't get length for sequence " +
                                align.GetSeq_id(m_Row).AsFastaString());
                 }
@@ -592,7 +592,7 @@ public:
             return 0;
         }
 
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqalignException, eUnsupported,
                    "'exon_count' score is valid only for "
                    "Spliced-seg alignments");
     }
@@ -637,7 +637,7 @@ public:
             return 0;
         }
 
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqalignException, eUnsupported,
                    "'start_codon' and 'stop_codon' scores valid only for "
                    "Spliced-seg alignments");
     }
@@ -866,7 +866,7 @@ public:
                 }
             }
         }
-        NCBI_THROW(CAlgoAlignUtilException, eScoreNotFound,
+        NCBI_THROW(CSeqalignException, eUnsupported,
                    "last_splice_site score inapplicable");
         return 0;
     }
@@ -969,14 +969,14 @@ public:
         // check assumptions:
         //
         if ( !align.GetSegs().IsSpliced() ) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eUnsupported,
                        "CScore_TblastnScore: "
                        "valid only for spliced-seg alignments");
         }
 
         if ( align.GetSegs().GetSpliced().GetProduct_type() !=
              CSpliced_seg::eProduct_type_protein) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eUnsupported,
                        "CScore_TblastnScore: "
                        "valid only for protein spliced-seg alignments");
         }

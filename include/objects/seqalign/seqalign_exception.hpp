@@ -41,13 +41,41 @@ class CSeqalignException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
+        /// Operation that is undefined for the given input Seq-align,
+        /// and which is impossible to perform.
         eUnsupported,
+
+        /// The current alignment has a structural or data error.
+        ///
+        /// This error code applies to problems on "this" object
+        /// in member functions of an alignment object. Note that
+        /// mismatches between alignment types and scores that
+        /// are not supported for them are indicated by eUnsupported.
         eInvalidAlignment,
+
+        /// An invalid alignmnent passed as input to the current
+        /// operation has a structural or data error.
+        ///
+        /// This error code applies to problems on an alignment
+        /// object other than "this" object. Note that
+        /// mismatches between alignment types and scores that
+        /// are not supported for them are indicated by eUnsupported.
         eInvalidInputAlignment,
+
         eInvalidRowNumber,
         eOutOfRange,
         eInvalidInputData,
-        eInvalidSeqId
+
+        /// A sequence identifier is invalid or cannot be
+        /// resolved within the relevant scope.
+        eInvalidSeqId,
+
+        /// Attempt to use unimplemented funtionality.
+        ///
+        /// The operation could be performed, in theory, but
+        /// current code is incomplete and requires modification
+        /// to provided the desired functionality.
+        eNotImplemented
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -60,6 +88,7 @@ public:
         case eOutOfRange:            return "eOutOfRange";
         case eInvalidInputData:      return "eInvalidInputData";
         case eInvalidSeqId:          return "eInvalidSeqId";
+        case eNotImplemented:        return "eNotImplemented";
         default:                     return CException::GetErrCodeString();
         }
     }

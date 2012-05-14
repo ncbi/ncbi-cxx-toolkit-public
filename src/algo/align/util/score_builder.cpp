@@ -71,7 +71,7 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
     }
     if (m_ScoreBlk == NULL) {
         NCBI_THROW(CException, eUnknown,
-                "Failed to initialize blast score block");
+                   "Failed to initialize blast score block");
     }
 
     // fill in the score matrix
@@ -89,7 +89,7 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
     score_options = BlastScoringOptionsFree(score_options);
     if (status) {
         NCBI_THROW(CException, eUnknown,
-                "Failed to initialize score matrix");
+                   "Failed to initialize score matrix");
     }
 
     // fill in Karlin blocks
@@ -118,7 +118,7 @@ void CScoreBuilder::x_Initialize(CBlastOptionsHandle& options)
     if (status || m_ScoreBlk->kbp_gap_std[0] == NULL ||
         m_ScoreBlk->kbp_gap_std[0]->Lambda <= 0.0) {
         NCBI_THROW(CException, eUnknown,
-                "Failed to initialize Karlin blocks");
+                   "Failed to initialize Karlin blocks");
     }
 }
 
@@ -158,14 +158,14 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
                                  const CSeq_align& align)
 {
     if ( !align.GetSegs().IsDenseg() ) {
-        NCBI_THROW(CException, eUnknown,
-            "CScoreBuilder::GetBlastScore(): "
-            "only dense-seg alignments are supported");
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CScoreBuilder::GetBlastScore(): "
+                   "only dense-seg alignments are supported");
     }
 
     if (m_ScoreBlk == 0) {
-        NCBI_THROW(CException, eUnknown,
-               "Blast scoring parameters have not been specified");
+        NCBI_THROW(CSeqalignException, eInvalidInputData,
+                   "Blast scoring parameters have not been specified");
     }
 
     int computed_score = 0;
@@ -186,7 +186,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
         Int4 **matrix = m_ScoreBlk->matrix->data;
 
         if (m_BlastType != eBlastp) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eUnsupported,
                         "Protein scoring parameters required");
         }
 
@@ -217,7 +217,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
         int mismatch = m_ScoreBlk->penalty; // assumed negative
 
         if (m_BlastType != eBlastn) {
-            NCBI_THROW(CException, eUnknown,
+            NCBI_THROW(CSeqalignException, eUnsupported,
                         "Nucleotide scoring parameters required");
         }
 
@@ -276,7 +276,7 @@ int CScoreBuilder::GetBlastScore(CScope& scope,
             computed_score /= 2;
     }
     else {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CSeqalignException, eUnsupported,
                     "pairwise alignment contains unsupported "
                     "or mismatched molecule types");
     }
@@ -303,8 +303,9 @@ double CScoreBuilder::GetBlastEValue(CScope& scope,
                                      const CSeq_align& align)
 {
     if (m_EffectiveSearchSpace == 0) {
-        NCBI_THROW(CException, eUnknown,
-               "E-value calculation requires search space to be specified");
+        NCBI_THROW(CSeqalignException, eInvalidInputData,
+                   "E-value calculation requires search space "
+                   "to be specified");
     }
 
     int raw_score = GetBlastScore(scope, align);
@@ -336,7 +337,8 @@ double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
         return CScoreBuilderBase::ComputeScore(scope, align, ranges, score);
     default:
         if (ranges.empty() || !ranges.begin()->IsWhole()) {
-            NCBI_THROW(CException, eUnknown, "Score not supported within a range");
+            NCBI_THROW(CSeqalignException, eNotImplemented,
+                       "Score not supported within a range");
         }
     }
 
@@ -372,21 +374,21 @@ double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
 
     case CSeq_align::eScore_SumEValue:
         {{
-             NCBI_THROW(CException, eUnknown,
+             NCBI_THROW(CSeqalignException, eNotImplemented,
                         "CScoreBuilder::AddScore(): "
                         "sum_e not implemented");
          }}
 
     case CSeq_align::eScore_CompAdjMethod:
         {{
-             NCBI_THROW(CException, eUnknown,
+             NCBI_THROW(CSeqalignException, eNotImplemented,
                         "CScoreBuilder::AddScore(): "
                         "comp_adj_method not implemented");
          }}
 
     default:
         {{
-             NCBI_THROW(CException, eUnknown,
+             NCBI_THROW(CSeqalignException, eNotImplemented,
                         "CScoreBuilder::AddScore(): "
                         "unrecognized score");
              return 0;

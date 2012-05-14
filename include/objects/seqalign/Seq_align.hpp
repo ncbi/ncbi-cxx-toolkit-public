@@ -150,6 +150,10 @@ public:
         //< count of mismatches (num_mismatch)
         eScore_MismatchCount,
 
+        //< number of gap bases in the alignment
+        //< (= length of all gap segments)
+        eScore_GapCount,
+
         //< percent identity (0.0-100.0) (pct_identity)
         //< NOTE: there are multiple ways to express this; the default is to
         //< consider a gap as a mismatch, as noted above.

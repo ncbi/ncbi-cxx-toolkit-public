@@ -76,13 +76,33 @@ public:
         eScore_PercentCoverage
     };
 
+    /// Error handling while adding scores that are not implemented
+    /// or unsupported (cannot be defined) for certain types
+    /// of alignments.
+    ///
+    /// Transient errors, such as problems retrieving sequence
+    /// data, will always throw.
+    enum EErrorMode {
+        eError_Silent, ///< Try to ignore errors, continue adding scores.
+        eError_Report, ///< Print error messages, but do not fail.
+        eError_Throw   ///< Throw exceptions on errors.
+    };
+
     /// @name Functions to add scores directly to Seq-aligns
     /// @{
+
+    EErrorMode GetErrorMode(void) const { return m_ErrorMode; }
+    void SetErrorMode(EErrorMode mode) { m_ErrorMode = mode; }
 
     void AddScore(CScope& scope, CSeq_align& align,
                   CSeq_align::EScoreType score);
     void AddScore(CScope& scope, list< CRef<CSeq_align> >& aligns,
                   CSeq_align::EScoreType score);
+
+    /// @}
+
+    /// @name Functions to compute scores without adding
+    /// @{
 
     double ComputeScore(CScope& scope, const CSeq_align& align,
                         CSeq_align::EScoreType score);
@@ -92,10 +112,6 @@ public:
     virtual double ComputeScore(CScope& scope, const CSeq_align& align,
                                 const CRangeCollection<TSeqPos> &ranges,
                                 CSeq_align::EScoreType score);
-    /// @}
-
-    /// @name Functions to compute scores without adding
-    /// @{
 
     /// Compute percent identity (range 0-100)
     enum EPercentIdentityType {
@@ -186,6 +202,7 @@ public:
     /// @}
 
 private:
+    EErrorMode m_ErrorMode;
     string m_SubstMatrixName;
 
     void x_GetMatrixCounts(CScope& scope,
