@@ -1223,6 +1223,10 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
         window = windows[window_index];
         query_index = window->query_range.context;
         query_composition = &query_info[query_index].composition;
+
+        nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
+						  window);
+
         status =
             callbacks->get_range(matchingSeq, &window->subject_range,
                                  &subject, 
@@ -1241,9 +1245,6 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                     window->align, TRUE, FALSE);
         }
         searchsp = query_info[query_index].eff_search_space;
-
-        nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
-						  window);
 
         /* For Smith-Waterman alignments, adjust the search using the
          * composition of the highest scoring alignment in window */
