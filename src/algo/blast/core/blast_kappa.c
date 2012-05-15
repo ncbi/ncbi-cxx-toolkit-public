@@ -879,9 +879,11 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
 {
     if (self != NULL) {
         BlastKappa_SequenceInfo * local_data = self->local_data;
-        BlastSeqSrcReleaseSequence(local_data->seq_src,
+        if (self->length > 0) {
+            BlastSeqSrcReleaseSequence(local_data->seq_src,
                                    &local_data->seq_arg);
-        BlastSequenceBlkFree(local_data->seq_arg.seq);
+            BlastSequenceBlkFree(local_data->seq_arg.seq);
+        }
         free(self->local_data);
         self->local_data = NULL;
     }
@@ -2256,6 +2258,9 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                          seqSrc, default_db_genetic_code,
                                          thisMatch->oid);
         if (status_code != 0) {
+            /* some sequences may have been excluded by membit filtering 
+               so this is not really an exception */
+            status_code = 0;
             goto match_loop_cleanup;
         }
         status_code =
