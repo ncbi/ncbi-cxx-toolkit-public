@@ -66,9 +66,10 @@ string CObjectStack::GetStackTraceASN(void) const
     if (!GetStackDepth()) {
         return "stack is empty";
     }
-    _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
-    _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
-    string stack = FetchFrameFromBottom(0).m_TypeInfo->GetName();
+//    _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
+//    _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
+    string stack = FetchFrameFromBottom(0).HasTypeInfo() ?
+        FetchFrameFromBottom(0).m_TypeInfo->GetName() : "?";
     for ( size_t i = 1; i < GetStackDepth(); ++i ) {
         const TFrame& frame = FetchFrameFromBottom(i);
         switch ( frame.m_FrameType ) {
