@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = basic_sample
+APP_PROJ = basic_sample multi_command
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
