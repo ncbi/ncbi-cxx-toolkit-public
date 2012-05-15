@@ -923,12 +923,10 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 
         printf("Using UDP port %hu\n", wait_job_handler.GetPort());
 
-        m_NetScheduleExecutor.SetAffinityPreference(affinity_preference);
-
         if (wait_job_handler.RequestJob(m_NetScheduleExecutor, job,
                 wait_job_handler.CmdAppendTimeout(
                     CNetScheduleNotificationHandler::MkBaseGETCmd(
-                        m_NetScheduleExecutor, m_Opts.affinity), &abs_timeout)))
+                        affinity_preference, m_Opts.affinity), &abs_timeout)))
             printf("%s\nA job has been returned; won't wait.\n",
                 job.job_id.c_str());
         else {

@@ -819,7 +819,8 @@ public:
     CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
             CAbsTimeout& abs_timeout, CNetScheduleAPI ns_api);
 
-    static string MkBaseGETCmd(CNetScheduleExecutor::TInstance executor,
+    static string MkBaseGETCmd(
+        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list);
     string CmdAppendTimeout(const string& base_cmd, CAbsTimeout* timeout);
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
