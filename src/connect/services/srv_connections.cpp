@@ -239,7 +239,12 @@ string CNetServerConnection::Exec(const string& cmd)
 #endif
 
     string output;
-    m_Impl->ReadCmdOutputLine(output);
+    try {
+        m_Impl->ReadCmdOutputLine(output);
+    }
+    catch (CNetSrvConnException& e) {
+        NCBI_RETHROW_SAME(e, "... CMD=" + cmd);
+    }
 
     return output;
 }
