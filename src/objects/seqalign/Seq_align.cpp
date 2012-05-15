@@ -422,22 +422,23 @@ static string sc_ScoreHelpText[] = {
 };
 
 static bool sc_IsInteger[] = {
-    true,
-    true,
-    false,
-    false,
-    true,
-    true,
-    true,
-    true,
-    true,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
+    true,   // eScore_Score
+    true,   // eScore_Blast
+    false,  // eScore_BitScore
+    false,  // eScore_EValue
+    true,   // eScore_AlignLength
+    true,   // eScore_IdentityCount
+    true,   // eScore_PositiveCount
+    true,   // eScore_NegativeCount
+    true,   // eScore_MismatchCount
+    true,   // eScore_GapCount
+    false,  // eScore_PercentIdentity_Gapped
+    false,  // eScore_PercentIdentity_Ungapped
+    false,  // eScore_PercentIdentity_GapOpeningOnly
+    false,  // eScore_PercentCoverage
+    false,  // eScore_SumEValue
+    false,  // eScore_CompAdjMethod
+    false,  // eScore_HighQualityPercentCoverage
 };
 
 CSeq_align::TScoreNameMap CSeq_align::m_ScoreNameMap;

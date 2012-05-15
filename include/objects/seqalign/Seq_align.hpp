@@ -122,8 +122,8 @@ public:
     ///     Measure of the percent of the query represented in a set of exons
     ///         (sum of lengths of exon on query) / (query length - polyA)
     ///
-    /// @warning The order of this enumeration and the sc_ScoreHelpText
-    ///     array must correspond!
+    /// @warning The order of this enumeration and the sc_ScoreNames,
+    ///     sc_ScoreHelpText, and sc_IsInteger arrays must correspond!
     ///
     enum EScoreType {
         //< generic 'score'
