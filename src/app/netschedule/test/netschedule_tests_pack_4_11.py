@@ -176,6 +176,10 @@ class Scenario304( TestBase ):
         return "SUBMIT without aff, CHAFF as identified (add a0, a1, a2), " \
                "GET2 wnode_aff = 1 exclusive_new_aff=1"
 
+    def report_warning( self, msg, server ):
+        self.warning = msg
+        return
+
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
@@ -186,6 +190,7 @@ class Scenario304( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario304' )
         ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [ 'a3', 'a4', 'a5' ] )
 
         output = execAny( ns_client,
@@ -219,6 +224,10 @@ class Scenario305( TestBase ):
         return "SUBMIT with a7, CHAFF as identified (add a0, a1, a2), " \
                "GET2 wnode_aff = 1 exclusive_new_aff=1"
 
+    def report_warning( self, msg, server ):
+        self.warning = msg
+        return
+
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
@@ -229,6 +238,7 @@ class Scenario305( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario305' )
         ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [ 'a3', 'a4', 'a5' ] )
 
         output = execAny( ns_client,
@@ -672,3 +682,50 @@ class Scenario312( TestBase ):
 
         return True
 
+class Scenario313( TestBase ):
+    " Scenario 313 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Transit client data"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        self.ns.connect( 10 )
+        self.ns.directLogin( 'TEST',
+                             'netschedule_admin client_node=n1 ' \
+                             'client_session=s1 control_port=732 ' \
+                             'client_host=myhost' )
+        self.ns.directSendCmd( 'AFLS' )
+        reply = self.ns.directReadSingleReply()
+        self.ns.disconnect()
+
+        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                            str( self.ns.getPort() ),
+                                            'TEST', 'scenario313' )
+        info = getClientInfo( ns_admin )
+        if info[ 'worker_node_control_port' ] != 732 or \
+           info[ 'client_host' ] != 'myhost':
+            raise Exception( "Unexpected client control port and/or client host" )
+
+        # Second connect to remove control port and host
+        self.ns.connect( 10 )
+        self.ns.directLogin( 'TEST',
+                             'netschedule_admin client_node=n1 ' \
+                             'client_session=s1' )
+        self.ns.directSendCmd( 'AFLS' )
+        reply = self.ns.directReadSingleReply()
+        self.ns.disconnect()
+        info = getClientInfo( ns_admin )
+        if info[ 'worker_node_control_port' ] != 'n/a' or \
+           info[ 'client_host' ] != 'n/a':
+            raise Exception( "Unexpected cleared client control " \
+                             "port and/or client host" )
+        return True

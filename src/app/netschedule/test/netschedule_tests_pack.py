@@ -330,7 +330,11 @@ class Scenario09( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         qinfo = self.ns.getQueueInfo( 'TEST' )
-        return qinfo[ "queue_type" ] == "static"
+        if qinfo.has_key( "queue_type" ):
+            return qinfo[ "queue_type" ] == "static"
+        if qinfo.has_key( "queue type" ):
+            return qinfo[ "queue type" ] == "static"
+        raise Exception( "No queue type found" )
 
 
 class Scenario10( TestBase ):

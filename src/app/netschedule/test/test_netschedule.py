@@ -35,7 +35,7 @@ latestNetscheduleVersion = "4.11.0"
 excludeTestsMap = \
 {
     "4.10.0":   [ 300, 301, 302, 303, 304, 305, 306, 307, 308, 309,
-                  310, 311, 312 ],
+                  310, 311, 312, 313 ],
     "4.11.0":   [ 250, 255 ]
 }
 
@@ -390,6 +390,7 @@ def main():
               pack_4_11.Scenario310( netschedule ),
               pack_4_11.Scenario311( netschedule ),
               pack_4_11.Scenario312( netschedule ),
+              pack_4_11.Scenario313( netschedule ),
             ]
 
     # Calculate the start test index
