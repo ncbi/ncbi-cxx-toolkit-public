@@ -99,7 +99,6 @@ public:
         virtual void operator()(const TInfo& info) = 0;
     };
 
-    void TraverseJobs(CNetScheduleAPI::EJobStatus, IAction<CNSJobInfo>&);
     void TraverseNodes(IAction<CNetScheduleAdmin::SWorkerNodeInfo>&);
     void CancelJob(const std::string& jid);
 

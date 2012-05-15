@@ -181,19 +181,6 @@ private:
 };
 
 
-
-void CNSInfoRenderer::RenderJobByStatus(CNetScheduleAPI::EJobStatus status,
-                                        TFlags flags)
-{
-    ITagWriter::TAttributes attrs;
-    attrs.push_back(ITagWriter::TAttribute
-                    ("Status", CNetScheduleAPI::StatusToString(status) ));
-
-    STagGuard guard(m_Writer,"Jobs", attrs);
-    CNSJobListRenderAction action(*this, flags & ~eStatus);
-    m_Collector.TraverseJobs(status,action);
-}
-
 void CNSInfoRenderer::RenderJob(const string& job_id, TFlags flags)
 {
     auto_ptr<CNSJobInfo> info(m_Collector.CreateJobInfo(job_id));

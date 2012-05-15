@@ -84,16 +84,6 @@ void CNSRemoteJobControlApp::Init(void)
                      "NetCache service address (service_name or host:port)",
                      CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("jlist",
-                             "status",
-                             "Show jobs by status",
-                             CArgDescriptions::eString);
-    arg_desc->SetConstraint("jlist",
-                            &(*new CArgAllow_Strings(NStr::eNocase),
-                              "done", "failed", "running", "pending",
-                              "canceled", "returned", "all")
-                            );
-
     arg_desc->AddFlag("qlist", "Show queue list");
 
     arg_desc->AddFlag("wnlist", "Show worker nodes");
@@ -152,12 +142,6 @@ void CNSRemoteJobControlApp::Init(void)
     arg_desc->SetConstraint("render",
                             &(*new CArgAllow_Strings(NStr::eNocase),
                               "text", "xml")
-                            );
-
-    arg_desc->SetConstraint("jlist",
-                            &(*new CArgAllow_Strings(NStr::eNocase),
-                              "done", "failed", "running", "pending",
-                              "canceled", "returned", "all")
                             );
 
     arg_desc->AddOptionalKey("of",
@@ -321,20 +305,7 @@ int CNSRemoteJobControlApp::Run(void)
 
     auto_ptr<CNSInfoRenderer> renderer(new CNSInfoRenderer(*writer, *info_collector));
 
-    if (args["jlist"]) {
-        string sstatus = args["jlist"].AsString();
-        if (NStr::CompareNocase(sstatus, "all") == 0) {
-            for(int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-                CNetScheduleAPI::EJobStatus status =
-                    (CNetScheduleAPI::EJobStatus)i;
-                renderer->RenderJobByStatus(status, flags);
-            }
-        } else {
-            CNetScheduleAPI::EJobStatus status =
-                CNetScheduleAPI::StringToStatus(sstatus);
-            renderer->RenderJobByStatus(status, flags);
-        }
-    } else if (args["jid"]) {
+    if (args["jid"]) {
         string jid = args["jid"].AsString();
         renderer->RenderJob(jid, flags);
     } else if (args["wnlist"]) {
