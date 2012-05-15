@@ -186,7 +186,7 @@ void SNetCacheAPIImpl::SetPassword(const string& password)
     if (password.empty())
         m_Password = kEmptyStr;
     else {
-        string encoded_password(NStr::CEncode(password));
+        string encoded_password(NStr::PrintableString(password));
 
         if (encoded_password.length() > MAX_NETCACHE_PASSWORD_LENGTH) {
             NCBI_THROW(CNetCacheException,

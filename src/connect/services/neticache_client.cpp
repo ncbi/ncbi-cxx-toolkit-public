@@ -79,9 +79,9 @@ static string s_CheckKeySubkey(
     const string& key, const string& subkey, string* encoded_key)
 {
     encoded_key->push_back('"');
-    encoded_key->append(NStr::CEncode(key));
+    encoded_key->append(NStr::PrintableString(key));
 
-    string encoded_subkey(NStr::CEncode(subkey));
+    string encoded_subkey(NStr::PrintableString(subkey));
 
     if (encoded_key->length() > (1 + MAX_ICACHE_KEY_LENGTH) ||
             encoded_subkey.length() > MAX_ICACHE_SUBKEY_LENGTH) {
@@ -194,7 +194,7 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
         }
     }
 
-    icache_impl->m_CacheName = NStr::CEncode(icache_impl->m_CacheName);
+    icache_impl->m_CacheName = NStr::PrintableString(icache_impl->m_CacheName);
 
     if (icache_impl->m_CacheName.length() > MAX_ICACHE_CACHE_NAME_LENGTH) {
         NCBI_THROW(CNetCacheException,
