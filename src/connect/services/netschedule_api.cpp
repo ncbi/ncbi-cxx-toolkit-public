@@ -206,9 +206,9 @@ void CNetScheduleServerListener::OnInit(
         }
 
         bool use_affinities = config->GetBool(config_section,
-                "use_affinities", CConfig::eErr_NoThrow, true);
+                "use_affinities", CConfig::eErr_NoThrow, false);
         bool claim_new_affinities = config->GetBool(config_section,
-                "claim_new_affinities", CConfig::eErr_NoThrow, true);
+                "claim_new_affinities", CConfig::eErr_NoThrow, false);
 
         ns_impl->m_AffinityPreference =
                 !use_affinities && !claim_new_affinities ?

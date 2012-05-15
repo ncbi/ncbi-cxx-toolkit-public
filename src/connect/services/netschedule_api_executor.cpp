@@ -263,8 +263,8 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
         const string& affinity_list,
         CAbsTimeout* timeout)
 {
-    string base_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
-            m_Impl->m_AffinityPreference, affinity_list));
+    string base_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(m_Impl,
+            affinity_list));
 
     if (m_Impl->m_NotificationHandler.RequestJob(m_Impl, job,
             m_Impl->m_NotificationHandler.CmdAppendTimeout(base_cmd,
@@ -325,27 +325,35 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
 }
 
 string CNetScheduleNotificationHandler::MkBaseGETCmd(
-    CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+    CNetScheduleExecutor::TInstance executor,
     const string& affinity_list)
 {
     string cmd;
 
-    switch (affinity_preference) {
-    case CNetScheduleExecutor::ePreferredAffsOrAnyJob:
-        cmd = "GET2 wnode_aff=1 any_aff=1";
-        break;
-
-    case CNetScheduleExecutor::ePreferredAffinities:
-        cmd = "GET2 wnode_aff=1 any_aff=0";
-        break;
-
+    switch (executor->m_AffinityPreference) {
     case CNetScheduleExecutor::eClaimNewPreferredAffs:
-        cmd = "GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1";
+        cmd = !executor->m_PreferredAffinities.empty() ?
+                "GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1" :
+                "GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=1";
         break;
+
+    case CNetScheduleExecutor::ePreferredAffsOrAnyJob:
+        if (!executor->m_PreferredAffinities.empty()) {
+            cmd = "GET2 wnode_aff=1 any_aff=1";
+            break;
+        }
+        /* FALL THROUGH */
 
     case CNetScheduleExecutor::eAnyJob:
         cmd = "GET2 wnode_aff=0 any_aff=1";
         break;
+
+    case CNetScheduleExecutor::ePreferredAffinities:
+        if (!executor->m_PreferredAffinities.empty()) {
+            cmd = "GET2 wnode_aff=1 any_aff=0";
+            break;
+        }
+        /* FALL THROUGH */
 
     case CNetScheduleExecutor::eExplicitAffinitiesOnly:
         cmd = "GET2 wnode_aff=0 any_aff=0";
