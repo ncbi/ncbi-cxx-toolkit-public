@@ -260,14 +260,25 @@ int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
 
         if (m_Opts.output_format == eJSON)
             printf("\n}\n");
-    } else if (IsOptionSet(eJobsByStatus)) {
+    } else if (IsOptionSet(eActiveJobCount) || IsOptionSet(eJobsByStatus)) {
         if (!IsOptionSet(eQueue) &&
                 (IsOptionSet(eAffinity) || IsOptionSet(eGroup))) {
             fprintf(stderr, PROGRAM_NAME ": invalid option combination.\n");
             return 2;
         }
 
-        if (m_Opts.output_format == eRaw) {
+        if (IsOptionSet(eActiveJobCount)) {
+            CNetScheduleAdmin::TStatusMap st_map;
+
+            m_NetScheduleAdmin.StatusSnapshot(st_map,
+                    m_Opts.affinity, m_Opts.job_group);
+
+            printf(m_Opts.output_format == eHumanReadable ?
+                    "Total number of Running and Pending jobs: %u\n" :
+                        m_Opts.output_format == eRaw ? "%u\n" :
+                            "{\n\t\"active_job_count\": %u\n}\n",
+                    st_map["Running"] + st_map["Pending"]);
+        } else if (m_Opts.output_format == eRaw) {
             string cmd = "STAT JOBS";
 
             if (!m_Opts.affinity.empty()) {

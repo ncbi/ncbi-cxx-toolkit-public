@@ -213,6 +213,10 @@ struct SOptionDefinition {
         "jobs-by-affinity", "For each affinity, print the number "
             "of pending jobs associated with it.", {eQueue, -1}},
 
+    {OPT_DEF(eSwitch, eActiveJobCount),
+        "active-job-count", "Only print the total number of "
+            "Pending and Running jobs in all queues combined.", {-1}},
+
     {OPT_DEF(eSwitch, eJobsByStatus),
         "jobs-by-status", "Print the number of jobs itemized by their "
             "current status. If the '--" AFFINITY_OPTION "' option "
@@ -691,7 +695,7 @@ struct SCommandDefinition {
         "\"human-readable\" is assumed.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
             eJobGroupInfo, eClientInfo, eNotificationInfo, eAffinityInfo,
-            eJobsByAffinity, eJobsByStatus,
+            eActiveJobCount, eJobsByAffinity, eJobsByStatus,
             eAffinity, eJobGroup, eVerbose, eOutputFormat,
             eCompatMode, eAuth, eClientNode, eClientSession, -1},
             {eHumanReadable, eRaw, eJSON, -1}},
