@@ -75,6 +75,10 @@ FEBS J. 272:5101-5109.",
 Thomas L. Madden, Richa Agarwala, Alejandro A. Sch&auml;ffer \
 (2008), \"Database Indexing for Production MegaBLAST Searches\", \
 Bioinformatics 24:1757-1764.",
+    // eDeltaBlast
+    "Grzegorz M. Boratyn, Alejandro A. Schaffer, Richa Agarwala, Stephen F. Altschul, \
+David J. Lipman and Thomas L. Madden (2012) \"Domain enhanced lookup time \
+accelerated BLAST\", Biology Direct 7:12.",
     // eMaxPublications
     kEmptyStr
 };
@@ -97,7 +101,9 @@ entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=11452024&dopt=Citation",
     "http://www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=16218944&dopt=Citation",
     // eIndexedMegablast
-    "http://www.ncbi.nlm.nih.gov/pubmed/18567917?dopt=Citation",
+    "http://www.ncbi.nlm.nih.gov/pubmed/18567917",
+    // eDeltaBlast
+    "http://www.ncbi.nlm.nih.gov/pubmed/22510480",
     // eMaxPublications
     kEmptyStr
 };

@@ -74,6 +74,7 @@ public:
         eCompBasedStats,            ///< 2001 NAR paper
         eCompAdjustedMatrices,      ///< submitted for publication
         eIndexedMegablast,          ///< 2008 Bioinformatics on indexed megablast
+        eDeltaBlast,          	    ///< 2012 Biology Direct on DeltaBLAST
         eMaxPublications            ///< Used as sentinel value
     };
 

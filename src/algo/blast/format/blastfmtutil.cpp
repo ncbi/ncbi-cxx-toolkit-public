@@ -91,6 +91,8 @@ CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len,
         }
     } else if (pub == blast::CReference::eIndexedMegablast) {
         reference += " for database indexing";
+    } else if (pub == blast::CReference::eDeltaBlast) {
+        reference += " for DELTA-BLAST";
     }
 
     ostringstream str;

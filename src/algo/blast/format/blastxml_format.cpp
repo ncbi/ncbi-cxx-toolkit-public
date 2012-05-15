@@ -666,6 +666,8 @@ s_GetBlastPublication(EProgram program)
         publication = CReference::ePhiBlast; break;
     case ePSIBlast:
         publication = CReference::eCompBasedStats; break;
+    case eDeltaBlast:
+        publication = CReference::eDeltaBlast; break;
     default:
         publication = CReference::eGappedBlast; break;
     }

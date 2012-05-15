@@ -245,6 +245,12 @@ CBlastFormat::PrintProlog()
     }
 
     m_Outfile << "\n\n";
+    if (m_Program == "deltablast") {
+        CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
+                              m_Outfile, CReference::eDeltaBlast);
+        m_Outfile << "\n";
+    }
+
     if (m_Megablast)
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                                           m_Outfile, CReference::eMegaBlast);
@@ -254,27 +260,30 @@ CBlastFormat::PrintProlog()
 
     if (m_Megablast && m_IndexedMegablast)
     {
-        m_Outfile << "\n\n";
+        m_Outfile << "\n";
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                               m_Outfile, CReference::eIndexedMegablast);
     }
 
-    if (m_Program == "psiblast") {
-        m_Outfile << "\n\n";
+    if (m_Program == "psiblast" || m_Program == "deltablast") {
+        m_Outfile << "\n";
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                               m_Outfile, CReference::eCompAdjustedMatrices);
     }
     if (m_Program == "psiblast" || m_Program == "blastp") {
-        m_Outfile << "\n\n";
+        m_Outfile << "\n";
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                               m_Outfile, CReference::eCompBasedStats,
                               (bool)(m_Program == "psiblast"));
     }
 
-    if (m_Program == "deltablast" && !m_DomainDbInfo.empty()) {
-        m_Outfile << "\n\n" << "Conserved Domain ";
-        CBlastFormatUtil::PrintDbReport(m_DomainDbInfo, kFormatLineLength, 
+    if (m_Program == "deltablast" || !m_DomainDbInfo.empty()) {
+        m_Outfile << "\n\n";
+        if (!m_DomainDbInfo.empty()) {
+        	m_Outfile << "\n\n" << "Conserved Domain ";
+        	CBlastFormatUtil::PrintDbReport(m_DomainDbInfo, kFormatLineLength, 
                                         m_Outfile, true);
+        }
     }
     else {
         m_Outfile << "\n\n";
