@@ -232,10 +232,12 @@ void CObjectStack::x_PopStackPath(void)
 const string& CObjectStack::GetStackPath(void)
 {
     if (!m_PathValid && GetStackDepth()) {
-        _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
-        _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
+//        _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
+//        _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
+//        m_MemberPath = FetchFrameFromBottom(0).GetTypeInfo()->GetName();
         // there is no "root" symbol
-        m_MemberPath = FetchFrameFromBottom(0).GetTypeInfo()->GetName();
+        m_MemberPath = FetchFrameFromBottom(0).HasTypeInfo() ?
+            FetchFrameFromBottom(0).m_TypeInfo->GetName() : "?";
         for ( size_t i = 1; i < GetStackDepth(); ++i ) {
             const TFrame& frame = FetchFrameFromBottom(i);
             if (frame.HasMemberId()) {
