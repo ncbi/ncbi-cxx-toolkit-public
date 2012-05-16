@@ -69,8 +69,8 @@
  */
 
 #include <connect/ncbi_ftp_connector.h>
-#include <connect/ncbi_namedpipe_connector.hpp>
 #include <connect/ncbi_memory_connector.h>
+#include <connect/ncbi_namedpipe_connector.hpp>
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
@@ -115,6 +115,15 @@ class NCBI_XCONNECT_EXPORT CConn_IOStream : public    CNcbiIostream,
                                             protected CConnIniter
 {
 public:
+    /// Must be compatible by values with TCONN_Flags.
+    enum {
+        fConn_Untie         = 1,  ///< do not flush before reading
+        fConn_ReadBuffered  = 2,  ///< read buffer is to be allocated
+        fConn_WriteBuffered = 4   ///< write buffer is to be allocated
+    } EConn_Flag;
+    typedef unsigned int TConn_Flags;  ///< bitwise OR of EConn_Flag
+
+public:
     /// Create a stream based on a CONN, which is to be closed upon
     /// stream dtor only if "close" parameter is passed as "true".
     ///
@@ -127,7 +136,7 @@ public:
     ///  Default I/O timeout
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
-    /// @param tie
+    /// @param flags
     ///  Specifies whether to tie input and output -- a tied stream flushes
     ///  all pending output prior to doing any input.
     /// @sa
@@ -138,7 +147,7 @@ public:
      bool            close    = false,
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize,
-     bool            tie      = true,
+     TConn_Flags     flags    = fConn_ReadBuffered | fConn_WriteBuffered,
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
 
@@ -154,7 +163,7 @@ protected:
     ///  Default I/O timeout
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
-    /// @param tie
+    /// @param flags
     ///  Specifies whether to tie input and output -- a tied stream flushes
     ///  all pending output prior to doing any input.
     /// @sa
@@ -163,7 +172,7 @@ protected:
     (CONNECTOR       connector,
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize,
-     bool            tie      = true,
+     TConn_Flags     flags    = fConn_ReadBuffered | fConn_WriteBuffered,
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
 
@@ -449,9 +458,6 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);
 
-protected:
-    SOCK* m_SockPtr;
-
 private:
     // Disable copy constructor and assignment.
     CConn_SocketStream(const CConn_SocketStream&);
@@ -657,10 +663,10 @@ public:
      );
     virtual ~CConn_PipeStream();
 
-    CPipe& GetPipe(void) { return m_Pipe; }
+    CPipe& GetPipe(void) { return *m_Pipe; }
 
 protected:
-    CPipe m_Pipe; ///< Underlying pipe.
+    CPipe* m_Pipe; ///< Underlying pipe.
 
 private:
     // Disable copy constructor and assignment.
@@ -711,11 +717,12 @@ public:
     (const string&        host,
      const string&        user,
      const string&        pass,
-     const string&        path    = kEmptyStr,
-     unsigned short       port    = 0,
-     TFTP_Flags           flag    = 0,
-     const SFTP_Callback* cmcb    = 0,
-     const STimeout*      timeout = kDefaultTimeout
+     const string&        path     = kEmptyStr,
+     unsigned short       port     = 0,
+     TFTP_Flags           flag     = 0,
+     const SFTP_Callback* cmcb     = 0,
+     const STimeout*      timeout  = kDefaultTimeout,
+     size_t               buf_size = kConn_DefaultBufSize
      );
 
     /// Abort any command in progress, read and discard all input data,
@@ -740,15 +747,16 @@ class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
 public:
     CConn_FTPDownloadStream
     (const string&        host,
-     const string&        file    = kEmptyStr,
-     const string&        user    = "ftp",
-     const string&        pass    = "-none@", // "-" helps make login quieter
-     const string&        path    = kEmptyStr,
-     unsigned short       port    = 0, ///< 0 means default (21 for FTP)
-     TFTP_Flags           flag    = 0,
-     const SFTP_Callback* cmcb    = 0,
-     Uint8                offset  = 0, ///< file offset to begin download from
-     const STimeout*      timeout = kDefaultTimeout
+     const string&        file     = kEmptyStr,
+     const string&        user     = "ftp",
+     const string&        pass     = "-none@", // "-" helps make login quieter
+     const string&        path     = kEmptyStr,
+     unsigned short       port     = 0, ///< 0 means default (21 for FTP)
+     TFTP_Flags           flag     = 0,
+     const SFTP_Callback* cmcb     = 0,
+     Uint8                offset   = 0, ///< file offset to begin download from
+     const STimeout*      timeout  = kDefaultTimeout,
+     size_t               buf_size = kConn_DefaultBufSize
      );
 
 private:
@@ -791,7 +799,8 @@ private:
 /// Writing to the stream is undefined.
 ///
 extern NCBI_XCONNECT_EXPORT
-CConn_IOStream* NcbiOpenURL(const string& url);
+CConn_IOStream* NcbiOpenURL(const string& url,
+                            size_t        buf_size = kConn_DefaultBufSize);
 
 #endif //NCBI_CONN_STREAM_EXPERIMENTAL_API
 
