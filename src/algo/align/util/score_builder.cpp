@@ -328,6 +328,7 @@ double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
     case CSeq_align::eScore_PositiveCount:
     case CSeq_align::eScore_NegativeCount:
     case CSeq_align::eScore_MismatchCount:
+    case CSeq_align::eScore_GapCount:
     case CSeq_align::eScore_AlignLength:
     case CSeq_align::eScore_PercentIdentity_Gapped:
     case CSeq_align::eScore_PercentIdentity_Ungapped:
