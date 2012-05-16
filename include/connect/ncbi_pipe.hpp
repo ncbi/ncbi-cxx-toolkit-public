@@ -66,10 +66,10 @@ class CPipeHandle;
 ///
 /// CPipe --
 ///
-/// Launch child process with pipes connected to its standard I/O.
+/// Launch a child process with pipes connected to its standard I/O.
 ///
-/// Program can read from stdin/stderr and write to stdin of the
-/// executed child process using pipe object functions Read/Write.
+/// A program can read from stdin/stderr and write to stdin of the
+/// executed child process using the Read/Write methods of the pipe object.
 ///
 /// @sa
 ///   CNamedPipe, CExec
@@ -386,16 +386,16 @@ public:
     class NCBI_XCONNECT_EXPORT IProcessWatcher
     {
     public:
-        /// an action which ExecWait method should take 
-        /// after Watch method has returned
+        /// An action which the ExecWait() method should take 
+        /// after the Watch() method has returned.
         enum EAction {
             eContinue, ///< Continue running
-            eStop      ///< Kill the chiled process and exit
+            eStop      ///< Kill the child process and exit
         };
         virtual ~IProcessWatcher();
 
         /// This method is called when the process has just
-        /// been started by the ExecWait method.
+        /// been started by the ExecWait() method.
         ///
         /// @param pid
         ///   Process Id to monitor
@@ -404,7 +404,7 @@ public:
         virtual EAction OnStart(TProcessHandle /*pid*/) { return eContinue; }
 
         /// This method is getting called periodically during
-        /// the process execution by ExecWait method.
+        /// the process execution by the ExecWait() method.
         ///
         /// @param pid
         ///   Process Id to monitor
@@ -419,7 +419,7 @@ public:
         eCanceled  ///< Watcher requested process termination
     };
 
-    /// Execute a command with the vector of arguments and wait for its
+    /// Execute a command with a vector of arguments and wait for its
     /// completion.
     /// 
     /// @param cmd
