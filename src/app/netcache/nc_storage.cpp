@@ -2751,12 +2751,16 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
     ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
 
     bool failed = false;
-    Uint4 prev_rec_num = 0;
+    Uint4 prev_rec_num = 0, last_alive = 0;
     Uint4 cnt_processed = 0, cnt_moved = 0, size_moved = 0;
     while (!m_Stopped) {
         max_file->info_lock.Lock();
-        Uint4 rec_num = 0;
-        SFileIndexRec* ind_rec = max_file->index_head;
+        Uint4 rec_num = last_alive;
+        SFileIndexRec* ind_rec = max_file->index_head - rec_num;
+        if (rec_num != 0  &&  x_IsIndexDeleted(max_file, ind_rec)) {
+            last_alive = rec_num = 0;
+            ind_rec = max_file->index_head;
+        }
         do {
             if (ind_rec->next_num == 0) {
                 if (max_file->index_head->next_num == 0  &&  max_file->used_size != 0)
@@ -2764,6 +2768,7 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
                 ind_rec = NULL;
                 break;
             }
+            last_alive = rec_num;
             rec_num = ind_rec->next_num;
             ind_rec = max_file->index_head - rec_num;
         }
