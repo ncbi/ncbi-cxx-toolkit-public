@@ -548,6 +548,7 @@ public:
     /// CTarEntryInfo::GetPosition(ePos_Header)'s result possibly off-set
     /// with some fixed archive base position, e.g. if there is any preamble).
     /// The extraction is done at the first matching entry only, then stops.
+    /// @note fStreamPipeThrough will be ignored if passed in flags.
     /// See test suite (in test/test_tar.cpp) for a usage example.
     /// @return
     ///   IReader interface to read the file contents with;  0 on error.
@@ -606,12 +607,12 @@ private:
     void x_Open(EAction action);
     void x_Close(bool truncate);  // NB: "truncate" effects file archives only
 
-    // Flush the archive (adding EOT) if necessary;  return "true" if done
+    // Flush the archive (w/EOT);  return "true" if it is okay to truncate
     bool x_Flush(bool nothrow = false);
 
-    // Backspace and skip the archive (in terms of blocks).
-    void x_Backspace(EAction action, Uint8 blocks);
-    void x_Skip(Uint8 blocks);  // Can do either skip or read
+    // Backspace and skip the archive.
+    void x_Backspace(EAction action);  // NB: m_ZeroBlockCount blocks back
+    void x_Skip(Uint8 blocks);         // NB: Can do either skip or read
 
     // Parse in extended entry information (POSIX) for the current entry.
     EStatus x_ParsePAXData(const string& buffer);
@@ -663,22 +664,23 @@ private:
     void x_AppendFile(const string& file);
 
 private:
-    string        m_FileName;     ///< Tar archive file name.
-    CNcbiFstream* m_FileStream;   ///< File stream of the archive.
-    CNcbiIos&     m_Stream;       ///< Archive stream (used for all I/O).
-    const size_t  m_BufferSize;   ///< Buffer(record) size for I/O operations.
-    size_t        m_BufferPos;    ///< Position within the record.
-    Uint8         m_StreamPos;    ///< Position in stream (0-based).
-    char*         m_BufPtr;       ///< Page unaligned buffer pointer.
-    char*         m_Buffer;       ///< I/O buffer (page-aligned).
-    CMask*        m_Mask;         ///< Masks for list/test/extract.
-    EOwnership    m_MaskOwned;    ///< Flag of m_Mask's ownership.
-    EOpenMode     m_OpenMode;     ///< What was it opened for.
-    bool          m_Modified;     ///< True after at least one write.
-    bool          m_Bad;          ///< True if a fatal output error occurred.
-    TFlags        m_Flags;        ///< Bitwise OR of flags.
-    string        m_BaseDir;      ///< Base directory for relative paths.
-    CTarEntryInfo m_Current;      ///< Current entry being processed.
+    string        m_FileName;       ///< Tar archive file name
+    CNcbiFstream* m_FileStream;     ///< File stream of the archive
+    CNcbiIos&     m_Stream;         ///< Archive stream (used for all I/O)
+    size_t        m_ZeroBlockCount; ///< Zero blocks seen in between entries
+    const size_t  m_BufferSize;     ///< Buffer(record) size for I/O operations
+    size_t        m_BufferPos;      ///< Position within the record
+    Uint8         m_StreamPos;      ///< Position in stream (0-based)
+    char*         m_BufPtr;         ///< Page unaligned buffer pointer
+    char*         m_Buffer;         ///< I/O buffer (page-aligned)
+    CMask*        m_Mask;           ///< Masks for list/test/extract
+    EOwnership    m_MaskOwned;      ///< Flag of m_Mask's ownership
+    EOpenMode     m_OpenMode;       ///< What was it opened for
+    bool          m_Modified;       ///< True after at least one write
+    bool          m_Bad;            ///< True if a fatal output error occurred
+    TFlags        m_Flags;          ///< Bitwise OR of flags
+    string        m_BaseDir;        ///< Base directory for relative paths
+    CTarEntryInfo m_Current;        ///< Current entry being processed
 
 private:
     // Prohibit assignment and copy
