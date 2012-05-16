@@ -234,6 +234,12 @@ public:
         m_BlastType = type;
     }
 
+    ///Sets the start index of defline for PSI blast description table
+    /// @param int startIndex [in]
+    void SetStartIndex(int startIndex) {
+        m_StartIndex = startIndex;
+    }
+
     void SetCgiContext (CCgiContext& ctx) {
         m_Ctx = &ctx;
     }
@@ -431,6 +437,9 @@ protected:
     /// mapviewer build name associated with the sequences in the BLAST
     /// database out of which the results are being formatted by this class.
     string m_MapViewerBuildName;
+
+    ///The start index of defline for PSI blast description table
+    int    m_StartIndex;
 
     ///Internal function to return score info
     ///@param aln seq-align we are working with [in]

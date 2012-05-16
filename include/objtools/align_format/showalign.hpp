@@ -440,9 +440,7 @@ private:
     CDisplaySeqalign(const CDisplaySeqalign& other);
     /// Prohibit assignment operator
     CDisplaySeqalign& operator=(const CDisplaySeqalign& rhs);
-
-protected: 
-
+ 
     ///internal insert information
     ///aln_start. insert right after this position
     struct SInsertInformation : public CObject {
@@ -619,6 +617,10 @@ protected:
     /// mapviewer build name associated with the sequences in the BLAST
     /// database out of which the results are being formatted by this class.
     string m_MapViewerBuildName;
+    ///gi(if exists) that is used for html formatting
+    string m_CurrAlnSeqID_Label;
+    ///accession that is displayed
+    string m_CurrAlnAccession;
 
     TranslatedFrameForLocalSeq m_TranslatedFrameForLocalSeq;
 
@@ -906,6 +908,7 @@ protected:
     
 	SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);	
 	string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
+    string x_InitDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
 	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
 	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);    
