@@ -61,12 +61,14 @@ extern "C" {
 
 
 struct SConnectionTag;
-typedef struct SConnectionTag* CONN;      /**< connection handle */
+typedef struct SConnectionTag* CONN;  /**< connection handle */
 
 
+/** CONN flags should be kept compatible with CConn_IOStream::TConn_Flags.
+ */
 enum ECONN_Flag {
     fCONN_Untie      = 1,  /**< do not call flush method prior to every read */
-    fCONN_Supplement = 2   /**< supplement I/O with extended return codes    */
+    fCONN_Supplement = 64  /**< supplement I/O with extended return codes    */
 };
 typedef unsigned int TCONN_Flags;  /**< bitwise OR of ECONN_Flag */
 
@@ -175,8 +177,9 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
 
 /** Block on the connection until it becomes available for either reading or
  * writing (depending on "event"), until timeout expires, or until any error.
- * @note  "timeout" can also be one of two special values:
- *        NULL (means infinite), kDefaultTimeout (connector-defined).
+ * @note  "timeout" can also be one of the two special values:
+ *        * NULL (for infinite timeout, also as kInfiniteTimeout);
+ *        * kDefaultTimeout (connector-defined).
  * @sa
  *  CONN_Read, CONN_Write
  */
@@ -192,13 +195,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
  * May not return eIO_Success if no data at all can be written before
  * the write timeout expires or an error occurs.
  * Parameter "how" modifies the write behavior:
- * eIO_WritePlain      -- return immediately after having written as little
+ * * @var eIO_WritePlain
+ *                        return immediately after having written as little
  *                        as 1 byte of data (return eIO_Success), or if an
  *                        error has occurred (and "*n_written == 0");
- * eIO_WritePersist    -- return only after having written all of the data from
+ * * @var eIO_WritePersist
+ *                        return only after having written all of the data from
  *                        "buf" (return eIO_Success), or if an error has
- *                        occurred (fewer bytes written, non-eIO_Success).
- * eIO_WriteSupplement -- same as eIO_WritePlain but can return non-eIO_Success
+ *                        occurred (fewer bytes written, non-eIO_Success);
+ * * @var eIO_WriteSupplement
+ *                        same as eIO_WritePlain but can return non-eIO_Success
  *                        even with some data written (as indicated by
  *                        "*n_written"), to signify that an error has occurred
  *                        past the just written block of data.
@@ -250,15 +256,20 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
  * Return the number of actually read bytes in "*n_read".
  * May not return eIO_Success if no data at all can be read before
  * the read timeout expires or an error occurs.
+ *
  * Parameter "how" modifies the read behavior:
- *   eIO_ReadPlain      -- return immediately after having read as many as
+ * * @var eIO_ReadPlain
+ *                         return immediately after having read as many as
  *                         1 byte from connection (return eIO_Success), or
  *                         if an error has occurred (and "*n_read == 0");
- *   eIO_ReadPeek       -- eIO_ReadPlain but don't discard data read from CONN;
- *   eIO_ReadPersist    -- return only after having filled full "buf" with data
+ * * @var eIO_ReadPeek
+ *                         eIO_ReadPlain but don't discard data read from CONN;
+ * * @var eIO_ReadPersist
+ *                         return only after having filled full "buf" with data
  *                         (exactly "size" bytes, eIO_Success), or if an error
- *                         has occurred (fewer bytes, non-eIO_Success).
- *   eIO_ReadSupplement -- same as eIO_ReadPlain but can return non-eIO_Success
+ *                         has occurred (fewer bytes, non-eIO_Success);
+ * * @var eIO_ReadSupplement
+ *                         same as eIO_ReadPlain but can return non-eIO_Success
  *                         even with some read data (as indicated by
  *                         "*n_read"), to show that an error has been following
  *                         the just read block of data (eg eIO_Closed for EOF).
@@ -282,9 +293,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  * If not enough space provided in "line" to accomodate the '\0'-terminated
  * line, then all "size" bytes are used up and "*n_read" is equal to "size"
  * upon return - this is the only case when "line" will not be '\0'-terminated.
+ *
  * Return code advises the caller whether another read can be attempted:
- *   eIO_Success -- read completed successfully, keep reading;
- *   other code  -- an error occurred, and further read attempt may fail.
+ *   * eIO_Success -- read completed successfully, keep reading;
+ *   * other code  -- an error occurred, and further read attempt may fail.
  *
  * This call utilizes eIO_Read timeout as set by CONN_SetTimeout().
  * @sa
@@ -301,10 +313,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReadLine
 /** Obtain status of the last I/O operation.  This is NOT a completion
  * code of the last CONN call, but rather some status from a lower level
  * connector's layer (if available).
- * Special case:  eIO_Open as "dir" checks whether the connection is in an open
- * state (which means the underlying connector has been successfully opened,
- * but does not assure/check availability for any data or I/O), and returns
- * eIO_Success if it is, or an error code otherwise.
+ * @par Special case:  eIO_Open as "dir" checks whether the connection is in
+ * an open state (which means the underlying connector has been successfully
+ * opened, but does not assure/check availability for any data or I/O), and
+ * returns eIO_Success if it is, or an error code otherwise.
  * @sa
  *  CONN_Create, CONN_Read, CONN_Write, CONN_Flush
  */
@@ -329,24 +341,28 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * callback type.  Note that the callback function is always called prior
  * to the event to happen, e.g. the eCONN_OnClose callback is called when
  * the connection is about to close, but has not yet been closed.
+ * @par
  * The callback function is supplied with 3 arguments: the connection handle,
  * a type of event, and a user data (specified when the callback was set).
  * CONN_SetCallback() stores previous callback in "old_cb" (if it is not NULL).
+ * @par
  * The callbacks remain valid until they are explicitly changed / de-activated
  * or the connection becomes closed.
+ * @par
  * This means that if a callback is intercepted and then relayed to the old
  * handler, the interceptor may not assume the callback remains set, and
  * must re-instate itself upon each upcall of the old handler (in general).
+ * @par
  * Normally, callback would return eIO_Success and let the operation continue;
  * non-eIO_Success return value causes it to be returned to the caller level
  * (but possibly with some processing already completed by then, e.g. such as
  * a partial read for eCONN_OnRead from an internal connection buffer).
- * NOTE:  eIO_Interrupt returned from the callback switches connection into a
+ * @note  eIO_Interrupt returned from the callback switches connection into a
  * cancelled state irreversibly, causing any further I/O for this handle to
  * fail with eIO_Interrupt.
- * NOTE:  non-eIO_Success from an eCONN_OnClose callback cannot postpone the
+ * @note  non-eIO_Success from an eCONN_OnClose callback cannot postpone the
  * connection closure (but the error code is still passed through to the user).
- * NOTE:  eCONN_OnTimeout can restart the I/O that has timed out by returning
+ * @note  eCONN_OnTimeout can restart the I/O that has timed out by returning
  * eIO_Success.
  * @sa
  *  CONN_Read, CONN_Write, CONN_Close

@@ -86,10 +86,9 @@ extern "C" {
  *  EIO_WriteMethod
  */
 typedef enum {
-    eIO_ReadPlain,      /**< read readily available data only, wait if none  */
     eIO_ReadPeek,       /**< do eIO_ReadPlain but leave data in input queue  */
-    eIO_ReadPersist,    /**< read exactly as much as requested, w/waits      */
-    eIO_ReadSupplement  /**< do eIO_ReadPlain but return extended status     */
+    eIO_ReadPlain,      /**< read readily available data only, wait if none  */
+    eIO_ReadPersist     /**< read exactly as much as requested, w/waits      */
 } EIO_ReadMethod;
 
 
@@ -98,10 +97,10 @@ typedef enum {
  *  EIO_ReadMethod
  */
 typedef enum {
+    eIO_WriteNone,      /**< invalid reserved opcode, not for use!           */
     eIO_WritePlain,     /**< write as much as possible, report back how much */
-    eIO_WritePersist,   /**< write exactly as much as specified              */
-    eIO_WriteOutOfBand, /**< write out-of-band chunk of urgent data          */
-    eIO_WriteSupplement /**< do eIO_WritePlain but return extended status    */
+    eIO_WritePersist,   /**< write exactly as much as specified, w/waits     */
+    eIO_WriteOutOfBand  /**< write out-of-band chunk of urgent data (if supp)*/
 } EIO_WriteMethod;
 
 
@@ -115,8 +114,8 @@ typedef enum {
  */
 typedef enum {
     eIO_Open      = 0x0, /**< also serves as no-event indicator in SOCK_Poll */
-    eIO_Read      = 0x1,
-    eIO_Write     = 0x2,
+    eIO_Read      = 0x1, /**< read                                           */
+    eIO_Write     = 0x2, /**< write                                          */
     eIO_ReadWrite = 0x3, /**< eIO_Read | eIO_Write                           */
     eIO_Close     = 0x4  /**< also serves as an error indicator in SOCK_Poll */
 } EIO_Event;
