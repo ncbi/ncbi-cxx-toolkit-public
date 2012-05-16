@@ -919,6 +919,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                         if (endptr) {
                             *endptr = (char*)ptr;
                         }
+                        errno = 0;
                         return sign < 0 ? -HUGE_VAL : HUGE_VAL;
                     }
                 }
@@ -2572,12 +2573,18 @@ void NStr::PtrToString(string& out_str, const void* value)
 
 const void* NStr::StringToPtr(const CTempStringEx& str)
 {
-    errno = 0;
+    int& errno_ref = errno;
+    errno_ref = 0;
     void *ptr = NULL;
+    int res;
     if ( str.HasZeroAtEnd() ) {
-        ::sscanf(str.data(), "%p", &ptr);
+        res = ::sscanf(str.data(), "%p", &ptr);
     } else {
-        ::sscanf(string(str).c_str(), "%p", &ptr);
+        res = ::sscanf(string(str).c_str(), "%p", &ptr);
+    }
+    if (res != 1) {
+        errno_ref = EINVAL;
+        return NULL;
     }
     return ptr;
 }

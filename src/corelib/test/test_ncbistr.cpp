@@ -1984,6 +1984,19 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
         BOOST_CHECK(errno != kTestErrno);
         BOOST_CHECK_EQUAL(ptr2, (void*)ptr_val);
     }}
+    {{
+        const void* ptr;
+
+        errno = kTestErrno;
+        ptr = NStr::StringToPtr("0");
+        BOOST_CHECK(errno == 0);
+        BOOST_CHECK_EQUAL(ptr, (void*)0);
+
+        errno = kTestErrno;
+        ptr = NStr::StringToPtr("q");
+        BOOST_CHECK(errno != kTestErrno  &&  errno > 0);
+        BOOST_CHECK_EQUAL(ptr, (void*)0);
+    }}
 }
 
 
