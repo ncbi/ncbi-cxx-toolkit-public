@@ -477,18 +477,9 @@ void CPipeHandle::x_Clear(void)
         m_ChildStdOut = INVALID_HANDLE_VALUE;
         m_SelfHandles = false;
     } else {
-        if (m_ChildStdIn != INVALID_HANDLE_VALUE) {
-            ::CloseHandle(m_ChildStdIn);
-            m_ChildStdIn  = INVALID_HANDLE_VALUE;
-        }
-        if (m_ChildStdOut != INVALID_HANDLE_VALUE) {
-            ::CloseHandle(m_ChildStdOut);
-            m_ChildStdOut  = INVALID_HANDLE_VALUE;
-        }
-        if (m_ChildStdErr != INVALID_HANDLE_VALUE) {
-            ::CloseHandle(m_ChildStdErr);
-            m_ChildStdErr  = INVALID_HANDLE_VALUE;
-        }
+        CloseHandle(CPipe::eStdIn);
+        CloseHandle(CPipe::eStdOut);
+        CloseHandle(CPipe::eStdErr);
     }
 }
 
@@ -914,7 +905,7 @@ CPipeHandle::~CPipeHandle()
 
 // Auxiliary function for exit from forked process with reporting errno
 // on errors to specified file descriptor 
-void s_Exit(int status, int fd)
+static void s_Exit(int status, int fd)
 {
     int errcode = errno;
     (void) ::write(fd, &errcode, sizeof(errcode));
@@ -1319,18 +1310,9 @@ void CPipeHandle::x_Clear(void)
         m_ChildStdOut = -1;
         m_SelfHandles = false;
     } else {
-        if (m_ChildStdIn  != -1) {
-            ::close(m_ChildStdIn);
-            m_ChildStdIn   = -1;
-        }
-        if (m_ChildStdOut != -1) {
-            ::close(m_ChildStdOut);
-            m_ChildStdOut  = -1;
-        }
-        if (m_ChildStdErr != -1) {
-            ::close(m_ChildStdErr);
-            m_ChildStdErr  = -1;
-        }
+        CloseHandle(CPipe::eStdIn);
+        CloseHandle(CPipe::eStdOut);
+        CloseHandle(CPipe::eStdErr);
     }
 }
 
@@ -1663,7 +1645,6 @@ CPipe::CPipe(void)
     : m_PipeHandle(new CPipeHandle), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
- 
 {
 }
 
