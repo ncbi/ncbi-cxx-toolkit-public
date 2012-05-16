@@ -2359,11 +2359,6 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "It is forbidden to have both any_affinity and "
                    "exclusive_new_aff GET2 flags set to 1.");
-    if (m_CommandArguments.exclusive_new_aff == true &&
-        m_CommandArguments.wnode_affinity == false)
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                   "It is forbidden to have exclusive_new_aff set "
-                   "to 1 while wnode_aff is set to 0 for GET2.");
     return;
 }
 

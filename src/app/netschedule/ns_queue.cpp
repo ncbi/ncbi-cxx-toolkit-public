@@ -1672,23 +1672,22 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
 
         if (job_id != 0)
             return job_id;
-
-        if (exclusive_new_affinity) {
-            job_id = x_FindPendingWithExclusiveAffinity(client,
-                                                        blacklisted_jobs);
-            if (job_id != 0) {
-                // If the picked job is with affinity, then this affinity must
-                // be added to the preferred list
-                unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
-                if (aff_id != 0)
-                    m_ClientsRegistry.UpdatePreferredAffinities(client,
-                                                                aff_id,
-                                                                0);
-                return job_id;
-            }
-        }
     }
 
+    if (exclusive_new_affinity) {
+        job_id = x_FindPendingWithExclusiveAffinity(client,
+                                                    blacklisted_jobs);
+        if (job_id != 0) {
+            // If the picked job is with affinity, then this affinity must
+            // be added to the preferred list
+            unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
+            if (aff_id != 0)
+                m_ClientsRegistry.UpdatePreferredAffinities(client,
+                                                            aff_id,
+                                                            0);
+            return job_id;
+        }
+    }
 
     if (any_affinity || (!aff_ids.any() && !wnode_affinity))
         return m_StatusTracker.GetJobByStatus(
