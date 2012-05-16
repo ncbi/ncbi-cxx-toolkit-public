@@ -2074,7 +2074,7 @@ try_even_more_suffix:
         --suff_idx;
     }
 
-    out_str.clear();
+    out_str.erase();
     if (flags & fWithSign)
         out_str.append(1, '+');
     if (!(flags & fWithCommas)  ||  digs_pre_dot <= 3) {
@@ -4667,7 +4667,7 @@ void s_URLDecode(const CTempString& src, string& dst, NStr::EUrlDecode flag)
 {
     SIZE_TYPE len = src.length();
     if ( !len ) {
-        dst.clear();
+        dst.erase();
         return;
     }
     if (dst.length() < src.length()) {
