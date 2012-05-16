@@ -6,7 +6,7 @@ outlog()
   logfile="$1"
   if [ -s "$logfile" ]; then
     echo "=== $logfile ==="
-    if [ "`cat $logfile 2>/dev/null | wc -l`" -gt "200" ]; then
+    if [ "`head -n 201 $logfile 2>/dev/null | wc -l`" -gt "200" ]; then
       head -100 "$logfile"
       echo '...'
       tail -100 "$logfile"

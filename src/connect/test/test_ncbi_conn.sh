@@ -6,10 +6,10 @@ outlog()
   logfile="$1"
   if [ -s "$logfile" ]; then
     echo "=== $logfile ==="
-    if [ "`cat $logfile 2>/dev/null | wc -l`" -gt "300" ]; then
+    if [ "`head -n 401 $logfile 2>/dev/null | wc -l`" -gt "400" ]; then
       head -100 "$logfile"
       echo '...'
-      tail -200 "$logfile"
+      tail -300 "$logfile"
     else
       cat "$logfile"
     fi
@@ -24,10 +24,13 @@ trap 'echo "`date`."' 0 1 2 3 15
 
 . ncbi_test_data
 
-ext="`expr $$ '%' 3`"
-if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$ext ]; then
-  .     $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$ext
-  proxy=1
+n="`ls -m $NCBI_TEST_DATA/proxy 2>/dev/null | wc -w`"
+n="`expr ${n:-0} + 1`"
+n="`expr $$ '%' $n`"
+
+if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$n ]; then
+  .     $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$n
+  proxy="$n"
 fi
 
 fw="`expr '(' $$ / 10 ')' '%' 2`"
@@ -35,20 +38,19 @@ if [ "$fw" = "1" ]; then
   CONN_FIREWALL=TRUE
   # Only proxy "0" is capable of forwarding the firewall port range
   case "`expr '(' $$ / 100 ')' '%' 3`" in
-    0) test "$ext" = "0"  &&  CONN_FIREWALL=FIREWALL
+    0) test "$proxy" = "0"  &&  CONN_FIREWALL=FIREWALL
       ;;
-    1)                        CONN_FIREWALL=FALLBACK
+    1)                          CONN_FIREWALL=FALLBACK
       ;;
     *)
       ;;
   esac
   export CONN_FIREWALL
-elif [ "${proxy:-0}" = "1" ]; then
-  if [ "$ext" != "0" -o "`expr '(' $$ / 100 ')' '%' 2`" != "0" ]; then
+elif [ -n "$proxy" ]; then
+  if [ "$proxy" != "0" -o "`expr '(' $$ / 100 ')' '%' 2`" != "0" ]; then
     # Only proxy "0" is capable of forwarding the relay port range
-    CONN_HTTP_PROXY_FLEX=TRUE # FIXME: Remove (obsolete now)
     CONN_HTTP_PROXY_LEAK=TRUE
-    export CONN_HTTP_PROXY_FLEX CONN_HTTP_PROXY_LEAK
+    export CONN_HTTP_PROXY_LEAK
   fi
 fi
 
