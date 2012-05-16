@@ -111,7 +111,7 @@ public:
              CRWStreambuf::TFlags flags    = 0)
         : CNcbiIstream(0), m_Sb(r, 0, buf_size, buf, flags)
     {
-        init(&m_Sb);
+        init(r ? &m_Sb : 0);
     }
 
 private:
@@ -148,7 +148,7 @@ public:
              CRWStreambuf::TFlags flags    = 0)
         : CNcbiOstream(0), m_Sb(0, w, buf_size, buf, flags)
     {
-        init(&m_Sb);
+        init(w ? &m_Sb : 0);
     }
 
 private:
@@ -186,7 +186,7 @@ public:
               CRWStreambuf::TFlags flags    = 0)
         : CNcbiIostream(0), m_Sb(rw, buf_size, buf, flags)
     {
-        init(&m_Sb);
+        init(rw ? &m_Sb : 0);
     }
 
     CRWStream(IReader*             r,
@@ -196,7 +196,7 @@ public:
               CRWStreambuf::TFlags flags    = 0)
         : CNcbiIostream(0), m_Sb(r, w, buf_size, buf, flags)
     {
-        init(&m_Sb);
+        init(r  ||  w ? &m_Sb : 0);
     }
 
 private:

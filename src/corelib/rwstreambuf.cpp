@@ -166,9 +166,9 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
     if (!s  &&  !m)
         return this;
 
-    if (gptr() < egptr())
+    if (gptr()   &&  gptr() < egptr())
         ERR_POST_X(3,Critical << "CRWStreambuf::setbuf(): Read data pending");
-    if (pptr() > pbase())
+    if (pbase()  &&  pptr() > pbase())
         ERR_POST_X(4,Critical << "CRWStreambuf::setbuf(): Write data pending");
 
     delete[] m_pBuf;
@@ -203,14 +203,12 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
 
 CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 {
-    _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF)  ||  pptr() >= epptr());
-
     if ( !m_Writer )
         return CT_EOF;
 
     ERW_Result result;
     size_t n_written;
-    size_t n_towrite = (size_t)(pptr() - pbase());
+    size_t n_towrite = (size_t)(pbase() ? pptr() - pbase() : 0);
 
     if ( n_towrite ) {
         // send buffer
@@ -261,7 +259,6 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
     }
 
     _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
-
     RWSTREAMBUF_HANDLE_EXCEPTIONS(
         result = m_Writer->Flush(),
         7, "CRWStreambuf::overflow(): IWriter::Flush()",
@@ -297,38 +294,40 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     do {
         _ASSERT( n );
-        if (pbase() + n < epptr()) {
-            // Would entirely fit into the buffer not causing an overflow
-            x_written = (size_t)(epptr() - pptr());
-            if (x_written > n)
-                x_written = n;
-            if ( x_written ) {
-                memcpy(pptr(), buf, x_written);
-                pbump(int(x_written));
-                n_written += x_written;
-                n         -= x_written;
-                if ( !n )
-                    return (streamsize) n_written;
-                buf       += x_written;
+        if (pbase()) {
+            if (pbase() + n < epptr()) {
+                // Would entirely fit into the buffer not causing an overflow
+                x_written = (size_t)(epptr() - pptr());
+                if (x_written > n)
+                    x_written = n;
+                if ( x_written ) {
+                    memcpy(pptr(), buf, x_written);
+                    pbump(int(x_written));
+                    n_written += x_written;
+                    n         -= x_written;
+                    if ( !n )
+                        return (streamsize) n_written;
+                    buf       += x_written;
+                }
             }
-        }
 
-        size_t x_towrite = (size_t)(pptr() - pbase());
-        if ( x_towrite ) {
-            RWSTREAMBUF_HANDLE_EXCEPTIONS(
-                result = m_Writer->Write(pbase(), x_towrite, &x_written),
-                8, "CRWStreambuf::xsputn(): IWriter::Write()",
-                x_written = 0);
-            _ASSERT(x_written <= x_towrite);
-            if ( !x_written ) {
-                x_Err    = true;
-                x_ErrPos = x_GetPPos();
-                break;
+            size_t x_towrite = (size_t)(pptr() - pbase());
+            if ( x_towrite ) {
+                RWSTREAMBUF_HANDLE_EXCEPTIONS(
+                    result = m_Writer->Write(pbase(), x_towrite, &x_written),
+                    8, "CRWStreambuf::xsputn(): IWriter::Write()",
+                    x_written = 0);
+                _ASSERT(x_written <= x_towrite);
+                if ( !x_written ) {
+                    x_Err    = true;
+                    x_ErrPos = x_GetPPos();
+                    break;
+                }
+                memmove(pbase(), pbase() + x_written, x_towrite - x_written);
+                x_PPos += (CT_OFF_TYPE) x_written;
+                pbump(-int(x_written));
+                continue;
             }
-            memmove(pbase(), pbase() + x_written, x_towrite - x_written);
-            x_PPos += (CT_OFF_TYPE) x_written;
-            pbump(-int(x_written));
-            continue;
         }
 
         _ASSERT(n  &&  result == eRW_Success);
@@ -351,13 +350,15 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
     } while (result == eRW_Success);
 
     _ASSERT(n  &&  x_Err);
-    x_written = (size_t)(epptr() - pptr());
-    if ( x_written ) {
-        if (x_written > n)
-            x_written = n;
-        memcpy(pptr(), buf, x_written);
-        n_written += x_written;
-        pbump(int(x_written));
+    if ( pbase() ) {
+        x_written = (size_t)(epptr() - pptr());
+        if ( x_written ) {
+            if (x_written > n)
+                x_written = n;
+            memcpy(pptr(), buf, x_written);
+            n_written += x_written;
+            pbump(int(x_written));
+        }
     }
     return (streamsize) n_written;
 }
@@ -365,7 +366,7 @@ streamsize CRWStreambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
 CT_INT_TYPE CRWStreambuf::underflow(void)
 {
-    _ASSERT(gptr() >= egptr());
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
 
     if ( !m_Reader )
         return CT_EOF;
@@ -413,7 +414,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     size_t n = (size_t) m;
 
     // first, read from the memory buffer
-    size_t n_read = (size_t)(egptr() - gptr());
+    size_t n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
     if (n_read > n)
         n_read = n;
     memcpy(buf, gptr(), n_read);
@@ -462,7 +463,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CRWStreambuf::showmanyc(void)
 {
-    _ASSERT(gptr() >= egptr());
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
 
     if ( !m_Reader )
         return -1;
