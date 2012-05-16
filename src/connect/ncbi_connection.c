@@ -79,11 +79,25 @@
 
 #define CONN_LOG(s_c, f_n, lvl, msg)  CONN_LOG_EX(s_c, f_n, lvl, msg, status)
 
+#if 0
+#  define CONN_CALLTRACE(func_name)                             \
+  do {                                                          \
+      static const STimeout* timeout = 0/*dummy*/;              \
+      char handle[80];                                          \
+      sprintf(handle, "0x%p", conn);                            \
+      CONN_LOG_EX(0, func_name, eLOG_Trace, handle, 0);         \
+  } while (0)
+#else
+#  define CONN_CALLTRACE(func_name)  /*((void) 0)*/
+#endif /*0*/
+
+
 /* Standard macros to verify that the connection handle is not NULL and valid.
  * NB: "retval" must be either a valid EIO_Status or 0 (no status logged)
  */
 #define CONN_NOT_NULL_EX(subcode, func_name, retval)                    \
   do {                                                                  \
+      CONN_CALLTRACE(func_name);                                        \
       if (!conn) {                                                      \
           static const STimeout* timeout = 0/*dummy*/;                  \
           CONN_LOG_EX(subcode, func_name, eLOG_Error,                   \
@@ -103,7 +117,7 @@
 #ifdef _DEBUG
 #  define CONN_TRACE(f_n, msg)   CONN_LOG(0, f_n, eLOG_Trace, msg)
 #else
-#  define CONN_TRACE(f_n, msg)   ((void) 0)
+#  define CONN_TRACE(f_n, msg)   /*((void) 0)*/
 #endif /*_DEBUG*/
 
 
@@ -196,7 +210,7 @@ static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
 }
 
 
-static EIO_Status x_ReInit(CONN conn, CONNECTOR connector)
+static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
 {
     static const STimeout* timeout = 0/*dummy*/;
     EIO_Status status;
@@ -210,6 +224,7 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector)
 
     for (x_conn = conn->meta.list;  x_conn;  x_conn = x_conn->next) {
         if (x_conn == connector) {
+            assert(!close);
             /* reinit with the same and the only connector - allowed */
             if (!x_conn->next  &&  x_conn == conn->meta.list)
                 break;
@@ -242,7 +257,8 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector)
             }
             if (status != eIO_Success
                 &&  (status != eIO_Closed  ||  connector)) {
-                CONN_LOG(3, ReInit, connector ? eLOG_Error : eLOG_Warning,
+                CONN_LOG(3, close ? "Close" : "ReInit",
+                         connector ? eLOG_Error : eLOG_Warning,
                          "Connection failed to close properly");
             }
         }
@@ -341,7 +357,7 @@ extern EIO_Status CONN_CreateEx
             conn->w_timeout = kDefaultTimeout;
             conn->c_timeout = kDefaultTimeout;
             conn->magic     = CONNECTION_MAGIC;
-            if ((status = x_ReInit(conn, connector)) != eIO_Success) {
+            if ((status = x_ReInit(conn, connector, 0)) != eIO_Success) {
                 conn->magic = (unsigned int)(-1);
                 free(conn);
                 conn = 0;
@@ -355,6 +371,7 @@ extern EIO_Status CONN_CreateEx
         CONN_LOG(2, Create, eLOG_Error, "NULL connector");
     }
 
+    CONN_CALLTRACE(Create);
     *connection = conn;
     return status;
 }
@@ -374,7 +391,7 @@ extern EIO_Status CONN_ReInit
 {
     CONN_NOT_NULL(1, ReInit);
 
-    return x_ReInit(conn, connector);
+    return x_ReInit(conn, connector, 0);
 }
 
 
@@ -690,9 +707,6 @@ extern EIO_Status CONN_Write
         break;
     case eIO_WritePersist:
         return s_CONN_WritePersist(conn, buf, size, n_written);
-    case eIO_WriteSupplement:
-        conn->w_status = s_CONN_Write(conn, buf, size, n_written);
-        return conn->w_status;
     default:
         return eIO_NotSupported;
     }
@@ -911,9 +925,6 @@ extern EIO_Status CONN_Read
         break;
     case eIO_ReadPersist:
         return s_CONN_ReadPersist(conn, buf, size, n_read);
-    case eIO_ReadSupplement:
-        conn->r_status = s_CONN_Read(conn, buf, size, n_read, 0/*i.e.read*/);
-        return conn->r_status;
     default:
         return eIO_NotSupported;
     }
@@ -1044,7 +1055,7 @@ extern EIO_Status CONN_Close(CONN conn)
 
     CONN_NOT_NULL(27, Close);
 
-    status = x_ReInit(conn, 0);
+    status = x_ReInit(conn, 0, 1);
     BUF_Destroy(conn->buf);
     conn->magic = 0;
     conn->buf = 0;
@@ -1111,4 +1122,26 @@ extern EIO_Status CONN_GetSOCK(CONN conn, SOCK* sock)
         }
     }
     return eIO_Closed;
+}
+
+
+extern EIO_Status CONN_SetFlags(CONN conn, TCONN_Flags flags)
+{
+    CONN_CALLTRACE(SetFlags);
+
+    if (!conn)
+        return eIO_InvalidArg;
+
+    flags &=              ~fCONN_Flush;
+    flags |= conn->flags & fCONN_Flush;
+    conn->flags = flags;
+    return eIO_Success;
+}
+
+
+extern TCONN_Flags CONN_GetFlags(CONN conn)
+{
+    CONN_CALLTRACE(GetFlags);
+
+    return conn ? 0 : conn->flags & ~fCONN_Flush;
 }
