@@ -1454,6 +1454,23 @@ string CScoreLookup::HelpText(const string &score_name)
     return "assumed to be a score on the Seq-align";
 }
 
+CScoreLookup::IScore::EComplexity CScoreLookup::
+Complexity(const string &score_name)
+{
+    CSeq_align::TScoreNameMap::const_iterator score_it =
+        CSeq_align::ScoreNameMap().find(score_name);
+    if (score_it != CSeq_align::ScoreNameMap().end()) {
+        return IScore::eEasy;
+    }
+
+    TScoreDictionary::const_iterator token_it = m_Scores.find(score_name);
+    if (token_it != m_Scores.end()) {
+        return token_it->second->GetComplexity();
+    }
+    
+    NCBI_THROW(CAlgoAlignUtilException, eScoreNotFound, score_name);
+}
+
 bool CScoreLookup::IsIntegerScore(const objects::CSeq_align& align,
                                   const string &score_name)
 {

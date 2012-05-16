@@ -60,7 +60,7 @@ USING_SCOPE(objects);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static inline void s_ParseTree_Flatten(CQueryParseTree& tree,
+void CAlignFilter::x_ParseTree_Flatten(CQueryParseTree& tree,
                                        CQueryParseTree::TNode& node)
 {
     CQueryParseNode::EType type = node->GetType();
@@ -70,11 +70,13 @@ static inline void s_ParseTree_Flatten(CQueryParseTree& tree,
         {{
              CQueryParseTree::TNode::TNodeList_I iter;
              size_t hoisted = 0;
+             size_t count_by_complexity[] = {0, 0};
              do {
                  hoisted = 0;
                  for (iter = node.SubNodeBegin();
                       iter != node.SubNodeEnd();  ) {
                      CQueryParseTree::TNode& sub_node = **iter;
+                     ++count_by_complexity[x_Complexity(sub_node)];
                      if (sub_node->GetType() == type) {
                          /// hoist this node's children
                          CQueryParseTree::TNode::TNodeList_I sub_iter =
@@ -91,6 +93,25 @@ static inline void s_ParseTree_Flatten(CQueryParseTree& tree,
                  }
              }
              while (hoisted != 0);
+
+             if (count_by_complexity[CScoreLookup::IScore::eEasy] &&
+                 count_by_complexity[CScoreLookup::IScore::eHard])
+             {
+                 /// Have both easy and hard subnodes; move hard nodes to end
+                 CQueryParseTree::TNode::TNodeList hard_nodes;
+                 for (iter = node.SubNodeBegin(); iter != node.SubNodeEnd(); )
+                 {
+                     if (x_Complexity(**iter) == CScoreLookup::IScore::eHard) {
+                         hard_nodes.push_back(node.DetachNode(*iter++));
+                     } else {
+                         ++iter;
+                     }
+                 }
+
+                 ITERATE (CQueryParseTree::TNode::TNodeList, it, hard_nodes) {
+                     node.AddNode(*it);
+                 }
+             }
          }}
         break;
 
@@ -101,7 +122,7 @@ static inline void s_ParseTree_Flatten(CQueryParseTree& tree,
     CQueryParseTree::TNode::TNodeList_I iter;
     for (iter = node.SubNodeBegin();
          iter != node.SubNodeEnd();  ++iter) {
-        s_ParseTree_Flatten(tree, **iter);
+        x_ParseTree_Flatten(tree, **iter);
     }
 }
 
@@ -152,7 +173,7 @@ void CAlignFilter::SetFilter(const string& filter)
     // flatten the tree
     // this transforms the tree so that equivalent nodes are grouped more
     // effectively.  this grouping permist easier tree evaluation
-    s_ParseTree_Flatten(*m_ParseTree, *m_ParseTree->GetQueryTree());
+    x_ParseTree_Flatten(*m_ParseTree, *m_ParseTree->GetQueryTree());
 
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
     m_Scope->AddDefaults();
@@ -754,6 +775,30 @@ bool CAlignFilter::x_Query_Range(const CQueryParseTree::TNode& key_node,
     }
 
     return false;
+}
+
+CScoreLookup::IScore::EComplexity
+CAlignFilter::x_Complexity(const CQueryParseTree::TNode& node)
+{
+    if (node.GetValue().GetType() == CQueryParseNode::eString) {
+        try {
+            return m_ScoreLookup.Complexity(node.GetValue().GetStrValue());
+        } catch (CAlgoAlignUtilException &) {
+            /// Score not found, so this is an align_filter's built-in string
+            return CScoreLookup::IScore::eEasy;
+        }
+    }
+
+    for (CQueryParseTree::TNode::TNodeList_CI iter = node.SubNodeBegin();
+         iter != node.SubNodeEnd(); ++iter)
+    {
+        if (x_Complexity(**iter) == CScoreLookup::IScore::eHard) {
+            return CScoreLookup::IScore::eHard;
+        }
+    }
+
+    /// None of the subnodes are hard
+    return CScoreLookup::IScore::eEasy;
 }
 
 

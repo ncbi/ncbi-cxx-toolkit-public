@@ -246,6 +246,13 @@ private:
                        const CQueryParseTree::TNode& val2_node,
                        const objects::CSeq_align& align);
 
+    objects::CScoreLookup::IScore::EComplexity
+    x_Complexity(const CQueryParseTree::TNode& node);
+
+    void x_ParseTree_Flatten(CQueryParseTree& tree,
+                             CQueryParseTree::TNode& node);
+
+
 private:
     bool m_RemoveDuplicates;
     string m_Query;

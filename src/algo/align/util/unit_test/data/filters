@@ -48,10 +48,12 @@ last_splice_site > 3000
 2 9
 internal_unaligned > 2
 4
-(internal_unaligned > 2 or last_splice_site > 3000) and cds_pct_coverage = 100
+cds_pct_coverage = 100 and (internal_unaligned > 2 or last_splice_site > 3000)
 2
-(internal_unaligned > 2 or last_splice_site > 3000) and cds_pct_coverage < 100
+cds_pct_coverage < 100 and (internal_unaligned > 2 or last_splice_site > 3000)
 4 9
+(cds_pct_coverage < 100 and internal_unaligned > 2) or last_splice_site > 3000
+2 4 9
 longest_gap > 1000
 1
 max_intron_len > 10000

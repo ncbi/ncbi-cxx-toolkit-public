@@ -90,6 +90,8 @@ public:
     /// Help text for score
     string HelpText(const string &score_name);
 
+    IScore::EComplexity Complexity(const string &score_name);
+
     bool IsIntegerScore(const objects::CSeq_align& align,
                         const string &score_name);
 
