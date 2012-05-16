@@ -36,12 +36,18 @@
 #include <corelib/stream_utils.hpp>
 #include <util/compress/tar.hpp>
 #include <util/compress/stream_util.hpp>
+#ifdef TEST_CONN_TAR
+#  define NCBI_CONN_STREAM_EXPERIMENTAL_API
+#  include <connect/ncbi_conn_stream.hpp>
+#  include <connect/ncbi_gnutls.h>
+#endif // TEST_CONN_TAR
 #include <errno.h>
 #ifdef NCBI_OS_MSWIN
 #  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
+#  include <conio.h>
 #endif // NCBI_OS_MSWIN
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
 #  include <signal.h>
 #endif // NCBI_OS_UNIX
 
@@ -57,6 +63,47 @@ USING_NCBI_SCOPE;
 
 
 const unsigned int fVerbose = CTar::fDumpEntryHeaders;
+
+
+#ifdef TEST_CONN_TAR
+
+static volatile bool s_Canceled = false;
+
+
+class CCanceled : public CObject, public ICanceled
+{
+public:
+    virtual bool IsCanceled(void) const { return s_Canceled; }
+};
+
+
+#  if   defined(NCBI_OS_MSWIN)
+static BOOL WINAPI s_Interrupt(DWORD type)
+{
+    switch (type) {
+    case CTRL_C_EVENT:
+    case CTRL_BREAK_EVENT:
+        s_Canceled = true;
+        return TRUE;  // handled
+    case CTRL_CLOSE_EVENT:
+    case CTRL_LOGOFF_EVENT:
+    case CTRL_SHUTDOWN_EVENT:
+    default:
+        break;
+    }
+    return FALSE;  // unhandled
+}
+#  elif defined(NCBI_OS_UNIX)
+extern "C" {
+static void s_Interrupt(int /*signo*/)
+{
+    s_Canceled = true;
+}
+}
+#  endif // NCBI_OS
+
+#endif // TEST_CONN_TAR
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -105,6 +152,7 @@ CTarTest::CTarTest()
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
                         eDPF_OmitInfoSev | eDPF_ErrorID);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
     DisableArgDescriptions(fDisableStdArgs);
     HideStdArgs(-1/*everything*/);
 }
@@ -112,6 +160,25 @@ CTarTest::CTarTest()
 
 void CTarTest::Init(void)
 {
+#ifdef TEST_CONN_TAR
+
+    class CPrivateIniter : public CConnIniter {
+    public:
+        CPrivateIniter(void)
+        { }
+    };
+    CPrivateIniter init;
+
+#  if   defined(NCBI_OS_MSWIN)
+    SetConsoleCtrlHandler(s_Interrupt, TRUE);
+#  elif defined(NCBI_OS_UNIX)
+    signal(SIGINT,  s_Interrupt);
+    signal(SIGTERM, s_Interrupt);
+    signal(SIGQUIT, s_Interrupt);
+#  endif // NCBI_OS
+
+#endif // TEST_CONN_TAR
+
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     args->PrintUsageIfNoArgs();
     if (args->Exist ("h")) {
@@ -126,9 +193,15 @@ void CTarTest::Init(void)
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
     args->AddFlag("T", "Test archive by a walk-through [non-standard]");
-    args->AddKey ("f", "archive_file_name",
-                  "Archive file name;  use '-' for stdin/stdout",
-                  CArgDescriptions::eString);
+    args->AddKey ("f", "archive_filename"
+#ifdef TEST_CONN_TAR
+                  "_or_url"
+#endif // TEST_CONN_TAR
+                  , "Archive file name;  use '-' for stdin/stdout"
+#ifdef TEST_CONN_TAR
+                  ";  or a URL for list/extract/test/stream-through"
+#endif // TEST_CONN_TAR
+                  , CArgDescriptions::eString);
     args->AddOptionalKey("C", "directory",
                          "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey ("b", "blocking_factor",
@@ -195,7 +268,7 @@ static int x_CheckLFS(const CArgs& args, string& path)
             message +=
                 string(nolfs ? " and" : " but") +
                 " TAR API may not work";
-            path.clear();
+            path.erase();
             nolfs = -1;
         } else {
             message +=
@@ -323,17 +396,65 @@ int CTarTest::Run(void)
         NCBI_THROW(CArgException, eInvalidArg,
                    "Sorry, -z is not supported with either -r or -u");
     }
-    bool stream = args["s"].HasValue();
-    bool pipethru = false;
 
+#ifdef TEST_CONN_TAR
+    bool url = NStr::FindNoCase(file, "://", 3, 5) != NPOS ? true : false;
+#endif // TEST_CONN_TAR
+
+    bool pipethru;
+    string filename;
+    if (args["S"].HasValue()) {
+        filename.swap(file);
+        pipethru = true;
+    } else {
+        pipethru = false;
+    }
+
+    bool   stream          = args["s"].HasValue();
     size_t blocking_factor = args["b"].AsInteger();
 
     auto_ptr<CTar>     tar;
     auto_ptr<CNcbiIos> zs;
-    ifstream ifs;
-    ofstream ofs;
+    istream*  in = 0;
+    ifstream  ifs;
+    ofstream  ofs;
     CNcbiIos* io;
-    CRWStream stdio(new CStreamReader(NcbiCin), new CStreamWriter(NcbiCout),
+
+#ifdef TEST_CONN_TAR
+    CCanceled canceled;
+    auto_ptr<CConn_IOStream> conn;
+    if (url) {
+#  ifdef HAVE_LIBGNUTLS
+        SOCK_SetupSSL(NcbiSetupGnuTls);
+#  endif // HAVE_LIBGNUTLS
+        if (pipethru  &&  action != eCreate) {
+            conn.reset(NcbiOpenURL(filename));
+        } else if (action == eList || action == eExtract || action == eTest) {
+            conn.reset(NcbiOpenURL(file));
+            file.erase();
+        } else {
+            NCBI_THROW(CArgException, eInvalidArg,
+                       "Sorry, URL is not supported with this action/mode");
+        }
+        if (!(in = conn.get())) {
+            in = &ifs;
+            in->clear(NcbiBadbit);
+        } else {
+            conn->SetCanceledCallback(&canceled);
+        }
+    } else
+#endif // TEST_CONN_TAR
+        if (pipethru  &&  !filename.empty()) {
+            ifs.open(filename.c_str(), IOS_BASE::in | IOS_BASE::binary);
+            in = &ifs;
+        }
+
+    CRWStream stdio(!in  ||  in->good()
+                    ? new CStreamReader(in ? *in : NcbiCin)
+                    : 0,
+                    !in  ||  in->good()
+                    ? new CStreamWriter(           NcbiCout)
+                    : 0,
                     0, 0, CRWStreambuf::fOwnAll | CRWStreambuf::fUntie);
 #ifdef NCBI_OS_MSWIN
     _setmode(_fileno(stdin),  _O_BINARY);
@@ -349,9 +470,6 @@ int CTarTest::Run(void)
                 os = &ofs;
             } else if (action != eUpdate  ||  n < 2) {
                 os = &stdio;
-                if (args["S"].HasValue()) {
-                    pipethru = true;
-                }
             } else {
                 NCBI_THROW(CArgException, eInvalidArg, "2+fold pipe update");
             }
@@ -383,13 +501,10 @@ int CTarTest::Run(void)
             _ASSERT(action == eList || action == eExtract || action == eTest);
             istream* is;
             if (!file.empty()) {
-                ifs.open(file.c_str(),  IOS_BASE::in | IOS_BASE::binary);
+                ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
                 is = &ifs;
             } else {
                 is = &stdio;
-                if (args["S"].HasValue()) {
-                    pipethru = true;
-                }
             }
             if (!is->good()) {
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
@@ -520,7 +635,7 @@ int CTarTest::Run(void)
                     NcbiCerr << pfx << it->GetName() + x_Pos(*it) << NcbiEndl;
                 }
             }
-            tar->Close();  // finalize TAR file before streams close (below)
+            tar->Close();  // finalize TAR file before streams closed (below)
         } else if (action == eList  ||  action == eExtract) {
             if (n) {
                 auto_ptr<CMaskFileName> mask(new CMaskFileName);

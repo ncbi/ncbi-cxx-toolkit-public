@@ -1,17 +1,28 @@
 #! /bin/sh
 # $Id$
 
-# Locate native tar;  exit successfully if none found
-string="`whereis tar 2>/dev/null`"
-if [ -z "$string" ]; then
-  tar="`which tar 2>/dev/null`"
+huge_tar_file="DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
+huge_tar_dir="/panfs/traces01/ftp-geo-pub/public"
+huge_tar_ftp="ftp://ftp.ncbi.nlm.nih.gov/pub/geo"
+
+if [ "`basename $0 .sh`" != "test_conn_tar" ]; then
+  # Locate native tar;  exit successfully if none found
+  string="`whereis tar 2>/dev/null`"
+  if [ -z "$string" ]; then
+    tar="`which tar 2>/dev/null`"
+  else
+    tar="`echo $string | cut -f2 -d' '`"
+  fi
+  test -x "$tar"  ||  exit 0
+  # NB:  only works correctly on intprod21
+  huge_tar="$huge_tar_dir"/"$huge_tar_file"
 else
-  tar="`echo $string | cut -f2 -d' '`"
+  test_conn_tar="test_conn_tar"
+  test -n "$huge_tar"  ||  huge_tar="$huge_tar_ftp"/"$huge_tar_file"
 fi
-test -x "$tar"  ||  exit 0
 
 test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
-test_tar=${CFG_BIN:-.}/test_tar${exe}
+test_tar=${CFG_BIN:-.}/${test_conn_tar:-test_tar}${exe}
 if [ ! -x $test_tar ]; then
   echo "Test binary $test_tar not found.  Stop."
   exit 1
@@ -41,17 +52,21 @@ case ${CHECK_SIGNATURE:-Unknown} in
 
 esac
 
-huge_tar="/panfs/traces01/ftp-geo-pub/public/DATA/supplementary/series/GSE15735/GSE15735_RAW.tar"
-if [ -f "$huge_tar" ]; then
+if [ -n "$test_conn_tar" -o -f "$huge_tar" ]; then
   if $okay ; then
     echo
     echo "`date` *** Checking compatibility with existing NCBI data"
     echo
 
-    $test_tar -T -f "$huge_tar"  ||  exit 1
+    $test_tar ${test_conn_tar:+-v} -T -f "$huge_tar"  ||  exit 1
   else
     echo
-    echo "`date` *** LF64 ${what}, skipping data compatibility test"
+    echo "`date` *** LF64 ${what}, skipping data compatibility check"
+  fi
+  if [ -n "$test_conn_tar" ]; then
+    echo
+    echo "`date` *** TEST COMPLETE"
+    exit 0
   fi
 fi
 
