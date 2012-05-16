@@ -48,34 +48,45 @@ BEGIN_NCBI_SCOPE
 
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
-                               size_t buf_size, bool tie,
-                               CT_CHAR_TYPE* ptr, size_t size) :
-    CNcbiIostream(0), m_CSb(0)
+                               size_t buf_size, TConn_Flags flags,
+                               CT_CHAR_TYPE* ptr, size_t size)
+    : CNcbiIostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
-        csb(new CConn_Streambuf(connector, timeout, buf_size, tie,
+        csb(new CConn_Streambuf(connector, timeout, buf_size, flags,
                                 ptr, size));
-    if (csb->GetCONN()) {
-        init(csb.get());
-        m_CSb = csb.release();
-    } else
-        init(0); // according to the standard (27.4.4.1.3), badbit is set here
+    CONN conn = csb->GetCONN();
+    if (conn) {
+        SOCK s/*dummy*/;
+        (void) CONN_GetSOCK(conn, &s);  // Prompt connection to actually open
+        if (CONN_Status(conn, eIO_Open) == eIO_Success) {
+            init(csb.get());
+            m_CSb = csb.release();
+            return;
+        }
+    }
+    init(0); // according to the standard (27.4.4.1.3), badbit is set here
 }
 
 
 CConn_IOStream::CConn_IOStream(CONN conn, bool close, const STimeout* timeout,
-                               size_t buf_size, bool tie,
-                               CT_CHAR_TYPE* ptr, size_t size) :
-    CNcbiIostream(0), m_CSb(0)
+                               size_t buf_size, TConn_Flags flags,
+                               CT_CHAR_TYPE* ptr, size_t size)
+    : CNcbiIostream(0), m_CSb(0)
 {
+    auto_ptr<CConn_Streambuf>
+        csb(new CConn_Streambuf(conn, close, timeout, buf_size, flags,
+                                ptr, size));
     if (conn) {
-        auto_ptr<CConn_Streambuf>
-            csb(new CConn_Streambuf(conn, close, timeout, buf_size, tie,
-                                    ptr, size));
-        init(csb.get());
-        m_CSb = csb.release();
-    } else
-        init(0);
+        SOCK s/*dummy*/;
+        (void) CONN_GetSOCK(conn, &s);  // Prompt connection to open (if not)
+        if (CONN_Status(conn, eIO_Open) == eIO_Success) {
+            init(csb.get());
+            m_CSb = csb.release();
+            return;
+        }
+    }
+    init(0); // according to the standard (27.4.4.1.3), badbit is set here
 }
 
 
@@ -598,7 +609,8 @@ CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
                                        size_t     buf_size)
     : CConn_IOStream(MEMORY_CreateConnectorEx(buf, owner == eTakeOwnership
                                               ? 1/*true*/
-                                              : 0/*false*/), 0, buf_size, true,
+                                              : 0/*false*/),
+                     0, buf_size, fConn_ReadBuffered | fConn_WriteBuffered,
                      0, BUF_Size(buf)),
       m_Ptr(0)
 {
@@ -671,13 +683,23 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
 }
 
 
+static CONNECTOR s_PipeConnectorBuilder(const string&         cmd,
+                                        const vector<string>& args,
+                                        CPipe::TCreateFlags   create_flags,
+                                        CPipe*&               pipe)
+{
+    pipe = new CPipe;
+    return PIPE_CreateConnector(cmd, args, create_flags,
+                                pipe, eNoOwnership);
+}
+
+
 CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
                                    CPipe::TCreateFlags   create_flags,
                                    const STimeout*       timeout,
                                    size_t                buf_size)
-    : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags,
-                                          &m_Pipe, eNoOwnership),
+    : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, create_flags, m_Pipe),
                      timeout, buf_size)
 {
     return;
@@ -686,9 +708,10 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
 
 CConn_PipeStream::~CConn_PipeStream()
 {
-    // Explicitly call x_Cleanup() to avoid using dead m_Pipe otherwise.
+    // Explicitly do x_Cleanup() to avoid using dead m_Pipe in base class dtor
     x_Cleanup();
     rdbuf(0);
+    delete m_Pipe;
 }
 
 
@@ -717,11 +740,12 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
                                  unsigned short       port,
                                  TFTP_Flags           flag,
                                  const SFTP_Callback* cmcb,
-                                 const STimeout*      timeout)
+                                 const STimeout*      timeout,
+                                 size_t               buf_size)
     : CConn_IOStream(FTP_CreateConnectorSimple(host.c_str(), port,
                                                user.c_str(), pass.c_str(),
                                                path.c_str(), flag, cmcb),
-                     timeout, 0/*must be unbuffered*/, false/*thus untied*/)
+                     timeout, buf_size, fConn_Untie | fConn_ReadBuffered)
 {
     return;
 }
@@ -770,8 +794,10 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
                                                  TFTP_Flags           flag,
                                                  const SFTP_Callback* cmcb,
                                                  Uint8                offset,
-                                                 const STimeout*      timeout)
-    : CConn_FtpStream(host, user, pass, path, port, flag, cmcb, timeout)
+                                                 const STimeout*      timeout,
+                                                 size_t               buf_size)
+    : CConn_FtpStream(host, user, pass, path, port, flag, cmcb,
+                      timeout, buf_size)
 {
     // Use '\n' here instead of NcbiFlush to avoid (and thus make silent)
     // flush errors on retrieval of inexistent (or bad) files / directories..
@@ -841,7 +867,7 @@ public:
                      SFILE_ConnAttr* attr   = 0)
         : CConn_IOStream(FILE_CreateConnectorEx(ifname.c_str(),
                                                 ofname.c_str(), attr),
-                         0/*timeout*/, 0/*unbuffered*/, false/*untied*/)
+                         0/*timeout*/, 0/*unbuffered*/, fConn_Untie)
     {
         return;
     }
@@ -868,7 +894,7 @@ static bool x_IsIdentifier(const string& str)
 
 extern
 NCBI_XCONNECT_EXPORT  // FIXME: To remove once the API is fully official
-CConn_IOStream* NcbiOpenURL(const string& url)
+CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
 {
     class CPrivateIniter : public CConnIniter {
     public:
@@ -890,12 +916,16 @@ CConn_IOStream* NcbiOpenURL(const string& url)
         net_info->req_method = eReqMethod_Connect;
 
     if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
-        if (net_info->req_method == eReqMethod_Connect)
-            return new CConn_SocketStream(*net_info);
+        if (net_info->req_method == eReqMethod_Connect) {
+            return new CConn_SocketStream(*net_info, 0, 0,
+                                          fSOCK_LogDefault, buf_size);
+        }
         switch (net_info->scheme) {
         case eURL_Https:
         case eURL_Http:
-            return new CConn_HttpStream(net_info.get());
+            return new CConn_HttpStream(net_info.get(), kEmptyStr, 0, 0, 0, 0,
+                                        fHTTP_AutoReconnect, kDefaultTimeout,
+                                        buf_size);
         case eURL_File:
             if (*net_info->host  ||  net_info->port)
                 break; /*not supported*/
@@ -917,7 +947,9 @@ CConn_IOStream* NcbiOpenURL(const string& url)
                                                : net_info->debug_printout
                                                == eDebugPrintout_Some
                                                ? fFTP_LogControl
-                                               : 0);
+                                               : 0, 0, 0,
+                                               net_info->timeout,
+                                               buf_size);
         default:
             break;
         }
