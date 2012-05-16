@@ -50,7 +50,6 @@ wait $spid 2>/dev/null
 if [ $exit_code != 0 ]; then
   outlog "$server_log"
   outlog "$client_log"
-  uptime
 fi
 
 exit $exit_code

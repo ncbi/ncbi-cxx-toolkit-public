@@ -29,7 +29,6 @@ test_ncbi_socket >$log 2>&1
 exit_code=$?
 if [ $exit_code != 0 ]; then
   outlog $log
-  uptime
   exit $exit_code
 fi
 
@@ -62,7 +61,6 @@ wait $spid 2>/dev/null
 if [ $exit_code != 0 ]; then
   outlog "$server_log"
   outlog "$client_log"
-  uptime
 fi
 
 exit $exit_code

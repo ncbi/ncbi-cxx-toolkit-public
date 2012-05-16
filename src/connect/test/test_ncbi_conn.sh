@@ -55,9 +55,6 @@ fi
 $CHECK_EXEC test_ncbi_conn -nopause 2>&1
 exit_code=$?
 
-if [ "$exit_code" != "0" ]; then
-  outlog "$log"
-  uptime
-fi
+test "$exit_code" = "0"  ||  outlog "$log"
 
 exit $exit_code

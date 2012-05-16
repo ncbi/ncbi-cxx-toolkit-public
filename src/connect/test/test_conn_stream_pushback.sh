@@ -32,7 +32,6 @@ while [ $i -lt $j ]; do
 
   if [ "$exit_code" != "0" ]; then
     outlog "$log"
-    uptime
     break
   fi
 done

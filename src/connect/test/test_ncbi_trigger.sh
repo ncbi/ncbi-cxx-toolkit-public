@@ -71,7 +71,6 @@ test $client_exit_code != 0  &&  exit_code=$client_exit_code
 if [ $exit_code != 0 ]; then
   outlog "$server_log"
   outlog "$client_log"
-  uptime
 fi
 
 exit $exit_code
