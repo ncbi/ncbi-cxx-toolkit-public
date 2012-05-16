@@ -189,7 +189,7 @@ static void s_ReadStream(istream& ios)
             NcbiCerr.write(buf, cnt);
             NcbiCerr << endl << flush;
             total += cnt;
-        } else if (ios.eof()) {
+        } else if (ios.eof()  ||  ios.bad()) {
             break;
         }
         ios.clear();
