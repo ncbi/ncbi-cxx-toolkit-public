@@ -3,11 +3,16 @@
 #
 # Check netcached services
 
-services="`svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_services.lst | tr $'\r\n' ' '`"
-test $? -eq 0 || exit 1
+res_file="/tmp/`basename $0`.$$"
+trap 'rm -f $res_file' 1 2 15 0
 
-hosts="`svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_servers.lst | tr $'\r\n' ' '`"
+svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_services.lst | tr $'\r\n' ' ' >$res_file
+test $? -eq 0 || exit 1
+services="`cat $res_file`"
+
+svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_servers.lst | tr $'\r\n' ' ' >$res_file
 test $? -eq 0 || exit 2
+hosts="`cat $res_file`"
 
 # For Nagios test
 
@@ -19,9 +24,6 @@ send_nsca="/home/ivanov/nagios/root/opt/machine/nagios/bin/send_nsca"
 send_nsca_cfg="/home/ivanov/nagios/root/opt/machine/nagios/bin/send_nsca.cfg"
 nagios_host="nagios"
 service_host="NC_netcache"
-
-res_file="/tmp/`basename $0`.$$"
-trap 'rm -f $res_file' 1 2 15
 
 # Send result to Nagios server
 
