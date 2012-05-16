@@ -181,7 +181,8 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
             Uint8 period = CNCDistributionConf::GetPeerThrottlePeriod();
             if (cur_time - m_ThrottleStart > period) {
                 m_InThrottle = false;
-                m_FirstNWErrTime = 0;
+                if (m_InitiallySynced)
+                    m_FirstNWErrTime = 0;
                 m_CntNWErrors = 0;
                 m_ThrottleStart = 0;
             }
@@ -657,12 +658,8 @@ CNCPeerControl::RegisterSyncStop(bool is_passive,
     }
     else {
         s_SetNextTime(m_NextSyncTime, next_time, true);
-        if (m_InThrottle)
-            x_SrvInitiallySynced();
         if (now - m_FirstNWErrTime >= CNCDistributionConf::GetNetworkErrorTimeout())
-        {
             x_SlotsInitiallySynced(m_SlotsToInitSync);
-        }
     }
 
     if (!is_passive)

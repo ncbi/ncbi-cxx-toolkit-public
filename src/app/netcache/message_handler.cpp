@@ -2859,7 +2859,7 @@ CNCMessageHandler::x_DoCmd_Health(void)
     m_SockBuffer.WriteMessage("OK:", "HEALTH_COEFF=" + health_coeff);
     m_SockBuffer.WriteMessage("OK:", "UP_TIME=" + NStr::IntToString(g_NetcacheServer->GetUpTime()));
     m_SockBuffer.WriteMessage("OK:", string("CACHING_COMPLETE=") + (CNetCacheServer::IsCachingComplete()? "yes": "no"));
-    m_SockBuffer.WriteMessage("OK:", string("INITALLY_SYNCED=") + (CNetCacheServer::IsInitiallySynced()? "yes": "no"));
+    m_SockBuffer.WriteMessage("OK:", string("INITIALLY_SYNCED=") + (CNetCacheServer::IsInitiallySynced()? "yes": "no"));
     //m_SockBuffer.WriteMessage("OK:", "MEM_LIMIT=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
     //m_SockBuffer.WriteMessage("OK:", "MEM_USED=" + NStr::UInt8ToString(CNCMemManager::GetMemoryUsed()));
     //m_SockBuffer.WriteMessage("OK:", "DISK_CACHE=" + NStr::UInt8ToString(CNCMemManager::GetMemoryLimit()));
