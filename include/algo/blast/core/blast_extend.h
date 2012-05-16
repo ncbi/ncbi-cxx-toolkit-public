@@ -55,8 +55,8 @@ extern "C" {
 
 /** Structure for keeping last hit information for a diagonal */
 typedef struct DiagStruct {
-   Int4 last_hit   : 31; /**< Offset of the last hit */
-   Uint4 flag      : 1 ; /**< Reset the next extension? */
+   signed int last_hit   : 31; /**< Offset of the last hit */
+   unsigned int flag      : 1 ; /**< Reset the next extension? */
 } DiagStruct;
 
 /** Structure for keeping last hit information for a diagonal in a hash table, when 
@@ -64,8 +64,8 @@ typedef struct DiagStruct {
  */
 typedef struct DiagHashCell {
    Int4 diag;            /**< This hit's diagonal */
-   Int4 level      : 31; /**< This hit's offset in the subject sequence */
-   Uint4 hit_saved : 1;  /**< Whether or not this hit has been saved */
+   signed int level      : 31; /**< This hit's offset in the subject sequence */
+   unsigned int hit_saved : 1;  /**< Whether or not this hit has been saved */
    Int4  hit_len;        /**< The length of last hit */
    Uint4 next;           /**< Offset of next element in the chain */
 }  DiagHashCell;
