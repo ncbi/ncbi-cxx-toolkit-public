@@ -67,48 +67,59 @@ string CConn_Streambuf::x_Message(const char* msg)
 }
 
 
-CConn_Streambuf::CConn_Streambuf(CONNECTOR       connector,
-                                 const STimeout* timeout,
-                                 size_t          buf_size,
-                                 bool            tie,
-                                 CT_CHAR_TYPE*   ptr,
-                                 size_t          size)
-    : m_Conn(0), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1),
-      m_Status(eIO_Unknown), m_Tie(tie), m_Close(true), m_CbValid(false),
+CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
+                                 const STimeout*             timeout,
+                                 size_t                      buf_size,
+                                 CConn_IOStream::TConn_Flags flags,
+                                 CT_CHAR_TYPE*               ptr,
+                                 size_t                      size)
+    : m_Conn(0), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
+      m_Status(eIO_Unknown), m_Tie(false), m_Close(true), m_CbValid(false),
       x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
     if (!connector) {
         ERR_POST_X(2, x_Message("CConn_Streambuf():  NULL connector"));
         return;
     }
-    TCONN_Flags flag = tie ? 0 : fCONN_Untie;
-    if ((m_Status = CONN_CreateEx(connector, flag, &m_Conn)) != eIO_Success) {
+    if ((flags & (CConn_IOStream::fConn_Untie |
+                  CConn_IOStream::fConn_WriteBuffered))
+        == CConn_IOStream::fConn_WriteBuffered  &&  buf_size) {
+        m_Tie = true;
+    }
+    if ((m_Status = CONN_CreateEx(connector, fCONN_Supplement
+                                  | (m_Tie ? 0 : fCONN_Untie), &m_Conn))
+        != eIO_Success) {
         ERR_POST_X(3, x_Message("CConn_Streambuf():  CONN_Create() failed"));
         if (connector->destroy)
             connector->destroy(connector);
         return;
     }
     _ASSERT(m_Conn);
-    x_Init(timeout, buf_size, ptr, size);
+    x_Init(timeout, buf_size, flags, ptr, size);
 }
 
 
-CConn_Streambuf::CConn_Streambuf(CONN            conn,
-                                 bool            close,
-                                 const STimeout* timeout,
-                                 size_t          buf_size,
-                                 bool            tie,
-                                 CT_CHAR_TYPE*   ptr,
-                                 size_t          size)
-    : m_Conn(conn), m_WriteBuf(0), m_BufSize(buf_size ? buf_size : 1),
-      m_Status(eIO_Unknown), m_Tie(tie), m_Close(close), m_CbValid(false),
+CConn_Streambuf::CConn_Streambuf(CONN                        conn,
+                                 bool                        close,
+                                 const STimeout*             timeout,
+                                 size_t                      buf_size,
+                                 CConn_IOStream::TConn_Flags flags,
+                                 CT_CHAR_TYPE*               ptr,
+                                 size_t                      size)
+    : m_Conn(conn), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
+      m_Status(eIO_Unknown), m_Tie(false), m_Close(close), m_CbValid(false),
       x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
     if (!m_Conn) {
         ERR_POST_X(1, x_Message("CConn_Streambuf():  NULL connection"));
         return;
     }
-    x_Init(timeout, buf_size, ptr, size);
+    if ((flags & (CConn_IOStream::fConn_Untie |
+                  CConn_IOStream::fConn_WriteBuffered))
+        == CConn_IOStream::fConn_WriteBuffered  &&  buf_size) {
+        m_Tie = true;
+    }
+    x_Init(timeout, buf_size, flags, ptr, size);
 }
 
 
@@ -120,6 +131,7 @@ EIO_Status CConn_Streambuf::Status(EIO_Event direction) const
 
 
 void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
+                             CConn_IOStream::TConn_Flags flags,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
     if (timeout != kDefaultTimeout) {
@@ -128,20 +140,40 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Close,     timeout) ==eIO_Success);
     }
 
-    m_WriteBuf = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : 0;
-    m_ReadBuf  = buf_size ? m_WriteBuf + m_BufSize           : &x_Buf;
+    if (!(flags & (CConn_IOStream::fConn_ReadBuffered |
+                   CConn_IOStream::fConn_WriteBuffered))) {
+        buf_size = 0;
+    }
+    if (buf_size) {
+        m_WriteBuf = new
+            CT_CHAR_TYPE[buf_size
+                         << ((flags & (CConn_IOStream::fConn_ReadBuffered |
+                                       CConn_IOStream::fConn_WriteBuffered))
+                             ==       (CConn_IOStream::fConn_ReadBuffered |
+                                       CConn_IOStream::fConn_WriteBuffered)
+                             ? 1 : 0)];
+        if (flags & CConn_IOStream::fConn_ReadBuffered)
+            m_BufSize = buf_size;
+        if (!(flags & CConn_IOStream::fConn_WriteBuffered))
+            buf_size = 0;
+        if (flags & CConn_IOStream::fConn_ReadBuffered)
+            m_ReadBuf = m_WriteBuf + buf_size;
+    } /* else see ctor */
 
-    setp(m_WriteBuf,    m_WriteBuf + buf_size);  // Put area (if any)
+    if (buf_size)
+        setp(m_WriteBuf, m_WriteBuf + buf_size);
+    /* else setp(0, 0) */
     if (ptr)
-        setg(ptr,       ptr,       ptr + size);  // Initial get area
+        setg(ptr,        ptr,       ptr + size);   // Initial get area
     else
-        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf);   // Empty get area
+        setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);    // Empty get area
 
     SCONN_Callback cb;
     cb.func = x_OnClose; /* NCBI_FAKE_WARNING: WorkShop */
     cb.data = this;
     CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, &m_Cb);
     m_CbValid = true;
+
     m_Status = eIO_Success;
 }
 
@@ -210,39 +242,45 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     if (!m_Conn)
         return CT_EOF;
 
-    if (pbase()) {
+    size_t n_written;
+    size_t n_towrite = (size_t)(pbase() ? pptr() - pbase() : 0);
+
+    if (n_towrite) {
         // send buffer
-        size_t n_towrite = (size_t)(pptr() - pbase());
-        if (n_towrite) {
-            size_t n_written;
+        do {
             m_Status = CONN_Write(m_Conn, pbase(),
                                   n_towrite, &n_written, eIO_WritePlain);
+            _ASSERT(n_written <= n_towrite);
             if (!n_written) {
                 _ASSERT(m_Status != eIO_Success);
-                ERR_POST_X(4, x_Message("overflow():  CONN_Write() failed"));
-                return CT_EOF;
+                break;
             }
             // update buffer content (get rid of the data just sent)
             memmove(pbase(), pbase() + n_written, n_towrite - n_written);
             x_PPos += (CT_OFF_TYPE) n_written;
             pbump(-int(n_written));
-        }
 
-        // store char
-        if (!CT_EQ_INT_TYPE(c, CT_EOF))
-            return sputc(CT_TO_CHAR_TYPE(c));
+            // store char
+            if (!CT_EQ_INT_TYPE(c, CT_EOF))
+                return sputc(CT_TO_CHAR_TYPE(c));
+            n_towrite -= n_written;
+        } while (n_towrite  &&  m_Status == eIO_Success);
+        if (n_towrite) {
+            _ASSERT(m_Status != eIO_Success);
+            ERR_POST_X(4, x_Message("overflow():  CONN_Write() failed"));
+            return CT_EOF;
+        }
     } else if (!CT_EQ_INT_TYPE(c, CT_EOF)) {
         // send char
-        size_t n_written;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         m_Status = CONN_Write(m_Conn, &b, 1, &n_written, eIO_WritePlain);
+        _ASSERT(n_written <= 1);
         if (!n_written) {
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(5, x_Message("overflow():  CONN_Write(1) failed"));
             return CT_EOF;
         }
         x_PPos += (CT_OFF_TYPE) 1;
-        _ASSERT(n_written == 1);
         return c;
     }
 
@@ -262,15 +300,15 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
-    _ASSERT((Uint8)m < numeric_limits<size_t>::max());
+    _ASSERT((Uint8) m < numeric_limits<size_t>::max());
     size_t n = (size_t) m;
 
     m_Status = eIO_Success;
     size_t n_written = 0;
+    size_t x_written;
 
     do {
-        size_t x_written;
-
+        _ASSERT(n);
         if (pbase()) {
             if (pbase() + n < epptr()) {
                 // Would entirely fit into the buffer not causing an overflow
@@ -291,14 +329,14 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
             size_t x_towrite = (size_t)(pptr() - pbase());
             if (x_towrite) {
                 m_Status = CONN_Write(m_Conn, pbase(), x_towrite,
-                                      &x_written, eIO_WriteSupplement);
+                                      &x_written, eIO_WritePlain);
+                _ASSERT(x_written <= x_towrite);
                 if (!x_written) {
                     _ASSERT(m_Status != eIO_Success);
                     ERR_POST_X(6, x_Message("xsputn(): "
                                             " CONN_Write() failed"));
                     break;
                 }
-                _ASSERT(x_written <= x_towrite);
                 memmove(pbase(), pbase() + x_written, x_towrite - x_written);
                 x_PPos += (CT_OFF_TYPE) x_written;
                 pbump(-int(x_written));
@@ -307,14 +345,14 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         }
 
         _ASSERT(n  &&  m_Status == eIO_Success);
-        m_Status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WriteSupplement);
+        m_Status = CONN_Write(m_Conn, buf, n, &x_written, eIO_WritePlain);
+        _ASSERT(x_written <= n);
         if (!x_written) {
             _ASSERT(m_Status != eIO_Success);
             ERR_POST_X(7, x_Message("xsputn(): "
                                     " CONN_Write(direct) failed"));
             break;
         }
-        _ASSERT(x_written <= n);
         x_PPos    += (CT_OFF_TYPE) x_written;
         n_written += x_written;
         n         -= x_written;
@@ -323,10 +361,10 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
         buf       += x_written;
     } while (m_Status == eIO_Success);
 
-    if ( pbase() ) {
-        _ASSERT(n);
-        if (pptr() < epptr()) {
-            size_t x_written = (size_t)(epptr() - pptr());
+    _ASSERT(n  &&  m_Status != eIO_Success);
+    if (pbase()) {
+        x_written = (size_t)(epptr() - pptr());
+        if (x_written) {
             if (x_written > n)
                 x_written = n;
             memcpy(pptr(), buf, x_written);
@@ -340,14 +378,14 @@ streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 
 CT_INT_TYPE CConn_Streambuf::underflow(void)
 {
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
+
     if (!m_Conn)
         return CT_EOF;
 
     // flush output buffer, if tied up to it
     if (m_Tie  &&  x_sync() != 0)
         return CT_EOF;
-
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
 
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
@@ -358,7 +396,8 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     // read from connection
     size_t n_read;
     m_Status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize,
-                         &n_read, eIO_ReadSupplement);
+                         &n_read, eIO_ReadPlain);
+    _ASSERT(n_read <= m_BufSize);
     if (!n_read) {
         _ASSERT(m_Status != eIO_Success);
         if (m_Status != eIO_Closed)
@@ -385,11 +424,11 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if (m <= 0)
         return 0;
-    _ASSERT((Uint8)m < numeric_limits<size_t>::max());
+    _ASSERT((Uint8) m < numeric_limits<size_t>::max());
     size_t n = (size_t) m;
 
     // first, read from the memory buffer
-    size_t n_read = gptr() ? (size_t)(egptr() - gptr()) : 0;
+    size_t n_read = (size_t)(gptr() ? egptr() - gptr() : 0);
     if (n_read > n)
         n_read = n;
     memcpy(buf, gptr(), n_read);
@@ -399,10 +438,13 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     while (n) {
         // next, read from the connection
-        size_t       x_read = n < m_BufSize ? m_BufSize : n;
+        size_t     x_toread = n < m_BufSize ? m_BufSize : n;
         CT_CHAR_TYPE* x_buf = n < m_BufSize ? m_ReadBuf : buf;
-        m_Status = CONN_Read(m_Conn, x_buf, x_read,
-                             &x_read, eIO_ReadSupplement);
+        size_t       x_read;
+
+        m_Status = CONN_Read(m_Conn, x_buf, x_toread,
+                             &x_read, eIO_ReadPlain);
+        _ASSERT(x_read <= x_toread);
         if (!x_read) {
             _ASSERT(m_Status != eIO_Success);
             if (m_Status != eIO_Closed)
@@ -438,10 +480,10 @@ streamsize CConn_Streambuf::showmanyc(void)
 {
     static const STimeout kZeroTmo = {0, 0};
 
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
+
     if (!m_Conn)
         return -1;
-
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
 
     // flush output buffer, if tied up to it
     if (m_Tie)
@@ -456,17 +498,22 @@ streamsize CConn_Streambuf::showmanyc(void)
         tmo = timeout;
 
     size_t x_read;
+    bool backup = false;
     if (m_BufSize > 1) {
+        if (eback()  &&  gptr() > eback()) {
+            backup = true;
+            x_Buf = gptr()[-1];
+        }
         if (!tmo)
             _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, &kZeroTmo)==eIO_Success);
         m_Status = CONN_Read(m_Conn, m_ReadBuf + 1, m_BufSize - 1,
-                             &x_read, eIO_ReadSupplement);
+                             &x_read, eIO_ReadPlain);
         if (!tmo)
             _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, timeout)  ==eIO_Success);
         _ASSERT(x_read > 0  ||  m_Status != eIO_Success);
     } else {
-        x_read = 0;
         m_Status = CONN_Wait(m_Conn, eIO_Read, tmo ? tmo : &kZeroTmo);
+        x_read = 0;
     }
 
     if (!x_read) {
@@ -486,10 +533,9 @@ streamsize CConn_Streambuf::showmanyc(void)
         return      0;  // no data available immediately
     }
 
+    m_ReadBuf[0] = x_Buf;
     _ASSERT(m_BufSize > 1);
-    if (gptr())
-        m_ReadBuf[0] = gptr()[-1];
-    setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1 + x_read);
+    setg(m_ReadBuf + !backup, m_ReadBuf + 1, m_ReadBuf + 1 + x_read);
     x_GPos += x_read;
     return x_read;
 }
@@ -497,13 +543,9 @@ streamsize CConn_Streambuf::showmanyc(void)
 
 int CConn_Streambuf::sync(void)
 {
-    if (!m_Conn)
+    if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
         return -1;
-
-    do {
-        if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
-            return -1;
-    } while (pbase()  &&  pptr() > pbase());
+    _ASSERT(!pbase()  ||  pbase() == pptr());
     return 0;
 }
 
@@ -525,9 +567,9 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
         // tellp()/tellg() support only
         switch (which) {
         case IOS_BASE::out:
-            return x_PPos + (CT_OFF_TYPE)(pptr() ? pptr() - pbase() : 0);
+            return x_PPos + (CT_OFF_TYPE)(pbase() ? pptr() - pbase() : 0);
         case IOS_BASE::in:
-            return x_GPos - (CT_OFF_TYPE)(gptr() ? egptr() - gptr() : 0);
+            return x_GPos - (CT_OFF_TYPE)(gptr()  ? egptr() - gptr() : 0);
         default:
             break;
         }

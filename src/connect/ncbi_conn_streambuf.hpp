@@ -33,8 +33,7 @@
  *
  */
 
-#include <corelib/ncbistre.hpp>
-#include <connect/ncbi_connection.h>
+#include <connect/ncbi_conn_stream.hpp>
 
 #ifdef NCBI_COMPILER_MIPSPRO
 #  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
@@ -52,10 +51,14 @@ class CDiagCompileInfo;  // Forward declaration
 class CConn_Streambuf : public CConn_StreambufBase
 {
 public:
-    CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
-                    size_t buf_size, bool tie, CT_CHAR_TYPE* ptr, size_t size);
-    CConn_Streambuf(CONN conn, bool close, const STimeout* timeout,
-                    size_t buf_size, bool tie, CT_CHAR_TYPE* ptr, size_t size);
+    CConn_Streambuf(CONNECTOR connector,
+                    const STimeout* timeout, size_t buf_size,
+                    CConn_IOStream::TConn_Flags flags,
+                    CT_CHAR_TYPE* ptr, size_t size);
+    CConn_Streambuf(CONN conn, bool close,
+                    const STimeout* timeout, size_t buf_size,
+                    CConn_IOStream::TConn_Flags flags,
+                    CT_CHAR_TYPE* ptr, size_t size);
     virtual   ~CConn_Streambuf()   { Close();  delete[] m_WriteBuf; }
     CONN       GetCONN(void) const { return m_Conn;                 }
     EIO_Status Close  (void)       { return x_Close(true);          }
@@ -98,9 +101,9 @@ protected:
 private:
     CONN                m_Conn;      // underlying connection handle
 
-    CT_CHAR_TYPE*       m_ReadBuf;   // I/O arena or &x_Buf (if unbuffered)
-    CT_CHAR_TYPE*       m_WriteBuf;  // m_ReadBuf + m_BufSize (0 if unbuffered)
-    size_t              m_BufSize;   // of m_ReadBuf, m_WriteBuf (if buffered)
+    CT_CHAR_TYPE*       m_WriteBuf;  // I/O arena (set as 0 if unbuffered)
+    CT_CHAR_TYPE*       m_ReadBuf;   // read buffer or &x_Buf (if unbuffered)
+    size_t              m_BufSize;   // of m_ReadBuf (1 if unbuffered)
 
     EIO_Status          m_Status;    // status of last I/O completed by CONN
 
@@ -113,6 +116,7 @@ private:
     CT_POS_TYPE         x_PPos;      // put position [for ostream.tellp()]
 
     void                x_Init(const STimeout* timeout, size_t buf_size,
+                               CConn_IOStream::TConn_Flags flags,
                                CT_CHAR_TYPE* ptr, size_t size);
 
     EIO_Status          x_Close(bool close);
