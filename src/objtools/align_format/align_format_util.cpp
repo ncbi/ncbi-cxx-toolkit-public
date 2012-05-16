@@ -1476,15 +1476,19 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
         CRef<CSeq_align_set> new_aln(new CSeq_align_set);        
         hitsMap.insert(map<string, CRef<CSeq_align_set> >::value_type(seqIdList[i],new_aln));
     }
-
+    int count = 0;
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         const CSeq_id& cur_id = (*iter)->GetSeq_id(1);
         if(previous_id.Empty() || !cur_id.Match(*previous_id)) {
+            if(count >= seqIdList.size()) {         
+                break;
+            }
             string idString = cur_id.GetSeqIdString();
             if(hitsMap.find(idString) != hitsMap.end()) {                        
                 temp =  new CSeq_align_set;
                 temp->Set().push_back(*iter);
                 hitsMap[idString] = temp;
+                count++;
             }
             else {
                 temp.Reset();
@@ -1496,8 +1500,8 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
             }
         } 
         previous_id = &cur_id;
-    }    
-    return hitsMap;
+    }     
+    return hitsMap;    
 }
 
 
@@ -3189,6 +3193,7 @@ CAlignFormatUtil::GetSeqAlignCalcParams(const CSeq_align& aln)
     seqSetInfo->bit_score = bits;
     seqSetInfo->raw_score = score;
     seqSetInfo->evalue = evalue;
+    seqSetInfo->match = num_ident;
     seqSetInfo->id = &(aln.GetSeq_id(1));
     seqSetInfo->subjRange = CRange<TSeqPos>(0,0);	
     seqSetInfo->flip = false;
