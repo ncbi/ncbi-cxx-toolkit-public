@@ -331,12 +331,11 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
              score.SetValue().SetReal(actual);
              cerr << MSerial_AsnText << score;
              **/
-         }}
+        }}
 
         /// check high-quality percent coverage if data has it
-        try
-        {{
-             double actual;
+        if ( !alignment.GetSegs().IsStd() ) {
+             double actual = 0.0;
              score_builder.AddScore(*scope, alignment,
                                     CSeq_align::eScore_HighQualityPercentCoverage);
              alignment.GetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage, actual);
@@ -354,11 +353,7 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
              score.SetValue().SetReal(actual);
              cerr << MSerial_AsnText << score;
              **/
-         }}
-         catch (CException &e) {
-             LOG_POST(Error << "Exception thrown when checking pct_coverage_hiqual: "
-                            << e.ReportThis());
-         }
+        }
 
         if (alignment.GetSegs().IsDenseg()) {
             ///
@@ -375,7 +370,7 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
             alignment.GetSegs().GetSpliced().GetProduct_type() ==
                 CSpliced_seg::eProduct_type_protein)
         {
-            int actual;
+            int actual = 0.0;
             score_builder.AddScore(*scope, alignment,
                                    CSeq_align::eScore_PositiveCount);
             alignment.GetNamedScore(CSeq_align::eScore_PositiveCount, actual);
