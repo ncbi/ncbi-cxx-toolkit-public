@@ -1668,12 +1668,6 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
         TNSBitVector    client_aff =
                             m_ClientsRegistry.GetPreferredAffinities(client);
 
-        if (!client_aff.any())
-            LOG_POST(Message << Warning << "The client '" << client.GetNode()
-                             << "' requests a job considering the node "
-                                "preferred affinities while the node "
-                                "preferred affinities list is empty.");
-
         job_id = x_FindPendingWithAffinity(client_aff, blacklisted_jobs);
 
         if (job_id != 0)
