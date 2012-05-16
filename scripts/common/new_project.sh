@@ -50,6 +50,7 @@ ARGUMENTS:
      app/netschedule to build a NCBI GRID client application using NetSchedule
      app/objects     to build an application using ASN.1 objects
      app/objmgr      to build an application using the object manager
+     app/serial      to build sample serialization applications
      app/soap/client to build a SOAP client
      app/soap/server to build a SOAP server
      app/unit_test   to build a Boost-based unit test application
