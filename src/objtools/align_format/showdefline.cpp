@@ -531,6 +531,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
         }
     }
     m_DeflineTemplates = NULL;
+    m_StartIndex = 0;
 }
 
 CShowBlastDefline::~CShowBlastDefline()
@@ -1354,60 +1355,44 @@ CShowBlastDefline::SScoreInfo*
 CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_rank)
 {
     string evalue_buf, bit_score_buf, total_bit_score_buf, raw_score_buf;
-    int score = 0;
-    double bits = 0;
-    double evalue = 0;
-    int sum_n = 0;
-    int num_ident = 0;
-    SScoreInfo* score_info = NULL;
-
+        
     if(aln.Get().empty())
-        return score_info;
+        return NULL;
 
-    score_info = x_GetScoreInfo(*(aln.Get().front()), blast_rank); 
+    auto_ptr<SScoreInfo> score_info(new SScoreInfo);   
 
-    double total_bits = 0;
-    double highest_bits = 0;
-    double lowest_evalue = 0;
-    int highest_length = 1;
-    int highest_ident = 0;
-    int highest_identity = 0;
-    list<int> use_this_gi;   // Not used here, but needed for GetAlnScores.    
-    score_info->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&score_info->master_covered_length,&score_info->flip);
-												
-    ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
-        int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, 
-                                                        m_TranslatedNucAlignment);
-        CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue, sum_n, 
-                                   num_ident, use_this_gi);  
-        use_this_gi.clear();
-    
-        total_bits += bits;
-    
-        if (100*num_ident/align_length > highest_identity) {
-            highest_length = align_length;
-            highest_ident = num_ident;
-            highest_identity = 100*num_ident/align_length;
-        }
-    
-        if (bits > highest_bits) {
-            highest_bits = bits;
-            lowest_evalue = evalue;
-        }       
+    CAlignFormatUtil::SSeqAlignSetCalcParams* seqSetInfo = CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(aln);
+    if(seqSetInfo->hspNum == 0) {//calulated params are not in ASN - calculate now
+        seqSetInfo = CAlignFormatUtil::GetSeqAlignSetCalcParams(aln,m_QueryLength,m_TranslatedNucAlignment);
     }
-    score_info->match = highest_ident;      
-    score_info->align_length = highest_length;
 
-    // Really need to call this twice??
-    CAlignFormatUtil::GetScoreString(lowest_evalue, highest_bits, total_bits, score,
-                                     evalue_buf, bit_score_buf, total_bit_score_buf, raw_score_buf);
+    CAlignFormatUtil::GetScoreString(seqSetInfo->evalue, seqSetInfo->bit_score, seqSetInfo->total_bit_score, seqSetInfo->raw_score,
+                              evalue_buf, bit_score_buf, total_bit_score_buf,
+                              raw_score_buf);
+    score_info->id = seqSetInfo->id;
 
     score_info->total_bit_string = total_bit_score_buf; 
-    score_info->bit_string = bit_score_buf;
+    score_info->bit_string = bit_score_buf;    
     score_info->evalue_string = evalue_buf;
-    score_info->hspNum = aln.Size();	
+    score_info->percent_coverage = seqSetInfo->percent_coverage;
+    score_info->percent_identity = seqSetInfo->percent_identity;
+    score_info->hspNum = seqSetInfo->hspNum;
 
-    return score_info;
+    score_info->use_this_gi = seqSetInfo->use_this_gi;
+    score_info->sum_n = seqSetInfo->sum_n == -1 ? 1:seqSetInfo->sum_n ;
+
+    score_info->raw_score_string = raw_score_buf;//check if used
+    score_info->match = seqSetInfo->match; //check if used     
+    score_info->align_length = seqSetInfo->align_length;//check if used
+    score_info->master_covered_length = seqSetInfo->master_covered_length;//check if used
+
+    
+    score_info->subjRange = seqSetInfo->subjRange;    //check if used
+    score_info->flip = seqSetInfo->flip;//check if used		
+
+    score_info->blast_rank = blast_rank+1;		   
+
+    return score_info.release();
 }
 
 vector <CShowBlastDefline::SDeflineInfo*> 
@@ -1558,31 +1543,32 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);        
     }
     /*****************This block of code is for future use with AJAX begin***************************/ 
-    string deflId; 
+    string deflId,deflFrmID; 
     if(sdl->gi == 0) {
         string accession;
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
+        deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like ref| or pdbd|
     }
     else {        
-      deflId = NStr::IntToString(sdl->gi);
+        deflFrmID = deflId = NStr::IntToString(sdl->gi);
     }
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_id",deflId);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFrm_id",deflFrmID);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum); 
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",iter->blast_rank); 
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",m_StartIndex + iter->blast_rank); 
+    
 	/*****************This block of code is for future use with AJAX end***************************/ 
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"total_bit_string",iter->total_bit_string);
         
-    int percent_coverage = 100*iter->master_covered_length/m_QueryLength;
-
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString(percent_coverage));
+    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_coverage",NStr::IntToString(iter->percent_coverage));
 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",iter->evalue_string);
 
-    if(m_Option & eShowPercentIdent){
-        int percent_identity = CAlignFormatUtil::GetPercentMatch(iter->match, iter->align_length);
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::IntToString(percent_identity));
+    if(m_Option & eShowPercentIdent){        
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::IntToString(iter->percent_identity));
     }
         
     if(m_Option & eShowSumN){     

@@ -1938,15 +1938,16 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     
     //inits m_FeatObj,m_featScope,m_CanRetrieveSeq,m_ConfigFile,m_Reg,m_LinkoutOrder,m_DynamicFeature
     x_InitAlignParams(actual_aln_list);    
-    
-    if(m_AlignOption & eHtml){  
-        out<<"<script src=\"blastResult.js\"></script>";
-    }
+        
     bool newDesign = false;
+    string sortOneAln = m_Ctx ? m_Ctx->GetRequestValue("SORT_ONE_ALN").GetValue() : kEmptyStr;
     string oldBlastFormat = m_Ctx ? m_Ctx->GetRequestValue("OLD_BLAST").GetValue() : kEmptyStr;
     if(!oldBlastFormat.empty() && m_AlignOption & eHtml) {
         oldBlastFormat = NStr::ToLower(oldBlastFormat);
         newDesign = (oldBlastFormat == "on" || oldBlastFormat == "true" || oldBlastFormat == "yes") ? false : true;
+    }
+    if((m_AlignOption & eHtml) && !newDesign){  
+        out<<"<script src=\"blastResult.js\"></script>";
     }
     //get sequence
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){         
@@ -2008,9 +2009,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                       GetBioseqHandle(*previousId));
                                                       //release memory 
                         }                        
-                        x_DisplayAlnvecInfo(out, alnvecInfo,
-                                            previousId.Empty() || 
-                                            !subid->Match(*previousId));
+                        bool showDefLine = (sortOneAln != "on") ? (previousId.Empty() || !subid->Match(*previousId)) : false;
+                        x_DisplayAlnvecInfo(out, alnvecInfo,showDefLine);                                            
                        
                         previousId = subid;
                     }                
@@ -3447,6 +3447,18 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
     string alignParams = m_AlignTemplates->alignInfoTmpl;
     
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_curr_num",NStr::IntToString(m_currAlignHsp + 1));
+    alignParams = CAlignFormatUtil::MapTemplate(alignParams,"alnID",m_CurrAlnSeqID_Label);
+
+    string hidePrevNaviagtion,hideNextNaviagtion;
+    if(m_currAlignHsp == 0) {
+        hidePrevNaviagtion = "hidden";
+    }
+    if (m_currAlignHsp ==  m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber - 1) {
+        hideNextNaviagtion = "hidden";
+    }
+    alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_prev",hidePrevNaviagtion);
+    alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_next",hideNextNaviagtion);
+
     if (m_SeqalignSetRef->Get().front()->CanGetType() && 
            m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
     {
@@ -3619,13 +3631,10 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 }
 
 string
-CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info)
+CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info)
 {
-    CNcbiOstrstream out;    
-    string deflines,accession,id_label;	
-	list<int>& use_this_gi = aln_vec_info->use_this_gi;
-    string linksStr;
-    list<string> linkoutStr;
+    string deflines;	
+	list<int>& use_this_gi = aln_vec_info->use_this_gi;    
     if(bsp_handle){        
         const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);        
         const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
@@ -3639,8 +3648,8 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
             //there is no blast defline in such case.
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false);
-		    id_label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
-			accession = alnDispParams->label;
+		    m_CurrAlnSeqID_Label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
+			m_CurrAlnAccession = alnDispParams->label;
 			delete alnDispParams;
 			deflines = alnDefLine;
         } else {
@@ -3656,17 +3665,17 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline);                    
                     if(isFirst){
                         firstGi = alnDispParams->gi;                        
-						id_label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
-                        accession = alnDispParams->seqID->AsFastaString();
-                        if(accession.find("gnl|BL_ORD_ID") != string::npos){ 
+						m_CurrAlnSeqID_Label = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
+                        m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
+                        if(m_CurrAlnAccession.find("gnl|BL_ORD_ID") != string::npos){ 
 							///Get first token of the title
                             vector <string> parts;
                             NStr::Tokenize(alnDispParams->title," ",parts);
                             if(parts.size() > 0) {
-                                accession = parts[0];        
+                                m_CurrAlnAccession = parts[0];        
                             }
                             }
-						//accession = alnDispParams->label;
+						//m_CurrAlnAccession = alnDispParams->label;
                     }                    
 					deflines += alnDefLine;	
                     isFirst = false;					
@@ -3674,7 +3683,22 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
                 }
             }            
 			m_NumBlastDefLines = numBdl;            
-        }
+        }        
+    }	
+    return deflines;
+}
+
+
+string
+CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info)
+{
+    CNcbiOstrstream out;    
+    string deflines, linksStr;
+    list<string> linkoutStr;
+    
+    if(bsp_handle){        
+         deflines = x_InitDefLinesHeader(bsp_handle,aln_vec_info);
+
         //list<string> ::iterator it = m_CustomLinksList.end();
         //m_CustomLinksList.splice(it,linkoutStr);
 
@@ -3704,12 +3728,12 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqTitlesShow",alnSeqTitlesShow);				
 
 	//fill id info
-	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnID",id_label);				
-	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"firstSeqID",accession);	
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnID",m_CurrAlnSeqID_Label);				
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"firstSeqID",m_CurrAlnAccession);	
    
 	//fill sequence checkbox
 	string seqRetrieval = ((m_AlignOption&eSequenceRetrieval) && m_CanRetrieveSeq) ? "" : "hidden";
-	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqGi",id_label);
+	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqGi",m_CurrAlnSeqID_Label);
 	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnQueryNum",NStr::IntToString(m_QueryNumber));				
 	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqRet",seqRetrieval);
 
@@ -3720,7 +3744,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 	if(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber > 1 &&	
 		m_AlignOption & eShowSortControls){
 		//3. Display sort info
-		sortInfo = x_FormatAlignSortInfo(id_label);					
+		sortInfo = x_FormatAlignSortInfo(m_CurrAlnSeqID_Label);					
 	}
 	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"sortInfo",sortInfo);
 	
