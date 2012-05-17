@@ -312,43 +312,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             }   
         }
     }        
-    //get id (sdl->id, sdl-gi)
-    if(bdl.empty()){
-        wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-        sdl->id = wid;
-        sdl->gi = FindGi(*ids);    
-    } else {        
-        bool found = false;
-        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
-            iter != bdl.end(); iter++){
-            const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
-            int cur_gi =  FindGi(*cur_id);    
-            wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
-            if (!use_this_gi.empty()) {
-                ITERATE(list<int>, iter_gi, use_this_gi){
-                    if(cur_gi == *iter_gi){
-                        found = true;
-                        break;
-                    }
-                }
-            } else {
-                ITERATE(CBioseq::TId, iter_id, *cur_id) {
-                    if ((*iter_id)->Match(aln_id) 
-                      || (aln_id.IsGeneral() && aln_id.GetGeneral().CanGetDb() && 
-                         (*iter_id)->IsGeneral() && (*iter_id)->GetGeneral().CanGetDb() &&
-                         aln_id.GetGeneral().GetDb() == (*iter_id)->GetGeneral().GetDb())) {
-                        found = true;
-                    }
-                }
-            }
-            if(found){
-                sdl->id = wid;
-                sdl->gi = cur_gi;
-                ids = cur_id;
-                break;
-            }
-        }
-    }
+    //get id (sdl->id, sdl-gi)    
+    sdl->id = CAlignFormatUtil::GetDisplayIds(handle,aln_id,use_this_gi,sdl->gi);
 
     //get linkout
     if((m_Option & eLinkout)){

@@ -3357,7 +3357,54 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     return seqSetInfo.release();
 }
 
+CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
+                                const CSeq_id& aln_id,
+                                list<int>& use_this_gi,
+                                int& gi)
+                                           
+{
+    const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
+    const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
+       
+    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
+    CRef<CSeq_id> wid;    
 
+    gi = 0;
+    if(bdl.empty()){
+        wid = FindBestChoice(*ids, CSeq_id::WorstRank);        
+        gi = FindGi(*ids);    
+    } else {        
+        bool found = false;
+        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
+            iter != bdl.end(); iter++){
+            const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
+            int cur_gi =  FindGi(*cur_id);    
+            wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
+            if (!use_this_gi.empty()) {
+                ITERATE(list<int>, iter_gi, use_this_gi){
+                    if(cur_gi == *iter_gi){
+                        found = true;
+                        break;
+                    }
+                }
+            } else {
+                ITERATE(CBioseq::TId, iter_id, *cur_id) {
+                    if ((*iter_id)->Match(aln_id) 
+                      || (aln_id.IsGeneral() && aln_id.GetGeneral().CanGetDb() && 
+                         (*iter_id)->IsGeneral() && (*iter_id)->GetGeneral().CanGetDb() &&
+                         aln_id.GetGeneral().GetDb() == (*iter_id)->GetGeneral().GetDb())) {
+                        found = true;
+                    }
+                }
+            }
+            if(found){                
+                gi = cur_gi;                
+                break;
+            }
+        }
+    }    
+    return wid;
+}
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
