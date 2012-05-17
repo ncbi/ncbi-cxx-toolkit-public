@@ -3904,10 +3904,11 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
             read = 0;
         }
 
+        off = m_Tar->m_BufferPos;  // NB: x_ReadArchive() changes m_BufferPos
         if (m_Tar->x_ReadArchive(count)) {
-            memcpy(buf, m_Tar->m_Buffer + m_Tar->m_BufferPos, count);
-            _ASSERT(!OFFSET_OF(m_Tar->m_StreamPos));
+            memcpy(buf, m_Tar->m_Buffer + off, count);
             m_Tar->m_StreamPos += ALIGN_SIZE(count);
+            _ASSERT(!OFFSET_OF(m_Tar->m_StreamPos));
             m_Read += count;
             read   += count;
         } else {
