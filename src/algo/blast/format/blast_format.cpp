@@ -868,6 +868,7 @@ void
 CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
                         CConstRef<blast::CBlastQueryVector> queries)
 {
+
     // For remote searches, we don't retrieve the sequence data for the query
     // sequence when initially sending the request to the BLAST server (if it's
     // a GI/accession/TI), so we flush the scope so that it can be retrieved
@@ -908,6 +909,13 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         x_PrintIgTabularReport(results);
         return;
     }
+
+    
+    if (m_IsHTML){
+        m_Outfile << "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/align.css\" media=\"screen\" />"
+                
+                  << "<link rel=\"stylesheet\" type=\"text/css\" href=\"css/alignIE.css\" media=\"screen\" />";
+    }
     const bool kIsTabularOutput = false;
 
     // other output types will need a bioseq handle
@@ -921,6 +929,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     // print the preamble for this query
 
     m_Outfile << "\n\n";
+    
     CBlastFormatUtil::AcknowledgeBlastQuery(*bioseq, kFormatLineLength,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, kIsTabularOutput,
@@ -1037,6 +1046,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
         flags += CDisplaySeqalign::eShowTranslationForLocalSeq;
     }
     flags += CDisplaySeqalign::eShowSequencePropertyLabel;
+    flags += CDisplaySeqalign::eShowInfoOnMouseOverSeqid;
     vector<string> chain_type_list;
     ITERATE(vector<string>, iter, annots->m_ChainType) {
         if (*iter=="N/A"){
