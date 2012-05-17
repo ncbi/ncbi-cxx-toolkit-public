@@ -520,7 +520,8 @@ CAsnBinaryDefs::ETagValue CObjectTypeInfo::GetASNTag() const
 }
 
 bool CObjectTypeInfo::MatchPattern(
-    vector<int>& pattern, size_t& pos, int depth) const
+    vector<int>& pattern, size_t& pos, int depth,
+    const CItemInfo* item) const
 {
     bool good = false;
     CAsnBinaryDefs::ETagValue tag = GetASNTag();
@@ -571,7 +572,8 @@ bool CObjectTypeInfo::MatchPattern(
                     .Find(pattern[pos+1]);
                 good = i != kInvalidMember &&
                     GetMemberIterator(i).GetMemberType()
-                        .MatchPattern(pattern,pos,depth);
+                        .MatchPattern(pattern,pos,depth,
+                            GetMemberIterator(i).GetItemInfo());
                 if (!good) {
                     pos = prev;
                     break;
@@ -590,7 +592,8 @@ bool CObjectTypeInfo::MatchPattern(
                 .Find(pattern[pos+1]);
             good = i != kInvalidMember &&
                 GetVariantIterator(i).GetVariantType()
-                    .MatchPattern(pattern,pos,depth);
+                    .MatchPattern(pattern,pos,depth,
+                        GetVariantIterator(i).GetItemInfo());
             if (!good) {
                 pos = prev;
             }
@@ -646,11 +649,15 @@ bool CObjectTypeInfo::MatchPattern(
                     }
                 }
             }
-            good = elem_count != 0;
+            if (item && item->NonEmpty()) {
+                good = elem_count != 0;
+            } else {
+                good = true;
+            }
         }
         break;
     case eTypeFamilyPointer:
-        good = GetPointedType().MatchPattern(pattern, pos, depth);
+        good = GetPointedType().MatchPattern(pattern, pos, depth, item);
         break;
     default:
         break;

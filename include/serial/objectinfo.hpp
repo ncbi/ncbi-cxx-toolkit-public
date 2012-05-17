@@ -404,7 +404,8 @@ private:
 private:
     CTypeInfo* GetNCTypeInfo(void) const;
 
-    bool MatchPattern(vector<int>& pattern, size_t& pos, int depth) const;
+    bool MatchPattern(vector<int>& pattern, size_t& pos, int depth,
+                      const CItemInfo* item = NULL) const;
     friend class CObjectIStreamAsnBinary;
 };
 
