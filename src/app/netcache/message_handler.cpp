@@ -2334,12 +2334,12 @@ CNCMessageHandler::x_WriteBlobData(void)
             x_CloseConnection();
             return true;
         }
+        if (m_Size != Uint8(-1)  &&  m_Size < want_read)
+            want_read = size_t(m_Size);
         if (want_read == 0) {
             x_SetState(eReadyForCommand);
             return true;
         }
-        if (m_Size != Uint8(-1)  &&  m_Size < want_read)
-            want_read = size_t(m_Size);
 
         n_written = m_SockBuffer.Write(m_BlobAccess->GetDataPtr(), want_read);
         // HasError is processed in ManageCmdPipeline
@@ -3010,8 +3010,11 @@ CNCMessageHandler::x_DoCmd_Get(void)
         blob_size = 0;
     else
         blob_size -= m_StartPos;
-    if (m_Size != Uint8(-1)  &&  m_Size < blob_size) {
-        blob_size = m_Size;
+    if (m_Size != Uint8(-1)) {
+        if (m_Size < blob_size)
+            blob_size = m_Size;
+        else
+            m_Size = blob_size;
     }
     m_SockBuffer.WriteMessage("OK:", "BLOB found. SIZE="
                                      + NStr::UInt8ToString(blob_size));
