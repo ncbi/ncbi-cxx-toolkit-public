@@ -1846,6 +1846,14 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
                     &&  (x_IsFlagSet(fNoBlobVersionCheck)
                          ||  m_BlobAccess->GetCurBlobVersion() == m_BlobVersion);
     m_LatestSrvId = CNCDistributionConf::GetSelfID();
+    if (m_LatestExist) {
+        m_LatestBlobSum.create_time = m_BlobAccess->GetCurBlobCreateTime();
+        m_LatestBlobSum.create_server = m_BlobAccess->GetCurCreateServer();
+        m_LatestBlobSum.create_id = m_BlobAccess->GetCurCreateId();
+        m_LatestBlobSum.dead_time = m_BlobAccess->GetCurBlobDeadTime();
+        m_LatestBlobSum.expire = m_BlobAccess->GetCurBlobExpire();
+        m_LatestBlobSum.ver_expire = m_BlobAccess->GetCurVerExpire();
+    }
     if (x_IsFlagSet(fDoNotProxyToPeers)
         ||  m_ForceLocal
         ||  (m_Quorum == 1  &&  (m_LatestExist  ||  !m_SearchOnRead))
@@ -1863,16 +1871,8 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
         return true;
     }
 
-    if (m_LatestExist) {
-        if (m_Quorum != 0)
-            --m_Quorum;
-        m_LatestBlobSum.create_time = m_BlobAccess->GetCurBlobCreateTime();
-        m_LatestBlobSum.create_server = m_BlobAccess->GetCurCreateServer();
-        m_LatestBlobSum.create_id = m_BlobAccess->GetCurCreateId();
-        m_LatestBlobSum.dead_time = m_BlobAccess->GetCurBlobDeadTime();
-        m_LatestBlobSum.expire = m_BlobAccess->GetCurBlobExpire();
-        m_LatestBlobSum.ver_expire = m_BlobAccess->GetCurVerExpire();
-    }
+    if (m_LatestExist  &&  m_Quorum != 0)
+        --m_Quorum;
     x_SetState(eReadMetaNextPeer);
     return true;
 }
