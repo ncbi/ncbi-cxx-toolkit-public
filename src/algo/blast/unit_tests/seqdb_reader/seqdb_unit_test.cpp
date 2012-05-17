@@ -2058,7 +2058,7 @@ BOOST_AUTO_TEST_CASE(ExpertTaxInfo)
     db.GetTaxInfo(562, info);
     BOOST_REQUIRE_EQUAL(info.taxid,           562);
  
-    BOOST_REQUIRE_THROW(db.GetTaxInfo(4294967295, info), CSeqDBException);
+    BOOST_REQUIRE_THROW(db.GetTaxInfo(2147483647, info), CSeqDBException);
     BOOST_REQUIRE_THROW(db.GetTaxInfo(0, info), CSeqDBException);
     BOOST_REQUIRE_THROW(db.GetTaxInfo(-3, info), CSeqDBException);
 }
