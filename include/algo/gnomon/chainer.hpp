@@ -52,6 +52,7 @@ struct SMinScor {
     double m_minprotfrac;
     double m_endprotfrac;
     int m_prot_cds_len;
+    int m_cds_len;
 };
 
 
