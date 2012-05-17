@@ -482,6 +482,13 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
     }
 
     NON_CONST_ITERATE(TGeneModelList, it, models) {
+        TInDels fs;
+        ITERATE(TInDels, i, it->FrameShifts()) {   // removing fshifts in UTRs
+            if (i->IntersectingWith(it->ReadingFrame().GetFrom(), it->ReadingFrame().GetTo()))
+                fs.push_back(*i);
+        }
+        it->FrameShifts() = fs;
+
 #ifdef _DEBUG
         {
             string protein = it->GetProtein(m_gnomon->GetSeq());
@@ -555,8 +562,8 @@ void RemoveTrailingNs::transform_model(CGeneModel& m)
 void CGeneSelectorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
     arg_desc->AddDefaultKey("intergenic","intergenic","Minimum intergenic distance",CArgDescriptions::eInteger,"20");
-    arg_desc->AddDefaultKey("altfrac","altfrac","The score of the principal model in the gene is multiplied by this fraction. Alt variants with the score above "
-                            "this score are included in gene",CArgDescriptions::eDouble,"80.0");
+    arg_desc->AddDefaultKey("altfrac","altfrac","The CDS length of the principal model in the gene is multiplied by this fraction. Alt variants with the CDS length above "
+                            "this are included in gene",CArgDescriptions::eDouble,"80.0");
     arg_desc->AddDefaultKey("composite","composite","Maximal composite number in alts",CArgDescriptions::eInteger,"1");
     arg_desc->AddFlag("opposite","Allow overlap of complete multiexon genes with opposite strands");
     arg_desc->AddFlag("partialalts","Allows partial alternative variants. In combination with -nognomon will allow partial genes");

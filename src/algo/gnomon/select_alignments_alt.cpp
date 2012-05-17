@@ -120,18 +120,19 @@ size_t CModelCompare::CountCommonSplices(const CGeneModel& a, const CGeneModel& 
     return commonspl;
 }
 
-bool HasRetainedIntron(const CGeneModel& under_test, const CGeneModel& control_model)
+int HasRetainedIntron(const CGeneModel& under_test, const CGeneModel& control_model)
 {
+    int num = 0;
     for(int i = 1; i < (int)control_model.Exons().size(); ++i) {
         if(control_model.Exons()[i-1].m_ssplice && control_model.Exons()[i].m_fsplice) {
             TSignedSeqRange intron(control_model.Exons()[i-1].GetTo()+1,control_model.Exons()[i].GetFrom()-1);
             ITERATE(CGeneModel::TExons, test_exon, under_test.Exons()) {
                 if(Include(test_exon->Limits(), intron))
-                    return true;
+                    ++num;
             }
         }
     } 
-    return false;
+    return num;
 }
 
 bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
@@ -149,6 +150,82 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
     if(front().PStop() || !front().FrameShifts().empty())
         return false;
 
+    ITERATE(CAltSplice, it, *this) {
+        const CGeneModel& b = *it;
+        set<TSignedSeqRange> b_introns;
+        for(int i = 1; i < (int)b.Exons().size(); ++i) {
+            if(b.Exons()[i-1].m_ssplice && b.Exons()[i].m_fsplice) {
+                TSignedSeqRange intron(b.Exons()[i-1].GetTo()+1,b.Exons()[i].GetFrom()-1);
+                b_introns.insert(intron);
+            }
+        }
+
+        bool a_has_new_intron = false;
+        for(int i = 1; i < (int)a.Exons().size(); ++i) {
+            if(a.Exons()[i-1].m_ssplice && a.Exons()[i].m_fsplice) {
+                TSignedSeqRange intron(a.Exons()[i-1].GetTo()+1,a.Exons()[i].GetFrom()-1);
+                if(b_introns.insert(intron).second) {
+                    a_has_new_intron = true;
+                    continue;
+                }
+            }
+        }
+ 
+       if(a_has_new_intron) {
+            continue;
+       } else if(a.RealCdsLen() <= b.RealCdsLen()){
+            return false;
+       }
+    }
+
+    return true;
+    
+
+    /* Include everything version
+    typedef vector<TSignedSeqRange> TRVec;
+    TRVec a_introns;
+    for(int i = 1; i < (int)a.Exons().size(); ++i) {
+        if(a.Exons()[i-1].m_ssplice && a.Exons()[i].m_fsplice) {
+            TSignedSeqRange intron(a.Exons()[i-1].GetTo()+1,a.Exons()[i].GetFrom()-1);
+            a_introns.push_back(intron);
+        }
+    }
+    
+    ITERATE(CAltSplice, it, *this) {
+        const CGeneModel& b = *it;
+        TRVec b_introns;
+        for(int i = 1; i < (int)b.Exons().size(); ++i) {
+            if(b.Exons()[i-1].m_ssplice && b.Exons()[i].m_fsplice) {
+                TSignedSeqRange intron(b.Exons()[i-1].GetTo()+1,b.Exons()[i].GetFrom()-1);
+                b_introns.push_back(intron);
+            }
+        }
+        if(a_introns.empty() && b_introns.empty())  //already have not-spliced model
+            return false;
+
+        bool b_contains_all_introns = false;
+        
+        if(!a_introns.empty()) {
+            TRVec::iterator it = find(b_introns.begin(),b_introns.end(),a_introns.front());
+            if(it != b_introns.end() && b_introns.size()-(it-b_introns.begin()) >= a_introns.size() && equal(a_introns.begin(),a_introns.end(),it)) 
+                b_contains_all_introns = true;
+        }
+
+        if(a_introns.empty() || b_contains_all_introns) { // b exactly contains all spliced part of a (if any)
+            bool new_pattern = false;
+            ITERATE(TRVec, it, b_introns) {
+                if(Include(a.Exons().front(),*it) || Include(a.Exons().back(),*it))
+                    new_pattern = true; 
+            }
+            if(!new_pattern)
+                return false;
+        }
+    }
+
+    return true;
+    */
+
+    /*  Old version
     ITERATE(CAltSplice, it, *this) {
         const CGeneModel& b = *it;
         if (HasRetainedIntron(a, b) || HasRetainedIntron(b, a))
@@ -184,6 +261,7 @@ bool CAltSplice::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) con
     }
 
     return true;
+    */
 }
 
 bool CAltSplice::IsAlternative(const CGeneModel& a) const
@@ -279,13 +357,13 @@ bool CModelCompare::AreSimilar(const CGeneModel& a, const CGeneModel& b, int tol
     if(amax-amin != bmax-bmin) return false;
 
 //  head-to-tail overlap
-//     if (!((amin==0 && size_t(amax)==a.size()-1)||(bmin==0 && size_t(bmax)==b.size()-1)))
-//         return false;
+    if (amin != 0 || size_t(amax) != a.Exons().size()-1 || bmin != 0 || size_t(bmax) != b.Exons().size()-1)
+        return false;
     
     for( ; amin <= amax; ++amin, ++bmin) {
-        if(abs(max(mutual_min,a.Exons()[amin].GetFrom())-max(mutual_min,b.Exons()[bmin].GetFrom())) > tolerance)
+        if(abs(max(mutual_min,a.Exons()[amin].GetFrom())-max(mutual_min,b.Exons()[bmin].GetFrom())) >= tolerance)
             return false;
-        if(abs(min(mutual_max,a.Exons()[amin].GetTo())-min(mutual_max,b.Exons()[bmin].GetTo())) > tolerance)
+        if(abs(min(mutual_max,a.Exons()[amin].GetTo())-min(mutual_max,b.Exons()[bmin].GetTo())) >= tolerance)
             return false;
     }
     
@@ -307,11 +385,18 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
         return true;
     else if(!b.TrustedProt().empty() && a.TrustedProt().empty()) 
         return false;
-    else if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().Empty()) {       // coding is alway better
+    else if(a.ReadingFrame().NotEmpty() && b.ReadingFrame().Empty()) {       // coding is always better
         return true;
     } else if(b.ReadingFrame().NotEmpty() && a.ReadingFrame().Empty()) {
         return false;
     } else if(a.ReadingFrame().NotEmpty()) {     // both coding
+        int acdslen = a.FShiftedLen(a.GetCdsInfo().Cds(),true);
+        int bcdslen = b.FShiftedLen(b.GetCdsInfo().Cds(),true);
+        if(acdslen > 1.5*bcdslen)   // much longer cds is better
+            return true;
+        else if(bcdslen > 1.5*acdslen)
+            return false;
+
         double ds = 0.025*(fabs(b.Score())+fabs(a.Score()));
         
         double as = a.Score();
@@ -330,9 +415,13 @@ bool DescendingModelOrder(const CGeneModel& a, const CGeneModel& b)
         if(b.isNMD())
             bs -= ds;
         
-        if(as > bs)
+        if(as > bs)    // better score
             return true;
         else if(bs > as)
+            return false;
+        else if(HasRetainedIntron(a, b) < HasRetainedIntron(b,a)) // less retained introns is better
+            return true;
+        else if(HasRetainedIntron(a, b) > HasRetainedIntron(b,a))
             return false;
         else if(a.Weight() > b.Weight())       // more alignments is better
             return true;
@@ -469,7 +558,8 @@ CGeneSelector::ECompat CGeneSelector::CheckCompatibility(const CAltSplice& gene,
     if(gene.IsAlternative(algn)) {   // has common splice or common CDS
         if (gene.IsAllowedAlternative(algn, composite) &&
             ( !algn.TrustedmRNA().empty() || !algn.TrustedProt().empty()    // trusted gene
-              || (algn.AlignLen() > altfrac/100*gene.front().AlignLen() && (algn.ReadingFrame().Empty() || algn.Score() > altfrac/100*gene.front().Score())) // long enough and noncoding or good score
+              //              || (algn.AlignLen() > altfrac/100*gene.front().AlignLen() && (algn.ReadingFrame().Empty() || algn.Score() > altfrac/100*gene.front().Score())) // long enough and noncoding or good score
+              || (algn.AlignLen() > altfrac/100*gene.front().AlignLen() && (algn.ReadingFrame().Empty() || algn.RealCdsLen() > altfrac/100*gene.front().RealCdsLen())) // long enough and noncoding or long enough cds
             )
          && gene_good_enough_to_be_annotation && algn_good_enough_to_be_annotation)       // complete or allowpartials
             return eAlternative;
@@ -567,6 +657,14 @@ void CGeneSelector::FindGenesPass2(const list<const CGeneModel*>& possibly_alter
                 break;
             case eAlternative:
                 if(included_in == alts.end()) {
+                    included_in = itl;
+                } else if(Include(included_in->Limits(),itl->Limits()) || Include(itl->Limits(),included_in->Limits())) {   // connects nested to external
+                    itl->Nested() = (Include(included_in->Limits(),itl->Limits()) && included_in->Nested()) || (Include(itl->Limits(),included_in->Limits()) && itl->Nested());
+                    ITERATE(CAltSplice, i, *included_in) {
+                        itl->Insert(*i);
+                    }                        
+                    possibly_nested.remove(&(*included_in));
+                    alts.erase(included_in);
                     included_in = itl;
                 } else {
                     bad_aligns.push_back(algn);
