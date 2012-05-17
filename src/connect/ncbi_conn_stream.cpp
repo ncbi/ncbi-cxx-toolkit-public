@@ -598,7 +598,7 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 
 CConn_MemoryStream::CConn_MemoryStream(size_t buf_size)
     : CConn_IOStream(MEMORY_CreateConnector(),
-                     0, buf_size, fConn_ReadBuffered | fConn_WriteBuffered),
+                     kInfiniteTimeout/*0*/, buf_size),
       m_Ptr(0)
 {
     return;
@@ -623,7 +623,8 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        size_t      size,
                                        EOwnership  owner,
                                        size_t      buf_size)
-    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true,
+    : CConn_IOStream(MEMORY_CreateConnector(),
+                     0, buf_size, fConn_ReadBuffered | fConn_WriteBuffered,
                      (CT_CHAR_TYPE*) ptr, size),
       m_Ptr(owner == eTakeOwnership ? ptr : 0)
 {
@@ -636,7 +637,7 @@ CConn_MemoryStream::~CConn_MemoryStream()
     // Explicitly call x_Cleanup() to avoid using deleted m_Ptr otherwise.
     x_Cleanup();
     rdbuf(0);
-    delete[] (char*) m_Ptr;
+    delete[] (CT_CHAR_TYPE*) m_Ptr;
 }
 
 
