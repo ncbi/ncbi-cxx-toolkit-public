@@ -33,6 +33,9 @@ script_dir=`(cd "$script_dir"; pwd)`
 timestamp_file=`mktemp /tmp/check_exec_timestamp.XXXXXXXXXX`
 touch $timestamp_file
 
+# Save current pid (need for RunID)
+echo $$ > check_exec.pid
+
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 

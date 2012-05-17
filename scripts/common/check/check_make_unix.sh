@@ -529,7 +529,8 @@ RunTest()
 
                 # Remove old core file if it exist (for clarity of the test)
                 corefile="\$x_work_dir/core"
-                rm -f "\$corefile"  > /dev/null 2>&1
+                rm -f "\$corefile" > /dev/null 2>&1
+                rm -f check_exec.pid > /dev/null 2>&1
 
                 # Run check
                 start_time="\`date +'$x_date_format'\`"
@@ -554,6 +555,12 @@ EOF_launch
                         s/ ["][$][@]["].*$//
                 }' \$x_log >> \$x_test_out
 
+                # RunID
+                runpid='?'
+                test -f check_exec.pid  &&  runpid="\`cat check_exec.pid\`"
+                runid="\`date -u +%y%m%d%H%M%S\`-\$runpid-\`uname -n\`"
+                rm -f check_exec.pid > /dev/null 2>&1
+                
                 # Get application execution time
                 exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '%%' | tr -d '\000-\037' | tr  -d '\176-\377'\`
                 echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
@@ -643,7 +650,9 @@ EOF_launch
                     echo "\$start_time" >> "\$x_test_rep"
                     echo "\$result"     >> "\$x_test_rep"
                     echo "\$exec_time"  >> "\$x_test_rep"
+                    echo "\$x_authors"  >> "\$x_test_rep"
                     echo "\$load_avg"   >> "\$x_test_rep"
+                    echo "\$runid"      >> "\$x_test_rep"
                 fi
 
             else  # Run test if it exist
@@ -653,8 +662,9 @@ EOF_launch
                     count_absent=\`expr \$count_absent + 1\`
 
                     if test -n "\$NCBI_AUTOMATED_BUILD"; then
-                        echo "ABS"      >> "\$x_test_rep"
+                        echo "ABS"         >> "\$x_test_rep"
                         echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+                        echo "\$x_authors" >> "\$x_test_rep"
                     fi
                 fi
             fi
@@ -667,14 +677,11 @@ EOF_launch
                 count_absent=\`expr \$count_absent + 1\`
 
                 if test -n "\$NCBI_AUTOMATED_BUILD"; then
-                    echo "ABS"      >> "\$x_test_rep"
+                    echo "ABS"         >> "\$x_test_rep"
                     echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+                    echo "\$x_authors" >> "\$x_test_rep"
                 fi
             fi
-        fi
-
-        if \$no_report_err; then
-           test -n "\$NCBI_AUTOMATED_BUILD" && echo "\$x_authors" >> "\$x_test_rep"
         fi
         
     done  # Run test under all specified check tools   

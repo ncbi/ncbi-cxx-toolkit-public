@@ -421,6 +421,7 @@ RunTest() {
    # Run check
    CHECK_TIMEOUT=\`expr \$x_timeout \* \$NCBI_CHECK_TIMEOUT_MULT\`
    export CHECK_TIMEOUT
+   rm -f check_exec.pid > /dev/null 2>&1
    start_time="\`date +'$x_date_format'\`"
    check_exec="\$root_dir/scripts/common/check/check_exec.sh"
    \$check_exec $x_time \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
@@ -433,6 +434,12 @@ RunTest() {
        s/ ["][$][@]["].*$//
     }' \$x_test_out.\$\$ >> \$x_test_out
 
+   # RunID
+   runpid='?'
+   test -f check_exec.pid  &&  runpid="\`cat check_exec.pid\`"
+   runid="\`date -u +%y%m%d%H%M%S\`-\$runpid-\`uname -n\`"
+   rm -f check_exec.pid > /dev/null 2>&1
+                
    # Get application execution time
    exec_time=\`tail -3 \$x_test_out.\$\$\`
    exec_time=\`echo "\$exec_time" | tr '\n\r' '%%'\`
@@ -498,6 +505,7 @@ RunTest() {
       echo "\$exec_time"  >> "\$x_test_rep"
       echo "\$x_authors"  >> "\$x_test_rep"
       echo "\$load_avg"   >> "\$x_test_rep"
+      echo "\$runid"      >> "\$x_test_rep"
    fi
 }
 
