@@ -60,6 +60,10 @@ class NCBI_XCONNECT_EXPORT CPollable
 public:
     virtual
     EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const = 0;
+
+    virtual
+    POLLABLE   GetPOLLABLE(void) const = 0;
+
     virtual ~CPollable() { }
 
 protected:
@@ -97,6 +101,9 @@ public:
 
     /// Access to the underlying "TRIGGER".
     TRIGGER GetTRIGGER(void) const;
+
+    virtual
+    POLLABLE GetPOLLABLE(void) const {return POLLABLE_FromTRIGGER(m_Trigger);}
 
 protected:
     TRIGGER m_Trigger;
@@ -450,6 +457,9 @@ public:
     /// Access to the underlying "SOCK"
     SOCK GetSOCK(void) const;
 
+    virtual
+    POLLABLE GetPOLLABLE(void) const { return POLLABLE_FromSOCK(m_Socket); }
+
 protected:
     SOCK       m_Socket;
     EOwnership m_IsOwned;
@@ -668,6 +678,9 @@ public:
     /// Access to the underlying "LSOCK"
     LSOCK GetLSOCK(void) const;
 
+    virtual
+    POLLABLE GetPOLLABLE(void) const { return POLLABLE_FromLSOCK(m_Socket); }
+
 protected:
     LSOCK      m_Socket;
     EOwnership m_IsOwned;
@@ -724,23 +737,26 @@ public:
     ///
     static ESwitch SetDataLogging(ESwitch log);
 
-    /// @note  Use CSocket::Wait() to wait for I/O event(s) on a single socket.
-    ///
-    /// @param m_Pollable
-    ///
-    /// @param m_Event
-    ///
-    /// @param m_REvent
-    ///
+    /// Polling structure
     struct SPoll {
-        CPollable* m_Pollable;
-        EIO_Event  m_Event;
-        EIO_Event  m_REvent;
+        CPollable* m_Pollable;  ///< object pointer (or NULL not to poll)
+        EIO_Event  m_Event;     ///< event inqury (or eIO_Open not to poll)
+        EIO_Event  m_REvent;    ///< event ready (eIO_Open if not ready)
 
         SPoll(CPollable* pollable = 0, EIO_Event event = eIO_Open)
             : m_Pollable(pollable), m_Event(event), m_REvent(eIO_Open)
         { }
     };
+
+    /// Poll a vector of CPollable objects for I/O readiness.
+    ///
+    /// @note  If possible, consider using lower-level SOCK_Poll() for
+    ///        performance reasons (the code may still use a vector to prepare
+    ///        the array of elements, then pass vector::data() and
+    ///        vector::size() when making the SOCK_Poll() call).
+    ///
+    /// @note  Use CSocket::Wait() to wait for I/O event(s) on a single socket.
+    ///
     static EIO_Status Poll(vector<SPoll>&  polls,
                            const STimeout* timeout,
                            size_t*         n_ready = 0);

@@ -1299,12 +1299,14 @@ CTar::~CTar()
     // Close stream(s)
     x_Close(x_Flush(true/*nothrow*/));
     delete m_FileStream;
+    m_FileStream = 0;
 
     // Delete owned file name masks
-    UnsetMask();
+    SetMask(0);
 
     // Delete buffer
     delete[] m_BufPtr;
+    m_BufPtr = 0;
 }
 
 

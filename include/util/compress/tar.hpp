@@ -382,7 +382,7 @@ public:
     ///   Create, Update, SetBaseDir
     auto_ptr<TEntries> Append(const string& name);
 
-    /// Append an entry from stream (exactly entry.GetSize() bytes)
+    /// Append an entry from stream (exactly entry.GetSize() bytes).
     /// @return
     ///   A list (containing one entry) with full acrhive info filled in
     /// @sa
@@ -392,12 +392,12 @@ public:
     /// Look whether more recent copies of archive members are available in
     /// the file system, and if so, append them to the archive:
     ///
-    /// if fUpdate is set in processing flags, only the existing archive
+    /// - if fUpdate is set in processing flags, only the existing archive
     /// entries (including directories) will be updated;  that is, Update(".")
     /// won't recursively add "." if "." is not an archive member;  it will,
-    /// however, do the recursive update should "." be found in the archive.
+    /// however, do the recursive update should "." be found in the archive;
     ///
-    /// if fUpdate is unset, the existing entries will be updated (if their
+    /// - if fUpdate is unset, the existing entries will be updated (if their
     /// file system counterparts are newer), and inexistent entries will be
     /// added to the archive;  that is, Update(".") will recursively scan "."
     /// to update both existing entries (if newer files found), and also add
@@ -416,6 +416,8 @@ public:
     /// a directory otherwise specified by SetBaseDir()).
     ///
     /// Extract all archive entries, whose names match the pre-set mask.
+    /// @return
+    ///   A list of entries that have been actually extracted.
     /// @sa
     ///   SetMask, SetBaseDir
     auto_ptr<TEntries> Extract(void);
@@ -433,7 +435,7 @@ public:
     ///
     /// Read through the archive without actually extracting anything from it.
     /// Flag fDumpEntryHeaders causes most of archive headers to be dumped to
-    /// the log (as eDiag_Info) as Test() advances through the archive.
+    /// the log (as eDiag_Info) as the Test() advances through the archive.
     /// @sa
     ///   SetFlags
     void Test(void);
@@ -454,25 +456,17 @@ public:
     /// The set of masks is used to process existing entries in the archive,
     /// and apply to list and extract operations only.
     /// If masks are not defined then all archive entries will be processed.
-    /// By default, the masks are used case sensitively.  To cancel this and
+    /// By default, the masks are used case-sensitively.  To cancel this and
     /// use the masks case-insensitively, SetFlags() can be called with
     /// fMaskNocase flag set.
     /// @note Unset mask means wildcard processing (all entries match).
     /// @param mask
-    ///   Set of masks.
+    ///   Set of masks (0 to unset the current set without setting a new one).
     /// @param own
     ///   Flag to take ownership on the masks (delete upon CTar destruction).
     /// @sa
-    //    SetFlags, UnsetMask
+    //    SetFlags
     void SetMask(CMask* mask, EOwnership own = eNoOwnership);
-
-    /// Unset name mask.
-    ///
-    /// Upon mask reset, all entries become subject to archive processing in
-    /// the list and extract operations.
-    /// @sa
-    ///   SetMask
-    void UnsetMask(void);
 
     /// Get base directory to use for files while extracting from/adding to
     /// the archive, and in the latter case used only for relative paths.
@@ -612,7 +606,7 @@ private:
 
     // Backspace and skip the archive.
     void x_Backspace(EAction action);  // NB: m_ZeroBlockCount blocks back
-    void x_Skip(Uint8 blocks);         // NB: Can do either skip or read
+    void x_Skip(Uint8 blocks);         // NB: Can do by either skip or read
 
     // Parse in extended entry information (POSIX) for the current entry.
     EStatus x_ParsePAXData(const string& buffer);
@@ -630,7 +624,7 @@ private:
     auto_ptr<TEntries> x_ReadAndProcess(EAction action);
 
     // Process current entry from the archive (the actual size passed in).
-    // If extract == FALSE, then just skip the entry without any processing.
+    // If "extract" is FALSE, then just skip the entry without any processing.
     bool x_ProcessEntry(bool extract, Uint8 size, const TEntries* done);
 
     // Extract current entry (the actual size passed in) from the archive into
@@ -639,9 +633,9 @@ private:
                         const CDirEntry* dst, const CDirEntry* src);
 
     // Restore attributes of an entry in the file system.
-    // If 'path' not specified, then the destination path will be constructed
-    // from 'info', and the base directory (if any).  Otherwise, 'path' will
-    // be used "as is", assuming it corresponds to the specified 'info'.
+    // If "path" is not specified, then the destination path will be
+    // constructed from "info", and the base directory (if any).  Otherwise,
+    // "path" will be used "as is", assuming it corresponds to "info".
     void x_RestoreAttrs(const CTarEntryInfo& info,
                         TFlags               what,
                         const CDirEntry*     path = 0,
@@ -654,24 +648,24 @@ private:
     // Append an entry from the file system to the archive.
     auto_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
 
-    // Append an entry from istream to the archive.
+    // Append an entry from an istream to the archive.
     auto_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry, istream& is);
 
-    // Append data from istream to the archive.
+    // Append data from an istream to the archive.
     void x_AppendStream(const string& name, istream& is);
 
     // Append a regular file to the archive.
     void x_AppendFile(const string& file);
 
 private:
-    string        m_FileName;       ///< Tar archive file name
-    CNcbiFstream* m_FileStream;     ///< File stream of the archive
+    string        m_FileName;       ///< Tar archive file name (only if file)
+    CNcbiFstream* m_FileStream;     ///< File stream of the archive (if file)
     CNcbiIos&     m_Stream;         ///< Archive stream (used for all I/O)
     size_t        m_ZeroBlockCount; ///< Zero blocks seen in between entries
     const size_t  m_BufferSize;     ///< Buffer(record) size for I/O operations
     size_t        m_BufferPos;      ///< Position within the record
     Uint8         m_StreamPos;      ///< Position in stream (0-based)
-    char*         m_BufPtr;         ///< Page unaligned buffer pointer
+    char*         m_BufPtr;         ///< Page-unaligned buffer pointer
     char*         m_Buffer;         ///< I/O buffer (page-aligned)
     CMask*        m_Mask;           ///< Masks for list/test/extract
     EOwnership    m_MaskOwned;      ///< Flag of m_Mask's ownership
@@ -759,18 +753,11 @@ void CTar::SetFlags(TFlags flags)
 inline
 void CTar::SetMask(CMask* mask, EOwnership own)
 {
-    UnsetMask();
-    m_Mask      = mask;
-    m_MaskOwned = own;
-}
-
-inline
-void CTar::UnsetMask(void)
-{
     if ( m_MaskOwned ) {
         delete m_Mask;
     }
-    m_Mask = 0;
+    m_Mask      = mask;
+    m_MaskOwned = mask ? own : eNoOwnership;
 }
 
 inline
