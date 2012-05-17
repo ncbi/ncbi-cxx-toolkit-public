@@ -1340,7 +1340,7 @@ const string& CDiagContext::GetHost(void) const
     // UNIX - use uname()
     {{
         struct utsname buf;
-        if (uname(&buf) == 0) {
+        if (uname(&buf) >= 0) {
             m_Host->SetString(buf.nodename);
             return m_Host->GetOriginalString();
         }
