@@ -119,7 +119,8 @@ public:
     unsigned GetAffinityLowRemoval(void) const          { return m_AffinityLowRemoval; }
     unsigned GetAffinityDirtPercentage(void) const      { return m_AffinityDirtPercentage; }
     bool IsDrainShutdown(void) const                   { return m_CurrentSubmitsCounter.Get() < kSubmitCounterInitialValue; }
-    void SetDrainShutdown(void)                         { m_CurrentSubmitsCounter.Add(-1*kSubmitCounterInitialValue); }
+    void SetDrainShutdown(void)
+    { m_CurrentSubmitsCounter.Add(-1*static_cast<int>(kSubmitCounterInitialValue)); }
     unsigned int  GetCurrentSubmitsCounter(void)        { return m_CurrentSubmitsCounter.Get(); }
     unsigned int  IncrementCurrentSubmitsCounter(void)  { return m_CurrentSubmitsCounter.Add(1); }
     unsigned int  DecrementCurrentSubmitsCounter(void)  { return m_CurrentSubmitsCounter.Add(-1); }
