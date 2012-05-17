@@ -1663,7 +1663,7 @@ const char* CTar::x_ReadArchive(size_t& n)
     if (m_BufferPos == m_BufferSize) {
         m_BufferPos  = 0;
         if (!m_FileStream  &&  (m_Flags & fStreamPipeThrough)) {
-            Uint8 zbc = m_ZeroBlockCount;
+            size_t zbc = m_ZeroBlockCount;
             x_WriteArchive(m_BufferSize);
             m_StreamPos -= m_BufferSize;
             _ASSERT(m_BufferPos == 0);
