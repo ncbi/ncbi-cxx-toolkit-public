@@ -731,10 +731,10 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             }
             if (count) {
                 if ( 0 != cigar.pcount() ) {
+                   trivial = false;
                    cigar << '+';
                 }
                 cigar << type << count;
-                trivial = false;
             }
             if (frameshift) {
                 trivial = false;
