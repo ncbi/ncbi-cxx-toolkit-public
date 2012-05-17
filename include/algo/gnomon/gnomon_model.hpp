@@ -563,7 +563,7 @@ public:
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b, bool withextras = true) const { return FShiftedLen(TSignedSeqRange(a,b), withextras); }
     //snap to codons works by analising transcript coordinates (MUST be a protein or reading frame cutout)
     TSignedSeqRange ShrinkToRealPoints(TSignedSeqRange orig_range, bool snap_to_codons = false) const;
-    TSignedSeqPos FShiftedMove(TSignedSeqPos orig_pos, int len) const;
+    TSignedSeqPos FShiftedMove(TSignedSeqPos orig_pos, int len) const;   // may reurn < 0 if hits a gap
     TInDels GetInDels(bool fs_only) const;
     int TargetLen() const { return m_target_len; }
 
