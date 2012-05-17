@@ -716,13 +716,13 @@ TSignedSeqRange CAlignMap::ShrinkToRealPoints(TSignedSeqRange orig_range, bool s
 
 TSignedSeqPos CAlignMap::FShiftedMove(TSignedSeqPos orig_pos, int len) const {
     orig_pos = MapOrigToEdited(orig_pos);
-    _ASSERT(orig_pos >= 0);
+    if(orig_pos < 0) 
+        return orig_pos;
     if(m_orientation == ePlus)
         orig_pos += len;
     else
         orig_pos -= len;
     orig_pos = MapEditedToOrig(orig_pos);
-    _ASSERT(orig_pos >= 0);
     return orig_pos;
 }
 
