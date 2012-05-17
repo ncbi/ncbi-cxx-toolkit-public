@@ -1453,7 +1453,7 @@ static EIO_Status s_Select_(size_t                n,
             }
 
             event = polls[i].event;
-            if ((EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
                 if (!bad) {
                     ready = 0/*false*/;
@@ -1477,8 +1477,7 @@ static EIO_Status s_Select_(size_t                n,
                 ready = 1/*true*/;
                 if (polls[i].revent == eIO_Close)
                     continue;
-                assert((EIO_Event)
-                       (polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+                assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
                 event = (EIO_Event)(event & ~polls[i].revent);
             }
 
@@ -1654,6 +1653,8 @@ static EIO_Status s_Select_(size_t                n,
                 ready++;
                 continue;
             }
+            if (!polls[i].event)
+                continue;
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
             assert(fd < FD_SETSIZE);
 #  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
@@ -1669,12 +1670,14 @@ static EIO_Status s_Select_(size_t                n,
                 sock->writable = 1/*true*/;
 #  endif /*NCBI_OS_MSWIN*/
             }
+            assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
             if (polls[i].revent == eIO_Open) {
                 if (!FD_ISSET(fd, &efds))
                     continue;
                 polls[i].revent = eIO_Close;
             } else if (sock->type == eTrigger)
                 polls[i].revent = polls[i].event;
+            assert(polls[i].revent != eIO_Open);
             ready++;
         } else
             assert(polls[i].revent == eIO_Open);
@@ -1704,7 +1707,7 @@ static size_t s_CountPolls(size_t n, SSOCK_Poll polls[])
             assert(!polls[i].revent/*eIO_Open*/);
             continue;
         }
-        if ((EIO_Event)(polls[i].event | eIO_ReadWrite) != eIO_ReadWrite) {
+        if ((polls[i].event | eIO_ReadWrite) != eIO_ReadWrite) {
             good = 0/*false*/;
             continue;
         }
@@ -1788,7 +1791,7 @@ static EIO_Status s_Poll_(size_t                n,
             }
 
             event = polls[i].event;
-            if ((EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
                 bad = 1/*true*/;
                 continue;
@@ -1809,8 +1812,7 @@ static EIO_Status s_Poll_(size_t                n,
                 ready++;
                 if (polls[i].revent == eIO_Close)
                     continue;
-                assert((EIO_Event)
-                       (polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+                assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
                 event = (EIO_Event)(event & ~polls[i].revent);
             }
 
@@ -1927,8 +1929,8 @@ static EIO_Status s_Poll_(size_t                n,
 
     assert(status != eIO_Success  ||  ready > 0);
     if (status == eIO_Success  &&  n) {
-        nfds_t scanned = 0;
         nfds_t x_ready = 0;
+        nfds_t scanned = 0;
         nfds_t j;
         for (j = 0, i = 0;  i < n;  i++) {
             SOCK sock = polls[i].sock;
@@ -1944,21 +1946,26 @@ static EIO_Status s_Poll_(size_t                n,
                     x_ready++;
                     continue;
                 }
+                if (!polls[i].event)
+                    continue;
                 events = revents = 0;
                 if (scanned < ready) {
+                    nfds_t x_scanned = 0;
+                    nfds_t k;
                     assert(j < count);
-                    do {
+                    for (k = j;  k < count;  k++) {
                         if (x_polls[j].revents)
-                            scanned++;
+                            x_scanned++;
                         if (x_polls[j].fd == fd) {
-                            events  = x_polls[j].events;
-                            revents = x_polls[j].revents;
-                            j++;
+                            events   = x_polls[j].events;
+                            revents  = x_polls[j].revents;
+                            scanned += x_scanned;
+                            j        = ++k;
                             break;
                         }
-                    } while (++j < count);
-                } else
-                    continue;
+                    }
+                    assert(events  ||  j < count);
+                }
                 if ((events & POLLIN)
                      &&  (revents & (POLLIN | POLLHUP | POLLPRI))) {
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
@@ -1967,16 +1974,19 @@ static EIO_Status s_Poll_(size_t                n,
                     &&  (revents & (POLLOUT | POLLHUP))) {
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
                 }
+                assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
                 if (polls[i].revent == eIO_Open) {
                     if (!(revents & (POLLERR | POLLNVAL)))
                         continue;
                     polls[i].revent = eIO_Close;
                 } else if (sock->type == eTrigger)
                     polls[i].revent = polls[i].event;
+                assert(polls[i].revent != eIO_Open);
                 x_ready++;
             } else
                 assert(polls[i].revent == eIO_Open);
         }
+        assert(scanned == ready);
         assert(x_ready >= ready);
     }
 
@@ -2053,7 +2063,7 @@ static EIO_Status s_Select(size_t                n,
             }
 
             event = polls[i].event;
-            if ((EIO_Event)(event | eIO_ReadWrite) != eIO_ReadWrite) {
+            if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
                 if (!bad) {
                     ready = 0/*false*/;
@@ -2077,8 +2087,7 @@ static EIO_Status s_Select(size_t                n,
                 ready = 1/*true*/;
                 if (polls[i].revent == eIO_Close)
                     continue;
-                assert((EIO_Event)
-                       (polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+                assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
                 event = (EIO_Event)(event & ~polls[i].revent);
             }
 
@@ -2145,7 +2154,7 @@ static EIO_Status s_Select(size_t                n,
             } else
                 ev = ((TRIGGER) sock)->fd;
 
-            if (count >= sizeof(what)/sizeof(what[0])) {
+            if (count >= sizeof(what) / sizeof(what[0])) {
                 /* NB: only once here, as this sets "bad" to "1" */
                 CORE_LOGF_X(145, eLOG_Error,
                             ("[SOCK::Select] "
@@ -2222,6 +2231,7 @@ static EIO_Status s_Select(size_t                n,
                         if (what[i] != ((TRIGGER) sock)->fd)
                             continue;
                         polls[j].revent = polls[j].event;
+                        assert(polls[j].revent != eIO_Open);
                         ready = 1/*true*/;
                         break;
                     }
@@ -2296,6 +2306,7 @@ static EIO_Status s_Select(size_t                n,
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
                         ready = 1/*true*/;
                     }
+                    assert((polls[j].revent | eIO_ReadWrite) == eIO_ReadWrite);
                     if (!polls[j].revent) {
                         int k;
                         if ((e.lNetworkEvents & FD_CLOSE)
@@ -2313,6 +2324,7 @@ static EIO_Status s_Select(size_t                n,
                             }
                         }
                     }
+                    assert(polls[j].revent != eIO_Open);
                     break;
                 }
                 assert(j < n);
