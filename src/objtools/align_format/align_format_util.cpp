@@ -2850,6 +2850,19 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
                     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);                        
                 }                   
             }
+        } else if (wid->Which() == CSeq_id::e_Local){
+                      
+            string url_holder = CAlignFormatUtil::GetURLFromRegistry("LOCAL_ID");
+        
+            string user_url = m_Reg->Get("LOCAL_ID","TOOL_URL");
+            string id_string;
+            wid->GetLabel(&id_string, CSeq_id::eContent);
+            url_link = CAlignFormatUtil::MapTemplate(user_url,"seq_id", id_string);  
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"db_name", seqUrlInfo->database); 
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"taxid", seqUrlInfo->taxid);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"title", id_string);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
         }
     }
     seqUrlInfo->seqUrl = url_link;

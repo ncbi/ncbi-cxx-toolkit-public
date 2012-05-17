@@ -1368,6 +1368,10 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
            type_temp == "gsfasta" || type_temp == "gsfasta_prev"){
             taxid[row] = CAlignFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
                                                             m_Scope);
+        } else if ((m_AlignOption & eHtml) && m_AV->GetSeqId(row).Which() == CSeq_id::e_Local && row > 0){
+            //this is for adding url for local seqid, for example igblast db.
+            taxid[row] = CAlignFormatUtil::GetTaxidForSeqid(m_AV->GetSeqId(row),
+                                                            m_Scope);
         } else {
             taxid[row] = 0;
         }

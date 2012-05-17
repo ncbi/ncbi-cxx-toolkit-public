@@ -387,6 +387,16 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         seqUrlInfo.resourcesUrl = m_Reg.get() ? m_Reg->Get(m_BlastType, "RESOURCES_URL") : kEmptyStr;
         seqUrlInfo.useTemplates = useTemplates;        
         seqUrlInfo.advancedView = advancedView;
+
+        if(sdl->id->Which() == CSeq_id::e_Local && (m_Option & eHtml)){
+            //get taxid info for local blast db such as igblast db
+            ITERATE(list<CRef<CBlast_def_line> >, iter_bdl, bdl) {
+                if ((*iter_bdl)->IsSetTaxid() && (*iter_bdl)->CanGetTaxid()){
+                    seqUrlInfo.taxid = (*iter_bdl)->GetTaxid();
+                    break;
+                }
+            }
+        }
         sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef);        
         if (advancedView){
             if (m_Option & eLinkout && (sdl->gi > 0) ) {                    
