@@ -429,6 +429,8 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
         }
     }
     RemoveExtraFShifts();
+    if(MyExons().empty())
+        m_range = TSignedSeqRange();
 }
 
 void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_cds_invariant)
