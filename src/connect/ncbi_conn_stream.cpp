@@ -597,7 +597,8 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
 
 
 CConn_MemoryStream::CConn_MemoryStream(size_t buf_size)
-    : CConn_IOStream(MEMORY_CreateConnector(), 0, buf_size, true),
+    : CConn_IOStream(MEMORY_CreateConnector(),
+                     0, buf_size, fConn_ReadBuffered | fConn_WriteBuffered),
       m_Ptr(0)
 {
     return;
