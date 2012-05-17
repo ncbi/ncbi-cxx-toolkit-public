@@ -1584,6 +1584,10 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     /// "NCBIEXTRATYPE=<extra-type>").
     bool             m_TypedExtra;
 
+    /// Special flag indicating that the message should not be printed by
+    /// Tee-handler.
+    bool             m_NoTee;
+
     /// Convert extra arguments to string
     string FormatExtraMessage(void) const;
 

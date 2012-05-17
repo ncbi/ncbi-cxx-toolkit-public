@@ -142,6 +142,38 @@ private:
 };
 
 
+// Special diag handler for duplicating error log messages on stderr.
+class CTeeDiagHandler : public CDiagHandler
+{
+public:
+    CTeeDiagHandler(CDiagHandler* orig, bool own_orig);
+    virtual void Post(const SDiagMessage& mess);
+
+    // Don't post duplicates to console.
+    virtual void PostToConsole(const SDiagMessage& mess) {}
+
+    virtual string GetLogName(void)
+    {
+        return m_OrigHandler.get() ?
+            m_OrigHandler->GetLogName() : "STDERR-TEE";
+    }
+    virtual void Reopen(TReopenFlags flags)
+    {
+        if ( m_OrigHandler.get() ) {
+            m_OrigHandler->Reopen(flags);
+        }
+    }
+
+    CDiagHandler* GetOriginalHandler(void) const
+    {
+        return m_OrigHandler.get();
+    }
+
+private:
+    EDiagSev              m_MinSev;
+    AutoPtr<CDiagHandler> m_OrigHandler;
+};
+
 
 #if defined(NCBI_POSIX_THREADS) && defined(HAVE_PTHREAD_ATFORK)
 
@@ -2298,9 +2330,15 @@ void CDiagContext::FlushMessages(CDiagHandler& handler)
     if ( !m_Messages.get()  ||  m_Messages->empty() ) {
         return;
     }
+    CTeeDiagHandler* tee = dynamic_cast<CTeeDiagHandler*>(&handler);
+    if (tee  &&  !tee->GetOriginalHandler()) {
+        // Tee over STDERR - flushing will create duplicate messages
+        return;
+    }
     auto_ptr<TMessages> tmp(m_Messages.release());
     //ERR_POST_X(1, Message << "***** BEGIN COLLECTED MESSAGES *****");
-    ITERATE(TMessages, it, *tmp.get()) {
+    NON_CONST_ITERATE(TMessages, it, *tmp.get()) {
+        it->m_NoTee = true; // Do not tee duplicate messages to console.
         handler.Post(*it);
         if (it->m_Flags & eDPF_IsConsole) {
             handler.PostToConsole(*it);
@@ -2771,7 +2809,12 @@ static CDiagHandler* s_CreateDefaultDiagHandler(void)
     static bool s_DefaultDiagHandlerInitialized = false;
     if ( !s_DefaultDiagHandlerInitialized ) {
         s_DefaultDiagHandlerInitialized = true;
-        return new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
+        CDiagHandler* handler = new CStreamDiagHandler(&NcbiCerr, true, kLogName_Stderr);
+        if ( TTeeToStderr::GetDefault() ) {
+            // Need to tee?
+            handler = new CTeeDiagHandler(handler, true);
+        }
+        return handler;
     }
     return s_DefaultHandler;
 }
@@ -3121,6 +3164,7 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* function)
     : m_Event(eEvent_Start),
       m_TypedExtra(false),
+      m_NoTee(false),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -3173,6 +3217,7 @@ SDiagMessage::SDiagMessage(const string& message, bool* result)
       m_RequestId(0),
       m_Event(eEvent_Start),
       m_TypedExtra(false),
+      m_NoTee(false),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -3212,6 +3257,7 @@ SDiagMessage::SDiagMessage(const SDiagMessage& message)
       m_RequestId(0),
       m_Event(eEvent_Start),
       m_TypedExtra(false),
+      m_NoTee(false),
       m_Data(0),
       m_Format(eFormat_Auto)
 {
@@ -4663,34 +4709,6 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 }
 
 
-// Special diag handler for duplicating error log messages on stderr.
-class CTeeDiagHandler : public CDiagHandler
-{
-public:
-    CTeeDiagHandler(CDiagHandler* orig, bool own_orig);
-    virtual void Post(const SDiagMessage& mess);
-
-    // Don't post duplicates to console.
-    virtual void PostToConsole(const SDiagMessage& mess) {}
-
-    virtual string GetLogName(void)
-    {
-        return m_OrigHandler.get() ?
-            m_OrigHandler->GetLogName() : "STDERR-TEE";
-    }
-    virtual void Reopen(TReopenFlags flags)
-    {
-        if ( m_OrigHandler.get() ) {
-            m_OrigHandler->Reopen(flags);
-        }
-    }
-
-private:
-    EDiagSev              m_MinSev;
-    AutoPtr<CDiagHandler> m_OrigHandler;
-};
-
-
 CTeeDiagHandler::CTeeDiagHandler(CDiagHandler* orig, bool own_orig)
     : m_MinSev(TTeeMinSeverity::GetDefault()),
       m_OrigHandler(orig, own_orig ? eTakeOwnership : eNoOwnership)
@@ -4700,6 +4718,10 @@ CTeeDiagHandler::CTeeDiagHandler(CDiagHandler* orig, bool own_orig)
     if ( tee ) {
         m_OrigHandler = tee->m_OrigHandler;
     }
+    CStreamDiagHandler* str = dynamic_cast<CStreamDiagHandler*>(m_OrigHandler.get());
+    if (str  &&  str->GetLogName() == kLogName_Stderr) {
+        m_OrigHandler.reset();
+    }
 }
 
 
@@ -4708,6 +4730,12 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
     if ( m_OrigHandler.get() ) {
         m_OrigHandler->Post(mess);
     }
+
+    if ( mess.m_NoTee ) {
+        // The message has been printed.
+        return;
+    }
+
     // Ignore posts below the min severity and applog messages
     if ((mess.m_Flags & eDPF_AppLog)  ||
         CompareDiagPostLevel(mess.m_Severity, m_MinSev) < 0) {
@@ -4742,8 +4770,7 @@ extern void SetDiagHandler(CDiagHandler* handler, bool can_delete)
     }
     if ( CDiagBuffer::sm_CanDeleteHandler )
         delete CDiagBuffer::sm_Handler;
-    if (TTeeToStderr::GetDefault()  &&
-        handler->GetLogName() != kLogName_Stderr) {
+    if ( TTeeToStderr::GetDefault() ) {
         // Need to tee?
         handler = new CTeeDiagHandler(handler, can_delete);
         can_delete = true;
@@ -6181,9 +6208,20 @@ extern void SetDiagStream(CNcbiOstream* os,
                           void*         cleanup_data,
                           const string& stream_name)
 {
+    string str_name = stream_name;
+    if ( str_name.empty() ) {
+        if (os == &cerr) {
+            str_name = kLogName_Stderr;
+        }
+        else if (os == &cout) {
+            str_name = kLogName_Stdout;
+        }
+        else {
+            str_name =  kLogName_Stream;
+        }
+    }
     SetDiagHandler(new CCompatStreamDiagHandler(os, quick_flush,
-        cleanup, cleanup_data,
-        stream_name.empty() ? "STREAM" : stream_name));
+        cleanup, cleanup_data, str_name));
 }
 
 
