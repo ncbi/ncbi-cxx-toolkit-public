@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/gnomon/gnomon.hpp>
+#include <algo/gnomon/chainer.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
 #include "hmm.hpp"
 #include "hmm_inlines.hpp"
@@ -164,6 +165,9 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end));
         transcript_exons.push_back(TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
 
+        _ASSERT(Exons().back().Limits().NotEmpty());
+        _ASSERT(transcript_exons.back().NotEmpty());
+
         int pos = 0;
         int prod_pos = prod_cur_start;
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
@@ -225,7 +229,12 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
     m_alignmap = CAlignMap(Exons(), transcript_exons, indels, orientation, target_len );
     FrameShifts() = m_alignmap.GetInDels(true);
-    
+
+    TSignedSeqRange newlimits = m_alignmap.ShrinkToRealPoints(Limits(),is_protein);
+    if(newlimits != Limits()) {
+        Clip(newlimits,CAlignModel::eRemoveExons);    
+    }   
+
     for (CGeneModel::TExons::const_iterator piece_begin = Exons().begin(); piece_begin != Exons().end(); ++piece_begin) {
         _ASSERT( !piece_begin->m_fsplice );
         
@@ -256,8 +265,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             
         piece_begin = piece_end;
     }
-
-
 
     if (is_protein) {
         TSignedSeqRange reading_frame = Limits();
