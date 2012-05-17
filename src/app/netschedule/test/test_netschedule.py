@@ -36,7 +36,7 @@ excludeTestsMap = \
 {
     "4.10.0":   [ 300, 301, 302, 303, 304, 305, 306, 307, 308, 309,
                   310, 311, 312, 313 ],
-    "4.11.0":   [ 250, 255 ]
+    "4.11.0":   [ ]
 }
 
 
@@ -120,6 +120,9 @@ def main():
     parser.add_option( "--start-from", dest="start_from",
                        default="0",
                        help="Test index to start from (default: 0)" )
+    parser.add_option( "--count", dest="count",
+                       default="0",
+                       help="Number of tests to run" )
     parser.add_option( "--header", dest="header",
                        default="",
                        help="Header for the tests output" )
@@ -143,6 +146,7 @@ def main():
     startID = int( options.start_from )
     if startID < 0:
         raise Exception( "Negative start test ID" )
+    test_count = int( options.count )
 
     # Check the number of arguments
     if len( args ) != 1:
@@ -156,6 +160,8 @@ def main():
         print "Using grid_cli path: " + options.pathGridCli
         print "Using DB path: " + options.pathDB
         print "Starting tests from: " + options.start_from
+        if test_count > 0:
+            print "Number of tests to run: " + options.count
         print "NS version to test: " + options.version
 
     netschedule = None
@@ -206,7 +212,7 @@ def main():
               pack.Scenario39( netschedule ),
               pack.Scenario40( netschedule ),
               pack.Scenario41( netschedule ),
-              pack.Scenario42( netschedule ),
+              # --pack.Scenario42( netschedule ),
               # pack.Scenario43( netschedule ),
               # pack.Scenario45( netschedule ),
               pack.Scenario46( netschedule ),
@@ -268,7 +274,7 @@ def main():
               pack_4_10.Scenario149( netschedule ),
               pack_4_10.Scenario150( netschedule ),
               pack_4_10.Scenario151( netschedule ),
-              pack_4_10.Scenario152( netschedule ),
+              # --pack_4_10.Scenario152( netschedule ),
               pack_4_10.Scenario153( netschedule ),
               pack_4_10.Scenario154( netschedule ),
               pack_4_10.Scenario155( netschedule ),
@@ -315,16 +321,16 @@ def main():
               pack_4_10.Scenario196( netschedule ),
               pack_4_10.Scenario197( netschedule ),
               pack_4_10.Scenario198( netschedule ),
-              pack_4_10.Scenario199( netschedule ),
-              pack_4_10.Scenario200( netschedule ),
-              pack_4_10.Scenario201( netschedule ),
+              # --pack_4_10.Scenario199( netschedule ),
+              # --pack_4_10.Scenario200( netschedule ),
+              # --pack_4_10.Scenario201( netschedule ),
               pack_4_10.Scenario203( netschedule ),
               pack_4_10.Scenario204( netschedule ),
-              pack_4_10.Scenario205( netschedule ),
+              # --pack_4_10.Scenario205( netschedule ),
               pack_4_10.Scenario206( netschedule ),
               pack_4_10.Scenario207( netschedule ),
               pack_4_10.Scenario208( netschedule ),
-              pack_4_10.Scenario211( netschedule ),
+              # --pack_4_10.Scenario211( netschedule ),
               pack_4_10.Scenario212( netschedule ),
               pack_4_10.Scenario213( netschedule ),
               pack_4_10.Scenario214( netschedule ),
@@ -358,12 +364,12 @@ def main():
               pack_4_10.Scenario247( netschedule ),
               pack_4_10.Scenario248( netschedule ),
               pack_4_10.Scenario249( netschedule ),
-              pack_4_10.Scenario250( netschedule ),
+              # --pack_4_10.Scenario250( netschedule ),
               pack_4_10.Scenario251( netschedule ),
               pack_4_10.Scenario252( netschedule ),
               pack_4_10.Scenario253( netschedule ),
               pack_4_10.Scenario254( netschedule ),
-              pack_4_10.Scenario255( netschedule ),
+              # --pack_4_10.Scenario255( netschedule ),
               pack_4_10.Scenario256( netschedule ),
               pack_4_10.Scenario257( netschedule ),
               pack_4_10.Scenario258( netschedule ),
@@ -446,7 +452,10 @@ def main():
                       "Scenario: " + aTest.getScenario() + "\n" \
                       "Exception:\n" + str( exct )
                 sys.stderr.flush()
-            time.sleep( 5 )
+            #time.sleep( 5 )
+            test_count -= 1
+            if test_count == 0:
+                break
         netschedule.safeStop()
         netschedule.deleteDB()
     except:

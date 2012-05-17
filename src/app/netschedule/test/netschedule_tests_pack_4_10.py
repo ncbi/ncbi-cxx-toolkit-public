@@ -18,22 +18,32 @@ from cgi import parse_qs
 
 
 NON_EXISTED_JOB = "JSID_01_777_130.14.24.83_9101"
+ANY_AUTH_TOKEN = '1166018352_2'
 
 
-def getClientInfo( ns, verbose = True, expectedClients = 1, clientIndex = 0 ):
+def getClientInfo( ns, clientNode = None,
+                    minClients = 1, maxClients = None, verbose = True ):
     " Provides the client info "
     servers = ns.get_servers()
     if len( servers ) != 1:
         raise Exception( "Invalid number of servers returned." )
-
     serverClients = servers[ 0 ].get_client_info( verbose )
-    if len( serverClients ) != expectedClients:
-        raise Exception( "Expected " + str( expectedClients ) + \
-                         " client(s). Received " + \
-                         str( len( serverClients ) ) + " client(s)" )
-    if expectedClients <= 0:
+    if minClients is not None and len( serverClients ) < minClients:
+        raise Exception( "Too few clients returned (" +
+                str( len( serverClients ) ) + "); minimum: " + \
+                            str( minClients ) )
+    if maxClients is not None and len( serverClients ) > maxClients:
+        raise Exception( "Too many clients returned (" +
+                str( len( serverClients ) ) + "); maximum: " + \
+                            str( maxClients ) )
+    if len( serverClients ) == 0 or not clientNode:
         return None
-    return serverClients[ clientIndex ]
+
+    for clientInfo in serverClients:
+        if clientInfo[ 'client_node' ] == clientNode:
+            return clientInfo
+
+    raise Exception( "Unable to find client '" + clientNode + "'" )
 
 def getAffinityInfo( ns, verbose = True, expectedAffinities = 1, affIndex = 0 ):
     " Provides the affinity info "
@@ -223,7 +233,7 @@ class Scenario102( TestBase ):
         self.fromScratch()
 
         try:
-            self.ns.getVersion( "my_node" )
+            self.ns.getVersion( node = "my_node", session = "" )
         except Exception, exc:
             if "client_node is provided but " \
                "client_session is not" in str( exc ):
@@ -249,7 +259,7 @@ class Scenario103( TestBase ):
         self.fromScratch()
 
         try:
-            self.ns.getVersion( "", "my_session" )
+            self.ns.getVersion( node = "", session = "my_session" )
         except Exception, exc:
             if "client_session is provided " \
                "but client_node is not" in str( exc ):
@@ -277,7 +287,7 @@ class Scenario104( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario104' )
-        getClientInfo( ns_client, True, 0, 0 )
+        getClientInfo( ns_client, None, 0, 0 )
         return True
 
 class Scenario105( TestBase ):
@@ -301,9 +311,8 @@ class Scenario105( TestBase ):
                                              'TEST', 'scenario105' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
 
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] == 'mynode' and \
-           client[ 'session' ] == 'mysession' and \
+        client = getClientInfo( ns_client, 'mynode' )
+        if client[ 'session' ] == 'mysession' and \
            client[ 'type' ] == 'unknown':
             return True
 
@@ -329,11 +338,10 @@ class Scenario106( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario105' )
 
-        self.ns.submitJob( 'TEST', 'bla', '', 'node', '000' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'node', '000' )
 
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] == 'node' and \
-           client[ 'session' ] == '000' and \
+        client = getClientInfo( ns_client, 'node' )
+        if client[ 'session' ] == '000' and \
            client[ 'type' ] == 'submitter':
             return True
 
@@ -356,16 +364,15 @@ class Scenario107( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.ns.getJob( 'TEST', -1, -1, '', "",
+        self.ns.getJob( 'TEST', -1, '', "",
                         'scenario107', 'default' )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario107' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'scenario107' )
 
-        if client[ 'client_node' ] == 'scenario107' and \
-           client[ 'session' ] == 'default' and \
+        if client[ 'session' ] == 'default' and \
            client[ 'type' ] == 'worker node' and \
            len( client[ 'running_jobs' ] ) == 1 and \
            client[ 'running_jobs' ][ 0 ] == jobID:
@@ -390,19 +397,18 @@ class Scenario108( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.ns.getJob( 'TEST' )
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        jobInfo = self.ns.getJob( 'TEST' )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
 
-        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1,
+        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                            'mynode',
                                                            'mysession' )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario108' )
-        client = getClientInfo( ns_client, True )
-        if client[ 'client_node' ] == 'mynode' and \
-           client[ 'session' ] == 'mysession' and \
+        client = getClientInfo( ns_client, 'mynode' )
+        if client[ 'session' ] == 'mysession' and \
            client[ 'type' ] == 'reader' and \
            len( client[ 'reading_jobs' ] ) == 1 and \
            client[ 'reading_jobs' ][ 0 ] == key:
@@ -426,20 +432,18 @@ class Scenario109( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', '0' )
-        self.ns.getJob( 'TEST', -1, -1, '', '',
-                        'mynode', '0' )
-        self.ns.putJob( 'TEST', jobID, 0, "", 'mynode', '0' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', '0' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', '', 'mynode', '0' )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "", 'mynode', '0' )
 
-        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1,
+        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                            'mynode',
                                                            '0' )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario109' )
-        client = getClientInfo( ns_client, True )
-        if client[ 'client_node' ] == 'mynode' and \
-           client[ 'session' ] == '0' and \
+        client = getClientInfo( ns_client, 'mynode' )
+        if client[ 'session' ] == '0' and \
            client[ 'type' ] == 'submitter | worker node | reader' and \
            len( client[ 'reading_jobs' ] ) == 1 and \
            client[ 'reading_jobs' ][ 0 ] == key:
@@ -463,20 +467,18 @@ class Scenario110( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', '0' )
-        self.ns.getJob( 'TEST', -1, -1, '', '',
-                        'mynode', '0' )
-        self.ns.putJob( 'TEST', jobID, 0, "", 'mynode', '0' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', '0' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', '', 'mynode', '0' )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "", 'mynode', '0' )
 
-        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1,
+        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                            'mynode',
                                                            '0' )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario110' )
-        client = getClientInfo( ns_client, False )
-        if client[ 'client_node' ] == 'mynode' and \
-           client[ 'session' ] == '0' and \
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+        if client[ 'session' ] == '0' and \
            client[ 'number_of_submitted_jobs' ] == 1 and \
            client[ 'number_of_jobs_given_for_execution' ] == 1 and \
            client[ 'number_of_jobs_given_for_reading' ] == 1 and \
@@ -508,15 +510,15 @@ class Scenario111( TestBase ):
                                              'TEST', 'scenario111' )
 
         # get original session
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', '0' )
-        client = getClientInfo( ns_client )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', '0' )
+        client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] != '0':
             raise Exception( "Unexpected session. Expected '0'. " \
                              "Received: '" + client[ 'session' ] )
 
         # get modified session session
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', '1' )
-        client = getClientInfo( ns_client )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', '1' )
+        client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] != '1':
             raise Exception( "Unexpected session. Expected '1'. " \
                              "Received: '" + client[ 'session' ] )
@@ -546,7 +548,7 @@ class Scenario112( TestBase ):
                                              'TEST', 'scenario112' )
         ns_client.set_client_identification( 'mynode', 'session1' )
 
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] != 'session1':
             raise Exception( "Unexpected session. Expected 'session1'. " \
                              "Received: '" + client[ 'session' ] )
@@ -555,7 +557,7 @@ class Scenario112( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario112' )
         ns_client.set_client_identification( 'mynode', 'session1' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] != 'session1':
             raise Exception( "Unexpected session. Expected 'session1'. " \
                              "Received: '" + client[ 'session' ] )
@@ -566,7 +568,7 @@ class Scenario112( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario112' )
-        info = getClientInfo( ns_client, True, 1 )
+        info = getClientInfo( ns_client, 'mynode' )
         if info[ 'session' ] != 'n/a':
             raise Exception( "Unexpected session. Expected 'n/a', " \
                              "received: " + info[ 'session' ] )
@@ -595,21 +597,15 @@ class Scenario113( TestBase ):
 
         # get original session
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.ns.getJob( 'TEST', -1, -1, '', '',
-                        'mynode', 'mysession' )
+        self.ns.getJob( 'TEST', -1, '', '', 'mynode', 'mysession' )
 
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] != 'mynode':
-            raise Exception( "Incorrect client node (1): " + \
-                             client[ 'client_node' ] )
+        client = getClientInfo( ns_client, 'mynode' )
         if client[ 'running_jobs' ][ 0 ] != jobID:
             raise Exception( "Running job is not registered" )
 
         # To touch the clients registry with another session
-        self.ns.submitJob( 'TEST', 'bla2', '', 'mynode', 'changedsession' )
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] != 'mynode':
-            raise Exception( "Incorrect client node (2)" )
+        self.ns.submitJob( 'TEST', 'bla2', '', '', 'mynode', 'changedsession' )
+        client = getClientInfo( ns_client, 'mynode' )
         if client.has_key( 'running_jobs' ):
             raise Exception( "Running job is still there" )
 
@@ -648,20 +644,14 @@ class Scenario114( TestBase ):
         ns_client.set_client_identification( 'mynode', 'mysession' )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.ns.getJob( 'TEST', -1, -1, '', '',
-                        'mynode', 'mysession' )
+        self.ns.getJob( 'TEST', -1, '', '', 'mynode', 'mysession' )
 
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] != 'mynode':
-            raise Exception( "Incorrect client node: " + \
-                             client[ 'client_node' ] )
+        client = getClientInfo( ns_client, 'mynode' )
         if client[ 'running_jobs' ][ 0 ] != jobID:
             raise Exception( "Running job is not registered" )
 
         execAny( ns_client, 'CLRN' )
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] != 'mynode':
-            raise Exception( "Incorrect client node (2)" )
+        client = getClientInfo( ns_client, 'mynode' )
         if client.has_key( 'running_jobs' ):
             raise Exception( "Running job is still there" )
 
@@ -700,16 +690,14 @@ class Scenario115( TestBase ):
                                              'TEST', 'scenario115' )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.ns.getJob( 'TEST' )
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        jobInfo = self.ns.getJob( 'TEST' )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
 
-        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1,
+        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                            'mynode',
                                                            'session1' )
 
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] != 'mynode':
-            raise Exception( "Incorrect client node (1)" )
+        client = getClientInfo( ns_client, 'mynode' )
         if client.has_key( 'running_jobs' ):
             raise Exception( "Running job is still there" )
         if client[ 'number_of_jobs_given_for_reading' ] != 1:
@@ -754,16 +742,14 @@ class Scenario116( TestBase ):
         ns_client.set_client_identification( 'mynode', 'session1' )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.ns.getJob( 'TEST' )
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        jobInfo = self.ns.getJob( 'TEST' )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
 
-        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1,
+        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                            'mynode',
                                                            'session1' )
 
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] != 'mynode':
-            raise Exception( "Incorrect client node (1)" )
+        client = getClientInfo( ns_client, 'mynode' )
         if not client.has_key( 'reading_jobs' ):
             raise Exception( "Reading job is not found" )
         if client[ 'number_of_jobs_given_for_reading' ] != 1:
@@ -771,9 +757,7 @@ class Scenario116( TestBase ):
 
         execAny( ns_client, 'CLRN' )
 
-        client = getClientInfo( ns_client )
-        if client[ 'client_node' ] != 'mynode':
-            raise Exception( "Incorrect client node (1)" )
+        client = getClientInfo( ns_client, 'mynode' )
         if client.has_key( 'reading_jobs' ):
             raise Exception( "Reading job is still there" )
         if client[ 'number_of_jobs_given_for_reading' ] != 1:
@@ -808,15 +792,13 @@ class Scenario117( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        self.ns.getJob( 'TEST', -1, -1, '', "",
-                        'scenario117-1', 'default' )
-        self.ns.getJob( 'TEST', -1, -1, '', "",
-                        'scenario117-2', 'default' )
+        self.ns.getJob( 'TEST', -1, '', "", 'scenario117-1', 'default' )
+        self.ns.getJob( 'TEST', -1, '', "", 'scenario117-2', 'default' )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario117' )
-        getClientInfo( ns_client, True, 2, 0 )
+        getClientInfo( ns_client, minClients = 2, maxClients = 2 )
         return True
 
 class Scenario118( TestBase ):
@@ -868,7 +850,7 @@ class Scenario119( TestBase ):
         ns_client.set_client_identification( 'mynode', 'mysession' )
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
-        client = getClientInfo( ns_client, False )
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
         if client[ 'number_of_preferred_affinities' ] != 2:
             raise Exception( 'Unexpected length of preferred_affinities' )
         if client[ 'type' ] not in [ 'unknown', 'worker node' ]:
@@ -898,7 +880,7 @@ class Scenario120( TestBase ):
         ns_client.set_client_identification( 'mynode', 'mysession' )
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'mynode' )
         if len( client[ 'preferred_affinities' ] ) != 2:
             raise Exception( 'Unexpected length of preferred_affinities' )
         if client[ 'preferred_affinities' ][ 0 ] != 'a1':
@@ -938,7 +920,7 @@ class Scenario121( TestBase ):
         ns_client.on_warning = self.report_warning
         changeAffinity( ns_client, [], [ 'a1', 'a2' ] )
 
-        client = getClientInfo( ns_client, True )
+        getClientInfo( ns_client, 'node', 1, 1 )
         if "unknown affinity to delete" in self.warning:
             return True
         raise Exception( "The expected warning has not received" )
@@ -972,7 +954,7 @@ class Scenario122( TestBase ):
 
         changeAffinity( ns_client, [ 'a1', 'a2', 'a3' ], [] )
         changeAffinity( ns_client, [ 'a2', 'a4' ], [ 'a1' ] )
-        client = getClientInfo( ns_client, True )
+        client = getClientInfo( ns_client, 'node' )
         if "already registered affinity to add" not in self.warning:
             raise Exception( "The expected warning has not received" )
 
@@ -1006,7 +988,7 @@ class Scenario123( TestBase ):
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
         execAny( ns_client, 'CLRN' )
-        client = getClientInfo( ns_client, True )
+        client = getClientInfo( ns_client, 'node' )
         if client.has_key( 'number_of_preferred_affinities' ):
             raise Exception( "Expected no preferred affinities, got some." )
         return True
@@ -1034,9 +1016,9 @@ class Scenario124( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
-        self.ns.submitJob( 'TEST', 'bla', '', 'node', 'other_session' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'node', 'other_session' )
 
-        client = getClientInfo( ns_client, True )
+        client = getClientInfo( ns_client, 'node' )
         if client.has_key( 'number_of_preferred_affinities' ):
             raise Exception( "Expected no preferred affinities, got some." )
         return True
@@ -1526,7 +1508,7 @@ class Scenario138( TestBase ):
 
         try:
             # Job is unknown, but the key format is just fine
-            self.ns.returnJob( "TEST", NON_EXISTED_JOB )
+            self.ns.returnJob( "TEST", NON_EXISTED_JOB, ANY_AUTH_TOKEN )
         except Exception, exc:
             if "Job not found" in str( exc ) or \
                "eJobNotFound" in str( exc ):
@@ -1682,7 +1664,7 @@ class Scenario143( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
 
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
@@ -1719,13 +1701,13 @@ class Scenario144( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
 
-        if jobID != jobIDReceived:
+        if jobID != jobInfo[ 0 ]:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
-        readJobID, state, passport = self.ns.getJobsForReading2( 'TEST', -1,
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
+        readJobID, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                                  'mynode',
                                                                  'session1' )
         if readJobID != jobID:
@@ -1763,15 +1745,15 @@ class Scenario145( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST', node = 'client1' )[ 0 ]
 
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency 1 detected" )
 
         time.sleep( 15 )
 
-        jobIDReceived = self.ns.getJob( 'TEST' )
-        if jobID != jobIDReceived:
+        jobInfo = self.ns.getJob( 'TEST', node = 'client2' )
+        if not jobInfo or jobID != jobInfo[ 0 ]:
             raise Exception( "Inconsistency 2 detected" )
 
         # Check the status
@@ -1801,12 +1783,13 @@ class Scenario146( TestBase ):
         " Provides the scenario "
         return " SUBMIT, [GET, FAIL] 3 times, check run_counter "
 
-    def getAndFail( self ):
+    def getAndFail( self, clientNode ):
         " get a job and then fail it "
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST', node = clientNode )
+        jobIDReceived = jobInfo[ 0 ]
         if self.jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.failJob( 'TEST', self.jobID, 3 )
+        self.ns.failJob( 'TEST', self.jobID, jobInfo[ 1 ], 3 )
         return
 
     def execute( self ):
@@ -1814,9 +1797,9 @@ class Scenario146( TestBase ):
         self.fromScratch()
 
         self.jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.getAndFail()
-        self.getAndFail()
-        self.getAndFail()
+        self.getAndFail('client1')
+        self.getAndFail('client2')
+        self.getAndFail('client3')
 
         # Check the run_counter
         info = self.ns.getJobInfo( 'TEST', self.jobID )
@@ -1837,12 +1820,13 @@ class Scenario147( TestBase ):
         " Provides the scenario "
         return " SUBMIT, [GET, FAIL] 4 times, check status "
 
-    def getAndFail( self ):
+    def getAndFail( self, clientNode ):
         " get a job and then fail it "
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST', node = clientNode )
+        jobIDReceived = jobInfo[ 0 ]
         if self.jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.failJob( 'TEST', self.jobID, 3 )
+        self.ns.failJob( 'TEST', self.jobID, jobInfo[ 1 ], 3 )
         return
 
     def execute( self ):
@@ -1850,10 +1834,10 @@ class Scenario147( TestBase ):
         self.fromScratch()
 
         self.jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.getAndFail()
-        self.getAndFail()
-        self.getAndFail()
-        self.getAndFail()
+        self.getAndFail('client1')
+        self.getAndFail('client2')
+        self.getAndFail('client3')
+        self.getAndFail('client4')
 
         # Check the status
         status1 = self.ns.getFastJobStatus( 'TEST', self.jobID )
@@ -1885,7 +1869,7 @@ class Scenario148( TestBase ):
         " get a job and then fail it "
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                str( self.count ),
                                                str( self.count ) )
         self.ns.failRead2( 'TEST', readJobID, passport, "",
@@ -1898,8 +1882,8 @@ class Scenario148( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        jobInfo = self.ns.getJob( 'TEST' )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
 
         self.readAndFail()
         self.readAndFail()
@@ -1932,9 +1916,9 @@ class Scenario149( TestBase ):
         " Provides the scenario "
         return " SUBMIT, [GET, wait till fail] 4 times, check status "
 
-    def getAndWaitTillFail( self ):
+    def getAndWaitTillFail( self, clientNode ):
         " get a job and then fail it "
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST', node = clientNode )[ 0 ]
         if self.jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
         time.sleep( 15 )
@@ -1945,10 +1929,10 @@ class Scenario149( TestBase ):
         self.fromScratch()
 
         self.jobID = self.ns.submitJob( 'TEST', 'bla' )
-        self.getAndWaitTillFail()
-        self.getAndWaitTillFail()
-        self.getAndWaitTillFail()
-        self.getAndWaitTillFail()
+        self.getAndWaitTillFail('client1')
+        self.getAndWaitTillFail('client2')
+        self.getAndWaitTillFail('client3')
+        self.getAndWaitTillFail('client4')
 
         # Check the status
         status1 = self.ns.getFastJobStatus( 'TEST', self.jobID )
@@ -1981,7 +1965,7 @@ class Scenario150( TestBase ):
         " read a job and then fail it "
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                str( self.count ),
                                                str( self.count ) )
         self.count += 1
@@ -1995,10 +1979,11 @@ class Scenario150( TestBase ):
         self.fromScratch()
 
         self.jobID = self.ns.submitJob( 'TEST', 'bla' )
-        receivedJobID = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        receivedJobID = jobInfo[ 0 ]
         if self.jobID != receivedJobID:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', self.jobID, 0, "" )
+        self.ns.putJob( 'TEST', self.jobID, jobInfo[ 1 ], 0, "" )
 
         self.readAndWaitTillFail()
         self.readAndWaitTillFail()
@@ -2050,56 +2035,27 @@ class Scenario151( TestBase ):
         self.fromScratch()
 
         self.jobID = self.ns.submitJob( 'TEST', 'bla' )
-        receivedJobID = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        receivedJobID = jobInfo[ 0 ]
         if self.jobID != receivedJobID:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', self.jobID, 0, "" )
-        jobID, s, p = self.ns.getJobsForReading2( 'TEST', -1, 'n1', 's' )
+        self.ns.putJob( 'TEST', self.jobID, jobInfo[ 1 ], 0, "" )
+        jobID, s, p = self.ns.getJobsForReading2( 'TEST', -1, '', 'n1', 's' )
         self.checkReadCounter( 1 )
 
         time.sleep( 15 )
-        jobID, s, p = self.ns.getJobsForReading2( 'TEST', -1, 'n2', 's' )
+        jobID, s, p = self.ns.getJobsForReading2( 'TEST', -1, '', 'n2', 's' )
         self.checkReadCounter( 2 )
 
         self.ns.rollbackRead2( 'TEST', self.jobID, p, "n", "s" )
         self.checkReadCounter( 1 )
 
-        jobID, s, p = self.ns.getJobsForReading2( 'TEST', -1, 'n3', 's' )
+        jobID, s, p = self.ns.getJobsForReading2( 'TEST', -1, '', 'n3', 's' )
         self.checkReadCounter( 2 )
 
         self.ns.confirmRead2( 'TEST', self.jobID, p, 'n', 's' )
         self.checkReadCounter( 2 )
         return True
-
-class Scenario152( TestBase ):
-    " Scenario 152 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        self.jobID = None
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return " SUBMIT1, SUBMIT2, GET1, EXCHANGE 1 for 2"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        jobID1 = self.ns.submitJob( 'TEST', 'bla' )
-        jobID2 = self.ns.submitJob( 'TEST', 'bla' )
-
-        jobIDReceived1 = self.ns.getJob( 'TEST' )
-        if jobID1 != jobIDReceived1:
-            raise Exception( "Inconsistency detected" )
-
-        output = self.ns.exchangeJob( 'TEST', jobID1,
-                                      0, "succeeded" ).split( '\n' )
-
-        jobIDReceived2 = output[ 0 ].strip()
-        return jobID2 == jobIDReceived2
 
 class Scenario153( TestBase ):
     " Scenario 153 "
@@ -2117,16 +2073,16 @@ class Scenario153( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'mynode', 'mysession'  )
-        if jobID != jobIDReceived:
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobInfo = self.ns.getJob( 'TEST',
+                node = 'mynode', session = 'mysession' )
+        if jobID != jobInfo[ 0 ]:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', jobID, 0, "",
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "",
                         'mynode', 'mysession' )
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'mynode', 'mysession' )
 
         # Check the status
@@ -2144,7 +2100,7 @@ class Scenario153( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario169' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'mynode' )
         if len( client[ 'reading_jobs' ] ) != 1 or \
            client[ 'reading_jobs' ][ 0 ] != jobID:
             raise Exception( "Wrong job in the reading jobs list" )
@@ -2166,16 +2122,16 @@ class Scenario154( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'mynode', 'mysession'  )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "", 'mynode', 'mysession' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', jobID, 0, "",
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "",
                         'mynode', 'mysession' )
         jobIDReceived, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'mynode', 'mysession' )
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
@@ -2212,16 +2168,16 @@ class Scenario155( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'mynode', 'mysession'  )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "", 'mynode', 'mysession' )
+        jobIDReceived = jobInfo [ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', jobID, 0, "",
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "",
                         'mynode', 'mysession' )
         jobIDReceived, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'mynode', 'mysession' )
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
@@ -2258,16 +2214,16 @@ class Scenario156( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'mynode', 'mysession'  )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "", 'mynode', 'mysession' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', jobID, 0, "",
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "",
                         'mynode', 'mysession' )
         jobIDReceived, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'mynode', 'mysession' )
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
@@ -2310,16 +2266,17 @@ class Scenario157( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'mynode', 'mysession'  )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', jobID, 0, "",
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "",
                         'mynode', 'mysession' )
         jobIDReceived, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'mynode', 'mysession' )
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
@@ -2357,16 +2314,16 @@ class Scenario158( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'mynode', 'mysession'  )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "", 'mynode', 'mysession'  )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', jobID, 0, "",
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "",
                         'mynode', 'mysession' )
         jobIDReceived, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'mynode', 'mysession' )
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
@@ -2410,17 +2367,18 @@ class Scenario159( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'mynode', 'mysession'  )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
-        self.ns.putJob( 'TEST', jobID, 0, "",
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "",
                         'mynode', 'mysession' )
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'mynode', 'mysession' )
 
         if jobID != readJobID:
@@ -2468,7 +2426,7 @@ class Scenario160( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
         info = self.ns.getJobInfo( 'TEST', jobID )
 
         return info[ 'event' ] == 'Submit' and \
@@ -2545,36 +2503,36 @@ class Scenario162( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        self.jobID = self.ns.submitJob( 'TEST', 'bla', '', 'c1', 'session1' )
+        self.jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'c1', 'session1' )
         self.checkEvent( 'localhost', 'Submit', 'Pending', 'c1', 'session1' )
 
-        receivedJobID = self.ns.getJob( 'TEST', -1, -1, '', "",
+        self.ns.getJob( 'TEST', -1, '', "",
                                         'c2', 'session2' )
         self.checkEvent( 'localhost', 'Request', 'Running', 'c2', 'session2' )
         time.sleep( 15 )
         self.checkEvent( 'ns', 'Timeout', 'Pending', '', '' )
 
-        receivedJobID = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'c3', 'session3' )
         self.checkEvent( 'localhost', 'Request', 'Running', 'c3', 'session3' )
-        self.ns.returnJob( 'TEST', self.jobID, 'c31', 'session31' )
+        self.ns.returnJob( 'TEST', self.jobID, jobInfo[ 1 ], 'c31', 'session31' )
         self.checkEvent( 'localhost', 'Return', 'Pending', 'c31', 'session31' )
 
-        receivedJobID = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'c4', 'session4' )
         self.checkEvent( 'localhost', 'Request', 'Running', 'c4', 'session4' )
-        self.ns.failJob(  'TEST', self.jobID, 4, '', '', 'c5', 'session5' )
+        self.ns.failJob( 'TEST', self.jobID, jobInfo[ 1 ], 4, '', '', 'c5', 'session5' )
         self.checkEvent( 'localhost', 'Fail', 'Pending', 'c5', 'session5' )
 
-        receivedJobID = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'c6', 'session6' )
         self.checkEvent( 'localhost', 'Request', 'Running', 'c6', 'session6' )
-        self.ns.putJob( 'TEST', receivedJobID, 0, "", 'c7', 'session7' )
+        self.ns.putJob( 'TEST', jobInfo[ 0 ], jobInfo[ 1 ], 0, "", 'c7', 'session7' )
         self.checkEvent( 'localhost', 'Done', 'Done', 'c7', 'session7' )
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'c8', 'session8' )
         self.checkEvent( 'localhost', 'Read', 'Reading', 'c8', 'session8' )
         time.sleep( 15 )
@@ -2582,7 +2540,7 @@ class Scenario162( TestBase ):
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'c9', 'session9' )
         self.checkEvent( 'localhost', 'Read', 'Reading', 'c9', 'session9' )
         self.ns.rollbackRead2( 'TEST', self.jobID, passport, 'c10', 'session10' )
@@ -2590,7 +2548,7 @@ class Scenario162( TestBase ):
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'c11', 'session11' )
         self.checkEvent( 'localhost', 'Read', 'Reading', 'c11', 'session11' )
         self.ns.failRead2( 'TEST', self.jobID, passport, "", 'c12', 'session12' )
@@ -2598,7 +2556,7 @@ class Scenario162( TestBase ):
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'c13', 'session13' )
         self.checkEvent( 'localhost', 'Read', 'Reading', 'c13', 'session13' )
         self.ns.confirmRead2( 'TEST', self.jobID, passport, "c14", "session14" )
@@ -2626,11 +2584,12 @@ class Scenario163( TestBase ):
         self.fromScratch( 3 )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.failJob( 'TEST', jobID, 4 )
+        self.ns.failJob( 'TEST', jobID, jobInfo[ 1 ], 4 )
         info = self.ns.getJobInfo( 'TEST', jobID )
 
         if info.has_key( "event" ):
@@ -2662,7 +2621,7 @@ class Scenario164( TestBase ):
         self.fromScratch( 3 )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
@@ -2697,9 +2656,9 @@ class Scenario165( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch( 3 )
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'mynode', 'mysession' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        jobIDReceived = self.ns.getJob( 'TEST', -1, '', "",
+                                        'mynode', 'mysession' )[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
@@ -2738,15 +2697,16 @@ class Scenario166( TestBase ):
         self.fromScratch( 3 )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         self.ns.failRead2( 'TEST', readJobID, passport, "", "node", "session" )
         info = self.ns.getJobInfo( 'TEST', jobID )
@@ -2781,14 +2741,15 @@ class Scenario167( TestBase ):
         self.fromScratch( 3 )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         time.sleep( 15 )
 
@@ -2823,14 +2784,15 @@ class Scenario168( TestBase ):
         self.fromScratch( 3 )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
@@ -2871,21 +2833,20 @@ class Scenario169( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'scenario169', 'default' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.returnJob( 'TEST', jobID, 'scenario169', 'default' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'scenario169', 'default' )
-        if jobIDReceived != "":
+        self.ns.returnJob( 'TEST', jobID, jobInfo[ 1 ], 'scenario169', 'default' )
+        if self.ns.getJob( 'TEST', -1, '', "", 'scenario169', 'default' ):
             raise Exception( "No jobs expected, however one was received" )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario169' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'scenario169' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
@@ -2909,21 +2870,21 @@ class Scenario170( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'scenario170', 'default' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.failJob( 'TEST', jobID, 4, '', '', 'scenario170', 'default' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'scenario170', 'default' )
-        if jobIDReceived != "":
+        self.ns.failJob( 'TEST', jobID, jobInfo[ 1 ], 4, '', '',
+                'scenario170', 'default' )
+        if self.ns.getJob( 'TEST', -1, '', "", 'scenario170', 'default' ):
             raise Exception( "No jobs expected, however one was received" )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario170' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'scenario170' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
@@ -2948,21 +2909,19 @@ class Scenario171( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'scenario171', 'default' )
+        jobIDReceived = self.ns.getJob( 'TEST', -1, '', "",
+                                        'scenario171', 'default' )[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
         time.sleep( 15 )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
-                                        'scenario171', 'default' )
-        if jobIDReceived != "":
+        if self.ns.getJob( 'TEST', -1, '', "", 'scenario171', 'default' ):
             raise Exception( "No jobs expected, however one was received" )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario171' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'scenario171' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
@@ -2986,15 +2945,16 @@ class Scenario172( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'node', 'session' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         if readJobID != jobID:
             raise Exception( "Inconsistency" )
@@ -3003,7 +2963,7 @@ class Scenario172( TestBase ):
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         if readJobID != "":
             raise Exception( "Expected no jobs but received one" )
@@ -3011,7 +2971,7 @@ class Scenario172( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario172' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
@@ -3035,15 +2995,16 @@ class Scenario173( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'node', 'session' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         if readJobID != jobID:
             raise Exception( "Inconsistency" )
@@ -3052,7 +3013,7 @@ class Scenario173( TestBase ):
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         if readJobID != "":
             raise Exception( "Expected no jobs but received one" )
@@ -3060,7 +3021,7 @@ class Scenario173( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario173' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
@@ -3084,15 +3045,16 @@ class Scenario174( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'node', 'session' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         if readJobID != jobID:
             raise Exception( "Inconsistency" )
@@ -3100,7 +3062,7 @@ class Scenario174( TestBase ):
 
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         if readJobID != "":
             raise Exception( "Expected no jobs but received one" )
@@ -3108,7 +3070,7 @@ class Scenario174( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario173' )
-        client = getClientInfo( ns_client )
+        client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
             raise Exception( "Wrong job in the client blacklist" )
@@ -3131,21 +3093,22 @@ class Scenario175( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'scenario175', 'default' )
+        jobIDReceived = jobInfo[ 0 ]
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        self.ns.putJob( 'TEST', jobID, 0, "" )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
         readJobID, \
         state, \
-        passport = self.ns.getJobsForReading2( 'TEST', -1,
+        passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
         if readJobID != jobID:
             raise Exception( "Inconsistency" )
 
         try:
-            self.ns.putJob( 'TEST', jobID, 0, "" )
+            self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "" )
         except Exception, excpt:
             if 'Cannot accept job results' in str( excpt ):
                 return True
@@ -3222,7 +3185,7 @@ class Scenario178( TestBase ):
         self.fromScratch()
 
         try:
-            self.ns.putJob( 'TEST', NON_EXISTED_JOB, 0, "",
+            self.ns.putJob( 'TEST', NON_EXISTED_JOB, ANY_AUTH_TOKEN, 0, "",
                             'mynode', 'mysession' )
         except Exception, exc:
             if "Job not found" in str( exc ):
@@ -3248,7 +3211,7 @@ class Scenario179( TestBase ):
         self.fromScratch()
 
         try:
-            self.ns.returnJob( 'TEST', NON_EXISTED_JOB,
+            self.ns.returnJob( 'TEST', NON_EXISTED_JOB, ANY_AUTH_TOKEN,
                                'mynode', 'mysession' )
         except Exception, exc:
             if "Job not found" in str( exc ):
@@ -3379,8 +3342,9 @@ class Scenario184( TestBase ):
                                            "", 'node', 'session' )
         time.sleep( 1 )
 
-        jobKey = self.ns.getJob( 'TEST' )
-        self.ns.putJob( 'TEST', jobKey, 0, '' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        jobKey = jobInfo[ 0 ]
+        self.ns.putJob( 'TEST', jobKey, jobInfo[ 1 ], 0, '' )
 
         process.wait()
         if process.returncode != 0:
@@ -3413,8 +3377,9 @@ class Scenario185( TestBase ):
         process = self.ns.spawnSubmitWait( 'TEST', 3,
                                            "", 'node', 'session' )
 
-        jobKey = self.ns.getJob( 'TEST' )
-        self.ns.failJob( 'TEST', jobKey, 3 )
+        jobInfo = self.ns.getJob( 'TEST' )
+        jobKey = jobInfo[ 0 ]
+        self.ns.failJob( 'TEST', jobKey, jobInfo[ 1 ], 3 )
 
         process.wait()
         if process.returncode != 0:
@@ -3447,7 +3412,7 @@ class Scenario186( TestBase ):
         process = self.ns.spawnSubmitWait( 'TEST', 20,
                                            "", 'node', 'session' )
 
-        jobKey = self.ns.getJob( 'TEST' )
+        jobKey = self.ns.getJob( 'TEST' )[ 0 ]
 
         # The wait will have the pause till the job is timed out
         process.wait()
@@ -3481,7 +3446,7 @@ class Scenario187( TestBase ):
         process = self.ns.spawnSubmitWait( 'TEST', 3,
                                            "", 'node', 'session' )
 
-        jobKey = self.ns.getJob( 'TEST' )
+        jobKey = self.ns.getJob( 'TEST' )[ 0 ]
         self.ns.cancelJob( 'TEST', jobKey )
 
         process.wait()
@@ -3525,7 +3490,7 @@ class Scenario188( TestBase ):
         processStdout = process.stdout.read()
         processStderr = process.stderr.read()
 
-        if "NCBI_JSQ_TEST" in processStdout:
+        if "[valid" in processStdout:
             return True
 
         raise Exception( "Did not receive notifications when expected" )
@@ -3560,7 +3525,7 @@ class Scenario189( TestBase ):
         processStdout = process.stdout.read()
         processStderr = process.stderr.read()
 
-        if "NCBI_JSQ_TEST" in processStdout:
+        if "[valid" in processStdout:
             raise Exception( "Expect no notifications but received one" )
         return True
 
@@ -3594,7 +3559,7 @@ class Scenario190( TestBase ):
         processStdout = process.stdout.read()
         processStderr = process.stderr.read()
 
-        if "NCBI_JSQ_TEST" in processStdout:
+        if "[valid" in processStdout:
             return True
 
         raise Exception( "Did not receive notifications when expected" )
@@ -3629,9 +3594,10 @@ class Scenario191( TestBase ):
         processStdout = process.stdout.read()
         processStderr = process.stderr.read()
 
-        print "NOTIFICATION: " + processStdout
-        if "NCBI_JSQ_TEST" in processStdout:
+        if "[valid" in processStdout:
             return True
+
+        print "NOTIFICATION: " + processStdout
 
         raise Exception( "Did not receive notifications when expected" )
 
@@ -3671,7 +3637,7 @@ class Scenario192( TestBase ):
         processStdout = process.stdout.read()
         processStderr = process.stderr.read()
 
-        if "NCBI_JSQ_TEST" in processStdout:
+        if "[valid" in processStdout:
             return True
 
         raise Exception( "Did not receive notifications when expected" )
@@ -3712,7 +3678,7 @@ class Scenario193( TestBase ):
         processStdout = process.stdout.read()
         processStderr = process.stderr.read()
 
-        if "NCBI_JSQ_TEST" in processStdout:
+        if "[valid" in processStdout:
             raise Exception( "Received notifications when not expected" )
         return True
 
@@ -3737,15 +3703,11 @@ class Scenario194( TestBase ):
                                              'TEST', 'scenario194' )
 
         self.ns.getFastJobStatus( 'TEST', NON_EXISTED_JOB )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
         self.ns.getFastJobStatus( 'TEST', NON_EXISTED_JOB,
                                   'mynode', 'mysession')
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario195( TestBase ):
@@ -3769,15 +3731,11 @@ class Scenario195( TestBase ):
                                              'TEST', 'scenario195' )
 
         self.ns.getJobStatus( 'TEST', NON_EXISTED_JOB )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
         self.ns.getJobStatus( 'TEST', NON_EXISTED_JOB,
                               'mynode', 'mysession')
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario196( TestBase ):
@@ -3802,15 +3760,11 @@ class Scenario196( TestBase ):
                                              'TEST', 'scenario196' )
 
         self.ns.submitJob( 'TEST', 'input' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
-        self.ns.submitJob( 'TEST', 'input', '',
+        self.ns.submitJob( 'TEST', 'input', '', '',
                            'mynode', 'mysession')
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario197( TestBase ):
@@ -3835,15 +3789,11 @@ class Scenario197( TestBase ):
                                              'TEST', 'scenario197' )
 
         self.ns.cancelJob( 'TEST', NON_EXISTED_JOB )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
         self.ns.cancelJob( 'TEST', NON_EXISTED_JOB,
                            'mynode', 'mysession')
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario198( TestBase ):
@@ -3868,126 +3818,11 @@ class Scenario198( TestBase ):
                                              'TEST', 'scenario198' )
 
         self.ns.getJobBriefStatus( 'TEST', NON_EXISTED_JOB )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
         self.ns.getJobBriefStatus( 'TEST', NON_EXISTED_JOB,
                                    'mynode', 'mysession' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
-        return True
-
-class Scenario199( TestBase ):
-    " Scenario 199 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return " GET as anonymous, GET as identified, " \
-               "check clients registry "
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario199' )
-
-        self.ns.getJob( 'TEST' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
-
-        self.ns.getJob( 'TEST', -1, -1, '', '',
-                        'mynode', 'mysession' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
-        return True
-
-class Scenario200( TestBase ):
-    " Scenario 200 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return " PUT as anonymous, PUT as identified, " \
-               "check clients registry "
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario200' )
-        try:
-            self.ns.putJob( 'TEST', NON_EXISTED_JOB, 0, '' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
-
-        try:
-            self.ns.putJob( 'TEST', NON_EXISTED_JOB, 0, "",
-                            'mynode', 'mysession' )
-        except:
-            pass
-
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
-        return True
-
-class Scenario201( TestBase ):
-    " Scenario 201 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return " RETURN as anonymous, RETURN as identified, " \
-               "check clients registry "
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario201' )
-        try:
-            self.ns.returnJob( 'TEST', NON_EXISTED_JOB )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
-
-        try:
-            self.ns.returnJob( 'TEST', NON_EXISTED_JOB,
-                               'mynode', 'mysession' )
-        except:
-            pass
-
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario203( TestBase ):
@@ -4011,14 +3846,10 @@ class Scenario203( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario203' )
         self.ns.getBriefStat( 'TEST' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        client = getClientInfo( ns_client, None, 0, 0 )
 
         self.ns.getBriefStat( 'TEST', 'mynode', 'mysession' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario204( TestBase ):
@@ -4041,53 +3872,12 @@ class Scenario204( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario204' )
-        self.ns.getJob( 'TEST' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        self.ns.getAffinityStatus( 'TEST' )
+        getClientInfo( ns_client, None, 0, 0 )
 
-        self.ns.getJob( 'TEST', 2, 37000, '', '', 'mynode', 'mysession' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
-        return True
-
-class Scenario205( TestBase ):
-    " Scenario 205 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return " FPUT as anonymous, FPUT as identified, " \
-               "check clients registry "
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario205' )
-        try:
-            self.ns.failJob( 'TEST', NON_EXISTED_JOB, 3 )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
-
-        try:
-            self.ns.failJob( 'TEST', NON_EXISTED_JOB, 4, '', '',
-                             'mynode', 'mysession' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        self.ns.getAffinityStatus( 'TEST',
+                                   node = 'mynode', session = 'mysession' )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario206( TestBase ):
@@ -4110,23 +3900,17 @@ class Scenario206( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario206' )
-        try:
-            self.ns.setJobProgressMessage( 'TEST', NON_EXISTED_JOB,
-                                            'msg' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        jobID = self.ns.submitJob( 'TEST', 'bla',
+                                   node = 'prep', session = 'session' )
+        self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
 
-        try:
-            self.ns.setJobProgressMessage( 'TEST', NON_EXISTED_JOB,
+        self.ns.setJobProgressMessage( 'TEST', jobID, 'msg' )
+
+        getClientInfo( ns_client, None, 1, 1 )
+
+        self.ns.setJobProgressMessage( 'TEST', jobID,
                                            'msg', 'mynode', 'mysession' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 2, 2 )
         return True
 
 class Scenario207( TestBase ):
@@ -4149,22 +3933,15 @@ class Scenario207( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario207' )
-        try:
-            self.ns.getJobProgressMessage( 'TEST', NON_EXISTED_JOB )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        jobID = self.ns.submitJob( 'TEST', 'bla',
+                                   node = 'prep', session = 'session' )
+        self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
 
-        try:
-            self.ns.getJobProgressMessage( 'TEST', NON_EXISTED_JOB,
-                                           'mynode', 'mysession' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        self.ns.getJobProgressMessage( 'TEST', jobID )
+        getClientInfo( ns_client, None, 1, 1 )
+
+        self.ns.getJobProgressMessage( 'TEST', jobID, 'mynode', 'mysession' )
+        getClientInfo( ns_client, 'mynode', 2, 2 )
         return True
 
 class Scenario208( TestBase ):
@@ -4188,53 +3965,10 @@ class Scenario208( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario208' )
         self.ns.getQueueDump( 'TEST' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
-        self.ns.getQueueDump( 'TEST', '', 'mynode', 'mysession' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
-        return True
-
-class Scenario211( TestBase ):
-    " Scenario 211 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return " JXCG as anonymous, JXCG as identified, " \
-               "check clients registry "
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario211' )
-        try:
-            self.ns.exchangeJob( 'TEST', NON_EXISTED_JOB, 9, 'output' )
-        except:
-            pass
-
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
-
-        try:
-            self.ns.exchangeJob( 'TEST', NON_EXISTED_JOB, 9,
-                                 'output', '', 'mynode', 'mysession' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        self.ns.getQueueDump( 'TEST', node = 'mynode', session = 'mysession' )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario212( TestBase ):
@@ -4257,23 +3991,15 @@ class Scenario212( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario212' )
-        try:
-            self.ns.extendJobExpiration( 'TEST', NON_EXISTED_JOB, 5 )
-        except:
-            pass
+        jobID = self.ns.submitJob( 'TEST', 'bla',
+                                   node = 'prep', session = 'session' )
+        self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
+        self.ns.extendJobExpiration( 'TEST', jobID, 5 )
 
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 1, 1 )
 
-        try:
-            self.ns.extendJobExpiration( 'TEST', NON_EXISTED_JOB, 5,
-                                         'mynode', 'mysession' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        self.ns.extendJobExpiration( 'TEST', jobID, 5, 'mynode', 'mysession' )
+        getClientInfo( ns_client, 'mynode', 2, 2 )
         return True
 
 class Scenario213( TestBase ):
@@ -4296,22 +4022,14 @@ class Scenario213( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario213' )
-        try:
-            self.ns.getAffinityStatus( 'TEST', 'myaff' )
-        except:
-            pass
+        jobID = self.ns.submitJob( 'TEST', 'bla', affinity = 'myaff',
+                                   node = 'prep', session = 'session' )
+        self.ns.getAffinityStatus( 'TEST', 'myaff' )
 
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 1, 1 )
 
-        try:
-            self.ns.getAffinityStatus( 'TEST', 'myaff', 'mynode', 'mysession' )
-        except:
-            pass
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        self.ns.getAffinityStatus( 'TEST', 'myaff', 'mynode', 'mysession' )
+        getClientInfo( ns_client, 'mynode', 2, 2 )
         return True
 
 class Scenario214( TestBase ):
@@ -4334,15 +4052,11 @@ class Scenario214( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario214' )
-        self.ns.getVersion( '', '', 'TEST' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        self.ns.getVersion( 'TEST', '', '' )
+        getClientInfo( ns_client, None, 0, 0 )
 
-        self.ns.getVersion( 'mynode', 'mysession', 'TEST' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        self.ns.getVersion( 'TEST', 'mynode', 'mysession' )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario215( TestBase ):
@@ -4366,14 +4080,10 @@ class Scenario215( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario215' )
         self.ns.getQueueInfo( 'TEST' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
         self.ns.getQueueInfo( 'TEST', 'mynode', 'mysession' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario216( TestBase ):
@@ -4542,14 +4252,10 @@ class Scenario220( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario220' )
         self.ns.getAffinityList( 'TEST' )
-        client = getClientInfo( ns_client, False, 0 )
-        if client is not None:
-            raise Exception( "Expected no client. Received some." )
+        getClientInfo( ns_client, None, 0, 0 )
 
         self.ns.getAffinityList( 'TEST', 'mynode', 'mysession' )
-        client = getClientInfo( ns_client, False, 1, 0 )
-        if client is None:
-            raise Exception( "Expected a client. Received none." )
+        getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
 class Scenario221( TestBase ):
@@ -4641,7 +4347,7 @@ class Scenario223( TestBase ):
         processStdout = process.stdout.read()
         processStderr = process.stderr.read()
 
-        if "NCBI_JSQ_TEST" in processStdout:
+        if "[valid" in processStdout:
             raise Exception( "Receive notifications when not expected: " + \
                              processStdout)
         return True
@@ -4937,13 +4643,13 @@ class Scenario233( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
+        jobID1 = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
 
-        dump = self.ns.getQueueDump( 'TEST', '', 'mynode', 'mysession',
-                                     jobID1 )
+        dump = self.ns.getQueueDump( 'TEST', start_after = jobID1,
+                                     node = 'mynode', session = 'mysession' )
         count = 0
         for line in dump:
             if line.startswith( "key: " ):
@@ -4971,13 +4677,13 @@ class Scenario234( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
+        jobID1 = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
 
-        dump = self.ns.getQueueDump( 'TEST', '', 'mynode', 'mysession',
-                                     jobID1, 2 )
+        dump = self.ns.getQueueDump( 'TEST', '', jobID1, 2, '',
+                                     'mynode', 'mysession' )
         count = 0
         for line in dump:
             if line.startswith( "key: " ):
@@ -5004,13 +4710,13 @@ class Scenario235( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
+        jobID1 = self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
 
-        dump = self.ns.getQueueDump( 'TEST', '', 'mynode', 'mysession',
-                                     '', 1 )
+        dump = self.ns.getQueueDump( 'TEST', '', '', 1, '',
+                                     'mynode', 'mysession' )
         count = 0
         jobLine = ""
         for line in dump:
@@ -5042,11 +4748,11 @@ class Scenario236( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
-        self.ns.submitJob( 'TEST', 'bla', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', 'mysession' )
 
-        dump = self.ns.getQueueDump( 'TEST', '', 'mynode', 'mysession',
-                                     '', 50 )
+        dump = self.ns.getQueueDump( 'TEST', '', '', 50, '',
+                                     'mynode', 'mysession' )
         count = 0
         for line in dump:
             if line.startswith( "key: " ):
@@ -5074,20 +4780,22 @@ class Scenario237( TestBase ):
         self.fromScratch()
 
         # c1
-        jobID = self.ns.submitJob( 'TEST', 'bla', '', 'c1', 's1' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', 'c1', 's1' )
 
         # c2
-        receivedJobID = self.ns.getJob( 'TEST', -1, -1, '', "",
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "",
                                         'c2', 's2' )
+        receivedJobID = jobInfo[ 0 ]
         if receivedJobID != jobID:
             raise Exception( "Inconsistency" )
-        self.ns.returnJob( 'TEST', jobID, 'c2', 's2' )
+        self.ns.returnJob( 'TEST', jobID, jobInfo[ 1 ], 'c2', 's2' )
 
         # c3
-        receivedJobID = self.ns.getJob( 'TEST', -1, -1, '', "", 'c3', 's3' )
+        jobInfo = self.ns.getJob( 'TEST', -1, '', "", 'c3', 's3' )
+        receivedJobID = jobInfo[ 0 ]
         if receivedJobID != jobID:
             raise Exception( "Inconsistency" )
-        self.ns.putJob( 'TEST', jobID, 0, "", 'c3', 's3' )
+        self.ns.putJob( 'TEST', jobID, jobInfo[ 1 ], 0, "", 'c3', 's3' )
 
         # c4
         readJobID, passport = self.ns.getJobForReading( 'TEST', 'c4', 's4' )
@@ -5142,7 +4850,7 @@ class Scenario239( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario239' )
-        self.ns.submitJob( 'TEST', 'bla', 'a1', 'mynode', 'mysession' )
+        self.ns.submitJob( 'TEST', 'bla', 'a1', '', 'mynode', 'mysession' )
 
         aff = getAffinityInfo( ns_client, False, 1, 0 )
         if aff[ 'number_of_jobs' ] != 1:
@@ -5178,7 +4886,7 @@ class Scenario240( TestBase ):
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario240' )
-        jobID = self.ns.submitJob( 'TEST', 'bla', 'a1', 'mynode', 'mysession' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a1', '', 'mynode', 'mysession' )
 
         aff = getAffinityInfo( ns_client, True, 1, 0 )
         if len( aff[ 'jobs' ] ) != 1:
@@ -5364,7 +5072,7 @@ class Scenario245( TestBase ):
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario245' )
 
-        self.ns.getJob( 'TEST', 10, 5000, 'a6', '', 'mynode', 'mysession' )
+        self.ns.getJob( 'TEST', 10, 'a6', '', 'mynode', 'mysession' )
         time.sleep( 5 )
 
         aff = getAffinityInfo( ns_client, True, 1, 0 )
@@ -5491,35 +5199,6 @@ class Scenario249( TestBase ):
             raise
         return False
 
-class Scenario250( TestBase ):
-    " Scenario 250 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return "JXCG2 as anonymous"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario250' )
-        try:
-            execAny( ns_client,
-                     'JXCG2 ' + NON_EXISTED_JOB + \
-                     ' passport 1 out wnode_aff=0 any_aff=1' )
-        except Exception, exc:
-            if "Anonymous client" in str( exc ):
-                return True
-            raise
-        return False
-
 class Scenario251( TestBase ):
     " Scenario 251 "
 
@@ -5536,7 +5215,7 @@ class Scenario251( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'node', '000' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario251' )
@@ -5574,7 +5253,7 @@ class Scenario252( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'node', '000' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario252' )
@@ -5623,7 +5302,7 @@ class Scenario253( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'node', '000' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario253' )
@@ -5673,7 +5352,7 @@ class Scenario254( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'node', '000' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario254' )
@@ -5703,56 +5382,6 @@ class Scenario254( TestBase ):
         if status1 != "Pending" or \
            status2 != "Pending" or \
            status3 != "Pending":
-            return False
-        return True
-
-class Scenario255( TestBase ):
-    " Scenario 255 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return "SUBMIT, GET2, JXCG2 as identified, check the job status"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'node', '000' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario255' )
-        ns_client.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client,
-                          'GET2 wnode_aff=0 any_aff=1' )
-        if '&' in output:
-            values = parse_qs( output, True, True )
-            receivedJobID = values[ 'job_key' ][ 0 ]
-            passport = values[ 'auth_token' ][ 0 ]
-        else:
-            receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
-
-        if jobID != receivedJobID:
-            raise Exception( "Inconsistency" )
-
-        execAny( ns_client, 'JXCG2 ' + jobID + ' ' + passport + \
-                            ' 0 Output wnode_aff=0 any_aff=1' )
-
-        # Check the status
-        status1 = self.ns.getFastJobStatus( 'TEST', jobID )
-        status2 = self.ns.getJobStatus( 'TEST', jobID )
-
-        info = self.ns.getJobInfo( 'TEST', jobID )
-        status3 = info[ "status" ]
-
-        if status1 != "Done" or \
-           status2 != "Done" or \
-           status3 != "Done":
             return False
         return True
 
@@ -5835,7 +5464,7 @@ class Scenario258( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        self.ns.submitJob( 'TEST', 'bla', "", "", "", "000" )
+        self.ns.submitJob( 'TEST', 'bla', "", "000", "", "" )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario258' )
@@ -5904,7 +5533,7 @@ class Scenario260( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', '', 'gita' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'gita', '', '' )
 
         self.ns.connect( 10 )
         self.ns.directLogin( 'TEST' )
@@ -5949,7 +5578,7 @@ class Scenario261( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', '', '0xFF' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', '0xFF', '', '' )
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
                                              'TEST', 'scenario261' )
@@ -5981,14 +5610,14 @@ class Scenario262( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '', '', '111' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '', '', '111' )
-        jobID3 = self.ns.submitJob(  'TEST', 'bla', '', '', '', '111' )
+        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' )
+        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' )
+        jobID3 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' )
 
-        j1 = self.ns.getJob( 'TEST', -1, -1, '', "", '', '' )
-        j2 = self.ns.getJob( 'TEST', -1, -1, '', "", '', '' )
+        j1 = self.ns.getJob( 'TEST' )
+        self.ns.getJob( 'TEST' )
 
-        self.ns.putJob( 'TEST', j1, 0, "" )
+        self.ns.putJob( 'TEST', j1[ 0 ], j1[ 1 ], 0 )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
@@ -6031,7 +5660,7 @@ class Scenario263( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', '', '222' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', '222', '', '' )
         self.ns.cancelGroup( 'TEST', '222' )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
@@ -6075,17 +5704,17 @@ class Scenario264( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '', '', '222' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '', '', '333' )
+        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '222', '', '' )
+        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '333', '', '' )
 
-        j1 = self.ns.getJob( 'TEST', -1, -1, '', "", '', '' )
-        self.ns.putJob( 'TEST', j1, 0, "" )
+        j1 = self.ns.getJob( 'TEST' )
+        self.ns.putJob( 'TEST', j1[ 0 ], j1[ 1 ], 0 )
 
-        r1, s, p  = self.ns.getJobsForReading2( 'TEST', -1, "n", "s", "333" )
+        r1, s, p  = self.ns.getJobsForReading2( 'TEST', -1, "333", "n", "s" )
         if r1 != "":
             raise Exception( "Expected no job, received: " + r1 )
 
-        r2, s, p = self.ns.getJobsForReading2( 'TEST', -1, "n", "s", "222" )
+        r2, s, p = self.ns.getJobsForReading2( 'TEST', -1, "222", "n", "s" )
         if r2 != jobID1:
             raise Exception( "Expected: " + jobID1 + ", got: " + r2 )
         return True
@@ -6107,10 +5736,10 @@ class Scenario265( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '', '', '444' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '', '', '555' )
+        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '444', '', '' )
+        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '555', '', '' )
 
-        dump = self.ns.getQueueDump( 'TEST', '', '', '', '', 0, '555' )
+        dump = self.ns.getQueueDump( 'TEST', '', '', 0, '555', '', '' )
         if "group: 2 ('555')" in dump:
             return True
         raise Exception( "DUMP did not provide the expected group 555" )
@@ -6156,10 +5785,10 @@ class Scenario267( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID1 = self.ns.submitJob(  'TEST', 'bla', 'a1', '', '', 'g1' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', 'a1', '', '', 'g2' )
-        jobID3 = self.ns.submitJob(  'TEST', 'bla', 'a2', '', '', 'g1' )
-        jobID4 = self.ns.submitJob(  'TEST', 'bla', 'a2', '', '', 'g2' )
+        jobID1 = self.ns.submitJob(  'TEST', 'bla', 'a1', 'g1', '', '' )
+        jobID2 = self.ns.submitJob(  'TEST', 'bla', 'a1', 'g2', '', '' )
+        jobID3 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g1', '', '' )
+        jobID4 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g2', '', '' )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),

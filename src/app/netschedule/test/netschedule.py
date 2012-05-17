@@ -460,15 +460,19 @@ class NetSchedule:
     @staticmethod
     def __appendNodeSession( cmd, node, session ):
         " Appends node and session if needed "
-        if node != "" or session != "":
+        if node is None or node != '' or session is None or session != '':
             cmd.append( "--extended-cli" )
-            if node != "":
+            if node is None:
+                cmd.append( "--client-node=default" )
+            elif node:
                 cmd.append( "--client-node=" + node )
-            if session != "":
+            if session is None:
+                cmd.append( "--client-session=default" )
+            elif session:
                 cmd.append( "--client-session=" + session )
         return cmd
 
-    def getVersion( self, node = "", session = "", queue = '' ):
+    def getVersion( self, queue = '', node = None, session = None ):
         " Gets the netschedule server version. If queue is given => GETP "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -482,7 +486,7 @@ class NetSchedule:
         self.verbosePrint( cmdLine )
         return self.__safeRun( cmdLine ).strip()
 
-    def getActiveJobsCount( self, qname, node = "", session = "" ):
+    def getActiveJobsCount( self, qname, node = None, session = None ):
         " Gets the active jobs count "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -498,7 +502,7 @@ class NetSchedule:
             raise Exception( "Unexpected line format (" + output + ")" )
         return int( parts[ len( parts ) - 1 ].strip() )
 
-    def getQueueList( self, node = "", session = "" ):
+    def getQueueList( self, node = None, session = None ):
         " Get the list of queues "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -514,8 +518,7 @@ class NetSchedule:
                 del queues[ index ]
         return queues
 
-    def reconfigure( self, auth = "netschedule_admin",
-                           node = "", session = "" ):
+    def reconfigure( self, auth = "netschedule_admin" ):
         " Makes netscheduled re-read its config file "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -523,14 +526,13 @@ class NetSchedule:
         cmdLine = [ self.__grid_cli, "reconf",
                     "--extended-cli",
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
-        cmdLine = self.__appendNodeSession( cmdLine, node, session )
         if auth != "":
             cmdLine += [ "--auth=" + auth ]
         self.verbosePrint( cmdLine )
         return self.__safeRun( cmdLine ).split( '\n' )
 
     def getQueueInfo( self, qname,
-                            node = "", session = "" ):
+                            node = '', session = '' ):
         " Provides information about the given queue "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -554,7 +556,7 @@ class NetSchedule:
         return result
 
     def createQueue( self, qname, classname, comment = "",
-                           node = "", session = "" ):
+                           node = None, session = None ):
         " Creates a dynamic queue "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -569,7 +571,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine ).split( '\n' )
 
     def deleteQueue( self, qname,
-                           node = "", session = "" ):
+                           node = None, session = None ):
         " Deletes a dynamic queue "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -582,8 +584,8 @@ class NetSchedule:
         self.__safeRun( cmdLine )
         return
 
-    def submitJob( self, qname, jobinput, affinity = "",
-                   node = "", session = "", group = "" ):
+    def submitJob( self, qname, jobinput, affinity = "", group = "",
+                   node = '', session = '' ):
         " Submit a job "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -602,7 +604,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine ).strip()
 
     def getFastJobStatus( self, qname, jobID,
-                          node = "", session = "" ):
+                          node = '', session = '' ):
         " Gets the fast job status SST (Pending, Running etc)"
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -617,7 +619,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine ).strip()
 
     def getJobStatus( self, qname, jobID,
-                      node = "", session = "" ):
+                      node = '', session = '' ):
         " Gets the job status (no lifetime change) WST (Pending, Running etc)"
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -631,7 +633,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine ).strip()
 
     def getJobBriefStatus( self, qname, jobID,
-                           node = "", session = "" ):
+                           node = '', session = '' ):
         " Provides the brief job status STATUS "
 
         """ eg:
@@ -665,7 +667,7 @@ class NetSchedule:
         return result
 
     def cancelAllQueueJobs( self, qname, auth = "netschedule_admin",
-                                  node = "", session = "" ):
+                                  node = None, session = None ):
         " removes all the jobs from the queue "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -683,7 +685,7 @@ class NetSchedule:
         return
 
     def cancelJob( self, qname, jobid,
-                   node = "", session = "" ):
+                   node = '', session = '' ):
         " Cancels the given job "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -698,7 +700,7 @@ class NetSchedule:
         return
 
     def cancelGroup( self, qname, group,
-                   node = "", session = "" ):
+                   node = None, session = None ):
         " Cancels the given group of jobs "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -714,7 +716,7 @@ class NetSchedule:
         return
 
     def dropJob( self, qname, jobid,
-                       node = "", session = "" ):
+                       node = None, session = None ):
         " Drops the given job "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -729,7 +731,7 @@ class NetSchedule:
         return
 
     def rescheduleJob( self, qname, jobid,
-                             node = "", session = "" ):
+                             node = None, session = None ):
         " Reschedules the job "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -744,7 +746,7 @@ class NetSchedule:
         return
 
     def getServerConfiguration( self, auth = "",
-                                      node = "", session = "" ):
+                                      node = None, session = None ):
         " Provides the server configuration "
 
         if not self.isRunning():
@@ -763,7 +765,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
 
-    def getJobInfo( self, qname, jobid, node = '', session = '' ):
+    def getJobInfo( self, qname, jobid, node = None, session = None ):
         " Provides the job information "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -793,7 +795,7 @@ class NetSchedule:
 
 
     def getStat( self, qname,
-                       node = '', session = '' ):
+                       node = None, session = None ):
         " Provides the queue statistics "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -840,8 +842,8 @@ class NetSchedule:
 
         return result
 
-    def getJob( self, qname, timeout = -1, port = -1, aff = '', guid = "",
-                      node = '', session = '' ):
+    def getJob( self, qname, timeout = -1, aff = '', guid = "",
+                      node = None, session = None ):
         " Provides a job for execution "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -851,8 +853,6 @@ class NetSchedule:
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         if timeout != -1:
             cmdLine += [ "--wait-timeout=" + str( timeout ) ]
-#        if port != -1:
-#            cmdLine += [ "--listening-port=" + str( port ) ]
         if aff != '':
             cmdLine += [ "--affinity-list=" + aff ]
         if guid != "":
@@ -860,20 +860,29 @@ class NetSchedule:
         cmdLine = self.__appendNodeSession( cmdLine, node, session )
 
         self.verbosePrint( cmdLine )
-        output = self.__safeRun( cmdLine ).split( '\n' )
+        output = self.__safeRun( cmdLine )
+        if not output:
+            return None
+        lines = output.split( '\n' )
 
-        if len( output ) == 0:
-            return ""
-        return output[ 0 ].strip()      # This is JOB ID
+        jobID, attrs, jobInput = lines[ 0 ], lines[ 1 ], lines[ 2: ]
+        attrs = attrs.split()
+        authToken = attrs[ 0 ]
+        attrs = attrs[ 1: ]
+        attr_map = {}
+        for attr in attrs:
+            k, v = attr.split('=', 1)
+            attr_map[ k ] = v.strip( '"' )
+        return (jobID, authToken, attrs, jobInput)
 
-    def putJob( self, qname, jobID, retCode, out = "",
-                node = '', session = '' ):
+    def putJob( self, qname, jobID, authToken, retCode, out = "",
+                node = None, session = None ):
         " Commits the executed job "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
 
         cmdLine = [ self.__grid_cli, "commitjob",
-                    "--queue=" + qname, jobID,
+                    "--queue=" + qname, jobID, authToken,
                     "--return-code=" + str( retCode ),
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         if out != "":
@@ -883,14 +892,14 @@ class NetSchedule:
         self.verbosePrint( cmdLine )
         return self.__safeRun( cmdLine )
 
-    def returnJob( self, qname, jobID,
-                   node = '', session = '' ):
+    def returnJob( self, qname, jobID, authToken,
+                   node = None, session = None ):
         " returns the job "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
 
         cmdLine = [ self.__grid_cli, "returnjob",
-                    "--queue=" + qname, jobID,
+                    "--queue=" + qname, jobID, authToken,
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         cmdLine = self.__appendNodeSession( cmdLine, node, session )
 
@@ -898,7 +907,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
     def getServerInfo( self, qname,
-                             node = '', session = '' ):
+                             node = None, session = None ):
         " Provides the server information "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -921,9 +930,9 @@ class NetSchedule:
         return result
 
     def getQueueDump( self, qname, status = '',
-                            node = '', session = '',
                             start_after = '', count = 0,
-                            group = "" ):
+                            group = "",
+                            node = '', session = '' ):
         " Provides the server information "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -977,14 +986,15 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
 
-    def failJob( self, qname, jobID, retCode, output = "", errmsg = "",
-                 node = '', session = '' ):
+    def failJob( self, qname, jobID, authToken,
+                 retCode, output = "", errmsg = "",
+                 node = None, session = None ):
         " Fails the given job "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
 
         cmdLine = [ self.__grid_cli, "commitjob", "--queue=" + qname,
-                    jobID, "--fail-job=" + errmsg,
+                    jobID, authToken, "--fail-job=" + errmsg,
                     "--return-code=" + str( retCode ),
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
         if output != "":
@@ -995,7 +1005,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
     def registerWorkerNode( self, qname, port,
-                                  node = '', session = '' ):
+                                  node = None, session = None ):
         " Registers the worker node "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -1010,7 +1020,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
     def unregisterWorkerNode( self, qname, port,
-                                    node = '', session = '' ):
+                                    node = None, session = None ):
         " Unregisters the worker node "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -1024,8 +1034,7 @@ class NetSchedule:
         self.verbosePrint( cmdLine )
         return self.__safeRun( cmdLine )
 
-    def getWorkerNodeStat( self, qname,
-                                 node = '', session = '' ):
+    def getWorkerNodeStat( self, qname, node = '', session = '' ):
         " Provides the worker nodes statistics attached to the queue "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -1045,8 +1054,7 @@ class NetSchedule:
             result.append( line )
         return result
 
-    def getBriefStat( self, qname = '',
-                      node = '', session = '' ):
+    def getBriefStat( self, qname = '', node = '', session = '' ):
         " Runs the STAT command "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -1082,25 +1090,7 @@ class NetSchedule:
         self.verbosePrint( cmdLine )
         return self.__safeRun( cmdLine )
 
-    def exchangeJob( self, qname, jobID, retCode, output, aff = '',
-                           node = '', session = '' ):
-        " Exchanges the job for another "
-        if not self.isRunning():
-            raise Exception( "netschedule is not running" )
-
-        cmdLine = [ self.__grid_cli, "commitjob",
-                    jobID, "--queue=" + qname,
-                    "--get-next-job", "--job-output=" + str( output ),
-                    "--return-code=" + str( retCode ),
-                    "--ns=" + self.__host + ":" + str( self.__port ) ]
-        if aff != '':
-            cmdLine += [ "--affinity=" + aff ]
-        cmdLine = self.__appendNodeSession( cmdLine, node, session )
-
-        self.verbosePrint( cmdLine )
-        return self.__safeRun( cmdLine )
-
-    def getAffinityStatus( self, qname, affinity,
+    def getAffinityStatus( self, qname, affinity = None,
                            node = '', session = '' ):
         " Provides the affinity status "
         if not self.isRunning():
@@ -1108,8 +1098,10 @@ class NetSchedule:
 
         cmdLine = [ self.__grid_cli, "stats",
                     "--queue=" + qname,
-                    "--jobs-by-status", "--affinity=" + affinity,
+                    "--jobs-by-status",
                     "--ns=" + self.__host + ":" + str( self.__port ) ]
+        if affinity:
+            cmdLine.append( "--affinity=" + affinity )
         cmdLine = self.__appendNodeSession( cmdLine, node, session )
 
         self.verbosePrint( cmdLine )
@@ -1177,7 +1169,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
     def getJobsForReading( self, qname, count, timeout = -1,
-                                 node = '', session = '' ):
+                                 node = None, session = None ):
         " Requests jobs for reading "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -1205,7 +1197,7 @@ class NetSchedule:
         return groupID, jobs
 
     def confirmJobRead( self, qname, groupID, jobs,
-                              node = '', session = '' ):
+                              node = None, session = None ):
         " Confirms the fact that jobs have been read "
         if len( jobs ) <= 0:
             raise Exception( "Jobs list expected" )
@@ -1225,7 +1217,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
     def rollbackJobRead( self, qname, groupID, jobs,
-                               node = '', session = '' ):
+                               node = None, session = None ):
         " Rollbacks reading jobs "
         if len( jobs ) <= 0:
             raise Exception( "Jobs list expected" )
@@ -1246,7 +1238,7 @@ class NetSchedule:
 
 
     def failJobReading( self, qname, groupID, jobs, err_msg,
-                              node = '', session = '' ):
+                              node = None, session = None ):
         " Fails the jobs reading "
         if len( jobs ) <= 0:
             raise Exception( "Jobs list expected" )
@@ -1269,7 +1261,7 @@ class NetSchedule:
         return self.__safeRun( cmdLine )
 
     def submitBatch( self, qname, jobs,
-                           node = '', session = '' ):
+                           node = None, session = None ):
         " Performs a batch submit "
         if len( jobs ) <= 0:
             raise Exception( "Jobs list expected" )
@@ -1309,7 +1301,7 @@ class NetSchedule:
         return result
 
     def execAny( self, qname, command,
-                       node = '', session = '' ):
+                       node = None, session = None ):
         " Executes an arbitrary command "
         if not self.isRunning():
             raise Exception( "netschedule is not running" )
@@ -1350,7 +1342,7 @@ class NetSchedule:
 
     def spawnSubmitWait( self, qname, timeout,
                        aff = "",
-                       node = "", session = "" ):
+                       node = None, session = None ):
         " Spawns grid_cli to wait for SUBMIT notifications "
 
         cmdLine = [ self.__grid_cli,
@@ -1372,8 +1364,8 @@ class NetSchedule:
             raise Exception( "Failed to spawn with submit" )
         return process
 
-    def getJobsForReading2( self, qname, timeout = -1,
-                            node = "", session = "",  group = "" ):
+    def getJobsForReading2( self, qname, timeout = -1,  group = "",
+                            node = None, session = None ):
         " Runs the READ command and provides jobKey, state and passport "
         cmdLine = [ self.__grid_cli,
                     "--extended-cli",
@@ -1400,7 +1392,7 @@ class NetSchedule:
         return lines[0].strip(), lines[1].strip(), lines[2].strip()
 
     def failRead2( self, qname, jobID, passport, errMsg = "",
-                         node = "", session = "" ):
+                         node = None, session = None ):
         " FRED for a job "
         cmdLine = [ self.__grid_cli,
                     "--extended-cli",
@@ -1419,7 +1411,7 @@ class NetSchedule:
         return
 
     def confirmRead2( self, qname, jobID, passport,
-                         node = "", session = "" ):
+                         node = None, session = None ):
         " CFRM for a job "
         cmdLine = [ self.__grid_cli,
                     "--extended-cli",
@@ -1435,7 +1427,7 @@ class NetSchedule:
         return
 
     def rollbackRead2( self, qname, jobID, passport,
-                         node = "", session = "" ):
+                         node = None, session = None ):
         " RDRB for a job "
         cmdLine = [ self.__grid_cli,
                     "--extended-cli",

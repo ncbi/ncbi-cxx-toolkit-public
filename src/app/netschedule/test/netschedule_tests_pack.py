@@ -689,7 +689,7 @@ class Scenario23( TestBase ):
             return False
 
         jobID = self.ns.submitJob( "TEST", 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
 
         if jobID != jobIDReceived:
             return False
@@ -737,7 +737,7 @@ class Scenario24( TestBase ):
             return False
 
         jobID = self.ns.submitJob( "TEST", 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
 
         if jobID != jobIDReceived:
             return False
@@ -749,7 +749,7 @@ class Scenario24( TestBase ):
             return False
 
         time.sleep( 40 )    # Till the job is expired
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
         if jobID != jobIDReceived:
             return False
         if self.ns.getActiveJobsCount( 'TEST' ) != 1:
@@ -788,12 +788,13 @@ class Scenario25( TestBase ):
             return False
 
         jobID = self.ns.submitJob( "TEST", 'bla' )
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobInfo = self.ns.getJob( 'TEST' )
+        jobIDReceived = jobInfo[ 0 ]
 
         if jobID != jobIDReceived:
             return False
 
-        self.ns.returnJob( 'TEST', jobID )
+        self.ns.returnJob( 'TEST', jobID, jobInfo[ 1 ] )
 
         if self.ns.getActiveJobsCount( 'TEST' ) != 1:
             return False
@@ -871,7 +872,7 @@ class Scenario27( TestBase ):
         if dump.count( 'status: Pending' ) != 2:
             raise Exception( "Unexpected number of jobs in dump" )
 
-        jobIDReceived = self.ns.getJob( 'TEST' )
+        jobIDReceived = self.ns.getJob( 'TEST' )[ 0 ]
         if jobID1 != jobIDReceived:
             return False
 
@@ -1089,8 +1090,8 @@ class Scenario36( TestBase ):
     @staticmethod
     def getScenario():
         " Should return a textual description of the test "
-        return "Submit first job, submit second job, get the job, " \
-               "exchange the job for another one, get jobs status"
+        return "Submit a job, submit another job, get the first job, " \
+               "get the second job, check status of both jobs."
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -1103,20 +1104,17 @@ class Scenario36( TestBase ):
         jobID1 = self.ns.submitJob( 'TEST', 'bla' )
         jobID2 = self.ns.submitJob( 'TEST', 'bla' )
 
-        receivedJobID1 = self.ns.getJob( 'TEST' )
+        receivedJobID1 = self.ns.getJob( 'TEST' )[ 0 ]
         if jobID1 != receivedJobID1:
             return False
 
-        receivedJobID2 = self.ns.exchangeJob( 'TEST', receivedJobID1, 12,
-                                              'Test output' )
+        receivedJobID2 = self.ns.getJob( 'TEST' )[ 0 ]
         if not receivedJobID2.startswith( jobID2 ):
             return False
 
         info1 = self.ns.getJobInfo( 'TEST', jobID1 )
-        if info1[ 'status' ] != 'Done' or \
-           info1[ 'run_counter' ] != '1' or \
-           getRetCode( info1 ) != '12' or \
-           info1[ 'output_data' ] != "'D Test output'":
+        if info1[ 'status' ] != 'Running' or \
+           info1[ 'run_counter' ] != '1':
             return False
 
         info2 = self.ns.getJobInfo( 'TEST', jobID2 )
@@ -1242,7 +1240,7 @@ class Scenario40( TestBase ):
         jobID1 = jobID1     # pylint is happy
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'aff0' )
 
-        receivedJobID = self.ns.getJob( 'TEST', -1, -1, 'aff0' )
+        receivedJobID = self.ns.getJob( 'TEST', -1, 'aff0' )[ 0 ]
         if jobID2 != receivedJobID:
             return False
 
@@ -1279,48 +1277,7 @@ class Scenario41( TestBase ):
         jobID = jobID   # pylint is happy
 
         try:
-            self.ns.getJob( 'TEST', -1, -1, 'other_affinity' )
-        except Exception, exc:
-            if "NoJobsWithAffinity" in str( exc ):
-                raise Exception( "Old style NS exception answer: " \
-                                 "NoJobsWithAffinity" )
-            raise
-
-        return True
-
-
-class Scenario42( TestBase ):
-    " Scenario 42 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Submit two jobs with an affinity aff0, " \
-               "get a job with aff0, exchage it to a job with affinity aff1. " \
-               "It will fail till NS is fixed."
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'aff0' )
-        jobID2 = self.ns.submitJob( 'TEST', 'bla', 'aff0' )
-        jobID2 = jobID2     # pylint is happy
-
-        receivedJobID1 = self.ns.getJob( 'TEST', -1, -1, 'aff0' )
-        if jobID1 != receivedJobID1:
-            return False
-
-        try:
-            self.ns.exchangeJob( 'TEST', receivedJobID1, 0, 'bla', 'aff1' )
+            self.ns.getJob( 'TEST', -1, 'other_affinity' )
         except Exception, exc:
             if "NoJobsWithAffinity" in str( exc ):
                 raise Exception( "Old style NS exception answer: " \
@@ -1451,7 +1408,7 @@ class Scenario46( TestBase ):
         jobID2 = self.ns.submitJob( 'TEST', 'bla' )
         jobID2 = jobID2     # pylint is happy
 
-        receivedJobID = self.ns.getJob( 'TEST' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
         if receivedJobID != jobID1:
             return False
 
@@ -1496,7 +1453,7 @@ class Scenario50( TestBase ):
 
 
         jobID1 = self.ns.submitJob( 'TEST', 'bla1' )
-        receivedJobID1 = self.ns.getJob( 'TEST' )
+        receivedJobID1 = self.ns.getJob( 'TEST' )[ 0 ]
         self.ns.putJob( 'TEST', receivedJobID1, 0, 'bla' )
 
         groupID, jobs = self.ns.getJobsForReading( 'TEST', 1 )
@@ -1660,7 +1617,7 @@ class Scenario55( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        receivedJobID = self.ns.getJob( 'TEST' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
         if receivedJobID != jobID:
             return False
         self.ns.failJob( 'TEST', jobID, 1, "error-output" )
@@ -1691,7 +1648,7 @@ class Scenario56( TestBase ):
             raise Exception( "Cannot start netschedule" )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
-        receivedJobID = self.ns.getJob( 'TEST' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
         if jobID != receivedJobID:
             return False
 
