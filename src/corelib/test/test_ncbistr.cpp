@@ -1950,7 +1950,7 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
     }}
     {{
         #if SIZEOF_VOIDP == 8
-            Uint8 ptr_val = NCBI_CONST_UINT8(0x01234d00002fe008);
+            const void* ptr_val = (void*)0x01234d00002fe008;
             #if defined(NCBI_OS_MSWIN)
                 const char* ptr_str = "01234D00002FE008";
             #elif defined(NCBI_OS_SOLARIS)
@@ -1959,7 +1959,7 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
                 const char* ptr_str = "0x1234d00002fe008";
             #endif
         #else
-            unsigned long ptr_val = 0xD02fe008;
+            const void* ptr_val = (void*)0xD02fe008;
             #if defined(NCBI_OS_MSWIN)
                 const char* ptr_str = "D02FE008";
             #elif defined(NCBI_OS_SOLARIS)
@@ -1970,19 +1970,19 @@ BOOST_AUTO_TEST_CASE(s_PtrToString)
         #endif
 
         errno = kTestErrno;
-        s = NStr::PtrToString((void*)ptr_val);
+        s = NStr::PtrToString(ptr_val);
         BOOST_CHECK(errno != kTestErrno);
         BOOST_CHECK_EQUAL(s, string(ptr_str));
 
         errno = kTestErrno;
         const void* ptr1 = NStr::StringToPtr(s);
         BOOST_CHECK(errno != kTestErrno);
-        BOOST_CHECK_EQUAL(ptr1, (void*)ptr_val);
+        BOOST_CHECK_EQUAL(ptr1, ptr_val);
 
         errno = kTestErrno;
         const void* ptr2 = NStr::StringToPtr(CTempString(ptr_str));
         BOOST_CHECK(errno != kTestErrno);
-        BOOST_CHECK_EQUAL(ptr2, (void*)ptr_val);
+        BOOST_CHECK_EQUAL(ptr2, ptr_val);
     }}
     {{
         const void* ptr;
