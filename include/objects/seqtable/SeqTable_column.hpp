@@ -70,7 +70,6 @@ public:
     bool TryGetReal(size_t row, double& v) const;
 
     const string* GetStringPtr(size_t row) const;
-    const CStringUTF8* GetUtf8StringPtr(size_t row) const;
     const vector<char>* GetBytesPtr(size_t row) const;
     CConstRef<CSeq_id> GetSeq_id(size_t row) const;
     CConstRef<CSeq_loc> GetSeq_loc(size_t row) const;

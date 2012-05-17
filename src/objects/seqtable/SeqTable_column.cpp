@@ -201,50 +201,6 @@ const string* CSeqTable_column::GetStringPtr(size_t row) const
 }
 
 
-const CStringUTF8* CSeqTable_column::GetUtf8StringPtr(size_t row) const
-{
-    size_t index = row;
-    if ( IsSetSparse() ) {
-        index = GetSparse().GetIndexAt(row);
-        if ( index == CSeqTable_sparse_index::kSkipped ) {
-            if ( IsSetSparse_other() ) {
-                return &GetSparse_other().GetUtf8_string();
-            }
-            return 0;
-        }
-    }
-    if ( IsSetData() ) {
-        const CSeqTable_multi_data& data = GetData();
-        if ( data.IsUtf8_string() ) {
-            const CSeqTable_multi_data::TUtf8_string& arr =
-                data.GetUtf8_string();
-            if ( index < arr.size() ) {
-                return &arr[index];
-            }
-        }
-        else {
-            const CCommonUtf8String_table& common =
-                data.GetCommon_utf8_string();
-            const CCommonUtf8String_table::TIndexes& indexes =
-                common.GetIndexes();
-            if ( index < indexes.size() ) {
-                const CCommonUtf8String_table::TStrings& arr =
-                    common.GetStrings();
-                size_t arr_index = indexes[index];
-                if ( arr_index < arr.size() ) {
-                    return &arr[arr_index];
-                }
-                return 0;
-            }
-        }
-    }
-    if ( IsSetDefault() ) {
-        return &GetDefault().GetUtf8_string();
-    }
-    return 0;
-}
-
-
 const vector<char>* CSeqTable_column::GetBytesPtr(size_t row) const
 {
     size_t index = row;

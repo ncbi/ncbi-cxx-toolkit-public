@@ -13,13 +13,8 @@ bit._type      = vector
 loc._type      = vector
 id._type       = vector
 interval._type = vector
-utf8-string._type = vector
 
 [CommonString-table]
-strings._type       = vector
-indexes._type       = vector
-
-[CommonUtf8String-table]
 strings._type       = vector
 indexes._type       = vector
 

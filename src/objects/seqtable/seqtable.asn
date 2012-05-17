@@ -112,15 +112,6 @@ SeqTable-column-info ::= SEQUENCE {
 
 CommonString-table ::= SEQUENCE {
     -- set of possible values
-    strings     SEQUENCE OF VisibleString,
-
-    -- indexes of values
-    indexes     SEQUENCE OF INTEGER
-}
-
-
-CommonUtf8String-table ::= SEQUENCE {
-    -- set of possible values
     strings     SEQUENCE OF UTF8String,
 
     -- indexes of values
@@ -145,7 +136,7 @@ SeqTable-multi-data ::= CHOICE {
     real        SEQUENCE OF REAL,
 
     -- a set of strings, one per row
-    string      SEQUENCE OF VisibleString,
+    string      SEQUENCE OF UTF8String,
 
     -- a set of byte arrays, one per row
     bytes       SEQUENCE OF OCTET STRING,
@@ -163,13 +154,7 @@ SeqTable-multi-data ::= CHOICE {
     -- a set of locations, one per row
     loc         SEQUENCE OF Seq-loc,
     id          SEQUENCE OF Seq-id,
-    interval    SEQUENCE OF Seq-interval,
-
-    -- a set of Unicode strings in UTF8 encoding, one per row
-    utf8-string SEQUENCE OF UTF8String,
-
-    -- a set of string with small set of possible values
-    common-utf8-string   CommonUtf8String-table
+    interval    SEQUENCE OF Seq-interval
 }
 
 
@@ -181,7 +166,7 @@ SeqTable-single-data ::= CHOICE {
     real        REAL,
 
     -- string
-    string      VisibleString,
+    string      UTF8String,
 
     -- byte array
     bytes       OCTET STRING,
@@ -192,10 +177,7 @@ SeqTable-single-data ::= CHOICE {
     -- location
     loc         Seq-loc,
     id          Seq-id,
-    interval    Seq-interval,
-
-    -- Unicode string in UTF8 encoding
-    utf8-string UTF8String
+    interval    Seq-interval
 }
 
 
