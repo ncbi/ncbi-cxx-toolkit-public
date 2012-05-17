@@ -322,27 +322,7 @@ double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
                                    const CRangeCollection<TSeqPos> &ranges,
                                    CSeq_align::EScoreType score)
 {
-    switch (score) {
-    case CSeq_align::eScore_Score:
-    case CSeq_align::eScore_IdentityCount:
-    case CSeq_align::eScore_PositiveCount:
-    case CSeq_align::eScore_NegativeCount:
-    case CSeq_align::eScore_MismatchCount:
-    case CSeq_align::eScore_GapCount:
-    case CSeq_align::eScore_AlignLength:
-    case CSeq_align::eScore_PercentIdentity_Gapped:
-    case CSeq_align::eScore_PercentIdentity_Ungapped:
-    case CSeq_align::eScore_PercentIdentity_GapOpeningOnly:
-    case CSeq_align::eScore_PercentCoverage:
-    case CSeq_align::eScore_HighQualityPercentCoverage:
-        return CScoreBuilderBase::ComputeScore(scope, align, ranges, score);
-    default:
-        if (ranges.empty() || !ranges.begin()->IsWhole()) {
-            NCBI_THROW(CSeqalignException, eNotImplemented,
-                       "Score not supported within a range");
-        }
-    }
-
+    // Override certain score computations in this subclass.
     switch (score) {
     case CSeq_align::eScore_Blast:
         return GetBlastScore(scope, align);
@@ -374,26 +354,12 @@ double CScoreBuilder::ComputeScore(CScope& scope, const CSeq_align& align,
          }}
 
     case CSeq_align::eScore_SumEValue:
-        {{
-             NCBI_THROW(CSeqalignException, eNotImplemented,
-                        "CScoreBuilder::AddScore(): "
-                        "sum_e not implemented");
-         }}
-
     case CSeq_align::eScore_CompAdjMethod:
-        {{
-             NCBI_THROW(CSeqalignException, eNotImplemented,
-                        "CScoreBuilder::AddScore(): "
-                        "comp_adj_method not implemented");
-         }}
+        // FIXME TODO: Not implemented.
 
+    // Fallback to superclass implementation of score computation.
     default:
-        {{
-             NCBI_THROW(CSeqalignException, eNotImplemented,
-                        "CScoreBuilder::AddScore(): "
-                        "unrecognized score");
-             return 0;
-         }}
+        return CScoreBuilderBase::ComputeScore(scope, align, ranges, score);
     }
 }
 
