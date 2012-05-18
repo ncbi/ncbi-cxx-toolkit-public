@@ -61,7 +61,10 @@ void CSubSource::GetLabel(string* str) const
         type_name = "other";
     } else {
         try {
-            type_name = GetSubtypeName(GetSubtype(), eVocabulary_insdc);
+            // eVocabulary_insdc has some special cases not (historically)
+            // used here.
+            type_name = GetSubtypeName(GetSubtype());
+            replace(type_name.begin(), type_name.end(), '_', '-');
         } catch (CSerialException&) {
             type_name = "unknown";
         }
@@ -86,6 +89,17 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
 
     if (name == "note") {
         return eSubtype_other;
+    } else if (vocabulary == eVocabulary_insdc) {
+        // consider a table if more special cases arise.
+        if (name == "insertion-seq") {
+            return eSubtype_insertion_seq_name;
+        } else if (name == "plasmid") {
+            return eSubtype_plasmid_name;
+        } else if (name == "transposon") {
+            return eSubtype_transposon_name;
+        } else if (name == "sub-clone") {
+            return eSubtype_subclone;
+        }
     }
 
     return ENUM_METHOD_NAME(ESubtype)()->FindValue(str);
@@ -97,12 +111,19 @@ string CSubSource::GetSubtypeName(CSubSource::TSubtype stype,
 {
     if (stype == CSubSource::eSubtype_other) {
         return "note";
-    } else {
-        string name = ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
-        if (vocabulary == eVocabulary_insdc) {
-            replace(name.begin(), name.end(), '-', '_');
+    } else if (vocabulary == eVocabulary_insdc) {
+        switch (stype) {
+        case eSubtype_subclone:           return "sub_clone";
+        case eSubtype_plasmid_name:       return "plasmid";
+        case eSubtype_transposon_name:    return "transposon";
+        case eSubtype_insertion_seq_name: return "insertion_seq";
+        default:
+            return NStr::Replace
+                (ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true),
+                 "-", "_");
         }
-        return name;
+    } else {
+        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
     }
 }
 
