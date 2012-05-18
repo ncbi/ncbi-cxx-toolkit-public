@@ -405,7 +405,7 @@ CNCActiveClientHub::CNCActiveClientHub(CNCMessageHandler* client)
 inline void
 CNCActiveClientHub::SetStatus(ENCClientHubStatus status)
 {
-    m_Status = status;
+    *(volatile ENCClientHubStatus*)&m_Status = status;
 }
 
 inline ENCClientHubStatus

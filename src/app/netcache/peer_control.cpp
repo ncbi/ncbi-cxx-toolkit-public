@@ -316,9 +316,9 @@ CNCPeerControl::x_AssignClientConn(CNCActiveClientHub* hub,
             return false;
         }
     }
-    hub->SetStatus(eNCHubConnReady);
     hub->SetHandler(conn);
     conn->SetClientHub(hub);
+    hub->SetStatus(eNCHubConnReady);
     return true;
 }
 
