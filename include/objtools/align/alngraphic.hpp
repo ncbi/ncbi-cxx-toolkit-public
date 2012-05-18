@@ -48,7 +48,8 @@ public:
         eCompactView = (1 << 0),    //put as many seq as possible on one line
                                     //default sequence with same id on one line
         eMouseOverInfo = (1 << 1),  //show info when mouse over alignment graph
-        eAnchorLink = (1 << 2)      //quick link in blast resutl html page
+        eAnchorLink = (1 << 2),      //quick link in blast resutl html page
+        eAnchorLinkDynamic = (1 << 3) //quick link in blast resutl html page for new design
     };
 
     //graph bar height
@@ -87,6 +88,10 @@ public:
         m_MouseOverFormName = form_name;
     }
     
+    
+    void SetOnClickFunctionName(string onClickFunction) { 
+        m_onClickFunction = m_onClickFunction;
+    }
     // Display top num seqalign
     void SetNumAlignToShow(int num) {  //internal default = 1000
         m_NumAlignToShow = num;
@@ -127,6 +132,7 @@ private:
     int m_BarHeight;
     string m_ImagePath;
     string m_MouseOverFormName;   //the text input window to show mouseover info
+    string m_onClickFunction;
     int m_NumLine;
     
     //blast sub-sequence query
