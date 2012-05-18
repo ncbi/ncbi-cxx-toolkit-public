@@ -70,6 +70,10 @@ def main():
                        default=0,
                        help="Number of clients for each instance of " \
                             "test_netschedule_crash. (Default: 0)" )
+    parser.add_option( "--batch", dest="batch",
+                       default=10000,
+                       help="Number of jobs for each loop in " \
+                            "test_netschedule_crash. (Default: 10000)" )
 
     # parse the command line options
     options, args = parser.parse_args()
@@ -98,6 +102,9 @@ def main():
     clients = int( options.clients )
     if clients < 0:
         raise Exception( "Invalid number of clients" )
+    batch = int( options.batch )
+    if batch <= 0:
+        raise Exception( "Invalid batch size" )
 
     baseDir = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + os.path.sep
 
@@ -155,6 +162,7 @@ def main():
                       " -delay 1 " \
                       " -naff " + str( affs ) + \
                       " -ngroup " + str( groups ) + \
+                      " -batch " + str( batch ) + \
                       " -nclients " + str( clients )
             if options.verbose:
                 print "Launching test_netschedule_crash #" + \
