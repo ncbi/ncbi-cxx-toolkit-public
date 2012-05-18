@@ -3480,6 +3480,7 @@ MFC	c	Matsushima Fungus Collection
 MFGC	c	Margot Forde Germplasm Centre, AgResearch GrasslandsWar
 MFLB	s	Marine Fisheries Laboratory
 MFLU<THA>	s	Mae Fah Laung University Herbarium
+MFLUCC<THA>	c	Mae Fah Luang University Culture Collection
 MfN<DEU>	s	Museum fur Naturkunde
 MFNB	s	Museo Friulano di Storia Naturale
 MFP	s	Museo Felipe Poey
@@ -6637,7 +6638,8 @@ ZDEU	s	Zoology Department, Ege University
 ZDKU	s	Kharkiv National University
 ZDM	s	Zigong dinosaur Museum
 ZEA	s	Universidad de Guadalajara, Centro Universitario de la Costa Sur, Departamento de Ecologia y Recursos Naturales
-ZFMK	s	Zoologisches Forschungsmuseum Alexander Koenig
+ZFMK	sb	Zoologisches Forschungsmuseum Alexander Koenig
+ZFMK:COL	s	Zoologisches Forschungsmuseum Alexander Koenig, Coleoptera collection
 ZFSN	s	Laboratoire de Zoologie de la Faculte Des Sciences
 ZGLC	s	Natural History Museum, Limassol
 ZHAN	s	Zhanjiang Teachers College, Biology Department
