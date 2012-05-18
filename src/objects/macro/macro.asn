@@ -891,7 +891,11 @@ Cap-change ::= ENUMERATED {
     tolower (1) ,
     toupper (2) ,
     firstcap (3) ,
-    firstcaprestnochange (4) }
+    firstcaprestnochange (4) ,
+    firstlower-restnochange (5) ,
+    cap-word-space (6) ,
+    cap-word-space-punc (7)
+    }
 
 Text-transform ::= CHOICE {
   edit Field-edit ,
