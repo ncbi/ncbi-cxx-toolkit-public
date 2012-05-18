@@ -55,56 +55,18 @@ CSubSource::~CSubSource(void)
 
 void CSubSource::GetLabel(string* str) const
 {
-    typedef SStaticPair<TSubtype, const char*> TPair;
-    static const TPair sc_Pairs[] = {
-        { eSubtype_chromosome,              "chromosome" },
-        { eSubtype_map,                     "map" },
-        { eSubtype_clone,                   "clone" },
-        { eSubtype_subclone,                "subclone" },
-        { eSubtype_haplotype,               "haplotype" },
-        { eSubtype_genotype,                "genotype" },
-        { eSubtype_sex,                     "sex" },
-        { eSubtype_cell_line,               "cell_line" },
-        { eSubtype_cell_type,               "cell_type" },
-        { eSubtype_tissue_type,             "tissue_type" },
-        { eSubtype_clone_lib,               "clone_lib" },
-        { eSubtype_dev_stage,               "dev_stage" },
-        { eSubtype_frequency,               "frequency" },
-        { eSubtype_germline,                "germline" },
-        { eSubtype_rearranged,              "rearranged" },
-        { eSubtype_lab_host,                "lab_host" },
-        { eSubtype_pop_variant,             "pop_variant" },
-        { eSubtype_tissue_lib,              "tissue_lib" },
-        { eSubtype_plasmid_name,            "plasmid_name" },
-        { eSubtype_transposon_name,         "transposon_name" },
-        { eSubtype_insertion_seq_name,      "insertion_seq_name" },
-        { eSubtype_plastid_name,            "plastid_name" },
-        { eSubtype_country,                 "country" },
-        { eSubtype_segment,                 "segment" },
-        { eSubtype_endogenous_virus_name,   "endogenous_virus_name" },
-        { eSubtype_transgenic,              "transgenic" },
-        { eSubtype_environmental_sample,    "environmental_sample" },
-        { eSubtype_isolation_source,        "isolation_source" },
-        { eSubtype_lat_lon,                 "lat_lon" },
-        { eSubtype_collection_date,         "collection_date" },
-        { eSubtype_collected_by,            "collected_by" },
-        { eSubtype_identified_by,           "identified_by" },
-        { eSubtype_fwd_primer_seq,          "fwd_primer_seq" },
-        { eSubtype_rev_primer_seq,          "rev_primer_seq" },
-        { eSubtype_fwd_primer_name,         "fwd_primer_name" },
-        { eSubtype_rev_primer_name,         "rev_primer_name" },
-        { eSubtype_other,                   "other" }
-    };
-    typedef CStaticArrayMap<TSubtype, const char*> TSubtypeMap;
-    DEFINE_STATIC_ARRAY_MAP(TSubtypeMap, sc_Map, sc_Pairs);
-
     *str += '/';
-    TSubtypeMap::const_iterator iter = sc_Map.find(GetSubtype());
-    if (iter != sc_Map.end()) {
-        *str += iter->second;
+    string type_name;
+    if (GetSubtype() == eSubtype_other) {
+        type_name = "other";
     } else {
-        *str += "unknown";
+        try {
+            type_name = GetSubtypeName(GetSubtype(), eVocabulary_insdc);
+        } catch (CSerialException&) {
+            type_name = "unknown";
+        }
     }
+    *str += type_name;
     *str += '=';
     *str += GetName();
     if (IsSetAttrib()) {
@@ -115,22 +77,32 @@ void CSubSource::GetLabel(string* str) const
 }
 
 
-CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str)
+CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
+                                                 EVocabulary vocabulary)
 {
     string name = NStr::TruncateSpaces(str);
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
 
+    if (name == "note") {
+        return eSubtype_other;
+    }
+
     return ENUM_METHOD_NAME(ESubtype)()->FindValue(str);
 }
 
 
-string CSubSource::GetSubtypeName(CSubSource::TSubtype stype)
+string CSubSource::GetSubtypeName(CSubSource::TSubtype stype,
+                                  EVocabulary vocabulary)
 {
     if (stype == CSubSource::eSubtype_other) {
         return "note";
     } else {
-        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
+        string name = ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
+        if (vocabulary == eVocabulary_insdc) {
+            replace(name.begin(), name.end(), '-', '_');
+        }
+        return name;
     }
 }
 

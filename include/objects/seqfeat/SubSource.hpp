@@ -71,11 +71,18 @@ public:
 
     void GetLabel(string* str) const;
 
+    enum EVocabulary {
+        eVocabulary_raw, // per ASN.1, except eSubtype_other <-> "note"
+        eVocabulary_insdc // per GB/DDBJ/EMBL qualifier names
+    };
+
     // convert subtype from string to enum.
-    static TSubtype GetSubtypeValue(const string& str);
+    static TSubtype GetSubtypeValue(const string& str,
+                                    EVocabulary vocabulary = eVocabulary_raw);
 
 	// get name for subsource
-    static string GetSubtypeName(CSubSource::TSubtype stype);
+    static string GetSubtypeName(CSubSource::TSubtype stype,
+                                 EVocabulary vocabulary = eVocabulary_raw);
 
 	// identify whether subsource value should be blank
 	static bool NeedsNoText (const TSubtype& subtype);
