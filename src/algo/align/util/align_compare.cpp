@@ -346,34 +346,26 @@ struct SComp_Less
     }
     bool operator()(const TComp& c1, const TComp& c2) const
     {
-        // strict comparison amounts to ordering in either ascending or
-        // descending order of overlap
-        // descending order means that we evaluate the best examples first, and
+        // strict comparison amounts to placing all identical pairs either before
+        // or after non-identical ones
+        // putting identical pairs first means that we evaluate the best examples first, and
         // can establish equality without polluting the comparison with weaker
         // alignments; non-strict means we combine weaker overlapping
         // alignments together into equivalence groups with alignments that are
         // identical
         if (strict_compare) {
-            if ((c1.second.is_equivalent && !c2.second.is_equivalent) ||
-                c1.second.overlap > c2.second.overlap)
-            {
+            if (c1.second.is_equivalent && !c2.second.is_equivalent) {
                 return true;
             }
-            if ((c2.second.is_equivalent && !c1.second.is_equivalent) ||
-                c2.second.overlap > c1.second.overlap)
-            {
+            if (c2.second.is_equivalent && !c1.second.is_equivalent) {
                 return false;
             }
         }
         else {
-            if ((c1.second.is_equivalent && !c2.second.is_equivalent) ||
-                c1.second.overlap > c2.second.overlap)
-            {
+            if (c1.second.is_equivalent && !c2.second.is_equivalent) {
                 return false;
             }
-            if ((c2.second.is_equivalent && !c1.second.is_equivalent) ||
-                c2.second.overlap > c1.second.overlap)
-            {
+            if (c2.second.is_equivalent && !c1.second.is_equivalent) {
                 return true;
             }
         }
@@ -531,50 +523,79 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
         }
         std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict));
 
-        ITERATE (vector<TComp>, comp_it, comparisons) {
-            if (set1_aligns.empty() && set2_aligns.empty()) {
-                /// Found best comparison for all alignments
-                break;
-            }
-            bool is_equivalent = comp_it->second.is_equivalent;
-            if (is_equivalent || comp_it->second.overlap > 0) {
-                vector<TComp>::const_iterator equiv_comp_it;
-                for(equiv_comp_it = comp_it+1;
-                    equiv_comp_it != comparisons.end() &&
-                    (equiv_comp_it->first.first == comp_it->first.first ||
-                     equiv_comp_it->first.second == comp_it->first.second) &&
-                    (is_equivalent ? equiv_comp_it->second.is_equivalent
-                                   : equiv_comp_it->second.overlap > 0);
-                    ++equiv_comp_it);
-                --equiv_comp_it;
-                bool covered_new_aligns = false;
-                for (vector<TComp>::const_iterator it = comp_it;
-                     it <= equiv_comp_it; ++it)
-                {
-                    if (set1_aligns.erase(it->first.first)) {
-                        it->first.first->match_level =
-                            is_equivalent ? e_Equiv : e_Overlap;
-                        group.push_back(it->first.first);
-                        ++(is_equivalent ? m_CountEquivSet1 : m_CountOverlapSet1);
-                        covered_new_aligns = true;
-                    }
+        typedef pair<TAlignPtrSet, EMatchLevel> TAlignGroup;
+
+        list<TAlignGroup> groups;
+        map<const SAlignment *, list<TAlignGroup>::iterator> group_map;
+
+        ITERATE (vector<TComp>, it, comparisons) {
+            bool is_equivalent = it->second.is_equivalent;
+            /// This comparison counts if the two alignments are equivalent, or
+            /// they overlap and we haven't yet seen an equivalence for either
+            if (is_equivalent ||
+                    (it->second.overlap > 0 &&
+                     it->first.first->match_level != e_Equiv &&
+                     it->first.second->match_level != e_Equiv))
+            {
+                list<TAlignGroup>::iterator align1_group = groups.end(),
+                                            align2_group = groups.end();
+                if (set1_aligns.erase(it->first.first)) {
+                    it->first.first->match_level =
+                        is_equivalent ? e_Equiv : e_Overlap;
+                    group.push_back(it->first.first);
+                    ++(is_equivalent ? m_CountEquivSet1 : m_CountOverlapSet1);
+                } else {
+                    align1_group = group_map[it->first.first];
                 }
-                for (vector<TComp>::const_iterator it = comp_it;
-                     it <= equiv_comp_it; ++it)
-                {
-                    if (set2_aligns.erase(it->first.second)) {
-                        it->first.second->match_level =
-                            is_equivalent ? e_Equiv : e_Overlap;
-                        group.push_back(it->first.second);
-                        ++(is_equivalent ? m_CountEquivSet2 : m_CountOverlapSet2);
-                        covered_new_aligns = true;
-                    }
+                if (set2_aligns.erase(it->first.second)) {
+                    it->first.second->match_level =
+                        is_equivalent ? e_Equiv : e_Overlap;
+                    group.push_back(it->first.second);
+                    ++(is_equivalent ? m_CountEquivSet2 : m_CountOverlapSet2);
+                } else {
+                    align2_group = group_map[it->first.second];
                 }
-                if (covered_new_aligns) {
+                if (align1_group == groups.end() &&
+                    align2_group == groups.end())
+                {
+                    /// Neither alignemnts was encountered before, so create
+                    /// new group
+                    list<TAlignGroup>::iterator new_group =
+                        groups.insert(groups.end(), TAlignGroup());
+                    new_group->first.insert(it->first.first);
+                    new_group->first.insert(it->first.second);
+                    new_group->second = it->first.first->match_level;
+                    group_map[it->first.first] = new_group;
+                    group_map[it->first.second] = new_group;
                     ++(is_equivalent ? m_CountEquivGroups
                                      : m_CountOverlapGroups);
+                } else if(align1_group == groups.end()) {
+                    /// alignment 1 is new, add it to existing group
+                    align2_group->first.insert(it->first.first);
+                    group_map[it->first.first] = align2_group;
+                } else if(align2_group == groups.end()) {
+                    /// alignment 2 is new, add it to existing group
+                    align1_group->first.insert(it->first.second);
+                    group_map[it->first.second] = align1_group;
+                } else if (align1_group != align2_group) {
+                    /// The alignments are in two separate groups; merge them
+                    ITERATE (TAlignPtrSet, group2_it, align2_group->first) {
+                        align1_group->first.insert(*group2_it);
+                        group_map[*group2_it] = align1_group;
+                    }
+                    if (align2_group->second == e_Overlap) {
+                        --m_CountOverlapGroups;
+                        if (align1_group->second == e_Equiv) {
+                            /// Change the group from equivalence to overlap
+                            align1_group->second = e_Overlap;
+                            ++m_CountOverlapGroups;
+                            --m_CountEquivGroups;
+                        }
+                    } else {
+                        --m_CountEquivGroups;
+                    }
+                    groups.erase(align2_group);
                 }
-                comp_it = equiv_comp_it;
             }
         }
 
