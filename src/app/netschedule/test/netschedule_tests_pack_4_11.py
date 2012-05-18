@@ -525,7 +525,7 @@ class Scenario310( TestBase ):
         ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                             str( self.ns.getPort() ),
                                             'TEST', 'scenario310' )
-        info = getClientInfo( ns_admin )
+        info = getClientInfo( ns_admin, 'node1' )
         if info[ 'preferred_affinities_reset' ] != True:
             raise Exception( "Expected to have preferred affinities reset, " \
                              "received: " + \
@@ -564,7 +564,7 @@ class Scenario311( TestBase ):
            affInfo[ 'clients__preferred' ] != [ 'node1' ]:
             raise Exception( "Unexpected affinity registry content "
                              "after adding 1 preferred affinity" )
-        info = getClientInfo( ns_admin )
+        info = getClientInfo( ns_admin, 'node1' )
         if info[ 'preferred_affinities_reset' ] != False:
             raise Exception( "Expected to have preferred affinities non reset, " \
                              "received: " + \
@@ -573,7 +573,7 @@ class Scenario311( TestBase ):
         # Worker node timeout is 5 sec
         time.sleep( 7 )
 
-        info = getClientInfo( ns_admin )
+        info = getClientInfo( ns_admin, 'node1' )
         if info[ 'preferred_affinities_reset' ] != True:
             raise Exception( "Expected to have preferred affinities reset, " \
                              "received: " + \
@@ -635,7 +635,7 @@ class Scenario312( TestBase ):
         # Worker node timeout is 5 sec
         time.sleep( 7 )
 
-        info = getClientInfo( ns_admin )
+        info = getClientInfo( ns_admin, 'node1' )
         if info[ 'preferred_affinities_reset' ] != True:
             raise Exception( "Expected to have preferred affinities reset, " \
                              "received: " + \
@@ -680,7 +680,7 @@ class Scenario313( TestBase ):
         ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                             str( self.ns.getPort() ),
                                             'TEST', 'scenario313' )
-        info = getClientInfo( ns_admin )
+        info = getClientInfo( ns_admin, 'n1' )
         if info[ 'worker_node_control_port' ] != 732 or \
            info[ 'client_host' ] != 'myhost':
             raise Exception( "Unexpected client control port and/or client host" )
@@ -693,7 +693,7 @@ class Scenario313( TestBase ):
         self.ns.directSendCmd( 'AFLS' )
         reply = self.ns.directReadSingleReply()
         self.ns.disconnect()
-        info = getClientInfo( ns_admin )
+        info = getClientInfo( ns_admin, 'n1' )
         if info[ 'worker_node_control_port' ] != 'n/a' or \
            info[ 'client_host' ] != 'n/a':
             raise Exception( "Unexpected cleared client control " \
