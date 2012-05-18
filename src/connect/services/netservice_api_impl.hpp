@@ -95,7 +95,8 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     string m_APIName;
     string m_ClientName;
 
-    CRef<SNetServerInPool> m_EnforcedServer;
+    string m_EnforcedServerHost;
+    unsigned m_EnforcedServerPort;
 
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
