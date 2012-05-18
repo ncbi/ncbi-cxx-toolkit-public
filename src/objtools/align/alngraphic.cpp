@@ -342,6 +342,8 @@ CAlnGraphic::CAlnGraphic(const CSeq_align_set& seqalign,
     m_ImagePath = "./";
     m_MouseOverFormName = "document.forms[0]";
     m_NumLine = 55;
+    m_onClickFunction= "DisplayAlignFromGraphics";
+
     if (m_MasterRange) {
         if (m_MasterRange->GetFrom() >= m_MasterRange->GetTo()) {
             m_MasterRange = NULL;
@@ -751,14 +753,18 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                     image->SetAttribute("ONMOUSEOUT", m_MouseOverFormName + 
                                         ".defline.value='Mouse-over to show defline and scores, click to show alignments'");
                 }
-                if(m_View & eAnchorLink){
+                if(m_View & (eAnchorLink | eAnchorLinkDynamic)){
                     string acc;
                     (*iter2)->id->GetLabel(&acc, CSeq_id::eContent, 0);
                     string seqid = (*iter2)->gi == 
                         0 ? acc : NStr::IntToString((*iter2)->gi);
                     ad = new CHTML_a("#" + seqid, image);
+                    if(m_View & eAnchorLinkDynamic) {
+                        ad->SetAttribute("onclick", m_onClickFunction + "(\"" + seqid + "\",event)");
+                    }
                     tc = tbl->InsertAt(0, column, ad);
-                } else {
+                }                 
+                else {
                     tc = tbl->InsertAt(0, column, image);
                 }
                 column ++;
