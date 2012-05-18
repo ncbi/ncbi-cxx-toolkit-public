@@ -494,7 +494,6 @@ int CTarTest::Run(void)
                      (zc, CCompressionStreamProcessor::eDelete),
                      CCompressionStream::fOwnProcessor);
                 zs.reset(os);
-                return 0;
             }
             io = os;
         } else {
