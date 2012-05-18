@@ -1651,45 +1651,79 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
                                   bool                  any_affinity,
                                   bool                  exclusive_new_affinity)
 {
-    unsigned int    job_id = 0;
+    bool            explicit_aff = aff_ids.any();
+    unsigned int    wnode_aff_candidate = 0;
+    unsigned int    exclusive_aff_candidate = 0;
     TNSBitVector    blacklisted_jobs =
                             m_ClientsRegistry.GetBlacklistedJobs(client);
 
-    if (aff_ids.any()) {
-        job_id = x_FindPendingWithAffinity(aff_ids, blacklisted_jobs);
-
-        if (job_id != 0)
-            return job_id;
-    }
-
-
+    TNSBitVector    pref_aff;
     if (wnode_affinity) {
-        // Check that I know something about this client
-        TNSBitVector    client_aff =
-                            m_ClientsRegistry.GetPreferredAffinities(client);
-
-        job_id = x_FindPendingWithAffinity(client_aff, blacklisted_jobs);
-
-        if (job_id != 0)
-            return job_id;
+        pref_aff = m_ClientsRegistry.GetPreferredAffinities(client);
+        wnode_affinity = wnode_affinity && pref_aff.any();
     }
 
-    if (exclusive_new_affinity) {
-        job_id = x_FindPendingWithExclusiveAffinity(client,
-                                                    blacklisted_jobs);
-        if (job_id != 0) {
-            // If the picked job is with affinity, then this affinity must
-            // be added to the preferred list
+    TNSBitVector    all_pref_aff;
+    if (exclusive_new_affinity)
+        all_pref_aff = m_ClientsRegistry.GetAllPreferredAffinities();
+
+    if (explicit_aff || wnode_affinity || exclusive_new_affinity) {
+        // Check all pending jobs
+        TNSBitVector                pending_jobs =
+                            m_StatusTracker.GetJobs(CNetScheduleAPI::ePending);
+        TNSBitVector::enumerator    en(pending_jobs.first());
+
+        for (; en.valid(); ++en) {
+            unsigned int    job_id = *en;
+
+            if (blacklisted_jobs[job_id] == true)
+                continue;
+
             unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
+            if (aff_id != 0 && explicit_aff) {
+                if (aff_ids[aff_id] == true)
+                    return job_id;
+            }
+
+            if (aff_id != 0 && wnode_affinity) {
+                if (pref_aff[aff_id] == true) {
+                    if (explicit_aff == false)
+                        return job_id;
+                    if (wnode_aff_candidate == 0)
+                        wnode_aff_candidate = job_id;
+                    continue;
+                }
+            }
+
+            if (exclusive_new_affinity) {
+                if (aff_id == 0 || all_pref_aff[aff_id] == false) {
+                    if (explicit_aff == false && wnode_affinity == false) {
+                        if (aff_id != 0)
+                            m_ClientsRegistry.UpdatePreferredAffinities(client,
+                                                                        aff_id,
+                                                                        0);
+                        return job_id;
+                    }
+                    if (exclusive_aff_candidate == 0)
+                        exclusive_aff_candidate = job_id;
+                }
+            }
+        }
+
+        if (wnode_aff_candidate != 0)
+            return wnode_aff_candidate;
+        if (exclusive_aff_candidate != 0) {
+            unsigned int    aff_id = m_GCRegistry.GetAffinityID(exclusive_aff_candidate);
             if (aff_id != 0)
                 m_ClientsRegistry.UpdatePreferredAffinities(client,
                                                             aff_id,
                                                             0);
-            return job_id;
+            return exclusive_aff_candidate;
         }
     }
 
-    if (any_affinity || (!aff_ids.any() && !wnode_affinity))
+
+    if (any_affinity || (!explicit_aff && !wnode_affinity))
         return m_StatusTracker.GetJobByStatus(
                                     CNetScheduleAPI::ePending,
                                     blacklisted_jobs,
@@ -1698,43 +1732,6 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
     return 0;
 }
 
-
-unsigned int
-CQueue::x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
-                                  const TNSBitVector &  blacklist_ids)
-{
-    if (!aff_ids.any())
-        return 0;
-
-    TNSBitVector    candidate_jobs =
-                         m_AffinityRegistry.GetJobsWithAffinity(aff_ids);
-    if (!candidate_jobs.any())
-        return 0;
-
-    m_StatusTracker.PendingIntersect(&candidate_jobs);
-    candidate_jobs -= blacklist_ids;
-
-    if (!candidate_jobs.any())
-        return 0;
-
-    return m_StatusTracker.GetPendingJobFromSet(candidate_jobs);
-}
-
-
-unsigned int
-CQueue::x_FindPendingWithExclusiveAffinity(const CNSClientId &   client,
-                                           const TNSBitVector &  blacklist_ids)
-{
-    TNSBitVector    worker_node_affinities =
-                             m_ClientsRegistry.GetAllPreferredAffinities();
-    TNSBitVector    jobs_to_exclude = blacklist_ids |
-                             m_AffinityRegistry.GetJobsWithAffinity(worker_node_affinities);
-
-    return m_StatusTracker.GetJobByStatus(
-                                CNetScheduleAPI::ePending,
-                                jobs_to_exclude,
-                                TNSBitVector());
-}
 
 
 string CQueue::GetAffinityList()

@@ -369,14 +369,6 @@ private:
                      bool                   any_affinity,
                      bool                   exclusive_new_affinity);
 
-    unsigned int
-    x_FindPendingWithAffinity(const TNSBitVector &  aff_ids,
-                              const TNSBitVector &  blacklist_ids);
-
-    unsigned int
-    x_FindPendingWithExclusiveAffinity(const CNSClientId &   client,
-                                       const TNSBitVector &  blacklist_ids);
-
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     const string &          auth_token,
                                     time_t                  curr,
