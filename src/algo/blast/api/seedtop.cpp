@@ -63,10 +63,17 @@ void CSeedTop::x_ParsePattern()
 {
     vector <string> units;
     NStr::TruncateSpacesInPlace(m_Pattern);
-    NStr::Tokenize(m_Pattern, "-", units);
+    NStr::Tokenize(NStr::ToUpper(m_Pattern), "-", units);
     ITERATE(vector<string>, unit, units){
         if (*unit != "") {
-            m_Units.push_back(SPatternUnit(*unit));
+            char ch = (*unit)[0];
+            if (ch=='[' || ch=='{' || ch=='X' || (*unit).length()==1 || (*unit)[1]=='(') {
+                m_Units.push_back(SPatternUnit(*unit));
+            } else {
+                for (int i=0; i<(*unit).length(); ++i) {
+                    m_Units.push_back(SPatternUnit(string(*unit, i, 1)));
+                }
+            }
         }
     }
 }

@@ -55,42 +55,67 @@ struct SPatternUnit {
     bool is_x;
     SPatternUnit(const string unit) {
         unsigned int tail_start = 0;
+        bool parse_failed = false;
         is_x = false;
         switch(unit[0]) {
             case '[':
                 tail_start = unit.find(']') + 1;
+                if (tail_start == string::npos + 1){
+                    parse_failed = true;
+                    break;
+                }
                 allowed_letters = string(unit, 1, tail_start - 2);
                 break;
             case '{':
                 tail_start = unit.find('}') + 1;
+                if (tail_start == string::npos + 1){
+                    parse_failed = true;
+                    break;
+                }
                 disallowed_letters = string(unit, 1, tail_start - 2);
                 break;
-            case 'x':
+            case 'X':
                 tail_start = 1;
                 is_x = true;
                 break;
             default:
+                if (unit[0] > 'Z' || unit[0] < 'A'){
+                    parse_failed = true;
+                    break;
+                }
                 tail_start = 1;
                 allowed_letters = string(unit, 0, 1);
                 break;
         }
+
+        if (parse_failed) {
+            NCBI_THROW(CBlastException, eInvalidArgument, "Can not parse pattern file");
+        }
+
         // parse the (x,y) part
         if (tail_start >= unit.size()) {
             at_least = 1;
             at_most = 2;
         } else {
-            string rep(unit, tail_start + 1, unit.size()-2-tail_start);
-            size_t pos_comma = rep.find(',');
-            if (pos_comma == rep.npos) {
-                at_least = NStr::StringToUInt(rep);
-                at_most = at_least + 1;
-            } else if (pos_comma == rep.size() -1) {
-                at_least = NStr::StringToUInt(string(rep, 0, pos_comma));
-                at_most = rep.npos;
-            } else {
-                at_least = NStr::StringToUInt(string(rep, 0, pos_comma));
-                at_most = NStr::StringToUInt(string(rep, 
+            if (unit[tail_start] != '(' || unit[unit.size()-1] != ')') {
+                NCBI_THROW(CBlastException, eInvalidArgument, "Can not parse pattern file");
+            }
+            try {
+                string rep(unit, tail_start + 1, unit.size()-2-tail_start);
+                size_t pos_comma = rep.find(',');
+                if (pos_comma == rep.npos) {
+                    at_least = NStr::StringToUInt(rep);
+                    at_most = at_least + 1;
+                } else if (pos_comma == rep.size() -1) {
+                    at_least = NStr::StringToUInt(string(rep, 0, pos_comma));
+                    at_most = rep.npos;
+                } else {
+                    at_least = NStr::StringToUInt(string(rep, 0, pos_comma));
+                    at_most = NStr::StringToUInt(string(rep, 
                              pos_comma + 1, rep.size()-1-pos_comma)) + 1;
+                }
+            } catch (...) {
+                NCBI_THROW(CBlastException, eInvalidArgument, "Can not parse pattern file");
             }
         }
     }
