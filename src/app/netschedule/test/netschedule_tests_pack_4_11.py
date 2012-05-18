@@ -103,36 +103,6 @@ class Scenario301( TestBase ):
 
         return True
 
-class Scenario302( TestBase ):
-    " Scenario 302 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return "GET2 wnode_aff = 0 exclusive_new_aff=1"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario302' )
-        ns_client.set_client_identification( 'node', 'session' )
-
-        try:
-            output = execAny( ns_client,
-                              'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=1' )
-        except Exception, exc:
-            if "forbidden" in str( exc ):
-                return True
-            raise
-        raise Exception( "Expected exception, got nothing" )
-
 class Scenario303( TestBase ):
     " Scenario 303 "
 

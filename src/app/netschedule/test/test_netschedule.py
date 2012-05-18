@@ -385,7 +385,6 @@ def main():
 
               pack_4_11.Scenario300( netschedule ),
               pack_4_11.Scenario301( netschedule ),
-              pack_4_11.Scenario302( netschedule ),
               pack_4_11.Scenario303( netschedule ),
               pack_4_11.Scenario304( netschedule ),
               pack_4_11.Scenario305( netschedule ),
