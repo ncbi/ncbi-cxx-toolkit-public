@@ -4329,20 +4329,6 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
                 prot.SetName().push_front(val);
             }
             ChangeMade(CCleanupChange::eChangeQualifiers);
-
-            // Removed per JIRA SF-625.  I'm leaving the code here in case we decide to put
-            // it in "serious cleanup" in the future.
-
-            //if (prot.IsSetDesc()) {
-            //    const CProt_ref::TDesc& desc = prot.GetDesc();
-            //    FOR_EACH_NAME_ON_PROTREF (it, prot) {
-            //        if (NStr::EqualNocase(desc, *it)) {
-            //            prot.ResetDesc();
-            //            ChangeMade(CCleanupChange::eChangeQualifiers);
-            //            break;
-            //        }
-            //    }
-            //}
         } else {
             return eAction_Nothing;
         }
@@ -6840,10 +6826,6 @@ static bool s_CommentRedundantWithGeneRef (
     if (STRING_FIELD_MATCH (gene_ref, Locus_tag, comm)) return true;
     if (STRING_SET_MATCH   (gene_ref, Syn,       comm)) return true;
 
-    // For JIRA SF-625.  Leaving code commented-out here in case it's needed
-    // in the future to move into "serious cleanup"
-    // if (STRING_FIELD_MATCH (gene_ref, Desc,      comm)) return true;
-
     return false;
 }
 
@@ -7094,11 +7076,6 @@ void CNewCleanup_imp::ProtrefBC (
                 }
                 continue;
             } 
-            // For JIRA SF-625.  Leaving this here in case we decide to move it to "serious cleanup" later
-            // else if (prot_ref.IsSetDesc() && NStr::EqualCase (*it, prot_ref.GetDesc())) {
-                // prot_ref.ResetDesc();
-                // ChangeMade (CCleanupChange::eRemoveQualifier);
-            // }
 
             // This is pretty inefficient, so when there's time we should replace it with a map or something
             if (NStr::Find (*it, "ribulose") != string::npos
@@ -7241,21 +7218,6 @@ void CNewCleanup_imp::ProtFeatfBC (
         }
     }
 
-    // For JIRA SF-625. Leaving in case we move it to "serious cleanup" later.
-
-    // remove description if same as protein name
-    //if (FIELD_IS_SET (pr, Desc)) {
-    //    const string& desc = GET_FIELD (pr, Desc);
-    //    FOR_EACH_NAME_ON_PROTREF (nm_itr, pr) {
-    //        const string& str = *nm_itr;
-    //        if (NStr::Equal (desc, str)) {
-    //            RESET_FIELD (pr, Desc);
-    //            ChangeMade (CCleanupChange::eRemoveQualifier);
-    //            break;
-    //        }
-    //    }
-    //}
-        
     // remove feat.comment if equal to various protein fields
     if (FIELD_IS_SET (sf, Comment)) {
         if (s_CommentRedundantWithProtRef (pr, GET_FIELD (sf, Comment))) {
@@ -9202,6 +9164,32 @@ void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq_set & bioseq_set )
 {
     if( x_RemoveDupBioSourceImpl( bioseq_set ) ) {
         ChangeMade( CCleanupChange::eRemoveDupBioSource );
+    }
+}
+
+void CNewCleanup_imp::x_RemoveProtDescThatDupsProtName( CProt_ref & prot )
+{
+    // remove prot desc if it matches any prot name
+    if (prot.IsSetDesc()) {
+        const CProt_ref::TDesc& desc = prot.GetDesc();
+        FOR_EACH_NAME_ON_PROTREF (it, prot) {
+            if (NStr::EqualNocase(desc, *it)) {
+                prot.ResetDesc();
+                ChangeMade(CCleanupChange::eChangeQualifiers);
+                break;
+            }
+        }
+    }
+}
+
+void CNewCleanup_imp::x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat & seq_feat )
+{
+    if( FIELD_IS_SET(seq_feat, Comment) ) {
+        const string & comm = GET_FIELD(seq_feat, Comment);
+        if ( STRING_FIELD_MATCH (gene, Desc, comm) ) {
+            RESET_FIELD(gene, Desc);
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
     }
 }
 

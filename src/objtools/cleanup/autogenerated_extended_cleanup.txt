@@ -59,3 +59,13 @@ use m_NewCleanup.x_RemoveDupBioSource {
 use m_NewCleanup.x_RemoveDupBioSource {
     Bioseq-set
 }
+
+use m_NewCleanup.x_RemoveProtDescThatDupsProtName
+{
+    Prot-ref
+}
+
+use m_NewCleanup.x_RemoveRedundantComment
+{
+    Seq-feat.data.gene AND Seq-feat
+}

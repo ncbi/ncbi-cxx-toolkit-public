@@ -440,6 +440,9 @@ private:
     void x_RemoveDupBioSource( CBioseq & bioseq );
     void x_RemoveDupBioSource( CBioseq_set & bioseq_set );
 
+    void x_RemoveProtDescThatDupsProtName( CProt_ref & prot );
+    void x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat& seq_feat );
+
 protected:
 
     CRef<CCleanupChange>  m_Changes;
