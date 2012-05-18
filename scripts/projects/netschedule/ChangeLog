@@ -1,3 +1,33 @@
+Release 4.11.0-Joukov based on SC-10 (2012-05-18)
+
+Improvements and bug fixes
+
+    * Leak of Worker Node internal structures (JIRA: CXX-804)
+    * Netschedule: SST and SST2 (fast status) does not change timestamp
+      (JIRA: CXX-2229)
+    * NetSchedule: new output of the SST2/WST2/STATUS2 commands to return the
+      updated job expiration time (JIRA: CXX-2380)
+    * NetSchedule: the new REFUSESUBMITS command (JIRA: CXX-2416)
+    * NetSchedule: MGET to advance the job last access time (JIRA: CXX-2653)
+    * NetSchedule: close connection in case of a wrong command (JIRA: CXX-3156)
+    * NetSchedule: error_message field in the events database (JIRA: CXX-3160)
+    * NetSchedule: wipe out JXCG2 command (JIRA: CXX-3192)
+    * Enhancement over GET2 affinity handling (JIRA: CXX-3206)
+    * NetSchedule: move the peer address from parameters to client IP field in
+      the connection start request (JIRA: CXX-3216)
+    * NetSchedule GET2 to return output in URL-encoded format (JIRA: CXX-3217)
+    * NetSchedule: extension to the SHUTDOWN command (JIRA: CXX-3237)
+    * NetSchedule: STAT to produce additional output (JIRA: CXX-3242)
+    * NetSchedule: changes in the ACNT command (JIRA: CXX-3253)
+    * NetSchedule: Extend STAT JOBS with ability to print info with and without
+      a queue (JIRA: CXX-3266)
+    * NetSchedule to print peer control port in STAT CLIENTS output
+      (JIRA: CXX-3279)
+    * NetSchedule to print client host in STAT CLIENTS output (JIRA: CXX-3283)
+    * NetSchedule: improved algorithm for picking a job considering preferred
+      affinities. (JIRA: CXX-3290)
+
+
 Release 4.10.0 based on TRUNK (2012-03-20)
 
 Improvements and bug fixes
