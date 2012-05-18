@@ -80,3 +80,8 @@ Bug fix release
 February 23, 2012
 version 2.4.4
 In XML Schema generation, corrected elementFormDefault attribute.
+
+May 18, 2012
+version 2.5.0
+Fixed bug in matching ASN binary data against known data types.
+
