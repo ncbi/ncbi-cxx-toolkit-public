@@ -192,7 +192,7 @@ public:
     /// @sa
     ///   EMatch, GetSub, GetResult
     string GetMatch(
-        const string& str,
+        CTempString   str,
         size_t        offset   = 0,
         size_t        idx      = 0,
         TMatch        flags    = fMatch_default,
@@ -212,7 +212,7 @@ public:
     /// @sa
     ///   EMatch, GetMatch, NumFound
     bool IsMatch(
-        const string& str,
+        CTempString   str,
         TMatch        flags = fMatch_default
     );
 
@@ -230,8 +230,8 @@ public:
     ///   subpattern match (idx > 0). Return empty string when no match.
     /// @sa
     ///   GetMatch(), GetResult()
-    string GetSub(const string& str, size_t idx = 0) const;
-    void   GetSub(const string& str, size_t idx, string& dst) const;
+    string GetSub(CTempString str, size_t idx = 0) const;
+    void   GetSub(CTempString str, size_t idx, string& dst) const;
 
     /// Get number of patterns + subpatterns.
     ///

@@ -72,7 +72,7 @@ public:
     ///   not specified. Otherwise return FALSE.
     /// @sa
     ///   NStr::MatchesMask, CMask
-    bool Match(const string& str, NStr::ECase use_case = NStr::eCase) const;
+    bool Match(CTempString str, NStr::ECase use_case = NStr::eCase) const;
 };
 
 /* @} */

@@ -222,47 +222,45 @@ int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 
 
 // NOTE: This code is used also in the CDirEntry::MatchesMask.
-/// @internal
-bool s_MatchesMask(const char* str, const char* mask, NStr::ECase use_case) 
+bool NStr::MatchesMask(CTempString str, CTempString mask, ECase use_case)
 {
     char c;
-    bool infinite = true;
-
-    while (infinite) {
+    for ( size_t str_pos = 0, mask_pos = 0; ; ) {
         // Analyze symbol in mask
-        switch ( c = *mask++ ) {
-        
+        switch ( c = mask[mask_pos++] ) {
         case '\0':
-            return *str == '\0';
+            return str[str_pos] == '\0';
 
         case '?':
-            if (*str == '\0') {
+            if (str[str_pos] == '\0') {
                 return false;
             }
-            ++str;
+            ++str_pos;
             break;
 
         case '*':
-            c = *mask;
+            c = mask[mask_pos];
             // Collapse multiple stars
             while ( c == '*' ) {
-                c = *++mask;
+                c = mask[++mask_pos];
             }
             if (c == '\0') {
                 return true;
             }
             // General case, use recursion
-            while ( *str ) {
-                if (s_MatchesMask(str, mask, use_case)) {
+            while ( str[str_pos] ) {
+                if ( MatchesMask(str.substr(str_pos),
+                                 mask.substr(mask_pos),
+                                 use_case) ) {
                     return true;
                 }
-                ++str;
+                ++str_pos;
             }
             return false;
 
         default:
             // Compare nonpattern character in mask and name
-            char s = *str++;
+            char s = str[str_pos++];
             if (use_case == NStr::eNocase) {
                 c = tolower((unsigned char) c);
                 s = tolower((unsigned char) s);
@@ -274,53 +272,6 @@ bool s_MatchesMask(const char* str, const char* mask, NStr::ECase use_case)
         }
     }
     return false;
-}
-
-
-bool NStr::MatchesMask(const CTempStringEx& str, 
-                       const CTempStringEx& mask, ECase use_case)
-{
-    const char* s_ptr = str.data();
-    const char* m_ptr = mask.data();
-
-    if ( str.HasZeroAtEnd() &&
-         mask.HasZeroAtEnd() ) {
-        // strings has zero at the end already
-        return s_MatchesMask(s_ptr, m_ptr, use_case);
-    }
-
-    // Small temporary buffers on stack for appending zero chars
-    char s_buf[256]; 
-    char m_buf[256]; 
-
-    // 'mask' usually have shorter length, check it first.
-    if ( !mask.HasZeroAtEnd() ) {
-        size_t size = mask.size();
-        if ( size < sizeof(m_buf) ) {
-            memcpy(m_buf, mask.data(), size);
-            m_buf[size] = '\0';
-            m_ptr = m_buf;
-        } else {
-            // 'mask' is long -- very rare case, can assume that 'str'
-            // is long also.
-            // use std::string() to allocate memory for appending zero char
-            return s_MatchesMask(string(str).c_str(),
-                                 string(mask).c_str(), use_case);
-        }
-    }
-    if ( !str.HasZeroAtEnd() ) {
-        size_t size = str.size();
-        if ( size < sizeof(s_buf) ) {
-            memcpy(s_buf, str.data(), size);
-            s_buf[size] = '\0';
-            s_ptr = s_buf;
-        } else {
-            // use std::string() to allocate memory for appending zero char
-            return s_MatchesMask(string(str).c_str(), m_ptr, use_case);
-        }
-    }
-    // Both strings are zero-terminated now
-    return MatchesMask(s_ptr, m_ptr, use_case);
 }
 
 

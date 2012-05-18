@@ -84,7 +84,7 @@ public:
     ///   Return TRUE if the string 'str' matches one of the inclusion masks
     ///   and does not match any of the exclusion masks, or no masks at all
     ///   have been specified. Otherwise, return FALSE.
-    virtual bool Match(const string& str,
+    virtual bool Match(CTempString str,
                        NStr::ECase use_case = NStr::eCase) const = 0;
 
 protected:
@@ -119,7 +119,7 @@ public:
     ///   have been specified. Otherwise, return FALSE.
     /// @sa
     ///   NStr::MatchesMask
-    bool Match(const string& str, NStr::ECase use_case = NStr::eCase) const;
+    bool Match(CTempString str, NStr::ECase use_case = NStr::eCase) const;
 };
 
 /* @} */
@@ -131,7 +131,7 @@ public:
 //
 
 inline
-bool CMaskFileName::Match(const string& str, NStr::ECase use_case) const
+bool CMaskFileName::Match(CTempString str, NStr::ECase use_case) const
 {
     bool found = m_Inclusions.empty();
 

@@ -132,7 +132,7 @@ void CRegexp::Set(const string& pattern, TCompile flags)
 }
 
 
-void CRegexp::GetSub(const string& str, size_t idx, string& dst) const
+void CRegexp::GetSub(CTempString str, size_t idx, string& dst) const
 {
     int start = m_Results[2 * idx];
     int end   = m_Results[2 * idx + 1];
@@ -140,12 +140,12 @@ void CRegexp::GetSub(const string& str, size_t idx, string& dst) const
     if ((int)idx >= m_NumFound  ||  start == -1  ||  end == -1) {
         dst.erase();
     } else {
-        dst.assign(str, start, end - start);
+        dst.assign(str.data()+start, end - start);
     }
 }
 
 
-string CRegexp::GetSub(const string& str, size_t idx) const
+string CRegexp::GetSub(CTempString str, size_t idx) const
 {
     string s;
     GetSub(str, idx, s);
@@ -154,7 +154,7 @@ string CRegexp::GetSub(const string& str, size_t idx) const
 
 
 string CRegexp::GetMatch(
-    const string& str,
+    CTempString   str,
     size_t        offset,
     size_t        idx,
     TMatch        flags,
@@ -173,7 +173,7 @@ string CRegexp::GetMatch(
 }
 
 
-bool CRegexp::IsMatch(const string& str, TMatch flags)
+bool CRegexp::IsMatch(CTempString str, TMatch flags)
 {
     int x_flags = s_GetRealMatchFlags(flags);
     m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),

@@ -1698,8 +1698,8 @@ public:
 
     /// Wrapper for the function strftime() that corrects handling %D and %T
     /// time formats on MS Windows.
-    static size_t strftime (char* s, size_t maxsize, const char* format,
-                            const struct tm* timeptr);
+    static size_t strftime(char* s, size_t maxsize, const char* format,
+                           const struct tm* timeptr);
 
     /// Match "str" against the "mask".
     ///
@@ -1718,8 +1718,8 @@ public:
     ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
     /// @sa
     ///    CRegexp, CRegexpUtil
-    static bool MatchesMask(const CTempStringEx& str, 
-                            const CTempStringEx& mask, ECase use_case = eCase);
+    static bool MatchesMask(CTempString str, 
+                            CTempString mask, ECase use_case = eCase);
 
     // The following 4 methods change the passed string, then return it
 

@@ -34,7 +34,7 @@
 BEGIN_NCBI_SCOPE
 
 
-bool CMaskRegexp::Match(const string& str, NStr::ECase use_case) const
+bool CMaskRegexp::Match(CTempString str, NStr::ECase use_case) const
 {
     CRegexp::TCompile compile_flags = CRegexp::fCompile_default;
     if ( use_case == NStr::eNocase ) {

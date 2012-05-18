@@ -3418,7 +3418,7 @@ inline
 bool CDirEntry::MatchesMask(const string& name, const string& mask,
                             NStr::ECase use_case)
 {
-    return NStr::MatchesMask(name.c_str(), mask.c_str(), use_case);
+    return NStr::MatchesMask(name, mask, use_case);
 }
 
 inline
