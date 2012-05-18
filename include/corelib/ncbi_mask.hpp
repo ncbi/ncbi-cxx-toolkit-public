@@ -1,7 +1,7 @@
 #ifndef CORELIB___NCBI_MASK__HPP
 #define CORELIB___NCBI_MASK__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -28,12 +28,12 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  Classes to match string against set of masks.
+ * File Description:  Classes to match a string against a set of masks.
  *
  */
 
 /// @file ncbi_mask.hpp
-/// Classes to match string against set of masks.
+/// Classes to match a string against a set of masks.
 
 #include <corelib/ncbistd.hpp>
 
@@ -49,47 +49,47 @@ BEGIN_NCBI_SCOPE
 ///
 /// CMask --
 ///
-/// Abstract class. Basic class for CMaskFileName, CMaskRegexp.
+/// Abstract class. Base class for CMaskFileName, CMaskRegexp.
 ///
-/// The empty mask object always correspond to "all is included" case.
-/// Throw exceptions on error.
+/// An empty mask object always corresponds to "all is included" case.
+/// Throws exceptions on errors.
 ///
 
 class CMask
 {
 public:
     /// Constructor
-    CMask(void) {};
+    CMask(void) { }
     /// Destructor
-    virtual ~CMask(void) {};
+    virtual ~CMask(void) { }
 
-    /// Add inclusion mask
+    /// Add an inclusion mask
     void Add(const string& mask)             { m_Inclusions.push_back(mask); }
-    /// Add exclusion mask
+    /// Add an exclusion mask
     void AddExclusion(const string& mask)    { m_Exclusions.push_back(mask); }
 
-    /// Remove inclusion mask
+    /// Remove an inclusion mask
     void Remove(const string& mask)          { m_Inclusions.remove(mask); }
-    /// Remove exclusion mask
+    /// Remove an exclusion mask
     void RemoveExclusion(const string& mask) { m_Exclusions.remove(mask); }
 
-    /// Match string
+    /// Match a string.
     ///
     /// @param str
     ///   String to match.
     /// @param use_case
-    ///   Whether to do a case sensitive compare(eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
-    /// @return 
-    ///   Return TRUE if string 'str' matches to one of inclusion masks
-    ///   and not matches none of exclusion masks, or match masks are
-    ///   not specified. Otherwise return FALSE.
+    ///   Whether to do case-sensitive comparison (eCase, default), or
+    ///   case-insensitive comparison (eNocase).
+    /// @return
+    ///   Return TRUE if the string 'str' matches one of the inclusion masks
+    ///   and does not match any of the exclusion masks, or no masks at all
+    ///   have been specified. Otherwise, return FALSE.
     virtual bool Match(const string& str,
                        NStr::ECase use_case = NStr::eCase) const = 0;
 
 protected:
-    list<string>  m_Inclusions;   ///< Inclusion masks list
-    list<string>  m_Exclusions;   ///< Exclusion masks list
+    list<string>  m_Inclusions;   ///< List of inclusion masks
+    list<string>  m_Exclusions;   ///< List of exclusion masks
 };
 
 
@@ -98,25 +98,25 @@ protected:
 ///
 /// CMaskFileName --
 ///
-/// Class to match file names against set of masks using wildcards characters.
+/// Class to match file names against set of masks using wildcard characters.
 ///
-/// The empty mask object always correspond to "all is included" case.
-/// Throw exceptions on error.
+/// An empty mask object always corresponds to "all is included" case.
+/// Throws exceptions on errors.
 ///
 class CMaskFileName : public CMask
 {
 public:
-    /// Match string
+    /// Match a string.
     ///
     /// @param str
     ///   String to match.
     /// @param use_case
-    ///   Whether to do a case sensitive compare(eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
+    ///   Whether to do case-sensitive comparison (eCase, default), or
+    ///   case-insensitive comparison (eNocase).
     /// @return 
-    ///   Return TRUE if string 'str' matches to one of inclusion masks
-    ///   and not matches none of exclusion masks, or match masks are
-    ///   not specified. Otherwise return FALSE.
+    ///   Return TRUE if the string 'str' matches one of the inclusion masks
+    ///   and does not match any of the exclusion masks, or no masks at all
+    ///   have been specified. Otherwise, return FALSE.
     /// @sa
     ///   NStr::MatchesMask
     bool Match(const string& str, NStr::ECase use_case = NStr::eCase) const;
