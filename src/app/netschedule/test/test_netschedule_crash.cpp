@@ -482,7 +482,9 @@ int CTestNetScheduleCrash::Run(void)
 
     CNetScheduleAPI                     cl(service, "crash_test", queue);
 
-    cl.SetProgramVersion("test wn 1.0.2");
+    cl.SetProgramVersion("crash_test wn 1.0.3");
+    cl.SetClientNode("crash_test_node");
+    cl.SetClientSession("crash_test_session");
 
     cl.GetAdmin().PrintServerVersion(NcbiCout);
 
