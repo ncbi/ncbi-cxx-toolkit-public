@@ -897,6 +897,10 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         break;
 
     case 0:
+        if (IsOptionSet(eAffinityList))
+            break;
+        /* FALL THROUGH */
+
     case OPTION_N(2):
         affinity_preference = CNetScheduleExecutor::eAnyJob;
         break;
