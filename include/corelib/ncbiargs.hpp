@@ -238,7 +238,7 @@ public:
         fAppend   = (1 <<  2),  ///< Open file in append mode.
         fTruncate = (1 << 12)   ///< Open file in truncate mode.
     };
-    typedef int TFileFlags;   // binary OR of "EFileFlags"
+    typedef unsigned int TFileFlags;   ///< Bitwise OR of "EFileFlags"
 
     /// Get the argument as an input file stream.
     virtual CNcbiIstream& AsInputFile (TFileFlags flags = 0) const = 0;
@@ -519,7 +519,7 @@ public:
     /// Must match the argument type, or an exception will be thrown.
     /// ( File related are for eInputFile and eOutputFiler argument types.)
     enum EFlags {
-        // file related flags:
+        // File related flags:
 
         /// Open file right away for eInputFile, eOutputFile
         fPreOpen = (1 << 0),
@@ -537,7 +537,7 @@ public:
         /// Repeated key arguments are legal (use with AddKey)
         fAllowMultiple = (1 << 3),
 
-        // Error handling flags
+        // Error handling flags:
 
         /// Ignore invalid argument values. If not set, exceptions will be
         /// thrown on invalid values.
@@ -564,7 +564,7 @@ public:
         /// Hide it in Usage
         fHidden = (1 << 10)
     };
-    typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
+    typedef unsigned int TFlags;  ///< Bitwise OR of "EFlags"
 
     /// Add description for mandatory key.
     ///
@@ -584,7 +584,7 @@ public:
                 const string& synopsis,   ///< Synopsis for argument
                 const string& comment,    ///< Argument description
                 EType         type,       ///< Argument type
-                TFlags        flags = 0   ///< Optional file related flags
+                TFlags        flags = 0   ///< Optional flags
                );
 
     /// Add description for optional key without default value.
@@ -605,7 +605,7 @@ public:
                         const string& synopsis, ///< Synopsis for argument
                         const string& comment,  ///< Argument description
                         EType         type,     ///< Argument type
-                        TFlags        flags = 0 ///< Optional file flags
+                        TFlags        flags = 0 ///< Optional flags
                        );
 
     /// Add description for optional key with default value.
@@ -627,7 +627,7 @@ public:
                        const string& comment,       ///< Argument description
                        EType         type,          ///< Argument type
                        const string& default_value, ///< Default value
-                       TFlags        flags = 0,     ///< Optional file flags
+                       TFlags        flags = 0,     ///< Optional flags
     /// Optional name of environment variable that contains default value
                        const string& env_var = kEmptyStr
                       );
@@ -673,7 +673,7 @@ public:
     void AddOpening(const string& name,     ///< Name of argument
                     const string& comment,  ///< Argument description
                     EType         type,     ///< Argument type
-                    TFlags        flags = 0 ///< Optional file flags
+                    TFlags        flags = 0 ///< Optional flags
                     );
 
     /// Add description for mandatory postional argument.
@@ -698,7 +698,7 @@ public:
     void AddPositional(const string& name,     ///< Name of argument
                        const string& comment,  ///< Argument description
                        EType         type,     ///< Argument type
-                       TFlags        flags = 0 ///< Optional file flags
+                       TFlags        flags = 0 ///< Optional flags
                       );
 
     /// Add description for optional positional argument without default
@@ -721,7 +721,7 @@ public:
     void AddOptionalPositional(const string& name,     ///< Name of argument
                                const string& comment,  ///< Argument descr.
                                EType         type,     ///< Argument type
-                               TFlags        flags = 0 ///< Optional file flgs
+                               TFlags        flags = 0 ///< Optional flags
                               );
 
     /// Add description for optional positional argument with default value.
@@ -743,7 +743,7 @@ public:
                               const string& comment,///< Argument description
                               EType         type,   ///< Argument type
                               const string& default_value, ///< Default value
-                              TFlags        flags = 0, ///< Optional file flags
+                              TFlags        flags = 0, ///< Optional flags
     /// Optional name of environment variable that contains default value
                               const string& env_var = kEmptyStr
                              );
@@ -764,7 +764,7 @@ public:
                   unsigned      n_optional,  ///< Number of optional args
                   const string& comment,     ///< Argument description
                   EType         type,        ///< Argument type
-                  TFlags        flags = 0    ///< Optional file flags
+                  TFlags        flags = 0    ///< Optional flags
                  );
 
     /// Add argument alias. The alias can be used in the command line instead
