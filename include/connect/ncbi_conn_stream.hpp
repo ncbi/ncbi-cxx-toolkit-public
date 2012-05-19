@@ -223,7 +223,7 @@ public:
     ///   CONN_Close
     EIO_Status      Close(void);
 
-    /// Cancellation support
+    /// Cancellation support.
     /// @note ICanceled implementation must be derived from CObject as its
     /// first superclass.
     /// @sa
@@ -231,10 +231,13 @@ public:
     EIO_Status      SetCanceledCallback(const ICanceled* canceled);
 
     /// @return
-    ///   Internal CONNection handle (NULL if unset)
+    ///   Internal CONNection handle, which is still owned and used by
+    ///   the stream (or NULL if no such connection exists)
+    /// @note
+    ///   Connection can have additional flags set for I/O processing.
     /// @sa
-    ///   CONN, ncbi_connection.h
-    CONN GetCONN(void) const;
+    ///   CONN, ncbi_connection.h, CONN_GetFlags
+    CONN            GetCONN(void) const;
 
 protected:
     void x_Cleanup(void);

@@ -404,6 +404,29 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_GetSOCK
  );
     
 
+/** Set connection processing flags.
+ * @return
+ *  eIO_Success on success, other error code on error.
+ * @sa
+ *  CONN_CreateEx, CONN_GetFlags
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetFlags
+(CONN        conn,  /**< [in]  connection handle    */
+ TCONN_Flags flags  /**< [in]  new connection flags */
+ );
+
+
+/** Get connection processing flags currently in effect.
+ * @return
+ *  Current value of the flags.
+ * @sa
+ *  CONN_CreateEx, CONN_SetFlags
+ */
+extern NCBI_XCONNECT_EXPORT TCONN_Flags CONN_GetFlags
+(CONN conn  /**< [in]  connection handle */
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
