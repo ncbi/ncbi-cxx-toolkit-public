@@ -43,7 +43,7 @@
  */
 
 #include <ncbi_pch.hpp>
-/* Cancel __wur (warn unused result) ill effects in GCC */
+// Cancel __wur (warn unused result) ill effects in GCC
 #ifdef   _FORTIFY_SOURCE
 #  undef _FORTIFY_SOURCE
 #endif /*_FORTIFY_SOURCE*/
@@ -1262,8 +1262,6 @@ CTar::CTar(const string& filename, size_t blocking_factor)
       m_StreamPos(0),
       m_BufPtr(0),
       m_Buffer(0),
-      m_Mask(0),
-      m_MaskOwned(eNoOwnership),
       m_OpenMode(eNone),
       m_Modified(false),
       m_Bad(false),
@@ -1283,8 +1281,6 @@ CTar::CTar(CNcbiIos& stream, size_t blocking_factor)
       m_StreamPos(0),
       m_BufPtr(0),
       m_Buffer(0),
-      m_Mask(0),
-      m_MaskOwned(eNoOwnership),
       m_OpenMode(eNone),
       m_Modified(false),
       m_Bad(false),
@@ -1301,8 +1297,10 @@ CTar::~CTar()
     delete m_FileStream;
     m_FileStream = 0;
 
-    // Delete owned file name masks
-    SetMask(0);
+    // Delete owned masks
+    for (size_t i = 0;  i < sizeof(m_Mask) / sizeof(m_Mask[0]);  i++) {
+        SetMask(0, eNoOwnership, EMaskType(i));
+    }
 
     // Delete buffer
     delete[] m_BufPtr;
@@ -1425,7 +1423,6 @@ void CTar::x_Close(bool truncate)
     m_OpenMode  = eNone;
     m_Modified  = false;
     m_BufferPos = 0;
-    m_StreamPos = 0;
     m_Bad = false;
 }
 
@@ -1493,6 +1490,7 @@ void CTar::x_Open(EAction action)
                 toend = true;
             }
             x_Close(false);  // NB: m_OpenMode = eNone; m_Modified = false
+            m_StreamPos = 0;
             switch (mode) {
             case eWO:
                 // WO access
@@ -1521,12 +1519,12 @@ void CTar::x_Open(EAction action)
                 break;
             }
             if (!m_FileStream->is_open()  ||  !m_FileStream->good()) {
-                mode = eNone;
                 int x_errno = errno;
                 TAR_THROW(this, eOpen,
                           "Cannot open archive" + s_OSReason(x_errno));
+            } else {
+                m_OpenMode = mode;
             }
-            m_OpenMode = mode;
         } else {
             // No need to reopen the archive file
             _ASSERT(m_OpenMode > eWO  &&  action != eCreate);
@@ -1577,19 +1575,18 @@ const CTarEntryInfo* CTar::GetNextEntryInfo(void)
     if (m_Bad) {
         return 0;
     }
-    if (m_OpenMode) {
+    if (m_OpenMode & eRO) {
         x_Skip(BLOCK_OF(m_Current.GetPosition(CTarEntryInfo::ePos_Data)
                         + ALIGN_SIZE(m_Current.GetSize()) - m_StreamPos));
+    } else {
+        x_Open(eInternal);
     }
-
-    x_Open(eInternal);
     auto_ptr<TEntries> temp = x_ReadAndProcess(eInternal);
     _ASSERT(temp.get()  &&  temp->size() < 2);
     if (temp->size() < 1) {
         return 0;
     }
-
-    _ASSERT(m_Current == *temp->begin());
+    _ASSERT(m_Current == temp->front());
     return &m_Current;
 }
 
@@ -1831,13 +1828,13 @@ CTar::EStatus CTar::x_ParsePAXData(const string& buffer)
         { "gname",    0,      &gname,    fPAXNone  },
         { "comment",  0,      0,         fPAXNone  },  // string: check only
         { "charset",  0,      0,         fPAXNone  },  // string: check only
-        /* GNU sparse extensions (NB: .size and .realsize don't go together) */
+        // GNU sparse extensions (NB: .size and .realsize don't go together)
         { "GNU.sparse.realsize", &sparse, nodot, fPAXSparse },
         { "GNU.sparse.major",    &dummy,  nodot, fPAXSparse },
         { "GNU.sparse.minor",    &dummy,  nodot, fPAXSparse },
         { "GNU.sparse.size",     &sparse, nodot, fPAXSparse },
         { "GNU.sparse.name",     0,       &name, fPAXNone   },
-        /* Other */
+        // Other
         { "SCHILY.realsize",     &size,   nodot, fPAXSize   }
     };
     const char* str = buffer.c_str();
@@ -2513,12 +2510,12 @@ void CTar::x_WriteEntryInfo(const string& name)
 
     // User and group
     const string& usr = m_Current.GetUserName();
-    size_t len = usr.length();
+    size_t len = usr.size();
     if (len < sizeof(h->uname)) {
         memcpy(h->uname, usr.c_str(), len);
     }
     const string& grp = m_Current.GetGroupName();
-    len = grp.length();
+    len = grp.size();
     if (len < sizeof(h->gname)) {
         memcpy(h->gname, grp.c_str(), len);
     }
@@ -2564,8 +2561,8 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     char*      storage = link ? h->linkname         : h->name;
     size_t        size = link ? sizeof(h->linkname) : sizeof(h->name);
     const string& name = link ? info.GetLinkName()  : info.GetName();
-    size_t         len = name.length();
     const char*    src = name.c_str();
+    size_t         len = name.size();
 
     if (len <= size) {
         // Name fits!
@@ -2689,6 +2686,26 @@ void CTar::x_Backspace(EAction action)
 }
 
 
+static bool s_MatchPattern(const list<CTempString>& elems,
+                           const CMask*             mask,
+                           NStr::ECase              acase)
+{
+    _ASSERT(mask  &&  !elems.empty());
+    if (elems.size() == 1) {
+        return mask->Match(elems.front(), acase);
+    }
+
+    string temp;
+    REVERSE_ITERATE(list<CTempString>, it, elems) {
+        temp = temp.empty() ? string(*it) : string(*it) + '/' + temp;
+        if (mask->Match(temp, acase)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 {
     auto_ptr<TEntries> done(new TEntries);
@@ -2740,8 +2757,11 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             }
             if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
                 TAR_POST(6, Error, "Orphaned extended information ignored");
-            } else if (m_ZeroBlockCount < 2
-                       &&  action != eAppend  &&  m_StreamPos) {
+            } else if (m_ZeroBlockCount < 2  &&  action != eAppend) {
+                if (!m_StreamPos) {
+                    TAR_THROW(this, eRead,
+                              "Unexpected EOF in archive");
+                }
                 TAR_POST(58, Warning, m_ZeroBlockCount
                          ? "Incomplete EOT in archive"
                          : "Missing EOT in archive");
@@ -2866,19 +2886,33 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         xinfo.m_Type = CTarEntryInfo::eUnknown;
         _ASSERT(status == eFailure  ||  status == eSuccess);
 
-        if (!Checkpoint(m_Current, false/*read*/))
+        // User callback
+        if (!Checkpoint(m_Current, false/*read*/)) {
             status = eFailure;
+        }
+        // Last sanity check
+        if (status != eFailure  &&  m_Current.GetName().empty()) {
+            TAR_THROW(this, eBadName,
+                      "Empty entry name in archive");
+        }
 
         // Match file name with the set of masks
         bool match = (status == eFailure ? false
-                      : m_Mask  &&  (action == eList     ||
-                                     action == eExtract  ||
-                                     action == eInternal)
-                      ? m_Mask->Match(m_Current.GetName(),
-                                      m_Flags & fMaskNocase
-                                      ? NStr::eNocase
-                                      : NStr::eCase)
+                      : m_Mask[eExtractMask].mask  &&  (action == eList     ||
+                                                        action == eExtract  ||
+                                                        action == eInternal)
+                      ? m_Mask[eExtractMask].mask->Match(m_Current.GetName(),
+                                                         m_Mask[eExtractMask]
+                                                         .acase)
                       : true);
+        if (match  &&  m_Mask[eExcludeMask].mask  &&  action != eTest) {
+            list<CTempString> elems;
+            _ASSERT(!m_Current.GetName().empty());
+            NStr::Split(m_Current.GetName(), "/", elems);
+            match = !s_MatchPattern(elems,
+                                    m_Mask[eExcludeMask].mask,
+                                    m_Mask[eExcludeMask].acase);
+        }
 
         // NB: match is 'false' when processing a failing entry
         if ((match  &&  action == eInternal)
@@ -3437,10 +3471,10 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
     bool absolute;
     // Remove leading base dir from the path
     if (!base_dir.empty()  &&  NStr::StartsWith(retval, base_dir, how)) {
-        if (retval.length() > base_dir.length()) {
-            retval.erase(0, base_dir.length()/*separator too*/);
+        if (retval.size() > base_dir.size()) {
+            retval.erase(0, base_dir.size()/*separator too*/);
         } else {
-            retval.assign(".", 1);
+            retval.assign(1, '.');
         }
         absolute = false;
     } else {
@@ -3450,25 +3484,25 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
     SIZE_TYPE pos = 0;
 
 #ifdef NCBI_OS_MSWIN
-    _ASSERT(!retval.empty());
     // Remove a disk name if present
-    if (isalpha((unsigned char) retval[0])  &&  retval.find(":") == 1) {
+    if (retval.size() > 1
+        &&  isalpha((unsigned char) retval[0])  &&  retval[1] == ':') {
         pos = 2;
     }
 #endif //NCBI_OS_MSWIN
 
     // Remove any leading and trailing slashes
-    while (pos < retval.length()  &&  retval[pos] == '/') {
+    while (pos < retval.size()  &&  retval[pos] == '/') {
         pos++;
     }
     if (pos) {
         retval.erase(0, pos);
     }
-    pos = retval.length();
+    pos = retval.size();
     while (pos > 0  &&  retval[pos - 1] == '/') {
         --pos;
     }
-    if (pos < retval.length()) {
+    if (pos < retval.size()) {
         retval.erase(pos);
     }
 
@@ -3486,6 +3520,11 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
     const EFollowLinks follow_links = (m_Flags & fFollowLinks ?
                                        eFollowLinks : eIgnoreLinks);
+    unsigned int uid = 0, gid = 0;
+    bool update = true;
+
+    // Create the entry info
+    m_Current = CTarEntryInfo(m_StreamPos);
 
     // Compose entry name for relative names
     string path = s_ToFilesystemPath(m_BaseDir, name);
@@ -3500,25 +3539,31 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     }
     CDirEntry::EType type = CDirEntry::GetType(st.orig);
 
-    // Create the entry info
-    m_Current = CTarEntryInfo(m_StreamPos);
-
     string temp = s_ToArchiveName(m_BaseDir, path);
-    list<CTempString> elems;
-    NStr::Split(name, "/", elems);
-    if (find(elems.begin(), elems.end(), "..") != elems.end()) {
-        TAR_THROW(this, eBadName,
-                  "Name '" + temp + "' embeds parent directory ('..')");
-    }
-    elems.clear();
-    m_Current.m_Name.swap(temp);
-    if (type == CDirEntry::eDir  &&  m_Current.m_Name != "/") {
-        m_Current.m_Name += '/';
-    } else if (m_Current.GetName().empty()) {
+
+    if (temp.empty()) {
         TAR_THROW(this, eBadName,
                   "Empty entry name not allowed");
     }
 
+    list<CTempString> elems;
+    NStr::Split(temp, "/", elems);
+    if (find(elems.begin(), elems.end(), "..") != elems.end()) {
+        TAR_THROW(this, eBadName,
+                  "Name '" + temp + "' embeds parent directory ('..')");
+    }
+    if (m_Mask[eExcludeMask].mask
+        &&  s_MatchPattern(elems,
+                           m_Mask[eExcludeMask].mask,
+                           m_Mask[eExcludeMask].acase)) {
+        goto out;
+    }
+    elems.clear();
+    if (type == CDirEntry::eDir  &&  temp != "/") {
+        temp += '/';
+    }
+
+    m_Current.m_Name.swap(temp);
     m_Current.m_Type = CTarEntryInfo::EType(type);
     if (m_Current.GetType() == CTarEntryInfo::eSymLink) {
         _ASSERT(!follow_links);
@@ -3529,7 +3574,6 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         }
     }
 
-    unsigned int uid = 0, gid = 0;
     entry.GetOwner(&m_Current.m_UserName, &m_Current.m_GroupName,
                    follow_links, &uid, &gid);
 #ifdef NCBI_OS_UNIX
@@ -3551,14 +3595,13 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
 
     // Check if we need to update this entry in the archive
-    bool update = true;
     if (toc) {
         bool found = false;
 
         if (type != CDirEntry::eUnknown) {
             // Start searching from the end of the list, to find
             // the most recent entry (if any) first
-            string temp;
+            _ASSERT(temp.empty());
             REVERSE_ITERATE(TEntries, e, *toc) {
                 if (!temp.empty()) {
                     if (e->GetType() == CTarEntryInfo::eHardLink  ||
@@ -3599,7 +3642,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         }
     }
 
-    // Append entry
+    // Append the entry
     switch (type) {
     case CDirEntry::eFile:
         _ASSERT(update);
@@ -3633,21 +3676,27 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     case CDirEntry::eDoor:
     case CDirEntry::eSocket:
         // Tar does not have any provisions to store this kind of entries
-        TAR_POST(3, Warning,
-                 "Skipping non-archiveable "
-                 + string(type == CDirEntry::eSocket ? "socket" : "door")
-                 + " entry '" + path + '\'');
+        if (!(m_Flags & fSkipUnsupported)) {
+            TAR_POST(3, Warning,
+                     "Skipping non-archiveable "
+                     + string(type == CDirEntry::eSocket ? "socket" : "door")
+                     + " entry '" + path + '\'');
+        }
         break;
 
     case CDirEntry::eUnknown:
-        TAR_THROW(this, eBadName,
-                  "Unable to handle '" + path + '\'');
+        if (!(m_Flags & fSkipUnsupported)) {
+            TAR_THROW(this, eBadName,
+                      "Unable to handle '" + path + '\'');
+        }
         /*FALLTHRU*/
 
     default:
-        TAR_POST(14, Warning,
-                 "Skipping unsupported source '" + path
-                 + "' of type #" + NStr::IntToString(int(type)));
+        if (type == CDirEntry::eUnknown  ||  !(m_Flags & fSkipUnsupported)) {
+            TAR_POST(14, Warning,
+                     "Skipping unsupported source '" + path
+                     + "' of type #" + NStr::IntToString(int(type)));
+        }
         break;
     }
 
@@ -3661,17 +3710,33 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
 {
     auto_ptr<TEntries> entries(new TEntries);
 
-    // Create the entry info
-    m_Current = entry;
-    m_Current.m_Pos = m_StreamPos;
-    m_Current.m_Type = CTarEntryInfo::eFile;
+    // Create a temp entry info first
+    m_Current = CTarEntryInfo(m_StreamPos);
 
-    while (NStr::EndsWith(m_Current.m_Name, '/'))
-        m_Current.m_Name.resize(m_Current.m_Name.size() - 1);
-    if (m_Current.m_Name.empty()) {
+    string temp = s_ToArchiveName(kEmptyStr, entry.GetName());
+
+    while (NStr::EndsWith(temp, '/')) { // NB: directories are not allowed here
+        temp.resize(temp.size() - 1);
+    }
+    if (temp.empty()) {
         TAR_THROW(this, eBadName,
                   "Empty entry name not allowed");
     }
+
+    list<CTempString> elems;
+    NStr::Split(temp, "/", elems);
+    if (find(elems.begin(), elems.end(), "..") != elems.end()) {
+        TAR_THROW(this, eBadName,
+                  "Name '" + temp + "' embeds parent directory ('..')");
+    }
+    elems.clear();
+
+    // Recreate entry info
+    m_Current = entry;
+    m_Current.m_Name.swap(temp);
+    m_Current.m_Pos = m_StreamPos;
+    m_Current.m_Type = CTarEntryInfo::eFile;
+
     if (!is.good()) {
         TAR_THROW(this, eRead,
                   "Bad input file stream");
@@ -3703,10 +3768,10 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
 
     struct passwd *pwd = getpwuid(m_Current.m_Stat.st_uid);
     if (pwd)
-        m_Current.m_UserName.assign(pwd->pw_name);
+        m_Current.m_UserName = pwd->pw_name;
     struct group  *grp = getgrgid(m_Current.m_Stat.st_gid);
     if (grp)
-        m_Current.m_GroupName.assign(grp->gr_name);
+        m_Current.m_GroupName = grp->gr_name;
 #else
     // safe file mode
     m_Current.m_Stat.st_mode = (fTarURead | fTarUWrite |
@@ -3718,7 +3783,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                                  &m_Current.m_UserName,
                                  &m_Current.m_GroupName,
                                  &uid, &gid);
-    /* these are fake but we don't want to leave plain 0 (root) in there */
+    // these are fake but we don't want to leave plain 0 (Unix root) in there
     m_Current.m_Stat.st_uid = (uid_t) uid;
     m_Current.m_Stat.st_gid = (gid_t) gid;
 #endif //NCBI_OS_UNIX
@@ -3806,6 +3871,22 @@ void CTar::x_AppendFile(const string& file)
 }
 
 
+void CTar::SetMask(CMask*    mask, EOwnership  own,
+                   EMaskType type, NStr::ECase acase)
+{
+    if (type < 0  ||  (size_t) type >= sizeof(m_Mask) / sizeof(m_Mask[0])) {
+        TAR_THROW(this, eMemory,
+                  "Mask type is out of range: " + NStr::IntToString(type));
+    }
+    if (m_Mask[type].owned) {
+        delete m_Mask[type].mask;
+    }
+    m_Mask[type].mask  = mask;
+    m_Mask[type].acase = acase;
+    m_Mask[type].owned = mask ? own : eNoOwnership;
+}
+
+
 void CTar::SetBaseDir(const string& dirname)
 {
     s_BaseDir(dirname).swap(m_BaseDir);
@@ -3825,9 +3906,9 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files,
         result += BLOCK_SIZE/*header*/ + ALIGN_SIZE(f->second);
 
         // Count in the long name (if any)
-        string path = s_ToFilesystemPath(basedir, f->first);
-        string name = s_ToArchiveName(basedir, path);
-        size_t namelen = name.length() + 1;
+        string path    = s_ToFilesystemPath(basedir, f->first);
+        string name    = s_ToArchiveName(basedir, path);
+        size_t namelen = name.size() + 1;
         if (namelen > sizeof(((SHeader*) 0)->name)) {
             result += BLOCK_SIZE/*long name header*/ + ALIGN_SIZE(namelen);
         }
@@ -3968,10 +4049,10 @@ IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
         return 0;
     }
 
-    _ASSERT(tar->m_Current == *temp->begin());
+    _ASSERT(tar->m_Current == temp->front());
     CTarEntryInfo::EType type = tar->m_Current.GetType();
-    if (type != CTarEntryInfo::eFile  &&
-        (type != CTarEntryInfo::eUnknown  ||  (flags & fSkipUnsupported))) {
+    if (type != CTarEntryInfo::eFile
+        &&  (type != CTarEntryInfo::eUnknown  ||  (flags & fSkipUnsupported))){
         return 0;
     }
 
@@ -3984,8 +4065,8 @@ IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
 IReader* CTar::GetNextEntryData(void)
 {
     CTarEntryInfo::EType type = m_Current.GetType();
-    return type != CTarEntryInfo::eFile  &&
-        (type != CTarEntryInfo::eUnknown  ||  (m_Flags & fSkipUnsupported))
+    return type != CTarEntryInfo::eFile
+        &&  (type != CTarEntryInfo::eUnknown  ||  (m_Flags & fSkipUnsupported))
         ? 0 : new CTarReader(this);
 }
 

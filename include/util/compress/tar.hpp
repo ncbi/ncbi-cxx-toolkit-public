@@ -267,7 +267,7 @@ public:
     enum EFlags {
         // --- Extract/List/Test ---
         /// Ignore blocks of zeros in archive.
-        //  Generally, 2 or more consecutive zero blocks indicate EOF.
+        //  Generally, 2 or more consecutive zero blocks indicate EOT.
         fIgnoreZeroBlocks   = (1<<1),
 
         // --- Extract/Append/Update ---
@@ -293,7 +293,6 @@ public:
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
 
         // --- Extract/List ---
-        fMaskNocase         = (1<<10),
         /// Skip unsupported entries rather than making files out of them
         /// when extracting (the latter is the default POSIX requirement).
         fSkipUnsupported    = (1<<15),
@@ -303,7 +302,7 @@ public:
         fSlowSkipWithRead   = (1<<21),
 
         // --- Miscellaneous ---
-        /// Stream pipes tar data through
+        /// Stream tar data through
         fStreamPipeThrough  = (1<<24),
         /// Do not trim tar file size after append/update
         fTarfileNoTruncate  = (1<<26),
@@ -315,6 +314,19 @@ public:
     };
     typedef unsigned int TFlags;  ///< Bitwise OR of EFlags
 
+    /// Mask type enumerator.
+    /// @enum eExtractMask
+    ///   CMask can select both inclusions and exclusions (in this order) of
+    ///   fully-qualified archive entries for list or extraction, so that e.g.
+    ///   the mask ".svn" does not match an entry like "a/.svn" for procesing.
+    /// @enum eExcludeMask
+    ///   CMask can select both exlusions and inclusions (in this order) of
+    ///   patterns of archive entries for all operations (excepting eTest),
+    ///   and so the mask ".svn" matches "a/b/c/.svn" for processing.
+    enum EMaskType {
+        eExtractMask = 0,  ///< for list or extract
+        eExcludeMask       ///< applied as a pattern
+    };
 
     /// Constructors
     CTar(const string& filename, size_t blocking_factor = 20);
@@ -373,6 +385,7 @@ public:
     /// have only forward slashes in the paths, and drive letter, if any on
     /// MS-Windows, stripped).  All entries will be added at the logical end
     /// (not always EOF) of the archive, when appending to a non-empty one.
+    ///
     /// @note Adding to a stream archive does not seek to the logical end of
     /// the archive but begins at the current position right away.
     ///
@@ -382,7 +395,7 @@ public:
     ///   Create, Update, SetBaseDir
     auto_ptr<TEntries> Append(const string& name);
 
-    /// Append an entry from stream (exactly entry.GetSize() bytes).
+    /// Append an entry from a stream (exactly entry.GetSize() bytes).
     /// @return
     ///   A list (containing one entry) with full acrhive info filled in
     /// @sa
@@ -451,22 +464,27 @@ public:
     /// Set processing flags.
     void   SetFlags(TFlags flags);
 
+    /// Get current stream position.
+    Uint8  GetCurrentPosition(void) const;
+
     /// Set name mask.
     ///
     /// The set of masks is used to process existing entries in the archive,
     /// and apply to list and extract operations only.
     /// If masks are not defined then all archive entries will be processed.
-    /// By default, the masks are used case-sensitively.  To cancel this and
-    /// use the masks case-insensitively, SetFlags() can be called with
-    /// fMaskNocase flag set.
+    ///
     /// @note Unset mask means wildcard processing (all entries match).
+    ///
     /// @param mask
     ///   Set of masks (0 to unset the current set without setting a new one).
     /// @param own
-    ///   Flag to take ownership on the masks (delete upon CTar destruction).
+    ///   Whether to take ownership on the mask (delete upon CTar destruction).
     /// @sa
     //    SetFlags
-    void SetMask(CMask* mask, EOwnership own = eNoOwnership);
+    void SetMask(CMask*      mask,
+                 EOwnership  own   = eNoOwnership,
+                 EMaskType   type  = eExtractMask,
+                 NStr::ECase acase = NStr::eNocase);
 
     /// Get base directory to use for files while extracting from/adding to
     /// the archive, and in the latter case used only for relative paths.
@@ -593,6 +611,16 @@ private:
         eZeroBlock,
         eEOF
     };
+    /// Mask storage
+    struct SMask {
+        CMask*      mask;
+        NStr::ECase acase;
+        EOwnership  owned;
+
+        SMask(void)
+            : mask(0), acase(NStr::eNocase), owned(eNoOwnership)
+        { }
+    };
 
     // Common part of initialization.
     void x_Init(void);
@@ -667,8 +695,7 @@ private:
     Uint8         m_StreamPos;      ///< Position in stream (0-based)
     char*         m_BufPtr;         ///< Page-unaligned buffer pointer
     char*         m_Buffer;         ///< I/O buffer (page-aligned)
-    CMask*        m_Mask;           ///< Masks for list/test/extract
-    EOwnership    m_MaskOwned;      ///< Flag of m_Mask's ownership
+    SMask         m_Mask[2];        ///< Entry masks for operations
     EOpenMode     m_OpenMode;       ///< What was it opened for
     bool          m_Modified;       ///< True after at least one write
     bool          m_Bad;            ///< True if a fatal output error occurred
@@ -750,14 +777,9 @@ void CTar::SetFlags(TFlags flags)
     m_Flags = flags;
 }
 
-inline
-void CTar::SetMask(CMask* mask, EOwnership own)
+inline Uint8 CTar::GetCurrentPosition(void) const
 {
-    if ( m_MaskOwned ) {
-        delete m_Mask;
-    }
-    m_Mask      = mask;
-    m_MaskOwned = mask ? own : eNoOwnership;
+    return m_StreamPos;
 }
 
 inline
