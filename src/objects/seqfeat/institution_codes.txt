@@ -6140,7 +6140,8 @@ URV	s	University of Richmond, Biology Department
 US	s	Smithsonian Institution, Department of Botany
 US<ZAF>	s	University of Stellenbosch
 USA	s	University of South Alabama
-USAC	s	University of Western Australia
+USAC<AUS>	s	University of Western Australia
+USAC<GTM>	s	Universidad de San Carlos de Guatemala
 USAM	s	University of South Alabama, Department of Biological Sciences
 USANHC	s	University of South Alabama, Vertebrate Natural History Collection
 USAS	s	University of Regina, Biology Department
