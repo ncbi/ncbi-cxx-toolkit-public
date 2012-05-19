@@ -1653,8 +1653,6 @@ static EIO_Status s_Select_(size_t                n,
                 ready++;
                 continue;
             }
-            if (!polls[i].event)
-                continue;
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
             assert(fd < FD_SETSIZE);
 #  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
@@ -1931,8 +1929,7 @@ static EIO_Status s_Poll_(size_t                n,
     if (status == eIO_Success  &&  n) {
         nfds_t x_ready = 0;
         nfds_t scanned = 0;
-        nfds_t j;
-        for (j = 0, i = 0;  i < n;  i++) {
+        for (m = 0, i = 0;  i < n;  i++) {
             SOCK sock = polls[i].sock;
             if (sock  &&  polls[i].event) {
                 TSOCK_Handle fd;
@@ -1946,25 +1943,23 @@ static EIO_Status s_Poll_(size_t                n,
                     x_ready++;
                     continue;
                 }
-                if (!polls[i].event)
-                    continue;
                 events = revents = 0;
                 if (scanned < ready) {
                     nfds_t x_scanned = 0;
-                    nfds_t k;
-                    assert(j < count);
-                    for (k = j;  k < count;  k++) {
+                    nfds_t j;
+                    assert((nfds_t) m < count);
+                    for (j = (nfds_t) m;  j < count;  ++j) {
                         if (x_polls[j].revents)
                             x_scanned++;
                         if (x_polls[j].fd == fd) {
                             events   = x_polls[j].events;
                             revents  = x_polls[j].revents;
                             scanned += x_scanned;
-                            j        = ++k;
+                            m        = (size_t) ++j;
                             break;
                         }
                     }
-                    assert(events  ||  j < count);
+                    assert(events  ||  ((nfds_t) m < count  &&  count <= j));
                 }
                 if ((events & POLLIN)
                      &&  (revents & (POLLIN | POLLHUP | POLLPRI))) {
@@ -1986,7 +1981,7 @@ static EIO_Status s_Poll_(size_t                n,
             } else
                 assert(polls[i].revent == eIO_Open);
         }
-        assert(scanned == ready);
+        assert(scanned <= ready);
         assert(x_ready >= ready);
     }
 

@@ -560,7 +560,7 @@ string CSocketAPI::ntoa(unsigned int host)
 }
 
 
-string CSocketAPI::gethostname(ESwitch log)
+string       CSocketAPI::gethostname(ESwitch log)
 {
     char hostname[256];
     if (SOCK_gethostnameEx(hostname, sizeof(hostname), log) != 0)
@@ -569,7 +569,7 @@ string CSocketAPI::gethostname(ESwitch log)
 }
 
 
-string CSocketAPI::gethostbyaddr(unsigned int host, ESwitch log)
+string       CSocketAPI::gethostbyaddr(unsigned int host, ESwitch log)
 {
     char hostname[256];
     if (!SOCK_gethostbyaddrEx(host, hostname, sizeof(hostname), log))
