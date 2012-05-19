@@ -46,9 +46,11 @@
 #  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
 #  include <conio.h>
+#  define  DEVNULL "NUL"
 #endif // NCBI_OS_MSWIN
-#if defined(NCBI_OS_UNIX)
+#ifdef NCBI_OS_UNIX
 #  include <signal.h>
+#  define  DEVNULL "/dev/null"
 #endif // NCBI_OS_UNIX
 
 #include <common/test_assert.h>  // This header must go last
@@ -208,6 +210,9 @@ void CTarTest::Init(void)
                          "Archive block size in 512-byte units\n"
                          "(10K blocks in use by default)",
                          CArgDescriptions::eInteger, "20");
+    args->AddOptionalKey("X", "exclude",
+                         "Exclude pattern", CArgDescriptions::eString,
+                         CArgDescriptions::fAllowMultiple);
     args->SetConstraint ("b", new CArgAllow_Integers(1, (1 << 22) - 1));
     args->AddFlag("i", "Ignore zero blocks");
     args->AddFlag("h", "Follow links");
@@ -573,7 +578,16 @@ int CTarTest::Run(void)
     if (pipethru) {
         m_Flags |=  CTar::fStreamPipeThrough;
     }
+    auto_ptr<CMask> exclude;
+    if (args["X"].HasValue()) {
+        exclude.reset(new CMaskFileName);
+        const CArgValue::TStringArray& values = args["X"].GetStringList();
+        ITERATE(CArgValue::TStringArray, it, values) {
+            exclude->Add(*it);
+        }
+    }
 
+    CStopWatch sw(CStopWatch::eStart);
     if (!tar.get()) {
         _ASSERT(action == eExtract  &&  stream  &&  n == 1);
         if (!io) {
@@ -593,16 +607,17 @@ int CTarTest::Run(void)
                                CRWStreambuf::fLogExceptions));
         bool tocout = args["O"].HasValue();
         ofstream of;
-        if (!tocout) {
-            of.open(args[1].AsString().c_str(),
+        if (!tocout  ||  pipethru) {
+            of.open(!tocout ? args[1].AsString().c_str() : DEVNULL,
                     IOS_BASE::out | IOS_BASE::binary);
         }
-        NcbiStreamCopy(tocout ? NcbiCout : of, rs);
+        NcbiStreamCopy(!tocout  ||  pipethru ? of : NcbiCout, rs);
     } else {
         tar->SetFlags(m_Flags);
         if (args["C"].HasValue()) {
             tar->SetBaseDir(args["C"].AsString());
         }
+        tar->SetMask(exclude.get(), eNoOwnership, CTar::eExcludeMask);
         if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
             if (!n) {
                 NCBI_THROW(CArgException, eInvalidArg, "Must specify file(s)");
@@ -671,11 +686,11 @@ int CTarTest::Run(void)
                                            CRWStreambuf::fLogExceptions));
                     bool tocout = args["O"].HasValue();
                     ofstream of;
-                    if (!tocout) {
-                        of.open(info->GetName().c_str(),
+                    if (!tocout  ||  pipethru) {
+                        of.open(!tocout ? info->GetName().c_str() : DEVNULL,
                                 IOS_BASE::out | IOS_BASE::binary);
                     }
-                    NcbiStreamCopy(tocout ? NcbiCout : of, rs);
+                    NcbiStreamCopy(!tocout  ||  pipethru ? of : NcbiCout, rs);
                 }
             } else {
                 auto_ptr<CTar::TEntries> entries = tar->Extract();
@@ -702,10 +717,21 @@ int CTarTest::Run(void)
             }
         }
     }
+    Uint8 pos = tar.get() ? tar->GetCurrentPosition() : 0;
 
     zs.reset(0);       // make sure zip stream gets finalized...
     if (ofs.is_open()) {
         ofs.close();   // ...before the output file gets closed
+    }
+
+    if (pos  &&  (m_Flags & fVerbose)) {
+        double elapsed = sw.Elapsed();
+        Uint8  rate = elapsed ? (Uint8)(pos / elapsed) : 0; 
+        NcbiCerr << NStr::UInt8ToString(pos, NStr::fWithCommas)
+                 << " archive byte" << &"s"[pos == 1] << " processed in "
+                 << CTimeSpan(elapsed + 0.5).AsString("h:m:s")
+                 << (rate ? " " + x_DataSize(rate, false) + "/s" : kEmptyStr)
+                 << NcbiEndl;
     }
     return 0;
 }
