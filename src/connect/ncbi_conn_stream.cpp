@@ -58,6 +58,7 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
     CONN conn = csb->GetCONN();
     if (conn) {
         SOCK s/*dummy*/;
+        // CONN_Write(0 bytes) could have done the same effect as GetSOCK
         (void) CONN_GetSOCK(conn, &s);  // Prompt connection to actually open
         if (CONN_Status(conn, eIO_Open) == eIO_Success) {
             init(csb.get());
@@ -79,6 +80,7 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close, const STimeout* timeout,
                                 ptr, size));
     if (conn) {
         SOCK s/*dummy*/;
+        // CONN_Write(0 bytes) should have done the same effect as GetSOCK
         (void) CONN_GetSOCK(conn, &s);  // Prompt connection to open (if not)
         if (CONN_Status(conn, eIO_Open) == eIO_Success) {
             init(csb.get());
