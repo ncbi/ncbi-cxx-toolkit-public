@@ -204,7 +204,8 @@ void CNetCacheKey::Assign(const string& key_str)
     m_Key = key_str;
 
     if (!ParseBlobKey(key_str.c_str(), key_str.size(), this)) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
+        NCBI_THROW(CNetCacheException, eKeyFormatError,
+                "Invalid NetCache key format.");
     }
 }
 
