@@ -2318,6 +2318,15 @@ bool CBlastOptions::GetForceIndex() const
     return m_Local->GetForceIndex();
 }
 
+bool CBlastOptions::GetIsOldStyleMBIndex() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetIsOldStyleMBIndex() not available.");
+    }
+
+    return m_Local->GetIsOldStyleMBIndex();
+}
+
 bool CBlastOptions::GetMBIndexLoaded() const
 {
     if (! m_Local) {
@@ -2336,10 +2345,13 @@ const string CBlastOptions::GetIndexName() const
     return m_Local->GetIndexName();
 }
 
-void CBlastOptions::SetUseIndex( bool use_index, const string & index_name, bool force_index )
+void CBlastOptions::SetUseIndex( 
+        bool use_index, const string & index_name, 
+        bool force_index, bool old_style_index )
 {
     if (m_Local) {
-        m_Local->SetUseIndex( use_index, index_name, force_index );
+        m_Local->SetUseIndex( 
+                use_index, index_name, force_index, old_style_index );
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_ForceMbIndex, force_index);

@@ -42,8 +42,14 @@
 extern "C" {
 #endif
 
+enum EOidState {
+    eNoResults = 0,
+    eHasResults,
+    eNotIndexed
+};
+
 /** Function pointer type to retrieve hits from an indexed database */
-typedef unsigned long (*T_MB_IdbGetResults)(void * idb, Int4 oid, Int4 chunk,
+typedef unsigned long (*T_MB_IdbGetResults)(/* void * idb, */Int4 oid, Int4 chunk,
                                    BlastInitHitList * init_hitlist);
 
 /** Function pointer type to check index seeds availability for oid. */

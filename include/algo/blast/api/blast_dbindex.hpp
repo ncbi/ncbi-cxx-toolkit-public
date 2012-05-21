@@ -44,7 +44,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 NCBI_XBLAST_EXPORT
-std::string DbIndexInit( const string & indexname );
+std::string DbIndexInit( 
+        const string & indexname, bool old_style, bool & partial );
 
 /** Get minimal word size accepted by indexing library.
 */
@@ -59,13 +60,15 @@ class CIndexedDbException : public CException
 
         /// Error types that BLAST can generate
         enum EErrCode {
-            eIndexInitError     ///< Index initialization error.
+            eIndexInitError,    ///< Index initialization error.
+            eDBMismatch         ///< index-db inconsistency
         };
 
         /// Translate from the error code value to its string representation
         virtual const char* GetErrCodeString(void) const {
             switch ( GetErrCode() ) {
                 case eIndexInitError: return "eIndexInitError";
+                case eDBMismatch: return "inconsistent database";
                 default: return CException::GetErrCodeString();
             }
         }

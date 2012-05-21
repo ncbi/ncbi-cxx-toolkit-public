@@ -883,7 +883,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
     Boolean blastp = (lookup_wrap->lut_type == eAaLookupTable ||
                      lookup_wrap->lut_type == eCompressedAaLookupTable);
     Boolean rpsblast = (lookup_wrap->lut_type == eRPSLookupTable);
-    Boolean indexed_mb_lookup = (lookup_wrap->lut_type == eIndexedMBLookupTable);
+    // Boolean indexed_mb_lookup = (lookup_wrap->lut_type == eIndexedMBLookupTable);
+    Boolean indexed_mb_lookup = (lookup_wrap->read_indexed_db != 0);
     Boolean phi_lookup = (lookup_wrap->lut_type == ePhiLookupTable ||
                          lookup_wrap->lut_type == ePhiNaLookupTable);
     Boolean smith_waterman = 
@@ -901,8 +902,10 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
 
     if (smith_waterman) {
         aux_struct->WordFinder = NULL;
+    /*
     } else if (indexed_mb_lookup) {
         aux_struct->WordFinder = MB_IndexedWordFinder;
+    */
     } else if (phi_lookup) {
         aux_struct->WordFinder = PHIBlastWordFinder;
     } else if (blastp) {
@@ -911,9 +914,17 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
     } else if (rpsblast) {
         aux_struct->WordFinder = BlastRPSWordFinder;
     } else {
-        BlastChooseNucleotideScanSubject(lookup_wrap);
-        BlastChooseNaExtend(lookup_wrap);
-        aux_struct->WordFinder = BlastNaWordFinder;
+        if( lookup_wrap->lut_type != eIndexedMBLookupTable ) {
+            BlastChooseNucleotideScanSubject(lookup_wrap);
+            BlastChooseNaExtend(lookup_wrap);
+        }
+
+        if( indexed_mb_lookup ) {
+            aux_struct->WordFinder = MB_IndexedWordFinder;
+        }
+        else {
+            aux_struct->WordFinder = BlastNaWordFinder;
+        }
     }
     
     aux_struct->offset_pairs = 

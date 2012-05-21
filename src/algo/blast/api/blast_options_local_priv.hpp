@@ -294,8 +294,11 @@ public:
     /******************** Megablast Database Index *******************/
     bool GetUseIndex() const;
     bool GetForceIndex() const;
+    bool GetIsOldStyleMBIndex() const;
     const string GetIndexName() const;
-    void SetUseIndex( bool use_index = true, const string & index_name = "", bool force_index = false );
+    void SetUseIndex( 
+            bool use_index = true, const string & index_name = "", 
+            bool force_index = false, bool old_style_index = false );
     bool GetMBIndexLoaded() const;
     void SetMBIndexLoaded( bool index_loaded = true );
 
@@ -340,6 +343,7 @@ private:
     /// Use megablast database index.
     bool m_UseMBIndex;
     bool m_ForceMBIndex;
+    bool m_OldStyleMBIndex;
 
     /// Database index has been loaded.
     bool m_MBIndexLoaded;
@@ -1545,14 +1549,21 @@ inline void CBlastOptionsLocal::SetMBIndexLoaded( bool index_loaded )
     m_MBIndexLoaded = index_loaded;
 }
 
+inline bool CBlastOptionsLocal::GetIsOldStyleMBIndex() const
+{
+    return m_OldStyleMBIndex;
+}
+
 inline void CBlastOptionsLocal::SetUseIndex( 
-        bool use_index, const string & index_name, bool force_index )
+        bool use_index, const string & index_name, 
+        bool force_index, bool old_style_index )
 {
     m_UseMBIndex = use_index;
 
     if( m_UseMBIndex ) {
         m_ForceMBIndex = force_index;
         m_MBIndexName  = index_name;
+        m_OldStyleMBIndex = old_style_index;
     }
 }
 

@@ -102,6 +102,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       lookup_wrap->lut = NULL;
       break;
 
+   case eMixedMBLookupTable:
    case eSmallNaLookupTable:
    case eNaLookupTable:
    case eMBLookupTable:
@@ -139,6 +140,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
                              lookup_options, query_options, lut_width);
           }
       }
+      ASSERT( lookup_wrap->lut_type != eMixedMBLookupTable );
       break;
 
    case ePhiLookupTable: case ePhiNaLookupTable:
@@ -183,6 +185,7 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
       break;
 
    case eIndexedMBLookupTable:
+   case eMixedMBLookupTable:
       lookup->lut = NULL;
       break;
 

@@ -2210,6 +2210,10 @@ CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
             kArgIndexName, "string",
             "MegaBLAST database index name",
             CArgDescriptions::eString );
+    arg_desc.AddDefaultKey(
+            kArgOldStyleIndex, "boolean",
+            "Use old style index (deprecated)",
+            CArgDescriptions::eBoolean, "true" );
     arg_desc.SetCurrentGroup( "" );
 }
 
@@ -2217,7 +2221,9 @@ bool
 CMbIndexArgs::HasBeenSet(const CArgs& args)
 {
     if ( (args.Exist(kArgUseIndex) && args[kArgUseIndex].HasValue()) ||
-         (args.Exist(kArgIndexName) && args[kArgIndexName].HasValue()) ) {
+         (args.Exist(kArgIndexName) && args[kArgIndexName].HasValue()) ||
+         (args.Exist(kArgOldStyleIndex) && 
+                args[kArgOldStyleIndex].HasValue()) ) {
         return true;
     }
     return false;
@@ -2233,6 +2239,7 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
 
         bool use_index   = true;
         bool force_index = false;
+        bool old_style_index = false;
 
         if( args[kArgUseIndex] ) {
             if( args[kArgUseIndex].AsBoolean() ) force_index = true;
@@ -2258,7 +2265,11 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
                         "Can not deduce database index name" );
             }
     
-            opts.SetUseIndex( true, index_name, force_index );
+            if( args.Exist( kArgOldStyleIndex ) ) {
+                old_style_index = args[kArgOldStyleIndex].AsBoolean();
+            }
+
+            opts.SetUseIndex( true, index_name, force_index, old_style_index );
         }
     }
 }

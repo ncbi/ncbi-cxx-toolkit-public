@@ -116,6 +116,10 @@ void CMkIndexApplication::Init()
             "stride", "stride",
             "distance between stored database positions",
             CArgDescriptions::eInteger );
+    arg_desc->AddDefaultKey(
+            "old_style_index", "boolean",
+            "Use old style index (deprecated)",
+            CArgDescriptions::eBoolean, "true" );
     arg_desc->SetConstraint( 
             "verbosity",
             &(*new CArgAllow_Strings, "quiet", "normal", "verbose") );
@@ -148,6 +152,8 @@ int CMkIndexApplication::Run()
     CDbIndex::SOptions options = CDbIndex::DefaultSOptions();
     std::string verbosity = GetArgs()["verbosity"].AsString();
 
+    bool old_style( GetArgs()["old_style_index"].AsBoolean() );
+
     if( verbosity == "quiet" ) {
         options.report_level = REPORT_QUIET;
     }else if( verbosity == "verbose" ) {
@@ -177,7 +183,7 @@ int CMkIndexApplication::Run()
         else options.stride = GetArgs()["stride"].AsInteger();
     }
 
-    if( GetArgs()["ws_hint"] )
+    if( GetArgs()["ws_hint"] ) {
         if( options.legacy ) {
             ERR_POST( Warning << "-ws_hint has no effect upon "
                                  "legacy index creation" );
@@ -193,12 +199,14 @@ int CMkIndexApplication::Run()
 
             options.ws_hint = ws_hint;
         }
+    }
 
     unsigned int vol_num = 0;
 
     CDbIndex::TSeqNum start, orig_stop( kMax_UI4 ), stop = 0;
     string ofname_base = 
         GetArgs()["show_filters"] ? "" : GetArgs()["output"].AsString();
+    string odir_name( CFile( ofname_base ).GetDir() );
     CSequenceIStream * seqstream = 0;
     string iformat = GetArgs()["iformat"].AsString();
 
@@ -221,14 +229,16 @@ int CMkIndexApplication::Run()
                 return 0;
             }
 
-            if( GetArgs()["db_mask"] ) {
-                seqstream = new CSequenceIStreamBlastDB( 
-                        GetArgs()["input"].AsString(), true,
-                        GetArgs()["db_mask"].AsInteger() );
-            }
-            else {
-                seqstream = new CSequenceIStreamBlastDB( 
-                        GetArgs()["input"].AsString(), false );
+            if( old_style ) {
+                if( GetArgs()["db_mask"] ) {
+                    seqstream = new CSequenceIStreamBlastDB( 
+                            GetArgs()["input"].AsString(), true,
+                            GetArgs()["db_mask"].AsInteger() );
+                }
+                else {
+                    seqstream = new CSequenceIStreamBlastDB( 
+                            GetArgs()["input"].AsString(), false );
+                }
             }
         }
         else {
@@ -246,17 +256,79 @@ int CMkIndexApplication::Run()
         exit( 1 );
     }
 
+    if( !old_style && iformat == "blastdb" ) {
+        typedef std::vector< std::string > TStrVec;
+        TStrVec db_vols;
+
+        // Enumerate BLAST database volumes.
+        {
+            std::string ifname( GetArgs()["input"].AsString() );
+            CSeqDB db( ifname, CSeqDB::eNucleotide, 0, 0, false );
+            db.FindVolumePaths( db_vols, true );
+        }
+
+        bool enable_mask( GetArgs()["db_mask"] );
+        int filter( enable_mask ? GetArgs()["db_mask"].AsInteger() : 0 );
+
+        ITERATE( TStrVec, dbvi, db_vols ) {
+            seqstream = 
+                new CSequenceIStreamBlastDB( *dbvi, enable_mask, filter );
+            CDbIndex::TSeqNum start, orig_stop( kMax_UI4 ), stop = 0;
+            Uint4 num_seq( 0 ), num_vol( 0 );
+            vol_num = 0;
+            std::string dbv_name( 
+                    CFile::ConcatPath( odir_name, CFile( *dbvi ).GetName() ) );
+            
+            do {
+                start = stop;
+                stop = orig_stop;
+                ostringstream os;
+                os << dbv_name << "." << setfill( '0' ) << setw( 2 ) 
+                   << vol_num++ << ".idx";
+                cerr << "creating " << os.str() << "..." << flush;
+                CDbIndex::MakeIndex( 
+                        *seqstream, os.str(), start, stop, options );
+                num_seq += (stop - start);
+
+                if( start == stop ) cerr << "removed (empty)" << endl;
+                else{ ++num_vol; cerr << "done" << endl; }
+            }
+            while( start != stop );
+
+            CIndexSuperHeader< 
+                CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 > shdr( 
+                        num_seq, num_vol );
+            shdr.Save( dbv_name + ".shd" );
+            delete seqstream;
+        }
+
+        return 0;
+    }
+
+    Uint4 num_seq( 0 ), num_vol( 0 );
+
     do { 
         start = stop;
         stop = orig_stop;
         ostringstream os;
         os << ofname_base << "." << setfill( '0' ) << setw( 2 ) 
            << vol_num++ << ".idx";
-        cerr << "creating " << os.str() << endl;
+        cerr << "creating " << os.str() << "..." << flush;
         CDbIndex::MakeIndex( 
                 *seqstream,
                 os.str(), start, stop, options );
+        num_seq += (stop - start);
+
+        if( start == stop ) cerr << "removed (empty)" << endl;
+        else{ ++num_vol; cerr << "done" << endl; }
     }while( start != stop );
+
+    if( !old_style ) {
+        CIndexSuperHeader< 
+            CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 > shdr(
+                    num_seq, num_vol );
+        shdr.Save( ofname_base + ".shd" );
+    }
 
     return 0;
 }

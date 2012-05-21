@@ -395,10 +395,13 @@ public:
     /******************** Megablast Database Index *******************/
     bool GetUseIndex() const;
     bool GetForceIndex() const;
+    bool GetIsOldStyleMBIndex() const;
     bool GetMBIndexLoaded() const;
     const string GetIndexName() const;
     void SetMBIndexLoaded( bool index_loaded = true );
-    void SetUseIndex( bool use_index = true, const string & index_name = "", bool force_index = false );
+    void SetUseIndex( 
+            bool use_index = true, const string & index_name = "", 
+            bool force_index = false, bool old_style_index = false );
 
     /// Allows to dump a snapshot of the object
     /// @todo this doesn't do anything for locality eRemote

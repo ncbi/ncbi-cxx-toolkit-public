@@ -78,6 +78,213 @@ extern unsigned long GetCodeBits( unsigned long stride );
   */
 unsigned long GetMinOffset( unsigned long stride );
 
+/** Exceptions that superheader objects can throw. */
+class NCBI_XBLAST_EXPORT CIndexSuperHeader_Exception : public CException
+{
+public:
+
+    /** Numerical error codes. */
+    enum EErrCode
+    {
+        eFile,      ///< filesystem error
+        eRead,      ///< stream reading error
+        eWrite,     ///< stream writing error
+        eEndian,    ///< wrong index endianness
+        eVersion,   ///< unrecognized index format version
+        eSize       ///< wrong header size
+    };
+
+    /** Get a human readable description of the exception type.
+
+        @return string describing the exception type
+    */
+    virtual const char * GetErrCodeString() const
+    {
+        switch( GetErrCode() ) {
+            case eFile:    return "access failure";
+            case eRead:    return "read failure";
+            case eWrite:   return "write failure";
+            case eEndian:  return "endianness mismatch";
+            case eVersion: return "unknown index format version";
+            case eSize:    return "wrong header size";
+            default: return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT( CIndexSuperHeader_Exception, CException );
+};
+
+/** Base class for index superheaders. */
+class NCBI_XBLAST_EXPORT CIndexSuperHeader_Base : public CObject
+{
+public:
+
+    /** Old style index without superheader.
+
+        This should never appear in the 'version' field of superheader.
+    */
+    static const Uint4 INDEX_FORMAT_VERSION_0 = 0;
+
+    /** Old style index with superheader. */
+    static const Uint4 INDEX_FORMAT_VERSION_1 = 1;
+
+    /** Symbolic values for endianess. */
+    enum EEndianness { eLittleEndian = 0, eBigEndian };
+
+    /** Get the endianness of the host system. */
+    static Uint4 GetSystemEndianness( void );
+
+    /** Generate index volume file name from the index base name.
+
+        @param idxname index base name
+        @param volume volume ordinal number
+
+        @return corresponding index volume file name
+    */
+    static std::string GenerateIndexVolumeName(
+            const std::string & idxname, size_t volume );
+
+    /** Object constructor.
+
+        Reads the superheader structure from the file.
+
+        @param size actual size of the superheader file
+        @param endianness superheader file endianness
+        @param version index format version
+
+        @throw CIndexSuperHeader_Exception
+    */
+    CIndexSuperHeader_Base( size_t size, Uint4 endianness, Uint4 version );
+
+    /* Object constructor.
+
+       Used to create a superheader object for saving.
+
+       @param version index format version
+    */
+    CIndexSuperHeader_Base( Uint4 version );
+
+    /** Object destructor. */
+    virtual ~CIndexSuperHeader_Base() {}
+    
+    /** Get the endianness of the superheader. */
+    Uint4 GetEndianness( void );
+
+    /** Get the index format version. */
+    Uint4 GetVersion( void );
+
+    /** Get number of sequences in the index (total of all volumes). */
+    virtual Uint4 GetNumSeq( void ) const = 0;
+
+    /** Get number of volumes in the index. */
+    virtual Uint4 GetNumVol( void ) const = 0;
+
+    /** Save the superheader into the file.
+
+        @param fname output file name
+
+        @throw CIndexSuperHeader_Exception
+    */
+    virtual void Save( const std::string & fname ) = 0;
+
+protected:
+
+    // Size in bytes of the common part of superheader file  for all versions.
+    static const size_t COMMON_SIZE = 2*sizeof( Uint4 );
+
+    /** Save common part to the given stream.
+
+        @param os output stream
+        @param fname file name (for reporting)
+
+        @throw CIndexSuperHeader_Exception
+    */
+    void Save( std::ostream & os, const std::string & fname );
+
+    size_t actual_size_; //< superheader file size reported by OS
+
+private:
+
+    Uint4 endianness_;  //< superheader endianness
+    Uint4 version_;     //< index format version
+};
+
+/** Superheader derived classes parametrized by index format version. */
+template< Uint4 INDEX_FORMAT_VERSION > class CIndexSuperHeader;
+
+/** Superheader for old style indices. */
+template<> 
+class CIndexSuperHeader< CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 >
+    : public CIndexSuperHeader_Base
+{
+public:
+
+    /** Object constructor.
+
+        Reads the superheader structure from the file.
+
+        @param size actual size of the superheader file
+        @param endianness superheader file endianness
+        @param version index format version
+        @param fname index superheader file name
+        @param is input stream corresponding to superheader file
+
+        @throw CIndexSuperHeader_Exception
+    */
+    CIndexSuperHeader( 
+            size_t size, Uint4 endianness, Uint4 version, 
+            const std::string & fname, std::istream & is );
+
+    /** Object constructor.
+
+        Used to create a superheader object for saving.
+
+        @param n_seq number of sequences in the database volume
+        @param n_vol number of index volumes in the index for a given
+                     database volume.
+
+        @throw CIndexSuperHeader_Exception
+    */
+    CIndexSuperHeader( Uint4 n_seq, Uint4 n_vol );
+
+    /** Get number of sequences in the index (total of all volumes). 
+
+        @note Overrides CIndexSuperHeader_Base::GetNumSeq().
+    */
+    virtual Uint4 GetNumSeq( void ) const { return num_seq_; }
+
+    /** Get number of volumes in the index.
+    */
+    virtual Uint4 GetNumVol( void ) const { return num_vol_; }
+
+    /** Save the superheader into the file.
+
+        @param fname output file name
+
+        @throw CIndexSuperHeader_Exception
+    */
+    virtual void Save( const std::string & fname );
+
+private:
+
+    /// Expected size of the superheader file.
+    static const size_t EXPECTED_SIZE = COMMON_SIZE + 2*sizeof( Uint4 );
+
+    Uint4 num_seq_; //< total number of sequences in all index volumes
+    Uint4 num_vol_; //< total number of volumes in the index
+};
+
+/** Read superheader structure from the file.
+
+    @param fname superheader file name
+    
+    @return shared pointer to the superheader object
+
+    @throw CIndexSuperHeader_Exception
+*/
+NCBI_XBLAST_EXPORT CRef< CIndexSuperHeader_Base > 
+GetIndexSuperHeader( const std::string & fname );
+
 /** Structure into which an index header is loaded. */
 struct SIndexHeader
 {
@@ -95,6 +302,12 @@ struct SIndexHeader
     CSequenceIStream::TStreamPos stop_;              /**< OID of the last sequence in the index. */
     CSequenceIStream::TStreamPos stop_chunk_;        /**< Number of the last chunk of the last sequence in the index. */
 };
+
+/** Read the index header information from the given file.
+    @param fname        [I]   name of the index volume file
+    @return the number of subjects in the index volume (from the volume header)
+*/
+const size_t GetIdxVolNumOIDs( const std::string & fname );
 
 /** A vector or pointer based sequence wrapper.
     Serves as either a std::vector wrapper or holds a constant size

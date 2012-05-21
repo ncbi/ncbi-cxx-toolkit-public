@@ -171,7 +171,9 @@ typedef enum {
     ePhiLookupTable,  /**< protein lookup table specialized for phi-blast */
     ePhiNaLookupTable,  /**< nucleotide lookup table for phi-blast */
     eRPSLookupTable, /**< RPS lookup table (rpsblast and rpstblastn) */
-    eIndexedMBLookupTable /**< use database index as a lookup structure */
+    eIndexedMBLookupTable, /**< use database index as a lookup structure */
+    eMixedMBLookupTable /**< use when some volumes are searched with index and 
+                             some are not */
 } ELookupTableType;
 
 /** Options needed to construct a lookup table 

@@ -36,6 +36,7 @@
 #include <sstream>
 #include <string>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -59,6 +60,213 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
+
+//-------------------------------------------------------------------------
+namespace {
+    template< typename t_int >
+    union UIntHolder
+    {
+        t_int v;
+        char buf[sizeof( t_int )];
+    };
+
+    template< typename t_int >
+    void ReadInt( std::istream & is, t_int & v )
+    {
+        UIntHolder< t_int > h;
+        is.read( h.buf, sizeof( t_int ) );
+        v = h.v;
+    }
+
+    template< typename t_int >
+    void WriteInt( std::ostream & os, const t_int & v )
+    {
+        UIntHolder< t_int > h; 
+        h.v = v;
+        os.write( h.buf, sizeof( t_int ) );
+    }
+
+    void CheckStream( std::istream & is, const std::string & msg )
+    {
+        if( is.eof() || is.bad() ) {
+            NCBI_THROW( CIndexSuperHeader_Exception, eRead, msg );
+        }
+    }
+
+    void CheckStream( std::ostream & os, const std::string & msg )
+    {
+        if( os.bad() ) {
+            NCBI_THROW( CIndexSuperHeader_Exception, eWrite, msg );
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+std::string CIndexSuperHeader_Base::GenerateIndexVolumeName( 
+        const std::string & idxname, size_t volume )
+{
+    std::ostringstream os;
+    os << idxname << "." << setw(2) << setfill( '0' )
+       << volume << ".idx";
+    return os.str();
+}
+
+//-------------------------------------------------------------------------
+Uint4 CIndexSuperHeader_Base::GetSystemEndianness( void )
+{
+    union { Uint4 a; unsigned char b[4]; } x;
+    x.a = (Uint4)0x01020304ULL;
+    return (x.b[0] == 0x01) ? eBigEndian : eLittleEndian;
+}
+
+//-------------------------------------------------------------------------
+#define M_CHECK_STREAM(_s,_f,_m) { \
+        std::ostringstream _os; \
+        _os << '[' << _f << "] " << _m; \
+        CheckStream( _s, _os.str() ); \
+    }
+        
+//-------------------------------------------------------------------------
+CRef< CIndexSuperHeader_Base > GetIndexSuperHeader( 
+        const std::string & fname )
+{
+    typedef CRef< CIndexSuperHeader_Base > TRet;
+    CFile fl( fname );
+
+    if( !fl.Exists() ) {
+        std::ostringstream os;
+        os << "file " << fname << " does not exist";
+        NCBI_THROW( CIndexSuperHeader_Exception, eFile, os.str() );
+    }
+
+    if( !fl.CheckAccess( CFile::fRead ) ) {
+        std::ostringstream os;
+        os << "read access denied for " << fname;
+        NCBI_THROW( CIndexSuperHeader_Exception, eFile, os.str() );
+    }
+
+    size_t file_size( (size_t)fl.GetLength() );
+    std::ifstream is( fname.c_str() );
+    M_CHECK_STREAM( is, fname, "at endianness" );
+    Uint4 endianness;
+    ReadInt( is, endianness );
+    M_CHECK_STREAM( is, fname, "at version" );
+    endianness = (endianness == 0) ? 
+                 CIndexSuperHeader_Base::eLittleEndian : 
+                 CIndexSuperHeader_Base::eBigEndian;
+        
+    if( endianness != CIndexSuperHeader_Base::GetSystemEndianness() ) {
+        NCBI_THROW( CIndexSuperHeader_Exception, eEndian, "" );
+    }
+
+    Uint4 version;
+    ReadInt( is, version );
+
+    switch( version ) {
+        case CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1:
+            return TRet( new CIndexSuperHeader< 
+                    CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 >(
+                file_size, endianness, version, fname, is ) );
+
+        default: 
+        { 
+            std::ostringstream os;
+            os << ": " << version;
+            NCBI_THROW( CIndexSuperHeader_Exception, eVersion, os.str() );
+        }
+    }
+
+    return TRet( 0 );
+}
+
+//-------------------------------------------------------------------------
+CIndexSuperHeader_Base::CIndexSuperHeader_Base( 
+        size_t size, Uint4 endianness, Uint4 version )
+    : actual_size_( size ), endianness_( endianness ), version_( version )
+{
+}
+
+//-------------------------------------------------------------------------
+CIndexSuperHeader_Base::CIndexSuperHeader_Base( Uint4 version )
+    : endianness_( GetSystemEndianness() ), version_( version )
+{
+}
+
+//-------------------------------------------------------------------------
+void CIndexSuperHeader_Base::Save( 
+        std::ostream & os, const std::string & fname )
+{
+    M_CHECK_STREAM( os, fname, "at endianness" );
+    WriteInt( os, endianness_ );
+    M_CHECK_STREAM( os, fname, "at version" );
+    WriteInt( os, version_ );
+}
+
+//-------------------------------------------------------------------------
+CIndexSuperHeader< 
+    CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 >::CIndexSuperHeader( 
+            size_t size, Uint4 endianness, Uint4 version, 
+            const std::string & fname, std::istream & is )
+    : CIndexSuperHeader_Base( size, endianness, version )
+{
+    if( size != EXPECTED_SIZE ) {
+        std::ostringstream os;
+        os << ": expected " << EXPECTED_SIZE << "; got " << size;
+        NCBI_THROW( CIndexSuperHeader_Exception, eSize, os.str() );
+    }
+
+    M_CHECK_STREAM( is, fname, "at num_seq" );
+    ReadInt( is, num_seq_ );
+    M_CHECK_STREAM( is, fname, "at num_vol" );
+    ReadInt( is, num_vol_ );
+
+    if( is.bad() ) {
+        NCBI_THROW( CIndexSuperHeader_Exception, eRead,
+                    std::string( "[" ) + fname + "] " + 
+                    "at end" );
+    }
+}
+
+//-------------------------------------------------------------------------
+CIndexSuperHeader< 
+    CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 >::CIndexSuperHeader( 
+        Uint4 n_seq, Uint4 n_vol )
+    : CIndexSuperHeader_Base( 
+            CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 ),
+      num_seq_( n_seq ), num_vol_( n_vol )
+{
+}
+
+//-------------------------------------------------------------------------
+void CIndexSuperHeader< 
+    CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 >::Save( 
+            const std::string & fname )
+{
+    std::ofstream os( fname.c_str() );
+    CIndexSuperHeader_Base::Save( os, fname );
+    M_CHECK_STREAM( os, fname, "at num_seq" );
+    WriteInt( os, num_seq_ );
+    M_CHECK_STREAM( os, fname, "at num_vol" );
+    WriteInt( os, num_vol_ );
+    M_CHECK_STREAM( os, fname, "at end" );
+}
+
+//-------------------------------------------------------------------------
+const size_t GetIdxVolNumOIDs( const std::string & fname )
+{
+    std::ifstream is( fname.c_str() );
+    Uint4 t, start, end;
+    for( int i( 0 ); i < 7; ++i ) { ReadInt( is, t ); }
+    M_CHECK_STREAM( is, fname, "at start oid" );
+    ReadInt( is, start );
+    ReadInt( is, t );
+    M_CHECK_STREAM( is, fname, "at end oid" );
+    ReadInt( is, end );
+    if( is.bad() ) start = end = 0;
+    return end - start;
+}
+
+#undef M_CHECK_STREAM
 
 //-------------------------------------------------------------------------
 namespace {

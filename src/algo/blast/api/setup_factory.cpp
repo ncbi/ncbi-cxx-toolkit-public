@@ -394,6 +394,7 @@ CSetupFactory::InitializeMegablastDbIndex(CRef<CBlastOptions> options)
     }
 
     string errstr = "";
+    bool partial( false );
 
     if( options->GetProgramType() != eBlastTypeBlastn ) {
         errstr = "Database indexing is available for blastn only.";
@@ -408,7 +409,9 @@ CSetupFactory::InitializeMegablastDbIndex(CRef<CBlastOptions> options)
         errstr += ".";
     }
     else {
-        errstr = DbIndexInit( options->GetIndexName() );
+        errstr = DbIndexInit( 
+                options->GetIndexName(), 
+                options->GetIsOldStyleMBIndex(), partial );
     }
 
     if( errstr != "" ) {
@@ -423,7 +426,8 @@ CSetupFactory::InitializeMegablastDbIndex(CRef<CBlastOptions> options)
     }
 
     options->SetMBIndexLoaded();
-    options->SetLookupTableType( eIndexedMBLookupTable );
+    options->SetLookupTableType( 
+            partial ? eMixedMBLookupTable : eIndexedMBLookupTable );
 }
 
 SInternalData::SInternalData()
