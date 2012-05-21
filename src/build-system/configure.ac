@@ -5870,7 +5870,7 @@ if test "$with_zorba" != no; then
    if test -d "$ZORBA_PATH"; then
       NCBI_FIX_DIR(ZORBA_PATH)
    fi
-   vpath="$ZORBA_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+   vpath="$ZORBA_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
    if test -d "$vpath/lib"; then
       ZORBA_PATH=$vpath
       NCBI_FIX_DIR(ZORBA_PATH)
@@ -5878,7 +5878,7 @@ if test "$with_zorba" != no; then
       : ${ZORBA_LIBPATH=$vpath}
       NCBI_FIX_DIR(ZORBA_LIBPATH)
    else
-      vpath="$ZORBA_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      vpath="$ZORBA_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
       if test -d "$vpath/lib"; then
          ZORBA_PATH=$vpath
          NCBI_FIX_DIR(ZORBA_PATH)

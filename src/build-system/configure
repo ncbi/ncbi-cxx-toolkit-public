@@ -30922,7 +30922,7 @@ if test "$with_zorba" != no; then
     /*) ZORBA_PATH=$ncbi_fix_dir_tmp ;;
  esac
    fi
-   vpath="$ZORBA_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+   vpath="$ZORBA_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
    if test -d "$vpath/lib"; then
       ZORBA_PATH=$vpath
       ncbi_fix_dir_tmp=`if cd $ZORBA_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
@@ -30956,7 +30956,7 @@ if test "$with_zorba" != no; then
     /*) ZORBA_LIBPATH=$ncbi_fix_dir_tmp ;;
  esac
    else
-      vpath="$ZORBA_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
+      vpath="$ZORBA_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
       if test -d "$vpath/lib"; then
          ZORBA_PATH=$vpath
          ncbi_fix_dir_tmp=`if cd $ZORBA_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
