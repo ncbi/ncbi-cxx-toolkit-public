@@ -1522,11 +1522,14 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     if(sdl->gi == 0) {
         string accession;
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
-        deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like ref| or pdbd|
+        deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
     }
     else {        
         deflFrmID = deflId = NStr::IntToString(sdl->gi);
     }
+    //If gi deflFrmID and deflId are the same and equal to gi
+    //If gnl deflFrmID=number, deflId=ti:number like  "268252125" and "ti:268252125" or "961433.m" and "GNOMON:961433.m"
+    //if GNOMON:961433.m
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_id",deflId);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFrm_id",deflFrmID);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);    
