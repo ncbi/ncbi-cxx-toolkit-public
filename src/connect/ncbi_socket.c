@@ -117,7 +117,7 @@
 
 #ifndef   MAXHOSTNAMELEN
 #  define MAXHOSTNAMELEN  255
-#endif // MAXHOSTNAMELEN
+#endif /* MAXHOSTNAMELEN */
 
 
 
@@ -1609,7 +1609,7 @@ static EIO_Status s_Select_(size_t                n,
                 }
                 return eIO_Timeout;
             }
-            // NB: ready
+            /* NB: ready */
         } else { /* nfds < 0 */
             int x_error = SOCK_ERRNO;
             if (x_error != SOCK_EINTR) {
@@ -1873,11 +1873,12 @@ static EIO_Status s_Poll_(size_t                n,
             slice = wait;
 
         if (count  ||  !ready) {
-            x_ready = poll(x_polls, count, ready ? 0 : slice);
+            x_ready = poll(x_polls, count, !ready ? slice : 0);
 
             if (x_ready > 0) {
                 assert(status == eIO_Success);
                 ready = (nfds_t) x_ready;
+                assert(ready <= count);
                 break;
             }
         } else
@@ -1895,7 +1896,7 @@ static EIO_Status s_Poll_(size_t                n,
                 status = eIO_Timeout;
                 break;
             }
-            // NB: ready
+            /* NB: ready */
         } else { /* x_ready < 0 */
             if ((x_ready = SOCK_ERRNO) != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(x_ready);
