@@ -145,6 +145,7 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    Blast_KarlinBlk* kbp;
    char buffer[1024];
    Int2 status = 0;
+   int index;
 
    sbp->read_in_matrix = TRUE;
    if ((status = Blast_ScoreBlkMatrixFill(sbp, get_path)) != 0)
@@ -316,9 +317,17 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    if (status) 
        Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
    else {
-       /* Put a copy the Karlin block into the kbp_std array */
-       sbp->kbp_std[0] = (Blast_KarlinBlk*) 
+
+       /* fill in the rest of kbp_gap_std */
+       for(index=1;index<sbp->number_of_contexts;index++)
+       sbp->kbp_gap_std[index] = (Blast_KarlinBlk*)
            BlastMemDup(sbp->kbp_gap_std[0], sizeof(Blast_KarlinBlk));
+
+       /* copy kbp_gap_std to kbp_std */
+       for(index=0;index<sbp->number_of_contexts;index++)
+       sbp->kbp_std[index] = (Blast_KarlinBlk*)
+           BlastMemDup(sbp->kbp_gap_std[0], sizeof(Blast_KarlinBlk));
+
        sbp->kbp = sbp->kbp_std;
    }
 
