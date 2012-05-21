@@ -210,11 +210,11 @@ private:
 };
 
 /** Superheader derived classes parametrized by index format version. */
-template< Uint4 INDEX_FORMAT_VERSION > class CIndexSuperHeader;
+template< Uint4 INDEX_FORMAT_VERSION > class NCBI_XBLAST_EXPORT CIndexSuperHeader;
 
 /** Superheader for old style indices. */
-template<> 
-class CIndexSuperHeader< CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 >
+template<> class NCBI_XBLAST_EXPORT 
+CIndexSuperHeader< CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 >
     : public CIndexSuperHeader_Base
 {
 public:
