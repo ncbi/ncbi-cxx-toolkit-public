@@ -2320,7 +2320,6 @@ static EIO_Status s_Select(size_t                n,
                             }
                         }
                     }
-                    assert(polls[j].revent != eIO_Open);
                     break;
                 }
                 assert(j < n);
