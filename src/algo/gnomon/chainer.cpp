@@ -1475,6 +1475,13 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
             cds.SetReadingFrame(reading_frame,true);
             cds.SetStart(conf_start,true);
             SetCdsInfo(cds);          
+            TInDels fs;
+            ITERATE(TInDels, i, FrameShifts()) {
+                TSignedSeqRange fullcds = cds.Start()+cds.ReadingFrame()+cds.Stop();
+                if(Include(fullcds,i->Loc()))
+                    fs.push_back(*i);
+            }
+            FrameShifts() = fs;
             gnomon.GetScore(*this);
             AddComment("Restored confirmed start");
         }
