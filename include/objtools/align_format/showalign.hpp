@@ -254,7 +254,7 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     }
 
     //Display pariwise seqalign for the set of seq IDS (for future use)
-    void DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs);
+    void DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <string> selectedIDs);        
     //Data representing templates for defline display 
     struct SAlignTemplates {
         string alignHeaderTmpl; ///< Template for displaying header,deflines and gene info  - BLAST_ALIGN_HEADER
@@ -591,6 +591,7 @@ private:
     
     map < string, struct SAlnLinksParams > m_AlnLinksParams;
     list <string> m_CustomLinksList;
+    list<string> m_LinkoutList;
     list <string> m_HSPLinksList;
 
     CRef < objects::CObjectManager > m_FeatObj;  // used for fetching feature
@@ -617,10 +618,12 @@ private:
     /// mapviewer build name associated with the sequences in the BLAST
     /// database out of which the results are being formatted by this class.
     string m_MapViewerBuildName;
-    ///gi(if exists) that is used for html formatting
-    string m_CurrAlnSeqID_Label;
+    ///gi(if exists) that is used for html formatting otherwise id without db part
+    string m_CurrAlnID_Lbl;
     ///accession that is displayed
     string m_CurrAlnAccession;
+    ///gi(if exists) that is used for html formatting otherwise id with db part like ti:xxxxxxx or GNOMON:XXXXXX
+    string m_CurrAlnID_DbLbl;
 
     TranslatedFrameForLocalSeq m_TranslatedFrameForLocalSeq;
 
@@ -875,7 +878,7 @@ private:
     SAlnRowInfo *x_PrepareRowData(void);
 
     string x_FormatSingleAlign(SAlnInfo* aln_vec_info);  
-    string x_FormatAlignSortInfo(string id_label);
+    string x_FormatAlignSortInfo();
     string x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info);
     string x_FormatIdentityInfo(string alignInfo, SAlnInfo* aln_vec_info);
     string x_FormatDynamicFeaturesInfo(string alignInfo, SAlnInfo* aln_vec_info);
