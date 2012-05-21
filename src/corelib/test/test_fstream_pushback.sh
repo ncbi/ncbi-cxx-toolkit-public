@@ -15,10 +15,10 @@ while [ $i -lt $j ]; do
   $CHECK_EXEC test_fstream_pushback >$log 2>&1
   exit_code=$?
   if [ "$exit_code" != "0" ]; then
-    if [ "`cat $log | wc -l`" -gt "40" ]; then
-      cat -n $log | head -20
+    if [ "`head -n 301 $log | wc -l`" -gt "300" ]; then
+      cat -n $log | head -100
       echo '......'
-      cat -n $log | tail -20
+      cat -n $log | tail -200
     else
       cat $log
     fi
