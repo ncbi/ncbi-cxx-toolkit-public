@@ -401,12 +401,15 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
         {{
             CNSTransaction      transaction(this);
 
-            if (!group.empty())
+            if (!group.empty()) {
                 group_id = m_GroupRegistry.AddJob(group, job_id);
-            aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token,
-                                                             job_id, 0);
-            job.SetAffinityId(aff_id);
-            job.SetGroupId(group_id);
+                job.SetGroupId(group_id);
+            }
+            if (!aff_token.empty()) {
+                aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token,
+                                                                 job_id, 0);
+                job.SetAffinityId(aff_id);
+            }
             job.Flush(this);
 
             transaction.Commit();
