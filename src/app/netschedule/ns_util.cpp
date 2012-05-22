@@ -40,24 +40,17 @@
 BEGIN_NCBI_SCOPE
 
 
-void NS_FormatIPAddress(unsigned int ipaddr, string& str_addr)
-{
-    unsigned int hostaddr = CSocketAPI::HostToNetLong(ipaddr);
-    char buf[32];
-    sprintf(buf, "%u.%u.%u.%u",
-        (hostaddr >> 24) & 0xff,
-        (hostaddr >> 16) & 0xff,
-        (hostaddr >> 8)  & 0xff,
-        hostaddr        & 0xff);
-    str_addr = buf;
-}
-
-
 string NS_FormatIPAddress(unsigned int ipaddr)
 {
-    string str_addr;
-    NS_FormatIPAddress(ipaddr, str_addr);
-    return str_addr;
+    unsigned int    hostaddr = CSocketAPI::HostToNetLong(ipaddr);
+    char            buf[32];
+
+    sprintf(buf, "%u.%u.%u.%u",
+                (hostaddr >> 24) & 0xff,
+                (hostaddr >> 16) & 0xff,
+                (hostaddr >> 8)  & 0xff,
+                 hostaddr        & 0xff);
+    return buf;
 }
 
 

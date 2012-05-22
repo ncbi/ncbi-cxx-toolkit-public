@@ -37,11 +37,8 @@
 
 BEGIN_NCBI_SCOPE
 
-class CQueue;
 
-
-void            NS_FormatIPAddress(unsigned int ipaddr, string& str_addr);
-string          NS_FormatIPAddress(unsigned int ipaddr);
+string  NS_FormatIPAddress(unsigned int ipaddr);
 
 
 END_NCBI_SCOPE

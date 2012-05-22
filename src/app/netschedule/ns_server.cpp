@@ -117,11 +117,10 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     CServer::SetParameters(params);
     m_Port = params.port;
     m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);
-    if (params.use_hostname) {
+    if (params.use_hostname)
         m_Host = CSocketAPI::gethostname();
-    } else {
-        NS_FormatIPAddress(m_HostNetAddr, m_Host);
-    }
+    else
+        m_Host = NS_FormatIPAddress(m_HostNetAddr);
 
     m_InactivityTimeout = params.network_timeout;
 
