@@ -415,7 +415,7 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
             transaction.Commit();
         }}
 
-        m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
+        m_StatusTracker.AddPendingJob(job_id);
 
         // Register the job with the client
         m_ClientsRegistry.AddToSubmitted(client, 1);

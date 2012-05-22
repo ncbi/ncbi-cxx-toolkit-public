@@ -141,6 +141,8 @@ public:
     void SetStatus(unsigned   job_id,
                    TJobStatus status);
 
+    void AddPendingJob(unsigned int  job_id);
+
     // Erase the job
     void Erase(unsigned job_id);
 

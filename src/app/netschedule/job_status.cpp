@@ -189,12 +189,19 @@ void CJobStatusTracker::SetStatus(unsigned    job_id,
             old_status = g_ValidJobStatuses[k];
 
             if (status != g_ValidJobStatuses[k])
-                bv.set(job_id, false);
+                bv.set_bit(job_id, false);
         } else {
             if (status == g_ValidJobStatuses[k])
-                bv.set(job_id, true);
+                bv.set_bit(job_id, true);
         }
     }
+}
+
+
+void CJobStatusTracker::AddPendingJob(unsigned int  job_id)
+{
+    CWriteLockGuard         guard(m_Lock);
+    m_StatusStor[(int) CNetScheduleAPI::ePending]->set_bit(job_id, true);
 }
 
 
@@ -386,9 +393,8 @@ void CJobStatusTracker::AddPendingBatch(unsigned  job_id_from,
                                         unsigned  job_id_to)
 {
     CWriteLockGuard     guard(m_Lock);
-    TNSBitVector &      bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
-
-    bv.set_range(job_id_from, job_id_to);
+    m_StatusStor[(int) CNetScheduleAPI::ePending]->set_range(job_id_from,
+                                                             job_id_to);
 }
 
 
