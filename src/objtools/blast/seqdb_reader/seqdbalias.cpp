@@ -833,16 +833,12 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         
         // The name was not found as an alias file, so check for the
         // existence of a volume file at the same location.
+        
         bool found = false;
         CSeqDB_BasePath bp;
-        CSeqDB_Path new_vol_path( base, prot_nucl, 'i', 'n' );
-        if (m_Atlas.DoesFileExist(new_vol_path, locked)) {
-            bp = CSeqDB_BasePath(new_db_path.FindBasePath() );
-            found = true;
-        }
 
         // Always check local copy first unless full path is given
-        if (!found && !m_SkipLocal[i]) {
+        if (!m_SkipLocal[i]) {
             // GCC 3.0.4 requires the extra parentheses below.
             CSeqDB_BasePath local_base((CSeqDB_DirName(CDir::GetCwd())),
                                    CSeqDB_BaseName(m_DBList[i].FindBaseName()));
@@ -852,6 +848,14 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
                 found = true;
             }
         } 
+
+        if (!found) {
+            CSeqDB_Path new_vol_path( base, prot_nucl, 'i', 'n' );
+            if (m_Atlas.DoesFileExist(new_vol_path, locked)) {
+                bp = CSeqDB_BasePath(new_db_path.FindBasePath() );
+                found = true;
+            }
+        }
 
         if (found) {
             string normal_name;
