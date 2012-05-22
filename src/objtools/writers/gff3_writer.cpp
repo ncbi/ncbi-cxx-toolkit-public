@@ -214,7 +214,13 @@ bool CGff3Writer::x_WriteAlignDisc(
 
     const CSeq_align_set::Tdata& data = align.GetSegs().GetDisc().Get();
     for ( CASCIT cit = data.begin(); cit != data.end(); ++cit ) {
-        if (!x_WriteAlign(**cit, bInvertWidth)) {
+        CRef<CSeq_align> pA(new CSeq_align);
+        pA->Assign(**cit);
+        if ( align.IsSetScore() ) {
+            pA->SetScore().insert( pA->SetScore().end(),
+                align.GetScore().begin(), align.GetScore().end() );
+        }
+        if (!x_WriteAlign(*pA, bInvertWidth)) {
             return false;
         }
     }
