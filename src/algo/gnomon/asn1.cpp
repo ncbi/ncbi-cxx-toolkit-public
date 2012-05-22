@@ -919,7 +919,7 @@ void RestoreModelReadingFrame(const CSeq_feat_Handle& feat, CAlignModel& model)
             }
         }
 
-        TSignedSeqRange reading_frame =  model.GetAlignMap().MapRangeEditedToOrig(rf,true);
+        TSignedSeqRange reading_frame =  model.GetAlignMap().MapRangeEditedToOrig(rf,false);
 
         CCDSInfo cds_info;
         cds_info.SetReadingFrame(reading_frame, false);
