@@ -630,65 +630,91 @@ bool  CQueue::GetJobOrWait(const CNSClientId &     client,
     for (;;) {
         try {
             TNSBitVector        aff_ids;
-            CFastMutexGuard     guard(m_OperationLock);
 
-            if (wnode_affinity) {
-                // Check first that the were no preferred affinities reset for
-                // the client
-                if (m_ClientsRegistry.GetAffinityReset(client))
-                    return false;   // Affinity was reset, so no job for the client
-            }
+            {{
+                CFastMutexGuard     guard(m_OperationLock);
 
-            if (timeout != 0) {
-                // WGET:
-                // The affinities has to be resolved straight away, however at this
-                // point it is still unknown that the client will wait for them, so
-                // the client ID is passed as 0. Later on the client info will be
-                // updated in the affinity registry if the client really waits for
-                // this affinities.
-                CNSTransaction      transaction(this);
-                aff_ids = m_AffinityRegistry.ResolveAffinitiesForWaitClient(*aff_list, 0);
-                transaction.Commit();
-            }
-            else
-                // GET:
-                // No need to create aff records if they are not known
-                aff_ids = m_AffinityRegistry.GetAffinityIDs(*aff_list);
+                if (wnode_affinity) {
+                    // Check first that the were no preferred affinities reset for
+                    // the client
+                    if (m_ClientsRegistry.GetAffinityReset(client))
+                        return false;   // Affinity was reset, so no job for the client
+                }
 
-            x_UnregisterGetListener(client, port);
+                if (timeout != 0) {
+                    // WGET:
+                    // The affinities has to be resolved straight away, however at this
+                    // point it is still unknown that the client will wait for them, so
+                    // the client ID is passed as 0. Later on the client info will be
+                    // updated in the affinity registry if the client really waits for
+                    // this affinities.
+                    CNSTransaction      transaction(this);
+                    aff_ids = m_AffinityRegistry.ResolveAffinitiesForWaitClient(*aff_list, 0);
+                    transaction.Commit();
+                }
+                else
+                    // GET:
+                    // No need to create aff records if they are not known
+                    aff_ids = m_AffinityRegistry.GetAffinityIDs(*aff_list);
+
+                x_UnregisterGetListener(client, port);
+            }}
+
             for (;;) {
-                unsigned int        job_id = x_FindPendingJob(client,
-                                                              aff_ids,
-                                                              wnode_affinity,
-                                                              any_affinity,
-                                                              exclusive_new_affinity);
-                if (!job_id) {
-                    if (timeout != 0) {
-                        // WGET:
-                        // There is no job, so the client might need to be registered
-                        // in the waiting list
-                        if (port > 0)
-                            x_RegisterGetListener(client, port, timeout, aff_ids,
-                                                  wnode_affinity, any_affinity,
-                                                  exclusive_new_affinity,
-                                                  new_format);
+                // No lock here to make it possible to pick a job
+                // simultaneously from many threads
+                x_SJobPick  job_pick = x_FindPendingJob(client, aff_ids,
+                                                        wnode_affinity,
+                                                        any_affinity,
+                                                        exclusive_new_affinity);
+                {{
+                    CFastMutexGuard     guard(m_OperationLock);
+
+                    if (job_pick.job_id == 0) {
+                        if (timeout != 0) {
+                            // WGET:
+                            // There is no job, so the client might need to be registered
+                            // in the waiting list
+                            if (port > 0)
+                                x_RegisterGetListener(client, port, timeout, aff_ids,
+                                                      wnode_affinity, any_affinity,
+                                                      exclusive_new_affinity,
+                                                      new_format);
+                        }
+                        return true;
                     }
-                    return true;
-                }
 
-                if (x_UpdateDB_GetJobNoLock(client, curr,
-                                            job_id, *new_job)) {
-                    // The job is not expired and successfully read
-                    m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eRunning);
-                    m_GCRegistry.UpdateLifetime(job_id, new_job->GetExpirationTime(m_Timeout,
-                                                                                   m_RunTimeout));
-                    TimeLineAdd(job_id, curr + m_RunTimeout);
-                    m_ClientsRegistry.AddToRunning(client, job_id);
-                    return true;
-                }
+                    // Check that the job is still Pending
+                    if (GetJobStatus(job_pick.job_id) !=
+                            CNetScheduleAPI::ePending)
+                        continue;   // Try to pick a job again
 
-                // Reset job_id and try again
-                new_job->SetId(0);
+                    // the job is still pending, check if it was received as
+                    // with exclusive affinity
+                    if (job_pick.exclusive && job_pick.aff_id != 0) {
+                        if (m_ClientsRegistry.IsPreferredByAny(job_pick.aff_id))
+                            continue;   // Other WN grabbed this affinity already
+                        m_ClientsRegistry.UpdatePreferredAffinities(client,
+                                                                    job_pick.aff_id,
+                                                                    0);
+                    }
+
+                    if (x_UpdateDB_GetJobNoLock(client, curr,
+                                                job_pick.job_id, *new_job)) {
+                        // The job is not expired and successfully read
+                        m_StatusTracker.ChangeStatus(this, job_pick.job_id,
+                                                     CNetScheduleAPI::eRunning);
+                        m_GCRegistry.UpdateLifetime(job_pick.job_id,
+                                                    new_job->GetExpirationTime(m_Timeout,
+                                                                               m_RunTimeout));
+                        TimeLineAdd(job_pick.job_id, curr + m_RunTimeout);
+                        m_ClientsRegistry.AddToRunning(client, job_pick.job_id);
+                        return true;
+                    }
+
+                    // Reset job_id and try again
+                    new_job->SetId(0);
+                }}
             }
         }
         catch (CBDB_ErrnoException &  ex) {
@@ -1645,17 +1671,19 @@ void CQueue::OptimizeMem()
 }
 
 
-unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
-                                  const TNSBitVector &  aff_ids,
-                                  bool                  wnode_affinity,
-                                  bool                  any_affinity,
-                                  bool                  exclusive_new_affinity)
+CQueue::x_SJobPick
+CQueue::x_FindPendingJob(const CNSClientId  &  client,
+                         const TNSBitVector &  aff_ids,
+                         bool                  wnode_affinity,
+                         bool                  any_affinity,
+                         bool                  exclusive_new_affinity)
 {
+    x_SJobPick      job_pick;
     bool            explicit_aff = aff_ids.any();
     unsigned int    wnode_aff_candidate = 0;
     unsigned int    exclusive_aff_candidate = 0;
     TNSBitVector    blacklisted_jobs =
-                            m_ClientsRegistry.GetBlacklistedJobs(client);
+                    m_ClientsRegistry.GetBlacklistedJobs(client);
 
     TNSBitVector    pref_aff;
     if (wnode_affinity) {
@@ -1681,14 +1709,22 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
 
             unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
             if (aff_id != 0 && explicit_aff) {
-                if (aff_ids[aff_id] == true)
-                    return job_id;
+                if (aff_ids[aff_id] == true) {
+                    job_pick.job_id = job_id;
+                    job_pick.exclusive = false;
+                    job_pick.aff_id = aff_id;
+                    return job_pick;
+                }
             }
 
             if (aff_id != 0 && wnode_affinity) {
                 if (pref_aff[aff_id] == true) {
-                    if (explicit_aff == false)
-                        return job_id;
+                    if (explicit_aff == false) {
+                        job_pick.job_id = job_id;
+                        job_pick.exclusive = false;
+                        job_pick.aff_id = aff_id;
+                        return job_pick;
+                    }
                     if (wnode_aff_candidate == 0)
                         wnode_aff_candidate = job_id;
                     continue;
@@ -1698,11 +1734,10 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
             if (exclusive_new_affinity) {
                 if (aff_id == 0 || all_pref_aff[aff_id] == false) {
                     if (explicit_aff == false && wnode_affinity == false) {
-                        if (aff_id != 0)
-                            m_ClientsRegistry.UpdatePreferredAffinities(client,
-                                                                        aff_id,
-                                                                        0);
-                        return job_id;
+                        job_pick.job_id = job_id;
+                        job_pick.exclusive = true;
+                        job_pick.aff_id = aff_id;
+                        return job_pick;
                     }
                     if (exclusive_aff_candidate == 0)
                         exclusive_aff_candidate = job_id;
@@ -1710,26 +1745,36 @@ unsigned CQueue::x_FindPendingJob(const CNSClientId  &  client,
             }
         }
 
-        if (wnode_aff_candidate != 0)
-            return wnode_aff_candidate;
+        if (wnode_aff_candidate != 0) {
+            job_pick.job_id = wnode_aff_candidate;
+            job_pick.exclusive = false;
+            job_pick.aff_id = 0;
+            return job_pick;
+        }
+
         if (exclusive_aff_candidate != 0) {
-            unsigned int    aff_id = m_GCRegistry.GetAffinityID(exclusive_aff_candidate);
-            if (aff_id != 0)
-                m_ClientsRegistry.UpdatePreferredAffinities(client,
-                                                            aff_id,
-                                                            0);
-            return exclusive_aff_candidate;
+            job_pick.job_id = exclusive_aff_candidate;
+            job_pick.exclusive = true;
+            job_pick.aff_id = m_GCRegistry.GetAffinityID(exclusive_aff_candidate);
+            return job_pick;
         }
     }
 
 
-    if (any_affinity || (!explicit_aff && !wnode_affinity))
-        return m_StatusTracker.GetJobByStatus(
+    if (any_affinity || (!explicit_aff && !wnode_affinity)) {
+        job_pick.job_id = m_StatusTracker.GetJobByStatus(
                                     CNetScheduleAPI::ePending,
                                     blacklisted_jobs,
                                     TNSBitVector());
+        job_pick.exclusive = false;
+        job_pick.aff_id = 0;
+        return job_pick;
+    }
 
-    return 0;
+    job_pick.job_id = 0;
+    job_pick.exclusive = false;
+    job_pick.aff_id = 0;
+    return job_pick;
 }
 
 

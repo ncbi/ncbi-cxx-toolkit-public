@@ -620,6 +620,13 @@ CNSClientsRegistry::IsRequestedAffinity(const string &         name,
 }
 
 
+bool  CNSClientsRegistry::IsPreferredByAny(unsigned int  aff_id) const
+{
+    CMutexGuard     guard(m_Lock);
+    return m_WNAffinities[aff_id];
+}
+
+
 bool  CNSClientsRegistry::GetAffinityReset(const CNSClientId &   client) const
 {
     if (!client.IsComplete())

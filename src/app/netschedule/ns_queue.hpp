@@ -362,7 +362,14 @@ private:
                                       const string &       auth_token,
                                       TJobStatus           target_status);
 
-    unsigned int
+    struct x_SJobPick
+    {
+        unsigned int    job_id;
+        bool            exclusive;
+        unsigned int    aff_id;
+    };
+
+    x_SJobPick
     x_FindPendingJob(const CNSClientId &    client,
                      const TNSBitVector &   aff_ids,
                      bool                   wnode_affinity,

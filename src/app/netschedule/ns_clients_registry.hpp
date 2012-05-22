@@ -116,6 +116,7 @@ class CNSClientsRegistry
         bool  IsRequestedAffinity(const string &         name,
                                   const TNSBitVector &   aff,
                                   bool                   use_preferred) const;
+        bool  IsPreferredByAny(unsigned int  aff_id) const;
         string  GetNodeName(unsigned int  id) const;
         bool  GetAffinityReset(const CNSClientId &   client) const;
         vector< pair< unsigned int, unsigned short > >
