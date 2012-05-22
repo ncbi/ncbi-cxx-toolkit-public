@@ -35,7 +35,6 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/test_mt.hpp>
 #include <stdio.h>                 // remove()
-#include <stdlib.h>                // atoi()
 /* This header must go last */
 #include <common/test_assert.h>
 
@@ -72,11 +71,11 @@ bool CTestApp::Thread_Run(int idx)
 
     PopDiagPostPrefix();
 
-    if (ret == 0) {
-        remove(filename.c_str());
-        return true;
-    }
-    return false;
+    if (ret)
+        return false;
+
+    remove(filename.c_str());
+    return true;
 }
 
 
