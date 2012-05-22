@@ -491,6 +491,11 @@ int CTestNetScheduleCrash::Run(void)
     CNetScheduleSubmitter               submitter = cl.GetSubmitter();
     CNetScheduleExecutor                executor = cl.GetExecutor();
 
+    if (naff > 0) {
+        // Enable retrieving affinities
+        executor.SetAffinityPreference(
+                        CNetScheduleExecutor::eClaimNewPreferredAffs);
+    }
 
     if (args["main"]) {
         this->MainLoop(submitter, executor, total_jobs, queue);
