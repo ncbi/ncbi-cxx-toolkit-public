@@ -171,16 +171,19 @@ void CGffAlignmentRecord::SetMatchType(
         m_strType = strEstMatch;
         return;
     }
-    if (target_info & (CSeq_id::fAcc_nuc | CSeq_id::eAcc_mrna)) {
+    if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_mrna) {
         m_strType = strCdnaMatch;
         return;
     }
-    if (source_info & CSeq_id::fAcc_prot  
-            /*  && !(target_info & CSeq_id::fAcc_prot*/) {
+    if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa) {
+        m_strType = strCdnaMatch;
+        return;
+    }
+    if (source_info & CSeq_id::fAcc_prot) {
         m_strType = strTransNucMatch;
         return;
     }
-    //m_strType = "match";
+//    m_strType = "match";
 }
 
 //  ----------------------------------------------------------------------------
