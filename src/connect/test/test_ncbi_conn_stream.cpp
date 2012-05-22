@@ -260,7 +260,7 @@ int main(int argc, const char* argv[])
                                      0/*port = default*/, flag, 0/*cmcb*/,
                                      1024/*offset*/, net_info->timeout);
 
-    for (size = 0;  download.good();  size += download.gcount()) {
+    for (size = 0;  download.good();  size += (size_t) download.gcount()) {
         char buf[512];
         download.read(buf, sizeof(buf));
     }
@@ -331,14 +331,14 @@ int main(int argc, const char* argv[])
                 speedstr += " and verified";
             if (!filetime.empty()) {
                 time_t stop = (time_t) NStr::StringToUInt(filetime);
-                time_t time = udiff(stop, start.GetTimeT());
+                time_t time = (time_t) udiff((long) stop, (long) start.GetTimeT());
                 double rate = (val / 1024.0) / (time ? time : 1);
                 speedstr += (" in "
                              + NStr::ULongToString((unsigned long) time)
                              + " sec @ "
                              + NStr::DoubleToString(rate,2, NStr::fDoubleFixed)
                              + " KB/s");
-                delta = udiff(stop, CTime(CTime::eCurrent).GetTimeT());
+                delta = (time_t) udiff((long) stop, (long) CTime(CTime::eCurrent).GetTimeT());
             }
             if (delta < 1800) {
                 LOG_POST("Test 3 passed: " <<
@@ -500,7 +500,7 @@ int main(int argc, const char* argv[])
         if (i + k > kBufferSize + 1)
             k = kBufferSize + 1 - i;
         ios.read(&buf2[i], k);
-        j = ios.gcount();
+        j = (size_t) ios.gcount();
         if (!ios.good() && !ios.eof()) {
             ERR_POST("Cannot receive data");
             return 2;
