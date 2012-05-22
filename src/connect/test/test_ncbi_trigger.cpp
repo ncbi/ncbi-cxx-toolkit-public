@@ -176,9 +176,10 @@ private:
 
 void* CTriggerThread::Main(void)
 {
+    _ASSERT(s_Trigger.IsSet() == eIO_Closed);
     SleepMilliSec(m_Delay);
-    assert(s_Trigger.IsSet() == eIO_Closed);
-    assert(s_Trigger.Set()   == eIO_Success);
+    _ASSERT(s_Trigger.IsSet() == eIO_Closed);
+    _ASSERT(s_Trigger.Set()   == eIO_Success);
     return 0;
 }
 
