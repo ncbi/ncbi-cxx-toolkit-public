@@ -457,7 +457,9 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     int i;
     SBlastTargetTranslation* target_t = NULL;
 
-    if ( !hsp_list || (program_number != eBlastTypeBlastp && program_number != eBlastTypeTblastn)) 
+    if ( !hsp_list || (program_number != eBlastTypeBlastp 
+                    && program_number != eBlastTypeTblastn
+                    && program_number != eBlastTypeBlastx))
         return;
 
     /* Initialize the subject */
@@ -2229,7 +2231,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     }
     while (BlastHSPStreamRead(hsp_stream, &thisMatch) != kBlastHSPStream_Eof) {
         int numAligns[6];
-        Blast_KarlinBlk * kbp;
+        Blast_KarlinBlk * kbp = NULL;
         BlastCompo_MatchingSequence matchingSeq = {0,};
         BlastHSPList * hsp_list = Blast_HSPListNew(0);
         double best_evalue;   
