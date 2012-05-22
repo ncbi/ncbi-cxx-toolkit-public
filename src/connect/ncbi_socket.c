@@ -1876,6 +1876,11 @@ static EIO_Status s_Poll_(size_t                n,
             x_ready = poll(x_polls, count, !ready ? slice : 0);
 
             if (x_ready > 0) {
+#ifdef NCBI_OS_DARWIN
+                /* Mac OS X sometimes misreports, weird! */
+                if (x_ready > (int) count)
+                    x_ready = (int) count;
+#endif /*NCBI_OS_DARWIN*/
                 assert(status == eIO_Success);
                 ready = (nfds_t) x_ready;
                 assert(ready <= count);
@@ -2041,7 +2046,7 @@ static EIO_Status s_Select(size_t                n,
     char  _id[MAXIDLEN];
 
     for (;;) { /* timeslice loop */
-        int/*bool*/ bad   = 0/*false*/;
+        int/*bool*/ done  = 0/*false*/;
         int/*bool*/ ready = 0/*false*/;
         DWORD       count = 0;
         DWORD       slice;
@@ -2061,9 +2066,9 @@ static EIO_Status s_Select(size_t                n,
             event = polls[i].event;
             if ((event | eIO_ReadWrite) != eIO_ReadWrite) {
                 polls[i].revent = eIO_Close;
-                if (!bad) {
+                if (!done) {
                     ready = 0/*false*/;
-                    bad   = 1/*true*/;
+                    done  = 1/*true*/;
                 }
                 continue;
             }
@@ -2071,7 +2076,7 @@ static EIO_Status s_Select(size_t                n,
                 assert(!polls[i].revent/*eIO_Open*/);
                 continue;
             }
-            if (bad)
+            if (done)
                 continue;
 
             if (sock->sock == SOCK_INVALID) {
@@ -2157,7 +2162,7 @@ static EIO_Status s_Select(size_t                n,
                              " Too many objects, must be less than %u",
                              (unsigned int) count));
                 polls[i].revent = eIO_Close;
-                ready = bad = 1/*true*/;
+                ready = done = 1/*true*/;
                 continue;
             }
             want[count]   = bitset;
@@ -2165,7 +2170,7 @@ static EIO_Status s_Select(size_t                n,
         }
         assert(i >= n);
 
-        if (bad) {
+        if (done) {
             if (ready) {
                 errno = SOCK_ETOOMANY;
                 return eIO_Unknown;
@@ -2184,13 +2189,13 @@ static EIO_Status s_Select(size_t                n,
             slice = wait;
 
         if (count) {
-            DWORD r;
+            DWORD m = 0, r;
             i = 0;
             do {
                 size_t j;
-                DWORD  m = count - (DWORD) i;
-                r = WaitForMultipleObjects(m,
-                                           what + i,
+                DWORD  c = count - m;
+                r = WaitForMultipleObjects(c,
+                                           what + m,
                                            FALSE/*any*/,
                                            ready ? 0 : slice);
                 if (r == WAIT_FAILED) {
@@ -2200,48 +2205,57 @@ static EIO_Status s_Select(size_t                n,
                                         err, strerr ? strerr : "",
                                         ("[SOCK::Select] "
                                          " Failed WaitForMultipleObjects(%u)",
-                                         (unsigned int) m));
+                                         (unsigned int) c));
                     UTIL_ReleaseBufferOnHeap(strerr);
                     break;
                 }
                 if (r == WAIT_TIMEOUT)
                     break;
-                if (r < WAIT_OBJECT_0  ||  r >= WAIT_OBJECT_0 + m) {
+                if (r < WAIT_OBJECT_0  ||  WAIT_OBJECT_0 + c <= r) {
                     CORE_LOGF_X(134, ready ? eLOG_Trace : eLOG_Error,
                                 ("[SOCK::Select] "
                                  " WaitForMultipleObjects(%u) returned %d",
-                                 (unsigned int) m, (int)(r - WAIT_OBJECT_0)));
+                                 (unsigned int) c, (int)(r - WAIT_OBJECT_0)));
                     r = WAIT_FAILED;
                     break;
                 }
-                i += (size_t)(r - WAIT_OBJECT_0);
+                m += r - WAIT_OBJECT_0;
+                assert(!done);
 
-                /* something must be ready (NB: the loop always broken) */
+                /* something must be ready */
                 for (j = i;  j < n;  j++) {
                     SOCK sock = polls[j].sock;
                     WSANETWORKEVENTS e;
                     long bitset;
                     if (!sock  ||  !polls[j].event)
                         continue;
+                    if (polls[j].revent == eIO_Close) {
+                        ready = 1/*true*/;
+                        continue;
+                    }
                     if (sock->type == eTrigger) {
-                        if (what[i] != ((TRIGGER) sock)->fd)
+                        if (what[m] != ((TRIGGER) sock)->fd)
                             continue;
                         polls[j].revent = polls[j].event;
                         assert(polls[j].revent != eIO_Open);
-                        ready = 1/*true*/;
+                        done = 1/*true*/;
                         break;
                     }
-                    if (what[i] != sock->event)
-                        continue;
-                    assert(polls[j].revent != eIO_Close);
-                    /* reset well before a re-enabling WSA API call occurs */
-                    if (!WSAResetEvent(what[i])) {
-                        sock->r_status = sock->w_status = eIO_Closed;
+                    if (sock->sock == SOCK_INVALID) {
                         polls[j].revent = eIO_Close;
                         ready = 1/*true*/;
+                        continue;
+                    }
+                    if (what[m] != sock->event)
+                        continue;
+                    /* reset well before a re-enabling WSA API call occurs */
+                    if (!WSAResetEvent(what[m])) {
+                        sock->r_status = sock->w_status = eIO_Closed;
+                        polls[j].revent = eIO_Close;
+                        done = 1/*true*/;
                         break;
                     }
-                    if (WSAEnumNetworkEvents(sock->sock, what[i], &e) != 0) {
+                    if (WSAEnumNetworkEvents(sock->sock, what[m], &e) != 0) {
                         int x_error = SOCK_ERRNO;
                         const char* strerr = SOCK_STRERROR(x_error);
                         CORE_LOGF_ERRNO_EXX(136, eLOG_Error,
@@ -2251,13 +2265,18 @@ static EIO_Status s_Select(size_t                n,
                                              s_ID(sock, _id)));
                         UTIL_ReleaseBuffer(strerr);
                         polls[j].revent = eIO_Close;
-                        ready = 1/*true*/;
+                        done = 1/*true*/;
                         break;
                     }
                     /* NB: the bits are XCAOWR */
                     if (!(bitset = e.lNetworkEvents)) {
+                        if (ready  ||  !slice) {
+                            m = count - 1;
+                            assert(!done);
+                            break;
+                        }
                         if (sock->type == eListening
-                            &&  (sock->log == eOn  || 
+                            &&  (sock->log == eOn  ||
                                  (sock->log == eDefault  &&  s_Log == eOn))) {
                             LSOCK lsock = (LSOCK) sock;
                             ELOG_Level level;
@@ -2276,7 +2295,7 @@ static EIO_Status s_Select(size_t                n,
                     if (bitset & FD_CLOSE/*X*/) {
                         if (sock->type != eSocket) {
                             polls[j].revent = eIO_Close;
-                            ready = 1/*true*/;
+                            done = 1/*true*/;
                             break;
                         }
                         bitset |= FD_READ/*at least SHUT_WR @ remote end*/;
@@ -2290,17 +2309,17 @@ static EIO_Status s_Select(size_t                n,
                         if (bitset & (FD_ACCEPT | FD_OOB | FD_READ))
                             sock->readable = 1/*true*/;
                     }
-                    bitset &= want[i];
+                    bitset &= want[m];
                     if ((bitset & (FD_CONNECT | FD_WRITE))
                         &&  sock->writable) {
                         assert(sock->type & eSocket);
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Write);
-                        ready = 1/*true*/;
+                        done = 1/*true*/;
                     }
                     if ((bitset & (FD_ACCEPT | FD_OOB | FD_READ))
                         &&  sock->readable) {
                         polls[j].revent=(EIO_Event)(polls[j].revent|eIO_Read);
-                        ready = 1/*true*/;
+                        done = 1/*true*/;
                     }
                     assert((polls[j].revent | eIO_ReadWrite) == eIO_ReadWrite);
                     if (!polls[j].revent) {
@@ -2308,31 +2327,36 @@ static EIO_Status s_Select(size_t                n,
                         if ((e.lNetworkEvents & FD_CLOSE)
                             &&  !e.iErrorCode[FD_CLOSE_BIT]) {
                             polls[j].revent = polls[j].event;
-                            ready = 1/*true*/;
+                            done = 1/*true*/;
                         } else for (k = 0;  k < FD_MAX_EVENTS;  k++) {
                             if (!(e.lNetworkEvents & (1 << k)))
                                 continue;
                             if (e.iErrorCode[k]) {
                                 polls[j].revent = eIO_Close;
                                 errno = e.iErrorCode[k];
-                                ready = 1/*true*/;
+                                done = 1/*true*/;
                                 break;
                             }
                         }
-                    }
+                    } else
+                        done = 1/*true*/;
                     break;
                 }
-                assert(j < n);
+                if (done) {
+                    ready = 1/*true*/;
+                    done = 0/*false*/;
+                    i = ++j;
+                }
                 if (ready  ||  !slice)
-                    i++;
-            } while (i < (size_t) count);
+                    m++;
+            } while (m < count);
 
             if (ready)
                 break;
 
             if (r == WAIT_FAILED)
                 return eIO_Unknown;
-            assert(r == WAIT_TIMEOUT);
+            /* treat this as a timed out slice */
         } else if (ready) {
             break;
         } else
