@@ -252,9 +252,9 @@ TJobStatus CJobStatusTracker::ChangeStatus(CQueue *      queue,
                                            TJobStatus    status,
                                            bool *        updated)
 {
-    CWriteLockGuard     guard(m_Lock);
     bool                status_updated = false;
     TJobStatus          old_status = CNetScheduleAPI::eJobNotFound;
+    CWriteLockGuard     guard(m_Lock);
 
     switch (status) {
 
@@ -401,9 +401,9 @@ void CJobStatusTracker::AddPendingBatch(unsigned  job_id_from,
 unsigned int
 CJobStatusTracker::GetPendingJobFromSet(const TNSBitVector &  candidate_set)
 {
-    CReadLockGuard              guard(m_Lock);
     TNSBitVector &              bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
     TNSBitVector::enumerator    en(candidate_set.first());
+    CReadLockGuard              guard(m_Lock);
 
     for (; en.valid(); ++en) {
         unsigned int    id = *en;
@@ -423,8 +423,8 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
                                   const TNSBitVector &  unwanted_jobs,
                                   const TNSBitVector &  group_jobs) const
 {
-    CReadLockGuard      guard(m_Lock);
     TNSBitVector &      bv = *m_StatusStor[(int)status];
+    CReadLockGuard      guard(m_Lock);
 
     if (!bv.any())
         return 0;
