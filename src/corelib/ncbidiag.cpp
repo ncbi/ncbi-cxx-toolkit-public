@@ -65,6 +65,8 @@ DEFINE_STATIC_MUTEX(s_DiagMutex);
 static CSafeStaticPtr<CRWLock> s_DiagRWLock;
 static CSafeStaticPtr<CAtomicCounter_WithAutoInit> s_ReopenEntered;
 
+DEFINE_STATIC_FAST_MUTEX(s_ApproveMutex);
+
 
 void g_Diag_Use_RWLock(void)
 {
@@ -1070,6 +1072,7 @@ CDiagContext::~CDiagContext(void)
 
 void CDiagContext::ResetLogRates(void)
 {
+    CFastMutexGuard lock(s_ApproveMutex);
     m_AppLogRC->Reset(GetLogRate_Limit(eLogRate_App),
         CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
         CTimeSpan((long)0),
@@ -1106,6 +1109,7 @@ unsigned int CDiagContext::GetLogRate_Limit(ELogRate_Type type) const
 
 void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
 {
+    CFastMutexGuard lock(s_ApproveMutex);
     switch ( type ) {
     case eLogRate_App:
         TAppLogRateLimitParam::SetDefault(limit);
@@ -1159,6 +1163,7 @@ unsigned int CDiagContext::GetLogRate_Period(ELogRate_Type type) const
 
 void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
 {
+    CFastMutexGuard lock(s_ApproveMutex);
     switch ( type ) {
     case eLogRate_App:
         TAppLogRatePeriodParam::SetDefault(period);
@@ -1203,7 +1208,10 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
 {
     bool approved = true;
     if ( IsSetDiagPostFlag(eDPF_AppLog, msg.m_Flags) ) {
-        approved = m_AppLogRC->Approve();
+        if ( m_AppLogRC->IsEnabled() ) {
+            CFastMutexGuard lock(s_ApproveMutex);
+            approved = m_AppLogRC->Approve();
+        }
         if ( approved ) {
             m_AppLogSuspended = false;
         }
@@ -1216,7 +1224,10 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
         switch ( msg.m_Severity ) {
         case eDiag_Info:
         case eDiag_Trace:
-            approved = m_TraceLogRC->Approve();
+            if ( m_TraceLogRC->IsEnabled() ) {
+                CFastMutexGuard lock(s_ApproveMutex);
+                approved = m_TraceLogRC->Approve();
+            }
             if ( approved ) {
                 m_TraceLogSuspended = false;
             }
@@ -1226,7 +1237,10 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
             }
             break;
         default:
-            approved = m_ErrLogRC->Approve();
+            if ( m_ErrLogRC->IsEnabled() ) {
+                CFastMutexGuard lock(s_ApproveMutex);
+                approved = m_ErrLogRC->Approve();
+            }
             if ( approved ) {
                 m_ErrLogSuspended = false;
             }

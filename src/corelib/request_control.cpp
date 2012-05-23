@@ -88,7 +88,7 @@ bool CRequestRateControl::x_Approve(EThrottleAction action, CTimeSpan *sleeptime
         *sleeptime = CTimeSpan(0,0);
     }
     // Is throttler disabled, that always approve request
-    if ( m_NumRequests == kNoLimit ) {
+    if ( m_NumRequestsAllowed == kNoLimit ) {
         return true;
     }
     // Redefine default action

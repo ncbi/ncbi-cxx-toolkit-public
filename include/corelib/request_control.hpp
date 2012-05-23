@@ -202,6 +202,9 @@ public:
     void Lock()   { Approve(eSleep); }
     void Unlock() { /* do nothing */ }
 
+    /// Check if throttling is enabled.
+    bool IsEnabled(void) const { return m_NumRequestsAllowed != kNoLimit; }
+
 private:
     typedef double TTime;
 
