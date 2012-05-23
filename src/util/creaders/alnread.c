@@ -2452,10 +2452,10 @@ static EBool s_SkippableNexusComment (char *str)
     }
     if (s_StringNICmp (str, "format ", 7) == 0
         ||  s_StringNICmp (str, "dimensions ", 11) == 0
-        ||  s_StringNICmp (str, "dimensions ", 11) == 0
         ||  s_StringNICmp (str, "options ", 8) == 0
         ||  s_StringNICmp (str, "begin characters", 16) == 0
-        ||  s_StringNICmp (str, "begin data", 10) == 0) {
+        ||  s_StringNICmp (str, "begin data", 10) == 0
+        ||  s_StringNICmp (str, "begin ncbi", 10) == 0) {
         return eTrue;
     } else {
         return eFalse;
@@ -2487,6 +2487,7 @@ static EBool s_SkippableString (char * str)
 {
     if (str == NULL
         ||  s_StringNICmp (str, "matrix", 6) == 0
+        ||  s_StringNICmp (str, "sequin", 6) == 0
         ||  s_StringNICmp (str, "#NEXUS", 6) == 0
         ||  s_StringNICmp (str, "CLUSTAL W", 8) == 0
         ||  s_SkippableNexusComment (str)
@@ -3488,7 +3489,6 @@ s_AfrpInitLineData(
     void* pfile)
 {
     int overall_line_count = 0;
-    EBool found_stop = eFalse;
     EBool in_taxa_comment = eFalse;
     char* linestring = readfunc (pfile);
     TLineInfoPtr last_line = NULL, next_line = NULL;
@@ -3502,8 +3502,7 @@ s_AfrpInitLineData(
     while (linestring != NULL  &&  linestring [0] != EOF) {
         s_TrimSpace (&linestring);
         if (!in_taxa_comment  &&  s_FoundStopLine(linestring)) {
-            free(linestring);
-            break;
+            linestring [0] = 0;
         }
         if (in_taxa_comment) {
             if (strncmp (linestring, "end;", 4) == 0) {
@@ -3625,7 +3624,7 @@ s_ReadAlignFileRaw
     EBool                    in_bracketed_comment = eFalse;
     TBracketedCommentListPtr comment_list = NULL, last_comment = NULL;
     EBool                    last_line_was_marked_id = eFalse;
-    TLineInfoPtr             last_line = NULL, next_line;
+    TLineInfoPtr             next_line;
 
     if (readfunc == NULL  ||  sequence_info == NULL) {
         return NULL;
