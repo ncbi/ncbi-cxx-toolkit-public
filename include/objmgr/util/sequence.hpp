@@ -742,8 +742,8 @@ public:
     /// requesting eGM_one_dash.)
     enum EGapMode {
         eGM_one_dash, ///< A single dash, followed by a line break.
-        eGM_dashes,   ///< Multiple inline dashes (default).
-        eGM_letters,  ///< Multiple inline N or X characters as appropriate.
+        eGM_dashes,   ///< Multiple inline dashes.
+        eGM_letters,  ///< Multiple inline Ns or Xs as appropriate (default).
         eGM_count     ///< >?N or >?unk100, as appropriate.
     };
 

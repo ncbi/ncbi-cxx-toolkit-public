@@ -2451,7 +2451,7 @@ CFastaOstream::CFastaOstream(CNcbiOstream& out)
     : m_Out(out),
       m_Width(70),
       m_Flags(fInstantiateGaps | fAssembleParts),
-      m_GapMode(eGM_dashes)
+      m_GapMode(eGM_letters)
 {
     m_Gen.reset(new sequence::CDeflineGenerator);
 }
