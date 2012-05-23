@@ -408,6 +408,7 @@ void CWriteDB_Volume::ListFiles(vector<string> & files) const
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CWriteDB_Volume::CreateColumn(const string      & title,
                                   const TColumnMeta & meta,
+                                  Uint8               max_sz,
                                   bool                mbo)
 {
     int col_id = m_Columns.size();
@@ -436,13 +437,13 @@ int CWriteDB_Volume::CreateColumn(const string      & title,
                              m_Index,
                              title,
                              meta,
-                             m_MaxFileSize));
+                             max_sz));
 
     /* For support of multiple byte orders */
     if (mbo) new_col->AddByteOrder(m_DbName,
                              extn3,
                              m_Index,
-                             m_MaxFileSize);
+                             max_sz);
     
     // If the OID is not zero, then add all the blank records for the
     // prior OIDs to the new column.

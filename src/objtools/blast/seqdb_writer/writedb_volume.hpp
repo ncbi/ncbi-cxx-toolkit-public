@@ -213,9 +213,11 @@ public:
     ///
     /// @param title The title of the new column.
     /// @param meta Metadata to store in the new column.
+    /// @param max_sz max file size.
     /// @return The numeric column ID.
     int CreateColumn(const string      & title,
                      const TColumnMeta & meta,
+                     Uint8               max_sz,
                      bool                mbo = true);
     
     /// Add meta data to a column.

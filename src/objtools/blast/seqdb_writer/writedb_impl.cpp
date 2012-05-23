@@ -1010,7 +1010,8 @@ void CWriteDB_Impl::x_Publish()
             
             for(size_t i = 0; i < m_ColumnTitles.size(); i++) {
                 m_Volume->CreateColumn(m_ColumnTitles[i],
-                                       m_ColumnMetas[i]);
+                                       m_ColumnMetas[i],
+                                       m_MaxFileSize);
             }
 #endif
         }
