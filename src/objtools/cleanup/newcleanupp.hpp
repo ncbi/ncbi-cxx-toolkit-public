@@ -369,6 +369,7 @@ private:
     void x_SetFrameFromLoc( CCdregion &cdregion, const CSeq_loc &location );
 
     void x_CleanupECNumber( string &ec_num );
+    void x_CleanupECNumberList( CProt_ref::TEc & ec_num_list );
 
     void x_CleanupAndRepairInference( string &inference );
 

@@ -6115,6 +6115,36 @@ void CNewCleanup_imp::x_CleanupECNumber( string &ec_num )
     }
 }
 
+static bool s_ECNumberCanBeSplit( const string & ec_num )
+{
+    // check if string is non-empty and contains no forbidden characters
+    if( ec_num.empty() ) {
+        return false;
+    }
+    return ( ec_num.find_first_not_of("0123456789.-n ;") == string::npos );
+}
+
+void CNewCleanup_imp::x_CleanupECNumberList( CProt_ref::TEc & ec_num_list )
+{
+    // CProt_ref::TEc is a list, so the iterator stays valid even if we 
+    // add new entries after the current one
+    NON_CONST_ITERATE( CProt_ref::TEc, ec_num_iter, ec_num_list ) {
+        string & ec_num = *ec_num_iter;
+        x_CleanupECNumber( ec_num );
+        if( s_ECNumberCanBeSplit(ec_num) ) {
+            // if there are any, split at first ' ' or ';'
+            string::size_type split_pos = ec_num.find_first_of(" ;");
+            if( split_pos != string::npos ) {
+                string new_ec_num = ec_num.substr( split_pos + 1 );
+                ec_num.resize( split_pos );
+                CProt_ref::TEc::iterator next_ec_num_iter = ec_num_iter;
+                ++next_ec_num_iter;
+                ec_num_list.insert( next_ec_num_iter, new_ec_num );
+            }
+        }
+    }
+}
+
 static const char * const s_evCategoryNoSpace [] = {
   "COORDINATES:",
   "DESCRIPTION:",

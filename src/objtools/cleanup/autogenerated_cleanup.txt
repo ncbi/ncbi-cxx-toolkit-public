@@ -267,7 +267,7 @@ use m_NewCleanup.UserObjectBC {
 
 use m_NewCleanup.x_AddNumToUserField { User-field }
 
-use m_NewCleanup.x_CleanupECNumber { Prot-ref.ec.E }
+use m_NewCleanup.x_CleanupECNumberList { Prot-ref.ec }
 
 # While we're traversing the hierarchy AND we record any
 # muid to pmid mappings we can determine AND 

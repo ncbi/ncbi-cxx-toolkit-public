@@ -157,7 +157,6 @@
 #include <objects/seqtable/Seq_table.hpp>
 #include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqtable/SeqTable_multi_data.hpp>
-#include <objects/seqtable/CommonString_table.hpp>
 #include <objects/seqtable/SeqTable_single_data.hpp>
 #include <objects/seqtable/SeqTable_column_info.hpp>
 #include <objects/seq/Annot_descr.hpp>
@@ -544,7 +543,6 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_activity
   void x_BasicCleanupSeqFeat_data_data_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_desc_ETC( std::string & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_E_ETC( std::string & arg0 );
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ec_ETC( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_name_E_ETC( std::string & arg0 );
@@ -699,8 +697,6 @@ void x_BasicCleanupBioseq_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_
   void x_BasicCleanupBioseqSet_annot_E_E_data_graph_E_ETC( CSeq_graph & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_graph_ >
 void x_BasicCleanupBioseqSet_annot_E_E_data_graph_ETC( Tcontainer_ncbi_cref_cseq_graph_ & arg0 );
-  void x_BasicCleanupBioseqSet_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_common_string_common_string_ETC( CCommonString_table & arg0 );
-  void x_BasicCleanupBioseqSet_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_common_string_ETC( CCommonString_table & arg0 );
   void x_BasicCleanupBioseqSet_annot_E_E_data_seq_table_seq_table_columns_E_E_data_data_ETC( CSeqTable_multi_data & arg0 );
   void x_BasicCleanupBioseqSet_annot_E_E_data_seq_table_seq_table_columns_E_E_data_ETC( CSeqTable_multi_data & arg0 );
   void x_BasicCleanupBioseqSet_annot_E_E_data_seq_table_seq_table_columns_E_E_sparse_other_sparse_other_ETC( CSeqTable_single_data & arg0 );
