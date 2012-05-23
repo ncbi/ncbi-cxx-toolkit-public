@@ -34,7 +34,6 @@
 #include "ns_queue_param_accessor.hpp"
 #include "background_host.hpp"
 #include "ns_util.hpp"
-#include "ns_format.hpp"
 #include "ns_server.hpp"
 #include "ns_handler.hpp"
 

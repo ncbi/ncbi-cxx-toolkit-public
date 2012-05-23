@@ -184,7 +184,7 @@ private:
     /// Quick local timer
     CFastLocalTime                              m_LocalTimer;
     /// List of admin stations
-    CNetSchedule_AccessList                     m_AdminHosts;
+    CNetScheduleAccessList                      m_AdminHosts;
 
     CAtomicCounter                              m_AtomicCommandNumber;
 

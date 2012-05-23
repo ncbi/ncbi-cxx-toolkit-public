@@ -79,10 +79,10 @@ public:
     const CQueueClientInfoList &  GetProgramVersionList() const
     { return m_Queue.m_ProgramVersionList; }
 
-    const CNetSchedule_AccessList &  GetSubmHosts() const
+    const CNetScheduleAccessList &  GetSubmHosts() const
     { return m_Queue.m_SubmHosts; }
 
-    const CNetSchedule_AccessList &  GetWnodeHosts() const
+    const CNetScheduleAccessList &  GetWnodeHosts() const
     { return m_Queue.m_WnodeHosts; }
 
     unsigned int GetNotifHifreqPeriod() const

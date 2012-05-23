@@ -45,42 +45,28 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNetScheduleHandler;
-
 
 /// List of hosts allowed
 ///
 /// @internal
-class CNetSchedule_AccessList
+class CNetScheduleAccessList
 {
 public:
-    CNetSchedule_AccessList()
+    CNetScheduleAccessList()
     {}
 
-    /// @return TRUE if restriction list set
-    bool IsRestrictionSet() const;
-
     /// is host allowed to connect
-    bool IsAllowed(unsigned ha) const;
+    bool IsAllowed(unsigned int  ha) const;
 
     /// Delimited lists of hosts allowed into the system
-    void SetHosts(const string& host_names);
+    void SetHosts(const string &  host_names);
 
     string Print(const string &  prefix,
                  const string &  separator) const;
 
 private:
-    bool x_IsRestrictionSet() const
-    {
-        return m_Hosts.any();
-    }
-
-private:
-    typedef TNSBitVector        THostVector;
-
-private:
     mutable CRWLock             m_Lock;
-    THostVector                 m_Hosts;
+    TNSBitVector                m_Hosts;
 };
 
 

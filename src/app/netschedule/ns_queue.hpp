@@ -43,7 +43,6 @@
 
 #include "ns_types.hpp"
 #include "ns_util.hpp"
-#include "ns_format.hpp"
 #include "ns_db.hpp"
 #include "background_host.hpp"
 #include "job.hpp"
@@ -507,9 +506,9 @@ private:
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
-    CNetSchedule_AccessList      m_SubmHosts;
+    CNetScheduleAccessList       m_SubmHosts;
     /// Host access list for job execution (workers)
-    CNetSchedule_AccessList      m_WnodeHosts;
+    CNetScheduleAccessList       m_WnodeHosts;
 
     CNetScheduleKeyGenerator     m_KeyGenerator;
 
@@ -584,22 +583,22 @@ inline bool CQueue::GetDenyAccessViolations() const
 }
 inline bool CQueue::IsVersionControl() const
 {
-    CReadLockGuard guard(m_ParamLock);
+    // The m_ProgramVersionList has internal lock anyway
     return m_ProgramVersionList.IsConfigured();
 }
 inline bool CQueue::IsMatchingClient(const CQueueClientInfo& cinfo) const
 {
-    CReadLockGuard guard(m_ParamLock);
+    // The m_ProgramVersionList has internal lock anyway
     return m_ProgramVersionList.IsMatchingClient(cinfo);
 }
 inline bool CQueue::IsSubmitAllowed(unsigned host) const
 {
-    CReadLockGuard guard(m_ParamLock);
+    // The m_SubmHosts has internal lock anyway
     return host == 0  ||  m_SubmHosts.IsAllowed(host);
 }
 inline bool CQueue::IsWorkerAllowed(unsigned host) const
 {
-    CReadLockGuard guard(m_ParamLock);
+    // The m_WnodeHosts has internal lock anyway
     return host == 0  ||  m_WnodeHosts.IsAllowed(host);
 }
 

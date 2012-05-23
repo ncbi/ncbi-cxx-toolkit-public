@@ -276,13 +276,13 @@ void CNSClientId::CheckAccess(TNSClientRole   role,
 bool  CNSClientId::CheckVersion(const CQueue *  queue)
 {
     // There is nothing to check if it is not a queue required ops
-    if (queue == NULL)
+    if (queue == NULL || m_VersionControl == false)
         return true;
 
     if (m_VersionControl)
         m_VersionControl = queue->IsVersionControl();
 
-    if (!m_VersionControl)
+    if (m_VersionControl == false)
         return true;
 
 

@@ -38,19 +38,12 @@
 BEGIN_NCBI_SCOPE
 
 
-bool CNetSchedule_AccessList::IsRestrictionSet() const
-{
-    CReadLockGuard guard(m_Lock);
-    return x_IsRestrictionSet();
-}
-
-
 /// is host allowed to connect
-bool CNetSchedule_AccessList::IsAllowed(unsigned ha) const
+bool CNetScheduleAccessList::IsAllowed(unsigned ha) const
 {
     CReadLockGuard guard(m_Lock);
 
-    if (!x_IsRestrictionSet())
+    if (m_Hosts.any() == false)
         return true;
 
     return m_Hosts[ha];
@@ -58,7 +51,7 @@ bool CNetSchedule_AccessList::IsAllowed(unsigned ha) const
 
 
 /// Delimited lists of hosts allowed into the system
-void CNetSchedule_AccessList::SetHosts(const string& host_names)
+void CNetScheduleAccessList::SetHosts(const string& host_names)
 {
     vector<string>      hosts;
     NStr::Tokenize(host_names, ";, \n\r", hosts, NStr::eMergeDelims);
@@ -73,28 +66,29 @@ void CNetSchedule_AccessList::SetHosts(const string& host_names)
             string          my_name = CSocketAPI::gethostname();
             unsigned int    ha = CSocketAPI::gethostbyname(my_name);
 
-            if (ha != 0)
-                m_Hosts.set(ha);
+            if (ha != 0) {
+                m_Hosts.set_bit(ha, true);
+                continue;
+            }
         }
 
-        unsigned int        ha = CSocketAPI::gethostbyname(*it);
+        unsigned int        ha = CSocketAPI::gethostbyname(hn);
         if (ha != 0)
-            m_Hosts.set(ha);
+            m_Hosts.set_bit(ha, true);
         else
-            ERR_POST("'" << *it << "' is not a valid host name. Ignored.");
+            ERR_POST("'" << hn << "' is not a valid host name. Ignored.");
     }
 }
 
 
 // Used to print as a comma separated string - part of output
 // or as output in the socket with leading 'OK:'
-string CNetSchedule_AccessList::Print(const string &  prefix,
-                                      const string &  separator) const
+string CNetScheduleAccessList::Print(const string &  prefix,
+                                     const string &  separator) const
 {
-    string                  s;
-
-    CReadLockGuard          guard(m_Lock);
-    THostVector::enumerator en(m_Hosts.first());
+    string                      s;
+    CReadLockGuard              guard(m_Lock);
+    TNSBitVector::enumerator    en(m_Hosts.first());
 
     for(; en.valid(); ++en) {
         if (!s.empty())

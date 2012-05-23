@@ -104,9 +104,10 @@ public:
 
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const
     {
-        _ASSERT(IsConfigured());
-
         CReadLockGuard guard(m_Lock);
+
+        if (m_RegisteredClients.empty())
+            return true;
 
         ITERATE(vector<CQueueClientInfo>, it, m_RegisteredClients) {
             if (NStr::CompareNocase(cinfo.client_name, it->client_name)==0) {

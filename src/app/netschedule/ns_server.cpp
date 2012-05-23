@@ -247,8 +247,7 @@ void CNetScheduleServer::PrintJobsStat(CNetScheduleHandler &  handler)
 
 bool CNetScheduleServer::AdminHostValid(unsigned host) const
 {
-    return !m_AdminHosts.IsRestrictionSet() ||
-            m_AdminHosts.IsAllowed(host);
+    return m_AdminHosts.IsAllowed(host);
 }
 
 

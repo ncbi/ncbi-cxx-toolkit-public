@@ -81,14 +81,14 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
                          eNSCR_Admin },
         { { "mode", eNSPT_Int, eNSPA_Required } } },
+    { "RECO",          { &CNetScheduleHandler::x_ProcessReloadConfig,
+                         eNSCR_Admin } },
 
     /*** Any role ***/
     { "VERSION",  { &CNetScheduleHandler::x_ProcessVersion,
                     eNSCR_Any } },
     { "QUIT",     { &CNetScheduleHandler::x_ProcessQuitSession,
                     eNSCR_Any } },
-    { "RECO",     { &CNetScheduleHandler::x_ProcessReloadConfig,
-                    eNSCR_Admin } },
     { "ACNT",     { &CNetScheduleHandler::x_ProcessActiveCount,
                     eNSCR_Any } },
     { "QLST",     { &CNetScheduleHandler::x_ProcessQList,
@@ -842,7 +842,6 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 
 
     if (extra.processor == &CNetScheduleHandler::x_ProcessQuitSession) {
-        m_ClientId.CheckAccess(extra.role, NULL);
         x_ProcessQuitSession(0);
         return;
     }
@@ -856,20 +855,18 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     CQueue *            queue_ptr = NULL;
     if (extra.role & eNSAC_Queue) {
         if (m_QueueName.empty())
-            NCBI_THROW(CNetScheduleException, eUnknownQueue, "Job queue is required");
+            NCBI_THROW(CNetScheduleException, eUnknownQueue,
+                       "Job queue is required");
         queue_ref.Reset(GetQueue());
         queue_ptr = queue_ref.GetPointer();
     }
     else if (extra.processor == &CNetScheduleHandler::x_ProcessStatistics ||
              extra.processor == &CNetScheduleHandler::x_ProcessRefuseSubmits) {
-        // The STAT and REFUSESUBMITS commands could be with or without a queue
-        try {
+        if (m_QueueName.empty() == false) {
+            // The STAT and REFUSESUBMITS commands
+            // could be with or without a queue
             queue_ref.Reset(GetQueue());
             queue_ptr = queue_ref.GetPointer();
-        }
-        catch (...) {
-            // That means no queue were found, i.e.
-            // the STAT or REFUSESUBMITS is for whole server
         }
     }
 

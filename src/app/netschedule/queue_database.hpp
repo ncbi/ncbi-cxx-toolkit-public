@@ -46,7 +46,6 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include "ns_util.hpp"
-#include "ns_format.hpp"
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "ns_notifications.hpp"
