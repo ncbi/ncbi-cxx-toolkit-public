@@ -1401,7 +1401,8 @@ Macro-action-choice ::= CHOICE {
   apply-table Apply-table-action ,
   remove-sequences Remove-sequences-action ,
   propagate-sequence-technology NULL ,
-  add-file-descriptors Add-descriptor-list-action }
+  add-file-descriptors Add-descriptor-list-action ,
+  propagate-missing-old-name NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
