@@ -260,7 +260,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     
     for(i = 0; i < m_DBList.size(); i++) {
         // skip local DB search only if absolute path is given
-        if(m_DBList[i].GetBasePathS()[0] == CDirEntry::GetPathSeparator()) {
+        if(m_DBList[i].GetBasePathS().find(CDirEntry::GetPathSeparator()) != string::npos) {
             m_SkipLocal[i] = true;
         }
 
