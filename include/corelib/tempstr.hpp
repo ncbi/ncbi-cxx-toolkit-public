@@ -144,7 +144,7 @@ public:
     size_type rfind(const CTempString& match,
                     size_type pos = npos) const;
 
-    /// Find the first instance of a given character string within the
+    /// Find the last instance of a given character string within the
     /// current string, beginning at an optional offset.
     size_type rfind(char match, size_type pos = npos) const;
 
