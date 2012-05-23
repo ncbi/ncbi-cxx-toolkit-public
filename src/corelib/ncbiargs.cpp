@@ -3375,9 +3375,9 @@ CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
             return d->second->CreateArgs(argv2)->SetCommand(command);
         }
         m_Command.clear();
-    } else if (m_Cmd_req != eCommandOptional) {
-//        NCBI_THROW(CArgException,eInvalidArg, "Command is required");
-        NCBI_THROW(CArgHelpException,eHelp,kEmptyStr);
+    }
+    if (m_Cmd_req != eCommandOptional) {
+        NCBI_THROW(CArgException,eInvalidArg, "Command is required");
     }
     return CArgDescriptions::CreateArgs(argv)->SetCommand(kEmptyStr);
 }
