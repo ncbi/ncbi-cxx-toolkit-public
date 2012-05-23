@@ -773,11 +773,11 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     // other output types will need a bioseq handle
     CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(),
                                                       CScope::eGetBioseq_All);
-    // If this assertion fails, we're not able to get the query, most likely a bug.
-    // report error and return. SB-981 , GP-2207
+    // If we're not able to get the query, most likely a bug. SB-981 , GP-2207
     if( !bhandle  ){
-	ERR_POST("Failed to resolve SeqId: "+results.GetSeqId()->AsFastaString());
-	return;
+        string message = "Failed to resolve SeqId: "+results.GetSeqId()->AsFastaString();
+	ERR_POST(message);
+        NCBI_THROW(CException, eUnknown, message);
     }
     CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
 
