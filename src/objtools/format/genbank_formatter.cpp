@@ -1749,20 +1749,49 @@ void CGenbankFormatter::FormatWGS
 
     const bool bHtml = wgs.GetContext()->Config().DoHTML();
 
+    // Get first and last id (sanitized for html, if necessary)
     list<string> l;
     string first_id = wgs.GetFirstID();
     if( bHtml ) {
         TryToSanitizeHtml( first_id );
     }
+    string last_id;
+    bool first_id_equals_second_id = false;
     if ( wgs.GetFirstID() == wgs.GetLastID() ) {
-        Wrap(l, tag, first_id);
+        last_id = first_id;
+        first_id_equals_second_id = true;
     } else {
-        string last_id = wgs.GetLastID();
+        last_id = wgs.GetLastID();
         if( bHtml ) {
             TryToSanitizeHtml( last_id );
         }
-        Wrap(l, tag, first_id + "-" + last_id);
     }
+
+    string wgs_line = ( first_id_equals_second_id ? first_id : first_id + "-" + last_id );
+
+    // surround wgs_line with a link, if necessary
+    if( bHtml ) {
+        string link;
+        if( first_id_equals_second_id ) {
+            link = "http://www.ncbi.nlm.nih.gov/nuccore/" + first_id;
+        } else {
+            string url_arg;
+            if( CWGSItem::eWGS_Projects == wgs.GetType() ) {
+                if( first_id.length() > 2 && first_id[2] == '_' ) {
+                    url_arg = first_id.substr(0, 9);
+                } else {
+                    url_arg = first_id.substr(0, 6);
+                }
+                link = "http://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + url_arg;
+            } else {
+                link = "http://www.ncbi.nlm.nih.gov/nuccore?term=" + first_id + ":" + last_id + "[PACC]";
+            }
+        }
+        wgs_line = "<a href=\"" + link + "\">" + wgs_line + "</a>";
+    }
+
+    Wrap( l, tag, wgs_line, ePara, bHtml );
+
     text_os.AddParagraph(l, wgs.GetObject());
 }
 
@@ -1792,15 +1821,31 @@ void CGenbankFormatter::FormatTSA
     if( bHtml ) {
         TryToSanitizeHtml( first_id );
     }
+    string id_range;
     if ( tsa.GetFirstID() == tsa.GetLastID() ) {
-        Wrap(l, tag, first_id);
+        id_range = first_id;
     } else {
         string last_id = tsa.GetLastID();
-        if( bHtml ) {
-            TryToSanitizeHtml( last_id );
-        }
-        Wrap(l, tag, first_id + "-" + last_id);
+        id_range = first_id + "-" + last_id;
     }
+
+    if( bHtml ) {
+        TryToSanitizeHtml( id_range );
+
+        string tsa_master = tsa.GetContext()->GetTSAMasterName();
+        if( tsa_master.length() > 2 && tsa_master[2] == '_' ) {
+            tsa_master = tsa_master.substr(0, 9);
+        } else {
+            tsa_master = tsa_master.substr(0, 6);
+        }
+        TryToSanitizeHtml(tsa_master);
+        if( ! tsa_master.empty() ) {
+            id_range = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + tsa_master + "\">" + id_range + "</a>";
+        }
+    }
+
+    Wrap(l, tag, id_range, ePara, bHtml);
+
     text_os.AddParagraph(l, tsa.GetObject());
 }
 
