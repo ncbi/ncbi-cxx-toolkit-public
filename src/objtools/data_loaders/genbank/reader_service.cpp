@@ -94,7 +94,7 @@ struct ConnInfoDeleter2
 };
 
 
-struct SServerScanInfo
+struct SServerScanInfo : public CObject
 {
     typedef vector< AutoPtr<SSERV_Info, CDeleter<SSERV_Info> > > TSkipServers;
     SServerScanInfo(const TSkipServers& skip_servers)
@@ -150,7 +150,7 @@ static void s_ScanInfoReset(void* data)
 static void s_ScanInfoCleanup(void* data)
 {
     SServerScanInfo* scan_info = static_cast<SServerScanInfo*>(data);
-    delete scan_info;
+    scan_info->RemoveReference();
 }
 
 
@@ -174,7 +174,7 @@ CReaderServiceConnector::Connect(int error_count)
     STimeout tmout;
     SetOpenTimeoutTo(&tmout, error_count);
     
-    SServerScanInfo* scan_info = 0;
+    CRef<SServerScanInfo> scan_info;
 
     if ( NStr::StartsWith(m_ServiceName, "http://") ) {
         if ( s_GetDebugLevel() > 0 ) {
@@ -199,10 +199,9 @@ CReaderServiceConnector::Connect(int error_count)
                 s << " " << CSocketAPI::ntoa(it->get()->host);
             }
         }
-        AutoPtr<SServerScanInfo> scan_ptr(new SServerScanInfo(m_SkipServers));
+        CRef<SServerScanInfo> scan_ptr(new SServerScanInfo(m_SkipServers));
         SSERVICE_Extra params;
         memset(&params, 0, sizeof(params));
-        params.data = scan_ptr.get();
         params.reset = s_ScanInfoReset;
         params.cleanup = s_ScanInfoCleanup;
         params.get_next_info = s_ScanInfoGetNextInfo;
@@ -212,6 +211,8 @@ CReaderServiceConnector::Connect(int error_count)
             CDebugPrinter s("CReaderConnector");
             s << "Opening service connection to " << m_ServiceName;
         }
+        params.data = scan_ptr;
+        scan_ptr->AddReference();
         info.m_Stream.reset(new CConn_ServiceStream(m_ServiceName, fSERV_Any,
                                                     net_info.get(),
                                                     &params,
@@ -220,7 +221,7 @@ CReaderServiceConnector::Connect(int error_count)
             CDebugPrinter s("CReaderConnector");
             s << "Opened service connection to " << m_ServiceName;
         }
-        scan_info = scan_ptr.release();
+        scan_info = scan_ptr;
     }
 
     CConn_IOStream& stream = *info.m_Stream;
