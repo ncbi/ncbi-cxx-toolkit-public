@@ -1373,6 +1373,7 @@ DINO	s	Dinosaur National Monument
 DIS	s	Dinamation International Society
 DISCA	s	Estacion Biologica de Rancho Grande, Ministerio del Ambiente y Recursos Naturales Renovables
 DISKO	s	Danish Arctic Station
+DiSTA<ITA>	s	Phytoplasma Collection University of Bologn
 DIX	s	Dixie College, Natural History Museum
 DKG	s	Juniper Hall Field Centre
 DLF	s	Stetson University, Biology Department
