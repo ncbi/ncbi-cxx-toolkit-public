@@ -1060,9 +1060,7 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                     dbr->GetItem(&v);
                     _TRACE("confidential: "<<v.Value());
                     if ( v.Value() ) {
-                        blob_state |=
-                            CBioseq_Handle::fState_confidential |
-                            CBioseq_Handle::fState_no_data;
+                        blob_state |= CBioseq_Handle::fState_confidential;
                     }
                 }
                 else if ( name == "suppress" ) {
@@ -1080,9 +1078,7 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                     dbr->GetItem(&v);
                     _TRACE("withdrawn: "<<v.Value());
                     if ( v.Value() ) {
-                        blob_state |=
-                            CBioseq_Handle::fState_withdrawn |
-                            CBioseq_Handle::fState_no_data;
+                        blob_state |= CBioseq_Handle::fState_withdrawn;
                     }
                 }
                 else if ( name == "last_touched_m" ) {
@@ -1143,6 +1139,7 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
     }
     if ( !ret.first && force_blob ) {
         // no data
+        _TRACE("actually no data");
         blob_state |= CBioseq_Handle::fState_no_data;
     }
     m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
