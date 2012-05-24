@@ -47,11 +47,11 @@ void CBadResiduesException::ReportExtra(ostream& out) const
 {
     out << "Bad Residues = ";
     if( m_BadResiduePositions.m_SeqId ) {
-        out << MSerial_AsnText << *m_BadResiduePositions.m_SeqId;
+        out << m_BadResiduePositions.m_SeqId->GetSeqIdString(true);
     } else {
         out << "Seq-id ::= NULL";
     }
-    out << ", line no = " << m_BadResiduePositions.m_LineNo;
+    out << ", line number = " << m_BadResiduePositions.m_LineNo;
     out << ", positions: ";
     x_ConvertBadIndexesToString( out, m_BadResiduePositions.m_BadIndexes, 20 );
 }

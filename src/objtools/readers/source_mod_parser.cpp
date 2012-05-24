@@ -32,6 +32,9 @@
 */
 
 #include <ncbi_pch.hpp>
+
+#include <sstream>
+
 #include <objtools/readers/source_mod_parser.hpp>
 
 #include <corelib/ncbiutil.hpp>
@@ -92,13 +95,15 @@ T* LeaveAsIs(void)
 }
 
 
-string CSourceModParser::ParseTitle(const CTempString& title)
+string CSourceModParser::ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid )
 {
     SMod   mod;
     string stripped_title;
     size_t pos = 0;
 
     m_Mods.clear();
+
+    mod.seqid = seqid;
 
     while (pos < title.size()) {
         size_t lb_pos = title.find('[', pos), eq_pos = title.find('=', lb_pos),
@@ -273,7 +278,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         } else if (NStr::EqualNocase(mod->value, "circular")) {
             seq.SetInst().SetTopology(CSeq_inst::eTopology_circular);
         } else {
-            x_HandleBadModValue(*mod);
+            x_HandleBadModValue(*mod, "'linear', 'circular'", (TDummyModMap*)NULL);
         }
     }
 
@@ -284,7 +289,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         } else if (NStr::EqualNocase(mod->value, "rna")) {
             seq.SetInst().SetMol( CSeq_inst::eMol_rna );
         } else {
-            x_HandleBadModValue(*mod);
+            x_HandleBadModValue(*mod, "'dna', 'rna'", (TDummyModMap*)NULL);
         }
     }
 
@@ -297,7 +302,7 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
         } else if (NStr::EqualNocase(mod->value, "mixed")) {
             seq.SetInst().SetStrand( CSeq_inst::eStrand_mixed );
         } else {
-            x_HandleBadModValue(*mod);
+            x_HandleBadModValue(*mod, "'single', 'double', 'mixed'", (TDummyModMap*)NULL);
         }
     }
 
@@ -341,7 +346,9 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
                 bsrc->SetGenome(CBioSource::GetTypeInfo_enum_EGenome()
                                 ->FindValue(mod->value));
             } catch (CSerialException&) {
-                x_HandleBadModValue(*mod);
+                x_HandleBadModValue(
+                    *mod, "'mitochondrial', 'provirus', 'extrachromosomal', 'insertion sequence'", 
+                    (TDummyModMap*)NULL);
             }
         }
     }
@@ -359,7 +366,8 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
                             ->FindValue(mod->value));
             }
         } catch (CSerialException&) {
-            x_HandleBadModValue(*mod);
+            x_HandleBadModValue(*mod, "'natural mutant', 'mutant'", (TDummyModMap*)NULL, 
+                CBioSource::GetTypeInfo_enum_EOrigin() );
         }
     }
 
@@ -648,7 +656,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
     if ((mod = FindMod("moltype", "mol-type")) != NULL) {
         TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
         if (it == sc_BiomolMap.end()) {
-            x_HandleBadModValue(*mod);
+            x_HandleBadModValue(*mod, kEmptyStr, &sc_BiomolMap);
         } else {
             mi->SetBiomol(it->second);
         }
@@ -658,7 +666,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
     if ((mod = FindMod("tech")) != NULL) {
         TTechMap::const_iterator it = sc_TechMap.find(mod->value.c_str());
         if (it == sc_TechMap.end()) {
-            x_HandleBadModValue(*mod);
+            x_HandleBadModValue(*mod, kEmptyStr, &sc_TechMap);
         } else {
             mi->SetTech(it->second);
         }
@@ -668,7 +676,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
     if ((mod = FindMod("completeness", "completedness")) != NULL) {
         TTechMap::const_iterator it = sc_CompletenessMap.find(mod->value.c_str());
         if (it == sc_CompletenessMap.end()) {
-            x_HandleBadModValue(*mod);
+            x_HandleBadModValue(*mod, kEmptyStr, &sc_CompletenessMap);
         } else {
             mi->SetCompleteness(it->second);
         }
@@ -922,6 +930,26 @@ void CSourceModParser::ApplyPubMods(CSeq_descr& sd)
     s_ApplyPubMods(sd, FindAllMods("PMID"));
 }
 
+CSourceModParser::CBadModError::CBadModError( 
+    const SMod & badMod, 
+    const string & sAllowedValues )
+    : runtime_error(x_CalculateErrorString(badMod, sAllowedValues)),
+            m_BadMod(badMod), m_sAllowedValues(sAllowedValues) 
+{ 
+    // no further work required
+}
+
+string CSourceModParser::CBadModError::x_CalculateErrorString(
+            const SMod & badMod, 
+            const string & sAllowedValues )
+{
+    stringstream str_strm;
+    str_strm << "Bad modifier value at seqid '" 
+        << ( badMod.seqid ? badMod.seqid->AsFastaString() : "UNKNOWN")
+        << "'. '" << badMod.key << "' cannot have value '" << badMod.value
+        << "'.  Accepted values are [" << sAllowedValues << "]";
+    return str_strm.str();
+}
 
 CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 {
@@ -997,19 +1025,47 @@ void CSourceModParser::GetLabel(string* s, TWhichMods which) const
     }
 }
 
-void CSourceModParser::x_HandleBadModValue(const SMod& mod)
+template <class TModMap>
+void CSourceModParser::x_HandleBadModValue(
+    const SMod& mod, const string & sAllowedValues, 
+    const TModMap * modMap,
+    const CEnumeratedTypeValues* enum_values)
 {
     m_BadMods.insert(mod);
 
+    if( eHandleBadMod_Ignore == m_HandleBadMod ) {
+        return;
+    }
+
+    string sAllAllowedValues = sAllowedValues;
+    if( NULL != enum_values ) {
+        ITERATE( CEnumeratedTypeValues::TValues, enum_iter, enum_values->GetValues() ) {
+            if( ! sAllAllowedValues.empty() ) {
+                sAllAllowedValues += ", ";
+            }
+            sAllAllowedValues += '\'' + enum_iter->first + '\'';
+        }
+    }
+
+    if( NULL != modMap ) {
+        ITERATE( typename TModMap, modmap_iter, *modMap ) {
+            if( ! sAllAllowedValues.empty() ) {
+                sAllAllowedValues += ", ";
+            }
+            sAllAllowedValues += string("'") + modmap_iter->first + "'";
+        }
+    }
+
+    CBadModError badModError(mod, sAllAllowedValues);
+
     switch( m_HandleBadMod ) {
-    case eHandleBadMod_Ignore:
-        // nothing to do
-        break;
     case eHandleBadMod_Throw:
-        throw CBadModError(mod);
+        throw badModError;
     case eHandleBadMod_PrintToCerr:
-        cerr << "Warning: Bad modifier: " << mod.ToString() << endl;
+        cerr << badModError.what() << endl;
         break;
+    default:
+        _TROUBLE;
     }
 }
 

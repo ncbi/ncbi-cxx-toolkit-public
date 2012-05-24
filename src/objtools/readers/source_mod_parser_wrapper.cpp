@@ -51,7 +51,7 @@ void CSourceModParserWrapper::ExtractTitleAndApplyAllMods(CBioseq_Handle& bsh, C
     if( title_desc ) {
         CSourceModParser smp;
         string& title(const_cast<string&>(title_desc->GetTitle()));
-        title = smp.ParseTitle(title);
+        title = smp.ParseTitle(title, bsh.GetInitialSeqIdOrNull() );
         x_ApplyAllMods(smp, bsh, organism);
         smp.GetLabel(&title, CSourceModParser::fUnusedMods);
     }

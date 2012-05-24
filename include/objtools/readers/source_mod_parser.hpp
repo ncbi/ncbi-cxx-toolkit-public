@@ -47,6 +47,7 @@
 #include <objtools/readers/reader_exception.hpp>
 
 #include <set>
+#include <map>
 
 /** @addtogroup Miscellaneous
  *
@@ -58,6 +59,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CBioseq;
+class CSeq_id;
 // class CSubmit_block;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -87,7 +89,7 @@ public:
 
     /// Extract and store bracketed modifiers from a title string, returning a
     /// stripped version (which may well be empty at that point!)
-    string ParseTitle(const CTempString& title);
+    string ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid);
 
     /// Apply previously extracted modifiers to the given object, marking all
     /// relevant ones as used.
@@ -112,6 +114,8 @@ public:
     };
 
     struct SMod {
+
+        CConstRef<CSeq_id> seqid;
         string key;
         string value;
         size_t pos;
@@ -134,14 +138,20 @@ public:
     // class which may be thrown
     class CBadModError : public runtime_error {
     public:
-        CBadModError( const SMod & badMod )  
-          : runtime_error("bad modifier name or value: " + badMod.ToString() ),
-            m_BadMod(badMod) { }
+        CBadModError( 
+            const SMod & badMod, 
+            const std::string & sAllowedValues );
         ~CBadModError() THROWS_NONE { } // required by GCC 4.6
 
         const SMod & GetBadMod() const { return m_BadMod; }
+        const std::string & GetAllowedValues() const { return m_sAllowedValues; }
     private:
-        SMod m_BadMod;
+        SMod        m_BadMod;
+        std::string m_sAllowedValues;
+
+        std::string x_CalculateErrorString(
+            const SMod & badMod, 
+            const string & sAllowedValues );
     };
 
     /// Return all modifiers matching the given criteria (if any) without
@@ -182,7 +192,20 @@ private:
     void x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa);
     void x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb);
 
-    void x_HandleBadModValue(const SMod& mod);
+
+    // sAllowedValues, enum_values, etc. are combined to produce the final list of
+    // allowed values.
+    // TModMap is some kind of map whose keys are "const char *".
+    template <typename TModMap >
+    void x_HandleBadModValue(
+        const SMod& mod, 
+        const string & sAllowedValues, 
+        const TModMap * modMap,
+        const CEnumeratedTypeValues* enum_values = NULL
+        );
+    // Useful if you don't want to use modMap.  You can pass modMap something
+    // like (TDummyModMap*)NULL
+    typedef std::map<const char*, int> TDummyModMap;
 };
 
 

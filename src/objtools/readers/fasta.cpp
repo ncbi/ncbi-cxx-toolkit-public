@@ -844,7 +844,7 @@ void CFastaReader::AssignMolType(void)
     default:
         if (default_mol == CSeq_inst::eMol_not_set) {
             NCBI_THROW2(CObjReaderParseException, eAmbiguous,
-                        "CFastaReader: Unable to determine sequence type around line " + NStr::NumericToString(LineNumber()),
+                        "CFastaReader: Unable to determine sequence type (is it nucleotide? protein?) around line " + NStr::NumericToString(LineNumber()),
                         LineNumber());
         } else {
             inst.SetMol(default_mol);
@@ -1685,7 +1685,7 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
             = seq.GetClosestDescriptor(CSeqdesc::e_Title);
         if (title_desc) {
             string& title(const_cast<string&>(title_desc->GetTitle()));
-            title = smp.ParseTitle(title);
+            title = smp.ParseTitle(title, CConstRef<CSeq_id>(seq.GetFirstId()) );
             smp.ApplyAllMods(seq);
             if( TestFlag(fUnknModThrow) ) {
                 CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
@@ -1694,7 +1694,7 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
                     // there are unused mods and user specified to throw if any
                     // unused 
                     CNcbiOstrstream err;
-                    err << "CFastaReader: Unused mods on ";
+                    err << "CFastaReader: Unrecognized modifiers on ";
 
                     // get sequence ID
                     const CSeq_id* seq_id = seq.GetFirstId();
