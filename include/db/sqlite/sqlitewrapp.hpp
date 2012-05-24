@@ -401,6 +401,8 @@ public:
     /// Bind blob value of given size containing only zeros to parameter
     /// index. Parameters' numbers start from 1.
     void BindZeroedBlob(int index, size_t        size);
+    /// Bind null value to parameter index.
+    void BindNull      (int index);
 
     /// Execute statement without returning any result
     void Execute(void);
@@ -419,6 +421,8 @@ public:
     /// Reset the statement to release all locks and to be ready to execute
     /// again.
     void Reset(void);
+    /// Reset all bindings to the statement to their initial NULL values
+    void ClearBindings(void);
 
     /// Get number of columns in result set. Method should be executed only
     /// after Step() returned TRUE, otherwise returned value is undefined.

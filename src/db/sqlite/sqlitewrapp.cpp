@@ -628,25 +628,32 @@ CSQLITE_Statement::x_Finalize(void)
     }
 }
 
-#define STMT_BIND_IMPL(sql_type, str_type, index, val)          \
-    do {                                                        \
-        _ASSERT(m_StmtHandle);                                  \
-        SQLITE_SAFE_CALL((NCBI_NAME2(sqlite3_bind_, sql_type)   \
-                                   (m_StmtHandle, index, val)), \
-                         m_ConnHandle, eStmtBind,               \
-                         "Error binding " << #str_type          \
-                            << " parameter N " << index         \
-                        );                                      \
-        _ASSERT(sql_ret == SQLITE_OK);                          \
-    } while (0)
-
-#define STMT_BIND(sql_type, str_type, index, val)               \
-    STMT_BIND_IMPL(sql_type, str_type, index, val)
+#define STMT_BIND_IMPL(sql_type, str_type, index_and_val)           \
+    do {                                                            \
+        _ASSERT(m_StmtHandle);                                      \
+        SQLITE_SAFE_CALL((NCBI_NAME2(sqlite3_bind_, sql_type)       \
+                                   (m_StmtHandle, index_and_val)),  \
+                         m_ConnHandle, eStmtBind,                   \
+                         "Error binding " << #str_type              \
+                            << " parameter N " << index             \
+                        );                                          \
+        _ASSERT(sql_ret == SQLITE_OK);                              \
+    } while (0)                                                     \
+/**/
 
 #define COMMA ,
 
-#define STMT_BIND3(sql_type, str_type, index, val1, val2, val3)           \
-    STMT_BIND_IMPL(sql_type, str_type, index, val1 COMMA val2 COMMA val3)
+#define STMT_BIND_WITH_VAL(sql_type, str_type, index, val)          \
+    STMT_BIND_IMPL(sql_type, str_type, index COMMA val)
+
+#define STMT_BIND_NO_VAL(sql_type, str_type, index)                 \
+    STMT_BIND_IMPL(sql_type, str_type, index)
+
+#define STMT_BIND(sql_type, str_type, index, val)                   \
+    STMT_BIND_WITH_VAL(sql_type, str_type, index, val)
+
+#define STMT_BIND3(sql_type, str_type, index, val1, val2, val3)     \
+    STMT_BIND_WITH_VAL(sql_type, str_type, index, val1 COMMA val2 COMMA val3)
 
 
 void
@@ -686,6 +693,12 @@ CSQLITE_Statement::BindZeroedBlob(int index, size_t size)
     STMT_BIND(zeroblob, zeroed blob, index, int(size));
 }
 
+void
+CSQLITE_Statement::BindNull(int index)
+{
+    STMT_BIND_NO_VAL(null, NULL, index);
+}
+
 bool
 CSQLITE_Statement::Step(void)
 {
@@ -699,7 +712,7 @@ CSQLITE_Statement::Step(void)
 }
 
 void
-CSQLITE_Statement::Reset()
+CSQLITE_Statement::Reset(void)
 {
     if (!m_StmtHandle) {
         return;
@@ -708,6 +721,19 @@ CSQLITE_Statement::Reset()
     SQLITE_SAFE_CALL(sqlite3_reset(m_StmtHandle),
                      m_ConnHandle, eStmtStep,
                      "Error reseting statement");
+    _ASSERT(sql_ret == SQLITE_OK);
+}
+
+void
+CSQLITE_Statement::ClearBindings(void)
+{
+    if (!m_StmtHandle) {
+        return;
+    }
+
+    SQLITE_SAFE_CALL(sqlite3_clear_bindings(m_StmtHandle),
+                     m_ConnHandle, eStmtStep,
+                     "Error clearing bindings");
     _ASSERT(sql_ret == SQLITE_OK);
 }
 
