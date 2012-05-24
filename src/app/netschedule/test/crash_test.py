@@ -74,6 +74,9 @@ def main():
                        default=10000,
                        help="Number of jobs for each loop in " \
                             "test_netschedule_crash. (Default: 10000)" )
+    parser.add_option( "--delay", dest="delay",
+                       default=1,
+                       help="Delay in sec between stages. (Default: 1)" )
 
     # parse the command line options
     options, args = parser.parse_args()
@@ -105,6 +108,9 @@ def main():
     batch = int( options.batch )
     if batch <= 0:
         raise Exception( "Invalid batch size" )
+    delay = int( options.delay )
+    if delay < 0:
+        raise Exception( "Invalid delay" )
 
     baseDir = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + os.path.sep
 
@@ -159,7 +165,7 @@ def main():
                       " -service localhost:" + str( port ) + \
                       " -queue " + qName + \
                       " -jobs " + str( jobs ) + \
-                      " -delay 1 " \
+                      " -delay " + str( delay ) + \
                       " -naff " + str( affs ) + \
                       " -ngroup " + str( groups ) + \
                       " -batch " + str( batch ) + \
