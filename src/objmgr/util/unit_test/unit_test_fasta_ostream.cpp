@@ -107,6 +107,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaRaw)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_dashes);
               /// FIXME: this should be the default!!
               //fasta_os.SetFlag(CFastaOstream::fInstantiateGaps);
               //fasta_os.SetFlag(CFastaOstream::fAssembleParts);
@@ -194,7 +195,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SimpleSoft)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
-              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
+              // fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, loc);
               fasta_os.Write(seh);
           }}
@@ -242,6 +243,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SimpleHard)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_dashes);
               fasta_os.SetMask(CFastaOstream::eHardMask, loc);
               fasta_os.Write(seh);
           }}
@@ -295,7 +297,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoft)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
-              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
+              // fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, loc);
               fasta_os.Write(seh);
               fasta_os.SetMask(CFastaOstream::eSoftMask, CConstRef<CSeq_loc>());
@@ -359,7 +361,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
-              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
+              // fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, soft_loc);
               fasta_os.SetMask(CFastaOstream::eHardMask, hard_loc);
               fasta_os.Write(seh);
@@ -403,7 +405,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
-              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
+              // fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, soft_loc);
               fasta_os.SetMask(CFastaOstream::eHardMask, hard_loc);
               fasta_os.Write(seh);
@@ -477,7 +479,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SoftHardSimpleOverlap)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
-              fasta_os.SetGapMode(CFastaOstream::eGM_letters);
+              // fasta_os.SetGapMode(CFastaOstream::eGM_letters);
               fasta_os.SetMask(CFastaOstream::eSoftMask, soft_loc);
               fasta_os.SetMask(CFastaOstream::eHardMask, hard_loc);
               fasta_os.Write(seh);
@@ -514,6 +516,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
          CNcbiOstrstream os;
          {{
               CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_dashes);
               /// FIXME: this should be the default!!
               //fasta_os.SetFlag(CFastaOstream::fInstantiateGaps);
               fasta_os.SetFlag(CFastaOstream::fShowModifiers);
@@ -537,6 +540,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
         CNcbiOstrstream os;
         {{
             CFastaOstream fasta_os(os);
+            fasta_os.SetGapMode(CFastaOstream::eGM_dashes);
             /// FIXME: this should be the default!!
             //fasta_os.SetFlag(CFastaOstream::fInstantiateGaps);
             fasta_os.SetFlag(CFastaOstream::fShowModifiers);
