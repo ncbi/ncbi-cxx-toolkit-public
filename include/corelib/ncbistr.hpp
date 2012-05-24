@@ -2254,7 +2254,7 @@ public:
     /// @return
     ///   Return a printable version of "str".
     /// @sa
-    ///   ParseEscapes
+    ///   ParseEscapes, CEncode, CParse
     static string PrintableString(const CTempString&  str,
                                   TPrintableMode mode = eNewLine_Quote);
 
@@ -2291,6 +2291,7 @@ public:
     ///   If 'flags' have fEscSeqRange_User, replace all out of range
     ///   escape sequences with this char.
     /// @return
+    ///   String with parsed C-style escape sequences.
     ///   - If invalid flags are passed, or string have wrong format
     ///     throw an CStringException exception.
     ///   - If parsing succeeds, return the converted value.
@@ -2298,7 +2299,7 @@ public:
     ///   - Otherwise, if escape sequence is out of range [0-255],
     ///     see fEscSeqRange* flags for behavior. 
     /// @sa 
-    ///   EEscSeqFlags, PrintableString
+    ///   EEscSeqFlags, PrintableString, CEncode, CParse
     static string ParseEscapes(const CTempString& str, 
                                TEscSeqFlags flags = fEscSeqRange_Last, 
                                char user_char = '?');
@@ -2307,25 +2308,50 @@ public:
     ///
     /// @param[in] str
     ///   The original string to extract a quoted string from.
-    ///   It must start with a quote (either single or double).
+    ///   It must start with a double quote.
     /// @param[out] n_read
     ///   How many symbols the quoted string occupied in the original string.
     /// @return
     ///   The extracted string, un-escaped and with the quotes removed.
     ///   Throw an exception on format error.
-    static string ParseQuoted(const CTempString& str,
-                              size_t*            n_read = NULL);
+    static string ParseQuoted(const CTempString& str, size_t* n_read = NULL);
+
+    /// Define that string is quoted or not.
+    enum EQuoted {
+        eQuoted,       ///< String is quoted
+        eNotQuoted     ///< String is not quoted
+    };
 
     /// Encode a string for C/C++.
     ///
-    /// Synonym for PrintableString().
-    /// @sa PrintableString
-    static string CEncode(const CTempString& str);
+    /// @param str
+    ///   The string to be parsed.
+    /// @param quoted
+    ///   Define, to 
+    /// @sa
+    ///   CParse, PrintableString
+    static string CEncode(const CTempString& str, EQuoted quoted = eQuoted);
+
+    /// Discard C-style backslash escapes.
+    ///
+    /// @param str
+    ///   The original string to parse.
+    /// @param quoted
+    ///   Define that parsing string is quoted or not.
+    ///   If parameter "quoted" equal eQuoted and string is not started and
+    ///   finished with a double-quote, the exception will be thrown,
+    ///   otherwise quotes will be removed in result.
+    /// @return
+    ///   String with parsed C-style escape sequences.
+    /// @sa
+    ///   CEncode
+    static string CParse(const CTempString& str, EQuoted quoted = eQuoted);
 
     /// Encode a string for JavaScript.
     ///
-    /// Like to CEncode(), but process some symbols in different way.
-    /// @sa PrintableString, CEncode
+    /// Replace relevant characters by predefined entities.
+    /// Like to PrintableString(), but process some symbols in different way.
+    /// @sa PrintableString
     static string JavaScriptEncode(const CTempString& str);
 
     /// Encode a string for XML.
@@ -5199,12 +5225,6 @@ inline
 const string* NStr::FindNoCase(const vector <string>& vec, const CTempString& val)
 {
     return Find(vec, val, eNocase);
-}
-
-inline
-string NStr::CEncode(const CTempString& str)
-{
-    return PrintableString(str);
 }
 
 inline

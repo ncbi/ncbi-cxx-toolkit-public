@@ -2110,7 +2110,6 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     {{
         string s;
         // fEscSeqRange_Last
-        s=NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Last);
         BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Last), "\x47");
     
         // fEscSeqRange_Byte0
@@ -2165,6 +2164,179 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     //NcbiCout << NStr::UInt8ToString(Uint8(s2.size())) << NcbiEndl
     //         << s2 << NcbiEndl;
     BOOST_CHECK(s2.compare(CNcbiOstrstreamToString(os2)) == 0);
+}
+
+
+//----------------------------------------------------------------------------
+// NStr::CEncode|CParse()
+//----------------------------------------------------------------------------
+
+struct SCEncodeTest {
+    const char* str;                // String input
+    const char* expected_nonquoted; // C encoded string with eNotQuoted flag
+    const char* expected_quoted;    // C encoded string with eQuoted flag
+};
+
+static const SCEncodeTest s_CEncodeTests[] = {
+    { "ABC",        "ABC",          "\"ABC\""           },
+    { "ABC",        "ABC",          "\"ABC\""           },
+    { "\"ABC\"",    "\\\"ABC\\\"",  "\"\\\"ABC\\\"\""   },
+    { "\t\n\x44",   "\\t\\nD",      "\"\\t\\nD\""       },
+    { "\x81""f",    "\\201f",       "\"\\201f\""        },
+    { "\\x81f",     "\\""\\x81f",   "\"\\\\x81f\""      },
+    { "\\x81""f",   "\\""\\x81f",   "\"\\\\x81f\""      },
+    { "\\x81""f",   "\\\\x81f",     "\"\\\\x81f\""      }
+};
+
+BOOST_AUTO_TEST_CASE(s_CEncode)
+{
+    NcbiCout << NcbiEndl << "NStr::{CEncode|CParse}() tests...";
+
+    const size_t count = sizeof(s_CEncodeTests)/sizeof(s_CEncodeTests[0]);
+    for (size_t i = 0;  i < count;  ++i)
+    {
+        const SCEncodeTest* test = &s_CEncodeTests[i];
+        string ce, cp;
+
+        // eNotQuoted
+        try {
+            ce = NStr::CEncode(test->str, NStr::eNotQuoted);
+            BOOST_CHECK_EQUAL(ce, test->expected_nonquoted);
+            try {
+                cp = NStr::CParse(ce, NStr::eNotQuoted);
+                BOOST_CHECK_EQUAL(cp, test->str);
+            }
+            catch (CStringException&) {
+                _TROUBLE;
+            }
+        }
+        catch (CStringException&) {
+            _TROUBLE;
+        }
+
+        // eQuoted (by default)
+        try {
+            ce = NStr::CEncode(test->str, NStr::eQuoted);
+            BOOST_CHECK_EQUAL(ce, test->expected_quoted);
+            try {
+                cp = NStr::CParse(ce, NStr::eQuoted);
+                BOOST_CHECK_EQUAL(cp, test->str);
+            }
+            catch (CStringException&) {
+                _TROUBLE;
+            }
+        }
+        catch (CStringException&) {
+            _TROUBLE;
+        }
+    }
+
+    // Special cases for CParse(str, eQuoted)
+    {
+        string s;
+        // Unterminated escaped string
+        try {
+            s = NStr::CParse("\"", NStr::eQuoted);
+            _TROUBLE;
+        }
+        catch (CStringException&) {}
+
+        // Must start with a double quote
+        try {
+            s = NStr::CParse(" \"A\"", NStr::eQuoted);
+            _TROUBLE;
+        }
+        catch (CStringException&) {}
+
+        // Must finish with a double quote
+        try {
+            s = NStr::CParse("\"A\" ", NStr::eQuoted);
+            _TROUBLE;
+        }
+        catch (CStringException&) {}
+
+        // Must finish with a double quote
+        try {
+            s = NStr::CParse("\"A\\t", NStr::eQuoted);
+            _TROUBLE;
+        }
+        catch (CStringException&) {}
+
+        // Escaped string format error
+        try {
+            s = NStr::CParse("\"A\\\"", NStr::eQuoted);
+            _TROUBLE;
+        }
+        catch (CStringException&) {}
+
+        // No anything between adjacent strings ("A""B").
+        try {
+            s = NStr::CParse("\"A\"?\"B\"", NStr::eQuoted);
+            _TROUBLE;
+        }
+        catch (CStringException&) {}
+
+        BOOST_CHECK_EQUAL( NStr::CParse("\"A\"\"B\"",          NStr::eQuoted),    "AB" );
+        BOOST_CHECK_EQUAL( NStr::CParse("\"A\"\"B\"",          NStr::eNotQuoted), "\"A\"\"B\"" );
+        BOOST_CHECK_EQUAL( NStr::CParse("A\"\"B",              NStr::eNotQuoted), "A\"\"B" );
+
+        BOOST_CHECK_EQUAL( NStr::CParse("\"bar\\x44zoo\"",     NStr::eQuoted),    "barDzoo" );
+        BOOST_CHECK_EQUAL( NStr::CParse("\"bar\\x44zoo\"",     NStr::eNotQuoted), "\"barDzoo\"" );
+
+        BOOST_CHECK_EQUAL( NStr::CParse("\"\\x44\"\"f\"",      NStr::eQuoted),    "Df" );
+        BOOST_CHECK_EQUAL( NStr::CParse("\\x44\"\"f",          NStr::eNotQuoted), "D\"\"f" );
+
+        BOOST_CHECK_EQUAL( NStr::CParse("\"\x4\"\"4\"",        NStr::eQuoted),    "\x4""4" );
+        BOOST_CHECK_EQUAL( NStr::CParse("\"\x4\"\"4\"",        NStr::eNotQuoted), "\"\x4\"\"4\"" );
+
+        BOOST_CHECK_EQUAL( NStr::CParse("\"bar\\x44foo\"",     NStr::eQuoted),    "barOoo" );
+        BOOST_CHECK_EQUAL( NStr::CParse("\"bar\\x44foo\"",     NStr::eNotQuoted), "\"barOoo\"" );
+        BOOST_CHECK_EQUAL( NStr::CParse("bar\\x44foo",         NStr::eNotQuoted), "barOoo" );
+
+        BOOST_CHECK_EQUAL( NStr::CParse("\"bar\\x44\"\"foo\"", NStr::eQuoted),    "barDfoo" );
+        BOOST_CHECK_EQUAL( NStr::CParse("\"bar\\x44\"\"foo\"", NStr::eNotQuoted), "\"barD\"\"foo\"" );
+        BOOST_CHECK_EQUAL( NStr::CParse("bar\\x44\"\"foo",     NStr::eNotQuoted), "barD\"\"foo" );
+    }
+
+    // Matrix test
+    {
+        for (unsigned i1 = 1;  i1 < 256;  i1++) {
+            for (unsigned i2 = 0;  i2 < 256;  i2++) {
+                char s[3];
+                s[0] = (char) i1;
+                s[1] = (char) i2;
+                s[2] = '\0';
+
+                string ce = NStr::CEncode     (s,  NStr::eQuoted);
+                string cp = NStr::CParse      (ce, NStr::eQuoted);
+                string pq = NStr::ParseQuoted (ce);
+                BOOST_CHECK_EQUAL(s, cp);
+                BOOST_CHECK_EQUAL(s, pq);
+
+                string cenq  = NStr::CEncode (s,    NStr::eNotQuoted);
+                string cpnq  = NStr::CParse  (cenq, NStr::eNotQuoted);
+                BOOST_CHECK_EQUAL(s, cpnq);
+                BOOST_CHECK_EQUAL("\"" + cenq + "\"", ce);
+                // Generate data for next test
+                //cout << ce << ", ";
+            }
+        }
+        // Use pregenerated data from previous test
+        static const char encoded_data[255 * 256][8] = {
+            #include "test_ncbistr_cencode_data.inc"
+        };
+        for (unsigned i1 = 1;  i1 < 256;  i1++) {
+            for (unsigned i2 = 0;  i2 < 256;  i2++) {
+                const char* s = encoded_data[(i1-1)*256 + i2];
+                char s1 = s[0];
+                char s2 = (char) i1;
+                BOOST_CHECK_EQUAL(s[0], (char) i1);
+                BOOST_CHECK_EQUAL(s[1], (char) i2);
+                BOOST_CHECK_EQUAL(memcmp(s+2, "\0\0\0\0\0\0",6), 0);
+            }
+        }
+    }
+    return;
 }
 
 
@@ -3296,7 +3468,7 @@ static const string s_ShellStr[] = {
 #ifdef NCBI_OS_UNIX
 BOOST_AUTO_TEST_CASE(s_ShellEncode)
 {
-    cout << endl << "ShellEncode tests..." << endl;
+    NcbiCout << endl << "ShellEncode tests..." << endl;
 
     string echo_file = CFile::GetTmpName(CFile::eTmpFileCreate);
     string cmd_file = "./echo.sh";

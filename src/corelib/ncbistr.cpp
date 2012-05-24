@@ -3310,6 +3310,76 @@ string NStr::JavaScriptEncode(const CTempString& str)
     return s_PrintableString(str, eNewLine_Quote, eLanguage_Javascript);
 }
 
+
+string NStr::CEncode(const CTempString& str, EQuoted quoted)
+{
+    switch (quoted) {
+    case eNotQuoted:
+        return PrintableString(str);
+    case eQuoted:
+        return '"' + PrintableString(str) + '"';
+    }
+    _TROUBLE;
+    // Unreachable
+    return str;
+}
+
+
+string NStr::CParse(const CTempString& str, EQuoted quoted)
+{
+    if (quoted == eNotQuoted) {
+        return ParseEscapes(str);
+    }
+    _ASSERT(quoted == eQuoted);
+
+    SIZE_TYPE pos;
+    SIZE_TYPE len = str.length();
+    const char quote_char = '"';
+
+    if (len < 2 || str[0] != quote_char  || str[len-1] != quote_char) {
+        NCBI_THROW2(CStringException, eFormat,
+            "The source string must start and finish with a double quote", 0);
+    }
+
+    // Flag that next char is escaped, ignore it
+    bool escaped = false; 
+    // We have a quote mark, start collect string chars
+    bool collect = true;
+    // Position of last quote
+    SIZE_TYPE last_quote = 0;
+
+    string out;
+    out.reserve(str.size());
+
+    for (pos = 1; pos < len; ++pos) {
+        unsigned char ch = str[pos];
+        if (ch == quote_char  &&  !escaped) {
+            // Have a substring
+            CTempString sub(str.data() + last_quote + 1, pos - last_quote - 1);
+            if (collect) {
+                // Parse escape sequences and add it to result
+                out += ParseEscapes(sub);
+            } else {
+                // Possible we have adjacent strings ("A""B").
+                if (pos != last_quote + 1) {
+                    NCBI_THROW2(CStringException, eFormat,
+                        "Quoted string format error", pos);
+                }
+            }
+            last_quote = pos;
+            collect = !collect;
+        } else {
+            escaped = ch == '\\' ? !escaped : false;
+        }
+    }
+    if (escaped || last_quote != len-1) {
+        NCBI_THROW2(CStringException, eFormat,
+            "Unterminated quoted string", str.length());
+    }
+    return out;
+}
+
+
 string NStr::XmlEncode(const CTempString& str)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-predefined-ent
 {
@@ -3615,15 +3685,16 @@ string NStr::ParseQuoted(const CTempString& str, size_t* n_read /*= NULL*/)
     const char* str_end = str_pos + str.length();
     bool escaped = false;
 
-    while (++str_pos < str_end)
+    while (++str_pos < str_end) {
         if (*str_pos == quote_char && !escaped) {
             size_t pos = str_pos - str.data();
             if (n_read != NULL)
                 *n_read = pos + 1;
             return ParseEscapes(CTempString(str.data() + 1, pos - 1));
-        } else
+        } else {
             escaped = *str_pos == '\\' ? !escaped : false;
-
+        }
+    }
     NCBI_THROW2(CStringException, eFormat,
         "Unterminated quoted string", str.length());
 }
