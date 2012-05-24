@@ -550,7 +550,7 @@ void CTextUtil::GetWordFrequencies(CNcbiIstream& istr,
 ///
 ///
 
-static const string sc_StopWordArray[] = {
+static const char* const sc_StopWordArray[] = {
     "a",
     "about",
     "again",
@@ -645,7 +645,7 @@ static const string sc_StopWordArray[] = {
     "you",
     "your",
 };
-typedef CStaticArraySet<string> TStopWords;
+typedef CStaticArraySet<const char*, PCase_CStr> TStopWords;
 DEFINE_STATIC_ARRAY_MAP(TStopWords, sc_StopWords, sc_StopWordArray);
 
 
