@@ -113,13 +113,17 @@ const string& GetTechString(int tech);
 
 struct SModelEvidance
 {
-    string name;
-    string method;
-    bool mrnaEv;
-    bool estEv;
+    typedef std::pair<Int8, Int8> TSpanType;
+
+    string     name;
+    string     method;
+    bool       mrnaEv;
+    bool       estEv;
+    int        gi;
+    TSpanType  span; // start, then end. 0-based
 
     SModelEvidance(void) :
-        name(kEmptyStr), method(kEmptyStr), mrnaEv(false), estEv(false)
+        name(kEmptyStr), method(kEmptyStr), mrnaEv(false), estEv(false), gi(-1), span(-1, -1)
     {}
 };
 

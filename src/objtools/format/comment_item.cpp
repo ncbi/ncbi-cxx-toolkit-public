@@ -30,6 +30,9 @@
 *
 */
 #include <ncbi_pch.hpp>
+
+#include <sstream>
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -526,8 +529,8 @@ string CCommentItem::GetStringForRefTrack
             }
             oss << "].";
         } else {
-            oss << "NCBI contigs are derived from assembled genomic sequence data."
-                << "~Also see:~"
+            oss << "NCBI contigs are derived from assembled genomic sequence data.~"
+                << "Also see:~"
                 << "    Documentation of NCBI's Annotation Process~ ";
         }
         break;
@@ -865,9 +868,24 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
 }
 
 static
-string s_HtmlWrapModelEvidenceName( const string &name )
+string s_HtmlWrapModelEvidenceName( const SModelEvidance& me )
 {
-    return "<a href=\"" + strLinkBaseNuc + name + "?report=graph\">" + name + "</a>";
+    stringstream strm;
+    strm << "<a href=\"" << strLinkBaseNuc;
+    if( me.gi > 0 ) {
+        strm << me.gi;
+    } else {
+        strm << me.name;
+    }
+    strm << "?report=graph";
+    if( (me.span.first >= 0) && (me.span.second >= me.span.first) ) {
+        const Int8 kPadAmount = 500;
+        strm << "&v=" << max<Int8>(me.span.first - kPadAmount, 1) 
+             << ":" << (me.span.second + kPadAmount); // okay if second number goes over end of sequence
+    }
+    strm << "\">" << me.name << "</a>";
+
+    return strm.str();
 }
 
 string CCommentItem::GetStringForModelEvidance
@@ -880,7 +898,7 @@ string CCommentItem::GetStringForModelEvidance
 
     CNcbiOstrstream text;
 
-    const string me_name = ( bHtml ? s_HtmlWrapModelEvidenceName(me.name) : me.name );
+    const string me_name = ( bHtml ? s_HtmlWrapModelEvidenceName(me) : me.name );
 
     text << "MODEL " << *refseq << ":  " << "This record is predicted by "
          << "automated computational analysis. This record is derived from "

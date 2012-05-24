@@ -1034,6 +1034,36 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
             if ( moduop->HasField("EST") ) {
                 me.estEv = true;
             }
+            if( moduop->HasField("Contig Gi") ) {
+                ufp = &(moduop->GetField("Contig Gi"));
+                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsInt() ) {
+                    me.gi = ufp->GetData().GetInt();
+                }
+            }
+            if( moduop->HasField("Contig Span") ) {
+                ufp = &(moduop->GetField("Contig Span"));
+                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsInts() 
+                    && ufp->IsSetNum() && ufp->GetNum() == 2 && ufp->GetData().GetInts().size() == 2 ) 
+                {
+                    const CUser_field::C_Data::TInts & int_list = ufp->GetData().GetInts();
+                    me.span.first  = int_list[0];
+                    me.span.second = int_list[1];
+                }
+            }
+        }
+    }
+
+    // if me.name is missing version, try to update from me.gi
+    if( me.gi > 0 && me.name.find('.') == string::npos ) {
+        CSeq_id_Handle accver_idh = bsh.GetScope().GetAccVer( CSeq_id_Handle::GetGiHandle(me.gi) );
+        if( accver_idh ) {
+            CConstRef<CSeq_id> accver_seq_id = accver_idh.GetSeqIdOrNull();
+            if( accver_seq_id ) {
+                const CTextseq_id *text_id = accver_seq_id->GetTextseq_Id();
+                if( text_id && text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+                    me.name = text_id->GetAccession() + "." + NStr::IntToString(text_id->GetVersion());
+                }
+            }
         }
     }
 
