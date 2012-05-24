@@ -269,6 +269,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SDiscoveredServers* m_DiscoveredServers;
     SDiscoveredServers* m_ServerGroupPool;
     unsigned m_LatestDiscoveryIteration;
+
+    bool m_UseSmartRetries;
 };
 
 inline CNetServer SNetServiceImpl::GetServer(

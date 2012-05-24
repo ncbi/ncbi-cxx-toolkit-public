@@ -37,6 +37,7 @@
 
 #include <connect/services/error_codes.hpp>
 #include <connect/services/srv_connections_expt.hpp>
+#include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
@@ -337,6 +338,8 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
                 }
             }
         }
+        m_UseSmartRetries = config->GetBool(section,
+                "smart_service_retries", CConfig::eErr_NoThrow, true);
     }
 
     m_ServerPool->Init(config, section);
@@ -786,131 +789,101 @@ void SNetServiceImpl::GetDiscoveredServers(
     discovered_servers->m_Service = this;
 }
 
-static void SleepUntil(const CTime& time)
-{
-    CTime current_time(GetFastLocalTime());
-    if (time > current_time) {
-        CTimeSpan diff(time - current_time);
-        SleepMicroSec(diff.GetCompleteSeconds() * 1000 * 1000 +
-            diff.GetNanoSecondsAfterSecond() / 1000);
-    }
-}
-
 void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     CNetServer::SExecResult& exec_result,
     IIterationBeginner* iteration_beginner)
 {
-    CNetServiceIterator it = iteration_beginner->BeginIteration();
-
-    CTime max_connection_time(GetFastLocalTime());
-    CTime retry_delay_until(max_connection_time);
-    max_connection_time.AddNanoSecond(
-        m_ServerPool->m_MaxConnectionTime * 1000 * 1000);
-
     int retry_count = (int) TServConn_ConnMaxRetries::GetDefault();
 
-    try {
-        (*it)->ConnectAndExec(cmd, exec_result);
-        return;
-    }
-    catch (CNetScheduleException& ex) {
-        if (ex.GetErrCode() !=
-                CNetScheduleException::eSubmitsDisabled || !++it)
-            throw;
-    }
-    catch (CNetSrvConnException& ex) {
-        switch (ex.GetErrCode()) {
-        case CNetSrvConnException::eConnectionFailure:
-        case CNetSrvConnException::eServerThrottle:
-            if ((++it || retry_count > 0) &&
-                    (m_ServerPool->m_MaxConnectionTime == 0 ||
-                            GetFastLocalTime() < max_connection_time))
-                break;
-            /* else: FALL THROUGH */
+    const unsigned long retry_delay = s_GetRetryDelay();
 
-        default:
-            throw;
-        }
-    }
+    CAbsTimeout max_connection_time(m_ServerPool->m_MaxConnectionTime / 1000,
+        (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
 
-    // At this point, 'it' points to the next server (or NULL);
-    // variable 'retry_count' is set from the respective configuration
-    // parameter; 'max_connection_time' is set correctly unless
-    // m_MaxConnectionTime is zero.
+    CNetServiceIterator it = iteration_beginner->BeginIteration();
 
-    unsigned long retry_delay = s_GetRetryDelay() * 1000 * 1000;
-    retry_delay_until.AddNanoSecond(retry_delay);
-
-    string last_error;
-    bool throttled;
     unsigned number_of_servers = 0;
     unsigned ns_with_submits_disabled = 0;
+    unsigned servers_throttled = 0;
 
     for (;;) {
-        throttled = false;
-        while (it) {
-            ++number_of_servers;
-            try {
-                (*it)->ConnectAndExec(cmd, exec_result);
-                return;
-            }
-            catch (CNetScheduleException& ex) {
-                if (ex.GetErrCode() != CNetScheduleException::eSubmitsDisabled)
-                    throw;
-                last_error = ex.what();
-                ++ns_with_submits_disabled;
-            }
-            catch (CNetSrvConnException& ex) {
-                switch (ex.GetErrCode()) {
-                case CNetSrvConnException::eConnectionFailure:
-                    last_error = ex.what();
-                    --retry_count;
-                    break;
-
-                case CNetSrvConnException::eServerThrottle:
-                    throttled = true;
-                    if (last_error.empty())
-                        last_error = ex.what();
-                    --retry_count;
-                    break;
-
-                default:
-                    throw;
-                }
-            }
-            ++it;
+        try {
+            (*it)->ConnectAndExec(cmd, exec_result);
+            return;
         }
-        if (retry_count <= 0 || ns_with_submits_disabled == number_of_servers)
-            break;
+        catch (CNetCacheException& ex) {
+            if (retry_count <= 0 && !m_UseSmartRetries)
+                throw;
+            LOG_POST(Warning << ex);
+        }
+        catch (CNetScheduleException& ex) {
+            if (retry_count <= 0 && !m_UseSmartRetries)
+                throw;
+            if (ex.GetErrCode() == CNetScheduleException::eSubmitsDisabled)
+                ++ns_with_submits_disabled;
+            LOG_POST(Warning << ex);
+        }
+        catch (CNetSrvConnException& ex) {
+            if (retry_count <= 0 && !m_UseSmartRetries)
+                throw;
+            switch (ex.GetErrCode()) {
+            case CNetSrvConnException::eConnectionFailure:
+                break;
+
+            case CNetSrvConnException::eServerThrottle:
+                ++servers_throttled;
+                break;
+
+            default:
+                throw;
+            }
+            LOG_POST(Warning << ex);
+        }
+
+        ++number_of_servers;
+        ++it;
 
         if (m_ServerPool->m_MaxConnectionTime > 0 &&
-                GetFastLocalTime() >= max_connection_time) {
-            LOG_POST(Error << "Timeout (max_connection_time=" <<
-                m_ServerPool->m_MaxConnectionTime <<
-                "); cmd=" << cmd <<
-                "; exception=" << last_error);
-            break;
+                max_connection_time.GetRemainingTime().GetAsMilliSeconds() <=
+                        (it ? 0 : retry_delay)) {
+            NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout,
+                    "Exceeded max_connection_time=" <<
+                    m_ServerPool->m_MaxConnectionTime <<
+                    "; cmd=[" << cmd << "]");
         }
 
-        SleepUntil(retry_delay_until);
-        retry_delay_until = GetFastLocalTime();
-        retry_delay_until.AddNanoSecond(retry_delay);
-        it = iteration_beginner->BeginIteration();
+        if (!it) {
+            if (number_of_servers == ns_with_submits_disabled) {
+                NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+                        "Cannot execute ["  << cmd <<
+                        "]: all NetSchedule servers are "
+                        "in REFUSESUBMITS mode.");
+            }
+            if (number_of_servers == servers_throttled) {
+                NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+                        "Cannot execute ["  << cmd <<
+                        "]: all servers are throttled.");
+            }
+            if (retry_count <= 0) {
+                NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+                        "Unable to execute [" << cmd <<
+                        "] on any of the discovered servers.");
+            }
 
-        LOG_POST("Unable to execute '" << cmd <<
-            (!throttled ?
-                "' on any of the discovered servers; last error seen: " :
-                "' on any of the discovered servers (some servers are "
-                    "throttled); last error seen: ") << last_error <<
-            "; remaining attempts: " << retry_count);
+            LOG_POST(Warning << "Unable to execute [" << cmd << "] on any "
+                    "of the discovered servers; will retry after delay.");
+
+            SleepMilliSec(retry_delay);
+
+            it = iteration_beginner->BeginIteration();
+
+            number_of_servers = 0;
+            ns_with_submits_disabled = 0;
+            servers_throttled = 0;
+        }
+
+        --retry_count;
     }
-
-    NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-        "Unable to execute '" << cmd <<
-        (!throttled ?
-            "' on any of the discovered servers; last error seen: " :
-            "' on any of the discovered servers (some servers are "
-                "throttled); last error seen: ") << last_error);
 }
 
 SNetServerPoolImpl::~SNetServerPoolImpl()
