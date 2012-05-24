@@ -3874,7 +3874,7 @@ void CTar::x_AppendFile(const string& file)
 void CTar::SetMask(CMask*    mask, EOwnership  own,
                    EMaskType type, NStr::ECase acase)
 {
-    if (type < 0  ||  (size_t) type >= sizeof(m_Mask) / sizeof(m_Mask[0])) {
+    if ((int) type < 0  ||  sizeof(m_Mask)/sizeof(m_Mask[0]) <= (size_t) type){
         TAR_THROW(this, eMemory,
                   "Mask type is out of range: " + NStr::IntToString(type));
     }
