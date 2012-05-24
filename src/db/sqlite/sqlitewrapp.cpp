@@ -643,17 +643,14 @@ CSQLITE_Statement::x_Finalize(void)
 
 #define COMMA ,
 
-#define STMT_BIND_WITH_VAL(sql_type, str_type, index, val)          \
-    STMT_BIND_IMPL(sql_type, str_type, index COMMA val)
-
 #define STMT_BIND_NO_VAL(sql_type, str_type, index)                 \
     STMT_BIND_IMPL(sql_type, str_type, index)
 
 #define STMT_BIND(sql_type, str_type, index, val)                   \
-    STMT_BIND_WITH_VAL(sql_type, str_type, index, val)
+    STMT_BIND_IMPL(sql_type, str_type, index COMMA val)
 
 #define STMT_BIND3(sql_type, str_type, index, val1, val2, val3)     \
-    STMT_BIND_WITH_VAL(sql_type, str_type, index, val1 COMMA val2 COMMA val3)
+    STMT_BIND_IMPL(sql_type, str_type, index COMMA val1 COMMA val2 COMMA val3)
 
 
 void
