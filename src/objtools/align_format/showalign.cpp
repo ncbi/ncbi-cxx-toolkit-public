@@ -3621,6 +3621,12 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	else {
 		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"seq_info",alnGi + seqid); 
 	}
+    string hspNum;
+    if(isFirst) {
+        hspNum = NStr::IntToString(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber);
+        hspNum = (hspNum == "0") ? "" : hspNum;
+    }
+    alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnHspNum",hspNum);
 	string alnIdLbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->seqID->GetSeqIdString();
 	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnIdLbl",alnIdLbl);
 	string linkoutStr, dnldLinkStr;
@@ -3666,7 +3672,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_gi,firstGi);                
 				if(alnDispParams) {
                     numBdl++;                
-					bool hideDefline = (int)(maxNumBdl) > k_MaxDeflinesToShow && numBdl >= k_MinDeflinesToShow + 1;
+                    bool hideDefline = (numBdl > 1)? true : false;                    
 					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline);                    
                     if(isFirst){
                         const CSeq_id& aln_id = m_AV->GetSeqId(1);
