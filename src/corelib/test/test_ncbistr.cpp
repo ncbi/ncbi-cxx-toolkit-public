@@ -2317,22 +2317,6 @@ BOOST_AUTO_TEST_CASE(s_CEncode)
                 string cpnq  = NStr::CParse  (cenq, NStr::eNotQuoted);
                 BOOST_CHECK_EQUAL(s, cpnq);
                 BOOST_CHECK_EQUAL("\"" + cenq + "\"", ce);
-                // Generate data for next test
-                //cout << ce << ", ";
-            }
-        }
-        // Use pregenerated data from previous test
-        static const char encoded_data[255 * 256][8] = {
-            #include "test_ncbistr_cencode_data.inc"
-        };
-        for (unsigned i1 = 1;  i1 < 256;  i1++) {
-            for (unsigned i2 = 0;  i2 < 256;  i2++) {
-                const char* s = encoded_data[(i1-1)*256 + i2];
-                char s1 = s[0];
-                char s2 = (char) i1;
-                BOOST_CHECK_EQUAL(s[0], (char) i1);
-                BOOST_CHECK_EQUAL(s[1], (char) i2);
-                BOOST_CHECK_EQUAL(memcmp(s+2, "\0\0\0\0\0\0",6), 0);
             }
         }
     }
