@@ -38,8 +38,12 @@
 #include <algo/blast/core/blast_options.h>
 
 #include <objtools/alnmgr/alnvec.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -441,8 +445,134 @@ void CScoreBuilder::AddScore(CScope& scope,
     }
 }
 
+static inline char s_Complement(char residue)
+{
+    switch (residue) {
+    case 'A':
+        return 'T';
+    case 'C':
+        return 'G';
+    case 'G':
+        return 'C';
+    case 'T':
+        return 'A';
+    case 'N':
+        return 'N';
+    default:
+        NCBI_THROW(CException, eUnknown, string("Unexpected residue: ") + residue);
+        return 0;
+    }
+}
 
+static inline void s_RecordMatch(size_t match, string &BTOP, string &flipped_BTOP)
+{
+    if (match) {
+        string match_str = NStr::NumericToString(match);
+        BTOP += match_str;
+        flipped_BTOP.insert(0, match_str);
+    }
+}
 
+static pair<string,string> s_ComputeTraceback(CScope& scope,
+                                              const CSeq_align& align)
+{
+    if (!align.GetSegs().IsDenseg() || align.CheckNumRows() != 2) {
+        NCBI_THROW(CException, eUnknown,
+                   "Traceback strings can only be calculated for pairwise "
+                   "Dense-seg alignments");
+    }
 
+    const CDense_seg& ds = align.GetSegs().GetDenseg();
+    CAlnVec vec(ds, scope);
+    string BTOP, flipped_BTOP;
+    for (CDense_seg::TNumseg i = 0;  i < ds.GetNumseg();  ++i) {
+        string query, subject;
+        vec.GetSegSeqString(query, 0, i);
+        vec.GetSegSeqString(subject, 1, i);
+        if (query.empty()) {
+            ITERATE (string, it, subject) {
+                BTOP += '-';
+                BTOP += *it;
+                flipped_BTOP.insert(flipped_BTOP.begin(), s_Complement(*it));
+                flipped_BTOP.insert(flipped_BTOP.begin(), '-');
+            }
+        } else if (subject.empty()) {
+            ITERATE (string, it, query) {
+                BTOP += *it;
+                BTOP += '-';
+                flipped_BTOP.insert(flipped_BTOP.begin(), '-');
+                flipped_BTOP.insert(flipped_BTOP.begin(), s_Complement(*it));
+            }
+        } else {
+            size_t match = 0;
+            for (size_t idx = 0; idx < query.size(); ++idx) {
+                NCBI_ASSERT(query.size() == subject.size(),
+                            "inconsistent aligned segment length");
+                if (query[idx] == subject[idx]) {
+                    ++match;
+                } else {
+                    s_RecordMatch(match, BTOP, flipped_BTOP);
+                    match = 0;
+                    BTOP += query[idx];
+                    BTOP += subject[idx];
+                    flipped_BTOP.insert(flipped_BTOP.begin(),
+                                        s_Complement(subject[idx]));
+                    flipped_BTOP.insert(flipped_BTOP.begin(),
+                                        s_Complement(query[idx]));
+                }
+            }
+            s_RecordMatch(match, BTOP, flipped_BTOP);
+        }
+    }
+    return pair<string,string>(
+        BTOP, align.GetSeqStrand(0) == align.GetSeqStrand(1)
+                  ? BTOP : flipped_BTOP);
+}
+
+void CScoreBuilder::AddTracebacks(CScope& scope, CSeq_align& align)
+{
+    ITERATE (CSeq_align::TExt, ext_it, align.SetExt()) {
+        if ((*ext_it)->GetType().IsStr() &&
+            (*ext_it)->GetType().GetStr() == "Tracebacks")
+        {
+            /// Tracebacks object already exists
+            return;
+        }
+    }
+
+    CRef<CUser_object> tracebacks(new CUser_object);
+    align.SetExt().push_back(tracebacks);
+    tracebacks->SetType().SetStr("Tracebacks");
+    pair<string,string> traceback_strings = s_ComputeTraceback(scope, align);
+    tracebacks->AddField("Query", traceback_strings.first);
+    tracebacks->AddField("Subject", traceback_strings.second);
+}
+
+void CScoreBuilder::AddTracebacks(CScope& scope,
+                                  list< CRef<CSeq_align> >& aligns)
+{
+    NON_CONST_ITERATE (list< CRef<CSeq_align> >, iter, aligns) {
+        AddTracebacks(scope, **iter);
+    }
+}
+
+string CScoreBuilder::GetTraceback(CScope& scope, const CSeq_align& align,
+                                   CSeq_align::TDim row)
+{
+    if (align.IsSetExt()) {
+        ITERATE (CSeq_align::TExt, ext_it, align.GetExt()) {
+            if ((*ext_it)->GetType().IsStr() &&
+                (*ext_it)->GetType().GetStr() == "Tracebacks")
+            {
+                return (*ext_it)->GetField(row == 0 ? "Query" : "Subject")
+                           .GetData().GetStr();
+            }
+        }
+    }
+
+    /// Tracebacks user object not found; need to calculate on the fly
+    pair<string,string> traceback_strings = s_ComputeTraceback(scope, align);
+    return row == 0 ? traceback_strings.first : traceback_strings.second;
+}
 
 END_NCBI_SCOPE

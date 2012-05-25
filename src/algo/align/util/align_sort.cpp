@@ -137,6 +137,14 @@ CAlignSort::SAlignExtractor::operator()(const CSeq_align& align)
         else if (NStr::EqualNocase(*iter, "subject_align_len")) {
             item.second = align.GetSeqRange(1).GetLength();
         }
+        else if (NStr::EqualNocase(*iter, "query_traceback")) {
+            CScoreBuilder builder;
+            item.first = builder.GetTraceback(*scope, align, 0);
+        }
+        else if (NStr::EqualNocase(*iter, "subject_traceback")) {
+            CScoreBuilder builder;
+            item.first = builder.GetTraceback(*scope, align, 1);
+        }
 
         else {
             /// assume it is a score

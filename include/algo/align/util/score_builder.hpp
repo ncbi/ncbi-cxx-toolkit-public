@@ -115,6 +115,14 @@ public:
     /// Compute the BLAST e-value
     double GetBlastEValue (CScope& scope, const CSeq_align& align);
 
+
+    void AddTracebacks(CScope& scope, CSeq_align& align);
+
+    void AddTracebacks(CScope& scope, list< CRef<CSeq_align> >& aligns);
+
+    string GetTraceback(CScope& scope, const CSeq_align& align,
+                        CSeq_align::TDim row);
+
     /// @}
 
     /// @name Functions for configuring blast scores
