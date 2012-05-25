@@ -814,20 +814,23 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         catch (CNetCacheException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
-            LOG_POST(Warning << ex);
+            LOG_POST(Warning << (*it).GetServerAddress() << ": " << ex);
         }
         catch (CNetScheduleException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
             if (ex.GetErrCode() == CNetScheduleException::eSubmitsDisabled)
                 ++ns_with_submits_disabled;
-            LOG_POST(Warning << ex);
+            else {
+                LOG_POST(Warning << (*it).GetServerAddress() << ": " << ex);
+            }
         }
         catch (CNetSrvConnException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
             switch (ex.GetErrCode()) {
             case CNetSrvConnException::eConnectionFailure:
+                LOG_POST(Warning << ex);
                 break;
 
             case CNetSrvConnException::eServerThrottle:
@@ -837,7 +840,6 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             default:
                 throw;
             }
-            LOG_POST(Warning << ex);
         }
 
         ++number_of_servers;
