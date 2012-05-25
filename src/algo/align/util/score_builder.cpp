@@ -531,21 +531,28 @@ static pair<string,string> s_ComputeTraceback(CScope& scope,
 
 void CScoreBuilder::AddTracebacks(CScope& scope, CSeq_align& align)
 {
+    CRef<CUser_object> tracebacks;
     ITERATE (CSeq_align::TExt, ext_it, align.SetExt()) {
         if ((*ext_it)->GetType().IsStr() &&
             (*ext_it)->GetType().GetStr() == "Tracebacks")
         {
             /// Tracebacks object already exists
-            return;
+            tracebacks = *ext_it;
+            break;
         }
     }
 
-    CRef<CUser_object> tracebacks(new CUser_object);
-    align.SetExt().push_back(tracebacks);
-    tracebacks->SetType().SetStr("Tracebacks");
+    if (!tracebacks) {
+        tracebacks.Reset(new CUser_object);
+        tracebacks->SetType().SetStr("Tracebacks");
+        align.SetExt().push_back(tracebacks);
+    } else if (tracebacks->HasField("Query") && tracebacks->HasField("Subject"))
+    {
+        return;
+    }
     pair<string,string> traceback_strings = s_ComputeTraceback(scope, align);
-    tracebacks->AddField("Query", traceback_strings.first);
-    tracebacks->AddField("Subject", traceback_strings.second);
+    tracebacks->SetField("Query").SetData().SetStr(traceback_strings.first);
+    tracebacks->SetField("Subject").SetData().SetStr(traceback_strings.second);
 }
 
 void CScoreBuilder::AddTracebacks(CScope& scope,
@@ -564,8 +571,11 @@ string CScoreBuilder::GetTraceback(CScope& scope, const CSeq_align& align,
             if ((*ext_it)->GetType().IsStr() &&
                 (*ext_it)->GetType().GetStr() == "Tracebacks")
             {
-                return (*ext_it)->GetField(row == 0 ? "Query" : "Subject")
-                           .GetData().GetStr();
+                string field = row == 0 ? "Query" : "Subject";
+                if ((*ext_it)->HasField(field)) {
+                    return (*ext_it)->GetField(field).GetData().GetStr();
+                }
+                break;
             }
         }
     }
