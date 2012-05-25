@@ -245,9 +245,15 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     void DiscoverServersIfNeeded();
     void GetDiscoveredServers(CRef<SDiscoveredServers>& discovered_servers);
 
+    enum EServerErrorHandling {
+        eRethrowServerErrors,
+        eIgnoreServerErrors
+    };
+
     void IterateUntilExecOK(const string& cmd,
         CNetServer::SExecResult& exec_result,
-        IIterationBeginner* iteration_beginner);
+        IIterationBeginner* iteration_beginner,
+        EServerErrorHandling error_handling);
 
     CNetServer GetServer(const string& host, unsigned int port);
     CNetServer GetServer(const SServerAddress& server_address);

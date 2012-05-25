@@ -84,7 +84,9 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     string MakeCmd(const char* cmd_base, const CNetCacheKey& key);
     CNetService FindOrCreateService(const string& service_name);
     CNetServer::SExecResult ExecMirrorAware(
-        const CNetCacheKey& key, const string& cmd);
+        const CNetCacheKey& key, const string& cmd,
+        SNetServiceImpl::EServerErrorHandling error_handling =
+            SNetServiceImpl::eRethrowServerErrors);
 
     CNetService m_Service;
 

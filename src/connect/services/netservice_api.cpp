@@ -648,7 +648,8 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 
             SRandomIterationBeginner iteration_beginner(*this);
 
-            m_Impl->IterateUntilExecOK(cmd, exec_result, &iteration_beginner);
+            m_Impl->IterateUntilExecOK(cmd, exec_result, &iteration_beginner,
+                    SNetServiceImpl::eIgnoreServerErrors);
 
             return exec_result;
         }
@@ -791,7 +792,8 @@ void SNetServiceImpl::GetDiscoveredServers(
 
 void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     CNetServer::SExecResult& exec_result,
-    IIterationBeginner* iteration_beginner)
+    IIterationBeginner* iteration_beginner,
+    SNetServiceImpl::EServerErrorHandling error_handling)
 {
     int retry_count = (int) TServConn_ConnMaxRetries::GetDefault();
 
@@ -812,7 +814,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             return;
         }
         catch (CNetCacheException& ex) {
-            if (retry_count <= 0 && !m_UseSmartRetries)
+            if (error_handling == eRethrowServerErrors ||
+                    (retry_count <= 0 && !m_UseSmartRetries))
                 throw;
             LOG_POST(Warning << (*it).GetServerAddress() << ": " << ex);
         }
@@ -821,6 +824,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 throw;
             if (ex.GetErrCode() == CNetScheduleException::eSubmitsDisabled)
                 ++ns_with_submits_disabled;
+            else if (error_handling == eRethrowServerErrors)
+                throw;
             else {
                 LOG_POST(Warning << (*it).GetServerAddress() << ": " << ex);
             }

@@ -262,7 +262,8 @@ CNetService SNetCacheAPIImpl::FindOrCreateService(const string& service_name)
 }
 
 CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
-    const CNetCacheKey& key, const string& cmd)
+    const CNetCacheKey& key, const string& cmd,
+    SNetServiceImpl::EServerErrorHandling error_handling)
 {
     CNetServer primary_server(GetServer(key));
 
@@ -276,7 +277,8 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
             FindOrCreateService(key.GetServiceName()) : m_Service,
             primary_server);
 
-    m_Service->IterateUntilExecOK(cmd, exec_result, &iteration_beginner);
+    m_Service->IterateUntilExecOK(cmd, exec_result,
+            &iteration_beginner, error_handling);
 
     return exec_result;
 }
@@ -359,7 +361,8 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
     CNetServer::SExecResult exec_result;
 
     if (write_existing_blob)
-        exec_result = ExecMirrorAware(key, cmd);
+        exec_result = ExecMirrorAware(key, cmd,
+                SNetServiceImpl::eIgnoreServerErrors);
     else {
         try {
             exec_result = m_Service.FindServerAndExec(cmd);
