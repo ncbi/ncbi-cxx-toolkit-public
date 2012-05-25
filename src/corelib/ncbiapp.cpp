@@ -330,8 +330,9 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
                 // handle-exceptions flag.
                 throw;
             }
-            catch (CArgException& e) {
-                NCBI_RETHROW_SAME(e, "Application's initialization failed");
+            catch (CArgException&) {
+//                NCBI_RETHROW_SAME(e, "Application's initialization failed");
+                throw;
             }
             catch (CException& e) {
                 NCBI_REPORT_EXCEPTION_X(15,
@@ -678,8 +679,9 @@ int CNcbiApplication::AppMain
                 cerr << "Error in command-line arguments. "
                     "See error logs for more details." << endl;
             }
-            cerr << string(72, '=') << endl;
+            cerr << string(72, '=') << endl << endl;
         }
+        SetDiagPostAllFlags(eDPF_Severity);
         NCBI_REPORT_EXCEPTION_X(18, "", e);
         got_exception = true;
         exit_code = 1;
