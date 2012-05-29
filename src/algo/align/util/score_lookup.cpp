@@ -622,32 +622,68 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
+        bool is_protein = false;
+        TSeqPos product_length = 0;
         if (align.GetSegs().IsSpliced()) {
-            const CSpliced_seg& seg = align.GetSegs().GetSpliced();
             bool score_precalculated=false;
-            double score = 0;
+            const CSpliced_seg& seg = align.GetSegs().GetSpliced();
+            is_protein = seg.GetProduct_type() ==
+                         CSpliced_seg::eProduct_type_protein;
+            if (seg.CanGetProduct_length()) {
+                product_length = seg.GetProduct_length();
+            }
             ITERATE (CSpliced_seg::TModifiers, it, seg.GetModifiers()) {
                 if (m_StartCodon
                     ? (*it)->IsStart_codon_found() 
                     : (*it)->IsStop_codon_found() ) {
                     score_precalculated=true;
+                    if (m_StartCodon
+                        ? (*it)->GetStart_codon_found()
+                        : (*it)->GetStop_codon_found())
+                    {
+                        return 1;
+                    }
                 }
             }
-            if(score_precalculated) {      
-            ITERATE (CSpliced_seg::TModifiers, it, seg.GetModifiers()) {
-                if (m_StartCodon
-                    ? ((*it)->IsStart_codon_found() &&
-                       (*it)->GetStart_codon_found())
-                    : ((*it)->IsStop_codon_found() &&
-                       (*it)->GetStop_codon_found()))
-                {
-                    return 1;
-                }
+            if (score_precalculated) {
+                /// Found the modifier, but it was set to false
+                return 0;
             }
-            } else {
-// calculate score
-            bool calculated=false;
+        }
+        if (!product_length) {
+            CBioseq_Handle product_bsh =
+                scope->GetBioseqHandle(align.GetSeq_id(0));
+            if (!product_bsh) {
+                NCBI_THROW(CSeqalignException, eUnsupported,
+                           "Can't get sequence " +
+                               align.GetSeq_id(0).AsFastaString());
+            }
+            switch (product_bsh.GetSequenceType()) {
+            case CSeq_inst::eMol_aa:
+                is_protein = true;
+                break;
 
+            case CSeq_inst::eMol_rna:
+                is_protein = false;
+                break;
+
+            default:
+                NCBI_THROW(CSeqalignException, eUnsupported,
+                           "Invalid sequence type for " +
+                               align.GetSeq_id(0).AsFastaString());
+            }
+            product_length = product_bsh.GetBioseqLength();
+        }
+
+        CRef<CSeq_loc> aligned_genomic;
+        if (is_protein) {
+            if(m_StartCodon ? align.GetSeqStart(0) > 0
+                            : align.GetSeqStop(0) < product_length - 1)
+            {
+                return 0;
+            }
+            aligned_genomic = align.CreateRowSeq_loc(1);
+        } else {
             ///
             /// complicated (copied from cds_internal_stops Get())
             ///
@@ -672,71 +708,48 @@ public:
                 }
             }
 
-            if (cds) {
-                if(!m_StartCodon) {
-// extend location by a codon beyond stop
-                    TSeqPos stop = cds->GetLocation().GetStop(eExtreme_Biological);
-                    bool plus = cds->GetLocation().GetStrand() != eNa_strand_minus;
-                    TSeqPos new_stop=stop+(plus?3:-3);
-                    TSeqPos genomic_length=0;
-                    CBioseq_Handle bsh = scope->GetBioseqHandle(*(cds->GetLocation().GetId()));
-                    if (bsh) {
-                        genomic_length = bsh.GetBioseqLength();
-                    } else {
-                        NCBI_THROW(CSeqalignException, eUnsupported,
-                                   "could not get nucleotide length for 'stop_codon' score");
-                    }
-                    if(new_stop>=genomic_length) {  
-                        score=0 ; calculated = true;
-                    }
-                    for(CTypeIterator<CSeq_interval> i(cds->SetLocation()); i; ++i) {
-                        if(plus) {
-                             if(i->GetTo()==stop){i->SetTo(new_stop); break; }
-                        } else {
-                             if(i->GetFrom()==stop){i->SetFrom(new_stop); break; }
-                        }
-                    }
-                }
-                if(!calculated) {
-                    string trans="";
-                    CSeqTranslator::Translate(*cds, *scope, trans);
-                    if(m_StartCodon) {
-                        if ( !cds->GetLocation().IsPartialStart(eExtreme_Biological) &&
-// need a better function to determine if it's a alternative start for gcode 11 , etc
-                            trans[0]=='M') {
-                            score=1; calculated=true;
-                        } else {
-                            score=0; calculated=true;
-                        }
-                    } else {
-                        if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
-                            NStr::EndsWith(trans, "*")) { // are only stop codons NEXT to translation count
-                            score=1; calculated=true;
-                        } else {
-                            score=0; calculated=true;
-                        }
-                    }
-                }
-
-            }
-            if(!calculated) {
+            if (!cds) {
                 NCBI_THROW(CSeqalignException, eUnsupported,
-                           "'start_codon' or 'stop_codon' score could not be calculated for unknown reason");
+                           "No CDS for " + align.GetSeq_id(0).AsFastaString());
             }
-/*
-// obviously cannot change alignment here, needs to be moved somewhere
-            CRef<CSpliced_seg_modifier> mod(new CSpliced_seg_modifier);
-            if(m_StartCodon) mod->SetStart_codon_found(score>0?true:false);
-            else             mod->SetStop_codon_found(score>0?true:false);
-            seg.SetModifiers().push_back(mod); 
-*/
+
+            if(m_StartCodon
+                ? cds->GetLocation().IsPartialStart(eExtreme_Biological)
+                : cds->GetLocation().IsPartialStop(eExtreme_Biological))
+            {
+                return 0;
             }
-            return score;
+            aligned_genomic.Reset(&cds->SetLocation());
         }
 
-        NCBI_THROW(CSeqalignException, eUnsupported,
-                   "'start_codon' and 'stop_codon' scores valid only for "
-                   "Spliced-seg alignments");
+        if(!m_StartCodon) {
+// extend location by a codon beyond stop
+            TSeqPos stop = aligned_genomic->GetStop(eExtreme_Biological);
+            bool plus = aligned_genomic->GetStrand() != eNa_strand_minus;
+            TSeqPos new_stop=stop+(plus?3:-3);
+            CBioseq_Handle genomic_bsh =
+                scope->GetBioseqHandle(*(aligned_genomic->GetId()));
+            if (!genomic_bsh) {
+                NCBI_THROW(CSeqalignException, eUnsupported,
+                           "could not get nucleotide length for 'stop_codon' score");
+            }
+
+            TSeqPos genomic_length = genomic_bsh.GetBioseqLength();
+            if(new_stop>=genomic_length) {  
+                return 0;
+            }
+            for(CTypeIterator<CSeq_interval> i(*aligned_genomic); i; ++i) {
+                if(plus) {
+                     if(i->GetTo()==stop){i->SetTo(new_stop); break; }
+                } else {
+                     if(i->GetFrom()==stop){i->SetFrom(new_stop); break; }
+                }
+            }
+        }
+        string trans="";
+        CSeqTranslator::Translate(*aligned_genomic, *scope, trans);
+
+        return m_StartCodon ? trans[0]=='M' : NStr::EndsWith(trans, "*");
     }
 
 
