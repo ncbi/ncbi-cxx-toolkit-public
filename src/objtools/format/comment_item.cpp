@@ -880,8 +880,9 @@ string s_HtmlWrapModelEvidenceName( const SModelEvidance& me )
     strm << "?report=graph";
     if( (me.span.first >= 0) && (me.span.second >= me.span.first) ) {
         const Int8 kPadAmount = 500;
-        strm << "&v=" << max<Int8>(me.span.first - kPadAmount, 1) 
-             << ":" << (me.span.second + kPadAmount); // okay if second number goes over end of sequence
+        // The "+1" is because we display 1-based to user and in URL
+        strm << "&v=" << max<Int8>(me.span.first + 1 - kPadAmount, 1) 
+             << ":" << (me.span.second + 1 + kPadAmount); // okay if second number goes over end of sequence
     }
     strm << "\">" << me.name << "</a>";
 
