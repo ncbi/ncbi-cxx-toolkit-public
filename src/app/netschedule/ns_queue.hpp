@@ -116,8 +116,9 @@ public:
     typedef list<pair<string, string> > TParameterList;
     void SetParameters(const SQueueParameters& params);
     TParameterList GetParameters() const;
-    int GetTimeout() const;
-    int GetRunTimeout() const;
+    time_t GetTimeout() const;
+    time_t GetRunTimeout() const;
+    time_t GetPendingTimeout() const;
     int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
     time_t GetBlacklistTime() const;
@@ -437,6 +438,7 @@ private:
                       const TNSBitVector &  jobs_to_cancel);
     time_t x_GetEstimatedJobLifetime(unsigned int   job_id,
                                      TJobStatus     status) const;
+    time_t x_GetSubmitTime(unsigned int  job_id);
 
 private:
     friend class CJob;
@@ -489,8 +491,8 @@ private:
     // Configurable queue parameters
     // When modifying this, modify all places marked with PARAMETERS
     mutable CRWLock              m_ParamLock;
-    int                          m_Timeout;         ///< Result exp. timeout
-    int                          m_RunTimeout;      ///< Execution timeout
+    time_t                       m_Timeout;         ///< Result exp. timeout
+    time_t                       m_RunTimeout;      ///< Execution timeout
     /// Its precision, set at startup only, not reconfigurable
     int                          m_RunTimeoutPrecision;
     /// How many attempts to make on different nodes before failure
@@ -503,6 +505,7 @@ private:
     unsigned                     m_MaxOutputSize;
     bool                         m_DenyAccessViolations;
     time_t                       m_WNodeTimeout;
+    time_t                       m_PendingTimeout;
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -549,13 +552,17 @@ private:
 // we lock m_ParamLock for reading. In cases where you need more than one
 // parameter, to provide consistency use CQueueParamAccessor, which is a smart
 // guard around the parameter block.
-inline int CQueue::GetTimeout() const
+inline time_t CQueue::GetTimeout() const
 {
     return m_Timeout;
 }
-inline int CQueue::GetRunTimeout()  const
+inline time_t CQueue::GetRunTimeout()  const
 {
     return m_RunTimeout;
+}
+inline time_t CQueue::GetPendingTimeout() const
+{
+    return m_PendingTimeout;
 }
 inline int CQueue::GetRunTimeoutPrecision() const
 {

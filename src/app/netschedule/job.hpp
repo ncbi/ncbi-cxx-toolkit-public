@@ -150,11 +150,13 @@ private:
 
 time_t  GetJobExpirationTime(time_t      last_touch,
                              TJobStatus  status,
+                             time_t      job_submit_time,
                              time_t      job_timeout,
                              time_t      job_run_timeout,
                              time_t      queue_timeout,
                              time_t      queue_run_timeout,
-                             time_t      event_time = 0);
+                             time_t      queue_pending_timeout,
+                             time_t      event_time);
 
 
 // Internal representation of a Job
@@ -319,11 +321,14 @@ public:
 
     time_t          GetExpirationTime(time_t  queue_timeout,
                                       time_t  queue_run_timeout,
-                                      time_t  event_time = 0) const
+                                      time_t  queue_pending_timeout,
+                                      time_t  event_time) const
     {
        return GetJobExpirationTime(m_LastTouch, m_Status,
+                                   GetSubmitTime(),
                                    m_Timeout, m_RunTimeout,
                                    queue_timeout, queue_run_timeout,
+                                   queue_pending_timeout,
                                    event_time);
     }
 

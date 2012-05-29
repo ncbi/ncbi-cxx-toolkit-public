@@ -118,12 +118,12 @@ public:
 
     string GetParamValue(unsigned int  n) const {
         switch (n) {
-        case 0:  return NStr::IntToString(m_Queue.m_Timeout);
+        case 0:  return NStr::NumericToString(m_Queue.m_Timeout);
         case 1:  return NStr::DoubleToString(m_Queue.m_NotifHifreqInterval);
         case 2:  return NStr::IntToString(m_Queue.m_NotifHifreqPeriod);
         case 3:  return NStr::IntToString(m_Queue.m_NotifLofreqMult);
         case 4:  return NStr::IntToString(m_Queue.m_DumpBufferSize);
-        case 5:  return NStr::IntToString(m_Queue.m_RunTimeout);
+        case 5:  return NStr::NumericToString(m_Queue.m_RunTimeout);
         case 6:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
         case 7:  return NStr::IntToString(m_Queue.m_FailedRetries);
         case 8:  return NStr::Int8ToString(m_Queue.m_BlacklistTime);

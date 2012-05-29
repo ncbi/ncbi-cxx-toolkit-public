@@ -214,10 +214,12 @@ string CJobEvent::GetField(int  index) const
 
 time_t  GetJobExpirationTime(time_t      last_touch,
                              TJobStatus  status,
+                             time_t      job_submit_time,
                              time_t      job_timeout,
                              time_t      job_run_timeout,
                              time_t      queue_timeout,
                              time_t      queue_run_timeout,
+                             time_t      queue_pending_timeout,
                              time_t      event_time)
 {
     time_t      last_update = event_time;
@@ -229,6 +231,19 @@ time_t  GetJobExpirationTime(time_t      last_touch,
         if (job_run_timeout != 0)
             return last_update + job_run_timeout;
         return last_update + queue_run_timeout;
+    }
+
+    if (status == CNetScheduleAPI::ePending) {
+        time_t      regular_expiration = last_update +
+                                         queue_timeout;
+        if (job_timeout != 0)
+            regular_expiration = last_update + job_timeout;
+        time_t      pending_expiration = job_submit_time +
+                                         queue_pending_timeout;
+
+        if (regular_expiration < pending_expiration)
+            return regular_expiration;
+        return pending_expiration;
     }
 
     if (job_timeout != 0)
@@ -705,6 +720,7 @@ void CJob::Print(CNetScheduleHandler &        handler,
 {
     time_t      timeout = m_Timeout;
     time_t      run_timeout = m_RunTimeout;
+    time_t      pending_timeout = queue.GetPendingTimeout();
 
     if (m_Timeout == 0)
         timeout = queue.GetTimeout();
@@ -712,7 +728,9 @@ void CJob::Print(CNetScheduleHandler &        handler,
         run_timeout = queue.GetRunTimeout();
 
     CTime       exp_time(GetExpirationTime(queue.GetTimeout(),
-                                           queue.GetRunTimeout()));
+                                           queue.GetRunTimeout(),
+                                           pending_timeout,
+                                           0));
     exp_time.ToLocalTime();
     CTime       touch_time(m_LastTouch);
     touch_time.ToLocalTime();
@@ -727,32 +745,36 @@ void CJob::Print(CNetScheduleHandler &        handler,
 
     if (m_Status == CNetScheduleAPI::eRunning ||
         m_Status == CNetScheduleAPI::eReading)
-        handler.WriteMessage("OK:erase_time: n/a (duration " +
-                             NStr::ULongToString(timeout) + " sec)");
+        handler.WriteMessage("OK:erase_time: n/a (timeout: " +
+                             NStr::ULongToString(timeout) +
+                             " sec, pending timeout: " +
+                             NStr::ULongToString(pending_timeout) + " sec)");
     else
-        handler.WriteMessage("OK:", "erase_time: " + exp_time.AsString() +
-                                    " (duration " +
-                                    NStr::ULongToString(timeout) + " sec)");
+        handler.WriteMessage("OK:erase_time: " + exp_time.AsString() +
+                             " (timeout: " +
+                             NStr::ULongToString(timeout) +
+                             " sec, pending timeout: " +
+                             NStr::ULongToString(pending_timeout) + " sec)");
 
     if (m_Status != CNetScheduleAPI::eRunning &&
         m_Status != CNetScheduleAPI::eReading) {
-        handler.WriteMessage("OK:run_expiration: n/a (duration " +
+        handler.WriteMessage("OK:run_expiration: n/a (timeout: " +
                              NStr::ULongToString(run_timeout) + " sec)");
-        handler.WriteMessage("OK:read_expiration: n/a (duration " +
+        handler.WriteMessage("OK:read_expiration: n/a (timeout: " +
                              NStr::ULongToString(run_timeout) + " sec)");
     } else {
         if (m_Status == CNetScheduleAPI::eRunning) {
             handler.WriteMessage("OK:", "run_expiration: " + exp_time.AsString() +
-                                        " (duration " +
+                                        " (timeout: " +
                                         NStr::ULongToString(run_timeout) + " sec)");
-            handler.WriteMessage("OK:read_expiration: n/a (duration " +
+            handler.WriteMessage("OK:read_expiration: n/a (timeout: " +
                                  NStr::ULongToString(run_timeout) + " sec)");
         } else {
             // Reading job
-            handler.WriteMessage("OK:run_expiration: n/a (duration " +
+            handler.WriteMessage("OK:run_expiration: n/a (timeout: " +
                                  NStr::ULongToString(run_timeout) + " sec)");
             handler.WriteMessage("OK:", "read_expiration: " + exp_time.AsString() +
-                                        " (duration " +
+                                        " (timeout: " +
                                         NStr::ULongToString(run_timeout) + " sec)");
         }
     }
@@ -769,7 +791,7 @@ void CJob::Print(CNetScheduleHandler &        handler,
 
         subm_exp_time.ToLocalTime();
         handler.WriteMessage("OK:", "subm_notif_expiration: " +
-                                    subm_exp_time.AsString() + " (duration " +
+                                    subm_exp_time.AsString() + " (timeout: " +
                                     NStr::IntToString(m_SubmNotifTimeout) + " sec)");
     }
     else

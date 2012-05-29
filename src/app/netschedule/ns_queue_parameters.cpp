@@ -52,6 +52,7 @@ static time_t           default_empty_lifetime = -1;
 static time_t           default_blacklist_time = 0;
 static int              default_run_timeout_precision = 3600;
 static time_t           default_wnode_timeout = 40;
+static time_t           default_pending_timeout = 604800;
 
 
 SQueueParameters::SQueueParameters() :
@@ -68,6 +69,7 @@ SQueueParameters::SQueueParameters() :
     max_output_size(kNetScheduleMaxDBDataSize),
     deny_access_violations(false),
     wnode_timeout(default_wnode_timeout),
+    pending_timeout(default_pending_timeout),
     run_timeout_precision(default_run_timeout_precision)
 {}
 
@@ -144,6 +146,9 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     wnode_timeout = GetIntNoErr("wnode_timeout", default_wnode_timeout);
     if (wnode_timeout <= 0)
         wnode_timeout = default_wnode_timeout;
+    pending_timeout = GetIntNoErr("pending_timeout", default_pending_timeout);
+    if (pending_timeout <= 0)
+        pending_timeout = default_pending_timeout;
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);
