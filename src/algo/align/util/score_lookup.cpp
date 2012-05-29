@@ -620,10 +620,20 @@ public:
 
     virtual bool IsInteger() const { return true; };
 
-    virtual double Get(const CSeq_align& align, CScope*) const
+    virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         if (align.GetSegs().IsSpliced()) {
             const CSpliced_seg& seg = align.GetSegs().GetSpliced();
+            bool score_precalculated=false;
+            double score = 0;
+            ITERATE (CSpliced_seg::TModifiers, it, seg.GetModifiers()) {
+                if (m_StartCodon
+                    ? (*it)->IsStart_codon_found() 
+                    : (*it)->IsStop_codon_found() ) {
+                    score_precalculated=true;
+                }
+            }
+            if(score_precalculated) {      
             ITERATE (CSpliced_seg::TModifiers, it, seg.GetModifiers()) {
                 if (m_StartCodon
                     ? ((*it)->IsStart_codon_found() &&
@@ -634,13 +644,101 @@ public:
                     return 1;
                 }
             }
-            return 0;
+            } else {
+// calculate score
+            bool calculated=false;
+
+            ///
+            /// complicated (copied from cds_internal_stops Get())
+            ///
+
+            /// first, generate a gene model
+            CFeatureGenerator generator(*scope);
+            generator.SetFlags(CFeatureGenerator::fDefaults |
+                               CFeatureGenerator::fGenerateLocalIds);
+            generator.SetAllowedUnaligned(10);
+
+            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+            CSeq_annot annot;
+            CBioseq_set bset;
+            generator.ConvertAlignToAnnot(*clean_align, annot, bset);
+
+            /// extract the CDS and translate it
+            CRef<CSeq_feat> cds;
+            ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
+                if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
+                    cds = *it;
+                    break;
+                }
+            }
+
+            if (cds) {
+                if(!m_StartCodon) {
+// extend location by a codon beyond stop
+                    TSeqPos stop = cds->GetLocation().GetStop(eExtreme_Biological);
+                    bool plus = cds->GetLocation().GetStrand() != eNa_strand_minus;
+                    TSeqPos new_stop=stop+(plus?3:-3);
+                    TSeqPos genomic_length=0;
+                    CBioseq_Handle bsh = scope->GetBioseqHandle(*(cds->GetLocation().GetId()));
+                    if (bsh) {
+                        genomic_length = bsh.GetBioseqLength();
+                    } else {
+                        NCBI_THROW(CSeqalignException, eUnsupported,
+                                   "could not get nucleotide length for 'stop_codon' score");
+                    }
+                    if(new_stop>=genomic_length) {  
+                        score=0 ; calculated = true;
+                    }
+                    for(CTypeIterator<CSeq_interval> i(cds->SetLocation()); i; ++i) {
+                        if(plus) {
+                             if(i->GetTo()==stop){i->SetTo(new_stop); break; }
+                        } else {
+                             if(i->GetFrom()==stop){i->SetFrom(new_stop); break; }
+                        }
+                    }
+                }
+                if(!calculated) {
+                    string trans="";
+                    CSeqTranslator::Translate(*cds, *scope, trans);
+                    if(m_StartCodon) {
+                        if ( !cds->GetLocation().IsPartialStart(eExtreme_Biological) &&
+// need a better function to determine if it's a alternative start for gcode 11 , etc
+                            trans[0]=='M') {
+                            score=1; calculated=true;
+                        } else {
+                            score=0; calculated=true;
+                        }
+                    } else {
+                        if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
+                            NStr::EndsWith(trans, "*")) { // are only stop codons NEXT to translation count
+                            score=1; calculated=true;
+                        } else {
+                            score=0; calculated=true;
+                        }
+                    }
+                }
+
+            }
+            if(!calculated) {
+                NCBI_THROW(CSeqalignException, eUnsupported,
+                           "'start_codon' or 'stop_codon' score could not be calculated for unknown reason");
+            }
+/*
+// obviously cannot change alignment here, needs to be moved somewhere
+            CRef<CSpliced_seg_modifier> mod(new CSpliced_seg_modifier);
+            if(m_StartCodon) mod->SetStart_codon_found(score>0?true:false);
+            else             mod->SetStop_codon_found(score>0?true:false);
+            seg.SetModifiers().push_back(mod); 
+*/
+            }
+            return score;
         }
 
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "'start_codon' and 'stop_codon' scores valid only for "
                    "Spliced-seg alignments");
     }
+
 
 private:
     bool m_StartCodon;
