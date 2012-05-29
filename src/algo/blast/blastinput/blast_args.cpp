@@ -1803,19 +1803,20 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddFlag(kArgShowGIs, "Show NCBI GIs in deflines?", true);
 
     // number of one-line descriptions to display
-    arg_desc.AddDefaultKey(kArgNumDescriptions, "int_value",
+    arg_desc.AddOptionalKey(kArgNumDescriptions, "int_value",
                  "Number of database sequences to show one-line "
-                 "descriptions for",
-                 CArgDescriptions::eInteger,
-                 NStr::IntToString(m_DfltNumDescriptions));
+                 "descriptions for\n"
+    		     "Not applicable for outfmt > 4\n"
+    			 "Default = `"+ NStr::IntToString(m_DfltNumDescriptions)+ "'",
+                 CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgNumDescriptions, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
     // number of alignments per DB sequence
-    arg_desc.AddDefaultKey(kArgNumAlignments, "int_value",
-                 "Number of database sequences to show alignments for",
-                 CArgDescriptions::eInteger, 
-                 NStr::IntToString(m_DfltNumAlignments));
+    arg_desc.AddOptionalKey(kArgNumAlignments, "int_value",
+                 "Number of database sequences to show alignments for\n"
+                 "Default = `" + NStr::IntToString(m_DfltNumAlignments) + "'",
+                 CArgDescriptions::eInteger );
     arg_desc.SetConstraint(kArgNumAlignments, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
@@ -1825,7 +1826,9 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     /// Hit list size, listed here for convenience only
     arg_desc.SetCurrentGroup("Restrict search or results");
     arg_desc.AddOptionalKey(kArgMaxTargetSequences, "num_sequences",
-                            "Maximum number of aligned sequences to keep",
+                            "Maximum number of aligned sequences to keep \n"
+    						"Not applicable for outfmt <= 4\n"
+    						"Default = `" + NStr::IntToString(BLAST_HITLIST_SIZE) + "'",
                             CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgMaxTargetSequences,
                            new CArgAllowValuesGreaterThanOrEqual(1));
@@ -1888,60 +1891,6 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
     }
 }
 
-void 
-CFormattingArgs::x_IssueWarningsOnIncompatibleOptions(const CArgs& args) const
-{
-    // Issue warnings, per SB-830
-    bool max_target_seqs_set = false;
-    bool num_descr_set = false;
-    bool num_alignments_set = false;
-    typedef vector< CRef<CArgValue> > TArgs;
-    TArgs cmdline_args = args.GetAll();
-    ITERATE(TArgs, arg, cmdline_args) {
-        if ((*arg)->GetName() == kArgMaxTargetSequences) {
-            max_target_seqs_set = true;
-            continue;
-        }
-        if ((*arg)->GetName() == kArgNumAlignments) {
-            num_alignments_set = true;
-            continue;
-        }
-        if ((*arg)->GetName() == kArgNumDescriptions) {
-            num_descr_set = true;
-            continue;
-        }
-    }
-    
-    switch (m_OutputFormat) {
-    case ePairwise:
-    case eQueryAnchoredIdentities:
-    case eQueryAnchoredNoIdentities:
-    case eFlatQueryAnchoredIdentities:
-    case eFlatQueryAnchoredNoIdentities:
-        if (max_target_seqs_set) {
-            LOG_POST(Warning << kArgMaxTargetSequences << " should not be set "
-                     "with " << kArgOutputFormat << " " << (int)m_OutputFormat);
-        }
-        break;
-    case eXml: 
-    case eTabular:
-    case eTabularWithComments:
-    case eAsnText:
-    case eAsnBinary:
-    case eCommaSeparatedValues:
-    case eArchiveFormat:
-        if ((num_alignments_set && (m_NumAlignments != m_DfltNumAlignments)) ||
-            (num_descr_set && (m_NumDescriptions != m_DfltNumDescriptions))) {
-            LOG_POST(Warning << "WARNING: Please use -" << kArgMaxTargetSequences 
-                     << " to control the number of hits for output format "
-                     << (int)m_OutputFormat << ". -" << kArgNumAlignments 
-                     << " and -" << kArgNumDescriptions << " are ignored when " 
-                     << "output format " << (int)m_OutputFormat << " is used.");
-        }
-    case eEndValue:
-        break;
-    }
-}
 
 void
 CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
@@ -1950,62 +1899,70 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     ParseFormattingString(args, m_OutputFormat, m_CustomOutputFormatSpec);
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);
 
-    if (args[kArgNumDescriptions]) {
-        m_NumDescriptions = args[kArgNumDescriptions].AsInteger();
-    } 
-
-    if (args[kArgNumAlignments]) {
-        m_NumAlignments = args[kArgNumAlignments].AsInteger();
-    }
-
-    TSeqPos hitlist_size =0; // opt.GetHitlistSize();
-    if (args[kArgMaxTargetSequences]) {
-        hitlist_size = args[kArgMaxTargetSequences].AsInteger();
-        if (hitlist_size > 0 && m_OutputFormat <= eFlatQueryAnchoredNoIdentities) {
-            /* Only non-default values will be overriden */
-            string warnings = CalculateFormattingParams(hitlist_size,
-                      m_NumDescriptions != kDfltArgNumDescriptions 
-                      ? &m_NumDescriptions : 0,
-                      m_NumAlignments != kDfltArgNumAlignments 
-                      ? &m_NumAlignments : 0);
-            if ( !warnings.empty() ) {
-                ERR_POST(Warning << warnings);
-            }
-        }
-    }
-
-    if (m_NumDescriptions == 0 && m_NumAlignments == 0 && hitlist_size == 0) {
-        string msg("Either -");
-        msg += kArgMaxTargetSequences + ", -";
-        msg += kArgNumDescriptions + ", or -" + kArgNumAlignments + " must ";
-        msg += "be non-zero";
-        NCBI_THROW(CInputException, eInvalidInput, msg);
-    }
-    else {
-        TSeqPos df_hitlist_size = opt.GetHitlistSize();
-        if (hitlist_size != 0 || 
-            df_hitlist_size <= MIN(m_NumDescriptions, m_NumAlignments)) { 
-            if (hitlist_size == 0) hitlist_size = df_hitlist_size;
-            opt.SetHitlistSize(hitlist_size);
-            // alignments and descriptions are set here so that limiting is done
-            // correctly for tabular output
-            m_NumDescriptions = MIN(m_NumDescriptions, 
-                                (TSeqPos)opt.GetHitlistSize());
-            m_NumAlignments = MIN(m_NumAlignments, 
-                              (TSeqPos)opt.GetHitlistSize());
-        } else {
-            if (m_OutputFormat <= eFlatQueryAnchoredNoIdentities) {
-                opt.SetHitlistSize(MAX(m_NumDescriptions, m_NumAlignments));
-            } else {
-                // These formats do not have sections just for descriptions or alignments.
-                opt.SetHitlistSize(MIN(m_NumDescriptions, m_NumAlignments));
-            }
-        }
-    }
-
     m_Html = static_cast<bool>(args[kArgProduceHtml]);
-    
-    x_IssueWarningsOnIncompatibleOptions(args);
+
+    // Default hitlist size 500, value can be changed if import search strategy is used
+    int hitlist_size = opt.GetHitlistSize();
+
+    // To preserve hitlist size in import search strategy > 500,
+    // we need to increase the  num_ descriptions and num_alignemtns
+    if(hitlist_size > BLAST_HITLIST_SIZE )
+    {
+    	if(!args[kArgNumDescriptions] && !args[kArgNumAlignments] &&
+    	   (m_OutputFormat <= eFlatQueryAnchoredNoIdentities)) {
+    		m_NumDescriptions = hitlist_size;
+    		m_NumAlignments = hitlist_size/ 2;
+    		return;
+    	}
+    }
+
+    if(m_OutputFormat <= eFlatQueryAnchoredNoIdentities) {
+    	 if (args[kArgMaxTargetSequences]) {
+    		 ERR_POST(Warning << "The parameter -max_target_seqs is ignored for "
+    				    "output formats, 0,1,2,3. Use -num_descriptions "
+    				    "and -num_alignments to control output");
+    	 }
+
+    	 m_NumDescriptions = m_DfltNumDescriptions;
+    	 m_NumAlignments = m_DfltNumAlignments;
+
+    	 if (args[kArgNumDescriptions]) {
+    	    m_NumDescriptions = args[kArgNumDescriptions].AsInteger();
+    	 }
+
+    	if (args[kArgNumAlignments]) {
+    		m_NumAlignments = args[kArgNumAlignments].AsInteger();
+    	}
+
+    	// The If clause is for handling import_search_strategy hitlist size < 500
+    	// We want to preserve the hitlist size in iss if no formatting input is entered in cmdline
+    	// If formmating option(s) is entered than the iss hitlist size is overridden.
+    	if (args[kArgNumDescriptions] || args[kArgNumAlignments]) {
+    		hitlist_size = max(m_NumDescriptions, m_NumAlignments);
+    	}
+    }
+    else
+    {
+    	if (args[kArgNumDescriptions]) {
+   		 ERR_POST(Warning << "The parameter -num_descriptions is ignored for "
+   				    		 "output formats > 4 . Use -max_target_seqs "
+   				             "to control output");
+    	}
+
+    	if (args[kArgMaxTargetSequences]) {
+    		hitlist_size = args[kArgMaxTargetSequences].AsInteger();
+    	}
+    	else if (args[kArgNumAlignments]) {
+    		hitlist_size = args[kArgNumAlignments].AsInteger();
+    	}
+
+    	m_NumDescriptions = hitlist_size;
+    	m_NumAlignments = hitlist_size;
+    }
+
+    opt.SetHitlistSize(hitlist_size);
+
+    return;
 }
 
 void
@@ -2506,6 +2463,7 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
     can_override.insert(kArgOutputFormat);
     can_override.insert(kArgNumDescriptions);
     can_override.insert(kArgNumAlignments);
+    can_override.insert(kArgMaxTargetSequences);
     can_override.insert(kArgRemote);
     can_override.insert(kArgNumThreads);
     can_override.insert(kArgInputSearchStrategy);
@@ -2515,12 +2473,6 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
 
     // this stores the arguments (and their defaults) that cannot be overriden
     map<string, string> has_defaults;
-    has_defaults[kArgNumDescriptions] =
-        NStr::SizetToString(kDfltArgNumDescriptions);
-    has_defaults[kArgNumAlignments] = 
-        NStr::SizetToString(kDfltArgNumAlignments);
-    has_defaults[kArgOutputFormat] = 
-        NStr::IntToString(kDfltArgOutputFormat);
     has_defaults[kArgCompBasedStats] = kDfltArgCompBasedStats;
     // FIX the line below for igblast, and add igblast options
     has_defaults[kArgEvalue] = NStr::DoubleToString(BLAST_EXPECT_VALUE);

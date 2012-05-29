@@ -933,8 +933,6 @@ private:
     /// comma-separated value (populated if applicable)
     string m_CustomOutputFormatSpec;
 
-    /// Issues warnings that can only be caught at runtime
-    void x_IssueWarningsOnIncompatibleOptions(const CArgs& args) const;
 };
 
 /// Argument class to collect multi-threaded arguments
