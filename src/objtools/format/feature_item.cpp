@@ -1525,6 +1525,23 @@ ENa_strand s_GeneSearchNormalizeLoc( CBioseq_Handle top_bioseq_handle,
     CRef<CSeq_loc> &loc, const TSeqPos circular_length,
     EGeneSearchLocOpt opt = 0 )
 {
+    // remove far parts first, if requested
+    if( top_bioseq_handle && (opt & fGeneSearchLocOpt_RemoveFar) != 0 ) {
+        CRef<CSeq_loc> new_loc( new CSeq_loc );
+        CSeq_loc_mix::Tdata &new_loc_parts = new_loc->SetMix().Set();
+
+        CSeq_loc_CI loc_iter( *loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological );
+        for( ; loc_iter; ++loc_iter ) {
+            const CSeq_id& loc_id = loc_iter.GetSeq_id();
+            if( top_bioseq_handle.IsSynonym(loc_id) ) {
+                CRef<CSeq_loc> new_part( new CSeq_loc );
+                new_part->Assign( *loc_iter.GetRangeAsSeq_loc() );
+                new_loc_parts.push_back( new_part );
+            } 
+        }
+        loc = new_loc;
+    }
+
     CRef<CSeq_loc> new_loc( new CSeq_loc );
     CSeq_loc_mix::Tdata &new_loc_parts = new_loc->SetMix().Set();
 
@@ -1535,16 +1552,12 @@ ENa_strand s_GeneSearchNormalizeLoc( CBioseq_Handle top_bioseq_handle,
         // parts that are on far bioseqs don't count as part of strandedness (e.g. as in X17229)
         // ( CR956646 is another good test case since its near parts 
         //   are minus strand and far are plus on the "GNAS" gene )
-        if( top_bioseq_handle ) {
+        if( top_bioseq_handle && (opt & fGeneSearchLocOpt_RemoveFar) == 0 ) { 
             const CSeq_id& loc_id = loc_iter.GetSeq_id();
             if( top_bioseq_handle.IsSynonym(loc_id) ) {
                 if( original_strand == eNa_strand_other) {
                     // strand should have strandedness of first near part
                     original_strand = loc_iter.GetStrand();
-                }
-            } else {
-                if( (opt & fGeneSearchLocOpt_RemoveFar) != 0 ) {
-                    continue;
                 }
             }
         } else {
