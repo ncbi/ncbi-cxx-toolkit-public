@@ -665,9 +665,127 @@ void SMakeProjectT::CreateFullPathes(const string&      dir,
     }
 }
 
+void  SMakeProjectT::VerifyLibDepends(
+     const list<CProjKey>&  depends_ids, const string& mkname)
+{
+    list<string> warnings;
+    list<string> original;
+    list<string> duplicates;
+    for(list<CProjKey>::const_iterator p = depends_ids.begin();
+        p != depends_ids.end(); ++p) {
+        bool duplicate=false;
+        for(list<CProjKey>::const_iterator i = p;
+            ++i != depends_ids.end();) {
+            if (*i == *p) {
+                duplicates.push_back(i->Id());
+                duplicate=true;
+                break;
+            }
+        }
+        original.push_back(p->Id());
+    }
+    if (!duplicates.empty()) {
+        warnings.push_back("duplicate dependencies: " + NStr::Join(duplicates,","));
+    }
+    CProjBulderApp& app(GetApp());
+#if 1
+    set<string> projlibs;
+    bool fix = !duplicates.empty();
+    if (!app.m_GraphDepPrecedes.empty()) {
+        set<string> libsofar;
+        for(list<CProjKey>::const_iterator p = depends_ids.begin();
+            p != depends_ids.end(); ++p) {
+            list<string> wrong;
+            bool obsolete=false;
+            set<string>& precedes(app.m_GraphDepPrecedes[p->Id()]);
+            ITERATE(set<string>, s, libsofar) {
+                if (precedes.find(*s) != precedes.end()) {
+                    wrong.push_back(*s);
+                }
+                if (app.m_GraphDepIncludes[p->Id()].find(*s) != app.m_GraphDepIncludes[p->Id()].end()) {
+                    fix=true;
+                    warnings.push_back("obsolete library: " + *s + " already included into " + p->Id());
+                }
+                if (app.m_GraphDepIncludes[*s].find(p->Id()) != app.m_GraphDepIncludes[*s].end()) {
+                    fix=true;
+                    obsolete = true;
+                    warnings.push_back("obsolete library: " + p->Id() + " already included into " + *s);
+                }
+            }
+            if (!wrong.empty()) {
+                fix=true;
+                warnings.push_back("wrong library order: " + p->Id() + " should precede " + NStr::Join(wrong,","));
+            }
+            libsofar.insert(p->Id());
+            if (!obsolete) {
+                projlibs.insert(p->Id());
+            }
+        }
+    }
+    if (fix && !app.m_GraphDepRank.empty())
+    {
+        vector< list<string> > recommend;
+        for (set<string>::const_iterator p= projlibs.begin(); p != projlibs.end(); ++p) {
+            size_t rank = app.m_GraphDepRank[*p];
+            while (recommend.size() < rank+1) {
+                list<string> t;
+                recommend.push_back(t);
+            }
+            recommend[rank].push_back(*p);
+        }
+        list<string> advice;
+        for (size_t a= recommend.size(); a!= 0; --a) {
+            advice.insert(advice.end(), recommend[a-1].begin(), recommend[a-1].end());
+        }
+        warnings.push_back("present     library order: " + NStr::Join(original,","));
+        warnings.push_back("recommended library order: " + NStr::Join(advice,","));
+    }
+    if (!warnings.empty()) {
+        warnings.push_front("====== Library order warnings ======");
+        PTB_WARNING_EX(mkname,ePTB_InvalidMakefile,
+            NStr::Join(warnings,"\n"));
+    }
+#else
+/*
+    this compares dependency rank,
+    BUT rank does not mean that one library really needs another one;
+    maybe, they are just in different dependency branches.
+    That is, while, in general, it is good to place higher rank libs first,
+    in reality, it is not necessarily a problem.
+
+    ALSO, this is very slow, most likely because of large number of warning generated
+*/
+    if (!app.m_GraphDepRank.empty()) {
+        set<string> libsofar;
+        for(list<CProjKey>::const_iterator p = depends_ids.begin();
+            p != depends_ids.end(); ++p) {
+            list<string> wrong;
+            ITERATE(set<string>, s, libsofar) {
+                if (app.m_GraphDepRank[*s] < app.m_GraphDepRank[p->Id()]) {
+                    wrong.push_back(*s);
+                }
+                if (app.m_GraphDepIncludes[p->Id()].find(*s) != app.m_GraphDepIncludes[p->Id()].end()) {
+                    PTB_WARNING_EX(mkname,ePTB_InvalidMakefile,
+                        "obsolete library: " << *s << " already included into " << p->Id());
+                }
+                if (app.m_GraphDepIncludes[*s].find(p->Id()) != app.m_GraphDepIncludes[*s].end()) {
+                    PTB_WARNING_EX(mkname,ePTB_InvalidMakefile,
+                        "obsolete library: " << p->Id() << " already included into " << *s);
+                }
+            }
+            if (!wrong.empty()) {
+                PTB_WARNING_EX(mkname,ePTB_InvalidMakefile,
+                    "wrong library order: " << p->Id() << " should precede " << NStr::Join(wrong,","));
+            }
+            libsofar.insert(p->Id());
+        }
+    }
+#endif
+}
 
 void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
-                                      list<CProjKey>*     depends_ids)
+                                      list<CProjKey>*     depends_ids,
+                                      const string* mkname)
 {
     list<string> depends_libs;
     SMakeProjectT::ConvertLibDependsMacro(depends, depends_libs);
@@ -694,6 +812,11 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
             }
         }
     }
+
+    if (mkname != NULL) {
+        VerifyLibDepends(*depends_ids, *mkname);
+    }
+
     depends_ids->sort();
     depends_ids->unique();
 }
@@ -896,14 +1019,12 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     list<string> adj_depends(depends);
     copy(added_depends.begin(), 
          added_depends.end(), back_inserter(adj_depends));
-    adj_depends.sort();
-    adj_depends.unique();
 
     PLibExclude pred(proj_name, excluded_depends);
     EraseIf(adj_depends, pred);
 
     list<CProjKey> depends_ids;
-    SMakeProjectT::ConvertLibDepends(adj_depends, &depends_ids);
+    SMakeProjectT::ConvertLibDepends(adj_depends, &depends_ids, &applib_mfilepath);
 
     list<CProjKey> unconditional_depends_ids;
     k = m->second.m_Contents.find("USR_DEP");
@@ -1301,7 +1422,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                 }
             }
             list<CProjKey> dll_depends_ids;
-            SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids);
+            SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids, &applib_mfilepath);
             copy(dll_depends_ids.begin(), 
                     dll_depends_ids.end(), 
                     back_inserter(depends_ids));
@@ -1517,7 +1638,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("DEPENDENCIES");
     if (k != m->second.m_Contents.end()) {
         const list<string> depends = k->second;
-        SMakeProjectT::ConvertLibDepends(depends, &depends_ids);
+        SMakeProjectT::ConvertLibDepends(depends, &depends_ids, &applib_mfilepath);
     }
 
     list<string> requires;

@@ -2203,7 +2203,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     PTB_INFO("Project tree root: " << m_Root);
 
     // all possible project tags
-    const string& tagsfile = CDirEntry::ConvertToOSPath(
+    string tagsfile = CDirEntry::ConvertToOSPath(
         GetConfig().Get("ProjectTree", "ProjectTags"));
     if (!tagsfile.empty()) {
         string fileloc(CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, tagsfile));
@@ -2212,9 +2212,19 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         }
         LoadProjectTags(fileloc);
     }
+
+    //dependencies
+    string depsfile = FindDepGraph(m_ProjectTreeInfo->m_Root);
+    if (depsfile.empty() && !m_ExtSrcRoot.empty()) {
+        depsfile = FindDepGraph(m_ExtSrcRoot);
+    }
+    if (!depsfile.empty()) {
+        PTB_INFO("Library dependencies graph: " << depsfile);
+        LoadDepGraph(depsfile);
+    }
     
     /// <include> branch of tree
-    const string& include = GetConfig().Get("ProjectTree", "include");
+    string include = GetConfig().Get("ProjectTree", "include");
     m_ProjectTreeInfo->m_Include = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   include);
@@ -2223,7 +2233,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     
 
     /// <src> branch of tree
-    const string& src = GetConfig().Get("ProjectTree", "src");
+    string src = GetConfig().Get("ProjectTree", "src");
     m_ProjectTreeInfo->m_Src = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   src);
@@ -2240,7 +2250,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src, subtree));
 
     /// <compilers> branch of tree
-    const string& compilers = GetConfig().Get("ProjectTree", "compilers");
+    string compilers = GetConfig().Get("ProjectTree", "compilers");
     m_ProjectTreeInfo->m_Compilers = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
                                   compilers);
@@ -2249,7 +2259,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
                    (m_ProjectTreeInfo->m_Compilers);
 
     /// ImplicitExcludedBranches - all subdirs will be excluded by default
-    const string& implicit_exclude_str 
+    string implicit_exclude_str 
         = GetConfig().Get("ProjectTree", "ImplicitExclude");
     list<string> implicit_exclude_list;
     NStr::Split(implicit_exclude_str, 
@@ -2264,7 +2274,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     }
 
     /// <projects> branch of tree (scripts\projects)
-    const string& projects = CDirEntry::ConvertToOSPath(
+    string projects = CDirEntry::ConvertToOSPath(
         GetConfig().Get("ProjectTree", "projects"));
     m_ProjectTreeInfo->m_Projects = 
             CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
@@ -2432,6 +2442,86 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
     m_RegisteredProjectTags.insert("dll");
     m_RegisteredProjectTags.insert("public");
     m_RegisteredProjectTags.insert("internal");
+}
+
+string CProjBulderApp::FindDepGraph(const string& root) const
+{
+    list<string> locations;
+    string locstr(GetConfig().Get("ProjectTree", "DepGraph"));
+    NStr::Split(locstr, LIST_SEPARATOR, locations);
+    for (list<string>::const_iterator l = locations.begin(); l != locations.end(); ++l) {
+        CDirEntry fileloc(CDirEntry::ConcatPath(root,CDirEntry::ConvertToOSPath(*l)));
+        if (fileloc.Exists() && fileloc.IsFile()) {
+            return fileloc.GetPath();
+        }
+    }
+    return kEmptyStr;
+}
+
+void   CProjBulderApp::LoadDepGraph(const string& filename)
+{
+    CNcbiIfstream ifs(filename.c_str(), IOS_BASE::in);
+    if ( ifs.is_open() ) {
+        string line;
+        while ( NcbiGetlineEOL(ifs, line) ) {
+            if (line.empty() || line[0] == '#') {
+                continue;
+            }
+            list<string> values;
+            NStr::Split(line, " ", values);
+            if (values.size() > 2) {
+                list<string>::const_iterator l= values.begin();
+                string first  = *l++;
+                string second = *l++;
+                string third  = *l++;
+                if (second == "includes") {
+                    m_GraphDepIncludes[first].insert(third);
+                } else if (second == "needs") {
+                    m_GraphDepPrecedes[first].insert(third);
+                }
+            }
+        }
+    }
+
+    vector< set<string> > graph;
+    for (map<string, set<string> >::const_iterator d= m_GraphDepPrecedes.begin();
+            d!= m_GraphDepPrecedes.end(); ++d) {
+        InsertDep(graph, d->first);
+    }
+    for (size_t s= 0; s<graph.size(); ++s) {
+        for (set<string>::const_iterator l = graph[s].begin(); l != graph[s].end(); ++l) {
+            m_GraphDepRank[*l] = s;
+        }
+    }
+}
+
+void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep)
+{
+    const set<string>& dependents = m_GraphDepPrecedes[dep];
+    size_t graphset=0;
+    for (set<string>::const_iterator d = dependents.begin(); d != dependents.end(); ++d) {
+        for (bool found=false; !found; ) {
+            for (size_t s= 0; !found && s<graph.size(); ++s) {
+                if (graph[s].find(*d) != graph[s].end()) {
+                    graphset = max(graphset,s);
+                    found = true;
+                }
+            }
+            if (!found) {
+                InsertDep(graph, *d);
+            }
+        }
+    }
+    if (!dependents.empty()) {
+        ++graphset;
+    }
+    if (graphset < graph.size()) {
+        graph[graphset].insert(dep);
+    } else {
+        set<string> t;
+        t.insert(dep);
+        graph.push_back(t);
+    }
 }
 
 string CProjBulderApp::ProcessLocationMacros(string raw_data)

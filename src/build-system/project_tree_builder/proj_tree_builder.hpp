@@ -129,8 +129,12 @@ struct SMakeProjectT
 
     static bool   IsUserProjFile          (const string& name);
 
+    static void   VerifyLibDepends       ( const list<CProjKey>&  depends_ids,
+                                           const string& mkname);
+
     static void   ConvertLibDepends       (const list<string>& depends_libs, 
-                                           list<CProjKey>*     depends_ids);
+                                           list<CProjKey>*     depends_ids,
+                                           const string* mkname = NULL);
 
     static void   ConvertLibDependsMacro  (const list<string>& depends, 
                                            list<string>& depends_libs);

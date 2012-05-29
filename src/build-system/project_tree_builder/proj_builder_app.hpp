@@ -139,6 +139,9 @@ public:
     string m_CustomConfFile;
     CSimpleMakeFileContents m_CustomConfiguration;
     map<string,string>  m_CompositeProjectTags;
+    map<string, set<string> >  m_GraphDepIncludes;
+    map<string, set<string> >  m_GraphDepPrecedes;
+    map<string, size_t >  m_GraphDepRank;
 
 public:
 
@@ -188,7 +191,6 @@ public:
 
     string GetProjectTreeRoot(void) const;
     bool   IsAllowedProjectTag(const CProjItem& project, const string* filter = NULL) const;
-    void   LoadProjectTags(const string& filename);
     string ProcessLocationMacros(string data);
     bool IsScanningWholeTree(void) const {return m_ScanningWholeTree;}
     void SetFail(int exit_code=1) {m_ExitCode=exit_code;}
@@ -204,6 +206,11 @@ public:
     void SetConfFileData(const string& src, const string& dest);
     
 private:
+    void    LoadProjectTags(const string& filename);
+    string  FindDepGraph(const string& root) const;
+    void    LoadDepGraph(const string& filename);
+    void  InsertDep(vector< set<string> >& graph, const string& dep);
+
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
     void    GenerateMsvcProjects(CProjectItemsTree& projects_tree);
     void    GenerateMacProjects(CProjectItemsTree& projects_tree);
