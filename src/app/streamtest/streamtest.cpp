@@ -46,6 +46,8 @@
 #include <objects/seqset/gb_release_file.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objects/valerr/ValidErrItem.hpp>
+#include <objects/valerr/ValidError.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -57,6 +59,7 @@
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/validator/validator.hpp>
 #include <objtools/writers/agp_write.hpp>
 
 #include <algo/align/prosplign/prosplign.hpp>
@@ -64,6 +67,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
+USING_SCOPE(validator);
 
 #include "process.hpp"
 #include "process_scoped.hpp"
@@ -77,6 +81,7 @@ USING_SCOPE(sequence);
 #include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
 #include "process_title.hpp"
+#include "process_validate.hpp"
 #include "presenter.hpp"
 #include "presenter_releasefile.hpp"
 #include "presenter_seqset.hpp"
@@ -151,16 +156,17 @@ void CStreamTestApp::Init()
         CArgDescriptions::eString );
      arg_desc->SetConstraint( "test", &(*new CArgAllow_Strings,
                                         "null",
+                                        "agpwrite",
                                         "cleanup",
                                         "defline",
                                         "eutils",
                                         "fasta",
                                         "gene-overlap",
+                                        "indexed_title",
                                         "macrotest",
                                         "prosplign",
-                                        "agpwrite",
                                         "title",
-                                        "indexed_title"));
+                                        "validate"));
     
     arg_desc->AddDefaultKey( "options", 
         "Options",
@@ -249,6 +255,9 @@ CStreamTestApp::GetProcess(
     if ( testcase == "null" ) {
         pProcess = new CNullProcess;
     }
+    if ( testcase == "agpwrite" ) {
+        pProcess = new CAgpwriteProcess( args["options"].AsString() );
+    }
     if ( testcase == "cleanup" ) {
         pProcess = new CCleanupProcess;
     }
@@ -264,20 +273,20 @@ CStreamTestApp::GetProcess(
     if ( testcase == "gene-overlap" ) {
         pProcess = new CGeneOverlapProcess;
     }
+    if ( testcase == "indexed_title" ) {
+        pProcess = new CTitleProcess (true);
+    }
     if ( testcase == "macrotest" ) {
         pProcess = new CMacroTestProcess;
     }
     if ( testcase == "prosplign" ) {
         pProcess = new CProsplignProcess;
     }
-    if ( testcase == "agpwrite" ) {
-        pProcess = new CAgpwriteProcess( args["options"].AsString() );
-    }
     if ( testcase == "title" ) {
         pProcess = new CTitleProcess;
     }
-    if ( testcase == "indexed_title" ) {
-        pProcess = new CTitleProcess (true);
+    if ( testcase == "validate" ) {
+        pProcess = new CValidateProcess;
     }
     return pProcess;
 }
