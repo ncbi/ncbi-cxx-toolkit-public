@@ -3667,7 +3667,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNAV	s	Museo Naturalistico-Archeologico",
 "MNB	s	Museum fuer Naturkunde der Humboldt-Universitaet",
 "MNCE	s	Museu de Historia Natural Capao da Embuia",
-"MNCN	s	Museo Nacional de Ciencias Naturales",
+"MNCN	sb	Museo Nacional de Ciencias Naturales",
 "MNCR	s	Museo Nacional de Costa Rica",
 "MND	s	Museum Natura Docet",
 "MNDG	s	Museo Nacional \"David J. Guzman\"",
