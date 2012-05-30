@@ -156,6 +156,7 @@ def main():
     nsProc = Popen( nsCmdLine, shell = True, stdout = PIPE, stderr = PIPE )
 
     time.sleep( 10 )
+    nsProc.wait()
 
     crashProcs = []
     for index in xrange( numberOfQueues ):
