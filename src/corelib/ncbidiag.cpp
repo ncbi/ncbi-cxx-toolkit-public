@@ -54,6 +54,10 @@
 #  include <sys/utsname.h>
 #endif
 
+#ifdef NCBI_OS_LINUX
+# include <sys/prctl.h>
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   Corelib_Diag
 
@@ -5490,7 +5494,7 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
 class CAsyncDiagThread : public CThread
 {
 public:
-    CAsyncDiagThread(void);
+    CAsyncDiagThread(const string& thread_suffix);
     virtual ~CAsyncDiagThread(void);
 
     virtual void* Main(void);
@@ -5510,6 +5514,7 @@ public:
     CSemaphore m_DequeueSem;
 #endif
     deque<SDiagMessage*> m_MsgQueue;
+    string m_ThreadSuffix;
 };
 
 
@@ -5531,9 +5536,15 @@ CAsyncDiagHandler::~CAsyncDiagHandler(void)
 }
 
 void
+CAsyncDiagHandler::SetCustomThreadSuffix(const string& suffix)
+{
+    m_ThreadSuffix = suffix;
+}
+
+void
 CAsyncDiagHandler::InstallToDiag(void)
 {
-    m_AsyncThread = new CAsyncDiagThread();
+    m_AsyncThread = new CAsyncDiagThread(m_ThreadSuffix);
     m_AsyncThread->AddReference();
     try {
         m_AsyncThread->Run();
@@ -5608,14 +5619,15 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 }
 
 
-CAsyncDiagThread::CAsyncDiagThread(void)
+CAsyncDiagThread::CAsyncDiagThread(const string& thread_suffix)
     : m_NeedStop(false),
       m_CntWaiters(0),
-      m_SubHandler(NULL)
+      m_SubHandler(NULL),
 #ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
     , m_QueueSem(0, 100)
-    , m_DequeueSem(0, 10000000)
+    , m_DequeueSem(0, 10000000),
 #endif
+      m_ThreadSuffix(thread_suffix)
 {
     m_MsgsInQueue.Set(0);
 }
@@ -5626,6 +5638,14 @@ CAsyncDiagThread::~CAsyncDiagThread(void)
 void*
 CAsyncDiagThread::Main(void)
 {
+    if (!m_ThreadSuffix.empty()) {
+        string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
+        thr_name += m_ThreadSuffix;
+#ifdef NCBI_OS_LINUX
+        prctl(PR_SET_NAME, (unsigned long)thr_name.c_str(), 0, 0, 0);
+#endif
+    }
+
     deque<SDiagMessage*> save_msgs;
     while (!m_NeedStop) {
         {{

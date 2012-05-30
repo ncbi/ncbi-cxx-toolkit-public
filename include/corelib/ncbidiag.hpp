@@ -2573,6 +2573,10 @@ public:
     /// called. If InstallToDiag wasn't called then this method does nothing
     /// and is safe to be executed.
     void RemoveFromDiag(void);
+    /// Set custom suffix to use on all threads in the server's pool.
+    /// Value can be set only before call to InstallToDiag(), any change
+    /// of the value after call to InstallToDiag() will be ignored.
+    void SetCustomThreadSuffix(const string& suffix);
 
     /// Implementation of CDiagHandler
     virtual void Post(const SDiagMessage& mess);
@@ -2582,6 +2586,7 @@ public:
 private:
     /// Thread handling all physical printing of log messages
     CAsyncDiagThread* m_AsyncThread;
+    string m_ThreadSuffix;
 };
 
 
