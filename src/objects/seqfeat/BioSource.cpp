@@ -380,7 +380,7 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eMitochondrion";
                 break;
             case CBioSource::eGenome_chromosome:
-                return "eChromosome";
+                return "eNuclearProkaryote";
                 break;
             case CBioSource::eGenome_chloroplast:
                 return "eChloroplast";
@@ -395,16 +395,16 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eMacronuclear";
                 break;
             case CBioSource::eGenome_extrachrom:
-                return "eExtrachromosomal";
+                return "eOtherLoc";
                 break;
             case CBioSource::eGenome_cyanelle:
                 return "eCyanelle";
                 break;
             case CBioSource::eGenome_proviral:
-                return "eProviral";
+                return "eProviralProphage";
                 break;
             case CBioSource::eGenome_virion:
-                return "eVirion";
+                return "eVirionPhage";
                 break;
             case CBioSource::eGenome_nucleomorph:
                 return "eNucleomorph";
@@ -419,7 +419,7 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eProplastid";
                 break;
             case CBioSource::eGenome_endogenous_virus:
-                return "eEndogenous-virus";
+                return "eOtherLoc";
                 break;
             case CBioSource::eGenome_hydrogenosome:
                 return "eHydrogenosome";
