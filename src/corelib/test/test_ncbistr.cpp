@@ -101,12 +101,7 @@ struct SStringNumericValues
 
 // Test errno value, to check that 'errno' changes inside conversion methods.
 static const int kTestErrno = 555;
-#define CHECK_ERRNO                         \
-    if (flags & NStr::fIgnoreErrno) {       \
-        BOOST_CHECK(errno == 0);            \
-    } else {                                \
-        BOOST_CHECK(errno != kTestErrno);   \
-    }
+#define CHECK_ERRNO  BOOST_CHECK(errno != kTestErrno)
 
 // Default flags
 #define DF 0
@@ -860,10 +855,11 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
         const char* str = s_StrToDoublePosix[i].str;
         NcbiCout << "*** Checking string '" << str << "'*** " << NcbiEndl;
         errno = kTestErrno;
-        double valuep = NStr::StringToDouble(str, NStr::fDecimalPosix | NStr::fIgnoreErrno);
+        char* endptr = 0;
+        double valuep = NStr::StringToDoublePosix(str, &endptr);
+
         NcbiCout << setprecision(24) << result << " vs " << valuep
                  << setprecision(6)  << NcbiEndl;
-        BOOST_CHECK(errno == 0);
         if ( delta == 0 )
             BOOST_CHECK(valuep == result);
         double min = result-delta, max = result+delta;
@@ -982,6 +978,8 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
 }
 
 static const SStringNumericValues s_Str2NumNonPosixTests[] = {
+    { "",          DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "",          NStr::fConvErr_NoThrow,     -1, kBad, kBad, kBad, kBad, 0.,   0. },
     {  ",",        DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
     {  ",,",       DF,                         -1, kBad, kBad, kBad, kBad, kBad, 0. },
     {  ".,",       NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad, kBad, 0. },
@@ -1019,10 +1017,7 @@ static const SStringNumericValues s_Str2NumNonPosixTests[] = {
     { "0.000",     NStr::fDecimalPosix,        -1, kBad, kBad, kBad, kBad,  0., 0. },
     { ",,1234",    NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
     { "1234,,",    NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "12,,34",    NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. },
-    { "",          NStr::fConvErr_NoThrow |
-                   NStr::fIgnoreErrno,         -1, kBad, kBad, kBad, kBad, 0., 0. },
-    { "",          NStr::fIgnoreErrno,         -1, kBad, kBad, kBad, kBad, kBad, 0. },
+    { "12,,34",    NStr::fDecimalPosixOrLocal, -1, kBad, kBad, kBad, kBad,  kBad, 0. }
 };
 
 BOOST_AUTO_TEST_CASE(s_StringToDouble)
@@ -1527,7 +1522,6 @@ static const SStringDataSizeValues s_Str2DataSizeTests[] = {
     { ",123,4", NStr::fAllowCommas + NStr::fAllowLeadingSymbols, 1234 },
     { "10", NStr::fDecimalPosix + NStr::fConvErr_NoThrow, kBad },
     { "10", NStr::fDecimalPosixOrLocal + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fIgnoreErrno + NStr::fConvErr_NoThrow, kBad },
     { "10", NStr::fWithSign + NStr::fConvErr_NoThrow, kBad },
     { "10", NStr::fWithCommas + NStr::fConvErr_NoThrow, kBad },
     { "10", NStr::fDoubleFixed + NStr::fConvErr_NoThrow, kBad },
@@ -1831,7 +1825,6 @@ static const SUint8DataSizeValues s_Num2StrDataSizeTests[] = {
     { 10, NStr::fAllowTrailingSymbols, 3, NULL },
     { 10, NStr::fDecimalPosix, 3, NULL },
     { 10, NStr::fDecimalPosixOrLocal, 3, NULL },
-    { 10, NStr::fIgnoreErrno, 3, NULL },
     { 10, NStr::fDS_ForceBinary, 3, NULL },
     { 10, NStr::fDS_ProhibitFractions, 3, NULL },
     { 10, NStr::fDS_ProhibitSpaceBeforeSuffix, 3, NULL }

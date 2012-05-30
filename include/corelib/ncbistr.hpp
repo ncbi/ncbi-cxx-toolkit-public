@@ -237,8 +237,6 @@ public:
                                              ///< Can have trailing non-nums
         fDecimalPosix         = (1 << 23),   ///< For decimal point, use C locale
         fDecimalPosixOrLocal  = (1 << 24),   ///< For decimal point, try both C and current locale
-        fIgnoreErrno          = (1 << 25),   ///< On error, return zero and set
-        /// errno to zero (simulating a successful conversion of zero)
 
         fDS_ForceBinary       = (1 << 26),
         fDS_ProhibitFractions = (1 << 27),
@@ -260,9 +258,6 @@ public:
     /// @return
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
-    ///   - Otherwise, if TNumeric is float or double and fIgnoreErrno is set,
-    ///     set errno to zero and return zero (simulates successful conversion
-    ///     of zero).
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
     template <typename TNumeric>
@@ -285,9 +280,6 @@ public:
     /// @return
     ///   - If conversion succeeds, set errno to zero, set the value, and
     ///     return true.
-    ///   - Otherwise, if TNumeric is float or double and fIgnoreErrno is set,
-    ///     set errno to zero, set the value to zero, and return true
-    ///     (simulates successful conversion of zero).
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero, set the value to zero, and
     ///     return false.
@@ -414,8 +406,6 @@ public:
     ///   - If invalid flags are passed, throw an exception.
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
-    ///   - Otherwise, if fIgnoreErrno is set, set errno to zero and return
-    ///     zero (simulates successful conversion of zero).
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
     static double StringToDouble(const CTempStringEx& str,

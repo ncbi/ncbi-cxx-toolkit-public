@@ -348,9 +348,7 @@ int NStr::StringToNonNegativeInt(const string& str)
 #define S2N_CONVERT_ERROR(to_type, msg, errcode, force_errno, delta)        \
         if (flags & NStr::fConvErr_NoThrow)  {                              \
             int& err = errno;                                               \
-            if (flags & NStr::fIgnoreErrno) {                               \
-                err = 0;                                                    \
-            } else if ( force_errno || !err) {                              \
+            if ( force_errno || !err) {                                     \
                 err = errcode;                                              \
             }                                                               \
             /* ignore previously converted value -- always return zero */   \
@@ -1111,11 +1109,11 @@ static double s_StringToDouble(const char* str, size_t size,
             endptr = endptr2;
         }
     }
-    if (flags & NStr::fIgnoreErrno) {
-        errno_ref = 0;
-    };
-    if ( errno_ref  ||  !endptr  ||  endptr == begptr ) {
+    if ( !endptr  ||  endptr == begptr ) {
         S2N_CONVERT_ERROR(double, kEmptyStr, EINVAL, true, s_DiffPtr(endptr, begptr) + pos);
+    }
+    if ( errno_ref ) {
+        S2N_CONVERT_ERROR(double, kEmptyStr, errno_ref, false, s_DiffPtr(endptr, begptr) + pos);
     }
 #if 0
     if ( !s_IsDecimalPoint(*(endptr - 1), flags) && s_IsDecimalPoint(*endptr, flags) ) {
