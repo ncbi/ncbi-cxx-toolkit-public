@@ -35,6 +35,7 @@
 
 #include <util/thread_nonstop.hpp>
 #include "background_host.hpp"
+#include <sys/prctl.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -62,6 +63,11 @@ public:
     {}
 
     virtual void DoJob(void);
+    virtual void *  Main(void)
+    {
+        prctl(PR_SET_NAME, "netscheduled_st", 0, 0, 0);
+        return CThreadNonStop::Main();
+    }
 
 private:
     void  x_CheckDrainShutdown(void);

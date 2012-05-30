@@ -202,6 +202,7 @@ int CNetScheduleDApp::Run(void)
 
         SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
         auto_ptr<CNetScheduleServer>    server(new CNetScheduleServer());
+        server->SetCustomThreadSuffix("_h");
         server->SetNSParameters(params, false);
 
         // Use port passed through parameters
@@ -261,7 +262,16 @@ int CNetScheduleDApp::Run(void)
         if (args["nodaemon"])
             NcbiCout << "Server started" << NcbiEndl;
 
-        server->Run();
+        CAsyncDiagHandler diag_handler;
+        diag_handler.SetCustomThreadSuffix("_l");
+        try {
+            diag_handler.InstallToDiag();
+            server->Run();
+            diag_handler.RemoveFromDiag();
+        }
+        catch (CThreadException& ex) {
+            ERR_POST(Critical << ex);
+        }
 
         if (args["nodaemon"])
             NcbiCout << "Server stopped" << NcbiEndl;

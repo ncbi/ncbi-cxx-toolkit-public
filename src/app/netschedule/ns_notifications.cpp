@@ -528,6 +528,7 @@ void CGetJobNotificationThread::RequestStop(void)
 
 void *  CGetJobNotificationThread::Main(void)
 {
+    prctl(PR_SET_NAME, "netscheduled_nt", 0, 0, 0);
     while (1) {
         x_DoJob();
 

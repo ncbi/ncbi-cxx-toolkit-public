@@ -35,6 +35,8 @@
 
 #include "background_host.hpp"
 #include <util/thread_nonstop.hpp>
+#include <sys/prctl.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -115,6 +117,11 @@ public:
     {}
 
     virtual void DoJob(void);
+    virtual void *  Main(void)
+    {
+        prctl(PR_SET_NAME, "netscheduled_ew", 0, 0, 0);
+        return CThreadNonStop::Main();
+    }
 
 private:
     CJobQueueExecutionWatcherThread(const CJobQueueExecutionWatcherThread&);
