@@ -581,6 +581,7 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStats) {
     const int score_final[k_num_hsps_end] = { 29, 24 };
     const double evalue_final[k_num_hsps_end] = 
     { 1.361074 , 6.425098 };
+    const int ident_final[k_num_hsps_end] = { 3, 6};
             
 
     BlastHSPList* ending_hsp_list = 
@@ -592,7 +593,8 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStats) {
                                                 query_offset_final,
                                                 subject_offset_final,
                                                 score_final, 
-                                                evalue_final);
+                                                evalue_final,
+                                                ident_final);
 
 
     const Int8 kEffSearchSp = 84660;
@@ -838,6 +840,8 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStatsAndSW) {
     const double evalue_final[k_num_hsps_end] = 
         { 1.361074, 1.837947, 2.118044, 2.153685, 4.198304, 5.529096, 
             6.425098, 8.532644 };
+    const int ident_final[k_num_hsps_end] = 
+        { 3, 8, 23, 10, 6, 5, 6, 5};
 
     BlastHSPList* ending_hsp_list = 
         setUpHSPList(k_num_hsps_end,
@@ -848,7 +852,8 @@ BOOST_AUTO_TEST_CASE(testPSIRedoAlignmentWithCompBasedStatsAndSW) {
                                                 query_offset_final,
                                                 subject_offset_final,
                                                 score_final, 
-                                                evalue_final);
+                                                evalue_final,
+                                                ident_final);
 
 
     const Int8 kEffSearchSp = 84660;

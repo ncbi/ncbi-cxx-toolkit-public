@@ -457,10 +457,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     int i;
     SBlastTargetTranslation* target_t = NULL;
 
-    if ( !hsp_list || (program_number != eBlastTypeBlastp 
-                    && program_number != eBlastTypeTblastn
-                    && program_number != eBlastTypeBlastx))
-        return;
+    if ( !hsp_list) return;
 
     /* Initialize the subject */
     {

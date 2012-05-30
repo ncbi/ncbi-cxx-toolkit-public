@@ -299,6 +299,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
         expected_results[0].score = 865;
         expected_results[0].evalue = 1.41573e-108;
         expected_results[0].bit_score = 3371923606e-7;
+        expected_results[0].num_ident = 101; 
         int starts[] = {0, 941, -1, 1094, 153, 1095};
         int lengths[] = {153, 1, 79};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -312,6 +313,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
         expected_results[1].score = 638;
         expected_results[1].evalue = 3.93488e-77;
         expected_results[1].bit_score = 2497520568e-7;
+        expected_results[1].num_ident = 73; 
         int starts[] = {0, 154, -1, 307, 153, 308};
         int lengths[] = {153, 1, 25};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -325,6 +327,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
         expected_results[2].score = 650;
         expected_results[2].evalue = 2.54216e-83;
         expected_results[2].bit_score = 2543744518e-7;
+        expected_results[2].num_ident = 80; 
         int starts[] = {0, 190, 68, -1, 70, 258, 92, -1, 93, 280, 118, -1, 
                         119, 305, 151, -1, 152, 337, 161, -1, 162, 346, -1,
                         367, 183, 371};
@@ -335,11 +338,12 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
              back_inserter(expected_results[2].lengths));
     }
 
-    // HSP # 4
+    // HSP #4
     {
         expected_results[3].score = 53;
         expected_results[3].evalue = 3.74227;
         expected_results[3].bit_score = 244103049e-7;
+        expected_results[3].num_ident = 7; 
         int starts[] = {127, 104, 132, -1, 134, 109};
         int lengths[] = {5, 2, 15};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -354,6 +358,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
         expected_results[4].score = 52;
         expected_results[4].evalue = 4.67139;
         expected_results[4].bit_score = 240251054e-7;
+        expected_results[4].num_ident = 5; 
         int starts[] = {137, 20, 151, -1, 156, 34};
         int lengths[] = {14, 5, 17};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -367,6 +372,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
         expected_results[5].score = 50;
         expected_results[5].evalue = 6.76621;
         expected_results[5].bit_score = 2325470625e-8;
+        expected_results[5].num_ident = 6; 
         int starts[] = {159, 0, 173, -1, 178, 14};
         int lengths[] = {14, 5, 11};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -380,6 +386,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
         expected_results[6].score = 50;
         expected_results[6].evalue = 7.18326;
         expected_results[6].bit_score = 2325470625e-8;
+        expected_results[6].num_ident = 7; 
         int starts[] = {172, 305, 179, -1, 182, 312};
         int lengths[] = {7, 3, 33};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
@@ -388,11 +395,13 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
              back_inserter(expected_results[6].lengths));
     }
 
+
     // HSP # 8
     {
         expected_results[7].score = 50;
         expected_results[7].evalue = 7.87994;
         expected_results[7].bit_score = 2325470625e-8;
+        expected_results[7].num_ident = 8; 
         int starts[] = {153, 102, -1, 122, 173, 127};
         int lengths[] = {20, 5, 12};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],

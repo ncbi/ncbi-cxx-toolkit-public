@@ -306,6 +306,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
     expected_results[0].starts.push_back(34);
     expected_results[0].starts.push_back(95);
     expected_results[0].lengths.push_back(53);
+    expected_results[0].num_ident = 18;
 
     // HSP # 2
     expected_results[1].score = 59;
@@ -326,6 +327,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
     expected_results[1].lengths.push_back(32);
     expected_results[1].lengths.push_back(7);
     expected_results[1].lengths.push_back(39);
+    expected_results[1].num_ident = 24;
 
     // HSP # 3
     expected_results[2].score = 52;
@@ -334,6 +336,8 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
     expected_results[2].starts.push_back(322);
     expected_results[2].starts.push_back(46);
     expected_results[2].lengths.push_back(28);
+    expected_results[2].num_ident = 10;
+
 
     // HSP # 4
     expected_results[3].score = 50;
@@ -348,6 +352,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
     expected_results[3].lengths.push_back(6);
     expected_results[3].lengths.push_back(3);
     expected_results[3].lengths.push_back(23);
+    expected_results[3].num_ident = 16;
 
     qa::TSeqAlignSet actual_results;
     qa::SeqAlignSetConvert(*sas, actual_results);
@@ -387,6 +392,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
     expected_results[0].lengths.push_back(53);
     expected_results[0].sequence_gis.SetQuery(7450545);
     expected_results[0].sequence_gis.SetSubject(22982149);
+    expected_results[0].num_ident = 18;
 
     // HSP # 3
     {
@@ -398,6 +404,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
         expected_results[1].bit_score = 250238098e-7;
         expected_results[1].sequence_gis.SetQuery(7450545);
         expected_results[1].sequence_gis.SetSubject(43121985);
+        expected_results[1].num_ident = 19;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[1].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
@@ -416,11 +423,13 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
         expected_results[2].bit_score = 254090094e-7;
         expected_results[2].sequence_gis.SetQuery(7450545);
         expected_results[2].sequence_gis.SetSubject(13242404);
+        expected_results[2].num_ident = 39;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[2].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
              back_inserter(expected_results[2].lengths));
     }
+
 
     // HSP # 4
     expected_results[3].score = 50;
@@ -437,6 +446,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
     expected_results[3].lengths.push_back(6);
     expected_results[3].lengths.push_back(3);
     expected_results[3].lengths.push_back(23);
+    expected_results[3].num_ident = 16;
 
     qa::TSeqAlignSet actual_results;
     qa::SeqAlignSetConvert(*sas, actual_results);
@@ -476,6 +486,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSUniversal) {
     expected_results[0].lengths.push_back(53);
     expected_results[0].sequence_gis.SetQuery(7450545);
     expected_results[0].sequence_gis.SetSubject(22982149);
+    expected_results[0].num_ident = 18;
 
     // HSP # 2
     {
@@ -487,11 +498,13 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSUniversal) {
         expected_results[1].bit_score = 250238098e-7;
         expected_results[1].sequence_gis.SetQuery(7450545);
         expected_results[1].sequence_gis.SetSubject(43121985);
+        expected_results[1].num_ident = 19;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[1].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
              back_inserter(expected_results[1].lengths));
     }
+
 
     // HSP # 3
     {
@@ -505,6 +518,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSUniversal) {
         expected_results[2].bit_score = 254090094e-7;
         expected_results[2].sequence_gis.SetQuery(7450545);
         expected_results[2].sequence_gis.SetSubject(13242404);
+        expected_results[2].num_ident = 39;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[2].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
@@ -721,6 +735,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
         expected_results[0].bit_score = 232843196e-6;
         expected_results[0].sequence_gis.SetQuery(129295);
         expected_results[0].sequence_gis.SetSubject(34878800);
+        expected_results[0].num_ident = 101;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[0].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
@@ -736,6 +751,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
         expected_results[1].bit_score = 165048071e-6;
         expected_results[1].sequence_gis.SetQuery(129295);
         expected_results[1].sequence_gis.SetSubject(34878800);
+        expected_results[1].num_ident = 73;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[1].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
@@ -755,6 +771,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
         expected_results[2].bit_score = 142706496e-6;
         expected_results[2].sequence_gis.SetQuery(129295);
         expected_results[2].sequence_gis.SetSubject(20092202);
+        expected_results[2].num_ident = 85;
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[2].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
@@ -770,6 +787,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
     expected_results[3].starts.push_back(206);
     expected_results[3].starts.push_back(46);
     expected_results[3].lengths.push_back(19);
+    expected_results[3].num_ident = 8;
 
     // HSP # 5
     expected_results[4].score = 51;
@@ -780,6 +798,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_PssmAsQuery_CBS) {
     expected_results[4].starts.push_back(188);
     expected_results[4].starts.push_back(709);
     expected_results[4].lengths.push_back(30);
+    expected_results[4].num_ident = 6;
 
     /* HSP # 6
     {
