@@ -667,7 +667,7 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 
 void CNetService::ExecOnAllServers(const string& cmd)
 {
-    for (CNetServiceIterator it = Iterate(); it; ++it)
+    for (CNetServiceIterator it = Iterate(eIncludePenalized); it; ++it)
         (*it).ExecWithRetry(cmd);
 }
 
