@@ -146,6 +146,11 @@ public:
     /// Should be called if IsReadyToProcess() for some connection handler
     /// became true.
     void WakeUpPollCycle(void);
+    /// Set custom suffix to use on all threads in the server's pool.
+    /// Value can be set only before call to Run(), any change of the value
+    /// after call to Run() will be ignored.
+    void SetCustomThreadSuffix(const string& suffix)
+    { m_ThreadSuffix = suffix; }
 
 protected:
     /// Initialize the server
@@ -181,6 +186,7 @@ private:
     auto_ptr<CPoolOfThreads_ForServer> m_ThreadPool;
     SServer_Parameters*         m_Parameters;
     CServer_ConnectionPool*     m_ConnectionPool;
+    string m_ThreadSuffix;
 };
 
 

@@ -36,6 +36,10 @@
 #include <connect/ncbi_buffer.h>
 #include <connect/error_codes.hpp>
 
+#ifdef NCBI_OS_LINUX
+# include <sys/prctl.h>
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   Connect_ThrServer
 
@@ -199,6 +203,14 @@ CThreadInPool_ForServer::x_HandleOneRequest(bool catch_all)
 void*
 CThreadInPool_ForServer::Main(void)
 {
+    if (!m_Pool->m_ThrSuffix.empty()) {
+        string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
+        thr_name += m_Pool->m_ThrSuffix;
+#ifdef NCBI_OS_LINUX
+        prctl(PR_SET_NAME, (unsigned long)thr_name.c_str(), 0, 0, 0);
+#endif
+    }
+
     m_Pool->Register(*this);
     CAutoUnregGuard guard(this);
 
@@ -224,8 +236,10 @@ CThreadInPool_ForServer::ProcessRequest(TItemHandle handle)
 }
 
 
-CPoolOfThreads_ForServer::CPoolOfThreads_ForServer(unsigned int max_threads)
+CPoolOfThreads_ForServer::CPoolOfThreads_ForServer(unsigned int max_threads,
+                                                   const string& thr_suffix)
     : m_MaxThreads(max_threads),
+      m_ThrSuffix(thr_suffix),
       m_KilledAll(false)
 {
     m_ThreadCount.Set(0);
@@ -739,7 +753,7 @@ void CServer::Run(void)
 {
     StartListening(); // detect unavailable ports ASAP
 
-    m_ThreadPool.reset(new CPoolOfThreads_ForServer(m_Parameters->max_threads));
+    m_ThreadPool.reset(new CPoolOfThreads_ForServer(m_Parameters->max_threads, m_ThreadSuffix));
     if (TParamServerCatchExceptions::GetDefault()) {
         try {
             x_DoRun();

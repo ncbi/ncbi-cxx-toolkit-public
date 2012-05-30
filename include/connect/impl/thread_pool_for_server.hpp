@@ -228,7 +228,7 @@ public:
     ///
     /// @param max_threads
     ///   The maximum number of threads that this pool can run
-    CPoolOfThreads_ForServer(unsigned int max_threads);
+    CPoolOfThreads_ForServer(unsigned int max_threads, const string& thr_suffix);
 
     /// Destructor
     virtual ~CPoolOfThreads_ForServer(void);
@@ -285,6 +285,7 @@ private:
     CAtomicCounter          m_PutQueueNum;
     CAtomicCounter          m_GetQueueNum;
     TQueue**                m_Queues;
+    string                  m_ThrSuffix;
 
     typedef list<CRef<TThread> > TThreads;
     TThreads                m_Threads;
