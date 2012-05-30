@@ -72,7 +72,10 @@
 
 
 #define USE_HEAPOBJ_LIST  0
-#if USE_HEAPOBJ_LIST
+#define USE_TLS_PTR 1
+#if USE_TLS_PTR
+#  include <corelib/ncbithr.hpp>
+#elif USE_HEAPOBJ_LIST
 #  include <corelib/ncbi_safe_static.hpp>
 #  include <list>
 #  include <algorithm>
@@ -99,7 +102,9 @@ BEGIN_NCBI_SCOPE
 //
 
 
+#if !USE_TLS_PTR
 DEFINE_STATIC_FAST_MUTEX(sm_ObjectMutex);
+#endif
 
 #if defined(NCBI_COUNTER_NEED_MUTEX)
 // CAtomicCounter doesn't normally have a .cpp file of its own, so this
@@ -112,6 +117,11 @@ CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
     return m_Value += delta;
 }
 
+#endif
+
+#if USE_TLS_PTR
+static DECLARE_TLS_VAR(void*, s_LastNewPtr);
+static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
 #endif
 
 #if USE_HEAPOBJ_LIST
@@ -255,6 +265,11 @@ void* CObject::operator new(size_t size)
 #else
     void* ptr = ::operator new(size);
 
+#if USE_TLS_PTR
+    // just remember pointer in TLS
+    s_LastNewPtr = ptr;
+    s_LastNewType = eMagicCounterNew;
+#else
 #if USE_HEAPOBJ_LIST
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
@@ -267,6 +282,7 @@ void* CObject::operator new(size_t size)
 #  endif// USE_COMPLEX_MASK
 #endif// USE_HEAPOBJ_LIST
     static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterNew);
+#endif
     return ptr;
 #endif
 }
@@ -281,6 +297,11 @@ void CObject::operator delete(void* ptr)
     // 1. eMagicCounterDeleted when memory is freed after CObject destructor.
     // 2. eMagicCounterNew when memory is freed before CObject constructor.
     _ASSERT(magic == eMagicCounterDeleted  || magic == eMagicCounterNew);
+#endif
+#if USE_TLS_PTR
+    if ( s_LastNewPtr == ptr ) {
+        s_LastNewPtr = 0;
+    }
 #endif
     ::operator delete(ptr);
 }
@@ -320,10 +341,16 @@ void* CObject::operator new(size_t size, CObjectMemoryPool* memory_pool)
     if ( !ptr ) {
         return operator new(size);
     }
+#if USE_TLS_PTR
+    // just remember pointer in TLS
+    s_LastNewPtr = ptr;
+    s_LastNewType = eMagicCounterPoolNew;
+#else
 #  if USE_COMPLEX_MASK
     GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterPoolNew);
 #  endif// USE_COMPLEX_MASK
     static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterPoolNew);
+#endif
     return ptr;
 }
 
@@ -338,6 +365,11 @@ void CObject::operator delete(void* ptr, CObjectMemoryPool* memory_pool)
     // 2. eMagicCounterPoolNew when freed before CObject constructor.
     _ASSERT(magic == eMagicCounterPoolDeleted ||
             magic == eMagicCounterPoolNew);
+#endif
+#if USE_TLS_PTR
+    if ( s_LastNewPtr == ptr ) {
+        s_LastNewPtr = 0;
+    }
 #endif
     memory_pool->Deallocate(ptr);
 }
@@ -366,9 +398,42 @@ void CObject::operator delete[](void* ptr)
 }
 
 
+#ifdef _DEBUG
+# define ObjFatal Fatal
+#else
+# define ObjFatal Critical
+#endif
+
 // initialization in debug mode
 void CObject::InitCounter(void)
 {
+#if USE_TLS_PTR
+    if ( s_LastNewPtr == this ) {
+        s_LastNewPtr = 0;
+        switch ( s_LastNewType ) {
+        case eMagicCounterNew:
+            // allocated in heap
+            m_Counter.Set(eInitCounterInHeap);
+            break;
+        case eMagicCounterPoolNew:
+            // allocated in memory pool
+            m_Counter.Set(eInitCounterInPool);
+            break;
+        default:
+            ERR_POST_X(1, ObjFatal << "CObject::InitCounter: "
+                       "Bad s_LastNewType="<<s_LastNewType<<
+                       " at "<<StackTrace);
+            // something is broken in TLS data
+            // mark as not in heap
+            m_Counter.Set(eInitCounterNotInHeap);
+            break;
+        }
+    }
+    else {
+        // surely not in heap
+        m_Counter.Set(eInitCounterNotInHeap);
+    }
+#else
     // This code can't use Get(), which may block waiting for an
     // update that will never happen.
     // ATTENTION:  this code can cause UMR (Uninit Mem Read) -- it's okay here!
@@ -429,6 +494,7 @@ void CObject::InitCounter(void)
             m_Counter.Set(eInitCounterInPool);
         }
     }
+#endif
 }
 
 
@@ -443,12 +509,6 @@ CObject::CObject(const CObject& /*src*/)
     InitCounter();
 }
 
-
-#ifdef _DEBUG
-# define ObjFatal Fatal
-#else
-# define ObjFatal Critical
-#endif
 
 CObject::~CObject(void)
 {
@@ -587,6 +647,18 @@ void CObject::ReleaseReference(void) const
 void CObject::DoNotDeleteThisObject(void)
 {
     TCount count;
+#if USE_TLS_PTR
+    count = m_Counter.Get();
+    if ( ObjectStateValid(count) ) {
+        if ( ObjectStateCanBeDeleted(count) ) {
+            NCBI_THROW(CObjectException, eHeapState,
+                       "CObject::DoNotDeleteThisObject: "
+                       "CObject is allocated in heap");
+        }
+        // no-op
+        return;
+    }
+#else
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
         count = m_Counter.Get();
@@ -597,6 +669,7 @@ void CObject::DoNotDeleteThisObject(void)
             return;
         }
     }}
+#endif
 
     if ( count == eMagicCounterDeleted ||
          count == eMagicCounterPoolDeleted ) {
@@ -617,6 +690,18 @@ void CObject::DoDeleteThisObject(void)
 {
 #ifndef USE_SINGLE_ALLOC
     TCount count;
+#if USE_TLS_PTR
+    count = m_Counter.Get();
+    if ( ObjectStateValid(count) ) {
+        if ( !ObjectStateCanBeDeleted(count) ) {
+            NCBI_THROW(CObjectException, eHeapState,
+                       "CObject::DoDeleteThisObject: "
+                       "CObject is not allocated in heap");
+        }
+        // no-op
+        return;
+    }
+#else
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
         count = m_Counter.Get();
@@ -633,6 +718,7 @@ void CObject::DoDeleteThisObject(void)
             return;
         }
     }}
+#endif
     if ( ObjectStateValid(count) ) {
         ERR_POST_X(7, ObjFatal << "CObject::DoDeleteThisObject: "
                       "object was created without heap signature"<<StackTrace);
@@ -727,15 +813,25 @@ public:
 
         void Dump(void) const
         {
+            unsigned total_locks = 0;
             ITERATE ( TLocks, it, m_Locks ) {
+                ++total_locks;
                 LOG_POST("Locked<"<<sx_MonitorType->name()<<">"
                          "("<<it->first<<","<<m_Object<<")"
                          " @ " << *it->second);
             }
+            unsigned total_unlocks = 0;
             ITERATE ( TUnlocks, it, m_Unlocks ) {
+                ++total_unlocks;
                 LOG_POST("Unlocked<"<<sx_MonitorType->name()<<">"
                          "("<<it->first<<","<<m_Object<<")"
                          " @ " << *it->second);
+            }
+            if ( total_locks ) {
+                LOG_POST("Total locks for "<<m_Object<<": "<<total_locks);
+            }
+            if ( total_unlocks ) {
+                LOG_POST("Total unlocks for "<<m_Object<<": "<<total_unlocks);
             }
         }
         int LockCount(void) const
@@ -912,6 +1008,7 @@ const char* CObjectException::GetErrCodeString(void) const
     case eRefOverflow:  return "eRefOverflow";
     case eNoRef:        return "eNoRef";
     case eRefUnref:     return "eRefUnref";
+    case eHeapState:    return "eHeapState";
     default:    return CException::GetErrCodeString();
     }
 }

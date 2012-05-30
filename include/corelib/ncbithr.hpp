@@ -198,6 +198,71 @@ public:
 };
 
 
+// TLS static variable support in case there is no compiler support
+#ifdef NCBI_TLS_VAR
+# define DECLARE_TLS_VAR(type, var) NCBI_TLS_VAR type var
+#else
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CSimpleStaticTls
+///
+/// Define template class for simple data (POD) in thread local storage.
+/// The data type must fit in the same memory as pointer type.
+/// Use compiler support if possible, and direct pthread calls otherwise.
+/// The variable of this type is MT-safe to be declared statically.
+/// Initial value of the variable is zero or equivalent.
+template<class V> class CSimpleStaticTls {
+private:
+    typedef pthread_key_t key_type;
+    mutable key_type m_Key;
+    template<class A> struct SCaster {
+        static A FromVoidP(void* p) {
+            return A(reinterpret_cast<intptr_t>(p));
+        }
+        static const void* ToVoidP(A v) {
+            return reinterpret_cast<const void*>(intptr_t(v));
+        }
+    };
+    template<class A> struct SCaster<A*> {
+        static A* FromVoidP(void* p) {
+            return reinterpret_cast<A*>(p);
+        }
+        static const void* ToVoidP(A* v) {
+            return reinterpret_cast<const void*>(v);
+        }
+    };
+    key_type x_GetKey(void) const {
+        return m_Key? m_Key: x_GetKeyLong();
+    }
+    key_type x_GetKeyLong(void) const {
+        DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
+        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
+        if ( !m_Key ) {
+            _ASSERT(sizeof(value_type) <= sizeof(void*));
+            key_type new_key = 0;
+            do {
+                _VERIFY(pthread_key_create(&new_key, 0) == 0);
+            } while ( !new_key );
+            pthread_setspecific(new_key, 0);
+            m_Key = new_key;
+        }
+        return m_Key;
+    }
+public:
+    typedef V value_type;
+    /// Getter - returns value stored in TLS.
+    operator value_type() const {
+        return SCaster<value_type>::FromVoidP(pthread_getspecific(x_GetKey()));
+    }
+    /// Setter - changes value stored in TLS.
+    void operator=(const value_type& v) {
+        pthread_setspecific(x_GetKey(), SCaster<value_type>::ToVoidP(v));
+    }
+};
+# define DECLARE_TLS_VAR(type, var) CSimpleStaticTls<type> var
+#endif
+
+
 #define NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF 1
 
 #if NCBI_STATIC_TLS_VIA_SAFE_STATIC_REF

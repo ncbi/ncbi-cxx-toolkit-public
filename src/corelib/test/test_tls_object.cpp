@@ -37,62 +37,6 @@
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbi_system.hpp>
 
-// TLS static variable support in case there is no compiler support
-//#undef NCBI_TLS_VAR
-#ifdef NCBI_TLS_VAR
-# define DECLARE_TLS_VAR(type, var) static NCBI_TLS_VAR type var
-#else
-# include <pthread.h>
-# include <corelib/ncbimtx.hpp>
-template<class V> class CStaticTLS {
-private:
-    typedef pthread_key_t key_type;
-    mutable key_type m_Key;
-    template<class A> struct SCaster {
-        static A FromVoidP(void* p) {
-            return A(reinterpret_cast<intptr_t>(p));
-        }
-        static const void* ToVoidP(A v) {
-            return reinterpret_cast<const void*>(intptr_t(v));
-        }
-    };
-    template<class A> struct SCaster<A*> {
-        static A* FromVoidP(void* p) {
-            return reinterpret_cast<A*>(p);
-        }
-        static const void* ToVoidP(A* v) {
-            return reinterpret_cast<const void*>(v);
-        }
-    };
-    key_type x_GetKey(void) const {
-        return m_Key? m_Key: x_GetKeyLong();
-    }
-    key_type x_GetKeyLong(void) const {
-        DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
-        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
-        if ( !m_Key ) {
-            _ASSERT(sizeof(value_type) <= sizeof(void*));
-            key_type new_key = 0;
-            do {
-                _VERIFY(pthread_key_create(&new_key, 0) == 0);
-            } while ( !new_key );
-            pthread_setspecific(new_key, 0);
-            m_Key = new_key;
-        }
-        return m_Key;
-    }
-public:
-    typedef V value_type;
-    operator value_type() const {
-        return SCaster<value_type>::FromVoidP(pthread_getspecific(x_GetKey()));
-    }
-    void operator=(const value_type& v) {
-        pthread_setspecific(x_GetKey(), SCaster<value_type>::ToVoidP(v));
-    }
-};
-# define DECLARE_TLS_VAR(type, var) static CStaticTLS<type> var
-#endif
-
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -135,8 +79,8 @@ void message(const char* msg,
     }
 }
 
-DECLARE_TLS_VAR(const char*, s_CurrentStep);
-DECLARE_TLS_VAR(bool, s_CurrentInHeap);
+static DECLARE_TLS_VAR(const char*, s_CurrentStep);
+static DECLARE_TLS_VAR(bool, s_CurrentInHeap);
 
 class CObjectWithNew
 {
@@ -235,7 +179,7 @@ private:
     void operator=(CObjectWithNew&);
 };
 
-DECLARE_TLS_VAR(void*, s_LastNewPtr);
+static DECLARE_TLS_VAR(void*, s_LastNewPtr);
 
 class CObjectWithTLS
 {

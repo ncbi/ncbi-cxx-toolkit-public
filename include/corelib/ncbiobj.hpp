@@ -88,8 +88,9 @@ public:
         eCorrupted,     ///< Object corrupted error
         eRefOverflow,   ///< Reference overflow error
         eNoRef,         ///< Attempt to access an object that is unreferenced
-        eRefUnref       ///< Attempt to make a referenced object an
+        eRefUnref,      ///< Attempt to make a referenced object an
                         ///< unreferenced one
+        eHeapState      ///< Attempt to make incorrect in-heap state
     };
 
     /// Translate from the error code value to its string representation.
@@ -335,7 +336,7 @@ private:
     /// Possible bit patterns:
     /// - [0]0x...xxxx : non valid object -> cannot be referenced.
     /// - [0]1c...ccx0 : object not in heap -> cannot be deleted.
-    /// - [0]1c...cc01 : illegal; should be impossible to achieve.
+    /// - [0]1c...cc01 : object in heap pool -> can be deleted via CMemoryPool
     /// - [0]1c...cc11 : object in heap -> can be deleted.
     enum EObjectState {
         eStateBitsInHeap        = 1 << 0, ///< Detected as in heap
