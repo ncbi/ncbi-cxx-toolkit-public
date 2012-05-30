@@ -5622,12 +5622,12 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 CAsyncDiagThread::CAsyncDiagThread(const string& thread_suffix)
     : m_NeedStop(false),
       m_CntWaiters(0),
-      m_SubHandler(NULL)
+      m_SubHandler(NULL),
 #ifndef NCBI_HAVE_CONDITIONAL_VARIABLE
-    , m_QueueSem(0, 100)
-    , m_DequeueSem(0, 10000000),
+      m_QueueSem(0, 100),
+      m_DequeueSem(0, 10000000),
 #endif
-    , m_ThreadSuffix(thread_suffix)
+      m_ThreadSuffix(thread_suffix)
 {
     m_MsgsInQueue.Set(0);
 }
