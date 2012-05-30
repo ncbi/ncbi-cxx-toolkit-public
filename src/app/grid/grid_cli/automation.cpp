@@ -41,6 +41,8 @@
 
 USING_NCBI_SCOPE;
 
+#define PROTOCOL_VERSION 1
+
 class CAutomationException : public CException
 {
 public:
@@ -561,7 +563,7 @@ CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
 
     CJsonNode greeting(CJsonNode::NewArrayNode());
     greeting.PushString(PROGRAM_NAME);
-    greeting.PushString(PROGRAM_VERSION);
+    greeting.PushNumber(PROTOCOL_VERSION);
 
     if (protocol_dump != NULL) {
         string pid_str(NStr::NumericToString(m_Pid));
