@@ -513,6 +513,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     static CAtomicCounter counter;
     size_t model_num = counter.Add(1);
 
+    CMappedFeat full_length_rna;
     vector<CMappedFeat> ncRNAs;
     CMappedFeat cdregion_handle;
 
@@ -525,9 +526,19 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
 
     CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
     if (handle) {
-        for (CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_ncRNA);
+        for (CFeat_CI feat_iter(handle, CSeqFeatData::e_Rna);
              feat_iter;  ++feat_iter) {
-            ncRNAs.push_back(*feat_iter);
+            const CSeq_loc &rna_loc = feat_iter->GetLocation();
+            if (++rna_loc.begin() == rna_loc.end() &&
+                    rna_loc.GetTotalRange().GetLength() ==
+                        handle.GetBioseqLength())
+            {
+                full_length_rna = *feat_iter;
+            } else if (feat_iter->GetData().GetSubtype() ==
+                           CSeqFeatData::eSubtype_ncRNA)
+            {
+                ncRNAs.push_back(*feat_iter);
+            }
         }
     }
     else {
@@ -535,9 +546,19 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                  << CSeq_id_Handle::GetHandle(rna_id));
     }
 
-    CRef<CSeq_feat> mrna_feat =
-        x_CreateMrnaFeature(*align, loc, time, model_num,
-                            seqs, rna_id, cdregion);
+    if (m_flags & fForceTranscribeMrna) {
+        /// create a new bioseq for this mRNA
+        x_CreateMrnaBioseq(*align, loc, time, model_num,
+                           seqs, rna_id, cdregion);
+    }
+
+    CRef<CSeq_feat> mrna_feat = full_length_rna && m_flags&fPropagateNcrnaFeats
+        /// If there is a full-length RNA feature, propagate it instead of
+        /// creating a new one. Create the bioseq separately
+        ? x_CreateNcRnaFeature(&full_length_rna.GetOriginalFeature(),
+                               *align, loc, opts)
+        : x_CreateMrnaFeature(*align, loc, time, model_num,
+                              seqs, rna_id, cdregion);
 
     CRef<CSeq_feat> gene_feat;
 
@@ -1101,11 +1122,6 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
         CRNA_ref::TType type = CRNA_ref::eType_unknown;
         string name;    
         string RNA_class;
-        if (m_flags & fForceTranscribeMrna) {
-            /// create a new bioseq for this mRNA
-            x_CreateMrnaBioseq(align, loc, time, model_num,
-                               seqs, rna_id, cdregion);
-        }
 
         string gnomon_model_num = ExtractGnomonModelNum(rna_id);
         if (!gnomon_model_num.empty()) {
