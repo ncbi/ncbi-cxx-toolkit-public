@@ -3874,16 +3874,17 @@ void CTar::x_AppendFile(const string& file)
 void CTar::SetMask(CMask*    mask, EOwnership  own,
                    EMaskType type, NStr::ECase acase)
 {
-    if ((int) type < 0  ||  sizeof(m_Mask)/sizeof(m_Mask[0]) <= (size_t) type){
+    int idx = int(type);
+    if (idx < 0  ||  sizeof(m_Mask)/sizeof(m_Mask[0]) <= (size_t) idx){
         TAR_THROW(this, eMemory,
-                  "Mask type is out of range: " + NStr::IntToString(type));
+                  "Mask type is out of range: " + NStr::IntToString(idx));
     }
-    if (m_Mask[type].owned) {
-        delete m_Mask[type].mask;
+    if (m_Mask[idx].owned) {
+        delete m_Mask[idx].mask;
     }
-    m_Mask[type].mask  = mask;
-    m_Mask[type].acase = acase;
-    m_Mask[type].owned = mask ? own : eNoOwnership;
+    m_Mask[idx].mask  = mask;
+    m_Mask[idx].acase = acase;
+    m_Mask[idx].owned = mask ? own : eNoOwnership;
 }
 
 
