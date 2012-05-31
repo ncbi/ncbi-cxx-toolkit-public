@@ -3608,8 +3608,7 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
     string firstSeqClassInfo = (isFirst) ? "" : "hidden"; //hide ">" sign if not first seq align	
 	string alnDefLine  = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnDefLineTmpl,"alnSeqSt",firstSeqClassInfo);
 	*/
-	string alnDflnShow = (hideDefline) ? "hidden" : "";	
-	string alnDefLine = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnDefLineTmpl,"alnDflnShow",alnDflnShow);
+    string alnDefLine = m_AlignTemplates->alnDefLineTmpl;
 
 	string alnGi = (m_AlignOption&eShowGi && alnDispParams->gi > 0) ? "gi|" + NStr::IntToString(alnDispParams->gi) + "|" : "";
 	string seqid;					
@@ -3647,12 +3646,14 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnTitle",alnDispParams->title);			
 	return alnDefLine;
 }
-
+string alnTitlesLinkTmpl;    ///< Template for displaying link for more defline titles
+        string alnTitlesTmpl;    ///< Template for displaying multiple defline titles
     
 string
 CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info)
 {
     string deflines;	
+    string firstDefline;
 	list<int>& use_this_gi = aln_vec_info->use_this_gi;    
     if(bsp_handle){        
         const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);        
@@ -3673,8 +3674,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 			deflines = alnDefLine;
         } else {
             //format each defline             
-            int numBdl = 0;
-            int maxNumBdl = (aln_vec_info->use_this_gi.empty()) ? bdl.size() : aln_vec_info->use_this_gi.size();
+            int numBdl = 0;            
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){                
 				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_gi,firstGi);                
@@ -3707,13 +3707,27 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                             }
                         }						
                     }                    
-					deflines += alnDefLine;	
+                    if(numBdl == 1) { // first defline
+                        firstDefline = alnDefLine;
+                    }                    
+                    else {                        
+                        deflines += alnDefLine;	//this contains all deflines except the first one
+                    }                    
+                    					
                     isFirst = false;					
 					delete alnDispParams;
                 }
             }            
 			m_NumBlastDefLines = numBdl;            
         }        
+        if(m_NumBlastDefLines == 1) {
+            deflines = firstDefline;	
+        }
+        else {
+            string alnTitles = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesTmpl,"seqTitles",deflines);
+            string alnTitleslnk = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesLinkTmpl,"titleNum",NStr::IntToString(m_NumBlastDefLines - 1));
+            deflines = firstDefline + alnTitleslnk + alnTitles;            
+        }
     }	
     return deflines;
 }
