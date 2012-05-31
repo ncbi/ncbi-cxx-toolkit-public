@@ -1480,11 +1480,11 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         const CSeq_id& cur_id = (*iter)->GetSeq_id(1);
         if(previous_id.Empty() || !cur_id.Match(*previous_id)) {
-            if(count >= seqIdList.size()) {         
+            if(count >= seqIdList.size()) {                
                 break;
-            }
-            string idString = cur_id.GetSeqIdString();
-            if(hitsMap.find(idString) != hitsMap.end()) {                        
+            }         
+            string idString = cur_id.AsFastaString();
+            if(hitsMap.find(idString) != hitsMap.end()) {                                         
                 temp =  new CSeq_align_set;
                 temp->Set().push_back(*iter);
                 hitsMap[idString] = temp;
@@ -1913,9 +1913,12 @@ static list<string> s_GetLinkoutUrl(int linkout,
         else {
             url_link = s_MapDisabledLink(lnk_displ);            
         }
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kUnigeneDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
-    if ((linkout & eStructure) && cdd_rid != "" && cdd_rid != "0"){        
+    if ((linkout & eStructure) && cdd_rid != "" && cdd_rid != "0"){
         url_link = kStructureUrl;        
         lnk_displ = textLink ? "Structure" : kStructureImg;  
         if(!disableLink) {
@@ -1940,6 +1943,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
         else {
             url_link = s_MapDisabledLink(lnk_displ);
         }
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kStructureDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     if (linkout & eGeo){
@@ -1952,6 +1958,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
         else {
             url_link = s_MapDisabledLink(lnk_displ);
         }
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kGeoDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     if(linkout & eGene){
@@ -1972,6 +1981,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
       else {
         url_link = s_MapDisabledLink(lnk_displ);
       } 
+      if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kGeneDispl,"lnk",url_link);
+      }        
       linkout_list.push_back(url_link);        
     }
 
@@ -2000,6 +2012,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
             else {
                 url_link = s_MapDisabledLink(lnk_displ);
             }
+            if(textLink) {
+                url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
+            }
             linkout_list.push_back(url_link);
         }
     }
@@ -2013,12 +2028,15 @@ static list<string> s_GetLinkoutUrl(int linkout,
         else {
             url_link = s_MapDisabledLink(lnk_displ);
         }
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
+        }
         linkout_list.push_back(url_link);        
     }
     //View Bioassays involving <accession
     if(linkout & eBioAssay && is_na){
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");                        
-        lnk_displ = textLink ? "Bioassay" : kBioAssayNucImg;            
+        lnk_displ = textLink ? "PubChem Bio Assay" : kBioAssayNucImg;            
         if(!disableLink) {                    
             string linkTitle = " title=\"View Bioassays involving <@label@>\"";
             url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
@@ -2026,11 +2044,14 @@ static list<string> s_GetLinkoutUrl(int linkout,
         else {
             url_link = s_MapDisabledLink(lnk_displ);
         }
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
+        }
         linkout_list.push_back(url_link);        
     }
     else if (linkout & eBioAssay && !is_na) {
         url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");                        
-        lnk_displ = textLink ? "Bioassay" : kBioAssayProtImg;
+        lnk_displ = textLink ? "PubChem Bio Assay" : kBioAssayProtImg;
         if(!disableLink) {        
             lnkTitleInfo ="Bioassay data";
             string linkTitle = " title=\"View Bioassays involving <@label@>\"";
@@ -2038,6 +2059,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
         }
         else {
             url_link = s_MapDisabledLink(lnk_displ);
+        }
+        if(textLink) {
+            url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
         }
         linkout_list.push_back(url_link);        
     }

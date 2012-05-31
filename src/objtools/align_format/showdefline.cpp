@@ -1522,20 +1522,24 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);        
     }
     /*****************This block of code is for future use with AJAX begin***************************/ 
-    string deflId,deflFrmID; 
+    string deflId,deflFrmID,deflFastaSeq; 
     if(sdl->gi == 0) {
         string accession;
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
         deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
+        deflFastaSeq = sdl->id->AsFastaString();        
     }
     else {        
         deflFrmID = deflId = NStr::IntToString(sdl->gi);
+        deflFastaSeq = "gi|" + NStr::IntToString(sdl->gi);
     }
-    //If gi deflFrmID and deflId are the same and equal to gi
-    //If gnl deflFrmID=number, deflId=ti:number like  "268252125" and "ti:268252125" or "961433.m" and "GNOMON:961433.m"
-    //if GNOMON:961433.m
+    
+    //If gi - deflFrmID and deflId are the same and equal to gi "555",deflFastaSeq will have "gi|555"
+    //If gnl - deflFrmID=number, deflId=ti:number,deflFastaSeq=gnl|xxx
+    //like  "268252125","ti:268252125","gnl|ti|961433.m" or "961433.m" and "GNOMON:961433.m" "gnl|GNOMON|961433.m"    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_id",deflId);
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFrm_id",deflFrmID);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFrm_id",deflFrmID);    
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFASTA_id",deflFastaSeq);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum); 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",m_StartIndex + iter->blast_rank); 
