@@ -14847,3 +14847,497 @@ Bioseq-set ::= {
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "NR_048215",
+          version 1
+        }
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 226,
+        seq-data ncbi2na '0D3D0D144842D04847DA453F74969B7BBC6F6E823806749765E6
+FEB8FBF5BDE98EB4521BEABE391B9D67FF0C88C3ECF432FFF412EA44043030'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id other {
+                  accession "NR_048215",
+                  version 1
+                },
+                genomic-id other {
+                  accession "NT_037436",
+                  version 3
+                },
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 225,
+                    genomic-start 891249,
+                    genomic-end 891474,
+                    parts {
+                      match 226
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 226, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    }
+                  }
+                },
+                product-length 226
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "NR_047702",
+          version 1
+        }
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 113,
+        seq-data ncbi2na '6A228F380843F80F0337BBB80F3F008F0FD198233F3FF13FB573
+0C1680'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id other {
+                  accession "NR_047702",
+                  version 1
+                },
+                genomic-id other {
+                  accession "NW_001848856",
+                  version 1
+                },
+                product-strand plus,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 112,
+                    genomic-start 1322832,
+                    genomic-end 1322944,
+                    parts {
+                      match 113
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 113, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    }
+                  }
+                },
+                product-length 113
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "NR_004370",
+          version 1
+        }
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 6026,
+        seq-data ncbi2na '339FB7408F094E4EDC2C4460F00B805900A74F334BCEBD7C8DBC
+12F1FA337BAC3DC89C31390F004E05F3A84EE7CF3CF3CF3CF3CA7805098D908DBCCFAF81DC8C13
+9236CEB7EC5861237F40EDE57341FF8EB2CDCA1C51AF906AC1AA0D2AF63D688A89788669C51370
+A0A49299B03C547549DAA2B2E1800C10C4A1D3358A57B0FA0E2C47F035FC10A143E8A90B7AE524
+966B0F52750C9B33C0BEF9AF006F6CBE07EE7D31AB2C41F10FBAF2C7317F3B3B09B3C5AE8BDF33
+B8F031FB3FFD33BD75CFC005E4F2E77C062EF3EEA5AC73C7F8103C8B9C024A7F0397833DEE4EA3
+0E03085DEF79FD3E7FD23422B0EBC32092FEAA4F2CF186622B80F7E85B6C21C1F087CEFF4F0D08
+180BC8AF60A6348C595CBDC14C063941C90FABB271FF3A7774B67D5A805027FEA75AA82CEBE409
+E01F0283E1A0A914528BA25E69F0FE1D046A007C52B58130BBB0848F8C9DFDD8373ABAE993A5BD
+F2F6E8B8FEDEBC3D63060621D0333C0C8CDF4A3CEB9E09F3B25F4F4EFA4B00E7CFBBF83BBF3B0B
+A25B17BEBFB54F30A11C9F7C0E840F9B72430E23E24304ADEE395F23B5EA791999C4080B3418B3
+F1C8588AD6AC059E051FD39FA8FB81E01EF44E07E83D52C2EE2D3C1D93E3C6D5E57FB111656D9C
+7163E0F3F2E2B75A1B8D1EE197E6EF1AFBF6402F8581F8F3F2282C02DB042BF5B2BA179A0A34F3
+ECC335F16F0C04FEC30C40C0043F1403003304038F51A0D00BC0340300608EAFF3F33EEE29FA41
+745008FF04F5C3A3BEE6CFEE98B1F1041A6FD730033EFD8138036080403D80BA0B60FC0C030FD8
+3BAC34D80C2EF0CC3EB233C1C3FF00FEEECFCF1CC466F9833B3EF4DF2F3A931BE9C39041780C04
+3BEC5E93534AF0EFF3303E4B3BB45403240553050523CF38C4C39F30807084FD904FCFF2B30031
+3F3E0A0F8CCE52C03AECFFC3D7F4300130F80CF3300383CC01DC26BA34769D38B6382064901EE6
+D36EE0492844E04D84FF8193364B539EF2B1FC3C3FCCB9E7E87113AF8ABEC21CE70F0BE7CC0FFC
+C24CEB33CFA30030E3FF3D30CF00080E0013CD513F83B80060A80CFF7FF4340C31E203B724C0F8
+0CFFD3720FB77CF0E3DA03200B7EBCEF3CF7DBEBDBC00E8C4C007F931083C3003BCC183F0F03BF
+CD3CCCC0C3F3A42300333105D074CEA1C55783F0933C3CAA280201C18A3FDF2C9A22600801AF49
+1C2D1FEDCCE903B88E4BB3A26D0CF72CE203C18FC2D7DF038A53F15322AE52953306F0E3C7238E
+FD40896EF9F8CB9247CBABAC075370070330538858CB010B16E2A02F80207783222F012C6E01E7
+C8AF0958E05E0CD6F3A00F4D3C03EC33F030CF38832EE4FFF5330A13EC373C933140CCD300CC1F
+32FCF50F03E7E4FF0448303BCF0FE382E78C8FCCE3C4B9BCFFF683C4C3A4C3CD3E3FFBBFB38F04
+39808F4A317DA856DF8046C50A2DC133B90BCFA8CE05C326C3C1F870C3A8F2FFF163F3270F0443
+56A9BDCCCBCEC03B33F33CFC65DC1E81B17E24CCE7B856023AE0731F8D2BE0B4A6015E3A085804
+BDE1B90363ED20F8B32A980850D814DCA27AF5F582FD5D28C9EB93FC33CCC030DF37AC09838F22
+97CAB6018DF05CF7407F03AB0817C1FDF8CE0BD0AF38CC3B952EA51FFAC2481E99EEA381406C3B
+C6B9503C1074E48C5380A6FAF9F0049286B8D3A0B60359C28BBB041D17960907257C03A3A67C2F
+B317313C58C0B238FCCF1FB8CC03F807F3E2CA0AC43ACE6C82EFE9B09793A0794FAC48DFAEB2C9
+030D83885FA28782E882AFDBB812EBE3462F2DAD70BD0A6025803FD0B00400E5C1CCC040983CC3
+11F830FF8180A831AF50F5B05EF8B35BFBCF033A976EF4D7A4128185302096D888CDA08BFDFF7B
+FCC96C734E82DFD922233AC8EA72089384CC7BEED8CFFCD7685F803F3AEA846407DD04A5B14335
+927ADD42B822DDCB6320C3B2B0A82DA40F235B07DA8C28FA77823E232DA9F8FA804304EBF3B9DF
+DEAC0C8BF724FCEF2F1FBD568CBF2F1B250FBA07F7F700FFC20C73FABC050F2F7CF0F3063CD0F0
+4343D207A4687EA83587B70F004093EE3A5726AEF8443B8FDE54B9DE0ED02E080F42C266AD069A
+8B0738777C2B2503976D370F2E199383A3C18686EFF6F99DBA132E6081FEFF5B3FA0B3183030'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id other {
+                  accession "NR_004370",
+                  version 1
+                },
+                genomic-id other {
+                  accession "NW_001848859",
+                  version 1
+                },
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 6025,
+                    genomic-start 190009,
+                    genomic-end 196034,
+                    parts {
+                      match 6026
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 6026, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    }
+                  }
+                },
+                product-length 6026
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        genbank {
+          accession "GU183135",
+          version 1
+        }
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 1129,
+        seq-data ncbi2na '47DEB4A9A8B6889995A6492621BBB7BA3F6A798E98B2A273B75C
+7EE7A096FDD99D3DDEC1E8A28AAE97F2AF65F8DA2AB5AF56675656A5930DD95245FF7D7DFAF3A7
+E1815F0A1DB6941BEE913D7802862857F158AA2C084B1FA08E1AB72D35F910A025F7999FE9B7B1
+3BEA1D74A4780C782D49D3DD2DDF801EEF47BE84B1E912BDEB53C0A17410BAE5481289FACC4CE4
+8F68E8E8B8552A5478A58B82521F56D79497455F4925AC624124A9AF15D7A71277A58AA6AE80E8
+5417F3DE4EE2177A11577887D9F5150A0146DDC9E0050BE08F47208D40DD47E0CF8A0741020FCE
+B802E089DC50DDD383251E925DD8C6B31D203548421554224239E3C27143CD33D3EEDF3FEFFEFC
+00BDD920291E8FBBB303123DF8A8BB4EC0C06F9491BD00'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id genbank {
+                  accession "GU183135",
+                  version 1
+                },
+                genomic-id other {
+                  accession "NW_003104562",
+                  version 1
+                },
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 378,
+                    genomic-start 1871967,
+                    genomic-end 1872345,
+                    parts {
+                      match 124,
+                      mismatch 1,
+                      match 254
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 376955993652344, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 997361477572559, 10, -15 }
+                      }
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 379,
+                    product-end nucpos 507,
+                    genomic-start 1873600,
+                    genomic-end 1873728,
+                    parts {
+                      match 129
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 129, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 508,
+                    product-end nucpos 612,
+                    genomic-start 1877506,
+                    genomic-end 1877610,
+                    parts {
+                      match 4,
+                      mismatch 1,
+                      match 96,
+                      mismatch 1,
+                      match 3
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 100912002563477, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 980952380952381, 10, -15 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 613,
+                    product-end nucpos 790,
+                    genomic-start 1885753,
+                    genomic-end 1885930,
+                    parts {
+                      match 178
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 178, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 791,
+                    product-end nucpos 836,
+                    genomic-start 1886889,
+                    genomic-end 1886934,
+                    parts {
+                      match 46
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 46, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 837,
+                    product-end nucpos 1128,
+                    genomic-start 1887548,
+                    genomic-end 1887839,
+                    parts {
+                      match 292
+                    },
+                    scores {
+                      {
+                        id str "splign",
+                        value real { 292, 10, 0 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 1, 10, 0 }
+                      }
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    }
+                  }
+                },
+                product-length 1129
+              },
+              ext {
+                {
+                  type str "origin",
+                  data {
+                    {
+                      label str "algo",
+                      data str "Splign:1.39.8"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

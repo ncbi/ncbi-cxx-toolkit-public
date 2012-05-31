@@ -6505,7 +6505,7 @@ Seq-annot ::= {
         type ncRNA,
         ext gen {
           class "miRNA",
-          product "hsa-miR-155"
+          product "hsa-miR-155-5p"
         }
       },
       location packed-int {
@@ -6531,7 +6531,7 @@ Seq-annot ::= {
         type ncRNA,
         ext gen {
           class "miRNA",
-          product "hsa-miR-155*"
+          product "hsa-miR-155-3p"
         }
       },
       location packed-int {
@@ -6641,6 +6641,250 @@ Seq-annot ::= {
           to 30891925,
           strand plus,
           id gi 283557965
+        }
+      }
+    },
+    {
+      data gene {
+        locus "snoRNA:CG32479-a",
+        syn {
+          "CR43576",
+          "Dmel\CR43576"
+        },
+        locus-tag "Dmel_CR43576"
+      },
+      location int {
+        from 891249,
+        to 891474,
+        strand plus,
+        id other {
+          accession "NT_037436",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "cyt_map",
+          val "61D4-61D4"
+        }
+      },
+      dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBgn0263461"
+        },
+        {
+          db "GeneID",
+          tag id 12798554
+        }
+      }
+    },
+    {
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "snoRNA",
+          product "snoRNA:CG32479-a"
+        }
+      },
+      comment "snoRNA:CG32479-a-RA; Dmel\snoRNA:CG32479-a-RA; CR43576-RA;
+ Dmel\CR43576-RA",
+      location packed-int {
+        {
+          from 891249,
+          to 891474,
+          strand plus,
+          id other {
+            accession "NT_037436",
+            version 3
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "mir-2279",
+        desc "mir-2279 stem loop",
+        syn {
+          "CR42911",
+          "Dmel\CR42911",
+          "miR-2279"
+        },
+        locus-tag "Dmel_CR42911"
+      },
+      location int {
+        from 1322832,
+        to 1322944,
+        strand minus,
+        id other {
+          accession "NW_001848856",
+          version 1
+        }
+      },
+      dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBgn0262204"
+        },
+        {
+          db "miRBase",
+          tag str "MI0011289"
+        },
+        {
+          db "GeneID",
+          tag id 12798493
+        }
+      }
+    },
+    {
+      data rna {
+        type premsg,
+        ext name "mir-2279 precursor RNA"
+      },
+      comment "mir-2279-RM; Dmel\mir-2279-RM; CR42911-RM; Dmel\CR42911-RM",
+      location packed-int {
+        {
+          from 1322832,
+          to 1322944,
+          strand minus,
+          id other {
+            accession "NW_001848856",
+            version 1
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "CR41602",
+        syn {
+          "Dmel\CR41602"
+        },
+        locus-tag "Dmel_CR41602"
+      },
+      comment "Annotated by Drosophila Heterochromatin Genome Project,
+ Lawrence Berkeley National Lab, http://www.dhgp.org",
+      location int {
+        from 190009,
+        to 196034,
+        strand plus,
+        id other {
+          accession "NW_001848859",
+          version 1
+        }
+      },
+      dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBgn0085813"
+        },
+        {
+          db "GeneID",
+          tag id 5740420
+        }
+      }
+    },
+    {
+      data rna {
+        type rRNA,
+        ext name "ribosomal RNA"
+      },
+      comment "CR41602-RA; Dmel\CR41602-RA",
+      location packed-int {
+        {
+          from 190009,
+          to 196034,
+          strand plus,
+          id other {
+            accession "NW_001848859",
+            version 1
+          }
+        }
+      }
+    },
+    {
+      data gene {
+        locus "Bos taurus C6orf52 non-coding RNA transcript variant 1, partial
+ sequence"
+      },
+      partial TRUE,
+      location int {
+        from 1871967,
+        to 1887839,
+        strand plus,
+        id other {
+          accession "NW_003104562",
+          version 1
+        },
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type miscRNA,
+        ext gen {
+          product "C6orf52 non-coding RNA transcript variant 1"
+        }
+      },
+      partial TRUE,
+      comment "similar to human chromosome 6 open reading frame 52",
+      location packed-int {
+        {
+          from 1871967,
+          to 1872345,
+          strand plus,
+          id other {
+            accession "NW_003104562",
+            version 1
+          },
+          fuzz-from lim lt
+        },
+        {
+          from 1873600,
+          to 1873728,
+          strand plus,
+          id other {
+            accession "NW_003104562",
+            version 1
+          }
+        },
+        {
+          from 1877506,
+          to 1877610,
+          strand plus,
+          id other {
+            accession "NW_003104562",
+            version 1
+          }
+        },
+        {
+          from 1885753,
+          to 1885930,
+          strand plus,
+          id other {
+            accession "NW_003104562",
+            version 1
+          }
+        },
+        {
+          from 1886889,
+          to 1886934,
+          strand plus,
+          id other {
+            accession "NW_003104562",
+            version 1
+          }
+        },
+        {
+          from 1887548,
+          to 1887839,
+          strand plus,
+          id other {
+            accession "NW_003104562",
+            version 1
+          },
+          fuzz-to lim gt
         }
       }
     }
