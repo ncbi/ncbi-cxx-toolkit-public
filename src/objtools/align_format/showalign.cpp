@@ -195,6 +195,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_DomainInfo = NULL;
     m_SeqPropertyLabel = new vector<string>;
     m_TranslatedFrameForLocalSeq = eFirst;
+    m_ResultPositionIndex = -1;
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
                                        ? matrix_name 
@@ -1586,11 +1587,18 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     }
                     if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
                        (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
-                        
-                        if(gi > 0){
-                            out<<"<a name="<<gi<<"></a>";
+                        if (m_ResultPositionIndex >= 0){
+                            if(gi > 0){
+                                out<<"<a name=#_"<<m_ResultPositionIndex<<"_"<<gi<<"></a>";
+                            } else {
+                                out<<"<a name=#_"<<m_ResultPositionIndex<<"_" <<alnRoInfo->seqidArray[row]<<"></a>";
+                            }
                         } else {
-                            out<<"<a name="<<alnRoInfo->seqidArray[row]<<"></a>";
+                            if(gi > 0){
+                                out<<"<a name="<<gi<<"></a>";
+                            } else {
+                                out<<"<a name="<<alnRoInfo->seqidArray[row]<<"></a>";
+                            }
                         }
                     }					
                     //get sequence checkbox

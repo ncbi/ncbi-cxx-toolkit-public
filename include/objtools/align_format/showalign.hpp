@@ -433,6 +433,11 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     void SetSequencePropertyLabel(const vector<string>* SequencePropertyLabel) {
         m_SeqPropertyLabel = SequencePropertyLabel;
     }
+ 
+    //set and add result index in front of seqid in <a name=seqid> for quick link (for multiple result case)
+    void SetResultPositionIndex(int index) {
+        m_ResultPositionIndex = index;
+    }
 
 private:
 
@@ -626,6 +631,9 @@ private:
     string m_CurrAlnID_DbLbl;
 
     TranslatedFrameForLocalSeq m_TranslatedFrameForLocalSeq;
+
+    ///result position index for multiple query case
+    int m_ResultPositionIndex;
 
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec

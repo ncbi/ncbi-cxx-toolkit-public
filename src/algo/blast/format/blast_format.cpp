@@ -347,13 +347,17 @@ s_HasLocalIDs(CConstRef<CBlastQueryVector> queries)
 
 void 
 CBlastFormat::x_ConfigCShowBlastDefline(CShowBlastDefline& showdef, 
-                                        int skip_from, int skip_to)
+                                        int skip_from, int skip_to, int index)
 {
     int flags = 0;
     if (m_ShowLinkedSetSize)
         flags |= CShowBlastDefline::eShowSumN;
-    if (m_IsHTML)
+    if (m_IsHTML){
         flags |= CShowBlastDefline::eHtml;
+        if (index >= 0) {
+            showdef.SetResultPosIndex(index); 
+        }
+    }
     if (m_ShowGi)
         flags |= CShowBlastDefline::eShowGi;
 
@@ -405,9 +409,10 @@ s_IsGlobalSeqAlign(CConstRef<objects::CSeq_align_set> seqalign_set)
 
 void
 CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set, 
-                        unsigned int itr_num,
-                        blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
-                        int additional)
+                                unsigned int itr_num,
+                                blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
+                                int additional,
+                                int index)
 {
 
     if (itr_num != numeric_limits<unsigned int>::max() && 
@@ -440,7 +445,7 @@ CBlastFormat::x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
         CShowBlastDefline showdef(*aln_set, *m_Scope, 
                                   kFormatLineLength,
                                   m_NumSummary + additional);
-        x_ConfigCShowBlastDefline(showdef, -1, -1);
+        x_ConfigCShowBlastDefline(showdef, -1, -1, index);
         showdef.DisplayBlastDefline(m_Outfile);
     }
     m_Outfile << "\n";
@@ -869,7 +874,8 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
 void
 CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
-                        CConstRef<blast::CBlastQueryVector> queries)
+                                CConstRef<blast::CBlastQueryVector> queries, 
+                                int index)
 {
 
     // For remote searches, we don't retrieve the sequence data for the query
@@ -958,7 +964,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     if ( !m_IsBl2Seq ) {
         CPsiBlastIterationState::TSeqIds prev_ids = CPsiBlastIterationState::TSeqIds();
         int additional =  results.m_NumActualV +results.m_NumActualD + results.m_NumActualJ;
-        x_DisplayDeflines(aln_set, numeric_limits<unsigned int>::max(), prev_ids, additional);
+        x_DisplayDeflines(aln_set, numeric_limits<unsigned int>::max(), prev_ids, additional, index);
     }
 
     //-------------------------------------------------
@@ -1044,6 +1050,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
     display.SetLineLen(70);
+
     if (annots->m_FrameInfo[0] >= 0 && m_IgOptions->m_Translate) {
         display.SetTranslatedFrameForLocalSeq((CDisplaySeqalign::TranslatedFrameForLocalSeq) annots->m_FrameInfo[0]); 
         flags += CDisplaySeqalign::eShowTranslationForLocalSeq;
@@ -1074,7 +1081,7 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     display.SetSubjectMasks(subj_masks);
 
     if (m_IsHTML) {
-     
+        display.SetResultPositionIndex(index); 
         m_Outfile << "\n<CENTER><b><FONT color=\"green\">Alignments</FONT></b></CENTER>" 
                   << endl;
 

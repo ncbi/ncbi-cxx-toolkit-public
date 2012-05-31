@@ -257,6 +257,11 @@ public:
         m_PreComputedResID = preComputedResID;
     }
     
+    ///set and add result position index to <name=seqid> in score quick link for multiple result case
+    void SetResultPosIndex(int index) {
+        m_PositionIndex = index;
+    }
+
     /// Creates a '|' delimited string, corresponding to a list of Seq-ids
     /// @param id List of Seq-ids [in]
     /// @param show_gi Should gi ids be shown or skipped?
@@ -440,6 +445,9 @@ protected:
 
     ///The start index of defline for PSI blast description table
     int    m_StartIndex;
+
+    ///result position index for multiple query case
+    int m_PositionIndex;
 
     ///Internal function to return score info
     ///@param aln seq-align we are working with [in]

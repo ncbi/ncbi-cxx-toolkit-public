@@ -373,6 +373,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         string accession;
         sdl->id->GetLabel(&accession, CSeq_id::eContent);
         sdl->score_url = !useTemplates ? "<a href=#" : "";
+        if (!useTemplates && m_PositionIndex >= 0) {
+            sdl->score_url += "_" + NStr::IntToString(m_PositionIndex) + "_";
+        }
         sdl->score_url += sdl->gi == 0 ? accession : 
             NStr::IntToString(sdl->gi);
         sdl->score_url += !useTemplates ? ">" : "";
@@ -507,6 +510,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     }
     m_DeflineTemplates = NULL;
     m_StartIndex = 0;
+    m_PositionIndex = -1;
 }
 
 CShowBlastDefline::~CShowBlastDefline()

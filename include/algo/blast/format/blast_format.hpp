@@ -189,8 +189,10 @@ public:
     /// @param results Object containing alignments, mask regions, and
     ///                ancillary data to be output [in]
     /// @param queries Query sequences (cached for XML formatting) [in]
+    /// @param result position index if index >= 0 [in]
     void PrintOneResultSet(blast::CIgBlastResults& results,
-                           CConstRef<blast::CBlastQueryVector> queries);
+                           CConstRef<blast::CBlastQueryVector> queries, 
+                           int index = -1);
 
     /// Print all alignment information for aa PHI-BLAST run.
     /// any errors or warnings (errors are deemed fatal)
@@ -313,10 +315,12 @@ private:
     /// @param prev_seqids list of previously found Seq-ids, if applicable,
     /// otherwise it should be an empty list [in]
     /// @param additional show additional aligment summary [in]
+    /// @param index add result postition index to quick url link on score if index >=0 [in]
     void x_DisplayDeflines(CConstRef<CSeq_align_set> aln_set,
-                   unsigned int itr_num,
-                   blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
-                   int additional = 0);
+                           unsigned int itr_num,
+                           blast::CPsiBlastIterationState::TSeqIds& prev_seqids,
+                           int additional = 0,
+                           int index = -1);
 
     /// Split the full alignment into two sets of alignments: one for those
     /// seen in the previous iteration and used to build the PSSM and the other
@@ -336,9 +340,11 @@ private:
     /// @param showdef CShowBlastDefline object to configure [in|out]
     /// @param skip_from skipping display from [in]
     /// @param skip_to skipping display to [in]
+    /// @param index to add index (if >=0)to quick url link to score [in]
     void x_ConfigCShowBlastDefline(align_format::CShowBlastDefline& showdef,
                                    int skip_from = -1,
-                                   int skip_to = -1);
+                                   int skip_to = -1,
+                                   int index = -1);
 
     /// Prints XML and both species of ASN.1
     /// @param results Results for one query or Phi-blast iteration [in]
