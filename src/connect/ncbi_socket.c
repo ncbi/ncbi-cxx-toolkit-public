@@ -1557,7 +1557,7 @@ static EIO_Status s_Select_(size_t                n,
                 CORE_LOGF_X(145, eLOG_Error,
                             ("[SOCK::Select] "
                              " Too many sockets in select(),"
-                             " must be less than %u", count));
+                             " must be fewer than %u", count));
                 polls[i].revent = eIO_Close;
                 ready = bad = 1/*true*/;
                 continue;
@@ -2159,7 +2159,7 @@ static EIO_Status s_Select(size_t                n,
                 /* NB: only once here, as this sets "bad" to "1" */
                 CORE_LOGF_X(145, eLOG_Error,
                             ("[SOCK::Select] "
-                             " Too many objects, must be less than %u",
+                             " Too many objects, must be fewer than %u",
                              (unsigned int) count));
                 polls[i].revent = eIO_Close;
                 ready = done = 1/*true*/;
