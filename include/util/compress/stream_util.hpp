@@ -74,8 +74,8 @@ public:
         eBZip2,               ///< bzip2
         eLZO,                 ///< LZO (LZO1X)
         eZip,                 ///< zlib (raw zip data / DEFLATE method)
-        eGZipFile,            ///< .gz file
-        eConcatenatedGZipFile ///< Concatenated .gz file (decompress only)
+        eGZipFile,            ///< .gz file (including concatenated)
+        eConcatenatedGZipFile ///< Synonym for eGZipFile (for backward compatibility)
     };
 
     /// Default algorithm-specific compression/decompression flags.

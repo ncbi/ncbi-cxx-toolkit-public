@@ -38,8 +38,8 @@ BEGIN_NCBI_SCOPE
 const ICompression::TFlags kDefault_BZip2    = 0;
 const ICompression::TFlags kDefault_LZO      = 0;
 const ICompression::TFlags kDefault_Zip      = 0;
-const ICompression::TFlags kDefault_GZipFile = CZipCompression::fCheckFileHeader | CZipCompression::fWriteGZipFormat;
-const ICompression::TFlags kDefault_ConcatenatedGZipFile = CZipCompression::fGZip;
+const ICompression::TFlags kDefault_GZipFile = CZipCompression::fGZip;
+const ICompression::TFlags kDefault_ConcatenatedGZipFile = kDefault_GZipFile;
 
 
 // Type of initialization

@@ -179,7 +179,7 @@ int CTest::Run(void)
         // Use a set of 25 chars [A-Z]
         src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
     }
-    // Modify firs bytes to fixed value, this possible will prevent decoders
+    // Modify first bytes to fixed value, this possible will prevent decoders
     /// to treat random text data as compressed data.
     memcpy(src_buf,"12345",5);
 
