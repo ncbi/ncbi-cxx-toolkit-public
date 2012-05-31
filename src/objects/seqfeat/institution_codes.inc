@@ -2175,7 +2175,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HIPC	s	Instituto Superior Pedagogico Jose Marti, Departamento de Biologia",
 "HIRO	s	Hiroshima University, Biological Science Department",
 "HIRU	s	Okayama University of Science",
-"HITBC	s	Xishuangbanna Tropical Botanical Garden, Academia Sinica",
+"HITBC	s	Xishuangbanna Tropical Botanical Garden, Chinese Academy of Sciences",
 "HIUW	s	Hygiene-Institut der Universitaet",
 "HIWNT	s	Hampshire and Isle of Wight Naturalists' Trust Ltd.",
 "HJBL	s	Escuela Nacional de Ciencias Forestales",
