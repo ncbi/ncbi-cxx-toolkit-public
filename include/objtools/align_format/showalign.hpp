@@ -260,6 +260,8 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         string alignHeaderTmpl; ///< Template for displaying header,deflines and gene info  - BLAST_ALIGN_HEADER
         string sortInfoTmpl;    ///< Template for displaying  Sort by header - SORT_ALIGNS_SEQ
         string alnDefLineTmpl;    ///< Template for displaying one defline ALN_DEFLINE_ROW    
+        string alnTitlesLinkTmpl;    ///< Template for displaying link for more defline titles
+        string alnTitlesTmpl;    ///< Template for displaying multiple defline titles
         string alnSeqInfoTmpl;  ///< Template for displaying sequnce link in defline
         string alignInfoTmpl;   ///< Template for displaying singe align params - BLAST_ALIGN_PARAMS_NUC,BLAST_ALIGN_PARAMS_PROT
         string alignFeatureTmpl; ///< Template for displaying  align features -ALN_FEATURES 

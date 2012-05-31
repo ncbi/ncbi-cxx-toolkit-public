@@ -102,7 +102,8 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 static const char kUnigeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=<@db@>&cmd=Display&dopt=<@dopt@>_unigene&from_uid=<@gi@>&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kUnigeneImg[] = "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">";
-
+//For text link <@lnk@> is substituted by formatted url
+static const string kUnigeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">clustered expressed sequence tags</span></div>";
 
 ///structure
 // .ncbirc alias: STRUCTURE_URL
@@ -110,23 +111,30 @@ static const char kStructureUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/Struc
 &blast_view=<@blast_view@>&hsp=0&taxname=<@taxname@>&client=blast&log$=structure<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kStructureImg[] = "<img border=0 height=16 width=16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">";
+//For text link <@lnk@> is substituted by formatted url
+static const string kStructureDispl =  "<div><@lnk@>-<span class=\"rlLink\">3D structure displays</span></div>";
 
 ///structure overview
 static const char kStructure_Overview[] = "<a href=\"http://www.ncbi.nlm.nih.\
 gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&%s\
 &blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
+
 ///Geo
 // .ncbirc alias: GEO
 static const char kGeoUrl[] =  "<a href=\"http://www.ncbi.nlm.nih.gov/geoprofiles/?term=<@gi@>[gi]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kGeoImg[] = "<img border=0 height=16 width=16 src=\"images/E.gif\" alt=\"GEO profiles info linked to <@label@>\">";
+//For text link <@lnk@> is substituted by formatted url
+static const string kGeoDispl =  "<div><@lnk@>-<span class=\"rlLink\">microarray expression data</span></div>";
 
 ///Gene
 // .ncbirc alias: GENE
 static const char kGeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=search&term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kGeneImg[] = "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">";
+//For text link <@lnk@> is substituted by formatted url
+static const string kGeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">associated gene details</span></div>";
 
 ///Bioassay for proteins
 // .ncbirc alias: BIOASSAY_PROT
@@ -139,11 +147,16 @@ static const char kBioAssayProtImg[] = "<img border=0 height=16 width=16 src=\"i
 static const char kBioAssayNucURL[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[RNATargetGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 static const char kBioAssayNucImg[] = "<img border=0 height=16 width=16 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to <@label@>\">";
 
+//For text link <@lnk@> is substituted by formatted url for both BioAssay Nuc and Prot
+static const string kBioAssayDispl =  "<div><@lnk@>-<span class=\"rlLink\">bioactivity screening</span></div>";
+
 ///mapviewer linkout
 // .ncbirc alias: MAPVIEWER
 static const char kMapviwerUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=<@gi@>&THE_BLAST_RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kMapviwerImg[] = "<img border=0 height=16 width=16 src=\"images/M.gif\" alt=\"Genome view with mapviewer linked to <@label@>\">";
+//For text link <@lnk@> is substituted by formatted url
+static const string kMapviwerDispl =  "<div><@lnk@>-<span class=\"rlLink\">aligned genomic context</span></div>";
 
 ///mapviewer linkout
 //for used for NT/NW/NC
