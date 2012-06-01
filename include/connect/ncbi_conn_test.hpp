@@ -75,6 +75,9 @@ public:
     CConnTest(const STimeout* timeout = kDefaultTimeout,
               CNcbiOstream* output = 0, SIZE_TYPE width = 72);
 
+    void     SetEmail(const string& email)
+    { m_Email = email; }
+
     void     SetWidth(SIZE_TYPE width = 72)
     { m_Width = width; }
 
@@ -211,6 +214,7 @@ protected:
     const STimeout*       m_Timeout;
     CNcbiOstream*         m_Output;
     SIZE_TYPE             m_Width;
+    string                m_Email;
 
     /// Certain properties of communication as determined by configuration
     bool                  m_HttpProxy;

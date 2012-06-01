@@ -43,7 +43,9 @@
 #define _STR(x)           #x
 #define STRINGIFY(x)  _STR(x)
 
-#define NCBI_HELP_DESK  "NCBI Help Desk info@ncbi.nlm.nih.gov"
+#define HELP_EMAIL  (m_Email.empty()                                    \
+                     ? string("NCBI Help Desk info@ncbi.nlm.nih.gov")   \
+                     : m_Email)
 #define NCBI_FW_URL                                                     \
     "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
 
@@ -293,7 +295,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
             }
             if (okay == 1) {
                 temp += "Service response was not recognized; please contact "
-                    NCBI_HELP_DESK "\n";
+                    + HELP_EMAIL + '\n';
             }
         } else
             temp += x_TimeoutMsg();
@@ -372,7 +374,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp += str;
                 temp += "\" from your configuration\n";
             } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
-                temp += "; please contact " NCBI_HELP_DESK "\n";
+                temp += "; please contact " + HELP_EMAIL + '\n';
         }
         if (status != eIO_Timeout) {
             const char* mapper = SERV_MapperName(iter);
@@ -572,14 +574,14 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             temp += m_Fwd.size() + m_FwdFB.size() == 1 ? " port" : " ports";
         } else {
             status = eIO_Unknown;
-            temp = "No connection ports found, please contact " NCBI_HELP_DESK;
+            temp = "No connection ports found, please contact " + HELP_EMAIL;
         }
     } else if (status == eIO_Timeout) {
         temp = x_TimeoutMsg();
         if (m_Timeout > kTimeout)
-            temp += "You may want to contact " NCBI_HELP_DESK;
+            temp += "You may want to contact " + HELP_EMAIL;
     } else
-        temp = "Please contact " NCBI_HELP_DESK;
+        temp = "Please contact " + HELP_EMAIL;
 
     PostCheck(eFirewallConnPoints, 1/*sub*/, status, temp);
 
@@ -597,7 +599,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             if (cp->status != eIO_Success) {
                 status = cp->status;
                 temp  = CSocketAPI::HostPortToString(cp->host, cp->port);
-                temp += " is not operational, please contact " NCBI_HELP_DESK;
+                temp += " is not operational, please contact " + HELP_EMAIL;
                 break;
             }
         }
@@ -605,12 +607,12 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             if (!m_Firewall  &&  !m_FwdFB.empty()) {
                 status = eIO_Unknown;
                 temp = "Fallback ports found in non-firewall mode, please"
-                    " contact " NCBI_HELP_DESK;
+                    " contact " + HELP_EMAIL;
             } else if (m_Firewall != firewall) {
                 status = eIO_Unknown;
                 temp  = "Firewall ";
                 temp += firewall ? "wrongly" : "not";
-                temp += " acknowledged, please contact " NCBI_HELP_DESK;
+                temp += " acknowledged, please contact " + HELP_EMAIL;
             } else
                 temp.resize(2);
         }
@@ -992,7 +994,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                     &&  (!(iter = SERV_OpenSimple(kId2))
                          ||  !SERV_GetNextInfo(iter))) {
                     temp += "The service is currently unavailable;"
-                        " you may want to contact " NCBI_HELP_DESK "\n";
+                        " you may want to contact " + HELP_EMAIL + '\n';
                 } else if (m_Fwd.empty()  &&  net_info
                            &&  net_info->firewall != eFWMode_Fallback) {
                     temp += "The most likely reason for the failure is that"
@@ -1000,7 +1002,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                     temp += *net_info->proxy_host ? "forwarder" : "firewall";
                     temp += " is still blocking ports as reported above\n";
                 } else if (status != eIO_Timeout  ||  m_Timeout > kTimeout)
-                    temp += "Please contact " NCBI_HELP_DESK "\n";
+                    temp += "Please contact " + HELP_EMAIL + '\n';
                 SERV_Close(iter);
             }
         } else if (!str) {
@@ -1024,7 +1026,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             } else {
                 temp += n ? "Unrecognized" : "No";
                 temp += " response from service;"
-                    " please contact " NCBI_HELP_DESK "\n";
+                    " please contact " + HELP_EMAIL + '\n';
             }
         }
     }
