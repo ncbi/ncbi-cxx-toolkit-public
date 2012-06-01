@@ -137,81 +137,12 @@ bool CNSClientId::IsComplete(void) const
 }
 
 
-unsigned int CNSClientId::GetAddress(void) const
-{
-    return m_Addr;
-}
-
-
-const string &  CNSClientId::GetNode(void) const
-{
-    return m_ClientNode;
-}
-
-
-const string &  CNSClientId::GetSession(void) const
-{
-    return m_ClientSession;
-}
-
-
-unsigned short  CNSClientId::GetControlPort(void) const
-{
-    return m_ControlPort;
-}
-
-
-const string &  CNSClientId::GetClientHost(void) const
-{
-    return m_ClientHost;
-}
-
-
-const string &  CNSClientId::GetProgramName(void) const
-{
-    return m_ProgName;
-}
-
-
-const string &  CNSClientId::GetClientName(void) const
-{
-    return m_ClientName;
-}
-
-
-unsigned int  CNSClientId::GetCapabilities(void) const
-{
-    return m_Capabilities;
-}
-
-
 // This is for rude clients which provide the first (i.e. authorization)
 // in the format that cannot be parsed. In this case the whole line
 // is considered to be the client name.
 void CNSClientId::SetClientName(const string &  client_name)
 {
     m_ClientName = client_name;
-    return;
-}
-
-
-void CNSClientId::SetControlPort(unsigned short  port)
-{
-    m_ControlPort = port;
-    return;
-}
-
-
-void CNSClientId::SetClientHost(const string &  host)
-{
-    m_ClientHost = host;
-    return;
-}
-
-
-void CNSClientId::AddCapability(unsigned int  capabilities)
-{
-    m_Capabilities |= capabilities;
     return;
 }
 
@@ -306,19 +237,6 @@ bool  CNSClientId::CheckVersion(const CQueue *  queue)
         // There could be parsing errors
         return false;
     }
-}
-
-
-unsigned int  CNSClientId::GetID(void) const
-{
-    return m_ID;
-}
-
-
-void  CNSClientId::SetID(unsigned int  id)
-{
-    m_ID = id;
-    return;
 }
 
 

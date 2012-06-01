@@ -96,6 +96,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "QINF",     { &CNetScheduleHandler::x_ProcessQueueInfo,
                     eNSCR_Any },
         { { "qname", eNSPT_Id, eNSPA_Required } } },
+    { "SETQUEUE", { &CNetScheduleHandler::x_ProcessSetQueue,
+                    eNSCR_Any },
+        { { "qname", eNSPT_Id, eNSPA_Optional } } },
 
     /*** QueueAdmin role ***/
     { "DROPQ",    { &CNetScheduleHandler::x_ProcessDropQueue,
@@ -2092,14 +2095,57 @@ void CNetScheduleHandler::x_ProcessDeleteQueue(CQueue*)
 
 void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
 {
-    const string&   qname = m_CommandArguments.qname;
     int             kind;
     string          qclass;
     string          comment;
 
-    m_Server->QueueInfo(qname, kind, &qclass, &comment);
+    m_Server->QueueInfo(m_CommandArguments.qname, kind, &qclass, &comment);
     WriteMessage("OK:", NStr::IntToString(kind) + "\t" + qclass + "\t\"" +
                         NStr::PrintableString(comment) + "\"");
+    x_PrintRequestStop(eStatus_OK);
+}
+
+
+void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
+{
+    if (m_CommandArguments.qname.empty() ||
+        m_CommandArguments.qname == "noname") {
+        // Disconnecting from all the queues
+        m_QueueRef.Reset(NULL);
+        m_QueueName.clear();
+
+        m_ClientId.RemoveCapability(eNSAC_Queue  |
+                                    eNSAC_Worker |
+                                    eNSAC_Submitter);
+
+        WriteMessage("OK:");
+        x_PrintRequestStop(eStatus_OK);
+        return;
+    }
+
+    // Here: connecting to another queue
+
+    CRef<CQueue>    queue;
+
+    try {
+        queue = m_Server->OpenQueue(m_CommandArguments.qname);
+    }
+    catch (...) {
+        x_WriteMessageNoThrow("ERR:eUnknownQueue:");
+        x_PrintRequestStop(eStatus_BadRequest);
+        return;
+    }
+
+    m_QueueRef.Reset(queue);
+    m_QueueName = m_CommandArguments.qname;
+
+    m_ClientId.AddCapability(eNSAC_Queue);
+    if (queue->IsWorkerAllowed(m_ClientId.GetAddress()))
+        m_ClientId.AddCapability(eNSAC_Worker);
+    if (queue->IsSubmitAllowed(m_ClientId.GetAddress()))
+        m_ClientId.AddCapability(eNSAC_Submitter);
+
+    WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 

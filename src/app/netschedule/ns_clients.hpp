@@ -66,22 +66,37 @@ class CNSClientId
         bool IsComplete(void) const;
 
         // Getters/setters
-        unsigned int GetAddress(void) const;
-        const string &  GetNode(void) const;
-        const string &  GetSession(void) const;
-        unsigned short  GetControlPort(void) const;
-        const string &  GetClientHost(void) const;
-        const string &  GetProgramName(void) const;
-        const string &  GetClientName(void) const;
-        unsigned int GetCapabilities(void) const;
+        unsigned int GetAddress(void) const
+        { return m_Addr; }
+        const string &  GetNode(void) const
+        { return m_ClientNode; }
+        const string &  GetSession(void) const
+        { return m_ClientSession; }
+        unsigned short  GetControlPort(void) const
+        { return m_ControlPort; }
+        const string &  GetClientHost(void) const
+        { return m_ClientHost; }
+        const string &  GetProgramName(void) const
+        { return m_ProgName; }
+        const string &  GetClientName(void) const
+        { return m_ClientName; }
+        unsigned int GetCapabilities(void) const
+        { return m_Capabilities; }
         void SetClientName(const string &  client_name);
-        void SetClientHost(const string &  client_host);
-        void SetControlPort(unsigned short  port);
-        void AddCapability(unsigned int  capabilities);
+        void SetClientHost(const string &  client_host)
+        { m_ClientHost = client_host; }
+        void SetControlPort(unsigned short  port)
+        { m_ControlPort = port; }
+        void AddCapability(unsigned int  capabilities)
+        { m_Capabilities |= capabilities; }
+        void RemoveCapability(unsigned int  capabilities)
+        { m_Capabilities &= ~capabilities; }
         void CheckAccess(TNSClientRole  role, const CQueue *  queue);
         bool CheckVersion(const CQueue *  queue);
-        unsigned int GetID(void) const;
-        void SetID(unsigned int  id);
+        unsigned int GetID(void) const
+        { return m_ID; }
+        void SetID(unsigned int  id)
+        { m_ID = id; }
 
     private:
         static string x_AccessViolationMessage(unsigned int  deficit);
