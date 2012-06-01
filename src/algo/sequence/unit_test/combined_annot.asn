@@ -760,6 +760,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein has 4 indels compared to this genomic
+ sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -970,6 +972,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein has 4 indels compared to this genomic
+ sequence",
       product whole gi 109134349,
       location packed-int {
         {

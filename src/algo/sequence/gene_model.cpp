@@ -661,7 +661,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     }
 
     if (mrna_feat) {
-        SetFeatureExceptions(*mrna_feat, align, cds_feat.GetPointer());
+        SetFeatureExceptions(*mrna_feat, align,
+                             cds_feat.GetPointer(), cdregion);
     }
     if (cds_feat) {
         SetFeatureExceptions(*cds_feat, align);
@@ -1827,7 +1828,8 @@ void CFeatureGenerator::SImplementation::x_CopyAdditionalFeatures(const CBioseq_
 ///
 void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
                                   const CSeq_align* align,
-                                  CSeq_feat* cds_feat)
+                                  CSeq_feat* cds_feat,
+                                  const CSeq_feat* cds_feat_on_mrna)
 {
     if ( !feat.IsSetProduct() ) {
         ///
@@ -2058,7 +2060,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
     }
 
     x_SetExceptText(feat, except_text);
-    x_SetComment(feat, cds_feat, align, mismatch_locs,
+    x_SetComment(feat, cds_feat, cds_feat_on_mrna, align, mismatch_locs,
                  insert_locs, delete_locs, delete_sizes);
 }
 
@@ -2351,7 +2353,8 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
 
 void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
                                       const CSeq_align* align,
-                                      CSeq_feat* cds_feat)
+                                      CSeq_feat* cds_feat,
+                                      const CSeq_feat* cds_feat_on_mrna)
 {
     // We're going to set the exception and add any needed inference qualifiers,
     // so if there's already an inference qualifer there, remove it.
@@ -2379,7 +2382,7 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
     //   - mismatches in translation
     switch (feat.GetData().Which()) {
     case CSeqFeatData::e_Rna:
-        x_HandleRnaExceptions(feat, align, cds_feat);
+        x_HandleRnaExceptions(feat, align, cds_feat, cds_feat_on_mrna);
         break;
 
     case CSeqFeatData::e_Cdregion:
@@ -2395,7 +2398,7 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
         case CSeqFeatData::eSubtype_S_region:
         case CSeqFeatData::eSubtype_V_region:
         case CSeqFeatData::eSubtype_V_segment:
-            x_HandleRnaExceptions(feat, align, NULL);
+            x_HandleRnaExceptions(feat, align, NULL, NULL);
             break;
 
         default:
@@ -2415,6 +2418,7 @@ static string s_Count(unsigned num, const string &item_name)
 
 void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                       CSeq_feat *cds_feat,
+                      const CSeq_feat *cds_feat_on_mrna,
                       const CSeq_align *align,
                       const CRangeCollection<TSeqPos> &mismatch_locs,
                       const CRangeCollection<TSeqPos> &insert_locs,
@@ -2429,26 +2433,23 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
     }
     
     string rna_comment, cds_comment;
-    CRangeCollection<TSeqPos> mismatches_in_cds, inserts_in_cds, deletes_in_cds;
+    CRangeCollection<TSeqPos> inserts_in_cds, deletes_in_cds;
     TSeqRange cds_range;
     if (cds_feat) {
         CSeq_loc_Mapper to_mrna(*align, CSeq_loc_Mapper::eSplicedRow_Prod);
         for (CSeq_loc_CI loc_it(cds_feat->GetLocation()); loc_it;  ++loc_it) {
             CRef<CSeq_loc> cds_on_mrna = to_mrna.Map(*loc_it.GetRangeAsSeq_loc());
             cds_range += cds_on_mrna->GetTotalRange();
-            mismatches_in_cds += cds_on_mrna->GetTotalRange();
             inserts_in_cds += cds_on_mrna->GetTotalRange();
-            deletes_in_cds += cds_on_mrna->GetTotalRange();
-        }
-        mismatches_in_cds &= mismatch_locs;
+	    deletes_in_cds += cds_on_mrna->GetTotalRange();
+	}
         inserts_in_cds &= insert_locs;
         deletes_in_cds &= delete_locs;
     }
 
     if (m_is_best_refseq) {
-        rna_comment = "The RefSeq transcript has ";
         size_t indel_count = insert_locs.size() + delete_locs.size();
-        size_t cds_indel_count = inserts_in_cds.size() + deletes_in_cds.size();
+        rna_comment = "The RefSeq transcript has ";
         if (!mismatch_locs.empty()) {
             rna_comment +=
                 s_Count(mismatch_locs.GetCoveredLength(), "substitution");
@@ -2460,23 +2461,48 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
             rna_comment += s_Count(indel_count, "indel");
         }
         rna_comment += " compared to this genomic sequence";
-        if (false && (!mismatches_in_cds.empty() || cds_indel_count)) {
-            /// FIXME: We're not producing the CDS comment at this time in the
-            /// best_refseq case; we need to clarify how to determine the
-            /// number of mismatches relevant to translation
-            cds_comment = "The RefSeq protein has ";
-            if (cds_indel_count) {
-                cds_comment += s_Count(cds_indel_count, "indel");
-            }
-            if (!mismatches_in_cds.empty()) {
-                if (cds_indel_count) {
-                    cds_comment += " and ";
+        if (cds_feat && cds_feat_on_mrna) {
+            size_t cds_indel_count = inserts_in_cds.size()
+                                   + deletes_in_cds.size();
+            size_t cds_mismatch_count = 0;
+            CSeqVector prot(cds_feat->GetProduct(), *m_scope,
+                            CBioseq_Handle::eCoding_Iupac);
+            const CTrans_table &translate =
+                CGen_code_table::GetTransTable(1);
+            CSeq_loc_Mapper to_mrna(*cds_feat_on_mrna,
+                                    CSeq_loc_Mapper::eProductToLocation);
+            CSeq_loc_Mapper to_genomic(
+                *align, CSeq_loc_Mapper::eSplicedRow_Gen);
+            for (TSeqPos pos = 0; pos < prot.size(); ++pos) {
+                CSeq_loc aa_loc(cds_feat->SetProduct().SetWhole(), pos, pos);
+                CRef<CSeq_loc> rna_codon = to_mrna.Map(aa_loc);
+                CRef<CSeq_loc> genomic_codon = to_genomic.Map(*rna_codon);
+                CSeqVector codon(*genomic_codon, *m_scope,
+                                 CBioseq_Handle::eCoding_Iupac);
+                if (codon.size() == 3) {
+                    int state = CTrans_table::SetCodonState(
+                                    codon[0], codon[1], codon[2]);
+                    char translated_codon = pos == 0
+                        ? translate.GetStartResidue(state)
+                        : translate.GetCodonResidue(state);
+                    if (translated_codon != prot[pos]) {
+                        ++cds_mismatch_count;
+                    }
                 }
-                cds_comment += "up to "
-                             + s_Count(mismatches_in_cds.GetCoveredLength(),
-                                       "substitution");
             }
-            cds_comment += " compared to this genomic sequence";
+            if (cds_mismatch_count || cds_indel_count) {
+                cds_comment = "The RefSeq protein has ";
+                if (cds_mismatch_count) {
+                    cds_comment += s_Count(cds_mismatch_count, "substitution");
+                    if (cds_indel_count) {
+                        cds_comment += " and ";
+                    }
+                }
+                if (cds_indel_count) {
+                    cds_comment += s_Count(cds_indel_count, "indel");
+                }
+                cds_comment += " compared to this genomic sequence";
+            }
         }
     } else if (m_is_gnomon) {
         set<TSeqPos> insert_codons, delete_codons;

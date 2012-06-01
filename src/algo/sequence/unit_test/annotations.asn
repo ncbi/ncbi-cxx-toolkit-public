@@ -745,7 +745,8 @@ Seq-annot ::= {
         }
       },
       except TRUE,
-      comment "isoform 2 precursor is encoded by transcript variant 2",
+      comment "isoform 2 precursor is encoded by transcript variant 2; The
+ RefSeq protein has 1 indel compared to this genomic sequence",
       product whole gi 110611233,
       location packed-int {
         {
@@ -1171,6 +1172,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein has 2 substitutions and 1 indel compared to
+ this genomic sequence",
       product whole gi 219879767,
       location packed-int {
         {
@@ -2198,7 +2201,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "isoform 2 precursor is encoded by transcript variant 2",
+      comment "isoform 2 precursor is encoded by transcript variant 2; The
+ RefSeq protein has 1 indel compared to this genomic sequence",
       product whole gi 110611233,
       location packed-int {
         {
@@ -2691,6 +2695,8 @@ Seq-annot ::= {
         }
       },
       except TRUE,
+      comment "The RefSeq protein has 1 substitution compared to this genomic
+ sequence",
       product whole gi 89886293,
       location packed-int {
         {
@@ -5149,6 +5155,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein has 4 indels compared to this genomic
+ sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -5615,6 +5623,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein has 4 indels compared to this genomic
+ sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -6585,6 +6595,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein has 15 substitutions compared to this
+ genomic sequence",
       product whole gi 55742776,
       location packed-int {
         {
