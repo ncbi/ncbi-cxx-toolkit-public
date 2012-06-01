@@ -1430,9 +1430,9 @@ static EIO_Status s_Select_(size_t                n,
 
     for (;;) { /* optionally auto-resume if interrupted / sliced */
         int/*bool*/    bad   = 0/*false*/;
-#ifdef NCBI_OS_MSWIN
+#  ifdef NCBI_OS_MSWIN
         unsigned int   count = 0;
-#endif /*NCBI_OS_MSWIN*/
+#  endif /*NCBI_OS_MSWIN*/
         struct timeval xx_tv;
 
         write_only = 1/*true*/;
@@ -1687,7 +1687,7 @@ static EIO_Status s_Select_(size_t                n,
 }
 
 
-#  if defined(NCBI_OS_UNIX)  &&  defined(HAVE_POLL_H)
+#  if defined(NCBI_OS_UNIX) && !defined(NCBI_OS_DARWIN) && defined(HAVE_POLL_H)
 
 
 #    define NPOLLS  ((3 * sizeof(fd_set)) / sizeof(struct pollfd))
@@ -1876,11 +1876,11 @@ static EIO_Status s_Poll_(size_t                n,
             x_ready = poll(x_polls, count, !ready ? slice : 0);
 
             if (x_ready > 0) {
-#ifdef NCBI_OS_DARWIN
+#    ifdef NCBI_OS_DARWIN
                 /* Mac OS X sometimes misreports, weird! */
                 if (x_ready > (int) count)
-                    x_ready = (int) count;
-#endif /*NCBI_OS_DARWIN*/
+                    x_ready = (int) count;  /* this is *not* a workaround!!! */
+#    endif /*NCBI_OS_DARWIN*/
                 assert(status == eIO_Success);
                 ready = (nfds_t) x_ready;
                 assert(ready <= count);
@@ -1997,7 +1997,7 @@ static EIO_Status s_Poll_(size_t                n,
 }
 
 
-#  endif /*NCBI_OS_UNIX && HAVE_POLL_H*/
+#  endif /*NCBI_OS_UNIX && !NCBI_OS_DARWIN && HAVE_POLL_H*/
 
 
 #endif /*!NCBI_OS_MSWIN || !NCBI_CXX_TOOLKIT*/
@@ -2376,10 +2376,10 @@ static EIO_Status s_Select(size_t                n,
 
 #else /*!NCBI_OS_MSWIN || !NCBI_CXX_TOOLKIT*/
 
-#  if defined(NCBI_OS_UNIX)  &&  defined(HAVE_POLL_H)
+#  if defined(NCBI_OS_UNIX) && !defined(NCBI_OS_DARWIN) && defined(HAVE_POLL_H)
     if (s_IOWaitSysAPI != eSOCK_IOWaitSysAPISelect)
         return s_Poll_(n, polls, tv, asis);
-#  endif /*NCBI_OS_UNIX && HAVE_POLL_H*/
+#  endif /*NCBI_OS_UNIX && !NCBI_OS_DARWIN && HAVE_POLL_H*/
 
     return s_Select_(n, polls, tv, asis);
 
@@ -2398,7 +2398,7 @@ static inline void x_tvcpy(struct timeval* dst, struct timeval* src)
 #  pragma GCC diagnostic pop                        /* NCBI_FAKE_WARNING */
 #else
 #  define x_tvcpy(d, s)  (void) memcpy((d), (s), sizeof(*(d)))
-#endif /*__GNUC__*/
+#endif /*NCBI_COMPILER_GCC*/
 
 
 /* connect() could be async/interrupted by a signal or just cannot
