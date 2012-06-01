@@ -85,6 +85,10 @@
 #  undef Int4
 #  undef Uint4
 #endif
+#ifdef Int8
+#  undef Int8
+#  undef Uint8
+#endif
 
 typedef          char  Char;    /**< Alias for char */
 typedef signed   char  Schar;   /**< Alias for signed char */
