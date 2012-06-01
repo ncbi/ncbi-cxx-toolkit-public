@@ -2383,17 +2383,12 @@ else
    APP_LIBS_SETTING='$(LIBS)'
    NCBI_FEATURE(DLL)
    # Some shared libraries end up containing static libraries, so make
-   # sure to use DLL flags for both on platforms where such inclusion
-   # would otherwise be illegal....
-   case "$host_os:$host_cpu:$bit64_sfx" in
-      # linux*:*86:*) ;;
-      linux* | darwin* | solaris*:64 | *bsd* )
-        CFLAGS="$CFLAGS $CFLAGS_DLL"
-        CFLAGS_DLL=
-        CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
-        CXXFLAGS_DLL=
-        ;;
-   esac
+   # sure to use DLL flags for both, as such inclusion can otherwise
+   # result in linker errors.
+   CFLAGS="$CFLAGS $CFLAGS_DLL"
+   CFLAGS_DLL=
+   CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
+   CXXFLAGS_DLL=
    AC_DEFINE(NCBI_DLL_SUPPORT, 1,
      [Define to 1 if building dynamic libraries at all
       (albeit not necessarily by default).])
