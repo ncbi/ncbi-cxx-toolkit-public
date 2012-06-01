@@ -1,3 +1,15 @@
+Release 4.12.0 based on SC-10 (2012-06-01)
+
+Improvements and bug fixes
+
+    * NetSchedule: borrow NC implementation of the log writer in a separate
+      thread (JIRA: CXX-2859)
+    * NetSchedule: new command to switch the current queue (JIRA: CXX-3249)
+    * NetSchedule: timeout for jobs in Pending state (JIRA: CXX-3289)
+    * NetSchedule: make selection of a pending job parallel (JIRA: CXX-3299)
+    * Custom thread names
+
+
 Release 4.11.0 based on SC-10 (2012-05-18)
 
 Improvements and bug fixes
