@@ -5833,8 +5833,8 @@ if test "$with_xalan" != no; then
       [CPPFLAGS="$XALAN_INCLUDE $XERCES_INCLUDE $orig_CPPFLAGS"
        LIBS="$XALAN_LIBS $XERCES_LIBS $ICU_LIBS $orig_LIBS"
        AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <xalanc/XalanEXSLT/XalanEXSLTMath.hpp>]],
-             [[xalanc::XalanEXSLTMathFunctionsInstaller::installGlobal();]])],
+          [AC_LANG_PROGRAM([[#include <xalanc/XalanTransformer/XalanTransformer.hpp>]],
+             [[xalanc::XalanTransformer::initialize();]])],
           ncbi_cv_lib_xalan_c=yes, ncbi_cv_lib_xalan_c=no)])
    if test $ncbi_cv_lib_xalan_c = yes; then
       if test -f "$XALAN_LIBPATH/libxalan-c-static.a"; then

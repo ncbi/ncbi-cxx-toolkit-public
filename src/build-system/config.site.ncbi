@@ -99,7 +99,8 @@ esac
 
 case "$ncbi_platform" in
     FreeBSD32 | *MAC | SunOSx86 ) ;;
-    * ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
+    Linux64    ) : ${ICU_PATH=$NCBI/icu-49.1.1} ;;
+    *          ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
 esac
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.8}
@@ -202,12 +203,14 @@ esac
 
 case "$ncbi_platform" in
     FreeBSD32 | *MAC | SunOSx86 ) ;;
-    * ) : ${XALAN_PATH=$NCBI/xalan-1.8.0-ncbi2} ;;
+    Linux64    ) : ${XALAN_PATH=$NCBI/xalan-1.11~r1302529} ;;
+    *          ) : ${XALAN_PATH=$NCBI/xalan-1.8.0-ncbi2}   ;;
 esac
 
 case "$ncbi_platform" in
     FreeBSD32 | *MAC | SunOSx86 ) ;;
-    * ) : ${XERCES_PATH=$NCBI/xerces-2.6.0} ;;
+    Linux64    ) : ${XERCES_PATH=$NCBI/xerces-3.1.1} ;;
+    *          ) : ${XERCES_PATH=$NCBI/xerces-2.6.0} ;;
 esac
 
 case "$ncbi_platform" in

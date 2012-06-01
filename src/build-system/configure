@@ -30824,11 +30824,11 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <xalanc/XalanEXSLT/XalanEXSLTMath.hpp>
+#include <xalanc/XalanTransformer/XalanTransformer.hpp>
 int
 main ()
 {
-xalanc::XalanEXSLTMathFunctionsInstaller::installGlobal();
+xalanc::XalanTransformer::initialize();
   ;
   return 0;
 }
