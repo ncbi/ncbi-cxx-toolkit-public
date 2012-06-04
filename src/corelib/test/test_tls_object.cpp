@@ -179,7 +179,148 @@ private:
     void operator=(CObjectWithNew&);
 };
 
+
+class CObjectWithRef : public CObject
+{
+public:
+    CObjectWithRef(int = 0) {
+        object_count.Add(1);
+    }
+    virtual ~CObjectWithRef() {
+        object_count.Add(-1);
+    }
+};
+
+
+class CObjectWithRef2 : public CObjectWithRef
+{
+public:
+    CObjectWithRef2(int = 0) {
+        if ( s_CurrentInHeap ) {
+            if ( rand() % 10 == 0 ) {
+                throw runtime_error("CObjectWithRef2");
+            }
+        }
+    }
+    virtual ~CObjectWithRef2() {
+    }
+private:
+    CObjectWithRef m_SubObject;
+};
+
+
+static const CAtomicCounter::TValue kLastNewTypeMultiple = 1;
 static DECLARE_TLS_VAR(void*, s_LastNewPtr);
+static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
+typedef pair<void*, CAtomicCounter::TValue> TLastNewPtrMultipleInfo;
+typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
+static pthread_key_t s_LastNewPtrMultiple_key;
+
+static
+void sx_EraseLastNewPtrMultiple(void* ptr)
+{
+    delete (TLastNewPtrMultiple*)ptr;
+}
+
+static
+TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
+{
+    if ( !s_LastNewPtrMultiple_key ) {
+        DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
+        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
+        if ( !s_LastNewPtrMultiple_key ) {
+            pthread_key_t key = 0;
+            do {
+                _VERIFY(pthread_key_create(&key, sx_EraseLastNewPtrMultiple)==0);
+            } while ( !key );
+            pthread_setspecific(key, 0);
+            s_LastNewPtrMultiple_key = key;
+        }
+    }
+    TLastNewPtrMultiple* set = 
+        (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
+    if ( !set ) {
+        pthread_setspecific(s_LastNewPtrMultiple_key,
+                            set = new TLastNewPtrMultiple());
+    }
+    return *set;
+}
+
+
+static
+void sx_PushLastNewPtrMultiple(void* ptr, CAtomicCounter::TValue type)
+{
+    _ASSERT(s_LastNewPtr);
+    TLastNewPtrMultiple& set = sx_GetLastNewPtrMultiple();
+    if ( s_LastNewType != kLastNewTypeMultiple ) {
+        set.push_back(TLastNewPtrMultipleInfo(s_LastNewPtr, s_LastNewType));
+        s_LastNewType = kLastNewTypeMultiple;
+    }
+    set.push_back(TLastNewPtrMultipleInfo(ptr, type));
+}
+
+static
+CAtomicCounter::TValue sx_PopLastNewPtrMultiple(void* ptr)
+{
+    TLastNewPtrMultiple& set = sx_GetLastNewPtrMultiple();
+    NON_CONST_ITERATE ( TLastNewPtrMultiple, it, set ) {
+        if ( it->first == ptr ) {
+            CAtomicCounter::TValue last_type = it->second;
+            swap(*it, set.back());
+            set.pop_back();
+            if ( set.empty() ) {
+                s_LastNewPtr = 0;
+            }
+            else {
+                s_LastNewPtr = set.front().first;
+            }
+            return last_type;
+        }
+    }
+    return 0;
+}
+
+static inline
+void sx_PushLastNewPtr(void* ptr, CAtomicCounter::TValue type)
+{
+    //cerr << "sx_PushLastNewPtr(" << ptr << ", "<<s_LastNewPtr<<")"<<endl;
+    if ( s_LastNewPtr ) {
+        // multiple
+        sx_PushLastNewPtrMultiple(ptr, type);
+    }
+    else {
+        s_LastNewPtr = ptr;
+        s_LastNewType = type;
+    }
+}
+
+static inline
+CAtomicCounter::TValue sx_PopLastNewPtr(void* ptr)
+{
+    //cerr << "sx_PopLastNewPtr(" << ptr << ", "<<s_LastNewPtr<<")"<<endl;
+    void* last_ptr = s_LastNewPtr;
+    if ( !last_ptr ) {
+        return 0;
+    }
+    CAtomicCounter::TValue last_type = s_LastNewType;
+    if ( last_type == kLastNewTypeMultiple ) {
+        // multiple ptrs
+        return sx_PopLastNewPtrMultiple(ptr);
+    }
+    else {
+        if ( s_LastNewPtr != ptr ) {
+            return 0;
+        }
+        s_LastNewPtr = 0;
+        return last_type;
+    }
+}
+
+inline
+bool sx_HaveLastNewPtr(void)
+{
+    return s_LastNewPtr != 0;
+}
 
 class CObjectWithTLS
 {
@@ -188,11 +329,7 @@ class CObjectWithTLS
         eCounter_static   = 0x0
     };
     static bool IsNewInHeap(CObjectWithTLS* ptr) {
-        if ( GetNewPtr() == ptr ) {
-            SetNewPtr(0);
-            return true;
-        }
-        return false;
+        return sx_PopLastNewPtr(ptr);
     }
     static bool IsInHeap(const CObjectWithTLS* ptr) {
         if ( ptr->m_Counter == eCounter_heap ) {
@@ -204,24 +341,12 @@ class CObjectWithTLS
         return false;
     }
     static void RegisterNew(CObjectWithTLS* ptr) {
-        _ASSERT(GetNewPtr() == 0);
-        SetNewPtr(ptr);
+        sx_PushLastNewPtr(ptr, 2);
     }
     static void RegisterDelete(CObjectWithTLS* ptr) {
-        if ( GetNewPtr() == ptr ) {
-            SetNewPtr(0);
-        }
-        else {
-            _ASSERT(GetNewPtr() == 0);
-        }
+        sx_PopLastNewPtr(ptr);
     }
 public:
-    static void SetNewPtr(void* ptr) {
-        s_LastNewPtr = ptr;
-    }
-    static void* GetNewPtr() {
-        return s_LastNewPtr;
-    }
 
     enum EObjectPlace {
         eUnknown,
@@ -292,7 +417,7 @@ public:
 class CObjectWithTLS3 : public CObjectWithTLS
 {
 public:
-    CObjectWithTLS3(void)
+    CObjectWithTLS3(int = 0)
         : m_SubObject(eSubObject)
         {
             if ( s_CurrentInHeap ) {
@@ -330,8 +455,7 @@ public:
 
 
 void check_cnts(size_t expected = 0,
-                size_t expected_static = 0,
-                void* expected_ptr = 0)
+                size_t expected_static = 0)
 {
     if ( expected == ~0u ) {
         expected = 0;
@@ -339,15 +463,13 @@ void check_cnts(size_t expected = 0,
     else {
         expected = 1;
     }
-    if ( expected == 0 ) {
+    if ( 0 ) {
         if ( alloc_count.Get() != expected-expected_static )
             ERR_POST(Fatal<<"alloc_count: "<<alloc_count.Get());
         if ( object_count.Get() != expected )
             ERR_POST(Fatal<<"object_count: "<<object_count.Get());
     }
-    void *ptr = CObjectWithTLS::GetNewPtr();
-    if ( ptr != expected_ptr )
-        ERR_POST(Fatal<<"new ptr: " << ptr);
+    _VERIFY(!sx_HaveLastNewPtr());
 }
 
 
@@ -362,6 +484,10 @@ public:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 };
+
+
+int RecursiveNewRef(int level);
+int RecursiveNewTLS(int level);
 
 
 bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
@@ -407,6 +533,7 @@ void CTestTlsObjectApp::RunTest(void)
         }
     }
     CStopWatch sw;
+    check_cnts();
     for ( int t = 0; t < 1; ++t ) {
         void** ptr = new void*[COUNT];
         sw.Start();
@@ -425,14 +552,12 @@ void CTestTlsObjectApp::RunTest(void)
     check_cnts();
     {
         sw.Start();
-        for ( size_t i = 0; i < COUNT; ++i ) {
-            CObjectWithTLS::SetNewPtr(0);
-        }
+        void* ptr = new int;
+        sx_PushLastNewPtr(ptr, 2);
         double t1 = sw.Elapsed();
         sw.Start();
-        for ( size_t i = 0; i < COUNT; ++i ) {
-            _ASSERT(CObjectWithTLS::GetNewPtr() == 0);
-        }
+        _VERIFY(sx_PopLastNewPtr(ptr));
+        delete ptr;
         double t2 = sw.Elapsed();
         message("tls", "set", t1, "get", t2, COUNT);
     }
@@ -479,7 +604,7 @@ void CTestTlsObjectApp::RunTest(void)
             catch ( exception& ) {
                 ptr[i] = 0;
             }
-            _ASSERT(!CObjectWithTLS::GetNewPtr());
+            _ASSERT(!sx_HaveLastNewPtr());
             _ASSERT(!ptr[i] || ptr[i]->IsInHeap());
         }
         s_CurrentInHeap = false;
@@ -491,6 +616,34 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithTLS", "create", t1, "delete", t2, COUNT);
+        delete[] ptr;
+    }
+    check_cnts();
+    {
+        CRef<CObjectWithRef>* ptr = new CRef<CObjectWithRef>[COUNT];
+        sw.Start();
+        s_CurrentStep = "new CObjectWithRef";
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            try {
+                switch ( rand()%2 ) {
+                case 0: ptr[i] = new CObjectWithRef; break;
+                case 1: ptr[i] = new CObjectWithRef2; break;
+                }
+            }
+            catch ( exception& ) {
+                ptr[i] = 0;
+            }
+            _ASSERT(!sx_HaveLastNewPtr());
+            _ASSERT(!ptr[i] || ptr[i]->CanBeDeleted());
+        }
+        double t1 = sw.Elapsed();
+        check_cnts(COUNT);
+        sw.Start();
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            ptr[i].Reset();
+        }
+        double t2 = sw.Elapsed();
+        message("new CObjectWithRef", "create", t1, "delete", t2, COUNT);
         delete[] ptr;
     }
     check_cnts();
@@ -527,16 +680,17 @@ void CTestTlsObjectApp::RunTest(void)
         s_CurrentInHeap = true;
         for ( size_t i = 0; i < COUNT; ++i ) {
             try {
-                switch ( rand()%3 ) {
+                switch ( rand()%4 ) {
                 case 0: ptr[i] = new CObjectWithTLS(); break;
                 case 1: ptr[i] = new CObjectWithTLS2(); break;
                 case 2: ptr[i] = new CObjectWithTLS3(); break;
+                case 3: ptr[i] = new CObjectWithTLS3(RecursiveNewTLS(rand()%4)); break;
                 }
             }
             catch ( exception& ) {
                 ptr[i] = 0;
             }
-            _ASSERT(!CObjectWithTLS::GetNewPtr());
+            _ASSERT(!sx_HaveLastNewPtr());
             _ASSERT(!ptr[i] || ptr[i]->IsInHeap());
         }
         s_CurrentInHeap = false;
@@ -548,6 +702,37 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithTLS()", "create", t1, "delete", t2, COUNT);
+        delete[] ptr;
+    }
+    check_cnts();
+    {
+        CRef<CObjectWithRef>* ptr = new CRef<CObjectWithRef>[COUNT];
+        sw.Start();
+        s_CurrentStep = "new CObjectWithRef()";
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            try {
+                size_t j = rand()%COUNT;
+                switch ( rand()%4 ) {
+                case 0: ptr[j] = new CObjectWithRef(); break;
+                case 1: ptr[j] = new CObjectWithRef(RecursiveNewRef(rand()%4)); break;
+                case 2: ptr[j] = new CObjectWithRef2(); break;
+                case 3: ptr[j] = new CObjectWithRef2(RecursiveNewRef(rand()%4)); break;
+                }
+            }
+            catch ( exception& ) {
+                ptr[i] = 0;
+            }
+            _ASSERT(!sx_HaveLastNewPtr());
+            _ASSERT(!ptr[i] || ptr[i]->CanBeDeleted());
+        }
+        double t1 = sw.Elapsed();
+        check_cnts(COUNT);
+        sw.Start();
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            ptr[i] = 0;
+        }
+        double t2 = sw.Elapsed();
+        message("new CObjectWithRef()", "create", t1, "delete", t2, COUNT);
         delete[] ptr;
     }
     check_cnts();
@@ -583,6 +768,22 @@ void CTestTlsObjectApp::RunTest(void)
         message("static CObjectWithTLS", "create", t1, "delete", t2, COUNT);
     }
     check_cnts();
+    {
+        sw.Start();
+        s_CurrentStep = "CObjectWithRef[]";
+        CArray<CObjectWithRef, COUNT, false>* arr =
+            new CArray<CObjectWithRef, COUNT, false>;
+        double t1 = sw.Elapsed();
+        check_cnts(COUNT, COUNT);
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            _ASSERT(!arr->m_Array[i].CanBeDeleted());
+        }
+        sw.Start();
+        delete arr;
+        double t2 = sw.Elapsed();
+        message("static CObjectWithRef", "create", t1, "delete", t2, COUNT);
+    }
+    check_cnts();
 }
 
 bool CTestTlsObjectApp::TestApp_Init(void)
@@ -601,6 +802,31 @@ bool CTestTlsObjectApp::TestApp_Exit(void)
              " SHR: "<<max_shared/(1024*1024.)<<" MB");
     NcbiCout << "Test completed." << NcbiEndl;
     return true;
+}
+
+int RecursiveNewRef(int level)
+{
+    CRef<CObjectWithRef> ref;
+    if ( !level ) {
+        ref = new CObjectWithRef();
+    }
+    else {
+        ref = new CObjectWithRef(level-1);
+    }
+    return 1;
+}
+
+int RecursiveNewTLS(int level)
+{
+    CObjectWithTLS* ptr;
+    if ( !level ) {
+        ptr = new CObjectWithTLS();
+    }
+    else {
+        ptr = new CObjectWithTLS3(level-1);
+    }
+    CObjectWithTLS::Delete(ptr);
+    return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
