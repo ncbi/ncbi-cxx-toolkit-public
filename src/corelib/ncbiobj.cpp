@@ -120,8 +120,114 @@ CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
 #endif
 
 #if USE_TLS_PTR
+
+static const CAtomicCounter::TValue kLastNewTypeMultiple = 1;
 static DECLARE_TLS_VAR(void*, s_LastNewPtr);
 static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
+typedef pair<void*, CAtomicCounter::TValue> TLastNewPtrMultipleInfo;
+typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
+static pthread_key_t s_LastNewPtrMultiple_key;
+
+static
+void sx_EraseLastNewPtrMultiple(void* ptr)
+{
+    delete (TLastNewPtrMultiple*)ptr;
+}
+
+static
+TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
+{
+    if ( !s_LastNewPtrMultiple_key ) {
+        DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
+        NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
+        if ( !s_LastNewPtrMultiple_key ) {
+            pthread_key_t key = 0;
+            do {
+                _VERIFY(pthread_key_create(&key, sx_EraseLastNewPtrMultiple)==0);
+            } while ( !key );
+            pthread_setspecific(key, 0);
+            s_LastNewPtrMultiple_key = key;
+        }
+    }
+    TLastNewPtrMultiple* set = 
+        (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
+    if ( !set ) {
+        pthread_setspecific(s_LastNewPtrMultiple_key,
+                            set = new TLastNewPtrMultiple());
+    }
+    return *set;
+}
+
+
+static
+void sx_PushLastNewPtrMultiple(void* ptr, CAtomicCounter::TValue type)
+{
+    _ASSERT(s_LastNewPtr);
+    TLastNewPtrMultiple& set = sx_GetLastNewPtrMultiple();
+    if ( s_LastNewType != kLastNewTypeMultiple ) {
+        set.push_back(TLastNewPtrMultipleInfo(s_LastNewPtr, s_LastNewType));
+        s_LastNewType = kLastNewTypeMultiple;
+    }
+    set.push_back(TLastNewPtrMultipleInfo(ptr, type));
+}
+
+static
+CAtomicCounter::TValue sx_PopLastNewPtrMultiple(void* ptr)
+{
+    TLastNewPtrMultiple& set = sx_GetLastNewPtrMultiple();
+    NON_CONST_ITERATE ( TLastNewPtrMultiple, it, set ) {
+        if ( it->first == ptr ) {
+            CAtomicCounter::TValue last_type = it->second;
+            swap(*it, set.back());
+            set.pop_back();
+            if ( set.empty() ) {
+                s_LastNewPtr = 0;
+            }
+            else {
+                s_LastNewPtr = set.front().first;
+            }
+            return last_type;
+        }
+    }
+    return 0;
+}
+
+static inline
+void sx_PushLastNewPtr(void* ptr, CAtomicCounter::TValue type)
+{
+    //cerr << "sx_PushLastNewPtr(" << ptr << ", "<<s_LastNewPtr<<")"<<endl;
+    if ( s_LastNewPtr ) {
+        // multiple
+        sx_PushLastNewPtrMultiple(ptr, type);
+    }
+    else {
+        s_LastNewPtr = ptr;
+        s_LastNewType = type;
+    }
+}
+
+static inline
+CAtomicCounter::TValue sx_PopLastNewPtr(void* ptr)
+{
+    //cerr << "sx_PopLastNewPtr(" << ptr << ", "<<s_LastNewPtr<<")"<<endl;
+    void* last_ptr = s_LastNewPtr;
+    if ( !last_ptr ) {
+        return 0;
+    }
+    CAtomicCounter::TValue last_type = s_LastNewType;
+    if ( last_type == kLastNewTypeMultiple ) {
+        // multiple ptrs
+        return sx_PopLastNewPtrMultiple(ptr);
+    }
+    else {
+        if ( s_LastNewPtr != ptr ) {
+            return 0;
+        }
+        s_LastNewPtr = 0;
+        return last_type;
+    }
+}
+
 #endif
 
 #if USE_HEAPOBJ_LIST
@@ -267,8 +373,7 @@ void* CObject::operator new(size_t size)
 
 #if USE_TLS_PTR
     // just remember pointer in TLS
-    s_LastNewPtr = ptr;
-    s_LastNewType = eMagicCounterNew;
+    sx_PushLastNewPtr(ptr, eMagicCounterNew);
 #else
 #if USE_HEAPOBJ_LIST
     {{
@@ -299,9 +404,7 @@ void CObject::operator delete(void* ptr)
     _ASSERT(magic == eMagicCounterDeleted  || magic == eMagicCounterNew);
 #endif
 #if USE_TLS_PTR
-    if ( s_LastNewPtr == ptr ) {
-        s_LastNewPtr = 0;
-    }
+    sx_PopLastNewPtr(ptr);
 #endif
     ::operator delete(ptr);
 }
@@ -343,8 +446,7 @@ void* CObject::operator new(size_t size, CObjectMemoryPool* memory_pool)
     }
 #if USE_TLS_PTR
     // just remember pointer in TLS
-    s_LastNewPtr = ptr;
-    s_LastNewType = eMagicCounterPoolNew;
+    sx_PushLastNewPtr(ptr, eMagicCounterPoolNew);
 #else
 #  if USE_COMPLEX_MASK
     GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterPoolNew);
@@ -367,9 +469,7 @@ void CObject::operator delete(void* ptr, CObjectMemoryPool* memory_pool)
             magic == eMagicCounterPoolNew);
 #endif
 #if USE_TLS_PTR
-    if ( s_LastNewPtr == ptr ) {
-        s_LastNewPtr = 0;
-    }
+    sx_PopLastNewPtr(ptr);
 #endif
     memory_pool->Deallocate(ptr);
 }
@@ -408,9 +508,8 @@ void CObject::operator delete[](void* ptr)
 void CObject::InitCounter(void)
 {
 #if USE_TLS_PTR
-    if ( s_LastNewPtr == this ) {
-        s_LastNewPtr = 0;
-        switch ( s_LastNewType ) {
+    if ( CAtomicCounter::TValue type = sx_PopLastNewPtr(this) ) {
+        switch ( type ) {
         case eMagicCounterNew:
             // allocated in heap
             m_Counter.Set(eInitCounterInHeap);
@@ -421,7 +520,7 @@ void CObject::InitCounter(void)
             break;
         default:
             ERR_POST_X(1, ObjFatal << "CObject::InitCounter: "
-                       "Bad s_LastNewType="<<s_LastNewType<<
+                       "Bad s_LastNewType="<<type<<
                        " at "<<StackTrace);
             // something is broken in TLS data
             // mark as not in heap
