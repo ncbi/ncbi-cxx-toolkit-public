@@ -73,7 +73,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        label_type, mark_leaves,
                        m_BlastNameColorMap);
 
-    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
+    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
 }
 
 
@@ -89,7 +89,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        label_type, mark_leaves,
                        m_BlastNameColorMap);
 
-    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc);
+    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
 }
 
 CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
@@ -99,7 +99,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
     x_Init();
 
     x_InitTreeLabels(btc,lblType);
-    BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
+    BioTreeConvertContainer2Dynamic(m_Dyntree, btc, true);
 }
 
 
@@ -117,7 +117,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
     x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_leaves,
                        m_BlastNameColorMap);
 
-    BioTreeConvertContainer2Dynamic(m_Dyntree, btc);
+    BioTreeConvertContainer2Dynamic(m_Dyntree, btc, true);
 }
 
 

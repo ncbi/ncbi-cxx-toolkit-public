@@ -324,10 +324,15 @@ void BioTreeConvert2Container(TBioTreeContainer&      tree_container,
 }
 
 /// Convert ASN.1 BioTree container to dynamic tree
+/// @param dyn_tree Ouput dynamic tree
+/// @param tree_container Input tree container
+/// @param preserve_node_ids If true, node ids in the resulting dynamic tree
+/// will be the same is in the input tree container
 ///
 template<class TBioTreeContainer, class TDynamicTree>
 void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
-		                             const TBioTreeContainer&  tree_container)
+                                     const TBioTreeContainer&  tree_container, 
+                                     bool preserve_node_ids = false)
 {
 	dyn_tree.Clear();
 	
@@ -365,6 +370,9 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 		typedef typename TDynamicNodeType::TValueType    TDynamicNodeValueType;
 
 		TDynamicNodeValueType v;
+                if (preserve_node_ids) {
+                    v.SetId(uid);
+                }
     
 		typedef typename TCNode::TFeatures               TCNodeFeatureSet;
 
@@ -390,7 +398,9 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
             typename TDynamicTree::TBioTreeNode* parent_node = pmap[parent_id];
             if (parent_node != NULL) {              
                 node = dyn_tree.AddNode(v, parent_node);
-                dyn_tree.SetNodeId(node);
+                if (!preserve_node_ids) {
+                    dyn_tree.SetNodeId(node);
+                }
             }
             else {
                 NCBI_THROW(CException, eUnknown, "Parent not found");
@@ -400,7 +410,9 @@ void BioTreeConvertContainer2Dynamic(TDynamicTree&             dyn_tree,
 		} else {
 			TDynamicNodeType* dnode = new TDynamicNodeType(v);
 			dyn_tree.SetTreeNode(dnode);
-			dyn_tree.SetNodeId(dnode);
+                        if (!preserve_node_ids) {
+                            dyn_tree.SetNodeId(dnode);
+                        }
 			pmap[uid] = dnode;            
 		}
 
