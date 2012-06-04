@@ -39,14 +39,11 @@
 #include <corelib/ncbistre.hpp>
 
 #include <connect/services/netschedule_api.hpp>
-
-#include <common/ncbi_package_ver.h>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/mswin_no_popup.h>
 
-#define NETSCHEDULE_CHECK_VERSION_MAJOR 1
-#define NETSCHEDULE_CHECK_VERSION_MINOR 1
-#define NETSCHEDULE_CHECK_VERSION_PATCH 0
+#define GRID_APP_NAME "netschedule_check"
 
 USING_NCBI_SCOPE;
 
@@ -58,12 +55,6 @@ USING_NCBI_SCOPE;
 class CNetScheduleCheck : public CNcbiApplication
 {
 public:
-    CNetScheduleCheck() {
-        SetVersion(CVersionInfo(
-            NETSCHEDULE_CHECK_VERSION_MAJOR,
-            NETSCHEDULE_CHECK_VERSION_MINOR,
-            NETSCHEDULE_CHECK_VERSION_PATCH));
-    }
     void Init(void);
     int Run(void);
     int Run(CNetScheduleAPI nc_client);
@@ -244,5 +235,7 @@ int CNetScheduleCheck::Run(CNetScheduleAPI ns)
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CNetScheduleCheck().AppMain(argc, argv, 0, eDS_Default, 0);
 }

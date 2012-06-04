@@ -34,10 +34,15 @@
 #include "test_netschedule_data.hpp"
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/grid_app_version_info.hpp>
+
 #include <connect/ncbi_core_cxx.hpp>
+
 #include <util/random_gen.hpp>
 
 #include <set>
+
+#define GRID_APP_NAME "test_netschedule_client"
 
 USING_NCBI_SCOPE;
 
@@ -305,5 +310,7 @@ int CTestNetScheduleClient::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CTestNetScheduleClient().AppMain(argc, argv, 0, eDS_Default);
 }

@@ -139,6 +139,6 @@ private:
     int m_Count;
 };
 
-// Use this marcos to implement the main function for the CGridWorkerTest
+// Use this macro to implement the main function for the CGridWorkerTest
 // with idle task CGridWorkerIdleTask.
 NCBI_WORKERNODE_MAIN_EX(CGridWorkerTest, CGridWorkerIdleTask, 1.0.0);

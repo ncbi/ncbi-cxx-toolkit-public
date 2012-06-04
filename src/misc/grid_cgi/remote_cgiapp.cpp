@@ -33,6 +33,9 @@
 
 #include <misc/grid_cgi/remote_cgiapp.hpp>
 
+#define GRID_APP_NAME "remote_cgiapp"
+
+#include <connect/services/grid_app_version_info.hpp>
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_process.hpp>
@@ -88,10 +91,18 @@ public:
     {
         return new  CCgiWorkerNodeJob(m_App);
     }
-    virtual string GetJobVersion() const 
-    { 
-        return m_App.GetJobVersion(); 
-    } 
+    virtual string GetJobVersion() const
+    {
+        return GRID_APP_VERSION_INFO;
+    }
+    virtual string GetAppName() const
+    {
+        return GRID_APP_NAME;
+    }
+    virtual string GetAppVersion() const
+    {
+        return GRID_APP_VERSION;
+    }
 
 private:
     CRemoteCgiApp& m_App;
@@ -155,7 +166,7 @@ void CRemoteCgiApp::RequestShutdown()
 
 string CRemoteCgiApp::GetJobVersion() const
 {
-    return GetProgramDisplayName() + " 1.0.0"; 
+    return GRID_APP_VERSION_INFO;
 }
 
 int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,

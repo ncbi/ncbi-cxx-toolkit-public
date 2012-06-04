@@ -265,6 +265,7 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  Routine magic spells
 
-NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES(CRemoteAppJob, CRemoteAppIdleTask, 1.7.1);
+#define GRID_APP_NAME "remote_app"
+
+NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES_PKG_VER(CRemoteAppJob, CRemoteAppIdleTask);

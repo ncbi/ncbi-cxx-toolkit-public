@@ -59,8 +59,10 @@ public:
                          CNcbiOstream& os,
                          CWorkerNodeControlServer* control_server)
     {
-        os << "OK:" << control_server->GetWorkerNode().GetJobVersion() <<
-                " build " WN_BUILD_DATE "\n";
+        os << "OK:version=" << NStr::URLEncode(
+                control_server->GetWorkerNode().GetAppVersion()) <<
+                "&build_date=" << NStr::URLEncode(
+                control_server->GetWorkerNode().GetBuildDate()) << "\n";
     }
 };
 
@@ -121,8 +123,9 @@ public:
     {
         const CGridWorkerNode& node = control_server->GetWorkerNode();
 
-        os << "OK:Job class and version: " << node.GetJobVersion() <<
-                "\nBuild date: " WN_BUILD_DATE << "\n";
+        os << "OK:Application: " << node.GetAppName() <<
+                "\nVersion: " << node.GetAppVersion() <<
+                "\nBuild date: " << node.GetBuildDate() << "\n";
 
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app)

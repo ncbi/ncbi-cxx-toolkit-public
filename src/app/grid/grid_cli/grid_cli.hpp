@@ -40,8 +40,7 @@
 #include <connect/services/neticache_client.hpp>
 
 
-#define PROGRAM_NAME "grid_cli"
-#define PROGRAM_VERSION "1.2.0"
+#define GRID_APP_NAME "grid_cli"
 
 #define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
@@ -172,8 +171,6 @@ class CGridCommandLineInterfaceApp : public CNcbiApplication
 {
 public:
     CGridCommandLineInterfaceApp(int argc, const char* argv[]);
-
-    virtual string GetProgramVersion() const;
 
     virtual int Run();
 

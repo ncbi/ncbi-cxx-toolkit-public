@@ -38,10 +38,13 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/grid_app_version_info.hpp>
+
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_types.h>
 
+#define GRID_APP_NAME "test_netschedule_stress"
 
 USING_NCBI_SCOPE;
 
@@ -409,5 +412,7 @@ int CTestNetScheduleStress::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CTestNetScheduleStress().AppMain(argc, argv, 0, eDS_Default);
 }

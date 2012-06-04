@@ -562,7 +562,7 @@ CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
     m_Pid = (Int8) CProcess::GetCurrentPid();
 
     CJsonNode greeting(CJsonNode::NewArrayNode());
-    greeting.PushString(PROGRAM_NAME);
+    greeting.PushString(GRID_APP_NAME);
     greeting.PushNumber(PROTOCOL_VERSION);
 
     if (protocol_dump != NULL) {

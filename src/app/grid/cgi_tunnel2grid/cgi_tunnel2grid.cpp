@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <connect/services/grid_app_version_info.hpp>
+
 #include <misc/grid_cgi/grid_cgiapp.hpp>
 
 #include <cgi/cgiapp.hpp>
@@ -48,10 +50,7 @@
 
 #include <vector>
 
-
-#define CGITUNNEL2GRID_VERSION_MAJOR 1
-#define CGITUNNEL2GRID_VERSION_MINOR 1
-#define CGITUNNEL2GRID_VERSION_PATCH 0
+#define GRID_APP_NAME "cgi_tunnel2grid"
 
 USING_NCBI_SCOPE;
 
@@ -67,11 +66,8 @@ const string kElapsedTime = "ctg_time";
 class CCgiTunnel2Grid : public  CGridCgiApplication
 {
 public:
-    CCgiTunnel2Grid() : m_CgiContext(NULL) {
-        SetVersion(CVersionInfo(
-            CGITUNNEL2GRID_VERSION_MAJOR,
-            CGITUNNEL2GRID_VERSION_MINOR,
-            CGITUNNEL2GRID_VERSION_PATCH));
+    CCgiTunnel2Grid() : m_CgiContext(NULL)
+    {
     }
 
     virtual void Init(void);
@@ -500,6 +496,8 @@ void CCgiTunnel2Grid::x_SetupArgs()
 //
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     int result = CCgiTunnel2Grid().AppMain(argc, argv, 0, eDS_Default);
     _TRACE("back to normal diags");
     return result;

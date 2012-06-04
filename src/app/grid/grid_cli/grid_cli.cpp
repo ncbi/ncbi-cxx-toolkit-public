@@ -35,6 +35,7 @@
 #include "grid_cli.hpp"
 
 #include <connect/services/clparser.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #ifdef WIN32
 #include <io.h>
@@ -49,12 +50,6 @@ CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
     m_ArgV(argv),
     m_NetICacheClient(eVoid)
 {
-    SetVersion(CVersionInfo(PROGRAM_VERSION));
-}
-
-string CGridCommandLineInterfaceApp::GetProgramVersion() const
-{
-    return PROGRAM_NAME " version " PROGRAM_VERSION;
 }
 
 #ifdef _DEBUG
@@ -461,7 +456,7 @@ struct SCommandDefinition {
         "from the standard input stream, and the rest of attributes are "
         "taken from their respective command line options.\n\n"
         "If the '--" WAIT_TIMEOUT_OPTION "' option is given in single "
-        "job submission mode, " PROGRAM_NAME " will wait for the job "
+        "job submission mode, " GRID_APP_NAME " will wait for the job "
         "to terminate, and if the job terminates within the specified "
         "number of seconds or when this timeout has passed while the "
         "job is still Pending or Running, job status will be printed right "
@@ -569,7 +564,7 @@ struct SCommandDefinition {
         "requestjob", "Get a job from NetSchedule for processing.",
         "Return a job pending for execution. The status of the job is changed "
         "from \"Pending\" to \"Running\" before the job is returned. "
-        "This command makes it possible for " PROGRAM_NAME " to emulate a "
+        "This command makes it possible for " GRID_APP_NAME " to emulate a "
         "worker node.\n\n"
         "The affinity-related options affect how the job is selected. "
         "Unless the '--" ANY_AFFINITY_OPTION "' option is given, a job "
@@ -756,7 +751,7 @@ struct SCommandDefinition {
 
     {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Automate,
         "automate", "Start as a pipe-based automation server.",
-        "This command starts " PROGRAM_NAME " as an automation "
+        "This command starts " GRID_APP_NAME " as an automation "
         "server that can be used to interact with Grid objects "
         "through a Python module (ncbi.grid).",
         {eProtocolDump, -1}},
@@ -807,7 +802,7 @@ int CGridCommandLineInterfaceApp::Run()
                 memcpy(argv, argv + 1, argc * sizeof(*argv));
         }
 
-        CCommandLineParser clparser(PROGRAM_NAME, PROGRAM_VERSION,
+        CCommandLineParser clparser(GRID_APP_NAME, GRID_APP_VERSION_INFO,
             "Utility to access and control NCBI Grid services.");
 
         const SOptionDefinition* opt_def = s_OptionDefinitions;
@@ -887,7 +882,7 @@ int CGridCommandLineInterfaceApp::Run()
                     while (NStr::CompareNocase(opt_value,
                                 s_OutputFormats[*format]) != 0)
                         if (*++format < 0) {
-                            fprintf(stderr, PROGRAM_NAME
+                            fprintf(stderr, GRID_APP_NAME
                                     " %s: invalid output format '%s'.\n",
                                     cmd_def->name_variants, opt_value);
                             return 2;
@@ -934,7 +929,7 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eBatch:
                 if ((m_Opts.batch_size = NStr::StringToUInt(opt_value)) == 0) {
-                    fprintf(stderr, PROGRAM_NAME
+                    fprintf(stderr, GRID_APP_NAME
                         " %s: batch size must be greater that zero.\n",
                             cmd_def->name_variants);
                     return 2;
@@ -962,7 +957,7 @@ int CGridCommandLineInterfaceApp::Run()
             case eSelectByStatus:
                 if ((m_Opts.job_status = CNetScheduleAPI::StringToStatus(
                         opt_value)) == CNetScheduleAPI::eJobNotFound) {
-                    fprintf(stderr, PROGRAM_NAME
+                    fprintf(stderr, GRID_APP_NAME
                         ": invalid job status '%s'\n", opt_value);
                     return 2;
                 }
@@ -1035,7 +1030,7 @@ int CGridCommandLineInterfaceApp::Run()
                         s_OptionDefinitions[opt_id].required_options;
                                 *required_opt != -1; ++required_opt)
                     if (!IsOptionSet(*required_opt)) {
-                        fprintf(stderr, PROGRAM_NAME
+                        fprintf(stderr, GRID_APP_NAME
                                 ": option '--%s' requires option '--%s'.\n",
                                 s_OptionDefinitions[opt_id].name_variants,
                                 s_OptionDefinitions[
@@ -1045,7 +1040,7 @@ int CGridCommandLineInterfaceApp::Run()
         while (--opt_id >= 0);
 
         if (m_Opts.auth.empty())
-            m_Opts.auth = PROGRAM_NAME;
+            m_Opts.auth = GRID_APP_NAME;
 
         if (IsOptionAcceptedButNotSet(eInputFile)) {
             m_Opts.input_stream = stdin;
@@ -1053,7 +1048,7 @@ int CGridCommandLineInterfaceApp::Run()
             setmode(fileno(stdin), O_BINARY);
 #endif
         } else if (IsOptionSet(eInput) && IsOptionSet(eInputFile)) {
-            fprintf(stderr, PROGRAM_NAME ": options '--" INPUT_FILE_OPTION
+            fprintf(stderr, GRID_APP_NAME ": options '--" INPUT_FILE_OPTION
                 "' and '--" INPUT_OPTION "' are mutually exclusive.\n");
             return 2;
         }

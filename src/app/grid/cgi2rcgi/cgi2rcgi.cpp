@@ -43,6 +43,7 @@
 #include <util/checksum.hpp>
 
 #include <connect/services/grid_client.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include <connect/email_diag_handler.hpp>
 
@@ -54,17 +55,7 @@
 #include <map>
 #include <sstream>
 
-
-#define CGI2RCGI_VERSION_MAJOR 2
-#define CGI2RCGI_VERSION_MINOR 1
-#define CGI2RCGI_VERSION_PATCH 0
-
-// Program version is passed to NetSchedule so that it
-// does not allow obsolete clients to submit or execute jobs.
-#define PROGRAM_VERSION "Cgi2RCgi ver " \
-    NCBI_AS_STRING(CGI2RCGI_VERSION_MAJOR) "." \
-    NCBI_AS_STRING(CGI2RCGI_VERSION_MINOR) "." \
-    NCBI_AS_STRING(CGI2RCGI_VERSION_PATCH)
+#define GRID_APP_NAME "cgi2rcgi"
 
 USING_NCBI_SCOPE;
 
@@ -316,14 +307,6 @@ private:
     auto_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
 
-public:
-    CCgi2RCgiApp() {
-        SetVersion(CVersionInfo(
-            CGI2RCGI_VERSION_MAJOR,
-            CGI2RCGI_VERSION_MINOR,
-            CGI2RCGI_VERSION_PATCH));
-    }
-
 private:
     enum {
         eUseQueryString = 1,
@@ -378,7 +361,9 @@ void CCgi2RCgiApp::Init()
         m_FirstDelay = 0;
 
     m_NetScheduleAPI = CNetScheduleAPI(config);
-    m_NetScheduleAPI.SetProgramVersion(PROGRAM_VERSION);
+    // Program version is passed to NetSchedule so that it
+    // does not allow obsolete clients to submit or execute jobs.
+    m_NetScheduleAPI.SetProgramVersion(GRID_APP_VERSION_INFO);
 
     m_NetCacheAPI = CNetCacheAPI(config);
 
@@ -906,6 +891,8 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
 /////////////////////////////////////////////////////////////////////////////
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     GetDiagContext().SetOldPostFormat(false);
     return CCgi2RCgiApp().AppMain(argc, argv, 0, eDS_Default);
 }

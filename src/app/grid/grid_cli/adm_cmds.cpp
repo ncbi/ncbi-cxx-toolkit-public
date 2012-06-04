@@ -81,7 +81,7 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
         PrintBlobMeta(nc_key);
 
         printf("\nTo retrieve blob attributes from the server, use\n"
-            PROGRAM_NAME " blobinfo %s\n", m_Opts.id.c_str());
+            GRID_APP_NAME " blobinfo %s\n", m_Opts.id.c_str());
     } else {
         try {
             CNetScheduleKey ns_key(m_Opts.id);
@@ -90,7 +90,7 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
             PrintJobMeta(ns_key);
 
             printf("\nTo retrieve job attributes from the server, use\n"
-                PROGRAM_NAME " jobinfo %s\n", m_Opts.id.c_str());
+                GRID_APP_NAME " jobinfo %s\n", m_Opts.id.c_str());
         }
         catch (CNetScheduleException& e) {
             if (e.GetErrCode() != CNetScheduleException::eKeyFormatError)

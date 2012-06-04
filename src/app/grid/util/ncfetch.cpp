@@ -37,12 +37,14 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <connect/services/netcache_api.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 #include <corelib/ncbiargs.hpp>
 
-USING_NCBI_SCOPE;
+#define GRID_APP_NAME "ncfetch.cgi"
 
+USING_NCBI_SCOPE;
 
 /// NetCache BLOB/image fetch application
 ///
@@ -154,6 +156,8 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     SetSplitLogFile(true);
     GetDiagContext().SetOldPostFormat(false);
 

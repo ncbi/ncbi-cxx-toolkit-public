@@ -49,7 +49,7 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
 
         if (m_NetScheduleAPI.GetJobDetails(job) ==
                 CNetScheduleAPI::eJobNotFound) {
-            fprintf(stderr, PROGRAM_NAME ": job %s has expired.\n",
+            fprintf(stderr, GRID_APP_NAME ": job %s has expired.\n",
                     job.job_id.c_str());
             return 3;
         }
@@ -68,7 +68,7 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
                 CCgiRequest::fDoNotParseContent));
         }
         catch (CException& e) {
-            fprintf(stderr, PROGRAM_NAME
+            fprintf(stderr, GRID_APP_NAME
                     ": Error while parsing CGI request stream: %s.\n",
                     e.what());
             return 3;

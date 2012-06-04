@@ -34,29 +34,25 @@
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
 #include <connect/services/remote_app.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#define PROGRAM_NAME "CNSSubmitRemoteJobApp"
-#define PROGRAM_VERSION "1.1.0"
+#define GRID_APP_NAME "ns_submit_remote_job"
 
 USING_NCBI_SCOPE;
 
 class CNSSubmitRemoteJobApp : public CGridClientApp
 {
 public:
-    CNSSubmitRemoteJobApp() {
-        SetVersion(CVersionInfo(PROGRAM_VERSION, PROGRAM_NAME));
-    }
-
     virtual void Init(void);
     virtual int Run(void);
     virtual string GetProgramVersion(void) const
     {
-        return PROGRAM_NAME " version " PROGRAM_VERSION;
+        return GRID_APP_VERSION_INFO;
     }
 
 protected:
@@ -349,5 +345,7 @@ int CNSSubmitRemoteJobApp::Run(void)
 }
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CNSSubmitRemoteJobApp().AppMain(argc, argv);
 } 

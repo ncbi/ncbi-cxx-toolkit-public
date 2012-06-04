@@ -237,7 +237,7 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
 
     switch (*m_Position) {
     case '\0':
-        NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+        NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
             ": empty attribute value must be specified as " <<
                 attr_name << "=\"\"");
     case '\'':
@@ -483,7 +483,7 @@ bool CBatchSubmitAttrParser::NextAttribute()
 
     switch (m_JobAttribute) {
     case eUntypedArg:
-        NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+        NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
             ": unknown attribute " << attr_name <<
                 AT_POS(attr_name.data()));
 
@@ -492,7 +492,7 @@ bool CBatchSubmitAttrParser::NextAttribute()
 
     default:
         if (next_attr_type != CAttrListParser::eAttributeWithValue) {
-            NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+            NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
                 ": attribute " << attr_name <<
                     " requires a value" << AT_POS(attr_name.data()));
         }
@@ -542,7 +542,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                 if (IsOptionSet(eGroup))
                     m_GridClient->SetJobGroup(m_Opts.job_group);
                 if (!input_set) {
-                    NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+                    NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
                         ": attribute \"input\" is required at line " <<
                             attr_parser.GetLineNumber());
                 }
@@ -594,7 +594,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     }
                 }
                 if (!input_set) {
-                    NCBI_THROW_FMT(CArgException, eInvalidArg, PROGRAM_NAME
+                    NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
                         ": attribute \"input\" is required at line " <<
                             attr_parser.GetLineNumber());
                 }
@@ -692,7 +692,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
     return 0;
 
 ErrorExit:
-    fprintf(stderr, PROGRAM_NAME ": error while writing job input.\n");
+    fprintf(stderr, GRID_APP_NAME ": error while writing job input.\n");
     return 3;
 }
 
@@ -721,7 +721,7 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
     return 0;
 
 Error:
-    fprintf(stderr, PROGRAM_NAME ": error while writing job data.\n");
+    fprintf(stderr, GRID_APP_NAME ": error while writing job data.\n");
     return 3;
 }
 
@@ -750,7 +750,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobInput()
     job.job_id = m_Opts.id;
 
     if (m_NetScheduleAPI.GetJobDetails(job) == CNetScheduleAPI::eJobNotFound) {
-        fprintf(stderr, PROGRAM_NAME ": job %s has expired.\n",
+        fprintf(stderr, GRID_APP_NAME ": job %s has expired.\n",
                 job.job_id.c_str());
         return 3;
     }
@@ -774,7 +774,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
         break;
 
     default:
-        fprintf(stderr, PROGRAM_NAME
+        fprintf(stderr, GRID_APP_NAME
             ": cannot retrieve job output for job status %s.\n",
             CNetScheduleAPI::StatusToString(status).c_str());
         return 3;
@@ -813,7 +813,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
         }
     } else {
         if (!IsOptionSet(eJobId)) {
-            fprintf(stderr, PROGRAM_NAME " " READJOB_COMMAND
+            fprintf(stderr, GRID_APP_NAME " " READJOB_COMMAND
                 ": option '--" JOB_ID_OPTION "' is required.\n");
             return 2;
         }
@@ -906,7 +906,7 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         break;
 
     default:
-        fprintf(stderr, PROGRAM_NAME ": options '--" CLAIM_NEW_AFFINITIES_OPTION
+        fprintf(stderr, GRID_APP_NAME ": options '--" CLAIM_NEW_AFFINITIES_OPTION
             "' and '--" ANY_AFFINITY_OPTION "' are mutually exclusive.\n");
         return 2;
     }
@@ -1002,7 +1002,7 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
     return 0;
 
 ErrorExit:
-    fprintf(stderr, PROGRAM_NAME ": error while submitting job output.\n");
+    fprintf(stderr, GRID_APP_NAME ": error while submitting job output.\n");
     return 3;
 }
 

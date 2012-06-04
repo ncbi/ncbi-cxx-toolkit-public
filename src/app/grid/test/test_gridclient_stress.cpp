@@ -33,6 +33,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_client_app.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimisc.hpp>
@@ -41,18 +42,13 @@
 #include <math.h>
 #include <algorithm>
 
-#define PROGRAM_NAME "SampleNodeStressTest"
-#define PROGRAM_VERSION "1.1.0"
+#define GRID_APP_NAME "test_gridclient_stress"
 
 USING_NCBI_SCOPE;
 
 class CGridClientTestApp : public CGridClientApp
 {
 public:
-    CGridClientTestApp() {
-        SetVersion(CVersionInfo(PROGRAM_VERSION, PROGRAM_NAME));
-    }
-
     virtual void Init(void);
     virtual int Run(void);
     virtual string GetProgramVersion(void) const;
@@ -65,7 +61,7 @@ public:
 
 string CGridClientTestApp::GetProgramVersion(void) const
 {
-    return PROGRAM_NAME " version " PROGRAM_VERSION;
+    return GRID_APP_VERSION_INFO;
 }
 
 
@@ -227,5 +223,8 @@ int CGridClientTestApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CGridClientTestApp().AppMain(argc, argv, 0, eDS_Default, "test_gridclient_stress.ini");
+    GRID_APP_CHECK_VERSION_ARGS();
+
+    return CGridClientTestApp().AppMain(argc, argv, 0, eDS_Default,
+            GRID_APP_NAME ".ini");
 } 

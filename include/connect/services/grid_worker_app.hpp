@@ -209,6 +209,18 @@ inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
     }
 
+#define NCBI_WORKERNODE_MAIN_PKG_VER_EX(TWorkerNodeJob,                     \
+        TWorkerNodeIdleTask)                                                \
+    NCBI_DECLARE_WORKERNODE_FACTORY_PKG_VER_EX(TWorkerNodeJob,              \
+            TWorkerNodeIdleTask);                                           \
+    int main(int argc, const char* argv[])                                  \
+    {                                                                       \
+        GRID_APP_CHECK_VERSION_ARGS();                                      \
+        GetDiagContext().SetOldPostFormat(false);                           \
+        CGridWorkerApp app(new TWorkerNodeJob##FactoryEx);                  \
+        return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
+    }
+
 #define NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES(TWorkerNodeJob,                \
         TWorkerNodeIdleTask, Version)                                       \
     NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,                      \
@@ -218,6 +230,19 @@ inline void CGridWorkerApp::SetMergeLogLines(bool merge_log_lines /* = true*/)
         GetDiagContext().SetOldPostFormat(false);                           \
         CGridWorkerApp app(new TWorkerNodeJob##FactoryEx,                   \
             CVersionInfo(#Version));                                        \
+        app.SetMergeLogLines();                                             \
+        return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
+    }
+
+#define NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES_PKG_VER(TWorkerNodeJob,        \
+        TWorkerNodeIdleTask)                                                \
+    NCBI_DECLARE_WORKERNODE_FACTORY_PKG_VER_EX(TWorkerNodeJob,              \
+            TWorkerNodeIdleTask);                                           \
+    int main(int argc, const char* argv[])                                  \
+    {                                                                       \
+        GRID_APP_CHECK_VERSION_ARGS();                                      \
+        GetDiagContext().SetOldPostFormat(false);                           \
+        CGridWorkerApp app(new TWorkerNodeJob##FactoryEx);                  \
         app.SetMergeLogLines();                                             \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog);                 \
     }

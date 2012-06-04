@@ -163,7 +163,7 @@ struct SCommandLineParserImpl : public CObject, public SCommonParts
         const string& program_name,
         const string& program_summary,
         const string& program_description,
-        const string& program_version);
+        const string& version_info);
 
     void PrintWordWrapped(int topic_len, int indent,
         const string& text, int cont_indent = -1) const;
@@ -176,7 +176,7 @@ struct SCommandLineParserImpl : public CObject, public SCommonParts
 
     // Command and argument definitions.
     string m_ProgramName;
-    string m_ProgramVersion;
+    string m_VersionInfo;
     typedef map<string, const SOptionInfo*> TOptionNameToOptionInfoMap;
     typedef map<string, const SCommandInfo*> TCommandNameToCommandInfoMap;
     const SOptionInfo* m_SingleLetterOptions[256];
@@ -213,10 +213,10 @@ SCommandLineParserImpl::SCommandLineParserImpl(
         const string& program_name,
         const string& program_summary,
         const string& program_description,
-        const string& program_version) :
+        const string& version_info) :
     SCommonParts(program_summary, program_description),
     m_ProgramName(program_name),
-    m_ProgramVersion(program_version),
+    m_VersionInfo(version_info),
     m_VersionOption(VERSION_OPT_ID, s_Version,
         CCommandLineParser::eSwitch, kEmptyStr),
     m_HelpOption(HELP_OPT_ID, s_Help,
@@ -536,16 +536,7 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
     while (option_value != m_OptionValues.end())
         switch (option_value->first->m_Id) {
         case VERSION_OPT_ID:
-            {
-                CNcbiApplication* app = CNcbiApplication::Instance();
-                if (app != NULL)
-                    fputs(app->GetFullVersion().Print(
-                        m_ProgramName, CVersion::fVersionInfo |
-                            CVersion::fPackageShort).c_str(), stdout);
-                else
-                    printf("%s version %s\n", m_ProgramName.c_str(),
-                        m_ProgramVersion.c_str());
-            }
+            puts(m_VersionInfo.c_str());
             return HELP_CMD_ID;
 
         case HELP_OPT_ID:
@@ -638,11 +629,11 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
 
 CCommandLineParser::CCommandLineParser(
         const string& program_name,
-        const string& program_version,
+        const string& version_info,
         const string& program_summary,
         const string& program_description) :
     m_Impl(new SCommandLineParserImpl(
-        program_name, program_summary, program_description, program_version))
+        program_name, program_summary, program_description, version_info))
 {
 }
 

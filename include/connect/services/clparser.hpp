@@ -48,7 +48,7 @@ class NCBI_XCONNECT_EXPORT CCommandLineParser
 
     CCommandLineParser(
         const string& program_name,
-        const string& program_version,
+        const string& version_info,
         const string& program_summary,
         const string& program_description = kEmptyStr);
 
@@ -85,10 +85,11 @@ class NCBI_XCONNECT_EXPORT CCommandLineParser
 
     void AddAssociation(int cmd_id, int opt_id);
 
-    /// @return One of the command identifiers or -1
-    ///         if a help command was requested and
-    ///         has been already processed, in which case the caller
-    ///         must exit with return code 0.
+    /// Parse the command line. 
+    /// @return One of the command identifiers or -1 if the requested
+    ///         command is either help or version command, in which
+    ///         case it has been already processed by this method, and
+    ///         the caller must immediately exit with return code 0.
     int Parse(int argc, const char* const *argv);
 
     const string& GetProgramName() const;

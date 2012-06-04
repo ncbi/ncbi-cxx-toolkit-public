@@ -293,4 +293,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Routine magic spells
 
-NCBI_WORKERNODE_MAIN_EX(CRemoteCgiJob, CRemoteAppIdleTask, 1.7.1);
+#define GRID_APP_NAME "remote_cgi"
+
+NCBI_WORKERNODE_MAIN_PKG_VER_EX(CRemoteCgiJob, CRemoteAppIdleTask);

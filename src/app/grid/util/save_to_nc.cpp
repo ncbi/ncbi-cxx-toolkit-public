@@ -34,10 +34,13 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <connect/services/netcache_api.hpp>
+#include <connect/services/grid_app_version_info.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbistre.hpp>
-#include <connect/services/netcache_api.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 
@@ -46,9 +49,7 @@
 #include <fcntl.h>
 #endif
 
-#define SAVETONC_VERSION_MAJOR 1
-#define SAVETONC_VERSION_MINOR 1
-#define SAVETONC_VERSION_PATCH 0
+#define GRID_APP_NAME "save_to_nc"
 
 USING_NCBI_SCOPE;
 
@@ -57,12 +58,6 @@ USING_NCBI_SCOPE;
 class CSaveToNetCacheApp : public CNcbiApplication
 {
 public:
-    CSaveToNetCacheApp() {
-        SetVersion(CVersionInfo(
-            SAVETONC_VERSION_MAJOR,
-            SAVETONC_VERSION_MINOR,
-            SAVETONC_VERSION_PATCH));
-    }
     void Init(void);
     int Run(void);
 };
@@ -154,6 +149,8 @@ int CSaveToNetCacheApp::Run()
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     GetDiagContext().SetOldPostFormat(false);
     return CSaveToNetCacheApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }

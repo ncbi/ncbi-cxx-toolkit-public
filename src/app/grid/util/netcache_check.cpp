@@ -39,15 +39,13 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <connect/services/netcache_api.hpp>
-#include <connect/ncbi_socket.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
-#include <common/ncbi_package_ver.h>
+#include <connect/ncbi_socket.hpp>
 
 #include <corelib/mswin_no_popup.h>
 
-#define NETCACHE_CHECK_VERSION_MAJOR 1
-#define NETCACHE_CHECK_VERSION_MINOR 1
-#define NETCACHE_CHECK_VERSION_PATCH 0
+#define GRID_APP_NAME "netcache_check"
 
 USING_NCBI_SCOPE;
 
@@ -61,12 +59,6 @@ USING_NCBI_SCOPE;
 class CNetCacheCheckApp : public CNcbiApplication
 {
 public:
-    CNetCacheCheckApp() {
-        SetVersion(CVersionInfo(
-            NETCACHE_CHECK_VERSION_MAJOR,
-            NETCACHE_CHECK_VERSION_MINOR,
-            NETCACHE_CHECK_VERSION_PATCH));
-    }
     void Init(void);
     int Run(void);
 };
@@ -205,5 +197,7 @@ int CNetCacheCheckApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CNetCacheCheckApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }

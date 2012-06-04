@@ -41,12 +41,9 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/util.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
-#include <common/ncbi_package_ver.h>
-
-#define NETSCHEDULE_CONTROL_VERSION_MAJOR 1
-#define NETSCHEDULE_CONTROL_VERSION_MINOR 2
-#define NETSCHEDULE_CONTROL_VERSION_PATCH 0
+#define GRID_APP_NAME "netschedule_control"
 
 USING_NCBI_SCOPE;
 
@@ -57,12 +54,6 @@ USING_NCBI_SCOPE;
 class CNetScheduleControl : public CNcbiApplication
 {
 public:
-    CNetScheduleControl() {
-        SetVersion(CVersionInfo(
-            NETSCHEDULE_CONTROL_VERSION_MAJOR,
-            NETSCHEDULE_CONTROL_VERSION_MINOR,
-            NETSCHEDULE_CONTROL_VERSION_PATCH));
-    }
     void Init(void);
     int Run(void);
 
@@ -311,5 +302,7 @@ int CNetScheduleControl::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CNetScheduleControl().AppMain(argc, argv);
 }

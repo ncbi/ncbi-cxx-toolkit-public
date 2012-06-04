@@ -36,32 +36,22 @@
 
 #include <connect/services/remote_app.hpp>
 #include <connect/services/util.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#define REMOTEJOBCTL_VERSION_MAJOR 1
-#define REMOTEJOBCTL_VERSION_MINOR 1
-#define REMOTEJOBCTL_VERSION_PATCH 0
+#define GRID_APP_NAME "ns_remote_job_control"
 
 USING_NCBI_SCOPE;
 
 class CNSRemoteJobControlApp : public CNcbiApplication
 {
 public:
-    CNSRemoteJobControlApp() {
-        SetVersion(CVersionInfo(
-            REMOTEJOBCTL_VERSION_MAJOR,
-            REMOTEJOBCTL_VERSION_MINOR,
-            REMOTEJOBCTL_VERSION_PATCH));
-    }
-
     virtual void Init(void);
     virtual int Run(void);
-
-protected:
 };
 
 void CNSRemoteJobControlApp::Init(void)
@@ -341,5 +331,7 @@ int CNSRemoteJobControlApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CNSRemoteJobControlApp().AppMain(argc, argv);
 }

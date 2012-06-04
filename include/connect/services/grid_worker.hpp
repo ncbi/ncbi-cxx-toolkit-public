@@ -41,6 +41,7 @@
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/netcache_api.hpp>
 #include <connect/services/error_codes.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #include <connect/connect_export.h>
 
@@ -440,7 +441,13 @@ public:
 
     /// Get the job version
     ///
-    virtual string GetJobVersion(void) const = 0;
+    virtual string GetJobVersion() const = 0;
+
+    virtual string GetAppName() const {return GetJobVersion();}
+
+    virtual string GetAppVersion() const {return GetJobVersion();}
+
+    virtual string GetAppBuildDate() const {return __DATE__;}
 
     /// Get the Idle task
     ///
@@ -472,6 +479,14 @@ public:                                                                  \
     {                                                                    \
         return #TWorkerNodeJob " version " #Version;                     \
     }                                                                    \
+    virtual string GetAppName() const                                    \
+    {                                                                    \
+        return #TWorkerNodeJob;                                          \
+    }                                                                    \
+    virtual string GetAppVersion() const                                 \
+    {                                                                    \
+        return #Version;                                                 \
+    }                                                                    \
 }
 
 template <typename TWorkerNodeJob, typename TWorkerNodeIdleTask>
@@ -502,7 +517,8 @@ private:
     auto_ptr<TWorkerNodeIdleTask> m_IdleTask;
 };
 
-#define NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,TWorkerNodeIdleTask, Version) \
+#define NCBI_DECLARE_WORKERNODE_FACTORY_EX(                              \
+        TWorkerNodeJob,TWorkerNodeIdleTask, Version)                     \
 class TWorkerNodeJob##FactoryEx                                          \
     : public CSimpleJobFactoryEx<TWorkerNodeJob, TWorkerNodeIdleTask>    \
 {                                                                        \
@@ -511,8 +527,35 @@ public:                                                                  \
     {                                                                    \
         return #TWorkerNodeJob " version " #Version;                     \
     }                                                                    \
+    virtual string GetAppName() const                                    \
+    {                                                                    \
+        return #TWorkerNodeJob;                                          \
+    }                                                                    \
+    virtual string GetAppVersion() const                                 \
+    {                                                                    \
+        return #Version;                                                 \
+    }                                                                    \
 }
 
+#define NCBI_DECLARE_WORKERNODE_FACTORY_PKG_VER_EX(                      \
+        TWorkerNodeJob, TWorkerNodeIdleTask)                             \
+class TWorkerNodeJob##FactoryEx                                          \
+    : public CSimpleJobFactoryEx<TWorkerNodeJob, TWorkerNodeIdleTask>    \
+{                                                                        \
+public:                                                                  \
+    virtual string GetJobVersion() const                                 \
+    {                                                                    \
+        return GRID_APP_VERSION_INFO;                                    \
+    }                                                                    \
+    virtual string GetAppName() const                                    \
+    {                                                                    \
+        return GRID_APP_NAME;                                            \
+    }                                                                    \
+    virtual string GetAppVersion() const                                 \
+    {                                                                    \
+        return GRID_APP_VERSION;                                         \
+    }                                                                    \
+}
 
 
 /// Jobs watcher interface
@@ -593,24 +636,26 @@ public:
     unsigned int GetCheckStatusPeriod() const { return m_CheckStatusPeriod; }
     size_t GetServerOutputSize();
 
-    /// Get a name of a queue where this node is connected to.
-    ///
     const string& GetQueueName() const;
 
-    /// Get a node name
-    ///
     const string& GetClientName() const;
 
-    /// Get a job version
-    ///
-    string GetJobVersion() const
+    string GetAppName() const
     {
         CFastMutexGuard guard(m_JobFactoryMutex);
-        return m_JobFactory->GetJobVersion();
+        return m_JobFactory->GetAppName();
+    }
+    string GetAppVersion() const
+    {
+        CFastMutexGuard guard(m_JobFactoryMutex);
+        return m_JobFactory->GetAppVersion();
+    }
+    string GetBuildDate() const
+    {
+        CFastMutexGuard guard(m_JobFactoryMutex);
+        return m_JobFactory->GetAppBuildDate();
     }
 
-    /// Get a Connection Info
-    ///
     const string& GetServiceName() const;
 
     CNetCacheAPI GetNetCacheAPI() const { return m_NetCacheAPI; }

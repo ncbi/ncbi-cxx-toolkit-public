@@ -41,6 +41,8 @@
 
 #include <connect/services/netcache_api.hpp>
 #include <connect/services/neticache_client.hpp>
+#include <connect/services/grid_app_version_info.hpp>
+
 #include <connect/ncbi_socket.hpp>
 #include <common/ncbi_package_ver.h>
 
@@ -49,9 +51,7 @@
 #include <fcntl.h>
 #endif
 
-#define NETCACHE_CONTROL_VERSION_MAJOR 1
-#define NETCACHE_CONTROL_VERSION_MINOR 4
-#define NETCACHE_CONTROL_VERSION_PATCH 1
+#define GRID_APP_NAME "netcache_control"
 
 USING_NCBI_SCOPE;
 
@@ -64,12 +64,6 @@ USING_NCBI_SCOPE;
 class CNetCacheControl : public CNcbiApplication
 {
 public:
-    CNetCacheControl() {
-        SetVersion(CVersionInfo(
-            NETCACHE_CONTROL_VERSION_MAJOR,
-            NETCACHE_CONTROL_VERSION_MINOR,
-            NETCACHE_CONTROL_VERSION_PATCH));
-    }
     void Init();
     int Run();
 
@@ -487,5 +481,7 @@ int CNetCacheControl::Run()
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CNetCacheControl().AppMain(argc, argv, 0, eDS_Default, 0);
 }

@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -39,6 +40,8 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/grid_globals.hpp>
+#include <connect/services/grid_app_version_info.hpp>
+
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
 
@@ -46,6 +49,7 @@
 
 #include "test_netschedule_data.hpp"
 
+#define GRID_APP_NAME "test_netschedule_node"
 
 BEGIN_NCBI_SCOPE
 
@@ -223,5 +227,7 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
+    GRID_APP_CHECK_VERSION_ARGS();
+
     return CTestNetScheduleNode().AppMain(argc, argv, 0, eDS_Default);
 }
