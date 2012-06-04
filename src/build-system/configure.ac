@@ -3473,31 +3473,27 @@ fi
 orig_LIBS=$LIBS
 LIBS="$NETWORK_LIBS $orig_LIBS"
 AC_CHECK_FUNCS(inet_ntoa_r)
-if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
-   AC_MSG_NOTICE([Skipping checks for network functions new to Solaris 8.])
-else
-   AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
-      [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <netdb.h>]],
-          [[struct addrinfo *p; getaddrinfo("foo", "bar", p, &p);]])],
-          [ac_cv_func_getaddrinfo=yes], [ac_cv_func_getaddrinfo=no])])
-   test "$ac_cv_func_getaddrinfo" = "yes" && \
-     AC_DEFINE(HAVE_GETADDRINFO, 1,
-               [Define to 1 if you have the `getaddrinfo' function.])
-   AC_CACHE_CHECK([for getnameinfo], ac_cv_func_getnameinfo,
-      [AC_LINK_IFELSE([AC_LANG_PROGRAM(
-          [[#include <netdb.h>
-            #include <sys/types.h>
-            #include <sys/socket.h>]],
-          [[struct sockaddr p; char buf[256], buf2[256];
-            getnameinfo(&p, sizeof(p), buf, 256, buf2, 256, 0);]])],
-          [ac_cv_func_getnameinfo=yes], [ac_cv_func_getnameinfo=no])])
-   test "$ac_cv_func_getnameinfo" = "yes" && \
-     AC_DEFINE(HAVE_GETNAMEINFO, 1,
-               [Define to 1 if you have the `getnameinfo' function.])
-   AC_CHECK_FUNCS(freehostent gethostent_r getipnodebyaddr getipnodebyname \
-                  inet_ntop)
-fi
+AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>]],
+       [[struct addrinfo *p; getaddrinfo("foo", "bar", p, &p);]])],
+       [ac_cv_func_getaddrinfo=yes], [ac_cv_func_getaddrinfo=no])])
+test "$ac_cv_func_getaddrinfo" = "yes" && \
+  AC_DEFINE(HAVE_GETADDRINFO, 1,
+            [Define to 1 if you have the `getaddrinfo' function.])
+AC_CACHE_CHECK([for getnameinfo], ac_cv_func_getnameinfo,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>
+         #include <sys/types.h>
+         #include <sys/socket.h>]],
+       [[struct sockaddr p; char buf[256], buf2[256];
+         getnameinfo(&p, sizeof(p), buf, 256, buf2, 256, 0);]])],
+       [ac_cv_func_getnameinfo=yes], [ac_cv_func_getnameinfo=no])])
+test "$ac_cv_func_getnameinfo" = "yes" && \
+  AC_DEFINE(HAVE_GETNAMEINFO, 1,
+            [Define to 1 if you have the `getnameinfo' function.])
+AC_CHECK_FUNCS(freehostent gethostent_r getipnodebyaddr getipnodebyname \
+               inet_ntop)
 LIBS=$orig_LIBS
 
 
