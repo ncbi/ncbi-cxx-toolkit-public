@@ -511,7 +511,9 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 
     // check that no two consecutive hits are farther than the max intron
     // (extra short hits skipped)
+    // (throw out a hit if it intersects with previous on subject (genome), )
     size_t prev (0);
+    TSeqPos prevSmin, prevSmax;
     NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
 
         THitRef& h (*ii);
@@ -522,7 +524,13 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         }
 
         if(prev > 0) {
-            
+
+        const bool non_intersect = ( prevSmax < h->GetSubjMin() ) || ( prevSmin > h->GetSubjMax() );
+        if(!non_intersect) {//throw out intersecting hit
+            h.Reset(0);
+            continue;
+        }
+
             const bool consistent (h->GetSubjStrand()?
                                   (h->GetSubjStart() < prev + m_MaxIntron):
                                   (h->GetSubjStart() + m_MaxIntron > prev));
@@ -535,6 +543,8 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         }
 
         prev = h->GetSubjStop();
+        prevSmin = h->GetSubjMin();
+        prevSmax = h->GetSubjMax();
     }
 
     phitrefs->erase(remove_if(phitrefs->begin(), phitrefs->end(),
