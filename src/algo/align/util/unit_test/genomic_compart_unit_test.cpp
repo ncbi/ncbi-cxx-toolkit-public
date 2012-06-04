@@ -141,6 +141,10 @@ BOOST_AUTO_TEST_CASE(Test_Align_Filter)
                        intersections);
         }
 
+        cerr << "input=" << input_name
+            << "  intersections=" << intersections
+            << endl;
+
         set<SCompartmentData> expected_compartments;
         while (NcbiGetlineEOL(istr, line) && !line.empty()) {
            expected_compartments.insert(line);
@@ -166,6 +170,11 @@ BOOST_AUTO_TEST_CASE(Test_Align_Filter)
          ITERATE (list< CRef<CSeq_align_set> >, it, comparts) {
              actual_compartments.insert(**it);
          }
+
+         ITERATE (set<SCompartmentData>, it, actual_compartments) {
+             cerr << *it << endl;
+         }
+
          BOOST_CHECK_EQUAL(expected_compartments.size(),
                            actual_compartments.size());
          for(set<SCompartmentData>::const_iterator expected_it =

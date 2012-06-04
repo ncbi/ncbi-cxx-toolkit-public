@@ -190,7 +190,24 @@ struct SRangesByScore
 		int scores[2] = {0, 0};
 		r1.second->GetNamedScore(CSeq_align::eScore_Score, scores[0]);
 		r2.second->GetNamedScore(CSeq_align::eScore_Score, scores[1]);
-        return scores[0] > scores[1];
+
+        if (scores[0] > scores[1]) {
+            return true;
+        }
+        if (scores[1] > scores[0]) {
+            return false;
+        }
+
+        TSeqRange r1_0 = r1.second->GetSeqRange(0);
+        TSeqRange r2_0 = r2.second->GetSeqRange(0);
+        if (r1_0 < r2_0) {
+            return true;
+        }
+        if (r2_0 < r1_0) {
+            return false;
+        }
+
+        return r1.second->GetSeqRange(1) < r2.second->GetSeqRange(1);
     }
 };
 
@@ -209,7 +226,24 @@ struct SRangesByPctIdent
         	                   r2.first.second.GetLength());
         	return len1 > len2;
    		}
-		return scores[0] > scores[1];
+
+        if (scores[0] > scores[1]) {
+            return true;
+        }
+        if (scores[1] > scores[0]) {
+            return false;
+        }
+
+        TSeqRange r1_0 = r1.second->GetSeqRange(0);
+        TSeqRange r2_0 = r2.second->GetSeqRange(0);
+        if (r1_0 < r2_0) {
+            return true;
+        }
+        if (r2_0 < r1_0) {
+            return false;
+        }
+
+        return r1.second->GetSeqRange(1) < r2.second->GetSeqRange(1);
 	}
 };
 
@@ -218,7 +252,25 @@ struct SSeqAlignsBySize
     bool operator()(const CRef<CSeq_align>& al_ref1,
                     const CRef<CSeq_align>& al_ref2) const
     {
-        return al_ref1->GetAlignLength() > al_ref2->GetAlignLength();
+        TSeqPos al1_len = al_ref1->GetAlignLength();
+        TSeqPos al2_len = al_ref2->GetAlignLength();
+        if (al1_len > al2_len) {
+            return true;
+        }
+        if (al2_len > al1_len) {
+            return false;
+        }
+
+        TSeqRange r1_0 = al_ref1->GetSeqRange(0);
+        TSeqRange r2_0 = al_ref2->GetSeqRange(0);
+        if (r1_0 < r2_0) {
+            return true;
+        }
+        if (r2_0 < r1_0) {
+            return false;
+        }
+
+        return al_ref1->GetSeqRange(1) < al_ref2->GetSeqRange(1);
     };
 };
 
@@ -324,17 +376,30 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         ENa_strand s_strand = id_pair.second.second;
 
         vector< CRef<CSeq_align> >& aligns = align_it->second;
-		if(options & fCompart_SortByScore)        
+		if(options & fCompart_SortByScore) {
 			std::sort(aligns.begin(), aligns.end(), SSeqAlignsByScore());
-		if(options & fCompart_SortByPctIdent)        
+        }
+        else if(options & fCompart_SortByPctIdent) {
 			std::sort(aligns.begin(), aligns.end(), SSeqAlignsByPctIdent());
-		else
+        }
+        else {
 			std::sort(aligns.begin(), aligns.end(), SSeqAlignsBySize());
+        }
 
 #ifdef _VERBOSE_DEBUG
         {{
              cerr << "ids: " << id_pair.first.first << " x "
                  << id_pair.second.first << endl;
+             if(options & fCompart_SortByScore) {
+                 cerr << "  sort by score" << endl;
+             }
+             else if(options & fCompart_SortByPctIdent) {
+                 cerr << "  sort by percent identity" << endl;
+             }
+             else {
+                 cerr << "  sort by size" << endl;
+             }
+
              ITERATE (vector< CRef<CSeq_align> >, it, aligns) {
                  cerr << "  ("
                      << (*it)->GetSeqRange(0) << ", "
