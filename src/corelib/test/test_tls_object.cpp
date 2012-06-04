@@ -36,6 +36,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <vector>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -43,6 +44,17 @@ USING_NCBI_SCOPE;
 
 static CAtomicCounter alloc_count;
 static CAtomicCounter object_count;
+static int total_steps;
+static CAtomicCounter current_step;
+
+inline void add_alloc(int d)
+{
+    alloc_count.Add(d);
+    int c = current_step.Add(1);
+    if ( c % 1000000 == 0 ) {
+        LOG_POST("step "<<c<<" of "<<total_steps);
+    }
+}
 
 void error(const char* msg)
 {
@@ -160,13 +172,13 @@ public:
     }
 
     static void* operator new(size_t s) {
-        alloc_count.Add(1);
+        add_alloc(1);
         CObjectWithNew* ptr = (CObjectWithNew*)::operator new(s);
         RegisterNew(ptr);
         return ptr;
     }
     static void operator delete(void* ptr) {
-        alloc_count.Add(-1);
+        add_alloc(-1);
         RegisterDelete((CObjectWithNew*)ptr);
         ::operator delete(ptr);
     }
@@ -214,13 +226,15 @@ static DECLARE_TLS_VAR(void*, s_LastNewPtr);
 static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
 typedef pair<void*, CAtomicCounter::TValue> TLastNewPtrMultipleInfo;
 typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
-static pthread_key_t s_LastNewPtrMultiple_key;
+static TTlsKey s_LastNewPtrMultiple_key;
 
+#ifndef NCBI_POSIX_THREADS
 static
 void sx_EraseLastNewPtrMultiple(void* ptr)
 {
     delete (TLastNewPtrMultiple*)ptr;
 }
+#endif
 
 static
 TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
@@ -229,19 +243,33 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
         NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
         if ( !s_LastNewPtrMultiple_key ) {
-            pthread_key_t key = 0;
+            TTlsKey key = 0;
             do {
+#ifdef NCBI_WIN32_THREADS
+                _VERIFY((key = TlsAlloc()) != DWORD(-1));
+#else
                 _VERIFY(pthread_key_create(&key, sx_EraseLastNewPtrMultiple)==0);
+#endif
             } while ( !key );
+#ifndef NCBI_WIN32_THREADS
             pthread_setspecific(key, 0);
+#endif
             s_LastNewPtrMultiple_key = key;
         }
     }
-    TLastNewPtrMultiple* set = 
-        (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
+    TLastNewPtrMultiple* set;
+#ifdef NCBI_WIN32_THREADS
+    set = (TLastNewPtrMultiple*)TlsGetValue(s_LastNewPtrMultiple_key);
+#else
+    set = (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
+#endif
     if ( !set ) {
-        pthread_setspecific(s_LastNewPtrMultiple_key,
-                            set = new TLastNewPtrMultiple());
+        set = new TLastNewPtrMultiple();
+#ifdef NCBI_WIN32_THREADS
+        TlsSetValue(s_LastNewPtrMultiple_key, set);
+#else
+        pthread_setspecific(s_LastNewPtrMultiple_key, set);
+#endif
     }
     return *set;
 }
@@ -382,13 +410,13 @@ public:
     }
 
     static void* operator new(size_t s) {
-        alloc_count.Add(1);
+        add_alloc(1);
         CObjectWithTLS* ptr = (CObjectWithTLS*)::operator new(s);
         RegisterNew(ptr);
         return ptr;
     }
     static void operator delete(void* ptr) {
-        alloc_count.Add(-1);
+        add_alloc(-1);
         RegisterDelete((CObjectWithTLS*)ptr);
         ::operator delete(ptr);
     }
@@ -508,9 +536,10 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
 }
 
 
+static const size_t COUNT = 100000;
+
 void CTestTlsObjectApp::RunTest(void)
 {
-    const size_t COUNT = 100000;
     const size_t OBJECT_SIZE = sizeof(CObjectWithNew);
     for ( int t = 0; t < 1; ++t ) {
         // prealloc
@@ -524,9 +553,11 @@ void CTestTlsObjectApp::RunTest(void)
             const size_t COUNT2 = COUNT*2;
             void** p = new void*[COUNT2];
             for ( size_t i = 0; i < COUNT2; ++i ) {
+                add_alloc(1);
                 p[i] = ::operator new(OBJECT_SIZE);
             }
             for ( size_t i = 0; i < COUNT2; ++i ) {
+                add_alloc(-1);
                 ::operator delete(p[i]);
             }
             delete[] p;
@@ -538,11 +569,13 @@ void CTestTlsObjectApp::RunTest(void)
         void** ptr = new void*[COUNT];
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
+            add_alloc(1);
             ptr[i] = ::operator new(OBJECT_SIZE);
         }
         double t1 = sw.Elapsed();
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
+            add_alloc(-1);
             ::operator delete(ptr[i]);
         }
         double t2 = sw.Elapsed();
@@ -788,7 +821,13 @@ void CTestTlsObjectApp::RunTest(void)
 
 bool CTestTlsObjectApp::TestApp_Init(void)
 {
+    static string sss = "xxx";
     s_NumThreads = 20;
+    total_steps = s_NumThreads;
+    total_steps *= 3; // iterations in thread
+    total_steps *= 7; // passes in iteration
+    total_steps *= COUNT; // objects in pass
+    total_steps *= 2; // alloc/free
     NcbiCout << "Testing TLS variant of CObject counter init." << NcbiEndl;
     return true;
 }

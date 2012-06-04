@@ -75,6 +75,7 @@
 #define USE_TLS_PTR 1
 #if USE_TLS_PTR
 #  include <corelib/ncbithr.hpp>
+#  include <vector>
 #elif USE_HEAPOBJ_LIST
 #  include <corelib/ncbi_safe_static.hpp>
 #  include <list>
@@ -126,13 +127,15 @@ static DECLARE_TLS_VAR(void*, s_LastNewPtr);
 static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
 typedef pair<void*, CAtomicCounter::TValue> TLastNewPtrMultipleInfo;
 typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
-static pthread_key_t s_LastNewPtrMultiple_key;
+static TTlsKey s_LastNewPtrMultiple_key;
 
+#ifdef NCBI_POSIX_THREADS
 static
 void sx_EraseLastNewPtrMultiple(void* ptr)
 {
     delete (TLastNewPtrMultiple*)ptr;
 }
+#endif
 
 static
 TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
@@ -141,19 +144,33 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
         NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
         if ( !s_LastNewPtrMultiple_key ) {
-            pthread_key_t key = 0;
+            TTlsKey key = 0;
             do {
+#ifdef NCBI_WIN32_THREADS
+                _VERIFY((key = TlsAlloc()) != DWORD(-1));
+#else
                 _VERIFY(pthread_key_create(&key, sx_EraseLastNewPtrMultiple)==0);
+#endif
             } while ( !key );
+#ifndef NCBI_WIN32_THREADS
             pthread_setspecific(key, 0);
+#endif
             s_LastNewPtrMultiple_key = key;
         }
     }
-    TLastNewPtrMultiple* set = 
-        (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
+    TLastNewPtrMultiple* set;
+#ifdef NCBI_WIN32_THREADS
+    set = (TLastNewPtrMultiple*)TlsGetValue(s_LastNewPtrMultiple_key);
+#else
+    set = (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
+#endif
     if ( !set ) {
-        pthread_setspecific(s_LastNewPtrMultiple_key,
-                            set = new TLastNewPtrMultiple());
+        set = new TLastNewPtrMultiple();
+#ifdef NCBI_WIN32_THREADS
+        TlsSetValue(s_LastNewPtrMultiple_key, set);
+#else
+        pthread_setspecific(s_LastNewPtrMultiple_key, set);
+#endif
     }
     return *set;
 }
