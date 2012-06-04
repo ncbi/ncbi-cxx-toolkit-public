@@ -228,7 +228,7 @@ typedef pair<void*, CAtomicCounter::TValue> TLastNewPtrMultipleInfo;
 typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
 static TTlsKey s_LastNewPtrMultiple_key;
 
-#ifndef NCBI_POSIX_THREADS
+#ifdef NCBI_POSIX_THREADS
 static
 void sx_EraseLastNewPtrMultiple(void* ptr)
 {
