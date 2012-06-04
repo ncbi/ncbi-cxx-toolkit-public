@@ -214,18 +214,26 @@ public:
         fDoubleScientific= (1 <<  9), ///< Use scientific format for double
         fDoublePosix     = (1 << 10), ///< Use C locale
         fDoubleGeneral   = fDoubleFixed | fDoubleScientific,
-        fDS_Binary       = (1 << 11),
-        fDS_NoDecimalPoint = (1 << 12),
+        fDS_Binary               = (1 << 11),
+        fDS_NoDecimalPoint       = (1 << 12),
         fDS_PutSpaceBeforeSuffix = (1 << 13),
-        fDS_ShortSuffix  = (1 << 14),
-        fDS_PutBSuffixToo = (1 << 15)
+        fDS_ShortSuffix          = (1 << 14),
+        fDS_PutBSuffixToo        = (1 << 15)
     };
     typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
 
     /// String to number conversion flags.
     enum EStringToNumFlags {
         fConvErr_NoThrow      = (1 << 16),   ///< On error, return zero and set
-        /// errno to non-zero instead of throwing an exception (the default)
+        /// errno to non-zero instead of throwing an exception (the default).
+        /// We recommend the following technique to check against errors
+        /// with minimum overhead when this flag is used:
+        ///     if (!retval  &&  errno != 0)
+        ///        ERROR;
+        /// And for StringToDouble*() variants:
+        ///     if (retval == HUGE_VAL  ||  retval == -HUGE_VAL  ||  
+        ///        !retval  &&  errno != 0)
+        ///        ERROR;
         
         fMandatorySign        = (1 << 17),   ///< See 'fWithSign'
         fAllowCommas          = (1 << 18),   ///< See 'fWithCommas'
