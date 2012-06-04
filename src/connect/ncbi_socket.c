@@ -1631,58 +1631,56 @@ static EIO_Status s_Select_(size_t                n,
                 continue;
             assert(x_error != SOCK_EINTR  &&  ready);
         }
-
-        n = 0/*no post processing*/;
-        assert(ready);
         break;
     }
 
-    assert(( n  &&  nfds > 0)  ||
-           (!n  &&  nfds <= 0  &&  0 < ready));
-    ready = 0;
-    for (i = 0;  i < n;  i++) {
-        SOCK sock = polls[i].sock;
-        if (sock  &&  polls[i].event) {
-            TSOCK_Handle fd;
-            if (polls[i].revent == eIO_Close) {
-                ready++;
-                continue;
-            }
-            if ((fd = sock->sock) == SOCK_INVALID) {
-                polls[i].revent = eIO_Close;
-                ready++;
-                continue;
-            }
-#  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
-            assert(fd < FD_SETSIZE);
-#  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
-            if (!write_only  &&  FD_ISSET(fd, &rfds)) {
-                polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
-#  ifdef NCBI_OS_MSWIN
-                sock->readable = 1/*true*/;
-#  endif /*NCBI_OS_MSWIN*/
-            }
-            if (!read_only   &&  FD_ISSET(fd, &wfds)) {
-                polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
-#  ifdef NCBI_OS_MSWIN
-                sock->writable = 1/*true*/;
-#  endif /*NCBI_OS_MSWIN*/
-            }
-            assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
-            if (polls[i].revent == eIO_Open) {
-                if (!FD_ISSET(fd, &efds))
+    if (nfds > 0) {
+        /* NB: some fd bits could have been counted multiple times if reside
+           in different fd_set's (such as ready for both R and W), recount. */
+        for (ready = 0, i = 0;  i < n;  i++) {
+            SOCK sock = polls[i].sock;
+            if (sock  &&  polls[i].event) {
+                TSOCK_Handle fd;
+                if (polls[i].revent == eIO_Close) {
+                    ready++;
                     continue;
-                polls[i].revent = eIO_Close;
-            } else if (sock->type == eTrigger)
-                polls[i].revent = polls[i].event;
-            assert(polls[i].revent != eIO_Open);
-            ready++;
-        } else
-            assert(polls[i].revent == eIO_Open);
+                }
+                if ((fd = sock->sock) == SOCK_INVALID) {
+                    polls[i].revent = eIO_Close;
+                    ready++;
+                    continue;
+                }
+#  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
+                assert(fd < FD_SETSIZE);
+#  endif /*!NCBI_OS_MSWIN && FD_SETSIZE*/
+                if (!write_only  &&  FD_ISSET(fd, &rfds)) {
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Read);
+#  ifdef NCBI_OS_MSWIN
+                    sock->readable = 1/*true*/;
+#  endif /*NCBI_OS_MSWIN*/
+                }
+                if (!read_only   &&  FD_ISSET(fd, &wfds)) {
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
+#  ifdef NCBI_OS_MSWIN
+                    sock->writable = 1/*true*/;
+#  endif /*NCBI_OS_MSWIN*/
+                }
+                assert((polls[i].revent | eIO_ReadWrite) == eIO_ReadWrite);
+                if (polls[i].revent == eIO_Open) {
+                    if (!FD_ISSET(fd, &efds))
+                        continue;
+                    polls[i].revent = eIO_Close;
+                } else if (sock->type == eTrigger)
+                    polls[i].revent = polls[i].event;
+                assert(polls[i].revent != eIO_Open);
+                ready++;
+            } else
+                assert(polls[i].revent == eIO_Open);
+        }
     }
 
-    /* success; can do I/O now */
-    assert(ready >= nfds);
+    assert(ready);
+    /* can do I/O now */
     return eIO_Success;
 }
 
@@ -2371,7 +2369,7 @@ static EIO_Status s_Select(size_t                n,
         }
     }
 
-    /* success; can do I/O now */
+    /* can do I/O now */
     return eIO_Success;
 
 #else /*!NCBI_OS_MSWIN || !NCBI_CXX_TOOLKIT*/
