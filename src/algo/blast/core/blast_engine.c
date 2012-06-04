@@ -252,7 +252,7 @@ static Int2 s_GetNextSubjectChunk(BLAST_SequenceBlk* subject,
     (subject->chunk)++;
 
     /* if no chunking is performed */
-    if (backup->offset == 0 && backup->next == backup->full_range.right) {
+    if (backup->offset == 0 && residual == 0 && backup->next == backup->full_range.right) {
         subject->seq_ranges = backup->soft_ranges;
         subject->num_seq_ranges = backup->num_soft_ranges;
         return SUBJECT_SPLIT_OK;
