@@ -111,7 +111,7 @@ CChecksum::~CChecksum()
 }
 
 
-void CChecksum::x_Free()
+void CChecksum::x_Free(void)
 {
     switch ( GetMethod() ) {
     case eMD5:
@@ -148,10 +148,16 @@ CChecksum& CChecksum::operator= (const CChecksum& cks)
 }
 
 
-void CChecksum::Reset()
+void CChecksum::Reset(EMethod method)
 {
+    x_Free();
+
     m_LineCount = 0;
     m_CharCount = 0;
+    if (method != eNone) {
+        m_Method = method;
+    }
+
     switch ( GetMethod() ) {
     case eCRC32:
         m_Checksum.m_CRC32 = 0;
@@ -160,8 +166,7 @@ void CChecksum::Reset()
         m_Checksum.m_CRC32 = ~0;
         break;
     case eMD5:
-        delete m_Checksum.m_MD5;
-        m_Checksum.m_MD5 = new CMD5();
+        m_Checksum.m_MD5 = new CMD5;
         break;
     case eAdler32:
         m_Checksum.m_CRC32 = 1;
@@ -172,7 +177,7 @@ void CChecksum::Reset()
 }
 
 
-Uint4 CChecksum::GetChecksum() const
+Uint4 CChecksum::GetChecksum(void) const
 {
     switch ( GetMethod() ) {
     case eCRC32:
@@ -190,7 +195,7 @@ Uint4 CChecksum::GetChecksum() const
 
 CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
 {
-    if ( !Valid() ) {
+    if (!Valid()   ||  !out.good()) {
         return out;
     }
     out << sx_Start <<

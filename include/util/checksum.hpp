@@ -87,7 +87,7 @@ public:
     static void InitTables(void);
 
     /// Print C++ code for CRC32 tables for direct inclusion into library.
-    /// It eliminates the need to initialize CRC32 tables.
+    /// It also eliminates the need to initialize CRC32 tables.
     static void PrintTables(CNcbiOstream& out);
 
     /// Get current method used to compute control sum.
@@ -98,17 +98,17 @@ public:
 
     /// Return calculated checksum.
     /// Only valid in CRC32/CRC32ZIP/Adler32 modes!
-    Uint4 GetChecksum() const;
+    Uint4 GetChecksum(void) const;
 
     /// Return calculated MD5 digest.
     /// Only valid in MD5 mode!
     void GetMD5Digest(unsigned char digest[16]) const;
     void GetMD5Digest(string& str) const;
 
-    /// Reset the object to prepare it to the next checksum computation
-    void Reset();
+    /// Reset the object to prepare it to the next checksum computation.
+    void Reset(EMethod method = eNone/**<keep current method*/);
 
-    // Methods, used for file/stream operations
+    // Methods used for file/stream operations
 
     /// Update current control sum with data provided.
     void AddLine(const char* line, size_t length);
@@ -140,7 +140,7 @@ private:
     /// Update current control sum with data provided.
     void x_Update(const char* str, size_t length);
     /// Cleanup (used in destructor and assignment operator).
-    void x_Free();
+    void x_Free(void);
 };
 
 
@@ -149,14 +149,14 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
 
 /// Compute checksum for the given file.
 NCBI_XUTIL_EXPORT
-CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method);
+CChecksum  ComputeFileChecksum(const string& path, CChecksum::EMethod method);
 
 /// Computes checksum for the given file.
 NCBI_XUTIL_EXPORT
 CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum);
 
 /// Compute CRC32 checksum for the given file.
-Uint4 ComputeFileCRC32(const string& path);
+Uint4      ComputeFileCRC32(const string& path);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -174,10 +174,10 @@ public:
     /// Virtual methods from IWriter
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t* bytes_written = 0);
-    virtual ERW_Result Flush();
+    virtual ERW_Result Flush(void);
 
     /// Return checksum
-    const CChecksum& GetChecksum() const;
+    const CChecksum& GetChecksum(void) const;
 
 private:
     CChecksum m_Checksum;  ///< Checksum calculator
@@ -234,7 +234,7 @@ inline
 bool CChecksum::ValidChecksumLine(const char* line, size_t length) const
 {
     return length > kMinimumChecksumLength &&
-        line[0] == '/' && line[1] == '*' && // first four letter of checksum
+        line[0] == '/' && line[1] == '*' && // first four letters of checksum
         line[2] == ' ' && line[3] == 'O' && // see sx_Start in checksum.cpp
         ValidChecksumLineLong(line, length); // complete check
 }
@@ -277,21 +277,21 @@ inline
 ERW_Result CChecksumStreamWriter::Write(const void* buf, size_t count,
                                         size_t* bytes_written)
 {
+    m_Checksum.AddChars((const char*)buf, count);
     if (bytes_written) {
         *bytes_written = count;
     }
-    m_Checksum.AddChars((const char*)buf, count);
     return eRW_Success;
 }
 
 inline
-ERW_Result CChecksumStreamWriter::Flush()
+ERW_Result CChecksumStreamWriter::Flush(void)
 {
     return eRW_Success;
 }
 
 inline
-const CChecksum& CChecksumStreamWriter::GetChecksum() const
+const CChecksum& CChecksumStreamWriter::GetChecksum(void) const
 {
     return m_Checksum;
 }
