@@ -1064,7 +1064,9 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
                              const BlastCompo_SequenceRange * q_range,
 			     BlastCompo_SequenceData * queryData,
 			     const BlastCompo_Alignment *align,
-			     const Boolean shouldTestIdentical)
+			     const Boolean shouldTestIdentical,
+			     const ECompoAdjustModes compo_adjust_mode,
+			     const Boolean isSmithWaterman)
 {
     int status = 0;
     BlastKappa_SequenceInfo * local_data; /* BLAST-specific
@@ -1111,7 +1113,7 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
 
         if ( !(KAPPA_TBLASTN_NO_SEG_SEQUENCE) ) {
 	  if ((!shouldTestIdentical) || 
-            (shouldTestIdentical && 
+            (shouldTestIdentical && (compo_adjust_mode || !isSmithWaterman) &&
 	     (!s_TestNearIdentical(seqData, range->begin, queryData, q_range->begin, align)))) {
             status = s_DoSegSequenceData(seqData, eBlastTypeTblastn);
             if (status != 0) {
@@ -1150,7 +1152,9 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
                           const BlastCompo_SequenceRange * q_range,
 			  BlastCompo_SequenceData * queryData,
 			  const BlastCompo_Alignment *align,
-			  const Boolean shouldTestIdentical)
+			  const Boolean shouldTestIdentical,
+			  const ECompoAdjustModes compo_adjust_mode,
+			  const Boolean isSmithWaterman)
 
 {
     int status = 0;       /* return status */
@@ -1187,7 +1191,7 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
     }
     if ( !(KAPPA_BLASTP_NO_SEG_SEQUENCE) ) {
       if ((!shouldTestIdentical) || 
-	  (shouldTestIdentical && 
+	  (shouldTestIdentical && (compo_adjust_mode || !isSmithWaterman) &&
 	   (!s_TestNearIdentical(seqData, 0, queryData, q_range->begin, align)))) {
         status = s_DoSegSequenceData(seqData, eBlastTypeBlastp); 
       }
@@ -1230,7 +1234,9 @@ s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
                    const BlastCompo_SequenceRange * q_range,
                    BlastCompo_SequenceData * queryData,
 		   const BlastCompo_Alignment *align,
-		   const Boolean shouldTestIdentical)
+		   const Boolean shouldTestIdentical,
+		   const ECompoAdjustModes compo_adjust_mode,
+		   const Boolean isSmithWaterman)
 {
     Int4 idx;
     BlastKappa_SequenceInfo * seq_info = self->local_data;
@@ -1249,10 +1255,10 @@ s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
     if (seq_info->prog_number ==  eBlastTypeTblastn) {
         /* The sequence must be translated. */
       return s_SequenceGetTranslatedRange(self, s_range, seqData,
-                q_range, queryData, align, shouldTestIdentical);
+                q_range, queryData, align, shouldTestIdentical, compo_adjust_mode, isSmithWaterman);
     } else {
       return s_SequenceGetProteinRange(self, s_range, seqData, 
-                q_range, queryData, align, shouldTestIdentical);
+                q_range, queryData, align, shouldTestIdentical, compo_adjust_mode, isSmithWaterman);
     }
 }
 

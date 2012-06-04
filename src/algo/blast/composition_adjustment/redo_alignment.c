@@ -1063,7 +1063,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
 				 &query_info[query_index].seq,
                                  &window->query_range,
                                  &query,
-				 window->align, nearIdenticalStatus);
+				 window->align, nearIdenticalStatus, compo_adjust_mode, FALSE);
         if (status != 0) {
             goto window_index_loop_cleanup;
         }
@@ -1233,7 +1233,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
 				 &query_info[query_index].seq,
                                  &window->query_range,
                                  &query,
-				 window->align, nearIdenticalStatus);
+				 window->align, nearIdenticalStatus, compo_adjust_mode, TRUE);
         if (status != 0) 
             goto window_index_loop_cleanup;
             

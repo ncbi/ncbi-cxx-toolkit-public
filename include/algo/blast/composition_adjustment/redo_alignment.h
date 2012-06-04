@@ -210,7 +210,9 @@ get_range_type(const BlastCompo_MatchingSequence * sequence,
                const BlastCompo_SequenceRange * q_range,
                BlastCompo_SequenceData * q_data,
 	       const BlastCompo_Alignment *align,
-	       const Boolean shouldTestIdentical);
+	       const Boolean shouldTestIdentical,
+	       const ECompoAdjustModes compo_adjust_mode,
+	       const Boolean isSmithWaterman);
 
 /**
  * Function type: Calculate the traceback for one alignment by
