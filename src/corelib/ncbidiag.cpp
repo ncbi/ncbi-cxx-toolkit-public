@@ -2120,7 +2120,7 @@ const char* CDiagContext::kProperty_ReqTime     = "request_time";
 const char* CDiagContext::kProperty_BytesRd     = "bytes_rd";
 const char* CDiagContext::kProperty_BytesWr     = "bytes_wr";
 
-static const char* kDiagTimeFormat = "Y-M-DTh:m:s.l";
+static const char* kDiagTimeFormat = "Y-M-DTh:m:s.r";
 // Fixed fields' widths
 static const int   kDiagW_PID      = 5;
 static const int   kDiagW_TID      = 3;
