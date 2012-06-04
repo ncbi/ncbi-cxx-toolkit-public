@@ -115,6 +115,7 @@ bool CReadBlastApp::fit_blast
     numLeft++;
     if(PrintDetails()) NcbiCerr << "Left annot is alignment: numLeft: " << numLeft << NcbiEndl;
     vector<long> left_gis = getGIs(left_annot);
+    if(PrintDetails()) NcbiCerr << "Left annot is alignment: left_gis: " << left_gis.size()  << NcbiEndl;
 
     IncreaseVerbosity();
     ITERATE(CBioseq::TAnnot, right_annot, right.GetAnnot())
@@ -122,8 +123,9 @@ bool CReadBlastApp::fit_blast
       if(PrintDetails()) NcbiCerr << "Next right annot: numRight: " << numRight << NcbiEndl;
       if(!(*right_annot)->GetData().IsAlign()) continue;
       numRight++;
-      if(PrintDetails()) NcbiCerr << "Left annot is alignment: numRight: " << numRight << NcbiEndl;
+      if(PrintDetails()) NcbiCerr << "Right annot is alignment: numRight: " << numRight << NcbiEndl;
       vector<long> right_gis = getGIs(right_annot);
+      if(PrintDetails()) NcbiCerr << "Right annot is alignment: right_gis: " << right_gis.size()  << NcbiEndl;
       PushVerbosity();
       if(!giMatch(left_gis, right_gis))
          {
