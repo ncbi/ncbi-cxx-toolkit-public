@@ -800,6 +800,12 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             SetCommentsIfEmpty(&(node.Comments()));
             ParseAnnotation();
             break;
+        case K_UNION:
+            ParseUnion(node);
+            break;
+        case K_LIST:
+            ParseList(node);
+            break;
         default:
             for ( tok = GetNextToken(); tok == K_ATTPAIR || tok == K_XMLNS; tok = GetNextToken())
                 ;
