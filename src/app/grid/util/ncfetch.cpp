@@ -69,6 +69,8 @@ void CNetCacheBlobFetchApp::Init()
     // Standard CGI framework initialization
     CCgiApplication::Init();
 
+    GetConfig().Set("netcache_api", "enable_mirroring", "on_read");
+
     string password_source = GetConfig().GetString("ncfetch",
         "password_source", kEmptyStr);
     if (password_source.empty())

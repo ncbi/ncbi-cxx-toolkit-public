@@ -83,8 +83,14 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     string MakeCmd(const char* cmd);
     string MakeCmd(const char* cmd_base, const CNetCacheKey& key);
     CNetService FindOrCreateService(const string& service_name);
+
+    enum ECmdType {
+        eReadCmd,
+        eWriteCmd
+    };
+
     CNetServer::SExecResult ExecMirrorAware(
-        const CNetCacheKey& key, const string& cmd,
+        const CNetCacheKey& key, const string& cmd, ECmdType cmd_type,
         SNetServiceImpl::EServerErrorHandling error_handling =
             SNetServiceImpl::eRethrowServerErrors);
 
@@ -97,7 +103,12 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     string m_TempDir;
     bool m_CacheInput;
     bool m_CacheOutput;
-    bool m_EnableMirroring;
+
+    enum EMirroringMode {
+        eMirroringDisabled,
+        eMirroringEnabled,
+        MirroredRead,
+    } m_MirroringMode;
 
     string m_Password;
 };
