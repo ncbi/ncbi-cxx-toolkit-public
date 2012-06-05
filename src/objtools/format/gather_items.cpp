@@ -2005,19 +2005,19 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
                     sEvidence.push_back("paired-ends");
                     break;
                 case CLinkage_evidence::eType_align_genus:
-                    sEvidence.push_back("align_genus");
+                    sEvidence.push_back("align genus");
                     break;
                 case CLinkage_evidence::eType_align_xgenus:
-                    sEvidence.push_back("align_xgenus");
+                    sEvidence.push_back("align xgenus");
                     break;
                 case CLinkage_evidence::eType_align_trnscpt:
-                    sEvidence.push_back("align_trnscpt");
+                    sEvidence.push_back("align trnscpt");
                     break;
                 case CLinkage_evidence::eType_within_clone:
-                    sEvidence.push_back("within_clone");
+                    sEvidence.push_back("within clone");
                     break;
                 case CLinkage_evidence::eType_clone_contig:
-                    sEvidence.push_back("clone_contig");
+                    sEvidence.push_back("clone contig");
                     break;
                 case CLinkage_evidence::eType_map:
                     sEvidence.push_back("map");
