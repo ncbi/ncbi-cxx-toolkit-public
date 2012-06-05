@@ -544,7 +544,7 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
 }
 
 
-static const size_t COUNT = 100000;
+static const size_t COUNT = 20000;
 
 void CTestTlsObjectApp::RunTest(void)
 {
