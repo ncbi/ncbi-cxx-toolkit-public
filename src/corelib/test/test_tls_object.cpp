@@ -226,7 +226,11 @@ static DECLARE_TLS_VAR(void*, s_LastNewPtr);
 static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
 typedef pair<void*, CAtomicCounter::TValue> TLastNewPtrMultipleInfo;
 typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
+#ifdef NCBI_NO_THREADS
+static TLastNewPtrMultiple s_LastNewPtrMultiple;
+#else
 static TTlsKey s_LastNewPtrMultiple_key;
+#endif
 
 #ifdef NCBI_POSIX_THREADS
 static
@@ -239,39 +243,43 @@ void sx_EraseLastNewPtrMultiple(void* ptr)
 static
 TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
 {
+#ifdef NCBI_NO_THREADS
+    return s_LastNewPtrMultiple;
+#else
     if ( !s_LastNewPtrMultiple_key ) {
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
         NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
         if ( !s_LastNewPtrMultiple_key ) {
             TTlsKey key = 0;
             do {
-#ifdef NCBI_WIN32_THREADS
+#  ifdef NCBI_WIN32_THREADS
                 _VERIFY((key = TlsAlloc()) != DWORD(-1));
-#else
+#  else
                 _VERIFY(pthread_key_create(&key, sx_EraseLastNewPtrMultiple)==0);
-#endif
+#  endif
             } while ( !key );
-#ifndef NCBI_WIN32_THREADS
+#  ifndef NCBI_WIN32_THREADS
             pthread_setspecific(key, 0);
-#endif
+#  endif
             s_LastNewPtrMultiple_key = key;
         }
     }
     TLastNewPtrMultiple* set;
-#ifdef NCBI_WIN32_THREADS
+#  ifdef NCBI_WIN32_THREADS
     set = (TLastNewPtrMultiple*)TlsGetValue(s_LastNewPtrMultiple_key);
-#else
+#  else
     set = (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
-#endif
+#  endif
     if ( !set ) {
         set = new TLastNewPtrMultiple();
-#ifdef NCBI_WIN32_THREADS
+#  ifdef NCBI_WIN32_THREADS
         TlsSetValue(s_LastNewPtrMultiple_key, set);
-#else
+#  else
         pthread_setspecific(s_LastNewPtrMultiple_key, set);
-#endif
+#  endif
     }
     return *set;
+#endif
 }
 
 
