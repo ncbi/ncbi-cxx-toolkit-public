@@ -1191,7 +1191,7 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
     }
     if ( rctx.IsSetHitID() ) {
         CRef<CID2_Param> param(new CID2_Param);
-        param->SetName("log:phid");
+        param->SetName("log:ncbi_phid");
         param->SetValue().push_back(rctx.GetHitID());
         request.SetParams().Set().push_back(param);
     }
