@@ -29534,13 +29534,13 @@ else
        if test -x "$ICU_CONFIG" ; then
           ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    ICU_LIBS=`$ICU_CONFIG --ldflags | sed -e ""`
+    ICU_LIBS=`$ICU_CONFIG --ldflags-searchpath | sed -e ""`
  else
     ICU_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$ICU_CONFIG --ldflags | sed -e ""`; do
+    for x in `$ICU_CONFIG --ldflags-searchpath | sed -e ""`; do
        case "$x" in
           -L*)
              ICU_LIBS="$ICU_LIBS${ncbi_rp_L_sep}$x"
@@ -29558,6 +29558,7 @@ else
     done
     ICU_LIBS="$ICU_LIBS${ncbi_rp_R_flags}"
  fi
+          ICU_LIBS="$ICU_LIBS `$ICU_CONFIG --ldflags-libsonly`"
 
           CPPFLAGS="$ICU_INCLUDE $orig_CPPFLAGS"
           LIBS="$ICU_LIBS $orig_LIBS"
@@ -29634,13 +29635,13 @@ else
    if test -z "$ICU_INCLUDE"; then
       ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
       if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    ICU_LIBS=`$ICU_CONFIG --ldflags | sed -e ""`
+    ICU_LIBS=`$ICU_CONFIG --ldflags-searchpath | sed -e ""`
  else
     ICU_LIBS=
     ncbi_rp_L_sep=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in `$ICU_CONFIG --ldflags | sed -e ""`; do
+    for x in `$ICU_CONFIG --ldflags-searchpath | sed -e ""`; do
        case "$x" in
           -L*)
              ICU_LIBS="$ICU_LIBS${ncbi_rp_L_sep}$x"
@@ -29658,8 +29659,10 @@ else
     done
     ICU_LIBS="$ICU_LIBS${ncbi_rp_R_flags}"
  fi
+      ICU_LIBS="$ICU_LIBS `$ICU_CONFIG --ldflags-libsonly`"
    fi
-   ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags | sed -e 's/-licu/-lsicu/g'`
+   ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags-libsonly | sed -e 's/-licu/-lsicu/g'`
+   ICU_STATIC_LIBS="`$ICU_CONFIG --ldflags-searchpath` $ICU_STATIC_LIBS"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ICU 1

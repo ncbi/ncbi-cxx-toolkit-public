@@ -5571,7 +5571,8 @@ if test "$with_icu" != "no" ; then
       [ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir 2>/dev/null`/icu-config
        if test -x "$ICU_CONFIG" ; then
           ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
-          NCBI_RPATHIFY_OUTPUT(ICU_LIBS, $ICU_CONFIG --ldflags)
+          NCBI_RPATHIFY_OUTPUT(ICU_LIBS, $ICU_CONFIG --ldflags-searchpath)
+          ICU_LIBS="$ICU_LIBS `$ICU_CONFIG --ldflags-libsonly`"
 
           CPPFLAGS="$ICU_INCLUDE $orig_CPPFLAGS"
           LIBS="$ICU_LIBS $orig_LIBS"
@@ -5598,9 +5599,11 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$ICU_INCLUDE"; then
       ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
-      NCBI_RPATHIFY_OUTPUT(ICU_LIBS, $ICU_CONFIG --ldflags)
+      NCBI_RPATHIFY_OUTPUT(ICU_LIBS, $ICU_CONFIG --ldflags-searchpath)
+      ICU_LIBS="$ICU_LIBS `$ICU_CONFIG --ldflags-libsonly`"
    fi
-   ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags | sed -e 's/-licu/-lsicu/g'`
+   ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags-libsonly | sed -e 's/-licu/-lsicu/g'`
+   ICU_STATIC_LIBS="`$ICU_CONFIG --ldflags-searchpath` $ICU_STATIC_LIBS"
    AC_DEFINE(HAVE_ICU, 1, [Define to 1 if ICU libraries are available.])
 fi
 
