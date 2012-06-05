@@ -125,10 +125,6 @@ public:
     void SetClientSession(const string& client_session);
     void SetErrorMsg(const string& msg);
 
-    // generic access via field name
-    static int GetFieldIndex(const string& name);
-    string GetField(int index) const;
-
 private:
     friend class CJob;
     // Service fields
@@ -307,9 +303,6 @@ public:
     void           SetInput(const string& input);
     void           SetOutput(const string& output);
 
-    // generic access via field name
-    static int     GetFieldIndex(const string& name);
-    string         GetField(int index) const;
 
     // manipulators
     CJobEvent &         AppendEvent();

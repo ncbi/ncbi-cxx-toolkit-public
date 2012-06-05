@@ -42,25 +42,6 @@
 
 BEGIN_NCBI_SCOPE
 
-static const char*  kISO8601DateTime = 0;
-
-
-static string FormatTime(time_t t)
-{
-    if (!t)
-        return "NULL";
-
-    if (!kISO8601DateTime) {
-        const char *    format = CTimeFormat::GetPredefined(
-                                        CTimeFormat::eISO8601_DateTimeSec)
-                                            .GetString().c_str();
-
-        kISO8601DateTime = new char[strlen(format)+1];
-        strcpy(const_cast<char *>(kISO8601DateTime), format);
-    }
-    return CTime(t).ToLocalTime().AsString(kISO8601DateTime);
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 // CJobEvent implementation
@@ -162,52 +143,6 @@ void CJobEvent::SetErrorMsg(const string &  msg)
     else
         m_ErrorMsg = msg.substr(0, kMaxWorkerNodeErrMsgSize -
                                    kTruncatedTail.size() - 1) + kTruncatedTail;
-}
-
-
-static string  s_EventFieldNames[] = {
-    "event",
-    "event_status",
-    "timestamp",
-    "node_addr",
-    "ret_code",
-    "client_node",
-    "client_session",
-    "err_msg"
-};
-
-int CJobEvent::GetFieldIndex(const string &  name)
-{
-    for (unsigned n = 0; n < sizeof(s_EventFieldNames) /
-                             sizeof(*s_EventFieldNames); ++n) {
-        if (name == s_EventFieldNames[n])
-            return n;
-    }
-    return -1;
-}
-
-
-string CJobEvent::GetField(int  index) const
-{
-    switch (index) {
-    case 0: // event
-        return EventToString(m_Event);
-    case 1: // event_status
-        return CNetScheduleAPI::StatusToString(m_Status);
-    case 2: // timestamp
-        return FormatTime(m_Timestamp);
-    case 3: // node_addr
-        return NStr::IntToString(m_NodeAddr);
-    case 4: // ret_code
-        return NStr::IntToString(m_RetCode);
-    case 5: // client_node
-        return m_ClientNode;
-    case 6: // client_session
-        return m_ClientSession;
-    case 7: // err_msg
-        return m_ErrorMsg;
-    }
-    return "NULL";
 }
 
 
@@ -351,81 +286,6 @@ void CJob::SetOutput(const string &  output)
             m_Dirty |= fJobInfoPart;
     }
     m_Output = output;
-}
-
-
-static string  s_JobFieldNames[] = {
-    "id",
-    "passport",
-    "status",
-    "timeout",
-    "run_timeout",
-    "subm_notif_port",
-    "subm_notif_timeout",
-    "run_count",
-    "read_count",
-    "mask",
-    "group_id",
-    "last_touch",
-    "client_ip",
-    "client_sid",
-    "events",
-    "input",
-    "output",
-    "progress_msg"
-};
-
-int CJob::GetFieldIndex(const string &  name)
-{
-    for (unsigned n = 0; n < sizeof(s_JobFieldNames)/
-                             sizeof(*s_JobFieldNames); ++n) {
-        if (name == s_JobFieldNames[n])
-            return n;
-    }
-    return -1;
-}
-
-string CJob::GetField(int index) const
-{
-    switch (index) {
-    case 0:  // id
-        return NStr::IntToString(m_Id);
-    case 1:  // passport
-        return NStr::IntToString(m_Passport);
-    case 2:  // status
-        return CNetScheduleAPI::StatusToString(m_Status);
-    case 3:  // timeout
-        return NStr::IntToString(m_Timeout);
-    case 4:  // run_timeout
-        return NStr::IntToString(m_RunTimeout);
-    case 5:  // subm_notif_port
-        return NStr::IntToString(m_SubmNotifPort);
-    case 6:  // subm_notif_timeout
-        return NStr::IntToString(m_SubmNotifTimeout);
-    case 7:  // run_count
-        return NStr::IntToString(m_RunCount);
-    case 8:  // read-count
-        return NStr::IntToString(m_ReadCount);
-    case 9:  // mask
-        return NStr::IntToString(m_Mask);
-    case 10: // group id
-        return NStr::IntToString(m_GroupId);
-    case 11: // last_touch
-        return NStr::NumericToString(m_LastTouch);
-    case 12: // client_ip
-        return m_ClientIP;
-    case 13: // client_sid
-        return m_ClientSID;
-    case 14: // events
-        return NStr::SizetToString(m_Events.size());
-    case 15: // input
-        return m_Input;
-    case 16: // output
-        return m_Output;
-    case 17: // progress_msg
-        return m_ProgressMsg;
-    }
-    return "NULL";
 }
 
 
