@@ -284,10 +284,6 @@ bool CBioSource::IsSetOrgMod(void) const
 
 string CBioSource::GetRepliconName(void) const
 {
-    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_mitochondrion) {
-        return "MT";
-    }
-
     ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
         if ((*sit)->IsSetSubtype() && (*sit)->GetSubtype() == CSubSource::eSubtype_plasmid_name
             && (*sit)->IsSetName()) {
@@ -330,6 +326,10 @@ string CBioSource::GetRepliconName(void) const
             case CBioSource::eGenome_leucoplast:
             case CBioSource::eGenome_proplastid:
                 return "Pltd";
+                break;
+            case CBioSource::eGenome_mitochondrion:
+                return "MT";
+                break;
         }
     }
     return "";
@@ -365,9 +365,6 @@ string CBioSource::GetBioprojectLocation(void) const
     if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
         return "eNuclearProkaryote";
     }
-    if (NStr::Equal(GetBioprojectType(), "ePlasmid")) {
-        return "eNuclearProkaryote";
-    }
 
     if (IsSetGenome()) {
         switch (GetGenome()) {
@@ -376,8 +373,10 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eNuclearProkaryote";
                 break;
             case CBioSource::eGenome_mitochondrion:
-            case CBioSource::eGenome_kinetoplast:
                 return "eMitochondrion";
+                break;
+            case CBioSource::eGenome_kinetoplast:
+                return "eKinetoplast";
                 break;
             case CBioSource::eGenome_chromosome:
                 return "eNuclearProkaryote";
@@ -428,6 +427,10 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eChromatophore";
                 break;
         }
+    }
+
+    if (NStr::Equal(GetBioprojectType(), "ePlasmid")) {
+        return "eNuclearProkaryote";
     }
 
     return "";
