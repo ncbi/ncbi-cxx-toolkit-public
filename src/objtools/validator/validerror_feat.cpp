@@ -4060,6 +4060,10 @@ vector<string> CValidError_feat::GetAccessionsFromInferenceString (string infere
     if (NStr::StartsWith (remainder, ":")) {
         remainder = remainder.substr (1);
         NStr::TruncateSpacesInPlace (remainder);
+    } else if (NStr::IsBlank (remainder)) {
+        return accessions;
+    } else {
+        prefix = "";
     }
 
     if (NStr::IsBlank (remainder)) {
