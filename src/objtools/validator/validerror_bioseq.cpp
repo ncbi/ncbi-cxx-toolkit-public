@@ -1649,7 +1649,10 @@ bool CValidError_bioseq::CdError(const CBioseq_Handle& bsh)
         if ( nps ) {
             const CSeq_feat* cds = GetCDSForProduct(bsh);
             if ( cds == 0 ) {
-                return true;
+                const CSeq_feat* mat = GetPROTForProduct(bsh);
+                if ( mat == 0 ) {
+                    return true;
+                }
             }
         }
     }
