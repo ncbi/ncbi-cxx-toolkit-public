@@ -254,6 +254,7 @@ enum EErrType {
     eErr_GENERIC_SgmlPresentInText,
     eErr_GENERIC_UnexpectedPubStatusComment,
     eErr_GENERIC_PastReleaseDate,
+    eErr_GENERIC_MissingISOJTA,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,

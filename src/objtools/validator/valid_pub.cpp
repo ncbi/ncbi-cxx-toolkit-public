@@ -451,7 +451,7 @@ void CValidError_imp::ValidatePubArticle
             }
         }
         if ( !has_iso_jta  &&  (uid > 0  ||  in_press  ||  IsRequireISOJTA()) && !is_electronic_journal ) {
-            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingISOJTA,
                 "ISO journal title abbreviation missing", obj, ctx);
         }
     }

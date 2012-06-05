@@ -668,6 +668,9 @@ data." } },
    { eErr_GENERIC_PastReleaseDate,
    { "PastReleaseDate",
 "The record has is marked as hold-until-published, but the release anyway date has already passed." } },
+   { eErr_GENERIC_MissingISOJTA,
+   { "MissingISOJTA",
+"The publication journal is missing an ISO journal title abbreviation." } },
 
 /* SEQ_PKG */
 

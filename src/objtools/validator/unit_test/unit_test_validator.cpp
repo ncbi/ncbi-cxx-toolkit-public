@@ -9779,7 +9779,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         pub->SetArticle().SetFrom().SetJournal().SetImp().SetDate().SetStd().SetYear(2009);
         expected_errors[0]->SetSeverity(eDiag_Error);
         expected_errors[0]->SetErrMsg("Journal title missing");
-        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingPubInfo",
+        expected_errors.push_back(new CExpectedError(*id_it, eDiag_Warning, "MissingISOJTA",
                                   "ISO journal title abbreviation missing"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
