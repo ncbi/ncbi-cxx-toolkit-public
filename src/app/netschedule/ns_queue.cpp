@@ -602,7 +602,9 @@ TJobStatus  CQueue::PutResult(const CNSClientId &  client,
                 transaction.Commit();
             }}
 
-            m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eDone);
+            m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eDone);
+            m_StatisticsCounters.CountTransition(old_status,
+                                                 CNetScheduleAPI::eDone);
             m_ClientsRegistry.ClearExecuting(job_id);
 
             m_GCRegistry.UpdateLifetime(job_id,
@@ -740,8 +742,9 @@ bool  CQueue::GetJobOrWait(const CNSClientId &     client,
                     if (x_UpdateDB_GetJobNoLock(client, curr,
                                                 job_pick.job_id, *new_job)) {
                         // The job is not expired and successfully read
-                        m_StatusTracker.ChangeStatus(this, job_pick.job_id,
-                                                     CNetScheduleAPI::eRunning);
+                        m_StatusTracker.SetStatus(job_pick.job_id, CNetScheduleAPI::eRunning);
+                        m_StatisticsCounters.CountTransition(CNetScheduleAPI::ePending,
+                                                             CNetScheduleAPI::eRunning);
                         m_GCRegistry.UpdateLifetime(job_pick.job_id,
                                                     new_job->GetExpirationTime(m_Timeout,
                                                                                m_RunTimeout,
@@ -1113,7 +1116,9 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
         transaction.Commit();
     }}
 
-    m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::ePending);
+    m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
+    m_StatisticsCounters.CountTransition(old_status,
+                                         CNetScheduleAPI::ePending);
     TimeLineRemove(job_id);
     m_ClientsRegistry.ClearExecuting(job_id);
     m_ClientsRegistry.AddToBlacklist(client, job_id);
@@ -1259,7 +1264,9 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
             transaction.Commit();
         }}
 
-        m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eCanceled);
+        m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eCanceled);
+        m_StatisticsCounters.CountTransition(old_status,
+                                             CNetScheduleAPI::eCanceled);
 
         TimeLineRemove(job_id);
         if (old_status == CNetScheduleAPI::eRunning)
@@ -1339,7 +1346,9 @@ void CQueue::x_CancelJobs(const CNSClientId &   client,
             transaction.Commit();
         }}
 
-        m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eCanceled);
+        m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eCanceled);
+        m_StatisticsCounters.CountTransition(old_status,
+                                             CNetScheduleAPI::eCanceled);
 
         TimeLineRemove(job_id);
         if (old_status == CNetScheduleAPI::eRunning)
@@ -1521,6 +1530,7 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
         return;
 
     unsigned int        job_id = *candidates.first();
+    TJobStatus          old_status = GetJobStatus(job_id);
     {{
          CNSTransaction     transaction(this);
 
@@ -1553,7 +1563,9 @@ void CQueue::GetJobForReading(const CNSClientId &   client,
         TimeLineAdd(job_id, curr + read_timeout);
 
     // Update the memory cache
-    m_StatusTracker.ChangeStatus(this, job_id, CNetScheduleAPI::eReading);
+    m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eReading);
+    m_StatisticsCounters.CountTransition(old_status,
+                                          CNetScheduleAPI::eReading);
     m_ClientsRegistry.AddToReading(client, job_id);
 
     m_GCRegistry.UpdateLifetime(job_id, job->GetExpirationTime(m_Timeout,
@@ -2824,6 +2836,16 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &   client,
     // Update the memory map
     m_StatusTracker.SetStatus(job_id, new_status);
 
+    // Count the transition
+    CStatisticsCounters::ETransitionPathOption
+                                transition_path = CStatisticsCounters::eNone;
+    if (event_type == CJobEvent::eClear)
+        transition_path = CStatisticsCounters::eClear;
+    else if (event_type == CJobEvent::eSessionChanged)
+        transition_path = CStatisticsCounters::eNewSession;
+    m_StatisticsCounters.CountTransition(status_from, new_status,
+                                         transition_path);
+
     m_GCRegistry.UpdateLifetime(job_id, job.GetExpirationTime(m_Timeout,
                                                               m_RunTimeout,
                                                               m_PendingTimeout,
@@ -2849,15 +2871,8 @@ void CQueue::x_ResetRunningDueToClear(const CNSClientId &   client,
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            TJobStatus  new_status = x_ResetDueTo(client, *en,
-                                                  current_time,
-                                                  CNetScheduleAPI::eRunning,
-                                                  CJobEvent::eClear);
-            if (new_status != CNetScheduleAPI::eJobNotFound)
-                m_StatisticsCounters.CountTransition(
-                                            CNetScheduleAPI::eRunning,
-                                            new_status,
-                                            CStatisticsCounters::eClear);
+            x_ResetDueTo(client, *en, current_time,
+                         CNetScheduleAPI::eRunning, CJobEvent::eClear);
         } catch (...) {
             ERR_POST("Error resetting a running job when worker node is "
                      "cleared. Job: " << DecorateJobId(*en));
@@ -2872,15 +2887,8 @@ void CQueue::x_ResetReadingDueToClear(const CNSClientId &   client,
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            TJobStatus  new_status = x_ResetDueTo(client, *en,
-                                                  current_time,
-                                                  CNetScheduleAPI::eReading,
-                                                  CJobEvent::eClear);
-            if (new_status != CNetScheduleAPI::eJobNotFound)
-                m_StatisticsCounters.CountTransition(
-                                            CNetScheduleAPI::eReading,
-                                            new_status,
-                                            CStatisticsCounters::eClear);
+            x_ResetDueTo(client, *en, current_time,
+                         CNetScheduleAPI::eReading, CJobEvent::eClear);
         } catch (...) {
             ERR_POST("Error resetting a reading job when worker node is "
                      "cleared. Job: " << DecorateJobId(*en));
@@ -2895,15 +2903,8 @@ void CQueue::x_ResetRunningDueToNewSession(const CNSClientId &   client,
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            TJobStatus  new_status = x_ResetDueTo(client, *en,
-                                                  current_time,
-                                                  CNetScheduleAPI::eRunning,
-                                                  CJobEvent::eSessionChanged);
-            if (new_status != CNetScheduleAPI::eJobNotFound)
-                m_StatisticsCounters.CountTransition(
-                                            CNetScheduleAPI::eRunning,
-                                            new_status,
-                                            CStatisticsCounters::eNewSession);
+            x_ResetDueTo(client, *en, current_time,
+                         CNetScheduleAPI::eRunning, CJobEvent::eSessionChanged);
         } catch (...) {
             ERR_POST("Error resetting a running job when worker node "
                      "changed session. Job: " << DecorateJobId(*en));
@@ -2918,15 +2919,8 @@ void CQueue::x_ResetReadingDueToNewSession(const CNSClientId &   client,
     time_t      current_time = time(0);
     for (TNSBitVector::enumerator  en(jobs.first()); en.valid(); ++en) {
         try {
-            TJobStatus  new_status = x_ResetDueTo(client, *en,
-                                                  current_time,
-                                                  CNetScheduleAPI::eReading,
-                                                  CJobEvent::eSessionChanged);
-            if (new_status != CNetScheduleAPI::eJobNotFound)
-                m_StatisticsCounters.CountTransition(
-                                            CNetScheduleAPI::eReading,
-                                            new_status,
-                                            CStatisticsCounters::eNewSession);
+            x_ResetDueTo(client, *en, current_time,
+                         CNetScheduleAPI::eReading, CJobEvent::eSessionChanged);
         } catch (...) {
             ERR_POST("Error resetting a reading job when worker node "
                      "changed session. Job: " << DecorateJobId(*en));

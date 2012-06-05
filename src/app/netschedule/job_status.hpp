@@ -46,8 +46,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CQueue;
-
 
 const CNetScheduleAPI::EJobStatus
         g_ValidJobStatuses[] = { CNetScheduleAPI::ePending,
@@ -81,30 +79,6 @@ public:
     ~CJobStatusTracker();
 
     TJobStatus GetStatus(unsigned job_id) const;
-
-    /// Set job status. (Controls status change logic)
-    ///
-    ///  Status switching rules, [] - means request ignored
-    ///  ePending   <- eRunning, "no status"
-    ///  eRunning   <- ePending, [eCanceled]
-    ///  eCanceled  <- ePending, eRunning, [eDone, eFailed (ignored if job is ready)]
-    ///  eFailed    <- eRunning, [eCanceled]
-    ///  eDone      <- ePending, eRunning, [eCanceled, eFailed], eReading (timeout)
-    ///  eReading   <- eDone
-    ///  eConfirmed <- eReading, eDone
-    ///  eReadFailed <- eReading
-    ///
-    /// @param updated
-    ///     (out) TRUE if database needs to be updated for job_id.
-    ///
-    /// @return old status. Job may be already canceled (or failed)
-    /// in this case status change is ignored
-    ///
-    TJobStatus
-    ChangeStatus(CQueue *      queue,
-                 unsigned int  job_id,
-                 TJobStatus    status,
-                 bool *        updated = NULL);
 
     /// Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
