@@ -3965,6 +3965,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
                 if (s_ParseDegenerateCodon ( *tr, tRNA_codon)) {
                     tRNA_codon.clear();
                     copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
+                    justt = false;
                 } else {
                     justt = false;
                 }
@@ -3987,6 +3988,7 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
                     if (s_ParseDegenerateCodon( *tr, tRNA_codon) ) {
                         tRNA_codon.clear();
                         copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
+                        justt = false;
                     } else {
                         justt = false;
                     }
