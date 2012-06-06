@@ -1079,6 +1079,29 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
     return status;
 }
 
+s_AdjustSubjectForSraSearch(BlastHSPList* hsp_list, Uint1 offset )
+{
+	int i = 0;
+	BlastHSP ** hsp_array = hsp_list->hsp_array;
+	for(i=0; i < hsp_list->hspcnt; i++)
+	{
+		BlastHSP * hsp = hsp_array[i];
+		if(hsp->subject.offset <= offset)
+		{
+			hsp->subject.offset = 0;
+			hsp->query.offset += offset;
+		}
+		else
+		{
+			hsp->subject.offset -= offset;
+		}
+
+		hsp->subject.end -= offset;
+
+		ASSERT(hsp->subject.offset < hsp->subject.end);
+		ASSERT(hsp->query.offset < hsp->query.end);
+	}
+}
 
 Int4 
 BLAST_PreliminarySearchEngine(EBlastProgramType program_number, 
@@ -1165,6 +1188,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
        if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0)
            continue;
+
        if (db_length == 0) {
            /* This is not a database search, hence need to recalculate and save
             the effective search spaces and length adjustments for all 
@@ -1257,6 +1281,12 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             Blast_HSPListGetBitScores(hsp_list, gapped_calculation, sbp);
          } 
          
+         // This should only happen for sra searches
+         if(seq_arg.seq->bases_offset > 0)
+         {
+        	s_AdjustSubjectForSraSearch(hsp_list, seq_arg.seq->bases_offset);
+         }
+
          /* Save the results. */
          status = BlastHSPStreamWrite(hsp_stream, &hsp_list);
          if (status != 0)

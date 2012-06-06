@@ -283,6 +283,9 @@ typedef struct BLAST_SequenceBlk {
                                       seq_ranges */
    ESubjectMaskingType mask_type;          /**< type of subject masking */
    /* END: Data members needed for masking subjects from a BLAST database */
+
+   Uint1 bases_offset; /* Bases offset in first byte for SRA seq */
+
 } BLAST_SequenceBlk;
 
 /** Information about a single pattern occurence in the query. */

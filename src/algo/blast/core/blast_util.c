@@ -130,6 +130,7 @@ BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length,
     (*seq_blk)->nomask_allocated = FALSE;
     
     (*seq_blk)->length = length;
+    (*seq_blk)->bases_offset = 0;
    
     return 0;
 }
