@@ -27,22 +27,24 @@
  *
  */
 
-#include <ncbi_pch.hpp>
+#include "nc_pch.hpp"
 
 #include <util/random_gen.hpp>
-#include <connect/impl/server_connection.hpp>
 
 #include "peer_control.hpp"
 #include "active_handler.hpp"
 #include "periodic_sync.hpp"
+#include "distribution_conf.hpp"
 #include "nc_storage_blob.hpp"
+#include "netcached.hpp"
+#include "nc_stat.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
 typedef map<Uint8, CNCPeerControl*> TControlMap;
-static CFastRWLock s_MapLock;
+static CMiniMutex s_MapLock;
 static TControlMap s_Controls;
 static CAtomicCounter s_SyncOnInit;
 static CAtomicCounter s_WaitToOpenToClients;
@@ -51,6 +53,8 @@ static CAtomicCounter s_MirrorQueueSize;
 static FILE* s_MirrorLogFile = NULL;
 CAtomicCounter CNCPeerControl::sm_TotalCopyRequests;
 CAtomicCounter CNCPeerControl::sm_CopyReqsRejected;
+
+static CNCPeerShutdown* s_ShutdownListener;
 
 
 
@@ -62,7 +66,7 @@ s_SetNextTime(Uint8& next_time, Uint8 value, bool add_random)
 {
     if (add_random) {
         s_RndLock.Lock();
-        value += s_Rnd.GetRand(0, kNCTimeTicksInSec);
+        value += s_Rnd.GetRand(0, kUSecsPerSecond);
         s_RndLock.Unlock();
     }
     if (next_time < value)
@@ -96,6 +100,16 @@ CNCPeerControl::Initialize(void)
     s_MirrorLogFile = fopen(CNCDistributionConf::GetMirroringSizeFile().c_str(), "a");
     sm_TotalCopyRequests.Set(0);
     sm_CopyReqsRejected.Set(0);
+
+    s_ShutdownListener = new CNCPeerShutdown();
+    CTaskServer::AddShutdownCallback(s_ShutdownListener);
+
+    s_MapLock.Lock();
+    NON_CONST_ITERATE(TControlMap, it, s_Controls) {
+        it->second->SetRunnable();
+    }
+    s_MapLock.Unlock();
+
     return true;
 }
 
@@ -110,24 +124,20 @@ CNCPeerControl*
 CNCPeerControl::Peer(Uint8 srv_id)
 {
     CNCPeerControl* ctrl;
-    s_MapLock.ReadLock();
+    s_MapLock.Lock();
     TControlMap::const_iterator it = s_Controls.find(srv_id);
-    if (it != s_Controls.end()) {
-        ctrl = it->second;
-        s_MapLock.ReadUnlock();
-        return ctrl;
-    }
-    s_MapLock.ReadUnlock();
-    s_MapLock.WriteLock();
     it = s_Controls.find(srv_id);
     if (it == s_Controls.end()) {
         ctrl = new CNCPeerControl(srv_id);
         s_Controls[srv_id] = ctrl;
+        // s_ShutdownListener is set during initialization
+        if (s_ShutdownListener)
+            ctrl->SetRunnable();
     }
     else {
         ctrl = it->second;
     }
-    s_MapLock.WriteUnlock();
+    s_MapLock.Unlock();
     return ctrl;
 }
 
@@ -150,19 +160,19 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
 void
 CNCPeerControl::RegisterConnError(void)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CMiniMutexGuard guard(m_ObjLock);
     if (m_FirstNWErrTime == 0)
-        m_FirstNWErrTime = CNetCacheServer::GetPreciseTime();
+        m_FirstNWErrTime = CSrvTime::Current().AsUSec();
     if (++m_CntNWErrors >= CNCDistributionConf::GetCntErrorsToThrottle()) {
         m_InThrottle = true;
-        m_ThrottleStart = CNetCacheServer::GetPreciseTime();
+        m_ThrottleStart = CSrvTime::Current().AsUSec();
     }
 }
 
 void
 CNCPeerControl::RegisterConnSuccess(void)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CMiniMutexGuard guard(m_ObjLock);
     m_InThrottle = false;
     m_FirstNWErrTime = 0;
     m_CntNWErrors = 0;
@@ -172,58 +182,59 @@ CNCPeerControl::RegisterConnSuccess(void)
 bool
 CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
 {
-    if (g_NetcacheServer->ShutdownRequested())
+    if (CTaskServer::IsInHardShutdown())
         return false;
     if (m_InThrottle) {
-        CFastMutexGuard guard(m_ObjLock);
+        m_ObjLock.Lock();
         if (m_InThrottle) {
-            Uint8 cur_time = CNetCacheServer::GetPreciseTime();
+            Uint8 cur_time = CSrvTime::Current().AsUSec();
             Uint8 period = CNCDistributionConf::GetPeerThrottlePeriod();
-            if (cur_time - m_ThrottleStart > period) {
-                m_InThrottle = false;
-                if (m_InitiallySynced)
-                    m_FirstNWErrTime = 0;
-                m_CntNWErrors = 0;
-                m_ThrottleStart = 0;
-            }
-            else {
+            if (cur_time - m_ThrottleStart <= period) {
+                m_ObjLock.Unlock();
+                SRV_LOG(Warning, "Connection to " << m_SrvId << " is throttled");
                 return false;
             }
+
+            m_InThrottle = false;
+            if (m_InitiallySynced)
+                m_FirstNWErrTime = 0;
+            m_CntNWErrors = 0;
+            m_ThrottleStart = 0;
         }
+        m_ObjLock.Unlock();
     }
 
     CNCActiveHandler_Proxy* proxy = new CNCActiveHandler_Proxy(conn);
-    CServer_Connection* srv_conn = new CServer_Connection(proxy);
-    proxy->SetSocket(srv_conn);
-    conn->SetServerConn(srv_conn, proxy);
-    STimeout timeout = {0, 0};
-    EIO_Status conn_res = srv_conn->Connect(CSocketAPI::ntoa(Uint4(m_SrvId >> 32)),
-                                            Uint2(m_SrvId), &timeout,
-                                            fSOCK_LogOn | fSOCK_KeepAlive);
-    if (conn_res != eIO_Success) {
-        delete srv_conn;
-        // proxy is deleted inside srv_conn
+    if (!proxy->Connect(Uint4(m_SrvId >> 32), Uint2(m_SrvId))) {
+        delete proxy;
         RegisterConnError();
         return false;
     }
+    conn->SetProxy(proxy);
     return true;
 }
 
 CNCActiveHandler*
 CNCPeerControl::x_GetPooledConnImpl(void)
 {
-    if (m_PooledConns.empty()  ||  g_NetcacheServer->ShutdownRequested())
+    if (m_PooledConns.empty()  ||  CTaskServer::IsInHardShutdown())
         return NULL;
-    CNCActiveHandler* conn = m_PooledConns.back();
+
+    CNCActiveHandler* conn = &m_PooledConns.back();
     m_PooledConns.pop_back();
+    m_BusyConns.push_back(*conn);
+
     return conn;
 }
 
 CNCActiveHandler*
 CNCPeerControl::GetPooledConn(void)
 {
-    CFastMutexGuard guard(m_ObjLock);
-    return x_GetPooledConnImpl();
+    CMiniMutexGuard guard(m_ObjLock);
+    CNCActiveHandler* conn = x_GetPooledConnImpl();
+    if (conn)
+        ++m_ActiveConns;
+    return conn;
 }
 
 inline void
@@ -296,6 +307,13 @@ CNCPeerControl::x_CreateNewConn(bool for_bg)
         delete conn;
         conn = NULL;
     }
+
+    if (conn) {
+        m_ObjLock.Lock();
+        m_BusyConns.push_back(*conn);
+        m_ObjLock.Unlock();
+    }
+
     return conn;
 }
 
@@ -358,6 +376,9 @@ CNCPeerControl::GetBGConn(void)
     m_ObjLock.Lock();
     if (!x_ReserveBGConn()) {
         m_ObjLock.Unlock();
+        SRV_LOG(Warning, "Too many active (" << m_ActiveConns
+                         << ") or background (" << m_BGConns
+                         << ") connections");
         return NULL;
     }
     // x_GetBGConnImpl() releases m_ObjLock
@@ -380,7 +401,6 @@ retry:
             goto retry;
         }
 
-        g_NetcacheServer->WakeUpPollCycle();
         result = false;
     }
     else if (m_HasBGTasks
@@ -459,7 +479,8 @@ CNCPeerControl::PutConnToPool(CNCActiveHandler* conn)
     m_ObjLock.Lock();
     x_DecBGConns(conn);
     if (x_DoReleaseConn(conn)) {
-        m_PooledConns.push_back(conn);
+        m_BusyConns.erase(m_BusyConns.iterator_to(*conn));
+        m_PooledConns.push_back(*conn);
         m_ObjLock.Unlock();
     }
 }
@@ -469,6 +490,7 @@ CNCPeerControl::ReleaseConn(CNCActiveHandler* conn)
 {
     m_ObjLock.Lock();
     x_DecBGConns(conn);
+    m_BusyConns.erase(m_BusyConns.iterator_to(*conn));
     if (x_DoReleaseConn(NULL))
         m_ObjLock.Unlock();
 }
@@ -529,7 +551,7 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
 
             int queue_size = s_MirrorQueueSize.Add(1);
             if (s_MirrorLogFile) {
-                Uint8 cur_time = CNetCacheServer::GetPreciseTime();
+                Uint8 cur_time = CSrvTime::Current().AsUSec();
                 fprintf(s_MirrorLogFile, "%" NCBI_UINT8_FORMAT_SPEC ",%d\n",
                                          cur_time, queue_size);
             }
@@ -584,7 +606,7 @@ Uint8
 CNCPeerControl::GetMirrorQueueSize(Uint8 srv_id)
 {
     CNCPeerControl* peer = Peer(srv_id);
-    CFastMutexGuard guard(peer->m_ObjLock);
+    CMiniMutexGuard guard(peer->m_ObjLock);
     return peer->m_SmallMirror.size() + peer->m_BigMirror.size();
 }
 
@@ -604,7 +626,7 @@ CNCPeerControl::HasServersForInitSync(void)
 bool
 CNCPeerControl::StartActiveSync(void)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CMiniMutexGuard guard(m_ObjLock);
     if (m_CntActiveSyncs >= CNCDistributionConf::GetMaxSyncsOneServer())
         return false;
     ++m_CntActiveSyncs;
@@ -615,7 +637,7 @@ void
 CNCPeerControl::x_SrvInitiallySynced(void)
 {
     if (!m_InitiallySynced) {
-        INFO_POST("Initial sync for " << m_SrvId << " completed");
+        INFO("Initial sync for " << m_SrvId << " completed");
         m_InitiallySynced = true;
         s_SyncOnInit.Add(-1);
     }
@@ -626,13 +648,13 @@ CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots)
 {
     if (cnt_slots != 0  &&  m_SlotsToInitSync != 0) {
         if (cnt_slots != 1) {
-            INFO_POST("Server " << m_SrvId << " is out of reach");
+            INFO("Server " << m_SrvId << " is out of reach");
         }
         m_SlotsToInitSync -= cnt_slots;
         if (m_SlotsToInitSync == 0) {
             x_SrvInitiallySynced();
             if (s_WaitToOpenToClients.Add(-1) == 0)
-                CNetCacheServer::InitialSyncComplete();
+                CNCServer::InitialSyncComplete();
         }
     }
 }
@@ -640,7 +662,7 @@ CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots)
 void
 CNCPeerControl::AddInitiallySyncedSlot(void)
 {
-    CFastMutexGuard guard(m_ObjLock);
+    CMiniMutexGuard guard(m_ObjLock);
     x_SlotsInitiallySynced(1);
 }
 
@@ -649,8 +671,8 @@ CNCPeerControl::RegisterSyncStop(bool is_passive,
                                  Uint8& next_sync_time,
                                  Uint8 next_sync_delay)
 {
-    CFastMutexGuard guard(m_ObjLock);
-    Uint8 now = CNetCacheServer::GetPreciseTime();
+    CMiniMutexGuard guard(m_ObjLock);
+    Uint8 now = CSrvTime::Current().AsUSec();
     Uint8 next_time = now + next_sync_delay;
     s_SetNextTime(next_sync_time, next_time, true);
     if (m_FirstNWErrTime == 0) {
@@ -724,6 +746,97 @@ CNCPeerControl::FinishSync(CNCActiveSyncControl* sync_ctrl)
         m_ObjLock.Unlock();
     }
     return true;
+}
+
+void
+CNCPeerControl::ExecuteSlice(TSrvThreadNum /* thr_num */)
+{
+    if (CTaskServer::IsInShutdown())
+        return;
+
+    m_ObjLock.Lock();
+
+    NON_CONST_ITERATE(TNCPeerConnsList, it, m_BusyConns) {
+        it->CheckCommandTimeout();
+    }
+
+    m_ObjLock.Unlock();
+
+    RunAfter(1);
+}
+
+bool
+CNCPeerControl::GetReadyForShutdown(void)
+{
+    bool result = true;
+
+    m_ObjLock.Lock();
+    if (CTaskServer::IsInHardShutdown()) {
+        while (!m_Clients.empty()) {
+            CNCActiveClientHub* hub = m_Clients.front();
+            m_Clients.pop_front();
+            hub->SetErrMsg("Server is shutting down");
+            hub->SetStatus(eNCHubError);
+            result = false;
+        }
+    }
+    NON_CONST_ITERATE(TNCPeerConnsList, it, m_BusyConns) {
+        it->CheckCommandTimeout();
+        result = false;
+    }
+    ERASE_ITERATE(TNCActiveSyncList, it_sync, m_SyncList) {
+        CNCActiveSyncControl* sync_ctrl = *it_sync;
+        m_SyncList.erase(it_sync);
+
+        SSyncTaskInfo task_info;
+        bool has_more = sync_ctrl->GetNextTask(task_info);
+        sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL);
+        if (has_more)
+            sync_ctrl->GetNextTask(task_info);
+        result = false;
+    }
+    m_SyncList.clear();
+    m_NextTaskSync = m_SyncList.end();
+    x_UpdateHasTasks();
+    if (m_HasBGTasks)
+        result = false;
+
+    if (result) {
+        if (CNCStat::GetCntRunningCmds() != 0) {
+            result = false;
+        }
+        else {
+            while (!m_PooledConns.empty()) {
+                CNCActiveHandler* conn = &m_PooledConns.front();
+                m_PooledConns.pop_front();
+                conn->CloseForShutdown();
+                result = false;
+            }
+        }
+    }
+    m_ObjLock.Unlock();
+
+    return result;
+}
+
+
+CNCPeerShutdown::CNCPeerShutdown(void)
+{}
+
+CNCPeerShutdown::~CNCPeerShutdown(void)
+{}
+
+bool
+CNCPeerShutdown::ReadyForShutdown(void)
+{
+    bool result = true;
+    s_MapLock.Lock();
+    ITERATE(TControlMap, it_ctrl, s_Controls) {
+        CNCPeerControl* peer = it_ctrl->second;
+        result &= peer->GetReadyForShutdown();
+    }
+    s_MapLock.Unlock();
+    return result;
 }
 
 END_NCBI_SCOPE

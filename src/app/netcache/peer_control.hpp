@@ -44,7 +44,11 @@ class CNCActiveClientHub;
 class CNCBlobAccessor;
 class CNCActiveSyncControl;
 
-typedef list<CNCActiveHandler*>     TNCPeerConnsList;
+struct SActiveList_tag;
+typedef intr::list_base_hook<intr::tag<SActiveList_tag> >   TActiveListHook;
+typedef intr::list<CNCActiveHandler,
+                   intr::base_hook<TActiveListHook>,
+                   intr::constant_time_size<false> >        TNCPeerConnsList;
 typedef list<CNCActiveClientHub*>   TNCClientHubsList;
 typedef list<CNCActiveSyncControl*> TNCActiveSyncList;
 typedef TNCActiveSyncList::iterator TNCActiveSyncListIt;
@@ -87,7 +91,7 @@ typedef list<SNCMirrorEvent*>   TNCMirrorQueue;
 
 
 
-class CNCPeerControl
+class CNCPeerControl : public CSrvTask
 {
 public:
     static bool Initialize(void);
@@ -131,6 +135,8 @@ public:
     void PutConnToPool(CNCActiveHandler* conn);
     void ReleaseConn(CNCActiveHandler* conn);
 
+    bool GetReadyForShutdown(void);
+
 
     static CAtomicCounter   sm_TotalCopyRequests;
     static CAtomicCounter   sm_CopyReqsRejected;
@@ -140,6 +146,8 @@ private:
     CNCPeerControl(Uint8 srv_id);
     CNCPeerControl(const CNCPeerControl&);
     CNCPeerControl& operator= (const CNCPeerControl&);
+
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
 
     void x_SrvInitiallySynced(void);
     void x_SlotsInitiallySynced(Uint2 cnt_slots);
@@ -161,8 +169,9 @@ private:
 
 
     Uint8 m_SrvId;
-    CFastMutex m_ObjLock;
+    CMiniMutex m_ObjLock;
     TNCPeerConnsList m_PooledConns;
+    TNCPeerConnsList m_BusyConns;
     Uint8 m_FirstNWErrTime;
     Uint8 m_ThrottleStart;
     Uint8 m_NextSyncTime;
@@ -179,6 +188,16 @@ private:
     TNCMirrorQueue m_BigMirror;
     TNCActiveSyncList m_SyncList;
     TNCActiveSyncListIt m_NextTaskSync;
+};
+
+
+class CNCPeerShutdown : public CSrvShutdownCallback
+{
+public:
+    CNCPeerShutdown(void);
+    virtual ~CNCPeerShutdown(void);
+
+    virtual bool ReadyForShutdown(void);
 };
 
 

@@ -33,13 +33,6 @@
  */
 
 
-#include <map>
-#include <deque>
-#include <string>
-
-#include <corelib/ncbitype.h>
-#include <corelib/ncbimtx.hpp>
-#include <corelib/ncbistl.hpp>
 
 
 BEGIN_NCBI_SCOPE

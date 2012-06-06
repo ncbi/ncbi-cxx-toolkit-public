@@ -5,8 +5,6 @@ util/cache$ update-only
 connect$
 connect/services$
 connect/services/test$
-cgi$
-cgi/impl$
 db$
 db/sqlite$
 app$

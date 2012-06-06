@@ -1,0 +1,17 @@
+#################################
+# $Id$
+#################################
+
+LIB = task_server
+SRC = server_core srv_sync time_man rcu sockets_man scheduler \
+      threads_man timers memory_man logging srv_lib srv_tasks \
+      srv_stat
+
+#REQUIRES = MT Boost.Test.Included
+REQUIRES = MT Boost.Test.Included Linux GCC
+
+
+CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
+
+
+WATCHERS = ivanovp

@@ -2,6 +2,7 @@
 # $Id$
 #################################
 
+LIB_PROJ = task_server
 APP_PROJ = netcached
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -1,0 +1,9 @@
+[AddToProject]
+HeadersInSrc = active_handler.hpp distribution_conf.hpp message_handler.hpp \
+               nc_db_files.hpp nc_db_info.hpp nc_lib.hpp nc_pch.hpp nc_stat.hpp \
+               nc_storage.hpp nc_storage_blob.hpp nc_utils.hpp netcache_version.hpp \
+               netcached.hpp peer_control.hpp periodic_sync.hpp storage_types.hpp \
+               sync_log.hpp
+
+[UsePch]
+DefaultPch = nc_pch.hpp

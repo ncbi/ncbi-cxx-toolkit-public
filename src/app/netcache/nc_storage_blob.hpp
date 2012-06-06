@@ -28,12 +28,8 @@
  * Authors:  Pavel Ivanov
  */
 
-#include <corelib/ncbitime.hpp>
-#include <corelib/ncbimtx.hpp>
-#include <corelib/obj_pool.hpp>
 
 #include "nc_db_info.hpp"
-#include "nc_utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -41,29 +37,35 @@ BEGIN_NCBI_SCOPE
 
 class CNCBlobStorage;
 class CNCBlobAccessor;
+struct SNCCacheData;
+class CCurVerReader;
+struct SNCStateStat;
 
 
-class CNCBlobVerManager : public INCBlockedOpListener
+class CNCBlobVerManager : public CObject, public CSrvTask
 {
 public:
     static CNCBlobVerManager* Get(Uint2         time_bucket,
                                   const string& key,
                                   SNCCacheData* cache_data,
                                   bool          for_new_version);
+    void ObtainReference(void);
     void Release(void);
 
-    ENCBlockingOpResult  GetCurVersion(CNCRef<SNCBlobVerData>* ver_data,
-                                       INCBlockedOpListener* listener);
-    CNCRef<SNCBlobVerData> CreateNewVersion(void);
+    void RequestCurVersion(CSrvTransConsumer* consumer);
+    CSrvRef<SNCBlobVerData> GetCurVersion(void);
+    CSrvRef<SNCBlobVerData> CreateNewVersion(void);
 
-    bool FinalizeWriting(SNCBlobVerData* ver_data);
+    void FinalizeWriting(SNCBlobVerData* ver_data);
     void DeadTimeChanged(SNCBlobVerData* ver_data);
     void DeleteVersion(const SNCBlobVerData* ver_data);
+    void DeleteDeadVersion(int cut_time);
 
     SNCCacheData* GetCacheData(void);
 
 public:
-    void ReleaseVerData(const SNCBlobVerData* ver_data);
+    void RequestMemRelease(void);
+    const string& GetKey(void);
 
 private:
     CNCBlobVerManager(const CNCBlobVerManager&);
@@ -73,47 +75,31 @@ private:
                       const string& key,
                       SNCCacheData* cache_data);
     virtual ~CNCBlobVerManager(void);
-    virtual void OnBlockedOpFinish(void);
 
-    unsigned int x_IncRef(void);
-    unsigned int x_DecRef(void);
-    unsigned int x_GetRef(void);
-    void x_SetFlag(unsigned int flag, bool value);
-    bool x_IsFlagSet(unsigned int flag);
+    virtual void DeleteThis(void);
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
 
-    void x_ReadCurVersion(void);
-    void x_RestoreBlobKey(void);
     void x_DeleteCurVersion(void);
+    void x_ReleaseMgr(void);
 
 
-    enum {
-        kRefCntMask     = 0x0000FFFF,
-        kFlagsMask      = 0xFFFF0000,
-
-        fCleaningMgr    = 0x00010000,
-        fDeletingKey    = 0x00040000,
-        fNeedRestoreKey = 0x00080000
-    };
+    friend class CCurVerReader;
 
 
-    unsigned int volatile   m_State;
-    Uint2                   m_TimeBucket;
-    SNCCacheData*           m_CacheData;
-    string                  m_Key;
-    CNCRef<SNCBlobVerData>  m_CurVersion;
-    CNCLongOpTrigger        m_CurVerTrigger;
+    Uint2 m_TimeBucket;
+    bool  m_NeedReleaseMem;
+    SNCCacheData*  m_CacheData;
+    CCurVerReader* m_CurVerReader;
+    string m_Key;
+    CSrvRef<SNCBlobVerData>  m_CurVersion;
 };
 
 
-/// Object holding lock on NetCache blob.
-/// Object takes care of blob creation when necessary. When it is destroyed
-/// lock for the blob is released. Lock can also be released by explicit call
-/// of ReleaseLock() method.
-class CNCBlobAccessor
+class CNCBlobAccessor : public CSrvTransConsumer
 {
 public:
-    ///
-    ENCBlockingOpResult ObtainMetaInfo(INCBlockedOpListener* listener);
+    void RequestMetaInfo(CSrvTask* owner);
+    bool IsMetaInfoReady(void);
     /// Check if blob exists.
     /// Method can be called only after lock is acquired.
     bool IsBlobExists(void) const;
@@ -141,10 +127,9 @@ public:
     /// Initially set current position in the blob to start reading from
     void SetPosition(Uint8 pos);
     Uint8 GetPosition(void);
-    ENCBlockingOpResult ObtainFirstData(INCBlockedOpListener* listener);
-    size_t GetDataSize(void);
-    const void* GetDataPtr(void);
-    void MoveCurPos(size_t move_size);
+    Uint4 GetReadMemSize(void);
+    const void* GetReadMemPtr(void);
+    void MoveReadPos(Uint4 move_size);
     int GetCurBlobTTL(void) const;
     int GetNewBlobTTL(void) const;
     /// Set blob's timeout after last access before it will be deleted.
@@ -174,15 +159,11 @@ public:
     string GetCurPassword(void) const;
     void SetPassword(CTempString password);
     bool ReplaceBlobInfo(const SNCBlobVerData& new_info);
+
     size_t GetWriteMemSize(void);
     void* GetWriteMemPtr(void);
-    void MoveWritePos(size_t move_size);
+    void MoveWritePos(Uint4 move_size);
     void Finalize(void);
-    /// Delete the blob.
-    /// Method can be called only after lock is acquired and
-    /// lock is acquired for eNCDelete or eNCCreate access. If blob doesn't exist
-    /// or was already deleted by call to this method then method is no-op.
-    void DeleteBlob(void);
 
     /// Release blob lock.
     /// No other method can be called after call to this one.
@@ -195,11 +176,7 @@ public:
     /// Lock holder is yet not usable after construction until Prepare()
     /// and InitializeLock() are called.
     CNCBlobAccessor(void);
-    ~CNCBlobAccessor(void);
-    /// Add holder to the list with provided head
-    void AddToList(CNCBlobAccessor*& list_head);
-    /// Remove holder from the list with provided head
-    void RemoveFromList(CNCBlobAccessor*& list_head);
+    virtual ~CNCBlobAccessor(void);
 
     /// Prepare lock for the blob identified by key, subkey and version.
     /// Method only initializes necessary variables, actual acquiring of the
@@ -220,59 +197,101 @@ public:
     /// Initialize and acquire the lock.
     /// Should be called only after Prepare().
     void Initialize(SNCCacheData* cache_data);
-    /// Check if lock was initialized and process of lock acquiring was started
-    bool IsInitialized(void) const;
     void Deinitialize(void);
 
 private:
     CNCBlobAccessor(const CNCBlobAccessor&);
     CNCBlobAccessor& operator= (const CNCBlobAccessor&);
 
-    ///
-    static bool sx_IsOnlyOneChunk(SNCBlobVerData* ver_data);
-    ///
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
+
+    void x_CreateNewData(void);
     void x_DelCorruptedVersion(void);
-    ///
-    void x_ReadChunkData(CNCBlobBuffer* buffer);
-    ///
-    void x_ReadSingleChunk(void);
-    ///
-    void x_ReadNextChunk(void);
 
 
-    /// Previous holder in double-linked list of holders
-    CNCBlobAccessor*        m_PrevAccessor;
-    /// Next holder in list of holders
-    CNCBlobAccessor*        m_NextAccessor;
     /// Type of access requested for the blob
     ENCAccessType           m_AccessType;
-    ///
     string                  m_BlobKey;
     /// Password that was used for access to the blob
     string                  m_Password;
-    Uint2                   m_TimeBucket;
-    ///
     CNCBlobVerManager*      m_VerManager;
-    /// 
-    CNCRef<SNCBlobVerData>  m_CurData;
-    /// 
-    CNCRef<SNCBlobVerData>  m_NewData;
-    ///
-    bool                    m_Initialized;
-    bool                    m_HasError;
-    ///
-    INCBlockedOpListener*   m_InitListener;
-    ///
-    Uint8                   m_CurChunk;
+    CSrvRef<SNCBlobVerData> m_CurData;
+    CSrvRef<SNCBlobVerData> m_NewData;
+    SNCChunkMaps*           m_ChunkMaps;
+    bool        m_HasError;
+    bool        m_MetaInfoReady;
+    bool        m_WriteMemRequested;
+    Uint2       m_TimeBucket;
+    Uint8       m_CurChunk;
     /// Current position of reading/writing inside blob's chunk
-    size_t                  m_ChunkPos;
-    ///
-    Uint8                   m_SizeRead;
-    ///
-    CNCRef<CNCBlobBuffer>   m_Buffer;
-    SNCChunkMapInfo*        m_ChunkMaps[kNCMaxBlobMapsDepth + 1];
-    size_t                  m_CurMapsSize;
-    Uint2                   m_CurChunksInMap;
+    Uint4       m_ChunkPos;
+    Uint4       m_ChunkSize;
+    Uint8       m_SizeRead;
+    char*       m_Buffer;
+    CSrvTask*   m_Owner;
+};
+
+
+class CCurVerReader : public CSrvTransitionTask
+{
+public:
+    CCurVerReader(CNCBlobVerManager* mgr);
+    virtual ~CCurVerReader(void);
+
+private:
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
+
+
+    CNCBlobVerManager* m_VerMgr;
+};
+
+
+struct SWriteBackData
+{
+    CMiniMutex lock;
+    size_t cur_size;
+    size_t releasable_size;
+    size_t releasing_size;
+    vector<SNCBlobVerData*> to_add_list;
+    vector<SNCBlobVerData*> to_del_list;
+
+
+    SWriteBackData(void);
+};
+
+
+class CWriteBackControl : public CSrvTask
+{
+public:
+    static void Initialize(void);
+    static void ReadState(SNCStateStat& state);
+
+private:
+    CWriteBackControl(void);
+    virtual ~CWriteBackControl(void);
+
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
+};
+
+
+void SetWBSoftSizeLimit(Uint8 limit);
+void SetWBHardSizeLimit(Uint8 limit);
+void SetWBWriteTimeout(int timeout);
+void SetWBFailedWriteDelay(int delay);
+
+
+class CWBMemDeleter : public CSrvRCUUser
+{
+public:
+    CWBMemDeleter(char* mem, Uint4 mem_size);
+    virtual ~CWBMemDeleter(void);
+
+private:
+    virtual void ExecuteRCU(void);
+
+
+    char* m_Mem;
+    Uint4 m_MemSize;
 };
 
 
@@ -287,36 +306,23 @@ CNCBlobVerManager::GetCacheData(void)
     return m_CacheData;
 }
 
-
-inline void
-CNCBlobAccessor::AddToList(CNCBlobAccessor*& list_head)
+inline const string&
+CNCBlobVerManager::GetKey(void)
 {
-    m_NextAccessor = list_head;
-    if (list_head)
-        list_head->m_PrevAccessor = this;
-    list_head = this;
+    return m_Key;
 }
 
 inline void
-CNCBlobAccessor::RemoveFromList(CNCBlobAccessor*& list_head)
+CNCBlobVerManager::RequestCurVersion(CSrvTransConsumer* consumer)
 {
-    if (m_PrevAccessor) {
-        m_PrevAccessor->m_NextAccessor = m_NextAccessor;
-    }
-    else {
-        _ASSERT(list_head == this);
-        list_head = m_NextAccessor;
-    }
-    if (m_NextAccessor) {
-        m_NextAccessor->m_PrevAccessor = m_PrevAccessor;
-    }
-    m_NextAccessor = m_PrevAccessor = NULL;
+    m_CurVerReader->RequestTransition(consumer);
 }
+
 
 inline bool
-CNCBlobAccessor::IsInitialized(void) const
+CNCBlobAccessor::IsMetaInfoReady(void)
 {
-    return m_Initialized;
+    return m_MetaInfoReady;
 }
 
 inline bool
@@ -359,7 +365,7 @@ CNCBlobAccessor::GetCurBlobSize(void) const
 inline Uint8
 CNCBlobAccessor::GetNewBlobSize(void) const
 {
-    return m_NewData->size;
+    return m_NewData? m_NewData->size: 0;
 }
 
 inline Uint8
@@ -389,18 +395,19 @@ CNCBlobAccessor::GetNewBlobTTL(void) const
 inline bool
 CNCBlobAccessor::IsCurBlobExpired(void) const
 {
-    return m_CurData->expire <= int(time(NULL));
+    return m_CurData->expire <= CSrvTime::CurSecs();
 }
 
 inline bool
 CNCBlobAccessor::IsCurVerExpired(void) const
 {
-    return m_CurData->ver_expire <= int(time(NULL));
+    return m_CurData->ver_expire <= CSrvTime::CurSecs();
 }
 
 inline void
 CNCBlobAccessor::SetBlobCreateTime(Uint8 create_time)
 {
+    x_CreateNewData();
     m_NewData->create_time = create_time;
 }
 
@@ -443,6 +450,7 @@ CNCBlobAccessor::GetCurVerExpire(void) const
 inline void
 CNCBlobAccessor::SetNewBlobExpire(int expire, int dead_time /* = 0 */)
 {
+    x_CreateNewData();
     m_NewData->expire = expire;
     dead_time = max(dead_time, expire);
     if (m_CurData)
@@ -465,31 +473,43 @@ CNCBlobAccessor::GetNewVersionTTL(void) const
 inline void
 CNCBlobAccessor::SetVersionTTL(int ttl)
 {
+    x_CreateNewData();
     m_NewData->ver_ttl = ttl;
 }
 
 inline void
 CNCBlobAccessor::SetBlobTTL(int ttl)
 {
+    x_CreateNewData();
     m_NewData->ttl = ttl;
 }
 
 inline void
 CNCBlobAccessor::SetBlobVersion(int ver)
 {
+    x_CreateNewData();
     m_NewData->blob_ver = ver;
+}
+
+inline void
+CNCBlobAccessor::SetCurBlobExpire(int expire, int dead_time /* = 0 */)
+{
+    m_CurData->expire = expire;
+    m_CurData->dead_time = max(expire, max(m_CurData->dead_time, dead_time));
+    m_VerManager->DeadTimeChanged(m_CurData);
 }
 
 inline void
 CNCBlobAccessor::SetCurVerExpire(int expire)
 {
     m_CurData->ver_expire = expire;
-    m_CurData->need_write = true;
+    m_VerManager->DeadTimeChanged(m_CurData);
 }
 
 inline void
 CNCBlobAccessor::SetNewVerExpire(int expire)
 {
+    x_CreateNewData();
     m_NewData->ver_expire = expire;
 }
 
@@ -497,6 +517,7 @@ inline void
 CNCBlobAccessor::SetCreateServer(Uint8 create_server,
                                  Uint4 create_id)
 {
+    x_CreateNewData();
     m_NewData->create_server = create_server;
     m_NewData->create_id = create_id;
 }
@@ -522,6 +543,7 @@ CNCBlobAccessor::GetCurCreateId(void) const
 inline void
 CNCBlobAccessor::SetPassword(CTempString password)
 {
+    x_CreateNewData();
     m_NewData->password = password;
 }
 
@@ -545,28 +567,21 @@ CNCBlobAccessor::GetPosition(void)
 }
 
 inline const void*
-CNCBlobAccessor::GetDataPtr(void)
+CNCBlobAccessor::GetReadMemPtr(void)
 {
-    return m_Buffer->GetData() + m_ChunkPos;
-}
-
-inline void
-CNCBlobAccessor::MoveCurPos(size_t move_size)
-{
-    m_ChunkPos += move_size;
-    m_SizeRead += move_size;
+    return m_Buffer + m_ChunkPos;
 }
 
 inline void*
 CNCBlobAccessor::GetWriteMemPtr(void)
 {
-    return m_Buffer->GetData() + m_Buffer->GetSize();
+    return m_Buffer + m_ChunkPos;
 }
 
 inline void
-CNCBlobAccessor::MoveWritePos(size_t move_size)
+CNCBlobAccessor::MoveWritePos(Uint4 move_size)
 {
-    m_Buffer->Resize(m_Buffer->GetSize() + move_size);
+    m_ChunkPos += move_size;
     m_NewData->size += move_size;
 }
 

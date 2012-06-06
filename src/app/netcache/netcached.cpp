@@ -28,51 +28,44 @@
  * File Description: Network cache daemon
  *
  */
-#include <ncbi_pch.hpp>
-#include <stdio.h>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbiargs.hpp>
 
-#ifdef NCBI_OS_LINUX
-# include <signal.h>
-# include <sys/time.h>
-# include <sys/resource.h>
-#endif
+#include "nc_pch.hpp"
+
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbi_process.hpp>
+#include <db/sqlite/sqlitewrapp.hpp>
+
+#include "task_server.hpp"
 
 #include "message_handler.hpp"
 #include "netcached.hpp"
 #include "netcache_version.hpp"
-#include "nc_memory.hpp"
 #include "nc_stat.hpp"
 #include "distribution_conf.hpp"
 #include "sync_log.hpp"
 #include "peer_control.hpp"
 #include "nc_storage.hpp"
 #include "active_handler.hpp"
+#include "periodic_sync.hpp"
+#include "nc_storage_blob.hpp"
 
+#ifdef NCBI_OS_LINUX
+# include <sys/resource.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
 
 
-static const char* kNCReg_ServerSection       = "server";
+static const char* kNCReg_ServerSection       = "netcache";
 static const char* kNCReg_Ports               = "ports";
 static const char* kNCReg_CtrlPort            = "control_port";
-static const char* kNCReg_MaxConnections      = "max_connections";
-static const char* kNCReg_MaxThreads          = "max_threads";
-static const char* kNCReg_LogCmds             = "log_requests";
 static const char* kNCReg_AdminClient         = "admin_client_name";
 static const char* kNCReg_DefAdminClient      = "netcache_control";
-//static const char* kNCReg_MemLimit            = "db_cache_limit";
-static const char* kNCReg_MemLimit            = "memory_limit";
-static const char* kNCReg_MemAlert            = "memory_alert";
-static const char* kNCReg_ForceUsePoll        = "force_use_poll";
 static const char* kNCReg_SpecPriority        = "app_setup_priority";
-static const char* kNCReg_NetworkTimeout      = "network_timeout";
+//static const char* kNCReg_NetworkTimeout      = "network_timeout";
 static const char* kNCReg_DisableClient       = "disable_client";
-static const char* kNCReg_CommandTimeout      = "cmd_timeout";
+//static const char* kNCReg_CommandTimeout      = "cmd_timeout";
 static const char* kNCReg_BlobTTL             = "blob_ttl";
 static const char* kNCReg_VerTTL              = "ver_ttl";
 static const char* kNCReg_TTLUnit             = "ttl_unit";
@@ -85,18 +78,56 @@ static const char* kNCReg_AppSetupPrefix      = "app_setup_";
 static const char* kNCReg_AppSetupValue       = "setup";
 
 
-CNetCacheServer* g_NetcacheServer = NULL;
-CNCBlobStorage*  g_NCStorage      = NULL;
-static CFastMutex s_CachingLock;
+typedef set<unsigned int>   TPortsList;
+typedef vector<string>      TSpecKeysList;
+struct SSpecParamsEntry {
+    string        key;
+    CSrvRef<CObject> value;
+
+    SSpecParamsEntry(const string& key, CObject* value);
+};
+struct SSpecParamsSet : public CObject {
+    vector<SSpecParamsEntry>  entries;
+
+    virtual ~SSpecParamsSet(void);
+};
 
 
-extern "C" void
-s_NCSignalHandler(int sig)
+/// Port where server runs
+static TPortsList s_Ports;
+static Uint4 s_CtrlPort;
+/// Name of client that should be used for administrative commands
+static string s_AdminClient;
+static TSpecKeysList s_SpecPriority;
+static CSrvRef<SSpecParamsSet> s_SpecParams;
+//static unsigned int s_DefConnTimeout;
+static int s_DefBlobTTL;
+static bool s_DebugMode = false;
+static bool s_InitiallySynced = false;
+static bool s_CachingComplete = false;
+static CNCMsgHandler_Factory s_MsgHandlerFactory;
+static CNCHeartBeat* s_HeartBeat;
+
+
+
+
+CNCHeartBeat::~CNCHeartBeat(void)
+{}
+
+void
+CNCHeartBeat::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
-    if (g_NetcacheServer) {
-        g_NetcacheServer->RequestShutdown(sig);
-    }
+    if (CTaskServer::IsInShutdown())
+        return;
+
+    CNCBlobStorage::CheckDiskSpace();
+    SNCStateStat state;
+    CNCServer::ReadCurState(state);
+    CNCStat::SaveCurStateStat(state);
+
+    RunAfter(1);
 }
+
 
 static inline int
 s_CompareStrings(const string& left, const string& right)
@@ -108,40 +139,29 @@ s_CompareStrings(const string& left, const string& right)
 }
 
 
-
 SNCSpecificParams::~SNCSpecificParams(void)
 {}
 
 
 inline
-CNetCacheServer::SSpecParamsEntry::SSpecParamsEntry(const string& key,
-                                                    CObject*      value)
+SSpecParamsEntry::SSpecParamsEntry(const string& key,
+                                   CObject*      value)
     : key(key),
       value(value)
 {}
 
 
-CNetCacheServer::SSpecParamsSet::~SSpecParamsSet(void)
+SSpecParamsSet::~SSpecParamsSet(void)
 {}
 
 
-void
-CNetCacheServer::x_ReadSpecificParams(const IRegistry&   reg,
-                                      const string&      section,
-                                      SNCSpecificParams* params)
+static void
+s_ReadSpecificParams(const IRegistry& reg,
+                     const string& section,
+                     SNCSpecificParams* params)
 {
     if (reg.HasEntry(section, kNCReg_DisableClient, IRegistry::fCountCleared)) {
         params->disable = reg.GetBool(section, kNCReg_DisableClient, false);
-    }
-    if (reg.HasEntry(section, kNCReg_CommandTimeout, IRegistry::fCountCleared)) {
-        params->cmd_timeout = reg.GetInt(section, kNCReg_CommandTimeout, 600);
-    }
-    if (reg.HasEntry(section, kNCReg_NetworkTimeout, IRegistry::fCountCleared)) {
-        params->conn_timeout = reg.GetInt(section, kNCReg_NetworkTimeout, 10);
-        if (params->conn_timeout == 0) {
-            INFO_POST("INI file sets network timeout to 0. Assuming 10 seconds.");
-            params->conn_timeout =  10;
-        }
     }
     if (reg.HasEntry(section, kNCReg_BlobTTL, IRegistry::fCountCleared)) {
         params->blob_ttl = reg.GetInt(section, kNCReg_BlobTTL, 3600);
@@ -174,27 +194,27 @@ CNetCacheServer::x_ReadSpecificParams(const IRegistry&   reg,
         }
         else {
             if (pass_policy != "any") {
-                ERR_POST("Incorrect value of '" << kNCReg_PassPolicy
-                         << "' parameter: '" << pass_policy
-                         << "', assuming 'any'");
+                SRV_LOG(Error, "Incorrect value of '" << kNCReg_PassPolicy
+                               << "' parameter: '" << pass_policy
+                               << "', assuming 'any'");
             }
             params->pass_policy = eNCBlobPassAny;
         }
     }
 }
 
-inline void
-CNetCacheServer::x_PutNewParams(SSpecParamsSet*         params_set,
-                                unsigned int            best_index,
-                                const SSpecParamsEntry& entry)
+static inline void
+s_PutNewParams(SSpecParamsSet* params_set,
+               unsigned int best_index,
+               const SSpecParamsEntry& entry)
 {
     params_set->entries.insert(params_set->entries.begin() + best_index, entry);
 }
 
-CNetCacheServer::SSpecParamsSet*
-CNetCacheServer::x_FindNextParamsSet(const SSpecParamsSet*  cur_set,
-                                     const string&          key,
-                                     unsigned int&          best_index)
+static SSpecParamsSet*
+s_FindNextParamsSet(const SSpecParamsSet* cur_set,
+                    const string& key,
+                    unsigned int& best_index)
 {
     unsigned int low = 1;
     unsigned int high = Uint4(cur_set->entries.size());
@@ -215,11 +235,11 @@ CNetCacheServer::x_FindNextParamsSet(const SSpecParamsSet*  cur_set,
     return NULL;
 }
 
-void
-CNetCacheServer::x_CheckDefClientConfig(SSpecParamsSet* cur_set,
-                                        SSpecParamsSet* prev_set,
-                                        Uint1 depth,
-                                        SSpecParamsSet* deflt)
+static void
+s_CheckDefClientConfig(SSpecParamsSet* cur_set,
+                       SSpecParamsSet* prev_set,
+                       Uint1 depth,
+                       SSpecParamsSet* deflt)
 {
     if (depth == 0) {
         if (cur_set->entries.size() == 0) {
@@ -231,25 +251,23 @@ CNetCacheServer::x_CheckDefClientConfig(SSpecParamsSet* cur_set,
         if (deflt)
             this_deflt = (SSpecParamsSet*)deflt->entries[0].value.GetPointer();
         for (size_t i = 0; i < cur_set->entries.size(); ++i) {
-            x_CheckDefClientConfig((SSpecParamsSet*)cur_set->entries[i].value.GetPointer(),
+            s_CheckDefClientConfig((SSpecParamsSet*)cur_set->entries[i].value.GetPointer(),
                                    cur_set, depth - 1, this_deflt);
             this_deflt = (SSpecParamsSet*)cur_set->entries[0].value.GetPointer();
         }
     }
 }
 
-void
-CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
+static void
+s_ReadPerClientConfig(const CNcbiRegistry& reg)
 {
-    m_OldSpecParams = m_SpecParams;
-
     string spec_prty = reg.Get(kNCReg_ServerSection, kNCReg_SpecPriority);
-    NStr::Tokenize(spec_prty, ", \t\r\n", m_SpecPriority, NStr::eMergeDelims);
+    NStr::Tokenize(spec_prty, ", \t\r\n", s_SpecPriority, NStr::eMergeDelims);
 
     SNCSpecificParams* main_params = new SNCSpecificParams;
     main_params->disable         = false;
-    main_params->cmd_timeout     = 600;
-    main_params->conn_timeout    = 10;
+    //main_params->cmd_timeout     = 600;
+    //main_params->conn_timeout    = 10;
     main_params->blob_ttl        = 3600;
     main_params->ver_ttl         = 3600;
     main_params->ttl_unit        = 300;
@@ -258,40 +276,40 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
     main_params->pass_policy     = eNCBlobPassAny;
     main_params->quorum          = 2;
     main_params->fast_on_main    = true;
-    x_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);
-    m_DefConnTimeout = main_params->conn_timeout;
-    m_DefBlobTTL = main_params->blob_ttl;
+    s_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);
+    //s_DefConnTimeout = main_params->conn_timeout;
+    s_DefBlobTTL = main_params->blob_ttl;
     SSpecParamsSet* params_set = new SSpecParamsSet();
     params_set->entries.push_back(SSpecParamsEntry(kEmptyStr, main_params));
-    for (unsigned int i = 0; i < m_SpecPriority.size(); ++i) {
+    for (unsigned int i = 0; i < s_SpecPriority.size(); ++i) {
         SSpecParamsSet* next_set = new SSpecParamsSet();
         next_set->entries.push_back(SSpecParamsEntry(kEmptyStr, params_set));
         params_set = next_set;
     }
-    m_SpecParams = params_set;
+    s_SpecParams = params_set;
 
-    if (m_SpecPriority.size() != 0) {
+    if (s_SpecPriority.size() != 0) {
         list<string> conf_sections;
         reg.EnumerateSections(&conf_sections);
         ITERATE(list<string>, sec_it, conf_sections) {
             const string& section = *sec_it;
             if (!NStr::StartsWith(section, kNCReg_AppSetupPrefix, NStr::eNocase))
                 continue;
-            SSpecParamsSet* cur_set  = m_SpecParams;
-            NON_CONST_REVERSE_ITERATE(TSpecKeysList, prty_it, m_SpecPriority) {
+            SSpecParamsSet* cur_set  = s_SpecParams;
+            NON_CONST_REVERSE_ITERATE(TSpecKeysList, prty_it, s_SpecPriority) {
                 const string& key_name = *prty_it;
                 if (reg.HasEntry(section, key_name, IRegistry::fCountCleared)) {
                     const string& key_value = reg.Get(section, key_name);
                     unsigned int next_ind = 0;
                     SSpecParamsSet* next_set
-                                = x_FindNextParamsSet(cur_set, key_value, next_ind);
+                                = s_FindNextParamsSet(cur_set, key_value, next_ind);
                     if (!next_set) {
                         if (cur_set->entries.size() == 0) {
                             cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, new SSpecParamsSet()));
                             ++next_ind;
                         }
                         next_set = new SSpecParamsSet();
-                        x_PutNewParams(cur_set, next_ind,
+                        s_PutNewParams(cur_set, next_ind,
                                        SSpecParamsEntry(key_value, next_set));
                     }
                     cur_set = next_set;
@@ -304,214 +322,133 @@ CNetCacheServer::x_ReadPerClientConfig(const CNcbiRegistry& reg)
                 }
             }
             if (cur_set->entries.size() != 0) {
-                ERR_POST("Section '" << section << "' in configuration file is "
-                         "a duplicate of another section - ignoring it.");
+                SRV_LOG(Error, "Section '" << section << "' in configuration file is "
+                               "a duplicate of another section - ignoring it.");
                 continue;
             }
             SNCSpecificParams* params = new SNCSpecificParams(*main_params);
             if (reg.HasEntry(section, kNCReg_AppSetupValue)) {
-                x_ReadSpecificParams(reg, reg.Get(section, kNCReg_AppSetupValue),
+                s_ReadSpecificParams(reg, reg.Get(section, kNCReg_AppSetupValue),
                                      params);
             }
             cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, params));
         }
 
-        x_CheckDefClientConfig(m_SpecParams, NULL, Uint1(m_SpecPriority.size()), NULL);
+        s_CheckDefClientConfig(s_SpecParams, NULL, Uint1(s_SpecPriority.size()), NULL);
     }
 }
 
-bool
-CNetCacheServer::x_ReadServerParams(void)
+static bool
+s_ReadServerParams(void)
 {
-    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
     string ports_str = reg.Get(kNCReg_ServerSection, kNCReg_Ports);
-    if (ports_str != m_PortsConfStr) {
-        list<string> split_ports;
-        NStr::Split(ports_str, ", \t\r\n", split_ports);
-        TPortsList ports_list;
-        ITERATE(list<string>, it, split_ports) {
-            try {
-                ports_list.insert(NStr::StringToInt(*it));
-            }
-            catch (CStringException& ex) {
-                ERR_POST(Critical << "Error reading port number from '"
-                                  << *it << "': " << ex);
-                return false;
-            }
+    list<string> split_ports;
+    NStr::Split(ports_str, ", \t\r\n", split_ports);
+    ITERATE(list<string>, it, split_ports) {
+        try {
+            s_Ports.insert(NStr::StringToInt(*it));
         }
-        ITERATE(TPortsList, it, ports_list) {
-            unsigned int port = *it;
-            if (m_Ports.find(port) == m_Ports.end())
-                m_Ports.insert(port);
-        }
-        if (ports_list.size() != m_Ports.size()) {
-            ERR_POST("After reconfiguration some ports should not be "
-                     "listened anymore. It requires restarting of the server.");
-        }
-        if (m_Ports.size() == 0) {
-            ERR_POST(Critical << "No listening client ports were configured.");
+        catch (CStringException& ex) {
+            SRV_LOG(Critical, "Error reading port number from '"
+                              << *it << "': " << ex);
             return false;
         }
-        m_PortsConfStr = ports_str;
+    }
+    if (s_Ports.size() == 0) {
+        SRV_LOG(Critical, "No listening client ports were configured.");
+        return false;
     }
 
     try {
-        m_CtrlPort = reg.GetInt(kNCReg_ServerSection, kNCReg_CtrlPort, 0);
-
-        m_LogCmds     = reg.GetBool  (kNCReg_ServerSection, kNCReg_LogCmds, true);
-        m_AdminClient = reg.GetString(kNCReg_ServerSection, kNCReg_AdminClient,
+        s_CtrlPort = reg.GetInt(kNCReg_ServerSection, kNCReg_CtrlPort, 0);
+        s_AdminClient = reg.GetString(kNCReg_ServerSection, kNCReg_AdminClient,
                                       kNCReg_DefAdminClient);
-        bool force_poll = reg.GetBool(kNCReg_ServerSection, kNCReg_ForceUsePoll, true);
-        SOCK_SetIOWaitSysAPI(force_poll? eSOCK_IOWaitSysAPIPoll: eSOCK_IOWaitSysAPIAuto);
+        s_DebugMode = reg.GetBool(kNCReg_ServerSection, "debug_mode", false);
 
-        SServer_Parameters serv_params;
-        serv_params.max_connections = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxConnections, 100);
-        serv_params.max_threads     = reg.GetInt(kNCReg_ServerSection, kNCReg_MaxThreads, 20);
-        if (serv_params.max_threads < 1) {
-            serv_params.max_threads = 1;
-        }
-        serv_params.init_threads = 1;
-        serv_params.accept_timeout = &m_ServerAcceptTimeout;
-        try {
-            SetParameters(serv_params);
-        }
-        catch (CServer_Exception& ex) {
-            ERR_POST(Critical << "Cannot set server parameters: " << ex);
-            return false;
-        }
-
-        m_DebugMode = reg.GetBool(kNCReg_ServerSection, "debug_mode", false);
-
-        string str_val   = reg.GetString(kNCReg_ServerSection, kNCReg_MemLimit, "1Gb");
-        size_t mem_limit = size_t(NStr::StringToUInt8_DataSize(str_val));
-        str_val          = reg.GetString(kNCReg_ServerSection, kNCReg_MemAlert, "4Gb");
-        size_t mem_alert = size_t(NStr::StringToUInt8_DataSize(str_val));
-        CNCMemManager::SetLimits(mem_limit, mem_alert);
-        //CNCMemManager::SetLimits(mem_limit, mem_limit);
-
-        x_ReadPerClientConfig(reg);
+        s_ReadPerClientConfig(reg);
     }
     catch (CStringException& ex) {
-        ERR_POST(Critical << "Error in configuration: " << ex);
+        SRV_LOG(Critical, "Error in configuration: " << ex);
         return false;
     }
 
     return true;
 }
 
-CNetCacheServer::CNetCacheServer(void)
-    : m_SpecParams(NULL),
-      m_OldSpecParams(NULL),
-      m_Shutdown(false),
-      m_Signal(0),
-      m_InitiallySynced(false),
-      m_CachingComplete(false)
-{}
-
-CNetCacheServer::~CNetCacheServer()
-{}
-
-void
-CNetCacheServer::Init(void)
+static bool
+s_Initialize(bool do_reinit)
 {
-    INCBlockedOpListener::BindToThreadPool(GetThreadPool());
-}
+    CSQLITE_Global::Initialize();
+    CWriteBackControl::Initialize();
+    InitClientMessages();
 
-bool
-CNetCacheServer::Initialize(bool do_reinit)
-{
-    m_ServerAcceptTimeout.sec = 1;
-    m_ServerAcceptTimeout.usec = 0;
-
-    if (!x_ReadServerParams())
-        return false;
-
-    if (!CNCDistributionConf::Initialize(m_CtrlPort))
+    if (!CNCDistributionConf::Initialize(s_CtrlPort))
         return false;
     CNCActiveHandler::Initialize();
 
-    CFastMutexGuard guard(s_CachingLock);
-
-    _ASSERT(g_NetcacheServer == NULL);
-    g_NetcacheServer = this;
-
-    g_NCStorage = new CNCBlobStorage();
-    if (!g_NCStorage->Initialize(do_reinit))
+    if (!CNCBlobStorage::Initialize(do_reinit))
         return false;
+    CNCStat::Initialize();
+    s_HeartBeat = new CNCHeartBeat();
 
-    Uint8 max_rec_no = g_NCStorage->GetMaxSyncLogRecNo();
-    CNCSyncLog::Initialize(g_NCStorage->IsCleanStart(), max_rec_no);
-
-    m_StartTime = GetFastLocalTime();
+    Uint8 max_rec_no = CNCBlobStorage::GetMaxSyncLogRecNo();
+    CNCSyncLog::Initialize(CNCBlobStorage::IsCleanStart(), max_rec_no);
 
     if (!CNCPeerControl::Initialize())
         return false;
-    CNCPeriodicSync::PreInitialize();
 
-    if (m_Ports.find(m_CtrlPort) == m_Ports.end()) {
-        Uint4 port = m_CtrlPort;
-        if (m_DebugMode)
+    if (s_Ports.find(s_CtrlPort) == s_Ports.end()) {
+        Uint4 port = s_CtrlPort;
+        if (s_DebugMode)
             port += 10;
-        INFO_POST("Opening control port: " << port);
-        AddListener(new CNCMsgHndlFactory_Proxy(), port);
+        INFO("Opening control port: " << port);
+        if (!CTaskServer::AddListeningPort(port, &s_MsgHandlerFactory))
+            return false;
     }
     string ports_str;
-    ITERATE(TPortsList, it, m_Ports) {
+    ITERATE(TPortsList, it, s_Ports) {
         unsigned int port = *it;
-        if (IsDebugMode())
+        if (s_DebugMode)
             port += 10;
-        AddListener(new CNCMsgHndlFactory_Proxy(), port);
+        if (!CTaskServer::AddListeningPort(port, &s_MsgHandlerFactory))
+            return false;
         ports_str.append(NStr::IntToString(port));
         ports_str.append(", ", 2);
     }
     ports_str.resize(ports_str.size() - 2);
-    INFO_POST("Opening client ports: " << ports_str);
-    try {
-        StartListening();
-    }
-    catch (CServer_Exception& ex) {
-        ERR_POST(Critical << "Cannot listen to control port: " << ex);
-        return false;
-    }
+    INFO("Opening client ports: " << ports_str);
 
     return true;
 }
 
-void
-CNetCacheServer::Finalize(void)
+static void
+s_Finalize(void)
 {
-    CPrintTextProxy proxy(CPrintTextProxy::ePrintLog);
-    INFO_POST("NetCache server is destroying. Usage statistics:");
-    x_PrintServerStats(proxy);
+    INFO("NetCache server is finalizing.");
+    CNCStat::DumpAllStats();
 
-    if (g_NCStorage)
-        UpdateLastRecNo();
+    CNCBlobStorage::SaveMaxSyncLogRecNo();
     CNCPeriodicSync::Finalize();
     CNCPeerControl::Finalize();
-    if (GetThreadPool())
-        GetThreadPool()->KillAllThreads(true);
-    if (g_NCStorage)
-        g_NCStorage->Finalize();
-    //delete g_NCStorage;
-    //delete s_TaskPool;
+    CNCBlobStorage::Finalize();
     CNCSyncLog::Finalize();
     CNCDistributionConf::Finalize();
-
-    //g_NetcacheServer = NULL;
+    CSQLITE_Global::Finalize();
 }
 
 const SNCSpecificParams*
-CNetCacheServer::GetAppSetup(const TStringMap& client_params)
+CNCServer::GetAppSetup(const TStringMap& client_params)
 {
-    const SSpecParamsSet* cur_set = m_SpecParams;
-    NON_CONST_REVERSE_ITERATE(TSpecKeysList, key_it, m_SpecPriority) {
+    const SSpecParamsSet* cur_set = s_SpecParams;
+    NON_CONST_REVERSE_ITERATE(TSpecKeysList, key_it, s_SpecPriority) {
         TStringMap::const_iterator it = client_params.find(*key_it);
         const SSpecParamsSet* next_set = NULL;
         if (it != client_params.end()) {
             const string& value = it->second;
             unsigned int best_index = 0;
-            next_set = x_FindNextParamsSet(cur_set, value, best_index);
+            next_set = s_FindNextParamsSet(cur_set, value, best_index);
         }
         if (!next_set)
             next_set = static_cast<const SSpecParamsSet*>(cur_set->entries[0].value.GetPointer());
@@ -519,194 +456,76 @@ CNetCacheServer::GetAppSetup(const TStringMap& client_params)
     }
     return static_cast<const SNCSpecificParams*>(cur_set->entries[0].value.GetPointer());
 }
-/*
-void
-CNetCacheServer::Reconfigure(void)
+
+bool
+CNCServer::IsInitiallySynced(void)
 {
-    CNcbiApplication::Instance()->ReloadConfig();
-    x_ReadServerParams();
-    g_NCStorage->Reconfigure();
+    return s_InitiallySynced;
+}
+
+void
+CNCServer::InitialSyncComplete(void)
+{
+    INFO("Initial synchronization complete");
+    s_InitiallySynced = true;
+}
+
+void
+CNCServer::CachingCompleted(void)
+{
+    s_CachingComplete = true;
+    s_HeartBeat->SetRunnable();
+    if (!CNCPeriodicSync::Initialize())
+        CTaskServer::RequestShutdown(eSrvFastShutdown);
+}
+
+bool
+CNCServer::IsCachingComplete(void)
+{
+    return s_CachingComplete;
+}
+
+bool
+CNCServer::IsDebugMode(void)
+{
+    return s_DebugMode;
+}
+/*
+unsigned int
+CNCServer::GetDefConnTimeout(void)
+{
+    return s_DefConnTimeout;
 }
 */
-void
-CNetCacheServer::x_PrintServerStats(CPrintTextProxy& proxy)
+int
+CNCServer::GetDefBlobTTL(void)
 {
-    SServer_Parameters params;
-    GetParameters(&params);
+    return s_DefBlobTTL;
+}
 
-    proxy << "Time - " << CTime(CTime::eCurrent)
-                       << ", started at " << m_StartTime << endl
-          << "Env  - " << CThread::GetThreadsCount() << " (cur thr), "
-                       << params.max_threads << " (max thr), "
-                       << params.max_connections << " (max conns)" << endl
-          << endl;
-    CNCMemManager::PrintStats(proxy);
-    proxy << endl;
-    if (g_NCStorage)
-        g_NCStorage->PrintStat(proxy);
-    proxy << endl
-          << "Copy queue - " << CNCPeerControl::GetMirrorQueueSize() << endl
-          << "Sync log queue - " << g_ToSmartStr(CNCSyncLog::GetLogSize()) << endl;
-    CNCStat::Print(proxy);
+const string&
+CNCServer::GetAdminClient(void)
+{
+    return s_AdminClient;
 }
 
 int
-CNetCacheServer::GetMaxConnections(void)
+CNCServer::GetUpTime(void)
 {
-    SServer_Parameters params;
-    GetParameters(&params);
-    return params.max_connections;
-}
-
-bool
-CNetCacheServer::IsInitiallySynced(void)
-{
-    return g_NetcacheServer  &&  g_NetcacheServer->m_InitiallySynced;
+    CSrvTime cur_time = CSrvTime::Current();
+    cur_time -=  CTaskServer::GetStartTime();
+    return int(cur_time.Sec());
 }
 
 void
-CNetCacheServer::InitialSyncComplete(void)
+CNCServer::ReadCurState(SNCStateStat& state)
 {
-    INFO_POST("Initial synchronization complete");
-    g_NetcacheServer->m_InitiallySynced = true;
+    CNCBlobStorage::MeasureDB(state);
+    state.mirror_queue_size = CNCPeerControl::GetMirrorQueueSize();
+    state.sync_log_size = CNCSyncLog::GetLogSize();
+    CWriteBackControl::ReadState(state);
 }
 
-void
-CNetCacheServer::UpdateLastRecNo(void)
-{
-    g_NCStorage->SaveMaxSyncLogRecNo();
-}
-
-void
-CNetCacheServer::CachingCompleted(void)
-{
-    // Avoid race with constructor
-    CFastMutexGuard guard(s_CachingLock);
-
-    if (g_NetcacheServer == NULL)
-        return;
-
-    g_NetcacheServer->m_CachingComplete = true;
-    if (!CNCPeriodicSync::Initialize()) {
-        g_NetcacheServer->RequestShutdown();
-    }
-}
-
-bool
-CNetCacheServer::IsCachingComplete(void)
-{
-    return g_NetcacheServer  &&  g_NetcacheServer->m_CachingComplete;
-}
-
-bool
-CNetCacheServer::IsDebugMode(void)
-{
-    return g_NetcacheServer  &&  g_NetcacheServer->m_DebugMode;
-}
-
-
-CNetCacheDApp::CNetCacheDApp(void)
-{
-    CVersionInfo version(NCBI_PACKAGE_VERSION_MAJOR,
-                         NCBI_PACKAGE_VERSION_MINOR,
-                         NCBI_PACKAGE_VERSION_PATCH);
-    CRef<CVersion> full_version(new CVersion(version));
-
-    full_version->AddComponentVersion("Storage",
-                                      NETCACHED_STORAGE_VERSION_MAJOR,
-                                      NETCACHED_STORAGE_VERSION_MINOR,
-                                      NETCACHED_STORAGE_VERSION_PATCH);
-    full_version->AddComponentVersion("Protocol",
-                                      NETCACHED_PROTOCOL_VERSION_MAJOR,
-                                      NETCACHED_PROTOCOL_VERSION_MINOR,
-                                      NETCACHED_PROTOCOL_VERSION_PATCH);
-
-    SetVersion(version);
-    SetFullVersion(full_version);
-}
-
-void
-CNetCacheDApp::Init(void)
-{
-    SetDiagPostFlag(eDPF_DateTime);
-
-    // Setup command line arguments and parameters
-
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "netcached");
-
-    arg_desc->AddFlag("reinit", "Recreate the storage database.");
-#ifdef NCBI_OS_LINUX
-    arg_desc->AddFlag("nodaemon",
-                      "Turn off daemonization of NetCache at the start.");
-#endif
-    arg_desc->AddFlag("version-full", "Version");
-
-    SetupArgDescriptions(arg_desc.release());
-}
-
-int
-CNetCacheDApp::Run(void)
-{
-    CArgs args = GetArgs();
-
-    INFO_POST(NETCACHED_FULL_VERSION);
-
-#ifdef NCBI_OS_LINUX
-    if (!args["nodaemon"]) {
-        INFO_POST("Entering UNIX daemon mode...");
-        // Here's workaround for SQLite3 bug: if stdin is closed in forked
-        // process then 0 file descriptor is returned to SQLite after open().
-        // But there's assert there which prevents fd to be equal to 0. So
-        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
-        // just in case somebody will try to write to them.
-        bool is_good = CProcess::Daemonize(kEmptyCStr,
-                               CProcess::fDontChroot | CProcess::fKeepStdin
-                                                     | CProcess::fKeepStdout);
-        if (!is_good) {
-            ERR_POST(Critical << "Error during daemonization");
-            return 200;
-        }
-    }
-
-    // attempt to get server gracefully shutdown on signal
-    signal(SIGINT,  s_NCSignalHandler);
-    signal(SIGTERM, s_NCSignalHandler);
-#endif
-
-    CNetCacheServer* server = NULL;
-    CAsyncDiagHandler diag_handler;
-    if (!CNCMemManager::InitializeApp())
-        goto fin_mem;
-    CSQLITE_Global::Initialize();
-    server = new CNetCacheServer();
-    if (server->Initialize(args["reinit"])) {
-        try {
-            diag_handler.InstallToDiag();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST(Critical << ex);
-            goto fin_server;
-        }
-        server->Run();
-        if (server->GetSignalCode()) {
-            INFO_POST("Server got " << server->GetSignalCode() << " signal.");
-        }
-    }
-fin_server:
-    server->Finalize();
-    //delete server;
-    CSQLITE_Global::Finalize();
-    diag_handler.RemoveFromDiag();
-fin_mem:
-    CNCMemManager::FinalizeApp();
-
-    return 0;
-}
 
 END_NCBI_SCOPE
 
@@ -716,22 +535,7 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    g_Diag_Use_RWLock();
-    CDiagContext::SetOldPostFormat(false);
-    CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
-    // Main thread request context already created, so is not affected
-    // by just set default, so set it manually.
-    CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
-    SetDiagPostLevel(eDiag_Warning);
-
     // Defaults that should be always set for NetCache
-    CNcbiEnvironment env;
-    env.Set("NCBI_ABORT_ON_NULL", "true");
-    env.Set("DIAG_SILENT_ABORT", "0");
-    env.Set("DEBUG_CATCH_UNHANDLED_EXCEPTIONS", "false");
-    env.Set("THREAD_CATCH_UNHANDLED_EXCEPTIONS", "false");
-    env.Set("THREADPOOL_CATCH_UNHANDLED_EXCEPTIONS", "false");
-    env.Set("CSERVER_CATCH_UNHANDLED_EXCEPTIONS", "false");
 #ifdef NCBI_OS_LINUX
     struct rlimit rlim;
     if (getrlimit(RLIMIT_CORE, &rlim) == 0) {
@@ -740,5 +544,51 @@ int main(int argc, const char* argv[])
     }
 #endif
 
-    return CNetCacheDApp().AppMain(argc, argv, 0, eDS_ToStdlog);
+    if (!CTaskServer::Initialize(argc, argv)  ||  !s_ReadServerParams()) {
+        CTaskServer::Finalize();
+        return 100;
+    }
+
+    INFO(NETCACHED_FULL_VERSION);
+
+    bool is_daemon = true;
+    bool is_reinit = false;
+
+    for (int i = 1; i < argc; ++i) {
+        string param(argv[i]);
+        if (param == "-nodaemon")
+            is_daemon = false;
+        else if (param == "-reinit")
+            is_reinit = true;
+        else {
+            ERR_POST(Critical << "Unknown parameter: " << param);
+            CTaskServer::Finalize();
+            return 150;
+        }
+    }
+
+#ifdef NCBI_OS_LINUX
+    if (is_daemon) {
+        INFO("Entering UNIX daemon mode...");
+        // Here's workaround for SQLite3 bug: if stdin is closed in forked
+        // process then 0 file descriptor is returned to SQLite after open().
+        // But there's assert there which prevents fd to be equal to 0. So
+        // we keep descriptors 0, 1 and 2 in child process open. Latter two -
+        // just in case somebody will try to write to them.
+        bool is_good = CProcess::Daemonize(kEmptyCStr,
+                               CProcess::fDontChroot | CProcess::fKeepStdin
+                                                     | CProcess::fKeepStdout) != 0;
+        if (!is_good) {
+            SRV_LOG(Critical, "Error during daemonization");
+            return 200;
+        }
+    }
+#endif
+
+    if (s_Initialize(is_reinit))
+        CTaskServer::Run();
+    s_Finalize();
+    CTaskServer::Finalize();
+
+    return 0;
 }

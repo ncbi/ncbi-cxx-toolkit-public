@@ -29,11 +29,13 @@
  *
  */
 
-#include <ncbi_pch.hpp>
+#include "nc_pch.hpp"
+
+#include <corelib/ncbidbg.hpp>
 
 #include "sync_log.hpp"
 #include "distribution_conf.hpp"
-#include "netcached.hpp"
+#include "task_server.hpp"
 
 
 
@@ -42,7 +44,7 @@ BEGIN_NCBI_SCOPE
 
 struct SSlotData
 {
-    CFastMutex  lock;
+    CMiniMutex  lock;
     TSyncEvents events;
     Uint8       rec_number;
 
@@ -67,7 +69,7 @@ struct SSrvSyncedData
 };
 
 
-static CFastMutex       s_GlobalLock;
+static CMiniMutex       s_GlobalLock;
 typedef map<Uint2, SSlotData> TLog;
 static TLog             s_Log;
 typedef map<Uint2, SSrvSyncedData>  TSrvSyncedMap;
@@ -114,8 +116,8 @@ s_ReadHeader(FILE* file)
 
     // Read the number of pairs server <--> slot
     if (fread(&count, sizeof(count), 1, file) != 1) {
-        ERR_POST(Critical << "Cannot read the number of saved pairs(server <--> slot) "
-                             "with the last synced record numbers. Invalid file?");
+        SRV_LOG(Critical, "Cannot read the number of saved pairs(server <--> slot) "
+                          "with the last synced record numbers. Invalid file?");
         return false;
     }
 
@@ -123,7 +125,7 @@ s_ReadHeader(FILE* file)
         SFileServRecord record;
 
         if (fread(&record, sizeof(record), 1, file) != 1) {
-            ERR_POST(Critical << "Cannot read last synced record numbers. Invalid file?");
+            SRV_LOG(Critical, "Cannot read last synced record numbers. Invalid file?");
             return false;
         }
         SSrvSyncedData& sync_data = s_SyncedData[record.key_server]
@@ -231,6 +233,7 @@ static bool
 s_WriteRecord(FILE* file, Uint2 slot, const SNCSyncEvent* event)
 {
     SFixedPart record;
+    memset(&record, 0, sizeof(record));
     record.rec_no       = event->rec_no;
     record.event_type   = event->event_type;
     record.slot         = slot;
@@ -258,7 +261,7 @@ s_WriteRecord(FILE* file, Uint2 slot, const SNCSyncEvent* event)
 static inline SSlotData&
 s_GetSlotData(Uint2 slot)
 {
-    CFastMutexGuard guard(s_GlobalLock);
+    CMiniMutexGuard guard(s_GlobalLock);
     return s_Log[slot];
 }
 
@@ -268,7 +271,7 @@ s_GetSlotData(Uint2 slot)
 static Uint8
 s_GetMinLocalSyncedRecordNo(Uint2 slot, const SSlotData& data)
 {
-    CFastMutexGuard guard(s_GlobalLock);
+    CMiniMutexGuard guard(s_GlobalLock);
 
     Uint8 min_rec_no = (data.events.empty()? s_LastWrittenRecord
                                            : data.events.front()->rec_no);
@@ -462,7 +465,7 @@ CNCSyncLog::Initialize(bool need_read_saved, Uint8 start_log_rec_no)
     FILE* log_file = fopen(file_name.c_str(), "r");
 
     if (!log_file) {
-        ERR_POST("Cannot open file: " << file_name);
+        SRV_LOG(Warning, "Cannot open file: " << file_name);
 
         // Could not read the file and therefore could not identify the
         // start record number. So use the given
@@ -486,7 +489,7 @@ CNCSyncLog::Initialize(bool need_read_saved, Uint8 start_log_rec_no)
 
     // Check for the errors
     if (!feof(log_file)) {
-        ERR_POST(Critical << "Cannot read records from " << file_name
+        SRV_LOG(Critical, "Cannot read records from " << file_name
                           << ". Invalid file?");
 
         // Error occurred, the file is broken:
@@ -559,9 +562,9 @@ CNCSyncLog::AddEvent(Uint2 slot, SNCSyncEvent* event)
         abort();
 
     SSlotData& data = s_GetSlotData(slot);
-    CFastMutexGuard guard(data.lock);
+    CMiniMutexGuard guard(data.lock);
 
-    event->local_time = CNetCacheServer::GetPreciseTime();
+    event->local_time = CSrvTime::Current().AsUSec();
     s_GlobalLock.Lock();
     event->rec_no = ++s_LastWrittenRecord;
     s_GlobalLock.Unlock();
@@ -584,7 +587,7 @@ CNCSyncLog::GetLastSyncedRecNo(Uint8  server,
                                Uint8* local_synced_rec_no,
                                Uint8* remote_synced_rec_no)
 {
-    CFastMutexGuard guard(s_GlobalLock);
+    CMiniMutexGuard guard(s_GlobalLock);
 
     SSrvSyncedData& sync_data = s_SyncedData[server][slot];
     *local_synced_rec_no = sync_data.local_rec_no;
@@ -597,7 +600,7 @@ CNCSyncLog::SetLastSyncRecNo(Uint8 server,
                              Uint8 local_synced_rec_no,
                              Uint8 remote_synced_rec_no)
 {
-    CFastMutexGuard guard(s_GlobalLock);
+    CMiniMutexGuard guard(s_GlobalLock);
 
     SSrvSyncedData& sync_data = s_SyncedData[server][slot];
     sync_data.local_rec_no = local_synced_rec_no;
@@ -608,7 +611,7 @@ Uint8
 CNCSyncLog::GetCurrentRecNo(Uint2 slot)
 {
     SSlotData& data = s_GetSlotData(slot);
-    CFastMutexGuard guard(data.lock);
+    CMiniMutexGuard guard(data.lock);
     if (!data.events.empty())
         return data.events.back()->rec_no;
     else
@@ -629,7 +632,7 @@ CNCSyncLog::GetEventsList(Uint8  server,
                           TReducedSyncEvents* events)
 {
     {{
-        CFastMutexGuard guard(s_GlobalLock);
+        CMiniMutexGuard guard(s_GlobalLock);
         SSrvSyncedData& sync_data = s_SyncedData[server][slot];
         if (sync_data.local_rec_no > *local_start_rec_no)
             *local_start_rec_no = sync_data.local_rec_no;
@@ -642,7 +645,7 @@ CNCSyncLog::GetEventsList(Uint8  server,
     }}
 
     SSlotData& data = s_GetSlotData(slot);
-    CFastMutexGuard guard(data.lock);
+    CMiniMutexGuard guard(data.lock);
 
     // Check the presence of the local record
     if (data.events.empty()
@@ -712,7 +715,7 @@ CNCSyncLog::GetSyncOperations(Uint8 server,
         return false;
     }
 
-    Uint8 now = CNetCacheServer::GetPreciseTime();
+    Uint8 now = CSrvTime::Current().AsUSec();
     s_CompareEvents(local_events, local_start_rec_no,
                     now, remote_events,
                     local_synced_rec_no, events_to_send);
@@ -727,7 +730,7 @@ Uint8
 CNCSyncLog::Clean(Uint2 slot)
 {
     SSlotData& data = s_GetSlotData(slot);
-    CFastMutexGuard guard(data.lock);
+    CMiniMutexGuard guard(data.lock);
 
     Uint4 max_recs = CNCDistributionConf::GetMaxSlotLogEvents();
     Uint4 clean_to_recs = max_recs - CNCDistributionConf::GetCleanLogReserve();

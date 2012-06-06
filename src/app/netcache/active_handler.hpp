@@ -32,7 +32,7 @@
  */
 
 
-#include "message_handler.hpp"
+#include "nc_utils.hpp"
 #include "periodic_sync.hpp"
 
 
@@ -44,6 +44,9 @@ class CNCActiveHandler;
 class CNCActiveHandler_Proxy;
 class CNCPeerControl;
 class CNCActiveSyncControl;
+struct SNCBlobSummary;
+struct SNCSyncEvent;
+class CNCBlobAccessor;
 
 
 enum ENCClientHubStatus {
@@ -55,7 +58,7 @@ enum ENCClientHubStatus {
     eNCHubDataReady
 };
 
-class CNCActiveClientHub
+class CNCActiveClientHub : public CSrvRCUUser
 {
 public:
     static CNCActiveClientHub* Create(Uint8 srv_id, CNCMessageHandler* client);
@@ -74,6 +77,8 @@ public:
 private:
     CNCActiveClientHub(CNCMessageHandler* client);
 
+    virtual void ExecuteRCU(void);
+
 
     CNCMessageHandler* m_Client;
     CNCActiveHandler* m_Handler;
@@ -82,7 +87,12 @@ private:
 };
 
 
-class CNCActiveHandler : public INCBlockedOpListener
+struct SActiveList_tag;
+typedef intr::list_base_hook<intr::tag<SActiveList_tag> >   TActiveListHook;
+
+
+class CNCActiveHandler : public CSrvStatesTask<CNCActiveHandler>,
+                         public TActiveListHook
 {
 public:
     static void Initialize(void);
@@ -157,10 +167,9 @@ public:
                       bool search,
                       bool force_local);
 
-    CBufferedSockReaderWriter& GetSockBuffer(void);
-    void ForceBufferFlush(void);
-    bool IsBufferFlushed(void);
-    void FinishBlobFromClient(void);
+    CSrvSocketTask* GetSocket(void);
+    CTempString GetCmdResponse(void);
+    bool GotClientResponse(void);
 
     void SyncStart(CNCActiveSyncControl* ctrl, Uint8 local_rec_no, Uint8 remote_rec_no);
     void SyncBlobsList(CNCActiveSyncControl* ctrl);
@@ -187,63 +196,18 @@ public:
     CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer);
     virtual ~CNCActiveHandler(void);
 
-    void SetServerConn(CServer_Connection*     srv_conn,
-                       CNCActiveHandler_Proxy* proxy);
+    void SetProxy(CNCActiveHandler_Proxy* proxy);
     void SetClientHub(CNCActiveClientHub* hub);
     void SetReservedForBG(bool value);
     bool IsReservedForBG(void);
 
-    void OnTimeout(void);
-    void OnClose(IServer_ConnectionHandler::EClosePeer peer);
-    void OnRead(void);
-    void OnWrite(void);
-    EIO_Event GetEventsToPollFor(const CTime** alarm_time);
-    bool IsReadyToProcess(void);
-
-    /// Init diagnostics Client IP and Session ID for proper logging
-    void InitDiagnostics(void);
-    /// Reset diagnostics Client IP and Session ID to avoid logging
-    /// not related to the request
-    void ResetDiagnostics(void);
+    void CloseForShutdown(void);
+    void CheckCommandTimeout(void);
 
 private:
     friend class CNCActiveClientHub;
+    friend class CNCActiveHandler_Proxy;
 
-
-    enum EStates {
-        eConnIdle,
-        eWaitClientRelease,
-        eReadyForPool,
-        eReadFoundMeta,
-        eSendCopyPutCmd,
-        eReadCopyPut,
-        eReadCopyProlong,
-        eReadConfirm,
-        eReadDataPrefix,
-        eReadDataForClient,
-        eReadWritePrefix,
-        eWriteDataForClient,
-        eWaitOneLineAnswer,
-        eWaitForMetaInfo,
-        eWaitForFirstData,
-        eWriteBlobData,
-        eReadSyncStartAnswer,
-        eReadEventsList,
-        eReadBlobsList,
-        eSendSyncGetCmd,
-        eReadSyncGetAnswer,
-        eReadBlobData,
-        ePrepareSyncProlongCmd,
-        eReadSyncProInfoAnswer,
-        eExecuteProInfoCmd,
-        eConnClosed
-    };
-    enum EFlags {
-        fWaitForBlockedOp   = 0x10000,
-        fWaitForClient      = 0x20000,
-        eAllFlagsMask       = 0x30000
-    };
-    typedef int TStateFlags;
 
     enum ECommands {
         eSearchMeta = 1,
@@ -260,125 +224,105 @@ private:
     };
 
 
-    virtual void OnBlockedOpFinish(void);
-
-    /// Set machine state
-    void    x_SetState(EStates state);
-    /// Get machine state
-    EStates x_GetState(void) const;
-
-    /// Set additional machine state flag
-    void x_SetFlag  (EFlags  flag);
-    /// Remove additional machine state flag
-    void x_UnsetFlag(EFlags  flag);
-    /// Check if additional machine state flag is set
-    bool x_IsFlagSet(EFlags  flag) const;
-
-    /// Main dispatcher of state machine
-    void x_ManageCmdPipeline(void);
-    void x_MayDeleteThis(void);
-    bool x_ReplaceServerConn(void);
-    void x_DeferConnection(void);
-    void x_CloseConnection(void);
-    void x_WaitForWouldBlock(void);
+    State x_MayDeleteThis(void);
+    State x_ReplaceServerConn(void);
+    State x_ConnClosedReplaceable(void);
+    State x_CloseCmdAndConn(void);
+    State x_CloseConn(void);
     void x_AddConnToPool(void);
-    void x_SetStateAndAddToPool(EStates state);
-    void x_SendCmdToExecute(void);
+    void x_SetStateAndAddToPool(State state);
+    State x_SendCmdToExecute(void);
     void x_StartWritingBlob(void);
-    void x_FinishWritingBlob(void);
-    void x_FakeWritingBlob(void);
+    State x_FinishWritingBlob(void);
+    State x_FakeWritingBlob(void);
     void x_FinishSyncCmd(ESyncResult result);
-    void x_FinishCommand(bool success);
-    void x_ProcessPeerError(void);
-    void x_ProcessProtocolError(void);
+    void x_CleanCmdResources(void);
+    State x_FinishCommand(void);
+    State x_ProcessPeerError(void);
+    State x_ProcessProtocolError(void);
     void x_DoCopyPut(void);
     void x_DoSyncGet(void);
     void x_SendCopyProlongCmd(const SNCBlobSummary& blob_sum);
-    bool x_ReadSizeToRead(void);
+    State x_ReadSizeToRead(void);
     void x_DoProlongOur(void);
 
-    bool x_ConnIdle(void);
-    bool x_ReadFoundMeta(void);
-    bool x_SendCopyPutCmd(void);
-    bool x_ReadCopyPut(void);
-    bool x_ReadCopyProlong(void);
-    bool x_ReadConfirm(void);
-    bool x_ReadDataPrefix(void);
-    bool x_ReadDataForClient(void);
-    bool x_ReadWritePrefix(void);
-    bool x_WriteDataForClient(void);
-    bool x_WaitOneLineAnswer(void);
-    bool x_WaitForMetaInfo(void);
-    bool x_WaitForFirstData(void);
-    bool x_WriteBlobData(void);
-    bool x_PrepareSyncProlongCmd(void);
-    bool x_ReadSyncStartAnswer(void);
-    bool x_ReadEventsList(void);
-    bool x_ReadBlobsList(void);
-    bool x_SendSyncGetCmd(void);
-    bool x_ReadSyncGetAnswer(void);
-    bool x_ReadBlobData(void);
-    bool x_ReadSyncProInfoAnswer(void);
-    bool x_ExecuteProInfoCmd(void);
+    State x_InvalidState(void);
+    State x_IdleState(void);
+    State x_WaitClientRelease(void);
+    State x_PutSelfToPool(void);
+    State x_ReadFoundMeta(void);
+    State x_SendCopyPutCmd(void);
+    State x_ReadCopyPut(void);
+    State x_ReadCopyProlong(void);
+    State x_ReadConfirm(void);
+    State x_ReadDataPrefix(void);
+    State x_ReadDataForClient(void);
+    State x_ReadWritePrefix(void);
+    State x_FinishBlobFromClient(void);
+    State x_WaitOneLineAnswer(void);
+    State x_WaitForMetaInfo(void);
+    State x_WriteBlobData(void);
+    State x_PrepareSyncProlongCmd(void);
+    State x_ReadSyncStartHeader(void);
+    State x_ReadSyncStartAnswer(void);
+    State x_ReadEventsListKeySize(void);
+    State x_ReadEventsListBody(void);
+    State x_ReadBlobsListKeySize(void);
+    State x_ReadBlobsListBody(void);
+    State x_SendSyncGetCmd(void);
+    State x_ReadSyncGetHeader(void);
+    State x_ReadSyncGetAnswer(void);
+    State x_ReadBlobData(void);
+    State x_ReadSyncProInfoAnswer(void);
+    State x_ExecuteProInfoCmd(void);
 
 
-    CMutex  m_ObjLock;
     Uint8   m_SrvId;
     string  m_CmdToSend;
     CTempString m_Response;
     CNCPeerControl* m_Peer;
     CNCActiveClientHub* m_Client;
-    CServer_Connection* m_SrvConn;
     CNCActiveSyncControl* m_SyncCtrl;
     CNCActiveHandler_Proxy* m_Proxy;
-    CBufferedSockReaderWriter m_SockBuffer;
-    CNCRef<CRequestContext> m_CmdCtx;
-    CNCRef<CRequestContext> m_ConnCtx;
     string m_ConnReqId;
     Uint8  m_CntCmds;
     string m_BlobKey;
     CNCBlobAccessor* m_BlobAccess;
-    SNCBlobSummary m_BlobSum;
+    SNCBlobSummary* m_BlobSum;
     Uint8 m_OrigTime;
     Uint8 m_OrigRecNo;
     Uint8 m_OrigServer;
-    volatile TStateFlags m_State;
-    ECommands   m_CurCmd;
-    Uint8 m_ThrottleTime;
+    ECommands m_CurCmd;
     Uint8 m_SizeToRead;
     Uint4 m_ChunkSize;
     Uint2 m_BlobSlot;
     Uint2 m_TimeBucket;
     ESynActionType m_SyncAction;
     bool m_ReservedForBG;
-    bool m_InCmdPipeline;
-    volatile bool m_AddedToPool;
-    bool m_DidFirstWrite;
+    bool m_AddedToPool;
+    bool m_CmdStarted;
     bool m_GotAnyAnswer;
     bool m_GotCmdAnswer;
-    bool m_NeedFlushBuff;
+    bool m_GotClientResponse;
     bool m_BlobExists;
-    bool m_WaitForThrottle;
-    bool m_NeedDelete;
+    bool m_CmdSuccess;
+    bool m_CmdFromClient;
+    Uint2 m_KeySize;
     string m_ErrMsg;
+    TNCBufferType m_ReadBuf;
 };
 
 
-class CNCActiveHandler_Proxy : public IServer_ConnectionHandler
+class CNCActiveHandler_Proxy : public CSrvSocketTask
 {
 public:
     CNCActiveHandler_Proxy(CNCActiveHandler* handler);
     virtual ~CNCActiveHandler_Proxy(void);
-    void SetSocket(CSocket* sock);
     void SetHandler(CNCActiveHandler* handler);
+    void NeedToProxySocket(void);
+    bool SocketProxyDone(void);
 
-    virtual void OnOpen(void);
-    virtual void OnTimeout(void);
-    virtual void OnClose(IServer_ConnectionHandler::EClosePeer);
-    virtual void OnRead(void);
-    virtual void OnWrite(void);
-    virtual EIO_Event GetEventsToPollFor(const CTime** alarm_time) const;
-    virtual bool IsReadyToProcess(void) const;
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
 
 private:
     CNCActiveHandler_Proxy(CNCActiveHandler_Proxy&);
@@ -386,7 +330,7 @@ private:
 
 
     CNCActiveHandler* m_Handler;
-    CSocket* m_Socket;
+    bool m_NeedToProxy;
 };
 
 
@@ -399,19 +343,13 @@ inline
 CNCActiveClientHub::CNCActiveClientHub(CNCMessageHandler* client)
     : m_Client(client),
       m_Handler(NULL),
-      m_Status(eNCHubSuccess)
+      m_Status(eNCHubWaitForConn)
 {}
-
-inline void
-CNCActiveClientHub::SetStatus(ENCClientHubStatus status)
-{
-    *(volatile ENCClientHubStatus*)&m_Status = status;
-}
 
 inline ENCClientHubStatus
 CNCActiveClientHub::GetStatus(void)
 {
-    return m_Status;
+    return ACCESS_ONCE(m_Status);
 }
 
 inline void
@@ -445,22 +383,22 @@ CNCActiveClientHub::GetClient(void)
 }
 
 
-inline void
-CNCActiveHandler::SetClientHub(CNCActiveClientHub* hub)
+inline CSrvSocketTask*
+CNCActiveHandler::GetSocket(void)
 {
-    m_Client = hub;
+    return m_Proxy;
 }
 
-inline void
-CNCActiveHandler::SetReservedForBG(bool value)
+inline CTempString
+CNCActiveHandler::GetCmdResponse(void)
 {
-    m_ReservedForBG = value;
+    return m_Response;
 }
 
 inline bool
-CNCActiveHandler::IsReservedForBG(void)
+CNCActiveHandler::GotClientResponse(void)
 {
-    return m_ReservedForBG;
+    return m_GotClientResponse;
 }
 
 inline bool
@@ -472,15 +410,9 @@ CNCActiveHandler::IsBlobExists(void)
 inline const SNCBlobSummary&
 CNCActiveHandler::GetBlobSummary(void)
 {
-    return m_BlobSum;
+    return *m_BlobSum;
 }
 
-
-inline void
-CNCActiveHandler_Proxy::SetSocket(CSocket* sock)
-{
-    m_Socket = sock;
-}
 
 inline void
 CNCActiveHandler_Proxy::SetHandler(CNCActiveHandler* handler)

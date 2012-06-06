@@ -28,11 +28,11 @@
  * Authors:  Pavel Ivanov
  */
 
-#include <corelib/obj_pool.hpp>
-#include <corelib/ncbifile.hpp>
-#include <util/simple_buffer.hpp>
 
 #include "nc_utils.hpp"
+
+
+namespace intr = boost::intrusive;
 
 
 BEGIN_NCBI_SCOPE
@@ -40,39 +40,15 @@ BEGIN_NCBI_SCOPE
 
 static const Uint4  kNCMaxDBFileId = 0xFFFFFFFF;
 /// Maximum size of blob chunk stored in database.
-static const size_t kNCMaxBlobChunkSize = 32768;
+/// It's a little bit uneven to be efficient in the current memory manager.
+static const size_t kNCMaxBlobChunkSize = 32740;
 static const Uint2  kNCMaxChunksInMap = 128;
 
 
-///
-class CNCBlobBuffer : public CObject
-{
-public:
-    ///
-    char*  GetData(void);
-    const char* GetData(void) const;
-    ///
-    size_t GetSize(void) const;
-    ///
-    void   Resize(size_t new_size);
-
-public:
-    ///
-    CNCBlobBuffer(void);
-    virtual ~CNCBlobBuffer(void);
-
-private:
-    ///
-    virtual void DeleteThis(void);
-
-    ///
-    size_t  m_Size;
-    ///
-    char    m_Data[kNCMaxBlobChunkSize];
-};
-
 
 class CNCBlobVerManager;
+struct SNCChunkMaps;
+
 
 struct ATTR_PACKED SNCDataCoord
 {
@@ -84,56 +60,123 @@ struct ATTR_PACKED SNCDataCoord
     void clear(void);
 };
 
-const CNcbiDiag& operator<< (const CNcbiDiag& diag, SNCDataCoord coord);
+const CSrvDiagMsg& operator<< (const CSrvDiagMsg& msg, SNCDataCoord coord);
 bool operator== (SNCDataCoord left, SNCDataCoord right);
 bool operator!= (SNCDataCoord left, SNCDataCoord right);
 
 
-/// Full information about NetCache blob (excluding key, subkey, version)
-struct SNCBlobVerData : public CObject
+struct SVersMap_tag;
+typedef intr::set_base_hook<intr::tag<SVersMap_tag>,
+                            intr::optimize_size<true> >     TVerDataMapHook;
+
+
+/// Full information about NetCache blob (excluding key)
+struct SNCBlobVerData : public CObject,
+                        public CSrvTask,
+                        public TVerDataMapHook
 {
 public:
     SNCDataCoord coord;
+    SNCDataCoord data_coord;
+    Uint8   size;
+    string  password;
     Uint8   create_time;
+    Uint8   create_server;
+    Uint4   create_id;
     int     ttl;
     int     expire;
     int     dead_time;
     int     blob_ver;
     int     ver_ttl;
     int     ver_expire;
-    Uint8   size;
-    string  password;
-    Uint8   create_server;
-    Uint4   create_id;
     Uint4   chunk_size;
     Uint2   map_size;
     Uint1   map_depth;
-    bool    need_write;
     bool    has_error;
-    SNCDataCoord data_coord;
 
-    CNCRef<CNCBlobBuffer> data;
-    CNCBlobVerManager*  manager;
-    CNCLongOpTrigger    data_trigger;
+    bool    is_cur_version;
+    bool    meta_has_changed;
+    bool    move_or_rewrite;
+    bool    is_releasable;
+    bool    need_write_all;
+    bool    need_stop_write;
+    bool    need_mem_release;
+    bool    delete_scheduled;
+    Uint4   map_move_counter;
+    int     last_access_time;
+    int     need_write_time;
+    Uint8   cnt_chunks;
+    Uint8   cur_chunk_num;
+    SNCChunkMaps* chunk_maps;
+
+    CNCBlobVerManager* manager;
+
+    int     saved_access_time;
+    CMiniMutex wb_mem_lock;
+    size_t  meta_mem;
+    size_t  data_mem;
+    size_t  releasable_mem;
+    size_t  releasing_mem;
+    vector<char*> chunks;
 
 
     SNCBlobVerData(void);
     virtual ~SNCBlobVerData(void);
+
+public:
+    void AddChunkMem(char* mem, Uint4 mem_size);
+    void RequestDataWrite(void);
+    size_t RequestMemRelease(void);
+    void SetNotCurrent(void);
+    void SetCurrent(void);
+    void SetReleasable(void);
+    void SetNonReleasable(void);
 
 private:
     SNCBlobVerData(const SNCBlobVerData&);
     SNCBlobVerData& operator= (const SNCBlobVerData&);
 
     virtual void DeleteThis(void);
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
+
+    void x_FreeChunkMaps(void);
+    bool x_WriteBlobInfo(void);
+    bool x_WriteCurChunk(char* write_mem, Uint4 write_size);
+    bool x_ExecuteWriteAll(void);
+    void x_DeleteVersion(void);
 };
+
+
+struct SCompareVerAccessTime
+{
+    bool operator() (const SNCBlobVerData& left, const SNCBlobVerData& right) const
+    {
+        return left.saved_access_time < right.saved_access_time;
+    }
+};
+
+typedef intr::rbtree<SNCBlobVerData,
+                     intr::base_hook<TVerDataMapHook>,
+                     intr::constant_time_size<false>,
+                     intr::compare<SCompareVerAccessTime> > TVerDataMap;
 
 
 static const Uint1 kNCMaxBlobMapsDepth = 3;
 
 struct SNCChunkMapInfo
 {
+    Uint4   map_counter;
     Uint2   map_idx;
     SNCDataCoord ATTR_ALIGNED_8 coords[1];
+};
+
+struct SNCChunkMaps
+{
+    SNCChunkMapInfo* maps[kNCMaxBlobMapsDepth + 1];
+
+
+    SNCChunkMaps(Uint2 map_size);
+    ~SNCChunkMaps(void);
 };
 
 struct SNCBlobSummary
@@ -183,8 +226,8 @@ struct SNCBlobSummary
 
 class CNCBlobVerManager;
 
-struct SNCCacheData;
-typedef map<string, SNCCacheData*>   TNCBlobSumList;
+struct SNCBlobSummary;
+typedef map<string, SNCBlobSummary*>   TNCBlobSumList;
 
 
 
@@ -201,7 +244,7 @@ enum ENCDBFileType {
 static ENCDBFileType const s_AllFileTypes[]
                     = {eDBFileMeta, eDBFileData, eDBFileMaps
                        /*, eDBFileMoveMeta, eDBFileMoveData, eDBFileMoveMaps*/};
-static size_t const s_CntAllFiles = sizeof(s_AllFileTypes) / sizeof(s_AllFileTypes[0]);
+static Uint1 const s_CntAllFiles = sizeof(s_AllFileTypes) / sizeof(s_AllFileTypes[0]);
 
 enum EDBFileIndex {
     eFileIndexMeta = 0,
@@ -212,6 +255,13 @@ enum EDBFileIndex {
     //eFileIndexMoveData = eFileIndexData + eFileIndexMoveShift,
     //eFileIndexMoveMaps = eFileIndexMaps + eFileIndexMoveShift
 };
+
+
+#if defined(NCBI_OS_MSWIN)
+  typedef HANDLE TFileHandle;
+#else
+  typedef int TFileHandle;
+#endif
 
 
 struct SFileIndexRec;
@@ -240,33 +290,8 @@ struct SNCDBFileInfo : public CObject
     virtual ~SNCDBFileInfo(void);
 };
 /// Information about all database parts in NetCache storage
-typedef map<Uint4, CNCRef<SNCDBFileInfo> >  TNCDBFilesMap;
+typedef map<Uint4, CSrvRef<SNCDBFileInfo> >  TNCDBFilesMap;
 
-
-
-inline char*
-CNCBlobBuffer::GetData(void)
-{
-    return m_Data;
-}
-
-inline const char*
-CNCBlobBuffer::GetData(void) const
-{
-    return m_Data;
-}
-
-inline size_t
-CNCBlobBuffer::GetSize(void) const
-{
-    return m_Size;
-}
-
-inline void
-CNCBlobBuffer::Resize(size_t new_size)
-{
-    m_Size = new_size;
-}
 
 
 inline bool
@@ -281,11 +306,11 @@ SNCDataCoord::clear(void)
     file_id = rec_num = 0;
 }
 
-inline const CNcbiDiag&
-operator<< (const CNcbiDiag& diag, SNCDataCoord coord)
+inline const CSrvDiagMsg&
+operator<< (const CSrvDiagMsg& msg, SNCDataCoord coord)
 {
-    diag << "(" << coord.file_id << ", " << coord.rec_num << ")";
-    return diag;
+    msg << "(" << coord.file_id << ", " << coord.rec_num << ")";
+    return msg;
 }
 
 inline bool

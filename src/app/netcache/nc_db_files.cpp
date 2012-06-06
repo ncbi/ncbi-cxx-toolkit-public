@@ -26,7 +26,9 @@
  * Author: Pavel Ivanov
  */
 
-#include <ncbi_pch.hpp>
+#include "nc_pch.hpp"
+
+#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include "nc_db_files.hpp"
@@ -37,14 +39,14 @@
 BEGIN_NCBI_SCOPE
 
 
-static const char* kNCDBIndex_Table           = "NCX";
-static const char* kNCDBIndex_FileIdCol       = "id";
-static const char* kNCDBIndex_FileNameCol     = "nm";
-static const char* kNCDBIndex_CreatedTimeCol  = "tm";
+#define DBINDEX_TABLENAME   "NCX"
+#define DBINDEX_FILEID      "id"
+#define DBINDEX_FILENAME    "nm"
+#define DBINDEX_CREATEDTIME "tm"
 
-static const char* kNCSettings_Table          = "NCS";
-static const char* kNCSettings_NameCol        = "nm";
-static const char* kNCSettings_ValueCol       = "v";
+#define SETTINGS_TABLENAME  "NCS"
+#define SETTINGS_NAME       "nm"
+#define SETTINGS_VALUE      "v"
 
 
 
@@ -54,24 +56,22 @@ CNCDBIndexFile::~CNCDBIndexFile(void)
 void
 CNCDBIndexFile::CreateDatabase(void)
 {
-    CQuickStrStream sql;
     CSQLITE_Statement stmt(this);
 
-    sql.Clear();
-    sql << "create table if not exists " << kNCDBIndex_Table
-        << "(" << kNCDBIndex_FileIdCol      << " integer primary key,"
-               << kNCDBIndex_FileNameCol    << " varchar not null,"
-               << kNCDBIndex_CreatedTimeCol << " int not null"
-        << ")";
+    const char* sql;
+    sql = "create table if not exists " DBINDEX_TABLENAME
+          "(" DBINDEX_FILEID      " integer primary key,"
+              DBINDEX_FILENAME    " varchar not null,"
+              DBINDEX_CREATEDTIME " int not null"
+          ")";
     stmt.SetSql(sql);
     stmt.Execute();
 
-    sql.Clear();
-    sql << "create table if not exists " << kNCSettings_Table
-        << "(" << kNCSettings_NameCol   << " varchar not null,"
-               << kNCSettings_ValueCol  << " varchar not null,"
-               << "unique(" << kNCSettings_NameCol << ")"
-        << ")";
+    sql = "create table if not exists " SETTINGS_TABLENAME
+          "(" SETTINGS_NAME   " varchar not null,"
+              SETTINGS_VALUE  " varchar not null,"
+              "unique(" SETTINGS_NAME ")"
+          ")";
     stmt.SetSql(sql);
     stmt.Execute();
 }
@@ -79,26 +79,26 @@ CNCDBIndexFile::CreateDatabase(void)
 void
 CNCDBIndexFile::NewDBFile(Uint4 file_id, const string& file_name)
 {
-    CQuickStrStream sql;
-    sql << "insert into " << kNCDBIndex_Table
-        << "(" << kNCDBIndex_FileIdCol      << ","
-               << kNCDBIndex_FileNameCol    << ","
-               << kNCDBIndex_CreatedTimeCol
-        << ")values(?1,?2,?3)";
+    const char* sql;
+    sql = "insert into " DBINDEX_TABLENAME
+          "(" DBINDEX_FILEID      ","
+              DBINDEX_FILENAME    ","
+              DBINDEX_CREATEDTIME
+          ")values(?1,?2,?3)";
 
     CSQLITE_Statement stmt(this, sql);
     stmt.Bind(1, file_id);
     stmt.Bind(2, file_name.data(), file_name.size());
-    stmt.Bind(3, int(time(NULL)));
+    stmt.Bind(3, CSrvTime::CurSecs());
     stmt.Execute();
 }
 
 void
 CNCDBIndexFile::DeleteDBFile(Uint4 file_id)
 {
-    CQuickStrStream sql;
-    sql << "delete from " << kNCDBIndex_Table
-        << " where " << kNCDBIndex_FileIdCol << "=?1";
+    const char* sql;
+    sql = "delete from " DBINDEX_TABLENAME
+          " where " DBINDEX_FILEID "=?1";
 
     CSQLITE_Statement stmt(this, sql);
     stmt.Bind(1, file_id);
@@ -108,12 +108,12 @@ CNCDBIndexFile::DeleteDBFile(Uint4 file_id)
 void
 CNCDBIndexFile::GetAllDBFiles(TNCDBFilesMap* files_map)
 {
-    CQuickStrStream sql;
-    sql << "select " << kNCDBIndex_FileIdCol      << ","
-                     << kNCDBIndex_FileNameCol    << ","
-                     << kNCDBIndex_CreatedTimeCol
-        <<  " from " << kNCDBIndex_Table
-        << " order by " << kNCDBIndex_CreatedTimeCol;
+    const char* sql;
+    sql = "select " DBINDEX_FILEID      ","
+                    DBINDEX_FILENAME    ","
+                    DBINDEX_CREATEDTIME
+           " from " DBINDEX_TABLENAME
+          " order by " DBINDEX_CREATEDTIME;
 
     CSQLITE_Statement stmt(this, sql);
     while (stmt.Step()) {
@@ -129,9 +129,7 @@ CNCDBIndexFile::GetAllDBFiles(TNCDBFilesMap* files_map)
 void
 CNCDBIndexFile::DeleteAllDBFiles(void)
 {
-    CQuickStrStream sql;
-    sql << "delete from " << kNCDBIndex_Table;
-
+    const char* sql = "delete from " DBINDEX_TABLENAME;
     CSQLITE_Statement stmt(this, sql);
     stmt.Execute();
 }
@@ -139,10 +137,10 @@ CNCDBIndexFile::DeleteAllDBFiles(void)
 Uint8
 CNCDBIndexFile::GetMaxSyncLogRecNo(void)
 {
-    CQuickStrStream sql;
-    sql << "select " << kNCSettings_ValueCol
-        <<  " from " << kNCSettings_Table
-        << " where " << kNCSettings_NameCol << "='log_rec_no'";
+    const char* sql;
+    sql = "select " SETTINGS_VALUE
+           " from " SETTINGS_TABLENAME
+          " where " SETTINGS_NAME "='log_rec_no'";
 
     CSQLITE_Statement stmt(this, sql);
     if (stmt.Step())
@@ -153,9 +151,9 @@ CNCDBIndexFile::GetMaxSyncLogRecNo(void)
 void
 CNCDBIndexFile::SetMaxSyncLogRecNo(Uint8 rec_no)
 {
-    CQuickStrStream sql;
-    sql << "insert or replace into " << kNCSettings_Table
-        << " values('log_rec_no',?1)"; 
+    const char* sql;
+    sql = "insert or replace into " SETTINGS_TABLENAME
+          " values('log_rec_no',?1)"; 
 
     CSQLITE_Statement stmt(this, sql);
     stmt.Bind(1, rec_no);

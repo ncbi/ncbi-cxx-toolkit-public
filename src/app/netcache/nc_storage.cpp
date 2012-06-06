@@ -26,17 +26,22 @@
  * Author: Pavel Ivanov
  */
 
-#include <ncbi_pch.hpp>
+#include "nc_pch.hpp"
 
-#include <corelib/ncbidbg.hpp>
-#include <corelib/ncbistr.hpp>
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbi_process.hpp>
 
 #include "nc_storage.hpp"
+#include "storage_types.hpp"
+#include "nc_db_files.hpp"
+#include "distribution_conf.hpp"
 #include "netcached.hpp"
+#include "nc_storage_blob.hpp"
+#include "sync_log.hpp"
 #include "nc_stat.hpp"
-#include "message_handler.hpp"
-#include "nc_memory.hpp"
+
 
 #ifdef NCBI_OS_LINUX
 # include <sys/types.h>
@@ -65,7 +70,6 @@ static const char* kNCStorage_GarbagePctParam   = "max_garbage_pct";
 static const char* kNCStorage_MinDBSizeParam    = "min_storage_size";
 static const char* kNCStorage_MoveLifeParam     = "min_lifetime_to_move";
 static const char* kNCStorage_FailedMoveParam   = "failed_move_delay";
-static const char* kNCStorage_MaxIOWaitParam    = "max_io_wait_time";
 static const char* kNCStorage_GCBatchParam      = "gc_batch_size";
 static const char* kNCStorage_FlushTimeParam    = "sync_time_period";
 static const char* kNCStorage_ExtraGCOnParam    = "db_limit_del_old_on";
@@ -90,18 +94,104 @@ static const size_t kMemPageSize  = 4 * 1024;
 static const size_t kMemPageAlignMask = ~(kMemPageSize - 1);
 
 
+enum EStopCause {
+    eNoStop,
+    eStopWarning,
+    eStopDBSize,
+    eStopDiskSpace,
+    eStopDiskCritical
+};
+
+struct SBucketCache
+{
+    CMiniMutex   lock;
+    TKeyMap      key_map;
+};
+typedef map<Uint2, SBucketCache*> TBucketCacheMap;
+
+struct STimeTable
+{
+    CMiniMutex lock;
+    TTimeTableMap time_map;
+};
+typedef map<Uint2, STimeTable*> TTimeBuckets;
+
+
+
+/// Directory for all database files of the storage
+static string s_Path;
+/// Name of the storage
+static string s_Prefix;
+/// Number of blobs treated by GC and by caching mechanism in one batch
+static Uint2 s_GCBatchSize;
+static int s_FlushTimePeriod;
+static Uint1 s_MaxGarbagePct;
+static int s_MinMoveLife;
+static int s_FailedMoveDelay;
+static Uint8 s_MinDBSize;
+/// Name of guard file excluding several instances to run on the same
+/// database.
+static string s_GuardName;
+/// Lock for guard file representing this instance running.
+/// It will hold exclusive lock all the time while NetCache is
+/// working, so that other instance of NetCache on the same database will
+/// be unable to start.
+static auto_ptr<CFileLock> s_GuardLock;
+static CMiniMutex s_IndexLock;
+/// Index database file
+static auto_ptr<CNCDBIndexFile> s_IndexDB;
+/// Read-write lock to work with m_DBParts
+static CMiniMutex s_DBFilesLock;
+/// List of all database parts in the storage
+static TNCDBFilesMap* s_DBFiles = NULL;
+static Uint4 s_LastFileId = 0;
+static CMiniMutex s_NextWriteLock;
+static SWritingInfo s_AllWritings[s_CntAllFiles];
+static Uint4 s_NewFileSize;
+static TTimeBuckets s_TimeTables;
+static Uint8 s_CurBlobsCnt = 0;
+static Uint8 s_CurKeysCnt = 0;
+/// Current size of storage database. Kept here for printing statistics.
+static Uint8 s_CurDBSize = 0;
+static CMiniMutex s_GarbageLock;
+static Uint8 s_GarbageSize = 0;
+static int s_LastFlushTime = 0;
+/// Internal cache of blobs identification information sorted to be able
+/// to search by key, subkey and version.
+static TBucketCacheMap s_BucketsCache;
+static EStopCause s_IsStopWrite = eNoStop;
+static bool s_CleanStart;
+static bool s_NeedSaveLogRecNo;
+static Uint1 s_WarnLimitOnPct;
+static Uint1 s_WarnLimitOffPct;
+static int s_MinRecNoSavePeriod;
+static int s_LastRecNoSaveTime = 0;
+static CAtomicCounter s_BlobCounter;
+static Uint8 s_ExtraGCOnSize;
+static Uint8 s_ExtraGCOffSize;
+static Uint8 s_StopWriteOnSize;
+static Uint8 s_StopWriteOffSize;
+static Uint8 s_DiskFreeLimit;
+static Uint8 s_DiskCritical;
+static CNewFileCreator* s_NewFileCreator;
+static CDiskFlusher* s_DiskFlusher;
+static CRecNoSaver* s_RecNoSaver;
+static CSpaceShrinker* s_SpaceShrinker;
+static CExpiredCleaner* s_ExpiredCleaner;
+
+
 
 #define DB_CORRUPTED(msg)                                                   \
     do {                                                                    \
-        ERR_POST(Fatal << "Database is corrupted. " << msg                  \
-                 << " Bug, faulty disk or somebody writes to database?");   \
+        SRV_LOG(Fatal, "Database is corrupted. " << msg                     \
+                << " Bug, faulty disk or somebody writes to database?");    \
         abort();                                                            \
     } while (0)                                                             \
 /**/
 
 
 
-static char*
+static inline char*
 s_MapFile(TFileHandle fd, size_t file_size)
 {
     char* mem_ptr = NULL;
@@ -110,18 +200,14 @@ s_MapFile(TFileHandle fd, size_t file_size)
     mem_ptr = (char*)mmap(NULL, file_size, PROT_READ | PROT_WRITE,
                           MAP_SHARED, fd, 0);
     if (mem_ptr == MAP_FAILED) {
-        ERR_POST(Critical << "Cannot map file into memory, errno=" << errno);
+        SRV_LOG(Critical, "Cannot map file into memory, errno=" << errno);
         return NULL;
     }
-    /*int res = madvise(mem_ptr, file_size, MADV_SEQUENTIAL);
-    if (res) {
-        ERR_POST(Critical << "madvise failed, errno=" << errno);
-    }*/
 #endif
     return mem_ptr;
 }
 
-static void
+static inline void
 s_UnmapFile(char* mem_ptr, size_t file_size)
 {
 #ifdef NCBI_OS_LINUX
@@ -130,10 +216,23 @@ s_UnmapFile(char* mem_ptr, size_t file_size)
 #endif
 }
 
+static inline void
+s_LockFileMem(const void* mem_ptr, size_t mem_size)
+{
+// mlock is not allowed on NCBI servers (limit 32 KB)
+#if 0
+//#ifdef NCBI_OS_LINUX
+    int res = mlock(mem_ptr, mem_size);
+    if (res) {
+        SRV_LOG(Critical, "mlock finished with error, errno=" << errno);
+    }
+#endif
+}
 
 
-bool
-CNCBlobStorage::x_EnsureDirExist(const string& dir_name)
+
+static bool
+s_EnsureDirExist(const string& dir_name)
 {
     CDir dir(dir_name);
     if (!dir.Exists()) {
@@ -142,101 +241,113 @@ CNCBlobStorage::x_EnsureDirExist(const string& dir_name)
     return true;
 }
 
-bool
-CNCBlobStorage::x_ReadVariableParams(void)
+/// Read from registry only those parameters that can be changed on the
+/// fly, without re-starting the application.
+static bool
+s_ReadVariableParams(void)
 {
-    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
-    m_GCBatchSize = reg.GetInt(kNCStorage_RegSection, kNCStorage_GCBatchParam, 500);
+    s_GCBatchSize = Uint2(reg.GetInt(kNCStorage_RegSection, kNCStorage_GCBatchParam, 500));
 
-    string str = reg.GetString(kNCStorage_RegSection, kNCStorage_FileSizeParam, "100Mb");
-    m_NewFileSize = Uint4(NStr::StringToUInt8_DataSize(str));
-    m_MaxGarbagePct = reg.GetInt(kNCStorage_RegSection, kNCStorage_GarbagePctParam, 80);
-    str = reg.GetString(kNCStorage_RegSection, kNCStorage_MinDBSizeParam, "1Gb");
-    m_MinDBSize = NStr::StringToUInt8_DataSize(str);
-    m_MinMoveLife = reg.GetInt(kNCStorage_RegSection, kNCStorage_MoveLifeParam, 0);
-    m_FailedMoveDelay = reg.GetInt(kNCStorage_RegSection, kNCStorage_FailedMoveParam, 10);
+    string str = reg.GetString(kNCStorage_RegSection, kNCStorage_FileSizeParam, "100 MB");
+    s_NewFileSize = Uint4(NStr::StringToUInt8_DataSize(str));
+    s_MaxGarbagePct = reg.GetInt(kNCStorage_RegSection, kNCStorage_GarbagePctParam, 20);
+    str = reg.GetString(kNCStorage_RegSection, kNCStorage_MinDBSizeParam, "1 GB");
+    s_MinDBSize = NStr::StringToUInt8_DataSize(str);
+    s_MinMoveLife = reg.GetInt(kNCStorage_RegSection, kNCStorage_MoveLifeParam, 1000);
+    s_FailedMoveDelay = reg.GetInt(kNCStorage_RegSection, kNCStorage_FailedMoveParam, 10);
 
-    m_MaxIOWaitTime = reg.GetInt(kNCStorage_RegSection, kNCStorage_MaxIOWaitParam, 10);
+    s_MinRecNoSavePeriod = reg.GetInt(kNCStorage_RegSection, kNCStorage_MinRecNoSaveParam, 30);
+    s_FlushTimePeriod = reg.GetInt(kNCStorage_RegSection, kNCStorage_FlushTimeParam, 0);
 
-    m_MinRecNoSavePeriod = reg.GetInt(kNCStorage_RegSection, kNCStorage_MinRecNoSaveParam, 30);
-    m_FlushTimePeriod = reg.GetInt(kNCStorage_RegSection, kNCStorage_FlushTimeParam, 0);
-
-    m_ExtraGCOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
+    s_ExtraGCOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_ExtraGCOnParam, "0"));
-    m_ExtraGCOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
+    s_ExtraGCOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_ExtraGCOffParam, "0"));
-    m_StopWriteOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
+    s_StopWriteOnSize  = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_StopWriteOnParam, "0"));
-    m_StopWriteOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
+    s_StopWriteOffSize = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_StopWriteOffParam, "0"));
-    m_DiskFreeLimit  = NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, kNCStorage_MinFreeDiskParam, "5Gb"));
-    m_DiskCritical   = NStr::StringToUInt8_DataSize(reg.GetString(
-                       kNCStorage_RegSection, kNCStorage_DiskCriticalParam, "1Gb"));
+    s_DiskFreeLimit  = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_MinFreeDiskParam, "5 GB"));
+    s_DiskCritical   = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_DiskCriticalParam, "1 GB"));
 
     int warn_pct = reg.GetInt(kNCStorage_RegSection, "db_limit_percentage_alert", 65);
     if (warn_pct <= 0  ||  warn_pct >= 100) {
-        ERR_POST("Parameter db_limit_percentage_alert has wrong value " << warn_pct
-                 << ". Assuming it's 65.");
+        SRV_LOG(Error, "Parameter db_limit_percentage_alert has wrong value "
+                       << warn_pct << ". Assuming it's 65.");
         warn_pct = 65;
     }
-    m_WarnLimitOnPct = Uint1(warn_pct);
+    s_WarnLimitOnPct = Uint1(warn_pct);
     warn_pct = reg.GetInt(kNCStorage_RegSection, "db_limit_percentage_alert_delta", 5);
-    if (warn_pct <= 0  ||  warn_pct >= m_WarnLimitOnPct) {
-        ERR_POST("Parameter db_limit_percentage_alert_delta has wrong value "
-                 << warn_pct << ". Assuming it's 5.");
+    if (warn_pct <= 0  ||  warn_pct >= s_WarnLimitOnPct) {
+        SRV_LOG(Error, "Parameter db_limit_percentage_alert_delta has wrong value "
+                       << warn_pct << ". Assuming it's 5.");
         warn_pct = 5;
     }
-    m_WarnLimitOffPct = m_WarnLimitOnPct - Uint1(warn_pct);
+    s_WarnLimitOffPct = s_WarnLimitOnPct - Uint1(warn_pct);
+
+    SetWBSoftSizeLimit(NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, "write_back_soft_size_limit", "4 GB")));
+    SetWBHardSizeLimit(NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, "write_back_hard_size_limit", "6 GB")));
+    SetWBWriteTimeout(reg.GetInt(kNCStorage_RegSection, "write_back_timeout", 1000));
+    SetWBFailedWriteDelay(reg.GetInt(kNCStorage_RegSection, "write_back_failed_delay", 2));
 
     return true;
 }
 
-bool
-CNCBlobStorage::x_ReadStorageParams(void)
+/// Read all storage parameters from registry
+static bool
+s_ReadStorageParams(void)
 {
-    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
-    m_Path = reg.Get(kNCStorage_RegSection, kNCStorage_PathParam);
-    m_Prefix = reg.Get(kNCStorage_RegSection, kNCStorage_FilePrefixParam);
-    if (m_Path.empty()  ||  m_Prefix.empty()) {
-        ERR_POST(Critical <<  "Incorrect parameters for " << kNCStorage_PathParam
+    s_Path = reg.Get(kNCStorage_RegSection, kNCStorage_PathParam);
+    s_Prefix = reg.Get(kNCStorage_RegSection, kNCStorage_FilePrefixParam);
+    if (s_Path.empty()  ||  s_Prefix.empty()) {
+        SRV_LOG(Critical, "Incorrect parameters for " << kNCStorage_PathParam
                           << " and " << kNCStorage_FilePrefixParam
                           << " in the section '" << kNCStorage_RegSection << "': '"
-                          << m_Path << "' and '" << m_Prefix << "'");
+                          << s_Path << "' and '" << s_Prefix << "'");
         return false;
     }
-    if (!x_EnsureDirExist(m_Path))
+    if (!s_EnsureDirExist(s_Path)) {
+        SRV_LOG(Critical, "Cannot create directory " << s_Path);
         return false;
-    m_GuardName = reg.Get(kNCStorage_RegSection, kNCStorage_GuardNameParam);
-    if (m_GuardName.empty()) {
-        m_GuardName = CDirEntry::MakePath(m_Path,
+    }
+    s_GuardName = reg.Get(kNCStorage_RegSection, kNCStorage_GuardNameParam);
+    if (s_GuardName.empty()) {
+        s_GuardName = CDirEntry::MakePath(s_Path,
                                           kNCStorage_StartedFileName,
-                                          m_Prefix);
+                                          s_Prefix);
     }
     try {
-        return x_ReadVariableParams();
+        return s_ReadVariableParams();
     }
     catch (CStringException& ex) {
-        ERR_POST(Critical << "Bad configuration: " << ex);
+        SRV_LOG(Critical, "Bad configuration: " << ex);
         return false;
     }
 }
 
-string
-CNCBlobStorage::x_GetIndexFileName(void)
+/// Make name of the index file in the storage
+static string
+s_GetIndexFileName(void)
 {
-    string file_name(m_Prefix);
+    string file_name(s_Prefix);
     file_name += kNCStorage_IndexFileSuffix;
-    file_name = CDirEntry::MakePath(m_Path, file_name, kNCStorage_DBFileExt);
+    file_name = CDirEntry::MakePath(s_Path, file_name, kNCStorage_DBFileExt);
     return CDirEntry::CreateAbsolutePath(file_name);
 }
 
-string
-CNCBlobStorage::x_GetFileName(Uint4 file_id, ENCDBFileType file_type)
+/// Make name of file with meta-information in given database part
+static string
+s_GetFileName(Uint4 file_id, ENCDBFileType file_type)
 {
-    string file_name(m_Prefix);
+    string file_name(s_Prefix);
     switch (file_type) {
     case eDBFileMeta:
         file_name += kNCStorage_MetaFileSuffix;
@@ -251,20 +362,31 @@ CNCBlobStorage::x_GetFileName(Uint4 file_id, ENCDBFileType file_type)
         abort();
     }
     file_name += NStr::UIntToString(file_id);
-    file_name = CDirEntry::MakePath(m_Path, file_name, kNCStorage_DBFileExt);
+    file_name = CDirEntry::MakePath(s_Path, file_name, kNCStorage_DBFileExt);
     return CDirEntry::CreateAbsolutePath(file_name);
 }
 
-bool
-CNCBlobStorage::x_LockInstanceGuard(void)
+/// Make sure that current storage database is used only with one instance
+/// of NetCache. Lock specially named file exclusively and hold the lock
+/// for all time while process is working. This file also is used for
+/// determining if previous instance of NetCache was closed gracefully.
+/// If another instance of NetCache using the database method will throw
+/// an exception.
+///
+/// @return
+///   TRUE if guard file existed and was unlocked meaning that previous
+///   instance of NetCache was terminated inappropriately. FALSE if file
+///   didn't exist so that this storage instance is a clean start.
+static bool
+s_LockInstanceGuard(void)
 {
-    m_CleanStart = !CFile(m_GuardName).Exists();
+    s_CleanStart = !CFile(s_GuardName).Exists();
 
     try {
-        if (m_CleanStart) {
+        if (s_CleanStart) {
             // Just create the file with read and write permissions
-            CFileWriter tmp_writer(m_GuardName, CFileWriter::eOpenAlways);
-            CFile guard_file(m_GuardName);
+            CFileWriter tmp_writer(s_GuardName, CFileWriter::eOpenAlways);
+            CFile guard_file(s_GuardName);
             CFile::TMode user_mode, grp_mode, oth_mode;
 
             guard_file.GetMode(&user_mode, &grp_mode, &oth_mode);
@@ -272,67 +394,74 @@ CNCBlobStorage::x_LockInstanceGuard(void)
             guard_file.SetMode(user_mode, grp_mode, oth_mode);
         }
 
-        m_GuardLock = new CFileLock(m_GuardName,
-                                    CFileLock::fDefault,
-                                    CFileLock::eExclusive);
-        if (!m_CleanStart  &&  CFile(m_GuardName).GetLength() == 0)
-            m_CleanStart = true;
-        if (!m_CleanStart) {
-            INFO_POST("NetCache wasn't finished cleanly in previous run. "
-                      "Will try to work with storage as is.");
+        s_GuardLock.reset(new CFileLock(s_GuardName,
+                                        CFileLock::fDefault,
+                                        CFileLock::eExclusive));
+        if (!s_CleanStart  &&  CFile(s_GuardName).GetLength() == 0)
+            s_CleanStart = true;
+        if (!s_CleanStart) {
+            INFO("NetCache wasn't finished cleanly in previous run. "
+                 "Will try to work with storage as is.");
         }
 
         CFileIO writer;
-        writer.SetFileHandle(m_GuardLock->GetFileHandle());
+        writer.SetFileHandle(s_GuardLock->GetFileHandle());
         writer.SetFileSize(0, CFileIO::eBegin);
         string pid(NStr::UInt8ToString(CProcess::GetCurrentPid()));
         writer.Write(pid.c_str(), pid.size());
     }
     catch (CFileErrnoException& ex) {
-        ERR_POST(Critical << "Can't lock the database (other instance is running?): " << ex);
+        SRV_LOG(Critical, "Can't lock the database (other instance is running?): " << ex);
         return false;
     }
     return true;
 }
 
-inline void
-CNCBlobStorage::x_UnlockInstanceGuard(void)
+/// Unlock and delete specially named file used to ensure only one
+/// instance working with database.
+/// Small race exists here now which cannot be resolved for Windows
+/// without re-writing of the mechanism using low-level functions. Race
+/// can appear like this: if another instance will start right when this
+/// instance stops then other instance can be thinking that this instance
+/// terminated incorrectly.
+static void
+s_UnlockInstanceGuard(void)
 {
-    _ASSERT(m_GuardLock.get());
-
-    m_GuardLock.reset();
-    CFile(m_GuardName).Remove();
+    if (s_GuardLock.get()) {
+        s_GuardLock.reset();
+        CFile(s_GuardName).Remove();
+    }
 }
 
-bool
-CNCBlobStorage::x_OpenIndexDB(void)
+/// Open and read index database file
+static bool
+s_OpenIndexDB(void)
 {
-    string index_name = x_GetIndexFileName();
+    string index_name = s_GetIndexFileName();
     for (int i = 0; i < 2; ++i) {
         try {
-            m_IndexDB = new CNCDBIndexFile(index_name);
-            m_IndexDB->CreateDatabase();
-            m_IndexDB->GetAllDBFiles(&m_DBFiles);
-            ERASE_ITERATE(TNCDBFilesMap, it, m_DBFiles) {
-                CNCRef<SNCDBFileInfo> info = it->second;
+            s_IndexDB.reset(new CNCDBIndexFile(index_name));
+            s_IndexDB->CreateDatabase();
+            s_IndexDB->GetAllDBFiles(s_DBFiles);
+            ERASE_ITERATE(TNCDBFilesMap, it, (*s_DBFiles)) {
+                CSrvRef<SNCDBFileInfo> info = it->second;
 #ifdef NCBI_OS_LINUX
                 info->fd = open(info->file_name.c_str(), O_RDWR | O_NOATIME);
                 if (info->fd == -1) {
-                    ERR_POST(Critical << "Cannot open storage file, errno="
-                                      << errno);
+                    SRV_LOG(Critical, "Cannot open storage file, errno=" << errno);
 delete_file:
                     try {
-                        m_IndexDB->DeleteDBFile(info->file_id);
+                        s_IndexDB->DeleteDBFile(info->file_id);
                     }
                     catch (CSQLITE_Exception& ex) {
-                        ERR_POST(Critical << "Error cleaning index file: " << ex);
+                        SRV_LOG(Critical, "Error cleaning index file: " << ex);
                     }
-                    m_DBFiles.erase(it);
+                    s_DBFiles->erase(it);
                     continue;
                 }
                 Int8 file_size = CFile(info->file_name).GetLength();
                 if (file_size == -1) {
-                    ERR_POST(Critical << "Cannot read file size (errno=" << errno
+                    SRV_LOG(Critical, "Cannot read file size (errno=" << errno
                                       << "). File " << info->file_name
                                       << " will be deleted.");
                     goto delete_file;
@@ -354,7 +483,7 @@ delete_file:
                     info->type_index = eFileIndexMaps;
                 }
                 else {
-                    ERR_POST(Critical << "Unknown file signature: " << *(Uint8*)info->file_map);
+                    SRV_LOG(Critical, "Unknown file signature: " << *(Uint8*)info->file_map);
                     goto delete_file;
                 }
                 info->index_head = (SFileIndexRec*)(info->file_map + file_size);
@@ -364,50 +493,53 @@ delete_file:
             return true;
         }
         catch (CSQLITE_Exception& ex) {
-            m_IndexDB.reset();
-            ERR_POST("Index file is broken, reinitializing storage. " << ex);
+            s_IndexDB.reset();
+            SRV_LOG(Error, "Index file is broken, reinitializing storage. " << ex);
             CFile(index_name).Remove();
         }
     }
-    ERR_POST(Critical << "Cannot open or create index file for the storage.");
+    SRV_LOG(Critical, "Cannot open or create index file for the storage.");
     return false;
 }
 
-void
-CNCBlobStorage::x_CleanDatabase(void)
+/// Reinitialize database cleaning all data from it.
+/// Only database is cleaned, internal cache is left intact.
+static void
+s_CleanDatabase(void)
 {
-    INFO_POST("Reinitializing storage " << m_Prefix << " at " << m_Path);
+    INFO("Reinitializing storage " << s_Prefix << " at " << s_Path);
 
-    m_DBFiles.clear();
-    m_IndexDB->DeleteAllDBFiles();
+    s_DBFiles->clear();
+    s_IndexDB->DeleteAllDBFiles();
 }
 
-bool
-CNCBlobStorage::x_ReinitializeStorage(void)
+/// Check if database need re-initialization depending on different
+/// parameters and state of the guard file protecting from several
+/// instances running on the same database.
+static bool
+s_ReinitializeStorage(void)
 {
     try {
-        x_CleanDatabase();
+        s_CleanDatabase();
         return true;
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST("Error in soft reinitialization, trying harder. " << ex);
-        m_IndexDB.reset();
-        // GCC 3.0.4 doesn't allow to merge the following 2 lines
-        CFile file_obj(x_GetIndexFileName());
-        file_obj.Remove();
-        return x_OpenIndexDB();
+        SRV_LOG(Error, "Error in soft reinitialization, trying harder. " << ex);
+        s_IndexDB.reset();
+        CFile(s_GetIndexFileName()).Remove();
+        return s_OpenIndexDB();
     }
 }
 
-inline bool
-CNCBlobStorage::x_IsIndexDeleted(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+static inline bool
+s_IsIndexDeleted(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
     Uint4 rec_num = Uint4(file_info->index_head - ind_rec);
     return ind_rec->next_num == rec_num  ||  ind_rec->prev_num == rec_num;
 }
 
-SFileIndexRec*
-CNCBlobStorage::x_GetIndOrDeleted(SNCDBFileInfo* file_info, Uint4 rec_num)
+static SFileIndexRec*
+s_GetIndOrDeleted(SNCDBFileInfo* file_info, Uint4 rec_num)
 {
     SFileIndexRec* ind_rec = file_info->index_head - rec_num;
     char* min_ptr = file_info->file_map + kSignatureSize;
@@ -418,7 +550,7 @@ CNCBlobStorage::x_GetIndOrDeleted(SNCDBFileInfo* file_info, Uint4 rec_num)
                      << " which is not in the range between " << (void*)min_ptr
                      << " and " << (void*)file_info->index_head << ".");
     }
-    Uint4 next_num = *(volatile Uint4*)(&ind_rec->next_num);
+    Uint4 next_num = ACCESS_ONCE(ind_rec->next_num);
     if ((next_num != 0  &&  next_num < rec_num)  ||  ind_rec->prev_num > rec_num)
     {
         DB_CORRUPTED("Index record " << rec_num
@@ -429,11 +561,11 @@ CNCBlobStorage::x_GetIndOrDeleted(SNCDBFileInfo* file_info, Uint4 rec_num)
     return ind_rec;
 }
 
-SFileIndexRec*
-CNCBlobStorage::x_GetIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
+static SFileIndexRec*
+s_GetIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
 {
-    SFileIndexRec* ind_rec = x_GetIndOrDeleted(file_info, rec_num);
-    if (x_IsIndexDeleted(file_info, ind_rec)) {
+    SFileIndexRec* ind_rec = s_GetIndOrDeleted(file_info, rec_num);
+    if (s_IsIndexDeleted(file_info, ind_rec)) {
         DB_CORRUPTED("Index record " << rec_num
                      << " in file " << file_info->file_name
                      << " has been deleted.");
@@ -441,35 +573,35 @@ CNCBlobStorage::x_GetIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
     return ind_rec;
 }
 
-void
-CNCBlobStorage::x_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+static void
+s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
     SFileIndexRec* prev_rec;
     SFileIndexRec* next_rec;
     if (ind_rec->prev_num == 0)
         prev_rec = file_info->index_head;
     else
-        prev_rec = x_GetIndexRec(file_info, ind_rec->prev_num);
+        prev_rec = s_GetIndexRec(file_info, ind_rec->prev_num);
     if (ind_rec->next_num == 0)
         next_rec = file_info->index_head;
     else
-        next_rec = x_GetIndexRec(file_info, ind_rec->next_num);
+        next_rec = s_GetIndexRec(file_info, ind_rec->next_num);
     // These should be in the exactly this order to prevent unrecoverable
     // corruption.
-    *(volatile Uint4*)&prev_rec->next_num = ind_rec->next_num;
-    *(volatile Uint4*)&next_rec->prev_num = ind_rec->prev_num;
+    ACCESS_ONCE(prev_rec->next_num) = ind_rec->next_num;
+    ACCESS_ONCE(next_rec->prev_num) = ind_rec->prev_num;
     ind_rec->next_num = ind_rec->prev_num = Uint4(file_info->index_head - ind_rec);
 }
 
-inline void
-CNCBlobStorage::x_DeleteIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
+static inline void
+s_DeleteIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
 {
-    SFileIndexRec* ind_rec = x_GetIndexRec(file_info, rec_num);
-    x_DeleteIndexRec(file_info, ind_rec);
+    SFileIndexRec* ind_rec = s_GetIndexRec(file_info, rec_num);
+    s_DeleteIndexRec(file_info, ind_rec);
 }
 
-void
-CNCBlobStorage::x_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+static void
+s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
     Uint4 size = ind_rec->rec_size;
     if (size & 7)
@@ -477,7 +609,7 @@ CNCBlobStorage::x_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_
     size += sizeof(SFileIndexRec);
 
     file_info->info_lock.Lock();
-    x_DeleteIndexRec(file_info, ind_rec);
+    s_DeleteIndexRec(file_info, ind_rec);
     if (file_info->used_size < size)
         abort();
     file_info->used_size -= size;
@@ -488,27 +620,27 @@ CNCBlobStorage::x_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_
         abort();
     file_info->info_lock.Unlock();
 
-    m_GarbageLock.Lock();
-    m_GarbageSize += size;
-    m_GarbageLock.Unlock();
+    s_GarbageLock.Lock();
+    s_GarbageSize += size;
+    s_GarbageLock.Unlock();
 }
 
-CNCRef<SNCDBFileInfo>
-CNCBlobStorage::x_GetDBFile(Uint4 file_id)
+static CSrvRef<SNCDBFileInfo>
+s_GetDBFile(Uint4 file_id)
 {
-    m_DBFilesLock.Lock();
-    TNCDBFilesMap::const_iterator it = m_DBFiles.find(file_id);
-    if (it == m_DBFiles.end()) {
+    s_DBFilesLock.Lock();
+    TNCDBFilesMap::const_iterator it = s_DBFiles->find(file_id);
+    if (it == s_DBFiles->end()) {
         DB_CORRUPTED("Cannot find file " << file_id);
     }
-    CNCRef<SNCDBFileInfo> file_info = it->second;
-    m_DBFilesLock.Unlock();
+    CSrvRef<SNCDBFileInfo> file_info = it->second;
+    s_DBFilesLock.Unlock();
 
     return file_info;
 }
 
-inline Uint1
-CNCBlobStorage::x_CalcMapDepthImpl(Uint8 size, Uint4 chunk_size, Uint2 map_size)
+static inline Uint1
+s_CalcMapDepthImpl(Uint8 size, Uint4 chunk_size, Uint2 map_size)
 {
     Uint1 map_depth = 0;
     Uint8 cnt_chunks = (size + chunk_size - 1) / chunk_size;
@@ -519,10 +651,10 @@ CNCBlobStorage::x_CalcMapDepthImpl(Uint8 size, Uint4 chunk_size, Uint2 map_size)
     return map_depth;
 }
 
-Uint1
-CNCBlobStorage::x_CalcMapDepth(Uint8 size, Uint4 chunk_size, Uint2 map_size)
+static Uint1
+s_CalcMapDepth(Uint8 size, Uint4 chunk_size, Uint2 map_size)
 {
-    Uint1 map_depth = x_CalcMapDepthImpl(size, chunk_size, map_size);
+    Uint1 map_depth = s_CalcMapDepthImpl(size, chunk_size, map_size);
     if (map_depth > kNCMaxBlobMapsDepth) {
         DB_CORRUPTED("Size parameters are resulted in bad map_depth"
                      << ", size=" << size
@@ -532,43 +664,43 @@ CNCBlobStorage::x_CalcMapDepth(Uint8 size, Uint4 chunk_size, Uint2 map_size)
     return map_depth;
 }
 
-inline Uint2
-CNCBlobStorage::x_CalcCntMapDowns(Uint4 rec_size)
+static inline Uint2
+s_CalcCntMapDowns(Uint4 rec_size)
 {
     SFileChunkMapRec map_rec;
     return Uint2((SNCDataCoord*)((char*)&map_rec + rec_size) - map_rec.down_coords);
 }
 
-inline size_t
-CNCBlobStorage::x_CalcChunkDataSize(Uint4 rec_size)
+static inline Uint4
+s_CalcChunkDataSize(Uint4 rec_size)
 {
     SFileChunkDataRec data_rec;
-    return (Uint1*)((char*)&data_rec + rec_size) - data_rec.chunk_data;
+    return Uint4((Uint1*)((char*)&data_rec + rec_size) - data_rec.chunk_data);
 }
 
-inline Uint4
-CNCBlobStorage::x_CalcMetaRecSize(Uint2 key_size)
+static inline Uint4
+s_CalcMetaRecSize(Uint2 key_size)
 {
     SFileMetaRec meta_rec;
     return Uint4((char*)&meta_rec.key_data[key_size] - (char*)&meta_rec);
 }
 
-inline Uint4
-CNCBlobStorage::x_CalcMapRecSize(Uint2 cnt_downs)
+static inline Uint4
+s_CalcMapRecSize(Uint2 cnt_downs)
 {
     SFileChunkMapRec map_rec;
     return Uint4((char*)&map_rec.down_coords[cnt_downs] - (char*)&map_rec);
 }
 
-inline Uint4
-CNCBlobStorage::x_CalcChunkRecSize(size_t data_size)
+static inline Uint4
+s_CalcChunkRecSize(size_t data_size)
 {
     SFileChunkDataRec data_rec;
     return Uint4((char*)&data_rec.chunk_data[data_size] - (char*)&data_rec);
 }
 
-char*
-CNCBlobStorage::x_CalcRecordAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+static char*
+s_CalcRecordAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
     char* rec_ptr = file_info->file_map + ind_rec->offset;
     char* rec_end = rec_ptr + ind_rec->rec_size;
@@ -588,8 +720,8 @@ CNCBlobStorage::x_CalcRecordAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind
     return rec_ptr;
 }
 
-SFileMetaRec*
-CNCBlobStorage::x_CalcMetaAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+static SFileMetaRec*
+s_CalcMetaAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
     if (ind_rec->rec_type != eFileRecMeta) {
         DB_CORRUPTED("Index record " << (file_info->index_head - ind_rec)
@@ -597,7 +729,7 @@ CNCBlobStorage::x_CalcMetaAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_r
                      << " has wrong type " << int(ind_rec->rec_type)
                      << " when should be " << int(eFileRecMeta) << ".");
     }
-    SFileMetaRec* meta_rec = (SFileMetaRec*)x_CalcRecordAddress(file_info, ind_rec);
+    SFileMetaRec* meta_rec = (SFileMetaRec*)s_CalcRecordAddress(file_info, ind_rec);
     Uint4 min_size = sizeof(SFileMetaRec) + 1;
     if (meta_rec->has_password)
         min_size += 16;
@@ -611,8 +743,8 @@ CNCBlobStorage::x_CalcMetaAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_r
     return meta_rec;
 }
 
-SFileChunkMapRec*
-CNCBlobStorage::x_CalcMapAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+static SFileChunkMapRec*
+s_CalcMapAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
     if (ind_rec->rec_type != eFileRecChunkMap) {
         DB_CORRUPTED("Index record " << (file_info->index_head - ind_rec)
@@ -620,7 +752,7 @@ CNCBlobStorage::x_CalcMapAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_re
                      << " has wrong type " << int(ind_rec->rec_type)
                      << " when should be " << int(eFileRecChunkMap) << ".");
     }
-    char* rec_ptr = x_CalcRecordAddress(file_info, ind_rec);
+    char* rec_ptr = s_CalcRecordAddress(file_info, ind_rec);
     Uint4 min_size = sizeof(SFileChunkMapRec);
     if (ind_rec->rec_size < min_size) {
         DB_CORRUPTED("Index record " << (file_info->index_head - ind_rec)
@@ -632,8 +764,8 @@ CNCBlobStorage::x_CalcMapAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_re
     return (SFileChunkMapRec*)rec_ptr;
 }
 
-SFileChunkDataRec*
-CNCBlobStorage::x_CalcChunkAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+static SFileChunkDataRec*
+s_CalcChunkAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
     if (ind_rec->rec_type != eFileRecChunkData) {
         DB_CORRUPTED("Index record " << (file_info->index_head - ind_rec)
@@ -641,7 +773,7 @@ CNCBlobStorage::x_CalcChunkAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_
                      << " has wrong type " << int(ind_rec->rec_type)
                      << " when should be " << int(eFileRecChunkData) << ".");
     }
-    char* rec_ptr = x_CalcRecordAddress(file_info, ind_rec);
+    char* rec_ptr = s_CalcRecordAddress(file_info, ind_rec);
     Uint4 min_size = sizeof(SFileChunkDataRec);
     if (ind_rec->rec_size < min_size) {
         DB_CORRUPTED("Index record " << (file_info->index_head - ind_rec)
@@ -653,24 +785,26 @@ CNCBlobStorage::x_CalcChunkAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_
     return (SFileChunkDataRec*)rec_ptr;
 }
 
-bool
-CNCBlobStorage::x_CreateNewFile(size_t type_idx)
+/// Do set of procedures creating and initializing new database part and
+/// switching storage to using new database part as current one.
+static bool
+s_CreateNewFile(size_t type_idx)
 {
     // No need in mutex because m_LastBlob is changed only here and will be
     // executed only from one thread.
     Uint4 file_id;
-    if (m_LastFileId == kNCMaxDBFileId)
+    if (s_LastFileId == kNCMaxDBFileId)
         file_id = 1;
     else
-        file_id = m_LastFileId + 1;
+        file_id = s_LastFileId + 1;
     //size_t true_type_idx = type_idx - eFileIndexMoveShift;
     size_t true_type_idx = type_idx;
-    string file_name = x_GetFileName(file_id, s_AllFileTypes[true_type_idx]);
+    string file_name = s_GetFileName(file_id, s_AllFileTypes[true_type_idx]);
     SNCDBFileInfo* file_info = new SNCDBFileInfo();
     file_info->file_id      = file_id;
     file_info->file_name    = file_name;
-    file_info->create_time  = int(time(NULL));
-    file_info->file_size    = m_NewFileSize;
+    file_info->create_time  = CSrvTime::CurSecs();
+    file_info->file_size    = s_NewFileSize;
     file_info->file_type    = s_AllFileTypes[true_type_idx];
     file_info->type_index   = EDBFileIndex(true_type_idx);
 
@@ -679,17 +813,17 @@ CNCBlobStorage::x_CreateNewFile(size_t type_idx)
                          O_RDWR | O_CREAT | O_TRUNC | O_NOATIME,
                          S_IRUSR | S_IWUSR);
     if (file_info->fd == -1) {
-        ERR_POST(Critical << "Cannot create new storage file, errno=" << errno);
+        SRV_LOG(Critical, "Cannot create new storage file, errno=" << errno);
         delete file_info;
         return false;
     }
-    int trunc_res = ftruncate(file_info->fd, m_NewFileSize);
+    int trunc_res = ftruncate(file_info->fd, s_NewFileSize);
     if (trunc_res != 0) {
-        ERR_POST(Critical << "Cannot truncate new file, errno=" << errno);
+        SRV_LOG(Critical, "Cannot truncate new file, errno=" << errno);
         delete file_info;
         return false;
     }
-    file_info->file_map = s_MapFile(file_info->fd, m_NewFileSize);
+    file_info->file_map = s_MapFile(file_info->fd, s_NewFileSize);
     if (!file_info->file_map) {
         delete file_info;
         return false;
@@ -700,17 +834,19 @@ CNCBlobStorage::x_CreateNewFile(size_t type_idx)
     --file_info->index_head;
     file_info->index_head->next_num = file_info->index_head->prev_num = 0;
 
+    s_IndexLock.Lock();
     try {
-        CFastMutexGuard guard(m_IndexLock);
-        m_IndexDB->NewDBFile(file_id, file_name);
+        s_IndexDB->NewDBFile(file_id, file_name);
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST(Critical << "Error while adding new storage file: " << ex);
+        s_IndexLock.Unlock();
+        SRV_LOG(Critical, "Error while adding new storage file: " << ex);
         delete file_info;
         return false;
     }
+    s_IndexLock.Unlock();
 
-    m_LastFileId = file_id;
+    s_LastFileId = file_id;
     switch (true_type_idx) {
     case eFileIndexMeta:
         *(Uint8*)file_info->file_map = kMetaSignature;
@@ -725,42 +861,41 @@ CNCBlobStorage::x_CreateNewFile(size_t type_idx)
         abort();
     }
 
-    m_DBFilesLock.Lock();
-    m_DBFiles[file_id] = file_info;
+    s_DBFilesLock.Lock();
+    (*s_DBFiles)[file_id] = file_info;
 
-    m_NextWriteLock.Lock();
-    m_AllWritings[type_idx].next_file = file_info;
-    m_CurDBSize += kSignatureSize + sizeof(SFileIndexRec);
-    if (m_NextWaiters != 0)
-        m_NextWait.SignalAll();
-    m_NextWriteLock.Unlock();
+    s_NextWriteLock.Lock();
+    s_AllWritings[type_idx].next_file = file_info;
+    s_CurDBSize += kSignatureSize + sizeof(SFileIndexRec);
+    s_NextWriteLock.Unlock();
 
-    m_DBFilesLock.Unlock();
+    s_DBFilesLock.Unlock();
 
     return true;
 }
 
-void
-CNCBlobStorage::x_DeleteDBFile(const CNCRef<SNCDBFileInfo>& file_info)
+static void
+s_DeleteDBFile(const CSrvRef<SNCDBFileInfo>& file_info)
 {
+    s_IndexLock.Lock();
     try {
-        CFastMutexGuard guard(m_IndexLock);
-        m_IndexDB->DeleteDBFile(file_info->file_id);
+        s_IndexDB->DeleteDBFile(file_info->file_id);
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST(Critical << "Index database does not delete rows: " << ex);
+        SRV_LOG(Critical, "Index database does not delete rows: " << ex);
     }
+    s_IndexLock.Unlock();
 
-    m_DBFilesLock.Lock();
-    m_DBFiles.erase(file_info->file_id);
-    m_DBFilesLock.Unlock();
+    s_DBFilesLock.Lock();
+    s_DBFiles->erase(file_info->file_id);
+    s_DBFilesLock.Unlock();
 
-    m_NextWriteLock.Lock();
-    m_CurDBSize -= file_info->file_size;
-    m_NextWriteLock.Unlock();
-    m_GarbageLock.Lock();
-    m_GarbageSize -= file_info->garb_size;
-    m_GarbageLock.Unlock();
+    s_NextWriteLock.Lock();
+    s_CurDBSize -= file_info->file_size;
+    s_NextWriteLock.Unlock();
+    s_GarbageLock.Lock();
+    s_GarbageSize -= file_info->garb_size;
+    s_GarbageLock.Unlock();
 }
 
 SNCDBFileInfo::SNCDBFileInfo(void)
@@ -770,6 +905,7 @@ SNCDBFileInfo::SNCDBFileInfo(void)
       garb_size(0),
       used_size(0),
       index_head(NULL),
+      is_releasing(false),
       fd(0),
       create_time(0),
       next_shrink_time(0)
@@ -783,133 +919,71 @@ SNCDBFileInfo::~SNCDBFileInfo(void)
         s_UnmapFile(file_map, file_size);
 #ifdef NCBI_OS_LINUX
     if (fd  &&  fd != -1  &&  close(fd)) {
-        ERR_POST(Critical << "Error closing file " << file_name
+        SRV_LOG(Critical, "Error closing file " << file_name
                           << ", errno=" << errno);
     }
     if (unlink(file_name.c_str())) {
-        ERR_POST(Critical << "Error deleting file " << file_name
+        SRV_LOG(Critical, "Error deleting file " << file_name
                           << ", errno=" << errno);
     }
 #endif
 }
 
-CNCBlobStorage::CNCBlobStorage(void)
-    : m_Stopped(false),
-      m_LastFileId(0),
-      m_NextWaiters(0),
-      m_CurBlobsCnt(0),
-      m_CurDBSize(0),
-      m_GarbageSize(0),
-      m_CntMoveTasks(0),
-      m_CntMoveFiles(0),
-      m_CntFailedMoves(0),
-      m_MovedSize(0),
-      m_LastFlushTime(0),
-      m_FreeAccessors(NULL),
-      m_CntUsedHolders(0),
-      m_IsStopWrite(eNoStop),
-      m_DoExtraGC(false),
-      m_LastRecNoSaveTime(0),
-      m_ExtraGCTime(0)
-{
-    for (size_t i = 0; i < s_CntAllFiles; ++i) {
-        m_AllWritings[i].cur_file = m_AllWritings[i].next_file = NULL;
-    }
-}
-
-CNCBlobStorage::~CNCBlobStorage(void)
-{}
-
 bool
 CNCBlobStorage::Initialize(bool do_reinit)
 {
-    if (!x_ReadStorageParams())
+    for (size_t i = 0; i < s_CntAllFiles; ++i) {
+        s_AllWritings[i].cur_file = s_AllWritings[i].next_file = NULL;
+    }
+    s_DBFiles = new TNCDBFilesMap();
+
+    if (!s_ReadStorageParams())
         return false;
 
-    if (!x_LockInstanceGuard())
+    if (!s_LockInstanceGuard())
         return false;
-    if (!x_OpenIndexDB())
+    if (!s_OpenIndexDB())
         return false;
     if (do_reinit) {
-        if (!x_ReinitializeStorage())
+        if (!s_ReinitializeStorage())
             return false;
-        m_CleanStart = false;
+        s_CleanStart = false;
     }
 
     for (Uint2 i = 1; i <= CNCDistributionConf::GetCntTimeBuckets(); ++i) {
-        m_BucketsCache[i] = new SBucketCache(i);
-        m_TimeTables[i] = new STimeTable();
+        s_BucketsCache[i] = new SBucketCache();
+        s_TimeTables[i] = new STimeTable();
     }
 
-    m_BlobCounter.Set(0);
-    if (!m_DBFiles.empty()) {
+    s_BlobCounter.Set(0);
+    if (!s_DBFiles->empty()) {
         int max_create_time = 0;
-        ITERATE(TNCDBFilesMap, it, m_DBFiles) {
-            CNCRef<SNCDBFileInfo> file_info = it->second;
+        ITERATE(TNCDBFilesMap, it, (*s_DBFiles)) {
+            CSrvRef<SNCDBFileInfo> file_info = it->second;
             if (file_info->create_time >= max_create_time) {
                 max_create_time = file_info->create_time;
-                m_LastFileId = file_info->file_id;
+                s_LastFileId = file_info->file_id;
             }
         }
     }
 
-    m_GCAccessor = new CNCBlobAccessor();
+    s_NewFileCreator = new CNewFileCreator();
+    s_DiskFlusher = new CDiskFlusher();
+    s_RecNoSaver = new CRecNoSaver();
+    s_SpaceShrinker = new CSpaceShrinker();
+    s_ExpiredCleaner = new CExpiredCleaner();
+    CBlobCacher* cacher = new CBlobCacher();
+    cacher->SetRunnable();
 
-    m_BGThread = NewBGThread(this, &CNCBlobStorage::x_DoBackgroundWork);
-    try {
-        m_BGThread->Run();
-    }
-    catch (CThreadException& ex) {
-        ERR_POST(Critical << ex);
-        m_BGThread.Reset();
-        return false;
-    }
     return true;
 }
 
 void
 CNCBlobStorage::Finalize(void)
 {
-    m_Stopped = true;
-    m_StopCond.SignalAll();
-    m_NextFileSwitch.SignalAll();
+    s_IndexDB.reset();
 
-    if (m_FlushThread) {
-        try {
-            m_FlushThread->Join();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST(Critical << ex);
-        }
-    }
-    if (m_NewFileThread) {
-        try {
-            m_NewFileThread->Join();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST(Critical << ex);
-        }
-    }
-    if (m_GCThread) {
-        try {
-            m_GCThread->Join();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST(Critical << ex);
-        }
-    }
-    if (m_BGThread) {
-        try {
-            m_BGThread->Join();
-        }
-        catch (CThreadException& ex) {
-            ERR_POST(Critical << ex);
-        }
-    }
-
-    m_IndexDB.reset();
-
-    x_UnlockInstanceGuard();
+    s_UnlockInstanceGuard();
 }
 
 void
@@ -991,47 +1065,19 @@ CNCBlobStorage::PrintablePassword(const string& pass)
     return result;
 }
 
-CNCBlobAccessor*
-CNCBlobStorage::x_GetAccessor(void)
+static SBucketCache*
+s_GetBucketCache(Uint2 bucket)
 {
-    m_HoldersPoolLock.Lock();
-    CNCBlobAccessor* holder = m_FreeAccessors;
-    if (holder) {
-        holder->RemoveFromList(m_FreeAccessors);
-    }
-    else {
-        holder = new CNCBlobAccessor();
-    }
-    ++m_CntUsedHolders;
-    m_HoldersPoolLock.Unlock();
-
-    return holder;
-}
-
-void
-CNCBlobStorage::ReturnAccessor(CNCBlobAccessor* holder)
-{
-    m_HoldersPoolLock.Lock();
-    holder->AddToList(m_FreeAccessors);
-    --m_CntUsedHolders;
-    m_HoldersPoolLock.Unlock();
-}
-
-CNCBlobStorage::SBucketCache*
-CNCBlobStorage::x_GetBucketCache(Uint2 bucket)
-{
-    TBucketCacheMap::const_iterator it = m_BucketsCache.find(bucket);
-    if (it == m_BucketsCache.end())
+    TBucketCacheMap::const_iterator it = s_BucketsCache.find(bucket);
+    if (it == s_BucketsCache.end())
         abort();
     return it->second;
 }
 
-SNCCacheData*
-CNCBlobStorage::x_GetKeyCacheData(Uint2 time_bucket,
-                                  const string& key,
-                                  bool need_create)
+static SNCCacheData*
+s_GetKeyCacheData(Uint2 time_bucket, const string& key, bool need_create)
 {
-    SBucketCache* cache = x_GetBucketCache(time_bucket);
+    SBucketCache* cache = s_GetBucketCache(time_bucket);
     SNCCacheData* data = NULL;
     cache->lock.Lock();
     if (need_create) {
@@ -1043,10 +1089,10 @@ CNCBlobStorage::x_GetKeyCacheData(Uint2 time_bucket,
             data->key = key;
             data->time_bucket = time_bucket;
             cache->key_map.insert_unique_commit(*data, commit_data);
+            AtomicAdd(s_CurKeysCnt, 1);
         }
         else {
             data = &*ins_res.first;
-            data->key_del_time = 0;
         }
     }
     else {
@@ -1056,23 +1102,52 @@ CNCBlobStorage::x_GetKeyCacheData(Uint2 time_bucket,
         }
         else {
             data = &*it;
-            if (data->key_del_time != 0)
-                data = NULL;
         }
     }
+    if (data)
+        data->ref_cnt.Add(1);
     cache->lock.Unlock();
     return data;
 }
 
 void
-CNCBlobStorage::x_InitializeAccessor(CNCBlobAccessor* acessor)
+CNCBlobStorage::ReferenceCacheData(SNCCacheData* data)
+{
+    data->ref_cnt.Add(1);
+}
+
+void
+CNCBlobStorage::ReleaseCacheData(SNCCacheData* data)
+{
+    if (data->ref_cnt.Add(-1) != 0)
+        return;
+
+    SBucketCache* cache = s_GetBucketCache(data->time_bucket);
+    cache->lock.Lock();
+    if (data->ref_cnt.Get() != 0  ||  !data->coord.empty()
+        ||  !((TKeyMapHook*)data)->is_linked())
+    {
+        cache->lock.Unlock();
+        return;
+    }
+    cache->key_map.erase(*data);
+    AtomicSub(s_CurKeysCnt, 1);
+    cache->lock.Unlock();
+
+    data->CallRCU();
+}
+
+static void
+s_InitializeAccessor(CNCBlobAccessor* acessor)
 {
     const string& key = acessor->GetBlobKey();
     Uint2 time_bucket = acessor->GetTimeBucket();
     bool need_create = acessor->GetAccessType() == eNCCreate
                        ||  acessor->GetAccessType() == eNCCopyCreate;
-    SNCCacheData* data = x_GetKeyCacheData(time_bucket, key, need_create);
+    SNCCacheData* data = s_GetKeyCacheData(time_bucket, key, need_create);
     acessor->Initialize(data);
+    if (data)
+        CNCBlobStorage::ReleaseCacheData(data);
 }
 
 CNCBlobAccessor*
@@ -1081,44 +1156,14 @@ CNCBlobStorage::GetBlobAccess(ENCAccessType access,
                               const string& password,
                               Uint2         time_bucket)
 {
-    CNCBlobAccessor* accessor = x_GetAccessor();
+    CNCBlobAccessor* accessor = new CNCBlobAccessor();
     accessor->Prepare(key, password, time_bucket, access);
-    x_InitializeAccessor(accessor);
+    s_InitializeAccessor(accessor);
     return accessor;
 }
 
-void
-CNCBlobStorage::DeleteBlobKey(Uint2 time_bucket, const string& key)
-{
-    SBucketCache* cache = x_GetBucketCache(time_bucket);
-    cache->lock.Lock();
-    SNCCacheData* data = &*cache->key_map.find(key, SCacheKeyCompare());
-    if (!data->coord.empty()) {
-        cache->lock.Unlock();
-        return;
-    }
-    data->key_del_time = int(time(NULL));
-    cache->lock.Unlock();
-    cache->deleter.AddElement(key);
-}
-
-void
-CNCBlobStorage::RestoreBlobKey(Uint2 time_bucket,
-                               const string& key,
-                               SNCCacheData* cache_data)
-{
-    SBucketCache* cache = x_GetBucketCache(time_bucket);
-    cache->lock.Lock();
-    SNCCacheData* data = &*cache->key_map.find(key, SCacheKeyCompare());
-    if (data == cache_data)
-        data->key_del_time = 0;
-    /*else
-        abort();*/
-    cache->lock.Unlock();
-}
-
-inline void
-CNCBlobStorage::x_SwitchToNextFile(SWritingInfo& w_info)
+static inline void
+s_SwitchToNextFile(SWritingInfo& w_info)
 {
     w_info.cur_file = w_info.next_file;
     w_info.next_file = NULL;
@@ -1128,12 +1173,12 @@ CNCBlobStorage::x_SwitchToNextFile(SWritingInfo& w_info)
                              - (kSignatureSize + sizeof(SFileIndexRec));
 }
 
-bool
-CNCBlobStorage::x_GetNextWriteCoord(EDBFileIndex file_index,
-                                    Uint4 rec_size,
-                                    SNCDataCoord& coord,
-                                    CNCRef<SNCDBFileInfo>& file_info,
-                                    SFileIndexRec*& ind_rec)
+static bool
+s_GetNextWriteCoord(EDBFileIndex file_index,
+                    Uint4 rec_size,
+                    SNCDataCoord& coord,
+                    CSrvRef<SNCDBFileInfo>& file_info,
+                    SFileIndexRec*& ind_rec)
 {
     Uint4 true_rec_size = rec_size;
     if (true_rec_size & 7)
@@ -1141,25 +1186,16 @@ CNCBlobStorage::x_GetNextWriteCoord(EDBFileIndex file_index,
     Uint4 reserve_size = true_rec_size + sizeof(SFileIndexRec);
 
     bool need_signal_switch = false;
-    SWritingInfo& w_info = m_AllWritings[file_index];
-    CAbsTimeout timeout(m_MaxIOWaitTime);
+    SWritingInfo& w_info = s_AllWritings[file_index];
 
-    m_NextWriteLock.Lock();
-    while (w_info.left_file_size < reserve_size  &&  w_info.next_file == NULL)
-    {
-        ++m_NextWaiters;
-        while (w_info.next_file == NULL) {
-            if (!m_NextWait.WaitForSignal(m_NextWriteLock, timeout)) {
-                --m_NextWaiters;
-                m_NextWriteLock.Unlock();
-                return false;
-            }
-        }
-        --m_NextWaiters;
+    s_NextWriteLock.Lock();
+    if (w_info.left_file_size < reserve_size  &&  w_info.next_file == NULL) {
+        s_NextWriteLock.Unlock();
+        return false;
     }
     if (w_info.left_file_size < reserve_size) {
-        m_CurDBSize += w_info.left_file_size;
-        m_GarbageSize += w_info.left_file_size;
+        s_CurDBSize += w_info.left_file_size;
+        s_GarbageSize += w_info.left_file_size;
         w_info.cur_file->info_lock.Lock();
         w_info.cur_file->garb_size += w_info.left_file_size;
         if (w_info.cur_file->used_size
@@ -1169,7 +1205,11 @@ CNCBlobStorage::x_GetNextWriteCoord(EDBFileIndex file_index,
         }
         w_info.cur_file->info_lock.Unlock();
 
-        x_SwitchToNextFile(w_info);
+        Uint4 last_rec_num = w_info.next_rec_num - 1;
+        SFileIndexRec* last_ind = w_info.cur_file->index_head - last_rec_num;
+        s_LockFileMem(last_ind, (last_rec_num + 1) * sizeof(SFileIndexRec));
+
+        s_SwitchToNextFile(w_info);
         need_signal_switch = true;
     }
     file_info = w_info.cur_file;
@@ -1184,7 +1224,7 @@ CNCBlobStorage::x_GetNextWriteCoord(EDBFileIndex file_index,
 
     w_info.next_offset += true_rec_size;
     w_info.left_file_size -= reserve_size;
-    m_CurDBSize += reserve_size;
+    s_CurDBSize += reserve_size;
 
     file_info->cnt_unfinished.Add(1);
 
@@ -1202,10 +1242,10 @@ CNCBlobStorage::x_GetNextWriteCoord(EDBFileIndex file_index,
     index_head->prev_num = coord.rec_num;
 
     file_info->info_lock.Unlock();
-    m_NextWriteLock.Unlock();
+    s_NextWriteLock.Unlock();
 
     if (need_signal_switch)
-        m_NextFileSwitch.SignalAll();
+        s_NewFileCreator->SetRunnable();
 
     return true;
 }
@@ -1214,9 +1254,15 @@ bool
 CNCBlobStorage::ReadBlobInfo(SNCBlobVerData* ver_data)
 {
     _ASSERT(!ver_data->coord.empty());
-    CNCRef<SNCDBFileInfo> file_info = x_GetDBFile(ver_data->coord.file_id);
-    SFileIndexRec* ind_rec = x_GetIndexRec(file_info, ver_data->coord.rec_num);
-    SFileMetaRec* meta_rec = x_CalcMetaAddress(file_info, ind_rec);
+    CSrvRef<SNCDBFileInfo> file_info = s_GetDBFile(ver_data->coord.file_id);
+    SFileIndexRec* ind_rec = s_GetIndexRec(file_info, ver_data->coord.rec_num);
+    if (ind_rec->cache_data != ver_data->manager->GetCacheData()) {
+        DB_CORRUPTED("Index record " << ver_data->coord.rec_num
+                     << " in file " << file_info->file_name
+                     << " has wrong cache_data pointer " << ind_rec->cache_data
+                     << " when should be " << ver_data->manager->GetCacheData() << ".");
+    }
+    SFileMetaRec* meta_rec = s_CalcMetaAddress(file_info, ind_rec);
     ver_data->create_time = meta_rec->create_time;
     ver_data->ttl = meta_rec->ttl;
     ver_data->expire = meta_rec->expire;
@@ -1233,44 +1279,44 @@ CNCBlobStorage::ReadBlobInfo(SNCBlobVerData* ver_data)
     ver_data->create_server = meta_rec->create_server;
     ver_data->data_coord = ind_rec->chain_coord;
 
-    ver_data->map_depth = x_CalcMapDepth(ver_data->size,
+    ver_data->map_depth = s_CalcMapDepth(ver_data->size,
                                          ver_data->chunk_size,
                                          ver_data->map_size);
     return true;
 }
 
-void
-CNCBlobStorage::x_UpdateUpCoords(SFileChunkMapRec* map_rec,
-                                 SFileIndexRec* map_ind,
-                                 SNCDataCoord coord)
+static void
+s_UpdateUpCoords(SFileChunkMapRec* map_rec,
+                 SFileIndexRec* map_ind,
+                 SNCDataCoord coord)
 {
-    Uint2 cnt_downs = x_CalcCntMapDowns(map_ind->rec_size);
+    Uint2 cnt_downs = s_CalcCntMapDowns(map_ind->rec_size);
     for (Uint2 i = 0; i < cnt_downs; ++i) {
         SNCDataCoord down_coord = map_rec->down_coords[i];
-        CNCRef<SNCDBFileInfo> file_info = x_GetDBFile(down_coord.file_id);
-        SFileIndexRec* ind_rec = x_GetIndexRec(file_info, down_coord.rec_num);
+        CSrvRef<SNCDBFileInfo> file_info = s_GetDBFile(down_coord.file_id);
+        SFileIndexRec* ind_rec = s_GetIndexRec(file_info, down_coord.rec_num);
         ind_rec->chain_coord = coord;
     }
 }
 
-bool
-CNCBlobStorage::x_SaveOneMapImpl(SNCChunkMapInfo* save_map,
-                                 SNCChunkMapInfo* up_map,
-                                 Uint2 cnt_downs,
-                                 Uint2 map_size,
-                                 Uint1 map_depth,
-                                 SNCCacheData* cache_data)
+static bool
+s_SaveOneMapImpl(SNCChunkMapInfo* save_map,
+                 SNCChunkMapInfo* up_map,
+                 Uint2 cnt_downs,
+                 Uint2 map_size,
+                 Uint1 map_depth,
+                 SNCCacheData* cache_data)
 {
     SNCDataCoord map_coord;
-    CNCRef<SNCDBFileInfo> map_file;
+    CSrvRef<SNCDBFileInfo> map_file;
     SFileIndexRec* map_ind;
-    Uint4 rec_size = x_CalcMapRecSize(cnt_downs);
-    if (!x_GetNextWriteCoord(eFileIndexMaps, rec_size, map_coord, map_file, map_ind))
+    Uint4 rec_size = s_CalcMapRecSize(cnt_downs);
+    if (!s_GetNextWriteCoord(eFileIndexMaps, rec_size, map_coord, map_file, map_ind))
         return false;
 
     map_ind->rec_type = eFileRecChunkMap;
     map_ind->cache_data = cache_data;
-    SFileChunkMapRec* map_rec = x_CalcMapAddress(map_file, map_ind);
+    SFileChunkMapRec* map_rec = s_CalcMapAddress(map_file, map_ind);
     map_rec->map_idx = save_map->map_idx;
     map_rec->map_depth = map_depth;
     size_t coords_size = cnt_downs * sizeof(map_rec->down_coords[0]);
@@ -1279,21 +1325,21 @@ CNCBlobStorage::x_SaveOneMapImpl(SNCChunkMapInfo* save_map,
     up_map->coords[save_map->map_idx] = map_coord;
     ++save_map->map_idx;
     memset(save_map->coords, 0, map_size * sizeof(save_map->coords[0]));
-    x_UpdateUpCoords(map_rec, map_ind, map_coord);
+    s_UpdateUpCoords(map_rec, map_ind, map_coord);
 
     map_file->cnt_unfinished.Add(-1);
 
     return true;
 }
 
-bool
-CNCBlobStorage::x_SaveChunkMap(SNCBlobVerData* ver_data,
-                               SNCChunkMapInfo** maps,
-                               Uint2 cnt_downs,
-                               bool save_all_deps)
+static bool
+s_SaveChunkMap(SNCBlobVerData* ver_data,
+               SNCCacheData* cache_data,
+               SNCChunkMapInfo** maps,
+               Uint2 cnt_downs,
+               bool save_all_deps)
 {
-    SNCCacheData* cache_data = ver_data->manager->GetCacheData();
-    if (!x_SaveOneMapImpl(maps[0], maps[1], cnt_downs, ver_data->map_size, 1, cache_data))
+    if (!s_SaveOneMapImpl(maps[0], maps[1], cnt_downs, ver_data->map_size, 1, cache_data))
         return false;
 
     Uint1 cur_level = 0;
@@ -1303,7 +1349,7 @@ CNCBlobStorage::x_SaveChunkMap(SNCBlobVerData* ver_data,
     {
         cnt_downs = maps[cur_level]->map_idx;
         ++cur_level;
-        if (!x_SaveOneMapImpl(maps[cur_level], maps[cur_level + 1], cnt_downs,
+        if (!s_SaveOneMapImpl(maps[cur_level], maps[cur_level + 1], cnt_downs,
                               ver_data->map_size, cur_level + 1, cache_data))
         {
             return false;
@@ -1316,21 +1362,22 @@ CNCBlobStorage::x_SaveChunkMap(SNCBlobVerData* ver_data,
 bool
 CNCBlobStorage::WriteBlobInfo(const string& blob_key,
                               SNCBlobVerData* ver_data,
-                              SNCChunkMapInfo** maps,
-                              Uint8 cnt_chunks)
+                              SNCChunkMaps* maps,
+                              Uint8 cnt_chunks,
+                              SNCCacheData* cache_data)
 {
     SNCDataCoord old_coord = ver_data->coord;
     SNCDataCoord down_coord = ver_data->data_coord;
     if (old_coord.empty()) {
         if (ver_data->size > ver_data->chunk_size) {
             Uint2 last_chunks_cnt = Uint2((cnt_chunks - 1) % ver_data->map_size) + 1;
-            if (!x_SaveChunkMap(ver_data, maps, last_chunks_cnt, true))
+            if (!s_SaveChunkMap(ver_data, cache_data, maps->maps, last_chunks_cnt, true))
                 return false;
 
-            for (Uint1 i = kNCMaxBlobMapsDepth; i > 0; --i) {
-                if (!maps[i]->coords[0].empty()) {
-                    down_coord = maps[i]->coords[0];
-                    maps[i]->coords[0].clear();
+            for (Uint1 i = 1; i <= kNCMaxBlobMapsDepth; ++i) {
+                if (!maps->maps[i]->coords[0].empty()) {
+                    down_coord = maps->maps[i]->coords[0];
+                    maps->maps[i]->coords[0].clear();
                     ver_data->map_depth = i;
                     break;
                 }
@@ -1338,9 +1385,9 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
             if (down_coord.empty())
                 abort();
         }
-        else {
-            down_coord = maps[0]->coords[0];
-            maps[0]->coords[0].clear();
+        else if (ver_data->size != 0) {
+            down_coord = maps->maps[0]->coords[0];
+            maps->maps[0]->coords[0].clear();
             ver_data->map_depth = 0;
         }
     }
@@ -1348,18 +1395,18 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
     Uint2 key_size = Uint2(blob_key.size());
     if (!ver_data->password.empty())
         key_size += 16;
-    Uint4 rec_size = x_CalcMetaRecSize(key_size);
+    Uint4 rec_size = s_CalcMetaRecSize(key_size);
     SNCDataCoord meta_coord;
-    CNCRef<SNCDBFileInfo> meta_file;
+    CSrvRef<SNCDBFileInfo> meta_file;
     SFileIndexRec* meta_ind;
-    if (!x_GetNextWriteCoord(eFileIndexMeta, rec_size, meta_coord, meta_file, meta_ind))
+    if (!s_GetNextWriteCoord(eFileIndexMeta, rec_size, meta_coord, meta_file, meta_ind))
         return false;
 
     meta_ind->rec_type = eFileRecMeta;
-    meta_ind->cache_data = ver_data->manager->GetCacheData();
+    meta_ind->cache_data = cache_data;
     meta_ind->chain_coord = down_coord;
 
-    SFileMetaRec* meta_rec = x_CalcMetaAddress(meta_file, meta_ind);
+    SFileMetaRec* meta_rec = s_CalcMetaAddress(meta_file, meta_ind);
     meta_rec->size = ver_data->size;
     meta_rec->create_time = ver_data->create_time;
     meta_rec->create_server = ver_data->create_server;
@@ -1387,17 +1434,17 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
     ver_data->data_coord = down_coord;
 
     if (!down_coord.empty()) {
-        CNCRef<SNCDBFileInfo> down_file = x_GetDBFile(down_coord.file_id);
-        SFileIndexRec* down_ind = x_GetIndexRec(down_file, down_coord.rec_num);
+        CSrvRef<SNCDBFileInfo> down_file = s_GetDBFile(down_coord.file_id);
+        SFileIndexRec* down_ind = s_GetIndexRec(down_file, down_coord.rec_num);
         down_ind->chain_coord = meta_coord;
     }
 
     if (!old_coord.empty()) {
-        CNCRef<SNCDBFileInfo> old_file = x_GetDBFile(old_coord.file_id);
-        SFileIndexRec* old_ind = x_GetIndexRec(old_file, old_coord.rec_num);
+        CSrvRef<SNCDBFileInfo> old_file = s_GetDBFile(old_coord.file_id);
+        SFileIndexRec* old_ind = s_GetIndexRec(old_file, old_coord.rec_num);
         // Check that meta-data wasn't corrupted.
-        x_CalcMetaAddress(old_file, old_ind);
-        x_MoveRecToGarbage(old_file, old_ind);
+        s_CalcMetaAddress(old_file, old_ind);
+        s_MoveRecToGarbage(old_file, old_ind);
     }
 
     meta_file->cnt_unfinished.Add(-1);
@@ -1405,58 +1452,81 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
     return true;
 }
 
-void
-CNCBlobStorage::x_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth)
+static void
+s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord)
 {
-    CNCRef<SNCDBFileInfo> file_info = x_GetDBFile(coord.file_id);
-    SFileIndexRec* ind_rec = x_GetIndexRec(file_info, coord.rec_num);
+    CSrvRef<SNCDBFileInfo> file_info = s_GetDBFile(coord.file_id);
+    SFileIndexRec* ind_rec = s_GetIndexRec(file_info, coord.rec_num);
+    if (ind_rec->chain_coord != up_coord) {
+        DB_CORRUPTED("Index record " << coord.rec_num
+                     << " in file " << file_info->file_name
+                     << " has wrong up_coord " << ind_rec->chain_coord
+                     << " when should be " << up_coord << ".");
+    }
     if (map_depth == 0) {
-        x_CalcChunkAddress(file_info, ind_rec);
-        x_MoveRecToGarbage(file_info, ind_rec);
+        s_CalcChunkAddress(file_info, ind_rec);
+        s_MoveRecToGarbage(file_info, ind_rec);
     }
     else {
-        SFileChunkMapRec* map_rec = x_CalcMapAddress(file_info, ind_rec);
-        Uint2 cnt_downs = x_CalcCntMapDowns(ind_rec->rec_size);
+        SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, ind_rec);
+        Uint2 cnt_downs = s_CalcCntMapDowns(ind_rec->rec_size);
         for (Uint2 i = 0; i < cnt_downs; ++i) {
-            x_MoveDataToGarbage(map_rec->down_coords[i], map_depth - 1);
+            s_MoveDataToGarbage(map_rec->down_coords[i], map_depth - 1, coord);
         }
-        x_MoveRecToGarbage(file_info, ind_rec);
+        s_MoveRecToGarbage(file_info, ind_rec);
     }
 }
 
 void
 CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data,
-                               SNCChunkMapInfo** maps)
+                               SNCChunkMaps* maps)
 {
     if (!ver_data->coord.empty()) {
-        CNCRef<SNCDBFileInfo> meta_file = x_GetDBFile(ver_data->coord.file_id);
-        SFileIndexRec* meta_ind = x_GetIndexRec(meta_file, ver_data->coord.rec_num);
-        x_CalcMetaAddress(meta_file, meta_ind);
-        if (ver_data->size != 0)
-            x_MoveDataToGarbage(ver_data->data_coord, ver_data->map_depth);
-        x_MoveRecToGarbage(meta_file, meta_ind);
+        CSrvRef<SNCDBFileInfo> meta_file = s_GetDBFile(ver_data->coord.file_id);
+        SFileIndexRec* meta_ind = s_GetIndexRec(meta_file, ver_data->coord.rec_num);
+        s_CalcMetaAddress(meta_file, meta_ind);
+        if (ver_data->size != 0) {
+            s_MoveDataToGarbage(ver_data->data_coord,
+                                ver_data->map_depth,
+                                ver_data->coord);
+        }
+        s_MoveRecToGarbage(meta_file, meta_ind);
     }
-    else if (maps != NULL) {
+    else if (maps) {
+        SNCDataCoord empty_coord;
+        empty_coord.clear();
         for (Uint1 depth = 0; depth <= kNCMaxBlobMapsDepth; ++depth) {
             Uint2 idx = 0;
             while (idx < ver_data->map_size
-                   &&  !maps[depth]->coords[idx].empty())
+                   &&  !maps->maps[depth]->coords[idx].empty())
             {
-                x_MoveDataToGarbage(maps[depth]->coords[idx], depth);
+                s_MoveDataToGarbage(maps->maps[depth]->coords[idx], depth, empty_coord);
                 ++idx;
             }
         }
     }
 }
 
-bool
-CNCBlobStorage::x_ReadMapInfo(SNCDataCoord map_coord,
-                              SNCChunkMapInfo* map_info,
-                              Uint1 map_depth)
+static bool
+s_ReadMapInfo(SNCDataCoord map_coord,
+              SNCChunkMapInfo* map_info,
+              Uint1 map_depth/*,
+              SNCDataCoord up_coord*/)
 {
-    CNCRef<SNCDBFileInfo> map_file = x_GetDBFile(map_coord.file_id);
-    SFileIndexRec* map_ind = x_GetIndexRec(map_file, map_coord.rec_num);
-    SFileChunkMapRec* map_rec = x_CalcMapAddress(map_file, map_ind);
+    CSrvRef<SNCDBFileInfo> map_file = s_GetDBFile(map_coord.file_id);
+    SFileIndexRec* map_ind = s_GetIndexRec(map_file, map_coord.rec_num);
+    /*
+    This is an incorrect check because it can race with
+    CNCBlobVerManager::x_UpdateVersion
+
+    if (map_ind->chain_coord != up_coord) {
+        DB_CORRUPTED("Index record " << map_coord.rec_num
+                     << " in file " << map_file->file_name
+                     << " has wrong up_coord " << map_ind->chain_coord
+                     << " when should be " << up_coord << ".");
+    }
+    */
+    SFileChunkMapRec* map_rec = s_CalcMapAddress(map_file, map_ind);
     if (map_rec->map_idx != map_info->map_idx  ||  map_rec->map_depth != map_depth)
     {
         DB_CORRUPTED("Map at coord " << map_coord
@@ -1466,15 +1536,16 @@ CNCBlobStorage::x_ReadMapInfo(SNCDataCoord map_coord,
                      << " and " << map_depth << ".");
     }
     memcpy(map_info->coords, map_rec->down_coords,
-           x_CalcCntMapDowns(map_ind->rec_size) * sizeof(map_rec->down_coords[0]));
+           s_CalcCntMapDowns(map_ind->rec_size) * sizeof(map_rec->down_coords[0]));
     return true;
 }
 
 bool
 CNCBlobStorage::ReadChunkData(SNCBlobVerData* ver_data,
-                              SNCChunkMapInfo** maps,
+                              SNCChunkMaps* maps,
                               Uint8 chunk_num,
-                              CNCBlobBuffer* buffer)
+                              char*& buffer,
+                              Uint4& buf_size)
 {
     Uint2 map_idx[kNCMaxBlobMapsDepth] = {0};
     Uint1 cur_index = 0;
@@ -1486,27 +1557,44 @@ CNCBlobStorage::ReadChunkData(SNCBlobVerData* ver_data,
     }
     while (level_num != 0);
 
+    SNCDataCoord map_coord/*, up_coord*/;
     for (Uint1 depth = ver_data->map_depth; depth > 0; ) {
         Uint2 this_index = map_idx[depth];
         --depth;
-        if (maps[depth]->map_idx == this_index  &&  !maps[depth]->coords[0].empty())
+        SNCChunkMapInfo* this_map = maps->maps[depth];
+        if (this_map->map_idx == this_index
+            &&  !this_map->coords[0].empty()
+            &&  this_map->map_counter == ver_data->map_move_counter)
+        {
             continue;
+        }
 
-        SNCDataCoord map_coord;
-        if (depth + 1 == ver_data->map_depth)
+        this_map->map_counter = ver_data->map_move_counter;
+        this_map->map_idx = this_index;
+
+        if (depth + 1 == ver_data->map_depth) {
+            //up_coord = ver_data->coord;
             map_coord = ver_data->data_coord;
-        else
-            map_coord = maps[depth + 1]->coords[this_index];
+        }
+        else {
+            /*if (depth + 2 == ver_data->map_depth)
+                up_coord = ver_data->data_coord;
+            else
+                up_coord = maps->maps[depth + 2]->coords[map_idx[depth + 2]];*/
+            map_coord = maps->maps[depth + 1]->coords[this_index];
+        }
 
-        maps[depth]->map_idx = this_index;
-        x_ReadMapInfo(map_coord, maps[depth], depth + 1);
+        s_ReadMapInfo(map_coord, this_map, depth + 1/*, up_coord*/);
 
         while (depth > 0) {
             this_index = map_idx[depth];
-            map_coord = maps[depth]->coords[this_index];
             --depth;
-            maps[depth]->map_idx = this_index;
-            x_ReadMapInfo(map_coord, maps[depth], depth + 1);
+            this_map = maps->maps[depth];
+            this_map->map_counter = ver_data->map_move_counter;
+            this_map->map_idx = this_index;
+            //up_coord = map_coord;
+            map_coord = maps->maps[depth + 1]->coords[this_index];
+            s_ReadMapInfo(map_coord, this_map, depth + 1/*, up_coord*/);
         }
     }
 
@@ -1514,37 +1602,54 @@ CNCBlobStorage::ReadChunkData(SNCBlobVerData* ver_data,
     if (ver_data->map_depth == 0) {
         if (chunk_num != 0)
             abort();
+        //up_coord = ver_data->coord;
         chunk_coord = ver_data->data_coord;
     }
-    else
-        chunk_coord = maps[0]->coords[map_idx[0]];
+    else {
+        /*if (ver_data->map_depth == 1)
+            up_coord = ver_data->data_coord;
+        else
+            up_coord = maps->maps[1]->coords[map_idx[1]];*/
+        chunk_coord = maps->maps[0]->coords[map_idx[0]];
+    }
 
-    CNCRef<SNCDBFileInfo> data_file = x_GetDBFile(chunk_coord.file_id);
-    SFileIndexRec* data_ind = x_GetIndexRec(data_file, chunk_coord.rec_num);
-    SFileChunkDataRec* data_rec = x_CalcChunkAddress(data_file, data_ind);
+    CSrvRef<SNCDBFileInfo> data_file = s_GetDBFile(chunk_coord.file_id);
+    SFileIndexRec* data_ind = s_GetIndexRec(data_file, chunk_coord.rec_num);
+    /*
+    This is an incorrect check because it can race with
+    CNCBlobVerManager::x_UpdateVersion
+
+    if (data_ind->chain_coord != up_coord) {
+        DB_CORRUPTED("Index record " << chunk_coord.rec_num
+                     << " in file " << data_file->file_name
+                     << " has wrong up_coord " << data_ind->chain_coord
+                     << " when should be " << up_coord << ".");
+    }
+    */
+    SFileChunkDataRec* data_rec = s_CalcChunkAddress(data_file, data_ind);
     if (data_rec->chunk_num != chunk_num  ||  data_rec->chunk_idx != map_idx[0])
     {
-        ERR_POST(Critical << "File " << data_file->file_name
-                 << " in chunk record " << chunk_coord.rec_num
-                 << " has wrong chunk number " << data_rec->chunk_num
-                 << " and/or chunk index " << data_rec->chunk_idx
-                 << ". Deleting blob.");
+        SRV_LOG(Critical, "File " << data_file->file_name
+                          << " in chunk record " << chunk_coord.rec_num
+                          << " has wrong chunk number " << data_rec->chunk_num
+                          << " and/or chunk index " << data_rec->chunk_idx
+                          << ". Deleting blob.");
         return false;
     }
 
-    size_t data_size = x_CalcChunkDataSize(data_ind->rec_size);
-    memcpy(buffer->GetData(), data_rec->chunk_data, data_size);
-    buffer->Resize(data_size);
-    CNCStat::AddChunkRead(data_size);
+    buf_size = s_CalcChunkDataSize(data_ind->rec_size);
+    buffer = (char*)data_rec->chunk_data;
 
     return true;
 }
 
-bool
+char*
 CNCBlobStorage::WriteChunkData(SNCBlobVerData* ver_data,
-                               SNCChunkMapInfo** maps,
+                               SNCChunkMaps* maps,
+                               SNCCacheData* cache_data,
                                Uint8 chunk_num,
-                               const CNCBlobBuffer* data)
+                               char* buffer,
+                               Uint4 buf_size)
 {
     Uint2 map_idx[kNCMaxBlobMapsDepth] = {0};
     Uint1 cur_index = 0;
@@ -1556,58 +1661,53 @@ CNCBlobStorage::WriteChunkData(SNCBlobVerData* ver_data,
     }
     while (level_num != 0  &&  cur_index < kNCMaxBlobMapsDepth);
     if (level_num != 0  &&  cur_index >= kNCMaxBlobMapsDepth) {
-        ERR_POST("Chunk number " << chunk_num
-                 << " exceeded maximum map depth " << kNCMaxBlobMapsDepth
-                 << " with map_size=" << ver_data->map_size << ".");
-        return false;
+        SRV_LOG(Critical, "Chunk number " << chunk_num
+                          << " exceeded maximum map depth " << kNCMaxBlobMapsDepth
+                          << " with map_size=" << ver_data->map_size << ".");
+        return NULL;
     }
 
-    if (map_idx[1] != maps[0]->map_idx) {
-        if (!x_SaveChunkMap(ver_data, maps, ver_data->map_size, false))
+    if (map_idx[1] != maps->maps[0]->map_idx) {
+        if (!s_SaveChunkMap(ver_data, cache_data, maps->maps, ver_data->map_size, false))
             return false;
         for (Uint1 i = 0; i < kNCMaxBlobMapsDepth - 1; ++i)
-            maps[i]->map_idx = map_idx[i + 1];
+            maps->maps[i]->map_idx = map_idx[i + 1];
     }
 
     SNCDataCoord data_coord;
-    CNCRef<SNCDBFileInfo> data_file;
+    CSrvRef<SNCDBFileInfo> data_file;
     SFileIndexRec* data_ind;
-    Uint4 rec_size = x_CalcChunkRecSize(data->GetSize());
-    if (!x_GetNextWriteCoord(eFileIndexData, rec_size, data_coord, data_file, data_ind))
-        return false;
+    Uint4 rec_size = s_CalcChunkRecSize(buf_size);
+    if (!s_GetNextWriteCoord(eFileIndexData, rec_size, data_coord, data_file, data_ind))
+        return NULL;
 
     data_ind->rec_type = eFileRecChunkData;
-    data_ind->cache_data = ver_data->manager->GetCacheData();
-    SFileChunkDataRec* data_rec = x_CalcChunkAddress(data_file, data_ind);
+    data_ind->cache_data = cache_data;
+    SFileChunkDataRec* data_rec = s_CalcChunkAddress(data_file, data_ind);
     data_rec->chunk_num = chunk_num;
     data_rec->chunk_idx = map_idx[0];
-    memcpy(data_rec->chunk_data, data->GetData(), data->GetSize());
+    memcpy(data_rec->chunk_data, buffer, buf_size);
 
-    maps[0]->coords[map_idx[0]] = data_coord;
-    CNCStat::AddChunkWritten(data->GetSize());
+    maps->maps[0]->coords[map_idx[0]] = data_coord;
 
     data_file->cnt_unfinished.Add(-1);
 
-    return true;
+    return (char*)data_rec->chunk_data;
 }
 
 void
-CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data,
-                                    SNCDataCoord new_coord,
-                                    int new_dead_time)
+CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data)
 {
-    STimeTable* table = m_TimeTables[cache_data->time_bucket];
+    STimeTable* table = s_TimeTables[cache_data->time_bucket];
     table->lock.Lock();
-    if (cache_data->dead_time != 0) {
-        table->time_map.erase(*cache_data);
-        AtomicSub(m_CurBlobsCnt, 1);
+    if (cache_data->saved_dead_time != 0) {
+        table->time_map.erase(table->time_map.iterator_to(*cache_data));
+        AtomicSub(s_CurBlobsCnt, 1);
     }
-    cache_data->coord = new_coord;
-    cache_data->dead_time = new_dead_time;
-    if (new_dead_time != 0) {
-        cache_data->dead_time = new_dead_time;
+    cache_data->saved_dead_time = cache_data->dead_time;
+    if (cache_data->saved_dead_time != 0) {
         table->time_map.insert_equal(*cache_data);
-        AtomicAdd(m_CurBlobsCnt, 1);
+        AtomicAdd(s_CurBlobsCnt, 1);
     }
     table->lock.Unlock();
 }
@@ -1615,46 +1715,97 @@ CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data,
 Uint8
 CNCBlobStorage::GetMaxSyncLogRecNo(void)
 {
+    Uint8 result = 0;
+    s_IndexLock.Lock();
     try {
-        CFastMutexGuard guard(m_IndexLock);
-        return m_IndexDB->GetMaxSyncLogRecNo();
+        result = s_IndexDB->GetMaxSyncLogRecNo();
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST(Critical << "Cannot read max_sync_log_rec_no: " << ex);
-        return 0;
+        SRV_LOG(Critical, "Cannot read max_sync_log_rec_no: " << ex);
     }
+    s_IndexLock.Unlock();
+    return result;
 }
 
 void
 CNCBlobStorage::SaveMaxSyncLogRecNo(void)
 {
-    m_NeedSaveLogRecNo = true;
+    s_NeedSaveLogRecNo = true;
 }
 
-
-struct SNCTempBlobInfo
+Uint8
+CNCBlobStorage::GetDiskFree(void)
 {
-    string  key;
-    Uint8   create_time;
-    Uint8   create_server;
-    SNCDataCoord coord;
-    Uint4   create_id;
-    int     dead_time;
-    int     expire;
-    int     ver_expire;
-
-    SNCTempBlobInfo(const SNCCacheData& cache_info)
-        : key(cache_info.key),
-          create_time(cache_info.create_time),
-          create_server(cache_info.create_server),
-          coord(cache_info.coord),
-          create_id(cache_info.create_id),
-          dead_time(cache_info.dead_time),
-          expire(cache_info.expire),
-          ver_expire(cache_info.ver_expire)
-    {
+    try {
+        return CFileUtil::GetFreeDiskSpace(s_Path);
     }
-};
+    catch (CFileErrnoException& ex) {
+        SRV_LOG(Critical, "Cannot read free disk space: " << ex);
+        return 0;
+    }
+}
+
+Uint8
+CNCBlobStorage::GetAllowedDBSize(Uint8 free_space)
+{
+    Uint8 total_space = s_CurDBSize + free_space;
+    Uint8 allowed_db_size = total_space;
+
+    if (total_space < s_DiskCritical)
+        allowed_db_size = 0;
+    else
+        allowed_db_size = min(allowed_db_size, total_space - s_DiskCritical);
+    if (total_space < s_DiskFreeLimit)
+        allowed_db_size = 0;
+    else
+        allowed_db_size = min(allowed_db_size, total_space - s_DiskFreeLimit);
+    if (s_StopWriteOnSize != 0  &&  s_StopWriteOnSize < allowed_db_size)
+        allowed_db_size = s_StopWriteOnSize;
+
+    return allowed_db_size;
+}
+
+Uint8
+CNCBlobStorage::GetDBSize(void)
+{
+    return s_CurDBSize;
+}
+
+int
+CNCBlobStorage::GetNDBFiles(void)
+{
+    return int(s_DBFiles->size());
+}
+
+bool
+CNCBlobStorage::IsCleanStart(void)
+{
+    return s_CleanStart;
+}
+
+bool
+CNCBlobStorage::NeedStopWrite(void)
+{
+    return s_IsStopWrite != eNoStop  &&  s_IsStopWrite != eStopWarning;
+}
+
+bool
+CNCBlobStorage::AcceptWritesFromPeers(void)
+{
+    return s_IsStopWrite != eStopDiskCritical;
+}
+
+bool
+CNCBlobStorage::IsDBSizeAlert(void)
+{
+    return s_IsStopWrite != eNoStop;
+}
+
+Uint4
+CNCBlobStorage::GetNewBlobId(void)
+{
+    return Uint4(s_BlobCounter.Add(1));
+}
 
 void
 CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
@@ -1663,7 +1814,7 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
     Uint2 slot_buckets = CNCDistributionConf::GetCntSlotBuckets();
     Uint2 bucket_num = (slot - 1) * slot_buckets + 1;
     for (Uint2 i = 0; i < slot_buckets; ++i, ++bucket_num) {
-        SBucketCache* cache = x_GetBucketCache(bucket_num);
+        SBucketCache* cache = s_GetBucketCache(bucket_num);
 
         cache->lock.Lock();
         Uint8 cnt_blobs = cache->key_map.size();
@@ -1678,21 +1829,20 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
 
         info_ptr = (SNCTempBlobInfo*)big_block;
         for (Uint8 i = 0; i < cnt_blobs; ++i) {
-            if (!info_ptr->coord.empty()) {
-                Uint2 key_slot = 0, key_bucket = 0;
-                CNCDistributionConf::GetSlotByKey(info_ptr->key, key_slot, key_bucket);
-                if (key_slot != slot  ||  key_bucket != bucket_num)
-                    abort();
+            Uint2 key_slot = 0, key_bucket = 0;
+            CNCDistributionConf::GetSlotByKey(info_ptr->key, key_slot, key_bucket);
+            if (key_slot != slot  ||  key_bucket != bucket_num)
+                abort();
 
-                SNCCacheData* blob_sum = new SNCCacheData();
-                blob_sum->create_id = info_ptr->create_id;
-                blob_sum->create_server = info_ptr->create_server;
-                blob_sum->create_time = info_ptr->create_time;
-                blob_sum->dead_time = info_ptr->dead_time;
-                blob_sum->expire = info_ptr->expire;
-                blob_sum->ver_expire = info_ptr->ver_expire;
-                blobs_lst[info_ptr->key] = blob_sum;
-            }
+            SNCBlobSummary* blob_sum = new SNCBlobSummary();
+            blob_sum->create_id = info_ptr->create_id;
+            blob_sum->create_server = info_ptr->create_server;
+            blob_sum->create_time = info_ptr->create_time;
+            blob_sum->dead_time = info_ptr->dead_time;
+            blob_sum->expire = info_ptr->expire;
+            blob_sum->ver_expire = info_ptr->ver_expire;
+            blobs_lst[info_ptr->key] = blob_sum;
+
             info_ptr->~SNCTempBlobInfo();
             ++info_ptr;
         }
@@ -1702,116 +1852,79 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
 }
 
 void
-CNCBlobStorage::PrintStat(CPrintTextProxy& proxy)
+CNCBlobStorage::MeasureDB(SNCStateStat& state)
 {
-    m_DBFilesLock.Lock();
-    Uint4 num_files = Uint4(m_DBFiles.size());
-    m_DBFilesLock.Unlock();
-    Uint8 cnt_blobs = m_CurBlobsCnt;
-    int oldest_dead = numeric_limits<int>::max();
-    for (Uint2 i = 1; i <= CNCDistributionConf::GetCntTimeBuckets(); ++i) {
-        STimeTable* table = m_TimeTables[i];
+    s_DBFilesLock.Lock();
+    state.db_files = Uint4(s_DBFiles->size());
+    s_DBFilesLock.Unlock();
+
+    state.db_size = s_CurDBSize;
+    state.db_garb = s_GarbageSize;
+    state.cnt_blobs = s_CurBlobsCnt;
+    state.cnt_keys = s_CurKeysCnt;
+    state.min_dead_time = numeric_limits<int>::max();
+    ITERATE(TTimeBuckets, it, s_TimeTables) {
+        STimeTable* table = it->second;
         table->lock.Lock();
-        if (!table->time_map.empty())
-            oldest_dead = min(oldest_dead, table->time_map.begin()->dead_time);
+        if (!table->time_map.empty()) {
+            state.min_dead_time = min(state.min_dead_time,
+                                      table->time_map.begin()->dead_time);
+        }
         table->lock.Unlock();
     }
-    //m_GarbageLock.Lock();
-    Uint8 garbage = m_GarbageSize;
-    //m_GarbageLock.Unlock();
-    Uint8 db_size = m_CurDBSize;
-
-    proxy << "Now on disk - "
-                    << num_files << " files of "
-                    << g_ToSizeStr(db_size) << " (garbage - "
-                    << g_ToSizeStr(garbage) << ", "
-                    << (db_size == 0? 0: garbage * 100 / db_size) << "%)" << endl
-          << "Now in memory - "
-                    << g_ToSmartStr(cnt_blobs) << " blobs" << endl
-          << "Total moves - "
-                    << g_ToSmartStr(m_CntMoveTasks) << " tasks ("
-                    << m_CntFailedMoves << " failed), "
-                    << g_ToSizeStr(m_MovedSize) << " in size, cleaned "
-                    << g_ToSmartStr(m_CntMoveFiles) << " files" << endl;
-    if (oldest_dead != numeric_limits<int>::max()) {
-        proxy << "Dead times - ";
-        CTime tmp(CTime::eEmpty, CTime::eLocal);
-        tmp.SetTimeT(oldest_dead);
-        proxy << tmp.AsString() << " (oldest)" << endl;
-    }
+    if (state.min_dead_time == numeric_limits<int>::max())
+        state.min_dead_time = 0;
 }
 
 void
-CNCBlobStorage::x_CollectStorageStats(void)
+CBlobCacher::x_DeleteIndexes(SNCDataCoord map_coord, Uint1 map_depth)
 {
-    m_DBFilesLock.Lock();
-    Uint4 num_files = Uint4(m_DBFiles.size());
-    m_DBFilesLock.Unlock();
-    //m_GarbageLock.Lock();
-    Uint8 garbage = m_GarbageSize;
-    //m_GarbageLock.Unlock();
-    Uint8 db_size = m_CurDBSize;
-    Uint8 cnt_blobs = m_CurBlobsCnt;
-
-    CNCStat::AddDBMeasurement(num_files, db_size, garbage, cnt_blobs);
-}
-
-void
-CNCBlobStorage::OnBlockedOpFinish(void)
-{
-    m_GCBlockWaiter.SignalAll();
-}
-
-void
-CNCBlobStorage::x_CacheDeleteIndexes(SNCDataCoord map_coord, Uint1 map_depth)
-{
-    SNCDBFileInfo* file_info = m_DBFiles[map_coord.file_id];
-    SFileIndexRec* map_ind = x_GetIndexRec(file_info, map_coord.rec_num);
-    x_DeleteIndexRec(file_info, map_ind);
+    SNCDBFileInfo* file_info = (*s_DBFiles)[map_coord.file_id];
+    SFileIndexRec* map_ind = s_GetIndexRec(file_info, map_coord.rec_num);
+    s_DeleteIndexRec(file_info, map_ind);
     if (map_depth != 0) {
-        SFileChunkMapRec* map_rec = x_CalcMapAddress(file_info, map_ind);
-        Uint2 cnt_downs = x_CalcCntMapDowns(map_ind->rec_size);
+        SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, map_ind);
+        Uint2 cnt_downs = s_CalcCntMapDowns(map_ind->rec_size);
         for (Uint2 i = 0; i < cnt_downs; ++i) {
-            x_CacheDeleteIndexes(map_rec->down_coords[i], map_depth - 1);
+            x_DeleteIndexes(map_rec->down_coords[i], map_depth - 1);
         }
     }
 }
 
 bool
-CNCBlobStorage::x_CacheMapRecs(SNCDataCoord map_coord,
-                               Uint1 map_depth,
-                               SNCDataCoord up_coord,
-                               Uint2 up_index,
-                               SNCCacheData* cache_data,
-                               Uint8 cnt_chunks,
-                               Uint8& chunk_num,
-                               map<Uint4, Uint4>& sizes_map,
-                               TFileRecsMap& recs_map)
+CBlobCacher::x_CacheMapRecs(SNCDataCoord map_coord,
+                            Uint1 map_depth,
+                            SNCDataCoord up_coord,
+                            Uint2 up_index,
+                            SNCCacheData* cache_data,
+                            Uint8 cnt_chunks,
+                            Uint8& chunk_num,
+                            map<Uint4, Uint4>& sizes_map)
 {
-    TNCDBFilesMap::const_iterator it_file = m_DBFiles.find(map_coord.file_id);
-    if (it_file == m_DBFiles.end()) {
-        ERR_POST(Critical << "Cannot find file for the coord " << map_coord
-                 << " which is referenced by blob " << cache_data->key
-                 << ". Deleting blob.");
+    TNCDBFilesMap::const_iterator it_file = s_DBFiles->find(map_coord.file_id);
+    if (it_file == s_DBFiles->end()) {
+        SRV_LOG(Critical, "Cannot find file for the coord " << map_coord
+                          << " which is referenced by blob " << cache_data->key
+                          << ". Deleting blob.");
         return false;
     }
 
     SNCDBFileInfo* file_info = it_file->second.GetNCPointerOrNull();
-    TRecNumsSet& recs_set = recs_map[map_coord.file_id];
+    TRecNumsSet& recs_set = m_RecsMap[map_coord.file_id];
     TRecNumsSet::iterator it_recs = recs_set.find(map_coord.rec_num);
     if (it_recs == recs_set.end()) {
-        ERR_POST(Critical << "Blob " << cache_data->key
-                 << " references record with coord " << map_coord
-                 << ", but its index wasn't in live chain. Deleting blob.");
+        SRV_LOG(Critical, "Blob " << cache_data->key
+                          << " references record with coord " << map_coord
+                          << ", but its index wasn't in live chain. Deleting blob.");
         return false;
     }
 
-    SFileIndexRec* map_ind = x_GetIndexRec(file_info, map_coord.rec_num);
+    SFileIndexRec* map_ind = s_GetIndexRec(file_info, map_coord.rec_num);
     if (map_ind->chain_coord != up_coord) {
-        ERR_POST(Critical << "Up_coord for map/data in blob " << cache_data->key
-                 << " is incorrect: " << map_ind->chain_coord
-                 << " when should be " << up_coord
-                 << ". Correcting it.");
+        SRV_LOG(Critical, "Up_coord for map/data in blob " << cache_data->key
+                          << " is incorrect: " << map_ind->chain_coord
+                          << " when should be " << up_coord
+                          << ". Correcting it.");
         map_ind->chain_coord = up_coord;
     }
     map_ind->cache_data = cache_data;
@@ -1823,83 +1936,83 @@ CNCBlobStorage::x_CacheMapRecs(SNCDataCoord map_coord,
 
     if (map_depth == 0) {
         if (map_ind->rec_type != eFileRecChunkData) {
-            ERR_POST(Critical << "Blob " << cache_data->key
-                     << " with size " << cache_data->size
-                     << " references record with coord " << map_coord
-                     << " that has type " << int(map_ind->rec_type)
-                     << " when it should be " << int(eFileRecChunkData)
-                     << ". Deleting blob.");
+            SRV_LOG(Critical, "Blob " << cache_data->key
+                              << " with size " << cache_data->size
+                              << " references record with coord " << map_coord
+                              << " that has type " << int(map_ind->rec_type)
+                              << " when it should be " << int(eFileRecChunkData)
+                              << ". Deleting blob.");
             return false;
         }
         ++chunk_num;
         if (chunk_num > cnt_chunks) {
-            ERR_POST(Critical << "Blob " << cache_data->key
-                     << " with size " << cache_data->size
-                     << " has too many data chunks, should be " << cnt_chunks
-                     << ". Deleting blob.");
+            SRV_LOG(Critical, "Blob " << cache_data->key
+                              << " with size " << cache_data->size
+                              << " has too many data chunks, should be " << cnt_chunks
+                              << ". Deleting blob.");
             return false;
         }
-        size_t data_size = x_CalcChunkDataSize(map_ind->rec_size);
+        Uint4 data_size = s_CalcChunkDataSize(map_ind->rec_size);
         Uint4 need_size;
         if (chunk_num < cnt_chunks)
             need_size = cache_data->chunk_size;
         else
             need_size = (cache_data->size - 1) % cache_data->chunk_size + 1;
         if (data_size != need_size) {
-            ERR_POST(Critical << "Blob " << cache_data->key
-                     << " with size " << cache_data->size
-                     << " references data record with coord " << map_coord
-                     << " that has data size " << data_size
-                     << " when it should be " << need_size
-                     << ". Deleting blob.");
+            SRV_LOG(Critical, "Blob " << cache_data->key
+                              << " with size " << cache_data->size
+                              << " references data record with coord " << map_coord
+                              << " that has data size " << data_size
+                              << " when it should be " << need_size
+                              << ". Deleting blob.");
             return false;
         }
     }
     else {
         if (map_ind->rec_type != eFileRecChunkMap) {
-            ERR_POST(Critical << "Blob " << cache_data->key
-                     << " with size " << cache_data->size
-                     << " references record with coord " << map_coord
-                     << " at map_depth=" << map_depth
-                     << ". Record has type " << int(map_ind->rec_type)
-                     << " when it should be " << int(eFileRecChunkMap)
-                     << ". Deleting blob.");
+            SRV_LOG(Critical, "Blob " << cache_data->key
+                              << " with size " << cache_data->size
+                              << " references record with coord " << map_coord
+                              << " at map_depth=" << map_depth
+                              << ". Record has type " << int(map_ind->rec_type)
+                              << " when it should be " << int(eFileRecChunkMap)
+                              << ". Deleting blob.");
             return false;
         }
-        SFileChunkMapRec* map_rec = x_CalcMapAddress(file_info, map_ind);
+        SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, map_ind);
         if (map_rec->map_idx != up_index  ||  map_rec->map_depth != map_depth)
         {
-            ERR_POST(Critical << "Blob " << cache_data->key
-                     << " with size " << cache_data->size
-                     << " references map with coord " << map_coord
-                     << " that has wrong index " << map_rec->map_idx
-                     << " and/or map depth " << map_rec->map_depth
-                     << ", they should be " << up_index
-                     << " and " << map_depth
-                     << ". Deleting blob.");
+            SRV_LOG(Critical, "Blob " << cache_data->key
+                              << " with size " << cache_data->size
+                              << " references map with coord " << map_coord
+                              << " that has wrong index " << map_rec->map_idx
+                              << " and/or map depth " << map_rec->map_depth
+                              << ", they should be " << up_index
+                              << " and " << map_depth
+                              << ". Deleting blob.");
             return false;
         }
-        Uint2 cnt_downs = x_CalcCntMapDowns(map_ind->rec_size);
+        Uint2 cnt_downs = s_CalcCntMapDowns(map_ind->rec_size);
         for (Uint2 i = 0; i < cnt_downs; ++i) {
             if (!x_CacheMapRecs(map_rec->down_coords[i], map_depth - 1,
                                 map_coord, i, cache_data, cnt_chunks,
-                                chunk_num, sizes_map, recs_map))
+                                chunk_num, sizes_map))
             {
                 for (Uint2 j = 0; j < i; ++j) {
-                    x_CacheDeleteIndexes(map_rec->down_coords[j], map_depth - 1);
+                    x_DeleteIndexes(map_rec->down_coords[j], map_depth - 1);
                 }
                 return false;
             }
         }
         if (chunk_num < cnt_chunks  &&  cnt_downs != cache_data->map_size) {
-            ERR_POST(Critical << "Blob " << cache_data->key
-                     << " with size " << cache_data->size
-                     << " references map record with coord " << map_coord
-                     << " that has " << cnt_downs
-                     << " children when it should be " << cache_data->map_size
-                     << " because accumulated chunk_num=" << chunk_num
-                     << " is less than total " << cnt_chunks
-                     << ". Deleting blob.");
+            SRV_LOG(Critical, "Blob " << cache_data->key
+                              << " with size " << cache_data->size
+                              << " references map record with coord " << map_coord
+                              << " that has " << cnt_downs
+                              << " children when it should be " << cache_data->map_size
+                              << " because accumulated chunk_num=" << chunk_num
+                              << " is less than total " << cnt_chunks
+                              << ". Deleting blob.");
             return false;
         }
     }
@@ -1909,29 +2022,27 @@ CNCBlobStorage::x_CacheMapRecs(SNCDataCoord map_coord,
 }
 
 bool
-CNCBlobStorage::x_CacheMetaRec(SNCDBFileInfo* file_info,
-                               SFileIndexRec* ind_rec,
-                               SNCDataCoord coord,
-                               int cur_time,
-                               TFileRecsMap& recs_map)
+CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
+                            SFileIndexRec* ind_rec,
+                            SNCDataCoord coord)
 {
-    SFileMetaRec* meta_rec = x_CalcMetaAddress(file_info, ind_rec);
+    SFileMetaRec* meta_rec = s_CalcMetaAddress(file_info, ind_rec);
     if (meta_rec->has_password > 1  ||  meta_rec->dead_time < meta_rec->expire
         ||  meta_rec->dead_time < meta_rec->ver_expire
         ||  meta_rec->chunk_size == 0  ||  meta_rec->map_size == 0)
     {
-        ERR_POST(Critical << "Meta record in file " << file_info->file_name
-                 << " at offset " << ind_rec->offset << " was corrupted."
-                 << " passwd=" << meta_rec->has_password
-                 << ", expire=" << meta_rec->expire
-                 << ", ver_expire=" << meta_rec->ver_expire
-                 << ", dead=" << meta_rec->dead_time
-                 << ", chunk_size=" << meta_rec->chunk_size
-                 << ", map_size=" << meta_rec->map_size
-                 << ". Deleting it.");
+        SRV_LOG(Critical, "Meta record in file " << file_info->file_name
+                          << " at offset " << ind_rec->offset << " was corrupted."
+                          << " passwd=" << meta_rec->has_password
+                          << ", expire=" << meta_rec->expire
+                          << ", ver_expire=" << meta_rec->ver_expire
+                          << ", dead=" << meta_rec->dead_time
+                          << ", chunk_size=" << meta_rec->chunk_size
+                          << ", map_size=" << meta_rec->map_size
+                          << ". Deleting it.");
         return false;
     }
-    if (meta_rec->dead_time <= cur_time)
+    if (meta_rec->dead_time <= CSrvTime::CurSecs())
         return false;
 
     char* key_data = meta_rec->key_data;
@@ -1945,11 +2056,11 @@ CNCBlobStorage::x_CacheMetaRec(SNCDBFileInfo* file_info,
             ++cnt;
     }
     if (cnt != 2) {
-        ERR_POST(Critical << "Meta record in file " << file_info->file_name
-                 << " at offset " << ind_rec->offset << " was corrupted."
-                 << " key=" << key
-                 << ", cnt_special=" << cnt
-                 << ". Deleting it.");
+        SRV_LOG(Critical, "Meta record in file " << file_info->file_name
+                          << " at offset " << ind_rec->offset << " was corrupted."
+                          << " key=" << key
+                          << ", cnt_special=" << cnt
+                          << ". Deleting it.");
         return false;
     }
     Uint2 slot = 0, time_bucket = 0;
@@ -1966,30 +2077,31 @@ CNCBlobStorage::x_CacheMetaRec(SNCDBFileInfo* file_info,
     cache_data->create_server = meta_rec->create_server;
     cache_data->create_id = meta_rec->create_id;
     cache_data->dead_time = meta_rec->dead_time;
+    cache_data->saved_dead_time = meta_rec->dead_time;
     cache_data->expire = meta_rec->expire;
     cache_data->ver_expire = meta_rec->ver_expire;
 
     if (meta_rec->size == 0) {
         if (!ind_rec->chain_coord.empty()) {
-            ERR_POST(Critical << "Index record " << (file_info->index_head - ind_rec)
-                     << " in file " << file_info->file_name
-                     << " was corrupted. size=0 but chain_coord="
-                     << ind_rec->chain_coord << ". Ignoring that.");
+            SRV_LOG(Critical, "Index record " << (file_info->index_head - ind_rec)
+                              << " in file " << file_info->file_name
+                              << " was corrupted. size=0 but chain_coord="
+                              << ind_rec->chain_coord << ". Ignoring that.");
             ind_rec->chain_coord.clear();
         }
     }
     else {
-        Uint1 map_depth = x_CalcMapDepthImpl(meta_rec->size,
+        Uint1 map_depth = s_CalcMapDepthImpl(meta_rec->size,
                                              meta_rec->chunk_size,
                                              meta_rec->map_size);
         if (map_depth > kNCMaxBlobMapsDepth) {
-            ERR_POST(Critical << "Meta record in file " << file_info->file_name
-                     << " at offset " << ind_rec->offset << " was corrupted."
-                     << ", size=" << meta_rec->size
-                     << ", chunk_size=" << meta_rec->chunk_size
-                     << ", map_size=" << meta_rec->map_size
-                     << " (map depth is more than " << kNCMaxBlobMapsDepth
-                     << "). Deleting it.");
+            SRV_LOG(Critical, "Meta record in file " << file_info->file_name
+                              << " at offset " << ind_rec->offset << " was corrupted."
+                              << ", size=" << meta_rec->size
+                              << ", chunk_size=" << meta_rec->chunk_size
+                              << ", map_size=" << meta_rec->map_size
+                              << " (map depth is more than " << kNCMaxBlobMapsDepth
+                              << "). Deleting it.");
             return false;
         }
         Uint8 cnt_chunks = (meta_rec->size - 1) / meta_rec->chunk_size + 1;
@@ -1997,18 +2109,18 @@ CNCBlobStorage::x_CacheMetaRec(SNCDBFileInfo* file_info,
         typedef map<Uint4, Uint4> TSizesMap;
         TSizesMap sizes_map;
         if (!x_CacheMapRecs(ind_rec->chain_coord, map_depth, coord, 0, cache_data,
-                            cnt_chunks, chunk_num, sizes_map, recs_map))
+                            cnt_chunks, chunk_num, sizes_map))
         {
             delete cache_data;
             return false;
         }
         ITERATE(TSizesMap, it, sizes_map) {
-            SNCDBFileInfo* info = m_DBFiles[it->first];
+            SNCDBFileInfo* info = (*s_DBFiles)[it->first];
             info->used_size += it->second;
             if (info->garb_size < it->second)
                 abort();
             info->garb_size -= it->second;
-            m_GarbageSize -= it->second;
+            s_GarbageSize -= it->second;
         }
     }
     ind_rec->cache_data = cache_data;
@@ -2020,149 +2132,178 @@ CNCBlobStorage::x_CacheMetaRec(SNCDBFileInfo* file_info,
     if (file_info->garb_size < rec_size)
         abort();
     file_info->garb_size -= rec_size;
-    m_GarbageSize -= rec_size;
+    s_GarbageSize -= rec_size;
 
-    TBucketCacheMap::iterator it_bucket = m_BucketsCache.lower_bound(time_bucket);
+    TBucketCacheMap::iterator it_bucket = s_BucketsCache.lower_bound(time_bucket);
     SBucketCache* bucket_cache;
-    if (it_bucket == m_BucketsCache.end()  ||  it_bucket->first != time_bucket) {
-        bucket_cache = new SBucketCache(time_bucket);
-        m_BucketsCache.insert(it_bucket, TBucketCacheMap::value_type(time_bucket, bucket_cache));
+    if (it_bucket == s_BucketsCache.end()  ||  it_bucket->first != time_bucket) {
+        bucket_cache = new SBucketCache();
+        s_BucketsCache.insert(it_bucket, TBucketCacheMap::value_type(time_bucket, bucket_cache));
     }
     else {
         bucket_cache = it_bucket->second;
     }
-    STimeTable* time_table = m_TimeTables[time_bucket];
+    STimeTable* time_table = s_TimeTables[time_bucket];
     TKeyMap::insert_commit_data commit_data;
     pair<TKeyMap::iterator, bool> ins_res =
         bucket_cache->key_map.insert_unique_check(key, SCacheKeyCompare(), commit_data);
     if (ins_res.second) {
         bucket_cache->key_map.insert_unique_commit(*cache_data, commit_data);
+        ++s_CurKeysCnt;
     }
     else {
         SNCCacheData* old_data = &*ins_res.first;
         bucket_cache->key_map.erase(ins_res.first);
         bucket_cache->key_map.insert_equal(*cache_data);
-        --m_CurBlobsCnt;
-        time_table->time_map.erase(*old_data);
-        SNCDBFileInfo* old_file = m_DBFiles[old_data->coord.file_id];
-        SFileIndexRec* old_ind = x_GetIndexRec(old_file, old_data->coord.rec_num);
-        SFileMetaRec* old_rec = x_CalcMetaAddress(old_file, old_ind);
+        --s_CurBlobsCnt;
+        time_table->time_map.erase(time_table->time_map.iterator_to(*old_data));
+        SNCDBFileInfo* old_file = (*s_DBFiles)[old_data->coord.file_id];
+        SFileIndexRec* old_ind = s_GetIndexRec(old_file, old_data->coord.rec_num);
+        SFileMetaRec* old_rec = s_CalcMetaAddress(old_file, old_ind);
         if (old_rec->size != 0  &&  old_ind->chain_coord != ind_rec->chain_coord) {
-            Uint1 map_depth = x_CalcMapDepth(old_rec->size,
+            Uint1 map_depth = s_CalcMapDepth(old_rec->size,
                                              old_rec->chunk_size,
                                              old_rec->map_size);
-            x_MoveDataToGarbage(old_ind->chain_coord, map_depth);
+            s_MoveDataToGarbage(old_ind->chain_coord, map_depth, old_data->coord);
         }
-        x_MoveRecToGarbage(old_file, old_ind);
+        s_MoveRecToGarbage(old_file, old_ind);
         delete old_data;
     }
     time_table->time_map.insert_equal(*cache_data);
-    ++m_CurBlobsCnt;
+    ++s_CurBlobsCnt;
 
     return true;
 }
 
-bool
-CNCBlobStorage::x_CreateInitialFiles(set<Uint4>& new_file_ids)
+CBlobCacher::State
+CBlobCacher::x_StartCreateFiles(void)
 {
-    int cur_pass = 0;
-    size_t cur_file = 0;
-    while (!m_Stopped  &&  (cur_pass != 1  ||  cur_file < s_CntAllFiles)) {
-        if (cur_file < s_CntAllFiles) {
-            if (!x_CreateNewFile(cur_file))
-                goto del_file_and_retry;
-            new_file_ids.insert(m_AllWritings[cur_file].next_file->file_id);
-            ++cur_file;
-        }
-        else {
-            for (size_t i = 0; i < s_CntAllFiles; ++i) {
-                x_SwitchToNextFile(m_AllWritings[i]);
-            }
-            cur_file = 0;
-            ++cur_pass;
-        }
-        continue;
+    m_CurCreatePass = 0;
+    m_CurCreateFile = 0;
+    return &Me::x_CreateInitialFile;
+}
 
-del_file_and_retry:
-        if (m_DBFiles.empty()) {
-            ERR_POST(Critical << "Cannot create initial database files.");
-            return false;
-        }
+CBlobCacher::State
+CBlobCacher::x_CreateInitialFile(void)
+{
+    if (CTaskServer::IsInShutdown())
+        return &Me::x_CancelCaching;
+    if (m_CurCreatePass == 1  &&  m_CurCreateFile >= s_CntAllFiles)
+        return &Me::x_StartCacheBlobs;
 
-        CNCRef<SNCDBFileInfo> file_to_del;
-        ITERATE(TNCDBFilesMap, it, m_DBFiles) {
-            CNCRef<SNCDBFileInfo> file_info = it->second;
-            if (file_info->file_type == eDBFileData) {
-                file_to_del = file_info;
-                break;
-            }
+    if (m_CurCreateFile < s_CntAllFiles) {
+        if (!s_CreateNewFile(m_CurCreateFile))
+            return &Me::x_DelFileAndRetryCreate;
+
+        m_NewFileIds.insert(s_AllWritings[m_CurCreateFile].next_file->file_id);
+        ++m_CurCreateFile;
+    }
+    else {
+        for (Uint1 i = 0; i < s_CntAllFiles; ++i) {
+            s_SwitchToNextFile(s_AllWritings[i]);
         }
-        if (!file_to_del)
-            file_to_del = m_DBFiles.begin()->second;
-        x_DeleteDBFile(file_to_del);
+        m_CurCreateFile = 0;
+        ++m_CurCreatePass;
     }
 
-    return true;
+    // Yield execution to other tasks
+    SetRunnable();
+    return NULL;
 }
 
-void
-CNCBlobStorage::x_PreCacheFileRecNums(SNCDBFileInfo* file_info,
-                                      TRecNumsSet& recs_set)
+CBlobCacher::State
+CBlobCacher::x_DelFileAndRetryCreate(void)
 {
-    m_CurDBSize += file_info->file_size;
+    if (s_DBFiles->empty()) {
+        SRV_LOG(Critical, "Cannot create initial database files.");
+        GetDiagCtx()->SetRequestStatus(eStatus_ServerError);
+        CTaskServer::RequestShutdown(eSrvFastShutdown);
+        return &Me::x_CancelCaching;
+    }
+
+    CSrvRef<SNCDBFileInfo> file_to_del;
+    ITERATE(TNCDBFilesMap, it, (*s_DBFiles)) {
+        CSrvRef<SNCDBFileInfo> file_info = it->second;
+        if (file_info->file_type == eDBFileData) {
+            file_to_del = file_info;
+            break;
+        }
+    }
+    if (!file_to_del)
+        file_to_del = s_DBFiles->begin()->second;
+    s_DeleteDBFile(file_to_del);
+
+    // Yield execution to other tasks
+    SetState(&Me::x_CreateInitialFile);
+    SetRunnable();
+    return NULL;
+}
+
+CBlobCacher::State
+CBlobCacher::x_PreCacheRecNums(void)
+{
+    if (CTaskServer::IsInShutdown())
+        return &Me::x_CancelCaching;
+    if (m_CurFile == s_DBFiles->end())
+        return &Me::x_StartCreateFiles;
+
+    SNCDBFileInfo* file_info = m_CurFile->second.GetNCPointerOrNull();
+    TRecNumsSet& recs_set = m_RecsMap[file_info->file_id];
+
+    s_CurDBSize += file_info->file_size;
     // Non-garbage is left the same as in x_CreateNewFile
     Uint4 garb_size = file_info->file_size
                       - (kSignatureSize + sizeof(SFileIndexRec));
     file_info->garb_size += garb_size;
-    m_GarbageSize += garb_size;
+    s_GarbageSize += garb_size;
 
     SFileIndexRec* ind_rec = file_info->index_head;
     Uint4 prev_rec_num = 0;
     char* min_ptr = file_info->file_map + kSignatureSize;
-    while (!m_Stopped  &&  ind_rec->next_num != 0) {
+    while (!CTaskServer::IsInShutdown()  &&  ind_rec->next_num != 0) {
         Uint4 rec_num = ind_rec->next_num;
         if (rec_num <= prev_rec_num) {
-            ERR_POST(Critical << "File " << file_info->file_name
-                     << " contains wrong next_num=" << rec_num
-                     << " (it's not greater than current " << prev_rec_num
-                     << "). Won't cache anything else from this file.");
+            SRV_LOG(Critical, "File " << file_info->file_name
+                              << " contains wrong next_num=" << rec_num
+                              << " (it's not greater than current " << prev_rec_num
+                              << "). Won't cache anything else from this file.");
             goto wrap_index_and_return;
         }
         SFileIndexRec* next_ind;
         next_ind = file_info->index_head - rec_num;
         if ((char*)next_ind < min_ptr  ||  next_ind >= ind_rec) {
-            ERR_POST(Critical << "File " << file_info->file_name
-                     << " contains wrong next_num=" << rec_num
-                     << " in index record " << (file_info->index_head - ind_rec)
-                     << ". It produces pointer " << (void*)next_ind
-                     << " which is not in the range between " << (void*)min_ptr
-                     << " and " << (void*)ind_rec
-                     << ". Won't cache anything else from this file.");
+            SRV_LOG(Critical, "File " << file_info->file_name
+                              << " contains wrong next_num=" << rec_num
+                              << " in index record " << (file_info->index_head - ind_rec)
+                              << ". It produces pointer " << (void*)next_ind
+                              << " which is not in the range between " << (void*)min_ptr
+                              << " and " << (void*)ind_rec
+                              << ". Won't cache anything else from this file.");
             goto wrap_index_and_return;
         }
         char* next_rec_start = file_info->file_map + next_ind->offset;
         if (next_rec_start < min_ptr  ||  next_rec_start > (char*)next_ind
             ||  (rec_num == 1  &&  next_rec_start != min_ptr))
         {
-            ERR_POST(Critical << "File " << file_info->file_name
-                     << " contains wrong offset=" << ind_rec->offset
-                     << " in index record " << rec_num
-                     << ", resulting ptr " << (void*)next_rec_start
-                     << " which is not in the range " << (void*)min_ptr
-                     << " and " << (void*)next_ind
-                     << ". This record will be ignored.");
+            SRV_LOG(Critical, "File " << file_info->file_name
+                              << " contains wrong offset=" << ind_rec->offset
+                              << " in index record " << rec_num
+                              << ", resulting ptr " << (void*)next_rec_start
+                              << " which is not in the range " << (void*)min_ptr
+                              << " and " << (void*)next_ind
+                              << ". This record will be ignored.");
             goto ignore_rec_and_continue;
         }
         char* next_rec_end;
         next_rec_end = next_rec_start + next_ind->rec_size;
         if (next_rec_end < next_rec_start  ||  next_rec_end > (char*)next_ind) {
-            ERR_POST(Critical << "File " << file_info->file_name
-                     << " contains wrong rec_size=" << next_ind->rec_size
-                     << " for offset " << next_ind->offset
-                     << " in index record " << rec_num
-                     << " (resulting end ptr " << (void*)next_rec_end
-                     << " is greater than index record " << (void*)next_ind
-                     << "). This record will be ignored.");
+            SRV_LOG(Critical, "File " << file_info->file_name
+                              << " contains wrong rec_size=" << next_ind->rec_size
+                              << " for offset " << next_ind->offset
+                              << " in index record " << rec_num
+                              << " (resulting end ptr " << (void*)next_rec_end
+                              << " is greater than index record " << (void*)next_ind
+                              << "). This record will be ignored.");
             goto ignore_rec_and_continue;
         }
         if (next_ind->prev_num != prev_rec_num)
@@ -2175,13 +2316,13 @@ CNCBlobStorage::x_PreCacheFileRecNums(SNCDBFileInfo* file_info,
                 goto ignore_rec_and_continue;
             }
             if (next_ind->rec_size < sizeof(SFileChunkDataRec)) {
-                ERR_POST(Critical << "File " << file_info->file_name
-                         << " contains wrong rec_size=" << next_ind->rec_size
-                         << " for offset " << next_ind->offset
-                         << " in index record " << rec_num
-                         << ", rec_type=" << int(next_ind->rec_type)
-                         << ", min_size=" << sizeof(SFileChunkDataRec)
-                         << ". This record will be ignored.");
+                SRV_LOG(Critical, "File " << file_info->file_name
+                                  << " contains wrong rec_size=" << next_ind->rec_size
+                                  << " for offset " << next_ind->offset
+                                  << " in index record " << rec_num
+                                  << ", rec_type=" << int(next_ind->rec_type)
+                                  << ", min_size=" << sizeof(SFileChunkDataRec)
+                                  << ". This record will be ignored.");
                 goto ignore_rec_and_continue;
             }
             break;
@@ -2189,13 +2330,13 @@ CNCBlobStorage::x_PreCacheFileRecNums(SNCDBFileInfo* file_info,
             if (file_info->file_type != eDBFileMaps)
                 goto bad_rec_type;
             if (next_ind->rec_size < sizeof(SFileChunkMapRec)) {
-                ERR_POST(Critical << "File " << file_info->file_name
-                         << " contains wrong rec_size=" << next_ind->rec_size
-                         << " for offset " << next_ind->offset
-                         << " in index record " << rec_num
-                         << ", rec_type=" << int(next_ind->rec_type)
-                         << ", min_size=" << sizeof(SFileChunkMapRec)
-                         << ". This record will be ignored.");
+                SRV_LOG(Critical, "File " << file_info->file_name
+                                  << " contains wrong rec_size=" << next_ind->rec_size
+                                  << " for offset " << next_ind->offset
+                                  << " in index record " << rec_num
+                                  << ", rec_type=" << int(next_ind->rec_type)
+                                  << ", min_size=" << sizeof(SFileChunkMapRec)
+                                  << ". This record will be ignored.");
                 goto ignore_rec_and_continue;
             }
             break;
@@ -2210,23 +2351,23 @@ CNCBlobStorage::x_PreCacheFileRecNums(SNCDBFileInfo* file_info,
             if (meta_rec->has_password)
                 min_rec_size += 16;
             if (next_ind->rec_size < min_rec_size) {
-                ERR_POST(Critical << "File " << file_info->file_name
-                         << " contains wrong rec_size=" << next_ind->rec_size
-                         << " for offset " << next_ind->offset
-                         << " in index record " << rec_num
-                         << ", rec_type=" << int(next_ind->rec_type)
-                         << ", min_size=" << min_rec_size
-                         << ". This record will be ignored.");
+                SRV_LOG(Critical, "File " << file_info->file_name
+                                  << " contains wrong rec_size=" << next_ind->rec_size
+                                  << " for offset " << next_ind->offset
+                                  << " in index record " << rec_num
+                                  << ", rec_type=" << int(next_ind->rec_type)
+                                  << ", min_size=" << min_rec_size
+                                  << ". This record will be ignored.");
                 goto ignore_rec_and_continue;
             }
             break;
         default:
 bad_rec_type:
-            ERR_POST(Critical << "File " << file_info->file_name
-                     << " with type " << int(file_info->file_type)
-                     << " contains wrong rec_type=" << next_ind->rec_type
-                     << " in index record " << rec_num
-                     << "). This record will be ignored.");
+            SRV_LOG(Critical, "File " << file_info->file_name
+                              << " with type " << int(file_info->file_type)
+                              << " contains wrong rec_type=" << next_ind->rec_type
+                              << " in index record " << rec_num
+                              << "). This record will be ignored.");
             goto ignore_rec_and_continue;
         }
 
@@ -2239,331 +2380,400 @@ bad_rec_type:
 ignore_rec_and_continue:
         ind_rec->next_num = next_ind->next_num;
     }
-    return;
+    goto finalize_and_return;
 
 wrap_index_and_return:
     ind_rec->next_num = 0;
+
+finalize_and_return:
+    s_LockFileMem(ind_rec, (prev_rec_num + 1) * sizeof(SFileIndexRec));
+    ++m_CurFile;
+    SetRunnable();
+    return NULL;
 }
 
-void
-CNCBlobStorage::x_CacheDatabase(void)
+CBlobCacher::State
+CBlobCacher::x_StartCaching(void)
 {
-    CNCRef<CRequestContext> ctx(new CRequestContext());
-    ctx->SetRequestID();
-    CDiagContext::SetRequestContext(ctx);
-    if (g_NetcacheServer->IsLogCmds()) {
-        GetDiagContext().PrintRequestStart().Print("_type", "caching");
-        ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
+    CreateNewDiagCtx();
+    CSrvDiagMsg().StartRequest().PrintParam("_type", "caching");
+
+    m_CurFile = s_DBFiles->begin();
+    return &Me::x_PreCacheRecNums;
+}
+
+CBlobCacher::State
+CBlobCacher::x_CancelCaching(void)
+{
+    if (GetDiagCtx()->GetRequestStatus() == eStatus_OK)
+        GetDiagCtx()->SetRequestStatus(eStatus_OperationCanceled);
+    CSrvDiagMsg().StopRequest();
+    ReleaseDiagCtx();
+
+    Terminate();
+    return NULL;
+}
+
+CBlobCacher::State
+CBlobCacher::x_StartCacheBlobs(void)
+{
+    m_CurFile = s_DBFiles->begin();
+    return &Me::x_CacheNextFile;
+}
+
+CBlobCacher::State
+CBlobCacher::x_CacheNextFile(void)
+{
+try_next_file:
+    if (CTaskServer::IsInShutdown())
+        return &Me::x_CancelCaching;
+    if (m_CurFile == s_DBFiles->end())
+        return &Me::x_CleanOrphanRecs;
+
+    SNCDBFileInfo* file_info = m_CurFile->second.GetNCPointerOrNull();
+    if (file_info->file_type != eDBFileMeta
+        ||  m_NewFileIds.find(file_info->file_id) != m_NewFileIds.end())
+    {
+        ++m_CurFile;
+        goto try_next_file;
+    }
+    m_CurRecsSet = &m_RecsMap[file_info->file_id];
+    m_CurRecIt = m_CurRecsSet->begin();
+    return &Me::x_CacheNextRecord;
+}
+
+CBlobCacher::State
+CBlobCacher::x_CacheNextRecord(void)
+{
+    if (CTaskServer::IsInShutdown())
+        return &Me::x_CancelCaching;
+    if (m_CurRecIt == m_CurRecsSet->end()) {
+        m_CurRecsSet->clear();
+        ++m_CurFile;
+        return &Me::x_CacheNextFile;
     }
 
-    TFileRecsMap recs_map;
-    ITERATE(TNCDBFilesMap, it_file, m_DBFiles) {
-        SNCDBFileInfo* file_info = it_file->second.GetNCPointerOrNull();
-        x_PreCacheFileRecNums(file_info, recs_map[file_info->file_id]);
-    }
+    Uint4 rec_num = *m_CurRecIt;
+    SNCDBFileInfo* file_info = m_CurFile->second.GetNCPointerOrNull();
+    SNCDataCoord coord;
+    coord.file_id = file_info->file_id;
+    coord.rec_num = rec_num;
+    SFileIndexRec* ind_rec = s_GetIndexRec(file_info, rec_num);
+    if (!x_CacheMetaRec(file_info, ind_rec, coord))
+        s_DeleteIndexRec(file_info, ind_rec);
 
-    set<Uint4> new_file_ids;
-    if (!x_CreateInitialFiles(new_file_ids)) {
-        ctx->SetRequestStatus(CNCMessageHandler::eStatus_ServerError);
-        g_NetcacheServer->RequestShutdown();
-        goto clean_and_exit;
-    }
+    ++m_CurRecIt;
+    SetRunnable();
+    return NULL;
+}
 
-    int cur_time;
-    cur_time = int(time(NULL));
-    ERASE_ITERATE(TNCDBFilesMap, it_file, m_DBFiles) {
-        if (m_Stopped)
-            break;
-
-        SNCDBFileInfo* file_info = it_file->second;
-        if (file_info->file_type != eDBFileMeta
-            ||  new_file_ids.find(file_info->file_id) != new_file_ids.end())
-        {
-            continue;
-        }
-        TRecNumsSet& recs_set = recs_map[file_info->file_id];
-        TRecNumsSet::iterator it_rec = recs_set.begin();
-        for (; it_rec != recs_set.end()  &&  !m_Stopped; ++it_rec) {
-            Uint4 rec_num = *it_rec;
-            SNCDataCoord coord;
-            coord.file_id = file_info->file_id;
-            coord.rec_num = rec_num;
-            SFileIndexRec* ind_rec = x_GetIndexRec(file_info, rec_num);
-            if (!x_CacheMetaRec(file_info, ind_rec, coord, cur_time, recs_map))
-                x_DeleteIndexRec(file_info, ind_rec);
-        }
-        recs_set.clear();
-    }
-
-    ITERATE(TFileRecsMap, it_id, recs_map) {
-        if (m_Stopped)
-            break;
-
+CBlobCacher::State
+CBlobCacher::x_CleanOrphanRecs(void)
+{
+    ITERATE(TFileRecsMap, it_id, m_RecsMap) {
         Uint4 file_id = it_id->first;
         const TRecNumsSet& recs_set = it_id->second;
-        TNCDBFilesMap::iterator it_file = m_DBFiles.find(file_id);
-        if (it_file == m_DBFiles.end()) {
+        TNCDBFilesMap::iterator it_file = s_DBFiles->find(file_id);
+        if (it_file == s_DBFiles->end()) {
             // File could be deleted when we tried to create initial files.
             continue;
         }
         SNCDBFileInfo* file_info = it_file->second;
         TRecNumsSet::iterator it_rec = recs_set.begin();
-        for (; it_rec != recs_set.end()  &&  !m_Stopped; ++it_rec) {
-            x_DeleteIndexRec(file_info, *it_rec);
+        for (; it_rec != recs_set.end(); ++it_rec) {
+            s_DeleteIndexRec(file_info, *it_rec);
         }
     }
 
-    CNetCacheServer::CachingCompleted();
-
-clean_and_exit:
-    if (g_NetcacheServer->IsLogCmds()) {
-        GetDiagContext().PrintRequestStop();
-    }
-    CDiagContext::SetRequestContext(NULL);
+    return &Me::x_FinishCaching;
 }
 
-Uint8
-CNCBlobStorage::GetDiskFree(void)
+CBlobCacher::State
+CBlobCacher::x_FinishCaching(void)
 {
-    try {
-        return CFileUtil::GetFreeDiskSpace(m_Path);
-    }
-    catch (CFileErrnoException& ex) {
-        ERR_POST(Critical << "Cannot read free disk space: " << ex);
-        return 0;
-    }
+    CSrvDiagMsg().StopRequest();
+    ReleaseDiagCtx();
+
+    s_DiskFlusher->SetRunnable();
+    s_RecNoSaver->SetRunnable();
+    s_SpaceShrinker->SetRunnable();
+    s_ExpiredCleaner->SetRunnable();
+
+    CNCServer::CachingCompleted();
+
+    Terminate();
+    return NULL;
 }
 
-Uint8
-CNCBlobStorage::GetAllowedDBSize(Uint8 free_space)
+CBlobCacher::CBlobCacher(void)
 {
-    Uint8 total_space = m_CurDBSize + free_space;
-    Uint8 allowed_db_size = total_space;
-
-    if (total_space < m_DiskCritical)
-        allowed_db_size = 0;
-    else
-        allowed_db_size = min(allowed_db_size, total_space - m_DiskCritical);
-    if (total_space < m_DiskFreeLimit)
-        allowed_db_size = 0;
-    else
-        allowed_db_size = min(allowed_db_size, total_space - m_DiskFreeLimit);
-    if (m_StopWriteOnSize != 0  &&  m_StopWriteOnSize < allowed_db_size)
-        allowed_db_size = m_StopWriteOnSize;
-
-    return allowed_db_size;
+    SetState(&Me::x_StartCaching);
 }
+
+CBlobCacher::~CBlobCacher(void)
+{}
+
 
 void
-CNCBlobStorage::x_HeartBeat(void)
+CNCBlobStorage::CheckDiskSpace(void)
 {
-    ITERATE(TBucketCacheMap, it, m_BucketsCache) {
-        SBucketCache* cache = it->second;
-        cache->deleter.HeartBeat();
-    }
-
     Uint8 free_space = GetDiskFree();
     Uint8 allowed_db_size = GetAllowedDBSize(free_space);
-    Uint8 cur_db_size = m_CurDBSize;
+    Uint8 cur_db_size = s_CurDBSize;
 
-    if (m_IsStopWrite == eNoStop
-        &&  cur_db_size * 100 >= allowed_db_size * m_WarnLimitOnPct)
+    if (s_IsStopWrite == eNoStop
+        &&  cur_db_size * 100 >= allowed_db_size * s_WarnLimitOnPct)
     {
         ERR_POST(Critical << "ALERT! Database is too large. "
                  << "Current db size is " << g_ToSizeStr(cur_db_size)
                  << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
-        m_IsStopWrite = eStopWarning;
+        s_IsStopWrite = eStopWarning;
     }
 
-    if (m_IsStopWrite == eStopWarning) {
-        if (m_StopWriteOnSize != 0  &&  cur_db_size >= m_StopWriteOnSize) {
-            m_IsStopWrite = eStopDBSize;
+    if (s_IsStopWrite == eStopWarning) {
+        if (s_StopWriteOnSize != 0  &&  cur_db_size >= s_StopWriteOnSize) {
+            s_IsStopWrite = eStopDBSize;
             ERR_POST(Critical << "Database size exceeded its limit. "
                                  "Will no longer accept any writes from clients.");
         }
     }
-    else if (m_IsStopWrite == eStopDBSize  &&  cur_db_size <= m_StopWriteOffSize)
+    else if (s_IsStopWrite ==  eStopDBSize  &&  cur_db_size <= s_StopWriteOffSize)
     {
-        m_IsStopWrite = eStopWarning;
+        s_IsStopWrite = eStopWarning;
     }
-    if (free_space <= m_DiskCritical) {
-        m_IsStopWrite = eStopDiskCritical;
+    if (free_space <= s_DiskCritical) {
+        s_IsStopWrite = eStopDiskCritical;
         ERR_POST(Critical << "Free disk space is below CRITICAL threshold. "
                              "Will no longer accept any writes.");
     }
-    else if (free_space <= m_DiskFreeLimit) {
-        m_IsStopWrite = eStopDiskSpace;
+    else if (free_space <= s_DiskFreeLimit) {
+        s_IsStopWrite = eStopDiskSpace;
         ERR_POST(Critical << "Free disk space is below threshold. "
                              "Will no longer accept any writes from clients.");
     }
-    else if (m_IsStopWrite == eStopDiskSpace
-             ||  m_IsStopWrite == eStopDiskCritical)
+    else if (s_IsStopWrite == eStopDiskSpace
+             ||  s_IsStopWrite == eStopDiskCritical)
     {
-        m_IsStopWrite = eStopWarning;
+        s_IsStopWrite = eStopWarning;
     }
 
-    if (m_IsStopWrite == eStopWarning
-        &&  cur_db_size * 100 < allowed_db_size * m_WarnLimitOffPct)
+    if (s_IsStopWrite == eStopWarning
+        &&  cur_db_size * 100 < allowed_db_size * s_WarnLimitOffPct)
     {
         ERR_POST(Critical << "OK. Database is back to normal size. "
                  << "Current db size is " << g_ToSizeStr(cur_db_size)
                  << ", allowed db size is " << g_ToSizeStr(allowed_db_size) << ".");
-        m_IsStopWrite = eNoStop;
+        s_IsStopWrite = eNoStop;
     }
 }
 
-void
-CNCBlobStorage::x_GC_DeleteExpired(SNCCacheData* cache_data, int dead_before)
-{
-    cache_data->lock.Lock();
-    if (!cache_data->ver_mgr) {
-        if (!cache_data->coord.empty()  &&  cache_data->dead_time < dead_before) {
-            SNCDataCoord coord = cache_data->coord;
-            Uint8 size = cache_data->size;
-            Uint4 chunk_size = cache_data->chunk_size;
-            Uint2 map_size = cache_data->map_size;
-            SNCDataCoord new_coord;
-            new_coord.clear();
-            ChangeCacheDeadTime(cache_data, new_coord, 0);
-            cache_data->key_del_time = int(time(NULL));
-            SBucketCache* bucket = x_GetBucketCache(cache_data->time_bucket);
-            bucket->deleter.AddElement(cache_data->key);
-            cache_data->lock.Unlock();
 
-            CNCRef<SNCDBFileInfo> meta_file = x_GetDBFile(coord.file_id);
-            SFileIndexRec* meta_ind = x_GetIndexRec(meta_file, coord.rec_num);
-            if (!meta_ind->chain_coord.empty()) {
-                Uint1 map_depth = x_CalcMapDepth(size, chunk_size, map_size);
-                x_MoveDataToGarbage(meta_ind->chain_coord, map_depth);
-            }
-            x_MoveRecToGarbage(meta_file, meta_ind);
+CExpiredCleaner::State
+CExpiredCleaner::x_DeleteNextData(void)
+{
+    if (CTaskServer::IsInShutdown())
+        return NULL;
+
+    if (m_CurDelData >= m_CacheDatas.size()) {
+        if (m_BatchSize < s_GCBatchSize)
+            ++m_CurBucket;
+        m_CacheDatas.clear();
+        return &Me::x_CleanNextBucket;
+    }
+
+    SNCCacheData* cache_data = m_CacheDatas[m_CurDelData];
+
+    cache_data->lock.Lock();
+    CNCBlobVerManager* mgr = cache_data->ver_mgr;
+    if (mgr) {
+        mgr->ObtainReference();
+        cache_data->lock.Unlock();
+
+        mgr->DeleteDeadVersion(m_NextDead);
+        mgr->Release();
+    }
+    else if (!cache_data->coord.empty()  &&  cache_data->dead_time < m_NextDead) {
+        SNCDataCoord coord = cache_data->coord;
+        Uint8 size = cache_data->size;
+        Uint4 chunk_size = cache_data->chunk_size;
+        Uint2 map_size = cache_data->map_size;
+        cache_data->coord.clear();
+        cache_data->dead_time = 0;
+        CNCBlobStorage::ChangeCacheDeadTime(cache_data);
+        cache_data->lock.Unlock();
+
+        CSrvRef<SNCDBFileInfo> meta_file = s_GetDBFile(coord.file_id);
+        SFileIndexRec* meta_ind = s_GetIndexRec(meta_file, coord.rec_num);
+        s_CalcMetaAddress(meta_file, meta_ind);
+        if (!meta_ind->chain_coord.empty()) {
+            Uint1 map_depth = s_CalcMapDepth(size, chunk_size, map_size);
+            s_MoveDataToGarbage(meta_ind->chain_coord, map_depth, coord);
         }
-        else {
-            cache_data->lock.Unlock();
-        }
+        s_MoveRecToGarbage(meta_file, meta_ind);
     }
     else {
         cache_data->lock.Unlock();
-
-        m_GCAccessor->Prepare(cache_data->key, kEmptyStr,
-                              cache_data->time_bucket, eNCGCDelete);
-        x_InitializeAccessor(m_GCAccessor);
-        m_GCBlockLock.Lock();
-        while (m_GCAccessor->ObtainMetaInfo(this) == eNCWouldBlock) {
-            m_GCBlockWaiter.WaitForSignal(m_GCBlockLock);
-        }
-        m_GCBlockLock.Unlock();
-        if (m_GCAccessor->IsBlobExists()
-            &&  m_GCAccessor->GetCurBlobDeadTime() < dead_before)
-        {
-            m_GCAccessor->DeleteBlob();
-        }
-        m_GCAccessor->Deinitialize();
     }
+
+    CNCBlobStorage::ReleaseCacheData(cache_data);
+
+    ++m_CurDelData;
+    SetRunnable();
+    return NULL;
 }
 
-void
-CNCBlobStorage::x_RunGC(void)
+CExpiredCleaner::State
+CExpiredCleaner::x_StartSession(void)
 {
-    int cur_time = int(time(NULL));
-    int next_dead = cur_time;
+    m_StartTime = CSrvTime::CurSecs();
+    m_NextDead = m_StartTime;
     if (m_DoExtraGC) {
-        if (m_CurDBSize <= m_ExtraGCOffSize) {
+        if (s_CurDBSize <= s_ExtraGCOffSize) {
             m_DoExtraGC = false;
         }
         else {
             ++m_ExtraGCTime;
-            next_dead += m_ExtraGCTime;
+            m_NextDead += m_ExtraGCTime;
         }
     }
-    else if (m_ExtraGCOnSize != 0
-             &&  m_CurDBSize >= m_ExtraGCOnSize)
+    else if (s_ExtraGCOnSize != 0
+             &&  s_CurDBSize >= s_ExtraGCOnSize)
     {
         m_DoExtraGC = true;
         m_ExtraGCTime = 1;
-        next_dead += m_ExtraGCTime;
+        m_NextDead += m_ExtraGCTime;
     }
 
-    Uint2 cnt_buckets = CNCDistributionConf::GetCntTimeBuckets();
-    int cnt_read = 1;
-    Uint2 bucket = 1;
-    while (cnt_read != 0  &&  !m_Stopped) {
-        m_GCDatas.clear();
-        cnt_read = 0;
-        for (; bucket <= cnt_buckets  &&  cnt_read < m_GCBatchSize; ++bucket) {
-            STimeTable* table = m_TimeTables[bucket];
-            table->lock.Lock();
-            NON_CONST_ITERATE(TTimeTableMap, it, table->time_map) {
-                SNCCacheData* cache_data = &*it;
-                if (cache_data->dead_time >= next_dead  ||  cnt_read >= m_GCBatchSize)
-                {
-                    break;
-                }
-                m_GCDatas.push_back(cache_data);
-                ++cnt_read;
-            }
-            table->lock.Unlock();
-        }
-        for (size_t i = 0; i < m_GCDatas.size()  &&  !m_Stopped; ++i) {
-            x_GC_DeleteExpired(m_GCDatas[i], next_dead);
-        }
-    }
+    m_CurBucket = 1;
+    return &Me::x_CleanNextBucket;
 }
 
-bool
-CNCBlobStorage::x_MoveRecord(SNCDBFileInfo* rec_file,
-                             SFileIndexRec* rec_ind,
-                             int cur_time,
-                             bool& move_done)
+CExpiredCleaner::State
+CExpiredCleaner::x_CleanNextBucket(void)
 {
-    bool result = true;
-    CNCRef<SNCDBFileInfo> chain_file;
+    if (CTaskServer::IsInShutdown())
+        return NULL;
+    if (m_CurBucket > CNCDistributionConf::GetCntTimeBuckets())
+        return &Me::x_FinishSession;
+
+    m_BatchSize = 0;
+    STimeTable* table = s_TimeTables[m_CurBucket];
+    TTimeTableMap& time_map = table->time_map;
+    table->lock.Lock();
+    TTimeTableMap::iterator it = time_map.begin();
+    SNCCacheData* last_data = NULL;
+    for (; it != time_map.end(); ++m_BatchSize) {
+        if (m_BatchSize >= s_GCBatchSize)
+            break;
+
+        SNCCacheData* cache_data = &*it;
+        if (cache_data->saved_dead_time >= m_NextDead)
+            break;
+
+        int dead_time = ACCESS_ONCE(cache_data->dead_time);
+        if (dead_time != 0) {
+            if (dead_time != cache_data->saved_dead_time) {
+                time_map.erase(time_map.iterator_to(*cache_data));
+                cache_data->saved_dead_time = dead_time;
+                time_map.insert_equal(*cache_data);
+                if (last_data) {
+                    it = time_map.iterator_to(*last_data);
+                    ++it;
+                }
+                else
+                    it = time_map.begin();
+                continue;
+            }
+            CNCBlobStorage::ReferenceCacheData(cache_data);
+            m_CacheDatas.push_back(cache_data);
+        }
+        last_data = cache_data;
+        ++it;
+    }
+    table->lock.Unlock();
+
+    if (m_BatchSize == 0) {
+        ++m_CurBucket;
+        SetRunnable();
+        return NULL;
+    }
+
+    m_CurDelData = 0;
+    return &Me::x_DeleteNextData;
+}
+
+CExpiredCleaner::State
+CExpiredCleaner::x_FinishSession(void)
+{
+    SetState(&Me::x_StartSession);
+    if (!CTaskServer::IsInShutdown()) {
+        if (CSrvTime::CurSecs() == m_StartTime)
+            RunAfter(1);
+        else
+            SetRunnable();
+    }
+    return NULL;
+}
+
+CExpiredCleaner::CExpiredCleaner(void)
+    : m_DoExtraGC(false)
+{
+    SetState(&Me::x_StartSession);
+}
+
+CExpiredCleaner::~CExpiredCleaner(void)
+{}
+
+
+CSpaceShrinker::State
+CSpaceShrinker::x_MoveRecord(void)
+{
+    CSrvRef<SNCDBFileInfo> chain_file;
     SFileIndexRec* chain_ind = NULL;
     SFileChunkMapRec* map_rec = NULL;
     SFileChunkMapRec* up_map = NULL;
-    Uint2 up_index;
+    Uint2 up_index = Uint2(-1);
+
+    SNCDataCoord old_coord;
+    old_coord.file_id = m_MaxFile->file_id;
+    old_coord.rec_num = m_RecNum;
 
     SNCDataCoord new_coord;
-    CNCRef<SNCDBFileInfo> new_file;
+    CSrvRef<SNCDBFileInfo> new_file;
     SFileIndexRec* new_ind;
-    if (!x_GetNextWriteCoord(rec_file->type_index, //ENCDBFileType(rec_file->type_index + eFileIndexMoveShift),
-                             rec_ind->rec_size, new_coord, new_file, new_ind))
+    if (!s_GetNextWriteCoord(m_MaxFile->type_index, //ENCDBFileType(m_MaxFile->type_index + eFileIndexMoveShift),
+                             m_IndRec->rec_size, new_coord, new_file, new_ind))
     {
-        move_done = false;
-        return false;
+        m_Failed = true;
+        return &Me::x_FinishMoveRecord;
     }
 
     memcpy(new_file->file_map + new_ind->offset,
-           rec_file->file_map + rec_ind->offset,
-           rec_ind->rec_size);
+           m_MaxFile->file_map + m_IndRec->offset,
+           m_IndRec->rec_size);
 
-    SNCCacheData* cache_data = rec_ind->cache_data;
-    new_ind->cache_data = cache_data;
-    new_ind->rec_type = rec_ind->rec_type;
-    SNCDataCoord chain_coord = rec_ind->chain_coord;
+    new_ind->cache_data = m_CacheData;
+    new_ind->rec_type = m_IndRec->rec_type;
+    SNCDataCoord chain_coord = m_IndRec->chain_coord;
     new_ind->chain_coord = chain_coord;
 
     if (!chain_coord.empty()) {
-        chain_file = x_GetDBFile(chain_coord.file_id);
-        chain_ind = x_GetIndOrDeleted(chain_file, chain_coord.rec_num);
-        if (x_IsIndexDeleted(chain_file, chain_ind)
+        chain_file = s_GetDBFile(chain_coord.file_id);
+        chain_ind = s_GetIndOrDeleted(chain_file, chain_coord.rec_num);
+        if (s_IsIndexDeleted(chain_file, chain_ind)
             ||  chain_file->cnt_unfinished.Get() != 0)
         {
             goto wipe_new_record;
         }
 
-        SNCDataCoord old_coord;
-        old_coord.file_id = rec_file->file_id;
-        old_coord.rec_num = Uint4(rec_file->index_head - rec_ind);
-
         // Checks below are not just checks for corruption but also
         // an opportunity to fault in all database pages that will be necessary
         // to make all changes. This way we minimize the time that cache_data
         // lock will be held.
-        switch (rec_ind->rec_type) {
+        switch (m_IndRec->rec_type) {
         case eFileRecMeta:
             if (chain_ind->chain_coord != old_coord
-                &&  !x_IsIndexDeleted(rec_file, rec_ind))
+                &&  !s_IsIndexDeleted(m_MaxFile, m_IndRec))
             {
                 DB_CORRUPTED("Meta with coord " << old_coord
                              << " links down to record with coord " << new_ind->chain_coord
@@ -2571,15 +2781,15 @@ CNCBlobStorage::x_MoveRecord(SNCDBFileInfo* rec_file,
             }
             break;
         case eFileRecChunkMap:
-            map_rec = x_CalcMapAddress(new_file, new_ind);
+            map_rec = s_CalcMapAddress(new_file, new_ind);
             up_index = map_rec->map_idx;
             Uint2 cnt_downs;
-            cnt_downs = x_CalcCntMapDowns(new_ind->rec_size);
+            cnt_downs = s_CalcCntMapDowns(new_ind->rec_size);
             for (Uint2 i = 0; i < cnt_downs; ++i) {
                 SNCDataCoord down_coord = map_rec->down_coords[i];
-                CNCRef<SNCDBFileInfo> down_file = x_GetDBFile(down_coord.file_id);
-                SFileIndexRec* down_ind = x_GetIndOrDeleted(down_file, down_coord.rec_num);
-                if (x_IsIndexDeleted(down_file, down_ind))
+                CSrvRef<SNCDBFileInfo> down_file = s_GetDBFile(down_coord.file_id);
+                SFileIndexRec* down_ind = s_GetIndOrDeleted(down_file, down_coord.rec_num);
+                if (s_IsIndexDeleted(down_file, down_ind))
                     goto wipe_new_record;
                 if (down_ind->chain_coord != old_coord) {
                     DB_CORRUPTED("Map with coord " << old_coord
@@ -2592,11 +2802,11 @@ CNCBlobStorage::x_MoveRecord(SNCDBFileInfo* rec_file,
 
         case eFileRecChunkData:
             SFileChunkDataRec* data_rec;
-            data_rec = x_CalcChunkAddress(new_file, new_ind);
+            data_rec = s_CalcChunkAddress(new_file, new_ind);
             up_index = data_rec->chunk_idx;
         check_up_index:
             if (chain_ind->rec_type == eFileRecChunkMap) {
-                up_map = x_CalcMapAddress(chain_file, chain_ind);
+                up_map = s_CalcMapAddress(chain_file, chain_ind);
                 if (up_map->down_coords[up_index] != old_coord) {
                     DB_CORRUPTED("Record with coord " << old_coord
                                  << " links up to map with coord " << new_ind->chain_coord
@@ -2604,100 +2814,142 @@ CNCBlobStorage::x_MoveRecord(SNCDBFileInfo* rec_file,
                                  << " it has coord " << up_map->down_coords[up_index]);
                 }
             }
-            else {
-                if (chain_ind->chain_coord != old_coord) {
-                    DB_CORRUPTED("Record with coord " << old_coord
-                                 << " links up to meta with coord " << new_ind->chain_coord
-                                 << " but it has down coord " << chain_ind->chain_coord);
-                }
+            else if (chain_ind->chain_coord != old_coord) {
+                DB_CORRUPTED("Record with coord " << old_coord
+                             << " links up to meta with coord " << new_ind->chain_coord
+                             << " but it has down coord " << chain_ind->chain_coord);
             }
             break;
         }
     }
 
-    cache_data->lock.Lock();
-    if (cache_data->ver_mgr
-        ||  rec_ind->chain_coord != chain_coord
-        ||  (!chain_coord.empty()  &&  x_IsIndexDeleted(chain_file, chain_ind)
-             &&  !x_IsIndexDeleted(rec_file, rec_ind)))
-    {
-        result = false;
-        goto unlock_and_wipe;
-    }
-    if (cache_data->coord.empty()
-        ||  cache_data->dead_time <= cur_time + m_MinMoveLife
-        ||  x_IsIndexDeleted(rec_file, rec_ind))
-    {
-        goto unlock_and_wipe;
+    if (!m_CurVer) {
+        m_CacheData->lock.Lock();
+        if (m_CacheData->ver_mgr
+            ||  m_IndRec->chain_coord != chain_coord
+            ||  (!chain_coord.empty()  &&  s_IsIndexDeleted(chain_file, chain_ind)
+                 &&  !s_IsIndexDeleted(m_MaxFile, m_IndRec)))
+        {
+            m_Failed = true;
+            goto unlock_and_wipe;
+        }
+        if (m_CacheData->coord.empty()
+            ||  m_CacheData->dead_time <= CSrvTime::CurSecs() + s_MinMoveLife
+            ||  s_IsIndexDeleted(m_MaxFile, m_IndRec))
+        {
+            goto unlock_and_wipe;
+        }
     }
 
-    switch (rec_ind->rec_type) {
+    switch (m_IndRec->rec_type) {
     case eFileRecMeta:
-        cache_data->coord = new_coord;
+        if (m_CurVer) {
+            if (m_CurVer->coord != old_coord) {
+                // If coord for the version changed under us it's a bug.
+                DB_CORRUPTED("Coord " << old_coord << " of the current version for blob "
+                             << m_CacheData->key << " changed while move was in progress.");
+            }
+            m_CurVer->coord = new_coord;
+        }
+        else {
+            if (m_CacheData->coord != old_coord) {
+                // If there is no VerManager and still coord is something different
+                // it's a bug.
+                DB_CORRUPTED("Meta record with coord " << old_coord
+                             << " points to cache_data with key " << m_CacheData->key
+                             << " which has different coord " << m_CacheData->coord << ".");
+            }
+            m_CacheData->coord = new_coord;
+        }
         if (chain_ind)
             chain_ind->chain_coord = new_coord;
         break;
     case eFileRecChunkMap:
-        x_UpdateUpCoords(map_rec, new_ind, new_coord);
-        // fall through
+        s_UpdateUpCoords(map_rec, new_ind, new_coord);
+        if (m_CurVer)
+            ++m_CurVer->map_move_counter;
+        goto update_up_map;
+
     case eFileRecChunkData:
-        if (up_map)
+        if (m_CurVer) {
+            SFileChunkDataRec* new_data = s_CalcChunkAddress(new_file, new_ind);
+            m_CurVer->chunks[new_data->chunk_num] = (char*)new_data->chunk_data;
+        }
+    update_up_map:
+        if (up_map) {
             up_map->down_coords[up_index] = new_coord;
-        else
+        }
+        else {
             chain_ind->chain_coord = new_coord;
+            if (m_CurVer)
+                m_CurVer->data_coord = new_coord;
+        }
         break;
     }
 
-    cache_data->lock.Unlock();
-    move_done = true;
+    if (m_CurVer) {
+        if (m_MovingMeta) {
+            s_MoveRecToGarbage(m_MaxFile, m_IndRec);
+        }
+        else {
+            CMovedRecDeleter* deleter = new CMovedRecDeleter(m_MaxFile, m_IndRec);
+            deleter->CallRCU();
+        }
+    }
+    else {
+        m_CacheData->lock.Unlock();
+        s_MoveRecToGarbage(m_MaxFile, m_IndRec);
+    }
     new_file->cnt_unfinished.Add(-1);
-    return true;
+
+    ++m_CntMoved;
+    m_SizeMoved += m_IndRec->rec_size + sizeof(SFileIndexRec);
+
+    return &Me::x_FinishMoveRecord;
 
 unlock_and_wipe:
-    cache_data->lock.Unlock();
+    m_CacheData->lock.Unlock();
 wipe_new_record:
     new_ind->rec_type = eFileRecChunkData;
-    x_MoveRecToGarbage(new_file, new_ind);
-    move_done = false;
+    new_ind->chain_coord.clear();
+    s_MoveRecToGarbage(new_file, new_ind);
     new_file->cnt_unfinished.Add(-1);
 
-    return result;
+    return &Me::x_FinishMoveRecord;
 }
 
-bool
-CNCBlobStorage::x_ShrinkDiskStorage(void)
+CSpaceShrinker::State
+CSpaceShrinker::x_PrepareToShrink(void)
 {
-    if (m_Stopped)
-        return false;
+    if (CTaskServer::IsInShutdown())
+        return NULL;
 
-    int cur_time = int(time(NULL));
-    bool need_move = m_CurDBSize >= m_MinDBSize
-                     &&  m_GarbageSize * 100 > m_CurDBSize * m_MaxGarbagePct;
+    int cur_time = CSrvTime::CurSecs();
+    bool need_move = s_CurDBSize >= s_MinDBSize
+                     &&  s_GarbageSize * 100 > s_CurDBSize * s_MaxGarbagePct;
     double max_pct = 0;
     Uint8 total_rel_used = 0;
     Uint8 total_rel_garb = 0;
-    CNCRef<SNCDBFileInfo> max_file;
-    vector<CNCRef<SNCDBFileInfo> > files_to_del;
 
-    m_DBFilesLock.Lock();
-    ITERATE(TNCDBFilesMap, it_file, m_DBFiles) {
-        CNCRef<SNCDBFileInfo> this_file = it_file->second;
-        m_NextWriteLock.Lock();
+    s_DBFilesLock.Lock();
+    ITERATE(TNCDBFilesMap, it_file, (*s_DBFiles)) {
+        SNCDBFileInfo* this_file = it_file->second.GetNCPointerOrNull();
+        s_NextWriteLock.Lock();
         bool is_current = false;
         for (size_t i = 0; i < s_CntAllFiles; ++i) {
-            if (this_file == m_AllWritings[i].cur_file
-                ||  this_file == m_AllWritings[i].next_file)
+            if (this_file == s_AllWritings[i].cur_file
+                ||  this_file == s_AllWritings[i].next_file)
             {
                 is_current = true;
                 break;
             }
         }
-        m_NextWriteLock.Unlock();
+        s_NextWriteLock.Unlock();
         if (is_current  ||  this_file->cnt_unfinished.Get() != 0)
             continue;
 
         if (this_file->used_size == 0) {
-            files_to_del.push_back(this_file);
+            m_FilesToDel.push_back(SrvRef(this_file));
         }
         else if (need_move) {
             if (cur_time >= this_file->next_shrink_time) {
@@ -2708,7 +2960,7 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
                                       / (this_file->garb_size + this_file->used_size);
                     if (this_pct > max_pct) {
                         max_pct = this_pct;
-                        max_file = this_file;
+                        m_MaxFile = this_file;
                     }
                 }
                 this_file->info_lock.Unlock();
@@ -2721,309 +2973,399 @@ CNCBlobStorage::x_ShrinkDiskStorage(void)
             }
         }
     }
-    m_DBFilesLock.Unlock();
+    s_DBFilesLock.Unlock();
 
-    NON_CONST_ITERATE(vector<CNCRef<SNCDBFileInfo> >, it, files_to_del) {
-        x_DeleteDBFile(*it);
-    }
-    files_to_del.clear();
-
-    Uint8 proj_garbage = m_GarbageSize - total_rel_garb;
-    Uint8 proj_size = m_CurDBSize - (total_rel_garb + total_rel_used);
+    Uint8 proj_garbage = s_GarbageSize - total_rel_garb;
+    Uint8 proj_size = s_CurDBSize - (total_rel_garb + total_rel_used);
     if (need_move
-        &&  (proj_garbage * 100 <= proj_size * m_MaxGarbagePct
-             ||  max_pct * 100 <= m_MaxGarbagePct))
+        &&  (proj_garbage * 100 <= proj_size * s_MaxGarbagePct
+             ||  max_pct * 100 <= s_MaxGarbagePct))
     {
-        max_file = NULL;
+        m_MaxFile = NULL;
     }
 
-    if (max_file == NULL)
-        return false;
+    m_CurDelFile = m_FilesToDel.begin();
+    SetState(&Me::x_DeleteNextFile);
+    SetRunnable();
+    return NULL;
+}
 
-    CNCRef<CRequestContext> ctx(new CRequestContext());
-    ctx->SetRequestID();
-    GetDiagContext().SetRequestContext(ctx);
-    if (g_NetcacheServer->IsLogCmds()) {
-        GetDiagContext().PrintRequestStart()
-                        .Print("_type", "move")
-                        .Print("file_id", max_file->file_id);
+CSpaceShrinker::State
+CSpaceShrinker::x_DeleteNextFile(void)
+{
+    if (CTaskServer::IsInShutdown())
+        return NULL;
+
+    if (m_CurDelFile == m_FilesToDel.end()) {
+        m_FilesToDel.clear();
+        return &Me::x_StartMoves;
     }
-    ctx->SetRequestStatus(CNCMessageHandler::eStatus_OK);
 
-    bool failed = false;
-    Uint4 prev_rec_num = 0, last_alive = 0;
-    Uint4 cnt_processed = 0, cnt_moved = 0, size_moved = 0;
-    while (!m_Stopped) {
-        max_file->info_lock.Lock();
-        Uint4 rec_num = last_alive;
-        SFileIndexRec* ind_rec = max_file->index_head - rec_num;
-        if (rec_num != 0  &&  x_IsIndexDeleted(max_file, ind_rec)) {
-            last_alive = rec_num = 0;
-            ind_rec = max_file->index_head;
+    s_DeleteDBFile(*m_CurDelFile);
+    m_CurDelFile->Reset();
+    ++m_CurDelFile;
+    SetRunnable();
+    return NULL;
+}
+
+CSpaceShrinker::State
+CSpaceShrinker::x_StartMoves(void)
+{
+    m_StartTime = CSrvTime::CurSecs();
+    bool need_move = s_CurDBSize >= s_MinDBSize
+                     &&  s_GarbageSize * 100 > s_CurDBSize * s_MaxGarbagePct;
+    if (!m_MaxFile  ||  !need_move)
+        return &Me::x_FinishSession;
+
+    CreateNewDiagCtx();
+    CSrvDiagMsg().StartRequest()
+                 .PrintParam("_type", "move")
+                 .PrintParam("file_id", m_MaxFile->file_id);
+
+    m_Failed = false;
+    m_PrevRecNum = 0;
+    m_LastAlive = 0;
+    m_CntProcessed = 0;
+    m_CntMoved = 0;
+    m_SizeMoved = 0;
+
+    return &Me::x_MoveNextRecord;
+}
+
+CSpaceShrinker::State
+CSpaceShrinker::x_MoveNextRecord(void)
+{
+    if (CTaskServer::IsInShutdown())
+        return &Me::x_FinishMoves;
+
+    int cur_time = CSrvTime::CurSecs();
+    m_MaxFile->info_lock.Lock();
+    m_RecNum = m_LastAlive;
+    m_IndRec = m_MaxFile->index_head - m_RecNum;
+    if (m_RecNum != 0  &&  s_IsIndexDeleted(m_MaxFile, m_IndRec)) {
+        m_LastAlive = m_RecNum = 0;
+        m_IndRec = m_MaxFile->index_head;
+    }
+    do {
+        if (m_RecNum > m_PrevRecNum)
+            ++m_CntProcessed;
+        if (m_IndRec->next_num == 0) {
+            if (m_MaxFile->index_head->next_num == 0  &&  m_MaxFile->used_size != 0)
+                abort();
+            m_IndRec = NULL;
+            break;
         }
-        do {
-            if (ind_rec->next_num == 0) {
-                if (max_file->index_head->next_num == 0  &&  max_file->used_size != 0)
-                    abort();
-                ind_rec = NULL;
-                break;
+        m_LastAlive = m_RecNum;
+        m_RecNum = m_IndRec->next_num;
+        m_IndRec = m_MaxFile->index_head - m_RecNum;
+    }
+    while (m_RecNum <= m_PrevRecNum
+           ||  m_IndRec->cache_data->dead_time <= cur_time + s_MinMoveLife);
+    m_MaxFile->info_lock.Unlock();
+    if (!m_IndRec)
+        return &Me::x_FinishMoves;
+
+    m_CacheData = m_IndRec->cache_data;
+    m_CacheData->lock.Lock();
+    m_VerMgr = m_CacheData->ver_mgr;
+    if (m_VerMgr) {
+        m_VerMgr->ObtainReference();
+        m_CacheData->lock.Unlock();
+
+        m_VerMgr->RequestCurVersion(this);
+        return &Me::x_CheckCurVersion;
+    }
+    m_CacheData->lock.Unlock();
+
+    if (s_IsIndexDeleted(m_MaxFile, m_IndRec)) {
+        SetRunnable();
+        return NULL;
+    }
+    return &Me::x_MoveRecord;
+}
+
+SNCDataCoord
+CSpaceShrinker::x_FindMetaCoord(SNCDataCoord coord, Uint1 max_map_depth)
+{
+    if (max_map_depth == 0  ||  coord.empty())
+        return coord;
+
+    CSrvRef<SNCDBFileInfo> file_info = s_GetDBFile(coord.file_id);
+    SFileIndexRec* ind_rec = s_GetIndOrDeleted(file_info, coord.rec_num);
+    if (s_IsIndexDeleted(file_info, ind_rec)  ||  ind_rec->rec_type == eFileRecMeta)
+        return coord;
+
+    return x_FindMetaCoord(ind_rec->chain_coord, max_map_depth - 1);
+}
+
+CSpaceShrinker::State
+CSpaceShrinker::x_CheckCurVersion(void)
+{
+    if (!IsTransFinished())
+        return NULL;
+    if (CTaskServer::IsInShutdown())
+        return &Me::x_FinishMoves;
+
+    if (s_IsIndexDeleted(m_MaxFile, m_IndRec))
+        return &Me::x_FinishMoveRecord;
+
+    m_CurVer = m_VerMgr->GetCurVersion();
+    if (!m_CurVer)
+        return &Me::x_FinishMoveRecord;
+
+    if (m_IndRec->rec_type == eFileRecChunkData) {
+        SFileChunkDataRec* data_rec = s_CalcChunkAddress(m_MaxFile, m_IndRec);
+        Uint8 chunk_num = data_rec->chunk_num;
+        char* cur_chunk_ptr = NULL;
+        if (m_CurVer->chunks.size() > chunk_num)
+            cur_chunk_ptr = ACCESS_ONCE(m_CurVer->chunks[chunk_num]);
+        if (cur_chunk_ptr) {
+            if (cur_chunk_ptr != (char*)data_rec->chunk_data)
+                return &Me::x_FinishMoveRecord;
+            if (m_CurVer->coord.empty()) {
+                m_Failed = true;
+                return &Me::x_FinishMoveRecord;
             }
-            last_alive = rec_num;
-            rec_num = ind_rec->next_num;
-            ind_rec = max_file->index_head - rec_num;
         }
-        while (rec_num <= prev_rec_num
-               ||  ind_rec->cache_data->dead_time <= cur_time + m_MinMoveLife);
-        max_file->info_lock.Unlock();
-        if (!ind_rec)
-            break;
-        if (x_IsIndexDeleted(max_file, ind_rec))
-            continue;
-        if (ind_rec->cache_data->ver_mgr) {
-            failed = true;
-            break;
+        else {
+            SNCDataCoord meta_coord = x_FindMetaCoord(m_IndRec->chain_coord,
+                                                      m_CurVer->map_depth);
+            if (meta_coord.empty()  ||  meta_coord != m_CurVer->coord)
+                return &Me::x_FinishMoveRecord;
         }
-
-        bool move_done = false;
-        if (!x_MoveRecord(max_file, ind_rec, cur_time, move_done)) {
-            failed = true;
-            break;
-        }
-        ++cnt_processed;
-        if (move_done) {
-            ++cnt_moved;
-            ++m_CntMoveTasks;
-            size_moved += ind_rec->rec_size + sizeof(SFileIndexRec);
-            m_MovedSize += ind_rec->rec_size + sizeof(SFileIndexRec);
-            x_MoveRecToGarbage(max_file, ind_rec);
-        }
-        prev_rec_num = rec_num;
     }
-    if (!failed) {
-        ++m_CntMoveFiles;
-        if (max_file->used_size == 0)
-            x_DeleteDBFile(max_file);
-        else if (cnt_processed == 0) {
-            ERR_POST(Warning << "Didn't find anything to process in the file");
-            max_file->next_shrink_time = cur_time + max(m_MinMoveLife, 300);
+    else if (m_IndRec->rec_type == eFileRecChunkMap) {
+        if (m_CurVer->map_depth == 0)
+            return &Me::x_FinishMoveRecord;
+        SNCDataCoord meta_coord = x_FindMetaCoord(m_IndRec->chain_coord,
+                                                  m_CurVer->map_depth - 1);
+        if (meta_coord.empty()  &&  m_CurVer->coord.empty()) {
+            m_Failed = true;
+            return &Me::x_FinishMoveRecord;
+        }
+        if (meta_coord.empty()  ||  meta_coord != m_CurVer->coord)
+            return &Me::x_FinishMoveRecord;
+    }
+    else if (m_CurVer->coord.file_id != m_MaxFile->file_id
+             ||  m_CurVer->coord.rec_num != m_RecNum)
+    {
+        return &Me::x_FinishMoveRecord;
+    }
+    else if (m_CurVer->move_or_rewrite
+             ||  !AtomicCAS(m_CurVer->move_or_rewrite, false, true))
+    {
+        m_Failed = true;
+        return &Me::x_FinishMoveRecord;
+    }
+
+    m_MovingMeta = m_IndRec->rec_type == eFileRecMeta;
+    if (m_CurVer->dead_time < CSrvTime::CurSecs() + s_MinMoveLife)
+        return &Me::x_FinishMoveRecord;
+    else
+        return &Me::x_MoveRecord;
+}
+
+CSpaceShrinker::State
+CSpaceShrinker::x_FinishMoveRecord(void)
+{
+    if (m_VerMgr) {
+        if (m_CurVer) {
+            if (m_MovingMeta)
+                m_CurVer->move_or_rewrite = false;
+            m_CurVer.Reset();
+        }
+        m_VerMgr->Release();
+        m_VerMgr = NULL;
+    }
+
+    ++m_CntProcessed;
+    m_PrevRecNum = m_RecNum;
+
+    if (m_Failed)
+        SetState(&Me::x_FinishMoves);
+    else
+        SetState(&Me::x_MoveNextRecord);
+    SetRunnable();
+    return NULL;
+}
+
+CSpaceShrinker::State
+CSpaceShrinker::x_FinishMoves(void)
+{
+    if (!m_Failed) {
+        m_MaxFile->is_releasing = true;
+        if (m_MaxFile->used_size == 0)
+            s_DeleteDBFile(m_MaxFile);
+        else if (m_CntProcessed == 0) {
+            SRV_LOG(Warning, "Didn't find anything to process in the file");
+            m_MaxFile->next_shrink_time = CSrvTime::CurSecs() + max(s_MinMoveLife, 300);
         }
         else
-            max_file->next_shrink_time = cur_time + m_MinMoveLife;
+            m_MaxFile->next_shrink_time = CSrvTime::CurSecs() + s_MinMoveLife;
     }
     else {
-        ctx->SetRequestStatus(CNCMessageHandler::eStatus_CmdAborted);
-        ++m_CntFailedMoves;
-        max_file->next_shrink_time = cur_time + m_FailedMoveDelay;
+        GetDiagCtx()->SetRequestStatus(eStatus_CmdAborted);
+        m_MaxFile->next_shrink_time = CSrvTime::CurSecs() + s_FailedMoveDelay;
     }
+    m_MaxFile.Reset();
 
-    if (g_NetcacheServer->IsLogCmds()) {
-        GetDiagContext().Extra().Print("cnt_processed", cnt_processed)
-                                .Print("cnt_moved", cnt_moved)
-                                .Print("size_moved", size_moved);
-        GetDiagContext().PrintRequestStop();
-    }
-    ctx.Reset();
-    GetDiagContext().SetRequestContext(NULL);
+    CSrvDiagMsg().PrintExtra()
+                 .PrintParam("cnt_processed", m_CntProcessed)
+                 .PrintParam("cnt_moved", m_CntMoved)
+                 .PrintParam("size_moved", m_SizeMoved);
+    CSrvDiagMsg().StopRequest();
+    ReleaseDiagCtx();
+    CNCStat::DBFileCleaned(!m_Failed, m_CntProcessed, m_CntMoved, m_SizeMoved);
 
-    return true;
+    return &Me::x_FinishSession;
 }
 
-void
-CNCBlobStorage::x_SaveLogRecNo(void)
+CSpaceShrinker::State
+CSpaceShrinker::x_FinishSession(void)
 {
-    int cur_time = int(time(NULL));
-    if (!m_NeedSaveLogRecNo
-        ||  cur_time < m_LastRecNoSaveTime + m_MinRecNoSavePeriod)
-    {
+    SetState(&Me::x_PrepareToShrink);
+    if (!CTaskServer::IsInShutdown()) {
+        if (CSrvTime::CurSecs() != m_StartTime)
+            SetRunnable();
+        else
+            RunAfter(1);
+    }
+    return NULL;
+}
+
+CSpaceShrinker::CSpaceShrinker(void)
+{
+    SetState(&Me::x_PrepareToShrink);
+}
+
+CSpaceShrinker::~CSpaceShrinker(void)
+{}
+
+
+CMovedRecDeleter::CMovedRecDeleter(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
+    : m_FileInfo(file_info),
+      m_IndRec(ind_rec)
+{}
+
+CMovedRecDeleter::~CMovedRecDeleter(void)
+{}
+
+void
+CMovedRecDeleter::ExecuteRCU(void)
+{
+    s_MoveRecToGarbage(m_FileInfo, m_IndRec);
+    delete this;
+}
+
+
+CRecNoSaver::~CRecNoSaver(void)
+{}
+
+void
+CRecNoSaver::ExecuteSlice(TSrvThreadNum /* thr_num */)
+{
+    int cur_time = CSrvTime::CurSecs();
+    int next_save = s_LastRecNoSaveTime + s_MinRecNoSavePeriod;
+    if (!s_NeedSaveLogRecNo)
+        next_save = cur_time + s_MinRecNoSavePeriod;
+    else if (CTaskServer::IsInShutdown())
+        next_save = cur_time;
+
+    if (cur_time < next_save) {
+        if (!CTaskServer::IsInShutdown())
+            RunAfter(next_save - cur_time);
         return;
     }
 
+    s_NeedSaveLogRecNo = false;
     Uint8 log_rec_no = CNCSyncLog::GetLastRecNo();
-    m_IndexLock.Lock();
+    s_IndexLock.Lock();
     try {
-        m_IndexDB->SetMaxSyncLogRecNo(log_rec_no);
+        s_IndexDB->SetMaxSyncLogRecNo(log_rec_no);
     }
     catch (CSQLITE_Exception& ex) {
-        ERR_POST(Critical << "Cannot save sync log record number: " << ex);
+        SRV_LOG(Critical, "Cannot save sync log record number: " << ex);
     }
-    m_IndexLock.Unlock();
+    s_IndexLock.Unlock();
 
-    m_LastRecNoSaveTime = cur_time;
+    s_LastRecNoSaveTime = cur_time;
+    RunAfter(s_MinRecNoSavePeriod);
 }
 
-void
-CNCBlobStorage::x_FlushStorage(void)
-{
-    int cur_time = int(time(NULL));
-    if (!m_FlushTimePeriod  ||  cur_time < m_LastFlushTime + m_FlushTimePeriod)
-        return;
 
-    Uint4 last_id = 0;
-    for (;;) {
-        m_DBFilesLock.Lock();
-        TNCDBFilesMap::iterator file_it = m_DBFiles.upper_bound(last_id);
-        if (file_it == m_DBFiles.end()) {
-            m_DBFilesLock.Unlock();
-            break;
-        }
-        CNCRef<SNCDBFileInfo> file_info = file_it->second;
-        m_DBFilesLock.Unlock();
+CDiskFlusher::CDiskFlusher(void)
+{
+    SetState(&Me::x_CheckFlushTime);
+}
+
+CDiskFlusher::~CDiskFlusher(void)
+{}
+
+CDiskFlusher::State
+CDiskFlusher::x_CheckFlushTime(void)
+{
+    if (!s_FlushTimePeriod  ||  CTaskServer::IsInShutdown())
+        return NULL;
+
+    int cur_time = CSrvTime::CurSecs();
+    if (cur_time < s_LastFlushTime + s_FlushTimePeriod) {
+        RunAfter(s_LastFlushTime + s_FlushTimePeriod - cur_time);
+        return NULL;
+    }
+
+    m_LastId = 0;
+    return &Me::x_FlushNextFile;
+}
+
+CDiskFlusher::State
+CDiskFlusher::x_FlushNextFile(void)
+{
+    if (CTaskServer::IsInShutdown())
+        return NULL;
+
+    s_DBFilesLock.Lock();
+    TNCDBFilesMap::iterator file_it = s_DBFiles->upper_bound(m_LastId);
+    if (file_it == s_DBFiles->end()) {
+        s_DBFilesLock.Unlock();
+        s_LastFlushTime = CSrvTime::CurSecs();
+        return &Me::x_CheckFlushTime;
+    }
+    CSrvRef<SNCDBFileInfo> file_info = file_it->second;
+    s_DBFilesLock.Unlock();
 
 #ifdef NCBI_OS_LINUX
-        if (msync(file_info->file_map, file_info->file_size, MS_SYNC)) {
-            ERR_POST(Critical << "Unable to sync file" << file_info->file_name
-                              << ", errno=" << errno);
-        }
+    if (msync(file_info->file_map, file_info->file_size, MS_SYNC)) {
+        SRV_LOG(Critical, "Unable to sync file" << file_info->file_name
+                          << ", errno=" << errno);
+    }
 #endif
 
-        last_id = file_info->file_id;
-    }
-
-    m_LastFlushTime = cur_time;
-}
-
-void
-CNCBlobStorage::x_DoBackgroundWork(void)
-{
-    x_CacheDatabase();
-
-    m_NewFileThread = NewBGThread(this, &CNCBlobStorage::x_DoNewFileWork);
-    try {
-        m_NewFileThread->Run();
-    }
-    catch (CThreadException& ex) {
-        ERR_POST(Critical << ex);
-        m_NewFileThread.Reset();
-        g_NetcacheServer->RequestShutdown();
-        return;
-    }
-    m_GCThread = NewBGThread(this, &CNCBlobStorage::x_DoGCWork);
-    try {
-        m_GCThread->Run();
-    }
-    catch (CThreadException& ex) {
-        ERR_POST(Critical << ex);
-        m_GCThread.Reset();
-        g_NetcacheServer->RequestShutdown();
-        return;
-    }
-    m_FlushThread = NewBGThread(this, &CNCBlobStorage::x_DoFlushWork);
-    try {
-        m_FlushThread->Run();
-    }
-    catch (CThreadException& ex) {
-        ERR_POST(Critical << ex);
-        m_FlushThread.Reset();
-        g_NetcacheServer->RequestShutdown();
-        return;
-    }
-
-    while (!m_Stopped) {
-        Uint8 start_time = CNetCacheServer::GetPreciseTime();
-
-        x_HeartBeat();
-        x_CollectStorageStats();
-        x_ShrinkDiskStorage();
-
-        Uint8 end_time = CNetCacheServer::GetPreciseTime();
-        if (end_time - start_time < kNCTimeTicksInSec) {
-            m_StopLock.Lock();
-            if (!m_Stopped)
-                m_StopCond.WaitForSignal(m_StopLock, CTimeout(1, 0));
-            m_StopLock.Unlock();
-        }
-    }
-}
-
-void
-CNCBlobStorage::x_DoFlushWork(void)
-{
-    while (!m_Stopped) {
-        int start_time = int(time(NULL));
-        x_FlushStorage();
-        x_SaveLogRecNo();
-        int end_time = int(time(NULL));
-
-        int to_wait = m_FlushTimePeriod;
-        if (!to_wait)
-            to_wait = m_MinRecNoSavePeriod;
-        if (end_time - start_time < to_wait * kNCTimeTicksInSec) {
-            m_StopLock.Lock();
-            if (!m_Stopped)
-                m_StopCond.WaitForSignal(m_StopLock, CTimeout(to_wait, 0));
-            m_StopLock.Unlock();
-        }
-    }
-}
-
-void
-CNCBlobStorage::x_DoGCWork(void)
-{
-    while (!m_Stopped) {
-        Uint8 start_time = CNetCacheServer::GetPreciseTime();
-        x_RunGC();
-        Uint8 end_time = CNetCacheServer::GetPreciseTime();
-        if (end_time - start_time < kNCTimeTicksInSec) {
-            m_StopLock.Lock();
-            if (!m_Stopped)
-                m_StopCond.WaitForSignal(m_StopLock, CTimeout(1, 0));
-            m_StopLock.Unlock();
-        }
-    }
-}
-
-void
-CNCBlobStorage::x_DoNewFileWork(void)
-{
-    while (!m_Stopped) {
-        for (size_t i = 0; i < s_CntAllFiles; ++i) {
-            if (m_AllWritings[i].next_file == NULL)
-                x_CreateNewFile(i);
-        }
-
-        m_NextWriteLock.Lock();
-        bool has_null = false;
-        for (size_t i = 0; i < s_CntAllFiles; ++i) {
-            if (m_AllWritings[i].next_file == NULL) {
-                has_null = true;
-                break;
-            }
-        }
-        if (!m_Stopped  &&  !has_null)
-            m_NextFileSwitch.WaitForSignal(m_NextWriteLock);
-        m_NextWriteLock.Unlock();
-    }
+    m_LastId = file_info->file_id;
+    SetRunnable();
+    return NULL;
 }
 
 
-CNCBlobStorage::SBucketCache::SBucketCache(Uint2 bucket)
-    : deleter(CKeysCleaner(bucket))
-{}
-
-
-CNCBlobStorage::CKeysCleaner::CKeysCleaner(Uint2 bucket)
-    : m_Bucket(bucket)
+CNewFileCreator::~CNewFileCreator(void)
 {}
 
 void
-CNCBlobStorage::CKeysCleaner::Delete(const string& key) const
+CNewFileCreator::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
-    SBucketCache* cache = g_NCStorage->x_GetBucketCache(m_Bucket);
-    cache->lock.Lock();
-    TKeyMap::iterator it = cache->key_map.find(key, SCacheKeyCompare());
-    if (it != cache->key_map.end()) {
-        SNCCacheData* cache_data = &*it;
-        if (cache_data->key_del_time != 0) {
-            if (cache_data->key_del_time >= int(time(NULL)) - 2) {
-                cache->deleter.AddElement(key);
-            }
-            else {
-                cache->key_map.erase(it);
-                delete cache_data;
-            }
+    for (Uint1 i = 0; i < s_CntAllFiles; ++i) {
+        if (s_AllWritings[i].next_file == NULL) {
+            s_CreateNewFile(i);
+            SetRunnable();
+            break;
         }
     }
-    cache->lock.Unlock();
+}
+
+
+void
+SNCCacheData::ExecuteRCU(void)
+{
+    delete this;
 }
 
 END_NCBI_SCOPE

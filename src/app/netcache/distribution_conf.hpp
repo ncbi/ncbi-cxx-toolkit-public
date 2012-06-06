@@ -33,25 +33,10 @@
  */
 
 
-#include <map>
-#include <deque>
-#include <string>
-
-// For Uint2, Uint8, NCBI_CONST_UINT8
-#include <corelib/ncbitype.h>
-
-// For CFastMutex
-#include <corelib/ncbimtx.hpp>
-
-// For BEGIN_NCBI_SCOPE
-#include <corelib/ncbistl.hpp>
+#include "nc_utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
-
-
-typedef map<Uint8, string>  TNCPeerList;
-typedef vector<Uint8>       TServersList;
 
 
 class CNCDistributionConf
@@ -92,13 +77,13 @@ public:
     static const vector<Uint2>& GetSelfSlots(void);
     static Uint1 GetCntActiveSyncs(void);
     static Uint1 GetMaxSyncsOneServer(void);
-    static Uint1 GetMaxWorkerTimePct(void);
+    static Uint1 GetSyncPriority(void);
     static Uint2 GetMaxPeerTotalConns(void);
     static Uint2 GetMaxPeerBGConns(void);
     static Uint1 GetCntErrorsToThrottle(void);
     static Uint8 GetPeerThrottlePeriod(void);
-    static double GetPeerConnTimeout(void);
     static Uint1 GetPeerTimeout(void);
+    static Uint1 GetBlobListTimeout(void);
     static Uint8 GetSmallBlobBoundary(void);
     static Uint2 GetMaxMirrorQueueSize(void);
     static const string& GetSyncLogFileName(void);

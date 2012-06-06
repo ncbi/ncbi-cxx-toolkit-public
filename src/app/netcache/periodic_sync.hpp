@@ -26,31 +26,14 @@
  *
  * ===========================================================================
  *
- * Authors: Denis Vakatov, Pavel Ivanov, Sergey Satskiy
+ * Authors: Pavel Ivanov
  *
  * File Description: Data structures and API to support blobs mirroring.
  *
  */
 
-
-#include <map>
-#include <deque>
-#include <string>
-
-// For Uint2, Uint8, NCBI_CONST_UINT8
-#include <corelib/ncbitype.h>
-
-// For CFastMutex
-#include <corelib/ncbimtx.hpp>
-
-// For BEGIN_NCBI_SCOPE
-#include <corelib/ncbistl.hpp>
-
-#include <corelib/ncbithr.hpp>
-
 #include "sync_log.hpp"
 #include "nc_db_info.hpp"
-#include "nc_utils.hpp"
 #include "nc_utils.hpp"
 
 
@@ -78,7 +61,6 @@ enum ESyncInitiateResult {
 class CNCPeriodicSync
 {
 public:
-    static void PreInitialize(void);
     static bool Initialize(void);
     static void Finalize(void);
 
@@ -108,9 +90,6 @@ public:
                        Uint8 sync_id,
                        Uint8 local_synced_rec_no,
                        Uint8 remote_synced_rec_no);
-
-    static Uint4 BeginTimeEvent(Uint8 server_id);
-    static void EndTimeEvent(Uint8 server_id, Uint8 adj_time);
 };
 
 
@@ -152,7 +131,7 @@ enum ESynActionType {
 
 struct SSyncSrvData
 {
-    CFastMutex lock;
+    CMiniMutex lock;
     Uint8   srv_id;
     Uint8   next_sync_time;
     Uint8   first_nw_err_time;
@@ -165,7 +144,7 @@ struct SSyncSrvData
 
 struct SSyncSlotSrv
 {
-    CFastMutex lock;
+    CMiniMutex lock;
     CNCPeerControl* peer;
     bool    sync_started;
     bool    is_passive;
@@ -176,6 +155,7 @@ struct SSyncSlotSrv
     Uint8   next_sync_time;
     Uint8   last_active_time;
     Uint8   cur_sync_id;
+    Uint8   cnt_sync_ops;
 
     SSyncSlotSrv(CNCPeerControl* peer);
 };
@@ -185,7 +165,7 @@ typedef map<Uint2, SSyncSlotSrv*>  TSlotSrvsList;
 
 struct SSyncSlotData
 {
-    CFastMutex lock;
+    CMiniMutex lock;
     TSlotSrvsList srvs;
     Uint2   slot;
     Uint1   cnt_sync_started;
@@ -211,28 +191,34 @@ struct SSyncTaskInfo
 };
 
 
-class CNCActiveSyncControl : public CThread
+class CNCActiveSyncControl : public CSrvStatesTask<CNCActiveSyncControl>
 {
 public:
     CNCActiveSyncControl(void);
     virtual ~CNCActiveSyncControl(void);
 
-    CRequestContext* GetDiagCtx(void);
     Uint2 GetSyncSlot(void);
     void StartResponse(Uint8 local_rec_no, Uint8 remote_rec_no, bool by_blobs);
     void AddStartEvent(SNCSyncEvent* evt);
-    void AddStartBlob(const string& key, SNCCacheData* blob_sum);
+    void AddStartBlob(const string& key, SNCBlobSummary* blob_sum);
     bool GetNextTask(SSyncTaskInfo& task_info);
     void ExecuteSyncTask(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
     void CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn);
-    void WakeUp(void);
 
 private:
-    virtual void* Main(void);
-
-    bool x_DoPeriodicSync(SSyncSlotData* slot_data, SSyncSlotSrv*  slot_srv);
-    void x_PrepareSyncByEvents(void);
-    void x_PrepareSyncByBlobs(void);
+    State x_StartScanSlots(void);
+    State x_CheckSlotOurSync(void);
+    State x_CheckSlotTheirSync(void);
+    State x_FinishScanSlots(void);
+    State x_DoPeriodicSync(void);
+    State x_WaitSyncStarted(void);
+    State x_PrepareSyncByEvents(void);
+    State x_WaitForBlobList(void);
+    State x_PrepareSyncByBlobs(void);
+    State x_ExecuteSyncCommands(void);
+    State x_ExecuteFinalize(void);
+    State x_WaitForExecutingTasks(void);
+    State x_FinishSync(void);
     void x_CleanRemoteObjects(void);
     void x_CalcNextTask(void);
     void x_DoEventSend(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
@@ -246,12 +232,10 @@ private:
 
     SSyncSlotData*  m_SlotData;
     SSyncSlotSrv*   m_SlotSrv;
-    CNCRef<CRequestContext> m_DiagCtx;
     Uint8       m_SrvId;
     Uint2       m_Slot;
     ESyncResult m_Result;
-    CMutex      m_Lock;
-    CConditionVariable m_WaitCond;
+    CMiniMutex  m_Lock;
     Uint4       m_StartedCmds;
 
     Uint8 m_LocalStartRecNo;
@@ -276,38 +260,29 @@ private:
     Uint8   m_ProlongERR;
     Uint8   m_DelOK;
     Uint8   m_DelERR;
+    bool m_ForceInitSync;
+    bool m_NeedRehash;
+    bool m_DidSync;
+    bool m_FinishSyncCalled;
+    Uint8 m_MinNextTime;
+    Uint8 m_LoopStart;
+    TSyncSlotsMap::const_iterator m_NextSlotIt;
+    Uint8 m_StartTime;
 };
 
 
-class CNCTimeThrottler
+class CNCLogCleaner : public CSrvTask
 {
 public:
-    CNCTimeThrottler(void);
-
-    Uint4 BeginTimeEvent(Uint8 server_id);
-    void EndTimeEvent(Uint8 server_id, Uint8 adj_time);
+    CNCLogCleaner(void);
+    virtual ~CNCLogCleaner(void);
 
 private:
-    Uint8   m_PeriodStart;
-    Uint8   m_TotalTime;
-    Uint8   m_CurStart;
-    typedef map<Uint8, Uint8>   TTimeMap;
-    TTimeMap m_SrvTime;
-
-    enum EMode {
-        eTotal,
-        eByServer
-    };
-    EMode   m_Mode;
-};
+    virtual void ExecuteSlice(TSrvThreadNum thr_idx);
 
 
-class CNCThrottler_Getter : public CNCTlsObject<CNCThrottler_Getter,
-                                                CNCTimeThrottler>
-{
-public:
-    static CNCTimeThrottler* CreateTlsObject(void);
-    static void DeleteTlsObject(void* obj);
+    TSyncSlotsMap::const_iterator m_NextSlotIt;
+    map<Uint2, Uint8> m_LastForceTime;
 };
 
 
@@ -316,12 +291,6 @@ public:
 //////////////////////////////////////////////////////////////////////////
 //  Inline functions
 //////////////////////////////////////////////////////////////////////////
-
-inline CRequestContext*
-CNCActiveSyncControl::GetDiagCtx(void)
-{
-    return m_DiagCtx;
-}
 
 inline Uint2
 CNCActiveSyncControl::GetSyncSlot(void)
@@ -349,7 +318,7 @@ CNCActiveSyncControl::AddStartEvent(SNCSyncEvent* evt)
 }
 
 inline void
-CNCActiveSyncControl::AddStartBlob(const string& key, SNCCacheData* blob_sum)
+CNCActiveSyncControl::AddStartBlob(const string& key, SNCBlobSummary* blob_sum)
 {
     m_RemoteBlobs[key] = blob_sum;
 }

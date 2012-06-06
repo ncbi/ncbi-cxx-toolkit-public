@@ -1,0 +1,11 @@
+[AddToProject]
+HeadersInSrc = task_server.hpp server_core.hpp srv_sync.hpp \
+               srv_time.hpp rcu.hpp sockets_man.hpp scheduler.hpp \
+               threads_man.hpp timers.hpp memory_man.hpp \
+               logging.hpp task_server_pch.hpp srv_ref.hpp \
+               srv_diag.hpp srv_lib.hpp srv_inlines.hpp \
+               srv_sockets.hpp srv_tasks.hpp time_man.hpp \
+               srv_stat.hpp
+
+[UsePch]
+DefaultPch = task_server_pch.hpp

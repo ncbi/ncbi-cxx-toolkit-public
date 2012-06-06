@@ -30,14 +30,15 @@
  */
 
 
-#include <ncbi_pch.hpp>
+#include "nc_pch.hpp"
 
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbireg.hpp>
 #include <util/checksum.hpp>
 #include <util/random_gen.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <connect/services/netcache_key.hpp>
 #include <connect/services/netcache_api_expt.hpp>
+
+#include "task_server.hpp"
 
 #include "distribution_conf.hpp"
 #include "netcached.hpp"
@@ -83,13 +84,13 @@ static string   s_PeriodicLogFile;
 static FILE*    s_CopyDelayLog = NULL;
 static Uint1    s_CntActiveSyncs = 4;
 static Uint1    s_MaxSyncsOneServer = 2;
-static Uint1    s_MaxWorkerTimePct = 50;
+static Uint1    s_SyncPriority = 10;
 static Uint2    s_MaxPeerTotalConns = 100;
 static Uint2    s_MaxPeerBGConns = 50;
 static Uint1    s_CntErrorsToThrottle = 10;
-static Uint8    s_PeerThrottlePeriod = 10 * kNCTimeTicksInSec;
-static double   s_PeerConnTimeout = 0.1;
-static Uint1    s_PeerTimeout = 10;
+static Uint8    s_PeerThrottlePeriod = 10 * kUSecsPerSecond;
+static Uint1    s_PeerTimeout = 2;
+static Uint1    s_BlobListTimeout = 10;
 static Uint8    s_SmallBlobBoundary = 65535;
 static Uint2    s_MaxMirrorQueueSize = 10000;
 static string   s_SyncLogFileName;
@@ -113,13 +114,11 @@ static string       kNCReg_NCServerSlotsPrefix = "srv_slots_";
 bool
 CNCDistributionConf::Initialize(Uint2 control_port)
 {
-    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
-    Uint4 self_host = SOCK_gethostbyname(0);
+    Uint4 self_host = CTaskServer::GetIPByHost(CTaskServer::GetHostName());
     s_SelfID = (Uint8(self_host) << 32) + control_port;
-    char ipaddr[32];
-    SOCK_ntoa(self_host, ipaddr, sizeof(ipaddr)-1);
-    s_SelfHostIP = ipaddr;
+    s_SelfHostIP = CTaskServer::IPToString(self_host);
     s_BlobId.Set(0);
 
     string reg_value;
@@ -133,7 +132,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         list<CTempString> srv_fields;
         NStr::Split(reg_value, ":", srv_fields);
         if (srv_fields.size() != 3) {
-            ERR_POST(Critical << "Incorrect peer server specification: '"
+            SRV_LOG(Critical, "Incorrect peer server specification: '"
                               << reg_value << "'");
             return false;
         }
@@ -141,28 +140,39 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         string grp_name = *it_fields;
         ++it_fields;
         string host_str = *it_fields;
-        Uint4 host = CSocketAPI::gethostbyname(host_str);
+        Uint4 host = CTaskServer::GetIPByHost(host_str);
         ++it_fields;
         string port_str = *it_fields;
         Uint2 port = NStr::StringToUInt(port_str, NStr::fConvErr_NoThrow);
         if (host == 0  ||  port == 0) {
-            ERR_POST(Critical << "Bad configuration: host does not exist ("
+            SRV_LOG(Critical, "Bad configuration: host does not exist ("
                               << reg_value << ")");
             return false;
         }
         Uint8 srv_id = (Uint8(host) << 32) + port;
         if (srv_id == s_SelfID) {
+            if (found_self) {
+                SRV_LOG(Critical, "Bad configuration: self host mentioned twice");
+                return false;
+            }
             found_self = true;
             s_SelfGroup = grp_name;
         }
-        else
-            s_Peers[srv_id] = host_str + ":" + port_str;
+        else {
+            string peer_str = host_str + ":" + port_str;
+            if (s_Peers.find(srv_id) != s_Peers.end()) {
+                SRV_LOG(Critical, "Bad configuration: host " << peer_str
+                                  << " mentioned twice");
+                return false;
+            }
+            s_Peers[srv_id] = peer_str;
+        }
 
         // There must be corresponding description of slots
         value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
         reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
         if (reg_value.empty()) {
-            ERR_POST(Critical << "Bad configuration: no slots for a server "
+            SRV_LOG(Critical, "Bad configuration: no slots for a server "
                               << srv_idx);
             return false;
         }
@@ -172,12 +182,12 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         ITERATE(list<string>, it, values) {
             Uint2 slot = NStr::StringToUInt(*it, NStr::fConvErr_NoThrow);
             if (slot == 0) {
-                ERR_POST(Critical << "Bad slot number: " << *it);
+                SRV_LOG(Critical, "Bad slot number: " << *it);
                 return false;
             }
             TServersList& srvs = s_RawSlot2Servers[slot];
             if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
-                ERR_POST(Critical << "Bad configuration: slot " << slot
+                SRV_LOG(Critical, "Bad configuration: slot " << slot
                                   << " provided twice for server " << srv_idx);
                 return false;
             }
@@ -200,8 +210,8 @@ CNCDistributionConf::Initialize(Uint2 control_port)
 
     if (!found_self) {
         if (s_Peers.size() != 0) {
-            ERR_POST(Critical <<  "Bad configuration - no description found for "
-                                  "itself (port " << control_port << ")");
+            SRV_LOG(Critical, "Bad configuration - no description found for "
+                              "itself (port " << control_port << ")");
             return false;
         }
         s_SelfSlots.push_back(1);
@@ -229,23 +239,23 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     try {
         s_CntSlotBuckets = reg.GetInt(kNCReg_NCPoolSection, "cnt_slot_buckets", 10);
         if (numeric_limits<Uint2>::max() / s_CntSlotBuckets < s_MaxSlotNumber) {
-            ERR_POST(Critical << "Bad configuration: too many buckets per slot ("
-                     << s_CntSlotBuckets << ") with given number of slots ("
-                     << s_MaxSlotNumber << ").");
+            SRV_LOG(Critical, "Bad configuration: too many buckets per slot ("
+                              << s_CntSlotBuckets << ") with given number of slots ("
+                              << s_MaxSlotNumber << ").");
             return false;
         }
         s_CntTimeBuckets = s_CntSlotBuckets * s_MaxSlotNumber;
         s_TimeRndShare = s_SlotRndShare / s_CntSlotBuckets + 1;
         s_CntActiveSyncs = reg.GetInt(kNCReg_NCPoolSection, "max_active_syncs", 4);
         s_MaxSyncsOneServer = reg.GetInt(kNCReg_NCPoolSection, "max_syncs_one_server", 2);
-        s_MaxWorkerTimePct = reg.GetInt(kNCReg_NCPoolSection, "max_deferred_time_pct", 10);
+        s_SyncPriority = reg.GetInt(kNCReg_NCPoolSection, "deferred_priority", 10);
         s_MaxPeerTotalConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_connections", 100);
         s_MaxPeerBGConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_bg_connections", 50);
         s_CntErrorsToThrottle = reg.GetInt(kNCReg_NCPoolSection, "peer_errors_for_throttle", 10);
         s_PeerThrottlePeriod = reg.GetInt(kNCReg_NCPoolSection, "peer_throttle_period", 10);
-        s_PeerThrottlePeriod *= kNCTimeTicksInSec;
-        s_PeerConnTimeout = reg.GetDouble(kNCReg_NCPoolSection, "peer_connection_timeout", 0.1);
-        s_PeerTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_communication_timeout", 10);
+        s_PeerThrottlePeriod *= kUSecsPerSecond;
+        s_PeerTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_communication_timeout", 2);
+        s_BlobListTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_blob_list_timeout", 10);
         s_SmallBlobBoundary = reg.GetInt(kNCReg_NCPoolSection, "small_blob_max_size", 100);
         s_SmallBlobBoundary *= 1024;
         s_MaxMirrorQueueSize = reg.GetInt(kNCReg_NCPoolSection, "max_instant_queue_size", 10000);
@@ -259,23 +269,19 @@ CNCDistributionConf::Initialize(Uint2 control_port)
             s_CleanLogReserve = s_MaxSlotLogEvents - 1;
         s_MaxCleanLogBatch = reg.GetInt(kNCReg_NCPoolSection, "max_clean_log_batch", 10000);
         s_MinForcedCleanPeriod = reg.GetInt(kNCReg_NCPoolSection, "min_forced_clean_log_period", 10);
-        s_MinForcedCleanPeriod *= kNCTimeTicksInSec;
+        s_MinForcedCleanPeriod *= kUSecsPerSecond;
         s_CleanAttemptInterval = reg.GetInt(kNCReg_NCPoolSection, "clean_log_attempt_interval", 1);
         s_PeriodicSyncInterval = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_interval", 10);
-        s_PeriodicSyncInterval *= kNCTimeTicksInSec;
-        //s_PeriodicSyncHeadTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_head_time", 1);
-        //s_PeriodicSyncHeadTime *= kNCTimeTicksInSec;
-        //s_PeriodicSyncTailTime = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_tail_time", 10);
-        //s_PeriodicSyncTailTime *= kNCTimeTicksInSec;
+        s_PeriodicSyncInterval *= kUSecsPerSecond;
         s_PeriodicSyncTimeout = reg.GetInt(kNCReg_NCPoolSection, "deferred_sync_timeout", 10);
-        s_PeriodicSyncTimeout *= kNCTimeTicksInSec;
+        s_PeriodicSyncTimeout *= kUSecsPerSecond;
         s_FailedSyncRetryDelay = reg.GetInt(kNCReg_NCPoolSection, "failed_sync_retry_delay", 1);
-        s_FailedSyncRetryDelay *= kNCTimeTicksInSec;
+        s_FailedSyncRetryDelay *= kUSecsPerSecond;
         s_NetworkErrorTimeout = reg.GetInt(kNCReg_NCPoolSection, "network_error_timeout", 300);
-        s_NetworkErrorTimeout *= kNCTimeTicksInSec;
+        s_NetworkErrorTimeout *= kUSecsPerSecond;
     }
     catch (CStringException& ex) {
-        ERR_POST(Critical << "Bad configuration: " << ex);
+        SRV_LOG(Critical, "Bad configuration: " << ex);
         return false;
     }
     return true;
@@ -384,10 +390,7 @@ CNCDistributionConf::GetMainSrvIP(const string& key)
 {
     try {
         CNetCacheKey nc_key(key);
-        Uint4 host;
-        Uint2 port;
-        CSocketAPI::StringToHostPort(nc_key.GetHost(), &host, &port);
-        return host;
+        return CTaskServer::GetIPByHost(nc_key.GetHost());
     }
     catch (CNetCacheException&) {
         return 0;
@@ -443,9 +446,9 @@ CNCDistributionConf::GetMaxSyncsOneServer(void)
 }
 
 Uint1
-CNCDistributionConf::GetMaxWorkerTimePct(void)
+CNCDistributionConf::GetSyncPriority(void)
 {
-    return CNetCacheServer::IsInitiallySynced()? s_MaxWorkerTimePct: 100;
+    return CNCServer::IsInitiallySynced()? s_SyncPriority: 1;
 }
 
 Uint2
@@ -472,16 +475,16 @@ CNCDistributionConf::GetPeerThrottlePeriod(void)
     return s_PeerThrottlePeriod;
 }
 
-double
-CNCDistributionConf::GetPeerConnTimeout(void)
-{
-    return s_PeerConnTimeout;
-}
-
 Uint1
 CNCDistributionConf::GetPeerTimeout(void)
 {
     return s_PeerTimeout;
+}
+
+Uint1
+CNCDistributionConf::GetBlobListTimeout(void)
+{
+    return s_BlobListTimeout;
 }
 
 Uint8
@@ -574,7 +577,7 @@ void
 CNCDistributionConf::PrintBlobCopyStat(Uint8 create_time, Uint8 create_server, Uint8 write_server)
 {
     if (s_CopyDelayLog) {
-        Uint8 cur_time = CNetCacheServer::GetPreciseTime();
+        Uint8 cur_time = CSrvTime::Current().AsUSec();
         fprintf(s_CopyDelayLog,
                 "%" NCBI_UINT8_FORMAT_SPEC ",%" NCBI_UINT8_FORMAT_SPEC
                 ",%" NCBI_UINT8_FORMAT_SPEC ",%" NCBI_UINT8_FORMAT_SPEC "\n",
@@ -584,4 +587,3 @@ CNCDistributionConf::PrintBlobCopyStat(Uint8 create_time, Uint8 create_server, U
 
 
 END_NCBI_SCOPE
-
