@@ -353,7 +353,7 @@ int CNcbiApplogApp::Redirect() const
     // Add current time on this host
     time_t timer;
     long ns;
-    CTime::GetCurrentTimeT(timer, ns);
+    CTime::GetCurrentTimeT(&timer, &ns);
     s_args += string(" \"-htime=") + NStr::UInt8ToString(timer) + "." 
                                    + NStr::ULongToString(ns) + "\"";
 #if 0

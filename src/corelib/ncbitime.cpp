@@ -133,7 +133,7 @@ const char kFormatEscapeSymbol = '$';
     if ( value < min  ||  value > max ) {  \
         NCBI_THROW(CTimeException, eArgument, \
                    "CTime: " what " value '" + \
-                   NStr::Int8ToString(value) + "' is out of range"); \
+                   NStr::Int8ToString((Int8)value) + "' is out of range"); \
     }
 
 #define CHECK_RANGE_YEAR(value)  CHECK_RANGE(value, "year", 1583, kMax_Int)
@@ -1329,32 +1329,36 @@ CTime& CTime::x_SetTimeMTSafe(const time_t* value)
 }
 
 
-void CTime::GetCurrentTimeT(time_t& t, long& ns)
+void CTime::GetCurrentTimeT(time_t* sec, long* nanosec)
 {
+    _ASSERT(sec);
+    long ns = 0;
 #if defined(NCBI_OS_MSWIN)
     struct _timeb timebuffer;
     _ftime(&timebuffer);
-    t = timebuffer.time;
+    *sec = timebuffer.time;
     ns = (long) timebuffer.millitm *
          (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
 
 #elif defined(NCBI_OS_UNIX)
     struct timeval tp;
     if (gettimeofday(&tp,0) == -1) {
-        t = -1;
+        *sec = -1;
     } else {
-        t = tp.tv_sec;
+        *sec = tp.tv_sec;
         ns = long((double)tp.tv_usec *
                   (double)kNanoSecondsPerSecond /
                   (double)kMicroSecondsPerSecond);
     }
 #else
-    t = time(0);
-    ns = 0;
+    *sec = time(0);
 #endif
-    if (t == (time_t)(-1)) {
+    if (*sec == (time_t)(-1)) {
         NCBI_THROW(CTimeException, eConvert,
                    "CTime::GetCurrentTimeT(): unable to get time value");
+    }
+    if (nanosec) {
+        *nanosec = ns;
     }
 }
 
@@ -1368,7 +1372,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     if ( value ) {
         timer = *value;
     } else {
-        GetCurrentTimeT(timer, ns);
+        GetCurrentTimeT(&timer, &ns);
     }
 
     // Bind values to internal variables
@@ -2867,7 +2871,7 @@ void CFastLocalTime::Tuneup(void)
     // Get system time
     time_t timer;
     long ns;
-    CTime::GetCurrentTimeT(timer, ns);
+    CTime::GetCurrentTimeT(&timer, &ns);
     x_Tuneup(timer, ns);
 }
 
@@ -2911,7 +2915,7 @@ retry:
     // Get system time
     time_t timer;
     long ns;
-    CTime::GetCurrentTimeT(timer, ns);
+    CTime::GetCurrentTimeT(&timer, &ns);
 
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
@@ -2964,7 +2968,7 @@ int CFastLocalTime::GetLocalTimezone(void)
     // Get system timer
     time_t timer;
     long ns;
-    CTime::GetCurrentTimeT(timer, ns);
+    CTime::GetCurrentTimeT(&timer, &ns);
 
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
