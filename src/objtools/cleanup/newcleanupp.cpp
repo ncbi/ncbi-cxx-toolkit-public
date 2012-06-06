@@ -6246,7 +6246,8 @@ int s_GetBarcodeOrder( const CRef<CUser_field> &field )
         { "Barcode Index Number", 2 },
         { "Order Assignment", 3 },
         { "StructuredCommentPrefix", 1 },
-        { "StructuredCommentSuffix", 6 },
+        { "StructuredCommentSuffix", 7 },
+        { "Tentative Name", 6 },
         { "iBOL Release Status", 5 },
         { "iBOL Working Group", 4 }
     };
@@ -6854,7 +6855,6 @@ static bool s_CommentRedundantWithGeneRef (
 )
 
 {
-    if (STRING_FIELD_MATCH (gene_ref, Locus,     comm)) return true;
     if (STRING_FIELD_MATCH (gene_ref, Locus_tag, comm)) return true;
     if (STRING_SET_MATCH   (gene_ref, Syn,       comm)) return true;
 
@@ -7439,22 +7439,6 @@ CNewCleanup_imp::x_RRNANameBC( string &name )
            s_RegexpReplace( name, "RNA +rRNA", "RNA ") );
 
     NStr::TruncateSpacesInPlace(name);
-
-    if( NStr::EqualNocase(name, "16S rRNA. Bacterial SSU" ) ) {
-        name = "16S ribosomal RNA";
-    } if( NStr::EqualNocase(name, "Small Subunit Ribosomal RNA; ssuRNA; 16S ribosomal RNA") ) {
-        name = "16S ribosomal RNA";
-    } if( NStr::EqualNocase(name, "23S rRNA. Bacterial LSU" ) ) {
-        name = "23S ribosomal RNA";
-    } if( NStr::EqualNocase(name, "Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA") ) {
-        name = "23S ribosomal RNA";
-    } if( NStr::EqualNocase(name, "5S rRNA. Bacterial TSU") ) {
-        name = "5S ribosomal RNA";
-    } if( NStr::EqualNocase(name, "Small Subunit Ribosomal RNA; ssuRNA; SSU ribosomal RNA") ) {
-        name = "small subunit ribosomal RNA";
-    } if( NStr::EqualNocase(name, "Large Subunit Ribosomal RNA; lsuRNA; LSU ribosomal RNA") ) {
-         name = "large subunit ribosomal RNA";
-    }
 
     if( original_name != name ) {
         ChangeMade(CCleanupChange::eChangeRNAref);
