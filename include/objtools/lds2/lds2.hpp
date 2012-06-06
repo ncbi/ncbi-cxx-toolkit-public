@@ -119,6 +119,12 @@ public:
     EDuplicateIdMode GetDuplicateIdMode(void) const { return m_DupIdMode; }
     void SetDuplicateIdMode(EDuplicateIdMode mode) { m_DupIdMode = mode; }
 
+    /// Control grouping of standalone seq-aligns into bigger blobs.
+    /// If set to 0 or 1, no grouping is performed, each seq-align
+    /// becomes a separate blob.
+    int GetSeqAlignGroupSize(void) const { return m_SeqAlignGroupSize; }
+    void SetSeqAlignGroupSize(int sz) { m_SeqAlignGroupSize = sz; }
+
     /// Error handling while indexing files.
     /// NOTE: Only a few kinds of errors can be ignored (unsupported
     /// file format or object type, broken data file etc.).
@@ -162,6 +168,7 @@ private:
     EErrorMode           m_ErrorMode;
     CFastaReader::TFlags m_FastaFlags;
     THandlers            m_Handlers;
+    int                  m_SeqAlignGroupSize;
 };
 
 

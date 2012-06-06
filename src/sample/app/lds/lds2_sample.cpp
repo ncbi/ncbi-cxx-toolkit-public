@@ -102,6 +102,10 @@ void CSampleLds2Application::Init(void)
     arg_desc->AddFlag("print_feats", "Print features");
     arg_desc->AddFlag("print_aligns", "Print alignments");
 
+    arg_desc->AddOptionalKey("group_aligns", "group_size",
+        "Group standalone seq-aligns into blobs",
+        CArgDescriptions::eInteger);
+
     // Program description
     string prog_description = "Example of the LDS2 usage\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -129,6 +133,9 @@ int CSampleLds2Application::Run(void)
         CRef<CLDS2_Manager> mgr(new CLDS2_Manager(db_path));
         // Allow to split GB release bioseq-sets
         mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
+        if ( args["group_aligns"] ) {
+            mgr->SetSeqAlignGroupSize(args["group_aligns"].AsInteger());
+        }
         mgr->AddDataDir(data_path);
         mgr->UpdateData();
     }

@@ -96,9 +96,9 @@ void CLDS2TestApplication::Init(void)
         "Directory with the source text ASN.1 data files.",
         CArgDescriptions::eString, "lds2_data/asn");
 
-    arg_desc->AddDefaultKey("db", "DbFile",
+    arg_desc->AddOptionalKey("db", "DbFile",
         "LDS2 database file name.",
-        CArgDescriptions::eString, "lds2_data/lds2.db");
+        CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("format", "DataFormat",
         "Data format to use. If other than asn, the source data will be " \
@@ -111,6 +111,10 @@ void CLDS2TestApplication::Init(void)
     arg_desc->AddOptionalKey("id", "SeqId",
         "Seq-id to use in the database test.",
         CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("group_aligns", "group_size",
+        "Group standalone seq-aligns into blobs",
+        CArgDescriptions::eInteger);
 
     arg_desc->AddFlag("stress", "Run stress test.");
 
@@ -416,9 +420,16 @@ int CLDS2TestApplication::Run(void)
 {
     const CArgs& args(GetArgs());
 
-    m_DbFile = args["db"].AsString();
     m_SrcDir = CDirEntry::CreateAbsolutePath(args["src_dir"].AsString());
     m_DataDir = m_SrcDir;
+    if ( args["db"] ) {
+        m_DbFile = args["db"].AsString();
+    }
+    else {
+        m_DbFile = CDirEntry::CreateAbsolutePath(
+            CDirEntry::ConcatPath(m_SrcDir, "../lds2.db"));
+    }
+
     m_Fmt = eSerial_AsnText;
     m_RunStress = args["stress"];
     m_GZip = args["gzip"];
@@ -463,6 +474,9 @@ int CLDS2TestApplication::Run(void)
 
     cout << "Converting and indexing data..." << endl;
     m_Mgr.Reset(new CLDS2_Manager(m_DbFile));
+    if ( args["group_aligns"] ) {
+        m_Mgr->SetSeqAlignGroupSize(args["group_aligns"].AsInteger());
+    }
     m_Mgr->ResetData(); // Re-create the database
     m_Mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
 

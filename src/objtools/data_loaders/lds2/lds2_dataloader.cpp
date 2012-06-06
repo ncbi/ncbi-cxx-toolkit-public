@@ -42,6 +42,8 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/data_loader_factory.hpp>
@@ -251,7 +253,8 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadFastaTSE(CNcbiIstream&     in,
 }
 
 
-CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
+void CLDS2_DataLoader::x_LoadTSE(CTSE_LoadLock& load_lock,
+                                 const SLDS2_Blob& blob)
 {
     _ASSERT(blob.id > 0);
     CRef<CSeq_entry> entry(new CSeq_entry);
@@ -260,14 +263,17 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
     if ( !handler ) {
         ERR_POST_X(2, "Error loading blob: URL handler '" <<
             finfo.handler << "' not found");
-        // Return null on errors
-        entry.Reset();
-        return entry;
+        return;
     }
     auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
     _ASSERT(in.get());
     if (finfo.format == CFormatGuess::eFasta) {
-        return x_LoadFastaTSE(*in, blob);
+        entry = x_LoadFastaTSE(*in, blob);
+        if ( entry ) {
+            load_lock->SetSeq_entry(*entry);
+            load_lock.SetLoaded();
+        }
+        return;
     }
     try {
         auto_ptr<CObjectIStream> obj_in;
@@ -282,7 +288,7 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
             obj_in.reset(CObjectIStream::Open(eSerial_Xml, *in));
             break;
         default:
-            return CRef<CSeq_entry>(); // Unknown format, fail
+            return; // Unknown format, fail
         }
         switch ( blob.type ) {
         case SLDS2_Blob::eSeq_entry:
@@ -305,31 +311,55 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
                 break;
             }
         case SLDS2_Blob::eSeq_annot:
-            {
-                CRef<CSeq_annot> annot(new CSeq_annot);
-                *obj_in >> *annot;
-                entry->SetSet().SetAnnot().push_back(annot);
-                break;
-            }
         case SLDS2_Blob::eSeq_align_set:
-            {
-                CSeq_align_set aln_set;
-                *obj_in >> aln_set;
-                CRef<CSeq_annot> annot(new CSeq_annot);
-                ITERATE(CSeq_align_set::Tdata, it, aln_set.Set()) {
-                    annot->SetData().SetAlign().push_back(*it);
-                }
-                entry->SetSet().SetAnnot().push_back(annot);
-                break;
-            }
         case SLDS2_Blob::eSeq_align:
             {
-                CRef<CSeq_align> align(new CSeq_align);
-                *obj_in >> *align;
-                CRef<CSeq_annot> annot(new CSeq_annot);
-                annot->SetData().SetAlign().push_back(align);
-                entry->SetSet().SetAnnot().push_back(annot);
-                break;
+                // For standalone annotations create split-info so that
+                // they can be loaded later, using filtering by type/id/range.
+                CTSE_Info& tse = *load_lock;
+                entry->SetSet().SetId().SetId(0);
+                tse.SetSeq_entry(*entry);
+                CTSE_Split_Info& split_info = tse.GetSplitInfo();
+                // Use 0 for chunk id since there's just one chunk per blob.
+                CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(0));
+                chunk->x_AddAnnotPlace(0);
+                CLDS2_Database::TLDS2Annots annots;
+                m_Db->GetAnnots(blob.id, annots);
+                ITERATE(CLDS2_Database::TLDS2Annots, annot_it, annots) {
+                    const SLDS2_Annot& annot = **annot_it;
+                    CAnnotName annot_name;
+                    if (annot.is_named) {
+                        annot_name.SetNamed(annot.name);
+                    }
+                    else {
+                        annot_name.SetUnnamed();
+                    }
+                    SAnnotTypeSelector annot_type;
+                    switch (annot.type) {
+                    case SLDS2_Annot::eSeq_feat:
+                        annot_type.SetAnnotType(CSeq_annot::C_Data::e_Ftable);
+                        break;
+                    case SLDS2_Annot::eSeq_align:
+                        annot_type.SetAnnotType(CSeq_annot::C_Data::e_Align);
+                        break;
+                    case SLDS2_Annot::eSeq_graph:
+                        annot_type.SetAnnotType(CSeq_annot::C_Data::e_Graph);
+                        break;
+                    default:
+                        // Unknown blob type - ignore.
+                        return;
+                    }
+                    ITERATE(SLDS2_Annot::TIdMap, id_it, annot.ref_ids) {
+                        chunk->x_AddAnnotType(
+                            annot_name,
+                            annot_type,
+                            id_it->first,
+                            id_it->second.range);
+                    }
+                }
+                split_info.AddChunk(*chunk);
+                load_lock.SetLoaded();
+                return;
             }
         case SLDS2_Blob::eSeq_submit:
             {
@@ -353,7 +383,10 @@ CRef<CSeq_entry> CLDS2_DataLoader::x_LoadTSE(const SLDS2_Blob& blob)
         // Return null on errors
         entry.Reset();
     }
-    return entry;
+    if ( entry ) {
+        load_lock->SetSeq_entry(*entry);
+        load_lock.SetLoaded();
+    }
 }
 
 
@@ -368,14 +401,12 @@ void CLDS2_DataLoader::x_LoadBlobs(const TBlobSet& blobs,
         TBlobId blob_id = s_Int8ToBlobId(it->id);
         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
         if ( !load_lock.IsLoaded() ) {
-            CRef<CSeq_entry> seq_entry = x_LoadTSE(*it);
-            if ( !seq_entry ) {
+            x_LoadTSE(load_lock, *it);
+            if ( !load_lock.IsLoaded() ) {
                 NCBI_THROW2(CBlobStateException, eBlobStateError,
                             "cannot load blob",
                             CBioseq_Handle::fState_no_data);
             }
-            load_lock->SetSeq_entry(*seq_entry);
-            load_lock.SetLoaded();
         }
         locks.insert(load_lock);
     }
@@ -512,14 +543,12 @@ CLDS2_DataLoader::GetBlobById(const TBlobId& blob_id)
     CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
     if ( !load_lock.IsLoaded() ) {
         SLDS2_Blob blob = m_Db->GetBlobInfo(oid);
-        CRef<CSeq_entry> seq_entry = x_LoadTSE(blob);
-        if ( !seq_entry ) {
+        x_LoadTSE(load_lock, blob);
+        if ( !load_lock.IsLoaded() ) {
             NCBI_THROW2(CBlobStateException, eBlobStateError,
                         "cannot load blob",
                         CBioseq_Handle::fState_no_data);
         }
-        load_lock->SetSeq_entry(*seq_entry);
-        load_lock.SetLoaded();
     }
     return TTSE_Lock(load_lock);
 }
@@ -528,6 +557,76 @@ CLDS2_DataLoader::GetBlobById(const TBlobId& blob_id)
 void CLDS2_DataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     m_Db->GetSynonyms(idh, ids);
+}
+
+
+void CLDS2_DataLoader::GetChunk(TChunk chunk_info)
+{
+    if ( chunk_info->IsLoaded() ) return;
+
+    Int8 blob_id = dynamic_cast<const CBlobIdInt8&>(*chunk_info->GetBlobId()).GetValue();
+    SLDS2_Blob blob = m_Db->GetBlobInfo(blob_id);
+    SLDS2_File finfo = m_Db->GetFileInfo(blob.file_id);
+    _ASSERT(finfo.format != CFormatGuess::eFasta);
+    CRef<CLDS2_UrlHandler_Base> handler(x_GetUrlHandler(finfo));
+    if ( !handler ) {
+        ERR_POST_X(2, "Error loading blob: URL handler '" <<
+            finfo.handler << "' not found");
+        return;
+    }
+    auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
+    _ASSERT(in.get());
+    auto_ptr<CObjectIStream> obj_in;
+    switch ( finfo.format ) {
+    case CFormatGuess::eBinaryASN:
+        obj_in.reset(CObjectIStream::Open(eSerial_AsnBinary, *in));
+        break;
+    case CFormatGuess::eTextASN:
+        obj_in.reset(CObjectIStream::Open(eSerial_AsnText, *in));
+        break;
+    case CFormatGuess::eXml:
+        obj_in.reset(CObjectIStream::Open(eSerial_Xml, *in));
+        break;
+    default:
+        return; // Unknown format, fail
+    }
+
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    switch ( blob.type ) {
+    case SLDS2_Blob::eSeq_annot:
+        {
+            *obj_in >> *annot;
+            break;
+        }
+    case SLDS2_Blob::eSeq_align_set:
+        {
+            CSeq_align_set aln_set;
+            *obj_in >> aln_set;
+            ITERATE(CSeq_align_set::Tdata, it, aln_set.Set()) {
+                annot->SetData().SetAlign().push_back(*it);
+            }
+            break;
+        }
+    case SLDS2_Blob::eSeq_align:
+        {
+            // Alignments may be combined into blobs, check the amount.
+            Int8 count = m_Db->GetAnnotCountForBlob(blob.id);
+            while (count > 0) {
+                CRef<CSeq_align> align(new CSeq_align);
+                *obj_in >> *align;
+                annot->SetData().SetAlign().push_back(align);
+                count--;
+            }
+            break;
+        }
+    default:
+        // Nothing to load.
+        return;
+    }
+    CTSE_Chunk_Info::TPlace place;
+    place.second = 0;
+    chunk_info->x_LoadAnnot(place, *annot);
+    chunk_info->SetLoaded();
 }
 
 

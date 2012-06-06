@@ -100,6 +100,10 @@ void CLDS2IndexerApplication::Init(void)
 
 */
 
+    arg_desc->AddOptionalKey("group_aligns", "group_size",
+        "Group standalone seq-aligns into blobs",
+        CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("dump_table", "table_name",
         "Dump LDS2 table content",
         CArgDescriptions::eString);
@@ -126,6 +130,9 @@ int CLDS2IndexerApplication::Run(void)
     if (args["db"]) {
         db_path = args["db"].AsString();
     }
+    else {
+        db_path = CDirEntry::ConcatPath(source_path, "lds2.db");
+    }
 
     CLDS2_Manager mgr(db_path);
 
@@ -140,6 +147,10 @@ int CLDS2IndexerApplication::Run(void)
         if ( mode == GB_RELEASE_MODE_FORCE ) {
             mgr.SetGBReleaseMode(CLDS2_Manager::eGB_Force);
         }
+    }
+
+    if ( args["group_aligns"] ) {
+        mgr.SetSeqAlignGroupSize(args["group_aligns"].AsInteger());
     }
 
     if ( args["dump_table"] ) {

@@ -110,6 +110,8 @@ public:
 
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    virtual void GetChunk(TChunk chunk_info);
+
     typedef CSimpleLoaderMaker<CLDS2_DataLoader>                 TSimpleMaker;
     typedef CParamLoaderMaker<CLDS2_DataLoader, CLDS2_Database&> TDbMaker;
     friend class CSimpleLoaderMaker<CLDS2_DataLoader>;
@@ -140,7 +142,7 @@ private:
     // Load data for the blobs
     void x_LoadBlobs(const TBlobSet& blobs,
                      TTSE_LockSet&   locks);
-    CRef<CSeq_entry> x_LoadTSE(const SLDS2_Blob& blob);
+    void x_LoadTSE(CTSE_LoadLock& load_lock, const SLDS2_Blob& blob);
     CRef<CSeq_entry> x_LoadFastaTSE(CNcbiIstream&     in,
                                     const SLDS2_Blob& blob);
 

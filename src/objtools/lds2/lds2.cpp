@@ -40,6 +40,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -63,6 +64,7 @@ BEGIN_SCOPE(objects)
 // Hooks and helper classes for indexing data files
 
 typedef CLDS2_Database::TSeqIdSet TSeqIdSet;
+typedef SLDS2_AnnotIdInfo::TRange TAnnotRange;
 
 class CLDS2_ObjectParser
 {
@@ -79,8 +81,9 @@ public:
     // Try to parse the next blob, return true on success
     bool ParseNext(SLDS2_Blob::EBlobType blob_type = SLDS2_Blob::eUnknown);
 
-    void AddAnnot(SLDS2_Annot::EAnnotType annot_type,
-                  const TSeqIdSet&        ids);
+    void AddAnnot(SLDS2_Annot::EType         annot_type,
+                  const string*              annot_name,
+                  const SLDS2_Annot::TIdMap& ids);
 
     void AddBioseq(const TSeqIdSet& ids);
 
@@ -113,16 +116,16 @@ public:
         return m_IsGBBioseqSet;
     }
 
+    int GetSeqAlignGroupSize(void) const {
+        return m_Manager.GetSeqAlignGroupSize();
+    }
+
 private:
     static TTypeInfo sx_GetObjectTypeInfo(SLDS2_Blob::EBlobType blob_type);
 
     SLDS2_Blob::EBlobType x_GetBlobType(void);
 
-    struct SAnnotInfo {
-        SLDS2_Annot::EAnnotType type;
-        TSeqIdSet               ids;
-    };
-    typedef vector< AutoPtr<SAnnotInfo> > TAnnots;
+    typedef CLDS2_Database::TLDS2Annots TAnnots;
 
     struct SBioseqInfo {
         TSeqIdSet   ids;
@@ -215,20 +218,28 @@ void CLDS2_Seq_id_Hook::SkipObject(CObjectIStream& in,
 
 // Hook for detecting seq-annot type. Reads types of all
 // annotations (they must all be the same).
+// This hook also collects seq-ids and ranges for feats,
+// aligns and graphs.
 class CLDS2_AnnotType_Hook : public CSkipObjectHook
 {
 public:
-    CLDS2_AnnotType_Hook(void) {}
+    CLDS2_AnnotType_Hook(void) : m_Ids(0) {}
     ~CLDS2_AnnotType_Hook(void) {}
 
     virtual void SkipObject(CObjectIStream& in,
                             const CObjectTypeInfo& info);
 
+    void ResetAnnot(SLDS2_Annot::TIdMap* ids)
+    {
+        m_Type.clear();
+        m_Ids = ids;
+    }
+
     const string& GetType(void) const { return m_Type; }
-    void ResetType(void) { m_Type.clear(); }
 
 private:
-    string m_Type;
+    string               m_Type;
+    SLDS2_Annot::TIdMap* m_Ids;
 };
 
 
@@ -237,7 +248,80 @@ void CLDS2_AnnotType_Hook::SkipObject(CObjectIStream& in,
 {
     _ASSERT(m_Type.empty()  ||  m_Type == info.GetName());
     m_Type = info.GetName();
-    DefaultSkip(in, info);
+    // Parse feats, aligns and graphs here. For other annot types only ids
+    // will be collected.
+    if (m_Ids  &&  m_Type == "Seq-feat") {
+        CSeq_feat feat;
+        DefaultRead(in, ObjectInfo(feat));
+        ITERATE(CSeq_loc, it, feat.GetLocation()) {
+            (*m_Ids)[it.GetSeq_id_Handle()].range.CombineWith(it.GetRange());
+        }
+        if ( feat.IsSetProduct() ) {
+            ITERATE(CSeq_loc, it, feat.GetProduct()) {
+                (*m_Ids)[it.GetSeq_id_Handle()].range.CombineWith(it.GetRange());
+            }
+        }
+    }
+    else if (m_Ids  &&  m_Type == "Seq-align") {
+        CSeq_align align;
+        DefaultRead(in, ObjectInfo(align));
+        CSeq_align::TDim dim = align.GetDim();
+        for (CSeq_align::TDim row = 0; row < dim; row++) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(row));
+            (*m_Ids)[idh].range.CombineWith(align.GetSeqRange(row));
+        }
+    }
+    else if (m_Ids  &&  m_Type == "Seq-graph") {
+        CSeq_graph graph;
+        DefaultRead(in, ObjectInfo(graph));
+        ITERATE(CSeq_loc, it, graph.GetLoc()) {
+            (*m_Ids)[it.GetSeq_id_Handle()].range.CombineWith(it.GetRange());
+        }
+    }
+    else {
+        DefaultSkip(in, info);
+    }
+}
+
+
+class CLDS2_AnnotDesc_Hook : public CSkipObjectHook
+{
+public:
+    CLDS2_AnnotDesc_Hook(void) : m_Named(false) {}
+    ~CLDS2_AnnotDesc_Hook(void) {}
+
+    virtual void SkipObject(CObjectIStream& in,
+                            const CObjectTypeInfo& info);
+
+    void ResetName(void)
+    {
+        m_Named = false;
+        m_Name.clear();
+    }
+    bool IsNamed(void) const { return m_Named; }
+    const string& GetName(void) const { return m_Name; }
+
+private:
+    bool   m_Named;
+    string m_Name;
+};
+
+
+void CLDS2_AnnotDesc_Hook::SkipObject(CObjectIStream& in,
+                                      const CObjectTypeInfo& info)
+{
+    if ( m_Named ) {
+        // Ignore multiple names
+        DefaultSkip(in, info);
+    }
+    else {
+        CAnnotdesc desc;
+        DefaultRead(in, ObjectInfo(desc));
+        if ( desc.IsName() ) {
+            m_Named = true;
+            m_Name = desc.GetName();
+        }
+    }
 }
 
 
@@ -249,9 +333,11 @@ public:
     // stream.
     CLDS2_Annot_Hook(CLDS2_ObjectParser&   parser,
                      CLDS2_Seq_id_Hook&    id_hook,
+                     CLDS2_AnnotDesc_Hook& desc_hook,
                      CLDS2_AnnotType_Hook& type_hook)
         : m_Parser(parser),
           m_IdHook(id_hook),
+          m_DescHook(desc_hook),
           m_TypeHook(type_hook)
     {}
 
@@ -261,23 +347,28 @@ public:
 private:
     CLDS2_ObjectParser&    m_Parser;
     CLDS2_Seq_id_Hook&     m_IdHook;
+    CLDS2_AnnotDesc_Hook&  m_DescHook;
     CLDS2_AnnotType_Hook&  m_TypeHook;
-    TSeqIdSet              m_Ids;
+    TSeqIdSet              m_IdSet;
+    SLDS2_Annot::TIdMap    m_IdMap;
 };
 
 
 void CLDS2_Annot_Hook::SkipObject(CObjectIStream& in,
                                   const CObjectTypeInfo& info)
 {
-    m_Ids.clear();
-    CLDS2_Seq_id_Hook::CGuard guard(m_IdHook, m_Ids);
+    m_IdSet.clear();
+    m_IdMap.clear();
+    CLDS2_Seq_id_Hook::CGuard guard(m_IdHook, m_IdSet);
 
+    m_DescHook.ResetName();
     // annot-type hook may be not empty, e.g. after reading seq-hist
     // with alignments in it. Reset it now.
-    m_TypeHook.ResetType();
+    m_TypeHook.ResetAnnot(&m_IdMap);
+
     DefaultSkip(in, info);
 
-    SLDS2_Annot::EAnnotType annot_type = SLDS2_Annot::eUnknown;
+    SLDS2_Annot::EType annot_type = SLDS2_Annot::eUnknown;
 
     if (m_TypeHook.GetType() == "Seq-feat") {
         annot_type = SLDS2_Annot::eSeq_feat;
@@ -288,9 +379,19 @@ void CLDS2_Annot_Hook::SkipObject(CObjectIStream& in,
     else if (m_TypeHook.GetType() == "Seq-graph") {
         annot_type = SLDS2_Annot::eSeq_graph;
     }
-    m_TypeHook.ResetType();
+    ITERATE(TSeqIdSet, id, m_IdSet) {
+        // If an id was not included in the range map, add the whole sequence.
+        if (m_IdMap.find(*id) == m_IdMap.end()) {
+            m_IdMap[*id].range = TAnnotRange::GetWhole();
+        }
+    }
+    m_IdSet.clear();
+    m_TypeHook.ResetAnnot(0);
 
-    m_Parser.AddAnnot(annot_type, m_Ids);
+    m_Parser.AddAnnot(
+        annot_type,
+        m_DescHook.IsNamed() ? &m_DescHook.GetName() : NULL,
+        m_IdMap);
 }
 
 
@@ -646,10 +747,12 @@ void CLDS2_ObjectParser::EndBlob(SLDS2_Blob::EBlobType blob_type)
     }
 
     // Add annotations
-    ITERATE(TAnnots, it, m_Annots) {
-        CLDS2_Database::TAnnotRefSet refs;
-        ITERATE(TSeqIdSet, id, (*it)->ids) {
-            CLDS2_Database::TAnnotRef ref(*id, true);
+    NON_CONST_ITERATE(TAnnots, it, m_Annots) {
+        SLDS2_Annot& annot = **it;
+        annot.blob_id = blob_id;
+        NON_CONST_ITERATE(SLDS2_Annot::TIdMap, id, annot.ref_ids) {
+            SLDS2_AnnotIdInfo& ref_id = id->second;
+            ref_id.external = true;
             // If the blob can contain bioseqs, check if the annotation
             // is external. Each id has its own external flag.
             if (blob_type == SLDS2_Blob::eSeq_entry  ||
@@ -658,13 +761,12 @@ void CLDS2_ObjectParser::EndBlob(SLDS2_Blob::EBlobType blob_type)
                 blob_type == SLDS2_Blob::eBioseq_set_element || 
                 blob_type == SLDS2_Blob::eSeq_submit ) 
             {
-                if (m_BioseqIds.find(*id) != m_BioseqIds.end()) {
-                    ref.second = false;
+                if (m_BioseqIds.find(id->first) != m_BioseqIds.end()) {
+                    ref_id.external = false;
                 }
             }
-            refs.push_back(ref);
         }
-        m_Db.AddAnnot(blob_id, (*it)->type, refs);
+        m_Db.AddAnnot(annot);
     }
     ResetBlob();
 }
@@ -693,80 +795,102 @@ bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
     BeginBlob();
     SetBlobOffset(0);
 
-    auto_ptr<CObjectIStream> objstr(CObjectIStream::Open(m_Format, m_Stream));
+    // Prepare to load multiple seq-aligns into a single blob.
+    int count = 0;
+    while (m_BlobType == blob_type) {
+        auto_ptr<CObjectIStream> objstr(CObjectIStream::Open(m_Format, m_Stream));
 
-    // Hook for reading seq-ids and storing them to a collection.
-    CLDS2_Seq_id_Hook id_hook;
-    CObjectHookGuard<CSeq_id> seq_id_guard(id_hook, objstr.get());
+        // Hook for reading seq-ids and storing them to a collection.
+        CLDS2_Seq_id_Hook id_hook;
+        CObjectHookGuard<CSeq_id> seq_id_guard(id_hook, objstr.get());
 
-    // Hook which enables reading seq-ids only while parsing bioseq.ids
-    // member (to ignore seq-ids in other members like inst or hist).
-    CLDS2_BioseqIds_Hook bioseq_ids_hook(*this, id_hook);
-    CObjectHookGuard<CBioseq> bioseq_ids_guard(
-        "id", bioseq_ids_hook, objstr.get());
+        // Hook which enables reading seq-ids only while parsing bioseq.ids
+        // member (to ignore seq-ids in other members like inst or hist).
+        CLDS2_BioseqIds_Hook bioseq_ids_hook(*this, id_hook);
+        CObjectHookGuard<CBioseq> bioseq_ids_guard(
+            "id", bioseq_ids_hook, objstr.get());
 
-    // Hook for detecting annotation type.
-    CLDS2_AnnotType_Hook annot_type_hook;
-    CObjectHookGuard<CSeq_feat> seq_feat_guard(annot_type_hook,
-        objstr.get());
-    CObjectHookGuard<CSeq_graph> seq_graph_guard(annot_type_hook,
-        objstr.get());
-    CObjectHookGuard<CSeq_align> seq_align_guard(annot_type_hook,
-        objstr.get());
+        // Hook for detecting annotation type.
+        CLDS2_AnnotType_Hook annot_type_hook;
+        CObjectHookGuard<CSeq_feat> seq_feat_guard(annot_type_hook,
+            objstr.get());
+        CObjectHookGuard<CSeq_graph> seq_graph_guard(annot_type_hook,
+            objstr.get());
+        CObjectHookGuard<CSeq_align> seq_align_guard(annot_type_hook,
+            objstr.get());
 
-    // Hook for indexing seq-annots. Uses annot_type_hook to check
-    // seq-annot type.
-    CLDS2_Annot_Hook annot_hook(*this, id_hook, annot_type_hook);
-    CObjectHookGuard<CSeq_annot> seq_annot_guard(annot_hook,
-        objstr.get());
+        CLDS2_AnnotDesc_Hook annot_desc_hook;
+        CObjectHookGuard<CAnnotdesc> annot_desc_guard(annot_desc_hook,
+            objstr.get());
 
-    // Hooks for checking bioseq-set class and descr members.
-    // There presence and value may affect splitting bioseq-set
-    // into seq-entries.
-    CLDS2_BioseqSet_Hook bioseq_set_hook(*this);
-    CObjectHookGuard<CBioseq_set> bioseq_set_class_guard(
-        "class", bioseq_set_hook, objstr.get());
-    CObjectHookGuard<CBioseq_set> bioseq_set_descr_guard(
-        "descr", bioseq_set_hook, objstr.get());
-    CObjectHookGuard<CBioseq_set> bioseq_set_seqset_guard(
-        "seq-set", bioseq_set_hook, objstr.get());
+        // Hook for indexing seq-annots. Uses annot_type_hook to check
+        // seq-annot type.
+        CLDS2_Annot_Hook annot_hook(*this,
+            id_hook, annot_desc_hook, annot_type_hook);
+        CObjectHookGuard<CSeq_annot> seq_annot_guard(annot_hook,
+            objstr.get());
 
-    // Seq-entry hook is used to split bioseq-set into individual
-    // seq-entries.
-    CLDS2_SeqEntry_Hook entry_hook(*this);
-    CObjectHookGuard<CSeq_entry> entry_guard(entry_hook, objstr.get());
+        // Hooks for checking bioseq-set class and descr members.
+        // There presence and value may affect splitting bioseq-set
+        // into seq-entries.
+        CLDS2_BioseqSet_Hook bioseq_set_hook(*this);
+        CObjectHookGuard<CBioseq_set> bioseq_set_class_guard(
+            "class", bioseq_set_hook, objstr.get());
+        CObjectHookGuard<CBioseq_set> bioseq_set_descr_guard(
+            "descr", bioseq_set_hook, objstr.get());
+        CObjectHookGuard<CBioseq_set> bioseq_set_seqset_guard(
+            "seq-set", bioseq_set_hook, objstr.get());
 
-    // Seq-id set used to collect seq-ids from top level seq-aligns
-    // and seq-align-sets.
-    TSeqIdSet align_ids;
+        // Seq-entry hook is used to split bioseq-set into individual
+        // seq-entries.
+        CLDS2_SeqEntry_Hook entry_hook(*this);
+        CObjectHookGuard<CSeq_entry> entry_guard(entry_hook, objstr.get());
 
-    bool is_align = m_BlobType == SLDS2_Blob::eSeq_align  ||
-        m_BlobType == SLDS2_Blob::eSeq_align_set;
-    auto_ptr<CLDS2_Seq_id_Hook::CGuard> align_guard;
-    if ( is_align ) {
-        align_guard.reset(
-            new CLDS2_Seq_id_Hook::CGuard(id_hook, align_ids));
-    }
-    _ASSERT(align_ids.empty());
-
-    try {
-        TTypeInfo type_info = sx_GetObjectTypeInfo(m_BlobType);
-        objstr->Skip(type_info);
-        m_LastBlobPos += NcbiStreamposToInt8(objstr->GetStreamPos());
-
-        // Store seq-aligns and seq-align-sets as blobs
+        // Seq-id set used to collect seq-ids from top level seq-aligns
+        // and seq-align-sets.
+        SLDS2_Annot::TIdMap align_ids;
+        bool is_align = m_BlobType == SLDS2_Blob::eSeq_align  ||
+            m_BlobType == SLDS2_Blob::eSeq_align_set;
         if ( is_align ) {
-            AddAnnot(SLDS2_Annot::eSeq_align, align_ids);
-            align_ids.clear();
+            annot_type_hook.ResetAnnot(&align_ids);
         }
-        m_LastBlobType = m_BlobType;
-    }
-    catch (CSerialException) {
-        ResetBlob();
-        m_BlobType = SLDS2_Blob::eUnknown;
-        return false;
-    }
 
+        try {
+            TTypeInfo type_info = sx_GetObjectTypeInfo(m_BlobType);
+            objstr->Skip(type_info);
+            // Store seq-aligns and seq-align-sets as blobs
+            if ( is_align ) {
+                _ASSERT(annot_type_hook.GetType() == "Seq-align");
+                AddAnnot(SLDS2_Annot::eSeq_align, NULL, align_ids);
+                annot_type_hook.ResetAnnot(0);
+            }
+            m_LastBlobPos += NcbiStreamposToInt8(objstr->GetStreamPos());
+            m_LastBlobType = m_BlobType;
+        }
+        catch (CSerialException) {
+            ResetBlob();
+            m_BlobType = SLDS2_Blob::eUnknown;
+            return false;
+        }
+
+        // Loading multiple seq-aligns?
+        if (m_BlobType != SLDS2_Blob::eSeq_align) {
+            break;
+        }
+        try {
+            // Check next object type. If at EOF, catch the exception and
+            // save the collected aligns.
+            objstr->Close(); // Pushback unparsed data if any.
+            blob_type = x_GetBlobType();
+        }
+        catch (CEofException) {
+            break;
+        }
+        // Collected enough aligns?
+        if (++count >= GetSeqAlignGroupSize()) {
+            break;
+        }
+    }
     // Do not store bioseq-set if it has been split and stored as
     // separate seq-entries.
     if ( !GetSplitBioseqSet() ) {
@@ -777,13 +901,18 @@ bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
 }
 
 
-void CLDS2_ObjectParser::AddAnnot(SLDS2_Annot::EAnnotType annot_type,
-                                  const TSeqIdSet&        ids)
+void CLDS2_ObjectParser::AddAnnot(SLDS2_Annot::EType         annot_type,
+                                  const string*              annot_name,
+                                  const SLDS2_Annot::TIdMap& ids)
 {
-    SAnnotInfo* info = new SAnnotInfo;
-    info->type = annot_type;
-    info->ids.insert(ids.begin(), ids.end());
-    m_Annots.push_back(info);
+    SLDS2_Annot* annot = new SLDS2_Annot;
+    annot->type = annot_type;
+    annot->is_named = annot_name;
+    if ( annot_name ) {
+        annot->name = *annot_name;
+    }
+    annot->ref_ids.insert(ids.begin(), ids.end());
+    m_Annots.push_back(annot);
 }
 
 
@@ -808,7 +937,8 @@ CLDS2_Manager::CLDS2_Manager(const string& db_file)
                    CFastaReader::fAllSeqIds  |
                    CFastaReader::fOneSeq     |
                    CFastaReader::fNoSeqData  |
-                   CFastaReader::fParseRawID)
+                   CFastaReader::fParseRawID),
+      m_SeqAlignGroupSize(0)
 {
     SetDbFile(db_file);
     // Initialize default handlers
@@ -874,24 +1004,8 @@ void CLDS2_Manager::AddDataDir(const string& data_dir, EDirMode mode)
 
 bool CLDS2_Manager::x_IsGZipFile(const SLDS2_File& file_info)
 {
-    // Use handler - this will guarantee we are always using the same
-    // way to open the stream. No database is required for this.
-    CLDS2_UrlHandler_GZipFile gzip;
-    try {
-        // Try to read at least one byte from the file.
-        // Do not provide database since the chunks are not indexed yet.
-        auto_ptr<CNcbiIstream> in(gzip.OpenStream(file_info, 0, NULL));
-        if ( !in.get() ) return false;
-        char buf;
-        in->read(&buf, 1);
-        if (in->gcount() != 1) {
-            return false;
-        }
-    }
-    catch (CException) {
-        return false;
-    }
-    return true;
+    auto_ptr<CNcbiIstream> in(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+    return CFormatGuess::Format(*in) == CFormatGuess::eGZip;
 }
 
 
@@ -1041,7 +1155,7 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
                         // Failed to parse object. Ignore the rest of the file.
                         if (m_ErrorMode == eError_Throw) {
                             LDS2_THROW(eIndexerError,
-                                "Unrecognized top-level object in " +
+                                "Unrecognized top level object in " +
                                 info.name);
                         }
                         else if (m_ErrorMode == eError_Report) {

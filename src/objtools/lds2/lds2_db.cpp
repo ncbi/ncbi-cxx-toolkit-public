@@ -63,82 +63,85 @@ CLDS2_Database::~CLDS2_Database(void)
 // deletions.
 const char* kLDS2_CreateDB[] = {
     // files
-    "create table `file` (" \
-    "`file_id` integer primary key on conflict abort autoincrement," \
-    "`file_name` varchar(2048) not null unique on conflict abort," \
-    "`file_format` integer not null," \
-    "`file_handler` varchar(100)," \
-    "`file_size` integer(8)," \
-    "`file_time` integer(8)," \
-    "`file_crc` integer(4));",
+    "create table file ("
+    "file_id integer primary key on conflict abort autoincrement,"
+    "file_name text not null unique on conflict abort,"
+    "file_format integer not null,"
+    "file_handler text,"
+    "file_size integer(8),"
+    "file_time integer(8),"
+    "file_crc integer(4));",
 
     // chunks
-    "create table `chunk` (" \
-    "`file_id` integer(8) not null," \
-    "`raw_pos` integer(8) not null," \
-    "`stream_pos` integer(8) not null," \
-    "`data_size` inteter not null," \
-    "`data` blob default null);",
+    "create table chunk ("
+    "file_id integer(8) not null,"
+    "raw_pos integer(8) not null,"
+    "stream_pos integer(8) not null,"
+    "data_size inteter not null,"
+    "data blob default null);",
 
     // seq-id vs lds-id
-    "create table `seq_id` (" \
-    "`lds_id` integer primary key on conflict abort autoincrement," \
-    "`txt_id` varchar(100) not null," \
-    "`int_id` integer(8) default null," \
-    "`blob_size` integer(8)," \
-    "`blob_data` blob not null);",
+    "create table seq_id ("
+    "lds_id integer primary key on conflict abort autoincrement,"
+    "txt_id text not null,"
+    "int_id integer(8) default null,"
+    "blob_size integer(8),"
+    "blob_data blob not null);",
     // seq-id vs lds-id
     // index for reverse lookup, prevents duplicate ids
     // must exist during indexing to improve performance
-    "create unique index if not exists `idx_int_id` on `seq_id` (`int_id`);",
-    "create unique index if not exists `idx_txt_id` on `seq_id` (`txt_id`);",
+    "create unique index if not exists idx_int_id on seq_id (int_id);",
+    "create unique index if not exists idx_txt_id on seq_id (txt_id);",
 
     // bioseqs by blob
-    "create table `bioseq` (" \
-    "`bioseq_id` integer primary key on conflict abort autoincrement," \
-    "`blob_id` integer(8) not null);",
+    "create table bioseq ("
+    "bioseq_id integer primary key on conflict abort autoincrement,"
+    "blob_id integer(8) not null);",
 
     // bioseqs by lds_id
-    "create table `bioseq_id` (" \
-    "`bioseq_id` integer(8) not null," \
-    "`lds_id` integer(8) not null);",
+    "create table bioseq_id ("
+    "bioseq_id integer(8) not null,"
+    "lds_id integer(8) not null);",
 
     // blobs
-    "create table `blob` (" \
-    "`blob_id` integer primary key on conflict abort autoincrement," \
-    "`blob_type` integer not null," \
-    "`file_id` integer(8) not null," \
-    "`file_pos` integer(8));",
+    "create table blob ("
+    "blob_id integer primary key on conflict abort autoincrement,"
+    "blob_type integer not null,"
+    "file_id integer(8) not null,"
+    "file_pos integer(8));",
 
     // annotations
-    "create table `annot` (" \
-    "`annot_id` integer primary key on conflict abort autoincrement," \
-    "`annot_type` integer not null," \
-    "`blob_id` integer(8) not null);",
+    "create table annot ("
+    "annot_id integer primary key on conflict abort autoincrement,"
+    "annot_type integer not null,"
+    "blob_id integer(8) not null,"
+    "annot_name text);",
 
     // annotations by lds_id
-    "create table `annot_id` (" \
-    "`annot_id` integer(8) not null," \
-    "`lds_id` integer(8) not null," \
-    "`external` boolean);",
+    "create table annot_id ("
+    "annot_id integer(8) not null,"
+    "lds_id integer(8) not null,"
+    "external boolean,"
+    "rg_from integer(8) not null,"
+    "rg_to integer(8) not null);", // GetWhole.From/ToOpen if not set
 
     // delete files - cascade to blobls and chunks
-    "create trigger `delete_file` before delete on `file` begin " \
-    "delete from `blob` where `blob`.`file_id`=`old`.`file_id`;" \
-    "delete from `chunk` where `chunk`.`file_id`=`old`.`file_id`;" \
+    "create trigger delete_file before delete on file begin "
+    "delete from blob where blob.file_id=old.file_id;"
+    "delete from chunk where chunk.file_id=old.file_id;"
     "end;",
     // delete bioseqs - cascade to bioseq_id
-    "create trigger `delete_bioseq` before delete on `bioseq` begin " \
-    "delete from `bioseq_id` where `bioseq_id`.`bioseq_id`=`old`.`bioseq_id`;" \
+    "create trigger delete_bioseq before delete on bioseq begin "
+    "delete from bioseq_id where bioseq_id.bioseq_id=old.bioseq_id;"
     "end;",
     // delete blobs - cascade to bioseq and annot
-    "create trigger `delete_blob` before delete on `blob` begin " \
-    "delete from `bioseq` where `bioseq`.`blob_id`=`old`.`blob_id`;" \
-    "delete from `annot` where `annot`.`blob_id`=`old`.`blob_id`;" \
+    "create trigger delete_blob before delete on blob begin "
+    "delete from bioseq where bioseq.blob_id=old.blob_id;"
+    "delete from annot where annot.blob_id=old.blob_id;"
     "end;",
     // delete annotations - cascade to annot_id
-    "create trigger `delete_annot` before delete on `annot` begin " \
-    "delete from `annot_id` where `annot_id`.`annot_id`=`old`.`annot_id`;" \
+    "create trigger delete_annot before delete on annot begin "
+    "delete from annot_id where annot_id.annot_id=old.annot_id;"
     "end;"
 };
 
@@ -147,152 +150,169 @@ const char* kLDS2_CreateDB[] = {
 const char* kLDS2_CreateDBIdx[] = {
     // files
     // index files by name, prevents duplicate names
-    "create unique index if not exists `idx_filename` on `file` (`file_name`);",
+    "create unique index if not exists idx_filename on file (file_name);",
 
     // chunks
     // index by stream_pos
-    "create index if not exists `idx_stream_pos` on `chunk` (`stream_pos`);",
+    "create index if not exists idx_stream_pos on chunk (stream_pos);",
 
     // bioseqs by blob
     // reverse index
-    "create index if not exists `idx_blob_id` on `bioseq` (`blob_id`);",
+    "create index if not exists idx_blob_id on bioseq (blob_id);",
 
     // bioseqs by lds_id
     // index by bioseq_id
-    "create index if not exists `idx_bioseq_id` on `bioseq_id` (`bioseq_id`);",
+    "create index if not exists idx_bioseq_id on bioseq_id (bioseq_id);",
     // index by lds_id
-    "create index if not exists `idx_bioseq_lds_id` on `bioseq_id` (`lds_id`);",
+    "create index if not exists idx_bioseq_lds_id on bioseq_id (lds_id);",
 
     // blobs
     // index by file_id
-    "create index if not exists `idx_blob_file_id` on `blob` (`file_id`);",
+    "create index if not exists idx_blob_file_id on blob (file_id);",
 
     // annotations
     // index by blob_id
-    "create index if not exists `idx_annot_blob_id` on `annot` (`blob_id`);",
+    "create index if not exists idx_annot_blob_id on annot (blob_id);",
+    // index annot names
+    "create index if not exists idx_annot_name on annot (annot_name);",
 
     // annotations by lds_id
     // index by annot_id
-    "create index if not exists `idx_annot_id` on `annot_id` (`annot_id`);",
+    "create index if not exists idx_annot_id on annot_id (annot_id);",
     // index by lds_id
-    "create index if not exists `idx_annot_lds_id` on `annot_id` (`lds_id`);",
+    "create index if not exists idx_annot_lds_id on annot_id (lds_id);",
     // index 'external' column
-    "create index if not exists `idx_external` on `annot_id` (`external`);"
+    "create index if not exists idx_external on annot_id (external);"
+    // index annot range
+    "create index if not exists idx_annot_rg_from on annot_id (rg_from);"
+    "create index if not exists idx_annot_rg_to on annot_id (rg_to);"
 };
 
 
 // Drop the indexes.
 const char* kLDS2_DropDBIdx[] = {
-    "drop index if exists `idx_filename`;",
-    "drop index if exists `idx_stream_pos`;",
-    "drop index if exists `idx_blob_id`;",
-    "drop index if exists `idx_bioseq_id`;",
-    "drop index if exists `idx_bioseq_lds_id`;",
-    "drop index if exists `idx_blob_file_id`;",
-    "drop index if exists `idx_annot_blob_id`;",
-    "drop index if exists `idx_annot_id`;",
-    "drop index if exists `idx_annot_lds_id`;",
-    "drop index if exists `idx_external`;"
+    "drop index if exists idx_filename;",
+    "drop index if exists idx_stream_pos;",
+    "drop index if exists idx_blob_id;",
+    "drop index if exists idx_bioseq_id;",
+    "drop index if exists idx_bioseq_lds_id;",
+    "drop index if exists idx_blob_file_id;",
+    "drop index if exists idx_annot_blob_id;",
+    "drop index if exists idx_annot_name;",
+    "drop index if exists idx_annot_id;",
+    "drop index if exists idx_annot_lds_id;",
+    "drop index if exists idx_external;",
+    "drop index if exists idx_annot_rg_from;",
+    "drop index if exists idx_annot_rg_to;"
 };
 
 
 static const char* s_LDS2_SQL[] = {
     // eSt_GetFileNames
-    "select `file_name` from `file`;",
+    "select file_name from file;",
     // eSt_GetFileInfoByName
-    "select `file_id`, `file_format`, `file_handler`, `file_size`, "
-    "`file_time`, `file_crc` from `file` where `file_name`=?1;",
+    "select file_id, file_format, file_handler, file_size, "
+    "file_time, file_crc from file where file_name=?1;",
     // eSt_GetFileInfoById
-    "select `file_name`, `file_format`, `file_handler`, `file_size`, "
-    "`file_time`, `file_crc` from `file` where `file_id`=?1;",
+    "select file_name, file_format, file_handler, file_size, "
+    "file_time, file_crc from file where file_id=?1;",
     // eSt_GetLdsSeqIdForIntId
-    "select `lds_id` from `seq_id` where `int_id`=?1;",
+    "select lds_id from seq_id where int_id=?1;",
     // eSt_GetLdsSeqIdForTxtId
-    "select `lds_id` from `seq_id` where `txt_id`=?1;",
+    "select lds_id from seq_id where txt_id=?1;",
     // eSt_GetBioseqIdForIntId
-    "select `bioseq_id`.`bioseq_id` from `seq_id` "
-    "inner join `bioseq_id` using(`lds_id`) where `seq_id`.`int_id`=?1;",
+    "select bioseq_id.bioseq_id from seq_id "
+    "inner join bioseq_id using(lds_id) where seq_id.int_id=?1;",
     // eSt_GetBioseqIdForTxtId
-    "select `bioseq_id`.`bioseq_id` from `seq_id` "
-    "inner join `bioseq_id` using(`lds_id`) where `seq_id`.`txt_id`=?1;",
+    "select bioseq_id.bioseq_id from seq_id "
+    "inner join bioseq_id using(lds_id) where seq_id.txt_id=?1;",
     // eSt_GetSynonyms
-    "select distinct `lds_id` from `bioseq_id` where `bioseq_id`=?1;",
+    "select distinct lds_id from bioseq_id where bioseq_id=?1;",
     // eSt_GetBlobInfo
-    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
-    "from `blob` where `blob_id`=?1;",
+    "select distinct blob_id, blob_type, file_id, file_pos "
+    "from blob where blob_id=?1;",
     // eSt_GetBioseqForIntId
-    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
-    "from `blob` inner join `bioseq` using(`blob_id`) "
-    "inner join `bioseq_id` using(`bioseq_id`) "
-    "inner join `seq_id` using(`lds_id`) where `seq_id`.`int_id`=?1;",
+    "select distinct blob_id, blob_type, file_id, file_pos "
+    "from blob inner join bioseq using(blob_id) "
+    "inner join bioseq_id using(bioseq_id) "
+    "inner join seq_id using(lds_id) where seq_id.int_id=?1;",
     // eSt_GetBioseqForTxtId
-    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
-    "from `blob` inner join `bioseq` using(`blob_id`) "
-    "inner join `bioseq_id` using(`bioseq_id`) "
-    "inner join `seq_id` using(`lds_id`) where `seq_id`.`txt_id`=?1;",
+    "select distinct blob_id, blob_type, file_id, file_pos "
+    "from blob inner join bioseq using(blob_id) "
+    "inner join bioseq_id using(bioseq_id) "
+    "inner join seq_id using(lds_id) where seq_id.txt_id=?1;",
     // eSt_GetAnnotBlobsByIntId
-    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
-    "from `blob` inner join `annot` using(`blob_id`) "
-    "inner join `annot_id` using(`annot_id`) "
-    "inner join `seq_id` using(`lds_id`) where "
-    "`annot_id`.`external`=?2 and `seq_id`.`int_id`=?1;",
+    "select distinct blob_id, blob_type, file_id, file_pos "
+    "from blob inner join annot using(blob_id) "
+    "inner join annot_id using(annot_id) "
+    "inner join seq_id using(lds_id) where "
+    "annot_id.external=?2 and seq_id.int_id=?1;",
     // eSt_GetAnnotBlobsAllByIntId
-    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
-    "from `blob` inner join `annot` using(`blob_id`) "
-    "inner join `annot_id` using(`annot_id`) "
-    "inner join `seq_id` using(`lds_id`) where "
-    "`seq_id`.`int_id`=?1;",
+    "select distinct blob_id, blob_type, file_id, file_pos "
+    "from blob inner join annot using(blob_id) "
+    "inner join annot_id using(annot_id) "
+    "inner join seq_id using(lds_id) where "
+    "seq_id.int_id=?1;",
     // eSt_GetAnnotBlobsByTxtId
-    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
-    "from `blob` inner join `annot` using(`blob_id`) "
-    "inner join `annot_id` using(`annot_id`) "
-    "inner join `seq_id` using(`lds_id`) where "
-    "`annot_id`.`external`=?2 and `seq_id`.`txt_id`=?1;",
+    "select distinct blob_id, blob_type, file_id, file_pos "
+    "from blob inner join annot using(blob_id) "
+    "inner join annot_id using(annot_id) "
+    "inner join seq_id using(lds_id) where "
+    "annot_id.external=?2 and seq_id.txt_id=?1;",
     // eSt_GetAnnotBlobsAllByTxtId
-    "select distinct `blob_id`, `blob_type`, `file_id`, `file_pos` "
-    "from `blob` inner join `annot` using(`blob_id`) "
-    "inner join `annot_id` using(`annot_id`) "
-    "inner join `seq_id` using(`lds_id`) where "
-    "`seq_id`.`txt_id`=?1;",
+    "select distinct blob_id, blob_type, file_id, file_pos "
+    "from blob inner join annot using(blob_id) "
+    "inner join annot_id using(annot_id) "
+    "inner join seq_id using(lds_id) where "
+    "seq_id.txt_id=?1;",
+    // eSt_GetAnnotCountForBlob
+    "select count(distinct annot_id) from annot where blob_id=?1;",
+    // eSt_GetAnnotInfosForBlob
+    "select annot.annot_id, annot_type, annot_name not null as is_named, "
+    " annot_name, lds_id, external, rg_from, rg_to, blob_size, blob_data "
+    "from annot inner join annot_id using (annot_id) "
+    "inner join seq_id using(lds_id) where "
+    "annot.blob_id=?1;",
 
     // eSt_AddFile
-    "insert into `file` "
-    "(`file_name`, `file_format`, `file_handler`, `file_size`, "
-    "`file_time`, `file_crc`) values (?1, ?2, ?3, ?4, ?5, ?6);",
+    "insert into file "
+    "(file_name, file_format, file_handler, file_size, "
+    "file_time, file_crc) values (?1, ?2, ?3, ?4, ?5, ?6);",
     // eSt_AddLdsSeqId
-    "insert into `seq_id` (`txt_id`, `int_id`, `blob_size`, `blob_data`) "
+    "insert into seq_id (txt_id, int_id, blob_size, blob_data) "
     "values (?1, ?2, ?3, ?4);",
     // eSt_AddBlob
-    "insert into `blob` (`blob_type`, `file_id`, `file_pos`) "
+    "insert into blob (blob_type, file_id, file_pos) "
     "values (?1, ?2, ?3);",
     // eSt_AddBioseqToBlob
-    "insert into `bioseq` (`blob_id`) values (?1);",
+    "insert into bioseq (blob_id) values (?1);",
     // eSt_AddBioseqIds
-    "insert into `bioseq_id` (`bioseq_id`, `lds_id`) values (?1, ?2);",
+    "insert into bioseq_id (bioseq_id, lds_id) values (?1, ?2);",
     // eSt_AddAnnotToBlob
-    "insert into `annot` (`annot_type`, `blob_id`) values (?1, ?2);",
-    // eSt_AddAnnotIds
-    "insert into `annot_id` (`annot_id`, `lds_id`, `external`) "
+    "insert into annot (annot_type, blob_id, annot_name) "
     "values (?1, ?2, ?3);",
+    // eSt_AddAnnotIds
+    "insert into annot_id (annot_id, lds_id, external, rg_from, rg_to) "
+    "values (?1, ?2, ?3, ?4, ?5);",
     // eSt_DeleteFileByName
-    "delete from `file` where `file_name`=?1;",
+    "delete from file where file_name=?1;",
     // eSt_DeleteFileById
-    "delete from `file` where `file_id`=?1;",
+    "delete from file where file_id=?1;",
 
     // eSt_AddChunk
-    "insert into `chunk` "
-    "(`file_id`, `raw_pos`, `stream_pos`, `data_size`, `data`) "
+    "insert into chunk "
+    "(file_id, raw_pos, stream_pos, data_size, data) "
     "values (?1, ?2, ?3, ?4, ?5);",
     // eSt_FindChunk
-    "select `raw_pos`, `stream_pos`, `data_size`, `data` from `chunk` "
-    "where `file_id`=?1 and `stream_pos`<=?2 order by `stream_pos` desc "
+    "select raw_pos, stream_pos, data_size, data from chunk "
+    "where file_id=?1 and stream_pos<=?2 order by stream_pos desc "
     "limit 1;",
 
     // eSt_GetSeq_idForLdsSeqId
-    "select `blob_size`, `blob_data` from `seq_id` where `lds_id`=?1;",
+    "select blob_size, blob_data from seq_id where lds_id=?1;",
     // eSt_GetSeq_id_Synonyms
-    "select `blob_size`, `blob_data` from `seq_id` inner join `bioseq_id` "
-    "using(`lds_id`) where `bioseq_id`=?1;"
+    "select blob_size, blob_data from seq_id inner join bioseq_id "
+    "using(lds_id) where bioseq_id=?1;"
 };
 
 
@@ -562,40 +582,37 @@ Int8 CLDS2_Database::AddBioseq(Int8 blob_id, const TSeqIdSet& ids)
 }
 
 
-Int8 CLDS2_Database::AddAnnot(Int8                      blob_id,
-                              SLDS2_Annot::EAnnotType   annot_type,
-                              const TAnnotRefSet&       refs)
+Int8 CLDS2_Database::AddAnnot(SLDS2_Annot& annot)
 {
-    // Convert ids to lds-ids
-    typedef pair<Int8, bool> TLdsAnnotRef;
-    typedef vector<TLdsAnnotRef> TLdsAnnotRefSet;
-
-    TLdsAnnotRefSet lds_refs;
-    ITERATE(TAnnotRefSet, ref, refs) {
-        Int8 lds_id = x_GetLdsSeqId(ref->first);
-        lds_refs.push_back(TLdsAnnotRef(lds_id, ref->second));
-    }
-
     CSQLITE_Statement& st1 = x_GetStatement(eSt_AddAnnotToBlob);
 
     // Create new bioseq
-    st1.Bind(1, annot_type);
-    st1.Bind(2, blob_id);
+    st1.Bind(1, annot.type);
+    st1.Bind(2, annot.blob_id);
+    if ( annot.is_named ) {
+        st1.Bind(3, annot.name);
+    }
+    else {
+        st1.BindNull(3);
+    }
     st1.Execute();
-    Int8 annot_id = st1.GetLastInsertedRowid();
+    annot.id = st1.GetLastInsertedRowid();
     st1.Reset();
 
     // Link annot to its seq-ids
     CSQLITE_Statement& st2 = x_GetStatement(eSt_AddAnnotIds);
-    ITERATE(TLdsAnnotRefSet, ref, lds_refs) {
-        st2.Bind(1, annot_id);
-        st2.Bind(2, ref->first);
-        st2.Bind(3, ref->second);
+    NON_CONST_ITERATE(SLDS2_Annot::TIdMap, ref_id, annot.ref_ids) {
+        Int8 lds_id = x_GetLdsSeqId(ref_id->first);
+        st2.Bind(1, annot.id);
+        st2.Bind(2, lds_id);
+        st2.Bind(3, ref_id->second.external);
+        st2.Bind(4, ref_id->second.range.GetFrom());
+        st2.Bind(5, ref_id->second.range.GetToOpen());
         st2.Execute();
         st2.Reset();
     }
 
-    return annot_id;
+    return annot.id;
 }
 
 
@@ -807,6 +824,77 @@ void CLDS2_Database::GetAnnotBlobs(const CSeq_id_Handle& idh,
         blobs.push_back(info);
     }
     st->Reset();
+}
+
+
+Int8 CLDS2_Database::GetAnnotCountForBlob(Int8 blob_id)
+{
+    if (blob_id <= 0) {
+        return 0;
+    }
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetAnnotCountForBlob);
+    st.Bind(1, blob_id);
+    if ( !st.Step() ) {
+        return 0;
+    }
+    Int8 count = st.GetInt8(0);
+    st.Reset();
+    return count;
+}
+
+
+void CLDS2_Database::GetAnnots(Int8 blob_id, TLDS2Annots& infos)
+{
+    if (blob_id <= 0) {
+        return;
+    }
+
+    // Cache known lds-ids/seq-ids
+    typedef map<Int8, CSeq_id_Handle> TIdMap;
+    TIdMap ids;
+
+    CSQLITE_Statement& st = x_GetStatement(eSt_GetAnnotInfosForBlob);
+    st.Bind(1, blob_id);
+    auto_ptr<SLDS2_Annot> annot;
+    while ( st.Step() ) {
+        Int8 annot_id = st.GetInt8(0);
+        if (!annot.get()  ||  annot_id != annot->id) {
+            // Start next annot
+            if ( annot.get() ) {
+                infos.push_back(annot.release());
+            }
+            annot.reset(new SLDS2_Annot);
+            annot->id = annot_id;
+            annot->blob_id = blob_id;
+            annot->type = SLDS2_Annot::EType(st.GetInt(1));
+            annot->is_named = st.GetInt(2) != 0;
+            annot->name = st.GetString(3);
+        }
+        _ASSERT(annot.get());
+        // Convert lds-id to seq-id handle, use caching for better performance.
+        Int8 lds_id = st.GetInt8(4);
+        CSeq_id_Handle idh;
+        TIdMap::iterator found = ids.find(lds_id);
+        if (found != ids.end()) {
+            idh = found->second;
+        }
+        else {
+            CRef<CSeq_id> seq_id = x_BlobToSeq_id(st, 8, 9);
+            idh = CSeq_id_Handle::GetHandle(*seq_id);
+            ids[lds_id] = idh;
+        }
+
+        SLDS2_AnnotIdInfo id_info;
+        id_info.external = st.GetInt(5) != 0;
+        id_info.range.SetOpen(st.GetInt(6), st.GetInt(7));
+        // There should be no duplicate seq-ids for the same annot.
+        _ASSERT(annot->ref_ids.find(idh) == annot->ref_ids.end());
+        annot->ref_ids[idh] = id_info;
+    }
+    if ( annot.get() ) {
+        infos.push_back(annot.release());
+    }
+    st.Reset();
 }
 
 

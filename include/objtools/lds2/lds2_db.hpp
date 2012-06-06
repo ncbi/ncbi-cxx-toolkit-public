@@ -34,6 +34,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <util/format_guess.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <util/range.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -182,25 +183,56 @@ struct SLDS2_Blob
     Int8        file_id;
     Int8        file_pos;
 
-    SLDS2_Blob(void) : id(0), type(eUnknown), file_id(0), file_pos(-1) {}
+    SLDS2_Blob(void)
+        : id(0),
+          type(eUnknown),
+          file_id(0),
+          file_pos(-1)
+    {}
 };
 
 
-struct SLDS2_Annot {
+/// Info about seq-id used in an annotation.
+struct SLDS2_AnnotIdInfo
+{
+    typedef CRange<TSeqPos> TRange;
+
+    bool   external;
+    TRange range;
+
+    SLDS2_AnnotIdInfo(void)
+        : external(true),
+          range(TRange::GetEmpty())
+    {}
+};
+
+
+/// Annotation info.
+struct SLDS2_Annot
+{
+    typedef map<CSeq_id_Handle, SLDS2_AnnotIdInfo> TIdMap;
+
     /// Annotation type
-    enum EAnnotType {
+    enum EType {
         eUnknown        = 0,
         eSeq_feat       = 1,
         eSeq_align      = 2,
         eSeq_graph      = 3
     };
 
-    Int8        id;
-    EAnnotType  type;
-    Int8        blob_id;
-    bool        external;
+    Int8   id;
+    EType  type;
+    Int8   blob_id;
+    bool   is_named;
+    string name;
+    TIdMap ref_ids;
 
-    SLDS2_Annot(void) : id(0), type(eUnknown), blob_id(0), external(false) {}
+    SLDS2_Annot(void)
+        : id(-1),
+          type(eUnknown),
+          blob_id(-1),
+          is_named(false)
+    {}
 };
 
 
@@ -252,13 +284,8 @@ public:
     /// Add bioseq, return the new bioseq id.
     Int8 AddBioseq(Int8 blob_id, const TSeqIdSet& ids);
 
-    /// Seq-id with 'external annotation' flag.
-    typedef pair<CSeq_id_Handle, bool> TAnnotRef;
-    typedef vector<TAnnotRef>          TAnnotRefSet;
     /// Add annotation, return the new annot id.
-    Int8 AddAnnot(Int8                      blob_id,
-                  SLDS2_Annot::EAnnotType   annot_type,
-                  const TAnnotRefSet&       refs);
+    Int8 AddAnnot(SLDS2_Annot& annot);
 
     /// Check if the db contains a bioseq with the given id.
     /// Return -1 on conflict.
@@ -307,6 +334,14 @@ public:
     void GetAnnotBlobs(const CSeq_id_Handle& idh,
                        TAnnotChoice          choice,
                        TBlobSet&             blobs);
+
+    /// Get number of annotations grouped into a single blob.
+    Int8 GetAnnotCountForBlob(Int8 blob_id);
+
+    typedef vector< AutoPtr<SLDS2_Annot> > TLDS2Annots;
+
+    /// Get details about all annotations from a blob.
+    void GetAnnots(Int8 blob_id, TLDS2Annots& infos);
 
     /// Store the chunk info in the database.
     void AddChunk(const SLDS2_File&  file_info,
@@ -380,6 +415,8 @@ private:
         eSt_GetAnnotBlobsAllByIntId,
         eSt_GetAnnotBlobsByTxtId,
         eSt_GetAnnotBlobsAllByTxtId,
+        eSt_GetAnnotCountForBlob,
+        eSt_GetAnnotInfosForBlob,
         eSt_AddFile,
         eSt_AddLdsSeqId,
         eSt_AddBlob,
