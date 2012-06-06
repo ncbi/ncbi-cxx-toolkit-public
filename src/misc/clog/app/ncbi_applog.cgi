@@ -1,13 +1,10 @@
 #!/bin/sh
 
-NCBI_APPLOG=./ncbi_applog
+NCBI_APPLOG=./ncbi_applog.bin
 
 echo Content-type: text/plain
 echo ""
 
-# Read command line from stdin
-read line
-cmdline="-mode=cgi $line"
-
 umask 002
-eval $NCBI_APPLOG $cmdline
+read line
+eval $NCBI_APPLOG $line -mode=cgi
