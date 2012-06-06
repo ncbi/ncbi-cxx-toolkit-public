@@ -560,7 +560,11 @@ string ExtractAccession(const string& long_acc)
   CBioseq::TId ids;
   try{
     CSeq_id::ParseFastaIds(ids, long_acc.substr(pos2));
-    return ids.front()->GetSeqIdString(true);
+    string s=ids.front()->GetSeqIdString(true);
+    // remove undesirable "XXXX:" from "XXXX:Scaffold1_1".
+    pos1 = s.find(':');
+    if( pos1 != NPOS ) return s.substr(pos1+1);
+    return s;
   }
   catch(CException e){
     return long_acc;
