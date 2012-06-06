@@ -73,7 +73,37 @@ BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
+static const Int8 kEffectiveSearchSpace = 1050668186940;
 
+static void s_ScoreAlignments(const CSeq_align_set &alignments,
+                              CScope& Scope, CScoreBuilder &Scorer)
+{
+    ITERATE(CSeq_align_set::Tdata, Iter, alignments.Get()) {
+        CRef<CSeq_align> Curr(*Iter);
+
+        double DummyScore;
+        if(!Curr->GetNamedScore(CSeq_align::eScore_Score, DummyScore)) {
+            Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_Blast);
+        }
+
+        if(!Curr->GetNamedScore(CSeq_align::eScore_BitScore, DummyScore)) {
+            Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_BitScore);
+        }
+
+        if(!Curr->GetNamedScore(CSeq_align::eScore_EValue, DummyScore)) {
+            Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_EValue);
+        }
+
+        if(!Curr->GetNamedScore(CSeq_align::eScore_IdentityCount, DummyScore)) {
+            Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_IdentityCount);
+        }
+
+        if (Curr->GetSegs().Which() == CSeq_align::C_Segs::e_Disc) {
+            /// Compute score for the components of a Disc-seg alignment
+            s_ScoreAlignments(Curr->GetSegs().GetDisc(), Scope, Scorer);
+        }
+    }
+}
 
 
 void CBlastScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
@@ -81,29 +111,13 @@ void CBlastScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
     //CScoreBuilder Scorer(*Options);
     //Scorer.SetEffectiveSearchSpace(Options->GetEffectiveSearchSpace());
     CScoreBuilder Scorer(blast::eMegablast);
+    Scorer.SetEffectiveSearchSpace (kEffectiveSearchSpace);
 
     NON_CONST_ITERATE(CAlignResultsSet::TQueryToSubjectSet, QueryIter, AlignSet->Get()) {
         NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
             NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {  
             //NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
-
-                ITERATE(CSeq_align_set::Tdata, Iter, SubjectIter->second->Get()) {
-
-                    CRef<CSeq_align> Curr(*Iter);
-
-                    double DummyScore;
-                    if(!Curr->GetNamedScore(CSeq_align::eScore_Score, DummyScore)) {
-                        Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_Blast);
-                    }
-
-                    if(!Curr->GetNamedScore(CSeq_align::eScore_BitScore, DummyScore)) {
-                        Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_BitScore);
-                    }
-
-                    if(!Curr->GetNamedScore(CSeq_align::eScore_IdentityCount, DummyScore)) {
-                        Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_IdentityCount);
-                    }
-                }
+                s_ScoreAlignments(*SubjectIter->second, Scope, Scorer);
             }
         }
     }
