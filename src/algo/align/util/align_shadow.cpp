@@ -206,8 +206,8 @@ CNcbiOstream& operator << (CNcbiOstream& os, const CAlignShadow& align_shadow)
 {
     USING_SCOPE(objects);
     
-    os  << align_shadow.GetId(0)->GetSeqIdString(true) << '\t'
-        << align_shadow.GetId(1)->GetSeqIdString(true) << '\t';
+    os  << align_shadow.GetId(0)->AsFastaString() << '\t'
+        << align_shadow.GetId(1)->AsFastaString() << '\t';
     
     align_shadow.x_PartialSerialize(os);
     
