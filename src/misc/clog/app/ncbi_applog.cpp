@@ -321,33 +321,50 @@ int CNcbiApplogApp::Redirect() const
     // Get URL of logging CGI (from registry file, env.variable or default value)
     string url = NCBI_PARAM_TYPE(NCBI, NcbiApplogCGI)::GetDefault();
 
-    // We need host name in the cmd line only for 'start_app' command,
-    // all other should have it in the token
-    bool is_start_cmd = (GetArgs().GetCommand() == "start_app");
-    bool need_hostname = is_start_cmd;
+    // We need host name and sid in the command line for 'start_app' command,
+    // only, all other should have it in the token
+    bool is_start_app  = (GetArgs().GetCommand() == "start_app");
+    bool need_hostname = true;
+    bool need_sid      = true;
 
     // Create new command line to pass it to CGI
     string s_args;
     CNcbiArguments raw_args = GetArguments();
     for (size_t i = 1; i < raw_args.Size(); ++i) {
-        if (i == 2  &&  !is_start_cmd  &&  raw_args[i].empty() ) {
+        if (i == 2  &&  !is_start_app  &&  raw_args[i].empty() ) {
             // The token value is empty. Possible, it has passed via 
             // env.variable, insert real value into command line.
             s_args += " \"" + m_Token + "\"";
         } else {
+            // Check -host and -sid parameters
+            if (is_start_app) {
+                if (need_hostname  &&  NStr::StartsWith(raw_args[i], "-host")) {
+                    need_hostname = false;
+                }
+                if (need_sid  &&  NStr::StartsWith(raw_args[i], "-sid")) {
+                    need_sid = false;
+                }
+            }
+            // Mode will be set to 'cgi' in CGI, remove it from the command line now
             if (!NStr::StartsWith(raw_args[i], "-mode")) {
                 s_args += " \"" + raw_args[i] + "\"";
             }
-            if (need_hostname  &&  NStr::StartsWith(raw_args[i], "-host")) {
-                need_hostname = false;
-            }
         }
     }
-    // Add current host name into command line
-    if (need_hostname) {
-        const char* hostname = NcbiLogP_GetHostName();
-        if (hostname) {
-            s_args += string(" \"-host=") + hostname + "\"";
+    if (is_start_app) {
+        // Add global SID to command line if necessary
+        if (need_sid) {
+            string sid = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
+            if (!sid.empty()) {
+                s_args += string(" \"-sid=") + sid + "\"";
+            }
+        }
+        // Add current host name to command line
+        if (need_hostname) {
+            const char* hostname = NcbiLogP_GetHostName();
+            if (hostname) {
+                s_args += string(" \"-host=") + hostname + "\"";
+            }
         }
     }
     // Add current time on this host
