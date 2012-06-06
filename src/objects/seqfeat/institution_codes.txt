@@ -2569,6 +2569,7 @@ IOS	s	Institute of Oceanographic Sciences
 IOUSP	c	Marine Microalgae Culture Collection
 IOWA	s	University of Iowa, Museum of Natural History
 IPA	s	Empresa Pernambucana de Pesquisa Agropecuaria, IPA
+IPA:germplasm bank	b	Empresa Pernambucana de Pesquisa Agropecuaria, IPA, 
 IPAE<RUS>	s	Institute of Plant and Animal Ecology Ural Branch of Russian Academy of Sciences
 IPB<BRA>	s	Instituto Paranaense de Botanica
 IPB<DEU>	s	Institut fuer Palaeontologie
@@ -6228,7 +6229,7 @@ UV<CHL>	s	University of Valparaiso
 UV<COL>	s	Departamento de Biologia de la Universidad del Valle
 UVA	s	Geological Institute of the University of Amsterdam
 UVAL	s	Universidad del Valle de Guatemala
-UVC	s	Museo de Vertebrados, Universidad del Valle
+UVC	s	Coleccion de Anfibios y Reptiles, Universidad del Valle, Cali
 UVCC	s	University of Vermont
 UVCE	s	Colecao Entomologica, Laboratorio de Entomologia Sistematica
 UVCO	s	Universidad de Valle
