@@ -417,10 +417,14 @@ extern void NcbiLog_Destroy_Thread(void);
 /** Set up diagnostics destination.
  *  @param ds
  *    An enum value to specify an application's diagnostics destination.
+ *  @return
+ *    The diagnostic destination that was really set.
+ *    It is not always possible to set up an destination for logging messages
+ *    that specified in parameters.
  *  @sa
  *    ENcbiLog_Destination, NcbiLog_Init
  */
-extern void NcbiLog_SetDestination(ENcbiLog_Destination ds);
+extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds);
 
 
 /** Set PID/TID values
@@ -494,7 +498,7 @@ extern void NcbiLog_SetClient(const char* client);
 /** This function allows a program to override the normal session ID string
  *  that is logged. By default it is set to 'UNK_SESSION'. Using this method
  *  will override it with the user supplied string. Usually this value is
- *  taken from the ncbi_sid key in  the standard NCBI web cookie.
+ *  taken from the ncbi_sid key in the standard NCBI web cookie.
  *  @param client
  *    New session ID (URL encoded).
  *    Will be set to 'UNK_SESSION' if parameter is NULL or empty string.

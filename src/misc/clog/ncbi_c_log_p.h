@@ -162,11 +162,15 @@ extern TNcbiLog_Info*   NcbiLogP_GetInfoPtr(void);
 extern TNcbiLog_Context NcbiLogP_GetContextPtr(void);
 
 
+/* Enable/disable internal checks (enabled by default) */
+extern int /*bool*/ NcbiLogP_DisableChecks(int /*bool*/ disable);
+
+
 /** Variant of NcbiLog_SetDestination. 
  *  Try to force set new destination without additional checks.
  *  @sa NcbiLog_SetDestination, ENcbiLog_Destination, NcbiLog_Init
  */
-extern void NcbiLogP_SetDestination(ENcbiLog_Destination ds);
+extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds);
 
 
 /** Variant of NcbiLog_ReqStart, that use already prepared string with

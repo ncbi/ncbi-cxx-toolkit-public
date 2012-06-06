@@ -119,6 +119,9 @@ static volatile int /*bool*/      sx_IsInit    = 0;
 /* Enable/disable logging */
 static volatile int /*bool*/      sx_IsEnabled = 0;
 
+/* Enable/disable checks and state verifications -- used in ncbi_applog utility */
+static volatile int /*bool*/      sx_DisableChecks = 0;
+
 /* Application access log and error postings info structure (global) */
 static volatile TNcbiLog_Info*    sx_Info      = NULL;
 
@@ -968,11 +971,11 @@ static const char* s_GetDefaultLogLocation()
     static const char* kToolkitRc   = "/etc/toolkitrc";
     static const char* kSectionName = "[Web_dir_to_port]";
 
-    FILE* fp;
-    char  buf[256];
-    char  *line, *token, *p;
-    int   inside_section = 0 /*false*/;
-    int   n, line_size;
+    FILE*  fp;
+    char   buf[256];
+    char   *line, *token, *p;
+    int    inside_section = 0 /*false*/;
+    size_t n, line_size;
 
     if (log_path) {
         return log_path;
@@ -991,7 +994,7 @@ static const char* s_GetDefaultLogLocation()
     line_size = sizeof(buf) - 1;
 
     /* Read configuration file */
-    while (fgets(line, line_size, fp) != NULL)
+    while (fgets(line, (int)line_size, fp) != NULL)
     {
         if (inside_section) {
             if (line[0] == '#') {
@@ -1123,7 +1126,7 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
 static int /*bool*/ s_SetLogFiles(const char* dir) 
 {
     char path[FILENAME_MAX + 1];
-    int  n, nlen;
+    size_t n, nlen;
 
     assert(dir);
     n = strlen(dir);
@@ -1510,8 +1513,8 @@ static const char* sx_SeverityStr[] = {
 static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
 {
     TNcbiLog_Context  ctx;
-    int               n, pos;
-    size_t            r_len, w_len;
+    int               n;
+    size_t            pos, r_len, w_len;
     char*             buf;
     ENcbiLog_DiagFile diag = eDiag_Trace;
 
@@ -1803,33 +1806,45 @@ static void s_SetState(TNcbiLog_Context ctx, ENcbiLog_AppState state)
 #endif
     switch ( state ) {
         case eNcbiLog_AppBegin:
-            assert(sx_Info->state == eNcbiLog_NotSet);
+            if (!sx_DisableChecks) {
+                assert(sx_Info->state == eNcbiLog_NotSet);
+            }
             sx_Info->state = state;
             ctx->state = state;
             break;
         case eNcbiLog_AppRun:
-            assert(sx_Info->state == eNcbiLog_AppBegin);
+            if (!sx_DisableChecks) {
+                assert(sx_Info->state == eNcbiLog_AppBegin);
+            }
             sx_Info->state = state;
             ctx->state = state;
             break;
         case eNcbiLog_AppEnd:
-            assert(sx_Info->state != eNcbiLog_AppEnd);
+            if (!sx_DisableChecks) {
+                assert(sx_Info->state != eNcbiLog_AppEnd);
+            }
             sx_Info->state = state;
             ctx->state = state;
             break;
         case eNcbiLog_RequestBegin:
-            assert(s == eNcbiLog_AppBegin  ||
-                   s == eNcbiLog_AppRun    ||
-                   s == eNcbiLog_RequestEnd);
+            if (!sx_DisableChecks) {
+                assert(s == eNcbiLog_AppBegin  ||
+                       s == eNcbiLog_AppRun    ||
+                       s == eNcbiLog_RequestEnd);
+            }
             ctx->state = state;
             break;
         case eNcbiLog_Request:
-            assert(s == eNcbiLog_RequestBegin);
+            if (!sx_DisableChecks) {
+                assert(s == eNcbiLog_RequestBegin);
+            }
             ctx->state = state;
             break;
         case eNcbiLog_RequestEnd:
-            assert(s == eNcbiLog_Request  ||
-                   s == eNcbiLog_RequestBegin);
+            if (!sx_DisableChecks) {
+                assert(s == eNcbiLog_Request  ||
+                       s == eNcbiLog_RequestBegin);
+            }
             ctx->state = state;
             break;
         default:
@@ -1838,7 +1853,7 @@ static void s_SetState(TNcbiLog_Context ctx, ENcbiLog_AppState state)
 }
 
 
-void NcbiLog_SetDestination(ENcbiLog_Destination ds)
+ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 {
     MT_LOCK_API;
     if (ds != sx_Info->destination) {
@@ -1852,11 +1867,13 @@ void NcbiLog_SetDestination(ENcbiLog_Destination ds)
             s_InitDestination();
         }
     }
+    ds = sx_Info->destination;
     MT_UNLOCK;
+    return ds;
 }
 
 
-void NcbiLogP_SetDestination(ENcbiLog_Destination ds)
+ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds)
 {
     MT_LOCK_API;
     /* Set new destination */
@@ -1866,7 +1883,9 @@ void NcbiLogP_SetDestination(ENcbiLog_Destination ds)
         sx_Info->last_reopen_time = 0;
         s_InitDestination();
     }
+    ds = sx_Info->destination;
     MT_UNLOCK;
+    return ds;
 }
 
 
@@ -1969,7 +1988,8 @@ ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
  */
 void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
 {
-    int i, n, pos;
+    int    i, n;
+    size_t pos;
     char*  buf;
 
     s_SetState(ctx, eNcbiLog_AppBegin);
@@ -2029,7 +2049,8 @@ void NcbiLog_AppStop(int exit_status)
 void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
 {
     TNcbiLog_Context ctx = NULL;
-    int n, pos;
+    int    n;
+    size_t pos;
     double timespan;
 
     MT_LOCK_API;
@@ -2057,9 +2078,10 @@ void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
 }
 
 
-static int s_ReqStart(TNcbiLog_Context ctx)
+static size_t s_ReqStart(TNcbiLog_Context ctx)
 {
-    int n, pos;
+    int    n;
+    size_t pos;
 
     CHECK_APP_START(ctx);
     s_SetState(ctx, eNcbiLog_RequestBegin);
@@ -2114,7 +2136,7 @@ static int s_ReqStart(TNcbiLog_Context ctx)
 void NcbiLog_ReqStart(const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int   n, pos;
+    size_t n, pos;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -2134,7 +2156,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
 void NcbiLogP_ReqStartStr(const char* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int   n, pos;
+    size_t n, pos;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -2165,7 +2187,8 @@ void NcbiLog_ReqRun(void)
 void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 {
     TNcbiLog_Context ctx = NULL;
-    int n, pos;
+    int    n;
+    size_t pos;
     double timespan;
 
     MT_LOCK_API;
@@ -2196,8 +2219,9 @@ void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 void NcbiLog_Extra(const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int   n, pos;
-    char* buf;
+    int    n;
+    size_t nu, pos;
+    char*  buf;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -2212,8 +2236,8 @@ void NcbiLog_Extra(const SNcbiLog_Param* params)
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    n = s_PrintParams(buf, pos, params);
-    VERIFY(n > 0);
+    nu = s_PrintParams(buf, pos, params);
+    VERIFY(nu > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -2224,8 +2248,9 @@ void NcbiLog_Extra(const SNcbiLog_Param* params)
 void NcbiLogP_ExtraStr(const char* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int   n, pos;
-    char* buf;
+    int    n;
+    size_t nu, pos;
+    char*  buf;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -2240,8 +2265,8 @@ void NcbiLogP_ExtraStr(const char* params)
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    n = s_PrintParamsStr(buf, pos, params);
-    VERIFY(n > 0);
+    nu = s_PrintParamsStr(buf, pos, params);
+    VERIFY(nu > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -2253,8 +2278,9 @@ void NcbiLog_Perf(int status, double timespan,
                   const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int   n, pos;
-    char* buf;
+    int    n;
+    size_t nu, pos;
+    char*  buf;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -2269,8 +2295,8 @@ void NcbiLog_Perf(int status, double timespan,
     VERIFY(n > 0);
     pos += n;
     /* Parameters */
-    n = s_PrintParams(buf, pos, params);
-    VERIFY(n > 0);
+    nu = s_PrintParams(buf, pos, params);
+    VERIFY(nu > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
 
@@ -2281,8 +2307,8 @@ void NcbiLog_Perf(int status, double timespan,
 void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 {
     TNcbiLog_Context ctx = NULL;
-    int   n, pos;
-    char* buf;
+    size_t n, pos;
+    char*  buf;
 
     MT_LOCK_API;
     ctx = s_GetContext();
@@ -2350,3 +2376,10 @@ TNcbiLog_Context NcbiLogP_GetContextPtr(void)
 {
     return s_GetContext();
 }
+
+ int NcbiLogP_DisableChecks(int /*bool*/ disable)
+ {
+    int current = sx_DisableChecks;
+    sx_DisableChecks = disable;
+    return current;
+ }
