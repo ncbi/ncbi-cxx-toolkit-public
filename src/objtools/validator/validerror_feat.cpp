@@ -2713,6 +2713,10 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
             const string& rna_name = rna.GetExt().GetName();
+            if (NStr::StartsWith (rna_name, "transfer RNA ")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_tRNAmRNAmixup,
+                    "mRNA feature product indicates it should be a tRNA feature", feat);
+            }
             ValidateCharactersInField (rna_name, "mRNA name", feat);
             if (ContainsSgml(rna_name)) {
                 PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
