@@ -1328,33 +1328,33 @@ CTime& CTime::x_SetTimeMTSafe(const time_t* value)
     return *this;
 }
 
-// Get current GMT time with nanoseconds
-static void s_GetTimeT(time_t& timer, long& ns)
+
+void CTime::GetCurrentTimeT(time_t& t, long& ns)
 {
 #if defined(NCBI_OS_MSWIN)
     struct _timeb timebuffer;
     _ftime(&timebuffer);
-    timer = timebuffer.time;
+    t = timebuffer.time;
     ns = (long) timebuffer.millitm *
          (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
 
 #elif defined(NCBI_OS_UNIX)
     struct timeval tp;
     if (gettimeofday(&tp,0) == -1) {
-        timer = -1;
+        t = -1;
     } else {
-        timer = tp.tv_sec;
+        t = tp.tv_sec;
         ns = long((double)tp.tv_usec *
                   (double)kNanoSecondsPerSecond /
                   (double)kMicroSecondsPerSecond);
     }
 #else
-    timer = time(0);
+    t = time(0);
     ns = 0;
 #endif
-    if (timer == (time_t)(-1)) {
+    if (t == (time_t)(-1)) {
         NCBI_THROW(CTimeException, eConvert,
-                   "s_GetTimeT(): unable to get time value");
+                   "CTime::GetCurrentTimeT(): unable to get time value");
     }
 }
 
@@ -1368,7 +1368,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     if ( value ) {
         timer = *value;
     } else {
-        s_GetTimeT(timer, ns);
+        GetCurrentTimeT(timer, ns);
     }
 
     // Bind values to internal variables
@@ -2867,7 +2867,7 @@ void CFastLocalTime::Tuneup(void)
     // Get system time
     time_t timer;
     long ns;
-    s_GetTimeT(timer, ns);
+    CTime::GetCurrentTimeT(timer, ns);
     x_Tuneup(timer, ns);
 }
 
@@ -2911,7 +2911,7 @@ retry:
     // Get system time
     time_t timer;
     long ns;
-    s_GetTimeT(timer, ns);
+    CTime::GetCurrentTimeT(timer, ns);
 
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
@@ -2964,7 +2964,7 @@ int CFastLocalTime::GetLocalTimezone(void)
     // Get system timer
     time_t timer;
     long ns;
-    s_GetTimeT(timer, ns);
+    CTime::GetCurrentTimeT(timer, ns);
 
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.

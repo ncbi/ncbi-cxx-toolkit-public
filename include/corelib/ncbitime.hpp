@@ -467,6 +467,15 @@ public:
     ///   Time in time_t format.
     time_t GetTimeT(void) const;
 
+    /// Get current GMT time in time_t format (with nanoseconds).
+    ///
+    /// @param t
+    ///   The function return the number of seconds elapsed since
+    ///   midnight (00:00:00), January 1, 1970.
+    /// @param ns
+    ///   Number of nanoseconds (0, if not possible to get).
+    static void GetCurrentTimeT(time_t& t, long& ns);
+
     /// Set time using "struct tm" time value.
     ///
     /// @param t
