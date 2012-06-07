@@ -72,16 +72,21 @@ public:
     typedef vector<CSeq_id_Handle> TAccs;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
+    typedef vector<TSeqPos> TLengths;
+    typedef vector<CSeq_inst::TMol> TTypes;
 
     vector<CSeq_id_Handle> m_Ids;
     enum EBulkType {
         eBulk_gi,
         eBulk_acc,
         eBulk_label,
-        eBulk_taxid
+        eBulk_taxid,
+        eBulk_length,
+        eBulk_type
     };
     EBulkType m_Type;
     bool m_Verbose;
+    CScope::EForceLoad m_ForceLoad;
 };
 
 
@@ -122,7 +127,8 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          CArgDescriptions::eString, "gi");
     args.SetConstraint("type",
                        &(*new CArgAllow_Strings,
-                         "gi", "acc", "label", "taxid"));
+                         "gi", "acc", "label", "taxid", "length", "type"));
+    args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("verbose", "Verbose results");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
@@ -204,6 +210,13 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     else if ( args["type"].AsString() == "taxid" ) {
         m_Type = eBulk_taxid;
     }
+    else if ( args["type"].AsString() == "length" ) {
+        m_Type = eBulk_length;
+    }
+    else if ( args["type"].AsString() == "type" ) {
+        m_Type = eBulk_type;
+    }
+    m_ForceLoad = args["no-force"]? CScope::eNoForceLoad: CScope::eForceLoad;
     m_Verbose = args["verbose"];
     return true;
 }
@@ -222,11 +235,19 @@ int CTestApplication::Run(void)
     TAccs accs;
     TLabels labels;
     TTaxIds taxids;
+    TLengths lengths;
+    TTypes types;
     switch ( m_Type ) {
-    case eBulk_gi:    gis = scope.GetGis(m_Ids, scope.eForceLoad); break;
-    case eBulk_acc:   accs = scope.GetAccVers(m_Ids, scope.eForceLoad); break;
-    case eBulk_label: labels = scope.GetLabels(m_Ids, scope.eForceLoad); break;
-    case eBulk_taxid: taxids = scope.GetTaxIds(m_Ids, scope.eForceLoad); break;
+    case eBulk_gi:    gis = scope.GetGis(m_Ids, m_ForceLoad); break;
+    case eBulk_acc:   accs = scope.GetAccVers(m_Ids, m_ForceLoad); break;
+    case eBulk_label: labels = scope.GetLabels(m_Ids, m_ForceLoad); break;
+    case eBulk_taxid: taxids = scope.GetTaxIds(m_Ids, m_ForceLoad); break;
+    case eBulk_length:
+        lengths = scope.GetSequenceLengths(m_Ids, m_ForceLoad);
+        break;
+    case eBulk_type:
+        types = scope.GetSequenceTypes(m_Ids, m_ForceLoad);
+        break;
     }
     if ( m_Verbose ) {
         for ( size_t i = 0; i < count; ++i ) {
@@ -247,11 +268,18 @@ int CTestApplication::Run(void)
             if ( !taxids.empty() ) {
                 LOG_POST(m_Ids[i]<<" -> "<<taxids[i]);
             }
+            if ( !lengths.empty() ) {
+                LOG_POST(m_Ids[i]<<" -> "<<lengths[i]);
+            }
+            if ( !types.empty() ) {
+                LOG_POST(m_Ids[i]<<" -> "<<types[i]);
+            }
         }
     }
     for ( size_t i = 0; i < count; ++i ) {
         _ASSERT(!scope.GetBioseqHandle(m_Ids[i], CScope::eGetBioseq_Loaded));
     }
+    LOG_POST("Passed");
     return 0;
 }
 
