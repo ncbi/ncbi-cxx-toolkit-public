@@ -63,13 +63,14 @@ USING_SCOPE(objects);
 
 USING_SCOPE (sequence);
 
-static const double k_MinOverlapLenFactor = 0.60;
+static const double k_MinOverlapLenFactor = 0.45;
 static const double k_Min_Percent_Identity = 0.64999;
 static const int k_MaxReliableGapNum = 3;
 
 COligoSpecificityCheck::COligoSpecificityCheck(const CBioseq_Handle& template_handle,
                                                const CSeq_align_set& input_seqalign,
                                                CScope& scope,
+                                               int word_size,
                                                TSeqPos allowed_total_mismatch,
                                                TSeqPos allowed_3end_mismatch,
                                                TSeqPos max_mismatch,
@@ -77,6 +78,7 @@ COligoSpecificityCheck::COligoSpecificityCheck(const CBioseq_Handle& template_ha
     : m_TemplateHandle(template_handle),
       m_Hit(&input_seqalign),
       m_Scope(&scope),
+      m_WordSize(word_size),
       m_AllowedTotalMismatch(allowed_total_mismatch),
       m_Allowed3EndMismatch(allowed_3end_mismatch),
       m_MaxMismatch(max_mismatch),
@@ -151,6 +153,8 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
     num_3end_mismatch = 0;
     num_total_gap = 0;
     num_3end_gap = 0;
+    int num_continuous_match = 0;
+    int max_num_continuous_match = 0;
     CRef<CSeq_align> global_align(NULL);
     CConstRef<CSeq_align> input_hit = input_hsp_info->hsp;
     CRange<TSeqPos> master_range = input_hsp_info->master_range;
@@ -258,7 +262,15 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                     } else {
                         num_bp ++;
                     }
-                    
+                    if(master_string[i]== slave_string[i]){
+                        num_continuous_match ++;
+                        if (max_num_continuous_match < num_continuous_match) {
+                            max_num_continuous_match = num_continuous_match;
+                        }
+                    } else {
+                        //reset
+                        num_continuous_match = 0;
+                    }
                 }
                 //      cerr<< "master = " << master_string << endl;
                 //    cerr<< "slave = " << slave_string << endl;
@@ -270,21 +282,22 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                     //blast local alignment ends with gaps may not be an accurate alignment
                     do_global_alignment = true;
                 } else {
-                double percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/aln_range.GetLength();
-                if (percent_ident > k_Min_Percent_Identity && 
-                    num_total_mismatch + num_total_gap < m_MaxMismatch &&
-                    (num_total_mismatch + num_total_gap <= m_AllowedTotalMismatch || 
-                     num_3end_mismatch + num_3end_gap <= m_Allowed3EndMismatch)) {
-                    CRef<CSeq_align> aln_ref(new CSeq_align());
-                    aln_ref->SetType(CSeq_align::eType_partial);
-                    
-                    aln_ref->SetSegs().SetDenseg(*primer_denseg);
-                    
-                    global_align = aln_ref;
+                    double percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/aln_range.GetLength();
+                    if (max_num_continuous_match >= m_WordSize && 
+                        percent_ident > k_Min_Percent_Identity && 
+                        num_total_mismatch + num_total_gap < m_MaxMismatch &&
+                        (num_total_mismatch + num_total_gap <= m_AllowedTotalMismatch || 
+                         num_3end_mismatch + num_3end_gap <= m_Allowed3EndMismatch)) {
+                        CRef<CSeq_align> aln_ref(new CSeq_align());
+                        aln_ref->SetType(CSeq_align::eType_partial);
+                        
+                        aln_ref->SetSegs().SetDenseg(*primer_denseg);
+                        
+                        global_align = aln_ref;
+                    }
                 }
-                }
-            
-             } 
+                
+            } 
             //only extend if the hit alignment does not completely covers the primer window
             if (do_global_alignment) {
                 string master_seq;
@@ -394,7 +407,9 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                 TSeqPos insertion_3end = 0;
                 TSeqPos deletion_3end = 0;
                 TSeqPos num_master_gap = 0;
-                
+                num_continuous_match = 0;
+                max_num_continuous_match = 0;
+
                 ITERATE(string, iter, xcript) {
                     switch(*iter) {
                     case 'D':
@@ -422,6 +437,7 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                         }
                         total_mismatch ++;
                         num_bp ++;
+                        num_continuous_match = 0;
                         break;
                         
                     case 'M': 
@@ -435,6 +451,10 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                             }
                         }
                         num_bp ++;
+                        num_continuous_match ++;
+                        if (max_num_continuous_match < num_continuous_match) {
+                            max_num_continuous_match = num_continuous_match;
+                        }
                         break;
                         
                     case 'I':
@@ -449,6 +469,7 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                         }
                         total_insertion ++;
                         num_bp ++;
+                        num_continuous_match = 0;
                         break;
                         
                     case 'D':
@@ -462,6 +483,7 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                             }
                         }
                         total_deletion ++;
+                        num_continuous_match = 0;
                         break;
                     }
                 }
@@ -482,7 +504,8 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                 //   fmt.AsText(&text, CNWFormatter::eFormatType2);
                 //   cout << text << endl;
                 double percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/xcript.size();
-                if (percent_ident > k_Min_Percent_Identity && 
+                if (max_num_continuous_match >= m_WordSize &&
+                    percent_ident > k_Min_Percent_Identity && 
                     num_total_mismatch + num_total_gap < m_MaxMismatch &&
                     (num_total_mismatch + num_total_gap <= m_AllowedTotalMismatch || 
                      num_3end_mismatch + num_3end_gap <= m_Allowed3EndMismatch)) {

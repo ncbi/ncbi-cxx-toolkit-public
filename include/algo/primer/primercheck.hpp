@@ -134,7 +134,10 @@ public:
     ///the specificity checking database 
     
     ///@param scope: scope to fetch the sequences in alignment
-    
+
+    ///@word_size: target must have at least this long consecutive match to primer
+    ///to be detected.
+
     ///@param allowed_total_mismatch: the total mismatch threshhold below which a 
     ///primer hit pair representing a PCR product will be reported.  
     ///Note that this number is inclusive 
@@ -151,6 +154,7 @@ public:
     COligoSpecificityCheck(const CBioseq_Handle& template_handle,
                            const CSeq_align_set& input_seqalign,
                            CScope& scope,
+                           int word_size,
                            TSeqPos allowed_total_mismatch = 1,
                            TSeqPos allowed_3end_mismatch = 1,
                            TSeqPos max_mismatch = 7,
@@ -194,6 +198,7 @@ public:
     void SetMaxMismatchDetection(TSeqPos max_mismatch) {
         m_MaxMismatch = max_mismatch;
     }
+
 
     ///whether to count transcript of the same gene as non-specific
     ///@param allow_transcript_variants: a transcript variant from same gene 
@@ -432,6 +437,9 @@ private:
 
     ///scope to fetch sequence
     CRef<CScope> m_Scope;
+
+    ///minimal continuous match required
+    int m_WordSize;
 
     //scope associated with server for fetching feature info
     CRef<CObjectManager> m_FeatureOM;
