@@ -1042,7 +1042,7 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const SGFFrec& r)
 }
 
 namespace {
-const string dot = ".";
+const char* dot = ".";
 }
 
 void SGFFrec::print(CNcbiOstream& os) const
