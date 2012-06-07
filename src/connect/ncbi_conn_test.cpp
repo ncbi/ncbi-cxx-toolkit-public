@@ -35,11 +35,11 @@
 #include <corelib/stream_utils.hpp>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <util/random_gen.hpp>
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include <iterator>
+#include <stdlib.h>
 
 #define _STR(x)           #x
 #define STRINGIFY(x)  _STR(x)
@@ -953,15 +953,13 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     CTime  time(CTime::eCurrent, CTime::eLocal);
     time_t seed = time.GetTimeT();
 
-    CRandom rand(seed);
-
     char buf[(1 << 10) + 1];
     sprintf(buf, "%08X", (unsigned int) seed);
-    size_t size = rand.GetRand(2, (sizeof(buf)-1) >> 3);
+    size_t size = 2 + rand() % (((sizeof(buf)-1) >> 3) - 2 + 1);
 
     size_t i;
     for (i = 1;  i < size;  i++)
-        sprintf(buf + (i << 3), "%08X", (unsigned int) rand.GetRand());
+        sprintf(buf + (i << 3), "%08X", (unsigned int) rand());
     buf[size <<= 3] = '\0';
 
     CConn_ServiceStream echo(kEcho, fSERV_Any, net_info, 0, m_Timeout);
