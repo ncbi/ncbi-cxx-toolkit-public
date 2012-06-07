@@ -39,9 +39,14 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
     CGridCommandLineInterfaceApp::EAPIClass api_class)
 {
     static const string config_section("netcache_api");
+    static const string enable_mirroring_param("enable_mirroring");
 
-    CNcbiApplication::Instance()->GetConfig().Set(config_section,
-        "enable_mirroring", IsOptionSet(eEnableMirroring) ? "true" : "on_read");
+    CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
+
+    if (IsOptionSet(eEnableMirroring))
+        reg.Set(config_section, enable_mirroring_param, "true");
+    else if (reg.Get(config_section, enable_mirroring_param).empty())
+        reg.Set(config_section, enable_mirroring_param, "on_read");
 
     switch (api_class) {
     case eNetCacheAPI:
