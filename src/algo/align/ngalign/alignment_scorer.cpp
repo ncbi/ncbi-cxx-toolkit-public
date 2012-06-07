@@ -73,7 +73,7 @@ BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
-static const Int8 kEffectiveSearchSpace = 1050668186940;
+static const Int8 kEffectiveSearchSpace = NCBI_CONST_INT8(1050668186940);
 
 static void s_ScoreAlignments(const CSeq_align_set &alignments,
                               CScope& Scope, CScoreBuilder &Scorer)
