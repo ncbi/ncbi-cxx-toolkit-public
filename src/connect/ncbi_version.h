@@ -53,7 +53,7 @@
 
 #  define   NETDAEMONS_MAJOR        2
 #  define   NETDAEMONS_MINOR        0
-#  define   NETDAEMONS_PATCH        2
+#  define   NETDAEMONS_PATCH        4
 
 #  ifdef NCBI_CXX_TOOLKIT
 #    define NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION_COMPOSE_STR    \
