@@ -178,7 +178,23 @@ struct SRangesBySize
                            r1.first.second.GetLength());
         TSeqPos len2 = max(r2.first.first.GetLength(),
                            r2.first.second.GetLength());
-        return len1 > len2;
+        if (len1 > len2) {
+            return true;
+        }
+        if (len2 > len1) {
+            return false;
+        }
+
+        TSeqRange r1_0 = r1.second->GetSeqRange(0);
+        TSeqRange r2_0 = r2.second->GetSeqRange(0);
+        if (r1_0 < r2_0) {
+            return true;
+        }
+        if (r2_0 < r1_0) {
+            return false;
+        }
+
+        return r1.second->GetSeqRange(1) < r2.second->GetSeqRange(1);
     }
 };
 
@@ -305,7 +321,7 @@ struct SSeqAlignsByPctIdent
 
 void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                       list< CRef<CSeq_align_set> >& align_sets,
-                      TCompartOptions options, 
+                      TCompartOptions options,
                       float diff_len_filter)
 {
     //
@@ -416,8 +432,6 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         //
         // reduce the list to a set of overall ranges
         //
-        typedef pair<TSeqRange, TSeqRange> TRange;
-        typedef pair<TRange, CRef<CSeq_align> > TAlignRange;
 
         vector<TAlignRange> align_ranges;
 
@@ -428,7 +442,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
             align_ranges.push_back(TAlignRange(r, *iter));
         }
 
-#if 0//def _VERBOSE_DEBUG
+#ifdef _VERBOSE_DEBUG
         {{
              cerr << "ranges: "
                  << id_pair.first.first << "/" << q_strand
@@ -461,12 +475,18 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         // sort by descending hit size
         // fit each new hit into its best compartment compartment
         //
-		if(options & fCompart_SortByScore)        
-			std::sort(align_ranges.begin(), align_ranges.end(), SRangesByScore());
-	   	if(options & fCompart_SortByPctIdent)        
-			std::sort(align_ranges.begin(), align_ranges.end(), SRangesByPctIdent());
-		else
-			std::sort(align_ranges.begin(), align_ranges.end(), SRangesBySize());
+		if (options & fCompart_SortByScore) {
+			std::sort(align_ranges.begin(), align_ranges.end(),
+                      SRangesByScore());
+        }
+        else if (options & fCompart_SortByPctIdent) {
+			std::sort(align_ranges.begin(), align_ranges.end(),
+                      SRangesByPctIdent());
+        }
+        else {
+			std::sort(align_ranges.begin(), align_ranges.end(),
+                      SRangesBySize());
+        }
 
         list< multiset<TAlignRange> > compartments;
 
@@ -567,7 +587,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                     << "  diff=" << diff
                     << "  best_diff=" << best_diff
                     << "  align_len=" << it->second->GetAlignLength(false)
-                    << "  diff_len_ratio=" << diff_len_ratio 
+                    << "  diff_len_ratio=" << diff_len_ratio
                     << "  filter=" << (diff_len_ratio <= diff_len_filter ? "pass" : "fail" )
                     << endl;
 #endif
@@ -579,9 +599,9 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                         is_intersecting_subject ) ||
                       ( (options & fCompart_AllowIntersectionsBoth)  &&
                         is_intersecting_query && is_intersecting_subject ))  &&
-                     ( ( (options & fCompart_FilterByDiffLen) && 
+                     ( ( (options & fCompart_FilterByDiffLen) &&
                          (diff_len_ratio <= diff_len_filter) ) ||
-                       !(options & fCompart_FilterByDiffLen) ) &&   
+                       !(options & fCompart_FilterByDiffLen) ) &&
                     diff < best_diff) {
                     best_compart = compart_it;
                     best_diff = diff;
@@ -635,7 +655,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
              }
          }}
 #endif
-        
+
         // pack into seq-align-sets
         ITERATE (list< multiset<TAlignRange> >, it, compartments) {
             CRef<CSeq_align_set> sas(new CSeq_align_set);
