@@ -2956,21 +2956,155 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
 }
 
 
-TSeqPos CScope_Impl::GetSequenceLength(const CSeq_id_Handle& id,
-                                       int get_flag)
+TSeqPos CScope_Impl::GetSequenceLength(const CSeq_id_Handle& idh,
+                                       bool force_load)
 {
-    CBioseq_Handle bh = GetBioseqHandle(id, get_flag);
-    return bh? bh.GetBioseqLength(): kInvalidSeqPos;
+    TConfReadLockGuard rguard(m_ConfLock);
+
+    if ( !force_load ) {
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+        if ( info ) {
+            if ( info->HasBioseq() ) {
+                return info->GetObjectInfo().GetBioseqLength();
+            }
+            return kInvalidSeqPos;
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
+        TSeqPos length = it->GetDataSource().GetSequenceLength(idh);
+        if ( length ) {
+            return length;
+        }
+    }
+    return kInvalidSeqPos;
 }
                                   
 
-CSeq_inst::TMol CScope_Impl::GetSequenceType(const CSeq_id_Handle& id,
-                                             int get_flag)
+CSeq_inst::TMol CScope_Impl::GetSequenceType(const CSeq_id_Handle& idh,
+                                             bool force_load)
 {
-    CBioseq_Handle bh = GetBioseqHandle(id, get_flag);
-    return bh? bh.GetSequenceType(): CSeq_inst::eMol_not_set;
+    TConfReadLockGuard rguard(m_ConfLock);
+
+    if ( !force_load ) {
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+        if ( info ) {
+            if ( info->HasBioseq() ) {
+                return info->GetObjectInfo().GetInst_Mol();
+            }
+            return CSeq_inst::eMol_not_set;
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
+        CSeq_inst::TMol type = it->GetDataSource().GetSequenceType(idh);
+        if ( type != CSeq_inst::eMol_not_set ) {
+            return type;
+        }
+    }
+    return CSeq_inst::eMol_not_set;
 }
                                   
+
+void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
+                                     const TIds& ids,
+                                     bool force_load)
+{
+    int count = ids.size(), remaining = count;
+    ret.assign(count, kInvalidSeqPos);
+    vector<bool> loaded(count);
+    
+    TConfReadLockGuard rguard(m_ConfLock);
+    
+    if ( !force_load ) {
+        for ( int i = 0; i < count; ++i ) {
+            if ( loaded[i] ) {
+                continue;
+            }
+            SSeqMatch_Scope match;
+            CRef<CBioseq_ScopeInfo> info =
+                x_FindBioseq_Info(ids[i],
+                                  CScope::eGetBioseq_Resolved,
+                                  match);
+            if ( info ) {
+                if ( info->HasBioseq() ) {
+                    ret[i] = info->GetObjectInfo().GetBioseqLength();
+                    loaded[i] = true;
+                    --remaining;
+                }
+            }
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( !remaining ) {
+            break;
+        }
+        CPrefetchManager::IsActive();
+        it->GetDataSource().GetSequenceLengths(ids, loaded, ret);
+#ifdef NCBI_COMPILER_WORKSHOP
+        std::count(loaded.begin(), loaded.end(), false, remaining);
+#else
+        remaining = std::count(loaded.begin(), loaded.end(), false);
+#endif
+    }
+}
+
+
+void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
+                                   const TIds& ids,
+                                   bool force_load)
+{
+    int count = ids.size(), remaining = count;
+    ret.assign(count, CSeq_inst::eMol_not_set);
+    vector<bool> loaded(count);
+    
+    TConfReadLockGuard rguard(m_ConfLock);
+    
+    if ( !force_load ) {
+        for ( int i = 0; i < count; ++i ) {
+            if ( loaded[i] ) {
+                continue;
+            }
+            SSeqMatch_Scope match;
+            CRef<CBioseq_ScopeInfo> info =
+                x_FindBioseq_Info(ids[i],
+                                  CScope::eGetBioseq_Resolved,
+                                  match);
+            if ( info ) {
+                if ( info->HasBioseq() ) {
+                    ret[i] = info->GetObjectInfo().GetInst_Mol();
+                    loaded[i] = true;
+                    --remaining;
+                }
+            }
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( !remaining ) {
+            break;
+        }
+        CPrefetchManager::IsActive();
+        it->GetDataSource().GetSequenceTypes(ids, loaded, ret);
+#ifdef NCBI_COMPILER_WORKSHOP
+        std::count(loaded.begin(), loaded.end(), false, remaining);
+#else
+        remaining = std::count(loaded.begin(), loaded.end(), false);
+#endif
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -361,8 +361,18 @@ public:
    
     bool IsTransactionActive() const;
 
-    TSeqPos GetSequenceLength(const CSeq_id_Handle& id, int get_flag);
-    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id, int get_flag);
+    TSeqPos GetSequenceLength(const CSeq_id_Handle& id, bool force_load);
+    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id, bool force_load);
+
+    // Get a set of bioseq lengths
+    typedef vector<TSeqPos> TSequenceLengths;
+    void GetSequenceLengths(TSequenceLengths& ret,
+                            const TIds& idhs, bool force_load);
+    // Get a set of bioseq types
+    typedef vector<CSeq_inst::TMol> TSequenceTypes;
+    void GetSequenceTypes(TSequenceTypes& ret,
+                          const TIds& idhs, bool force_load);
+
 
 private:
     // constructor/destructor visible from CScope

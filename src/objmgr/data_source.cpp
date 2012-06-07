@@ -1228,6 +1228,36 @@ int CDataSource::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
+TSeqPos CDataSource::GetSequenceLength(const CSeq_id_Handle& idh)
+{
+    TSeqPos ret = kInvalidSeqPos;
+    TTSE_LockSet locks;
+    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    if ( match ) {
+        ret = match.m_Bioseq->GetBioseqLength();
+    }
+    else if ( m_Loader ) {
+        ret = m_Loader->GetSequenceLength(idh);
+    }
+    return ret;
+}
+
+
+CSeq_inst::TMol CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
+{
+    CSeq_inst::TMol ret = CSeq_inst::eMol_not_set;
+    TTSE_LockSet locks;
+    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    if ( match ) {
+        ret = match.m_Bioseq->GetInst_Mol();
+    }
+    else if ( m_Loader ) {
+        ret = m_Loader->GetSequenceType(idh);
+    }
+    return ret;
+}
+
+
 void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     int count = ids.size(), remaining = 0;
@@ -1324,6 +1354,58 @@ void CDataSource::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
     }
     if ( remaining && m_Loader ) {
         m_Loader->GetTaxIds(ids, loaded, ret);
+    }
+}
+
+
+void CDataSource::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
+                                     TSequenceLengths& ret)
+{
+    int count = ids.size(), remaining = 0;
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TTSE_LockSet locks;
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        if ( match ) {
+            ret[i] = match.m_Bioseq->GetBioseqLength();
+            loaded[i] = true;
+        }
+        else {
+            ++remaining;
+        }
+    }
+    if ( remaining && m_Loader ) {
+        m_Loader->GetSequenceLengths(ids, loaded, ret);
+    }
+}
+
+
+void CDataSource::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
+                                   TSequenceTypes& ret)
+{
+    int count = ids.size(), remaining = 0;
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TTSE_LockSet locks;
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        if ( match ) {
+            ret[i] = match.m_Bioseq->GetInst_Mol();
+            loaded[i] = true;
+        }
+        else {
+            ++remaining;
+        }
+    }
+    if ( remaining && m_Loader ) {
+        m_Loader->GetSequenceTypes(ids, loaded, ret);
     }
 }
 

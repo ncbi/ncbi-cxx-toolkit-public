@@ -42,6 +42,7 @@
 #include <objmgr/blob_id.hpp>
 
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <set>
 #include <map>
@@ -255,16 +256,24 @@ public:
     virtual int GetGi(const CSeq_id_Handle& idh);
     virtual string GetLabel(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
+    virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
 
     // bulk interface
     typedef vector<bool> TLoaded;
     typedef vector<int> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
+    typedef vector<TSeqPos> TSequenceLengths;
+    typedef vector<CSeq_inst::TMol> TSequenceTypes;
     virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     virtual void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
     virtual void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
     virtual void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    virtual void GetSequenceLengths(const TIds& ids, TLoaded& loaded,
+                                    TSequenceLengths& ret);
+    virtual void GetSequenceTypes(const TIds& ids, TLoaded& loaded,
+                                  TSequenceTypes& ret);
 
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with

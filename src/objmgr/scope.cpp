@@ -678,30 +678,72 @@ void CScope::GetTaxIds(TTaxIds* results,
 
 
 TSeqPos CScope::GetSequenceLength(const CSeq_id& id,
-                                  EGetBioseqFlag get_flag)
+                                  EForceLoad force_load)
 {
-    return GetSequenceLength(CSeq_id_Handle::GetHandle(id), get_flag);
+    return GetSequenceLength(CSeq_id_Handle::GetHandle(id), force_load);
 }
 
 
 TSeqPos CScope::GetSequenceLength(const CSeq_id_Handle& id,
-                                  EGetBioseqFlag get_flag)
+                                  EForceLoad force_load)
 {
-    return m_Impl->GetSequenceLength(id, get_flag);
+    return m_Impl->GetSequenceLength(id, force_load == eForceLoad);
+}
+
+
+void CScope::GetSequenceLengths(TSequenceLengths* results,
+                                const TSeq_id_Handles& ids,
+                                EForceLoad force_load)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetSequenceLengths: null results pointer");
+    }
+    return m_Impl->GetSequenceLengths(*results, ids, force_load == eForceLoad);
+}
+
+
+CScope::TSequenceLengths CScope::GetSequenceLengths(const TSeq_id_Handles& ids,
+                                                    EForceLoad force_load)
+{
+    TSequenceLengths results;
+    GetSequenceLengths(&results, ids, force_load);
+    return results;
 }
 
 
 CSeq_inst::TMol CScope::GetSequenceType(const CSeq_id& id,
-                                        EGetBioseqFlag get_flag)
+                                        EForceLoad force_load)
 {
-    return GetSequenceType(CSeq_id_Handle::GetHandle(id), get_flag);
+    return GetSequenceType(CSeq_id_Handle::GetHandle(id), force_load);
 }
 
 
 CSeq_inst::TMol CScope::GetSequenceType(const CSeq_id_Handle& id,
-                                        EGetBioseqFlag get_flag)
+                                        EForceLoad force_load)
 {
-    return m_Impl->GetSequenceType(id, get_flag);
+    return m_Impl->GetSequenceType(id, force_load == eForceLoad);
+}
+
+
+void CScope::GetSequenceTypes(TSequenceTypes* results,
+                              const TSeq_id_Handles& ids,
+                              EForceLoad force_load)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetSequenceTypes: null results pointer");
+    }
+    return m_Impl->GetSequenceTypes(*results, ids, force_load == eForceLoad);
+}
+
+
+CScope::TSequenceTypes CScope::GetSequenceTypes(const TSeq_id_Handles& ids,
+                                                EForceLoad force_load)
+{
+    TSequenceTypes results;
+    GetSequenceTypes(&results, ids, force_load);
+    return results;
 }
 
 

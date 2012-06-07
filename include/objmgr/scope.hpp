@@ -380,6 +380,18 @@ public:
     int GetTaxId(const CSeq_id_Handle& idh,
                  EForceLoad force_load = eNoForceLoad);
 
+    // returns kInvalidSeqPos if sequence is not known
+    TSeqPos GetSequenceLength(const CSeq_id& id,
+                              EForceLoad force_load = eNoForceLoad);
+    TSeqPos GetSequenceLength(const CSeq_id_Handle& id,
+                              EForceLoad force_load = eNoForceLoad);
+
+    // returns CSeq_inst::eMol_not_set if sequence is not known
+    CSeq_inst::TMol GetSequenceType(const CSeq_id& id,
+                                    EForceLoad force_load = eNoForceLoad);
+    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id,
+                                    EForceLoad force_load = eNoForceLoad);
+
     /// Bulk retrieval methods
     typedef vector<CSeq_id_Handle> TSeq_id_Handles;
     TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
@@ -406,6 +418,19 @@ public:
                    const TSeq_id_Handles& idhs,
                    EForceLoad force_load = eNoForceLoad);
 
+    typedef vector<TSeqPos> TSequenceLengths;
+    TSequenceLengths GetSequenceLengths(const TSeq_id_Handles& idhs,
+                                        EForceLoad force_load = eNoForceLoad);
+    void GetSequenceLengths(TSequenceLengths* results,
+                            const TSeq_id_Handles& idhs,
+                            EForceLoad force_load = eNoForceLoad);
+    typedef vector<CSeq_inst::TMol> TSequenceTypes;
+    TSequenceTypes GetSequenceTypes(const TSeq_id_Handles& idhs,
+                                    EForceLoad force_load = eNoForceLoad);
+    void GetSequenceTypes(TSequenceTypes* results,
+                          const TSeq_id_Handles& idhs,
+                          EForceLoad force_load = eNoForceLoad);
+
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);
 
@@ -428,17 +453,6 @@ public:
                                           const CSeq_entry& tse);
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CSeq_entry& tse);
-
-    // returns kInvalidSeqPos if sequence is not known
-    TSeqPos GetSequenceLength(const CSeq_id& id,
-                              EGetBioseqFlag get_flag = eGetBioseq_All);
-    TSeqPos GetSequenceLength(const CSeq_id_Handle& id,
-                              EGetBioseqFlag get_flag = eGetBioseq_All);
-    // returns CSeq_inst::eMol_not_set if sequence is not known
-    CSeq_inst::TMol GetSequenceType(const CSeq_id& id,
-                                    EGetBioseqFlag get_flag = eGetBioseq_All);
-    CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id,
-                                    EGetBioseqFlag get_flag = eGetBioseq_All);
 
     enum ETSEKind {
         eManualTSEs,

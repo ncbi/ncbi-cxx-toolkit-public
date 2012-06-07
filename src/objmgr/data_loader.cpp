@@ -255,6 +255,36 @@ int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
+TSeqPos CDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
+{
+    TSeqPos ret = kInvalidSeqPos;
+    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    ITERATE(TTSE_LockSet, it, locks) {
+        CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
+        if ( bs_info ) {
+            ret = bs_info->GetBioseqLength();
+            break;
+        }
+    }
+    return ret;
+}
+
+
+CSeq_inst::TMol CDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
+{
+    CSeq_inst::TMol ret = CSeq_inst::eMol_not_set;
+    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    ITERATE(TTSE_LockSet, it, locks) {
+        CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
+        if ( bs_info ) {
+            ret = bs_info->GetInst_Mol();
+            break;
+        }
+    }
+    return ret;
+}
+
+
 void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     int count = ids.size();
@@ -326,6 +356,58 @@ void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
                 (*it)->FindMatchingBioseq(ids[i]);
             if ( bs_info ) {
                 ret[i] = bs_info->GetTaxId();
+                break;
+            }
+        }
+        loaded[i] = true;
+    }
+}
+
+
+void CDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
+                                     TSequenceLengths& ret)
+{
+    int count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        
+        ret[i] = kInvalidSeqPos;
+        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
+        ITERATE(TTSE_LockSet, it, locks) {
+            CConstRef<CBioseq_Info> bs_info =
+                (*it)->FindMatchingBioseq(ids[i]);
+            if ( bs_info ) {
+                ret[i] = bs_info->GetBioseqLength();
+                break;
+            }
+        }
+        loaded[i] = true;
+    }
+}
+
+
+void CDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
+                                   TSequenceTypes& ret)
+{
+    int count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( int i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        
+        ret[i] = CSeq_inst::eMol_not_set;
+        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
+        ITERATE(TTSE_LockSet, it, locks) {
+            CConstRef<CBioseq_Info> bs_info =
+                (*it)->FindMatchingBioseq(ids[i]);
+            if ( bs_info ) {
+                ret[i] = bs_info->GetInst_Mol();
                 break;
             }
         }
