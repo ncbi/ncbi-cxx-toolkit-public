@@ -3648,11 +3648,11 @@ s_ReadAlignFileRaw
         linestring = next_line->data;
         overall_line_count = next_line->line_num-1;
 
+        s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
         if (*pformat == ALNFMT_FASTAGAP) {
             s_AfrpProcessFastaGap(afrp, pattern_list, linestring, overall_line_count);
             continue;
         }
-        s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
         /* we want to remove the comment from the line for the purpose 
          * of looking for blank lines and skipping,
          * but save comments for storing in array if line is not skippable or
