@@ -35,6 +35,7 @@
 #include <corelib/stream_utils.hpp>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <util/random_gen.hpp>
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
@@ -263,7 +264,7 @@ static int s_ParseHeader(const char* header, void* data, int server_error)
 
 EIO_Status CConnTest::DispatcherOkay(string* reason)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(kTest);
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
     ConnNetInfo_SetupStandardArgs(net_info, kTest);
 
     PreCheck(eDispatcher, 0/*main*/,
@@ -626,10 +627,10 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
 }
 
 
-static SOCK x_GetSOCK(const CConn_IOStream* fw)
+static inline SOCK x_GetSOCK(const CConn_IOStream* s)
 {
-    SOCK s;
-    return CONN_GetSOCK(fw->GetCONN(), &s) == eIO_Success ? s : 0;
+    SOCK sock;
+    return CONN_GetSOCK(s->GetCONN(), &sock) == eIO_Success ? sock : 0;
 }
 
 
@@ -744,8 +745,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             vector<CSocketAPI::SPoll>   poll;
             ITERATE(vector<CFWCheck>, ck, v) {
                 CConn_SocketStream* fw = ck->first.get();
-                CFWConnPoint*       cp = ck->second;
-                if (!fw  ||  cp->status != eIO_Success)
+                if (!fw  ||  ck->second->status != eIO_Success)
                     continue;
                 CSocket* s = new CSocket;
                 s->Reset(x_GetSOCK(fw), eNoOwnership, eCopyTimeoutsFromSOCK);
@@ -756,6 +756,14 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             if (!poll.size())
                 break;
             status = CSocketAPI::Poll(poll, net_info->timeout);
+            if (status != eIO_Timeout)
+                continue;
+            ITERATE(vector<CFWCheck>, ck, v)
+                ck->second->status = eIO_Timeout;
+            if (n) {
+                status = eIO_Success;
+                break;
+            }
         } while (status == eIO_Success);
 
         // Report results:
@@ -927,40 +935,78 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 }
 
 
+static inline unsigned int ud(time_t one, time_t two)
+{
+    return one > two ? one - two : two - one;
+}
+
+
 EIO_Status CConnTest::StatefulOkay(string* reason)
 {
-    static const char kId2Init[] =
-        "0\2000\200\242\200\240\200\5\0\0\0\0\0\0\0\0\0";
-    static const char kId2[] = "ID2";
-    char ry[sizeof(kFWSign)];
-
-    SConnNetInfo* net_info = ConnNetInfo_Create(kId2);
+    static const char kEcho[] = "ECHO";
 
     PreCheck(eStatefulService, 0/*main*/,
              "Checking reachability of a stateful service");
 
-    CConn_ServiceStream id2(kId2, fSERV_Any, net_info, 0/*params*/, m_Timeout);
-    id2.SetCanceledCallback(m_Canceled);
+    SConnNetInfo* net_info = ConnNetInfo_Create(kEcho);
+
+    CTime  time(CTime::eCurrent, CTime::eLocal);
+    time_t seed = time.GetTimeT();
+
+    CRandom rand(seed);
+
+    char buf[(1 << 10) + 1];
+    sprintf(buf, "%08X", (unsigned int) seed);
+    size_t size = rand.GetRand(2, (sizeof(buf)-1) >> 3);
+
+    size_t i;
+    for (i = 1;  i < size;  i++)
+        sprintf(buf + (i << 3), "%08X", (unsigned int) rand.GetRand());
+    buf[size <<= 3] = '\0';
+
+    CConn_ServiceStream echo(kEcho, fSERV_Any, net_info, 0, m_Timeout);
+    echo.SetCanceledCallback(m_Canceled);
 
     streamsize n = 0;
-    bool iofail = !id2.write(kId2Init, sizeof(kId2Init) - 1)  ||  !id2.flush()
-        ||  !(n = CStreamUtils::Readsome(id2, ry, sizeof(ry)-1));
-    EIO_Status status = ConnStatus
-        (iofail  ||  n < 4  ||  memcmp(ry, "0\200\240\200", 4) != 0, &id2);
-    ry[n] = '\0';
+    bool iofail = !echo.write(buf, size)  ||  !echo.flush();
+    if (!iofail) {
+        SOCK s;
+        if (!(s = x_GetSOCK(&echo)))
+            iofail = true;
+        else if (SOCK_Shutdown(s, eIO_Write) != eIO_Success)
+            iofail = true;
+        else if (!(n = CStreamUtils::Readsome(echo, buf, size)))
+            iofail = true;
+    }
+    if (!iofail) {
+        if (n < (streamsize) size) {
+            if (!echo.read(buf + n, (streamsize) size - n))
+                iofail = true;
+            else
+                n += echo.gcount();
+        }
+        if (n == (streamsize) size) {
+            time_t now = (time_t) NStr::StringToNumeric<unsigned int>
+                (CTempString(buf, 8), NStr::fConvErr_NoThrow, 16/*radix*/);
+            time.SetTimeT(now);
+        } else
+            iofail = true;
+    }
+    EIO_Status status = ConnStatus(iofail, &echo);
+    buf[n] = '\0';
 
     string temp;
     if (status == eIO_Interrupt)
         temp = kCanceled;
     else if (status == eIO_Success)
-        temp = "OK";
+        temp = "OK (RTT "+NStr::NumericToString(ud(seed,time.GetTimeT()))+')';
     else {
-        char* str = SERV_ServiceName(kId2);
-        if (str  &&  NStr::CompareNocase(str, kId2) != 0) {
+        char* str = SERV_ServiceName(kEcho);
+        if (str  &&  NStr::CompareNocase(str, kEcho) != 0) {
             temp = n ? "Unrecognized" : "No";
             temp += " response received from substituted service;"
                 " please remove [";
-            string upper(kId2);
+            string upper(kEcho);
             temp += NStr::ToUpper(upper);
             temp += "]CONN_SERVICE_NAME=\"";
             temp += str;
@@ -983,7 +1029,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                     " preventing this stateful service from operating"
                     " properly; try to remove [";
                 if (!m_Stateless) {
-                    string upper(kId2);
+                    string upper(kEcho);
                     temp += NStr::ToUpper(upper);
                     temp += "]CONN_STATELESS\n";
                 } else
@@ -991,7 +1037,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             } else if (!str) {
                 SERV_ITER iter = 0;
                 if (status != eIO_Timeout
-                    &&  (!(iter = SERV_OpenSimple(kId2))
+                    &&  (!(iter = SERV_OpenSimple(kEcho))
                          ||  !SERV_GetNextInfo(iter))) {
                     temp += "The service is currently unavailable;"
                         " you may want to contact " + HELP_EMAIL + '\n';
@@ -1007,7 +1053,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             }
         } else if (!str) {
             if (n  &&  net_info  &&  net_info->http_proxy_port
-                &&  NStr::strncasecmp(ry, kFWSign, (size_t) n) == 0) {
+                &&  NStr::strncasecmp(buf, kFWSign, (size_t) n) == 0) {
                 temp += "NCBI Firewall";
                 if (!net_info->firewall)
                     temp += " (Connection Relay)";
