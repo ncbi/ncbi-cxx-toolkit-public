@@ -394,8 +394,7 @@ int CPsiBlastApp::Run(void)
             CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                          query_opts->UseLowercaseMasks(),
                                          query_opts->GetParseDeflines(),
-                                         query_opts->GetRange(),
-                                         !m_CmdLineArgs->ExecuteRemotely());
+                                         query_opts->GetRange());
             iconfig.SetQueryLocalIdMode();
             CRef<CBlastFastaInputSource> fasta(new CBlastFastaInputSource(
                                          m_CmdLineArgs->GetInputStream(),

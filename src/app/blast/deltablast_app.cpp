@@ -184,8 +184,7 @@ int CDeltaBlastApp::Run(void)
         CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
-                                     query_opts->GetRange(),
-                                     !m_CmdLineArgs->ExecuteRemotely());
+                                     query_opts->GetRange());
         iconfig.SetQueryLocalIdMode();
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         size_t query_batch_size = m_CmdLineArgs->GetQueryBatchSize();

@@ -117,8 +117,7 @@ int CTblastnApp::Run(void)
             CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                          query_opts->UseLowercaseMasks(),
                                          query_opts->GetParseDeflines(),
-                                         query_opts->GetRange(),
-                                         !m_CmdLineArgs->ExecuteRemotely());
+                                         query_opts->GetRange());
             iconfig.SetQueryLocalIdMode();
             fasta.Reset(new CBlastFastaInputSource(
                                          m_CmdLineArgs->GetInputStream(),
