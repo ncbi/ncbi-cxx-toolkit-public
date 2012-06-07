@@ -5641,7 +5641,7 @@ CAsyncDiagThread::Main(void)
     if (!m_ThreadSuffix.empty()) {
         string thr_name = CNcbiApplication::Instance()->GetProgramDisplayName();
         thr_name += m_ThreadSuffix;
-#ifdef NCBI_OS_LINUX
+#if defined(NCBI_OS_LINUX)  &&  defined(PR_SET_NAME)
         prctl(PR_SET_NAME, (unsigned long)thr_name.c_str(), 0, 0, 0);
 #endif
     }
