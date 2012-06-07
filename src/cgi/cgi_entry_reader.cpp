@@ -41,11 +41,13 @@
 
 BEGIN_NCBI_SCOPE
 
-static const string kBoundaryTag        = "boundary=";
-static const string kContentDisposition = "Content-Disposition";
-static const string kContentType        = "Content-Type";
+static const char*     kBoundaryTag        = "boundary=";
+static const SIZE_TYPE kBoundaryTagLen     = 9;
+static const char*     kContentDisposition = "Content-Disposition";
+static const char*     kContentType        = "Content-Type";
 
 #define CCER "CCgiEntryReader: "
+
 
 static bool s_MatchesBoundary(const string& l, const string& b)
 {
@@ -191,7 +193,7 @@ CCgiEntryReaderContext::CCgiEntryReaderContext(CNcbiIstream& in,
                        CCER "no boundary field in " + content_type);
         }
         m_ContentType = eCT_Multipart;
-        m_Boundary = "--" + content_type.substr(pos + kBoundaryTag.size());
+        m_Boundary = "--" + content_type.substr(pos + kBoundaryTagLen);
         string      line;
         CT_INT_TYPE next = (x_DelimitedRead(line) == eRT_EOF ? CT_EOF
                             : m_In.peek());
