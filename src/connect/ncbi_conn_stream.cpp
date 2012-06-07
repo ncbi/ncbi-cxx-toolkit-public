@@ -247,10 +247,10 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 }
 
 
-static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
-                                           const void*         init_data,
-                                           size_t              init_size,
-                                           TSOCK_Flags         flags)
+static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
+                                          const void*         init_data,
+                                          size_t              init_size,
+                                          TSOCK_Flags         flags)
 {
     EIO_Status status;
     SOCK       sock = 0;
@@ -267,24 +267,12 @@ static CONNECTOR s_TunneledSocketConnector(const SConnNetInfo* net_info,
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
             &&  ((flags & ~(fSOCK_LogOn | fSOCK_LogDefault))  ||  init_size)) {
-            size_t size   = SOCK_OSHandleSize();
-            char*  handle = new char[size];
-            status = SOCK_GetOSHandleEx(sock, handle, size, eTakeOwnership);
-            if (status == eIO_Success) {
-                SOCK_Close(sock);
-                status = SOCK_CreateOnTopEx(handle, size, &sock,
-                                            init_data, init_size, flags);
-                if (status != eIO_Success) {
-                    SOCK_CloseOSHandle(handle, size);
-                    _ASSERT(!sock);
-                } else
-                    _ASSERT(sock);
-            } else {
-                SOCK_Abort(sock);
-                SOCK_Close(sock);
-                sock = 0;
-            }
-            delete[] handle;
+            SOCK s;
+            status = SOCK_CreateOnTopEx(sock, 0, &s,
+                                        init_data, init_size, flags);
+            _ASSERT(!s ^ !(status != eIO_Success));
+            SOCK_Destroy(sock);
+            sock = s;
         }
         proxy = true;
     }
@@ -314,7 +302,7 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        size_t              size,
                                        TSOCK_Flags         flags,
                                        size_t              buf_size)
-    : CConn_IOStream(s_TunneledSocketConnector(&net_info, data, size, flags),
+    : CConn_IOStream(s_SocketConnectorBuilder(&net_info, data, size, flags),
                      net_info.timeout, buf_size)
 {
     return;

@@ -387,9 +387,9 @@ static char* s_HostPort(const char* host, unsigned short nport)
  * so the longer multi-step sequence was introduced below, instead.
  * Cf. ncbi_conn_stream.cpp: s_TunneledSocketConnector().
  */
-static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
-                                         const void*         init_data,
-                                         size_t              init_size)
+static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
+                                          const void*         init_data,
+                                          size_t              init_size)
 {
     CONNECTOR   c;
     EIO_Status  status;
@@ -402,25 +402,12 @@ static CONNECTOR s_CreateSocketConnector(const SConnNetInfo* net_info,
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success  &&  init_size) {
-            size_t size   = SOCK_OSHandleSize();
-            void*  handle = malloc(size);
-            status = SOCK_GetOSHandleEx(sock, handle, size, eTakeOwnership);
-            if (status == eIO_Success) {
-                SOCK_Close(sock);
-                status  = SOCK_CreateOnTopEx(handle, size, &sock,
-                                             init_data, init_size, flags);
-                if (status != eIO_Success) {
-                    SOCK_CloseOSHandle(handle, size);
-                    assert(!sock);
-                } else
-                    assert(sock);
-            } else {
-                SOCK_Abort(sock);
-                SOCK_Close(sock);
-                sock = 0;
-            }
-            if (handle)
-                free(handle);
+            SOCK s;
+            status = SOCK_CreateOnTopEx(sock, 0, &s,
+                                        init_data, init_size, flags);
+            assert(!s ^ !(status != eIO_Success));
+            SOCK_Destroy(sock);
+            sock = s;
         }
         proxy = 1/*true*/;
     }
@@ -605,7 +592,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             break;
         case fSERV_Standalone:
             if (!net_info->stateless)
-                return s_CreateSocketConnector(net_info, 0, 0);
+                return s_SocketConnectorBuilder(net_info, 0, 0);
             /* Otherwise, it will be a pass-thru connection via dispatcher */
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(uuu->service, net_info,
@@ -742,8 +729,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         }
         net_info->port = uuu->port;
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
-        return s_CreateSocketConnector(net_info, &uuu->ticket,
-                                       uuu->ticket ? sizeof(uuu->ticket) : 0);
+        return s_SocketConnectorBuilder(net_info, &uuu->ticket,
+                                        uuu->ticket ? sizeof(uuu->ticket) : 0);
     }
     return HTTP_CreateConnectorEx(net_info,
                                   (uuu->params.flags

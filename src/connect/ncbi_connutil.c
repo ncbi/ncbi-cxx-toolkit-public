@@ -1533,24 +1533,10 @@ extern EIO_Status URL_ConnectEx
     BUF_Destroy(buf);
 
     if (s) {
-        /* resuse connection to HTTPD */
-        size_t size   = SOCK_OSHandleSize();
-        void*  handle = malloc(size);
-        status = SOCK_GetOSHandleEx(s, handle, size, eTakeOwnership);
-        if (status == eIO_Success) {
-            SOCK_Close(s);
-            status  = SOCK_CreateOnTopEx(handle, size, sock,
-                                         hdr, hdr_len, flags);
-            if (status != eIO_Success) {
-                SOCK_CloseOSHandle(handle, size);
-                assert(!*sock);
-            }
-        } else {
-            SOCK_Abort(s);
-            SOCK_Close(s);
-        }
-        if (handle)
-            free(handle);
+        /* resuse connection */
+        status = SOCK_CreateOnTopEx(s, 0, sock,
+                                    hdr, hdr_len, flags);
+        SOCK_Destroy(s);
     } else {
         /* connect to HTTPD */
         status = SOCK_CreateEx(host, port, o_timeout, sock,
