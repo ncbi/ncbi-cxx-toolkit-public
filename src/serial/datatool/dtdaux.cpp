@@ -96,19 +96,23 @@ DTDEntity::EType DTDEntity::GetType(void) const
 }
 
 void DTDEntity::SetParseAttributes( const string& namespaceName,
-    bool elementForm, bool attributeForm)
+    bool elementForm, bool attributeForm,
+    map<string,string>& prefixToNamespace)
 {
     m_TargetNamespace = namespaceName;
     m_ElementFormDefault = elementForm;
     m_AttributeFormDefault = attributeForm;
+    m_PrefixToNamespace = prefixToNamespace;
 }
 
 void DTDEntity::GetParseAttributes( string& namespaceName,
-    bool& elementForm, bool& attributeForm) const
+    bool& elementForm, bool& attributeForm,
+    map<string,string>& prefixToNamespace) const
 {
     namespaceName = m_TargetNamespace;
     elementForm = m_ElementFormDefault;
     attributeForm = m_AttributeFormDefault;
+    prefixToNamespace = m_PrefixToNamespace;
 }
 
 /////////////////////////////////////////////////////////////////////////////

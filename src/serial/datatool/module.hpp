@@ -42,6 +42,7 @@
 #include <set>
 #include "mcontainer.hpp"
 #include "comments.hpp"
+#include "namespace.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -79,6 +80,9 @@ public:
     void AddExports(const TExports& exports);
     void AddImports(const TImports& imports);
     void AddImports(const string& module, const list<string>& types);
+
+    void SetSubnamespace(const string& sub_ns);
+    virtual const CNamespace& GetNamespace(void) const;
 
     void PrintSampleDEF(CNcbiOstream& out) const;
     virtual void PrintASN(CNcbiOstream& out) const;
@@ -136,6 +140,7 @@ public:
     static string ToAsnId(const string& name);
     
     void AddExtraSchemaOutput(const string& extra) const;
+    string GetSubnamespace(void) const;
 
 private:
     const string x_GetVar(const string& section,
@@ -151,6 +156,8 @@ private:
     TExports m_Exports;
     TImports m_Imports;
     TDefinitions m_Definitions;
+    string m_Subnamespace;
+    mutable AutoPtr<CNamespace> m_Namespace;
 
     typedef map<string, CDataType*> TTypesByName;
     typedef map<string, string> TImportsByName;

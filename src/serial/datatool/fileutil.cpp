@@ -507,6 +507,16 @@ bool CDelayedOfstream::rewrite(void)
     return true;
 }
 
+void CDelayedOfstream::Discard(void)
+{
+    if ( is_open() ) {
+        m_Ostream.reset(0);
+        m_Istream.reset(0);
+        CFile(m_FileName).Remove();
+        m_FileName.clear();
+    }
+}
+
 bool Empty(const CNcbiOstrstream& src)
 {
     return const_cast<CNcbiOstrstream&>(src).pcount() == 0;

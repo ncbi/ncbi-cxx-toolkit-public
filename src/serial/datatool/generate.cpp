@@ -728,6 +728,7 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
     bool isfound = false;
     do {    
         isfound = false;
+        bool types_found = false;
         ITERATE ( TOutputFiles, filei, m_Files ) {
             CFileCode* code = filei->second.get();
             module_name = code->GetPrimaryClass()->GetDoxygenModuleName();
@@ -766,6 +767,16 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
                 *out <<
                     "void " << current_module << "_RegisterModuleClasses(void);\n\n";
             }
+            if (code->GetPrimaryClass()->GetKind() == CTypeStrings::eKindObject) {
+                CClassTypeStrings* classtype = dynamic_cast<CClassTypeStrings*>(code->GetPrimaryClass());
+                if (classtype && classtype->HaveTypeInfo()) {
+                    types_found = true;
+                }
+            }
+        }
+        if (isfound && !types_found) {
+            generated.pop_back();
+            out->Discard();
         }
         if (out->is_open()) {
             ns.Reset(*out);
@@ -792,6 +803,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
     bool isfound = false;
     do {    
         isfound = false;
+        bool types_found = false;
         ITERATE ( TOutputFiles, filei, m_Files ) {
             CFileCode* code = filei->second.get();
             module_name = code->GetPrimaryClass()->GetDoxygenModuleName();
@@ -834,6 +846,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
             if (code->GetPrimaryClass()->GetKind() == CTypeStrings::eKindObject) {
                 CClassTypeStrings* classtype = dynamic_cast<CClassTypeStrings*>(code->GetPrimaryClass());
                 if (classtype && classtype->HaveTypeInfo()) {
+                    types_found = true;
                     out_inc <<
                         "#include " << code->Include(code->GetUserHPPName()) << "\n";
                     out_code << "    "
@@ -841,6 +854,10 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
                              << classtype->GetClassNameDT() << "::GetTypeInfo();\n";
                 }
             }
+        }
+        if (isfound && !types_found) {
+            generated.pop_back();
+            out->Discard();
         }
         if (out->is_open()) {
             out_code << "}\n\n";

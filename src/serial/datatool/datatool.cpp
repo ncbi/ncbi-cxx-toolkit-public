@@ -81,7 +81,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(2,5,0) );
+    SetVersion( CVersionInfo(2,5,1) );
 }
 
 void CDataTool::Init(void)
@@ -755,6 +755,11 @@ SourceFile::EType CDataTool::LoadDefinitions(
         }
     }
     return srctype;
+}
+
+string CDataTool::GetConfigValue(const string& section, const string& name) const
+{
+    return generator.GetConfig().Get(section,name);
 }
 
 END_NCBI_SCOPE

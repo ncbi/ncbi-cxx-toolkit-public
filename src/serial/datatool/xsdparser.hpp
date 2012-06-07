@@ -111,7 +111,8 @@ protected:
     void ParseList(DTDAttribute& att);
 
     string CreateTmpEmbeddedName(const string& name, int emb);
-    string CreateEntityId( const string& name, DTDEntity::EType type);
+    string CreateEntityId( const string& name,DTDEntity::EType type,
+                           const string* prefix=NULL);
     void CreateTypeDefinition(DTDEntity::EType type);
     void ParseTypeDefinition(DTDEntity& ent);
     void ProcessNamedTypes(void);

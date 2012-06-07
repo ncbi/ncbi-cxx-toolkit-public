@@ -59,6 +59,184 @@ WSDLParser::~WSDLParser(void)
 {
 }
 
+void WSDLParser::BuildDataTree(
+    AutoPtr<CFileModules>& modules, AutoPtr<CDataTypeModule>& module)
+{
+    string basename(module->GetName());
+
+    // check for name clashes
+    string subns = ((CDataTool*)CNcbiApplication::Instance())->GetConfigValue(
+        "-", "UseSubnamespaces");
+    bool use_subns_all = NStr::CompareNocase(subns, "all_modules") == 0;
+    bool use_subns_problem = NStr::CompareNocase(subns, "problem_modules") == 0;
+    set<string> problem_ns;
+    set<string> all_ns;
+    {
+        map<string, set<string> > clashes;
+        map<string,DTDElement>::iterator i, j;
+        for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+            DTDElement::EType type = i->second.GetType();
+            bool valid =
+                type != DTDElement::eUnknown &&
+                type != DTDElement::eUnknownGroup &&
+                type != DTDElement::eWsdlUnsupportedEndpoint &&
+                !i->second.IsEmbedded() && !i->second.GetName().empty();
+            if (valid) {
+                for (j=i, ++j; j != m_MapElement.end(); ++j) {
+                   DTDElement::EType type = j->second.GetType();
+                    valid =
+                        type != DTDElement::eUnknown &&
+                        type != DTDElement::eUnknownGroup &&
+                        type != DTDElement::eWsdlUnsupportedEndpoint &&
+                        !j->second.IsEmbedded();
+                    if (valid &&
+                        NStr::CompareNocase(i->second.GetName(),j->second.GetName()) ==0 &&
+                        i->second.GetNamespaceName() != j->second.GetNamespaceName()) {
+                        clashes[i->second.GetName()].insert(i->second.GetNamespaceName());
+                        clashes[j->second.GetName()].insert(j->second.GetNamespaceName());
+                        problem_ns.insert(i->second.GetNamespaceName());
+                        problem_ns.insert(j->second.GetNamespaceName());
+                    }
+                }
+                all_ns.insert(i->second.GetNamespaceName());
+            }
+        }
+        if (!clashes.empty()) {
+            string report("Detected element name clashes:\n");
+            for (map<string, set<string> >::const_iterator c= clashes.begin();
+                c!= clashes.end(); ++c) {
+                for (set<string>::const_iterator n = c->second.begin(); 
+                    n != c->second.end(); ++n) {
+                    report += c->first + " in " + *n + "\n";
+                }
+            }
+            ERR_POST_X(4, Warning << report);
+            if (!use_subns_all && !use_subns_problem) {
+                NCBI_THROW(CDatatoolException,eWrongInput,
+                "Element name clashes detected, please request UseSubnamespaces in DEF file");
+            }
+        }
+    }
+    // if no clashes, go old style
+    if ((!use_subns_all && !use_subns_problem) ||
+        (use_subns_problem && problem_ns.empty())) {
+        XSDParser::BuildDataTree(modules,module);
+        return;
+    }
+    // make sure problem namespaces have non-empty prefix
+    if (use_subns_problem) {
+        for (set<string>::const_iterator p= problem_ns.begin();
+            p != problem_ns.end(); ++p) {
+            if (m_NamespaceToPrefix[*p].empty()) {
+                string ns_prefix;
+                for (;;) {
+                    ns_prefix += "a";
+                    if (m_PrefixToNamespace.find(ns_prefix) == m_PrefixToNamespace.end()) {
+                        m_NamespaceToPrefix[*p] = ns_prefix;
+                        m_PrefixToNamespace.erase("");
+                        m_PrefixToNamespace[ns_prefix] = *p;
+                        break;
+                    }
+                }
+                
+            }
+        }
+    } 
+
+    int m=0;
+    list< AutoPtr<CDataTypeModule> > modNs;
+    map<string, string> namesp2module;
+    map<string, string> module2nsprefix;
+// arrange definitions by namespaces
+    if (use_subns_problem) {
+        // ns with no problems: put them all in one module with no subns
+        for (set<string>::const_iterator a= all_ns.begin(); a != all_ns.end(); ++a) {
+            if (problem_ns.find(*a) == problem_ns.end()) {
+                GenerateDataTree(*module, *a);
+                namesp2module[*a] = basename;
+            }
+        }
+        modNs.push_back(module);
+        module2nsprefix[basename] = "";
+    } else {
+        problem_ns = all_ns;
+    }
+    // now, problem namespaces
+    for (set<string>::const_iterator a= problem_ns.begin(); a != problem_ns.end(); ++a) {
+        string ns_prefix(m_NamespaceToPrefix[*a]);
+        string module_name(ns_prefix);
+        if (!module_name.empty()) {
+            module_name += "_";
+        }
+        module_name += basename;
+
+        AutoPtr<CDataTypeModule> modN(new CDataTypeModule(module_name));
+        GenerateDataTree(*modN, *a);
+
+        namesp2module[*a] = module_name;
+        if (!modN->GetDefinitions().empty()) {
+            modN->SetSubnamespace(ns_prefix);
+            modNs.push_back(modN);
+            module2nsprefix[module_name] = ns_prefix;
+        }
+    }
+
+    if (modNs.size() > 1) {
+// find required export/imports 
+//   messages enough?
+//   well, only WSDL can contain several schemes.
+//   in theory, these schemes can refer to each other;
+//   WSDL messages do that almost always.
+        string imp_module;
+        map< string, list<string> > impex;
+        map<string,DTDElement>::iterator i;
+        for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+            if (i->second.GetType() == DTDElement::eWsdlMessage) {
+                // module that needs imports
+                imp_module = namesp2module[i->second.GetNamespaceName()];
+                const list<string>& refs( i->second.GetContent());
+                for (list<string>::const_iterator r = refs.begin(); r != refs.end(); ++r) {
+                    const DTDElement& node(m_MapElement[*r]);
+                    string name_space(node.GetNamespaceName());
+                    string module_name(namesp2module[name_space]);
+                    if (module_name != imp_module) {
+                        impex[module_name].push_back(node.GetName());
+                    }
+                }
+            }
+        }
+        // set exports
+        for (map< string, list<string> >::iterator x= impex.begin();
+                x != impex.end(); ++x) {
+            x->second.sort();
+            x->second.unique();
+            for (list< AutoPtr<CDataTypeModule> >::const_iterator n= modNs.begin();
+                    n != modNs.end(); ++n) {
+                if (n->get()->GetName() == x->first) {
+                    n->get()->AddExports(x->second);
+                    break;
+                }
+            }
+        }
+        // set imports
+        for (list< AutoPtr<CDataTypeModule> >::const_iterator n= modNs.begin();
+                n != modNs.end(); ++n) {
+            if (n->get()->GetName() == imp_module) {
+                for (map< string, list<string> >::iterator x= impex.begin();
+                        x != impex.end(); ++x) {
+                    n->get()->AddImports(x->first, x->second);
+                    n->get()->SetSubnamespace(kEmptyStr);
+                }
+            }
+        }
+    }
+// add modules
+    for (list< AutoPtr<CDataTypeModule> >::const_iterator n= modNs.begin();
+            n != modNs.end(); ++n) {
+        modules->AddModule(*n);
+    }
+}
+
 void WSDLParser::BuildDocumentTree(CDataTypeModule& module)
 {
     ParseHeader();
@@ -223,11 +401,7 @@ void WSDLParser::ParseBinding(DTDElement& node)
         if (!GetAttribute("type")) {
             ParseError("Binding has no type", "type");
         }
-        string id = CreateEntityId(m_Value,DTDEntity::eWsdlInterface);
-        if (m_MapEntity.find(id) == m_MapEntity.end()) {
-            ParseError("Unresolved entity", id.c_str());
-        }
-        PushEntityLexer(id);
+        PushEntityLexer(CreateEntityId(m_Value,DTDEntity::eWsdlInterface));
         ParseContent(node);
     } else if (ns == eSoapNamespace) {
         if (GetAttribute("style")) {
@@ -373,7 +547,8 @@ void WSDLParser::ParsePart(DTDElement& node)
 {
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("element")) {
-        AddElementContent(node,m_Value);
+        string name( m_Value + m_PrefixToNamespace[m_ValuePrefix]);
+        AddElementContent(node,name);
     } else {
         bool ok = false;
         if (GetAttribute("name")) {
@@ -508,6 +683,7 @@ void WSDLParser::ParseMessage(void)
     node.SetName(msg_name);
     node.SetType( DTDElement::eWsdlMessage);
     node.SetSourceLine(Lexer().CurrentLine());
+    node.SetNamespaceName(m_TargetNamespace);
     if (tok == K_CLOSING) {
         ParseContent(node);
     }
@@ -524,6 +700,7 @@ void WSDLParser::ParseService(void)
     node.SetName(m_Value);
     node.SetSourceLine(Lexer().CurrentLine());
     node.SetType( DTDElement::eWsdlService);
+    node.SetNamespaceName(m_TargetNamespace);
     if (tok == K_CLOSING) {
         ParseContent(node);
     }

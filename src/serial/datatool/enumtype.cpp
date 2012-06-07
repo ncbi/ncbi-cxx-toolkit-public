@@ -139,7 +139,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
         if (mem->Optional()) {
             use = "optional";
             if (mem->GetDefault()) {
-                use += "\" default=\"" + mem->GetDefault()->GetXmlString();
+                use += "\" default=\"" + GetXmlValueName(mem->GetDefault()->GetXmlString());
             }
         } else {
             use = "required";
@@ -173,7 +173,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
     if (!inAttlist) {
         const CDataMember* mem = GetDataMember();
         if (mem && mem->Optional() && mem->GetDefault()) {
-            tmp += " default=\"" + mem->GetDefault()->GetXmlString() + "\"";
+            tmp += " default=\"" + GetXmlValueName(mem->GetDefault()->GetXmlString()) + "\"";
         }
     }
     opentag.push_back(tmp + ">");
@@ -227,7 +227,7 @@ void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
         const CDataMember* mem = GetDataMember();
         out << "\n    " << tag << " (" << content << ") ";
         if (mem->GetDefault()) {
-            out << "\"" << mem->GetDefault()->GetXmlString() << "\"";
+            out << "\"" << GetXmlValueName(mem->GetDefault()->GetXmlString()) << "\"";
         } else {
             if (mem->Optional()) {
                 out << "#IMPLIED";
@@ -347,6 +347,11 @@ string CEnumDataType::GetDefaultString(const CDataValue& value) const
     }
 }
 
+string CEnumDataType::GetXmlValueName(const string& value) const
+{
+    return value;
+}
+
 CTypeInfo* CEnumDataType::CreateTypeInfo(void)
 {
     AutoPtr<CEnumeratedTypeValues>
@@ -436,6 +441,17 @@ const char* CIntEnumDataType::GetDEFKeyword(void) const
 bool CIntEnumDataType::IsInteger(void) const
 {
     return true;
+}
+
+string CIntEnumDataType::GetXmlValueName(const string& value) const
+{
+    TEnumValueType d = (TEnumValueType)NStr::StringToInt(value);
+    ITERATE(TValues, v, GetValues()) {
+        if (v->GetValue() == d) {
+            return v->GetName();
+        }
+    }
+    return value;
 }
 
 const char* CBigIntEnumDataType::GetASNKeyword(void) const

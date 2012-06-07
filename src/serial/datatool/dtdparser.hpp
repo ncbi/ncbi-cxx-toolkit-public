@@ -76,10 +76,12 @@ public:
     virtual void EndCommentBlock(void);
 
 protected:
-    AutoPtr<CDataTypeModule> Module(const string& name);
+    void Module(AutoPtr<CFileModules>& modules, const string& name);
 
     virtual void BeginDocumentTree(void);
     virtual void BuildDocumentTree(CDataTypeModule& module);
+    virtual void BuildDataTree(AutoPtr<CFileModules>& modules,
+                               AutoPtr<CDataTypeModule>& module);
     void SkipConditionalSection(void);
 
     virtual string GetLocation(void);
@@ -109,7 +111,7 @@ protected:
     void ConsumeAttributeContent(DTDElement& node, const string& id_name);
     void ParseEnumeratedList(DTDAttribute& attrib);
 
-    void GenerateDataTree(CDataTypeModule& module);
+    void GenerateDataTree(CDataTypeModule& module, const string& name_space);
     void ModuleType(CDataTypeModule& module, const DTDElement& node);
     AutoPtr<CDataType> Type(const DTDElement& node,
                             DTDElement::EOccurrence occ,

@@ -556,6 +556,10 @@ string CDataType::FileName(void) const
         return GetParentType()->FileName();
     }
     if ( m_CachedFileName.empty() ) {
+        string prefix(GetModule()->GetSubnamespace());
+        if (!prefix.empty()) {
+            prefix += '_';
+        }
         const string file = GetVar("_file");
         if ( !file.empty() ) {
             m_CachedFileName = file;
@@ -568,7 +572,7 @@ string CDataType::FileName(void) const
             }
             m_CachedFileName =
                 Path(dir,
-                     MakeFileName(m_MemberName, 5 /* strlen("_.cpp") */ ));
+                     MakeFileName(prefix+m_MemberName, 5 /* strlen("_.cpp") */ ));
         }
     }
     return m_CachedFileName;

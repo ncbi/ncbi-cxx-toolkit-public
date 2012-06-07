@@ -106,6 +106,7 @@ public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
+    virtual string GetXmlValueName(const string& value) const;
 
     struct SEnumCInfo {
         string enumName;
@@ -145,6 +146,7 @@ public:
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
+    virtual string GetXmlValueName(const string& value) const;
 };
 
 class CBigIntEnumDataType : public CIntEnumDataType {

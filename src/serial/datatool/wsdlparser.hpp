@@ -52,6 +52,8 @@ public:
 
 protected:
     virtual void BuildDocumentTree(CDataTypeModule& module);
+    virtual void BuildDataTree(AutoPtr<CFileModules>& modules,
+                               AutoPtr<CDataTypeModule>& module);
 
     void ParseHeader(void);
 

@@ -89,9 +89,11 @@ public:
     EType GetType(void) const;
 
     void SetParseAttributes( const string& namespaceName,
-        bool elementForm, bool attributeForm);
+        bool elementForm, bool attributeForm,
+        map<string,string>& prefixToNamespace);
     void GetParseAttributes( string& namespaceName,
-        bool& elementForm, bool& attributeForm) const;
+        bool& elementForm, bool& attributeForm,
+        map<string,string>& prefixToNamespace) const;
 private:
     string m_Name;
     string m_Data;
@@ -100,6 +102,7 @@ private:
     string m_TargetNamespace;
     bool m_ElementFormDefault;
     bool m_AttributeFormDefault;
+    map<string,string> m_PrefixToNamespace;
 };
 
 /////////////////////////////////////////////////////////////////////////////

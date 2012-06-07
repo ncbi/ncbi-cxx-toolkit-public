@@ -83,7 +83,7 @@ AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
         CDirEntry entry(fileName);
         m_StackPath.push(entry.GetDir());
         m_StackLexerName.push_back(fileName);
-        modules->AddModule( Module( NStr::Replace( entry.GetBase(), ".", "_")));
+        Module( modules, NStr::Replace( entry.GetBase(), ".", "_"));
         m_StackLexerName.pop_back();
         m_StackPath.pop();
     }
@@ -106,7 +106,8 @@ void DTDParser::EndCommentBlock()
     }
 }
 
-AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
+void DTDParser::Module(
+    AutoPtr<CFileModules>& modules, const string& name)
 {
     AutoPtr<CDataTypeModule> module(new CDataTypeModule(name));
     module->SetSourceLine(Lexer().CurrentLine());
@@ -129,8 +130,14 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
     PrintDocumentTree();
 #endif
 
-    GenerateDataTree(*module);
-    return module;
+    BuildDataTree( modules, module);
+}
+
+void DTDParser::BuildDataTree(
+    AutoPtr<CFileModules>& modules, AutoPtr<CDataTypeModule>& module)
+{
+    GenerateDataTree(*module, "*");
+    modules->AddModule(module);
 }
 
 void DTDParser::BeginDocumentTree(void)
@@ -871,7 +878,7 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
 /////////////////////////////////////////////////////////////////////////////
 // model generation
 
-void DTDParser::GenerateDataTree(CDataTypeModule& module)
+void DTDParser::GenerateDataTree(CDataTypeModule& module, const string& name_space)
 {
     m_GeneratedTypes.clear();
     m_ElementEmbTypes.clear();
@@ -896,6 +903,10 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
         }
         if (generate && !i->second.IsEmbedded())
         {
+            if (name_space != "*" &&
+                i->second.GetNamespaceName() != name_space) {
+                continue;
+            }
             string qname = i->second.GetName() + i->second.GetNamespaceName();
             if (m_GeneratedTypes.find(qname) == m_GeneratedTypes.end()) {
                 m_GeneratedTypes.insert(qname);
@@ -1381,6 +1392,8 @@ CDataValue* DTDParser::x_AttribValue(const DTDAttribute& att,
         value = new CBoolDataValue(NStr::StringToBool(defvalue));
         break;
     case DTDAttribute::eIntEnum:
+        value = new CIntDataValue(att.GetEnumValueId(defvalue));
+        break;
     case DTDAttribute::eInteger:
     case DTDAttribute::eBigInt:
         value = new CIntDataValue(NStr::StringToInt8(defvalue));

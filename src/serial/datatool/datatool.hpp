@@ -49,6 +49,8 @@ public:
     CDataTool(void);
     void Init(void);
     int Run(void);
+    
+    string GetConfigValue(const string& section, const string& name) const;
 
 private:
     bool ProcessModules(void);

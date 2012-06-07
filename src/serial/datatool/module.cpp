@@ -97,6 +97,34 @@ void CDataTypeModule::AddImports(const string& module, const list<string>& types
     m_Imports.push_back(import);
 }
 
+void CDataTypeModule::SetSubnamespace(const string& sub_ns)
+{
+    m_Subnamespace = sub_ns;
+}
+
+string CDataTypeModule::GetSubnamespace(void) const
+{
+    string sn(GetVar(GetName(),"_subnamespace",false));
+    if (!sn.empty()) {
+        return sn;
+    }
+    return m_Subnamespace;
+}
+
+const CNamespace& CDataTypeModule::GetNamespace(void) const
+{
+    if (m_Namespace.get()) {
+        return *m_Namespace;
+    }
+    const CNamespace& def= CModuleContainer::GetNamespace();
+    string sub_ns(GetSubnamespace());
+    if (sub_ns.empty()) {
+        return def;
+    }
+    m_Namespace.reset( new CNamespace(def.ToString() + sub_ns));
+    return *m_Namespace;
+}
+
 void CDataTypeModule::PrintSampleDEF(CNcbiOstream& out) const
 {
     map< string, set< string > >::const_iterator s = m_DefVars.begin();

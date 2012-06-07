@@ -128,6 +128,8 @@ public:
         }
     void open(const string& fileName);
     void close(void);
+    
+    void Discard(void);
 
 protected:
     bool equals(void);
