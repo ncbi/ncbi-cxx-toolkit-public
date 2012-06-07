@@ -13,7 +13,7 @@ APP: launcherd fwdaemon dispd.cgi
 #APP: lbsmd lbsm_feedback test_mghbn lbsmc testipub
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
-DEFAULT_CONFIGURATIONS:  Linux32-Centos:GCC Linux64-Centos:GCC FreeBSD32:GCC FreeBSD32-v80:GCC SunOSx86:GCC SunOSSparc:WS64 IntelMAC:GCC
+DEFAULT_CONFIGURATIONS:  Linux32-Centos:GCC Linux64-Centos:GCC FreeBSD32:GCC SunOSx86:GCC SunOSSparc:WS64 IntelMAC:GCC
 
 COPY: $bindir/test_mghbn                     $installdir/bin/ncbi_mghbn
 COPY: $bindir/test_ncbi_dblb                 $installdir/bin/ncbi_dblb
