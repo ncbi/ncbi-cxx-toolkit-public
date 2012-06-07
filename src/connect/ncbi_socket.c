@@ -3807,7 +3807,6 @@ static EIO_Status s_Connect(SOCK            sock,
             UTIL_ReleaseBuffer(strerr);
         }
 #endif /*SO_KEEPALIVE*/
-
 #ifdef SO_OOBINLINE
         if (!s_SetOobInline(x_sock, 1/*true*/)) {
             const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
@@ -4857,7 +4856,6 @@ static EIO_Status s_Accept(LSOCK           lsock,
             UTIL_ReleaseBuffer(strerr);
         }
 #endif /*SO_KEEPALIVE*/
-
 #ifdef SO_OOBINLINE
         if (!s_SetOobInline(x_sock, 1/*true*/)) {
             const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
@@ -5115,20 +5113,12 @@ extern EIO_Status SOCK_CreateUNIX(const char*     path,
 }
 
 
-extern EIO_Status SOCK_CreateOnTop(const void* handle,
-                                   size_t      handle_size,
-                                   SOCK*       sock)
-{
-    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
-}
-
-
-extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
-                                     size_t      handle_size,
-                                     SOCK*       sock,
-                                     const void* data,
-                                     size_t      datalen,
-                                     TSOCK_Flags flags)
+static EIO_Status s_CreateOnTop(const void* handle,
+                                size_t      handle_size,
+                                SOCK*       sock,
+                                const void* data,
+                                size_t      datalen,
+                                TSOCK_Flags flags)
 {
     union {
         struct sockaddr    sa;
@@ -5363,7 +5353,6 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
             UTIL_ReleaseBuffer(strerr);
         }
 #endif /*SO_KEEPALIVE*/
-
 #ifdef SO_OOBINLINE
         if (!s_SetOobInline(fd, 1/*true*/)) {
             const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
@@ -5417,6 +5406,47 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
     /* success */
     *sock = x_sock;
     return eIO_Success;
+}
+
+
+extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
+                                     size_t      handle_size,
+                                     SOCK*       sock,
+                                     const void* data,
+                                     size_t      datalen,
+                                     TSOCK_Flags flags)
+{
+    if (!handle_size) {
+        TSOCK_Handle fd     = SOCK_INVALID;
+        SOCK         xsock  = (SOCK) handle;
+        EIO_Status   status = SOCK_GetOSHandleEx(xsock, &fd, sizeof(fd),
+                                                 eTakeOwnership);
+        if (status == eIO_Success) {
+            SOCK_CloseEx(xsock, 0/*do not destroy*/);
+            status  = s_CreateOnTop(&fd, sizeof(fd), sock,
+                                    data, datalen, flags);
+            if (status != eIO_Success) {
+                SOCK_CloseOSHandle(&fd, sizeof(fd));
+                assert(!*sock);
+            } else
+                assert(*sock);
+        } else {
+            if (xsock  &&  fd != SOCK_INVALID)
+                SOCK_Abort(xsock);
+            SOCK_CloseEx(xsock, 0/*do not destroy*/);
+            *sock = 0;
+        }
+        return status;
+    }
+    return s_CreateOnTop(handle, handle_size, sock, data, datalen, flags);
+}
+    
+
+extern EIO_Status SOCK_CreateOnTop(const void* handle,
+                                   size_t      handle_size,
+                                   SOCK*       sock)
+{
+    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
 }
 
 

@@ -66,6 +66,7 @@
  *  SOCK_Reconnect
  *  SOCK_Shutdown
  *  SOCK_Close[Ex]
+ *  SOCK_Destroy
  *  SOCK_CloseOSHandle
  *  SOCK_Wait
  *  SOCK_Poll
@@ -626,20 +627,31 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  );
 
 
-/** [SERVER-side]  Create a socket on top of OS-dependent "handle"
- * (file descriptor on Unix, SOCKET on MS-Windows).  Returned socket
- * is not reopenable to its default peer (SOCK_Reconnect() may not specify
- * zeros for the connection point).
+/** [SERVER-side]  Create a socket on top of either an OS-dependent "handle"
+ * (file descriptor on Unix, SOCKET on MS-Windows) or an existing SOCK object.
+ * Returned socket is not reopenable to its default peer (SOCK_Reconnect() may
+ * not specify zeros for the connection point).
  * All timeouts are set to default [infinite] values.
+ * The call does *not* destroy either OS handle or SOCK passed in the
+ * arguments, regardless of the return status code.
+ * When a socket gets created on top of a "SOCK" handle, the original SOCK gets
+ * always emptied (the underlying OS handle removed from it) upon the call
+ * returns:  either the handle gets migrated to the new socket just created,
+ * or it gets closed unconditionally of the fSOCK_KeepOnClose flag in the
+ * original socket.  In either case, the original SOCK will still need
+ * SOCK_Close() in the caller's code to free up the memory it occupies.
+ * Any secure session that may have existed in the original SOCK will have
+ * been terminated (and new session may have been initiated in the new SOCK --
+ * at this time the old session is not allowed to "migrate").
  * @note
- *  SOCK_Close[Ex]() will not close the passed OS "handle" if fSOCK_KeepOnClose
- *  is set in "flags".
+ *  SOCK_Close[Ex]() on the resultant socket will not close the OS handle
+ *  if fSOCK_KeepOnClose is set in "flags".
  * @param handle
- *  [in]  OS-dependent "handle" to be converted
+ *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
- *  [in]  "handle" size
+ *  [in]  "handle" size (0 if a SOCK passed in "handle")
  * @param sock
- *  [out] SOCK built on top of the OS "handle"
+ *  [out] SOCK built on top of the "handle"
  * @param init_data
  *  [in]  initial output data segment (may be NULL)
  * @param init_size
@@ -649,7 +661,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @return
  *  Return eIO_Success on success;  otherwise: eIO_Closed if the "handle"
  *  does not refer to an open socket [but e.g. to a normal file or a pipe];
- *  other error codes in case of other errors
+ *  other error codes in case of other errors.
  * @sa
  *  SOCK_GetOSHandleEx, SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */
@@ -663,13 +675,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
  );
 
 
-/** [SERVER-side]  Create a socket on top of OS-dependent "handle".
+/** [SERVER-side]  Create a socket on top of a "handle".
  * Equivalent to SOCK_CreateOnTopEx(handle, handle_size, sock,
  *                                  0, 0, fSOCK_LogDefault|fSOCK_CloseOnClose).
  * @param handle
- *  [in]  OS-dependent "handle" to be converted
+ *  [in]  OS-dependent "handle" or "SOCK" to be converted
  * @param handle_size
- *  [in]  "handle" size
+ *  [in]  "handle" size (0 if a "SOCK" passed in "handle")
  * @param sock
  *  [out] SOCK built on top of the OS "handle"
  * @sa
@@ -751,6 +763,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
  *  SOCK_Create, SOCK_CreateOnTop, DSOCK_Create, SOCK_SetTimeout, SOCK_CloseEx
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
+#define SOCK_Destroy(s)  SOCK_Close(s)
 
 
 /** Close the SOCK handle, and conditionally destroy relevant internal data.
