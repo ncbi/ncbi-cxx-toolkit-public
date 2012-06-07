@@ -2704,6 +2704,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_protein_id, "protein_id" },
     { CSeqFeatData::eQual_proviral, "proviral" },
     { CSeqFeatData::eQual_pseudo, "pseudo" },
+    { CSeqFeatData::eQual_pseudogene, "pseudogene" },
     { CSeqFeatData::eQual_rearranged, "rearranged" },
     { CSeqFeatData::eQual_region_name, "region_name" },
     { CSeqFeatData::eQual_replace, "replace" },
