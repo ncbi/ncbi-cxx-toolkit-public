@@ -36,6 +36,7 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seq/seq__.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -55,6 +56,7 @@
 #include <serial/serial.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
+//#include <internal/asn_cache/lib/asn_cache_loader.hpp>
 
 #include <algorithm>
 
@@ -133,6 +135,10 @@ protected:
     bool m_get_acc;
     bool m_get_gi;
     bool m_get_ids;
+    bool m_get_label;
+    bool m_get_taxid;
+    bool m_get_length;
+    bool m_get_type;
 };
 
 
@@ -316,6 +322,8 @@ bool CTestOM::Thread_Run(int idx)
     int seq_count = 0, all_ids_count = 0;
     int all_feat_count = 0, all_desc_count = 0;
     bool ok = true;
+    typedef list<CConstRef<CSeq_entry> > TEntries;
+    TEntries all_entries;
     for ( int pass = 0; pass < m_pass_count; ++pass ) {
         CRef<CPrefetchSequence> prefetch;
         if ( m_prefetch_manager ) {
@@ -337,18 +345,43 @@ bool CTestOM::Thread_Run(int idx)
         for ( size_t i = 0; i < ids.size(); ++i ) {
             CSeq_id_Handle sih = m_Ids[i];
 
+            bool done = false;
             if ( m_get_acc ) {
                 scope.GetAccVer(sih);
-                continue;
+                done = true;
             }
 
             if ( m_get_gi ) {
                 scope.GetGi(sih);
-                continue;
+                done = true;
             }
 
             if ( m_get_ids ) {
                 scope.GetIds(sih);
+                done = true;
+            }
+
+            if ( m_get_label ) {
+                scope.GetLabel(sih);
+                done = true;
+            }
+
+            if ( m_get_taxid ) {
+                scope.GetTaxId(sih);
+                done = true;
+            }
+
+            if ( m_get_length ) {
+                scope.GetSequenceLength(sih);
+                done = true;
+            }
+
+            if ( m_get_type ) {
+                scope.GetSequenceType(sih);
+                done = true;
+            }
+            
+            if ( done ) {
                 continue;
             }
 
@@ -504,17 +537,30 @@ bool CTestOM::Thread_Run(int idx)
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
                         }
+                        //NcbiCout << " Seq-annots: " << annots.size() << NcbiEndl;
                         CAnnot_CI annot_it(handle, sel);
                         if ( m_verbose ) {
                             NcbiCout
                                 << " Seq-annots: " << annot_it.size() << "/" << annots.size()
                                 << " features: " << feats.size() << NcbiEndl;
                             if ( 0 ) {
+                                set<CSeq_annot_Handle> new_annots;
                                 for ( ; annot_it; ++annot_it ) {
+                                    new_annots.insert(*annot_it);
+                                }
+                                NcbiCout << "Old:\n";
+                                ITERATE( set<CSeq_annot_Handle>, it, annots ) {
                                     NcbiCout << MSerial_AsnText
-                                             << *annot_it->GetCompleteObject()
+                                             << *it->GetCompleteObject()
                                              << NcbiEndl;
                                 }
+                                NcbiCout << "New:\n";
+                                ITERATE( set<CSeq_annot_Handle>, it, new_annots ) {
+                                    NcbiCout << MSerial_AsnText
+                                             << *it->GetCompleteObject()
+                                             << NcbiEndl;
+                                }
+                                NcbiCout << "Done" << NcbiEndl;
                             }
                             annot_it.Rewind();
                         }
@@ -623,7 +669,27 @@ bool CTestOM::Thread_Run(int idx)
                 }
             }
             if ( !m_no_reset ) {
-                scope.ResetHistory();
+                if ( 1 ) {
+                    scope.ResetDataAndHistory();
+                }
+                else {
+                    CBioseq_Handle handle = scope.GetBioseqHandle(sih);
+                    CConstRef<CSeq_entry> entry(SerialClone(*handle.GetTopLevelEntry().GetCompleteObject()));
+                    _ASSERT(entry->ReferencedOnlyOnce());
+                    scope.ResetDataAndHistory();
+                    _ASSERT(!handle);
+                    _ASSERT(entry->ReferencedOnlyOnce());
+                    scope.AddTopLevelSeqEntry(*entry);
+                    handle = scope.GetBioseqHandle(sih);
+                    _ASSERT(handle);
+                    _ASSERT(entry==handle.GetTopLevelEntry().GetCompleteObject());
+                    CFeat_CI it(handle);
+                    scope.ResetDataAndHistory();
+                    _ASSERT(!handle);
+                    if ( !entry->ReferencedOnlyOnce() ) {
+                        all_entries.push_back(entry);
+                    }
+                }
             }
         }
         if ( error_count || null_handle_count ) {
@@ -636,6 +702,14 @@ bool CTestOM::Thread_Run(int idx)
             NcbiCout << "Total " << all_desc_count << " descr." << NcbiEndl;
             NcbiCout << "Total " << all_feat_count << " feats." << NcbiEndl;
         }
+    }
+
+    if ( m_prefetch_manager ) {
+        m_prefetch_manager->Shutdown();
+    }
+
+    ITERATE ( TEntries, it, all_entries ) {
+        _ASSERT((*it)->ReferencedOnlyOnce());
     }
 
     if ( ok ) {
@@ -672,6 +746,10 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("get_acc", "Get accession.version only");
     args.AddFlag("get_gi", "Get gi only");
     args.AddFlag("get_ids", "Get all seq-ids only");
+    args.AddFlag("get_label", "Get sequence label only");
+    args.AddFlag("get_taxid", "Get sequence TaxId only");
+    args.AddFlag("get_length", "Get sequence length only");
+    args.AddFlag("get_type", "Get sequence type only");
     args.AddDefaultKey("thread_index", "ThreadIndex",
                        "Thread index, affects test mode",
                        CArgDescriptions::eInteger, "0");
@@ -787,11 +865,22 @@ bool CTestOM::TestApp_Init(void)
     m_get_acc = args["get_acc"];
     m_get_gi = args["get_gi"];
     m_get_ids = args["get_ids"];
+    m_get_label = args["get_label"];
+    m_get_taxid = args["get_taxid"];
+    m_get_length = args["get_length"];
+    m_get_type = args["get_type"];
 
     m_ObjMgr = CObjectManager::GetInstance();
 #ifdef HAVE_PUBSEQ_OS
     DBAPI_RegisterDriver_FTDS();
     GenBankReaders_Register_Pubseq();
+#endif
+#if 0
+    string asn_cache_db =
+        "/panfs/pan1/gpipe/prod/data01/Homo_sapiens/QA_AllPaths_YH1.14134/sequence_cache";
+    CAsnCache_DataLoader::RegisterInObjectManager(*m_ObjMgr, asn_cache_db,
+                                                  CObjectManager::eDefault,
+                                                  88);
 #endif
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
