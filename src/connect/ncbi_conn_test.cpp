@@ -937,7 +937,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 
 static inline unsigned int ud(time_t one, time_t two)
 {
-    return one > two ? one - two : two - one;
+    return (unsigned int)(one > two ? one - two : two - one);
 }
 
 
