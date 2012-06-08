@@ -404,7 +404,7 @@ public class PtbguiMain extends javax.swing.JFrame {
         String line;
         while (isPtbRunning()) {
             try {
-                Thread.sleep(300);
+                Thread.sleep(3);
                 while (m_PtbErr != null && m_PtbErr.ready() &&
                        (line = m_PtbErr.readLine()) != null) {
                     System.err.println(line);
@@ -1661,7 +1661,7 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 1.3");
+        jLabel13.setText("  version 1.3.1");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
@@ -1673,7 +1673,7 @@ public class PtbguiMain extends javax.swing.JFrame {
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
                         .add(jLabel13)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 238, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 228, Short.MAX_VALUE)
                         .add(jButtonGOK, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 276, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.UNRELATED)
                         .add(jButtonGCancel))
