@@ -363,6 +363,12 @@ void CLocalRPSBlast::x_AdjustDbSize(void)
 	Uint8 db_size = db.GetTotalLengthStats();
 	int num_seq = db.GetNumSeqsStats();
 
+	if(0 == db_size)
+	    db_size = db.GetTotalLength();
+	    
+	if(0 == num_seq)
+	    num_seq = db.GetNumSeqs();
+
 	m_opt_handle->SetOptions().SetDbLength(db_size);
 	m_opt_handle->SetOptions().SetDbSeqNum(num_seq);
 
