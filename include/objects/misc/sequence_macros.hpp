@@ -2388,6 +2388,25 @@ EDIT_EACH (SYN_ON_ORGREF, Itr, Var)
 #define ERASE_SYN_ON_ORGREF(Itr, Var) \
 LIST_ERASE_ITEM (SYN_ON_ORGREF, Itr, Var)
 
+/// SYN_ON_ORGREF_IS_SORTED
+
+#define SYN_ON_ORGREF_IS_SORTED(Var, Func) \
+IS_SORTED (SYN_ON_ORGREF, Var, Func)
+
+/// SORT_SYN_ON_ORGREF
+
+#define SORT_SYN_ON_ORGREF(Var, Func) \
+DO_LIST_SORT (SYN_ON_ORGREF, Var, Func)
+
+/// SYN_ON_ORGREF_IS_UNIQUE
+
+#define SYN_ON_ORGREF_IS_UNIQUE(Var, Func) \
+IS_UNIQUE (SYN_ON_ORGREF, Var, Func)
+
+/// UNIQUE_SYN_ON_ORGREF
+
+#define UNIQUE_SYN_ON_ORGREF(Var, Func) \
+DO_UNIQUE (SYN_ON_ORGREF, Var, Func)
 
 ///
 /// COrgName macros

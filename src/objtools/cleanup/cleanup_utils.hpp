@@ -421,6 +421,10 @@ bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2);
 bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);
 bool s_DbtagEqual (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);
 
+// for sorting and uniquing org-ref syns
+bool s_OrgrefSynCompare( const string & syn1, const string & syn2 );
+bool s_OrgrefSynEqual  ( const string & syn1, const string & syn2 );
+
 // Is this range sorted according to the given comparison?
 // needed to see if sorts in cleanup do anything.
 // Maybe should be at a higher level of the source tree?

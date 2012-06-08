@@ -825,6 +825,15 @@ bool s_DbtagEqual (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
     return dbt1->Compare(*dbt2) == 0;
 }
 
+bool s_OrgrefSynCompare( const string & syn1, const string & syn2 )
+{
+    return NStr::CompareNocase(syn1, syn2) < 0;
+}
+
+bool s_OrgrefSynEqual( const string & syn1, const string & syn2 )
+{
+    return NStr::EqualNocase(syn1, syn2);
+}
 
 CRef<CSeq_loc> MakeFullLengthLocation(CBioseq_Handle bh, CScope* scope, CRef<CSeq_loc> new_loc, bool &first)
 {

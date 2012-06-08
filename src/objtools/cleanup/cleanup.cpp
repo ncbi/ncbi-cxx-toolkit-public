@@ -379,6 +379,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Clean Bioseq Title",
     "Decode XML",
     "Remove Dup BioSource",
+    "Clean Org-ref",
 
     // set when any other change is made.
     "Change Other", 

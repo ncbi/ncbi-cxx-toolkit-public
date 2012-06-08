@@ -1469,6 +1469,16 @@ void CNewCleanup_imp::x_PostOrgRef( COrg_ref& org )
         UNIQUE_DBXREF_ON_ORGREF (org, s_DbtagEqual);
         ChangeMade (CCleanupChange::eCleanDbxrefs);
     }
+
+    // sort/unique syns
+    if (! SYN_ON_ORGREF_IS_SORTED (org, s_OrgrefSynCompare)) {
+        SORT_SYN_ON_ORGREF (org, s_OrgrefSynCompare);
+        ChangeMade (CCleanupChange::eCleanOrgref);
+    }
+    if (! SYN_ON_ORGREF_IS_UNIQUE (org, s_OrgrefSynEqual)) {
+        UNIQUE_SYN_ON_ORGREF (org, s_OrgrefSynEqual);
+        ChangeMade (CCleanupChange::eCleanOrgref);
+    }
 }
 
 // is om1 < om2
