@@ -703,7 +703,7 @@ static bool s_NsAreGaps(const CBioseq_Handle& seq, CBioseqContext& ctx)
         return false;
     }
 
-    if (ctx.IsDelta()  &&  ( ctx.IsWGS() || ctx.IsTSA() ) &&  seq.GetInst_Ext().IsDelta()) {
+    if (ctx.IsDelta()  &&  ctx.IsWGS() &&  seq.GetInst_Ext().IsDelta()) {
         ITERATE (CDelta_ext::Tdata, iter, seq.GetInst_Ext().GetDelta().Get()) {
             const CDelta_seq& dseg = **iter;
             if (dseg.IsLiteral()) {
