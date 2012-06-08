@@ -259,7 +259,7 @@ int CNetScheduleControl::Run(void)
         for (CNetScheduleAdmin::TQueueList::const_iterator it = queues.begin();
             it != queues.end(); ++it) {
 
-            os << '[' << g_NetService_gethostname(it->server.GetHost()) <<
+            os << '[' << g_NetService_gethostnamebyaddr(it->server.GetHost()) <<
                 ':' << NStr::UIntToString(it->server.GetPort()) << ']' <<
                 std::endl;
 

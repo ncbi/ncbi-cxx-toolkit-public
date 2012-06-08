@@ -340,7 +340,7 @@ void CNSInfoRenderer::RenderQueueList()
 
         ITagWriter::TAttributes attrs;
         attrs.push_back(ITagWriter::TAttribute("Host",
-            g_NetService_gethostname(it->server.GetHost())));
+            g_NetService_gethostnamebyaddr(it->server.GetHost())));
 
         attrs.push_back(ITagWriter::TAttribute("Port",
             NStr::UIntToString(it->server.GetPort())));
