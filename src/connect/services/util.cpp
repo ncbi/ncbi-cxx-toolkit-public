@@ -152,6 +152,12 @@ const string& CCmdLineArgList::GetDelimiterString()
 }
 
 
+string g_NetService_gethostnamebyaddr(unsigned ip)
+{
+    string hostname = CSocketAPI::gethostbyaddr(ip, eOn);
+    return !hostname.empty() ? hostname : CSocketAPI::ntoa(ip);
+}
+
 unsigned g_NetService_gethostbyname(const string& hostname)
 {
     unsigned ip = CSocketAPI::gethostbyname(hostname, eOn);

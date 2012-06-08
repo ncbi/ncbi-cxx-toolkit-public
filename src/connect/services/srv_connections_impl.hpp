@@ -104,7 +104,7 @@ public:
 
 struct SNetServerInPool : public CObject
 {
-    SNetServerInPool(const string& host, unsigned short port);
+    SNetServerInPool(unsigned host, unsigned short port);
 
     // Releases a reference to the parent service object,
     // and if that was the last reference, the service object
@@ -176,6 +176,8 @@ struct SNetServerImpl : public CObject
 
     void ConnectAndExec(const string& cmd,
             CNetServer::SExecResult& exec_result);
+
+    static const char kXSiteFwd[];
 
     CNetService m_Service;
     CRef<SNetServerInPool> m_ServerInPool;

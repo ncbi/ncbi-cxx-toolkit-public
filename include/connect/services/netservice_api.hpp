@@ -69,7 +69,7 @@ class NCBI_XCONNECT_EXPORT CNetServerPool
 
     const string& GetClientName() const;
 
-    void StickToServer(const string& host, unsigned port);
+    void StickToServer(const string& host, unsigned short port);
 
     void SetPermanentConnection(ESwitch type);
 

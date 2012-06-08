@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 
 // A host:port pair.
 struct SServerAddress {
-    SServerAddress(const string& h, unsigned short p) : host(h), port(p) {}
+    SServerAddress(unsigned h, unsigned short p) : host(h), port(p) {}
 
     bool operator ==(const SServerAddress& h) const
     {
@@ -53,20 +53,20 @@ struct SServerAddress {
 
     bool operator <(const SServerAddress& right) const
     {
-        int cmp = host.compare(right.host);
+        int cmp = int(host) - int(right.host);
         return cmp < 0 || (cmp == 0 && port < right.port);
     }
 
     string AsString() const
     {
-        string address(g_NetService_gethostname(host));
+        string address(g_NetService_gethostnamebyaddr(host));
         address += ':';
         address += NStr::UIntToString(port);
 
         return address;
     }
 
-    string host;
+    unsigned host;
     unsigned short port;
 };
 
@@ -116,7 +116,7 @@ class NCBI_XCONNECT_EXPORT CNetServer
 {
     NCBI_NET_COMPONENT(NetServer);
 
-    string GetHost() const;
+    unsigned GetHost() const;
     unsigned short GetPort() const;
     string GetServerAddress() const;
 

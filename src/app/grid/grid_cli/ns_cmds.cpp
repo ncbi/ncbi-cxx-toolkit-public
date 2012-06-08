@@ -44,6 +44,10 @@ USING_NCBI_SCOPE;
 void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     CGridCommandLineInterfaceApp::EAPIClass api_class)
 {
+    if (IsOptionSet(eAllowXSiteConn))
+        CNcbiApplication::Instance()->GetConfig().Set(
+                "netschedule_api", "allow_xsite_conn", "true");
+
     string queue(!m_Opts.queue.empty() ? m_Opts.queue : "noname");
 
     if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
@@ -61,7 +65,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
             m_Opts.auth, queue);
         m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
-            NStr::StringToInt(port));
+            (unsigned short) NStr::StringToInt(port));
     } else {
         CNetScheduleKey key(m_Opts.id);
         key.host.push_back(':');
@@ -1081,7 +1085,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetQueueList()
     TQueueRegister queue_register;
 
     ITERATE (CNetScheduleAdmin::TQueueList, it, queues) {
-        string server_address(g_NetService_gethostname(it->server.GetHost()));
+        string server_address =
+                g_NetService_gethostnamebyaddr(it->server.GetHost());
         server_address += ':';
         server_address += NStr::UIntToString(it->server.GetPort());
 

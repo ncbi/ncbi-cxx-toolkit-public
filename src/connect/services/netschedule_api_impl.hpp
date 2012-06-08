@@ -150,7 +150,8 @@ struct SNetScheduleAPIImpl : public CObject
     CNetServer GetServer(const string& job_key)
     {
         CNetScheduleKey nskey(job_key);
-        return m_Service->GetServer(nskey.host, nskey.port);
+        return m_Service->GetServer(g_NetService_gethostbyname(nskey.host),
+                nskey.port);
     }
 
     static void VerifyJobGroupAlphabet(const string& job_group)

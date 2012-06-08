@@ -226,7 +226,7 @@ void CNetScheduleAdmin::GetWorkerNodes(
                 NStr::SplitInTwo(response, " ", host, response);
 
                 if (NStr::Compare(host, "localhost") == 0)
-                    host = g_NetService_gethostname((*it).GetHost());
+                    host = g_NetService_gethostnamebyaddr((*it).GetHost());
 
                 NStr::TruncateSpacesInPlace(response);
 

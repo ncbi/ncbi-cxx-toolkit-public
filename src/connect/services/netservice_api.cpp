@@ -207,6 +207,7 @@ SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
         const string& client_name) :
     m_APIName(api_name),
     m_ClientName(client_name),
+    m_EnforcedServerHost(0),
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
     m_UseOldStyleAuth(false)
@@ -240,7 +241,7 @@ void SNetServiceImpl::Construct()
             m_ServiceType = eLoadBalancedService;
         else {
             Construct(m_ServerPool->FindOrCreateServerImpl(
-                    g_NetService_gethostip(host),
+                    g_NetService_gethostbyname(host),
                     (unsigned short) NStr::StringToInt(port)));
             return;
         }
@@ -338,6 +339,27 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
                 }
             }
         }
+
+        if (m_AllowXSiteConnections = config->GetBool(section,
+                "allow_xsite_conn", CConfig::eErr_NoThrow, false)) {
+            SConnNetInfo* net_info = ConnNetInfo_Create(
+                    SNetServerImpl::kXSiteFwd);
+
+            SSERV_Info* sinfo = SERV_GetInfoEx(SNetServerImpl::kXSiteFwd,
+                    fSERV_Standalone, SERV_LOCALHOST, net_info, NULL, 0, NULL);
+
+            ConnNetInfo_Destroy(net_info);
+
+            if (sinfo == NULL) {
+                NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
+                    "Cannot find cross-site proxy");
+            }
+
+            m_ColoNetwork = SOCK_NetToHostLong(sinfo->host) >> 16;
+
+            free(sinfo);
+        }
+
         m_UseSmartRetries = config->GetBool(section,
                 "smart_service_retries", CConfig::eErr_NoThrow, true);
     }
@@ -532,9 +554,9 @@ bool CNetService::IsLoadBalanced() const
     return m_Impl->m_ServiceType == eLoadBalancedService;
 }
 
-void CNetServerPool::StickToServer(const string& host, unsigned port)
+void CNetServerPool::StickToServer(const string& host, unsigned short port)
 {
-    m_Impl->m_EnforcedServerHost = g_NetService_gethostip(host);
+    m_Impl->m_EnforcedServerHost = g_NetService_gethostbyname(host);
     m_Impl->m_EnforcedServerPort = port;
 }
 
@@ -570,7 +592,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
 }
 
 SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
-    const string& host, unsigned short port)
+    unsigned host, unsigned short port)
 {
     SServerAddress server_address(host, port);
 
@@ -599,13 +621,13 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer SNetServiceImpl::GetServer(const string& host, unsigned int port)
+CNetServer SNetServiceImpl::GetServer(unsigned host, unsigned int port)
 {
     m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
 
     CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
 
-    SNetServerInPool* server = m_ServerPool->m_EnforcedServerHost.empty() ?
+    SNetServerInPool* server = m_ServerPool->m_EnforcedServerHost == 0 ?
             m_ServerPool->FindOrCreateServerImpl(host, port) :
             m_ServerPool->FindOrCreateServerImpl(
                     m_ServerPool->m_EnforcedServerHost,
@@ -742,9 +764,8 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0)
                 if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
                         sinfo->rate != 0.0) {
-                    SNetServerInPool* server =
-                        m_ServerPool->FindOrCreateServerImpl(
-                            CSocketAPI::ntoa(sinfo->host), sinfo->port);
+                    SNetServerInPool* server = m_ServerPool->
+                            FindOrCreateServerImpl(sinfo->host, sinfo->port);
                     {{
                         CFastMutexGuard guard(server->m_ThrottleLock);
                         server->m_DiscoveredAfterThrottling = true;

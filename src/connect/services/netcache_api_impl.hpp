@@ -73,7 +73,8 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     CNetServer GetServer(const CNetCacheKey& key)
     {
-        return m_Service->GetServer(key.GetHost(), key.GetPort());
+        return m_Service->GetServer(g_NetService_gethostbyname(key.GetHost()),
+                key.GetPort());
     }
 
     virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer);

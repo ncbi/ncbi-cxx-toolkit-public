@@ -233,8 +233,9 @@ void CNetScheduleServerListener::OnConnected(
     CNetServerConnection conn_object(conn);
 
     if (!m_WorkerNodeCompatMode) {
-        CNetServerInfo server_info(
-                new SNetServerInfoImpl(conn_object.Exec(m_Auth)));
+        string version_info(conn_object.Exec(m_Auth));
+
+        CNetServerInfo server_info(new SNetServerInfoImpl(version_info));
 
         string attr_name, attr_value;
 

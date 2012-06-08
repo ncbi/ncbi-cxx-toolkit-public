@@ -71,13 +71,13 @@ static SServerAddress* s_GetFallbackServer()
     if (s_FallbackServer_Initialized)
         return s_FallbackServer->get();
     try {
-       string sport, host, hostport;
-       hostport = TCGI_NetCacheFallbackServer::GetDefault();
-       if (NStr::SplitInTwo(hostport, ":", host, sport)) {
-          unsigned int port = NStr::StringToInt(sport);
-          host = g_NetService_gethostip(host);
-          s_FallbackServer->reset(new SServerAddress(host, port));
-       }
+        string host, port;
+        if (NStr::SplitInTwo(TCGI_NetCacheFallbackServer::GetDefault(),
+                ":", host, port)) {
+            s_FallbackServer->reset(new SServerAddress(
+                    g_NetService_gethostbyname(host),
+                            (unsigned short) NStr::StringToInt(port)));
+        }
     } catch (...) {
     }
     s_FallbackServer_Initialized = true;
@@ -497,7 +497,7 @@ void CNetCacheAPI::Remove(const string& blob_id)
 void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
 {
     string cmd("GETMETA " + blob_id);
-    cmd.append(m_Impl->m_Service->m_ServerPool->m_EnforcedServerHost.empty() ?
+    cmd.append(m_Impl->m_Service->m_ServerPool->m_EnforcedServerHost == 0 ?
             " 0" : " 1");
 
     CNetCacheKey key(blob_id);

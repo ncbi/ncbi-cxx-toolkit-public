@@ -228,7 +228,7 @@ int CNetCacheControl::Run()
 
             if (NStr::SplitInTwo(service, ":", host, port))
                 nc_client.GetService().GetServerPool().StickToServer(
-                    host, NStr::StringToInt(port));
+                    host, (unsigned short) NStr::StringToInt(port));
             else {
                 NCBI_THROW(CArgException, eInvalidArg,
                     "This operation requires the \"service_name\" "

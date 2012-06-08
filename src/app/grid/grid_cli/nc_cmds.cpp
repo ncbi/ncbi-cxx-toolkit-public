@@ -38,15 +38,18 @@ USING_NCBI_SCOPE;
 void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
     CGridCommandLineInterfaceApp::EAPIClass api_class)
 {
-    static const string config_section("netcache_api");
-    static const string enable_mirroring_param("enable_mirroring");
+    static const string kConfigSection("netcache_api");
+    static const string kEnableMirroringParam("enable_mirroring");
 
     CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
 
     if (IsOptionSet(eEnableMirroring))
-        reg.Set(config_section, enable_mirroring_param, "true");
-    else if (reg.Get(config_section, enable_mirroring_param).empty())
-        reg.Set(config_section, enable_mirroring_param, "on_read");
+        reg.Set(kConfigSection, kEnableMirroringParam, "true");
+    else if (reg.Get(kConfigSection, kEnableMirroringParam).empty())
+        reg.Set(kConfigSection, kEnableMirroringParam, "on_read");
+
+    if (IsOptionSet(eAllowXSiteConn))
+        reg.Set(kConfigSection, "allow_xsite_conn", "true");
 
     switch (api_class) {
     case eNetCacheAPI:
@@ -56,7 +59,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
 
             if (NStr::SplitInTwo(m_Opts.nc_service, ":", host, port))
                 m_NetCacheAPI.GetService().GetServerPool().StickToServer(
-                    host, NStr::StringToInt(port));
+                    host, (unsigned short) NStr::StringToInt(port));
             else {
                 NCBI_THROW(CArgException, eInvalidArg,
                     "When blob ID is given, '--netcache' "
@@ -133,7 +136,7 @@ void CGridCommandLineInterfaceApp::PrintICacheServerUsed()
 {
     CNetServer selected_server(m_NetICacheClient.GetCurrentServer());
     printf("Server used: %s:%u\n",
-        g_NetService_TryResolveHost(selected_server.GetHost()).c_str(),
+        g_NetService_gethostnamebyaddr(selected_server.GetHost()).c_str(),
         (unsigned) selected_server.GetPort());
 }
 

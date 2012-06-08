@@ -58,6 +58,10 @@ class NCBI_XCONNECT_EXPORT CCmdLineArgList
 
 
 extern NCBI_XCONNECT_EXPORT
+string g_NetService_gethostnamebyaddr(unsigned ip);
+
+
+extern NCBI_XCONNECT_EXPORT
 unsigned g_NetService_gethostbyname(const string& hostname);
 
 

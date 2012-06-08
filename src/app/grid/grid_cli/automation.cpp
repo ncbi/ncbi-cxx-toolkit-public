@@ -442,7 +442,8 @@ void SNetScheduleServerAutomationObject::Call(const string& method,
             reply.PushString(m_NetServer.GetServerAddress());
             break;
         case 1:
-            reply.PushString(m_NetServer.GetHost());
+            reply.PushString(g_NetService_gethostnamebyaddr(
+                    m_NetServer.GetHost()));
             break;
         case 2:
             reply.PushNumber(m_NetServer.GetPort());

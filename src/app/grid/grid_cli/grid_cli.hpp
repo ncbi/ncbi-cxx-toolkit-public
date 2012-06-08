@@ -73,6 +73,7 @@ enum EOption {
     eUntypedArg,
     eOptionalID,
     eID,
+    eAllowXSiteConn,
     eAuth,
     eInput,
     eInputFile,

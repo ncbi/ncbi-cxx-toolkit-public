@@ -960,10 +960,9 @@ int CGridWorkerNode::Run()
     ITERATE(vector<string>, it, vhosts) {
         string host, port;
         NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, port);
-        if (host.empty() || port.empty())
-            continue;
-        m_Masters.insert(SServerAddress(NStr::ToLower(host),
-            (unsigned short) NStr::StringToUInt(port)));
+        if (!host.empty() && !port.empty())
+            m_Masters.insert(SServerAddress(g_NetService_gethostbyname(host),
+                    (unsigned short) NStr::StringToUInt(port)));
     }
 
     vhosts.clear();

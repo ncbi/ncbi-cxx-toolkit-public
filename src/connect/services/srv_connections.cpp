@@ -36,9 +36,12 @@
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/error_codes.hpp>
 
+#include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 
 #include <corelib/ncbi_system.hpp>
+
+#include "../daemons/fwda_cli.h"
 
 #ifdef NCBI_OS_LINUX
 # include <sys/socket.h>
@@ -256,7 +259,7 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 }
 
 /*************************************************************************/
-SNetServerInPool::SNetServerInPool(const string& host, unsigned short port) :
+SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port) :
     m_Address(host, port)
 {
     m_FreeConnectionListHead = NULL;
@@ -370,7 +373,7 @@ bool CNetServerInfo::GetNextAttribute(string& attr_name, string& attr_value)
     return true;
 }
 
-string CNetServer::GetHost() const
+unsigned CNetServer::GetHost() const
 {
     return m_Impl->m_ServerInPool->m_Address.host;
 }
@@ -420,6 +423,8 @@ CNetServerConnection SNetServerImpl::GetConnectionFromPool()
     }
 }
 
+const char SNetServerImpl::kXSiteFwd[] = "XSITEFWD";
+
 CNetServerConnection SNetServerImpl::Connect()
 {
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
@@ -430,10 +435,53 @@ CNetServerConnection SNetServerImpl::Connect()
     CAbsTimeout abs_timeout(conn_timeout.sec, conn_timeout.usec * 1000);
     STimeout remaining_timeout;
 
+    SServerAddress server_address(m_ServerInPool->m_Address);
+    ticket_t ticket = 0;
+
+    if (m_Service->m_AllowXSiteConnections &&
+            m_Service->IsColoAddr(m_ServerInPool->m_Address.host)) {
+        union {
+            SFWDRequestReply rq;
+            char buffer[FWD_MAX_RR_SIZE];
+        };
+
+        memset(buffer, 0, sizeof(buffer));
+        rq.host = m_ServerInPool->m_Address.host;
+        rq.port = SOCK_HostToNetShort(m_ServerInPool->m_Address.port);
+        rq.flag = SOCK_HostToNetShort(1);
+        memcpy(rq.text, kXSiteFwd, sizeof(kXSiteFwd));
+
+        streamsize len = 0;
+
+        {{
+            CConn_ServiceStream svc(kXSiteFwd);
+            ticket_t dummy = 0;
+            if (svc.write((const char*) &dummy, sizeof(dummy)) &&
+                    svc.write(buffer, offsetof(SFWDRequestReply, text) +
+                            sizeof(kXSiteFwd))) {
+                svc.read(buffer, sizeof(buffer));
+                len = svc.gcount();
+            }
+            /* svc is no longer needed */
+        }}
+
+        if (len < offsetof(SFWDRequestReply, text) || len >= FWD_MAX_RR_SIZE ||
+                rq.port == 0 || rq.ticket == 0) {
+            NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
+                    "Error while acquiring an auth ticket from the "
+                    "cross-site connection proxy: " << (rq.flag & 0x0F0F ?
+                    "client rejected" : "unspecified error"));
+        }
+
+        server_address.host = rq.host;
+        server_address.port = SOCK_NetToHostShort(rq.port);
+        ticket = rq.ticket;
+    }
+
     do {
-        io_st = conn->m_Socket.Connect(
-                m_ServerInPool->m_Address.host, m_ServerInPool->m_Address.port,
-                &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
+        io_st = conn->m_Socket.Connect(CSocketAPI::ntoa(server_address.host),
+                server_address.port, &internal_timeout,
+                fSOCK_LogOff | fSOCK_KeepAlive);
 
         abs_timeout.GetRemainingTime().Get(&remaining_timeout.sec,
                 &remaining_timeout.usec);
@@ -463,6 +511,12 @@ CNetServerConnection SNetServerImpl::Connect()
             &m_ServerInPool->m_ServerPool->m_CommTimeout);
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
+
+    if (ticket != 0 &&
+            conn->m_Socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
+        NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+                "Error while sending proxy auth ticket.");
+    }
 
     m_Service->m_Listener->OnConnected(conn);
 

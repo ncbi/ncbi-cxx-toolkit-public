@@ -87,7 +87,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     void Init(CConfig* config, const string& section);
 
     SNetServerInPool* FindOrCreateServerImpl(
-        const string& host, unsigned short port);
+        unsigned host, unsigned short port);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
 
     virtual ~SNetServerPoolImpl();
@@ -95,8 +95,8 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     string m_APIName;
     string m_ClientName;
 
-    string m_EnforcedServerHost;
-    unsigned m_EnforcedServerPort;
+    unsigned m_EnforcedServerHost;
+    unsigned short m_EnforcedServerPort;
 
     CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
@@ -208,7 +208,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SNetServiceImpl(const string& api_name, const string& client_name,
             INetServerConnectionListener* listener) :
         m_Listener(listener),
-        m_ServerPool(new SNetServerPoolImpl(api_name, client_name))
+        m_ServerPool(new SNetServerPoolImpl(api_name, client_name)),
+        m_AllowXSiteConnections(false),
+        m_UseSmartRetries(true)
     {
         ZeroInit();
     }
@@ -217,7 +219,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* parent) :
         m_Listener(parent->m_Listener),
         m_ServerPool(parent->m_ServerPool),
-        m_ServiceName(server->m_Address.AsString())
+        m_ServiceName(server->m_Address.AsString()),
+        m_ColoNetwork(parent->m_ColoNetwork),
+        m_AllowXSiteConnections(parent->m_AllowXSiteConnections),
+        m_UseSmartRetries(parent->m_UseSmartRetries)
     {
         ZeroInit();
         Construct(server);
@@ -225,7 +230,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SNetServiceImpl(const string& service_name, SNetServiceImpl* parent) :
         m_Listener(parent->m_Listener),
         m_ServerPool(parent->m_ServerPool),
-        m_ServiceName(service_name)
+        m_ServiceName(service_name),
+        m_ColoNetwork(parent->m_ColoNetwork),
+        m_AllowXSiteConnections(parent->m_AllowXSiteConnections),
+        m_UseSmartRetries(parent->m_UseSmartRetries)
     {
         ZeroInit();
         Construct();
@@ -255,10 +263,15 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         IIterationBeginner* iteration_beginner,
         EServerErrorHandling error_handling);
 
-    CNetServer GetServer(const string& host, unsigned int port);
+    CNetServer GetServer(unsigned host, unsigned int port);
     CNetServer GetServer(const SServerAddress& server_address);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
+
+    bool IsColoAddr(unsigned int ip) const
+    {
+        return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork;
+    }
 
     virtual ~SNetServiceImpl();
 
@@ -276,6 +289,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SDiscoveredServers* m_ServerGroupPool;
     unsigned m_LatestDiscoveryIteration;
 
+    unsigned int m_ColoNetwork;
+    bool m_AllowXSiteConnections;
     bool m_UseSmartRetries;
 };
 
