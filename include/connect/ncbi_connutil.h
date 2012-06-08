@@ -79,7 +79,6 @@
 
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connection.h>
-#include <connect/ncbi_socket.h>
 
 
 /* Well-known port values */

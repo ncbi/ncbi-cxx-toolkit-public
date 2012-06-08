@@ -42,7 +42,6 @@
 #endif
 #include <stdarg.h>
 #include <time.h>
-#include <errno.h>
 
 
 BEGIN_NCBI_NAMESPACE;

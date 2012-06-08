@@ -33,7 +33,6 @@
 
 #include "ncbi_priv.h"
 #include "ncbi_socketp.h"
-#include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connection.h>
 #include <stdlib.h>
 #include <string.h>
