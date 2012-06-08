@@ -423,8 +423,10 @@ CTaskServer::GetIPByHost(const string& host)
         in_addr.ai_family = AF_INET;
         struct addrinfo* out_addr = NULL;
         int x_errno = getaddrinfo(host.c_str(), NULL, &in_addr, &out_addr);
-        if (x_errno)
+        if (x_errno) {
             LOG_WITH_AIERR(Critical, "Error from getaddrinfo", x_errno);
+            ip = 0;
+        }
         else
             ip = ((struct sockaddr_in*)out_addr->ai_addr)->sin_addr.s_addr;
         freeaddrinfo(out_addr);
@@ -957,20 +959,17 @@ void
 CSrvListener::ExecuteSlice(TSrvThreadNum thread_idx)
 {
     Uint1 cnt_listen = ACCESS_ONCE(s_CntListeningSocks);
-    if (CTaskServer::IsInShutdown()) {
-        for (Uint1 i = 0; i < cnt_listen; ++i) {
+    for (Uint1 i = 0; i < cnt_listen; ++i) {
+        if (m_SeenErrors[i] != s_ListenErrors[i])
+            s_ProcessListenError(i);
+        if (m_SeenEvents[i] != s_ListenEvents[i])
+            s_ProcessListenEvent(i, thread_idx);
+
+        if (CTaskServer::IsInShutdown()) {
             SListenSockInfo& sock_info = s_ListenSocks[i];
             if (sock_info.fd != -1)
                 s_CloseSocket(sock_info.fd, false);
             sock_info.fd = -1;
-        }
-    }
-    else {
-        for (Uint1 i = 0; i < cnt_listen; ++i) {
-            if (m_SeenErrors[i] != s_ListenErrors[i])
-                s_ProcessListenError(i);
-            if (m_SeenEvents[i] != s_ListenEvents[i])
-                s_ProcessListenEvent(i, thread_idx);
         }
     }
 }
