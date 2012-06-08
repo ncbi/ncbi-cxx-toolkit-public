@@ -32,11 +32,12 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "ncbi_assert.h"                // no _ASSERT()s, keep clean from xncbi
 #include <connect/ncbi_socket_unix.hpp>
 #include <limits.h>                     // for PATH_MAX
-#if defined(NCBI_OS_MSWIN) && !defined(PATH_MAX)
+#if defined(NCBI_OS_MSWIN)  &&  !defined(PATH_MAX)
 #  define PATH_MAX 512                  // will actually use less than 32 chars
-#endif
+#endif // NCBI_OS_MSWIN && !PATH_MAX
 
 
 BEGIN_NCBI_SCOPE
@@ -142,7 +143,7 @@ EIO_Status CSocket::Connect(const string&   host,
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
     } else
-        _ASSERT(!m_Socket);
+        assert(!m_Socket);
     return status;
 }
 
@@ -172,7 +173,7 @@ EIO_Status CUNIXSocket::Connect(const string&   path,
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
     } else
-        _ASSERT(!m_Socket);
+        assert(!m_Socket);
     return status;
 }
 
@@ -290,12 +291,12 @@ EIO_Status CSocket::Read(void*          buf,
 
 EIO_Status CSocket::ReadLine(string& str)
 {
+    str.erase();
     if ( !m_Socket )
         return eIO_Closed;
     EIO_Status status;
     char buf[1024];
     size_t size;
-    str.erase();
     do {
         status = SOCK_ReadLine(m_Socket, buf, sizeof(buf), &size);
         if (!size)
@@ -390,7 +391,7 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 EIO_Status CDatagramSocket::Connect(unsigned int   host,
                                     unsigned short port)
 {
-    char addr[32];
+    char addr[40];
     if (host  &&  SOCK_ntoa(host, addr, sizeof(addr)) != 0)
         return eIO_Unknown;
     return m_Socket
@@ -406,8 +407,15 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
                                  unsigned short* sender_port,
                                  size_t          maxmsglen)
 {
-    if ( !m_Socket )
+    if ( !m_Socket ) {
+        if ( msglen )
+            *msglen = 0;
+        if ( sender_host )
+            *sender_host = "";
+        if ( sender_port )
+            *sender_port = 0;
         return eIO_Closed;
+    }
 
     unsigned int addr;
     EIO_Status status = DSOCK_RecvMsg(m_Socket, buf, buflen, maxmsglen,
@@ -435,16 +443,21 @@ EIO_Status CListeningSocket::Accept(CSocket*&       sock,
                                     const STimeout* timeout,
                                     TSOCK_Flags     flags) const
 {
-    if ( !m_Socket )
+    if ( !m_Socket ) {
+        sock = 0;
         return eIO_Closed;
+    }
 
-    SOCK x_sock;
-    EIO_Status status = LSOCK_AcceptEx(m_Socket, timeout, &x_sock, flags);
+    SOCK       x_sock;
+    EIO_Status status;
+    status = LSOCK_AcceptEx(m_Socket, timeout, &x_sock, flags);
+    assert(!x_sock ^ !(status != eIO_Success));
     if (status == eIO_Success) {
         try {
             sock = new CSocket;
         } catch (...) {
             sock = 0;
+            SOCK_Abort(x_sock);
             SOCK_Close(x_sock);
             throw;
         }
@@ -459,13 +472,15 @@ EIO_Status CListeningSocket::Accept(CSocket&        sock,
                                     const STimeout* timeout,
                                     TSOCK_Flags     flags) const
 {
-    if ( !m_Socket )
-        return eIO_Closed;
-
-    SOCK x_sock;
-    EIO_Status status = LSOCK_AcceptEx(m_Socket, timeout, &x_sock, flags);
-    if (status == eIO_Success)
-        sock.Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
+    SOCK       x_sock;
+    EIO_Status status;
+    if ( !m_Socket ) {
+        x_sock = 0;
+        status = eIO_Closed;
+    } else
+        status = LSOCK_AcceptEx(m_Socket, timeout, &x_sock, flags);
+    assert(!x_sock ^ !(status != eIO_Success));
+    sock.Reset(x_sock, eTakeOwnership, eCopyTimeoutsToSOCK);
     return status;
 }
 
@@ -473,7 +488,7 @@ EIO_Status CListeningSocket::Accept(CSocket&        sock,
 EIO_Status CListeningSocket::Close(void)
 {
     if ( !m_Socket )
-        return eIO_Success;
+        return eIO_Closed;
 
     EIO_Status status = m_IsOwned != eNoOwnership
         ? LSOCK_Close(m_Socket) : eIO_Success;
@@ -553,10 +568,10 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
 
 string CSocketAPI::ntoa(unsigned int host)
 {
-    char ipaddr[64];
-    if (SOCK_ntoa(host, ipaddr, sizeof(ipaddr)) != 0)
-        *ipaddr = 0;
-    return string(ipaddr);
+    char addr[40];
+    if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+        *addr = 0;
+    return string(addr);
 }
 
 

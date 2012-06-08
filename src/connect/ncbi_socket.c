@@ -3901,7 +3901,7 @@ static EIO_Status s_Connect(SOCK            sock,
 
         status = s_IsConnected(sock, x_tv, &x_error, !x_error);
         if (status != eIO_Success) {
-            char buf[64];
+            char buf[80];
             const char* reason;
             if (status == eIO_Timeout) {
                 assert(x_tv/*it is also normalized*/);
@@ -4662,6 +4662,8 @@ static EIO_Status s_Accept(LSOCK           lsock,
     TSOCK_socklen_t addrlen;
     char            _id[MAXIDLEN];
 
+    *sock = 0;
+
     if (!lsock  ||  lsock->sock == SOCK_INVALID) {
         CORE_LOGF_X(39, eLOG_Error,
                     ("%s[LSOCK::Accept] "
@@ -4929,7 +4931,7 @@ static EIO_Status s_CloseListening(LSOCK lsock)
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
-        char buf[16];
+        char port[10];
         const char* c;
 #ifdef NCBI_OS_UNIX
         if (lsock->path[0]) {
@@ -4938,8 +4940,8 @@ static EIO_Status s_CloseListening(LSOCK lsock)
         } else
 #endif /*NCBI_OS_UNIX*/ 
         {
-            sprintf(buf, ":%hu", lsock->port);
-            c = buf;
+            sprintf(port, ":%hu", lsock->port);
+            c = port;
         }
         CORE_LOGF_X(44, eLOG_Trace,
                     ("LSOCK#%u[%u]: %s at %s (%u accept%s total)",
@@ -5021,8 +5023,6 @@ extern EIO_Status LSOCK_GetOSHandleEx(LSOCK      lsock,
     TSOCK_Handle fd;
     EIO_Status   status;
 
-    if (!lsock)
-        return eIO_InvalidArg;
     if (!handle  ||  handle_size != sizeof(lsock->sock)) {
         CORE_LOGF_X(46, eLOG_Error,
                     ("LSOCK#%u[%u]: [LSOCK::GetOSHandle] "
@@ -5031,6 +5031,11 @@ extern EIO_Status LSOCK_GetOSHandleEx(LSOCK      lsock,
                      handle ? " size"                     : "",
                      handle ? (unsigned long) handle_size : 0));
         assert(0);
+        return eIO_InvalidArg;
+    }
+    if (!lsock) {
+        fd = SOCK_INVALID;
+        memcpy(handle, &fd, handle_size);
         return eIO_InvalidArg;
     }
     fd = lsock->sock;
@@ -5756,7 +5761,7 @@ extern EIO_Status SOCK_Poll(size_t          n,
     size_t         i;
 
     if (n  &&  !polls) {
-        if (n_ready)
+        if ( n_ready )
             *n_ready = 0;
         return eIO_InvalidArg;
     }
@@ -5909,7 +5914,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         x_read = 0;
     }
 
-    if (n_read)
+    if ( n_read )
         *n_read = x_read;
     return status;
 }
@@ -6113,7 +6118,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
         x_written = 0;
     }
 
-    if (n_written)
+    if ( n_written )
         *n_written = x_written;
     return status;
 }
@@ -6225,8 +6230,12 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
     char   port[10];
     size_t len;
 
-    if (!sock  ||  !buf  ||  !bufsize)
+    if (!buf  ||  !bufsize)
         return 0/*error*/;
+    if (!sock) {
+        *buf = '\0';
+        return 0/*error*/;
+    }
     switch (format) {
     case eSAF_Full:
 #ifdef NCBI_OS_UNIX
@@ -6276,8 +6285,6 @@ extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
     EIO_Status   status;
     TSOCK_Handle fd;
 
-    if (!sock)
-        return eIO_InvalidArg;
     if (!handle  ||  handle_size != sizeof(sock->sock)) {
         char _id[MAXIDLEN];
         CORE_LOGF_X(73, eLOG_Error,
@@ -6287,6 +6294,11 @@ extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
                      handle ? " size"                     : "",
                      handle ? (unsigned long) handle_size : 0));
         assert(0);
+        return eIO_InvalidArg;
+    }
+    if (!sock) {
+        fd = SOCK_INVALID;
+        memcpy(handle, &fd, handle_size);
         return eIO_InvalidArg;
     }
     fd = sock->sock;
@@ -6623,7 +6635,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     struct sockaddr_in peer;
     char _id[MAXIDLEN];
     unsigned int host;
-    char addr[64];
+    char addr[40];
 
     if (sock->type != eDatagram) {
         CORE_LOGF_X(81, eLOG_Error,
@@ -6660,11 +6672,16 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     }
 
     if (!host != !port) {
-        SOCK_HostPortToString(host, port, addr, sizeof(addr));
+        if (port) {
+            assert(!host);
+            sprintf(addr, ":%hu", port);
+        } else
+            *addr = '\0';
         CORE_LOGF_X(84, eLOG_Error,
                     ("%s[DSOCK::Connect] "
-                     " Address \"%s\" incomplete, missing %s",
-                     s_ID(sock, _id), addr, port ? "host" : "port"));
+                     " Address \"%.*s%s\" incomplete, missing %s",
+                     s_ID(sock, _id), MAXHOSTNAMELEN, host ? hostname : "",
+                     addr, port ? "host" : "port"));
         return eIO_InvalidArg;
     }
 
@@ -6931,6 +6948,13 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
     EIO_Status status;
     void*      x_msg;
 
+    if ( msglen )
+        *msglen = 0;
+    if ( sender_addr )
+        *sender_addr = 0;
+    if ( sender_port )
+        *sender_port = 0;
+
     if (sock->type != eDatagram) {
         CORE_LOGF_X(92, eLOG_Error,
                     ("%s[DSOCK::RecvMsg] "
@@ -6949,12 +6973,6 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
 
     BUF_Erase(sock->r_buf);
     sock->r_len = 0;
-    if (msglen)
-        *msglen = 0;
-    if (sender_addr)
-        *sender_addr = 0;
-    if (sender_port)
-        *sender_port = 0;
 
     x_msgsize = (msgsize  &&  msgsize < ((1 << 16) - 1))
         ? msgsize : ((1 << 16) - 1);
@@ -6990,11 +7008,11 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
             /* got a message */
             sock->r_status = eIO_Success;
             sock->r_len = (TNCBI_BigCount) x_read;
-            if (msglen)
+            if ( msglen)
                 *msglen = x_read;
-            if (sender_addr)
+            if ( sender_addr )
                 *sender_addr =       sin.sin_addr.s_addr;
-            if (sender_port)
+            if ( sender_port )
                 *sender_port = ntohs(sin.sin_port);
             if ((size_t) x_read > bufsize
                 &&  !BUF_Write(&sock->r_buf,
@@ -7399,14 +7417,14 @@ extern int SOCK_ntoa(unsigned int host,
                      size_t       bufsize)
 {
     const unsigned char* b = (const unsigned char*) &host;
-    char str[16/*sizeof("255.255.255.255")*/];
+    char x_buf[16/*sizeof("255.255.255.255")*/];
     int len;
 
-    if (buf  &&  bufsize > 0) {
-        len = sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
-        assert(0 < len  &&  (size_t) len < sizeof(str));
+    if (buf  &&  bufsize) {
+        len = sprintf(x_buf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
+        assert(0 < len  &&  (size_t) len < sizeof(x_buf));
         if ((size_t) len < bufsize) {
-            memcpy(buf, str, len + 1);
+            memcpy(buf, x_buf, len + 1);
             return 0/*success*/;
         }
         buf[0] = '\0';
@@ -7559,16 +7577,16 @@ extern const char* SOCK_StringToHostPort(const char*     str,
                                          unsigned int*   host,
                                          unsigned short* port)
 {
-    char abuf[MAXHOSTNAMELEN + 1];
+    char x_buf[MAXHOSTNAMELEN + 1];
     unsigned short p;
     unsigned int h;
     const char* s;
-    size_t alen;
+    size_t len;
     size_t n;
 
-    if (host)
+    if ( host )
         *host = 0;
-    if (port)
+    if ( port )
         *port = 0;
     if (!*str)
         return 0;
@@ -7576,10 +7594,10 @@ extern const char* SOCK_StringToHostPort(const char*     str,
         if (isspace((unsigned char)(*s))  ||  *s == ':')
             break;
     }
-    if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
+    if ((len = (size_t)(s - str)) > sizeof(x_buf) - 1)
         return 0;
     if (*s == ':') {
-        long i;
+        long  i;
         char* e;
         if (isspace((unsigned char) s[1]))
             return str;
@@ -7595,10 +7613,10 @@ extern const char* SOCK_StringToHostPort(const char*     str,
         p = 0;
         n = 0;
     }
-    if (alen) {
-        memcpy(abuf, str, alen);
-        abuf[alen] = '\0';
-        if (!(h = SOCK_gethostbyname(abuf)))
+    if (len) {
+        memcpy(x_buf, str, len);
+        x_buf[len] = '\0';
+        if (!(h = SOCK_gethostbyname(x_buf)))
             return str;
         if (host)
             *host = h;
@@ -7615,28 +7633,27 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
                                     size_t         bufsize)
 {
     char   x_buf[16/*sizeof("255.255.255.255")*/ + 6/*:port#*/];
-    size_t n;
+    size_t len;
 
     if (!buf  ||  !bufsize)
         return 0;
     if (!host) {
         *x_buf = '\0';
-        n = 0;
+        len = 0;
     } else if (SOCK_ntoa(host, x_buf, sizeof(x_buf)) != 0) {
         *buf = '\0';
         return 0;
     } else
-        n = strlen(x_buf);
+        len = strlen(x_buf);
     if (port  ||  !host)
-        n += sprintf(x_buf + n, ":%hu", port);
-    assert(n < sizeof(x_buf));
-    if (n >= bufsize) {
+        len += sprintf(x_buf + len, ":%hu", port);
+    assert(len < sizeof(x_buf));
+    if (len >= bufsize) {
         *buf = '\0';
         return 0;
     }
-    memcpy(buf, x_buf, n);
-    buf[n] = '\0';
-    return n;
+    memcpy(buf, x_buf, len + 1);
+    return len;
 }
 
 
