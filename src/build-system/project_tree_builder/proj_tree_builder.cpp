@@ -813,7 +813,7 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
         }
     }
 
-    if (mkname != NULL) {
+    if (mkname != NULL && !GetApp().IsScanningWholeTree()) {
         VerifyLibDepends(*depends_ids, *mkname);
     }
 
