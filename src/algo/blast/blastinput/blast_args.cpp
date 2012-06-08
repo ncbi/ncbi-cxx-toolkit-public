@@ -692,9 +692,10 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("General search options");
     // composition based statistics, keep in sync with ECompoAdjustModes
     // documentation in composition_constants.h
+    string default_cbs = (m_IsDeltaBlast ? "1" : "2");
     arg_desc.AddDefaultKey(kArgCompBasedStats, "compo", 
               (string)"Use composition-based statistics for blastp, blastx, or tblastn:\n"
-                      "    D or d: default (equivalent to 2)\n"
+                      "    D or d: default (equivalent to " + default_cbs + " )\n"
                       "    0 or F or f: no composition-based statistics\n"
                       "    1: Composition-based statistics "
                                       "as in NAR 29:2994-3005, 2001\n" +
@@ -733,12 +734,14 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
  * @param ungapped pointer to the value which determines whether the search
  * should be ungapped or not. It is NULL if ungapped searches are not
  * applicable
+ * @param is_deltablast is program deltablast [in]
  */
 static void
 s_SetCompositionBasedStats(CBlastOptions& opt,
                            const string& comp_stat_string,
                            bool smith_waterman_value,
-                           bool* ungapped = NULL)
+                           bool* ungapped,
+                           bool is_deltablast)
 {
     const EProgram program = opt.GetProgram();
     if (program == eBlastp || program == eTblastn || 
@@ -755,6 +758,9 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
                 compo_mode = eCompositionBasedStats;
                 break;
             case 'D': case 'd':
+                compo_mode = is_deltablast ? eCompositionBasedStats
+                    : eCompositionMatrixAdjust;
+		break;
             case '2': case 'T': case 't':
                 compo_mode = eCompositionMatrixAdjust;
                 break;
@@ -794,7 +800,8 @@ CCompositionBasedStatsArgs::ExtractAlgorithmOptions(const CArgs& args,
         s_SetCompositionBasedStats(opt, 
                                    args[kArgCompBasedStats].AsString(),
                                    args[kArgUseSWTraceback],
-                                   ungapped.get());
+                                   ungapped.get(),
+                                   m_IsDeltaBlast);
     }
 
 }
