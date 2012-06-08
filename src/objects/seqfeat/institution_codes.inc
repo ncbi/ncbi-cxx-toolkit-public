@@ -66,6 +66,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ABSM	s	Duke University, Botany Department",
 "ABT	s	Laboratoire de Biologie Vegetale et d'Ecologie Forestiere",
 "ABTC	s	Australian Biological Tissue Collection, South Australian Museum",
+"ABU<NGA>	s	Ahmadu Bello University Herbarium",
 "AC	s	Amherst College",
 "ACA	s	Agricultural University of Athens",
 "ACA-DC	c	Greek Coordinated Collections of Microorganisms",
