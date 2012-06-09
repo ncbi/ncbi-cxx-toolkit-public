@@ -41,7 +41,9 @@
 
 #include <corelib/ncbi_system.hpp>
 
-#include "../daemons/fwda_cli.h"
+#ifdef HAVE_LOCAL_LBSM
+#  include "../daemons/fwda_cli.h"
+#endif
 
 #ifdef NCBI_OS_LINUX
 # include <sys/socket.h>
@@ -436,6 +438,8 @@ CNetServerConnection SNetServerImpl::Connect()
     STimeout remaining_timeout;
 
     SServerAddress server_address(m_ServerInPool->m_Address);
+
+#ifdef HAVE_LOCAL_LBSM
     ticket_t ticket = 0;
 
     if (m_Service->m_AllowXSiteConnections &&
@@ -477,6 +481,7 @@ CNetServerConnection SNetServerImpl::Connect()
         server_address.port = SOCK_NetToHostShort(rq.port);
         ticket = rq.ticket;
     }
+#endif
 
     do {
         io_st = conn->m_Socket.Connect(CSocketAPI::ntoa(server_address.host),
@@ -512,11 +517,13 @@ CNetServerConnection SNetServerImpl::Connect()
     conn->m_Socket.DisableOSSendDelay();
     conn->m_Socket.SetReuseAddress(eOn);
 
+#ifdef HAVE_LOCAL_LBSM
     if (ticket != 0 &&
             conn->m_Socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
         NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                 "Error while sending proxy auth ticket.");
     }
+#endif
 
     m_Service->m_Listener->OnConnected(conn);
 
