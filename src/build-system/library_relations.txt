@@ -2620,6 +2620,7 @@ idgen needs xutil
 idx needs connect
 idx needs connext
 idx needs dbapi_driver
+idx needs spellsrvbase
 idx needs txservbase
 idx needs xconnect
 idx needs xncbi
@@ -2639,6 +2640,7 @@ idxgenome2 needs pub
 idxgenome2 needs seq
 idxgenome2 needs seqcode
 idxgenome2 needs sequtil
+idxgenome2 needs spellsrvbase
 idxgenome2 needs txservbase
 idxgenome2 needs xcgi
 idxgenome2 needs xconnect
@@ -2651,6 +2653,7 @@ idxgenomeprj needs connext
 idxgenomeprj needs dbapi_driver
 idxgenomeprj needs idx
 idxgenomeprj needs ilink
+idxgenomeprj needs spellsrvbase
 idxgenomeprj needs txservbase
 idxgenomeprj needs xconnect
 idxgenomeprj needs xncbi
@@ -2660,6 +2663,7 @@ idxjournals needs connext
 idxjournals needs dbapi_driver
 idxjournals needs idx
 idxjournals needs ilink
+idxjournals needs spellsrvbase
 idxjournals needs txservbase
 idxjournals needs xconnect
 idxjournals needs xncbi
@@ -2669,6 +2673,7 @@ idxlinkout needs connext
 idxlinkout needs dbapi_driver
 idxlinkout needs idx
 idxlinkout needs ilink
+idxlinkout needs spellsrvbase
 idxlinkout needs txservbase
 idxlinkout needs xconnect
 idxlinkout needs xncbi
@@ -2678,6 +2683,7 @@ idxlinkout2 needs connext
 idxlinkout2 needs dbapi_driver
 idxlinkout2 needs idx
 idxlinkout2 needs ilink
+idxlinkout2 needs spellsrvbase
 idxlinkout2 needs txservbase
 idxlinkout2 needs txxmldoc
 idxlinkout2 needs xconnect
@@ -2698,6 +2704,7 @@ idxnuccore needs pub
 idxnuccore needs seq
 idxnuccore needs seqcode
 idxnuccore needs sequtil
+idxnuccore needs spellsrvbase
 idxnuccore needs txservbase
 idxnuccore needs xcgi
 idxnuccore needs xconnect
@@ -2720,6 +2727,7 @@ idxnucest needs pub
 idxnucest needs seq
 idxnucest needs seqcode
 idxnucest needs sequtil
+idxnucest needs spellsrvbase
 idxnucest needs txservbase
 idxnucest needs xcgi
 idxnucest needs xconnect
@@ -2742,6 +2750,7 @@ idxnucgss needs pub
 idxnucgss needs seq
 idxnucgss needs seqcode
 idxnucgss needs sequtil
+idxnucgss needs spellsrvbase
 idxnucgss needs txservbase
 idxnucgss needs xcgi
 idxnucgss needs xconnect
@@ -2763,6 +2772,7 @@ idxnucleotide2 needs pub
 idxnucleotide2 needs seq
 idxnucleotide2 needs seqcode
 idxnucleotide2 needs sequtil
+idxnucleotide2 needs spellsrvbase
 idxnucleotide2 needs txservbase
 idxnucleotide2 needs xcgi
 idxnucleotide2 needs xconnect
@@ -2775,6 +2785,7 @@ idxomim needs connext
 idxomim needs dbapi_driver
 idxomim needs idx
 idxomim needs ilink
+idxomim needs spellsrvbase
 idxomim needs txservbase
 idxomim needs xconnect
 idxomim needs xncbi
@@ -2793,6 +2804,7 @@ idxpopset2 needs pub
 idxpopset2 needs seq
 idxpopset2 needs seqcode
 idxpopset2 needs sequtil
+idxpopset2 needs spellsrvbase
 idxpopset2 needs txservbase
 idxpopset2 needs xcgi
 idxpopset2 needs xconnect
@@ -2814,6 +2826,7 @@ idxprotein2 needs pub
 idxprotein2 needs seq
 idxprotein2 needs seqcode
 idxprotein2 needs sequtil
+idxprotein2 needs spellsrvbase
 idxprotein2 needs txservbase
 idxprotein2 needs xcgi
 idxprotein2 needs xconnect
@@ -2834,6 +2847,7 @@ idxseq2base needs pub
 idxseq2base needs seq
 idxseq2base needs seqcode
 idxseq2base needs sequtil
+idxseq2base needs spellsrvbase
 idxseq2base needs txservbase
 idxseq2base needs xcgi
 idxseq2base needs xconnect
@@ -2846,6 +2860,7 @@ idxtestdb needs connext
 idxtestdb needs dbapi_driver
 idxtestdb needs idx
 idxtestdb needs ilink
+idxtestdb needs spellsrvbase
 idxtestdb needs txservbase
 idxtestdb needs xconnect
 idxtestdb needs xncbi
@@ -2865,6 +2880,7 @@ idxumbrella needs pub
 idxumbrella needs seq
 idxumbrella needs seqcode
 idxumbrella needs sequtil
+idxumbrella needs spellsrvbase
 idxumbrella needs txservbase
 idxumbrella needs xcgi
 idxumbrella needs xconnect
@@ -2909,6 +2925,7 @@ igblast needs xutil
 ilink needs connect
 ilink needs connext
 ilink needs dbapi_driver
+ilink needs spellsrvbase
 ilink needs txservbase
 ilink needs xconnect
 ilink needs xncbi
@@ -4361,6 +4378,10 @@ spcgi needs xncbi
 spcgi needs xser
 spcgi needs xthrserv
 spcgi needs xutil
+spellsrvbase needs connect
+spellsrvbase needs txservbase
+spellsrvbase needs xconnect
+spellsrvbase needs xncbi
 splitdbasn_g needs connect
 splitdbasn_g needs creaders
 splitdbasn_g needs gendefasn_g
