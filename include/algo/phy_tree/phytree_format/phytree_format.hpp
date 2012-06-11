@@ -113,6 +113,15 @@ public:
                       const vector<int>& mark_leaves,
                       ELabelType lbl_type = eSeqId);
 
+    /// Constructor
+    /// @param guide_tree_calc GuideTreeCalc object with computed tree [in]
+    /// @param seq_ids Sequence ids to be marked in the tree
+    /// (can be gis, accessions or local ids, in the form gi|129295) [in]
+    /// @param lbl_type Type of labels to be used for tree leaves [in]
+    ///
+    CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
+                      vector<string>& seq_ids,
+                      ELabelType lbl_type = eSeqId);
 
     /// Constructor
     /// @param btc BioTreeContainer object [in]
@@ -122,8 +131,7 @@ public:
     /// Query node will have color features set so that it will be marked
     /// when tree is rendered. Query node id of -1 denotes that none of tree
     /// nodes is the query node.
-    CPhyTreeFormatter(CBioTreeContainer& btc, ELabelType lbl_type = eSeqId,
-                      const vector<int>& query_node_id = vector<int>());
+    CPhyTreeFormatter(CBioTreeContainer& btc, ELabelType lbl_type = eSeqId);
 
     /// Constructor with initialization of tree features
     /// @param btc BioTreeContainer object [in]
@@ -366,6 +374,12 @@ protected:
     /// @param lbl_type Labels type [in]
     ///
     void x_InitTreeLabels(CBioTreeContainer& btc, ELabelType lbl_type); 
+
+    /// Mark leave nodes corresponding to sequences with given sequence ids
+    /// @param btc BioTreeContainer [in|out]
+    /// @param ids List of sequence ids (gis or accessions, ex. gi|129295) [in]
+    ///
+    void x_MarkLeavesBySeqId(CBioTreeContainer& btc, vector<string>& ids);
 
 private:
     

@@ -92,9 +92,28 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
 }
 
+
+CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
+                                     vector<string>& seq_ids,
+                                     ELabelType label_type)
+{
+    x_Init();
+    vector<int> mark_leaves;
+
+    CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();
+    x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
+                       *guide_tree_calc.GetScope(), 
+                       label_type, mark_leaves,
+                       m_BlastNameColorMap);
+
+    x_MarkLeavesBySeqId(*btc, seq_ids);
+
+    BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
+}
+
+
 CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
-                                  CPhyTreeFormatter::ELabelType lblType,
-                                  const vector<int>& query_node_id)
+                                  CPhyTreeFormatter::ELabelType lblType)
 {
     x_Init();
 
@@ -866,6 +885,35 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     if ((int)num_rows != num_leaves) {
         NCBI_THROW(CPhyTreeFormatterException, eInvalidInput, "There are more Seq-ids"
                    " then tree leaves");
+    }
+}
+
+
+void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
+                                            vector<string>& ids)
+{
+
+    sort(ids.begin(), ids.end());
+
+    NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
+        if ((*node)->CanGetFeatures()) {
+            NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
+                               (*node)->SetFeatures().Set()) {
+
+                if (((*node_feature)->GetFeatureid() == eSeqIdId
+                     || (*node_feature)->GetFeatureid() == eAccessionNbrId)
+                    && binary_search(ids.begin(), ids.end(),
+                                     (*node_feature)->GetValue())) {
+
+                    // set features
+                    // color for query node
+                    x_AddFeature(eLabelBgColorId,
+                                 s_kQueryNodeBgColor, node); 
+
+                    x_AddFeature(eNodeInfoId, kNodeInfoQuery, node);
+                }
+            }
+        }
     }
 }
 
