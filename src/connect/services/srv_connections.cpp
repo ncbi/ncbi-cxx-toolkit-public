@@ -443,79 +443,100 @@ CNetServerConnection SNetServerImpl::Connect()
     ticket_t ticket = 0;
 
     if (m_Service->m_AllowXSiteConnections &&
-            m_Service->IsColoAddr(m_ServerInPool->m_Address.host)) {
+        m_Service->IsColoAddr(m_ServerInPool->m_Address.host)) {
         union {
             SFWDRequestReply rq;
-            char buffer[FWD_MAX_RR_SIZE];
+            char buffer[FWD_MAX_RR_SIZE + 1];
         };
 
         memset(buffer, 0, sizeof(buffer));
-        rq.host = m_ServerInPool->m_Address.host;
+        rq.host =                     m_ServerInPool->m_Address.host;
         rq.port = SOCK_HostToNetShort(m_ServerInPool->m_Address.port);
         rq.flag = SOCK_HostToNetShort(1);
+        _ASSERT(offsetof(SFWDRequestReply, text) +
+                sizeof(kXSiteFwd) < sizeof(buffer));
         memcpy(rq.text, kXSiteFwd, sizeof(kXSiteFwd));
 
         streamsize len = 0;
 
-        {{
-            CConn_ServiceStream svc(kXSiteFwd);
-            ticket_t dummy = 0;
-            if (svc.write((const char*) &dummy, sizeof(dummy)) &&
-                    svc.write(buffer, offsetof(SFWDRequestReply, text) +
-                            sizeof(kXSiteFwd))) {
-                svc.read(buffer, sizeof(buffer));
-                len = svc.gcount();
-            }
-            /* svc is no longer needed */
-        }}
-
-        if (len < offsetof(SFWDRequestReply, text) || len >= FWD_MAX_RR_SIZE ||
-                rq.port == 0 || rq.ticket == 0) {
-            NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
-                    "Error while acquiring an auth ticket from the "
-                    "cross-site connection proxy: " << (rq.flag & 0x0F0F ?
-                    "client rejected" : "unspecified error"));
+        CConn_ServiceStream svc(kXSiteFwd);
+        if (svc.write((const char*) &rq.ticket/*0*/, sizeof(rq.ticket)) &&
+            svc.write(buffer, offsetof(SFWDRequestReply, text) +
+                      sizeof(kXSiteFwd))) {
+            svc.read(buffer, sizeof(buffer) - 1);
+            len = svc.gcount();
+            _ASSERT((size_t) len < sizeof(buffer));
         }
 
-        server_address.host = rq.host;
-        server_address.port = SOCK_NetToHostShort(rq.port);
+        memset(buffer + len, 0, sizeof(buffer) - len);
+
+        if ((size_t) len < offsetof(SFWDRequestReply, text) ||
+            (rq.flag & 0xF0F0) || rq.port == 0) {
+            const char* err;
+            if (!len)
+                err = "Connection refused";
+            else if ((size_t) len < offsetof(SFWDRequestReply, text))
+                err = "Short response received";
+            else if (!(rq.flag & 0xF0F0))
+                err = rq.flag & 0x0F0F ? "Client rejected" : "Unknown error";
+            else if (NStr::strncasecmp(buffer, "NCBI", 4) == 0)
+                err = buffer;
+            else if (rq.text[0])
+                err = rq.text;
+            else
+                err = "Unspecified error";
+            NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
+                           "Error while acquiring an auth ticket from the "
+                           "cross-site connection proxy: " << err);
+        }
+
+        if (rq.ticket) {
+            server_address.host =                     rq.host;
+            server_address.port = SOCK_NetToHostShort(rq.port);
+        } else {
+            SOCK sock;
+            server_address.port = 0;
+            io_st = CONN_GetSOCK(svc.GetCONN(), &sock);
+            if (sock)
+                SOCK_CreateOnTop(sock, 0, &sock);
+            if (io_st != eIO_Success  ||  !sock) {
+                NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+                           "Error while connecting to proxy.");
+            }
+            conn->m_Socket.Reset(sock, eTakeOwnership, eCopyTimeoutsToSOCK);
+        }
         ticket = rq.ticket;
     }
 #endif
 
-    do {
-        io_st = conn->m_Socket.Connect(CSocketAPI::ntoa(server_address.host),
-                server_address.port, &internal_timeout,
-                fSOCK_LogOff | fSOCK_KeepAlive);
+    if (server_address.port) {
+        do {
+            io_st = conn->m_Socket.Connect
+                (CSocketAPI::ntoa(server_address.host),
+                 server_address.port, &internal_timeout,
+                 fSOCK_LogOff | fSOCK_KeepAlive);
 
-        abs_timeout.GetRemainingTime().Get(&remaining_timeout.sec,
-                &remaining_timeout.usec);
+            abs_timeout.GetRemainingTime().Get(&remaining_timeout.sec,
+                                               &remaining_timeout.usec);
 
-        if (s_InternalConnectTimeout.sec == remaining_timeout.sec ?
+            if (s_InternalConnectTimeout.sec == remaining_timeout.sec ?
                 s_InternalConnectTimeout.usec > remaining_timeout.usec :
                 s_InternalConnectTimeout.sec > remaining_timeout.sec)
-            internal_timeout = remaining_timeout;
-    } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
-        remaining_timeout.sec > 0));
+                internal_timeout = remaining_timeout;
+        } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
+                                          remaining_timeout.sec > 0));
 
-    if (io_st != eIO_Success) {
-        conn->m_Socket.Close();
+        if (io_st != eIO_Success) {
+            conn->m_Socket.Close();
 
-        string message = "Could not connect to " +
+            string message = "Could not connect to " +
                 m_ServerInPool->m_Address.AsString();
-        message += ": ";
-        message += IO_StatusStr(io_st);
+            message += ": ";
+            message += IO_StatusStr(io_st);
 
-        NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
+            NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
+        }
     }
-
-    m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
-
-    conn->m_Socket.SetDataLogging(eOff);
-    conn->m_Socket.SetTimeout(eIO_ReadWrite,
-            &m_ServerInPool->m_ServerPool->m_CommTimeout);
-    conn->m_Socket.DisableOSSendDelay();
-    conn->m_Socket.SetReuseAddress(eOn);
 
 #ifdef HAVE_LOCAL_LBSM
     if (ticket != 0 &&
@@ -524,6 +545,14 @@ CNetServerConnection SNetServerImpl::Connect()
                 "Error while sending proxy auth ticket.");
     }
 #endif
+
+    m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
+
+    conn->m_Socket.SetDataLogging(eOff);
+    conn->m_Socket.SetTimeout(eIO_ReadWrite,
+                              &m_ServerInPool->m_ServerPool->m_CommTimeout);
+    conn->m_Socket.DisableOSSendDelay();
+    conn->m_Socket.SetReuseAddress(eOn);
 
     m_Service->m_Listener->OnConnected(conn);
 
