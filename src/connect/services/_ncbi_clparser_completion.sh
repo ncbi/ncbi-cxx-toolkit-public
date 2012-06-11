@@ -28,6 +28,15 @@ _ncbi_clparser_completion()
 {
     COMPREPLY=()
     local program="${COMP_WORDS[0]}"
+    local program_alias=$(alias "$program" 2> /dev/null | perl -wne "
+            s/'\\\\''/'/g; s/.*='(.*)'\$/\$1/; print")
+    local implicit_opts=''
+    if test -n "$program_alias"; then
+        set $program_alias
+        program="$1"
+        shift
+        implicit_opts="$*"
+    fi
     local cword="${COMP_WORDS[COMP_CWORD]}"
     local line="${COMP_LINE::COMP_POINT}"
     [[ $line != *$cword ]] && cword="${line##* }"
@@ -47,7 +56,8 @@ _ncbi_clparser_completion()
         fi
     done
     if [[ $cword == $cmd || $cmd == 'help' ]]; then
-        COMPREPLY=($(compgen -W "$("$program" help 2> /dev/null | perl -ne '
+        COMPREPLY=($(compgen -W "$("$program" $implicit_opts \
+            help 2> /dev/null | perl -ne '
             if (!$parse) {$parse = m/commands:/o; next}
             if (@cmd = m/^\s{2,4}([a-z]\S+)(?: \(([^)]+)\))?/o) {
                 print map {" $_"} grep {length() > 2}
@@ -55,7 +65,8 @@ _ncbi_clparser_completion()
             }')" -- "$cword"))
     elif [[ -z $cword || $cword == -* && $cword != --*=* ]]; then
         [[ -z $cmd ]] && cmd="${COMP_LINE:COMP_POINT}" && cmd="${cmd%% *}"
-        local compl="$("$program" help "$cmd" 2> /dev/null | perl -e '
+        local compl="$("$program" $implicit_opts \
+            help "$cmd" 2> /dev/null | perl -e '
             %spec_opts = map {$_ => 1} split(" ", $ARGV[0]);
             $pword = $ARGV[1];
             while (<STDIN>) {last if m/options:/o}
