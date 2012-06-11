@@ -279,7 +279,6 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
     const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
        
-    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     CRef<CSeq_id> wid;    
     sdl->defline = NcbiEmptyString;
  
