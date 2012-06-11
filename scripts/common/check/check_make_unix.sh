@@ -390,7 +390,7 @@ fi
 
 if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
    ulimit -c 1000000
-   ulimit -v 2000000
+   ulimit -v 4000000
 fi
 
 
