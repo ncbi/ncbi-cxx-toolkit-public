@@ -941,6 +941,12 @@ static inline unsigned int ud(time_t one, time_t two)
 }
 
 
+static size_t rnd(size_t minimal, size_t maximal)
+{
+    return minimal <= maximal ? minimal + rand() % (maximal - minimal + 1) : 0;
+}
+
+
 EIO_Status CConnTest::StatefulOkay(string* reason)
 {
     static const char kEcho[] = "ECHO";
@@ -953,29 +959,22 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     CTime  time(CTime::eCurrent, CTime::eLocal);
     time_t seed = time.GetTimeT();
 
-    char buf[(1 << 10) + 1];
+    char buf[(1 << 10) + (8 + 1)];
     sprintf(buf, "%08X", (unsigned int) seed);
-    size_t size = 2 + rand() % (((sizeof(buf)-1) >> 3) - 2 + 1);
+    size_t size = rnd(2, (sizeof(buf) - (8 + 1)) >> 3);
 
     size_t i;
     for (i = 1;  i < size;  i++)
         sprintf(buf + (i << 3), "%08X", (unsigned int) rand());
-    buf[size <<= 3] = '\0';
+    memset(&buf[size <<= 3], 0, 8);
+    size += 8;
 
     CConn_ServiceStream echo(kEcho, fSERV_Any, net_info, 0, m_Timeout);
     echo.SetCanceledCallback(m_Canceled);
 
     streamsize n = 0;
-    bool iofail = !echo.write(buf, size)  ||  !echo.flush();
-    if (!iofail) {
-        SOCK s;
-        if (!(s = x_GetSOCK(&echo)))
-            iofail = true;
-        else if (SOCK_Shutdown(s, eIO_Write) != eIO_Success)
-            iofail = true;
-        else if (!(n = CStreamUtils::Readsome(echo, buf, size)))
-            iofail = true;
-    }
+    bool iofail = !echo.write(buf, size)  ||  !echo.flush()
+        ||  !(n = CStreamUtils::Readsome(echo, buf, size));
     if (!iofail) {
         if (n < (streamsize) size) {
             if (!echo.read(buf + n, (streamsize) size - n))

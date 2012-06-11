@@ -215,8 +215,8 @@ int CTestApp::Run(void)
         NStr::Justify("Should you choose to make its contents available to"
                       " NCBI, please keep in mind that the log can contain"
                       " authorization credentials, which you may want to"
-                      " delete from the file prior to actually submitting"
-                      " it for review.", PAGE_WIDTH, msg, "      ", "NOTE: ");
+                      " redact prior to actually submitting the file for"
+                      " review.", PAGE_WIDTH, msg, "      ", "NOTE: ");
         ITERATE(list<string>, line, msg) {
             m_Tee << NcbiEndl << *line;
         }
