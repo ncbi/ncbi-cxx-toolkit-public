@@ -340,8 +340,10 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             }
         }
 
-        if (m_AllowXSiteConnections = config->GetBool(section,
-                "allow_xsite_conn", CConfig::eErr_NoThrow, false)) {
+        m_AllowXSiteConnections = config->GetBool(section,
+                "allow_xsite_conn", CConfig::eErr_NoThrow, false);
+
+        if (m_AllowXSiteConnections) {
             SConnNetInfo* net_info = ConnNetInfo_Create(
                     SNetServerImpl::kXSiteFwd);
 
