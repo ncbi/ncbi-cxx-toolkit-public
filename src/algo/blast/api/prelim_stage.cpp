@@ -353,6 +353,19 @@ bool CBlastPrelimSearch::Run( vector<list<CRef<CStd_seg> > >  & l )
 	return x_BuildStdSegList(l);
 }
 
+void s_GetBitScores(BlastHitList * hit_list, bool gapped_calculation, const BlastScoreBlk * sbp)
+{
+
+	 for (int i = 0; i < hit_list->hsplist_count; i++)
+	 {
+	    	BlastHSPList* hsp_list = hit_list->hsplist_array[i];
+		    if (!hsp_list)
+		    	continue;
+
+		    Blast_HSPListGetBitScores(hsp_list, gapped_calculation, sbp);
+	 }
+}
+
 // Results is trimmed by Blast Hits Save Options if set
 bool CBlastPrelimSearch::x_BuildStdSegList( vector<list<CRef<CStd_seg> > >  & l )
 {
@@ -393,13 +406,19 @@ bool CBlastPrelimSearch::x_BuildStdSegList( vector<list<CRef<CStd_seg> > >  & l 
 	BlastHitList ** q_list_ptr = results->hitlist_array;
 	CRef<ILocalQueryData> local_query_data = m_QueryFactory->MakeLocalQueryData(m_Options.GetPointer());
 	l.resize(num_queries);
+	const BlastScoreBlk * sbp = m_InternalData->m_ScoreBlk->GetPointer();
+	bool gapped_cal = m_Options->GetGappedMode();
 	for(int i=0; i < num_queries; i++)
 	{
 		CConstRef<CSeq_loc> query_loc = local_query_data->GetSeq_loc(i);
 		TSeqPos	query_length = local_query_data->GetSeqLength(i);
 		BlastHitList * hit_list = q_list_ptr[i];
 		if(NULL != hit_list)
+		{
+
+			s_GetBitScores(hit_list, gapped_cal, sbp);
 			BLASTPrelminSearchHitListToStdSeg(program, hit_list, *query_loc, query_length, s_seqInfoSrc, l[i]);
+		}
 	}
 
 	return true;
