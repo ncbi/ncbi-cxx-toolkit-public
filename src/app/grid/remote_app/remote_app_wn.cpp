@@ -124,8 +124,11 @@ public:
 
             const CNetScheduleJob& job = context.GetJob();
 
-            string job_key("NCBI_NS_JID=" + job.job_id);
-            env.insert(env.begin(), job_key.c_str());
+            string queue_name_env("NCBI_NS_QUEUE=" + context.GetQueueName());
+            env.insert(env.begin(), queue_name_env.c_str());
+
+            string job_key_env("NCBI_NS_JID=" + job.job_id);
+            env.insert(env.begin(), job_key_env.c_str());
 
             std::string client_ip(kEmptyStr);
             if (!job.client_ip.empty()) {
