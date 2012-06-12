@@ -2186,44 +2186,50 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
     }
     GetApp().ExcludeUnrequestedProjects(target_tree);
 
-    // Analyze subtree dependencies
-    list<CProjKey> external_depends;
-    target_tree.GetExternalDepends(&external_depends);
+    for (;;) {
+        size_t orig_size = target_tree.m_Projects.size();
+        // Analyze subtree dependencies
+        list<CProjKey> external_depends;
+        target_tree.GetExternalDepends(&external_depends);
 
-    // We have to add more projects to the target tree
-    if ( !external_depends.empty()) {
-        list<CProjKey> depends_to_resolve = external_depends;
-        while ( !depends_to_resolve.empty() ) {
-            bool modified = false;
-            ITERATE(list<CProjKey>, p, depends_to_resolve) {
-                // id of the project we have to resolve
-                const CProjKey& prj_id = *p;
-                CProjectItemsTree::TProjects::const_iterator n = 
-                               GetApp().GetWholeTree().m_Projects.find(prj_id);
+        // We have to add more projects to the target tree
+        if ( !external_depends.empty()) {
+            list<CProjKey> depends_to_resolve = external_depends;
+            while ( !depends_to_resolve.empty() ) {
+                bool modified = false;
+                ITERATE(list<CProjKey>, p, depends_to_resolve) {
+                    // id of the project we have to resolve
+                    const CProjKey& prj_id = *p;
+                    CProjectItemsTree::TProjects::const_iterator n = 
+                                   GetApp().GetWholeTree().m_Projects.find(prj_id);
 
-                if (n != GetApp().GetWholeTree().m_Projects.end()) {
-                    //insert this project into the target_tree
-                    target_tree.m_Projects[prj_id] = n->second;
-                    modified = true;
+                    if (n != GetApp().GetWholeTree().m_Projects.end()) {
+                        //insert this project into the target_tree
+                        target_tree.m_Projects[prj_id] = n->second;
+                        modified = true;
+                    } else {
+                        /// FIXME: is this needed?
+                        _TRACE("Project not found: " + prj_id.Id());
+                    }
+                }
+    
+                if (!modified) {
+                    //done - no projects has been added to target_tree
+                    AddDatatoolSourcesDepends(&target_tree);
+                    *tree = target_tree;
+                    return;
                 } else {
-                    /// FIXME: is this needed?
-                    _TRACE("Project not found: " + prj_id.Id());
+                    //continue resolving dependencies
+                    target_tree.GetExternalDepends(&depends_to_resolve);
                 }
             }
-    
-            if (!modified) {
-                //done - no projects has been added to target_tree
-                AddDatatoolSourcesDepends(&target_tree);
-                *tree = target_tree;
-                return;
-            } else {
-                //continue resolving dependencies
-                target_tree.GetExternalDepends(&depends_to_resolve);
-            }
+        }
+
+        AddDatatoolSourcesDepends(&target_tree);
+        if (orig_size == target_tree.m_Projects.size()) {
+            break;
         }
     }
-
-    AddDatatoolSourcesDepends(&target_tree);
     *tree = target_tree;
 }
 
@@ -2758,6 +2764,8 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
         tree_extented = false;
         s_CollectDatatoolIds(*tree, &datatool_ids);
 
+        CProjectItemsTree::TProjects added;
+
         NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree->m_Projects) {
 //            const CProjKey&  project_id = p->first;
             CProjItem& project          = p->second;
@@ -2771,14 +2779,25 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
                         j = whole_datatool_ids.find(module);
                         if (j != whole_datatool_ids.end()) {
                             const CProjKey& depends_id = j->second;
+#if 1
+datatool_ids[module] = depends_id;
+added[depends_id] = GetApp().GetWholeTree().m_Projects.find(depends_id)->second;
+#else
                             tree->m_Projects[depends_id] = 
                                 GetApp().GetWholeTree().m_Projects.find(depends_id)->second;
                             tree_extented = true;
+#endif
                         }
                     }
                 }
             }
         }
+#if 1
+        tree_extented = !added.empty();
+        ITERATE(CProjectItemsTree::TProjects, p, added) {
+            tree->m_Projects[p->first] = p->second;
+        }
+#endif
     } while( tree_extented );
 
 
