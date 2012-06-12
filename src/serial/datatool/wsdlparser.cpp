@@ -143,7 +143,6 @@ void WSDLParser::BuildDataTree(
         }
     } 
 
-    int m=0;
     list< AutoPtr<CDataTypeModule> > modNs;
     map<string, string> namesp2module;
     map<string, string> module2nsprefix;
