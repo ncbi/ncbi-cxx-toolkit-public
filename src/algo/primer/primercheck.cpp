@@ -977,7 +977,7 @@ x_GetSlaveRangeGivenMasterRange(const CSeq_align& input_align,
            
         } catch (CSeqalignException& e) {
             //    if (e.GetErrCode() == CSeqalignException::eInvalidAlignment) {
-            //        cerr << "caught=" << e.what() << endl;
+            cerr << "ExtractSlice error = " << e.what() << endl;
             
             //  }
         }
