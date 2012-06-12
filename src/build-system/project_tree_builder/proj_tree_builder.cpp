@@ -673,12 +673,10 @@ void  SMakeProjectT::VerifyLibDepends(
     list<string> duplicates;
     for(list<CProjKey>::const_iterator p = depends_ids.begin();
         p != depends_ids.end(); ++p) {
-        bool duplicate=false;
         for(list<CProjKey>::const_iterator i = p;
             ++i != depends_ids.end();) {
             if (*i == *p) {
                 duplicates.push_back(i->Id());
-                duplicate=true;
                 break;
             }
         }
