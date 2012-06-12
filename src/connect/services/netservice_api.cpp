@@ -347,8 +347,8 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             SConnNetInfo* net_info = ConnNetInfo_Create(
                     SNetServerImpl::kXSiteFwd);
 
-            SSERV_Info* sinfo = SERV_GetInfoEx(SNetServerImpl::kXSiteFwd,
-                    fSERV_Standalone, SERV_LOCALHOST, net_info, NULL, 0, NULL);
+            SSERV_Info* sinfo = SERV_GetInfo(SNetServerImpl::kXSiteFwd,
+                    fSERV_Standalone, SERV_LOCALHOST, net_info);
 
             ConnNetInfo_Destroy(net_info);
 
