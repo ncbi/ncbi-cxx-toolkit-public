@@ -266,9 +266,9 @@ enum EGetTitleFlags {
 };
 typedef int TGetTitleFlags;
 
-NCBI_XOBJUTIL_EXPORT
+NCBI_DEPRECATED NCBI_XOBJUTIL_EXPORT
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
-NCBI_XOBJUTIL_EXPORT
+NCBI_DEPRECATED NCBI_XOBJUTIL_EXPORT
 bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags = 0);
 
 /* @} */
