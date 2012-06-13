@@ -131,11 +131,15 @@ CLocalBlastDbAdapter::GetSequence(int oid,
             m_SeqDB->RetSequence(&buffer);
             length += 0;    // to avoid compiler warning
         } else {
+            CSeqDB::TRangeList ranges;
+            ranges.insert(pair<int,int>(begin, end));
+            m_SeqDB->SetOffsetRanges(oid, ranges, false, false);
             TSeqPos length = 
                 m_SeqDB->GetAmbigSeq(oid, &buffer, kNuclCode, begin, end);
             _ASSERT((end-begin) == (int)length);
             s_AssignBufferToSeqData(buffer, *retval, length); 
             m_SeqDB->RetAmbigSeq(&buffer);
+            m_SeqDB->RemoveOffsetRanges(oid);
         }
     }
     return retval;
