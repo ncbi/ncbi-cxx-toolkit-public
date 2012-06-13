@@ -1523,7 +1523,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DZUP	s	Universidade Federal do Parana, Museu de Entomologia Pe. Jesus Santiago Moure",
 "DZVMLP	s	Departamento Cientifico de Zoologia de Vertebrados",
 "DZVU	s	Universidad de Uruguay",
-"E	s	Royal Botanic Garden",
+"E	sb	Royal Botanic Garden",
 "EA	s	National Museums of Kenya",
 "EAA	s	Estonian Agricultural University",
 "EAC	s	Universidade Federal do Ceara, Departamento de Biologia",
