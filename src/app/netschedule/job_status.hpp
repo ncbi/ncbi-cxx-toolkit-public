@@ -43,8 +43,12 @@
 #include <corelib/ncbimtx.hpp>
 
 #include "ns_types.hpp"
+#include "ns_precise_time.hpp"
+
 
 BEGIN_NCBI_SCOPE
+
+class CJobGCRegistry;
 
 
 const CNetScheduleAPI::EJobStatus
@@ -90,9 +94,13 @@ public:
     unsigned int  GetJobByStatus(TJobStatus            status,
                                  const TNSBitVector &  unwanted_jobs,
                                  const TNSBitVector &  group_jobs) const;
+    unsigned int  GetJobByStatus(TJobStatus            status,
+                                 const TNSBitVector &  unwanted_jobs) const;
 
     TNSBitVector  GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
     TNSBitVector  GetJobs(CNetScheduleAPI::EJobStatus  status) const;
+    TNSBitVector  GetOutdatedPendingJobs(CNSPreciseTime          timeout,
+                                         const CJobGCRegistry &  gc_registry) const;
 
     /// Logical AND of candidates and pending jobs
     /// (candidate_set &= pending_set)

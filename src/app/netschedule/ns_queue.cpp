@@ -209,18 +209,19 @@ void CQueue::SetParameters(const SQueueParameters &  params)
         m_RunTimeoutPrecision = params.run_timeout_precision;
     }
 
-    m_FailedRetries        = params.failed_retries;
-    m_BlacklistTime        = params.blacklist_time;
-    m_EmptyLifetime        = params.empty_lifetime;
-    m_MaxInputSize         = params.max_input_size;
-    m_MaxOutputSize        = params.max_output_size;
-    m_DenyAccessViolations = params.deny_access_violations;
-    m_WNodeTimeout         = params.wnode_timeout;
-    m_PendingTimeout       = params.pending_timeout;
-    m_NotifHifreqInterval  = params.notif_hifreq_interval;
-    m_NotifHifreqPeriod    = params.notif_hifreq_period;
-    m_NotifLofreqMult      = params.notif_lofreq_mult;
-    m_DumpBufferSize       = params.dump_buffer_size;
+    m_FailedRetries         = params.failed_retries;
+    m_BlacklistTime         = params.blacklist_time;
+    m_EmptyLifetime         = params.empty_lifetime;
+    m_MaxInputSize          = params.max_input_size;
+    m_MaxOutputSize         = params.max_output_size;
+    m_DenyAccessViolations  = params.deny_access_violations;
+    m_WNodeTimeout          = params.wnode_timeout;
+    m_PendingTimeout        = params.pending_timeout;
+    m_MaxPendingWaitTimeout = CNSPreciseTime(params.max_pending_wait_timeout);
+    m_NotifHifreqInterval   = params.notif_hifreq_interval;
+    m_NotifHifreqPeriod     = params.notif_hifreq_period;
+    m_NotifLofreqMult       = params.notif_lofreq_mult;
+    m_DumpBufferSize        = params.dump_buffer_size;
 
     // program version control
     m_ProgramVersionList.Clear();
@@ -329,7 +330,8 @@ unsigned CQueue::LoadStatusMatrix()
 
         // Register the loaded job with the garbage collector
         // Pending jobs will be processed later
-        m_GCRegistry.RegisterJob(job_id, aff_id, group_id,
+        CNSPreciseTime      precise_submit(submit_time);
+        m_GCRegistry.RegisterJob(job_id, precise_submit, aff_id, group_id,
                                  GetJobExpirationTime(last_touch, status,
                                                       submit_time,
                                                       job_timeout,
@@ -454,7 +456,8 @@ unsigned int  CQueue::Submit(const CNSClientId &  client,
                                    m_AffinityRegistry,
                                    m_NotifHifreqPeriod);
 
-        m_GCRegistry.RegisterJob(job_id, aff_id, group_id,
+        m_GCRegistry.RegisterJob(job_id, CNSPreciseTime::Current(),
+                                 aff_id, group_id,
                                  job.GetExpirationTime(m_Timeout,
                                                        m_RunTimeout,
                                                        m_PendingTimeout,
@@ -538,8 +541,10 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                                    m_AffinityRegistry,
                                    m_NotifHifreqPeriod);
 
+        CNSPreciseTime      current_precise = CNSPreciseTime::Current();
         for (size_t  k = 0; k < batch_size; ++k)
             m_GCRegistry.RegisterJob(batch[k].first.GetId(),
+                                     current_precise,
                                      batch[k].first.GetAffinityId(),
                                      group_id,
                                      batch[k].first.GetExpirationTime(m_Timeout,
@@ -708,36 +713,62 @@ bool  CQueue::GetJobOrWait(const CNSClientId &     client,
                                                         any_affinity,
                                                         exclusive_new_affinity);
                 {{
+                    bool                outdated_job = false;
                     CFastMutexGuard     guard(m_OperationLock);
 
                     if (job_pick.job_id == 0) {
-                        if (timeout != 0) {
-                            // WGET:
-                            // There is no job, so the client might need to be registered
-                            // in the waiting list
-                            if (port > 0)
-                                x_RegisterGetListener(client, port, timeout, aff_ids,
-                                                      wnode_affinity, any_affinity,
-                                                      exclusive_new_affinity,
-                                                      new_format);
+                        if (exclusive_new_affinity)
+                            // Second try only if exclusive new aff is set on
+                            job_pick = x_FindOutdatedPendingJob(client, 0);
+
+                        if (job_pick.job_id == 0) {
+                            if (timeout != 0) {
+                                // WGET:
+                                // There is no job, so the client might need to
+                                // be registered
+                                // in the waiting list
+                                if (port > 0)
+                                    x_RegisterGetListener(client, port, timeout, aff_ids,
+                                                          wnode_affinity, any_affinity,
+                                                          exclusive_new_affinity,
+                                                          new_format);
+                            }
+                            return true;
                         }
-                        return true;
+                        outdated_job = true;
+                    } else {
+                        // Check that the job is still Pending; it could be
+                        // grabbed by another WN or GC
+                        if (GetJobStatus(job_pick.job_id) !=
+                                CNetScheduleAPI::ePending)
+                            continue;   // Try to pick a job again
+
+                        if (exclusive_new_affinity) {
+                            if (m_GCRegistry.IsOutdatedJob(job_pick.job_id,
+                                                           m_MaxPendingWaitTimeout) == false) {
+                                x_SJobPick  outdated_pick = x_FindOutdatedPendingJob(client,
+                                                                                     job_pick.job_id);
+                                if (outdated_pick.job_id != 0) {
+                                    job_pick = outdated_pick;
+                                    outdated_job = true;
+                                }
+                            }
+                        }
                     }
 
-                    // Check that the job is still Pending
-                    if (GetJobStatus(job_pick.job_id) !=
-                            CNetScheduleAPI::ePending)
-                        continue;   // Try to pick a job again
-
-                    // the job is still pending, check if it was received as
+                    // The job is still pending, check if it was received as
                     // with exclusive affinity
-                    if (job_pick.exclusive && job_pick.aff_id != 0) {
+                    if (job_pick.exclusive && job_pick.aff_id != 0 && outdated_job == false) {
                         if (m_ClientsRegistry.IsPreferredByAny(job_pick.aff_id))
                             continue;   // Other WN grabbed this affinity already
                         m_ClientsRegistry.UpdatePreferredAffinities(client,
                                                                     job_pick.aff_id,
                                                                     0);
                     }
+                    if (outdated_job && job_pick.aff_id != 0)
+                        m_ClientsRegistry.UpdatePreferredAffinities(client,
+                                                                    job_pick.aff_id,
+                                                                    0);
 
                     if (x_UpdateDB_GetJobNoLock(client, curr,
                                                 job_pick.job_id, *new_job)) {
@@ -1745,7 +1776,7 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
                          bool                  any_affinity,
                          bool                  exclusive_new_affinity)
 {
-    x_SJobPick      job_pick;
+    x_SJobPick      job_pick = { 0, false, 0 };
     bool            explicit_aff = aff_ids.any();
     unsigned int    wnode_aff_candidate = 0;
     unsigned int    exclusive_aff_candidate = 0;
@@ -1828,7 +1859,8 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
     }
 
 
-    if (any_affinity || (!explicit_aff && !wnode_affinity)) {
+    if (any_affinity ||
+        (!explicit_aff && !wnode_affinity && !exclusive_new_affinity)) {
         job_pick.job_id = m_StatusTracker.GetJobByStatus(
                                     CNetScheduleAPI::ePending,
                                     blacklisted_jobs,
@@ -1838,12 +1870,40 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
         return job_pick;
     }
 
-    job_pick.job_id = 0;
-    job_pick.exclusive = false;
-    job_pick.aff_id = 0;
     return job_pick;
 }
 
+
+CQueue::x_SJobPick
+CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
+                                 unsigned int         picked_earlier)
+{
+    x_SJobPick      job_pick = { 0, false, 0 };
+
+    if (m_MaxPendingWaitTimeout.tv_sec == 0 &&
+        m_MaxPendingWaitTimeout.tv_nsec == 0)
+        return job_pick;    // Not configured
+
+    TNSBitVector    outdated_pending =
+                        m_StatusTracker.GetOutdatedPendingJobs(
+                                m_MaxPendingWaitTimeout,
+                                m_GCRegistry);
+    if (picked_earlier != 0)
+        outdated_pending.set_bit(picked_earlier, false);
+
+    if (!outdated_pending.any())
+        return job_pick;
+
+    outdated_pending -= m_ClientsRegistry.GetBlacklistedJobs(client);
+
+    if (!outdated_pending.any())
+        return job_pick;
+
+    job_pick.job_id = *outdated_pending.first();
+    job_pick.aff_id = m_GCRegistry.GetAffinityID(job_pick.job_id);
+    job_pick.exclusive = job_pick.aff_id != 0;
+    return job_pick;
+}
 
 
 string CQueue::GetAffinityList()
@@ -2062,10 +2122,26 @@ void CQueue::ClearWorkerNode(const CNSClientId &  client)
 }
 
 
+// Triggered from a notification thread only
 void CQueue::NotifyListenersPeriodically(time_t  current_time)
 {
-    // Triggered from a notification thread only, so check first the
-    // configured notification interval
+    if (m_MaxPendingWaitTimeout.tv_sec != 0 ||
+        m_MaxPendingWaitTimeout.tv_nsec != 0) {
+        // Pending outdated timeout is configured, so check for
+        // outdated jobs
+        CFastMutexGuard     guard(m_OperationLock);
+        TNSBitVector        outdated_pending =
+                                    m_StatusTracker.GetOutdatedPendingJobs(
+                                        m_MaxPendingWaitTimeout,
+                                        m_GCRegistry);
+        if (outdated_pending.any())
+            m_NotificationsList.CheckOutdatedJobs(outdated_pending,
+                                                  m_ClientsRegistry,
+                                                  m_NotifHifreqPeriod);
+    }
+
+
+    // Check the configured notification interval
     static double   last_notif_timeout = -1.0;
     static size_t   skip_limit = 0;
     static size_t   skip_count;

@@ -58,6 +58,7 @@
 #include "ns_statistics_counters.hpp"
 #include "ns_group.hpp"
 #include "ns_gc_registry.hpp"
+#include "ns_precise_time.hpp"
 
 #include <deque>
 #include <map>
@@ -119,6 +120,7 @@ public:
     time_t GetTimeout() const;
     time_t GetRunTimeout() const;
     time_t GetPendingTimeout() const;
+    CNSPreciseTime  GetMaxPendingWaitTimeout() const;
     int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
     time_t GetBlacklistTime() const;
@@ -375,6 +377,9 @@ private:
                      bool                   wnode_affinity,
                      bool                   any_affinity,
                      bool                   exclusive_new_affinity);
+    x_SJobPick
+    x_FindOutdatedPendingJob(const CNSClientId &  client,
+                             unsigned int         picked_earlier);
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     const string &          auth_token,
@@ -506,6 +511,7 @@ private:
     bool                         m_DenyAccessViolations;
     time_t                       m_WNodeTimeout;
     time_t                       m_PendingTimeout;
+    CNSPreciseTime               m_MaxPendingWaitTimeout;
     /// Client program version control
     CQueueClientInfoList         m_ProgramVersionList;
     /// Host access list for job submission
@@ -563,6 +569,10 @@ inline time_t CQueue::GetRunTimeout()  const
 inline time_t CQueue::GetPendingTimeout() const
 {
     return m_PendingTimeout;
+}
+inline CNSPreciseTime  CQueue::GetMaxPendingWaitTimeout() const
+{
+    return m_MaxPendingWaitTimeout;
 }
 inline int CQueue::GetRunTimeoutPrecision() const
 {

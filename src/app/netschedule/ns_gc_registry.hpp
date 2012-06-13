@@ -42,6 +42,7 @@
 
 #include <map>
 
+#include "ns_precise_time.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -53,6 +54,7 @@ struct SJobGCInfo
     unsigned int    m_AffinityID;   // The job affinity ID
     unsigned int    m_GroupID;      // The job group ID
     time_t          m_LifeTime;     // The last second the job considered alive
+    CNSPreciseTime  m_SubmitTime;   // Precise submit time
 
     SJobGCInfo() :
         m_AffinityID(0), m_GroupID(0), m_LifeTime(0)
@@ -73,10 +75,11 @@ class CJobGCRegistry
         CJobGCRegistry();
         ~CJobGCRegistry();
 
-        void RegisterJob(unsigned int   job_id,
-                         unsigned int   aff_id,
-                         unsigned int   group_id,
-                         time_t         life_time);
+        void RegisterJob(unsigned int            job_id,
+                         const CNSPreciseTime &  submit_time,
+                         unsigned int            aff_id,
+                         unsigned int            group_id,
+                         time_t                  life_time);
         bool DeleteIfTimedOut(unsigned int    job_id,       // in
                               time_t          current_time, // in
                               unsigned int *  aff_id,       // out: if deleted
@@ -86,6 +89,9 @@ class CJobGCRegistry
         time_t  GetLifetime(unsigned int  job_id) const;
         unsigned int  GetAffinityID(unsigned int  job_id) const;
         unsigned int  GetGroupID(unsigned int  job_id) const;
+        CNSPreciseTime  GetPreciseSubmitTime(unsigned int  job_id) const;
+        bool  IsOutdatedJob(unsigned int            job_id,
+                            const CNSPreciseTime &  timeout) const;
 
     private:
         mutable CFastMutex              m_Lock;         // Lock for the operations

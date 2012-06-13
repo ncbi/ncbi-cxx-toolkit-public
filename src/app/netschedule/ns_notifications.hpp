@@ -57,7 +57,7 @@ struct SNSNotificationAttributes
     unsigned short  m_Port;
     time_t          m_Lifetime;
 
-    string          m_ClientNode;   // Non-empty for the new style lients
+    string          m_ClientNode;   // Non-empty for the new style clients
     bool            m_WnodeAff;     // true if I need to consider the node
                                     // preferred affinities.
     bool            m_AnyJob;       // true if any job is suitable.
@@ -73,8 +73,6 @@ struct SNSNotificationAttributes
     // when a job is available.
     // second stage is infrequent (slow) till the end of the notifications.
 
-    bool            m_ShouldNotify; // If true then the notification thread
-                                    // will notify the client.
     time_t          m_HifreqNotifyLifetime;
     bool            m_SlowRate;     // true if the client did not come after
                                     // fast notifications period.
@@ -82,6 +80,7 @@ struct SNSNotificationAttributes
 
     string  Print(const CNSClientsRegistry &   clients_registry,
                   const CNSAffinityRegistry &  aff_registry,
+                  bool                         is_active,
                   bool                         verbose) const;
 };
 
@@ -117,6 +116,9 @@ class CNSNotificationList
                                 unsigned int           notif_lofreq_mult,
                                 CNSClientsRegistry &   clients_registry,
                                 CNSAffinityRegistry &  aff_registry);
+        void CheckOutdatedJobs(const TNSBitVector &  outdated_jobs,
+                               CNSClientsRegistry &  clients_registry,
+                               unsigned int          notif_highfreq_period);
         void Notify(unsigned int           job_id,
                     unsigned int           aff_id,
                     CNSClientsRegistry &   clients_registry,
@@ -140,14 +142,18 @@ class CNSNotificationList
         bool x_TestTimeout(time_t                       current_time,
                            CNSClientsRegistry &         clients_registry,
                            CNSAffinityRegistry &        aff_registry,
+                           list<SNSNotificationAttributes> &            container,
                            list<SNSNotificationAttributes>::iterator &  record);
 
     private:
-        list<SNSNotificationAttributes>     m_Listeners;
+        list<SNSNotificationAttributes>     m_PassiveListeners;
+        list<SNSNotificationAttributes>     m_ActiveListeners;
         mutable CMutex                      m_ListenersLock;
 
-        list<SNSNotificationAttributes>::const_iterator
-                                    x_SkipRecords(size_t count) const;
+        list<SNSNotificationAttributes>::iterator
+                x_FindListener(list<SNSNotificationAttributes> &  container,
+                               unsigned int                       address,
+                               unsigned short                     port);
 
         CDatagramSocket         m_GetNotificationSocket;
         char                    m_GetMsgBuffer[k_MessageBufferSize];

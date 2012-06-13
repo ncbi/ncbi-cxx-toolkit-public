@@ -116,11 +116,21 @@ public:
     const string GetQuotedErrorMsg() const
     { return "'" + NStr::PrintableString(m_ErrorMsg) + "'"; }
 
-    void SetStatus(TJobStatus status);
-    void SetEvent(EJobEvent  event);
-    void SetTimestamp(time_t t);
-    void SetNodeAddr(unsigned node_ip);
-    void SetRetCode(int retcode);
+    void SetStatus(TJobStatus status)
+    { m_Dirty = true;
+      m_Status = status; }
+    void SetEvent(EJobEvent  event)
+    { m_Dirty = true;
+      m_Event = event; }
+    void SetTimestamp(time_t t)
+    { m_Dirty = true;
+      m_Timestamp = (unsigned int) t; }
+    void SetNodeAddr(unsigned int  node_ip)
+    { m_Dirty = true;
+      m_NodeAddr = node_ip; }
+    void SetRetCode(int retcode)
+    { m_Dirty = true;
+      m_RetCode = retcode; }
     void SetClientNode(const string& client_node);
     void SetClientSession(const string& client_session);
     void SetErrorMsg(const string& msg);

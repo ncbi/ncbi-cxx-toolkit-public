@@ -35,6 +35,8 @@
 #include <util/bitset/bmalgo.h>
 
 #include "job_status.hpp"
+#include "ns_gc_registry.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -300,6 +302,28 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
 }
 
 
+unsigned int
+CJobStatusTracker::GetJobByStatus(TJobStatus            status,
+                                  const TNSBitVector &  unwanted_jobs) const
+{
+    TNSBitVector &      bv = *m_StatusStor[(int)status];
+    CReadLockGuard      guard(m_Lock);
+
+    if (!bv.any())
+        return 0;
+
+    if (unwanted_jobs.any()) {
+        TNSBitVector        candidates(bv);
+        candidates -= unwanted_jobs;
+        if (!candidates.any())
+            return 0;
+        return *candidates.first();
+    }
+
+    return *bv.first();
+}
+
+
 TNSBitVector
 CJobStatusTracker::GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const
 {
@@ -319,6 +343,50 @@ CJobStatusTracker::GetJobs(CNetScheduleAPI::EJobStatus  status) const
 {
     CReadLockGuard      guard(m_Lock);
     return *m_StatusStor[(int)status];
+}
+
+
+TNSBitVector
+CJobStatusTracker::GetOutdatedPendingJobs(CNSPreciseTime          timeout,
+                                          const CJobGCRegistry &  gc_registry) const
+{
+    static CNSPreciseTime   s_LastTimeout = CNSPreciseTime();
+    static unsigned int     s_LastCheckedJobID = 0;
+    static const size_t     kMaxCandidates = 100;
+
+    TNSBitVector            result;
+
+    if (timeout.tv_sec == 0 && timeout.tv_nsec == 0)
+        return result;  // Not configured
+
+    size_t                  count = 0;
+    const TNSBitVector &    pending_jobs = *m_StatusStor[(int) CNetScheduleAPI::ePending];
+    CNSPreciseTime          limit = CNSPreciseTime::Current() - timeout;
+    CReadLockGuard          guard(m_Lock);
+
+    if (s_LastTimeout != timeout) {
+        s_LastTimeout = timeout;
+        s_LastCheckedJobID = 0;
+    }
+
+    TNSBitVector::enumerator    en(pending_jobs.first());
+    for (; en.valid() && count < kMaxCandidates; ++en, ++count) {
+        unsigned int    job_id = *en;
+        if (job_id <= s_LastCheckedJobID) {
+            result.set_bit(job_id, true);
+            continue;
+        }
+        if (gc_registry.GetPreciseSubmitTime(job_id) < limit) {
+            s_LastCheckedJobID = job_id;
+            result.set_bit(job_id, true);
+            continue;
+        }
+
+        // No more old jobs
+        break;
+    }
+
+    return result;
 }
 
 

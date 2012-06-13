@@ -53,6 +53,7 @@ static time_t           default_blacklist_time = 0;
 static int              default_run_timeout_precision = 3600;
 static time_t           default_wnode_timeout = 40;
 static time_t           default_pending_timeout = 604800;
+static double           default_max_pending_wait_timeout = 0.0;
 
 
 SQueueParameters::SQueueParameters() :
@@ -70,6 +71,7 @@ SQueueParameters::SQueueParameters() :
     deny_access_violations(false),
     wnode_timeout(default_wnode_timeout),
     pending_timeout(default_pending_timeout),
+    max_pending_wait_timeout(default_max_pending_wait_timeout),
     run_timeout_precision(default_run_timeout_precision)
 {}
 
@@ -149,6 +151,10 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     pending_timeout = GetIntNoErr("pending_timeout", default_pending_timeout);
     if (pending_timeout <= 0)
         pending_timeout = default_pending_timeout;
+    max_pending_wait_timeout = GetDoubleNoErr("max_pending_wait_timeout",
+                                              default_max_pending_wait_timeout);
+    if (max_pending_wait_timeout < 0.0)
+        max_pending_wait_timeout = 0.0;
 
     subm_hosts = reg.GetString(sname,  "subm_host",  kEmptyStr);
     wnode_hosts = reg.GetString(sname, "wnode_host", kEmptyStr);

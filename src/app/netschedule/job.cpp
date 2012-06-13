@@ -84,42 +84,6 @@ CJobEvent::CJobEvent() :
 {}
 
 
-void CJobEvent::SetStatus(TJobStatus status)
-{
-    m_Dirty = true;
-    m_Status = status;
-}
-
-
-void CJobEvent::SetEvent(EJobEvent  event)
-{
-    m_Dirty = true;
-    m_Event = event;
-}
-
-
-void CJobEvent::SetTimestamp(time_t  t)
-{
-    m_Dirty = true;
-    // Will suffice until 2038
-    m_Timestamp = (unsigned) t;
-}
-
-
-void CJobEvent::SetNodeAddr(unsigned  node_ip)
-{
-    m_Dirty = true;
-    m_NodeAddr = node_ip;
-}
-
-
-void CJobEvent::SetRetCode(int  retcode)
-{
-    m_Dirty = true;
-    m_RetCode = retcode;
-}
-
-
 void CJobEvent::SetClientNode(const string &  client_node)
 {
     m_Dirty = true;
@@ -564,8 +528,6 @@ bool CJob::Flush(CQueue* queue)
 bool CJob::ShouldNotify(time_t curr)
 {
     // The very first event is always a submit
-    _ASSERT(!m_Events.empty());
-
     if (m_SubmNotifTimeout && m_SubmNotifPort)
         return m_Events[0].m_Timestamp + m_SubmNotifTimeout >= curr;
     return false;

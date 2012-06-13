@@ -63,6 +63,7 @@ struct SQueueParameters
     string          wnode_hosts;
     time_t          wnode_timeout;
     time_t          pending_timeout;
+    double          max_pending_wait_timeout;
 
     // This parameter is not reconfigurable
     int             run_timeout_precision;

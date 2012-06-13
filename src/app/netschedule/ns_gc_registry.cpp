@@ -49,13 +49,15 @@ CJobGCRegistry::~CJobGCRegistry()
 
 
 // Registers the job in the GC registry
-void CJobGCRegistry::RegisterJob(unsigned int   job_id,
-                                 unsigned int   aff_id,
-                                 unsigned int   group_id,
-                                 time_t         life_time)
+void CJobGCRegistry::RegisterJob(unsigned int            job_id,
+                                 const CNSPreciseTime &  submit_time,
+                                 unsigned int            aff_id,
+                                 unsigned int            group_id,
+                                 time_t                  life_time)
 {
     CFastMutexGuard     guard(m_Lock);
     SJobGCInfo          job_attr(aff_id, group_id, life_time);
+    job_attr.m_SubmitTime = submit_time;
 
     m_JobsAttrs[job_id] = job_attr;
 }
@@ -146,6 +148,27 @@ unsigned int  CJobGCRegistry::GetGroupID(unsigned int  job_id) const
 }
 
 
+CNSPreciseTime  CJobGCRegistry::GetPreciseSubmitTime(unsigned int  job_id) const
+{
+    CFastMutexGuard                     guard(m_Lock);
+    map<unsigned int,
+        SJobGCInfo>::const_iterator     attrs = m_JobsAttrs.find(job_id);
+
+    if (attrs == m_JobsAttrs.end())
+        return CNSPreciseTime();
+
+    return attrs->second.m_SubmitTime;
+}
+
+
+bool
+CJobGCRegistry::IsOutdatedJob(unsigned int            job_id,
+                              const CNSPreciseTime &  timeout) const
+{
+    CNSPreciseTime  submit_time = GetPreciseSubmitTime(job_id);
+    submit_time += timeout;
+    return submit_time < CNSPreciseTime::Current();
+}
 
 END_NCBI_SCOPE
 
