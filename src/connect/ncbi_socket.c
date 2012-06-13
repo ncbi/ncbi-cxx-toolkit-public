@@ -5427,6 +5427,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         EIO_Status   status = SOCK_GetOSHandleEx(xsock, &fd, sizeof(fd),
                                                  eTakeOwnership);
         if (status == eIO_Success) {
+            assert(fd != SOCK_INVALID);
             SOCK_CloseEx(xsock, 0/*do not destroy*/);
             status  = s_CreateOnTop(&fd, sizeof(fd), sock,
                                     data, datalen, flags);
