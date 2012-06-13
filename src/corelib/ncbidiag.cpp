@@ -3608,21 +3608,22 @@ bool SDiagMessage::ParseMessage(const string& message)
 
         // Date and time. Try all known formats.
         CTempString tmp = s_ParseStr(message, pos, ' ');
-        static const char* s_TimeFormats[3] = {
-            kDiagTimeFormat, "Y-M-DTh:m:s", "Y/M/D:h:m:s"
+        static const char* s_TimeFormats[4] = {
+            "Y/M/D:h:m:s", "Y-M-DTh:m:s", "Y-M-DTh:m:s.l", kDiagTimeFormat
         };
-        const char* fmt = s_TimeFormats[1];
         if (tmp.find('T') == NPOS) {
-            fmt = s_TimeFormats[2];
+            m_Data->m_Time = CTime(tmp, s_TimeFormats[0]);
         }
-        else if (tmp.find('.') != NPOS) {
-            fmt = s_TimeFormats[0];
+        else if (tmp.find('.') == NPOS) {
+            m_Data->m_Time = CTime(tmp, s_TimeFormats[1]);
         }
-        try {
-            m_Data->m_Time = CTime(tmp, fmt);
-        }
-        catch (CTimeException) {
-            return false;
+        else {
+            try {
+                m_Data->m_Time = CTime(tmp, s_TimeFormats[2]);
+            }
+            catch (CTimeException) {
+                m_Data->m_Time = CTime(tmp, s_TimeFormats[3]);
+            }
         }
 
         // Host
