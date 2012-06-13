@@ -373,19 +373,19 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\..\..\..\..\src\build-system\project_tree_builder\msvc71_project.dtd">
-      <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">Using datatool to create a C++ object from ASN/DTD %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">%40echo on
-"$(OutDir)datatool.exe" -oex "" -pch ncbi_pch.hpp -m "%(FullPath)" -oA -oc "%(Filename)" -od "%(RootDir)%(Directory)\%(Filename).def" -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\
-</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">%(RootDir)%(Directory)%(Filename).def;$(OutDir)datatool.exe;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">%(RootDir)%(Directory)%(Filename).files;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">Using datatool to create a C++ object from ASN/DTD %(FullPath)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">%40echo on
-"$(OutDir)datatool.exe" -oex "" -pch ncbi_pch.hpp -m "%(FullPath)" -oA -oc "%(Filename)" -od "%(RootDir)%(Directory)\%(Filename).def" -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\
-</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">%(RootDir)%(Directory)%(Filename).def;$(OutDir)datatool.exe;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">%(RootDir)%(Directory)%(Filename).files;%(Outputs)</Outputs>
+<FileType>Document</FileType>
+<Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">Using datatool to create a C++ object from ASN/DTD/Schema %(FullPath)</Message>
+<Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">set DATATOOL_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\msvc1000_prj&#xa;call &quot;%BUILD_TREE_ROOT%\datatool.bat&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;%(FullPath)&quot; -oA -oc &quot;%(Filename)&quot; -od &quot;%(RootDir)%(Directory)%(Filename).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#xa;if errorlevel 1 exit 1</Command>
+<AdditionalInputs
+         Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">%(RootDir)%(Directory)%(Filename).def;</AdditionalInputs>
+<Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">%(RootDir)%(Directory)%(Filename).files;%(RootDir)%(Directory)%(Filename)__.cpp;%(RootDir)%(Directory)%(Filename)___.cpp</Outputs>
+
+<FileType>Document</FileType>
+<Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">Using datatool to create a C++ object from ASN/DTD/Schema %(FullPath)</Message>
+<Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">set DATATOOL_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\msvc1000_prj&#xa;call &quot;%BUILD_TREE_ROOT%\datatool.bat&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;%(FullPath)&quot; -oA -oc &quot;%(Filename)&quot; -od &quot;%(RootDir)%(Directory)%(Filename).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#xa;if errorlevel 1 exit 1</Command>
+<AdditionalInputs
+         Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">%(RootDir)%(Directory)%(Filename).def;</AdditionalInputs>
+<Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">%(RootDir)%(Directory)%(Filename).files;%(RootDir)%(Directory)%(Filename)__.cpp;%(RootDir)%(Directory)%(Filename)___.cpp</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

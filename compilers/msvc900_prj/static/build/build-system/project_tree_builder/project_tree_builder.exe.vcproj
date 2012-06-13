@@ -1041,22 +1041,22 @@
 					Name="ReleaseDLL|Win32"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
-						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
-						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
-						Outputs="$(InputDir)$(InputName).files;"
+Name="VCCustomBuildTool"
+Description="Using datatool to create a C++ object from ASN/DTD/Schema $(InputPath)"
+CommandLine="set DATATOOL_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\msvc900_prj&#xa;call &quot;%BUILD_TREE_ROOT%\datatool.bat&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)$(InputName).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#xa;if errorlevel 1 exit 1"
+AdditionalDependencies="$(InputDir)$(InputName).def;"
+Outputs="$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseDLL|x64"
 					>
 					<Tool
-						Name="VCCustomBuildTool"
-						Description="Using datatool to create a C++ object from ASN/DTD $(InputPath)"
-						CommandLine="@echo on&#x0D;&#x0A;&quot;$(OutDir)\datatool.exe&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)\$(InputName).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#x0D;&#x0A;"
-						AdditionalDependencies="$(InputDir)$(InputName).def;&quot;$(OutDir)\datatool.exe&quot;"
-						Outputs="$(InputDir)$(InputName).files;"
+Name="VCCustomBuildTool"
+Description="Using datatool to create a C++ object from ASN/DTD/Schema $(InputPath)"
+CommandLine="set DATATOOL_PATH=$(ProjectDir)..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\msvc900_prj&#xa;call &quot;%BUILD_TREE_ROOT%\datatool.bat&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;$(InputPath)&quot; -oA -oc &quot;$(InputName)&quot; -od &quot;$(InputDir)$(InputName).def&quot; -odi -ocvs -or build-system\project_tree_builder\ -oR ..\..\..\..\..\..\&#xa;if errorlevel 1 exit 1"
+AdditionalDependencies="$(InputDir)$(InputName).def;"
+Outputs="$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp"
 					/>
 				</FileConfiguration>
 			</File>
