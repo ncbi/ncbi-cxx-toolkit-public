@@ -1,3 +1,16 @@
+
+Release 4.13.0 based on SC-10 (2012-06-13)
+
+Improvments and bug fixes
+
+    * Timeout for the jobs that are waiting too long for a WN with the "right"
+      affinity (JIRA: CXX-3223)
+    * Fixed output for notifications registry
+    * Fixed picking job algorithm for the case when a worker node asked for a
+      job considering its preferred affinities while none were in the list of
+      the preferred affinities.
+
+
 Release 4.12.0 based on SC-10 (2012-06-01)
 
 Improvements and bug fixes
