@@ -79,7 +79,7 @@ class Scenario301( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', '', '', '' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', '', '', '', '' )
 
         ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
                                              str( self.ns.getPort() ),
