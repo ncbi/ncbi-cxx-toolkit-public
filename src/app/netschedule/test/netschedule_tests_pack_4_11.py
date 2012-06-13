@@ -41,9 +41,7 @@ class Scenario300( TestBase ):
 
         jobID = self.ns.submitJob(  'TEST', 'bla', '', '', '', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario300' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario300' )
 
         output = execAny( ns_client, 'WST2 ' + jobID )
         values = parse_qs( output, True, True )
@@ -81,9 +79,7 @@ class Scenario301( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', '', '', '', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario301' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario301' )
 
         output = execAny( ns_client, 'SST2 ' + jobID )
         values = parse_qs( output, True, True )
@@ -119,9 +115,7 @@ class Scenario303( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario303' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario303' )
         ns_client.set_client_identification( 'node', 'session' )
 
         try:
@@ -156,9 +150,7 @@ class Scenario304( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario304' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario304' )
         ns_client.set_client_identification( 'node', 'session' )
         ns_client.on_warning = self.report_warning
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [ 'a3', 'a4', 'a5' ] )
@@ -204,9 +196,7 @@ class Scenario305( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a7' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario305' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario305' )
         ns_client.set_client_identification( 'node', 'session' )
         ns_client.on_warning = self.report_warning
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [ 'a3', 'a4', 'a5' ] )
@@ -248,15 +238,11 @@ class Scenario306( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a7' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario306' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario306' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
 
-        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario306' )
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario306' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         changeAffinity( ns_client2, [ 'a7' ], [] )
 
@@ -304,9 +290,7 @@ class Scenario307( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario307' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario307' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a0' ], [] )
 
@@ -323,9 +307,7 @@ class Scenario307( TestBase ):
         execAny( ns_client, 'RETURN2 ' + jobID + ' ' + passport )
         # Here: pending job and it is in the client black list
 
-        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario307' )
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario307' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         output = execAny( ns_client2,
                           'GET2 wnode_aff=1 any_aff=1 exclusive_new_aff=0' )
@@ -370,16 +352,12 @@ class Scenario308( TestBase ):
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
 
         # First client holds a0 affinity
-        ns_client1 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario308' )
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario308' )
         ns_client1.set_client_identification( 'node1', 'session1' )
         changeAffinity( ns_client1, [ 'a0' ], [] )
 
         # Second client holds a100 affinity
-        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario308' )
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario308' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         changeAffinity( ns_client2, [ 'a100' ], [] )
 
@@ -437,9 +415,7 @@ class Scenario309( TestBase ):
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
 
         # First client holds a0 affinity
-        ns_client1 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario309' )
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario309' )
         ns_client1.set_client_identification( 'node1', 'session1' )
         changeAffinity( ns_client1, [ 'a0' ], [] )
 
@@ -454,9 +430,7 @@ class Scenario309( TestBase ):
 
 
         # Second client holds a100 affinity
-        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario309' )
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario309' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         changeAffinity( ns_client2, [ 'a100' ], [] )
 
@@ -513,18 +487,14 @@ class Scenario310( TestBase ):
         self.fromScratch()
 
         # First client holds a0 affinity
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario310' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario310' )
         ns_client.set_client_identification( 'node1', 'session1' )
         changeAffinity( ns_client, [ 'a0' ], [] )
 
         # Worker node timeout is 5 sec
         time.sleep( 7 )
 
-        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                            str( self.ns.getPort() ),
-                                            'TEST', 'scenario310' )
+        ns_admin = self.getNetScheduleService( 'TEST', 'scenario310' )
         info = getClientInfo( ns_admin, 'node1' )
         if info[ 'preferred_affinities_reset' ] != True:
             raise Exception( "Expected to have preferred affinities reset, " \
@@ -549,15 +519,11 @@ class Scenario311( TestBase ):
         self.fromScratch()
 
         # First client holds a0 affinity
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario311' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario311' )
         ns_client.set_client_identification( 'node1', 'session1' )
         changeAffinity( ns_client, [ 'a0' ], [] )
 
-        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                            str( self.ns.getPort() ),
-                                            'TEST', 'scenario310' )
+        ns_admin = self.getNetScheduleService( 'TEST', 'scenario310' )
 
         affInfo = getAffinityInfo( ns_admin )
         if affInfo[ 'affinity_token' ] != 'a0' or \
@@ -614,15 +580,11 @@ class Scenario312( TestBase ):
         self.fromScratch()
 
         # First client holds a0 affinity
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario312' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario312' )
         ns_client.set_client_identification( 'node1', 'session1' )
         changeAffinity( ns_client, [ 'a0' ], [] )
 
-        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                            str( self.ns.getPort() ),
-                                            'TEST', 'scenario312' )
+        ns_admin = self.getNetScheduleService( 'TEST', 'scenario312' )
 
         output = execAny( ns_client,
                           'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0 port=9007 timeout=3000' )
@@ -677,9 +639,7 @@ class Scenario313( TestBase ):
         reply = self.ns.directReadSingleReply()
         self.ns.disconnect()
 
-        ns_admin = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                            str( self.ns.getPort() ),
-                                            'TEST', 'scenario313' )
+        ns_admin = self.getNetScheduleService( 'TEST', 'scenario313' )
         info = getClientInfo( ns_admin, 'n1' )
         if info[ 'worker_node_control_port' ] != 732 or \
            info[ 'client_host' ] != 'myhost':

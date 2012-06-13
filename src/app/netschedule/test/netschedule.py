@@ -70,6 +70,9 @@ class NetSchedule:
         self.__checkPresence()
         return
 
+    def getGridCLIPath( self ):
+        return self.__grid_cli
+
     def verbosePrint( self, cmdLine ):
         " Prints the command line if verbose is True "
         if self.__verbose:

@@ -10,10 +10,18 @@ Netschedule server tests pack
 
 import sys
 import time
-
+import grid_v01
+import ncbi.grid.ns as grid
 
 class TestBase:
     " Base class for tests "
+
+    def getNetScheduleService( self, queueName, clientName ):
+        return grid.NetScheduleService( self.ns.getHost() + ":" + \
+                                        str( self.ns.getPort() ),
+                                        queueName, clientName,
+                                        grid.ipc.AutomationServer( \
+                                            self.ns.getGridCLIPath() ) )
 
     def __init__( self, netschedule ):
         self.ns = netschedule

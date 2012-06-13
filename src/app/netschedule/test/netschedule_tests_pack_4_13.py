@@ -40,17 +40,13 @@ class Scenario400( TestBase ):
         self.fromScratch( 4 )
 
         # Client #2 plays a passive role of holding an affinity (a2)
-        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario400' )
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario400' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         changeAffinity( ns_client2, [ 'a2' ], [] )
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a2' )
 
 
-        ns_client1 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario400' )
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario400' )
         ns_client1.set_client_identification( 'node1', 'session1' )
         changeAffinity( ns_client1, [ 'a1' ], [] )
 
@@ -86,17 +82,13 @@ class Scenario401( TestBase ):
         self.fromScratch( 4 )
 
         # Client #2 plays a passive role of holding an affinity (a2)
-        ns_client2 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario401' )
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario401' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         changeAffinity( ns_client2, [ 'a2' ], [] )
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a2' )
 
 
-        ns_client1 = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                              str( self.ns.getPort() ),
-                                              'TEST', 'scenario400' )
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario400' )
         ns_client1.set_client_identification( 'node1', 'session1' )
         changeAffinity( ns_client1, [ 'a1' ], [] )
 

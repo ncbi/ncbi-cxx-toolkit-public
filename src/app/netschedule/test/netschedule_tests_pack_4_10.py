@@ -284,9 +284,7 @@ class Scenario104( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario104' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario104' )
         getClientInfo( ns_client, None, 0, 0 )
         return True
 
@@ -306,9 +304,7 @@ class Scenario105( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario105' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario105' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
 
         client = getClientInfo( ns_client, 'mynode' )
@@ -334,9 +330,7 @@ class Scenario106( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario105' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario105' )
 
         self.ns.submitJob( 'TEST', 'bla', '', '', 'node', '000' )
 
@@ -367,9 +361,7 @@ class Scenario107( TestBase ):
         self.ns.getJob( 'TEST', -1, '', "",
                         'scenario107', 'default' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario107' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario107' )
         client = getClientInfo( ns_client, 'scenario107' )
 
         if client[ 'session' ] == 'default' and \
@@ -404,9 +396,7 @@ class Scenario108( TestBase ):
                                                            'mynode',
                                                            'mysession' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario108' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario108' )
         client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] == 'mysession' and \
            client[ 'type' ] == 'reader' and \
@@ -439,9 +429,7 @@ class Scenario109( TestBase ):
         key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                            'mynode',
                                                            '0' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario109' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario109' )
         client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] == '0' and \
            client[ 'type' ] == 'submitter | worker node | reader' and \
@@ -474,9 +462,7 @@ class Scenario110( TestBase ):
         key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                            'mynode',
                                                            '0' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario110' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario110' )
         client = getClientInfo( ns_client, 'mynode', verbose = False )
         if client[ 'session' ] == '0' and \
            client[ 'number_of_submitted_jobs' ] == 1 and \
@@ -505,9 +491,7 @@ class Scenario111( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario111' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario111' )
 
         # get original session
         self.ns.submitJob( 'TEST', 'bla', '', '', 'mynode', '0' )
@@ -543,9 +527,7 @@ class Scenario112( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario112' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario112' )
         ns_client.set_client_identification( 'mynode', 'session1' )
 
         client = getClientInfo( ns_client, 'mynode' )
@@ -553,9 +535,7 @@ class Scenario112( TestBase ):
             raise Exception( "Unexpected session. Expected 'session1'. " \
                              "Received: '" + client[ 'session' ] )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario112' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario112' )
         ns_client.set_client_identification( 'mynode', 'session1' )
         client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] != 'session1':
@@ -565,9 +545,7 @@ class Scenario112( TestBase ):
         # CLRN
         execAny( ns_client, 'CLRN' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario112' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario112' )
         info = getClientInfo( ns_client, 'mynode' )
         if info[ 'session' ] != 'n/a':
             raise Exception( "Unexpected session. Expected 'n/a', " \
@@ -591,9 +569,7 @@ class Scenario113( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario113' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario113' )
 
         # get original session
         jobID = self.ns.submitJob( 'TEST', 'bla' )
@@ -638,9 +614,7 @@ class Scenario114( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario114' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario114' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
@@ -685,9 +659,7 @@ class Scenario115( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario115' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario115' )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
         jobInfo = self.ns.getJob( 'TEST' )
@@ -736,9 +708,7 @@ class Scenario116( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario116' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario116' )
         ns_client.set_client_identification( 'mynode', 'session1' )
 
         jobID = self.ns.submitJob( 'TEST', 'bla' )
@@ -795,9 +765,7 @@ class Scenario117( TestBase ):
         self.ns.getJob( 'TEST', -1, '', "", 'scenario117-1', 'default' )
         self.ns.getJob( 'TEST', -1, '', "", 'scenario117-2', 'default' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario117' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario117' )
         getClientInfo( ns_client, minClients = 2, maxClients = 2 )
         return True
 
@@ -818,9 +786,7 @@ class Scenario118( TestBase ):
         self.fromScratch()
 
         try:
-            ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                                 str( self.ns.getPort() ),
-                                                 'TEST', 'scenario118' )
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario118' )
             changeAffinity( ns_client, [ 'a1' ], [] )
         except Exception, excp:
             if "cannot use CHAFF command" in str( excp ):
@@ -844,9 +810,7 @@ class Scenario119( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario119' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario119' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
@@ -874,9 +838,7 @@ class Scenario120( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario120' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario120' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
@@ -913,9 +875,7 @@ class Scenario121( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario121' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario121' )
         ns_client.set_client_identification( 'node', 'session' )
         ns_client.on_warning = self.report_warning
         changeAffinity( ns_client, [], [ 'a1', 'a2' ] )
@@ -946,9 +906,7 @@ class Scenario122( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario122' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario122' )
         ns_client.set_client_identification( 'node', 'session' )
         ns_client.on_warning = self.report_warning
 
@@ -981,9 +939,7 @@ class Scenario123( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario123' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario123' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
@@ -1010,9 +966,7 @@ class Scenario124( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario124' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario124' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a1', 'a2' ], [] )
 
@@ -1040,9 +994,7 @@ class Scenario125( TestBase ):
         self.fromScratch()
 
         try:
-            ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                                str( self.ns.getPort() ),
-                                                'TEST', 'scenario125' )
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario125' )
             output = execAny( ns_client,
                               'GET2 wnode_aff=1 any_aff=1' )
         except Exception, exc:
@@ -1070,9 +1022,7 @@ class Scenario126( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario126' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario126' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
 
@@ -1110,9 +1060,7 @@ class Scenario127( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario126' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario126' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a0', 'a2' ], [] )
 
@@ -1139,9 +1087,7 @@ class Scenario128( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario126' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario126' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
@@ -1178,9 +1124,7 @@ class Scenario129( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario126' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario126' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
@@ -1211,9 +1155,7 @@ class Scenario131( TestBase ):
 
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario131' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario131' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a2' ], [] )
@@ -1254,9 +1196,7 @@ class Scenario132( TestBase ):
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a1' )
         jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario132' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario132' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a2' ], [] )
@@ -1297,9 +1237,7 @@ class Scenario133( TestBase ):
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
         jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario133' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario133' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a2' ], [] )
@@ -1340,9 +1278,7 @@ class Scenario134( TestBase ):
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
         jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario134' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario134' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a2' ], [] )
@@ -1383,9 +1319,7 @@ class Scenario135( TestBase ):
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
         jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario135' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario135' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a7' ], [] )
@@ -1417,9 +1351,7 @@ class Scenario136( TestBase ):
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
         jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario136' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario136' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a7' ], [] )
@@ -1468,9 +1400,7 @@ class Scenario137( TestBase ):
         if not self.ns.isRunning():
             raise Exception( "Cannot start netschedule" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario136' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario136' )
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a1' ], [] )
@@ -2097,9 +2027,7 @@ class Scenario153( TestBase ):
            status3 != "Reading":
             return False
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario169' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario169' )
         client = getClientInfo( ns_client, 'mynode' )
         if len( client[ 'reading_jobs' ] ) != 1 or \
            client[ 'reading_jobs' ][ 0 ] != jobID:
@@ -2662,9 +2590,7 @@ class Scenario165( TestBase ):
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario123' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario123' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'CLRN' )
 
@@ -2795,9 +2721,7 @@ class Scenario168( TestBase ):
         passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario168' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario168' )
         ns_client.set_client_identification( 'node', 'session' )
         execAny( ns_client, 'CLRN' )
 
@@ -2843,9 +2767,7 @@ class Scenario169( TestBase ):
         if self.ns.getJob( 'TEST', -1, '', "", 'scenario169', 'default' ):
             raise Exception( "No jobs expected, however one was received" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario169' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario169' )
         client = getClientInfo( ns_client, 'scenario169' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
@@ -2881,9 +2803,7 @@ class Scenario170( TestBase ):
         if self.ns.getJob( 'TEST', -1, '', "", 'scenario170', 'default' ):
             raise Exception( "No jobs expected, however one was received" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario170' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario170' )
         client = getClientInfo( ns_client, 'scenario170' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
@@ -2918,9 +2838,7 @@ class Scenario171( TestBase ):
         if self.ns.getJob( 'TEST', -1, '', "", 'scenario171', 'default' ):
             raise Exception( "No jobs expected, however one was received" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario171' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario171' )
         client = getClientInfo( ns_client, 'scenario171' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
@@ -2968,9 +2886,7 @@ class Scenario172( TestBase ):
         if readJobID != "":
             raise Exception( "Expected no jobs but received one" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario172' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario172' )
         client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
@@ -3018,9 +2934,7 @@ class Scenario173( TestBase ):
         if readJobID != "":
             raise Exception( "Expected no jobs but received one" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario173' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario173' )
         client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
@@ -3067,9 +2981,7 @@ class Scenario174( TestBase ):
         if readJobID != "":
             raise Exception( "Expected no jobs but received one" )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario173' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario173' )
         client = getClientInfo( ns_client, 'node' )
         if len( client[ 'blacklisted_jobs' ] ) != 1 or \
            client[ 'blacklisted_jobs' ][ 0 ] != jobID:
@@ -3617,9 +3529,7 @@ class Scenario192( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario192' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario192' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, ['a3'], [] )
 
@@ -3658,9 +3568,7 @@ class Scenario193( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario193' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario193' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, ['a3'], [] )
 
@@ -3698,9 +3606,7 @@ class Scenario194( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario194' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario194' )
 
         self.ns.getFastJobStatus( 'TEST', NON_EXISTED_JOB )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3726,9 +3632,7 @@ class Scenario195( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario195' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario195' )
 
         self.ns.getJobStatus( 'TEST', NON_EXISTED_JOB )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3755,9 +3659,7 @@ class Scenario196( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario196' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario196' )
 
         self.ns.submitJob( 'TEST', 'input' )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3784,9 +3686,7 @@ class Scenario197( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario197' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario197' )
 
         self.ns.cancelJob( 'TEST', NON_EXISTED_JOB )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3813,9 +3713,7 @@ class Scenario198( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario198' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario198' )
 
         self.ns.getJobBriefStatus( 'TEST', NON_EXISTED_JOB )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3842,9 +3740,7 @@ class Scenario203( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario203' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario203' )
         self.ns.getBriefStat( 'TEST' )
         client = getClientInfo( ns_client, None, 0, 0 )
 
@@ -3869,9 +3765,7 @@ class Scenario204( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario204' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario204' )
         self.ns.getAffinityStatus( 'TEST' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -3897,9 +3791,7 @@ class Scenario206( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario206' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario206' )
         jobID = self.ns.submitJob( 'TEST', 'bla',
                                    node = 'prep', session = 'session' )
         self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
@@ -3930,9 +3822,7 @@ class Scenario207( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario207' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario207' )
         jobID = self.ns.submitJob( 'TEST', 'bla',
                                    node = 'prep', session = 'session' )
         self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
@@ -3961,9 +3851,7 @@ class Scenario208( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario208' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario208' )
         self.ns.getQueueDump( 'TEST' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -3988,9 +3876,7 @@ class Scenario212( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario212' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario212' )
         jobID = self.ns.submitJob( 'TEST', 'bla',
                                    node = 'prep', session = 'session' )
         self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
@@ -4019,9 +3905,7 @@ class Scenario213( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario213' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario213' )
         jobID = self.ns.submitJob( 'TEST', 'bla', affinity = 'myaff',
                                    node = 'prep', session = 'session' )
         self.ns.getAffinityStatus( 'TEST', 'myaff' )
@@ -4049,9 +3933,7 @@ class Scenario214( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario214' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario214' )
         self.ns.getVersion( 'TEST', '', '' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -4076,9 +3958,7 @@ class Scenario215( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario215' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario215' )
         self.ns.getQueueInfo( 'TEST' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -4103,9 +3983,7 @@ class Scenario216( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario216' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario216' )
         self.ns.getJobForReading( 'TEST' )
         client = getClientInfo( ns_client, False, 0 )
         if client is not None:
@@ -4134,9 +4012,7 @@ class Scenario217( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario217' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario217' )
         try:
             self.ns.confirmReading( 'TEST', NON_EXISTED_JOB, 'passport' )
         except:
@@ -4172,9 +4048,7 @@ class Scenario218( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario218' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario218' )
         try:
             self.ns.failReadingJob( 'TEST', NON_EXISTED_JOB, 'passport' )
         except:
@@ -4210,9 +4084,7 @@ class Scenario219( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario219' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario219' )
         try:
             self.ns.rollbackJob( 'TEST', NON_EXISTED_JOB, 'passport' )
         except:
@@ -4248,9 +4120,7 @@ class Scenario220( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario220' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario220' )
         self.ns.getAffinityList( 'TEST' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -4274,9 +4144,7 @@ class Scenario221( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario221' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario221' )
 
         try:
             execAny( ns_client, 'CWGET' )
@@ -4302,9 +4170,7 @@ class Scenario222( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario221' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario221' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'CWGET' )
         return True
@@ -4331,9 +4197,7 @@ class Scenario223( TestBase ):
                                          'node', 'session' )
 
         # Cancel waiting
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario223' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario223' )
         ns_client.set_client_identification( 'node', 'session' )
         execAny( ns_client, 'CWGET' )
         time.sleep( 1 )
@@ -4368,9 +4232,7 @@ class Scenario224( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario224' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario224' )
         getNotificationInfo( ns_client, False, 0 )
         return True
 
@@ -4390,9 +4252,7 @@ class Scenario225( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario225' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario225' )
         execAny( ns_client, 'WGET 5000 15' )
         getNotificationInfo( ns_client, False, 1, 0 )
         return True
@@ -4413,9 +4273,7 @@ class Scenario226( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario226' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario226' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'WGET 5000 15' )
         getNotificationInfo( ns_client, False, 1, 0 )
@@ -4438,9 +4296,7 @@ class Scenario227( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario227' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario227' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'WGET 5000 5' )
         getNotificationInfo( ns_client, False, 1, 0 )
@@ -4465,9 +4321,7 @@ class Scenario228( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario228' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario228' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'WGET 5000 5' )
         info = getNotificationInfo( ns_client, False, 1, 0 )
@@ -4498,9 +4352,7 @@ class Scenario229( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario229' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario229' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'WGET 5010 5' )
         info = getNotificationInfo( ns_client, False, 1, 0 )
@@ -4533,9 +4385,7 @@ class Scenario230( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario230' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario230' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'WGET 5010 5 aff=a1,a2' )
         info = getNotificationInfo( ns_client, True, 1, 0 )
@@ -4575,9 +4425,7 @@ class Scenario231( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario231' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario231' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'WGET 5000 5' )
         info = getNotificationInfo( ns_client, False, 1, 0 )
@@ -4608,9 +4456,7 @@ class Scenario232( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario232' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario232' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         execAny( ns_client, 'WGET 5000 15' )
         self.ns.submitJob( 'TEST', 'bla' )
@@ -4825,9 +4671,7 @@ class Scenario238( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario238' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario238' )
         getAffinityInfo( ns_client, False, 0 )
         return True
 
@@ -4847,9 +4691,7 @@ class Scenario239( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario239' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario239' )
         self.ns.submitJob( 'TEST', 'bla', 'a1', '', 'mynode', 'mysession' )
 
         aff = getAffinityInfo( ns_client, False, 1, 0 )
@@ -4883,9 +4725,7 @@ class Scenario240( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario240' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario240' )
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a1', '', 'mynode', 'mysession' )
 
         aff = getAffinityInfo( ns_client, True, 1, 0 )
@@ -4922,9 +4762,7 @@ class Scenario241( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario241' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario241' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         changeAffinity( ns_client, [ 'a2' ], [] )
 
@@ -4960,9 +4798,7 @@ class Scenario242( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario242' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario242' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         ns_client.on_warning = None
 
@@ -4987,9 +4823,7 @@ class Scenario243( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario243' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario243' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         changeAffinity( ns_client, [ 'a4' ], [] )
         changeAffinity( ns_client, [], [ 'a4' ] )
@@ -5027,9 +4861,7 @@ class Scenario244( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario244' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario244' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
 
         execAny( ns_client, 'WGET 5000 10 aff=a5' )
@@ -5068,9 +4900,7 @@ class Scenario245( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario245' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario245' )
 
         self.ns.getJob( 'TEST', 10, 'a6', '', 'mynode', 'mysession' )
         time.sleep( 5 )
@@ -5106,9 +4936,7 @@ class Scenario246( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario246' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario246' )
         try:
             execAny( ns_client,
                      'GET2 wnode_aff=0 any_aff=1' )
@@ -5134,9 +4962,7 @@ class Scenario247( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario247' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario247' )
         try:
             execAny( ns_client, 'PUT2 ' + NON_EXISTED_JOB + ' passport 0 77' )
         except Exception, exc:
@@ -5161,9 +4987,7 @@ class Scenario248( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario248' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario248' )
         try:
             execAny( ns_client, 'FPUT2 ' + NON_EXISTED_JOB + ' passport err_msg out 1' )
         except Exception, exc:
@@ -5188,9 +5012,7 @@ class Scenario249( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario249' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario249' )
         try:
             execAny( ns_client, 'RETURN2 ' + NON_EXISTED_JOB + ' passport' )
         except Exception, exc:
@@ -5216,9 +5038,7 @@ class Scenario251( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario251' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario251' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client,
                           'GET2 wnode_aff=0 any_aff=1' )
@@ -5254,9 +5074,7 @@ class Scenario252( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario252' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario252' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client,
                           'GET2 wnode_aff=0 any_aff=1' )
@@ -5303,9 +5121,7 @@ class Scenario253( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario253' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario253' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client,
                           'GET2 wnode_aff=0 any_aff=1' )
@@ -5353,9 +5169,7 @@ class Scenario254( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob(  'TEST', 'bla', '', '', 'node', '000' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario254' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario254' )
         ns_client.set_client_identification( 'mynode', 'mysession' )
         output = execAny( ns_client,
                           'GET2 wnode_aff=0 any_aff=1' )
@@ -5407,9 +5221,7 @@ class Scenario256( TestBase ):
                                          'node', 'session' )
 
         # STAT NOTIFICATIONS
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario227' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario227' )
         info = getNotificationInfo( ns_client, True, 1, 0 )
         process.wait()
 
@@ -5440,9 +5252,7 @@ class Scenario257( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario257' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario257' )
         output = execAny( ns_client, 'STAT GROUPS' ).strip()
         if output != "END":
             raise Exception( "Expected no groups, received some" )
@@ -5465,9 +5275,7 @@ class Scenario258( TestBase ):
         self.fromScratch()
 
         self.ns.submitJob( 'TEST', 'bla', "", "000", "", "" )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario258' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario258' )
         info = getGroupInfo( ns_client, False, 1, 0 )
         if info[ 'group' ] != '000':
             raise Exception( "Unexpected group" )
@@ -5507,9 +5315,7 @@ class Scenario259( TestBase ):
         reply = self.ns.directReadSingleReply()
         self.ns.disconnect()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario259' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario259' )
         info = getGroupInfo( ns_client, False, 1, 0 )
         if info[ 'group' ] != 'kt312a':
             raise Exception( "Unexpected group" )
@@ -5551,9 +5357,7 @@ class Scenario260( TestBase ):
         reply = self.ns.directReadSingleReply()
         self.ns.disconnect()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario260' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario260' )
         info = getGroupInfo( ns_client, False, 1, 0 )
         if info[ 'group' ] != 'gita':
             raise Exception( "Unexpected group" )
@@ -5579,9 +5383,7 @@ class Scenario261( TestBase ):
         self.fromScratch()
 
         jobID = self.ns.submitJob(  'TEST', 'bla', '', '0xFF', '', '' )
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario261' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario261' )
         info = getGroupInfo( ns_client, False, 1, 0 )
         if info[ 'group' ] != '0xFF':
             raise Exception( "Unexpected group" )
@@ -5619,9 +5421,7 @@ class Scenario262( TestBase ):
 
         self.ns.putJob( 'TEST', j1[ 0 ], j1[ 1 ], 0 )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario262' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario262' )
 
         info = ns_client.get_number_of_jobs_by_status( None, "111" )
         if info[ 'Confirmed' ] != 0:
@@ -5663,9 +5463,7 @@ class Scenario263( TestBase ):
         jobID = self.ns.submitJob(  'TEST', 'bla', '', '222', '', '' )
         self.ns.cancelGroup( 'TEST', '222' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario263' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario263' )
 
         info = ns_client.get_number_of_jobs_by_status( None, "222" )
         if info[ 'Confirmed' ] != 0:
@@ -5760,9 +5558,7 @@ class Scenario266( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario266' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario266' )
         output = execAny( ns_client, 'DUMP group=777' )
         if output != "":
             raise Exception( "Expected error, got nothing: " + output )
@@ -5790,9 +5586,7 @@ class Scenario267( TestBase ):
         jobID3 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g1', '', '' )
         jobID4 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g2', '', '' )
 
-        ns_client = grid.NetScheduleService( self.ns.getHost() + ":" + \
-                                             str( self.ns.getPort() ),
-                                             'TEST', 'scenario267' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario267' )
 
         info = ns_client.get_number_of_jobs_by_status( 'a2', None )
         if info[ 'Confirmed' ] != 0:
