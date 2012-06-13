@@ -310,10 +310,10 @@ void CMultiCommandApplication::Init(void)
 {
     // Create the program's overall command-line argument descriptions class.
     // This will be a container for both the command-less and command-based
-    // usage forms. The eCommandOptional enum value lets the user decide whether
-    // to use a command-less or command-based command line. If you use the
-    // eCommandMandatory enum value, then a command-based command line must
-    // be used.
+    // usage forms.
+    // The ECommandPresence parameter controls whether or not the user must
+    // enter a command-based command line. Use eCommandOptional only when you
+    // are setting up both command-less and command-based command lines.
     auto_ptr< CCommandArgDescriptions >     cmd_desc(
         new CCommandArgDescriptions(true, 0,
             CCommandArgDescriptions::eCommandOptional));
