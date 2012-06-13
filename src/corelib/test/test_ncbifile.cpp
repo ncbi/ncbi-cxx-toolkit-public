@@ -61,9 +61,9 @@ static void s_CreateTestFile(const string& file)
 }
 
 
-/////////////////////////////////
-// File name spliting tests
-//
+//----------------------------------------------------------------------------
+//  File name spliting tests
+//----------------------------------------------------------------------------
 
 static void s_TEST_SplitPath(void)
 {
@@ -195,9 +195,9 @@ static void s_TEST_SplitPath(void)
 }
 
 
-/////////////////////////////////
+//----------------------------------------------------------------------------
 //  Path checking tests
-//
+//----------------------------------------------------------------------------
 
 static void s_TEST_CheckPath(void)
 {
@@ -365,9 +365,9 @@ static void s_TEST_CheckPath(void)
 }
 
 
-/////////////////////////////////
-// File name maching test
-//
+//----------------------------------------------------------------------------
+//  File name maching test
+//----------------------------------------------------------------------------
 
 static void s_TEST_MatchesMask(void)
 {
@@ -418,9 +418,83 @@ static void s_TEST_MatchesMask(void)
 }
 
 
-/////////////////////////////////
-// Work with files
-//
+//----------------------------------------------------------------------------
+//  String to permission mode conversion test
+//----------------------------------------------------------------------------
+
+struct SStrToModeTest
+{
+    const char* str;                     // string to convert
+    const char* str_default;             // string in default format (octal)
+    CDirEntry::EModeStringFormat fmt;    // 'str' format 
+    CDirEntry::TSpecialModeBits special; // special bits
+    CDirEntry::TMode user;               // user permissions
+    CDirEntry::TMode group;              // group permissions
+    CDirEntry::TMode other;              // other permissions
+};
+
+static const SStrToModeTest s_StrToMode[] = {
+    { "775",              "775",  CDirEntry::eModeFormat_Octal,    0, 7,7,5 },
+    { "642",              "642",  CDirEntry::eModeFormat_Octal,    0, 6,4,2 },
+    { "042",              "042",  CDirEntry::eModeFormat_Octal,    0, 0,4,2 },
+    { "42",               "042",  CDirEntry::eModeFormat_Octal,    0, 0,4,2 },
+    { "1",                "001",  CDirEntry::eModeFormat_Octal,    0, 0,0,1 },
+    { "1775",            "1775",  CDirEntry::eModeFormat_Octal,    1, 7,7,5 },
+    { "4775",            "4775",  CDirEntry::eModeFormat_Octal,    4, 7,7,5 },
+    { "7775",            "7775",  CDirEntry::eModeFormat_Octal,    7, 7,7,5 },
+    { "u=rws",           "4700",  CDirEntry::eModeFormat_Symbolic, 4, 7,0,0 },
+    { "u=rwS",           "4600",  CDirEntry::eModeFormat_Symbolic, 4, 6,0,0 },
+    { "g=rws",           "2070",  CDirEntry::eModeFormat_Symbolic, 2, 0,7,0 },
+    { "g=rwS",           "2060",  CDirEntry::eModeFormat_Symbolic, 2, 0,6,0 },
+    { "o=rt",            "1005",  CDirEntry::eModeFormat_Symbolic, 1, 0,0,5 },
+    { "o=rT",            "1004",  CDirEntry::eModeFormat_Symbolic, 1, 0,0,4 },
+    { "u=rwx",            "700",  CDirEntry::eModeFormat_Symbolic, 0, 7,0,0 },
+    { "g=wx",             "030",  CDirEntry::eModeFormat_Symbolic, 0, 0,3,0 },
+    { "u=rwx,o=x",        "701",  CDirEntry::eModeFormat_Symbolic, 0, 7,0,1 },
+    { "a=rwx",            "777",  CDirEntry::eModeFormat_Symbolic, 0, 7,7,7 },
+    { "go=rw",            "066",  CDirEntry::eModeFormat_Symbolic, 0, 0,6,6 },
+    { "u=rwx,g=rx,o=r",   "754",  CDirEntry::eModeFormat_Symbolic, 0, 7,5,4 },
+    { "u=rwx,g=,o=rx",    "705",  CDirEntry::eModeFormat_Symbolic, 0, 7,0,5 },
+    { "u=rw,go=r",        "644",  CDirEntry::eModeFormat_Symbolic, 0, 6,4,4 },
+    { "u=rws,g=rS,o=t",  "7741",  CDirEntry::eModeFormat_Symbolic, 7, 7,4,1 },
+    { NULL, NULL, CDirEntry::eModeFormat_Default, 0, 0, 0 }
+};
+
+static void s_TEST_StrToMode(void)
+{
+    for (int i = 0; s_StrToMode[i].str; ++i) {
+        SStrToModeTest test = s_StrToMode[i];
+        CDirEntry::TMode u1, g1, o1, s1;
+        CDirEntry::TMode u2, g2, o2, s2;
+        string s;
+
+        assert(CDirEntry::StringToMode(test.str, &u1, &g1, &o1, &s1));
+        assert(test.user    == u1);
+        assert(test.group   == g1);
+        assert(test.other   == o1);
+        assert(test.special == s1);
+        s = CDirEntry::ModeToString(u1, g1, o1, s1);
+        assert(s == test.str_default);
+        if (test.fmt == CDirEntry::eModeFormat_Octal) {
+            s = CDirEntry::ModeToString(u1, g1, o1, s1, CDirEntry::eModeFormat_Symbolic);
+            assert(CDirEntry::StringToMode(s, &u2, &g2, &o2, &s2));
+        } else {
+            s = CDirEntry::ModeToString(u1, g1, o1, s1, CDirEntry::eModeFormat_Octal);
+            assert(CDirEntry::StringToMode(s, &u2, &g2, &o2, &s2));
+
+        }
+        assert(test.user    == u2);
+        assert(test.group   == g2);
+        assert(test.other   == o2);
+        assert(test.special == s2);
+    }
+}
+
+
+
+//----------------------------------------------------------------------------
+//  Work with files
+//----------------------------------------------------------------------------
 
 static void s_TEST_File(void)
 {
@@ -591,9 +665,9 @@ static void s_TEST_File(void)
 }
 
 
-/////////////////////////////////
-// Work with directories
-//
+//----------------------------------------------------------------------------
+//  Work with directories
+//----------------------------------------------------------------------------
 
 static void s_TEST_Dir(void)
 {
@@ -786,9 +860,9 @@ static void s_TEST_Dir(void)
 }
 
 
-/////////////////////////////////
-// Work with symbolic links
-//
+//----------------------------------------------------------------------------
+//  Work with symbolic links
+//----------------------------------------------------------------------------
 
 static void s_TEST_Link(void)
 {
@@ -879,9 +953,9 @@ static void s_TEST_Link(void)
 }
 
 
-/////////////////////////////////
+//----------------------------------------------------------------------------
 // Memory mapping
-//
+//----------------------------------------------------------------------------
 
 static void s_TEST_MemoryFile(void)
 {
@@ -1146,9 +1220,9 @@ static void s_TEST_MemoryFile(void)
 }
 
 
-/////////////////////////////////
-// Low level file IO
-//
+//----------------------------------------------------------------------------
+//  FileIO API test
+//----------------------------------------------------------------------------
 
 static void s_TEST_FileIO(void)
 {
@@ -1435,9 +1509,9 @@ static void s_TEST_FileIO_LargeFiles(void)
 
 
 
-////////////////////////////////
-// Test application
-//
+//----------------------------------------------------------------------------
+//  Test application
+//----------------------------------------------------------------------------
 
 class CTest : public CNcbiApplication
 {
@@ -1475,6 +1549,7 @@ int CTest::Run(void)
         s_TEST_SplitPath();
         s_TEST_CheckPath();
         s_TEST_MatchesMask();
+        s_TEST_StrToMode();
         // CFile
         s_TEST_File();
         // CDir
@@ -1490,12 +1565,6 @@ int CTest::Run(void)
     NcbiCout << "TEST execution completed successfully!" << endl << endl;
     return 0;
 }
-
-
-
-///////////////////////////////////
-// APPLICATION OBJECT  and  MAIN
-//
 
 int main(int argc, const char* argv[])
 {

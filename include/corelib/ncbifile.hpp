@@ -1080,13 +1080,7 @@ public:
                  TMode            group_mode  = fDefault,
                  TMode            other_mode  = fDefault,
                  TSpecialModeBits special     = 0) const;
-
-    /// Construct mode_t value.
-    static mode_t MakeModeT(TMode            usr_mode,
-                            TMode            grp_mode,
-                            TMode            oth_mode,
-                            TSpecialModeBits special);
-
+    
     /// Set default permission modes globally for all CDirEntry objects.
     ///
     /// The default mode is set globally for all CDirEntry objects except for
@@ -1158,6 +1152,87 @@ public:
     ///   GetMode
     bool CheckAccess(TMode access_mode) const;
 
+
+    /// Construct mode_t value from permission modes.
+    /// Parameters must not have "fDefault" values.
+    /// @sa ModeFromModeT
+    static mode_t MakeModeT(TMode            user_mode,
+                            TMode            group_mode,
+                            TMode            other_mode,
+                            TSpecialModeBits special);
+
+    /// Convert mode_t to permission mode(s).
+    ///
+    /// @note
+    ///   On WINDOWS: There is only the "user_mode" permission setting,
+    ///   and "group_mode" and "other_mode" settings will be ignored.
+    ///   The "user_mode" will be combined with effective permissions for
+    ///   the current process owner on specified directory entry.
+    /// @sa
+    ///   GetMode, SetMode, MakeModeT
+    static void ModeFromModeT(mode_t            mode, 
+                              TMode*            user_mode, 
+                              TMode*            group_mode = 0, 
+                              TMode*            other_mode = 0,
+                              TSpecialModeBits* special    = 0);
+
+    /// Permission mode string format.
+    /// @sa 
+    ///   StringToMode, ModeToString
+    enum EModeStringFormat {
+        eModeFormat_Octal,                       ///< Octal format ("664")
+        eModeFormat_Symbolic,                    ///< Shell symbolic format ("u=rwx,g=rwx,o=rx")
+        eModeFormat_Default = eModeFormat_Octal  ///< Default mode
+    };
+
+
+    /// Convert permission modes to string representation using one of predefined formats.
+    /// Parameters must not have "fDefault" values.
+    /// @sa StringToMode, EModeStringFormat
+    static string ModeToString(TMode             user_mode,
+                               TMode             group_mode,
+                               TMode             other_mode,
+                               TSpecialModeBits  special,
+                               EModeStringFormat format = eModeFormat_Default);
+
+    /// Convert string (in one of predefined formats) to permission mode(s).
+    /// @return
+    ///   TRUE if the operation was completed successfully; FALSE, otherwise.
+    /// @sa 
+    ///   ModeToString, EModeStringFormat
+    static bool StringToMode(const CTempString& mode, 
+                             TMode*            user_mode, 
+                             TMode*            group_mode = 0, 
+                             TMode*            other_mode = 0,
+                             TSpecialModeBits* special    = 0);
+
+
+    /// Get file/directory mode creation mask.
+    /// @note
+    ///   umask can be usefull on Unix platform only. On Windows only
+    ///   C Runtime library honor it, any methods that use Windows API
+    ///   ignore its setting.
+    /// @sa 
+    ///   SetUmask
+    static void GetUmask(TMode*            user_mode, 
+                         TMode*            group_mode = 0, 
+                         TMode*            other_mode = 0,
+                         TSpecialModeBits* special    = 0);
+
+    /// Set file/directory mode creation mask.
+    ///
+    /// @note
+    ///   fDefault value for permission mode(s) mean 0.
+    /// @note
+    ///   umask can be usefull on Unix platform only. On Windows only
+    ///   C Runtime library honor it, any methods that use Windows API
+    ///   ignore its setting.
+    /// @sa
+    ///   GetUmask
+    static void SetUmask(TMode             user_mode,
+                         TMode             group_mode = fDefault,
+                         TMode             other_mode = fDefault,
+                         TSpecialModeBits  special    = 0);
 
     //
     // Temporary directory entries (and files)
@@ -1314,27 +1389,31 @@ protected:
                         TSpecialModeBits* special) const;
 
 private:
-    string        m_Path;    ///< Full path of this directory entry
+    string m_Path;    ///< Full path of this directory entry
 
     /// Which default mode: user, group, or other.
     ///
     /// Used as an index into an array that contains default mode values;
     /// so there is no "fDefault" as an enumeration value for EWho here!
     enum EWho {
-        eUser = 0,           ///< User mode
-        eGroup,              ///< Group mode
-        eOther,              ///< Other mode
-        eSpecial             ///< Special bits
+        eUser = 0,    ///< User mode
+        eGroup,       ///< Group mode
+        eOther,       ///< Other mode
+        eSpecial      ///< Special bits
     }; 
 
     /// Holds default mode values
-    TMode         m_DefaultMode[4/*EWho + Special bits*/];
+    TMode m_DefaultMode[4/*EWho + Special bits*/];
 
     /// Holds default mode global values, per entry type
-    static TMode  m_DefaultModeGlobal[eUnknown][4/*EWho + Special bits*/];
+    static TMode m_DefaultModeGlobal[eUnknown][4/*EWho + Special bits*/];
 
     /// Backup suffix
     static const char* m_BackupSuffix;
+
+private:
+    /// Convert permission mode to symbolic string representation.
+    static string x_ModeToSymbolicString(EWho who, TMode mode, bool special_bit);
 };
 
 

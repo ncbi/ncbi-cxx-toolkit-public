@@ -148,6 +148,8 @@ NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
 // Environment variable:
 //     NCBI_CONFIG__FileAPIHonorUmask
 //
+// On WINDOWS: umask affect only CRT function, the part of API that
+// use Windows API directly just ignore umask setting.
 #define DEFAULT_HONOR_UMASK_VALUE false
 
 NCBI_PARAM_DECL(bool, NCBI, FileAPIHonorUmask);
@@ -868,86 +870,15 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 }
 
 
-bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
-                        TMode* oth_mode, TSpecialModeBits* special) const
+bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode,
+                        TMode* other_mode, TSpecialModeBits* special) const
 {
     TNcbiSys_stat st;
     if (NcbiSys_stat(_T_XCSTRING(GetPath()), &st) != 0) {
         LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::GetMode():"
                                    " stat() failed for " << GetPath());
     }
-    // Owner
-    if (usr_mode) {
-        *usr_mode = (
-#if   defined(S_IRUSR)
-                     (st.st_mode & S_IRUSR  ? fRead              : 0) |
-#elif defined(S_IREAD)
-                     (st.st_mode & S_IREAD  ? fRead              : 0) |
-#endif
-#if   defined(S_IWUSR)
-                     (st.st_mode & S_IWUSR  ? fWrite             : 0) |
-#elif defined(S_IWRITE)
-                     (st.st_mode & S_IWRITE ? fWrite             : 0) |
-#endif
-#if   defined(S_IXUSR)
-                     (st.st_mode & S_IXUSR  ? fExecute           : 0) |
-#elif defined(S_IEXEC)
-                     (st.st_mode & S_IEXEC  ? fExecute           : 0) |
-#endif
-                     0);
-    }
-
-#ifdef NCBI_OS_MSWIN
-    if (grp_mode) *grp_mode = 0;
-    if (oth_mode) *oth_mode = 0;
-    if (special)  *special  = 0;
-
-#else
-
-    // Group
-    if (grp_mode) {
-        *grp_mode = (
-#ifdef S_IRGRP
-                     (st.st_mode & S_IRGRP  ? fRead              : 0) |
-#endif
-#ifdef S_IWGRP
-                     (st.st_mode & S_IWGRP  ? fWrite             : 0) |
-#endif
-#ifdef S_IXGRP
-                     (st.st_mode & S_IXGRP  ? fExecute           : 0) |
-#endif
-                     0);
-    }
-    // Others
-    if (oth_mode) {
-        *oth_mode = (
-#ifdef S_IROTH
-                     (st.st_mode & S_IROTH  ? fRead              : 0) |
-#endif
-#ifdef S_IWOTH
-                     (st.st_mode & S_IWOTH  ? fWrite             : 0) |
-#endif
-#ifdef S_IXOTH
-                     (st.st_mode & S_IXOTH  ? fExecute           : 0) |
-#endif
-                     0);
-    }
-    // Special bits
-    if (special) {
-        *special = (
-#ifdef S_ISUID
-                    (st.st_mode & S_ISUID   ? CDirEntry::fSetUID : 0) |
-#endif
-#ifdef S_ISGID
-                    (st.st_mode & S_ISGID   ? CDirEntry::fSetGID : 0) |
-#endif
-#ifdef S_ISVTX
-                    (st.st_mode & S_ISVTX   ? CDirEntry::fSticky : 0) |
-#endif
-                    0);
-    }
-#endif // NCBI_OS_MSWIN
-
+    ModeFromModeT(st.st_mode, user_mode, group_mode, other_mode, special);
     return true;
 }
 
@@ -1076,60 +1007,345 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 }
 
 
-// Construct real entry mode from parts.
-// Parameters must not have "fDefault" value.
-mode_t CDirEntry::MakeModeT(TMode            usr_mode,
-                            TMode            grp_mode,
-                            TMode            oth_mode,
-                            TSpecialModeBits special)
+mode_t CDirEntry::MakeModeT(TMode user_mode, TMode group_mode,
+                            TMode other_mode, TSpecialModeBits special)
 {
     mode_t mode = (
     // special bits
 #ifdef S_ISUID
-                   (special & fSetUID   ? S_ISUID    : 0) |
+                   (special & fSetUID     ? S_ISUID  : 0) |
 #endif
 #ifdef S_ISGID
-                   (special & fSetGID   ? S_ISGID    : 0) |
+                   (special & fSetGID     ? S_ISGID  : 0) |
 #endif
 #ifdef S_ISVTX
-                   (special & fSticky   ? S_ISVTX    : 0) |
+                   (special & fSticky     ? S_ISVTX  : 0) |
 #endif
     // modes
 #if   defined(S_IRUSR)
-                   (usr_mode & fRead    ? S_IRUSR    : 0) |
-#elif defined(S_IREAD)
-                   (usr_mode & fRead    ? S_IREAD    : 0) |
+                   (user_mode & fRead     ? S_IRUSR  : 0) |
+#elif defined(S_IREAD) 
+                   (user_mode & fRead     ? S_IREAD  : 0) |
 #endif
 #if   defined(S_IWUSR)
-                   (usr_mode & fWrite   ? S_IWUSR    : 0) |
+                   (user_mode & fWrite    ? S_IWUSR  : 0) |
 #elif defined(S_IWRITE)
-                   (usr_mode & fWrite   ? S_IWRITE   : 0) |
+                   (user_mode & fWrite    ? S_IWRITE : 0) |
 #endif
 #if   defined(S_IXUSR)
-                   (usr_mode & fExecute ? S_IXUSR    : 0) |
+                   (user_mode & fExecute  ? S_IXUSR  : 0) |
 #elif defined(S_IEXEC)
-                   (usr_mode & fExecute ? S_IEXEC    : 0) |
+                   (user_mode & fExecute  ? S_IEXEC  : 0) |
 #endif
 #ifdef S_IRGRP
-                   (grp_mode & fRead    ? S_IRGRP    : 0) |
+                   (group_mode & fRead    ? S_IRGRP  : 0) |
 #endif
 #ifdef S_IWGRP
-                   (grp_mode & fWrite   ? S_IWGRP    : 0) |
+                   (group_mode & fWrite   ? S_IWGRP  : 0) |
 #endif
 #ifdef S_IXGRP
-                   (grp_mode & fExecute ? S_IXGRP    : 0) |
+                   (group_mode & fExecute ? S_IXGRP  : 0) |
 #endif
 #ifdef S_IROTH
-                   (oth_mode & fRead    ? S_IROTH    : 0) |
+                   (other_mode & fRead    ? S_IROTH  : 0) |
 #endif
 #ifdef S_IWOTH
-                   (oth_mode & fWrite   ? S_IWOTH    : 0) |
+                   (other_mode & fWrite   ? S_IWOTH  : 0) |
 #endif
 #ifdef S_IXOTH
-                   (oth_mode & fExecute ? S_IXOTH    : 0) |
+                   (other_mode & fExecute ? S_IXOTH  : 0) |
 #endif
                    0);
     return mode;
+}
+
+
+void CDirEntry::ModeFromModeT(mode_t mode, 
+                              TMode* user_mode, TMode* group_mode, 
+                              TMode* other_mode, TSpecialModeBits* special)
+{
+    // Owner
+    if (user_mode) {
+        *user_mode = (
+#if   defined(S_IRUSR)
+                     (mode & S_IRUSR  ? fRead    : 0) |
+#elif defined(S_IREAD)
+                     (mode & S_IREAD  ? fRead    : 0) |
+#endif
+#if   defined(S_IWUSR)
+                     (mode & S_IWUSR  ? fWrite   : 0) |
+#elif defined(S_IWRITE)
+                     (mode & S_IWRITE ? fWrite   : 0) |
+#endif
+#if   defined(S_IXUSR)
+                     (mode & S_IXUSR  ? fExecute : 0) |
+#elif defined(S_IEXEC)
+                     (mode & S_IEXEC  ? fExecute : 0) |
+#endif
+                     0);
+    }
+
+#ifdef NCBI_OS_MSWIN
+    if (group_mode) *group_mode = 0;
+    if (other_mode) *other_mode = 0;
+    if (special)    *special    = 0;
+
+#else
+    // Group
+    if (group_mode) {
+        *group_mode = (
+#ifdef S_IRGRP
+                     (mode & S_IRGRP  ? fRead    : 0) |
+#endif
+#ifdef S_IWGRP
+                     (mode & S_IWGRP  ? fWrite   : 0) |
+#endif
+#ifdef S_IXGRP
+                     (mode & S_IXGRP  ? fExecute : 0) |
+#endif
+                     0);
+    }
+    // Others
+    if (other_mode) {
+        *other_mode = (
+#ifdef S_IROTH
+                     (mode & S_IROTH  ? fRead    : 0) |
+#endif
+#ifdef S_IWOTH
+                     (mode & S_IWOTH  ? fWrite   : 0) |
+#endif
+#ifdef S_IXOTH
+                     (mode & S_IXOTH  ? fExecute : 0) |
+#endif
+                     0);
+    }
+    // Special bits
+    if (special) {
+        *special = (
+#ifdef S_ISUID
+                    (mode & S_ISUID   ? fSetUID  : 0) |
+#endif
+#ifdef S_ISGID
+                    (mode & S_ISGID   ? fSetGID  : 0) |
+#endif
+#ifdef S_ISVTX
+                    (mode & S_ISVTX   ? fSticky  : 0) |
+#endif
+                    0);
+    }
+#endif // NCBI_OS_MSWIN
+}
+
+
+// Convert permission mode to "rw[xsStT]" string.
+string CDirEntry::x_ModeToSymbolicString(CDirEntry::EWho who, CDirEntry::TMode mode, bool special_bit)
+{
+    string out;
+    out.reserve(3);
+    if (mode & CDirEntry::fRead)
+        out += "r";
+    if (mode & CDirEntry::fWrite)
+        out += "w";
+    if ( special_bit ) {
+        if (who == CDirEntry::eOther) {
+            out += (mode & CDirEntry::fExecute) ? "t" : "T";
+        } else {
+            out += (mode & CDirEntry::fExecute) ? "s" : "S";
+        }
+    } else if (mode & CDirEntry::fExecute) {
+        out += "x";
+    }
+    return out;
+}
+
+
+string CDirEntry::ModeToString(TMode user_mode, TMode group_mode, 
+                               TMode other_mode, TSpecialModeBits special,
+                               EModeStringFormat format)
+{
+    string out;
+    switch (format) {
+    case eModeFormat_Octal:
+        {
+            int i = 0;
+            if (special > 0) {
+                out = "0000";
+                out[0] = char(special)  + '0';
+                i++;
+            } else {
+                out = "000";
+            }
+            out[i++] = char(user_mode)  + '0';
+            out[i++] = char(group_mode) + '0';
+            out[i++] = char(other_mode) + '0';
+        }
+        break;
+    case eModeFormat_Symbolic:
+        {
+            out.reserve(17);
+            out =   "u=" + x_ModeToSymbolicString(eUser,  user_mode,  (special & fSetUID) > 0);
+            out += ",g=" + x_ModeToSymbolicString(eGroup, group_mode, (special & fSetGID) > 0);
+            out += ",o=" + x_ModeToSymbolicString(eOther, other_mode, (special & fSticky) > 0);
+        }
+        break;
+    default:
+        _TROUBLE;
+    }
+
+    return out;
+}
+
+
+bool CDirEntry::StringToMode(const CTempString& mode, 
+                             TMode* user_mode, TMode* group_mode, 
+                             TMode* other_mode, TSpecialModeBits* special)
+{
+    if ( mode.empty() ) {
+        return false;
+    }
+    if ( isdigit((unsigned char)(mode[0])) ) {
+    // eModeFormat_Octal
+        unsigned int oct = NStr::StringToUInt(mode, NStr::fConvErr_NoThrow, 8);
+        if ((oct > 07777) || (!oct  &&  errno != 0)) {
+            return false;
+        }
+        if (other_mode) {
+            *other_mode = TMode(oct & 7);
+        }
+        oct >>= 3;
+        if (group_mode) {
+            *group_mode = TMode(oct & 7);
+        }
+        oct >>= 3;
+        if (user_mode) {
+            *user_mode = TMode(oct & 7);
+        }
+        if (special) {
+            oct >>= 3;
+            *special = TSpecialModeBits(oct);
+        }
+
+    } else {
+    // eModeFormat_Symbolic
+        list<string> parts;
+        NStr::Split(mode, ",", parts);
+        if ( parts.empty() ) {
+            return false;
+        }
+        bool have_user  = false;
+        bool have_group = false;
+        bool have_other = false;
+
+        if (user_mode) 
+            *user_mode = 0;
+        if (group_mode)
+            *group_mode = 0;
+        if (other_mode)
+            *other_mode = 0;
+        if (special)
+            *special = 0;
+
+        ITERATE(list<string>, it, parts) {
+            string accessor, perm;
+            if ( !NStr::SplitInTwo(*it, "=", accessor, perm) ) {
+                return false;
+            }
+            TMode mode = 0;
+            bool is_special = false;
+            // Permission mode(s) (rwx)
+            ITERATE(string, s, perm) {
+                switch(char(*s)) {
+                case 'r':
+                    mode |= fRead;
+                    break;
+                case 'w':
+                    mode |= fWrite;
+                    break;
+                case 'S':
+                case 'T':
+                    is_special = true;
+                    break;
+                case 's':
+                case 't':
+                    is_special = true;
+                    // fall through
+                case 'x':
+                    mode |= fExecute;
+                    break;
+                default:
+                    return false;
+                }
+            }
+            // Permission group category (ugoa)
+            ITERATE(string, s, accessor) {
+                switch(char(*s)) {
+                case 'u':
+                    if (have_user)
+                        return false;
+                    if (user_mode)
+                        *user_mode = mode;
+                    if (is_special  &&  special)
+                        *special |= fSetUID;
+                    have_user = true;
+                    break;
+                case 'g':
+                    if (have_group)
+                        return false;
+                    if (group_mode)
+                        *group_mode = mode;
+                    if (is_special  &&  special)
+                        *special |= fSetGID;
+                    have_group = true;
+                    break;
+                case 'o':
+                    if (have_other)
+                        return false;
+                    if (other_mode)
+                        *other_mode = mode;
+                    if (is_special  &&  special)
+                        *special |= fSticky;
+                    have_other = true;
+                    break;
+                case 'a':
+                    if (is_special || have_user || have_group || have_other)
+                        return false;
+                    have_user  = true;
+                    have_group = true;
+                    have_other = true;
+                    if (user_mode)
+                        *user_mode = mode;
+                    if (group_mode)
+                        *group_mode = mode;
+                    if (other_mode)
+                        *other_mode = mode;
+                    break;
+                default:
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+void CDirEntry::GetUmask(TMode* user_mode, TMode* group_mode, 
+                         TMode* other_mode, TSpecialModeBits* special)
+{
+    mode_t mode = umask(0);
+    umask(mode);
+    ModeFromModeT(mode, user_mode, group_mode, other_mode, special);
+}
+
+
+void CDirEntry::SetUmask(TMode user_mode, TMode group_mode, 
+                         TMode other_mode, TSpecialModeBits special)
+{
+    mode_t mode = MakeModeT((user_mode  == fDefault) ? 0 : user_mode,
+                            (group_mode == fDefault) ? 0 : group_mode,
+                            (other_mode == fDefault) ? 0 : other_mode,
+                            special);
+    umask(mode);
 }
 
 
