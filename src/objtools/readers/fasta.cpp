@@ -179,7 +179,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         char c = GetLineReader().PeekChar();
         if (GetLineReader().AtEOF()) {
             NCBI_THROW2(CObjReaderParseException, eEOF,
-                        "CFastaReader: Input stream no longer valid around line " + NStr::NumericToString(LineNumber()),
+                        "CFastaReader: Unexpected end-of-file around line " + NStr::NumericToString(LineNumber()),
                         LineNumber());
         }
         if (c == '>') {
@@ -205,7 +205,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         } else if (c == ']') {
             if (need_defline) {
                 NCBI_THROW2(CObjReaderParseException, eEOF,
-                            "CFastaReader: Reached end of segmented set around line " + NStr::NumericToString(LineNumber()),
+                            "CFastaReader: Reached unexpected end of segmented set around line " + NStr::NumericToString(LineNumber()),
                             LineNumber());
             } else {
                 break;
@@ -241,7 +241,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
 
     if (need_defline  &&  GetLineReader().AtEOF()) {
         NCBI_THROW2(CObjReaderParseException, eEOF,
-                    "CFastaReader: Reached end of input around line " + NStr::NumericToString(LineNumber()),
+                    "CFastaReader: Expected defline around line " + NStr::NumericToString(LineNumber()),
                     LineNumber());
     }
 
@@ -596,9 +596,9 @@ void CFastaReader::CheckDataLine(const TStr& s)
     }
     if (bad >= good / 3  &&  (len > 3  ||  good == 0  ||  bad > good)) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "CFastaReader: Input not marked as defline or comment, but "
-                    "contains too many special characters to be plausible data around line " + NStr::NumericToString(LineNumber()),
-                    LineNumber());
+            "CFastaReader: Near line " + NStr::NumericToString(LineNumber()) +
+            ", there's a line that doesn't look like plausible data, but it's not marked as defline or comment.",
+            LineNumber());
     }
 }
 
@@ -640,12 +640,12 @@ void CFastaReader::ParseDataLine(const TStr& s)
         } else if ( !isspace(c) ) {
             if (TestFlag(fValidate)) {
                 NCBI_THROW2(CBadResiduesException, eBadResidues,
-                            string("CFastaReader: Invalid residue ") + s[pos]
+                            string("CFastaReader: Invalid " + x_NucOrProt() + "residue ") + s[pos]
                             + " at position " + NStr::UInt8ToString(pos+1), // "+1" because 1-based for user
                                 CBadResiduesException::SBadResiduePositions( m_BestID, pos, LineNumber() ) );
             } else {
                 ERR_POST_X(1, Warning
-                           << "CFastaReader: Ignoring invalid residue " << c
+                           << "CFastaReader: Ignoring invalid " + x_NucOrProt() + "residue " << c
                            << " at line " << LineNumber()
                            << ", position " << pos);
             }
@@ -728,7 +728,7 @@ void CFastaReader::AssembleSeq(void)
         CSeqportUtil::Validate(tmp_data, &badIndexes);
         if ( ! badIndexes.empty() ) {
             NCBI_THROW2(CBadResiduesException, eBadResidues,
-                "CFastaReader: Invalid residue(s) in input sequence",
+                "CFastaReader: Invalid " + x_NucOrProt() + "residue(s) in input sequence",
                 CBadResiduesException::SBadResiduePositions( m_BestID, badIndexes, LineNumber() ) );
         }
     }
@@ -1384,7 +1384,7 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                 if (end == NPOS) {
                     if (pos > 0) {
                         NCBI_THROW2(CObjReaderParseException, eFormat,
-                                    "s_ParseFastaDefline: Bad ID "
+                                    "s_ParseFastaDefline: Bad defline ID "
                                     + name.substr(pos),
                                     pos);
                     } else if (s_IsValidLocalID(name)) {
@@ -1425,7 +1425,7 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
     if (ids.empty()) {
         if (flags & fReadFasta_RequireID) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                        "s_ParseFastaDefline: no ID present", 0);
+                        "s_ParseFastaDefline: no defline ID present", 0);
         }
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetId((*counter)++);
@@ -1474,7 +1474,7 @@ CRef<CSeq_entry> s_ReadFasta_OLD(CNcbiIstream& in, TReadFastaFlags flags,
 {
     if ( !in ) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "ReadFasta: Input stream no longer valid",
+                    "ReadFasta: Unexpected end of input",
                     in.tellg() - CT_POS_TYPE(0));
     } else {
         CT_INT_TYPE c = in.peek();
@@ -1719,6 +1719,17 @@ void CFastaReader::x_RecursiveApplyAllMods( CSeq_entry& entry )
             copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
                 inserter(m_BadMods, m_BadMods.begin()) );
         }
+    }
+}
+
+std::string CFastaReader::x_NucOrProt(void) const
+{
+    if( m_CurrentSeq && m_CurrentSeq->IsSetInst() && 
+        m_CurrentSeq->GetInst().IsSetMol() )
+    {
+        return ( m_CurrentSeq->GetInst().IsAa() ? "protein " : "nucleotide " );
+    } else {
+        return kEmptyStr;
     }
 }
 

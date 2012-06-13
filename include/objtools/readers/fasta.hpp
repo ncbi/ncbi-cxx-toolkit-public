@@ -210,6 +210,8 @@ protected:
 
     void x_RecursiveApplyAllMods( CSeq_entry& entry );
 
+    std::string x_NucOrProt(void) const;
+
 private:
     struct SGap {
         TSeqPos       pos; // 0-based, and NOT counting previous gaps
