@@ -51,6 +51,7 @@ static CAtomicCounter_WithAutoInit  s_TransitionsTotal[g_ValidJobStatusesSize]
                                                       [g_ValidJobStatusesSize];
 static CAtomicCounter_WithAutoInit  s_SubmitCounterTotal;
 static CAtomicCounter_WithAutoInit  s_DBDeleteCounterTotal;
+static CAtomicCounter_WithAutoInit  s_PickedAsOutdatedTotal;
 
 // From running
 static CAtomicCounter_WithAutoInit  s_ToPendingDueToTimeoutCounterTotal;
@@ -226,6 +227,7 @@ CStatisticsCounters::CStatisticsCounters()
 void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
 {
     extra.Print("submits", m_SubmitCounter.Get())
+         .Print("picked_as_outdated", m_PickedAsOutdated.Get())
          .Print("dbdeletions", m_DBDeleteCounter.Get());
 
     for (size_t  index_from = 0;
@@ -274,6 +276,7 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
 void CStatisticsCounters::PrintTransitions(CNetScheduleHandler &  handler) const
 {
     handler.WriteMessage("OK:submits: ", NStr::IntToString(m_SubmitCounter.Get()));
+    handler.WriteMessage("OK:picked_as_outdated: ", NStr::IntToString(m_PickedAsOutdated.Get()));
     handler.WriteMessage("OK:dbdeletions: ", NStr::IntToString(m_DBDeleteCounter.Get()));
 
     for (size_t  index_from = 0;
@@ -442,6 +445,13 @@ void CStatisticsCounters::CountSubmit(size_t  count)
 }
 
 
+void CStatisticsCounters::CountOutdatedPick(void)
+{
+    m_PickedAsOutdated.Add(1);
+    s_PickedAsOutdatedTotal.Add(1);
+}
+
+
 void  CStatisticsCounters::PrintTotal(size_t  affinities)
 {
     CDiagContext_Extra      extra = GetDiagContext().Extra();
@@ -449,6 +459,7 @@ void  CStatisticsCounters::PrintTotal(size_t  affinities)
     // Prints the total counters
     extra.Print("counters", "total")
          .Print("submits", s_SubmitCounterTotal.Get())
+         .Print("picked_as_outdated", s_PickedAsOutdatedTotal.Get())
          .Print("dbdeletions", s_DBDeleteCounterTotal.Get())
          .Print("affinities", affinities);
 

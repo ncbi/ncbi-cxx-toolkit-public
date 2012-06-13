@@ -71,6 +71,7 @@ public:
                          ETransitionPathOption        path_option = eNone);
     void CountDBDeletion(size_t  count);
     void CountSubmit(size_t  count);
+    void CountOutdatedPick(void);
 
     static void  PrintTotal(size_t  affinities);
 
@@ -84,7 +85,7 @@ private:
     CAtomicCounter_WithAutoInit     m_SubmitCounter;
     CAtomicCounter_WithAutoInit     m_DBDeleteCounter;
 
-    // There are 10 special transitions:
+    // There are some special counters:
     CAtomicCounter_WithAutoInit     m_ToPendingDueToTimeoutCounter;
     CAtomicCounter_WithAutoInit     m_ToPendingDueToFailCounter;
     CAtomicCounter_WithAutoInit     m_ToPendingDueToClearCounter;
@@ -99,6 +100,8 @@ private:
     CAtomicCounter_WithAutoInit     m_ToReadFailedDueToTimeoutCounter;
     CAtomicCounter_WithAutoInit     m_ToReadFailedDueToClearCounter;
     CAtomicCounter_WithAutoInit     m_ToReadFailedDueToNewSessionCounter;
+
+    CAtomicCounter_WithAutoInit     m_PickedAsOutdated;
 };
 
 

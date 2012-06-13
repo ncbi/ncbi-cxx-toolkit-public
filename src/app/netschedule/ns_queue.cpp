@@ -774,8 +774,12 @@ bool  CQueue::GetJobOrWait(const CNSClientId &     client,
                                                 job_pick.job_id, *new_job)) {
                         // The job is not expired and successfully read
                         m_StatusTracker.SetStatus(job_pick.job_id, CNetScheduleAPI::eRunning);
+
                         m_StatisticsCounters.CountTransition(CNetScheduleAPI::ePending,
                                                              CNetScheduleAPI::eRunning);
+                        if (outdated_job)
+                            m_StatisticsCounters.CountOutdatedPick();
+
                         m_GCRegistry.UpdateLifetime(job_pick.job_id,
                                                     new_job->GetExpirationTime(m_Timeout,
                                                                                m_RunTimeout,
