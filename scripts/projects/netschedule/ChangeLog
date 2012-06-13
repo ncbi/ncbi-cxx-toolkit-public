@@ -9,6 +9,8 @@ Improvments and bug fixes
     * Fixed picking job algorithm for the case when a worker node asked for a
       job considering its preferred affinities while none were in the list of
       the preferred affinities.
+    * NetSchedule: collect statistics separately of how a job was picked for WN
+      (JIRA: CXX-3345)
 
 
 Release 4.12.0 based on SC-10 (2012-06-01)
