@@ -298,7 +298,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  );
 
 
-/* This function to fill out the "*info" structure using
+/* This function fills out the "*info" structure using
  * registry entries named (see above) in macros REG_CONN_<NAME>:
  *
  *  -- INFO FIELD --  ----- NAME -----  ---------- REMARKS/EXAMPLES ---------
