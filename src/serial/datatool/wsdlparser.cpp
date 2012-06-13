@@ -113,7 +113,7 @@ void WSDLParser::BuildDataTree(
             ERR_POST_X(4, Warning << report);
             if (!use_subns_all && !use_subns_problem) {
                 NCBI_THROW(CDatatoolException,eWrongInput,
-                "Element name clashes detected, please request UseSubnamespaces in DEF file");
+"Element name clashes detected, please specify [-]UseSubnamespaces=problem_modules/all_modules in DEF file");
             }
         }
     }

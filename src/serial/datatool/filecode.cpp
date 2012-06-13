@@ -190,7 +190,7 @@ CFileCode::TIncludes& CFileCode::CPPIncludes(void)
 
 void CFileCode::AddForwardDeclaration(const string& cls, const CNamespace& ns)
 {
-    m_ForwardDeclarations[cls] = ns;
+    m_ForwardDeclarations[ ns.ToString() ].insert(cls);
 }
 
 
@@ -470,15 +470,17 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
     if ( !m_ForwardDeclarations.empty() ) {
         bool begin = false;
         ITERATE ( TForwards, i, m_ForwardDeclarations ) {
-            ns.Set(i->second, header);
-            if ( !begin ) {
+            ns.Set(CNamespace(i->first), header);
+            ITERATE( set<string>, s, i->second) {
+                if ( !begin ) {
+                    header <<
+                        "\n"
+                        "// forward declarations\n";
+                    begin = true;
+                }
                 header <<
-                    "\n"
-                    "// forward declarations\n";
-                begin = true;
+                    "class " << *s << ";\n";
             }
-            header <<
-                "class " << i->first << ";\n";
         }
         if ( begin )
             header << '\n';
@@ -874,9 +876,29 @@ CTypeStrings* CFileCode::GetPrimaryClass(void)
     return m_CurrentClass->code.get();
 }
 
+bool CFileCode::GetClasses(list<CTypeStrings*>& types)
+{
+    m_CurrentClass = &*(m_Classes.begin());
+    types.clear();
+    ITERATE ( TClasses, i, m_Classes ) {
+        types.push_back(i->code.get());
+    }
+    return !types.empty();
+}
+
+CNamespace CFileCode::GetClassNamespace(CTypeStrings* type)
+{
+    ITERATE ( TClasses, i, m_Classes ) {
+        if (type == i->code.get()) {
+            return i->ns;
+        }
+    }
+    return m_CurrentClass->ns;
+}
+
 bool CFileCode::AddType(const CDataType* type)
 {
-    string idName = type->IdName();
+    string idName = type->IdName() + type->GetNamespaceName();
     if ( m_AddedClasses.find(idName) != m_AddedClasses.end() )
         return false;
     m_AddedClasses.insert(idName);

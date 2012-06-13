@@ -51,7 +51,7 @@ class CCodeGenerator;
 class CFileCode : public CClassContext
 {
 public:
-    typedef map<string, CNamespace> TForwards;
+    typedef map<string, set<string> > TForwards;
     typedef set<string> TAddedClasses;
     struct SClassInfo {
         SClassInfo(const CNamespace& classNamespace,
@@ -109,6 +109,9 @@ public:
     bool GenerateUserHPP(const string& path, string& fileName) const;
     bool GenerateUserCPP(const string& path, string& fileName) const;
     CTypeStrings* GetPrimaryClass(void);
+
+    bool GetClasses(list<CTypeStrings*>& types);
+    CNamespace GetClassNamespace(CTypeStrings* type);
 
     CNcbiOstream& WriteSourceFile(CNcbiOstream& out) const;
     static CNcbiOstream& WriteCopyrightHeader(CNcbiOstream& out);

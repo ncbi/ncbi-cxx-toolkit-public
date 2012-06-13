@@ -583,7 +583,12 @@ const CNamespace& CDataType::Namespace(void) const
     if ( !m_CachedNamespace.get() ) {
         const string ns = GetVar("_namespace");
         if ( !ns.empty() ) {
-            m_CachedNamespace.reset(new CNamespace(ns));
+            string sub_ns(GetModule()->GetSubnamespace());
+            if (sub_ns.empty()) {
+                m_CachedNamespace.reset(new CNamespace(ns));
+            } else {
+                m_CachedNamespace.reset(new CNamespace(ns + "::" + sub_ns));
+            }
         }
         else {
             if ( GetParentType() ) {

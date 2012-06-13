@@ -731,7 +731,15 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
         bool types_found = false;
         ITERATE ( TOutputFiles, filei, m_Files ) {
             CFileCode* code = filei->second.get();
-            module_name = code->GetPrimaryClass()->GetDoxygenModuleName();
+            list<CTypeStrings*> filetypes;
+            code->GetClasses( filetypes );
+            module_name.clear();
+            ITERATE(list<CTypeStrings*>, t, filetypes) {
+                string module = (*t)->GetDoxygenModuleName();
+                if (module_name.empty() || module.size() < module_name.size()) {
+                    module_name = module;
+                }
+            }
             if (current_module.empty()) {
                 if (modules.find(module_name) != modules.end()) {
                     continue;
@@ -767,10 +775,12 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
                 *out <<
                     "void " << current_module << "_RegisterModuleClasses(void);\n\n";
             }
-            if (code->GetPrimaryClass()->GetKind() == CTypeStrings::eKindObject) {
-                CClassTypeStrings* classtype = dynamic_cast<CClassTypeStrings*>(code->GetPrimaryClass());
-                if (classtype && classtype->HaveTypeInfo()) {
-                    types_found = true;
+            ITERATE(list<CTypeStrings*>, t, filetypes) {
+                if ((*t)->GetKind() == CTypeStrings::eKindObject) {
+                    CClassTypeStrings* classtype = dynamic_cast<CClassTypeStrings*>(*t);
+                    if (classtype && classtype->HaveTypeInfo()) {
+                        types_found = true;
+                    }
                 }
             }
         }
@@ -806,7 +816,15 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
         bool types_found = false;
         ITERATE ( TOutputFiles, filei, m_Files ) {
             CFileCode* code = filei->second.get();
-            module_name = code->GetPrimaryClass()->GetDoxygenModuleName();
+            list<CTypeStrings*> filetypes;
+            code->GetClasses( filetypes );
+            module_name.clear();
+            ITERATE(list<CTypeStrings*>, t, filetypes) {
+                string module = (*t)->GetDoxygenModuleName();
+                if (module_name.empty() || module.size() < module_name.size()) {
+                    module_name = module;
+                }
+            }
             if (current_module.empty()) {
                 if (modules.find(module_name) != modules.end()) {
                     continue;
@@ -843,15 +861,22 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
                 out_code <<
                     "void " << current_module << "_RegisterModuleClasses(void)\n{\n";
             }
-            if (code->GetPrimaryClass()->GetKind() == CTypeStrings::eKindObject) {
-                CClassTypeStrings* classtype = dynamic_cast<CClassTypeStrings*>(code->GetPrimaryClass());
-                if (classtype && classtype->HaveTypeInfo()) {
-                    types_found = true;
-                    out_inc <<
-                        "#include " << code->Include(code->GetUserHPPName()) << "\n";
-                    out_code << "    "
-                             << string(code->GetNamespace())
-                             << classtype->GetClassNameDT() << "::GetTypeInfo();\n";
+            set<string> user_includes;
+            ITERATE(list<CTypeStrings*>, t, filetypes) {
+                if ((*t)->GetKind() == CTypeStrings::eKindObject) {
+                    CClassTypeStrings* classtype = dynamic_cast<CClassTypeStrings*>(*t);
+                    if (classtype && classtype->HaveTypeInfo()) {
+                        types_found = true;
+                        string userhpp(code->Include(code->GetUserHPPName()));
+                        if (user_includes.find(userhpp) == user_includes.end()) {
+                            user_includes.insert(userhpp);
+                            out_inc <<
+                                "#include " << code->Include(code->GetUserHPPName()) << "\n";
+                        }
+                        out_code << "    "
+                                 << code->GetClassNamespace(*t).ToString()
+                                 << classtype->GetClassNameDT() << "::GetTypeInfo();\n";
+                    }
                 }
             }
         }

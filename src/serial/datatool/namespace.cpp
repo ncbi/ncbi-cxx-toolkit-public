@@ -62,7 +62,10 @@ CNamespace::CNamespace(const string& ns)
         pos = end + 2;
         end = ns.find("::", pos);
     }
-    m_Namespaces.push_back(ns.substr(pos));
+    string last(ns.substr(pos));
+    if (!last.empty()) {
+        m_Namespaces.push_back(last);
+    }
     if ( m_Namespaces[0] == KNCBINamespaceDefine )
         m_Namespaces[0] = KNCBINamespaceName;
     else if ( m_Namespaces[0] == KSTDNamespaceDefine )
