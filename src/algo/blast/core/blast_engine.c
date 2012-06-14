@@ -1079,6 +1079,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
     return status;
 }
 
+static void 
 s_AdjustSubjectForSraSearch(BlastHSPList* hsp_list, Uint1 offset )
 {
 	int i = 0;
