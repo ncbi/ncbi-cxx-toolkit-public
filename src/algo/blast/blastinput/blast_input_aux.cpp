@@ -89,7 +89,7 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */)
         retval = 100000;
         break;
     case eDiscMegablast:
-	retval = 1000000;
+	retval = 500000;
 	break;
     case eMegablast:
         retval = 5000000;
