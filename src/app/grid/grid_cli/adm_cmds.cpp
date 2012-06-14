@@ -36,17 +36,14 @@
 #include "util.hpp"
 #include "grid_cli.hpp"
 
-#include <string.h>
-#include <ctype.h>
-
 USING_NCBI_SCOPE;
 
 CGridCommandLineInterfaceApp::EAPIClass
     CGridCommandLineInterfaceApp::SetUp_AdminCmd()
 {
-    switch (IsOptionSet(eNetCache, OPTION_N(0)) |
-            IsOptionSet(eNetSchedule, OPTION_N(1)) |
-            IsOptionSet(eWorkerNode, OPTION_N(2))) {
+    switch (IsOptionExplicitlySet(eNetCache, OPTION_N(0)) |
+            IsOptionExplicitlySet(eNetSchedule, OPTION_N(1)) |
+            IsOptionExplicitlySet(eWorkerNode, OPTION_N(2))) {
     case 0:
         fprintf(stderr, "This command requires either "
             "'--nc' or '--ns' option to be specified.\n");
@@ -69,37 +66,6 @@ CGridCommandLineInterfaceApp::EAPIClass
             "are mutually exclusive.\n");
         return eUnknownAPI;
     }
-}
-
-int CGridCommandLineInterfaceApp::Cmd_WhatIs()
-{
-    CNetCacheKey nc_key;
-    if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
-            m_Opts.id.length(), &nc_key)) {
-        printf("Type: NetCache blob ID, version %u\n", nc_key.GetVersion());
-
-        PrintBlobMeta(nc_key);
-
-        printf("\nTo retrieve blob attributes from the server, use\n"
-            GRID_APP_NAME " blobinfo %s\n", m_Opts.id.c_str());
-    } else {
-        try {
-            CNetScheduleKey ns_key(m_Opts.id);
-            printf("Type: NetSchedule job ID, version %u\n", ns_key.version);
-
-            PrintJobMeta(ns_key);
-
-            printf("\nTo retrieve job attributes from the server, use\n"
-                GRID_APP_NAME " jobinfo %s\n", m_Opts.id.c_str());
-        }
-        catch (CNetScheduleException& e) {
-            if (e.GetErrCode() != CNetScheduleException::eKeyFormatError)
-                throw;
-            fprintf(stderr, "Unable to recognize the specified token.\n");
-            return 3;
-        }
-    }
-    return 0;
 }
 
 int CGridCommandLineInterfaceApp::Cmd_ServerInfo()

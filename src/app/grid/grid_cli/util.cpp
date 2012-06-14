@@ -33,6 +33,8 @@
 
 #include "util.hpp"
 
+#include <connect/ncbi_util.h>
+
 BEGIN_NCBI_SCOPE
 
 static void Indent(FILE* output_stream, int indent)
@@ -139,6 +141,15 @@ CJsonNode ExecToJson(CNetService service, const string& command, bool multiline)
         }
 
     return result;
+}
+
+void GetUserAndHost(string* user, string* host)
+{
+    char user_buf[64];
+    if (CORE_GetUsername(user_buf, sizeof(user_buf)) != NULL)
+        *user = user_buf;
+
+    *host = CSocketAPI::gethostname();
 }
 
 END_NCBI_SCOPE

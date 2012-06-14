@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "grid_cli.hpp"
+#include "util.hpp"
 
 #include <connect/services/grid_rw_impl.hpp>
 
@@ -73,11 +74,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
     }
 
-    if (IsOptionSet(eClientNode))
-        m_NetScheduleAPI.SetClientNode(m_Opts.client_node);
-    if (IsOptionSet(eClientSession))
-        m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
-
     if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();
         if (IsOptionSet(eWorkerNode))
@@ -97,11 +93,31 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         break;
     case eNetScheduleExecutor:
         m_NetScheduleExecutor = m_NetScheduleAPI.GetExecutor();
+
+        if (!IsOptionSet(eLoginToken) &&
+                !IsOptionSet(eClientNode) && !IsOptionSet(eClientSession)) {
+            NCBI_THROW(CArgException, eNoArg, "client identification required "
+                    "(see the '" LOGIN_COMMAND "' command).");
+        }
         break;
     default:
         _ASSERT(0);
         break;
     }
+
+    if (!IsOptionSet(eClientNode)) {
+        string user, host;
+        GetUserAndHost(&user, &host);
+        DefineClientNode(user, host);
+    }
+
+    if (!m_Opts.client_node.empty())
+        m_NetScheduleAPI.SetClientNode(m_Opts.client_node);
+
+    SetUpClientSession();
+
+    if (!m_Opts.client_session.empty())
+        m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
 }
 
 void CGridCommandLineInterfaceApp::SetUp_GridClient()
@@ -241,8 +257,8 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
 
     switch (*m_Position) {
     case '\0':
-        NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
-            ": empty attribute value must be specified as " <<
+        NCBI_THROW_FMT(CArgException, eInvalidArg,
+            "empty attribute value must be specified as " <<
                 attr_name << "=\"\"");
     case '\'':
     case '"':
@@ -487,8 +503,8 @@ bool CBatchSubmitAttrParser::NextAttribute()
 
     switch (m_JobAttribute) {
     case eUntypedArg:
-        NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
-            ": unknown attribute " << attr_name <<
+        NCBI_THROW_FMT(CArgException, eInvalidArg,
+            "unknown attribute " << attr_name <<
                 AT_POS(attr_name.data()));
 
     case eExclusiveJob:
@@ -496,8 +512,8 @@ bool CBatchSubmitAttrParser::NextAttribute()
 
     default:
         if (next_attr_type != CAttrListParser::eAttributeWithValue) {
-            NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
-                ": attribute " << attr_name <<
+            NCBI_THROW_FMT(CArgException, eInvalidArg,
+                "attribute " << attr_name <<
                     " requires a value" << AT_POS(attr_name.data()));
         }
     }
@@ -546,8 +562,8 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                 if (IsOptionSet(eGroup))
                     m_GridClient->SetJobGroup(m_Opts.job_group);
                 if (!input_set) {
-                    NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
-                        ": attribute \"input\" is required at line " <<
+                    NCBI_THROW_FMT(CArgException, eInvalidArg,
+                        "attribute \"input\" is required at line " <<
                             attr_parser.GetLineNumber());
                 }
                 fprintf(m_Opts.output_stream,
@@ -598,8 +614,8 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                     }
                 }
                 if (!input_set) {
-                    NCBI_THROW_FMT(CArgException, eInvalidArg, GRID_APP_NAME
-                        ": attribute \"input\" is required at line " <<
+                    NCBI_THROW_FMT(CArgException, eInvalidArg,
+                        "attribute \"input\" is required at line " <<
                             attr_parser.GetLineNumber());
                 }
                 --remaining_batch_size;
@@ -853,30 +869,6 @@ int CGridCommandLineInterfaceApp::Cmd_CancelJob()
     return 0;
 }
 
-/*
-int CGridCommandLineInterfaceApp::Cmd_RegWNode()
-{
-    SetUp_NetScheduleCmd(eNetScheduleExecutor);
-
-    switch (IsOptionSet(eRegisterWNode, OPTION_N(0)) |
-        IsOptionSet(eUnregisterWNode, OPTION_N(1))) {
-    case OPTION_N(0): // eRegisterWNode
-        printf("%s\n", m_NetScheduleExecutor.GetGUID().c_str());
-        break;
-    case OPTION_N(1): // eUnregisterWNode
-        m_NetScheduleExecutor.UnRegisterClient();
-        break;
-
-    default:
-        fprintf(stderr, PROGRAM_NAME
-            ": exactly one registration option is required.\n");
-        return 2;
-    }
-
-    return 0;
-}
-*/
-
 int CGridCommandLineInterfaceApp::Cmd_RequestJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
@@ -910,8 +902,9 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         break;
 
     default:
-        fprintf(stderr, GRID_APP_NAME ": options '--" CLAIM_NEW_AFFINITIES_OPTION
-            "' and '--" ANY_AFFINITY_OPTION "' are mutually exclusive.\n");
+        fprintf(stderr, GRID_APP_NAME ": options '--"
+            CLAIM_NEW_AFFINITIES_OPTION "' and '--" ANY_AFFINITY_OPTION
+            "' are mutually exclusive.\n");
         return 2;
     }
 

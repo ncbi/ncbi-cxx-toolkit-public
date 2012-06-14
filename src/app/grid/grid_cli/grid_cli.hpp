@@ -42,6 +42,19 @@
 
 #define GRID_APP_NAME "grid_cli"
 
+#define LOGIN_TOKEN_ENV "GRID_CLI_LOGIN_TOKEN"
+#define DEFAULT_APP_UID GRID_APP_NAME
+
+#define LOGIN_TOKEN_APP_UID_FIELD "uid"
+#define LOGIN_TOKEN_AUTH_FIELD "c"
+#define LOGIN_TOKEN_USER_FIELD "u"
+#define LOGIN_TOKEN_HOST_FIELD "h"
+#define LOGIN_TOKEN_NETCACHE_FIELD "nc"
+#define LOGIN_TOKEN_NETSCHEDULE_FIELD "ns"
+#define LOGIN_TOKEN_QUEUE_FIELD "q"
+#define LOGIN_TOKEN_SESSION_FIELD "s"
+
+#define LOGIN_TOKEN_OPTION "login-token"
 #define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
 #define OUTPUT_FILE_OPTION "output-file"
@@ -65,6 +78,7 @@
 #define DIE_OPTION "die"
 #define DRAIN_OPTION "drain"
 
+#define LOGIN_COMMAND "login"
 #define READJOB_COMMAND "readjob"
 
 BEGIN_NCBI_SCOPE
@@ -73,7 +87,9 @@ enum EOption {
     eUntypedArg,
     eOptionalID,
     eID,
+    eAppUID,
     eAllowXSiteConn,
+    eLoginToken,
     eAuth,
     eInput,
     eInputFile,
@@ -166,6 +182,7 @@ enum ENetScheduleStatTopic {
 
 #define OPTION_ACCEPTED 1
 #define OPTION_SET 2
+#define OPTION_EXPLICITLY_SET 4
 #define OPTION_N(number) (1 << number)
 
 class CGridCommandLineInterfaceApp : public CNcbiApplication
@@ -183,9 +200,12 @@ private:
     int m_ArgC;
     const char** m_ArgV;
 
+    const char* m_CmdNameVariants;
+
     struct SOptions {
         string id;
         string auth;
+        string app_uid;
         EOutputFormat output_format;
         string nc_service;
         string cache_name;
@@ -240,19 +260,44 @@ private:
     } m_Opts;
 
 private:
+    void ParseLoginToken(const char* token);
+    void DefineClientNode(const string& user, const string& host);
+    void SetUpClientSession();
+
     bool IsOptionAcceptedButNotSet(EOption option)
     {
         return m_Opts.option_flags[option] == OPTION_ACCEPTED;
     }
 
+    void MarkOptionAsSet(int option)
+    {
+        m_Opts.option_flags[option] |= OPTION_SET;
+    }
+
+    void MarkOptionAsExplicitlySet(int option)
+    {
+        m_Opts.option_flags[option] |= OPTION_SET | OPTION_EXPLICITLY_SET;
+    }
+
     bool IsOptionSet(int option)
     {
-        return m_Opts.option_flags[option] == OPTION_SET;
+        return (m_Opts.option_flags[option] & OPTION_SET) != 0;
+    }
+
+    bool IsOptionExplicitlySet(int option)
+    {
+        return (m_Opts.option_flags[option] & OPTION_EXPLICITLY_SET) != 0;
     }
 
     int IsOptionSet(int option, int mask)
     {
-        return m_Opts.option_flags[option] == OPTION_SET ? mask : 0;
+        return (m_Opts.option_flags[option] & OPTION_SET) != 0 ? mask : 0;
+    }
+
+    int IsOptionExplicitlySet(int option, int mask)
+    {
+        return (m_Opts.option_flags[option] &
+                OPTION_EXPLICITLY_SET) != 0 ? mask : 0;
     }
 
     CNetCacheAPI m_NetCacheAPI;
@@ -295,6 +340,7 @@ public:
 // Miscellaneous commands.
 public:
     int Cmd_WhatIs();
+    int Cmd_Login();
     int Cmd_ServerInfo();
     int Cmd_Stats();
     int Cmd_Health();

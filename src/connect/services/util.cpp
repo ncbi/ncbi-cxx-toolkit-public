@@ -240,7 +240,8 @@ void g_VerifyAlphabet(const string& str, const CTempString& param_name,
     case eCC_RelaxedId:
         for (; len > 0; ++ch, --len)
             if (NOT_ALPHA(*ch) && NOT_DIGIT(*ch) && *ch != '_' &&
-                    *ch != '-' && *ch != '.' && *ch != ':' && *ch != '|')
+                    *ch != '-' && *ch != '.' && *ch != ':' &&
+                    *ch != '@' && *ch != '|')
                 break;
         break;
     }

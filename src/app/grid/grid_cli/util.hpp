@@ -43,6 +43,8 @@ void PrintJSON(FILE* output_stream, CJsonNode node);
 CJsonNode ExecToJson(CNetService service,
         const string& command, bool multiline);
 
+void GetUserAndHost(string* user, string* host);
+
 END_NCBI_SCOPE
 
 #endif // UTIL__HPP
