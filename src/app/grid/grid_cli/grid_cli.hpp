@@ -326,6 +326,7 @@ public:
     int Cmd_RequestJob();
     int Cmd_CommitJob();
     int Cmd_ReturnJob();
+    int Cmd_ClearNode();
     int Cmd_UpdateJob();
     int Cmd_QueueInfo();
     int Cmd_DumpQueue();

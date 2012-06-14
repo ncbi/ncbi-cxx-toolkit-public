@@ -1012,6 +1012,15 @@ int CGridCommandLineInterfaceApp::Cmd_ReturnJob()
     return 0;
 }
 
+int CGridCommandLineInterfaceApp::Cmd_ClearNode()
+{
+    SetUp_NetScheduleCmd(eNetScheduleExecutor);
+
+    m_NetScheduleExecutor.UnRegisterClient();
+
+    return 0;
+}
+
 int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin);

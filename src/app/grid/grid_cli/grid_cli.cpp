@@ -619,6 +619,16 @@ struct SCommandDefinition {
         {eID, eAuthToken, eNetSchedule, eQueue, eLoginToken, eAuth,
             eClientNode, eClientSession, eAllowXSiteConn, -1}},
 
+    {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_ClearNode,
+        "clearnode", "Fail incomplete jobs and clear client record.",
+        "The '--" LOGIN_TOKEN_OPTION "' option must be provided for "
+        "client identification. This command removes the corresponding "
+        "client registry record from all NetSchedule servers. If the "
+        "client had any running jobs, their status will be changed "
+        "back to Pending (or Failed if there are no retries left).",
+        {eNetSchedule, eQueue, eLoginToken, eAuth,
+            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_UpdateJob,
         "updatejob", "Modify attributes of an existing job.",
         "Change one or more job properties. The outcome depends "
