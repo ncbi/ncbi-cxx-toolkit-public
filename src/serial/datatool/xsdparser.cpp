@@ -392,10 +392,7 @@ void XSDParser::ParseImport(void)
             m_MapAttribute[name].SetName(name);
             m_MapAttribute[name].SetType(DTDAttribute::eString);
             import=false;
-        } else {
-            m_TargetNamespace = m_Value;
         }
-        
     }
     if (import && GetAttribute("schemaLocation")) {
         string name(m_Value);
