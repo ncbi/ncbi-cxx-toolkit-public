@@ -200,8 +200,6 @@ private:
     int m_ArgC;
     const char** m_ArgV;
 
-    const char* m_CmdNameVariants;
-
     struct SOptions {
         string id;
         string auth;

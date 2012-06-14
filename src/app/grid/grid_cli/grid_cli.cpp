@@ -865,7 +865,6 @@ int CGridCommandLineInterfaceApp::Run()
             ParseLoginToken(GetEnvironment().Get(LOGIN_TOKEN_ENV).c_str());
 
             cmd_def = s_CommandDefinitions + cmd_id;
-            m_CmdNameVariants = cmd_def->name_variants;
         }
         catch (exception& e) {
             NcbiCerr << e.what();
@@ -910,7 +909,7 @@ int CGridCommandLineInterfaceApp::Run()
                         if (*++format < 0) {
                             fprintf(stderr, GRID_APP_NAME
                                     " %s: invalid output format '%s'.\n",
-                                    m_CmdNameVariants, opt_value);
+                                    cmd_def->name_variants, opt_value);
                             return 2;
                         }
                     m_Opts.output_format = (EOutputFormat) *format;
@@ -957,7 +956,7 @@ int CGridCommandLineInterfaceApp::Run()
                 if ((m_Opts.batch_size = NStr::StringToUInt(opt_value)) == 0) {
                     fprintf(stderr, GRID_APP_NAME
                             " %s: batch size must be greater that zero.\n",
-                            m_CmdNameVariants);
+                            cmd_def->name_variants);
                     return 2;
                 }
                 break;
@@ -1095,7 +1094,7 @@ int CGridCommandLineInterfaceApp::Run()
     }
     catch (CArgException& e) {
         fprintf(stderr, GRID_APP_NAME " %s: %s\n",
-                m_CmdNameVariants, e.GetMsg().c_str());
+                cmd_def->name_variants, e.GetMsg().c_str());
         return 2;
     }
     catch (CException& e) {
