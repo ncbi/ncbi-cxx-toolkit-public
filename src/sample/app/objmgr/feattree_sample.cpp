@@ -55,6 +55,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -159,7 +160,8 @@ int CFeatTreeSampleApp::Run(void)
                  << dec << NcbiEndl;
         return 1;
     }
-    NcbiCout << "Title: " << GetTitle(bioseq_handle, 0) << NcbiEndl;
+    CDeflineGenerator gen;
+    NcbiCout << "Title: " << gen.GenerateDefline(bioseq_handle) << NcbiEndl;
 
     // Construct the Seq-loc to get features for.
     CSeq_loc seq_loc;
