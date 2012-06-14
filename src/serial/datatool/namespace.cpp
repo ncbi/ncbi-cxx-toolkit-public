@@ -66,10 +66,12 @@ CNamespace::CNamespace(const string& ns)
     if (!last.empty()) {
         m_Namespaces.push_back(last);
     }
-    if ( m_Namespaces[0] == KNCBINamespaceDefine )
-        m_Namespaces[0] = KNCBINamespaceName;
-    else if ( m_Namespaces[0] == KSTDNamespaceDefine )
-        m_Namespaces[0] = KSTDNamespaceName;
+    if (!m_Namespaces.empty()) {
+        if ( m_Namespaces[0] == KNCBINamespaceDefine )
+            m_Namespaces[0] = KNCBINamespaceName;
+        else if ( m_Namespaces[0] == KSTDNamespaceDefine )
+            m_Namespaces[0] = KSTDNamespaceName;
+    }
 }
 
 size_t CNamespace::EqualLevels(const CNamespace& ns) const
