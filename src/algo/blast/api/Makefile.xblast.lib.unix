@@ -1,0 +1,6 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to __svml_* functions.
+CORE = .core_
+CORE_SRCDIR = .
+include $(srcdir)/../core/Makefile.blast.lib.unix

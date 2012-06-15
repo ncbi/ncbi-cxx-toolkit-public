@@ -1,0 +1,11 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to __svml_* functions.
+
+CORE_SRCDIR ?= $(srcdir)
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)" "icc-Release"
+  $(CORE)blast_psi_priv.o: $(CORE_SRCDIR)/$(CORE)blast_psi_priv.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-log $< -o $@ \
+	    $(CC_FILTER)
+endif

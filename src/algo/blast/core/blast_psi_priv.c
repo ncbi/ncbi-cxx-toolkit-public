@@ -2067,14 +2067,6 @@ static double s_columnSpecificPseudocounts(const _PSISequenceWeights *posSearch,
 /****************************************************************************/
 /******* Compute residue frequencies stage of PSSM creation *****************/
 
-#if defined(__INTEL_COMPILER)  &&  __INTEL_COMPILER >= 1000 \
-  &&  defined(__i386__)  &&  defined(__OPTIMIZE__)  &&  defined(__PIC__)
-/* Kludge: avoid hitting the error "hidden symbol `__svml_log2' in
-   /opt/intel/cc/10.1.021/lib/libsvml.a(svml_dln2.o) is referenced by DSO"
-   when building dynamic libraries of the Toolkit but proceeding to link
-   ICC's libraries staticly and only into applications. */
-#  pragma optimization_level 2
-#endif
 int
 _PSIComputeFreqRatios(const _PSIMsa* msa,
                       const _PSISequenceWeights* seq_weights,

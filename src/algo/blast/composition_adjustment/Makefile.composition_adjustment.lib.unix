@@ -1,0 +1,13 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to __svml_* functions.
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(NCBI_PLATFORM_BITS)$(DLL)" "icc-Release64"
+  composition_adjustment.o: $(srcdir)/composition_adjustment.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-log -fno-builtin-exp \
+	    $< -o $@ $(CC_FILTER)
+
+  optimize_target_freq.o: $(srcdir)/optimize_target_freq.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-log $< -o $@ \
+	    $(CC_FILTER)
+endif
