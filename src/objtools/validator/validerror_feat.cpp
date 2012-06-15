@@ -3083,9 +3083,15 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     EDiagSev sev = (aa == 'U' || aa == 'O') ? eDiag_Warning : eDiag_Error;
 
     bool modified_codon_recognition = false;
-    if ( feat.CanGetExcept_text()  &&
-         NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") != NPOS ) {
-        modified_codon_recognition = true;
+    bool rna_editing = false;
+    if ( feat.CanGetExcept_text() ) {
+        string excpt_text = feat.GetExcept_text();
+        if ( NStr::FindNoCase(excpt_text, "modified codon recognition") != NPOS ) {
+            modified_codon_recognition = true;
+        }
+        if ( NStr::FindNoCase(excpt_text, "RNA editing") != NPOS ) {
+            rna_editing = true;
+        }
     }
 
     vector<string> recognized_codon_values;
@@ -3101,7 +3107,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
             continue;
         }
 
-        if ( !modified_codon_recognition ) {
+        if ( !modified_codon_recognition && !rna_editing ) {
             unsigned char taa = ncbieaa[*iter];
             string codon = CGen_code_table::IndexToCodon(*iter);
             recognized_codon_values.push_back (codon);
