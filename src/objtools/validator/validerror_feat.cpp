@@ -3489,6 +3489,30 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
     case CSeqFeatData::eSubtype_intron:
         ValidateIntron (feat);
         break;
+    case CSeqFeatData::eSubtype_assembly_gap:
+        {
+            bool is_far_delta = false;
+            const CSeq_loc& location = feat.GetLocation();
+            CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, location);
+            if ( bsh.IsSetInst_Repr()) {
+                CBioseq_Handle::TInst::TRepr repr = bsh.GetInst_Repr();
+                if ( repr == CSeq_inst::eRepr_delta ) {
+                    is_far_delta = true;
+                    const CBioseq& seq = *(bsh.GetCompleteBioseq());
+                    const CSeq_inst& inst = seq.GetInst();
+                    ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
+                        if ( !(*sg) ) continue;
+                        if (( (**sg).Which() == CDelta_seq::e_Loc )) continue;
+                        is_far_delta = false;
+                    }
+                }
+            }
+            if (! is_far_delta) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                        "An assembly_gap feature should only be on a contig record", feat);
+            }
+        }
+        break;
     default:
         break;
     }// end of switch statement  
