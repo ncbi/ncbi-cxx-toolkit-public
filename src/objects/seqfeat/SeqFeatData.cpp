@@ -94,6 +94,7 @@ static const SImportEntry kImportTable[] = {
     { "V_region",            CSeqFeatData::eSubtype_V_region },
     { "V_segment",           CSeqFeatData::eSubtype_V_segment },
     { "allele",              CSeqFeatData::eSubtype_allele },
+    { "assembly_gap",        CSeqFeatData::eSubtype_assembly_gap },
     { "attenuator",          CSeqFeatData::eSubtype_attenuator },
     { "centromere",          CSeqFeatData::eSubtype_centromere },
     { "conflict",            CSeqFeatData::eSubtype_conflict },
@@ -548,7 +549,8 @@ static const SSubtypeInfo s_subtype_info[] = {
     SUBTYPE_INFO(               e_Imp,        eSubtype_mobile_element,  99),
     SUBTYPE_INFO(               e_Imp,            eSubtype_centromere, 100),
     SUBTYPE_INFO(               e_Imp,              eSubtype_telomere, 101),
-    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 102),
+    SUBTYPE_INFO(               e_Imp,          eSubtype_assembly_gap, 102),
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 103),
     SUBTYPE_INFO(           e_not_set,                   eSubtype_any, 255)
 };
 static const size_t s_subtype_count =
@@ -2295,6 +2297,12 @@ START_SUBTYPE(gap)
     ADD_QUAL(note);
 END_SUBTYPE
 
+START_SUBTYPE(assembly_gap)
+    ADD_QUAL(estimated_length);
+    ADD_QUAL(gap_type);
+    ADD_QUAL(linkage_evidence);
+END_SUBTYPE
+
 START_SUBTYPE(operon)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
@@ -2599,6 +2607,8 @@ void CSeqFeatData::s_InitMandatoryQuals(void)
     AutoPtr<TFeatQuals> ptr(new TFeatQuals);
     TFeatQuals& table = *ptr;
 
+    table[eSubtype_assembly_gap].push_back(eQual_estimated_length);
+    table[eSubtype_assembly_gap].push_back(eQual_gap_type);
     table[eSubtype_conflict].push_back(eQual_citation);
     table[eSubtype_gap].push_back(eQual_estimated_length);
     table[eSubtype_misc_binding].push_back(eQual_bound_moiety);
@@ -2660,6 +2670,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_focus, "focus" },
     { CSeqFeatData::eQual_frequency, "frequency" },
     { CSeqFeatData::eQual_function, "function" },
+    { CSeqFeatData::eQual_gap_type, "gap_type" },
     { CSeqFeatData::eQual_gdb_xref, "gdb_xref" },
     { CSeqFeatData::eQual_gene, "gene" },
     { CSeqFeatData::eQual_gene_synonym, "gene_synonym" },
@@ -2676,6 +2687,8 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_lab_host, "lab_host" },
     { CSeqFeatData::eQual_label, "label" },
     { CSeqFeatData::eQual_lat_lon, "lat_lon" },
+    { CSeqFeatData::eQual_linkage_evidence, "linkage_evidence" },
+    { CSeqFeatData::eQual_linkage_group, "linkage_group" },
     { CSeqFeatData::eQual_locus_tag, "locus_tag" },
     { CSeqFeatData::eQual_macronuclear, "macronuclear" },
     { CSeqFeatData::eQual_map, "map" },

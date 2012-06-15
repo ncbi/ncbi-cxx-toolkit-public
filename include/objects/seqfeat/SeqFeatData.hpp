@@ -209,7 +209,8 @@ public:
         eSubtype_mobile_element     = 99,
         eSubtype_centromere         = 100,
         eSubtype_telomere           = 101,
-        eSubtype_max                = 102,
+        eSubtype_assembly_gap       = 102,
+        eSubtype_max                = 103,
         eSubtype_any                = 255
     };
     ESubtype GetSubtype(void) const;
@@ -325,6 +326,7 @@ public:
         eQual_focus,
         eQual_frequency,
         eQual_function,
+        eQual_gap_type,
         eQual_gdb_xref,
         eQual_gene,
         eQual_gene_synonym,
@@ -342,6 +344,7 @@ public:
         eQual_lab_host,
         eQual_label,
         eQual_lat_lon,
+        eQual_linkage_evidence,
         eQual_linkage_group,
         eQual_locus_tag,
         eQual_macronuclear,
