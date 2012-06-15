@@ -132,7 +132,11 @@ public:
     static double s_GetDefaultPolyaExtIdty(void);
     double GetPolyaExtIdentity(void) const;
 
-    void   SetStartModelId(size_t model_id) {
+    void   SetMinPolyaLen(size_t len);
+    static size_t s_GetDefaultMinPolyaLen(void);
+    size_t GetMinPolyaLen(void) const;
+
+   void   SetStartModelId(size_t model_id) {
         m_model_id = model_id - 1;
     }
     size_t GetNextModelId(void) const {
@@ -229,7 +233,7 @@ public:
     TOrfPair GetCds(const THit::TId & id, const vector<char> * seq_data = 0);
 
     static size_t s_TestPolyA(const char * seq, size_t dim, size_t cds_stop = 0);
-    static bool s_IsPolyA(const char * seq, size_t polya_start, size_t dim, size_t cds_stop = 0);
+    bool IsPolyA(const char * seq, size_t polya_start, size_t dim, size_t cds_stop = 0);
 
     // alignment statistics
 
@@ -309,6 +313,9 @@ protected:
 
     // min idty to extend alignment into polya
     double                m_MinPolyaExtIdty; 
+
+    // min polya length
+    size_t                m_MinPolyaLen;
 
     // compartment penalty as a per cent of the query (mRna) length
     double                m_CompartmentPenalty;
