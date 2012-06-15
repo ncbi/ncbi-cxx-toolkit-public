@@ -102,6 +102,13 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          NStr::DoubleToString(CSplign::s_GetDefaultPolyaExtIdty()));
 
     argdescr->AddDefaultKey
+        ("min_polya_len",
+         "min_polya_len",
+         "Minimal length of polya.",
+         CArgDescriptions::eInteger,
+         NStr::NumericToString(CSplign::s_GetDefaultMinPolyaLen()));
+
+    argdescr->AddDefaultKey
         ("max_intron",
          "max_intron",
          "The upper bound on intron length, in base pairs.",
@@ -123,6 +130,9 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->SetConstraint("min_exon_idty", constrain01);
     argdescr->SetConstraint("min_polya_ext_idty", constrain01);
     argdescr->SetConstraint("compartment_penalty", constrain01);
+
+    CArgAllow * constrain_1_1M (new CArgAllow_Integers(1,1000000));
+    argdescr->SetConstraint("min_polya_len", constrain_1_1M);
 
     CArgAllow * constrain_7_2M (new CArgAllow_Integers(7,2000000));
     argdescr->SetConstraint("max_intron", constrain_7_2M);
@@ -154,6 +164,7 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     splign->SetMinSingletonIdentityBps(args["min_singleton_idty_bps"].AsInteger());
     splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
     splign->SetPolyaExtIdentity(args["min_polya_ext_idty"].AsDouble());
+    splign->SetMinPolyaLen(args["min_polya_len"].AsInteger());
     const bool query_low_quality (args["type"].AsString() == kQueryType_EST);
     double max_space (args["max_space"].AsDouble() * kMb);
     const Uint4 kMax32 (numeric_limits<Uint4>::max());

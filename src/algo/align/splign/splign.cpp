@@ -100,6 +100,7 @@ CSplign::CSplign(void):
     m_CanResetHistory (true),
     m_MinExonIdty(s_GetDefaultMinExonIdty()),
     m_MinPolyaExtIdty(s_GetDefaultPolyaExtIdty()),
+    m_MinPolyaLen(s_GetDefaultMinPolyaLen()),
     m_CompartmentPenalty(s_GetDefaultCompartmentPenalty()),
     m_MinCompartmentIdty(s_GetDefaultMinCompartmentIdty()),
     m_MinSingletonIdty(s_GetDefaultMinCompartmentIdty()),
@@ -216,6 +217,10 @@ void CSplign::SetPolyaExtIdentity( double idty )
     }
 }
 
+void CSplign::SetMinPolyaLen(size_t len) {
+    m_MinPolyaLen = len;
+}
+
 void CSplign::SetMinCompartmentIdentity( double idty )
 {
     if(!(0 <= idty && idty <= 1)) {
@@ -287,6 +292,15 @@ double CSplign::GetPolyaExtIdentity( void ) const {
 double CSplign::s_GetDefaultPolyaExtIdty(void)
 {
     return 1.;
+}
+
+size_t CSplign::GetMinPolyaLen( void ) const {
+    return m_MinPolyaLen;
+}
+
+size_t CSplign::s_GetDefaultMinPolyaLen(void)
+{
+    return 1;
 }
 
 double CSplign::GetMinCompartmentIdentity(void) const {
@@ -1055,10 +1069,9 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     return rv;
 }
 
-bool CSplign::s_IsPolyA(const char * seq, size_t polya_start, size_t dim, size_t cds_stop) {
-    const size_t kMinPolyaLen(10);
+bool CSplign::IsPolyA(const char * seq, size_t polya_start, size_t dim, size_t cds_stop) {
     const double kMinPercAInPolya (0.80);
-    if( ( polya_start + kMinPolyaLen > dim ) || ( polya_start <= cds_stop ) ) return false;
+    if( ( polya_start + GetMinPolyaLen() > dim ) || ( polya_start <= cds_stop ) ) return false;
     size_t cnt = 0;
     for(size_t i = polya_start; i<dim; ++i) {
         if(seq[i] == 'A') ++cnt;
@@ -1423,7 +1436,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         THit::TCoord coord = s.m_box[1] + 1;
         m_polya_start = kMax_UInt;
         if(coord < mrna_size ) {//there is unaligned flanking part of mRNA 
-            if(!m_nopolya && s_IsPolyA(&m_mrna.front(), coord, m_mrna.size(), m_cds_stop)) {//polya
+            if(!m_nopolya && IsPolyA(&m_mrna.front(), coord, m_mrna.size(), m_cds_stop)) {//polya
                 m_polya_start = coord;
             } else {//gap
                 TSegment ss;
