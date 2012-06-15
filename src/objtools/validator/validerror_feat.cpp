@@ -1604,7 +1604,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
             } else {
                 int frame = 0;
                 CRef<CSeq_loc> p_loc = SourceToProduct(feat, cbr_loc, fS2P_AllowTer, m_Scope, &frame);
-                if (!p_loc || p_loc->IsNull() || !s_FrameMatch (cds, frame)) {
+                if (!p_loc || p_loc->IsNull() || frame != 1 /* !s_FrameMatch (cds, frame) */ ) {
                     PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
                         "Code-break location not in coding region - may be frame problem", feat);
                 }
