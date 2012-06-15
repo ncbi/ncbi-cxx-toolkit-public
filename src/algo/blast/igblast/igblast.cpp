@@ -153,8 +153,9 @@ CIgBlast::Run()
     /*** search DJ germline */
     int num_genes =  (m_IgOptions->m_IsProtein) ? 1 : 3;
     if (num_genes > 1) {
-        x_SetupDJSearch(annots, qf, opts_hndl);
+        
         for (int gene = 1; gene < num_genes; ++gene) {
+            x_SetupDJSearch(annots, qf, opts_hndl, gene);
             CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
             results[gene] = blast.Run();
             x_ConvertResultType(results[gene]);
@@ -227,15 +228,21 @@ void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
 
 };
 
-void CIgBlast::x_SetupDJSearch(vector<CRef <CIgAnnotation> > &annots,
+void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
                                CRef<IQueryFactory>           &qf,
-                               CRef<CBlastOptionsHandle>     &opts_hndl)
+                               CRef<CBlastOptionsHandle>     &opts_hndl,
+                               int db_type)
 {
     // Only igblastn will search DJ
     CBlastOptions & opts = opts_hndl->SetOptions();
     opts.SetMatchReward(1);
     opts.SetMismatchPenalty(-4);
-    opts.SetWordSize(5);
+    if (db_type == 2){ //J genes are longer so if can afford more reliable identification
+        opts.SetWordSize(9);
+    } else {
+        opts.SetWordSize(5);
+    }
+
     opts.SetGapOpeningCost(5);
     opts.SetGapExtensionCost(2);
     opts_hndl->SetEvalueThreshold(1000.0);

@@ -253,9 +253,10 @@ private:
                         CRef<CBlastOptionsHandle>     &opts_hndl);
 
     /// Prepare blast option handle and query for D, J germline database search
-    void x_SetupDJSearch(vector<CRef <CIgAnnotation> > &annots,
+    void x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
                          CRef<IQueryFactory>           &qf,
-                         CRef<CBlastOptionsHandle>     &opts_hndl);
+                         CRef<CBlastOptionsHandle>     &opts_hndl,
+                         int db_type);
 
     /// Prepare blast option handle and query for specified database search
     void x_SetupDbSearch(vector<CRef <CIgAnnotation> > &annot,
