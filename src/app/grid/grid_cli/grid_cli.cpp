@@ -391,7 +391,7 @@ struct SCommandDefinition {
         "the '--" LOGIN_TOKEN_OPTION "' command line option, "
         "which makes it possible to set client identification "
         "parameters all at once.\n",
-        {eAppUID, eNetSchedule, eQueue, eNetCache, eAuth,
+        {eAppUID, eNetSchedule, eQueue, eNetCache, eAuth, eAllowXSiteConn,
             eClientSession, -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_BlobInfo,
@@ -1184,6 +1184,14 @@ void CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
         } else if (key == LOGIN_TOKEN_SESSION_FIELD) {
             m_Opts.client_session = val;
             MarkOptionAsSet(eClientSession);
+        } else if (key == LOGIN_TOKEN_ALLOW_XSITE_CONN) {
+            switch (*val.data()) {
+            case 'T':
+            case 'Y':
+            case 't':
+            case 'y':
+                MarkOptionAsSet(eAllowXSiteConn);
+            }
         }
     } while (*end != '\0');
 

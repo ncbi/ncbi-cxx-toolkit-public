@@ -129,6 +129,9 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
     AppendLoginTokenField(&login_token,
             LOGIN_TOKEN_SESSION_FIELD, m_Opts.client_session);
 
+    if (IsOptionSet(eAllowXSiteConn))
+        AppendLoginTokenField(&login_token, LOGIN_TOKEN_ALLOW_XSITE_CONN, "y");
+
     puts(login_token.c_str());
 
     return 0;

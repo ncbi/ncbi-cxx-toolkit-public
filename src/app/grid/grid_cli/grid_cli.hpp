@@ -53,6 +53,7 @@
 #define LOGIN_TOKEN_NETSCHEDULE_FIELD "ns"
 #define LOGIN_TOKEN_QUEUE_FIELD "q"
 #define LOGIN_TOKEN_SESSION_FIELD "s"
+#define LOGIN_TOKEN_ALLOW_XSITE_CONN "x"
 
 #define LOGIN_TOKEN_OPTION "login-token"
 #define INPUT_OPTION "input"
