@@ -1090,6 +1090,11 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
 void CIgBlastTabularInfo::PrintHtmlSummary() const
 {
     if (m_IsNucl) {
+        if (m_IsMinusStrand) {
+            m_Ostream << "<br>Note that your query represents the minus strand\n"
+                      << "of a V gene and has been converted to the plus strand.\n"
+                      << "The sequence positions refer to the converted sequence.\n";
+        }
         m_Ostream << "<br><br><br>V(D)J rearrangement summary for query sequence:\n";
         m_Ostream << "<pre><table border=1>\n";
         m_Ostream << "<tr><td>Top V gene match</td>";

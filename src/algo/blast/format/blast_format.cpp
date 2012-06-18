@@ -938,14 +938,6 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     // print the preamble for this query
 
     m_Outfile << "\n\n";
-    
-    if (!m_IgOptions->m_IsProtein  &&
-         results.GetIgAnnotation()->m_MinusStrand) {
-        m_Outfile <<  "Note that your query represents the minus strand "
-                  << "of a V gene and has been converted to the plus strand. "
-                  << "The sequence positions refer to the converted sequence. "
-                  << endl << endl;
-    }
 
     CBlastFormatUtil::AcknowledgeBlastQuery(*bioseq, kFormatLineLength,
                                             m_Outfile, m_BelieveQuery,
