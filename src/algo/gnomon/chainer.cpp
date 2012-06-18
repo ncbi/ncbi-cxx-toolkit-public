@@ -167,10 +167,10 @@ struct SChainMember
         m_type(eCDS), m_left_cds(0), m_right_cds(0), m_cds(0), m_included(false),  m_postponed(false),
         m_marked_for_deletion(false), m_marked_for_retention(false) {}
 
-    void CollectContainedAlignments(set<SChainMember*>& chain_alignments);
+    void CollectContainedAlignments(set<CGeneModel*>& chain_alignments);
     void MarkIncludedContainedAlignments(const TSignedSeqRange& limits);
     void MarkPostponedContainedAlignments();
-    void CollectAllContainedAlignments(set<SChainMember*>& chain_alignments);
+    void CollectAllContainedAlignments(set<CGeneModel*>& chain_alignments);
     void MarkIncludedAllContainedAlignments(const TSignedSeqRange& limits);
     void MarkPostponedAllContainedAlignments();
     void MarkExtraCopiesForDeletion(const TSignedSeqRange& cds);
@@ -196,7 +196,7 @@ struct SChainMember
 class CChain : public CGeneModel
 {
 public:
-    CChain(const set<SChainMember*>& chain_alignments);
+    CChain(const set<CGeneModel*>& chain_alignments);
     //    void MergeWith(const CChain& another_chain, const CGnomonEngine&gnomon, const SMinScor& minscor);
     void ToEvidence(vector<TEvidence>& mrnas,
                     vector<TEvidence>& ests, 
@@ -220,11 +220,11 @@ public:
 
 
 
-void SChainMember::CollectContainedAlignments(set<SChainMember*>& chain_alignments)
+void SChainMember::CollectContainedAlignments(set<CGeneModel*>& chain_alignments)
 {
     NON_CONST_ITERATE (TContained, i, m_contained) {
         SChainMember* mi = *i;
-        chain_alignments.insert(mi);
+        chain_alignments.insert(mi->m_align);
     }
 }
 
@@ -291,7 +291,7 @@ void SChainMember::MarkExtraCopiesForDeletion(const TSignedSeqRange& cds)
 
 
 
-void SChainMember::CollectAllContainedAlignments(set<SChainMember*>& chain_alignments)
+void SChainMember::CollectAllContainedAlignments(set<CGeneModel*>& chain_alignments)
 {
     CollectContainedAlignments(chain_alignments);
     
@@ -1110,7 +1110,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         SChainMember& mi = **i;
         if(mi.m_included) continue;
 
-        set<SChainMember*> chain_alignments;
+        set<CGeneModel*> chain_alignments;
         mi.CollectAllContainedAlignments(chain_alignments);
         CChain chain(chain_alignments);
         TSignedSeqRange i_rf = chain.ReadingFrame();
@@ -1155,7 +1155,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         SChainMember& mi = **i;
         if(mi.m_included || mi.m_postponed) continue;
 
-        set<SChainMember*> chain_alignments;
+        set<CGeneModel*> chain_alignments;
         mi.CollectAllContainedAlignments(chain_alignments);
         CChain chain(chain_alignments);
         _ASSERT(chain.Weight() == mi.m_num);
@@ -1210,7 +1210,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         SChainMember& mi = **i;
         if(mi.m_included) continue;
 
-        set<SChainMember*> chain_alignments;
+        set<CGeneModel*> chain_alignments;
         mi.CollectAllContainedAlignments(chain_alignments);
         CChain chain(chain_alignments);
         _ASSERT(chain.Weight() == mi.m_num);
@@ -1222,6 +1222,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
         chain.ClipLowCoverageUTR();
+
         chains.push_back(chain);
         mi.MarkIncludedAllContainedAlignments(chain.Limits());
     }
@@ -1236,11 +1237,13 @@ void CChainer::CChainerImpl::CombineCompatibleChains(list<CChain>& chains) {
             list<CChain>::iterator jtt = jt++;
             if(itt != jtt && itt->Strand() == jtt->Strand() && Include(itt->ReadingFrame(),jtt->ReadingFrame()) && jtt->IsSubAlignOf(*itt)) {
 
+                set<CGeneModel*> chain_alignments(itt->m_members.begin(),itt->m_members.end());
                 for(vector<CGeneModel*>::iterator is = jtt->m_members.begin(); is != jtt->m_members.end(); ++is) {
-                    if(itt->AddSupport(CSupportInfo((*is)->ID())))
+                    if(chain_alignments.insert(*is).second) {
+                        itt->AddSupport(CSupportInfo((*is)->ID()));
                         itt->SetWeight(itt->Weight()+(*is)->Weight());
+                    }
                 }
-
                 chains.erase(jtt);
             }
         }
@@ -1315,16 +1318,16 @@ struct RightEndOrder
 };
 
 
-CChain::CChain(const set<SChainMember*>& chain_alignments)
+CChain::CChain(const set<CGeneModel*>& chain_alignments) : m_members(chain_alignments.begin(),chain_alignments.end())
 {
     SetType(eChain);
 
     _ASSERT(chain_alignments.size()>0);
-    ITERATE (set<SChainMember*>, it, chain_alignments)
-        m_members.push_back((*it)->m_align);
+    //    ITERATE (set<SChainMember*>, it, chain_alignments)
+    //        m_members.push_back((*it)->m_align);
     sort(m_members.begin(),m_members.end(),AlignSeqOrder());
 
-    EStrand strand = (*chain_alignments.begin())->m_align->Strand();
+    EStrand strand = m_members.front()->Strand();
     SetStrand(strand);
 
     vector<CSupportInfo> support;
@@ -1368,6 +1371,7 @@ CChain::CChain(const set<SChainMember*>& chain_alignments)
     SetWeight(weight);
     if(last_important_align != 0) 
        support[last_important_support].SetCore(true);
+
     ITERATE(vector<CSupportInfo>, s, support)
         AddSupport(*s);
 
@@ -3261,7 +3265,13 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
     for (size_t i = 1; i < a.Exons().size()-1; ++i) {
         const CModelExon* e = &a.Exons()[i];
         
-        while (i > 0 && !e->m_ssplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) {  //i==0 exon is long enough
+        while (i >= 0 && !e->m_ssplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) {
+
+            if(i == 0) { //first exon
+                a.CutExons(*e);
+                --i;
+                break;
+            }
             
             //this point is not an indel and is a codon boundary for proteins
             TSignedSeqPos remainingpoint = alignmap.ShrinkToRealPoints(TSignedSeqRange(a.Exons().front().GetFrom(),a.Exons()[i-1].GetTo()),snap_to_codons).GetTo();
@@ -3273,7 +3283,12 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
             e = &a.Exons()[i];
         }
         
-        while (!e->m_fsplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) { // i always < size()-1
+        while (!e->m_fsplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) { 
+
+            if(i == a.Exons().size()-1) { //last exon
+                a.CutExons(*e);
+                break;
+            }
             
             //this point is not an indel and is a codon boundary for proteins
             TSignedSeqPos remainingpoint = alignmap.ShrinkToRealPoints(TSignedSeqRange(a.Exons()[i+1].GetFrom(),a.Exons().back().GetTo()),snap_to_codons).GetFrom();
