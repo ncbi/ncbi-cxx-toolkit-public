@@ -2105,7 +2105,7 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
         // fEscSeqRange_Last
         BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Last), "\x47");
     
-        // fEscSeqRange_Byte0
+        // fEscSeqRange_First
         BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_First), "\x45");
     
         // fEscSeqRange_Errno

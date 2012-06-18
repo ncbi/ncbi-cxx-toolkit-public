@@ -1060,6 +1060,5 @@ int CThreadedApp::Run(void)
 int main(int argc, const char* argv[]) 
 {
     CThread::InitializeMainThreadId();
-    CThreadedApp app;
-    return app.AppMain(argc, argv, 0, eDS_Default);
+    return CThreadedApp().AppMain(argc, argv, 0, eDS_Default);
 }

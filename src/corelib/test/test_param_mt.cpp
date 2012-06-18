@@ -38,10 +38,10 @@
 
 USING_NCBI_SCOPE;
 
-const string   kStrParam_Default  = "StrParam Default";
-const bool     kBoolParam_Default = false;
-const unsigned kUIntParam_Default = 123;
-const string   kStaticStr_Default  = "StaticStringParam";
+const char*    kStrParam_Default    = "StrParam Default";
+const bool     kBoolParam_Default   = false;
+const unsigned kUIntParam_Default   = 123;
+const char*    kStaticStr_Default   = "StaticStringParam";
 const double   kDoubleParam_Default = 123.456;
 
 NCBI_PARAM_DECL(int, ParamTest, ThreadIdx);
@@ -114,7 +114,6 @@ private:
 
 
 typedef NCBI_PARAM_TYPE(ParamTest, StaticStr) TParam_StaticStr;
-
 static TParam_StaticStr s_StrParam;
 
 string InitIntParam(void);
@@ -214,11 +213,11 @@ bool CTestParamApp::TestApp_Init(void)
 bool CTestParamApp::TestApp_Exit(void)
 {
     // Test resets in ST mode
-    TParam_StrParam::SetDefault(kStrParam_Default + "-test1");
+    TParam_StrParam::SetDefault(string(kStrParam_Default) + "-test1");
     TParam_StrParam::ResetThreadDefault();
     _ASSERT(TParam_StrParam::GetThreadDefault() ==
         TParam_StrParam::GetDefault());
-    TParam_StrParam::SetDefault(kStrParam_Default + "-test2");
+    TParam_StrParam::SetDefault(string(kStrParam_Default) + "-test2");
     // the global value must be used
     _ASSERT(TParam_StrParam::GetThreadDefault() ==
         TParam_StrParam::GetDefault());
@@ -238,6 +237,5 @@ bool CTestParamApp::TestApp_Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
-    CTestParamApp app;
-    return app.AppMain(argc, argv);
+    return CTestParamApp().AppMain(argc, argv);
 }

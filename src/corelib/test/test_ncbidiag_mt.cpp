@@ -61,8 +61,7 @@ private:
 
 
 static char s_Str[k_NumThreadsMax*200] = "";
-static ostrstream s_Sout(s_Str, k_NumThreadsMax*200, ios::out);
-
+static ostrstream* s_Sout;
 static size_t s_CreateLine = 0;
 static size_t s_LogLine = 0;
 static size_t s_ErrLine = 0;
@@ -113,7 +112,8 @@ bool CTestDiagApp::TestApp_Init(void)
              << " format)..."
              << NcbiEndl;
     // Output to the string stream -- to verify the result
-    SetDiagStream(&s_Sout);
+    s_Sout = new ostrstream(s_Str, k_NumThreadsMax*200, ios::out);
+    SetDiagStream(s_Sout);
     return true;
 }
 
@@ -261,6 +261,5 @@ void CTestDiagApp::x_TestNewFormat(TStringList& messages)
 
 int main(int argc, const char* argv[]) 
 {
-    CTestDiagApp app;
-    return app.AppMain(argc, argv);
+    return CTestDiagApp().AppMain(argc, argv);
 }

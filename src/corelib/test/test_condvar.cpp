@@ -358,7 +358,7 @@ bool CTestCondVarApp::TestApp_Exit(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  MAIN
+// MAIN
 
 int main(int argc, const char* argv[]) 
 {

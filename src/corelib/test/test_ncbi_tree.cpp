@@ -325,11 +325,10 @@ int CTestApplication::Run(void)
 
   
 /////////////////////////////////
-// APPLICATION OBJECT and MAIN
+// MAIN
 //
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    CTestApplication theTestApplication;
-    return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
+    return CTestApplication().AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }

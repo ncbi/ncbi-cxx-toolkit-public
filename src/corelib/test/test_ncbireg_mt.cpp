@@ -276,6 +276,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     return true;
 }
 
+
 bool CTestRegApp::TestApp_Init(void)
 {
     NcbiCout << NcbiEndl
@@ -322,6 +323,7 @@ bool CTestRegApp::TestApp_Init(void)
     return true;
 }
 
+
 bool CTestRegApp::TestApp_Exit(void)
 {
     m_Registry.Clear();
@@ -339,6 +341,5 @@ bool CTestRegApp::TestApp_Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
-    CTestRegApp app;
-    return app.AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestRegApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }

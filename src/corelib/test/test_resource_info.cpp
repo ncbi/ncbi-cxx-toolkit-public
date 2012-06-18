@@ -67,21 +67,21 @@ void CResInfoTest::Init(void)
 }
 
 
-const char* src_name = "resinfo_plain.txt";
+const char*  src_name  = "resinfo_plain.txt";
 
-const string test1_res = "resource_info/some_user@some_server";
-const string test1_pwd = "resinfo_password";
-const string test1_val = "server_password";
+const char*  test1_res = "resource_info/some_user@some_server";
+const char*  test1_pwd = "resinfo_password";
+const char*  test1_val = "server_password";
 
-const string test2_res = "resource_info/some_user@some_server";
-const string test2_pwd = "resinfo_password2";
-const string test2_val = "server_password2";
-const string test2_ex = "username=anyone&server=server_name";
+const char*  test2_res = "resource_info/some_user@some_server";
+const char*  test2_pwd = "resinfo_password2";
+const char*  test2_val = "server_password2";
+const char*  test2_ex  = "username=anyone&server=server_name";
 
-const string test3_res = "resource_info2/another_user@another_server";
-const string test3_pwd = "resinfo_password";
-const string test3_val = "server_password";
-const string test3_ex = "username=onemore&server=server_name";
+const char*  test3_res = "resource_info2/another_user@another_server";
+const char*  test3_pwd = "resinfo_password";
+const char*  test3_val = "server_password";
+const char*  test3_ex  = "username=onemore&server=server_name";
 
 typedef CNcbiResourceInfo::TExtraValuesMap TExtraValuesMap;
 typedef CNcbiResourceInfo::TExtraValues    TExtraValues;

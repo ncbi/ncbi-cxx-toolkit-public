@@ -230,7 +230,6 @@ int CArgTestApplication::Run(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Cleanup
 
-
 void CArgTestApplication::Exit(void)
 {
     SetDiagStream(0);
@@ -240,9 +239,7 @@ void CArgTestApplication::Exit(void)
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
-
 int main(int argc, const char* argv[])
 {
-    // Execute main application function
     return CArgTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }

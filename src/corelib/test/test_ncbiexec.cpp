@@ -247,7 +247,7 @@ int CTest::Run(void)
 
 
 ///////////////////////////////////
-// APPLICATION OBJECT  and  MAIN
+// MAIN
 //
 
 int main(int argc, const char* argv[], const char* envp[])

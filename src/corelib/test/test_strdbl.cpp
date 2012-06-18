@@ -48,7 +48,9 @@ USING_NCBI_SCOPE;
 # define NCBI_CONST_LONGDOUBLE(v) v
 #endif
 
+
 static const double EPS = 2.22e-16; // 2^-52
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
@@ -1516,6 +1518,7 @@ bool CTestApp::CompareSerialization(double data, size_t digits)
 // Json uses 'fixed' format, not scientific; so, - nothing to compare
     return res;
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN

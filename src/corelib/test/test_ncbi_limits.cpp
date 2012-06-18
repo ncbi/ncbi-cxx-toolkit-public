@@ -109,8 +109,9 @@ static void s_Test(void)
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-//  MAIN
+///////////////////////////////////
+// MAIN
+//
 
 int main()
 {
@@ -126,9 +127,9 @@ int main()
         ERR_POST(Fatal << e.what());
     }
 
-	unsigned char c = 10;
-	unsigned char c_max = get_limits(c).max();
-   c = c_max;  // just to eliminate "unused var" warning
+    unsigned char c = 10;
+    unsigned char c_max = get_limits(c).max();
+    c = c_max;  // just to eliminate "unused var" warning
 
     // Success
     return 0;

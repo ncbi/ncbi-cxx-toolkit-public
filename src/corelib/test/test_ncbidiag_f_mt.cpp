@@ -512,8 +512,5 @@ bool CTestDiagApp::TestApp_Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
-    CTestDiagApp app;
-
-    app.AppMain(argc, argv, 0, eDS_Default, 0);
-    return 0;
+    return CTestDiagApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }

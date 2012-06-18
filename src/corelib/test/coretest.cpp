@@ -1146,28 +1146,13 @@ CTestApplication::~CTestApplication()
 
   
 /////////////////////////////////
-// APPLICATION OBJECT
-//   and
 // MAIN
 //
-
-
-// Note that if the application's object ("theTestApplication") was defined
-// inside the scope of function "main()", then its destructor could be
-// called *before* destructors of other statically allocated objects
-// defined in other modules.
-// It would cause a premature closure of diag. stream, and disallow the
-// destructors of other projects to refer to this application object:
-//  - the singleton method CNcbiApplication::Instance() would return NULL, and
-//  - if there is a "raw"(direct) pointer to "theTestApplication" then it
-//    might cause a real trouble.
-static CTestApplication theTestApplication;
-
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
     // Post error message
     ERR_POST("This message goes to the default diag.stream, CERR (2 times)");
     // Execute main application function
-    return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
+    return CTestApplication().AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }

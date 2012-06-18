@@ -1570,6 +1570,5 @@ int main(int argc, const char* argv[])
 {
     // Enable FileAPI logging, if necessary
     // CFileAPI::SetLogging(eOn);
-    // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }

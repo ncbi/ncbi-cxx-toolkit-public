@@ -302,11 +302,11 @@ void CDiagParserApp::x_CheckMessage(const string& message, bool valid)
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-//  MAIN
+///////////////////////////////////
+// MAIN
+//
 
 int main(int argc, const char* argv[]) 
 {
-    // Execute main application function
     return CDiagParserApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }

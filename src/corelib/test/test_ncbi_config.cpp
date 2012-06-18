@@ -73,7 +73,7 @@ void CConfigTestApplication::Init(void)
 }
 
 
-const string kSection = "test_section";
+const char* kSection = "test_section";
 
 int CConfigTestApplication::Run(void)
 {
@@ -116,14 +116,10 @@ int CConfigTestApplication::Run(void)
 
   
 ///////////////////////////////////
-// APPLICATION OBJECT  and  MAIN
+// MAIN
 //
-
-static CConfigTestApplication theTestApplication;
-
 
 int main(int argc, const char* argv[])
 {
-    // Execute main application function
-    return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
+    return CConfigTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }

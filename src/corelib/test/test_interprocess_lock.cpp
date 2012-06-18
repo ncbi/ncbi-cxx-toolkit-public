@@ -50,12 +50,11 @@ USING_NCBI_SCOPE;
 #define LOG_PARENT(msg)  LOG_POST(CTime(CTime::eCurrent).AsString() << "parent : " << msg)
 #define LOG_CHILD(msg)   LOG_POST(CTime(CTime::eCurrent).AsString() << "child  : " << msg)
 
-const CTimeout zero_timeout = CTimeout(0,0);
-
 
 static void Test_SingleProcess()
 {
     LOG_POST("=== Single-process test ===");
+    const CTimeout zero_timeout = CTimeout(0,0);
 
     LOG_POST("\n--- Test 1");
     // Name test
@@ -149,6 +148,8 @@ static void Test_SingleProcess()
 static void Test_MultiProcess()
 {
     LOG_POST("\n=== Multi-process tests ===");
+
+    const CTimeout zero_timeout = CTimeout(0,0);
 
     // Fixed names are usually more appropriate, but here we don't
     // want independent tests to step on each other....
@@ -364,14 +365,10 @@ int CTestApplication::Run(void)
 
   
 ///////////////////////////////////
-// APPLICATION OBJECT  and  MAIN
+// MAIN
 //
-
-static CTestApplication theTestApplication;
-
 
 int main(int argc, const char* argv[])
 {
-    // Execute main application function
-    return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }

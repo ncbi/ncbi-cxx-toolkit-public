@@ -42,11 +42,13 @@
 
 BEGIN_NCBI_SCOPE
 
+
 class CTestSubRegApp : public CNcbiApplication
 {
     void Init();
     int  Run();
 };
+
 
 void CTestSubRegApp::Init()
 {
@@ -72,6 +74,7 @@ void CTestSubRegApp::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
+
 int CTestSubRegApp::Run()
 {
     const CArgs& args = GetArgs();
@@ -90,6 +93,7 @@ int CTestSubRegApp::Run()
 END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
+
 
 int main(int argc, char** argv)
 {
