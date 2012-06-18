@@ -248,23 +248,24 @@ void CDeflineGenerator::x_SetFlags (
                 if (tsid.IsSetAccession()) {
                     const string& acc = tsid.GetAccession ();
                     TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
-                    if ( (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(wgs) ) 
+                    TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
+                    if ( div == NCBI_ACCN(wgs) ) 
                     {
                         if( (type & CSeq_id::fAcc_master) != 0 ) {
                             m_WGSMaster = true;
                         }
-                    } else if ( (type & NCBI_ACCN(division_mask)) == NCBI_ACCN(tsa) ) 
+                    } else if ( div == NCBI_ACCN(tsa) ) 
                     {
                         if( (type & CSeq_id::fAcc_master) != 0 && m_IsVirtual ) {
                             m_TSAMaster = true;
                         }
-                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_chromosome)) {
+                    } else if (type == NCBI_ACCN(refseq_chromosome)) {
                         m_IsNC = true;
-                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_mrna)) {
+                    } else if (type == NCBI_ACCN(refseq_mrna)) {
                         m_IsNM = true;
-                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_mrna_predicted)) {
+                    } else if (type == NCBI_ACCN(refseq_mrna_predicted)) {
                         m_IsNM = true;
-                    } else if ((type & NCBI_ACCN(division_mask)) == NCBI_ACCN(refseq_ncrna)) {
+                    } else if (type == NCBI_ACCN(refseq_ncrna)) {
                         m_IsNR = true;
                     }
                 }
@@ -744,7 +745,7 @@ static string x_OrganelleName (
 string CDeflineGenerator::x_TitleFromNC (void)
 
 {
-    bool   has_plasmid = false, virus_or_phage = false, is_plasmid = false;
+    bool   has_plasmid = false, virus_or_phage = false, is_chromosome = false, is_plasmid = false;
     string orgnl, pls, seq_tag, gen_tag;
     string result;
 
@@ -776,6 +777,7 @@ string CDeflineGenerator::x_TitleFromNC (void)
     orgnl = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, false);
 
     is_plasmid = (m_Genome == NCBI_GENOME(plasmid));
+    is_chromosome = (m_Genome == NCBI_GENOME(chromosome));
 
     switch (m_MICompleteness) {
         case NCBI_COMPLETENESS(partial):
@@ -808,6 +810,9 @@ string CDeflineGenerator::x_TitleFromNC (void)
     } else if (! orgnl.empty() ) {
         if ( m_Chromosome.empty() ) {
             result = m_Taxname + " " + orgnl + gen_tag;
+        } else if (is_chromosome) {
+            result = m_Taxname + " chromosome " + m_Chromosome
+                + seq_tag;
         } else {
             result = m_Taxname + " " + orgnl + " chromosome " + m_Chromosome
                 + seq_tag;
