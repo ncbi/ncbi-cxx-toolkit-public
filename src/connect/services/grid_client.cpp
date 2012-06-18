@@ -262,7 +262,8 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
         if (m_UseProgress) {
             GetNetScheduleSubmitter().GetProgressMsg(m_Job);
             if (!m_Job.progress_msg.empty()) {
-                if (m_Job.progress_msg[1] != ' ')
+                if (m_Job.progress_msg.length() > 1 &&
+                        m_Job.progress_msg[1] != ' ')
                     RemoveDataBlob(m_Job.progress_msg);
                 else if (m_Job.progress_msg[0] == 'K')
                     RemoveDataBlob(m_Job.progress_msg.c_str() + 2);
