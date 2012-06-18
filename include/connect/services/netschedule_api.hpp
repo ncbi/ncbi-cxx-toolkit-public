@@ -568,11 +568,17 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///
     void PutResult(const CNetScheduleJob& job);
 
-    /// Put job interim (progress) message
+    /// Put job interim (progress) message.
+    ///
+    /// @note The progress message must be first saved to a NetCache blob,
+    ///       then (using this method) the key of that blob must be set
+    ///       as the job progress message. The blob can be overwritten then
+    ///       in NetCache directly without notifying the NetSchedule server.
     ///
     /// @param job
     ///     NetSchedule job description structure. its progerss_msg
-    ///     field should be set
+    ///     field should be set to a NetCache key that contains the
+    ///     actual progress message.
     ///
     /// @sa GetProgressMsg
     ///

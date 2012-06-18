@@ -261,8 +261,12 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
             RemoveDataBlob(job_input + 2);
         if (m_UseProgress) {
             GetNetScheduleSubmitter().GetProgressMsg(m_Job);
-            if (!m_Job.progress_msg.empty())
-                RemoveDataBlob(m_Job.progress_msg);
+            if (!m_Job.progress_msg.empty()) {
+                if (m_Job.progress_msg[1] != ' ')
+                    RemoveDataBlob(m_Job.progress_msg);
+                else if (m_Job.progress_msg[0] == 'K')
+                    RemoveDataBlob(m_Job.progress_msg.c_str() + 2);
+            }
         }
     }
     return status;
@@ -285,8 +289,21 @@ string CGridClient::GetProgressMessage()
         GetNetScheduleSubmitter().GetProgressMsg(m_Job);
 
         if (!m_Job.progress_msg.empty()) {
+            string progress_message_key;
+            if (m_Job.progress_msg[1] != ' ')
+                if (CNetCacheKey::IsValidKey(m_Job.progress_msg))
+                    progress_message_key = m_Job.progress_msg;
+                else
+                    return m_Job.progress_msg;
+            else if (m_Job.progress_msg[0] == 'K')
+                progress_message_key = m_Job.progress_msg.c_str() + 2;
+            else if (m_Job.progress_msg[0] == 'D')
+                return m_Job.progress_msg.c_str() + 2;
+            else
+                return m_Job.progress_msg;
+
             string buffer;
-            GetNetCacheAPI().ReadData(m_Job.progress_msg, buffer);
+            GetNetCacheAPI().ReadData(progress_message_key, buffer);
             return buffer;
         }
     }
