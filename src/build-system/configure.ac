@@ -2154,7 +2154,9 @@ case "$host_os" in
 esac
 
 #### Overall configuration mode summary
-signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
+signature_hostname=`(hostname || uname -n) 2>/dev/null \
+    | sed 's/\..*//; s/-/_/g; 1q'`
+signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
 AC_DEFINE_UNQUOTED(NCBI_SIGNATURE, "$signature",
    [Build signature: compiler-name '_' compiler-version '-' configuration
    '--' platform-name '-' hostname])
