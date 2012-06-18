@@ -33,6 +33,7 @@
 
 #include <objects/taxon1/taxon1.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 
 #include <algo/phy_tree/bio_tree.hpp>
 #include <algo/phy_tree/bio_tree_conv.hpp>
@@ -694,6 +695,8 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
         NCBI_THROW(CPhyTreeFormatterException, eTaxonomyError,
                    "Problem initializing taxonomy information.");
     }
+
+    sequence::CDeflineGenerator defgen;
     
     // Come up with some labels for the terminal nodes
     int num_rows = (int)seqids.size();
@@ -727,7 +730,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
         }
 
         try{
-            titles[i] = sequence::GetTitle(bio_seq_handles[i]);
+            titles[i] = defgen.GenerateDefline(bio_seq_handles[i]);
         }
         catch(CException&) {
             titles[i] = s_kUnknown;
