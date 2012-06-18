@@ -105,6 +105,9 @@ void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, strin
             if (NStr::StartsWith(check, ":")) {
                 check = check.substr(1);
             }
+            if (NStr::StartsWith(check, " ")) {
+                check = check.substr(1);
+            }
             break;
         }
     }
