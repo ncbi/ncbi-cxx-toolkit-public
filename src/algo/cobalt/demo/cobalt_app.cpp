@@ -39,7 +39,7 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objmgr/object_manager.hpp>
-#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <serial/iterator.hpp>
 #include <objtools/readers/fasta.hpp>
@@ -586,6 +586,8 @@ int CMultiApplication::Run(void)
         }
     }
 
+    sequence::CDeflineGenerator defline_gen;
+
     if (args["outfmt"]) {
         CMultiAlnPrinter printer(*aligner.GetResults(), *aligner.GetScope(),
                                  CMultiAlnPrinter::eProtein);
@@ -640,14 +642,14 @@ int CMultiApplication::Run(void)
                     
                 }
                 // do not print 'unnamed protein product' for empty title
-                string title = sequence::GetTitle(bhandle);
+                string title = defline_gen.GenerateDefline(bhandle);
                 if (title != "unnamed protein product") {
                     printf(" %s", title.c_str());
                 }
                 printf("\n");
             }
             else {
-                printf(">%s\n", sequence::GetTitle(bhandle).c_str());
+                printf(">%s\n", defline_gen.GenerateDefline(bhandle).c_str());
             }
 
             for (int j = 0; j < results[i].GetLength(); j++) {
