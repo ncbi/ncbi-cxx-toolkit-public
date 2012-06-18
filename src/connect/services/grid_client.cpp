@@ -256,14 +256,13 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
               status == CNetScheduleAPI::eDone ||
               status == CNetScheduleAPI::eCanceled)) {
         x_GetJobDetails();
-        const char* job_input = m_Job.input.c_str();
-        if (job_input[0] == 'K' && job_input[1] == ' ')
-            RemoveDataBlob(job_input + 2);
+        if (m_Job.input.length() > 1 &&
+                m_Job.input[0] == 'K' && m_Job.input[1] == ' ')
+            RemoveDataBlob(m_Job.input.c_str() + 2);
         if (m_UseProgress) {
             GetNetScheduleSubmitter().GetProgressMsg(m_Job);
-            if (!m_Job.progress_msg.empty()) {
-                if (m_Job.progress_msg.length() > 1 &&
-                        m_Job.progress_msg[1] != ' ')
+            if (m_Job.progress_msg.length() > 1) {
+                if (m_Job.progress_msg[1] != ' ')
                     RemoveDataBlob(m_Job.progress_msg);
                 else if (m_Job.progress_msg[0] == 'K')
                     RemoveDataBlob(m_Job.progress_msg.c_str() + 2);
@@ -289,7 +288,9 @@ string CGridClient::GetProgressMessage()
     if (m_UseProgress) {
         GetNetScheduleSubmitter().GetProgressMsg(m_Job);
 
-        if (!m_Job.progress_msg.empty()) {
+        if (m_Job.progress_msg.length() <= 1)
+            return m_Job.progress_msg;
+        else {
             string progress_message_key;
             if (m_Job.progress_msg[1] != ' ')
                 if (CNetCacheKey::IsValidKey(m_Job.progress_msg))
