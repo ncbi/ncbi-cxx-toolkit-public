@@ -156,6 +156,8 @@ enum EOption {
     eDrain,
     eCompatMode,
     eDumpCGIEnv,
+    eAggregationInterval,
+    ePreviousInterval,
     eExtendedOptionDelimiter,
     eClientNode,
     eClientSession,
@@ -233,6 +235,7 @@ private:
         ESwitch on_off_switch;
         string error_message;
         string input;
+        string aggregation_interval;
         string command;
         FILE* input_stream;
         FILE* output_stream;

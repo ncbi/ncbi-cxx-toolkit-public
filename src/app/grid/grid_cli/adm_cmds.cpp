@@ -123,7 +123,10 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
 {
     switch (SetUp_AdminCmd()) {
     case eNetCacheAdmin:
-        m_NetCacheAdmin.PrintStat(NcbiCout);
+        m_NetCacheAdmin.PrintStat(NcbiCout, m_Opts.aggregation_interval,
+                !IsOptionSet(ePreviousInterval) ?
+                        CNetCacheAdmin::eReturnCurrentPeriod :
+                        CNetCacheAdmin::eReturnCompletePeriod);
         return 0;
 
     case eNetScheduleAdmin:

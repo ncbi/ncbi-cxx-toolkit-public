@@ -63,9 +63,24 @@ void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream)
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
-void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream)
+void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream,
+    const string& aggregation_period,
+    CNetCacheAdmin::EStatPeriodCompleteness period_completeness)
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("GETSTAT"),
+    string cmd("GETSTAT");
+
+    if (period_completeness != eReturnCurrentPeriod) {
+        cmd += " prev=1 type=\"";
+        if (!aggregation_period.empty())
+            cmd += NStr::PrintableString(aggregation_period);
+        cmd += '"';
+    } else if (!aggregation_period.empty()) {
+        cmd += " prev=0 type=\"";
+        cmd += NStr::PrintableString(aggregation_period);
+        cmd += '"';
+    }
+
+    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd(cmd.c_str()),
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 

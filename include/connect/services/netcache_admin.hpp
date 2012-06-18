@@ -70,8 +70,26 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
     /// Print contents of the configuration file
     void PrintConfig(CNcbiOstream& output_stream);
 
+    /// Enumeration for use with PrintStat(). Indicates
+    /// whether to return the current (incomplete) aggregation
+    /// period or the previous one (which is complete).
+    enum EStatPeriodCompleteness {
+        eReturnCurrentPeriod,
+        eReturnCompletePeriod
+    };
+
     /// Print server statistics
-    void PrintStat(CNcbiOstream& output_stream);
+    /// @param output_stream Stream for printing
+    ///        the GETSTAT command output.
+    /// @param aggregation_period Statistics aggregation
+    ///        interval to print ('1min', '1h', 'life', and so on).
+    /// @param period_completeness Whether to print statistics
+    ///        for the previous (complete) aggregation interval
+    ///        (as opposed to printing the current but incomplete
+    ///        statistics).
+    void PrintStat(CNcbiOstream& output_stream,
+            const string& aggregation_period = kEmptyStr,
+            EStatPeriodCompleteness period_completeness = eReturnCurrentPeriod);
 
     // Print server health information
     void PrintHealth(CNcbiOstream& output_stream);

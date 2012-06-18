@@ -301,6 +301,16 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eDumpCGIEnv),
         "dump-cgi-env", "Dump CGI environment prepared by cgi2rcgi.", {-1}},
 
+    {OPT_DEF(eOptionWithParameter, eAggregationInterval),
+        "aggregation-interval", "NetCache: specify the statistics "
+            "aggregation interval to return ('1min', '5min', '1h', "
+            "'life', and so on). Default: 'life'.", {-1}},
+
+    {OPT_DEF(eSwitch, ePreviousInterval),
+        "previous-interval", "NetCache: return statistics for the "
+            "previous (complete) aggregation interval (instead of "
+            "returning the current but incomplete statistics).", {-1}},
+
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -713,6 +723,7 @@ struct SCommandDefinition {
             eJobGroupInfo, eClientInfo, eNotificationInfo, eAffinityInfo,
             eActiveJobCount, eJobsByAffinity, eJobsByStatus,
             eAffinity, eJobGroup, eVerbose, eOutputFormat,
+            eAggregationInterval, ePreviousInterval,
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
             eAllowXSiteConn, -1},
         {eHumanReadable, eRaw, eJSON, -1}},
@@ -999,6 +1010,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
+                break;
+            case eAggregationInterval:
+                m_Opts.aggregation_interval = opt_value;
                 break;
             case eClientNode:
                 m_Opts.client_node = opt_value;
