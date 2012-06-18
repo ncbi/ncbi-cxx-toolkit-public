@@ -2433,6 +2433,16 @@ BOOST_AUTO_TEST_CASE(ThrowOnEmptySequence)
     BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CInputException);
 }
 
+BOOST_AUTO_TEST_CASE(ThrowOnSraID)
+{
+    CNcbiIfstream infile("data/sra_seqid.txt");
+    CBlastInputSourceConfig iconfig(false);
+    iconfig.SetRetrieveSeqData(false);
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+    CScope scope(*CObjectManager::GetInstance());
+    BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CInputException);
+}
+
 BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
 {
     string pdb_mol("1IQR");

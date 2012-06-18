@@ -319,6 +319,13 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
     scope.AddTopLevelSeqEntry(*seq_entry);
 
     CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry));
+    // Workaround until CXX-3351 is available
+    if (itr->GetFirstId() && itr->GetFirstId()->IsGeneral() &&
+        NStr::FindNoCase(itr->GetFirstId()->GetGeneral().GetDb(), "sra") != NPOS) {
+        NCBI_THROW(CInputException, eInvalidInput,
+               "SRA accessions are currently not supported, please use FASTA");
+    }
+
     CRef<CSeq_loc> retval(new CSeq_loc());
 
     if ( !blast::HasRawSequenceData(*itr) ) {
