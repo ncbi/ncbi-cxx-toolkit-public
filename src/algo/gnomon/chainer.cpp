@@ -158,6 +158,7 @@ enum {
 typedef vector<SChainMember*> TContained;
 
 typedef set<const CGeneModel*> TEvidence;
+typedef set<CGeneModel*> TGeneModelSet;
 
 struct SChainMember
 {
@@ -167,10 +168,10 @@ struct SChainMember
         m_type(eCDS), m_left_cds(0), m_right_cds(0), m_cds(0), m_included(false),  m_postponed(false),
         m_marked_for_deletion(false), m_marked_for_retention(false) {}
 
-    void CollectContainedAlignments(set<CGeneModel*>& chain_alignments);
+    void CollectContainedAlignments(TGeneModelSet& chain_alignments);
     void MarkIncludedContainedAlignments(const TSignedSeqRange& limits);
     void MarkPostponedContainedAlignments();
-    void CollectAllContainedAlignments(set<CGeneModel*>& chain_alignments);
+    void CollectAllContainedAlignments(TGeneModelSet& chain_alignments);
     void MarkIncludedAllContainedAlignments(const TSignedSeqRange& limits);
     void MarkPostponedAllContainedAlignments();
     void MarkExtraCopiesForDeletion(const TSignedSeqRange& cds);
@@ -196,7 +197,7 @@ struct SChainMember
 class CChain : public CGeneModel
 {
 public:
-    CChain(const set<CGeneModel*>& chain_alignments);
+    CChain(const TGeneModelSet& chain_alignments);
     //    void MergeWith(const CChain& another_chain, const CGnomonEngine&gnomon, const SMinScor& minscor);
     void ToEvidence(vector<TEvidence>& mrnas,
                     vector<TEvidence>& ests, 
@@ -220,7 +221,7 @@ public:
 
 
 
-void SChainMember::CollectContainedAlignments(set<CGeneModel*>& chain_alignments)
+void SChainMember::CollectContainedAlignments(TGeneModelSet& chain_alignments)
 {
     NON_CONST_ITERATE (TContained, i, m_contained) {
         SChainMember* mi = *i;
@@ -291,7 +292,7 @@ void SChainMember::MarkExtraCopiesForDeletion(const TSignedSeqRange& cds)
 
 
 
-void SChainMember::CollectAllContainedAlignments(set<CGeneModel*>& chain_alignments)
+void SChainMember::CollectAllContainedAlignments(TGeneModelSet& chain_alignments)
 {
     CollectContainedAlignments(chain_alignments);
     
@@ -1110,7 +1111,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         SChainMember& mi = **i;
         if(mi.m_included) continue;
 
-        set<CGeneModel*> chain_alignments;
+        TGeneModelSet chain_alignments;
         mi.CollectAllContainedAlignments(chain_alignments);
         CChain chain(chain_alignments);
         TSignedSeqRange i_rf = chain.ReadingFrame();
@@ -1155,7 +1156,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         SChainMember& mi = **i;
         if(mi.m_included || mi.m_postponed) continue;
 
-        set<CGeneModel*> chain_alignments;
+        TGeneModelSet chain_alignments;
         mi.CollectAllContainedAlignments(chain_alignments);
         CChain chain(chain_alignments);
         _ASSERT(chain.Weight() == mi.m_num);
@@ -1210,7 +1211,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         SChainMember& mi = **i;
         if(mi.m_included) continue;
 
-        set<CGeneModel*> chain_alignments;
+        TGeneModelSet chain_alignments;
         mi.CollectAllContainedAlignments(chain_alignments);
         CChain chain(chain_alignments);
         _ASSERT(chain.Weight() == mi.m_num);
@@ -1237,7 +1238,7 @@ void CChainer::CChainerImpl::CombineCompatibleChains(list<CChain>& chains) {
             list<CChain>::iterator jtt = jt++;
             if(itt != jtt && itt->Strand() == jtt->Strand() && Include(itt->ReadingFrame(),jtt->ReadingFrame()) && jtt->IsSubAlignOf(*itt)) {
 
-                set<CGeneModel*> chain_alignments(itt->m_members.begin(),itt->m_members.end());
+                TGeneModelSet chain_alignments(itt->m_members.begin(),itt->m_members.end());
                 for(vector<CGeneModel*>::iterator is = jtt->m_members.begin(); is != jtt->m_members.end(); ++is) {
                     if(chain_alignments.insert(*is).second) {
                         itt->AddSupport(CSupportInfo((*is)->ID()));
@@ -1318,13 +1319,15 @@ struct RightEndOrder
 };
 
 
-CChain::CChain(const set<CGeneModel*>& chain_alignments) : m_members(chain_alignments.begin(),chain_alignments.end())
+CChain::CChain(const TGeneModelSet& chain_alignments)
 {
+    _ASSERT(chain_alignments.size()>0);
+
     SetType(eChain);
 
-    _ASSERT(chain_alignments.size()>0);
-    //    ITERATE (set<SChainMember*>, it, chain_alignments)
-    //        m_members.push_back((*it)->m_align);
+    ITERATE(TGeneModelSet, it, chain_alignments) {
+        m_members.push_back(*it);
+    }
     sort(m_members.begin(),m_members.end(),AlignSeqOrder());
 
     EStrand strand = m_members.front()->Strand();
