@@ -88,7 +88,7 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
         return 2;
     }
 
-    if (api_class == eNetScheduleAdmin && IsOptionSet(eQueue)) {
+    if (api_class == eNetScheduleAdmin && IsOptionExplicitlySet(eQueue)) {
         CNetScheduleAPI::SServerParams params =
             m_NetScheduleAPI.GetServerParams();
         printf("max_input_size: %lu\n"

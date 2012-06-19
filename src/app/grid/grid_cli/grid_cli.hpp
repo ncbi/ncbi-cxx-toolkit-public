@@ -257,7 +257,7 @@ private:
             on_off_switch(eDefault),
             input_stream(NULL), output_stream(NULL), protocol_dump(NULL)
         {
-            memset(option_flags, 0, eNumberOfOptions);
+            memset(option_flags, 0, sizeof(option_flags));
         }
     } m_Opts;
 

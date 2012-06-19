@@ -893,7 +893,7 @@ int CGridCommandLineInterfaceApp::Run()
         }
 
         for (cmd_opt = cmd_def->options; *cmd_opt >= 0; ++cmd_opt)
-            m_Opts.option_flags[*cmd_opt] = OPTION_ACCEPTED;
+            m_Opts.option_flags[*cmd_opt] |= OPTION_ACCEPTED;
 
         if (m_Opts.option_flags[eOutputFormat])
             m_Opts.output_format = (EOutputFormat) *cmd_def->output_formats;
