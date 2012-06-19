@@ -967,10 +967,6 @@ private:
     /// Helper method for doing pre-processing consistency checks.
     void x_PreCheck(void) const; 
 
-    /// Helper method for checking if auto help requested and throw
-    /// CArgHelpException if help requested.
-    void x_CheckAutoHelp(const string& arg) const;
-
     void x_PrintComment(list<string>&   arr,
                         const CArgDesc& arg,
                         SIZE_TYPE       width) const;
@@ -1014,6 +1010,11 @@ private:
     bool x_IsMultiArg(const string& name) const;
 
 protected:
+
+    /// Helper method for checking if auto help requested and throw
+    /// CArgHelpException if help requested.
+    void x_CheckAutoHelp(const string& arg) const;
+
 // PrintUsage helpers
     class CPrintUsage
     {
@@ -1160,11 +1161,13 @@ class NCBI_XNCBI_EXPORT CCommandArgDescriptions : public CArgDescriptions
 {
 public:
 
-    /// Command presence requirement
-    enum ECommandPresence {
-        eCommandOptional,    ///< Command is not necessary
-        eCommandMandatory    ///< Nonempty command is required
+    enum ECommandArgFlags {
+        eCommandMandatory = 0,      ///< Nonempty command is required
+        eCommandOptional  = 1,      ///< Command is not necessary
+        eNoSortCommands   = (1<<1), ///< On PrintUsage, keep commands unsorted
+        eNoSortGroups     = (1<<2)  ///< On PrintUsage, keep command groups unsorted
     };
+    typedef unsigned int TCommandArgFlags;   ///< Bitwise OR of ECommandArgFlags
 
     /// Constructor.
     ///
@@ -1175,7 +1178,7 @@ public:
     /// If not set the default handler is used.
     CCommandArgDescriptions(bool auto_help = true,
                           CArgErrorHandler* err_handler = 0,
-                          ECommandPresence cmd_req = eCommandMandatory);
+                          TCommandArgFlags cmd_flags = eCommandMandatory);
     /// Destructor.
     virtual ~CCommandArgDescriptions(void);
 
@@ -1215,15 +1218,17 @@ private:
     // not allowed
     void SetArgsType(EArgSetType args_type) {}
 
-    size_t x_GetCommandGroupIndex(const string& group);
+    bool x_IsCommandMandatory(void) const;
+    size_t x_GetCommandGroupIndex(const string& group) const;
     string x_IdentifyCommand(const string& command) const;
 
     typedef map<string, AutoPtr<CArgDescriptions> > TDescriptions;
-    ECommandPresence m_Cmd_req;
+    TCommandArgFlags m_Cmd_req;
     TDescriptions m_Description;    ///< command to ArgDescriptions
     map<string, size_t > m_Groups;  ///< command to group #
     map<string,string> m_Aliases;   ///< command to alias; one alias only
-    vector<string> m_CmdGroups;     ///< group names, and order
+    list<string> m_Commands;        ///< command names, and order
+    list<string> m_CmdGroups;       ///< group names, and order
     size_t m_CurrentGroup;          ///< current group #
     mutable string m_Command;       ///< current command
 };

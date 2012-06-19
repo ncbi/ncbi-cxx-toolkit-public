@@ -3263,11 +3263,9 @@ void CArgDescriptions::x_PrintAliasesAsXml( CNcbiOstream& out,
 // CCommandArgDescriptions
 
 CCommandArgDescriptions::CCommandArgDescriptions(
-    bool auto_help, CArgErrorHandler* err_handler,
-    ECommandPresence cmd_req)
-    : CArgDescriptions(auto_help,err_handler), m_Cmd_req(cmd_req)
+    bool auto_help, CArgErrorHandler* err_handler, TCommandArgFlags cmd_flags)
+    : CArgDescriptions(auto_help,err_handler), m_Cmd_req(cmd_flags), m_CurrentGroup(0)
 {
-    SetCurrentCommandGroup(kEmptyStr);
 }
 
 CCommandArgDescriptions::~CCommandArgDescriptions(void)
@@ -3277,17 +3275,27 @@ CCommandArgDescriptions::~CCommandArgDescriptions(void)
 void CCommandArgDescriptions::SetCurrentCommandGroup(const string& group)
 {
     m_CurrentGroup = x_GetCommandGroupIndex(group);
+    if (m_CurrentGroup == 0) {
+        m_CmdGroups.push_back(group);
+        m_CurrentGroup = m_CmdGroups.size();
+    }
 }
 
-size_t CCommandArgDescriptions::x_GetCommandGroupIndex(const string& group)
+bool CCommandArgDescriptions::x_IsCommandMandatory(void) const
 {
-    for (size_t i = 1; i < m_CmdGroups.size(); ++i) {
-        if ( NStr::EqualNocase(m_CmdGroups[i], group) ) {
+    return (m_Cmd_req & eCommandOptional) == 0;
+}
+
+size_t CCommandArgDescriptions::x_GetCommandGroupIndex(const string& group) const
+{
+    size_t i = 1;
+    ITERATE( list<string>, g, m_CmdGroups) {
+        if ( NStr::EqualNocase(*g, group) ) {
             return i;
         }
+        ++i;
     }
-    m_CmdGroups.push_back(group);
-    return m_CmdGroups.size()-1;
+    return 0;
 }
 
 void CCommandArgDescriptions::AddCommand(
@@ -3312,6 +3320,12 @@ void CCommandArgDescriptions::AddCommand(
         if (description->Exist(s_AutoHelpXml)) {
             description->Delete(s_AutoHelpXml);
         }
+
+        if (m_CurrentGroup == 0) {
+            SetCurrentCommandGroup(kEmptyStr);
+        }
+        m_Commands.remove(command);
+        m_Commands.push_back(command);
         m_Description[command] = description;
         m_Groups[command] = m_CurrentGroup;
         if (!alias.empty()) {
@@ -3320,6 +3334,7 @@ void CCommandArgDescriptions::AddCommand(
             m_Aliases.erase(command);
         }
     } else {
+        m_Commands.remove(command);
         m_Description.erase(command);
         m_Groups.erase(command);
         m_Aliases.erase(command);
@@ -3338,23 +3353,17 @@ string CCommandArgDescriptions::x_IdentifyCommand(const string& command) const
         }
     }
     string cmd(command);
-    while (cmd.size() > 1) {
-        cmd.erase( cmd.size()-1);
-        if (cmd != "-") {
-            vector<string> candidates;
-            TDescriptions::const_iterator d;
-            for (d = m_Description.begin(); d != m_Description.end(); ++d) {
-                if (NStr::StartsWith(d->first,cmd)) {
-                    candidates.push_back(d->first);
-                }
-            }
-            if (candidates.size() == 0) {
-                continue;
-            } else if (candidates.size() == 1) {
-                return candidates.front();
+    if (cmd != "-") {
+        vector<string> candidates;
+        TDescriptions::const_iterator d;
+        for (d = m_Description.begin(); d != m_Description.end(); ++d) {
+            if (NStr::StartsWith(d->first,cmd)) {
+                candidates.push_back(d->first);
             }
         }
-        break;
+        if (candidates.size() == 1) {
+            return candidates.front();
+        }
     }
     return kEmptyStr;
 }
@@ -3362,8 +3371,11 @@ string CCommandArgDescriptions::x_IdentifyCommand(const string& command) const
 CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
 {
     if (argv.Size() > 1) {
-        if (m_Cmd_req == eCommandMandatory &&  argv[1].empty()) {
-            NCBI_THROW(CArgException,eInvalidArg, "Nonempty command is required");
+        if (x_IsCommandMandatory()) {
+            if (argv[1].empty()) {
+                NCBI_THROW(CArgException,eInvalidArg, "Nonempty command is required");
+            }
+            x_CheckAutoHelp(argv[1]);
         }
         string command( x_IdentifyCommand(argv[1]));
         TDescriptions::const_iterator d;
@@ -3375,8 +3387,11 @@ CArgs* CCommandArgDescriptions::CreateArgs(const CNcbiArguments& argv) const
             return d->second->CreateArgs(argv2)->SetCommand(command);
         }
         m_Command.clear();
+        if (x_IsCommandMandatory() && !m_Description.empty()) {
+            NCBI_THROW(CArgException,eInvalidArg, "Command not recognized: " + argv[1]);
+        }
     }
-    if (m_Cmd_req != eCommandOptional) {
+    if (x_IsCommandMandatory() && !m_Description.empty()) {
         NCBI_THROW(CArgException,eInvalidArg, "Command is required");
     }
     return CArgDescriptions::CreateArgs(argv)->SetCommand(kEmptyStr);
@@ -3393,7 +3408,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
         if (cmdsize > 2) {
             cmd = cmdargs[ 2];
             if (cmd.empty()) {
-                if (m_Cmd_req != eCommandMandatory) {
+                if (!x_IsCommandMandatory()) {
                     argdesc = this;
                 }
             } else {
@@ -3408,9 +3423,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
             argdesc = d->second.get();
         }
     } else {
-        if (m_Cmd_req != eCommandMandatory) {
-            argdesc = this;
-        }
+        argdesc = this;
     }
 
     if (argdesc) {
@@ -3451,7 +3464,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 
     arr.push_back("USAGE");
     arr.push_back(string("  ")+ m_UsageName +" <command> [options]");
-    if (m_Cmd_req == eCommandOptional) {
+    if (!x_IsCommandMandatory()) {
         arr.push_back("or");
         x.AddSynopsis(arr, m_UsageName,"    ");
     }
@@ -3471,9 +3484,16 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     }
     max_cmd_len += 2;
 
+    list<string> cmds = m_Commands;
+    if ((m_Cmd_req & eNoSortCommands)==0) {
+        cmds.sort();
+    }
     if (m_CmdGroups.size() > 1) {
-        size_t group = 0;
-        ITERATE( vector<string>, g, m_CmdGroups) {
+        list<string> cmdgroups = m_CmdGroups;
+        if ((m_Cmd_req & eNoSortGroups)==0) {
+            cmdgroups.sort();
+        }
+        ITERATE( list<string>, g, cmdgroups) {
             string grouptitle;
             bool titleprinted = false;
             if (g->empty()) {
@@ -3481,16 +3501,17 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
             } else {
                 grouptitle = *g;
             }
-            for (d = m_Description.begin(); d != m_Description.end(); ++d) {
-                map<string, size_t >::const_iterator j = m_Groups.find(d->first);
+            size_t group = x_GetCommandGroupIndex(*g);
+            ITERATE( list<string>, d, cmds) {
+                map<string, size_t >::const_iterator j = m_Groups.find(*d);
                 if (j != m_Groups.end() && j->second == group) {
                     if (!titleprinted) {
                         arr.push_back(kEmptyStr);
                         arr.push_back(grouptitle + ":");
                         titleprinted = true;
                     }
-                    CPrintUsage y(*(d->second));
-                    y.AddCommandDescription(arr, d->first, &m_Aliases, max_cmd_len, detailed);
+                    CPrintUsage y(*(m_Description.lower_bound(*d)->second));
+                    y.AddCommandDescription(arr, *d, &m_Aliases, max_cmd_len, detailed);
                 }
             }
             ++group;
@@ -3498,13 +3519,13 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     } else {
         arr.push_back(kEmptyStr);
         arr.push_back("AVAILABLE COMMANDS:");
-        for (d = m_Description.begin(); d != m_Description.end(); ++d) {
-            CPrintUsage y(*(d->second));
-            y.AddCommandDescription(arr, d->first, &m_Aliases, max_cmd_len, detailed);
+        ITERATE( list<string>, d, cmds) {
+            CPrintUsage y(*(m_Description.find(*d)->second));
+            y.AddCommandDescription(arr, *d, &m_Aliases, max_cmd_len, detailed);
         }
     }
 
-    if (m_Cmd_req == eCommandOptional && detailed) {
+    if (!x_IsCommandMandatory() && detailed) {
         arr.push_back(kEmptyStr);
         arr.push_back("Missing command:");
         x.AddDetails(arr);
@@ -3524,7 +3545,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
 {
     CPrintUsageXml x(*this,out);
-    if (m_Cmd_req == eCommandOptional) {
+    if (!x_IsCommandMandatory()) {
         x.PrintArguments(*this);
     }
     TDescriptions::const_iterator d;

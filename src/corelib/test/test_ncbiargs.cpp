@@ -500,7 +500,8 @@ void CArgTestApplication::Init(void)
 #else
     // Create cmd-line argument descriptions class
     auto_ptr<CCommandArgDescriptions> cmd_desc(
-        new CCommandArgDescriptions(true,0,CCommandArgDescriptions::eCommandOptional));
+        new CCommandArgDescriptions(true,0, CCommandArgDescriptions::eCommandOptional |
+                CCommandArgDescriptions::eNoSortCommands));
 
     // Specify USAGE context
     string prog_description =
@@ -516,7 +517,8 @@ void CArgTestApplication::Init(void)
     s_Test[m_TestNo].init(*cmd_desc);
 
     // add few commands
-    for (int a=0; a<4; ++a) {
+#if 1
+    for (int a=3; a>=0; --a) {
 
         auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
         arg_desc->SetUsageContext("",
@@ -531,8 +533,9 @@ void CArgTestApplication::Init(void)
         auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
         arg_desc->SetUsageContext("","RunTest4 description");
         s_Test[4].init(*arg_desc);
-        cmd_desc->AddCommand("r4", arg_desc.release());
+        cmd_desc->AddCommand("d4", arg_desc.release());
     }
+#endif
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(cmd_desc.release());
