@@ -46,9 +46,11 @@
 #include <serial/impl/continfo.hpp>
 #include <serial/impl/objistrimpl.hpp>
 #include <serial/pack_string.hpp>
+#include <serial/error_codes.hpp>
 
 BEGIN_NCBI_SCOPE
 
+#define NCBI_USE_ERRCODE_X   Serial_IStream
 
 CObjectIStream* CObjectIStream::CreateObjectIStreamAsnBinary(void)
 {
@@ -234,18 +236,45 @@ NCBI_PARAM_DECL(bool, SERIAL, READ_ANY_UTF8STRING_TAG);
 NCBI_PARAM_DEF_EX(bool, SERIAL, READ_ANY_UTF8STRING_TAG, true,
                   eParam_NoThread, SERIAL_READ_ANY_UTF8STRING_TAG);
 
+// int value meaning for READ_ANY_VISBLESTRING_TAG:
+// 0 - disallow, throws an exception
+// 1 - allow, but warn once (default)
+// 2 - allow without warning
+NCBI_PARAM_DECL(int, SERIAL, READ_ANY_VISIBLESTRING_TAG);
+NCBI_PARAM_DEF_EX(int, SERIAL, READ_ANY_VISIBLESTRING_TAG, 1,
+                  eParam_NoThread, SERIAL_READ_ANY_VISIBLESTRING_TAG);
+
 void CObjectIStreamAsnBinary::ExpectStringTag(EStringType type)
 {
     if ( type == eStringTypeUTF8 ) {
-        static NCBI_PARAM_TYPE(SERIAL, READ_ANY_UTF8STRING_TAG) sx_ReadAny;
-        if ( !sx_ReadAny.Get() ||
-             PeekTagByte()==MakeTagByte(eUniversal,ePrimitive,eUTF8String) ) {
-            // allow only UTF8String tag
-            ExpectSysTag(eUniversal, ePrimitive, eUTF8String);
-            return;
+        static NCBI_PARAM_TYPE(SERIAL, READ_ANY_UTF8STRING_TAG) sx_ReadAnyUtf8;
+        if ( sx_ReadAnyUtf8.Get() ) {
+            // may be eVisibleString
+            TByte alt_tag = MakeTagByte(eUniversal,ePrimitive,eVisibleString);
+            if ( PeekTagByte() == alt_tag ) {
+                ExpectSysTagByte(alt_tag);
+                return;
+            }
         }
+        ExpectSysTag(eUniversal, ePrimitive, eUTF8String);
     }
-    ExpectSysTag(eUniversal, ePrimitive, eVisibleString);
+    else {
+        static NCBI_PARAM_TYPE(SERIAL, READ_ANY_VISIBLESTRING_TAG) sx_ReadAny;
+        if ( int allow = sx_ReadAny.Get() ) {
+            // may be eUTF8String
+            TByte alt_tag = MakeTagByte(eUniversal,ePrimitive,eUTF8String);
+            if ( PeekTagByte() == alt_tag ) {
+                // optionally issue a warning
+                if ( allow == 1 ) {
+                    ERR_POST_X_ONCE(10, Warning<<
+                                    "CObjectIStreamAsnBinary: UTF8String data for VisibleString member "<<GetStackTraceASN()<<", ASN.1 specification may need an update");
+                }
+                ExpectSysTagByte(alt_tag);
+                return;
+            }
+        }
+        ExpectSysTag(eUniversal, ePrimitive, eVisibleString);
+    }
 }
 
 string CObjectIStreamAsnBinary::TagToString(TByte byte)
