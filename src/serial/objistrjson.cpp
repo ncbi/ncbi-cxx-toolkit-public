@@ -66,6 +66,7 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamJson()
 
 CObjectIStreamJson::CObjectIStreamJson(void)
     : CObjectIStream(eSerial_Json),
+    m_FileHeader(false),
     m_BlockStart(false),
     m_ExpectValue(false),
     m_Closing(0),
@@ -292,7 +293,7 @@ string CObjectIStreamJson::ReadKey(void)
     } else {
         SkipWhiteSpace();
         m_LastTag = x_ReadString();
-        Expect(':');
+        Expect(':', true);
         SkipWhiteSpace();
     }
     m_ExpectValue = true;
@@ -350,6 +351,7 @@ bool CObjectIStreamJson::NextElement(void)
 
 string CObjectIStreamJson::ReadFileHeader(void)
 {
+    m_FileHeader = true;
     StartBlock('{');
     string str( ReadKey());
     if (TopFrame().HasTypeInfo()) {
@@ -368,7 +370,9 @@ string CObjectIStreamJson::ReadFileHeader(void)
 
 void CObjectIStreamJson::EndOfRead(void)
 {
-    EndBlock('}');
+    EndBlock(m_FileHeader ? '}' : 0);
+    m_FileHeader = false;
+    CObjectIStream::EndOfRead();
 }
 
 

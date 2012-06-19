@@ -208,6 +208,7 @@ private:
     size_t ReadBase64Bytes(ByteBlock& block, char* buffer, size_t count);
     size_t ReadHexBytes(ByteBlock& block, char* buffer, size_t count);
 
+    bool m_FileHeader;
     bool m_BlockStart;
     bool m_ExpectValue;
     char m_Closing;
