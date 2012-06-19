@@ -45,15 +45,19 @@
 #define LOGIN_TOKEN_ENV "GRID_CLI_LOGIN_TOKEN"
 #define DEFAULT_APP_UID GRID_APP_NAME
 
-#define LOGIN_TOKEN_APP_UID_FIELD "uid"
-#define LOGIN_TOKEN_AUTH_FIELD "c"
+#define LOGIN_TOKEN_APP_UID_FIELD "app"
+#define LOGIN_TOKEN_AUTH_FIELD "cn"
 #define LOGIN_TOKEN_USER_FIELD "u"
 #define LOGIN_TOKEN_HOST_FIELD "h"
 #define LOGIN_TOKEN_NETCACHE_FIELD "nc"
+#define LOGIN_TOKEN_ICACHE_NAME_FIELD "ic"
+#define LOGIN_TOKEN_ENABLE_MIRRORING "mm"
 #define LOGIN_TOKEN_NETSCHEDULE_FIELD "ns"
 #define LOGIN_TOKEN_QUEUE_FIELD "q"
-#define LOGIN_TOKEN_SESSION_FIELD "s"
-#define LOGIN_TOKEN_ALLOW_XSITE_CONN "x"
+#define LOGIN_TOKEN_SESSION_PID_FIELD "pid"
+#define LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD "ts"
+#define LOGIN_TOKEN_SESSION_UID_FIELD "uid"
+#define LOGIN_TOKEN_ALLOW_XSITE_CONN "xs"
 
 #define LOGIN_TOKEN_OPTION "login-token"
 #define NETCACHE_OPTION "netcache"
@@ -267,7 +271,8 @@ private:
 private:
     void ParseLoginToken(const char* token);
     void DefineClientNode(const string& user, const string& host);
-    void SetUpClientSession();
+    void DefineClientSession(const string& pid,
+            const string& timestamp, const string& uid);
 
     void MarkOptionAsAccepted(int option)
     {

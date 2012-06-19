@@ -1057,7 +1057,12 @@ int CGridWorkerNode::Run()
             control_thread->GetControlPort()));
         m_NetScheduleAPI.SetClientNode(client_node);
 
-        m_NetScheduleAPI.SetClientSession(GetDiagContext().GetStringUID());
+        string session(NStr::NumericToString(CProcess::GetCurrentPid()) + '@');
+        session += NStr::NumericToString(GetFastLocalTime().GetTimeT());
+        session += ':';
+        session += GetDiagContext().GetStringUID();
+
+        m_NetScheduleAPI.SetClientSession(session);
     }
 
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();

@@ -117,6 +117,12 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
     if (IsOptionSet(eNetCache))
         AppendLoginTokenField(&login_token,
                 LOGIN_TOKEN_NETCACHE_FIELD, m_Opts.nc_service);
+    if (IsOptionSet(eCache))
+        AppendLoginTokenField(&login_token,
+                LOGIN_TOKEN_ICACHE_NAME_FIELD, m_Opts.cache_name);
+    if (IsOptionSet(eEnableMirroring))
+        AppendLoginTokenField(&login_token, LOGIN_TOKEN_ENABLE_MIRRORING, "y");
+
     if (IsOptionSet(eNetSchedule))
         AppendLoginTokenField(&login_token,
                 LOGIN_TOKEN_NETSCHEDULE_FIELD, m_Opts.ns_service);
@@ -124,10 +130,14 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
         AppendLoginTokenField(&login_token,
                 LOGIN_TOKEN_QUEUE_FIELD, m_Opts.queue);
 
-    SetUpClientSession();
+    AppendLoginTokenField(&login_token, LOGIN_TOKEN_SESSION_PID_FIELD,
+            NStr::NumericToString(CProcess::GetCurrentPid()));
 
-    AppendLoginTokenField(&login_token,
-            LOGIN_TOKEN_SESSION_FIELD, m_Opts.client_session);
+    AppendLoginTokenField(&login_token, LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD,
+            NStr::NumericToString(GetFastLocalTime().GetTimeT()));
+
+    AppendLoginTokenField(&login_token, LOGIN_TOKEN_SESSION_UID_FIELD,
+            GetDiagContext().GetStringUID());
 
     if (IsOptionSet(eAllowXSiteConn))
         AppendLoginTokenField(&login_token, LOGIN_TOKEN_ALLOW_XSITE_CONN, "y");
