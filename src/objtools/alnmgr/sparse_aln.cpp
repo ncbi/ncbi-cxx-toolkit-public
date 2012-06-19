@@ -550,6 +550,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
 
         string s;
         CSparse_CI it(*this, row, IAlnSegmentIterator::eSkipGaps, aln_range);
+        bool reversed = (it  &&  it->IsReversed());
 
         //LOG_POST_X(1, "GetAlnSeqString(" << row << ") ==========================================" );
         while (it)   {
@@ -592,19 +593,37 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
 
             if (prev_to_open == string::npos) {
                 // we have a gap at the start position
-                buffer.replace(0, off, off, m_GapChar);
+                if ( !reversed ) {
+                    buffer.replace(0, off, off, m_GapChar);
+                }
+                else {
+                    buffer.replace(size - off, off, off, m_GapChar);
+                }
             }
             else {   // this is not the first segement
                 off = max(prev_to_open, off);
                 int gap_size = off - prev_to_open;
-                buffer.replace(prev_to_open, gap_size, gap_size, m_GapChar);
+                if ( !reversed ) {
+                    buffer.replace(prev_to_open, gap_size, gap_size, m_GapChar);
+                }
+                else {
+                    buffer.replace(size - prev_to_open - gap_size,
+                        gap_size, gap_size, m_GapChar);
+                }
             }
 
-            size_t len = min(buffer.size() - off, s.size());
+            size_t len = min(size - off, s.size());
 
-            _ASSERT(off + len <= buffer.size());
+            _ASSERT(off + len <= size);
 
-            buffer.replace(off, len, s, 0, len);
+            // The iterator enumerates segments according to the anchor row direction.
+            // To get the correct sequence we may need to reverse this.
+            if ( !reversed ) {
+                buffer.replace(off, len, s, 0, len);
+            }
+            else {
+                buffer.replace(size - off - len, len, s, 0, len);
+            }
             prev_to_open = off + len;
             ++it;
         }
@@ -612,11 +631,21 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
         if (prev_to_open != string::npos  &&  fill_len > 0) {
             if (pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
                 // there is gap on the right
-                buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
+                if ( !reversed ) {
+                    buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
+                }
+                else {
+                    buffer.replace(0, fill_len, fill_len, m_GapChar);
+                }
             }
             else {
                 // adjust buffer length
-                buffer.resize(prev_to_open);
+                if ( !reversed ) {
+                    buffer.resize(prev_to_open);
+                }
+                else {
+                    buffer.erase(0, fill_len);
+                }
             }
         }
         //LOG_POST_X(3, buffer);
