@@ -57,6 +57,46 @@ extern "C" {
 typedef unsigned int           ticket_t;
 
 
+/* This structure is assumed packed */
+typedef struct {
+    unsigned int   host;   /* must be in network byte order                  */
+    unsigned short port;   /* see note about byte flag byte order below      */
+    unsigned short flag;   /* FWDaemon control information, see below        */
+    ticket_t       ticket; /* connection ticket (raw binary data, n.b.o.)    */
+    unsigned int   client; /* expected host to call back (nbo, logging only) */
+    char           text[1];/* name requested (for statistics purposes only)  */
+} SFWDRequestReply;
+
+
+/* Maximal accepted request/reply size */
+#define FWD_MAX_RR_SIZE 128
+
+
+/*
+ * Currently, bit 0 (if set) of FWDaemon control information (flag) is used to
+ * indicate that the client is a true firewall client.  If the bit is clear,
+ * it means that the client is a relay client (and should use a secondary
+ * -not an official firewall- port of the daemon, if available).
+ * Non-zero bit 0 in response indicates that the true firewall mode (via DMZ)
+ * is available (acknowledged when requested) and is being used by FWDaemon.
+ *
+ * Byte order for port and flag fields:
+ * When FWDaemon is contacted via INET socket, these two fields must be
+ * in network byte order.
+ * When FWDaemon is contacted via UNIX socket, these two fields are assumed
+ * to be in host byte order, unless 0xF000 is ORed with input "flag" value
+ * and both fields are then converted (or not) into network byte order:  in
+ * this case the byte order can be auto-detected, and the values returned
+ * in both fields in the response are going to use that very same byte order.
+ * NOTE:  0xF000 can also be used with INET socket, but conversion to and
+ *        from network byte order is still mandatory.
+ * NOTE:  0xF000 is ORed in reply flag field only if it has been present
+ *        in the request.
+ * NOTE:  This is a transitional interface;  future revisions will
+ *        require both flag and port to always be in network byte order.
+ */
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

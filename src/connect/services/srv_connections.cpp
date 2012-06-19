@@ -41,9 +41,7 @@
 
 #include <corelib/ncbi_system.hpp>
 
-#ifdef HAVE_LOCAL_LBSM
-#  include "../daemons/fwda_cli.h"
-#endif
+#include "../ncbi_comm.h"
 
 #ifdef NCBI_OS_LINUX
 # include <sys/socket.h>
@@ -439,7 +437,7 @@ CNetServerConnection SNetServerImpl::Connect()
 
     SServerAddress server_address(m_ServerInPool->m_Address);
 
-#ifdef HAVE_LOCAL_LBSM
+#ifdef HAVE_LIBCONNEXT
     ticket_t ticket = 0;
 
     if (m_Service->m_AllowXSiteConnections &&
@@ -538,7 +536,7 @@ CNetServerConnection SNetServerImpl::Connect()
         }
     }
 
-#ifdef HAVE_LOCAL_LBSM
+#ifdef HAVE_LIBCONNEXT
     if (ticket != 0 &&
             conn->m_Socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
         NCBI_THROW(CNetSrvConnException, eConnectionFailure,
