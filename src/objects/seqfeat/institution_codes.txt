@@ -2608,7 +2608,7 @@ IRGC	b	International Rice Genebank Collection
 IRK	s	Siberian Institute of Plant Physiology and Biochemistry
 IRKU	s	Irkutsk State University, Department of Botany and Genetics
 IRP	s	Isle Royale National Park
-IRRI	s	International Rice Research Institute
+IRRI	sb	International Rice Research Institute
 IRSAC	s	Institute de Recherche Scientific en Afrique Centrale
 IRSC	s	Institut de Recherches Scientifiques au Congo
 IRSM	s	Institut Recherche Scientifique de Madagascar
@@ -3100,6 +3100,7 @@ LILLE	s	Institut Catholique de Lille, Laboratoire de Biologie Vegetale
 LIM	s	Severoceske muzeum
 LIMFC	s	Limerick Field Club
 LIMK	s	Limerick Museum
+LIN-SB	c	Limnological Institute, Siberian Branch, Russian Academy of Sciences
 LINC	s	Lincoln University, Plant Sciences Group
 LINF	s	Shanxi Normal University, Biology Department
 LINHM	s	Long Island Natural History Museum
