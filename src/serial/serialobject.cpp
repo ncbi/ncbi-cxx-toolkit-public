@@ -708,7 +708,7 @@ CNcbiIstream& ReadObject(CNcbiIstream& is, TObjectPtr ptr, TTypeInfo info)
     istr->SetVerifyData(s_FlagsToVerify(is));
     TSerial_Format_Flags f = s_FlagsToFormatFlags(is);
     if (f != 0) {
-        ERR_POST_XX_ONCE(Serial_IStream, 8, Warning <<
+        ERR_POST_XX_ONCE(Serial_IStream, 9, Warning <<
             "ReadObject: ignoring unknown formatting flags");
     }
     if (istr->GetDataFormat() == eSerial_Xml) {

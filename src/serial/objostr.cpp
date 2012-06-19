@@ -1122,7 +1122,7 @@ void CObjectOStream::SetFormattingFlags(TSerial_Format_Flags flags)
     TSerial_Format_Flags accepted =
         fSerial_AsnText_NoIndentation | fSerial_AsnText_NoEol;
     if (flags & ~accepted) {
-        ERR_POST_X_ONCE(12, Warning <<
+        ERR_POST_X_ONCE(13, Warning <<
             "CObjectOStream::SetFormattingFlags: ignoring unknown formatting flags");
     }
     SetUseIndentation((flags & fSerial_AsnText_NoIndentation) == 0);
