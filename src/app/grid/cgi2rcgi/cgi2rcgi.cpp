@@ -103,7 +103,7 @@ public:
     const TPersistentEntries& GetPersistentEntries() const
         { return m_PersistentEntries; }
 
-    void LoadQueryStringTags(bool use_html);
+    void LoadQueryStringTags(CHTMLPlainText::EEncodeMode encode_mode);
 
     // Get CGI Context
     CCgiContext& GetCGIContext() { return m_CgiContext; }
@@ -230,17 +230,14 @@ void CGridCgiContext::DefinePersistentEntry(const string& entry_name,
     }
 }
 
-void CGridCgiContext::LoadQueryStringTags(bool use_html)
+void CGridCgiContext::LoadQueryStringTags(
+        CHTMLPlainText::EEncodeMode encode_mode)
 {
     ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
         string tag("QUERY_STRING:" + eit->first);
-        m_Page.AddTagMap(tag, new CHTMLPlainText(use_html ?
-            CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode,
-                eit->second));
+        m_Page.AddTagMap(tag, new CHTMLPlainText(encode_mode, eit->second));
         m_CustomHTTPHeader.AddTagMap(tag,
-            new CHTMLPlainText(use_html ?
-                CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode,
-                    eit->second));
+                new CHTMLPlainText(encode_mode, eit->second));
     }
 }
 
@@ -336,7 +333,9 @@ private:
     int m_AffinitySetLimit;
 
     string m_ContentType;
-    bool m_UseHTML;
+
+    CHTMLPlainText::EEncodeMode m_TargetEncodeMode;
+    bool m_HTMLPassThrough;
 };
 
 void CCgi2RCgiApp::Init()
@@ -407,7 +406,15 @@ void CCgi2RCgiApp::Init()
 
     m_ContentType = config.GetString(cgi2rcgi_section,
         "content_type", kEmptyStr);
-    m_UseHTML = m_ContentType.empty() || m_ContentType == "text/html";
+    if (m_ContentType.empty() || m_ContentType == "text/html") {
+        m_TargetEncodeMode = CHTMLPlainText::eHTMLEncode;
+        m_HTMLPassThrough = config.GetBool(cgi2rcgi_section,
+                "html_pass_through", false);
+    } else {
+        m_TargetEncodeMode = m_ContentType == "application/json" ?
+                CHTMLPlainText::eJSONEncode : CHTMLPlainText::eNoEncode;
+        m_HTMLPassThrough = true;
+    }
 
     m_Title = config.GetString(cgi2rcgi_section, "cgi_title",
                                     "Remote CGI Status Checker");
@@ -552,13 +559,13 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     CCgiResponse& response = ctx.GetResponse();
     m_Response = &response;
 
-    if (!m_UseHTML)
+    if (m_TargetEncodeMode != CHTMLPlainText::eHTMLEncode)
         response.SetContentType(m_ContentType);
 
     // Create an HTML page (using the template HTML file)
     try {
         m_Page.reset(new CHTMLPage(m_Title, m_HtmlTemplate));
-        CHTMLText* stat_view = new CHTMLText(m_UseHTML ?
+        CHTMLText* stat_view = new CHTMLText(!m_HTMLPassThrough ?
             kGridCgiForm : kPlainTextView);
         m_Page->AddTagMap("VIEW", stat_view);
     }
@@ -574,7 +581,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     grid_ctx.PullUpPersistentEntry("job_key", job_key);
     grid_ctx.PullUpPersistentEntry("Cancel");
 
-    grid_ctx.LoadQueryStringTags(m_UseHTML);
+    grid_ctx.LoadQueryStringTags(m_TargetEncodeMode);
     try {
         EJobPhase phase = eTerminated;
 
@@ -693,7 +700,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         m_Page->AddTagMap("SELF_URL", self_url);
         m_CustomHTTPHeader->AddTagMap("SELF_URL", self_url);
 
-        if (m_UseHTML) {
+        if (!m_HTMLPassThrough) {
             // Preserve persistent entries as hidden fields
             string hidden_fields;
             for (CGridCgiContext::TPersistentEntries::const_iterator it =
@@ -728,10 +735,9 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         m_CustomHTTPHeader->AddTagMap("JOB_ID", new CHTMLText(job_key));
         if (phase == eRunning) {
             grid_ctx.SetJobProgressMessage(m_GridClient->GetProgressMessage());
-            CHTMLPlainText* err = new CHTMLPlainText(m_UseHTML ?
-                CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode,
-                    grid_ctx.GetJobProgressMessage());
-            grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG", err);
+            grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",
+                    new CHTMLPlainText(m_TargetEncodeMode,
+                            grid_ctx.GetJobProgressMessage()));
         }
     } //try
     catch (exception& e) {
@@ -776,7 +782,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
 void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
 {
-    if (m_UseHTML && idelay >= 0) {
+    if (!m_HTMLPassThrough && idelay >= 0) {
         CHTMLText* redirect = new CHTMLText(
                     "<META HTTP-EQUIV=Refresh "
                     "CONTENT=\"<@REDIRECT_DELAY@>; URL=<@REDIRECT_URL@>\">");
@@ -821,9 +827,17 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
             if (m_GridClient->GetBlobSize() > 0)
                 grid_ctx.SetCompleteResponse(is);
             else {
-                m_StrPage = m_UseHTML ?
-                    "<html><head><title>Empty Result</title>"
-                    "</head><body>Empty Result</body></html>" : kEmptyStr;
+                switch (m_TargetEncodeMode) {
+                case CHTMLPlainText::eHTMLEncode:
+                    m_StrPage = "<html><head><title>Empty Result</title>"
+                        "</head><body>Empty Result</body></html>";
+                    break;
+                case CHTMLPlainText::eJSONEncode:
+                    m_StrPage = "{}";
+                    break;
+                default:
+                    m_StrPage = kEmptyStr;
+                }
                 grid_ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
             }
         }
@@ -883,9 +897,8 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
         ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl;
     DefineRefreshTags(fall_back_url, m_FallBackDelay);
 
-    CHTMLPlainText* err = new CHTMLPlainText(m_UseHTML ?
-        CHTMLPlainText::eHTMLEncode : CHTMLPlainText::eJSONEncode, msg);
-    ctx.GetHTMLPage().AddTagMap("MSG", err);
+    ctx.GetHTMLPage().AddTagMap("MSG",
+            new CHTMLPlainText(m_TargetEncodeMode, msg));
 }
 
 /////////////////////////////////////////////////////////////////////////////
