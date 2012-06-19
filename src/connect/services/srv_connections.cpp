@@ -734,7 +734,9 @@ CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd)
 
 CNetServerInfo CNetServer::GetServerInfo()
 {
-    return new SNetServerInfoImpl(ExecWithRetry("VERSION").response);
+    string response(ExecWithRetry("VERSION").response);
+
+    return new SNetServerInfoImpl(response);
 }
 
 END_NCBI_SCOPE
