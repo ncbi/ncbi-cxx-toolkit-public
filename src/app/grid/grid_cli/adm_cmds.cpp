@@ -41,14 +41,11 @@ USING_NCBI_SCOPE;
 CGridCommandLineInterfaceApp::EAPIClass
     CGridCommandLineInterfaceApp::SetUp_AdminCmd()
 {
-    switch (IsOptionExplicitlySet(eNetCache, OPTION_N(0)) |
-            IsOptionExplicitlySet(eNetSchedule, OPTION_N(1)) |
-            IsOptionExplicitlySet(eWorkerNode, OPTION_N(2))) {
-    case 0:
-        fprintf(stderr, "This command requires either "
-            "'--nc' or '--ns' option to be specified.\n");
-        return eUnknownAPI;
+    const char* applicable_error;
 
+    switch (IsOptionAccepted(eNetCache, OPTION_N(0)) |
+            IsOptionAccepted(eNetSchedule, OPTION_N(1)) |
+            IsOptionAccepted(eWorkerNode, OPTION_N(2))) {
     case OPTION_N(0): // eNetCache
         SetUp_NetCacheCmd(eNetCacheAdmin);
         return eNetCacheAdmin;
@@ -61,10 +58,41 @@ CGridCommandLineInterfaceApp::EAPIClass
         SetUp_NetScheduleCmd(eWorkerNodeAdmin);
         return eWorkerNodeAdmin;
 
-    default: // A combination of options
-        fprintf(stderr, "Options '--nc', '--ns', and '--wn' "
-            "are mutually exclusive.\n");
-        return eUnknownAPI;
+    case OPTION_N(0) | OPTION_N(1): // eNetCache or eNetSchedule
+        applicable_error = "either '--" NETCACHE_OPTION "' or '--"
+                NETSCHEDULE_OPTION "' must be explicitly specified.";
+        break;
+    case OPTION_N(0) | OPTION_N(2): // eNetCache or eWorkerNode
+        applicable_error = "either '--" NETCACHE_OPTION "' or '--"
+                WORKER_NODE_OPTION "' must be explicitly specified.";
+        break;
+    case OPTION_N(1) | OPTION_N(2): // eNetSchedule or eWorkerNode
+        applicable_error = "either '--" NETSCHEDULE_OPTION "' or '--"
+                WORKER_NODE_OPTION "' must be explicitly specified.";
+        break;
+    default: // All three are accepted.
+        applicable_error = "exactly one of '--" NETCACHE_OPTION "', '--"
+                 NETSCHEDULE_OPTION "', or '--" WORKER_NODE_OPTION
+                 "' must be explicitly specified.";
+    }
+
+    switch (IsOptionExplicitlySet(eNetCache, OPTION_N(0)) |
+            IsOptionExplicitlySet(eNetSchedule, OPTION_N(1)) |
+            IsOptionExplicitlySet(eWorkerNode, OPTION_N(2))) {
+    case OPTION_N(0): // eNetCache
+        SetUp_NetCacheCmd(eNetCacheAdmin);
+        return eNetCacheAdmin;
+
+    case OPTION_N(1): // eNetSchedule
+        SetUp_NetScheduleCmd(eNetScheduleAdmin);
+        return eNetScheduleAdmin;
+
+    case OPTION_N(2): // eWorkerNode
+        SetUp_NetScheduleCmd(eWorkerNodeAdmin);
+        return eWorkerNodeAdmin;
+
+    default: // None or a combination of options
+        NCBI_THROW(CArgException, eNoValue, applicable_error);
     }
 }
 

@@ -59,8 +59,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
         if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
             NCBI_THROW(CArgException, eInvalidArg,
-                "When job ID is given, '--netschedule' "
-                "must be a host:port server_host address.");
+                    "When job ID is given, '--" NETSCHEDULE_OPTION "' "
+                    "must be a host:port server address.");
         }
 
         m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
@@ -85,6 +85,16 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     case eNetScheduleAPI:
         break;
     case eNetScheduleAdmin:
+        if (!IsOptionExplicitlySet(eNetSchedule)) {
+            NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION
+                    "' must be explicitly specified.");
+        }
+        if (IsOptionAcceptedAndSetImplicitly(eQueue)) {
+            NCBI_THROW(CArgException, eNoValue, "'--" QUEUE_OPTION
+                    "' must be specified explicitly (not via $"
+                    LOGIN_TOKEN_ENV ").");
+        }
+        /* FALL THROUGH */
     case eWorkerNodeAdmin:
         m_NetScheduleAdmin = m_NetScheduleAPI.GetAdmin();
         break;

@@ -101,7 +101,8 @@ struct SOptionDefinition {
         "One of the output formats supported by this command.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNetCache),
-        "nc|netcache", "NetCache service name or server address.", {-1}},
+        "nc|" NETCACHE_OPTION, "NetCache service name "
+            "or server address.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eCache),
         "cache", "Enable ICache mode and specify cache name to use.", {-1}},
@@ -122,13 +123,15 @@ struct SOptionDefinition {
         "enable-mirroring", "Enable NetCache mirroring functionality.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNetSchedule),
-        "ns|netschedule", "NetSchedule service name or server address.", {-1}},
+        "ns|" NETSCHEDULE_OPTION, "NetSchedule service name "
+            "or server address.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eQueue),
         QUEUE_OPTION, "NetSchedule queue.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eWorkerNode),
-        "wn|worker-node", "Worker node address (a host:port pair).", {-1}},
+        "wn|" WORKER_NODE_OPTION, "Worker node address "
+            "(a host:port pair).", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eBatch),
         BATCH_OPTION, "Enable batch mode and specify batch size.", {-1}},
@@ -893,7 +896,7 @@ int CGridCommandLineInterfaceApp::Run()
         }
 
         for (cmd_opt = cmd_def->options; *cmd_opt >= 0; ++cmd_opt)
-            m_Opts.option_flags[*cmd_opt] |= OPTION_ACCEPTED;
+            MarkOptionAsAccepted(*cmd_opt);
 
         if (m_Opts.option_flags[eOutputFormat])
             m_Opts.output_format = (EOutputFormat) *cmd_def->output_formats;

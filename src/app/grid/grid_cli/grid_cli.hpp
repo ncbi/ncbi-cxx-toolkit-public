@@ -56,6 +56,9 @@
 #define LOGIN_TOKEN_ALLOW_XSITE_CONN "x"
 
 #define LOGIN_TOKEN_OPTION "login-token"
+#define NETCACHE_OPTION "netcache"
+#define NETSCHEDULE_OPTION "netschedule"
+#define WORKER_NODE_OPTION "worker-node"
 #define INPUT_OPTION "input"
 #define INPUT_FILE_OPTION "input-file"
 #define OUTPUT_FILE_OPTION "output-file"
@@ -266,9 +269,29 @@ private:
     void DefineClientNode(const string& user, const string& host);
     void SetUpClientSession();
 
-    bool IsOptionAcceptedButNotSet(EOption option)
+    void MarkOptionAsAccepted(int option)
+    {
+        m_Opts.option_flags[option] |= OPTION_ACCEPTED;
+    }
+
+    bool IsOptionAccepted(EOption option) const
+    {
+        return (m_Opts.option_flags[option] & OPTION_ACCEPTED) != 0;
+    }
+
+    int IsOptionAccepted(EOption option, int mask) const
+    {
+        return (m_Opts.option_flags[option] & OPTION_ACCEPTED) ? mask : 0;
+    }
+
+    bool IsOptionAcceptedButNotSet(EOption option) const
     {
         return m_Opts.option_flags[option] == OPTION_ACCEPTED;
+    }
+
+    bool IsOptionAcceptedAndSetImplicitly(EOption option) const
+    {
+        return m_Opts.option_flags[option] == (OPTION_ACCEPTED | OPTION_SET);
     }
 
     void MarkOptionAsSet(int option)
@@ -276,30 +299,29 @@ private:
         m_Opts.option_flags[option] |= OPTION_SET;
     }
 
+    bool IsOptionSet(int option) const
+    {
+        return (m_Opts.option_flags[option] & OPTION_SET) != 0;
+    }
+
+    int IsOptionSet(int option, int mask) const
+    {
+        return (m_Opts.option_flags[option] & OPTION_SET) ? mask : 0;
+    }
+
     void MarkOptionAsExplicitlySet(int option)
     {
         m_Opts.option_flags[option] |= OPTION_SET | OPTION_EXPLICITLY_SET;
     }
 
-    bool IsOptionSet(int option)
-    {
-        return (m_Opts.option_flags[option] & OPTION_SET) != 0;
-    }
-
-    bool IsOptionExplicitlySet(int option)
+    bool IsOptionExplicitlySet(int option) const
     {
         return (m_Opts.option_flags[option] & OPTION_EXPLICITLY_SET) != 0;
     }
 
-    int IsOptionSet(int option, int mask)
+    int IsOptionExplicitlySet(int option, int mask) const
     {
-        return (m_Opts.option_flags[option] & OPTION_SET) != 0 ? mask : 0;
-    }
-
-    int IsOptionExplicitlySet(int option, int mask)
-    {
-        return (m_Opts.option_flags[option] &
-                OPTION_EXPLICITLY_SET) != 0 ? mask : 0;
+        return (m_Opts.option_flags[option] & OPTION_EXPLICITLY_SET) ? mask : 0;
     }
 
     CNetCacheAPI m_NetCacheAPI;
@@ -357,7 +379,6 @@ public:
 // Implementation details.
 private:
     enum EAPIClass {
-        eUnknownAPI,
         eNetCacheAPI,
         eNetICacheClient,
         eNetCacheAdmin,

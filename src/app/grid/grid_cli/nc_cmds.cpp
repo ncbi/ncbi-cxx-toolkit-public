@@ -62,7 +62,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
                     host, (unsigned short) NStr::StringToInt(port));
             else {
                 NCBI_THROW(CArgException, eInvalidArg,
-                    "When blob ID is given, '--netcache' "
+                    "When blob ID is given, '--" NETCACHE_OPTION "' "
                     "must be a host:port server address.");
             }
         }
@@ -73,7 +73,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
             m_Opts.cache_name, m_Opts.auth);
 
         if (m_Opts.nc_service.empty()) {
-            NCBI_THROW(CArgException, eNoValue, "\"--nc\" "
+            NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
                 "option is required in icache mode.");
         }
 
@@ -82,6 +82,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
         break;
 
     default: // always eNetCacheAdmin
+        if (!IsOptionExplicitlySet(eNetCache)) {
+            NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
+                "must be explicitly specified.");
+        }
         m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
         m_NetCacheAdmin = m_NetCacheAPI.GetAdmin();
     }
