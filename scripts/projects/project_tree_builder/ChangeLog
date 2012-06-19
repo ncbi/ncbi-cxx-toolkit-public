@@ -214,5 +214,10 @@ version 3.7.3
 Added support of UNIX_PROJ on Unix.
 Corrected generation of project watchers list on MSVC2010.
 
+June 19, 2012
+version 3.8.0
+Added analysis of build order information and warnings on out of order builds.
+Added analysis of library order to report out of order and redundant entries.
+
 
 
