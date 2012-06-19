@@ -209,6 +209,7 @@ private:
                       const CRangeCollection<TSeqPos> &insert_locs,
                       const CRangeCollection<TSeqPos> &delete_locs,
                       const map<TSeqPos,TSeqPos> &delete_sizes);
+    string x_ConstructRnaName(const CBioseq_Handle& handle);
 
     CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id);
 };

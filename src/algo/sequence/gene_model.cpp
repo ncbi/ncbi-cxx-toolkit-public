@@ -55,6 +55,9 @@
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Splice_site.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
@@ -1175,7 +1178,7 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
         if (!RNA_class.empty()) {
             mrna_feat->SetData().SetRna().SetExt().SetGen().SetClass(RNA_class);
         }
-        name = sequence::GetTitle(handle);
+        name = x_ConstructRnaName(handle);
         if (!name.empty()) {
             if (!RNA_class.empty()) {
                 mrna_feat->SetData().SetRna().SetExt().SetGen().SetProduct(name);
@@ -1315,9 +1318,12 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                 cds_feat->Assign(*cdregion_on_mrna);
                 cds_feat->ResetId();
 
+                CBioseq_Handle prot_handle;
+
                 CConstRef<CSeq_id> prot_id(new CSeq_id);
                 if (cds_feat->CanGetProduct()) {
                     prot_id.Reset(cds_feat->GetProduct().GetId());
+                    prot_handle = m_scope->GetBioseqHandle(*prot_id);
                 }
                 string gnomon_model_num = ExtractGnomonModelNum(*prot_id);
                 if (m_flags & fForceTranslateCds) {
@@ -1337,6 +1343,24 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                     cds_loc->IsPartialStart(eExtreme_Biological);
 
                 cds_feat->SetLocation(*cds_loc);
+
+                if (prot_handle) {
+                    for (CFeat_CI feat_iter(prot_handle, CSeqFeatData::e_Prot);
+                         feat_iter; ++feat_iter)
+                    {
+                        const CProt_ref &prot_ref =
+                            feat_iter->GetData().GetProt();
+                        if (prot_ref.IsSetName() &&
+                            !prot_ref.GetName().empty())
+                        {
+                            CRef< CSeqFeatXref > prot_xref(new CSeqFeatXref());
+                            prot_xref->SetData().SetProt().SetName().push_back(
+                                prot_ref.GetName().front());
+                            cds_feat->SetXref().push_back(prot_xref);
+                            break;
+                        }
+                    }
+                }
 
                 /// make sure we set the CDS frame correctly
                 /// if we're 5' partial, we may need to adjust the frame
@@ -1380,11 +1404,12 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                 if (!gnomon_model_num.empty() && !is_partial_5prime) {
                     int cds_start = cdregion_on_mrna->GetLocation().GetTotalRange().GetFrom();
                     if (cds_start >= 3) {
-                        CBioseq_Handle handle =
+                        CBioseq_Handle rna_handle =
                             m_scope->GetBioseqHandle(*cdregion_on_mrna->GetLocation().GetId());
+
                         string strprot;
-                        if (handle) {
-                            CSeqVector vec(handle, CBioseq_Handle::eCoding_Iupac);
+                        if (rna_handle) {
+                            CSeqVector vec(rna_handle, CBioseq_Handle::eCoding_Iupac);
                             string mrna;
                             vec.GetSeqData(cds_start % 3, cds_start, mrna);
                             CSeqTranslator::Translate
@@ -1401,12 +1426,12 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                             stop_5prime_location->SetInt().SetFrom(stop_5prime);
                             stop_5prime_location->SetInt().SetTo(stop_5prime+2);
                             stop_5prime_location->SetInt().SetStrand(eNa_strand_plus);
-                            stop_5prime_location->SetId(*handle.GetSeqId());
+                            stop_5prime_location->SetId(*rna_handle.GetSeqId());
                             stop_5prime_feature->SetLocation(*stop_5prime_location);
 
                             SAnnotSelector sel(CSeq_annot::C_Data::e_Ftable);
                             sel.SetResolveNone();
-                            CAnnot_CI it(handle, sel);
+                            CAnnot_CI it(rna_handle, sel);
                             it->GetEditHandle().AddFeat(*stop_5prime_feature);
                         }
                     }
@@ -1446,6 +1471,31 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
             }
     }
     return cds_feat;
+}
+
+string CFeatureGenerator::
+SImplementation::x_ConstructRnaName(const CBioseq_Handle& handle)
+{
+    string name = sequence::GetTitle(handle);
+    const COrg_ref &org = sequence::GetOrg_ref(handle);
+    if (org.IsSetTaxname() && NStr::StartsWith(name, org.GetTaxname())) {
+        name.erase(0, org.GetTaxname().size());
+    }
+    NStr::ReplaceInPlace(name, ", nuclear gene encoding mitochondrial protein",
+                               "");
+    CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
+    if (feat_iter && feat_iter.GetSize() &&
+        feat_iter->GetData().GetGene().IsSetLocus())
+    {
+        NStr::ReplaceInPlace(
+            name, " (" + feat_iter->GetData().GetGene().GetLocus() + ')', "");
+    }
+    size_t last_comma = name.rfind(',');
+    if (last_comma != string::npos) {
+        name.erase(last_comma);
+    }
+    NStr::TruncateSpacesInPlace(name);
+    return name;
 }
 
 CRef<CSeq_feat>
