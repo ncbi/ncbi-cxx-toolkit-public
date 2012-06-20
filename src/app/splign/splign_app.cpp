@@ -1074,7 +1074,8 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
                                                              flags));
         //add some scores
         CSplign::TScoreSets scores;
-        CSplign::s_ComputeStats(sas, &scores);
+        bool not_empty (sas.GetPointer() && sas->CanGet() && sas->Get().size());
+        if(not_empty) CSplign::s_ComputeStats(sas, &scores);
         
         CSplign::TScoreSets::iterator   score_it = scores.begin();
         CSeq_align_set::Tdata::iterator align_it = sas->Set().begin();
