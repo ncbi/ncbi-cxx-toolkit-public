@@ -1286,11 +1286,12 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     size_t start2 = 0, pos2 = 0; // and genomic
     size_t seg_len = 0;
 	
-    string::const_iterator ib = transcript.begin(),
-        ie = transcript.end(), ii = ib;
+    string::const_iterator ib = transcript.begin();
+    string::const_iterator ie = transcript.end();
+    string::const_iterator ii = ib;
     unsigned char seg_type;
-    const static char badsymerr[] = "Unknown or unsupported transcript symbol";
-    char c = *ii++;
+    static const char* badsymerr = "Unknown or unsupported transcript symbol";
+    char c = ii != ie ? *ii++ : 0;
     if(c == 'M' || c == 'R') {
         seg_type = 0;
         ++pos1;
@@ -1305,8 +1306,13 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
         ++pos1;
     }
     else {
-
-        NCBI_THROW(CSeqalignException, eInvalidInputData, badsymerr);
+        if (c == 0) {
+            NCBI_THROW(CSeqalignException, eInvalidInputData,
+                "Empty transcript");
+        }
+        else {
+            NCBI_THROW(CSeqalignException, eInvalidInputData, badsymerr);
+        }
     }    
     
     while(ii < ie) {
