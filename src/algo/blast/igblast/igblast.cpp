@@ -223,7 +223,7 @@ void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
     }
     opts_hndl->SetEvalueThreshold(10.0);
     opts_hndl->SetFilterString("F");
-    opts_hndl->SetHitlistSize(5);
+    opts_hndl->SetHitlistSize(5+ m_IgOptions->m_NumAlign[0]);
     qf.Reset(new CObjMgr_QueryFactory(*m_Query));
 
 };
@@ -247,7 +247,9 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
     opts.SetGapExtensionCost(2);
     opts_hndl->SetEvalueThreshold(1000.0);
     opts_hndl->SetFilterString("F");
-    opts_hndl->SetHitlistSize(50);
+    opts_hndl->SetHitlistSize(max(max(50, 
+               m_IgOptions->m_NumAlign[1]), 
+               m_IgOptions->m_NumAlign[2]));
 
     // Mask query for D, J search
     int iq = 0;
