@@ -11,6 +11,7 @@ db
 dbapi
 gui
 html
+internal/objects/alndb_query$
 internal/align_model$
 internal/contigdb$
 internal/blast
