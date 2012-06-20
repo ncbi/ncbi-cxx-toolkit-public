@@ -158,12 +158,14 @@ int CIgBlastnApp::Run(void)
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
+        Int4 num_alignments = (db_args->GetDatabaseName() == kEmptyStr) ? 
+                               0 : fmt_args->GetNumAlignments();
         CBlastFormat formatter(opt, *blastdb_full,
                                fmt_args->GetFormattedOutputChoice(),
                                query_opts->GetParseDeflines(),
                                m_CmdLineArgs->GetOutputStream(),
                                fmt_args->GetNumDescriptions(),
-                               fmt_args->GetNumAlignments(),
+                               num_alignments,
                                *scope,
                                opt.GetMatrixName(),
                                fmt_args->ShowGis(),
