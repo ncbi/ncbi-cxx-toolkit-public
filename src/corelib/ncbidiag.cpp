@@ -4902,6 +4902,7 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
         return;
     }
     CDiagLock lock(CDiagLock::ePost);
+    m_Stream->clear();
     if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
         CNcbiOstrstream str_os;
         str_os << mess;
