@@ -130,6 +130,7 @@ CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
     x_ResetFields();
     x_SetFieldDelimiter(delim);
     SetParseLocalIds(parse_local_ids);
+    SetNoFetch(false);
 }
 
 CBlastTabularInfo::~CBlastTabularInfo()
@@ -333,7 +334,8 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     const int kSubjectRow = 1;
 
     int num_ident = -1;
-    
+    const bool kNoFetchSequence = GetNoFetch();
+
     // First reset all fields.
     x_ResetFields();
 
@@ -493,9 +495,9 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         x_IsFieldRequested(ePositives) ||
         x_IsFieldRequested(ePercentPositives) ||
         x_IsFieldRequested(eBTOP) ||
-        x_IsFieldRequested(eNumIdentical) ||
-        x_IsFieldRequested(eMismatches) ||
-        x_IsFieldRequested(ePercentIdentical)) {
+        (x_IsFieldRequested(eNumIdentical) && !kNoFetchSequence) ||
+        (x_IsFieldRequested(eMismatches) && !kNoFetchSequence) ||
+        (x_IsFieldRequested(ePercentIdentical) && !kNoFetchSequence)) {
 
         alnVec->SetGapChar('-');
         alnVec->GetWholeAlnSeqString(0, m_QuerySeq);

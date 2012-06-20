@@ -559,6 +559,8 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
              ? CBlastTabularInfo::eComma : CBlastTabularInfo::eTab);
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
         tabinfo.SetParseLocalIds(m_BelieveQuery);
+        if (ncbi::NStr::ToLower(m_Program) == string("blastn"))
+        	tabinfo.SetNoFetch(true);
 
         if (m_FormatType == CFormattingArgs::eTabularWithComments) {
             string strProgVersion =

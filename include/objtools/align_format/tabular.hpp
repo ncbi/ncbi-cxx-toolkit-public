@@ -159,6 +159,13 @@ public:
     /// @param field Which field to test [in]
     void SetParseLocalIds(bool val) { m_ParseLocalIds = val; }
 
+    /// Avoid fetching sequence (if possible)
+    /// If the sequence is needed (e.g., will be formatted, it will be fetched)
+    /// @param nofetch Do not fetch if true [in]
+    void SetNoFetch(bool nofetch);
+    /// Avoid fetch of sequence if true returned
+    bool GetNoFetch();
+
 protected:
     bool x_IsFieldRequested(ETabularField field);
     /// Add a field to the list of fields to show, if it is not yet present in
@@ -266,6 +273,7 @@ protected:
     int m_SubjectStart;      ///< Starting offset in subject
     int m_SubjectEnd;        ///< Ending offset in subject 
     int m_SubjectFrame;      ///< subject frame
+    bool m_NoFetch;	     ///< program as a string
 
 private:
 
@@ -415,6 +423,16 @@ inline void CBlastTabularInfo::x_PrintQueryLength(void)
 inline void CBlastTabularInfo::x_PrintSubjectLength(void)
 {
     m_Ostream << m_SubjectLength;
+}
+
+inline void CBlastTabularInfo::SetNoFetch(bool nofetch)
+{
+    m_NoFetch = nofetch;
+}
+
+inline bool CBlastTabularInfo::GetNoFetch(void)
+{
+    return m_NoFetch;
 }
 
 /// Class containing information needed for tabular formatting of BLAST 
