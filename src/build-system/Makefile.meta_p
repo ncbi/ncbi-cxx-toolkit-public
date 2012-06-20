@@ -67,7 +67,7 @@ $(RELEVANT_SUB_FILE): $(RELEVANT_FILE)
 
 IRRELEVANT_SUB_FILE = $(builddir)/irrelevant.prefixes
 $(IRRELEVANT_SUB_FILE): $(IRRELEVANT_FILE)
-	-grep -v '\$$$$' $(IRRELEVANT_FILE) > $(IRRELEVANT_SUB_FILE)
+	grep -v '[^^]\$$$$' $(IRRELEVANT_FILE) > $(IRRELEVANT_SUB_FILE)
 
 auto-relevance.mk: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@(if $(call is_relevant,,_SUB) ; then echo "RELEVANT_SUB = 1" ; fi ; \
