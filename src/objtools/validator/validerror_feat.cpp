@@ -240,6 +240,10 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
         ValidateFeatCit(feat.GetCit(), feat);
     }
 
+    if ( feat.IsSetPseudo()  &&  feat.GetPseudo() ) {
+        m_Imp.IncrementPseudoCount();
+    }
+
     FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
         if (!(*it)->IsSetQual()) {
             continue;
@@ -306,6 +310,8 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
                          "Inference qualifier problem - " + kInferenceMessage [(int) rsult] + " ("
                          + val + ")", feat);
             }
+        } else if (NStr::EqualNocase ((*it)->GetQual(), "pseudogene")) {
+            m_Imp.IncrementPseudogeneCount();
         }
         if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
             PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 

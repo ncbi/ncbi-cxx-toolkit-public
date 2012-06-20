@@ -500,6 +500,14 @@ public:
     inline void IncrementTpaWithoutHistoryCount (void) { m_NumTpaWithoutHistory++; }
     inline void AddToTpaWithoutHistoryCount (SIZE_TYPE num) { m_NumTpaWithoutHistory += num; }
 
+    // counting number of Pseudos and Pseudogenes
+    inline void ResetPseudoCount (void) { m_NumPseudo = 0; }
+    inline void IncrementPseudoCount (void) { m_NumPseudo++; }
+    inline void AddToPseudoCount (SIZE_TYPE num) { m_NumPseudo += num; }
+    inline void ResetPseudogeneCount (void) { m_NumPseudogene = 0; }
+    inline void IncrementPseudogeneCount (void) { m_NumPseudogene++; }
+    inline void AddToPseudogeneCount (SIZE_TYPE num) { m_NumPseudogene += num; }
+
     // set flag for farfetchfailure
     inline void SetFarFetchFailure (void) { m_FarFetchFailure = true; }
 
@@ -689,8 +697,11 @@ private:
     SIZE_TYPE   m_NumGenes;
     SIZE_TYPE   m_NumGeneXrefs;
 
-    size_t      m_NumTpaWithHistory;
-    size_t      m_NumTpaWithoutHistory;
+    SIZE_TYPE   m_NumTpaWithHistory;
+    SIZE_TYPE   m_NumTpaWithoutHistory;
+
+    SIZE_TYPE   m_NumPseudo;
+    SIZE_TYPE   m_NumPseudogene;
 };
 
 
