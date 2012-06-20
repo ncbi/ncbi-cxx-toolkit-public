@@ -353,6 +353,19 @@ bool CBlastPrelimSearch::Run( vector<list<CRef<CStd_seg> > >  & l )
 	return x_BuildStdSegList(l);
 }
 
+void s_FixNumIdent(BlastHSPList *hsp_list, bool gapped_calculation)
+{
+	   BlastHSP* hsp;
+	   int i;
+
+	   for (i=0; i < hsp_list->hspcnt; i++)
+	   {
+	      hsp = hsp_list->hsp_array[i];
+	      if (gapped_calculation)
+	    	  hsp->num_ident = -1;
+	   }
+}
+
 void s_GetBitScores(BlastHitList * hit_list, bool gapped_calculation, const BlastScoreBlk * sbp)
 {
 
@@ -363,6 +376,7 @@ void s_GetBitScores(BlastHitList * hit_list, bool gapped_calculation, const Blas
 		    	continue;
 
 		    Blast_HSPListGetBitScores(hsp_list, gapped_calculation, sbp);
+		    s_FixNumIdent(hsp_list, gapped_calculation);
 	 }
 }
 
