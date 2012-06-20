@@ -43,7 +43,8 @@ USING_NCBI_SCOPE;
 #define MAX_VISIBLE_DATA_LENGTH 50
 
 void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
-    CGridCommandLineInterfaceApp::EAPIClass api_class)
+        CGridCommandLineInterfaceApp::EAPIClass api_class,
+        CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
     if (IsOptionSet(eAllowXSiteConn))
         CNcbiApplication::Instance()->GetConfig().Set(
@@ -54,7 +55,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
         m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
             m_Opts.auth, queue);
-    else if (!m_Opts.ns_service.empty()) {
+    else if (IsOptionExplicitlySet(eNetSchedule)) {
         string host, port;
 
         if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
@@ -85,21 +86,20 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     case eNetScheduleAPI:
         break;
     case eNetScheduleAdmin:
-        if (!IsOptionExplicitlySet(eNetSchedule)) {
-            NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION
-                    "' must be explicitly specified.");
-        }
-        if (IsOptionAcceptedAndSetImplicitly(eQueue)) {
-            NCBI_THROW(CArgException, eNoValue, "'--" QUEUE_OPTION
-                    "' must be specified explicitly (not via $"
-                    LOGIN_TOKEN_ENV ").");
+        if (cmd_severity != eReadOnlyAdminCmd) {
+            if (!IsOptionExplicitlySet(eNetSchedule)) {
+                NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION
+                        "' must be explicitly specified.");
+            }
+            if (IsOptionAcceptedAndSetImplicitly(eQueue)) {
+                NCBI_THROW(CArgException, eNoValue, "'--" QUEUE_OPTION
+                        "' must be specified explicitly (not via $"
+                        LOGIN_TOKEN_ENV ").");
+            }
         }
         /* FALL THROUGH */
     case eWorkerNodeAdmin:
         m_NetScheduleAdmin = m_NetScheduleAPI.GetAdmin();
-        break;
-    case eNetScheduleSubmitter:
-        m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
         break;
     case eNetScheduleExecutor:
         m_NetScheduleExecutor = m_NetScheduleAPI.GetExecutor();
@@ -109,6 +109,14 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
             NCBI_THROW(CArgException, eNoArg, "client identification required "
                     "(see the '" LOGIN_COMMAND "' command).");
         }
+        /* FALL THROUGH */
+    case eNetScheduleSubmitter:
+        m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
+
+        SetUp_NetCacheCmd(eNetCacheAPI);
+        m_GridClient.reset(new CGridClient(m_NetScheduleSubmitter,
+                m_NetCacheAPI, CGridClient::eManualCleanup,
+                        CGridClient::eProgressMsgOn));
         break;
     default:
         _ASSERT(0);
@@ -131,15 +139,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     if (!m_Opts.client_session.empty())
         m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
-}
-
-void CGridCommandLineInterfaceApp::SetUp_GridClient()
-{
-    SetUp_NetScheduleCmd(eNetScheduleAPI);
-    SetUp_NetCacheCmd(eNetCacheAPI);
-    m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
-    m_GridClient.reset(new CGridClient(m_NetScheduleSubmitter, m_NetCacheAPI,
-            CGridClient::eManualCleanup, CGridClient::eProgressMsgOn));
 }
 
 void CGridCommandLineInterfaceApp::PrintJobMeta(const CNetScheduleKey& key)
@@ -339,7 +338,7 @@ bool CGridCommandLineInterfaceApp::ParseAndPrintJobEvents(const string& line)
 
 int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
 
     CNetScheduleAPI::EJobStatus status;
 
@@ -538,7 +537,7 @@ static const string s_NotificationTimestampFormat("Y/M/D h:m:s.l");
 
 int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 {
-    SetUp_GridClient();
+    SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
     if (IsOptionSet(eBatch)) {
         CBatchSubmitAttrParser attr_parser(m_Opts.input_stream);
@@ -777,7 +776,7 @@ int CGridCommandLineInterfaceApp::PrintJobAttrsAndDumpInput(
 
 int CGridCommandLineInterfaceApp::Cmd_GetJobInput()
 {
-    SetUp_GridClient();
+    SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
     CNetScheduleJob job;
     job.job_id = m_Opts.id;
@@ -793,7 +792,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobInput()
 
 int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
 {
-    SetUp_GridClient();
+    SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
     CNetScheduleJob job;
     job.job_id = m_Opts.id;
@@ -870,7 +869,7 @@ int CGridCommandLineInterfaceApp::Cmd_CancelJob()
 
         m_NetScheduleAPI.GetSubmitter().CancelJobGroup(m_Opts.job_group);
     } else if (IsOptionSet(eAllJobs)) {
-        SetUp_NetScheduleCmd(eNetScheduleAdmin);
+        SetUp_NetScheduleCmd(eNetScheduleAdmin, eSevereAdminCmd);
 
         m_NetScheduleAdmin.CancelAllJobs();
     } else {
@@ -1036,7 +1035,7 @@ int CGridCommandLineInterfaceApp::Cmd_ClearNode()
 
 int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+    SetUp_NetScheduleCmd(eNetScheduleAPI);
 
     if (IsOptionSet(eExtendLifetime) ||
             IsOptionSet(eProgressMessage)) {
@@ -1059,7 +1058,7 @@ int CGridCommandLineInterfaceApp::Cmd_UpdateJob()
 
 int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
 
     m_NetScheduleAdmin.PrintQueueInfo(NcbiCout);
 
@@ -1068,7 +1067,7 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
 
 int CGridCommandLineInterfaceApp::Cmd_DumpQueue()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
 
     m_NetScheduleAdmin.DumpQueue(NcbiCout, m_Opts.start_after_job,
             m_Opts.job_count, m_Opts.job_status, m_Opts.job_group);
@@ -1078,7 +1077,7 @@ int CGridCommandLineInterfaceApp::Cmd_DumpQueue()
 
 int CGridCommandLineInterfaceApp::Cmd_CreateQueue()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eSevereAdminCmd);
 
     m_NetScheduleAdmin.CreateQueue(m_Opts.id, m_Opts.queue,
         m_Opts.queue_description);
@@ -1088,7 +1087,7 @@ int CGridCommandLineInterfaceApp::Cmd_CreateQueue()
 
 int CGridCommandLineInterfaceApp::Cmd_GetQueueList()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
 
     CNetScheduleAdmin::TQueueList queues;
 
@@ -1128,7 +1127,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetQueueList()
 
 int CGridCommandLineInterfaceApp::Cmd_DeleteQueue()
 {
-    SetUp_NetScheduleCmd(eNetScheduleAdmin);
+    SetUp_NetScheduleCmd(eNetScheduleAdmin, eSevereAdminCmd);
 
     m_NetScheduleAdmin.DeleteQueue(m_Opts.id);
 

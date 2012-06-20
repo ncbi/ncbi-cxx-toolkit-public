@@ -36,7 +36,8 @@
 USING_NCBI_SCOPE;
 
 void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
-    CGridCommandLineInterfaceApp::EAPIClass api_class)
+        CGridCommandLineInterfaceApp::EAPIClass api_class,
+        CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
     static const string kConfigSection("netcache_api");
     static const string kEnableMirroringParam("enable_mirroring");
@@ -54,17 +55,17 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
     switch (api_class) {
     case eNetCacheAPI:
         m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
-        if (!m_Opts.id.empty() && !m_Opts.nc_service.empty()) {
+        if (!m_Opts.id.empty() && IsOptionExplicitlySet(eNetCache)) {
             string host, port;
 
-            if (NStr::SplitInTwo(m_Opts.nc_service, ":", host, port))
-                m_NetCacheAPI.GetService().GetServerPool().StickToServer(
-                    host, (unsigned short) NStr::StringToInt(port));
-            else {
+            if (!NStr::SplitInTwo(m_Opts.nc_service, ":", host, port)) {
                 NCBI_THROW(CArgException, eInvalidArg,
                     "When blob ID is given, '--" NETCACHE_OPTION "' "
                     "must be a host:port server address.");
             }
+
+            m_NetCacheAPI.GetService().GetServerPool().StickToServer(host,
+                    (unsigned short) NStr::StringToInt(port));
         }
         break;
 
@@ -82,7 +83,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
         break;
 
     default: // always eNetCacheAdmin
-        if (!IsOptionExplicitlySet(eNetCache)) {
+        if (cmd_severity != eReadOnlyAdminCmd &&
+                !IsOptionExplicitlySet(eNetCache)) {
             NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
                 "must be explicitly specified.");
         }
@@ -396,7 +398,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReinitNetCache()
 {
     bool icache_mode = IsOptionSet(eCache);
 
-    SetUp_NetCacheCmd(eNetCacheAdmin);
+    SetUp_NetCacheCmd(eNetCacheAdmin, eSevereAdminCmd);
 
     if (icache_mode)
         m_NetCacheAdmin.Reinitialize(m_Opts.cache_name);

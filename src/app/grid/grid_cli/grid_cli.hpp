@@ -391,17 +391,21 @@ private:
         eNetScheduleAdmin,
         eNetScheduleSubmitter,
         eNetScheduleExecutor,
-        eWorkerNodeAdmin,
-        eGridClient
+        eWorkerNodeAdmin
     };
-    EAPIClass SetUp_AdminCmd();
-    void SetUp_NetCacheCmd(EAPIClass api_class);
+    enum EAdminCmdSeverity {
+        eReadOnlyAdminCmd,
+        eSevereAdminCmd
+    };
+    EAPIClass SetUp_AdminCmd(EAdminCmdSeverity cmd_severity);
+    void SetUp_NetCacheCmd(EAPIClass api_class,
+            EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void PrintBlobMeta(const CNetCacheKey& key);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);
     void PrintICacheServerUsed();
-    void SetUp_NetScheduleCmd(EAPIClass api_class);
-    void SetUp_GridClient();
+    void SetUp_NetScheduleCmd(EAPIClass api_class,
+            EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void PrintJobMeta(const CNetScheduleKey& key);
     static void PrintStorageType(const string& data, const char* prefix);
     static bool MatchPrefixAndPrintStorageTypeAndData(const string& line,

@@ -41,7 +41,7 @@ USING_NCBI_SCOPE;
 
 int CGridCommandLineInterfaceApp::Cmd_Replay()
 {
-    SetUp_GridClient();
+    SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
     if (IsOptionSet(eDumpCGIEnv)) {
         CNetScheduleJob job;

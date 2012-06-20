@@ -39,7 +39,8 @@
 USING_NCBI_SCOPE;
 
 CGridCommandLineInterfaceApp::EAPIClass
-    CGridCommandLineInterfaceApp::SetUp_AdminCmd()
+        CGridCommandLineInterfaceApp::SetUp_AdminCmd(
+                CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
     const char* applicable_error;
 
@@ -47,15 +48,15 @@ CGridCommandLineInterfaceApp::EAPIClass
             IsOptionAccepted(eNetSchedule, OPTION_N(1)) |
             IsOptionAccepted(eWorkerNode, OPTION_N(2))) {
     case OPTION_N(0): // eNetCache
-        SetUp_NetCacheCmd(eNetCacheAdmin);
+        SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
         return eNetCacheAdmin;
 
     case OPTION_N(1): // eNetSchedule
-        SetUp_NetScheduleCmd(eNetScheduleAdmin);
+        SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity);
         return eNetScheduleAdmin;
 
     case OPTION_N(2): // eWorkerNode
-        SetUp_NetScheduleCmd(eWorkerNodeAdmin);
+        SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
         return eWorkerNodeAdmin;
 
     case OPTION_N(0) | OPTION_N(1): // eNetCache or eNetSchedule
@@ -80,15 +81,15 @@ CGridCommandLineInterfaceApp::EAPIClass
             IsOptionExplicitlySet(eNetSchedule, OPTION_N(1)) |
             IsOptionExplicitlySet(eWorkerNode, OPTION_N(2))) {
     case OPTION_N(0): // eNetCache
-        SetUp_NetCacheCmd(eNetCacheAdmin);
+        SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
         return eNetCacheAdmin;
 
     case OPTION_N(1): // eNetSchedule
-        SetUp_NetScheduleCmd(eNetScheduleAdmin);
+        SetUp_NetScheduleCmd(eNetScheduleAdmin, cmd_severity);
         return eNetScheduleAdmin;
 
     case OPTION_N(2): // eWorkerNode
-        SetUp_NetScheduleCmd(eWorkerNodeAdmin);
+        SetUp_NetScheduleCmd(eWorkerNodeAdmin, cmd_severity);
         return eWorkerNodeAdmin;
 
     default: // None or a combination of options
@@ -100,7 +101,7 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 {
     CNetService service;
 
-    EAPIClass api_class = SetUp_AdminCmd();
+    EAPIClass api_class = SetUp_AdminCmd(eReadOnlyAdminCmd);
 
     switch (api_class) {
     case eNetCacheAdmin:
@@ -149,7 +150,7 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 
 int CGridCommandLineInterfaceApp::Cmd_Stats()
 {
-    switch (SetUp_AdminCmd()) {
+    switch (SetUp_AdminCmd(eReadOnlyAdminCmd)) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.PrintStat(NcbiCout, m_Opts.aggregation_interval,
                 !IsOptionSet(ePreviousInterval) ?
@@ -171,7 +172,7 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
 
 int CGridCommandLineInterfaceApp::Cmd_Health()
 {
-    if (SetUp_AdminCmd() != eNetCacheAdmin)
+    if (SetUp_AdminCmd(eReadOnlyAdminCmd) != eNetCacheAdmin)
         return 2;
     m_NetCacheAdmin.PrintHealth(NcbiCout);
     return 0;
@@ -179,7 +180,7 @@ int CGridCommandLineInterfaceApp::Cmd_Health()
 
 int CGridCommandLineInterfaceApp::Cmd_GetConf()
 {
-    switch (SetUp_AdminCmd()) {
+    switch (SetUp_AdminCmd(eReadOnlyAdminCmd)) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.PrintConfig(NcbiCout);
         return 0;
@@ -195,7 +196,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetConf()
 
 int CGridCommandLineInterfaceApp::Cmd_Reconf()
 {
-    switch (SetUp_AdminCmd()) {
+    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.ReloadServerConfig();
         return 0;
@@ -211,7 +212,7 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
 
 int CGridCommandLineInterfaceApp::Cmd_Drain()
 {
-    switch (SetUp_AdminCmd()) {
+    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
     case eNetScheduleAdmin:
         m_NetScheduleAdmin.SwitchToDrainMode(m_Opts.on_off_switch);
         return 0;
@@ -224,7 +225,7 @@ int CGridCommandLineInterfaceApp::Cmd_Drain()
 
 int CGridCommandLineInterfaceApp::Cmd_Shutdown()
 {
-    switch (SetUp_AdminCmd()) {
+    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
     case eNetCacheAdmin:
         m_NetCacheAdmin.ShutdownServer();
         return 0;
@@ -266,7 +267,7 @@ int CGridCommandLineInterfaceApp::Cmd_Exec()
 {
     CNetService service;
 
-    switch (SetUp_AdminCmd()) {
+    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
     case eNetCacheAdmin:
         service = m_NetCacheAPI.GetService();
         break;
