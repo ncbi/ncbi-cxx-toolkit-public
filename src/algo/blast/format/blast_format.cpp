@@ -1042,10 +1042,10 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
 
 
     CDisplaySeqalign display(*aln_set, *m_Scope, &masklocs, NULL,  m_MatrixName);
-    int num_align_to_show = m_NumAlignments + results.m_NumActualD + 
+    int num_align_to_show = results.m_NumActualV + results.m_NumActualD + 
         results.m_NumActualJ;
     if (m_DbName != m_IgOptions->m_Db[0]->GetDatabaseName()){
-        num_align_to_show += results.m_NumActualV;
+        num_align_to_show += m_NumAlignments;
     }
     display.SetNumAlignToShow(num_align_to_show);
     display.SetMasterDomain(&domain);
