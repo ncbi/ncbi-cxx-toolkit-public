@@ -2185,9 +2185,7 @@ bool
 CMbIndexArgs::HasBeenSet(const CArgs& args)
 {
     if ( (args.Exist(kArgUseIndex) && args[kArgUseIndex].HasValue()) ||
-         (args.Exist(kArgIndexName) && args[kArgIndexName].HasValue()) ||
-         (args.Exist(kArgOldStyleIndex) && 
-                args[kArgOldStyleIndex].HasValue()) ) {
+         (args.Exist(kArgIndexName) && args[kArgIndexName].HasValue()) ) {
         return true;
     }
     return false;
