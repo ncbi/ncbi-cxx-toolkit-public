@@ -158,6 +158,26 @@ Seq-entry ::= seq {\
     },\
     gi 10029976\
   },\
+  descr {\
+    title \"7e24e11.x1 NCI_CGAP_Lu24 Homo sapiens cDNA clone IMAGE:3283436 3'\
+ similar to gb:U02368 PAIRED BOX PROTEIN PAX-3 (HUMAN);.\",\
+    source {\
+      org {\
+        taxname \"Homo sapiens\",\
+        common \"human\",\
+        db {\
+          {\
+            db \"biosample\",\
+            tag id 156185\
+          },\
+          {\
+            db \"taxon\",\
+            tag id 9606\
+          }\
+        }\
+      }\
+    }\
+  },\
   inst {\
     repr raw,\
     mol rna,\
@@ -200,6 +220,26 @@ Seq-entry ::= seq {\
     },\
     gi 10030089\
   },\
+  descr {\
+    title \"7e24e11.x1 NCI_CGAP_Lu24 Homo sapiens cDNA clone IMAGE:3283436 3'\
+ similar to SW:RL2B_HUMAN P29316 60S RIBOSOMAL PROTEIN L23A. ;.\",\
+    source {\
+      org {\
+        taxname \"Homo sapiens\",\
+        common \"human\",\
+        db {\
+          {\
+            db \"biosample\",\
+            tag id 156185\
+          },\
+          {\
+            db \"taxon\",\
+            tag id 9606\
+          }\
+        }\
+      }\
+    }\
+  },\
   inst {\
     repr raw,\
     mol rna,\
@@ -240,6 +280,26 @@ Seq-entry ::= seq {\
       version 1\
     },\
     gi 10030090\
+  },\
+  descr {\
+    title \"7e14h04.x1 NCI_CGAP_Lu24 Homo sapiens cDNA clone IMAGE:3282487 3'\
+ similar to SW:RL2B_HUMAN P29316 60S RIBOSOMAL PROTEIN L23A. ;.\",\
+    source {\
+      org {\
+        taxname \"Homo sapiens\",\
+        common \"human\",\
+        db {\
+          {\
+            db \"biosample\",\
+            tag id 156185\
+          },\
+          {\
+            db \"taxon\",\
+            tag id 9606\
+          }\
+        }\
+      }\
+    }\
   },\
   inst {\
     repr raw,\
