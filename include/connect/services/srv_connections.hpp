@@ -151,6 +151,10 @@ class NCBI_XCONNECT_EXPORT CNetServerMultilineCmdOutput
     bool ReadLine(string& output);
 };
 
+#ifdef HAVE_LIBCONNEXT
+#define NCBI_GRID_XSITE_CONN_SUPPORT 1
+#endif
+
 
 END_NCBI_SCOPE
 

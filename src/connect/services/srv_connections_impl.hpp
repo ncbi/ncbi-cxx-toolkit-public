@@ -177,7 +177,9 @@ struct SNetServerImpl : public CObject
     void ConnectAndExec(const string& cmd,
             CNetServer::SExecResult& exec_result);
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static const char kXSiteFwd[];
+#endif
 
     CNetService m_Service;
     CRef<SNetServerInPool> m_ServerInPool;

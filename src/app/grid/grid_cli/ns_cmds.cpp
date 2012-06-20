@@ -46,9 +46,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionSet(eAllowXSiteConn))
         CNcbiApplication::Instance()->GetConfig().Set(
                 "netschedule_api", "allow_xsite_conn", "true");
+#endif
 
     string queue(!m_Opts.queue.empty() ? m_Opts.queue : "noname");
 

@@ -139,8 +139,10 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
     AppendLoginTokenField(&login_token, LOGIN_TOKEN_SESSION_UID_FIELD,
             GetDiagContext().GetStringUID());
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionSet(eAllowXSiteConn))
         AppendLoginTokenField(&login_token, LOGIN_TOKEN_ALLOW_XSITE_CONN, "y");
+#endif
 
     puts(login_token.c_str());
 

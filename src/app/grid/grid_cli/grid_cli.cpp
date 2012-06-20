@@ -76,8 +76,10 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAppUID), "APP_UID", NULL, {-1}},
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     {OPT_DEF(eSwitch, eAllowXSiteConn),
         "allow-xsite-conn", "Allow cross-site connections.", {-1}},
+#endif
 
     {OPT_DEF(eOptionWithParameter, eLoginToken),
         LOGIN_TOKEN_OPTION, "Login token (see the '"
@@ -377,6 +379,12 @@ struct SCommandCategoryDefinition {
 #define ABOUT_SWITCH_ARG \
     "The " SWITCH_ARG " argument can be either 'on' or 'off'."
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+#define ALLOW_XSITE_CONN_IF_SUPPORTED eAllowXSiteConn,
+#else
+#define ALLOW_XSITE_CONN_IF_SUPPORTED
+#endif
+
 struct SCommandDefinition {
     int cat_id;
     int (CGridCommandLineInterfaceApp::*cmd_proc)();
@@ -405,14 +413,16 @@ struct SCommandDefinition {
         "which makes it possible to set client identification "
         "parameters all at once.\n",
         {eAppUID, eNetCache, eCache, eEnableMirroring,
-            eNetSchedule, eQueue, eAuth, eAllowXSiteConn, -1}},
+            eNetSchedule, eQueue, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_BlobInfo,
         "blobinfo|bi", "Retrieve metadata of a NetCache blob.",
         "Print vital information about the specified blob. "
         "Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
-        {eID, eNetCache, eCache, eLoginToken, eAuth, eAllowXSiteConn, -1}},
+        {eID, eNetCache, eCache, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_GetBlob,
         "getblob|gb", "Retrieve a blob from NetCache.",
@@ -421,7 +431,8 @@ struct SCommandDefinition {
         "file). Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eID, eNetCache, eCache, ePassword, eOffset,
-            eSize, eOutputFile, eLoginToken, eAuth, eAllowXSiteConn, -1}},
+            eSize, eOutputFile, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_PutBlob,
         "putblob|pb", "Create or update a NetCache blob.",
@@ -429,8 +440,8 @@ struct SCommandDefinition {
         "encountered and save the received data as a NetCache blob."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eOptionalID, eNetCache, eCache, ePassword, eTTL, eEnableMirroring,
-            eInput, eInputFile, eCompatMode,
-            eLoginToken, eAuth, eAllowXSiteConn, -1}},
+            eInput, eInputFile, eCompatMode, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_RemoveBlob,
         "rmblob|rb", "Remove a NetCache blob.",
@@ -438,14 +449,15 @@ struct SCommandDefinition {
         "(or never existed), no errors are reported."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eID, eNetCache, eCache, ePassword, eLoginToken, eAuth,
-            eAllowXSiteConn, -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_ReinitNetCache,
         "reinitnc", "Delete all blobs and reset NetCache database.",
         "This command purges and resets the specified NetCache "
         "(or ICache) database. Administrative privileges are "
         "required.",
-        {eNetCache, eCache, eLoginToken, eAuth, eAllowXSiteConn, -1}},
+        {eNetCache, eCache, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
         "jobinfo|ji", "Print information about a NetSchedule job.",
@@ -453,7 +465,8 @@ struct SCommandDefinition {
         "Expired jobs will be reported as not found.",
         {eID, eNetSchedule, eQueue, eBrief, eStatusOnly, eDeferExpiration,
             eProgressMessageOnly, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_SubmitJob,
         "submitjob", "Submit one or more jobs to a NetSchedule queue.",
@@ -498,14 +511,15 @@ struct SCommandDefinition {
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
             eGroup, eAffinity, eExclusiveJob, eOutputFile,
             eWaitTimeout, eLoginToken, eAuth, eClientNode, eClientSession,
-            eAllowXSiteConn, eDumpNSNotifications, -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobInput,
         "getjobinput", "Read job input.",
         "Retrieve and print job input to the standard output stream or "
         "save it to a file.",
         {eID, eNetSchedule, eQueue, eOutputFile, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobOutput,
         "getjoboutput", "Read job output if the job is completed.",
@@ -515,7 +529,8 @@ struct SCommandDefinition {
         "to the standard error stream and the program exits with a non-zero "
         "return code.",
         {eID, eNetSchedule, eQueue, eOutputFile, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_ReadJob,
         READJOB_COMMAND, "Return the next job that's done or failed.",
@@ -570,7 +585,8 @@ struct SCommandDefinition {
         {eNetSchedule, eQueue, eOutputFile, eJobGroup,
             eReliableRead, eTimeout, eJobId, eConfirmRead,
             eRollbackRead, eFailRead, eErrorMessage, eLoginToken,
-            eAuth, eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_CancelJob,
         "canceljob", "Cancel one or more NetSchedule jobs.",
@@ -578,7 +594,8 @@ struct SCommandDefinition {
         "This command also instructs the worker node that may be "
         "processing those jobs to stop the processing.",
         {eOptionalID, eNetSchedule, eQueue, eAllJobs, eJobGroup, eLoginToken,
-            eAuth, eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_RequestJob,
         "requestjob", "Get a job from NetSchedule for processing.",
@@ -602,8 +619,8 @@ struct SCommandDefinition {
         "is returned.",
         {eNetSchedule, eQueue, eAffinityList, eUsePreferredAffinities,
             eClaimNewAffinities, eAnyAffinity, eOutputFile, eWaitTimeout,
-            eLoginToken, eAuth, eClientNode, eClientSession, eAllowXSiteConn,
-            eDumpNSNotifications, -1}},
+            eLoginToken, eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications, -1}},
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_CommitJob,
         "commitjob", "Mark the job as complete or failed.",
@@ -618,7 +635,8 @@ struct SCommandDefinition {
         {eID, eAuthToken, eNetSchedule, eQueue,
             eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
             eAffinity, eOutputFile, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_ReturnJob,
         "returnjob", "Return a previously accepted job.",
@@ -630,7 +648,8 @@ struct SCommandDefinition {
         "not be discarded, and the expiration time will not be "
         "advanced.",
         {eID, eAuthToken, eNetSchedule, eQueue, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_ClearNode,
         "clearnode", "Fail incomplete jobs and clear client record.",
@@ -640,7 +659,8 @@ struct SCommandDefinition {
         "client had any running jobs, their status will be changed "
         "back to Pending (or Failed if there are no retries left).",
         {eNetSchedule, eQueue, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_UpdateJob,
         "updatejob", "Modify attributes of an existing job.",
@@ -648,7 +668,8 @@ struct SCommandDefinition {
         "on the current state of the job.",
         {eID, eNetSchedule, eQueue,
             eExtendLifetime, eProgressMessage, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_QueueInfo,
         "queueinfo|qi", "Get information about a NetSchedule queue.",
@@ -656,7 +677,8 @@ struct SCommandDefinition {
         "dynamic), and, if the queue is dynamic, print its description "
         "and the model queue name.",
         {eQueueArg, eNetSchedule, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DumpQueue,
         "dumpqueue", "Dump a NetSchedule queue.",
@@ -666,7 +688,7 @@ struct SCommandDefinition {
         "and/or job group.",
         {eNetSchedule, eQueue, eStartAfterJob, eJobCount, eJobGroup,
             eSelectByStatus, eLoginToken, eAuth, eClientNode, eClientSession,
-            eAllowXSiteConn, -1}},
+           ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,
         "createqueue", "Create a dynamic NetSchedule queue.",
@@ -674,7 +696,7 @@ struct SCommandDefinition {
         "a template known as a model queue.",
         {eTargetQueueArg, eModelQueue, eNetSchedule, eQueueDescription,
             eLoginToken, eAuth, eClientNode, eClientSession,
-            eAllowXSiteConn, -1}},
+           ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetQueueList,
         "getqueuelist", "Print the list of available NetSchedule queues.",
@@ -686,7 +708,7 @@ struct SCommandDefinition {
         "queue available only on a subset of servers, its servers "
         "are listed in parentheses after the queue name.",
         {eNetSchedule, eLoginToken, eAuth, eClientNode, eClientSession,
-            eAllowXSiteConn, -1}},
+           ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
         "deletequeue", "Delete a dynamic NetSchedule queue.",
@@ -694,14 +716,16 @@ struct SCommandDefinition {
         "Static queues cannot be deleted, although it is "
         "possible to cancel all jobs in a static queue.",
         {eTargetQueueArg, eNetSchedule, eLoginToken,
-            eAuth, eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_Replay,
         "replay", "Rerun a job in debugging environment.",
         "This command facilitates debugging of remote_cgi and "
         "remote_app jobs.",
         {eID, eQueue, eDumpCGIEnv, eCompatMode, eLoginToken,
-            eAuth, eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
         "serverinfo|si", "Print information about a Grid server.",
@@ -712,7 +736,7 @@ struct SCommandDefinition {
         "be printed instead.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue,
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
-            eAllowXSiteConn, -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_Stats,
         "stats", "Show server access statistics.",
@@ -728,7 +752,7 @@ struct SCommandDefinition {
             eAffinity, eJobGroup, eVerbose, eOutputFormat,
             eAggregationInterval, ePreviousInterval,
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
-            eAllowXSiteConn, -1},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1},
         {eHumanReadable, eRaw, eJSON, -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Health,
@@ -739,22 +763,24 @@ struct SCommandDefinition {
         /*"\n\nValid output format options for this operation: "
         "\"raw\""/ *, \"xml\", \"json\"* /".  If none specified, "
         "\"raw\" is assumed."*/,
-        {eNetCache, /*eOutputFormat,*/ eLoginToken,
-            eAuth, eAllowXSiteConn, -1}},
+        {eNetCache, /*eOutputFormat,*/ eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_GetConf,
         "getconf", "Dump actual configuration of a server.",
         "Print the effective configuration parameters of a "
         "running NetCache or NetSchedule server.",
         {eNetCache, eNetSchedule, eLoginToken, eAuth,
-            eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Reconf,
         "reconf", "Reload server configuration.",
         "Update configuration parameters of a running server. "
         "The server will look for a configuration file in the "
         "same location that was used during start-up.",
-        {eNetCache, eNetSchedule, eLoginToken, eAuth, eAllowXSiteConn, -1}},
+        {eNetCache, eNetSchedule, eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Drain,
         "drain", "Turn server drain mode on or off.",
@@ -764,7 +790,8 @@ struct SCommandDefinition {
         "the whole server.\n\n"
         ABOUT_SWITCH_ARG,
         {eSwitchArg, eNetSchedule, eQueue, eLoginToken,
-            eAuth, eClientNode, eClientSession, eAllowXSiteConn, -1}},
+            eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Shutdown,
         "shutdown", "Send a shutdown request to a remote server.",
@@ -777,7 +804,7 @@ struct SCommandDefinition {
         "NetSchedule servers version 4.11.0 and up.",
         {eNetCache, eNetSchedule, eWorkerNode, eNow, eDie, eDrain,
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
-            eAllowXSiteConn, -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Exec,
         "exec", "Execute an arbitrary command on one or more servers.",
@@ -786,7 +813,7 @@ struct SCommandDefinition {
         "\"json\". The default is \"raw\".",
         {eCommand, eNetCache, eNetSchedule, eQueue, eMultiline,
             eLoginToken, eAuth, eClientNode, eClientSession, eOutputFormat,
-            eAllowXSiteConn, -1},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1},
         {eRaw, eJSON, -1}},
 
     {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Automate,
@@ -1218,11 +1245,13 @@ void CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
             timestamp = val;
         else if (key == LOGIN_TOKEN_SESSION_UID_FIELD)
             uid = val;
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         else if (key == LOGIN_TOKEN_ALLOW_XSITE_CONN)
             switch (*val.data()) {
             case TRUE_VALUES:
                 MarkOptionAsSet(eAllowXSiteConn);
             }
+#endif
     } while (*end != '\0');
 
     DefineClientNode(user, host);

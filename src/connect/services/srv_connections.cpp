@@ -423,7 +423,9 @@ CNetServerConnection SNetServerImpl::GetConnectionFromPool()
     }
 }
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 const char SNetServerImpl::kXSiteFwd[] = "XSITEFWD";
+#endif
 
 CNetServerConnection SNetServerImpl::Connect()
 {
@@ -437,11 +439,11 @@ CNetServerConnection SNetServerImpl::Connect()
 
     SServerAddress server_address(m_ServerInPool->m_Address);
 
-#ifdef HAVE_LIBCONNEXT
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     ticket_t ticket = 0;
 
     if (m_Service->m_AllowXSiteConnections &&
-        m_Service->IsColoAddr(m_ServerInPool->m_Address.host)) {
+            m_Service->IsColoAddr(m_ServerInPool->m_Address.host)) {
         union {
             SFWDRequestReply rq;
             char buffer[FWD_MAX_RR_SIZE + 1];
@@ -455,25 +457,25 @@ CNetServerConnection SNetServerImpl::Connect()
                 sizeof(kXSiteFwd) < sizeof(buffer));
         memcpy(rq.text, kXSiteFwd, sizeof(kXSiteFwd));
 
-        streamsize len = 0;
+        size_t len = 0;
 
         CConn_ServiceStream svc(kXSiteFwd);
         if (svc.write((const char*) &rq.ticket/*0*/, sizeof(rq.ticket)) &&
-            svc.write(buffer, offsetof(SFWDRequestReply, text) +
-                      sizeof(kXSiteFwd))) {
+                svc.write(buffer, offsetof(SFWDRequestReply, text) +
+                        sizeof(kXSiteFwd))) {
             svc.read(buffer, sizeof(buffer) - 1);
-            len = svc.gcount();
-            _ASSERT((size_t) len < sizeof(buffer));
+            len = (size_t) svc.gcount();
+            _ASSERT(len < sizeof(buffer));
         }
 
         memset(buffer + len, 0, sizeof(buffer) - len);
 
-        if ((size_t) len < offsetof(SFWDRequestReply, text) ||
+        if (len < offsetof(SFWDRequestReply, text) ||
             (rq.flag & 0xF0F0) || rq.port == 0) {
             const char* err;
-            if (!len)
+            if (len == 0)
                 err = "Connection refused";
-            else if ((size_t) len < offsetof(SFWDRequestReply, text))
+            else if (len < offsetof(SFWDRequestReply, text))
                 err = "Short response received";
             else if (!(rq.flag & 0xF0F0))
                 err = rq.flag & 0x0F0F ? "Client rejected" : "Unknown error";
@@ -488,16 +490,16 @@ CNetServerConnection SNetServerImpl::Connect()
                            "cross-site connection proxy: " << err);
         }
 
-        if (rq.ticket) {
+        if (rq.ticket != 0) {
             server_address.host =                     rq.host;
             server_address.port = SOCK_NetToHostShort(rq.port);
         } else {
             SOCK sock;
             server_address.port = 0;
             io_st = CONN_GetSOCK(svc.GetCONN(), &sock);
-            if (sock)
+            if (sock != NULL)
                 SOCK_CreateOnTop(sock, 0, &sock);
-            if (io_st != eIO_Success  ||  !sock) {
+            if (io_st != eIO_Success  ||  sock == NULL) {
                 NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                            "Error while connecting to proxy.");
             }
@@ -505,22 +507,23 @@ CNetServerConnection SNetServerImpl::Connect()
         }
         ticket = rq.ticket;
     }
+
+    if (server_address.port != 0) {
 #endif
 
-    if (server_address.port) {
         do {
-            io_st = conn->m_Socket.Connect
-                (CSocketAPI::ntoa(server_address.host),
-                 server_address.port, &internal_timeout,
-                 fSOCK_LogOff | fSOCK_KeepAlive);
+            io_st = conn->m_Socket.Connect(CSocketAPI::ntoa(
+                    server_address.host), server_address.port,
+                    &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
 
             abs_timeout.GetRemainingTime().Get(&remaining_timeout.sec,
                                                &remaining_timeout.usec);
 
             if (s_InternalConnectTimeout.sec == remaining_timeout.sec ?
-                s_InternalConnectTimeout.usec > remaining_timeout.usec :
-                s_InternalConnectTimeout.sec > remaining_timeout.sec)
+                    s_InternalConnectTimeout.usec > remaining_timeout.usec :
+                    s_InternalConnectTimeout.sec > remaining_timeout.sec)
                 internal_timeout = remaining_timeout;
+
         } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
                                           remaining_timeout.sec > 0));
 
@@ -534,9 +537,10 @@ CNetServerConnection SNetServerImpl::Connect()
 
             NCBI_THROW(CNetSrvConnException, eConnectionFailure, message);
         }
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     }
 
-#ifdef HAVE_LIBCONNEXT
     if (ticket != 0 &&
             conn->m_Socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
         NCBI_THROW(CNetSrvConnException, eConnectionFailure,

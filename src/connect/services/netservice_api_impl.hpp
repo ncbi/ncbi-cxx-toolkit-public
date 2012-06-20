@@ -209,7 +209,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
             INetServerConnectionListener* listener) :
         m_Listener(listener),
         m_ServerPool(new SNetServerPoolImpl(api_name, client_name)),
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         m_AllowXSiteConnections(false),
+#endif
         m_UseSmartRetries(true)
     {
         ZeroInit();
@@ -220,8 +222,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_Listener(parent->m_Listener),
         m_ServerPool(parent->m_ServerPool),
         m_ServiceName(server->m_Address.AsString()),
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         m_ColoNetwork(parent->m_ColoNetwork),
         m_AllowXSiteConnections(parent->m_AllowXSiteConnections),
+#endif
         m_UseSmartRetries(parent->m_UseSmartRetries)
     {
         ZeroInit();
@@ -231,8 +235,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_Listener(parent->m_Listener),
         m_ServerPool(parent->m_ServerPool),
         m_ServiceName(service_name),
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         m_ColoNetwork(parent->m_ColoNetwork),
         m_AllowXSiteConnections(parent->m_AllowXSiteConnections),
+#endif
         m_UseSmartRetries(parent->m_UseSmartRetries)
     {
         ZeroInit();
@@ -268,10 +274,12 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     bool IsColoAddr(unsigned int ip) const
     {
         return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork;
     }
+#endif
 
     virtual ~SNetServiceImpl();
 
@@ -289,8 +297,11 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SDiscoveredServers* m_ServerGroupPool;
     unsigned m_LatestDiscoveryIteration;
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     unsigned int m_ColoNetwork;
     bool m_AllowXSiteConnections;
+#endif
+
     bool m_UseSmartRetries;
 };
 

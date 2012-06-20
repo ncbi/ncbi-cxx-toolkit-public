@@ -96,7 +96,9 @@ enum EOption {
     eOptionalID,
     eID,
     eAppUID,
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     eAllowXSiteConn,
+#endif
     eLoginToken,
     eAuth,
     eInput,

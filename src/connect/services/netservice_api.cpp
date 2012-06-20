@@ -340,6 +340,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             }
         }
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         m_AllowXSiteConnections = config->GetBool(section,
                 "allow_xsite_conn", CConfig::eErr_NoThrow, false);
 
@@ -361,6 +362,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
             free(sinfo);
         }
+#endif
 
         m_UseSmartRetries = config->GetBool(section,
                 "smart_service_retries", CConfig::eErr_NoThrow, true);
