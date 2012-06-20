@@ -440,13 +440,19 @@ void CValidError_bioseq::ValidateSeqIds
     bool is_nc = false;
     bool wgs_tech_needs_wgs_accession = false;
     bool is_segset_accession = false;
+    bool has_wgs_general = false;
 
     FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
         // first, do standalone validation
         ValidateSeqId (**i, seq);
 
-        if ((*i)->IsGeneral() && (*i)->GetGeneral().IsSetDb() && NStr::EqualNocase((*i)->GetGeneral().GetDb(), "LRG")) {
-            is_lrg = true;
+        if ((*i)->IsGeneral() && (*i)->GetGeneral().IsSetDb()) {
+            if (NStr::EqualNocase((*i)->GetGeneral().GetDb(), "LRG")) {
+                is_lrg = true;
+            }
+            if (NStr::StartsWith((*i)->GetGeneral().GetDb(), "WGS:")) {
+                has_wgs_general = true;
+            }
         } else if ((*i)->IsOther() && (*i)->GetOther().IsSetAccession()) {
             const string& acc = (*i)->GetOther().GetAccession();
             if (NStr::StartsWith(acc, "NG_")) {
@@ -563,7 +569,8 @@ void CValidError_bioseq::ValidateSeqIds
         } else if ( mi  &&  mi->IsSetTech()  &&  
                     mi->GetTech() == CMolInfo::eTech_wgs  &&
                     wgs_tech_needs_wgs_accession &&
-                    !is_segset_accession) {
+                    !is_segset_accession &&
+                    !has_wgs_general) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
                 "Mol-info.tech of wgs should have WGS accession", seq);
         }
