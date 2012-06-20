@@ -4395,6 +4395,7 @@ static const char s_EncodeURIScheme[256][4] = {
 //                   ";" | ":" | "&" | "=" | "+" | "$" | "," )
 // unreserved    = alphanum | mark
 // mark          = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")"
+// Note: ":" is name/password separator, so it must be encoded in each of them.
 static const char s_EncodeURIUserinfo[256][4] = {
     "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
     "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
@@ -4403,7 +4404,7 @@ static const char s_EncodeURIUserinfo[256][4] = {
     "%20", "!",   "%22", "%23", "$",   "%25", "&",   "'",
     "(",   ")",   "*",   "+",   ",",   "-",   ".",   "%2F",
     "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-    "8",   "9",   ":",   ";",   "%3C", "=",   "%3E", "%3F",
+    "8",   "9",   "%3A", ";",   "%3C", "=",   "%3E", "%3F",
     "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
     "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
     "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",

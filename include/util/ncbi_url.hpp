@@ -129,6 +129,14 @@ class NCBI_XUTIL_EXPORT CDefaultUrlEncoder : public CEmptyUrlEncoder
 public:
     CDefaultUrlEncoder(NStr::EUrlEncode encode = NStr::eUrlEnc_SkipMarkChars)
         : m_Encode(NStr::EUrlEncode(encode)) { return; }
+    virtual string EncodeUser(const string& user) const
+        {  return NStr::URLEncode(user, NStr::eUrlEnc_URIUserinfo); }
+    virtual string DecodeUser(const string& user) const
+        {  return NStr::URLDecode(user); }
+    virtual string EncodePassword(const string& password) const
+        {  return NStr::URLEncode(password, NStr::eUrlEnc_URIUserinfo); }
+    virtual string DecodePassword(const string& password) const
+        {  return NStr::URLDecode(password); }
     virtual string EncodePath(const string& path) const
         { return NStr::URLEncode(path, NStr::eUrlEnc_URIPath); }
     virtual string DecodePath(const string& path) const
