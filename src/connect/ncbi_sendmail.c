@@ -40,7 +40,7 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Sendmail
 
-#define MX_MAGIC_NUMBER 0xBA8ADEDA
+#define MX_MAGIC_COOKIE 0xBA8ADEDA
 #define MX_CRLF         "\r\n"
 
 #define SMTP_READERR    -1      /* Read error from socket               */
@@ -252,7 +252,6 @@ SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
 {
     if (info) {
         x_Sendmail_InitEnv();
-        info->magic_number    = MX_MAGIC_NUMBER;
         info->cc              = 0;
         info->bcc             = 0;
         s_MakeFrom(info->from, sizeof(info->from), user);
@@ -262,6 +261,7 @@ SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
         info->mx_port         = s_MxPort;
         info->mx_timeout      = s_MxTmo;
         info->mx_options      = 0;
+        info->magic_cookie    = MX_MAGIC_COOKIE;
     }
     return info;
 }
@@ -398,8 +398,8 @@ const char* CORE_SendMailEx(const char*          to,
     SOCK sock = 0;
 
     info = uinfo ? uinfo : SendMailInfo_Init(&ainfo);
-    if (info->magic_number != MX_MAGIC_NUMBER)
-        SENDMAIL_RETURN(6, "Invalid magic number");
+    if (info->magic_cookie != MX_MAGIC_COOKIE)
+        SENDMAIL_RETURN(6, "Invalid magic cookie");
 
     if ((!to         ||  !*to)        &&
         (!info->cc   ||  !*info->cc)  &&

@@ -63,7 +63,6 @@ typedef unsigned int TSendMailOptions;     /* Bitwise OR of ESendMailOption  */
 /* Define optional parameters for communication with sendmail
  */
 typedef struct {
-    unsigned int     magic_number;  /* Filled in by SendMailInfo_Init        */
     const char*      cc;            /* Carbon copy recipient(s)              */
     const char*      bcc;           /* Blind carbon copy recipient(s)        */
     char             from[1024];    /* Originator address                    */
@@ -73,6 +72,7 @@ typedef struct {
     short            mx_port;       /* Port to contact an MTA at             */
     STimeout         mx_timeout;    /* Timeout for all network transactions  */
     TSendMailOptions mx_options;    /* From the above                        */
+    unsigned int     magic_cookie;  /* Filled in by SendMailInfo_Init        */
 } SSendMailInfo;
 
 
@@ -98,7 +98,6 @@ typedef struct {
  */
 
 /* Initialize SSendMailInfo structure, setting:
- *   'magic_number' to a proper value (verified by CORE_SendMailEx()!);
  *   'cc', 'bcc', 'header' to NULL (means no recipients/additional headers);
  *   'from' filled out using either the provided (non-empty) user name
  *          or the name of the current user if discovered, 'anonymous'
@@ -112,7 +111,8 @@ typedef struct {
  *          [CONN]MX_HOST, [CONN]MX_PORT, and [CONN]MX_TIMEOUT, as well as
  *          through their process environment equivalents (which have higher
  *          precedence, and override the values found in the registry):
- *          CONN_MX_HOST, CONN_MX_PORT, and CONN_MX_TIMEOUT, respectively
+ *          CONN_MX_HOST, CONN_MX_PORT, and CONN_MX_TIMEOUT, respectively;
+ *   'magic_cookie' to a proper value (verified by CORE_SendMailEx()!).
  * Return value equals the argument passed in.
  * Note: This call is the only valid way to properly init SSendMailInfo.
  */

@@ -281,7 +281,7 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Note, "Test passed");
 
     CORE_LOG(eLOG_Note, "Testing bad magic");
-    info.magic_number = 0;
+    info.magic_cookie = 0;
     retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", "Bad Magic", &info);
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
