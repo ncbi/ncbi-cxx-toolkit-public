@@ -114,9 +114,9 @@ typedef struct {
     TNCBI_Time         bootup;  /* boot time, time_t-compatible              */
     TNCBI_Time         start;   /* LB start time, time_t-compatible          */
     struct {
-        short          major;
-        short          minor;
-        short          patch;
+        unsigned short major;
+        unsigned short minor;
+        unsigned short patch;
     } daemon;                   /* LBSMD version */
     unsigned short     pad;     /* MBZ */
 } SHINFO_Params;
