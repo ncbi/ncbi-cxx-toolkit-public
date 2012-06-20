@@ -447,6 +447,8 @@ private:
     CDisplaySeqalign(const CDisplaySeqalign& other);
     /// Prohibit assignment operator
     CDisplaySeqalign& operator=(const CDisplaySeqalign& rhs);
+
+protected:
  
     ///internal insert information
     ///aln_start. insert right after this position
