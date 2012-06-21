@@ -33,11 +33,11 @@ Linux64-Centos  : gcc : GCC.sh           --without-debug --without-mt --with-sta
 
 FreeBSD32  : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-SunOSx86   : gcc     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSx86   : gcc     : GCC.sh 4.5.3     --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : w55     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : w59     : WorkShop59.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 SunOSSparc : w55-64     : WorkShop55.sh 64 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSSparc : w55-32     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : gcc     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : gcc        : GCC.sh 4.5.3     --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
