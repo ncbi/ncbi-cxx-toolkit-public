@@ -30,6 +30,7 @@ Linux64-Centos : ICC     : ICC.sh       --with-mt --with-3psw=system
 
 FreeBSD32 : GCC : GCC.sh --without-debug
 
+SunOSx86 : GCC  : GCC.sh 4.5.3     --without-debug --without-mt --with-static
 SunOSx86 : WS64 : WorkShop59.sh 64 --with-debug --with-dll --with-mt
 
 SunOSSparc : GCC  : GCC.sh 4.5.3 --without-debug --with-mt --with-3psw=system
