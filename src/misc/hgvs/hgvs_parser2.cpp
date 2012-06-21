@@ -877,6 +877,14 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
         placement->SetLoc().SetEmpty().Assign(context.GetId());
     }
 
+    CVariationUtil util(context.GetScope());
+    if(CVariationUtil::eFail == util.CheckExonBoundary(*placement)) {
+        CRef<CVariationException> exception(new CVariationException);
+        exception->SetCode(CVariationException::eCode_hgvs_exon_boundary);
+        exception->SetMessage("HGVS exon-boundary position not represented in the transcript annotation");
+        placement->SetExceptions().push_back(exception);    
+    }
+
     return placement;
 }
 

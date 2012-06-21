@@ -174,7 +174,10 @@ public:
         ePass,
         eNotApplicable,
     };
-    ETestStatus CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln);
+    ETestStatus CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln); 
+
+    // Similar to above, except verify exon boundary using exon annotation on refseq transcripts, if exists
+    ETestStatus CheckExonBoundary(const CVariantPlacement& p); 
 
     /// Calculate upstream (first) and downstream(second) flanks for loc
     struct SFlankLocs

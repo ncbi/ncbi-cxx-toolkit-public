@@ -113,6 +113,47 @@ TSeqPos CVariationUtil::s_GetLength(const CVariantPlacement& p, CScope* scope)
 }
 
 
+CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p)
+{
+    const CSeq_id* id = p.GetLoc().GetId();
+    if(!id  
+       || !(p.IsSetStart_offset() || p.IsSetStop_offset())
+       || !(p.IsSetMol() && (p.GetMol() == CVariantPlacement::eMol_cdna || p.GetMol() == CVariantPlacement::eMol_rna)))
+    {
+        return eNotApplicable;
+    }
+
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(*id);
+    
+    set<TSeqPos> exon_terminal_pts;
+    for(CFeat_CI ci(bsh, sel); ci; ++ci) {
+        const CMappedFeat& mf = *ci;
+        exon_terminal_pts.insert(sequence::GetStart(mf.GetLocation(), NULL));
+        exon_terminal_pts.insert(sequence::GetStop(mf.GetLocation(), NULL));
+    }
+    if(exon_terminal_pts.size() == 0) {
+        return eNotApplicable;
+    }
+
+    if(p.IsSetStart_offset()) {
+        TSeqPos pos = sequence::GetStart(p.GetLoc(), NULL, eExtreme_Biological);
+        if(exon_terminal_pts.find(pos) == exon_terminal_pts.end()) {
+            return eFail;
+        }
+    }
+
+    if(p.IsSetStop_offset()) {
+        TSeqPos pos = sequence::GetStop(p.GetLoc(), NULL, eExtreme_Biological);
+        if(exon_terminal_pts.find(pos) == exon_terminal_pts.end()) {
+            return eFail;
+        }
+    }
+
+    return ePass;
+}
+
 CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln)
 {
     const CSeq_id* id = p.GetLoc().GetId();
@@ -325,6 +366,13 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
        && sequence::IsSameBioseq(aln.GetSegs().GetSpliced().GetGenomic_id(),
                                  *p3->GetLoc().GetId(), NULL))
     {
+        if(CheckExonBoundary(p, aln) == eFail) {
+            CRef<CVariationException> exception(new CVariationException);
+            exception->SetCode(CVariationException::eCode_hgvs_exon_boundary);
+            exception->SetMessage("HGVS exon-boundary position not found in alignment of " + aln.GetSeq_id(0).AsFastaString() + "-vs-" + aln.GetSeq_id(1).AsFastaString());
+            p3->SetExceptions().push_back(exception);
+        }
+            
         s_ResolveIntronicOffsets(*p3);
     }
 
