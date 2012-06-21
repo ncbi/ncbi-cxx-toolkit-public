@@ -963,6 +963,8 @@ CSQLITE_Blob::Write(const void* data, size_t size)
     if (size != 0) {
         if (!m_AppendStmt.get()) {
             string sql("update ");
+            sql += m_Database;
+            sql += ".";
             sql += m_Table;
             sql += " set ";
             sql += m_Column;
