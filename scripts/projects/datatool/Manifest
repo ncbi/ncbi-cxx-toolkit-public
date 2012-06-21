@@ -31,8 +31,8 @@ Linux64-Centos  : plain  : GCC.sh           --without-debug --without-mt --with-
 
 FreeBSD32  : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-SunOSx86   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-SunOSSparc : plain : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+SunOSx86   : plain  : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain  : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 #SunOSSparc : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 #PowerMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
