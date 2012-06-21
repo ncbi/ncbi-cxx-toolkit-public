@@ -43,9 +43,9 @@ FreeBSD32 : Release : GCC.sh --without-debug --with-optimization --with-symbols 
 FreeBSD32 : Debug : GCC.sh --with-debug --with-mt --without-bdb
 IntelMAC : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
 IntelMAC : Debug : GCC.sh --with-debug --with-mt --without-bdb
-SunOSx86 : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
-SunOSx86 : Debug : GCC.sh --with-debug --with-mt --without-bdb
-SunOSSparc : Release : GCC.sh 4.5.3 --without-debug --with-optimization --with-symbols --with-mt --without-bdb
-SunOSSparc : Debug : GCC.sh 4.5.3 --with-debug --with-mt --without-bdb
+SunOSx86 : Release : WorkShop59.sh 64 --without-debug --with-optimization --with-symbols --with-mt --without-bdb
+SunOSx86 : Debug : WorkShop59.sh 64 --with-debug --with-mt --without-bdb
+SunOSSparc : Release : WorkShop59.sh 64 --without-debug --with-optimization --with-symbols --with-mt --without-bdb
+SunOSSparc : Debug : WorkShop59.sh 64 --with-debug --with-mt --without-bdb
 Win32_9 : Release : static 32 ReleaseDLL
 Win32_9 : Debug : static 32 DebugDLL
