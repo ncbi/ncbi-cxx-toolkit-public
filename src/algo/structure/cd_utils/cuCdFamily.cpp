@@ -572,5 +572,55 @@ bool CDFamily::findChildren(CCdCore* cd, vector<CCdCore*>& cds, set<int>& childr
 	return children.size() > 0;
 }
 
+string CDFamily::getNewickRepresentation() const
+{
+    CNcbiOstrstream oss;
+    getNewickRepresentation(oss, begin());
+    return CNcbiOstrstreamToString(oss);
+}
+
+void CDFamily::getNewickRepresentation(std::ostream& os, const CDFamilyIterator& cursor) const 
+{
+    static const string underscore("_");
+    static unsigned int n;
+
+	if (!os.good())
+		return;
+
+    string label;
+    bool isRoot = (cursor == begin());
+
+    if (isRoot) n = 1;
+    label = NStr::UIntToString(n) + underscore + cursor->cd->GetAccession();
+    ++n;
+
+	// if leaf, print leaf and return
+	if (cursor.number_of_children() == 0) {
+        os << label;
+        if (number_of_siblings(cursor) > 1)
+            os << ',';
+        return;
+    } else {
+        os << '(';
+
+        // print each child
+        sibling_iterator sib = cursor.begin();
+        while (sib != cursor.end()) {
+            getNewickRepresentation(os, sib);  //recursive
+            ++sib;
+        }
+
+        // print ) <name>
+        os << ')' << label;
+        if (isRoot) {
+            os << ';';
+        } else {
+            if (number_of_siblings(cursor) > 1)
+                os << ',';
+        }
+    }
+    return;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
