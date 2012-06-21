@@ -558,20 +558,24 @@ CVariantPlacement::TMol CVariationUtil::GetMolType(const CSeq_id& id)
 
 CVariationUtil::SFlankLocs CVariationUtil::CreateFlankLocs(const CSeq_loc& loc, TSeqPos len)
 {
+    SFlankLocs flanks;
+    flanks.upstream.Reset(new CSeq_loc(CSeq_loc::e_Null));
+    flanks.downstream.Reset(new CSeq_loc(CSeq_loc::e_Null));
+    if(!loc.GetId()) {
+        return flanks;
+    }
+
     TSignedSeqPos start = sequence::GetStart(loc, m_scope, eExtreme_Positional);
     TSignedSeqPos stop = sequence::GetStop(loc, m_scope, eExtreme_Positional);
 
     CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(loc, NULL));
     TSignedSeqPos max_pos = bsh.GetInst_Length() - 1;
 
-    SFlankLocs flanks;
-    flanks.upstream.Reset(new CSeq_loc);
     flanks.upstream->SetInt().SetId().Assign(sequence::GetId(loc, NULL));
     flanks.upstream->SetInt().SetStrand(sequence::GetStrand(loc, NULL));
     flanks.upstream->SetInt().SetTo(min(max_pos, stop + (TSignedSeqPos)len));
     flanks.upstream->SetInt().SetFrom(max((TSignedSeqPos)0, start - (TSignedSeqPos)len));
 
-    flanks.downstream.Reset(new CSeq_loc);
     flanks.downstream->Assign(*flanks.upstream);
 
     CSeq_loc& second = sequence::GetStrand(loc, NULL) == eNa_strand_minus ? *flanks.upstream : *flanks.downstream;
@@ -1500,6 +1504,12 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     CRef<CSeq_loc> prot_loc = nuc2prot_mapper->Map(p->GetLoc());
     CRef<CSeq_loc> codons_loc = prot2nuc_mapper->Map(*prot_loc);
+
+    if(codons_loc->IsNull()) {
+        //normally shouldn't happen, but may happen with dubious annotation, e.g. BC149603.1:c.1A>G.
+        //Mapping to protein coordinates returns NULL, probably because protein and cds lengths are inconsistent.
+        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+    }
 
     TSignedSeqPos frame = abs(
               (TSignedSeqPos)p->GetLoc().GetStart(eExtreme_Biological)
