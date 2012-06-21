@@ -1,3 +1,30 @@
+2012-06-20 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
+
+	* all: This release is not compatible with older NetSchedule anymore.
+	* all workers: Support for job affinities.
+	* grid_cli (login): New command to generate client session token for NS.
+	* all: Cross-site connections to NS and NC servers through a proxy.
+	* all: New configuration parameter smart_service_retries.
+	* all workers: Display of client identification in STAT output.
+	* grid_cli (replay): New command to reconstruct remote_cgi environment.
+	* grid_cli (--admin): All admin commands now accept LBSM services.
+	* grid_cli (drain): New command to switch NS to "draining" mode.
+
+	* cgi2rcgi: Now accepts inline progress messages (versus NC keys).
+	* cgi2rcgi: New parameter html_pass_through to pass HTML output as is.
+	* ncfetch.cgi: Proper HTTP status codes for client-side errors.
+	* cgi2rcgi: Faster job result retrieval.
+	* all workers: Better handling of NetSchedule notifications.
+	* all apps: Uniform version reporting across all Grid applications.
+	* grid_cli (stats): Better command line option checking.
+	* all: Ignore server logic errors when looking for a vacant server.
+	* grid_cli, ncfetch.cgi: Auto switching to mirroring mode for reading.
+	* grid_cli (stats): --active-job-count re-implemented using STAT JOBS.
+	* grid_cli (stats): Options --aggregation-interval, --previous-interval.
+	* remote_cgi, remote_app: Define $NCBI_NS_QUEUE along with $NCBI_NS_JID.
+
+	* all: Fixed automatic mirroring mode for keys containing service name.
+
 2012-04-05 Dmitry Kazimirov <kazimird@ncbi.nlm.nih.gov>
 
 	* all: Support for NetSchedule client identification.
@@ -5,8 +32,8 @@
 	* grid_cli (submitjob): New option to wait for job completion.
 	* grid_cli (getconf): Now works for NetSchedule as well.
 	* all: Support for server initiated warnings (NetSchedule).
-	* grid_cli (stats): New option to retrieve client registry (NetSchedule).
-	* grid_cli (stats): Option to print current notification subscribers (NS).
+	* grid_cli (stats): New option to retrieve NetSchedule client registry.
+	* grid_cli (stats): Option to print current NS notification subscribers.
 	* grid_cli (stats): New option to print information on affinities (NS).
 	* grid_cli (dumpqueue): Options for pagination and selection by status.
 	* grid_cli: Support for NetSchedule job groups.
