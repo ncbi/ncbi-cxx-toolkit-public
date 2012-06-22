@@ -1480,7 +1480,7 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
     ITERATE(CSeq_align_set::Tdata, iter, source.Get()) { 
         const CSeq_id& cur_id = (*iter)->GetSeq_id(1);
         if(previous_id.Empty() || !cur_id.Match(*previous_id)) {
-            if(count >= seqIdList.size()) {                
+            if(count >= seqIdList.size()) {  
                 break;
             }         
             string idString = cur_id.AsFastaString();
@@ -1503,6 +1503,27 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
     }     
     return hitsMap;    
 }
+
+void CAlignFormatUtil::ExtractSeqAlignForSeqList(CRef<CSeq_align_set> &all_aln_set, string alignSeqList)
+{
+    vector <string> seqIds;
+    NStr::Tokenize(alignSeqList,",",seqIds);       
+
+    //SEQ_ALN_SET from ALIGNDB contains seq_aligns in random order
+    //The followimg will create a map that contains seq-aln_set per gi from ALIGN_SEQ_LIST
+    map < string, CRef<CSeq_align_set>  > hitsMap = CAlignFormatUtil::HspListToHitMap(seqIds,*all_aln_set) ;
+
+    map < string, CRef<CSeq_align_set>  >::iterator it;
+    list< CRef<CSeq_align_set> > orderedSet;
+    //orderedSet wil have seq aligns in th order of gi list
+    for(size_t i = 0; i < seqIds.size(); i++) {
+        if(hitsMap.find(seqIds[i]) != hitsMap.end()) {
+            orderedSet.push_back(hitsMap[seqIds[i]]);
+        }
+    }            
+    //This should contain seq align set in the order of gis in the list
+    all_aln_set = CAlignFormatUtil::HitListToHspList(orderedSet); 
+}                          
 
 
 
@@ -2907,7 +2928,7 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-    //hit_not_in_mapviewer = true if DbisNa && not (genomic+mapviwer sequence)
+    //hit_not_in_mapviewer = true if DbisNa && not (genomic+mapviwer sequence)    
     bool hit_not_in_mapviewer = (seqUrlInfo->advancedView) ? true :
                                         (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !( (seqUrlInfo->linkout & eGenomicSeq) && (seqUrlInfo->linkout & eMapviewer) )));
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
@@ -2998,10 +3019,7 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         }
 	    link = s_MapCustomLink(linkUrl,"genbank",seqUrlInfo->accession,linkText,linkTiltle);
         customLinksList.push_back(link);
-        link = NStr::Replace(link,"genbank","fasta");
-        link = NStr::Replace(link,linkText,"FASTA");
-        customLinksList.push_back(link);
-
+        
         //seqviewer
         string dbtype = (seqUrlInfo->isDbNa) ? "nuccore" : "protein";
 	    linkUrl = CAlignFormatUtil::MapTemplate(kSeqViewerUrl,"rid",seqUrlInfo->rid);
@@ -3126,9 +3144,21 @@ list<string>  CAlignFormatUtil::GetCustomLinksList(SSeqURLInfo *seqUrlInfo,
         linkUrl = seqUrlInfo->seqUrl;
 	    link = s_MapCustomLink(linkUrl,"GSFASTA",seqUrlInfo->accession, "GSFASTA");
 	    customLinksList.push_back(link);
-    }
-    if(customLinkTypes & eDownLoadSeq) {
-        linkUrl = CAlignFormatUtil::BuildUserUrl(*ids, 
+    }    
+    return customLinksList;    
+}
+
+
+string CAlignFormatUtil::GetAlignedRegionsURL(SSeqURLInfo *seqUrlInfo,
+                                          const CSeq_id& id,
+                                          objects::CScope &scope)                                          
+{
+    const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
+    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();    
+    string linkUrl,link;
+    
+    
+    linkUrl = CAlignFormatUtil::BuildUserUrl(*ids, 
                                                  0, 
                                                  kDownloadUrl,
                                                  seqUrlInfo->database,
@@ -3137,14 +3167,41 @@ list<string>  CAlignFormatUtil::GetCustomLinksList(SSeqURLInfo *seqUrlInfo,
                                                  seqUrlInfo->queryNumber,
                                                  true);
         if(!linkUrl.empty()) {
-            linkUrl += "&segs="+ seqUrlInfo->segs;
-            string linkTitle = "<@custom_report_type@> subject sequence <@seqid@> spanning the HSP";
-            string link = s_MapCustomLink(linkUrl,"Download",seqUrlInfo->accession, "Download Sequence",linkTitle);    
-            customLinksList.push_back(link);
-        }
-    }
+            linkUrl += "&segs="+ seqUrlInfo->segs;            
+    }    
    
-    return customLinksList;    
+    return linkUrl;    
+}
+
+
+
+string  CAlignFormatUtil::GetFASTALinkURL(SSeqURLInfo *seqUrlInfo,
+                                          const CSeq_id& id,
+                                          objects::CScope &scope)
+                                          
+{
+    const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
+    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
+    string linkUrl;
+
+    int customLinkTypes = SetCustomLinksTypes(seqUrlInfo, CAlignFormatUtil::eLinkTypeDefault);
+    
+    if( (customLinkTypes & eLinkTypeGenLinks) || (customLinkTypes & eLinkTypeTraceLinks)){
+         linkUrl = seqUrlInfo->seqUrl;    
+         linkUrl = NStr::Replace(linkUrl,"genbank","fasta");
+    }             
+    else if(customLinkTypes & eLinkTypeSNPLinks) {            
+        linkUrl = seqUrlInfo->seqUrl;    
+        vector<string> parts;
+        //SNP accession=dbSNP:rs35885954
+        NStr::Tokenize(seqUrlInfo->accession,":rs",parts,NStr::eMergeDelims); 
+        string rs;
+        if(parts.size() > 1) {
+            rs = parts[1];
+        }
+	    linkUrl = seqUrlInfo->resourcesUrl + rs + "?report=fasta";                
+    }    
+    return linkUrl;    
 }
 
 string  CAlignFormatUtil::GetGeneInfo(int giForGeneLookup)
