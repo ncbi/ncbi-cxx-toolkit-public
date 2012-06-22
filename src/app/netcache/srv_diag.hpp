@@ -41,14 +41,19 @@ struct SSrvThread;
 struct SLogData;
 
 
+#define _VERIFY(x)  if (x) {} else abort()
+
 #ifdef _ASSERT
 # undef _ASSERT
 #endif
-#define _VERIFY(x)  if (x) {} else abort()
 #ifdef _DEBUG
 # define _ASSERT(x)  _VERIFY(x)
 #else
 # define _ASSERT(x)  do {} while (0)
+#endif
+
+#ifdef assert
+# undef assert
 #endif
 #define assert(x)   _ASSERT(x)
 

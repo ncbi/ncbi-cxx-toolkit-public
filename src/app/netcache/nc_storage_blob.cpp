@@ -36,8 +36,8 @@
 BEGIN_NCBI_SCOPE
 
 
-static size_t s_WBSoftSizeLimit = 2000000000;
-static size_t s_WBHardSizeLimit = 3000000000;
+static size_t s_WBSoftSizeLimit = NCBI_CONST_UINT8(2000000000);
+static size_t s_WBHardSizeLimit = NCBI_CONST_UINT8(3000000000);
 static int s_WBWriteTimeout = 1000;
 static Uint2 s_WBFailedWriteDelay = 2;
 
