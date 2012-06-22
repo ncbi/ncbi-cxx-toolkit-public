@@ -142,7 +142,7 @@ static const SImportEntry kImportTable[] = {
 };
 
 static const SImportEntry* const kImportTableEnd
-    = kImportTable + sizeof(kImportTable)/sizeof(SImportEntry);
+    = kImportTable + sizeof(kImportTable)/sizeof(kImportTable[0]);
 
 // Feat info table
 typedef SStaticPair<CSeqFeatData::E_Choice, CSeqFeatData::SFeatDataInfo> TInfoPair;
@@ -3041,7 +3041,7 @@ vector<string> CFeatList::GetStoragekeys(int subtype) const
 
 void CFeatList::x_Init()
 {
-    size_t  config_item_size = sizeof(sc_ConfigItemInit)/sizeof(CFeatListItem);
+    const size_t  config_item_size = sizeof(sc_ConfigItemInit)/sizeof(sc_ConfigItemInit[0]);
     for (size_t i = 0; i < config_item_size; ++i ) {
         CFeatListItem item(sc_ConfigItemInit[i].m_Type,
                            sc_ConfigItemInit[i].m_Subtype,
