@@ -579,7 +579,7 @@ public:
     void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type)
     {
         if (type.GetTypeInfo()->IsCObject()) {
-            TObjectPtr objectPtr = type.GetTypeInfo()->Create(in.GetMemoryPool());
+            TObjectPtr objectPtr = type.GetTypeInfo()->Create(/*in.GetMemoryPool()*/);
             CRef<CObject> ref;
             ref.Reset(static_cast<CObject*>(objectPtr));
             type.GetTypeInfo()->DefaultReadData(in, objectPtr);
