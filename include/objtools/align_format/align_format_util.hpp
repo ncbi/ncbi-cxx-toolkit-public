@@ -720,6 +720,12 @@ public:
     ///
     static CRef<objects::CSeq_align_set> HitListToHspList(list< CRef<objects::CSeq_align_set> >& source);
 
+    ///extract seq_align_set coreesponding to seqid list
+    ///@param all_aln_set: CSeq_align_set source/target list
+    ///@param alignSeqList: string of seqIds separated by comma
+    ///
+    static void ExtractSeqAlignForSeqList(CRef<objects::CSeq_align_set> &all_aln_set, string alignSeqList);
+
     ///return the custom url (such as mapview)
     ///@param ids: the id list
     ///@param taxid
@@ -1103,6 +1109,26 @@ public:
                                    int customLinkTypes = eLinkTypeDefault);
 
     static list<string>  GetGiLinksList(SSeqURLInfo *seqUrlInfo,bool hspRange = false);
+
+    ///Create URL showing aligned regions info
+    ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
+    ///@param id: CSeq_id object    
+    ///@param scope: scope to fetch this sequence
+    ///@return: string containing URL
+    ///
+    static string  GetFASTALinkURL(SSeqURLInfo *seqUrlInfo,
+                                   const objects::CSeq_id& id,
+                                   objects::CScope &scope);
+
+    ///Create URL to FASTA info
+    ///@param seqUrlInfo: struct SSeqURLInfo containing data for URL construction
+    ///@param id: CSeq_id object    
+    ///@param scope: scope to fetch this sequence
+    ///@return: string containing URL
+    ///
+    static string GetAlignedRegionsURL(SSeqURLInfo *seqUrlInfo,
+                                const objects::CSeq_id& id,
+                                objects::CScope &scope);
 
     ///Set the database as gi type
     ///@param actual_aln_list: the alignment

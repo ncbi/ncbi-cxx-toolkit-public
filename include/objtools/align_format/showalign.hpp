@@ -602,6 +602,9 @@ protected:
     list <string> m_CustomLinksList;
     list<string> m_LinkoutList;
     list <string> m_HSPLinksList;
+    string m_FASTAlinkUrl;
+    string m_AlignedRegionsUrl;
+    
 
     CRef < objects::CObjectManager > m_FeatObj;  // used for fetching feature
     CRef < objects::CScope > m_featScope;        // used for fetching feature
