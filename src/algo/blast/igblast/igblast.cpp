@@ -462,6 +462,19 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             while (it != align_list.end()) {
                 bool keep = true;
+                /* chain type test */
+                if (q_ct!="N/A") {
+                    char s_ct = q_ct[1];
+                    string sid = (*it)->GetSeq_id(1).AsFastaString();
+                    sid = NStr::ToUpper(sid);
+                    if (sid.substr(0, 4) == "LCL|") sid = sid.substr(4, sid.length());
+                    if (sid.substr(0, 2) == "IG" && sid[3] == 'J') {
+                        s_ct = sid[2];
+                    } else if (sid[0] == 'J') {
+                        s_ct = sid[1];
+                    }
+                    if (s_ct != q_ct[1]) keep = false;
+                }
                 /* strand test */
                 if ((*it)->GetSeqStrand(0) != q_st) keep = false;
                 /* subject start test */
