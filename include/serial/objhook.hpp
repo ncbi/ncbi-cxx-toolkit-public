@@ -578,9 +578,17 @@ class CSerial_FilterObjectsHook : public CSkipObjectHook
 public:
     void SkipObject(CObjectIStream& in, const CObjectTypeInfo& type)
     {
-        TObject obj;
-        type.GetTypeInfo()->DefaultReadData(in, &obj);
-        Process(obj);
+        if (type.GetTypeInfo()->IsCObject()) {
+            TObjectPtr objectPtr = type.GetTypeInfo()->Create(in.GetMemoryPool());
+            CRef<CObject> ref;
+            ref.Reset(static_cast<CObject*>(objectPtr));
+            type.GetTypeInfo()->DefaultReadData(in, objectPtr);
+            Process(*static_cast<TObject*>(objectPtr));
+        } else {
+            TObject obj;
+            type.GetTypeInfo()->DefaultReadData(in, &obj);
+            Process(obj);
+        }
     }
     /// This method will be called when the object of the
     /// requested class is read
