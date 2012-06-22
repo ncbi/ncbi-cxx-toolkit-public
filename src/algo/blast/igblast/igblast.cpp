@@ -473,7 +473,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                     } else if (sid[0] == 'J') {
                         s_ct = sid[1];
                     }
-                    if (s_ct!='H' || s_ct!='L' || s_ct!='K') s_ct = q_ct[1];
+                    if (s_ct!='H' && s_ct!='L' && s_ct!='K') s_ct = q_ct[1];
                     if (s_ct != q_ct[1]) keep = false;
                 }
                 /* strand test */
