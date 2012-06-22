@@ -1125,8 +1125,14 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
                                customLinkTypes);                               
 
         m_HSPLinksList = CAlignFormatUtil::GetGiLinksList(seqUrlInfo,true);                                                                      
-    
-        
+
+        //URL tp FASTA representation, includes genbank, trace and SNP
+        m_FASTAlinkUrl = CAlignFormatUtil::GetFASTALinkURL(seqUrlInfo,*seqID, m_Scope);
+
+        //URL to FASTA for all regions
+        m_AlignedRegionsUrl =  CAlignFormatUtil::GetAlignedRegionsURL(seqUrlInfo,*seqID, m_Scope);
+                                          
+
         if(m_AlignOption&eLinkout && (seqUrlInfo->gi > 0)){     			                    
             const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);            
             const list< CRef< CBlast_def_line > > &bdl_list = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
@@ -3784,6 +3790,12 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnLinkOutLinks",linkOutStr);
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnCustomLinks",customLinkStr);
+    //The next line is not used for now
+    //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnFASTA",m_FASTAlinkUrl);
+    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnRegFASTA",m_AlignedRegionsUrl);
+    
+
+    
 
 	//fill sort info
 	string sortInfo;	
@@ -3970,6 +3982,8 @@ string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info)
 	
     string alignRows = x_DisplayRowData(aln_vec_info->alnRowInfo);
     alignRows = CAlignFormatUtil::MapTemplate(alignRowsTemplate,"align_rows",alignRows);
+    alignRows = CAlignFormatUtil::MapTemplate(alignRows,"aln_curr_num",NStr::IntToString(m_currAlignHsp));
+    
     alignInfo += alignRows;
     return alignInfo;
     //if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine)){///ignore eShowMiddleLine for templates
