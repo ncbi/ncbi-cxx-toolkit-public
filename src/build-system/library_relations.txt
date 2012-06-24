@@ -1747,7 +1747,6 @@ gpipe_common needs xobjutil
 gpipe_common needs xser
 gpipe_common needs xutil
 gpipe_kpi needs xmlwrapp
-gpipe_kpi needs xncbi
 gpipe_objutil needs asn_cache
 gpipe_objutil needs bdb
 gpipe_objutil needs biblio
@@ -4156,8 +4155,8 @@ pubmed needs xser
 pubmed needs xutil
 python_ncbi_dbapi includes connect
 python_ncbi_dbapi includes dbapi
-python_ncbi_dbapi includes xncbi
 python_ncbi_dbapi needs dbapi_driver
+python_ncbi_dbapi needs xncbi
 rcobaltasn_g needs xncbi
 rcobaltasn_g needs xser
 rcobaltasn_g needs xutil
@@ -4191,6 +4190,10 @@ remapcli needs xutil
 sage_mappings needs xncbi
 sage_mappings needs xser
 sage_mappings needs xutil
+sample_asn needs general
+sample_asn needs xncbi
+sample_asn needs xser
+sample_asn needs xutil
 scoremat needs biblio
 scoremat needs general
 scoremat needs medline
@@ -4368,6 +4371,9 @@ snputil needs xncbi
 snputil needs xobjmgr
 snputil needs xser
 snputil needs xutil
+soap_dataobj needs xncbi
+soap_dataobj needs xser
+soap_dataobj needs xutil
 softparse needs GMA
 softparse needs affy
 softparse needs biblio
@@ -4663,7 +4669,6 @@ txserv needs xncbi
 txservbase needs connect
 txservbase needs xconnect
 txservbase needs xncbi
-txxmldoc needs xncbi
 txxmltrans needs txxmldoc
 txxmltrans needs xcompress
 txxmltrans needs xncbi
@@ -7547,7 +7552,6 @@ xhgenefetch needs xobjmgr
 xhgenefetch needs xobjutil
 xhgenefetch needs xser
 xhgenefetch needs xutil
-xhist needs xncbi
 xhtml needs xncbi
 xid_estsub needs biblio
 xid_estsub needs connect
