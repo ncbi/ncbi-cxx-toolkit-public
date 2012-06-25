@@ -266,6 +266,48 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
     }}
 };
 
+struct SMolTypeInfo {
+
+    // is it shown to the user as a possibility or just silently accepted?
+    enum EShown {
+        eShown_Yes, // Yes, show to user in error messages, etc.
+        eShown_No   // No, don't show the user, but silently accept it if the user gives it to us
+    };
+
+    SMolTypeInfo(
+        EShown eShown, 
+        CMolInfo::TBiomol eBiomol,
+        CSeq_inst::EMol eMol ) :
+    m_eShown(eShown), m_eBiomol(eBiomol), m_eMol(eMol)
+    { }
+
+    CMolInfo::TBiomol m_eBiomol;
+    CSeq_inst::EMol   m_eMol;
+    EShown m_eShown; 
+};
+typedef SStaticPair<const char*, SMolTypeInfo> TBiomolMapEntry;
+static const TBiomolMapEntry sc_BiomolArray[] = {
+    // careful with the sort: remember that the key is canonicalized first
+    {"cRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_cRNA,            CSeq_inst::eMol_rna) },   
+    {"DNA",                   SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },   
+    {"Genomic",               SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },   
+    {"Genomic DNA",           SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },   
+    {"Genomic RNA",           SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_rna) },   
+    {"mRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_mRNA,            CSeq_inst::eMol_rna) },   
+    {"ncRNA",                 SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_ncRNA,           CSeq_inst::eMol_rna) },
+    {"non-coding RNA",        SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_ncRNA,           CSeq_inst::eMol_rna) },   
+    {"Other-Genetic",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_other_genetic,   CSeq_inst::eMol_other) }, 
+    {"Precursor RNA",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_pre_RNA,         CSeq_inst::eMol_rna) },   
+    {"Ribosomal RNA",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },   
+    {"rRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },   
+    {"Transcribed RNA",       SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna) },   
+    {"Tranfer-messenger RNA", SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tmRNA,           CSeq_inst::eMol_rna) },   
+    {"Transfer RNA",          SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },   
+    {"tRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },   
+};
+typedef CStaticPairArrayMap<const char*, SMolTypeInfo,
+                        CSourceModParser::PKeyCompare>  TBiomolMap;
+DEFINE_STATIC_ARRAY_MAP(TBiomolMap, sc_BiomolMap, sc_BiomolArray);
 
 void CSourceModParser::ApplyMods(CBioseq& seq)
 {
@@ -283,13 +325,40 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 
     // mol[ecule]
+    bool bMolSetViaMolMod = false;
     if ((mod = FindMod("molecule", "mol")) != NULL) {
         if (NStr::EqualNocase(mod->value, "dna")) {
             seq.SetInst().SetMol( CSeq_inst::eMol_dna );
+            bMolSetViaMolMod = true;
         } else if (NStr::EqualNocase(mod->value, "rna")) {
             seq.SetInst().SetMol( CSeq_inst::eMol_rna );
+            bMolSetViaMolMod = true;
         } else {
             x_HandleBadModValue(*mod, "'dna', 'rna'", (TDummyModMap*)NULL);
+        }
+    }
+
+    // if mol/molecule not set right, we can use moltype instead
+    // mol[-]type
+    if( ! bMolSetViaMolMod ) {
+        if ((mod = FindMod("moltype", "mol-type")) != NULL) {
+            TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
+            if (it == sc_BiomolMap.end()) {
+                // construct the possible bad values by hand
+                string sAllowedValues;
+                ITERATE( TBiomolMap, map_iter, sc_BiomolMap ) {
+                    if( map_iter->second.m_eShown == SMolTypeInfo::eShown_Yes ) {
+                        if( ! sAllowedValues.empty() ) {
+                            sAllowedValues += ", ";
+                        }
+                        sAllowedValues += '\'' + string(map_iter->first) + '\'';
+                    }
+                }
+                x_HandleBadModValue(*mod, sAllowedValues, (TDummyModMap*)NULL);
+            } else {
+                // moltype sets biomol and inst.mol
+                seq.SetInst().SetMol(it->second.m_eMol);
+            }
         }
     }
 
@@ -579,30 +648,6 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CBioSource>& bsrc,
     }
 }
 
-
-typedef SStaticPair<const char*, CMolInfo::TBiomol> TBiomolMapEntry;
-static const TBiomolMapEntry sc_BiomolArray[] = {
-    { "?",               CMolInfo::eBiomol_unknown },
-    { "cRNA",            CMolInfo::eBiomol_cRNA },
-    { "genomic",         CMolInfo::eBiomol_genomic },
-    { "genomic-mRNA",    CMolInfo::eBiomol_genomic_mRNA },
-    { "mRNA",            CMolInfo::eBiomol_mRNA },
-    { "non-coding RNA",  CMolInfo::eBiomol_ncRNA },
-    { "other-genetic",   CMolInfo::eBiomol_other_genetic },
-    { "peptide",         CMolInfo::eBiomol_peptide },
-    { "precursor RNA",   CMolInfo::eBiomol_pre_RNA },
-    { "rRNA",            CMolInfo::eBiomol_rRNA },
-    { "scRNA",           CMolInfo::eBiomol_scRNA },
-    { "snoRNA",          CMolInfo::eBiomol_snoRNA },
-    { "snRNA",           CMolInfo::eBiomol_snRNA },
-    { "transcribed-RNA", CMolInfo::eBiomol_transcribed_RNA },
-    { "transfer-messenger RNA", CMolInfo::eBiomol_tmRNA },
-    { "tRNA",            CMolInfo::eBiomol_tRNA }
-};
-typedef CStaticPairArrayMap<const char*, CMolInfo::TBiomol,
-                        CSourceModParser::PKeyCompare>  TBiomolMap;
-DEFINE_STATIC_ARRAY_MAP(TBiomolMap, sc_BiomolMap, sc_BiomolArray);
-
 typedef SStaticPair<const char*, CMolInfo::TTech> TTechMapEntry;
 static const TTechMapEntry sc_TechArray[] = {
     { "?",                  CMolInfo::eTech_unknown },
@@ -656,9 +701,20 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
     if ((mod = FindMod("moltype", "mol-type")) != NULL) {
         TBiomolMap::const_iterator it = sc_BiomolMap.find(mod->value.c_str());
         if (it == sc_BiomolMap.end()) {
-            x_HandleBadModValue(*mod, kEmptyStr, &sc_BiomolMap);
+            // construct the possible bad values by hand
+            string sAllowedValues;
+            ITERATE( TBiomolMap, map_iter, sc_BiomolMap ) {
+                if( map_iter->second.m_eShown == SMolTypeInfo::eShown_Yes ) {
+                    if( ! sAllowedValues.empty() ) {
+                        sAllowedValues += ", ";
+                    }
+                    sAllowedValues += '\'' + string(map_iter->first) + '\'';
+                }
+            }
+            x_HandleBadModValue(*mod, sAllowedValues, (TDummyModMap*)NULL);
         } else {
-            mi->SetBiomol(it->second);
+            // moltype sets biomol and inst.mol
+            mi->SetBiomol(it->second.m_eBiomol);
         }
     }
 
@@ -682,7 +738,6 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CMolInfo>& mi)
         }
     }
 }
-
 
 void CSourceModParser::x_ApplyMods(CAutoInitRef<CGene_ref>& gene)
 {

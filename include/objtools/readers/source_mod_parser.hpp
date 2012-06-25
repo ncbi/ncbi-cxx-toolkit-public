@@ -38,6 +38,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_hist.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqfeat/BioSource.hpp>
