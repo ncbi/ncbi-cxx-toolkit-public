@@ -45,6 +45,7 @@
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
@@ -600,6 +601,28 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
+static const CGenetic_code *s_GetGeneticCode(const CSeq_id& seq_id,
+                                             CScope* scope)
+{
+    CRef<CGenetic_code> genetic_code;
+    try {
+        CBioseq_Handle bsh = scope->GetBioseqHandle(seq_id);
+        int gcode = sequence::GetOrg_ref(bsh).GetGcode();
+        const CGenetic_code_table& tbl = CGen_code_table::GetCodeTable();
+        ITERATE (CGenetic_code_table::Tdata, it, tbl.Get()) {
+            if ((*it)->GetId() == gcode) {
+                genetic_code = *it;
+                break;
+            }
+        }
+    }
+    catch (CException&) {
+        // use the default genetic code
+    }
+
+    return genetic_code.GetPointer();
+}
+
 class CScore_StartStopCodon : public CScoreLookup::IScore
 {
 public:
@@ -746,8 +769,10 @@ public:
                 }
             }
         }
+
         string trans="";
-        CSeqTranslator::Translate(*aligned_genomic, *scope, trans);
+        CSeqTranslator::Translate(*aligned_genomic, *scope, trans,
+                                  s_GetGeneticCode(align.GetSeq_id(1), scope));
 
         return m_StartCodon ? trans[0]=='M' : NStr::EndsWith(trans, "*");
     }
@@ -805,9 +830,12 @@ public:
 
             if (cds) {
                 string trans;
-                CSeqTranslator::Translate(*cds, *scope, trans);
+                CSeqTranslator::Translate(cds->GetLocation(), *scope, trans,
+                                          s_GetGeneticCode(align.GetSeq_id(1),
+                                                           scope));
                 if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
-                     NStr::EndsWith(trans, "*")) {
+                     NStr::EndsWith(trans, "*"))
+                {
                     trans.resize(trans.size() - 1);
                 }
 
