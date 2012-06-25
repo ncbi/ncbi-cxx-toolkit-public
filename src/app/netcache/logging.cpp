@@ -137,7 +137,7 @@ s_WriteLog(const char* buf, size_t size)
     }
 
 #ifdef NCBI_OS_LINUX
-    if (write(s_LogFd, buf, size) != size) {
+    if (write(s_LogFd, buf, size) != ssize_t(size)) {
         // There's nothing we can do about it here
     }
 #endif
