@@ -267,7 +267,8 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         left_cds_limit = 0;
     }
 
-    FindAllStarts(starts,mrna,mrnamap,TSignedSeqRange(left_cds_limit,reading_frame_start-1),frame);
+    if(reading_frame_start-left_cds_limit >= 3)
+        FindAllStarts(starts,mrna,mrnamap,TSignedSeqRange(left_cds_limit,reading_frame_start-1),frame);
 
     if (frame==-1) {
         FindAllStops(stops,mrna,mrnamap,TSignedSeqRange(0,mrna.size()-1),frame);
@@ -559,8 +560,8 @@ CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const TInDels& frameshifts
     TInDels::const_iterator fsi_begin = frameshifts.begin();
     TInDels::const_iterator fsi_end = frameshifts.end();
 
-    m_orig_ranges.reserve(exons.size()+fsi_end-fsi_begin);
-    m_edited_ranges.reserve(exons.size()+fsi_end-fsi_begin);
+    m_orig_ranges.reserve(exons.size()+(fsi_end-fsi_begin));
+    m_edited_ranges.reserve(exons.size()+(fsi_end-fsi_begin));
     
     TSignedSeqPos estart = 0;
     for(unsigned int i = 0; i < exons.size(); ++i) {
