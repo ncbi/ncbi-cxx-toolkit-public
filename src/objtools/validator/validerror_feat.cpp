@@ -3448,15 +3448,31 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
     case CSeqFeatData::eSubtype_mat_peptide:
     case CSeqFeatData::eSubtype_sig_peptide:
     case CSeqFeatData::eSubtype_transit_peptide:
-        PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
-            "Peptide processing feature should be converted to the "
-            "appropriate protein feature subtype", feat);
+        if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+            const CSeq_loc& loc = feat.GetLocation();
+            CConstRef<CSeq_feat> cds = GetOverlappingCDS(loc, *m_Scope);
+            PostErr(!cds ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+                "sig/mat/transit_peptide feature cannot be associated with a "
+                "protein product of a coding region feature", feat);
+        } else {
+            PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+                "Peptide processing feature should be converted to the "
+                "appropriate protein feature subtype", feat);
+        }
         ValidatePeptideOnCodonBoundry(feat, key);
         break;
     case CSeqFeatData::eSubtype_preprotein:
-        PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
-            "Peptide processing feature should be converted to the "
-            "appropriate protein feature subtype", feat);
+        if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+            const CSeq_loc& loc = feat.GetLocation();
+            CConstRef<CSeq_feat> cds = GetOverlappingCDS(loc, *m_Scope);
+            PostErr(!cds ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+                "Pre/pro protein feature cannot be associated with a "
+                "protein product of a coding region feature", feat);
+        } else {
+            PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+                "Peptide processing feature should be converted to the "
+                "appropriate protein feature subtype", feat);
+        }
         break;
         
     case CSeqFeatData::eSubtype_mRNA:
