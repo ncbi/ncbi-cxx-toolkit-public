@@ -53,6 +53,7 @@
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_seg_modifier.hpp>
 #include <objects/seqalign/Splice_site.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
@@ -455,6 +456,18 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     {
         /// This is a protein alignment; transform it into a fake transcript alignment
         /// so the rest of the processing can go on
+        bool found_stop_codon = false;
+        ITERATE (CSpliced_seg::TModifiers, mod_it,
+                 input_align.GetSegs().GetSpliced().GetModifiers())
+        {
+            if ((*mod_it)->IsStop_codon_found() &&
+                (*mod_it)->GetStop_codon_found())
+            {
+                found_stop_codon = true;
+                break;
+            }
+        }
+
         CSeq_align *fake_transcript_align = new CSeq_align;
         align.Reset(fake_transcript_align);
         fake_transcript_align->Assign(input_align);
@@ -467,13 +480,39 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             s_TransformToNucpos((*exon_it)->SetProduct_end());
         }
 
+        if (found_stop_codon) {
+            /// Extend last exon to include stop codon
+            CRef<CSpliced_exon> last_exon =
+                fake_transcript_align->SetSegs().SetSpliced().SetExons().back(); 
+            last_exon->SetProduct_end().SetNucpos() += 3;
+            if (last_exon->IsSetGenomic_strand() ?
+                    last_exon->GetGenomic_strand() == eNa_strand_minus :
+                    (fake_transcript_align->GetSegs().GetSpliced()
+                        . IsSetGenomic_strand() &&
+                     fake_transcript_align->GetSegs().GetSpliced()
+                        . GetGenomic_strand() == eNa_strand_minus))
+            {
+                last_exon->SetGenomic_start() -= 3;
+            } else {
+                last_exon->SetGenomic_end() += 3;
+            }
+            CRef<CSpliced_exon_chunk> match_stop_codon(
+                new CSpliced_exon_chunk);
+            match_stop_codon->SetMatch(3);
+            last_exon->SetParts().push_back(match_stop_codon);
+        }
+
         CRef<CSeq_id> prot_id(new CSeq_id);
         prot_id->Assign(fake_transcript_align->GetSeq_id(0));
-        TSeqPos prot_length =
+        TSeqPos cds_length =
             fake_transcript_align->GetSegs().GetSpliced().CanGetProduct_length()
             ? fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()
             : m_scope->GetBioseqHandle(*prot_id).GetBioseqLength();
-        CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(*prot_id, 0, prot_length*3-1));
+        if (found_stop_codon) {
+            cds_length += 1;
+        }
+        CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(*prot_id, 0,
+                                                  cds_length*3-1));
 
         cd_feat.Reset(new CSeq_feat);
         cd_feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
