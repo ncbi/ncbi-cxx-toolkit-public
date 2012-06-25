@@ -992,13 +992,20 @@ void
 CStatRotator::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
     int cur_secs = CSrvTime::CurSecs();
-    for (int secs = s_LastRotateSecs; secs < cur_secs; secs += kMinStatPeriod) {
-        if (CTaskServer::IsInShutdown()  &&  secs + kMinStatPeriod >= cur_secs)
-            return;
+    if (cur_secs != s_LastRotateSecs) {
+        int cnt_iter = (cur_secs - s_LastRotateSecs) / kMinStatPeriod;
+        if (cnt_iter == 0)
+            cnt_iter = 1;
+        for (int i = 0; i < cnt_iter; ++i) {
+            if (CTaskServer::IsInShutdown())
+                return;
 
-        s_CollectCurStats();
+            s_CollectCurStats();
+        }
+        s_LastRotateSecs = cur_secs;
     }
-    s_LastRotateSecs = cur_secs;
+    else if (CTaskServer::IsInShutdown())
+        return;
     CalcNextRun();
 }
 
