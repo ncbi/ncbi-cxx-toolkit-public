@@ -278,7 +278,7 @@ struct SMolTypeInfo {
         EShown eShown, 
         CMolInfo::TBiomol eBiomol,
         CSeq_inst::EMol eMol ) :
-    m_eShown(eShown), m_eBiomol(eBiomol), m_eMol(eMol)
+        m_eBiomol(eBiomol), m_eMol(eMol), m_eShown(eShown)
     { }
 
     CMolInfo::TBiomol m_eBiomol;
@@ -301,7 +301,7 @@ static const TBiomolMapEntry sc_BiomolArray[] = {
     {"Ribosomal RNA",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },   
     {"rRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },   
     {"Transcribed RNA",       SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna) },   
-    {"Tranfer-messenger RNA", SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tmRNA,           CSeq_inst::eMol_rna) },   
+    {"Transfer-messenger RNA", SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tmRNA,           CSeq_inst::eMol_rna) },   
     {"Transfer RNA",          SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },   
     {"tRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },   
 };
