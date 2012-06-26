@@ -122,8 +122,6 @@ private:
 
     // CMappedFeat does not re-use objects
     mutable CCreatedFeat_Ref     m_MappedFeat;
-    // Original feature is not locked by handle, lock here.
-    mutable CConstRef<CSeq_feat> m_OriginalSeq_feat_Lock;
 };
 
 

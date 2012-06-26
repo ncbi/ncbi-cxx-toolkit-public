@@ -249,6 +249,7 @@ protected:
 private:
     CSeq_annot_Handle              m_Seq_annot;
     TFeatIndex                     m_FeatIndex;
+    mutable CConstRef<CSeq_feat>   m_CreatedOriginalFeat;
     mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
 };
 

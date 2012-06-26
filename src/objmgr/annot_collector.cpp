@@ -1059,17 +1059,23 @@ CCreatedFeat_Ref::GetOriginalFeature(const CSeq_feat_Handle& feat_h)
         ResetRefsFrom(&orig_feat, 0, &created_point, &created_interval);
     }
     else if ( feat_h.IsTableFeat() ) {
-        const CSeq_annot_Info& annot = feat_h.x_GetSeq_annot_Info();
-        CRef<CSeq_feat> orig_feat;
-        CRef<CSeq_point> created_point;
-        CRef<CSeq_interval> created_interval;
-        ReleaseRefsTo(&orig_feat, 0, &created_point, &created_interval);
-        annot.UpdateTableFeat(orig_feat,
-                              created_point,
-                              created_interval,
-                              feat_h.x_GetAnnotObject_Info());
-        ret = orig_feat;
-        ResetRefsFrom(&orig_feat, 0, &created_point, &created_interval);
+        if ( feat_h.m_CreatedOriginalFeat ) {
+            ret = feat_h.m_CreatedOriginalFeat;
+        }
+        else {
+            const CSeq_annot_Info& annot = feat_h.x_GetSeq_annot_Info();
+            CRef<CSeq_feat> orig_feat;
+            CRef<CSeq_point> created_point;
+            CRef<CSeq_interval> created_interval;
+            //ReleaseRefsTo(&orig_feat, 0, &created_point, &created_interval);
+            annot.UpdateTableFeat(orig_feat,
+                                  created_point,
+                                  created_interval,
+                                  feat_h.x_GetAnnotObject_Info());
+            ret = orig_feat;
+            //ResetRefsFrom(&orig_feat, 0, &created_point, &created_interval);
+            feat_h.m_CreatedOriginalFeat = ret;
+        }
     }
     else {
         ret = feat_h.GetPlainSeq_feat();

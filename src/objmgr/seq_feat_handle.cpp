@@ -92,6 +92,7 @@ CSeq_feat_Handle::~CSeq_feat_Handle(void)
 
 void CSeq_feat_Handle::Reset(void)
 {
+    m_CreatedOriginalFeat.Reset();
     m_CreatedFeat.Reset();
     m_FeatIndex = 0;
     m_Seq_annot.Reset();

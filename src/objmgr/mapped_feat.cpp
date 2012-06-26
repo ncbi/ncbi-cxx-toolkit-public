@@ -64,7 +64,6 @@ CMappedFeat& CMappedFeat::operator=(const CMappedFeat& feat)
         m_MappingInfoObj = *feat.m_MappingInfoPtr;
         m_MappingInfoPtr = &m_MappingInfoObj;
         m_MappedFeat = feat.m_MappedFeat;
-        m_OriginalSeq_feat_Lock.Reset();
     }
     return *this;
 }
@@ -81,18 +80,16 @@ void CMappedFeat::Reset(void)
     m_MappingInfoObj.Reset();
     m_MappingInfoPtr = &m_MappingInfoObj;
     m_MappedFeat.ResetRefs();
-    m_OriginalSeq_feat_Lock.Reset();
 }
 
 
 CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
                               const TIterator& annot)
 {
-    m_OriginalSeq_feat_Lock.Reset();
-
     const CAnnotObject_Ref& feat_ref = *annot;
     _ASSERT(feat_ref.IsFeat());
 
+    m_CreatedOriginalFeat.Reset();
     if ( feat_ref.IsSNPFeat() ) {
         m_FeatIndex = feat_ref.GetAnnotIndex() | kSNPTableBit;
         if ( !collector.m_CreatedOriginal ) {
@@ -103,6 +100,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
     }
     else if ( feat_ref.GetAnnotObject_Info().IsRegular() ) {
         m_FeatIndex = feat_ref.GetAnnotIndex();
+        m_CreatedFeat.Reset();
         _ASSERT(!IsTableSNP());
     }
     else {
@@ -140,10 +138,7 @@ CConstRef<CSeq_feat> CMappedFeat::GetSeq_feat(void) const
 
 const CSeq_feat& CMappedFeat::GetOriginalFeature(void) const
 {
-    if ( !m_OriginalSeq_feat_Lock ) {
-        m_OriginalSeq_feat_Lock = GetOriginalSeq_feat();
-    }
-    return *m_OriginalSeq_feat_Lock;
+    return *GetOriginalSeq_feat();
 }
 
 
