@@ -598,7 +598,7 @@ CNCStat::x_PrintUnstructured(CSrvPrintProxy& proxy)
                 continue;
 
             TSrvTimeTerm& time_term = m_ClWrLenBySize[i];
-            proxy << prev_size << "-" << size << ": "
+            proxy << g_ToSmartStr(prev_size) << "-" << g_ToSmartStr(size) << ": "
                   << g_ToSmartStr(time_term.GetCount()) << " (cnt), "
                   << g_AsMSecStat(time_term.GetAverage()) << " (avg msec), "
                   << g_AsMSecStat(time_term.GetMaximum()) << " (max msec)" << endl;
@@ -615,7 +615,7 @@ CNCStat::x_PrintUnstructured(CSrvPrintProxy& proxy)
                 continue;
 
             TSrvTimeTerm& time_term = m_ClRdLenBySize[i];
-            proxy << prev_size << "-" << size << ": "
+            proxy << g_ToSmartStr(prev_size) << "-" << g_ToSmartStr(size) << ": "
                   << g_ToSmartStr(time_term.GetCount()) << " (cnt), "
                   << g_AsMSecStat(time_term.GetAverage()) << " (avg msec), "
                   << g_AsMSecStat(time_term.GetMaximum()) << " (max msec)" << endl;
@@ -629,7 +629,7 @@ CNCStat::x_PrintUnstructured(CSrvPrintProxy& proxy)
                          ; ++i, prev_size = size + 1, size <<= 1)
         {
             if (m_DiskWrBySize[i] != 0) {
-                proxy << prev_size << "-" << size << ": "
+                proxy << g_ToSmartStr(prev_size) << "-" << g_ToSmartStr(size) << ": "
                       << g_ToSmartStr(m_DiskWrBySize[i]) << " (cnt)" << endl;
             }
         }

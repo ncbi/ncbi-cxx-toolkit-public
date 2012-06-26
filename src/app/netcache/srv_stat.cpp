@@ -309,8 +309,8 @@ CSrvStat::PrintToSocket(CSrvPrintProxy& proxy)
                     << m_ThrStarted << " (start), "
                     << m_ThrStopped << " (stop)" << endl;
     proxy << "Sockets flow - "
-                    << m_SockActiveOpens << " (active open), "
-                    << m_SockPassiveOpens << " (passive open), "
+                    << g_ToSmartStr(m_SockActiveOpens) << " (active open), "
+                    << g_ToSmartStr(m_SockPassiveOpens) << " (passive open), "
                     << m_SockOpenTime.GetCount() << " (closed)" << endl;
     proxy << "Jiffies - "
                     << g_AsMSecStat(m_JiffyTime.GetAverage()) << " (avg msec), "
