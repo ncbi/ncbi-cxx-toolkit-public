@@ -85,7 +85,7 @@ s_CheckTZChange(void)
     time_t cur_secs = CSrvTime::CurSecs() + CSrvTime::TZAdjustment();
     struct tm t;
     gmtime_r(&cur_secs, &t);
-    kCollectPeriodsCnt[kDayPeriodIdx] = 24 - t.tm_hour;
+    s_PeriodsCollected[kDayPeriodIdx] = t.tm_hour;
 #endif
 }
 
