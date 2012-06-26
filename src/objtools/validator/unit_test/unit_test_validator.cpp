@@ -11277,6 +11277,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     AddFeat(imp, entry->SetSet().SetSeq_set().back());
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    expected_errors[0]->SetErrCode("PeptideFeatureLacksCDS");
     expected_errors[0]->SetErrMsg("Peptide processing feature should be converted to the appropriate protein feature subtype");
     CRef<CSeq_id> local_id(new CSeq_id());
     local_id->SetLocal().SetStr("good");
@@ -11314,6 +11315,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     entry = BuildGoodSeq();
     seh = scope.AddTopLevelSeqEntry(*entry);
 
+    expected_errors[0]->SetErrCode("InvalidForType");
     expected_errors[0]->SetErrMsg("RNA feature should be converted to the appropriate RNA feature subtype, location should be converted manually");
     expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors[0]->SetAccession("good");
@@ -13438,7 +13440,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PeptideFeatOutOfFrame)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InvalidForType", 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PeptideFeatureLacksCDS", 
                       "Peptide processing feature should be converted to the appropriate protein feature subtype"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "PeptideFeatOutOfFrame", 
                       "Stop of sig_peptide is out of frame with CDS codons"));
