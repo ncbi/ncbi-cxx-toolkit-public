@@ -4389,10 +4389,20 @@ void CValidError_feat::ValidateNonImpFeatGbquals (const CSeq_feat& feat)
         CSeqFeatData::EQualifier gbqual = CSeqFeatData::GetQualifierType(qual_str);
 
         if ( gbqual == CSeqFeatData::eQual_bad ) {
-            if (ftype == CSeqFeatData::eSubtype_gene) {
+            CSeqFeatData::E_Choice chs = feat.GetData().Which();
+            if (chs == CSeqFeatData::e_Gene) {
                 if (NStr::Equal (qual_str, "gen_map")
                     || NStr::Equal (qual_str, "cyt_map")
                     || NStr::Equal (qual_str, "rad_map")) {
+                    continue;
+                }
+            } else if (chs == CSeqFeatData::e_Cdregion) {
+                if (NStr::Equal (qual_str, "orig_transcript_id")) {
+                    continue;
+                }
+            } else if (chs == CSeqFeatData::e_Rna) {
+                if (NStr::Equal (qual_str, "orig_protein_id")
+                    || NStr::Equal (qual_str, "orig_transcript_id")) {
                     continue;
                 }
             }
