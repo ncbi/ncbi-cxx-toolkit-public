@@ -1,3 +1,25 @@
+August 1, 2012
+* 2.2.27 release.
+New features:
+* Composition-based statistics for blastx.
+* Added seedtop - a tool for searching for patterns in an input sequence or
+  BLAST database.
+* Enable remote DELTA-BLAST searches.
+
+Improvements:
+* Revamped controls for the number of alignments/descriptions so that they are
+  specific to applicable output formats (see user manual for details).
+* Reduce memory usage for BLAST searches that involve (large) multiple queries.
+* Speed up start-up times for BLAST databases.
+* Display of new statistical parameters have been added to the BLAST results.
+* Speed up runtime performance of tabular output formatting.
+* Improve the placement of gaps in MegaBLAST
+
+Bug fixes:
+* Fixed formatting bug when GI input format is provided to blastn.
+* Fixed incorrect composition-statistics default for DELTA-BLAST.
+* Bug fixes in blast_formatter, blastdbcmd.
+
 January 31, 2012
 * 2.2.26 release.
 * Mac executables are now Universal Binaries for 32- and 64-bit architectures,
