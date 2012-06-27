@@ -332,7 +332,6 @@ void CObjectOStreamAsn::CopyBitString(CObjectIStream& in)
 
 void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
 {
-    size_t startLine = m_Output.GetLine();
     m_Output.PutChar('"');
     while ( length > 0 ) {
         char c = *ptr++;

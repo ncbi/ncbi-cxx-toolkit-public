@@ -1513,7 +1513,6 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                     // Check the string for non-printable characters
                     EFixNonPrint fix_method = m_FixMethod;
                     if ( fix_method != eFNP_Allow ) {
-                        size_t line = m_Input.GetLine();
                         for (size_t i = 0;  i < count;  i++) {
                             if ( !GoodVisibleChar(dst[i]) ) {
                                 FixVisibleChar(dst[i], fix_method,
