@@ -544,7 +544,7 @@ protected:
                             /* out */            size_t* out_avail);
     virtual EStatus Finish (char*       out_buf, size_t  out_size,
                             /* out */            size_t* out_avail);
-    virtual EStatus End    (void);
+    virtual EStatus End    (int abandon = 0);
 
 protected:
     /// Compress block of data in the cache buffer.
@@ -587,7 +587,7 @@ protected:
                             /* out */            size_t* out_avail);
     virtual EStatus Finish (char*       out_buf, size_t  out_size,
                             /* out */            size_t* out_avail);
-    virtual EStatus End    (void);
+    virtual EStatus End    (int abandon = 0);
 
 protected:
     /// Decompress block of data in the cache buffer.

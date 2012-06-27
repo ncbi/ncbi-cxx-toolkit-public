@@ -343,7 +343,7 @@ protected:
     /// Finish the compression/decompression process.
     /// Process pending input, flush pending output.
     /// This function slightly like to Flush(), but it must be called only
-    /// at the end of compression process before End().
+    /// at the end of compression process just before End().
     virtual EStatus Finish
     (char*       out_buf,     // [in]  output buffer
      size_t      out_size,    // [in]  output buffer size
@@ -353,7 +353,11 @@ protected:
     /// Free all dynamically allocated data structures.
     /// This function discards any unprocessed input and does not flush
     /// any pending output.
-    virtual EStatus End(void) = 0;
+    /// @param abandon
+    ///   If this parameter is not zero that skip all error checks,
+    ///   always return eStatus_Success. Use it if Process/Flush/Finish where
+    ///   not called to perform any compression/decompression after Init().
+    virtual EStatus End(int abandon = 0) = 0;
 
 protected:
     /// Reset internal state

@@ -1146,6 +1146,7 @@ CCompressionProcessor::EStatus CLZOCompressor::Finish(
         return eStatus_Overflow;
     }
     LIMIT_SIZE_PARAM_U(out_size);
+
     // If we have some already processed data in the output cache buffer
     if ( m_OutEndPtr != m_OutBegPtr ) {
         EStatus status = Flush(out_buf, out_size, out_avail);
@@ -1187,10 +1188,12 @@ CCompressionProcessor::EStatus CLZOCompressor::Finish(
 }
 
 
-CCompressionProcessor::EStatus CLZOCompressor::End(void)
+CCompressionProcessor::EStatus CLZOCompressor::End(int abandon)
 {
     SetBusy(false);
-    SetError(LZO_E_OK);
+    if (!abandon) {
+        SetError(LZO_E_OK);
+    }
     return eStatus_Success;
 }
 
@@ -1491,10 +1494,12 @@ CCompressionProcessor::EStatus CLZODecompressor::Finish(
 }
 
 
-CCompressionProcessor::EStatus CLZODecompressor::End(void)
+CCompressionProcessor::EStatus CLZODecompressor::End(int abandon)
 {
     SetBusy(false);
-    SetError(LZO_E_OK);
+    if (!abandon) {
+        SetError(LZO_E_OK);
+    }
     return eStatus_Success;
 }
 

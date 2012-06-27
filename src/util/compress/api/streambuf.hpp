@@ -97,7 +97,7 @@ protected:
     CCompressionStreamProcessor* GetStreamProcessor(
          CCompressionStream::EDirection dir) const;
 
-    // Get stream processor's status
+    // Get stream processor's state
     bool IsStreamProcessorOkay(CCompressionStream::EDirection dir) const;
 
     // Check that compression/stream processor for specified I/O direction
@@ -186,9 +186,7 @@ inline bool CCompressionStreambuf::IsStreamProcessorOkay(
             CCompressionStream::EDirection dir) const
 {
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
-    return IsOkay()  &&  sp  &&   sp->m_Processor  &&
-           sp->m_Processor->IsBusy()  &&
-           sp->m_State != CCompressionStreamProcessor::eDone;
+    return IsOkay()  &&  sp  &&  sp->IsOkay();
 }
 
 

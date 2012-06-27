@@ -180,7 +180,7 @@ int CTest::Run(void)
         src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
     }
     // Modify first bytes to fixed value, this possible will prevent decoders
-    /// to treat random text data as compressed data.
+    // to treat random text data as compressed data.
     memcpy(src_buf,"12345",5);
 
     // Test compressors with different size of data

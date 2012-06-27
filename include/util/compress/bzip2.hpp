@@ -322,6 +322,7 @@ public:
 protected:
     FILE*      m_FileStream;   ///< Underlying file stream
     bool       m_EOF;          ///< EOF flag for read mode
+    bool       m_HaveData;     ///< Flag that we read/write some data
 
 private:
     /// Private copy constructor to prohibit copy.
@@ -364,7 +365,7 @@ protected:
                             /* out */            size_t* out_avail);
     virtual EStatus Finish (char*       out_buf, size_t  out_size,
                             /* out */            size_t* out_avail);
-    virtual EStatus End    (void);
+    virtual EStatus End    (int abandon = 0);
 };
 
 
@@ -399,7 +400,7 @@ protected:
                             /* out */            size_t* out_avail);
     virtual EStatus Finish (char*       out_buf, size_t  out_size,
                             /* out */            size_t* out_avail);
-    virtual EStatus End    (void);
+    virtual EStatus End    (int abandon = 0);
 };
 
 

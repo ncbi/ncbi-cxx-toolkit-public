@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 // specified in the constructor. Any stream processor can implement either
 // compression or decompression.
 
-// On reading from stream, data will be readed from underlying stream,
+// On reading from stream, data will be read from the underlying stream,
 // processed by "read stream processor", and next processed data will be
 // carried to called process.
 // Also, all data written into CCompression[IO]Stream stream will be processed
@@ -69,7 +69,7 @@ BEGIN_NCBI_SCOPE
 //
 // Note:
 //   CCompression[IO]Stream class objects must be finalized after use.
-//   At least one IO operation should be accompleshed before finalization.
+//   At least one IO operation should be accomplished before finalization.
 //   Only after finalization all data put into stream will be processed
 //   for sure. By default finalization called in the class destructor, however
 //   it can be done in any time by call Finalize(). After finalization you
@@ -77,14 +77,22 @@ BEGIN_NCBI_SCOPE
 //   If you don't read that some data can be lost. 
 //
 // Note:
+//   The compression streams don't write nothing into output, if no input data
+//   is provided. This can be especially important for cases where output data 
+//   should have any header/footer (like .gz files for example). So, for empty
+//   input, you will have empty output, that may not be acceptable to external
+//   tools like gunzip and etc.
+//
+// Note:
 //   There is one special aspect of CCompression[I]OStream class. Basically
 //   the compression algorithms works on blocks of data. They waits until
 //   a block is full and then compresses it. As long as you only feed data
 //   to the stream without flushing it this works normally. If you flush
 //   the stream, you force a premature end of the data block. This will cause
-//   a worse compression factor. You should avoid flushing a output buffer.
+//   a worse compression factor. You should avoid flushing an output buffer
+//   to get a better compression ratio.
 //
-//   Accordingly, the using input stream with compression usualy have worse
+//   Accordingly, the using input stream with compression usually have worse
 //   compression than output stream with compression. Because a stream needs
 //   to flush data from compressor very often. Increasing compressor buffer
 //   size can to amend this situation.
@@ -223,6 +231,11 @@ public:
 
     /// (Re)Initialize stream processor.
     void Init(void);
+
+    // Get stream processor's status
+    bool IsOkay(void) const {
+        return m_Processor  &&  m_Processor->IsBusy()  &&  m_State != eDone;
+    }
 
 private:
     CCompressionProcessor* m_Processor;   ///< (De)compression processor.

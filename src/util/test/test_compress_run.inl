@@ -108,6 +108,23 @@
         OK;
     }}
 
+    //------------------------------------------------------------------------
+    // Compress/decompress buffer: empty input
+    //------------------------------------------------------------------------
+    {{
+        _TRACE("Compress/decompress buffer (empty input)...");
+
+        TCompression c;
+        result = c.CompressBuffer(src_buf, 0, dst_buf, dst_len, &out_len);
+        PrintResult(eCompress, c.GetErrorCode(), 0, dst_len, out_len);
+        assert(result);
+        assert(out_len == 0);
+        result = c.DecompressBuffer(src_buf, 0, dst_buf, dst_len, &out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), 0, dst_len, out_len);
+        assert(result);
+        assert(out_len == 0);
+        OK;
+    }}
 
     //------------------------------------------------------------------------
     // Decompress buffer: transparent read
@@ -145,6 +162,17 @@
     {{
         _TRACE("File compress/decompress test...");
         size_t n;
+
+        // Empty input test
+
+        INIT_BUFFERS;
+        {{
+            TCompressionFile zf;
+            assert(zf.Open(kFileName, TCompressionFile::eMode_Write)); 
+            assert(zf.Close()); 
+            assert(CFile(kFileName).GetLength() == 0);
+            CFile(kFileName).Remove();
+        }}
 
         // First test -- write 1k blocks and read in bulk
 
@@ -474,6 +502,97 @@
         assert(out_len == kDataLen);
         assert(memcmp(src_buf, dst_buf, kDataLen) == 0);
         OK;
+    }}
+
+    //------------------------------------------------------------------------
+    // Stream tests for empty input data (CXX-1828, CXX-3365)
+    //------------------------------------------------------------------------
+    {{
+        _TRACE("Stream test for empty input data...");
+
+        CNcbiIstrstream is_str("");
+        CNcbiOstrstream os_str;
+
+        {{
+            // Compression input stream
+            CCompressionIStream ics(is_str, new TStreamCompressor(),
+                                            CCompressionStream::fOwnProcessor);
+            ics.read(dst_buf, kReadMax);
+            out_len = ics.gcount();
+            assert(out_len == 0);
+
+            // Decompression input stream
+            CCompressionIStream ids(is_str, new TStreamDecompressor(),
+                                            CCompressionStream::fOwnProcessor);
+            ids.read(dst_buf, kReadMax);
+            out_len = ids.gcount();
+            assert(out_len == 0);
+        }}
+
+        // Special test for gzip format
+        if (test_name == "zlib") {
+            // Compression input stream
+            CCompressionIStream ics(is_str, new CZipStreamCompressor(CZipCompression::fGZip),
+                                            CCompressionStream::fOwnProcessor);
+            ics.read(dst_buf, kReadMax);
+            out_len = ics.gcount();
+            assert(out_len == 0);
+
+            // Decompression input stream
+            CCompressionIStream ids(is_str, new CZipStreamDecompressor(CZipCompression::fGZip),
+                                            CCompressionStream::fOwnProcessor);
+            ids.read(dst_buf, kReadMax);
+            out_len = ids.gcount();
+            assert(out_len == 0);
+        }
+
+        for (int i=0; i <= 1; i++)
+        {
+            bool flush_test = (i > 0);
+            // Compression output stream
+            {{
+                CCompressionOStream os(os_str, new TStreamCompressor(),
+                                               CCompressionStream::fOwnProcessor);
+                if (flush_test) {
+                    os.flush();
+                }
+            }}
+            out_len = os_str.pcount();
+            assert(out_len == 0);
+
+            // Decompression output stream
+            {{
+                CCompressionOStream os(os_str, new TStreamDecompressor(),
+                                               CCompressionStream::fOwnProcessor);
+                if (flush_test) {
+                    os.flush();
+                }
+            }}
+            out_len = os_str.pcount();
+            assert(out_len == 0);
+
+            // Special test for gzip format
+            if (test_name == "zlib") {
+                {{
+                   CCompressionOStream os(os_str, new CZipStreamCompressor(CZipCompression::fGZip),
+                                                  CCompressionStream::fOwnProcessor);
+                   if (flush_test) {
+                       os.flush();
+                   }
+                }}
+                out_len = os_str.pcount();
+                assert(out_len == 0);
+                {{
+                   CCompressionOStream os(os_str, new CZipStreamDecompressor(CZipCompression::fGZip),
+                                                  CCompressionStream::fOwnProcessor);
+                   if (flush_test) {
+                       os.flush();
+                   }
+                }}
+                out_len = os_str.pcount();
+                assert(out_len == 0);
+            }
+        }
     }}
 
     //------------------------------------------------------------------------
@@ -824,11 +943,11 @@
             // stream.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
         } else
+#endif
         if (test_name == "zlib") {
             /// Set of flags for gzip file format support
             c.SetFlags(c.GetFlags() | CZipCompression::fGZip);
         }
-#endif
 
         // Compress data into the file
         CNcbiIstrstream is_str(src_buf, kDataLen);

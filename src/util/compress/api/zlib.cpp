@@ -1004,6 +1004,9 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
+    if (!GetProcessedSize()) {
+        return eStatus_EndOfData;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     STREAM->next_in   = 0;
@@ -1038,12 +1041,14 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
 }
 
 
-CCompressionProcessor::EStatus CZipCompressor::End(void)
+CCompressionProcessor::EStatus CZipCompressor::End(int abandon)
 {
     int errcode = deflateEnd(STREAM);
-    SetError(errcode, zError(errcode));
     SetBusy(false);
-
+    if (abandon) {
+        return eStatus_Success;
+    }
+    SetError(errcode, zError(errcode));
     if ( errcode == Z_OK ) {
         return eStatus_Success;
     }
@@ -1354,11 +1359,12 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
 }
 
 
-CCompressionProcessor::EStatus CZipDecompressor::End(void)
+CCompressionProcessor::EStatus CZipDecompressor::End(int abandon)
 {
     int errcode = inflateEnd(STREAM);
     SetBusy(false);
-    if ( m_DecompressMode == eMode_TransparentRead   ||
+    if ( abandon ||
+         m_DecompressMode == eMode_TransparentRead   ||
          errcode == Z_OK ) {
         return eStatus_Success;
     }

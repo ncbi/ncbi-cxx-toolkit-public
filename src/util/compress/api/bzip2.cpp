@@ -307,7 +307,7 @@ CBZip2CompressionFile::CBZip2CompressionFile(
 CBZip2CompressionFile::CBZip2CompressionFile(
     ELevel level, int verbosity, int work_factor, int small_decompress)
     : CBZip2Compression(level, verbosity, work_factor, small_decompress), 
-      m_FileStream(0), m_EOF(true)
+      m_FileStream(0), m_EOF(true), m_HaveData(false)
 {
     return;
 }
@@ -385,13 +385,20 @@ long CBZip2CompressionFile::Read(void* buf, size_t len)
         // 'len' never exceed kMax_Int here.
         nread = (int)fread(buf, 1, len, m_FileStream);
     }
+    if (nread) {
+        m_HaveData = true;
+    }
     return nread;
 }
 
 
 long CBZip2CompressionFile::Write(const void* buf, size_t len)
 {
+    if (!len) {
+        return 0;
+    }
     LIMIT_SIZE_PARAM(len);
+    m_HaveData = true;
 
     int errcode;
     BZ2_bzWrite(&errcode, m_File, const_cast<void*>(buf), (int)len);
@@ -415,7 +422,8 @@ bool CBZip2CompressionFile::Close(void)
             BZ2_bzReadClose(&errcode, m_File);
             m_EOF = true;
         } else {
-            BZ2_bzWriteClose(&errcode, m_File, 0, 0, 0);
+            bool abandon = m_HaveData ? 0 : 1;
+            BZ2_bzWriteClose(&errcode, m_File, abandon, 0, 0);
         }
         m_File = 0;
     }
@@ -559,6 +567,9 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
+    if (!GetProcessedSize()) {
+        return eStatus_EndOfData;
+    }
     LIMIT_SIZE_PARAM_U(out_size);
 
     STREAM->next_in   = 0;
@@ -582,12 +593,14 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
 }
 
 
-CCompressionProcessor::EStatus CBZip2Compressor::End(void)
+CCompressionProcessor::EStatus CBZip2Compressor::End(int abandon)
 {
     int errcode = BZ2_bzCompressEnd(STREAM);
-    SetError(errcode, GetBZip2ErrorDescription(errcode));
     SetBusy(false);
-
+    if (abandon) {
+        return eStatus_Success;
+    }
+    SetError(errcode, GetBZip2ErrorDescription(errcode));
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
     }
@@ -739,11 +752,12 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
 }
 
 
-CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
+CCompressionProcessor::EStatus CBZip2Decompressor::End(int abandon)
 {
     int errcode = BZ2_bzDecompressEnd(STREAM);
     SetBusy(false);
-    if ( m_DecompressMode == eMode_TransparentRead   ||
+    if ( abandon ||
+         m_DecompressMode == eMode_TransparentRead   ||
          errcode == BZ_OK ) {
         return eStatus_Success;
     }

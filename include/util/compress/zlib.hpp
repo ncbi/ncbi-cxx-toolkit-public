@@ -123,7 +123,9 @@ public:
         fCheckFileHeader       = (1<<1), 
         ///< Use gzip (.gz) file format to write into compression stream
         ///< (the archive also can store file name and file modification
-        ///< date in this format)
+        ///< date in this format). Note: gzip file header and footer will be
+        ///< omitted if no input data is provided, and you will have empty
+        ///< output, that may not be acceptable to tools like gunzip and etc. 
         fWriteGZipFormat       = (1<<2),
         ///< Allow concatenated gzip files.
         ///< Multiple compressed files can be concatenated into one file.
@@ -132,7 +134,7 @@ public:
         ///< obtained if all members are decompressed and then recompressed
         ///< in a single step. 
         fAllowConcatenatedGZip = (1<<3),
-        /// Set of flags for gzip file support.
+        /// Set of flags for gzip file support. See each flag description above.
         fGZip = fCheckFileHeader | fWriteGZipFormat | fAllowConcatenatedGZip,
         ///< This flag can be used only with DecompressFile[IntoDir]().
         ///< It allow to restore the original file name and/or time stamp stored
@@ -500,7 +502,7 @@ protected:
                             /* out */            size_t* out_avail);
     virtual EStatus Finish (char*       out_buf, size_t  out_size,
                             /* out */            size_t* out_avail);
-    virtual EStatus End    (void);
+    virtual EStatus End    (int abandon = 0);
 
 private:
     unsigned long m_CRC32;    ///< CRC32 for compressed data.
@@ -541,7 +543,7 @@ protected:
                             /* out */            size_t* out_avail);
     virtual EStatus Finish (char*       out_buf, size_t  out_size,
                             /* out */            size_t* out_avail);
-    virtual EStatus End    (void);
+    virtual EStatus End    (int abandon = 0);
 
 private:
     bool    m_NeedCheckHeader;  ///< TRUE if needed to check to file header.
