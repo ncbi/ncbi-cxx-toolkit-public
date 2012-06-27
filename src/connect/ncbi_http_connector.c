@@ -575,7 +575,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
         } else
             assert(!sock);
 
-        /* connection failed */
+        /* connection failed, try another server */
         if (s_Adjust(uuu, 0, extract) != eIO_Success)
             break;
     }
@@ -647,12 +647,12 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                 uuu->w_len -= n_written;
                 off        += n_written;
             } while (uuu->w_len);
-        } else if (!uuu->read_state)
+        } else if (uuu->read_state == eRS_WriteRequest)
             status = SOCK_Write(uuu->sock, 0, 0, 0, eIO_WritePlain);
 
         if (status == eIO_Success) {
             assert(uuu->w_len == 0);
-            if (!uuu->read_state) {
+            if (uuu->read_state == eRS_WriteRequest) {
                 /* 10/07/03: While this call here is perfectly legal, it could
                  * cause connection severed by a buggy CISCO load-balancer. */
                 /* 10/28/03: CISCO's beta patch for their LB shows that the
@@ -761,8 +761,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     size_t     size;
 
     assert(uuu->sock  &&  uuu->read_state == eRS_ReadHeader);
-    retry->mode = eRetry_None;
-    retry->data = 0;
+    memset(retry, 0, sizeof(*retry));
+    /*retry->mode = eRetry_None;
+      retry->data = 0;*/
 
     /* line by line HTTP header input */
     for (;;) {
@@ -1073,17 +1074,12 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         SRetry     retry;
 
         status = s_ConnectAndSend(uuu, extract);
-        if (!uuu->sock) {
-            assert(status != eIO_Success);
+        if (status != eIO_Success  ||  extract == eEM_Flush)
             break;
-        }
-        if (status != eIO_Success) {
-            if (status != eIO_Timeout  ||
-                status == SOCK_Status(uuu->sock, eIO_Read)/*pending*/)
-                break;
-        }
-        if (extract == eEM_Flush)
-            break;
+        assert(uuu->sock  &&  uuu->read_state > eRS_WriteRequest);
+
+        if (uuu->read_state == eRS_DoneBody  &&  extract == eEM_Wait)
+            return eIO_Closed;
 
         /* set read timeout before leaving (s_Read() expects it set) */
         SOCK_SetTimeout(uuu->sock, eIO_Read, timeout);
@@ -1091,12 +1087,14 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         if (uuu->read_state & eRS_ReadBody)
             break;
 
+        assert(uuu->read_state == eRS_ReadHeader);
         if ((status = s_ReadHeader(uuu, &retry, extract)) == eIO_Success) {
             assert((uuu->read_state & eRS_ReadBody)  &&  !retry.mode);
             /* pending output data no longer needed */
             BUF_Erase(uuu->w_buf);
             break;
         }
+
         assert(status != eIO_Timeout  ||  !retry.mode);
         /* if polling then bail out with eIO_Timeout */
         if (status == eIO_Timeout
@@ -1187,17 +1185,18 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 
     if (uuu->expected) {
         const char* how = 0;
-        if (uuu->received > uuu->expected) {
-             status = eIO_Unknown/*received too much*/;
-             how = "too much";
+        if (uuu->expected <= uuu->received) {
+            uuu->read_state = eRS_DoneBody;
+            if (uuu->expected < uuu->received) {
+                status = eIO_Unknown/*received too much*/;
+                how = "too much";
+            }
         } else if (uuu->expected != (TNCBI_BigCount)(-1L)) {
-            if (status == eIO_Closed  &&  uuu->expected > uuu->received) {
+            assert(uuu->expected > uuu->received);
+            if (status == eIO_Closed) {
                 status  = eIO_Unknown/*received too little*/;
                 how = "premature EOF in";
             }
-        } else if (uuu->received) {
-            status = eIO_Unknown/*received too much*/;
-            how = "too much";
         }
         if (how) {
             char* url = ConnNetInfo_URL(uuu->net_info);
