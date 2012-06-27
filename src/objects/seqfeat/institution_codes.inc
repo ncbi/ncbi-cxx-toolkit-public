@@ -1070,7 +1070,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMNC	s	Canadian Museum of Nature, Neotropical Cerambycidae Collection",
 "CMNFI	s	Canadian Museum of Nature, Fish Collection",
 "CMNH	s	The Cleveland Museum of Natural History",
-"CMNH<USA-IL>	s	Chicago Museum of Natural History",
 "CMNS	s	Museum of Natural History, Shanghai",
 "CMNZ	s	Canterbury Museum",
 "CMSK	s	City Museum, Sheffield",
