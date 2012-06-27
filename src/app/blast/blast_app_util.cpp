@@ -484,7 +484,7 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     } else {
         CRef<blast::CBlastDatabaseArgs> db_args;
         CRef<CBlast4_subject> subj = strategy.GetSubject();
-	const bool subject_is_protein = Blast_SubjectIsProtein(prog) ? true : false;
+        const bool subject_is_protein = Blast_SubjectIsProtein(prog) ? true : false;
 
         if (subj->IsDatabase()) {
             CBlastOptionsBuilder bob(strategy.GetProgram(), strategy.GetService(), CBlastOptions::eBoth);

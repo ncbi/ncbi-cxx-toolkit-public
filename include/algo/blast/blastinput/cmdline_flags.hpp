@@ -313,6 +313,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgUseIndex;
 NCBI_BLASTINPUT_EXPORT extern const string kArgIndexName;
 /// Use old style megablast index.
 NCBI_BLASTINPUT_EXPORT extern const string kArgOldStyleIndex;
+/// Default value for use old style megablast index.
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgOldStyleIndex;
 
 /// Entrez query.
 NCBI_BLASTINPUT_EXPORT extern const string kArgEntrezQuery;

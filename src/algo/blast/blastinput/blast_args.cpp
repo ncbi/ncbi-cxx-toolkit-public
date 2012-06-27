@@ -2177,7 +2177,7 @@ CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(
             kArgOldStyleIndex, "boolean",
             "Use old style index (deprecated)",
-            CArgDescriptions::eBoolean, "true" );
+            CArgDescriptions::eBoolean, kDfltArgOldStyleIndex );
     arg_desc.SetCurrentGroup( "" );
 }
 
@@ -2482,6 +2482,7 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
     // FIX the line below for igblast, and add igblast options
     has_defaults[kArgEvalue] = NStr::DoubleToString(BLAST_EXPECT_VALUE);
     has_defaults[kTask] = m_Task;
+    has_defaults[kArgOldStyleIndex] = kDfltArgOldStyleIndex;
     has_defaults[kArgMaxHSPsPerSubject] =
         NStr::IntToString(kDfltArgMaxHSPsPerSubject);
     if (Blast_QueryIsProtein(m_OptsHandle->GetOptions().GetProgramType())) {
@@ -2529,6 +2530,10 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
             if (has_defaults[arg_name] == arg_value) { 
                 continue;
             } else {
+                if (arg_name == kTask && arg_value == "megablast") {
+                    // No need to issue warning here, as it's OK to change this
+                    continue;
+                }
                 LOG_POST(Warning << arg_name << " cannot be overridden when "
                          "using a search strategy");
             }

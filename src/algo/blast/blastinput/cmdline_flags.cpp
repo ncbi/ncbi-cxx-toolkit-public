@@ -195,6 +195,7 @@ const string kArgOutputSearchStrategy("export_search_strategy");
 const string kArgUseIndex("use_index");
 const string kArgIndexName("index_name");
 const string kArgOldStyleIndex("old_style_index");
+const string kDfltArgOldStyleIndex("true");
 
 const string kArgEntrezQuery("entrez_query");
 
