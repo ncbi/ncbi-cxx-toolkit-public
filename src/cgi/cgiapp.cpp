@@ -517,7 +517,7 @@ CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext& /*context*/)
 
 
 NCBI_PARAM_DECL(bool, CGI, Count_Transfered);
-NCBI_PARAM_DEF_EX(bool, CGI, Count_Transfered, false, eParam_NoThread,
+NCBI_PARAM_DEF_EX(bool, CGI, Count_Transfered, true, eParam_NoThread,
                   CGI_COUNT_TRANSFERED);
 typedef NCBI_PARAM_TYPE(CGI, Count_Transfered) TCGI_Count_Transfered;
 
