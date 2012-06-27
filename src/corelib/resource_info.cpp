@@ -325,8 +325,8 @@ CNcbiResourceInfo::CNcbiResourceInfo(const string& res_name,
 
 CNcbiResourceInfo& CNcbiResourceInfo::GetEmptyResInfo(void)
 {
-    static CNcbiResourceInfo sEmptyResInfo;
-    return sEmptyResInfo;
+    static CSafeStaticPtr<CNcbiResourceInfo> sEmptyResInfo;
+    return *sEmptyResInfo;
 }
 
 

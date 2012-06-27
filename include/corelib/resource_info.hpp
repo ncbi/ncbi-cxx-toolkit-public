@@ -42,6 +42,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -79,6 +80,7 @@ private:
     CNcbiResourceInfo& operator=(const CNcbiResourceInfo&);
 
     friend class CNcbiResourceInfoFile;
+    friend class CSafeStaticPtr<CNcbiResourceInfo>;
 
     /// Create a new empty resource info.
     CNcbiResourceInfo(void);

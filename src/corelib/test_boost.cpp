@@ -38,6 +38,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #ifndef BOOST_TEST_NO_LIB
 #  define BOOST_TEST_NO_LIB
@@ -843,9 +844,8 @@ CNcbiTestApplication::CNcbiTestApplication(void)
 static CNcbiTestApplication&
 s_GetTestApp(void)
 {
-    static CNcbiTestApplication s_TestApp;
-
-    return s_TestApp;
+    static CSafeStaticPtr<CNcbiTestApplication> s_TestApp;
+    return *s_TestApp;
 }
 
 void
