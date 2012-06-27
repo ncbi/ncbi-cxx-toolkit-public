@@ -112,7 +112,7 @@ void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, strin
         }
     }
     for (unsigned int i = 0; i < sizeof (valid_inf_prefixes) / sizeof (char *); i++) {
-        if (NStr::StartsWith (check, valid_inf_prefixes[i])) {
+        if (NStr::StartsWith (check, valid_inf_prefixes[i], NStr::eNocase)) {
             prefix = valid_inf_prefixes[i];
         }
     }
