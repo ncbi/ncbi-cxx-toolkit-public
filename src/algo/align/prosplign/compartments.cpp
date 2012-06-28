@@ -45,9 +45,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(prosplign)
 USING_SCOPE(ncbi::objects);
 
-typedef CSplign::THit     THit;
-typedef CSplign::THitRef  THitRef;
-typedef CSplign::THitRefs THitRefs;
 
 int CountQueryCoverage(THitRefs& hitrefs)
 {
@@ -72,6 +69,38 @@ int CountQueryCoverage(THitRefs& hitrefs)
 
     _ASSERT( len>0 );
     return len;
+}
+
+
+void RestoreOriginalHits(THitRefs& hitrefs,
+                         const THitRefs& orig_hitrefs,
+                         bool is_protein_subject)
+{
+    NON_CONST_ITERATE (THitRefs, h, hitrefs) {
+
+        TSeqPos subj_start = (*h)->GetSubjStart();
+        TSeqPos subj_stop = (*h)->GetSubjStop();
+        TSeqPos qry_start = (*h)->GetQueryStart();
+        TSeqPos qry_stop = (*h)->GetQueryStop();
+
+        if (!is_protein_subject) {
+            qry_start /=3;
+            qry_stop /=3;
+        }
+
+        //find hit with same boundaries and max score
+        double score = 0;
+        ITERATE(THitRefs, oh, orig_hitrefs) {
+            if ((*oh)->GetSubjStart() == subj_start &&
+                subj_stop == (*oh)->GetSubjStop() &&
+                (*oh)->GetQueryStart() == qry_start &&
+                qry_stop == (*oh)->GetQueryStop() &&
+                score < (*oh)->GetScore()) {
+                score = (*oh)->GetScore();
+                **h = **oh;
+            }
+        }
+    }
 }
 
 void RemoveOverlaps(THitRefs& hitrefs)
@@ -109,7 +138,7 @@ CRef<CScore> RealScore(const string& id, double value)
     return result;
 }
 
-CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs)
+CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
 {
     _ASSERT( !hitrefs.empty() );
 
@@ -128,25 +157,13 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
         bool strand = (*h)->GetSubjStrand();
         TSeqPos subj_min = (*h)->GetSubjMin();
         TSeqPos subj_max = (*h)->GetSubjMax();
-        TSeqPos qry_min = (*h)->GetQueryMin()/3;
-        TSeqPos qry_max = (*h)->GetQueryMax()/3;
-        double pct_identity = 0;
-        double bit_score = 0;
+        TSeqPos qry_min = (*h)->GetQueryMin();
+        TSeqPos qry_max = (*h)->GetQueryMax();
+        double pct_identity =(*h) ->GetIdentity();
+        double bit_score = (*h)->GetScore();
 
         subj_leftmost = min(subj_leftmost, subj_min);
         subj_rightmost = max(subj_rightmost, subj_max);
-
-        ITERATE(THitRefs, oh, orig_hitrefs) {
-            if ((*oh)->GetSubjStrand() == strand &&
-                (*oh)->GetSubjMin() <= subj_min &&
-                subj_max <= (*oh)->GetSubjMax() &&
-                (*oh)->GetQueryMin() <= qry_min &&
-                qry_max <= (*oh)->GetQueryMax() &&
-                pct_identity < (*oh)->GetIdentity()) {
-                pct_identity = (*oh)->GetIdentity();
-                bit_score = fabs((*oh)->GetScore())*(subj_max-subj_min+1)/((*oh)->GetSubjMax()-(*oh)->GetSubjMin()+1);
-            }
-        }
 
         CRef<CStd_seg> std_seg(new CStd_seg);
 
@@ -172,7 +189,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
     CRef<CUser_object> uo(new CUser_object);
     uo->SetType().SetStr("Compart Scores");
     uo->AddField("bit_score", TotalScore(hitrefs));
-    uo->AddField("num_covered_aa", CountQueryCoverage(hitrefs)/3);
+    uo->AddField("num_covered_aa", CountQueryCoverage(hitrefs));
     result->AddUserObject( *uo );
 
     CRef<CSeq_id> qry_id(new CSeq_id);
@@ -192,23 +209,30 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs, const THitRefs& orig_hitrefs
     return result;
 }
 
-TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options)
+auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
+                                                                CCompartOptions compart_options)
 {
-    TCompartments results;
+    auto_ptr<CCompartmentAccessor<THit> > comps_ptr;
     if (orig_hitrefs.empty())
-        return results;
+        return comps_ptr;
 
     THitRefs hitrefs;
+
+    bool is_protein_subject = double(orig_hitrefs.front()->GetSubjSpan())/orig_hitrefs.front()->GetQuerySpan() > 2.5;
 
     ITERATE(THitRefs, it, orig_hitrefs) {
         THitRef hitref(new THit(**it));
         if (!hitref->GetQueryStrand())
             NCBI_THROW(CProSplignException, eFormat, "minus strand on protein in BLAST hit");
-        hitref->SetQueryMax((hitref->GetQueryMax()+1)*3-1);
-        hitref->SetQueryMin(hitref->GetQueryMin()*3);
-
-        if (compart_options.m_ByCoverage)
+        if (!is_protein_subject) {
+            // set max first, otherwise min can be more than max and will throw an error
+            hitref->SetQueryMax(hitref->GetQueryMax()*3+2);
+            hitref->SetQueryMin(hitref->GetQueryMin()*3);
+        }
+        if (compart_options.m_Maximizing == CCompartOptions::eCoverage)
             hitref->SetIdentity(0.9999f);
+        else if (compart_options.m_Maximizing == CCompartOptions::eScore)
+            hitref->SetIdentity(hitref->GetScore()/hitref->GetLength());
 
         hitrefs.push_back(hitref);
     }
@@ -216,22 +240,52 @@ TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptio
     //count 'pseudo' length	
     int len = CountQueryCoverage(hitrefs);
 
-    CCompartmentAccessor<THit> comps ( int(compart_options.m_CompartmentPenalty * len),
-                                       int(compart_options.m_MinCompartmentIdty * len),
-                                       int(compart_options.m_MinSingleCompartmentIdty * len));
+    comps_ptr.reset
+        (new  CCompartmentAccessor<THit>( int(compart_options.m_CompartmentPenalty * len),
+                                          int(compart_options.m_MinCompartmentIdty * len),
+                                          int(compart_options.m_MinSingleCompartmentIdty * len)));
+
+    CCompartmentAccessor<THit>& comps = *comps_ptr;
+
     comps.SetMaxIntron(compart_options.m_MaxIntron);
     comps.Run(hitrefs.begin(), hitrefs.end());
 
-    CRef<CSeq_loc> prev_compartment_loc;
-    const TSeqPos max_extent = compart_options.m_MaxExtent;
+    THitRefs comphits;
+    if(comps.GetFirst(comphits)) {
+        do {
+            RestoreOriginalHits(comphits, orig_hitrefs, is_protein_subject);
+            RemoveOverlaps(comphits);
+
+        } while (comps.GetNext(comphits));
+    }
+    return comps_ptr;
+}
+
+TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options)
+{
+    auto_ptr<CCompartmentAccessor<THit> >  comps_ptr =
+        CreateCompartmentAccessor( orig_hitrefs, compart_options);
+
+    TCompartments results = FormatAsAsn(comps_ptr.get(), compart_options);
+    return results;
+}
+
+TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comps_ptr, CCompartOptions compart_options)
+{
+    TCompartments results;
+    if (comps_ptr == NULL)
+        return results;
+
+    CCompartmentAccessor<THit>& comps = *comps_ptr;
 
     THitRefs comphits;
     if(comps.GetFirst(comphits)) {
+    CRef<CSeq_loc> prev_compartment_loc;
+    const TSeqPos max_extent = compart_options.m_MaxExtent;
+
         size_t i = 0;
         do {
-            RemoveOverlaps(comphits);
-
-            CRef<CSeq_annot> compartment = MakeCompartment(comphits,orig_hitrefs);
+            CRef<CSeq_annot> compartment = MakeCompartment(comphits);
 
             const TSeqPos* boxPtr = comps.GetBox(i);
             TSeqPos cur_begin = boxPtr[2];
@@ -307,6 +361,7 @@ const double CCompartOptions::default_CompartmentPenalty = 0.5;
 const double CCompartOptions::default_MinCompartmentIdty = 0.5;
 const double CCompartOptions::default_MinSingleCompartmentIdty = 0.25;
 const int CCompartOptions::default_MaxIntron = CCompartmentFinder<THit>::s_GetDefaultMaxIntron();
+const char* CCompartOptions::s_scoreNames[] = {"coverage", "identity", "score"};
 
 void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
 {
@@ -344,9 +399,8 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddDefaultKey
         ("by_coverage",
          "flag",
-         "Ignore hit identity. Set all to 99.99%",
-         CArgDescriptions::eBoolean,
-         CCompartOptions::default_ByCoverage?"T":"F");
+         "Ignore hit identity. Set all to 99.99%\nDeprecated: use -maximize arg",
+         CArgDescriptions::eBoolean, default_ByCoverage?"T":"F");
     
     argdescr->AddDefaultKey
         ("max_intron",
@@ -354,7 +408,20 @@ void CCompartOptions::SetupArgDescriptions(CArgDescriptions* argdescr)
          "Maximal intron length",
          CArgDescriptions::eInteger,
          NStr::IntToString(CCompartOptions::default_MaxIntron));
-    
+
+    argdescr->AddDefaultKey
+        ("maximize",
+         "param",
+         "parameter to maximize",
+         CArgDescriptions::eString,
+         s_scoreNames[default_Maximizing]);
+
+    argdescr->SetConstraint("maximize",
+                             &(*new CArgAllow_Strings,
+                               s_scoreNames[eCoverage], s_scoreNames[eIdentity], s_scoreNames[eScore]));
+
+    argdescr->SetDependency("by_coverage", CArgDescriptions::eExcludes,
+                            "maximize");
 }
 
 CCompartOptions::CCompartOptions(const CArgs& args) :
@@ -362,9 +429,25 @@ CCompartOptions::CCompartOptions(const CArgs& args) :
     m_MinCompartmentIdty(args["min_compartment_idty"].AsDouble()),
     m_MinSingleCompartmentIdty(args["min_singleton_idty"].AsDouble()),
     m_MaxExtent(args["max_extent"].AsInteger()),
-    m_ByCoverage(args["by_coverage"].AsBoolean()),
     m_MaxIntron(args["max_intron"].AsInteger())
 {
+    if (args["maximize"]) { 
+        m_Maximizing = default_Maximizing;
+        for (size_t i = 0; i < sizeof(s_scoreNames)/sizeof(s_scoreNames[0]); ++i) {
+            if (args["maximize"].AsString() == s_scoreNames[i]) {
+                m_Maximizing = EMaximizing(i);
+                break;
+            }
+        }
+        m_ByCoverage = m_Maximizing == eCoverage;
+    } else {
+        if (args["by_coverage"]) {
+            m_ByCoverage = args["by_coverage"].AsBoolean();
+        } else {
+            m_ByCoverage = default_ByCoverage;
+        }
+        m_Maximizing = m_ByCoverage ? eCoverage : eIdentity;
+    }
 }
 
 END_SCOPE(prosplign)

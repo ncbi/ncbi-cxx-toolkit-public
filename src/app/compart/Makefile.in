@@ -3,7 +3,7 @@
 # Meta-makefile (app/compart)
 #################################
 
-APP_PROJ = compart
+APP_PROJ = compart compartp
 
 REQUIRES = algo
 

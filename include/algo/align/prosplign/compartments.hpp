@@ -35,6 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <algo/align/splign/splign.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <algo/align/util/compartment_finder.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -53,6 +54,12 @@ public:
     int    m_MaxExtent;
     bool   m_ByCoverage;
     int    m_MaxIntron;
+    enum EMaximizing {
+        eCoverage = 0,
+        eIdentity,
+        eScore
+    };
+    EMaximizing m_Maximizing;
 
     static const double default_CompartmentPenalty;
     static const double default_MinCompartmentIdty;
@@ -60,6 +67,8 @@ public:
     static const int    default_MaxExtent = 500;
     static const bool   default_ByCoverage = true;
     static const int    default_MaxIntron;
+    static const EMaximizing default_Maximizing = default_ByCoverage?eCoverage:eIdentity;
+    static const char* s_scoreNames[];
 };
 
 struct SCompartment {
@@ -82,14 +91,33 @@ struct SCompartment {
     }
 };
 
-typedef vector<SCompartment> TCompartmentStructs;
-typedef list<CRef<CSeq_annot> > TCompartments;
+typedef CSplign::THit     THit;
+typedef CSplign::THitRef  THitRef;
+typedef CSplign::THitRefs THitRefs;
 
-/// Makes compartments. Hits should be for a single protein-genomic pair.
-TCompartments SelectCompartmentsHits(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options);
-TCompartmentStructs MakeCompartments(const TCompartments& compartments_hits, CCompartOptions compart_options);
-/// Composition of above two functions
-TCompartmentStructs MakeCompartments(const CSplign::THitRefs& hitrefs, CCompartOptions compart_options);
+typedef list<CRef<CSeq_annot> > TCompartments;
+typedef vector<SCompartment> TCompartmentStructs;
+
+/// Selects compartments. Hits should be for a single query-subject pair.
+
+auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
+                                                                CCompartOptions compart_options);
+
+TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comparts_ptr, CCompartOptions compart_options);
+
+
+TCompartmentStructs MakeCompartments(const TCompartments& asn_representation,
+                                     CCompartOptions compart_options);
+
+
+/// Composition of first two functions
+TCompartments SelectCompartmentsHits(const THitRefs& hitrefs,
+                                     CCompartOptions compart_options);
+
+/// Composition of all three functions
+
+TCompartmentStructs MakeCompartments(const THitRefs& hitrefs,
+                                     CCompartOptions compart_options);
 
 END_SCOPE(prosplign)
 END_NCBI_SCOPE
