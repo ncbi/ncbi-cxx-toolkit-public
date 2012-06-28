@@ -1,0 +1,23 @@
+Seq-entry ::= seq {
+      id {
+        other {
+          accession "NC_000913" ,
+          version 2 } } ,
+      descr {
+        title "ref|NC_000913.2: ref|NC_000913.2|:4638539-4638978" } ,
+      inst {
+        repr delta ,
+        mol na ,
+        length 4639675 ,
+        ext
+          delta {
+            literal {
+              length 4638538 } ,
+            literal {
+              length 410 ,
+              seq-data
+                ncbi2na '35C14FF04904C129C22A968454300719F6F84CCD0BD0FB246F04B
+F8E034DB37039C9FDB44F3FC30D41CBE4D31070C06EB8350FB623F3FFCC03CD70B0120A33B24FF
+F041D05BCB12D280CBF25FFF09C2C0A9FFDE61F1BC20FEC0F6459B0C2F84B8D15AF66BCFE3'H } ,
+            literal {
+              length 727 } } } }

@@ -354,6 +354,7 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
     if (program_number == eBlastTypeBlastn) {
 
         BLAST_ScoreSetAmbigRes(sbp, 'N');
+        BLAST_ScoreSetAmbigRes(sbp, '-');
 
         /* If reward/penalty are both zero the calling program is
          * indicating that a matrix must be used to score both the

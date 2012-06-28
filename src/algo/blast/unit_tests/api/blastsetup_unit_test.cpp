@@ -1156,6 +1156,58 @@ BOOST_AUTO_TEST_CASE(testMainSetup)
     score_opts = BlastScoringOptionsFree(score_opts);
 }
 
+
+BOOST_AUTO_TEST_CASE(testDeltaSeqSetup)
+{
+    const EBlastProgramType kProgram = eBlastTypeBlastn;
+    const ENa_strand kStrand = eNa_strand_both;
+
+    CSeq_entry seq_entry;
+    ifstream in("data/delta_seq.asn");
+    in >> MSerial_AsnText >> seq_entry;
+    CSeq_id& id = const_cast<CSeq_id&>(*seq_entry.GetSeq().GetFirstId());
+    in.close();
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddTopLevelSeqEntry(seq_entry);
+    CRef<CSeq_loc> sl(new CSeq_loc());
+    sl->SetWhole().Assign(id);
+
+    TSeqLocVector query_v;
+    query_v.push_back(SSeqLoc(sl, scope));
+
+    CBlastQueryInfo query_info;
+    SetupQueryInfo(query_v, kProgram, kStrand, &query_info);
+
+    TSearchMessages msgs;
+    Blast_Message* blast_msg=NULL;
+
+    CBLAST_SequenceBlk query_blk;
+    SetupQueries(query_v, query_info, &query_blk, 
+                    kProgram, kStrand, msgs);
+
+    CRef<CBlastOptionsHandle>
+        opts_handle(CBlastOptionsFactory::Create(eBlastn));
+    const CBlastOptions& kOpts = opts_handle->GetOptions();
+
+    BlastScoreBlk* sbp;
+    Blast_Message* blast_message = NULL;
+    Int2 status =
+            BlastSetup_ScoreBlkInit(query_blk, query_info,
+                                    s_GetScoringOpts(kOpts),
+                                    kOpts.GetProgramType(),
+                                    &sbp, 1.0, &blast_message,
+                                    &BlastFindMatrixPath);
+    blast_message = Blast_MessageFree(blast_message);
+    BOOST_REQUIRE(status == 0);
+    sbp->kbp_std[0] = Blast_KarlinBlkNew();
+    status = Blast_KarlinBlkUngappedCalc(sbp->kbp_std[0], sbp->sfp[0]);
+    sbp = BlastScoreBlkFree(sbp);
+    BOOST_REQUIRE(status == 0);
+
+    
+}
+
 BOOST_AUTO_TEST_CASE(testSetupWithZeroLengthSequence)
 {
     CSeq_id id1("gi|6648925");
