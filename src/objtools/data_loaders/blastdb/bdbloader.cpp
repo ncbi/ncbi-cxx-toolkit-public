@@ -277,6 +277,36 @@ void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
     lock.SetLoaded();
 }
 
+TSeqPos CBlastDbDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
+{
+    int oid = 0;
+    if (m_BlastDb->SeqidToOid(*idh.GetSeqId(), oid)) {
+        return m_BlastDb->GetSeqLength(oid);
+    }
+    return kInvalidSeqPos;
+}
+
+CSeq_inst::TMol CBlastDbDataLoader::GetSequenceType(const CSeq_id_Handle& /*idh*/)
+{
+    switch (m_DBType) {
+    case CBlastDbDataLoader::eNucleotide: return CSeq_inst::eMol_na;
+    case CBlastDbDataLoader::eProtein:    return CSeq_inst::eMol_aa;
+    default:                              return CSeq_inst::eMol_not_set;
+    }
+}
+
+void CBlastDbDataLoader::GetSequenceTypes(const CDataLoader::TIds& ids, TLoaded& loaded,
+                                          TSequenceTypes& ret)
+{
+    CSeq_inst::TMol retval = CSeq_inst::eMol_not_set;
+    switch (m_DBType) {
+    case CBlastDbDataLoader::eNucleotide: retval = CSeq_inst::eMol_na;
+    case CBlastDbDataLoader::eProtein:    retval = CSeq_inst::eMol_aa;
+    default:                              retval = CSeq_inst::eMol_not_set;
+    }
+    ret.clear();
+    ret.assign(ids.size(), retval);
+}
 
 void CBlastDbDataLoader::GetChunk(TChunk chunk)
 {

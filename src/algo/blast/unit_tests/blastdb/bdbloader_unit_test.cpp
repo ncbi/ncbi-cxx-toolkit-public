@@ -136,6 +136,9 @@ void RetrieveGi555WithTimeOut(bool is_remote)
     TSeqPos len = sequence::GetLength(id, scope);
     const TSeqPos kLength(624);
     BOOST_REQUIRE_EQUAL(kLength, len);
+    BOOST_REQUIRE_EQUAL(kLength, scope->GetSequenceLength(id));
+    BOOST_REQUIRE_EQUAL(is_protein,
+                        CSeq_inst::IsAa(scope->GetSequenceType(id)));
 
     CBioseq_Handle bh = scope->GetBioseqHandle(id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
@@ -170,6 +173,9 @@ void RetrieveLargeProteinWithTimeOut(bool is_remote)
     TSeqPos len = sequence::GetLength(id, scope);
     const TSeqPos kLength(26926);
     BOOST_REQUIRE_EQUAL(kLength, len);
+    BOOST_REQUIRE_EQUAL(kLength, scope->GetSequenceLength(id));
+    BOOST_REQUIRE_EQUAL(is_protein,
+                        CSeq_inst::IsAa(scope->GetSequenceType(id)));
 
     CBioseq_Handle bh = scope->GetBioseqHandle(id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
@@ -212,6 +218,9 @@ void RetrieveLargeNuclSequence(bool is_remote)
     TSeqPos len = sequence::GetLength(*id, scope);
     const TSeqPos kLength(101520);
     BOOST_REQUIRE_EQUAL(kLength, len);
+    BOOST_REQUIRE_EQUAL(kLength, scope->GetSequenceLength(*id));
+    BOOST_REQUIRE_EQUAL(is_protein,
+                        CSeq_inst::IsAa(scope->GetSequenceType(*id)));
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*id);
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
@@ -248,6 +257,9 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     const TSeqPos kLength(249250621);
     TSeqPos len = sequence::GetLength(*id, scope);
     BOOST_REQUIRE_EQUAL(kLength, len);
+    BOOST_REQUIRE_EQUAL(kLength, scope->GetSequenceLength(*id));
+    BOOST_REQUIRE_EQUAL(is_protein,
+                        CSeq_inst::IsAa(scope->GetSequenceType(*id)));
     len = sequence::GetLength(*sl, scope);
     const TSeqRange kTestRange = sl->GetTotalRange();
     BOOST_REQUIRE_EQUAL(kRange, kTestRange);
