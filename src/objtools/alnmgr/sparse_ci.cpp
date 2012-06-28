@@ -116,47 +116,82 @@ void CSparse_CI::x_InitSegment(void)
         right_offset = 0;
     }
     else {
-        // Both iterators are valid - select nearest segment start.
-        from = min(m_NextAnchorRg.GetFrom(), m_NextRowRg.GetFrom());
-        // Calculate offset from the pairwise row segment start (to skip it).
-        left_offset = from - m_RowIt.GetFirstRange().GetFrom();
-        if (m_NextAnchorRg.GetFrom() > from) {
-            // Use part of row range up to the anchor segment start
-            // or the whole row segment if the anchor starts later.
-            to = min(m_NextAnchorRg.GetFrom(), m_NextRowRg.GetToOpen());
-            right_offset = m_NextRowRg.GetToOpen() - to;
-        }
-        else if (m_NextRowRg.GetFrom() > from) {
-            // Use part of anchor range up the the row segment start
-            // or the whole anchor segment if the row starts later.
-            to = min(m_NextRowRg.GetFrom(), m_NextAnchorRg.GetToOpen());
-            // Row range will become empty starting at the nearest row
-            // segment from/to depending on the strand.
-            left_offset = 0;
-            right_offset = m_RowIt.GetSecondRange().GetLength();
+        if ( m_AnchorDirect ) {
+            // Both iterators are valid - select nearest segment start.
+            from = min(m_NextAnchorRg.GetFrom(), m_NextRowRg.GetFrom());
+            // Calculate offset from the pairwise row segment start (to skip it).
+            left_offset = from - m_RowIt.GetFirstRange().GetFrom();
+            if (m_NextAnchorRg.GetFrom() > from) {
+                // Use part of row range up to the anchor segment start
+                // or the whole row segment if the anchor starts later.
+                to = min(m_NextAnchorRg.GetFrom(), m_NextRowRg.GetToOpen());
+                right_offset = m_NextRowRg.GetToOpen() - to;
+            }
+            else if (m_NextRowRg.GetFrom() > from) {
+                // Use part of anchor range up the the row segment start
+                // or the whole anchor segment if the row starts later.
+                to = min(m_NextRowRg.GetFrom(), m_NextAnchorRg.GetToOpen());
+                // Row range will become empty starting at the nearest row
+                // segment from/to depending on the strand.
+                left_offset = 0;
+                right_offset = m_RowIt.GetSecondRange().GetLength();
+            }
+            else {
+                // Both ranges start at the same point - find the nearest end.
+                to = min(m_NextAnchorRg.GetToOpen(), m_NextRowRg.GetToOpen());
+                right_offset = m_NextRowRg.GetToOpen() - to;
+            }
+
+            // Adjust gap flags if one of the pariwise segments starts past
+            // the sparse segment end.
+            anchor_gap = anchor_gap  ||
+                m_AnchorIt.GetFirstRange().GetFrom() >= to;
+            row_gap = row_gap  ||
+                m_RowIt.GetFirstRange().GetFrom() >= to;
         }
         else {
-            // Both ranges start at the same point - find the nearest end.
-            to = min(m_NextAnchorRg.GetToOpen(), m_NextRowRg.GetToOpen());
-            right_offset = m_NextRowRg.GetToOpen() - to;
-        }
+            // Both iterators are valid - select nearest segment end.
+            to = max(m_NextAnchorRg.GetToOpen(), m_NextRowRg.GetToOpen());
+            right_offset = m_RowIt.GetFirstRange().GetToOpen() - to;
+            if (m_NextAnchorRg.GetToOpen() < to) {
+                from = max(m_NextAnchorRg.GetToOpen(), m_NextRowRg.GetFrom());
+                left_offset = m_NextRowRg.GetFrom() - from;
+            }
+            else if (m_NextRowRg.GetToOpen() < to) {
+                from = max(m_NextRowRg.GetToOpen(), m_NextAnchorRg.GetFrom());
+                right_offset = 0;
+                left_offset = m_RowIt.GetSecondRange().GetLength();
+            }
+            else {
+                from = max(m_NextAnchorRg.GetFrom(), m_NextRowRg.GetFrom());
+                left_offset = from - m_NextRowRg.GetFrom();
+            }
 
-        // Adjust gap flags if one of the pariwise segments starts past
-        // the sparse segment end.
-        anchor_gap = anchor_gap  ||
-            m_AnchorIt.GetFirstRange().GetFrom() >= to;
-        row_gap = row_gap  ||
-            m_RowIt.GetFirstRange().GetFrom() >= to;
+            anchor_gap = anchor_gap  ||
+                m_AnchorIt.GetFirstRange().GetToOpen() <= from;
+            row_gap = row_gap  ||
+                m_RowIt.GetFirstRange().GetToOpen() <= from;
+        }
     }
 
     aln_rg.SetOpen(from, to);
 
     // Trim ranges to leave only unused range
-    if (m_NextAnchorRg.GetFrom() < to) {
-        m_NextAnchorRg.SetFrom(to);
+    if ( m_AnchorDirect ) {
+        if (m_NextAnchorRg.GetFrom() < to) {
+            m_NextAnchorRg.SetFrom(to);
+        }
+        if (m_NextRowRg.GetFrom() < to) {
+            m_NextRowRg.SetFrom(to);
+        }
     }
-    if (m_NextRowRg.GetFrom() < to) {
-        m_NextRowRg.SetFrom(to);
+    else {
+        if (m_NextAnchorRg.GetToOpen() > from) {
+            m_NextAnchorRg.SetToOpen(from);
+        }
+        if (m_NextRowRg.GetToOpen() > from) {
+            m_NextRowRg.SetToOpen(from);
+        }
     }
 
     // Adjust row range according to the alignment range.

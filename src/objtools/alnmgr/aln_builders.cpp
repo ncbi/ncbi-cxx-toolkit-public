@@ -315,7 +315,6 @@ void BuildAln(const TMergedVec& merged_vec,
 
     // Resize the container
     out_aln.SetPairwiseAlns().resize(total_number_of_rows);
-    
 
     // Copy pairwises
     TDim row = 0;
@@ -341,12 +340,20 @@ void
 s_TranslateAnchorToAlnCoords(CPairwiseAln& out_anchor_pw, ///< output must be empty
                              const CPairwiseAln& anchor_pw)
 {
+    if ( anchor_pw.empty() ) return;
     CPairwiseAln::TPos aln_pos = 0; /// Start at 0
+    CPairwiseAln::TPos aln_len = anchor_pw.GetFirstLength();
+    bool direct = anchor_pw.begin()->IsFirstDirect();
+
     // There should be no gaps on anchor
     _ASSERT(anchor_pw.GetInsertions().empty());
     ITERATE (CPairwiseAln::TAlnRngColl, it, anchor_pw) {
         CPairwiseAln::TAlnRng ar = *it;
-        ar.SetFirstFrom(aln_pos);
+        ar.SetFirstFrom(direct ? aln_pos : aln_len - aln_pos - ar.GetLength());
+        if ( !direct ) {
+            ar.SetDirect(!ar.IsDirect());
+            ar.SetFirstDirect(true);
+        }
         out_anchor_pw.insert(ar);
         aln_pos += ar.GetLength();
     }
@@ -354,17 +361,23 @@ s_TranslateAnchorToAlnCoords(CPairwiseAln& out_anchor_pw, ///< output must be em
 
 
 void
-s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (needs to be empty)
-                               const CPairwiseAln& pw, ///< input pairwise to translate from
-                               const CPairwiseAln& tr) ///< translating (aln segments) pairwise
+s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   // output pairwise (needs to be empty)
+                               const CPairwiseAln& pw, // input pairwise to translate from
+                               const CPairwiseAln& tr, // translating (aln segments) pairwise
+                               bool direct) // new anchor has the same direction as the original one?
 {
     // Shift between the old anchor and the alignment.
     const CPairwiseAln::TAlignRangeVector& gaps = pw.GetInsertions();
     CPairwiseAln::TAlignRangeVector::const_iterator gap_it = gaps.begin();
     ITERATE (CPairwiseAln, it, pw) {
         CPairwiseAln::TAlnRng ar = *it;
-        CPairwiseAln::TPos pos = tr.GetFirstPosBySecondPos(ar.GetFirstFrom());
+        CPairwiseAln::TPos pos =
+            tr.GetFirstPosBySecondPos(direct ? ar.GetFirstFrom() : ar.GetFirstTo());
         ar.SetFirstFrom(pos);
+        if ( !direct ) {
+            ar.SetDirect(!ar.IsDirect());
+            ar.SetFirstDirect(true);
+        }
         out_pw.insert(ar);
         if (gap_it != gaps.end()) {
             CPairwiseAln::const_iterator next_it = it;
@@ -377,7 +390,12 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
                     // anchor ranges and will produce -1.
                     CPairwiseAln::TPos new_gap_pos =
                         tr.GetFirstPosBySecondPos(gap_rg.GetFirstFrom(),
-                        CPairwiseAln::eForward);
+                        direct ? CPairwiseAln::eForward : CPairwiseAln::eBackwards);
+                    if ( !direct ) {
+                        ++new_gap_pos;
+                        gap_rg.SetDirect(!gap_rg.IsDirect());
+                        gap_rg.SetFirstDirect(true);
+                    }
                     gap_rg.SetFirstFrom(new_gap_pos);
                     out_pw.AddInsertion(gap_rg);
                     gap_it++;
@@ -392,10 +410,18 @@ s_TranslatePairwiseToAlnCoords(CPairwiseAln& out_pw,   ///< output pairwise (nee
             CPairwiseAln::eForward);
         // If there are no ranges ahead, try to find the last one before the gap.
         if (new_gap_pos == -1) {
-            new_gap_pos = tr.GetFirstPosBySecondPos(gap_rg.GetFirstFrom(),
+            new_gap_pos = tr.GetFirstPosBySecondPos(
+                gap_rg.GetFirstFrom(),
                 CPairwiseAln::eBackwards) + 1;
         }
+        else if ( !direct ) {
+            new_gap_pos++;
+        }
         gap_rg.SetFirstFrom(new_gap_pos);
+        if ( !direct ) {
+            gap_rg.SetDirect(!gap_rg.IsDirect());
+            gap_rg.SetFirstDirect(true);
+        }
         out_pw.AddInsertion(gap_rg);
         gap_it++;
     }
@@ -413,10 +439,14 @@ s_TranslateToAlnCoords(CAnchoredAln& anchored_aln,
     /// Fix the anchor pairwise, so it's expressed in aln coords:
     const CPairwiseAln& anchor_pw = *pairwises[anchor_row];
 
+    int flags = anchor_pw.GetFlags();
+    flags &= ~(CPairwiseAln::fDirect | CPairwiseAln::fReversed);
+
     CRef<CPairwiseAln> new_anchor_pw(new CPairwiseAln(pseudo_seqid,
                                                       anchor_pw.GetSecondId(),
-                                                      anchor_pw.GetFlags()));
+                                                      flags));
     s_TranslateAnchorToAlnCoords(*new_anchor_pw, anchor_pw);
+    bool direct = (new_anchor_pw->begin()->IsFirstDirect() == anchor_pw.begin()->IsFirstDirect());
 
     /// Translate non-anchor pairwises to aln coords:
     for (TDim row = 0;  row < (TDim)pairwises.size();  ++row) {
@@ -424,10 +454,12 @@ s_TranslateToAlnCoords(CAnchoredAln& anchored_aln,
             pairwises[row].Reset(new_anchor_pw);
         } else {
             const CPairwiseAln& pw = *pairwises[row];
+            flags = pw.GetFlags();
+            flags &= ~(CPairwiseAln::fDirect | CPairwiseAln::fReversed);
             CRef<CPairwiseAln> new_pw(new CPairwiseAln(pseudo_seqid,
                                                        pw.GetSecondId(),
-                                                       pw.GetFlags()));
-            s_TranslatePairwiseToAlnCoords(*new_pw, pw, *new_anchor_pw);
+                                                       flags));
+            s_TranslatePairwiseToAlnCoords(*new_pw, pw, *new_anchor_pw, direct);
             pairwises[row].Reset(new_pw);
         }
     }            

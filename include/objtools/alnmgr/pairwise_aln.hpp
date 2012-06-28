@@ -142,13 +142,15 @@ public:
     typedef CPairwiseAln::TAlnRng TAlnRange;
 
     CPairwise_CI(void)
-        : m_Unaligned(false)
+        : m_Direct(true),
+          m_Unaligned(false)
     {
     }
 
     /// Iterate the whole pairwise alignment.
     CPairwise_CI(const CPairwiseAln& pairwise)
         : m_Aln(&pairwise),
+          m_Direct(true),
           m_Range(TSignedRange::GetWhole()),
           m_Unaligned(false)
     {
@@ -159,6 +161,7 @@ public:
     CPairwise_CI(const CPairwiseAln& pairwise,
                  const TSignedRange& range)
         : m_Aln(&pairwise),
+          m_Direct(true),
           m_Range(range),
           m_Unaligned(false)
     {
@@ -171,7 +174,8 @@ public:
         return m_Aln  &&
             m_It != m_Aln->end()  &&
             m_GapIt != m_Aln->end()  &&
-            m_GapIt->GetFirstFrom() < m_Range.GetToOpen();
+            m_GapIt->GetFirstFrom() < m_Range.GetToOpen()  &&
+            m_It->GetFirstToOpen() > m_Range.GetFrom();
     }
 
     CPairwise_CI& operator++(void);
@@ -212,8 +216,7 @@ public:
     /// Absolute direction of the first sequence.
     bool IsFirstDirect(void) const
     {
-        _ASSERT(*this);
-        return m_It->IsFirstDirect();
+        return m_Direct;
     }
 
 private:
@@ -224,6 +227,7 @@ private:
     void x_InitSegment(void);
 
     CConstRef<CPairwiseAln> m_Aln;
+    bool         m_Direct;    // Order of segments - depends on 'first' strand
     TSignedRange m_Range;     // Total selected range on the first sequence
     TIterator    m_It;        // Next non-gap segment
     TIterator    m_GapIt;     // Last non-gap segment when in a gap

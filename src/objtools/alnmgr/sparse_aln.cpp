@@ -148,8 +148,12 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
         CRef<CPairwiseAln> dst(new CPairwiseAln(
             pw.GetFirstId(), pw.GetSecondId(), pw.GetFlags()));
         TSeqPos last_to = 0;
+        bool first_direct = true;
+        bool second_direct = true;
         while (seg_it != pw.end()) {
             CPairwiseAln::TAlignRange rg = *seg_it;
+            first_direct = rg.IsFirstDirect();
+            second_direct = rg.IsDirect();
             ++seg_it;
             // Check if there are gaps before the new segment's end.
             while (gap != gaps.end()  &&
@@ -158,6 +162,9 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
                     // Insertion in this row - align to the anchor.
                     CPairwiseAln::TAlignRange ins(gap->from + shift,
                         gap->second_from, gap->len, gap->direct);
+                    // Reset flags to match row orientation.
+                    ins.SetFirstDirect(first_direct);
+                    ins.SetDirect(second_direct);
                     dst->push_back(ins);
                 }
                 else if (gap->from > rg.GetFirstFrom()) {
@@ -187,6 +194,8 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
             if (gap->row == row) {
                 CPairwiseAln::TAlignRange ins(gap->from + shift,
                     last_to, gap->len, gap->direct);
+                ins.SetFirstDirect(first_direct);
+                ins.SetDirect(second_direct);
                 dst->push_back(ins);
             }
             shift = gap->shift + gap->len;
@@ -523,132 +532,79 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
     bool translate = force_translation  ||  IsTranslated();
 
     buffer.erase();
+    if (aln_range.GetLength() <= 0) {
+        return buffer;
+    }
 
-    if (aln_range.GetLength() > 0) {
-        const CPairwiseAln& pairwise_aln = *m_Aln->GetPairwiseAlns()[row];
-        _ASSERT( !pairwise_aln.empty() );
-        if (pairwise_aln.empty()) {
-            string errstr = "Invalid (empty) row (" + NStr::IntToString(row) + ").  Seq id \"" +
-                GetSeqId(row).AsFastaString() + "\".";
-            NCBI_THROW(CAlnException, eInvalidRequest, errstr);
+    const CPairwiseAln& pairwise_aln = *m_Aln->GetPairwiseAlns()[row];
+    if (pairwise_aln.empty()) {
+        string errstr = "Invalid (empty) row (" + NStr::IntToString(row) + ").  Seq id \"" +
+            GetSeqId(row).AsFastaString() + "\".";
+        NCBI_THROW(CAlnException, eInvalidRequest, errstr);
+    }
+
+    CSeqVector& seq_vector = x_GetSeqVector(row);
+    TSeqPos vec_size = seq_vector.size();
+
+    const int base_width = pairwise_aln.GetSecondBaseWidth();
+
+    // buffer holds sequence for "aln_range", 0 index corresonds to aln_range.GetFrom()
+    size_t size = aln_range.GetLength();
+    if (translate) {
+        size /= 3;
+    }
+    buffer.resize(size, m_GapChar);
+
+    string s; // current segment sequence
+    CSparse_CI it(*this, row, IAlnSegmentIterator::eSkipGaps, aln_range);
+
+    while ( it )   {
+        const IAlnSegment::TSignedRange& aln_r = it->GetAlnRange(); // in alignment
+        const IAlnSegment::TSignedRange& row_r = it->GetRange(); // on sequence
+
+        size_t off;
+        if (base_width == 1) {
+            // TODO performance issue - waiting for better API
+            if (IsPositiveStrand(row)) {
+                seq_vector.GetSeqData(row_r.GetFrom(), row_r.GetToOpen(), s);
+            } else {
+                seq_vector.GetSeqData(vec_size - row_r.GetToOpen(),
+                                        vec_size - row_r.GetFrom(), s);
+            }
+            if (translate) {
+                TranslateNAToAA(s, s);
+            }
+            off = aln_r.GetFrom() - aln_range.GetFrom();
+            if (translate) {
+                off /= 3;
+            }
         }
-
-        CSeqVector& seq_vector = x_GetSeqVector(row);
-        TSeqPos vec_size = seq_vector.size();
-
-        const int base_width = pairwise_aln.GetSecondBaseWidth();
-
-        // buffer holds sequence for "aln_range", 0 index corresonds to aln_range.GetFrom()
-        size_t size = aln_range.GetLength();
-        if (translate) {
-            size /= 3;
-        }
-        buffer.resize(size, ' ');
-
-        // check whether we have a gap at start position
-        size_t prev_to_open = (pairwise_aln.GetFirstFrom() > aln_range.GetFrom()) ? string::npos : 0;
-
-        string s;
-        CSparse_CI it(*this, row, IAlnSegmentIterator::eSkipGaps, aln_range);
-        bool reversed = (it  &&  it->IsReversed());
-
-        //LOG_POST_X(1, "GetAlnSeqString(" << row << ") ==========================================" );
-        while (it)   {
-            const IAlnSegment::TSignedRange& aln_r = it->GetAlnRange(); // in alignment
-            const IAlnSegment::TSignedRange& r = it->GetRange(); // on sequence
-
-            size_t off;
-            //LOG_POST_X(2, "Aln [" << aln_r.GetFrom() << ", " << aln_r.GetTo() << "], Seq  "
-            //                      << r.GetFrom() << ", " << r.GetTo());
-            if (base_width == 1) {
-                // TODO performance issue - waiting for better API
-                if (IsPositiveStrand(row)) {
-                    seq_vector.GetSeqData(r.GetFrom(), r.GetToOpen(), s);
-                } else {
-                    seq_vector.GetSeqData(vec_size - r.GetToOpen(),
-                                          vec_size - r.GetFrom(), s);
-                }
-                if (translate) {
-                    TranslateNAToAA(s, s);
-                }
-                off = aln_r.GetFrom() - aln_range.GetFrom();
-                if (translate) {
-                    off /= 3;
-                }
+        else {
+            _ASSERT(base_width == 3);
+            IAlnSegment::TSignedRange prot_r = row_r;
+            prot_r.SetFrom(row_r.GetFrom() / 3);
+            prot_r.SetLength(row_r.GetLength() < 3 ? 1 : row_r.GetLength() / 3);
+            if (IsPositiveStrand(row)) {
+                seq_vector.GetSeqData(prot_r.GetFrom(),
+                                        prot_r.GetToOpen(), s);
             }
             else {
-                _ASSERT(base_width == 3);
-                IAlnSegment::TSignedRange prot_r = r;
-                prot_r.SetFrom(r.GetFrom() / 3);
-                prot_r.SetLength(r.GetLength() < 3 ? 1 : r.GetLength() / 3);
-                if (IsPositiveStrand(row)) {
-                    seq_vector.GetSeqData(prot_r.GetFrom(),
-                                          prot_r.GetToOpen(), s);
-                } else {
-                    seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
-                                          vec_size - prot_r.GetFrom(), s);
-                }
-                off = (aln_r.GetFrom() - aln_range.GetFrom()) / 3;
+                seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
+                                      vec_size - prot_r.GetFrom(), s);
             }
-
-            if (prev_to_open == string::npos) {
-                // we have a gap at the start position
-                if ( !reversed ) {
-                    buffer.replace(0, off, off, m_GapChar);
-                }
-                else {
-                    buffer.replace(size - off, off, off, m_GapChar);
-                }
-            }
-            else {   // this is not the first segement
-                off = max(prev_to_open, off);
-                int gap_size = off - prev_to_open;
-                if ( !reversed ) {
-                    buffer.replace(prev_to_open, gap_size, gap_size, m_GapChar);
-                }
-                else {
-                    buffer.replace(size - prev_to_open - gap_size,
-                        gap_size, gap_size, m_GapChar);
-                }
-            }
-
-            size_t len = min(size - off, s.size());
-
-            _ASSERT(off + len <= size);
-
-            // The iterator enumerates segments according to the anchor row direction.
-            // To get the correct sequence we may need to reverse this.
-            if ( !reversed ) {
-                buffer.replace(off, len, s, 0, len);
-            }
-            else {
-                buffer.replace(size - off - len, len, s, 0, len);
-            }
-            prev_to_open = off + len;
-            ++it;
+            off = (aln_r.GetFrom() - aln_range.GetFrom()) / 3;
         }
-        int fill_len = size - prev_to_open;
-        if (prev_to_open != string::npos  &&  fill_len > 0) {
-            if (pairwise_aln.GetFirstTo() > aln_range.GetTo()) {
-                // there is gap on the right
-                if ( !reversed ) {
-                    buffer.replace(prev_to_open, fill_len, fill_len, m_GapChar);
-                }
-                else {
-                    buffer.replace(0, fill_len, fill_len, m_GapChar);
-                }
-            }
-            else {
-                // adjust buffer length
-                if ( !reversed ) {
-                    buffer.resize(prev_to_open);
-                }
-                else {
-                    buffer.erase(0, fill_len);
-                }
-            }
+
+        size_t len = min(size - off, s.size());
+        _ASSERT(off + len <= size);
+
+        if ( m_AnchorDirect ) {
+            buffer.replace(off, len, s, 0, len);
         }
-        //LOG_POST_X(3, buffer);
+        else {
+            buffer.replace(size - off - len, len, s, 0, len);
+        }
+        ++it;
     }
     return buffer;
 }
