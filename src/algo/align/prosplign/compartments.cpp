@@ -218,7 +218,7 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
 
     THitRefs hitrefs;
 
-    bool is_protein_subject = double(orig_hitrefs.front()->GetSubjSpan())/orig_hitrefs.front()->GetQuerySpan() > 2.5;
+    bool is_protein_subject = double(orig_hitrefs.front()->GetSubjSpan())/orig_hitrefs.front()->GetQuerySpan() < 2;
 
     ITERATE(THitRefs, it, orig_hitrefs) {
         THitRef hitref(new THit(**it));
