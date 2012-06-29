@@ -36,8 +36,8 @@
 BEGIN_NCBI_SCOPE
 
 
-string CSelection::sm_DefaultCheckboxName = "uid";
-string CSelection::sm_DefaultSaveName = "other_uids";
+const char* CSelection::sm_DefaultCheckboxName = "uid";
+const char* CSelection::sm_DefaultSaveName = "other_uids";
 
 
 CSelection::CSelection(const CCgiRequest& request, 

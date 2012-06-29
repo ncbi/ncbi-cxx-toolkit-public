@@ -40,7 +40,17 @@ BEGIN_NCBI_SCOPE
 
 // CHTMLHelper
 
-string CHTMLHelper::sm_newline( "\n" );
+const char* kDefaultNL = "\n";
+const char* CHTMLHelper::sm_newline = kDefaultNL;
+
+
+void CHTMLHelper::SetNL(const string& nl)
+{
+    if (sm_newline != kDefaultNL) {
+        free((char*)sm_newline);
+    }
+    sm_newline = strdup(nl.c_str());
+}
 
 
 static string s_HTMLEncode(const string& str, const string& set, 

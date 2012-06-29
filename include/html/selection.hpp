@@ -54,8 +54,8 @@ class CCgiRequest;
 class NCBI_XHTML_EXPORT CSelection : public CNCBINode, public CIDs
 {
 public:
-    static string sm_DefaultCheckboxName;
-    static string sm_DefaultSaveName;
+    static const char* sm_DefaultCheckboxName;
+    static const char* sm_DefaultSaveName;
 
     CSelection(const CCgiRequest& request,
                const string& checkboxName = sm_DefaultCheckboxName,

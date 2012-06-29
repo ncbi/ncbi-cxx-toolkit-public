@@ -107,24 +107,24 @@ public:
         { return ( (m_ItemCount - 1) / m_PageSize + 1 ); }
 
     // Name of hidden value holding selected page size
-    static const string KParam_PageSize;
+    static const char* KParam_PageSize;
     // Name of hidden value holding shown page size
-    static const string KParam_ShownPageSize;
+    static const char* KParam_ShownPageSize;
     // Name of hidden value holding current page number
-    static const string KParam_DisplayPage;
+    static const char* KParam_DisplayPage;
     // Name of image button for previous block of pages
-    static const string KParam_PreviousPages;
+    static const char* KParam_PreviousPages;
     // Name of image button for next block of pages
-    static const string KParam_NextPages;
+    static const char* KParam_NextPages;
     // Beginning of names of image buttons for specific page
-    static const string KParam_Page;
+    static const char* KParam_Page;
     // Page number inputed by user in text field (for 2nd and 3rd view)
-    static const string KParam_InputPage;
+    static const char* KParam_InputPage;
     // Name cmd and button for next page
-    static const string KParam_NextPage;
+    static const char* KParam_NextPage;
     // Name cmd and button for previous page
-    static const string KParam_PrevPage;
-    static const string KParam_GoToPage;
+    static const char* KParam_PrevPage;
+    static const char* KParam_GoToPage;
 
 private:
     // Pager parameters

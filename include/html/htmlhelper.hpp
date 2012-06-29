@@ -113,14 +113,13 @@ public:
     // Platform-dependent newline symbol.
     // Default value is "\n" as in UNIX.
     // Application program is to set it as correct.
-    static void SetNL( const string& nl )
-        { sm_newline = nl; }
+    static void SetNL(const string& nl);
     
-    static const string& GetNL(void)
+    static string GetNL(void)
         { return sm_newline; }
 
 protected:
-    static string sm_newline;
+    static const char* sm_newline;
 };
 
 

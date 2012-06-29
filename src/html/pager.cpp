@@ -37,16 +37,16 @@
 BEGIN_NCBI_SCOPE
 
 
-const string CPager::KParam_PageSize      = "dispmax";
-const string CPager::KParam_ShownPageSize = "showndispmax";
-const string CPager::KParam_DisplayPage   = "page";
-const string CPager::KParam_Page          = "page ";
-const string CPager::KParam_PreviousPages = "previous pages";
-const string CPager::KParam_NextPages     = "next pages";
-const string CPager::KParam_InputPage     = "inputpage";
-const string CPager::KParam_NextPage      = "Next Page";
-const string CPager::KParam_PrevPage      = "Prev Page";
-const string CPager::KParam_GoToPage      = "GoTo Page";
+const char* CPager::KParam_PageSize      = "dispmax";
+const char* CPager::KParam_ShownPageSize = "showndispmax";
+const char* CPager::KParam_DisplayPage   = "page";
+const char* CPager::KParam_Page          = "page ";
+const char* CPager::KParam_PreviousPages = "previous pages";
+const char* CPager::KParam_NextPages     = "next pages";
+const char* CPager::KParam_InputPage     = "inputpage";
+const char* CPager::KParam_NextPage      = "Next Page";
+const char* CPager::KParam_PrevPage      = "Prev Page";
+const char* CPager::KParam_GoToPage      = "GoTo Page";
 
 CPager::CPager(const CCgiRequest& request,
                int pageBlockSize,
@@ -80,7 +80,7 @@ CPager::CPager(const CCgiRequest& request,
             }
             else if ( NStr::StartsWith(value, KParam_Page) ) {
                 // look for params like: "page 2"
-                string page = value.substr(KParam_Page.size());
+                string page = value.substr(strlen(KParam_Page));
                 try {
                     m_DisplayPage = NStr::StringToInt(page) - 1;
                     m_PageChanged = true;
@@ -144,7 +144,7 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
         }
         else if ( NStr::StartsWith(value, KParam_Page) ) {
             // look for params like: "page 2"
-            string page = value.substr(KParam_Page.size());
+            string page = value.substr(strlen(KParam_Page));
             try {
                 NStr::StringToInt(page);
                 return true;
@@ -425,7 +425,7 @@ void CPagerViewButtons::CreateSubNodes()
     butt->SetAttribute("value", "Page");
     butt->SetEventHandler(eHTML_EH_Click,
                           "form.cmd.value='';form." +
-                          CPager::KParam_InputPage +
+                          string(CPager::KParam_InputPage) +
                           ".value=form.textpage" + m_jssuffix +
                           ".value;Go('Pager');");
     InsertAt(0, column, butt);
@@ -447,7 +447,7 @@ void CPagerViewButtons::CreateSubNodes()
 							  "this.value;}");
     
     textpage->SetEventHandler(eHTML_EH_KeyPress,
-                              "form." + CPager::KParam_InputPage +".value=" 
+                              "form." + string(CPager::KParam_InputPage) +".value=" 
                               "this.value;KeyPress('Pager',event);");
                                          
     InsertAt(0, column++, textpage);
