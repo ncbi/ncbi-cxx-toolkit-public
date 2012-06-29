@@ -53,7 +53,7 @@ public:
     };
 
 // attributes
-    static const string& GetSoapNamespace(void);
+    static const string GetSoapNamespace(void);
     void SetSoapNamespacePrefix(const string& prefix);
     const string& GetSoapNamespacePrefix(void) const;
 
@@ -98,7 +98,7 @@ private:
     TSoapContent m_FaultDetail;
     vector< const CTypeInfo* >  m_Types;
 
-    static const string& ms_SoapNamespace;
+    static const char* ms_SoapNamespace;
 };
 
 inline

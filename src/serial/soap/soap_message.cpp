@@ -41,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-const string& CSoapMessage::ms_SoapNamespace =
+const char*CSoapMessage::ms_SoapNamespace =
 //    "http://www.w3.org/2003/05/soap-envelope";
     "http://schemas.xmlsoap.org/soap/envelope/";   // v1.1
 
@@ -62,7 +62,7 @@ CSoapMessage::~CSoapMessage(void)
 {
 }
 
-const string& CSoapMessage::GetSoapNamespace(void)
+const string CSoapMessage::GetSoapNamespace(void)
 {
     return ms_SoapNamespace;
 }
