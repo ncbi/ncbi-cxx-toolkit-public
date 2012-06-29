@@ -39,9 +39,12 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
 
 
 #include <objects/seq/seqport_util.hpp>
+#include <objects/seqblock/GB_block.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
@@ -2080,6 +2083,66 @@ private:
     TIdRangeMap m_rangemap;
 };
 
+
+bool IsRefSeqGene(const CBioseq_Handle& bsh)
+{
+    if(!bsh.CanGetDescr()) {
+        return false;
+    }   
+    ITERATE(CSeq_descr::Tdata, it, bsh.GetDescr().Get()) {
+        const CSeqdesc& desc = **it;
+        if(desc.IsGenbank()) {
+            const CGB_block::TKeywords& k = desc.GetGenbank().GetKeywords();
+            if(std::find(k.begin(), k.end(), "RefSeqGene") != k.end()) {
+                return true;
+            }   
+        }   
+    }   
+    return false;
+}
+
+//VAR-239
+//If RefSeqGene NG, Return GeneIDs for loci having alignments to transcripts.
+//Otherwise, return empty set
+set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
+{
+    set<int> gene_ids;
+    if(!IsRefSeqGene(bsh)) {
+        return gene_ids;
+    }
+
+    set<CSeq_id_Handle> transcript_seq_ids;
+    for(CAlign_CI ci(bsh); ci; ++ci) {
+        const CSeq_align& aln = *ci;
+        if(aln.GetSegs().IsSpliced()) {
+            transcript_seq_ids.insert(CSeq_id_Handle::GetHandle(aln.GetSeq_id(0)));
+        }
+    }
+
+    SAnnotSelector sel;
+    sel.IncludeFeatType(CSeqFeatData::e_Gene);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
+    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
+    for(CFeat_CI ci(bsh, sel); ci; ++ci) {
+        const CMappedFeat& mf = *ci;
+        if(!mf.IsSetProduct() || !mf.IsSetDbxref()) {
+            continue;
+        }
+        CSeq_id_Handle product_id = CSeq_id_Handle::GetHandle(sequence::GetId(mf.GetProduct(), NULL));
+        if(transcript_seq_ids.find(product_id) == transcript_seq_ids.end()) {
+            continue;
+        }
+        ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref()) {
+            const CDbtag& dbtag = **it;
+            if(dbtag.GetDb() == "GeneID" || dbtag.GetDb() == "LocusID") {
+                gene_ids.insert(dbtag.GetTag().GetId());
+            }   
+        } 
+    }
+    return gene_ids; 
+}
+
+
 void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
 {
     SAnnotSelector sel;
@@ -2095,18 +2158,35 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
     m_loc2prop[idh].size(); //in case there's no annotation, simply add the entry to the map
                             //se we know it has been indexed.
 
-    CRef<CSeq_loc> all_gene_ranges(new CSeq_loc(CSeq_loc::e_Mix));
+    set<int> focus_loci = GetFocusLocusIDs(bsh);
+
+    //Note: A location can have in-neighborhood == true only if it is NOT in
+    //range of another locus. However, if we're dealing with in-focus/out-of-focus
+    //genes on NG, then for the purpose of calculating in-neighborhood flags we need to
+    //put the non-focus genes out-of-scope. On the other hand, when calculating is-intergenic
+    //flag, we have to assume that the non-focus genes are in scope (VAR-239). 
+    //That's why we need to collect focus_gene_ranges and non_focus_gene_ranges separately.
+    //(See the code below that sets CVariantProperties::eGene_location_intergenic)
+
+    CRef<CSeq_loc> focus_gene_ranges(new CSeq_loc(CSeq_loc::e_Mix));
+    CRef<CSeq_loc> non_focus_gene_ranges(new CSeq_loc(CSeq_loc::e_Mix));
     for(ci.Rewind(); ci; ++ci) {
         const CMappedFeat& mf = *ci;
         if(mf.GetData().IsGene()) {
-            all_gene_ranges->SetMix().Set().push_back(
+
+            int gene_id = s_GetGeneID(mf, ft);
+            bool is_focus_locus = focus_loci.empty() || focus_loci.find(gene_id) != focus_loci.end();
+
+            (is_focus_locus ? focus_gene_ranges : non_focus_gene_ranges)->SetMix().Set().push_back(
                     sequence::Seq_loc_Merge(mf.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL));
         }
     }
-    all_gene_ranges->ResetStrand();
-    SFastLocSubtract subtract_all_gene_overlap_from(*all_gene_ranges);
+    focus_gene_ranges->ResetStrand();
+    non_focus_gene_ranges->ResetStrand();
+    SFastLocSubtract subtract_gene_ranges_from(*focus_gene_ranges);
 
     CRef<CSeq_loc> all_gene_neighborhoods(new CSeq_loc(CSeq_loc::e_Mix));
+
     for(ci.Rewind(); ci; ++ci) {
         const CMappedFeat& mf = *ci;
         CMappedFeat parent_mf = ft.GetParent(mf);
@@ -2115,6 +2195,9 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
         }
 
         int gene_id = s_GetGeneID(mf, ft);
+        if(!focus_loci.empty() && focus_loci.find(gene_id) == focus_loci.end()) {
+            continue; //VAR-239
+        }
 
         if(!parent_mf && gene_id) {
             //Some locations currently may not be covered by any variant-properties values (e.g. in-cds)
@@ -2149,8 +2232,8 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             p.first = sequence::Seq_loc_Subtract(*p.first, *all_gene_ranges, CSeq_loc::fSortAndMerge_All, NULL);
             p.second = sequence::Seq_loc_Subtract(*p.second, *all_gene_ranges, CSeq_loc::fSortAndMerge_All, NULL);
 #else
-            subtract_all_gene_overlap_from(*p.first);
-            subtract_all_gene_overlap_from(*p.second);
+            subtract_gene_ranges_from(*p.first);
+            subtract_gene_ranges_from(*p.second);
 #endif
 
             x_Add(*p.first, gene_id, CVariantProperties::eGene_location_near_gene_5);
@@ -2207,11 +2290,14 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
 
     if(bsh.GetBioseqMolType() == CSeq_inst::eMol_dna) {
         CRef<CSeq_loc> range_loc = bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, eNa_strand_plus);
-        CRef<CSeq_loc> sub_loc = sequence::Seq_loc_Add(*all_gene_neighborhoods, *all_gene_ranges, 0, NULL);
-        sub_loc->ResetStrand();
+
+        CRef<CSeq_loc> genes_and_neighborhoods_loc = sequence::Seq_loc_Add(*all_gene_neighborhoods, *focus_gene_ranges, 0, NULL);
+        genes_and_neighborhoods_loc = sequence::Seq_loc_Add(*genes_and_neighborhoods_loc, *non_focus_gene_ranges, 0, NULL);
+
+        genes_and_neighborhoods_loc->ResetStrand();
         CRef<CSeq_loc> intergenic_loc = sequence::Seq_loc_Subtract(
                 *range_loc,
-                *sub_loc,
+                *genes_and_neighborhoods_loc,
                 CSeq_loc::fSortAndMerge_All,
                 NULL);
         x_Add(*intergenic_loc, 0, CVariantProperties::eGene_location_intergenic);
