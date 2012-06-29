@@ -100,22 +100,26 @@ typedef vector<SCompartment> TCompartmentStructs;
 
 /// Selects compartments. Hits should be for a single query-subject pair.
 
+NCBI_XALGOALIGN_EXPORT
 auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
                                                                 CCompartOptions compart_options);
 
+NCBI_XALGOALIGN_EXPORT
 TCompartments FormatAsAsn(CCompartmentAccessor<THit>* comparts_ptr, CCompartOptions compart_options);
 
 
+NCBI_XALGOALIGN_EXPORT
 TCompartmentStructs MakeCompartments(const TCompartments& asn_representation,
                                      CCompartOptions compart_options);
 
 
 /// Composition of first two functions
+NCBI_XALGOALIGN_EXPORT
 TCompartments SelectCompartmentsHits(const THitRefs& hitrefs,
                                      CCompartOptions compart_options);
 
 /// Composition of all three functions
-
+NCBI_XALGOALIGN_EXPORT
 TCompartmentStructs MakeCompartments(const THitRefs& hitrefs,
                                      CCompartOptions compart_options);
 
