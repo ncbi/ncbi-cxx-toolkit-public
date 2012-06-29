@@ -260,12 +260,12 @@ private:
 
 // Max time_t minus a couple days to avoid any possible problems related to
 // conversions to local time etc.
-static const CTime kInfinityTime(0x7FFB0000);
+static const time_t kInfinityTimeT = 0x7FFB0000;
 
 
 CScheduler_MT::CScheduler_MT(void)
-    : m_NextExecTime(kInfinityTime)
 {
+    m_NextExecTime.SetTimeT(kInfinityTimeT);
     m_IDCounter.Set(0);
 }
 
@@ -319,7 +319,7 @@ CScheduler_MT::x_SchedQueueChanged(CMutexGuard* guard)
         CTime next_time;
 
         if (m_ScheduledTasks.size() == 0) {
-            next_time = kInfinityTime;
+            next_time.SetTimeT(kInfinityTimeT);
         }
         else {
             next_time = (*m_ScheduledTasks.begin())->exec_time;
