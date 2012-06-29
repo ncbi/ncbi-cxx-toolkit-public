@@ -37,9 +37,9 @@
 
 BEGIN_NCBI_SCOPE
 
-const string CCgiSession::kDefaultSessionIdName = "ncbi_session_data";
-const string CCgiSession::kDefaultSessionCookieDomain = ".nih.gov";
-const string CCgiSession::kDefaultSessionCookiePath = "/";
+const char* CCgiSession::kDefaultSessionIdName = "ncbi_session_data";
+const char* CCgiSession::kDefaultSessionCookieDomain = ".nih.gov";
+const char* CCgiSession::kDefaultSessionCookiePath = "/";
 
 CCgiSession::CCgiSession(const CCgiRequest& request, 
                          ICgiSessionStorage* impl, 

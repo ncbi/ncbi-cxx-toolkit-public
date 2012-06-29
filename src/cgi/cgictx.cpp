@@ -84,7 +84,7 @@ CCtxMsg::~CCtxMsg(void)
 //  CCtxMsgString::
 //
 
-string CCtxMsgString::sm_nl = "\n";
+const char* CCtxMsgString::sm_nl = "\n";
 
 
 CCtxMsgString::~CCtxMsgString(void)
@@ -126,6 +126,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     return;
 }
 
+
 CCgiContext::CCgiContext(CCgiApplication&        app,
                          CNcbiIstream*           is,
                          CNcbiOstream*           os,
@@ -138,6 +139,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     x_InitSession(flags);
     return;
 }
+
+
 void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
 {
     CCgiSessionParameters params;
@@ -170,6 +173,7 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
     GetSelfURL();
     m_Response.Cookies().SetSecure(m_SelfURL.substr(0, 5) == "https");
 }
+
 
 CCgiContext::~CCgiContext(void)
 {
@@ -391,8 +395,8 @@ string CCgiContext::RetrieveTrackingId() const
         return m_TrackingId;
     }
 
-    static const string cookie_or_entry_name_1("WebCubbyUser");
-    static const string cookie_or_entry_name_2("WebEnv");
+    static const char* cookie_or_entry_name_1 = "WebCubbyUser";
+    static const char* cookie_or_entry_name_2 = "WebEnv";
 
     // The order of checking SID is:
     // - Check entries (GET and POST) for ncbi_sid.

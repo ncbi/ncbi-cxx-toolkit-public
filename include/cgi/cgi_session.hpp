@@ -63,9 +63,9 @@ class NCBI_XCGI_EXPORT CCgiSession
 public:
     typedef list<string> TNames;
 
-    static const string kDefaultSessionIdName;
-    static const string kDefaultSessionCookieDomain;
-    static const string kDefaultSessionCookiePath;
+    static const char* kDefaultSessionIdName;
+    static const char* kDefaultSessionCookieDomain;
+    static const char* kDefaultSessionCookiePath;
 
     /// Session status
     enum EStatus {

@@ -475,13 +475,13 @@ typedef NCBI_PARAM_TYPE(CGI, Cookie_Name_Banned_Symbols) TCookieNameBannedSymbol
 
 const char* s_GetCookieNameBannedSymbols(void)
 {
-    static string s_BannedSymbols;
+    static CSafeStaticPtr<string> s_BannedSymbols;
     static bool s_BannedSymbolsSet = false;
     if ( !s_BannedSymbolsSet ) {
-        s_BannedSymbols = TCookieNameBannedSymbols::GetDefault();
+        *s_BannedSymbols = TCookieNameBannedSymbols::GetDefault();
         s_BannedSymbolsSet = true;
     }
-    return s_BannedSymbols.c_str();
+    return s_BannedSymbols.Get().c_str();
 }
 
 

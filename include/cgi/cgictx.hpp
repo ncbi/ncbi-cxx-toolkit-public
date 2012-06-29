@@ -102,7 +102,7 @@ public:
     virtual ~CCtxMsgString(void);
     virtual CNcbiOstream& Write(CNcbiOstream& os) const;
 
-    static string sm_nl;
+    static const char* sm_nl;
 
 private:
     string m_Message;

@@ -243,9 +243,10 @@ extern "C" {
 // has changed since the last iteration)
 const int kSR_Executable = 111;
 const int kSR_WatchFile  = 112;
+
 static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
 {
-    static CTime restart_time(CTime::eEmpty, CTime::eGmt);
+    static CSafeStaticPtr<CTime> restart_time;
     static int   restart_reason;
 
     // Check if this CGI executable has been changed
@@ -264,13 +265,14 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
     }
 
     if (restart_reason) {
-        if (restart_time.IsEmpty()) {
-            restart_time.SetCurrent();
-            restart_time.AddSecond(delay);
+        if (restart_time->IsEmpty()) {
+            restart_time->SetTimeZone(CTime::eGmt);
+            restart_time->SetCurrent();
+            restart_time->AddSecond(delay);
             _TRACE("Will restart Fast-CGI in " << delay << " seconds, at "
-                   << restart_time.GetLocalTime().AsString("h:m:s"));
+                   << restart_time->GetLocalTime().AsString("h:m:s"));
         }
-        if (CurrentTime(CTime::eGmt) >= restart_time) {
+        if (CurrentTime(CTime::eGmt) >= *restart_time) {
             return restart_reason;
         }
     }

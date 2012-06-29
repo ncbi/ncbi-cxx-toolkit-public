@@ -37,6 +37,7 @@
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_session.hpp>
 #include <cgi/cgiapp.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <cgi/error_codes.hpp>
 #include <time.h>
 
@@ -53,20 +54,20 @@
 BEGIN_NCBI_SCOPE
 
 
-const string CCgiResponse::sm_ContentTypeName    = "Content-Type";
-const string CCgiResponse::sm_LocationName       = "Location";
-const string CCgiResponse::sm_ContentTypeDefault = "text/html";
-const string CCgiResponse::sm_ContentTypeMixed   = "multipart/mixed";
-const string CCgiResponse::sm_ContentTypeRelated = "multipart/related";
-const string CCgiResponse::sm_ContentTypeXMR     = "multipart/x-mixed-replace";
-const string CCgiResponse::sm_ContentDispoName   = "Content-Disposition";
-const string CCgiResponse::sm_FilenamePrefix     = "attachment; filename=\"";
-const string CCgiResponse::sm_HTTPStatusName     = "Status";
-const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
-const string CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
-const string CCgiResponse::sm_CacheControl       = "Cache-Control";
-const string CCgiResponse::sm_AcceptRanges       = "Accept-Ranges";
-const string CCgiResponse::sm_AcceptRangesBytes  = "bytes";
+const char* CCgiResponse::sm_ContentTypeName    = "Content-Type";
+const char* CCgiResponse::sm_LocationName       = "Location";
+const char* CCgiResponse::sm_ContentTypeDefault = "text/html";
+const char* CCgiResponse::sm_ContentTypeMixed   = "multipart/mixed";
+const char* CCgiResponse::sm_ContentTypeRelated = "multipart/related";
+const char* CCgiResponse::sm_ContentTypeXMR     = "multipart/x-mixed-replace";
+const char* CCgiResponse::sm_ContentDispoName   = "Content-Disposition";
+const char* CCgiResponse::sm_FilenamePrefix     = "attachment; filename=\"";
+const char* CCgiResponse::sm_HTTPStatusName     = "Status";
+const char* CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
+const char* CCgiResponse::sm_BoundaryPrefix     = "NCBI_CGI_Boundary_";
+const char* CCgiResponse::sm_CacheControl       = "Cache-Control";
+const char* CCgiResponse::sm_AcceptRanges       = "Accept-Ranges";
+const char* CCgiResponse::sm_AcceptRangesBytes  = "bytes";
 
 NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
 

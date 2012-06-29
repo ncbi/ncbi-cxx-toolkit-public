@@ -162,20 +162,20 @@ public:
     void x_SetSession(const CCgiSession& session);
 
 protected:
-    static const string sm_ContentTypeName;     // Content type header name
-    static const string sm_LocationName;        // Location header name
-    static const string sm_ContentTypeDefault;  // Dflt content type: text/html
-    static const string sm_ContentTypeMixed;    // multipart/mixed
-    static const string sm_ContentTypeRelated;  // multipart/related
-    static const string sm_ContentTypeXMR;      // multipart/x-mixed-replace
-    static const string sm_ContentDispoName;    // Content-Disposition
-    static const string sm_FilenamePrefix;      // Syntax preceding the fname
-    static const string sm_HTTPStatusName;      // Status header name:   Status
-    static const string sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
-    static const string sm_BoundaryPrefix;      // Start of multipart boundary
-    static const string sm_CacheControl;        // Cache-Control
-    static const string sm_AcceptRanges;        // Accept-Ranges
-    static const string sm_AcceptRangesBytes;   // bytes
+    static const char* sm_ContentTypeName;     // Content type header name
+    static const char* sm_LocationName;        // Location header name
+    static const char* sm_ContentTypeDefault;  // Dflt content type: text/html
+    static const char* sm_ContentTypeMixed;    // multipart/mixed
+    static const char* sm_ContentTypeRelated;  // multipart/related
+    static const char* sm_ContentTypeXMR;      // multipart/x-mixed-replace
+    static const char* sm_ContentDispoName;    // Content-Disposition
+    static const char* sm_FilenamePrefix;      // Syntax preceding the fname
+    static const char* sm_HTTPStatusName;      // Status header name:   Status
+    static const char* sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
+    static const char* sm_BoundaryPrefix;      // Start of multipart boundary
+    static const char* sm_CacheControl;        // Cache-Control
+    static const char* sm_AcceptRanges;        // Accept-Ranges
+    static const char* sm_AcceptRangesBytes;   // bytes
 
     typedef map<string, string, PNocase> TMap;
 
