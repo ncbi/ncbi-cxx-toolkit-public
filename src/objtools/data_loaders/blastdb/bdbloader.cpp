@@ -331,7 +331,7 @@ int CBlastDbDataLoader::x_GetOid(const CSeq_id_Handle& idh)
 {
     {
         CFastMutexGuard guard(s_Oid_Mutex);
-        TIds::iterator iter = m_Ids.find(idh);
+        TIdMap::iterator iter = m_Ids.find(idh);
         if ( iter != m_Ids.end() ) {
             return iter->second;
         }
@@ -369,7 +369,7 @@ int CBlastDbDataLoader::x_GetOid(const CSeq_id_Handle& idh)
     
     {
         CFastMutexGuard guard(s_Oid_Mutex);
-        m_Ids.insert(TIds::value_type(idh, oid));
+        m_Ids.insert(TIdMap::value_type(idh, oid));
     }
     return oid;
 }

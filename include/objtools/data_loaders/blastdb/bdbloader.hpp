@@ -147,7 +147,7 @@ public:
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
     
     /// A mapping from sequence identifier to blob ids.
-    typedef map< CSeq_id_Handle, int > TIds;
+    typedef map< CSeq_id_Handle, int > TIdMap;
 
     /// @note this is added to temporarily comply with the toolkit's stable
     /// components rule of having backwards compatible APIs
@@ -214,7 +214,7 @@ protected:
     EDbType         m_DBType;      ///< Is this database protein or nucleotide?
     CRef<IBlastDbAdapter> m_BlastDb;       ///< The sequence database
 
-    TIds            m_Ids;         ///< ID to OID translation
+    TIdMap          m_Ids;         ///< ID to OID translation
 
     /// Configuration value specified to the CCachedSequence
     bool            m_UseFixedSizeSlices;

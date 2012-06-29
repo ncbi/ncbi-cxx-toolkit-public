@@ -75,7 +75,7 @@ public:
     ///
     /// @param idmap
     ///   A map from CSeq_id_Handle to OID.
-    void RegisterIds(CBlastDbDataLoader::TIds & idmap);
+    void RegisterIds(CBlastDbDataLoader::TIdMap & idmap);
     
     /// A list of 'chunk' objects, generic sequence related data elements.
     typedef vector< CRef<CTSE_Chunk_Info> > TCTSE_Chunk_InfoVector;

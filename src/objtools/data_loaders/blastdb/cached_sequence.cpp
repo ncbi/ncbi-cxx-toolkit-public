@@ -131,7 +131,7 @@ static CBioseq::TId s_ExtractSeqIds(const CBioseq& bioseq)
 }
 
 void 
-CCachedSequence::RegisterIds(CBlastDbDataLoader::TIds & idmap)
+CCachedSequence::RegisterIds(CBlastDbDataLoader::TIdMap & idmap)
 {
     _ASSERT(m_TSE->IsSeq());
     
