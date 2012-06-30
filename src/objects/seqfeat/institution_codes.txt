@@ -4198,7 +4198,6 @@ NMKL	s	National Museum of Malaysia
 NML-HCCC	c	National Microbiology Laboratory Health Canada Culture Collections
 NMLS	s	Natur-Museum Luzern
 NMLU	s	Natur-Museum Luzern, Botany Department
-NMM	s	National Museum of Victoria
 NMMA	s	Nantucket Maria Mitchell Association, Natural Sciences Department
 NMMBP	s	Natl. Mus. Mar. Biol./Aquarium
 NMMH	s	North Manchurian Museum
@@ -4243,8 +4242,37 @@ NMSU<USA-NM>	s	New Mexico State University
 NMTC	s	Inner Mongolia Normal University, Biology Department
 NMTT	s	National Museum and Art Gallery, Port-of-Spain
 NMV<AUS>	s	Museum Victoria
+NMV<AUS>:A	s	Museum Victoria, Ichthyology
+NMV<AUS>:AV	s	Museum Victoria, Entomology - Australian Voucher Specimens
+NMV<AUS>:B	s	Museum Victoria, Ornithology
+NMV<AUS>:BE	s	Museum Victoria, Ornithology - Eggs
+NMV<AUS>:BUP	s	Museum Victoria, Buprestidae
+NMV<AUS>:C	s	Museum Victoria, Mammology
+NMV<AUS>:COL	s	Museum Victoria, Coleoptera
+NMV<AUS>:D	s	Museum Victoria, Herpetology
+NMV<AUS>:DIP	s	Museum Victoria, Diptera
+NMV<AUS>:DTB	s	Museum Victoria, Ornithology - Donald Thompson Collection
+NMV<AUS>:DTD	s	Museum Victoria, Herpetology - Donald Thompson Collection
+NMV<AUS>:F	s	Museum Victoria, Invertebrates Collection
+NMV<AUS>:G	b	Museum Victoria, DNA Products
+NMV<AUS>:H	s	Museum Victoria, Hygrobatidae
+NMV<AUS>:HEM	s	Museum Victoria, Hemiptera
+NMV<AUS>:HET	s	Museum Victoria, Heteroptera
+NMV<AUS>:HLW	s	Museum Victoria, Ornithology - H.L. White Collection
+NMV<AUS>:HYM	s	Museum Victoria, Hymenoptera
+NMV<AUS>:ISO	s	Museum Victoria, Isoptera
+NMV<AUS>:J	s	Museum Victoria, Crustacea
+NMV<AUS>:K	s	Museum Victoria, Arachnology
+NMV<AUS>:LEP	s	Museum Victoria, Lepidoptera
+NMV<AUS>:MEC	s	Museum Victoria, Mecoptera
+NMV<AUS>:MEG	s	Museum Victoria, Megaloptera
+NMV<AUS>:NEU	s	Museum Victoria, Neuroptera
+NMV<AUS>:NOH	s	Museum Victoria, Northofagus Project
+NMV<AUS>:ODO	s	Museum Victoria, Odonata
+NMV<AUS>:P	s	Museum Victoria, Paleontology & Paleobotany
+NMV<AUS>:T	s	Museum Victoria, Entomlogy Type Collection
+NMV<AUS>:TRI	s	Museum Victoria, Trichoptera
 NMV<JPN>	s	Nakagawa Museum at Nakagawa-cho
-NMVM	s	National Museum of Victoria
 NMW<AUT>	s	Naturhistorisches Museum, Wien
 NMW<GBR>	s	National Museums & Galleries of Wales, Department of Biodiversity and Systematic Biology
 NMWC	s	National Museum of Wales
