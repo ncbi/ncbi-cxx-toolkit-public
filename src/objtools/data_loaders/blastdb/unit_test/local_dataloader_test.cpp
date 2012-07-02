@@ -85,6 +85,9 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseq)
 
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE_EQUAL(624, handle1.GetInst().GetLength());
+     int taxid = scope.GetTaxId(seqid1);
+     BOOST_REQUIRE_EQUAL(9913, taxid);
+     BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
      BOOST_REQUIRE_EQUAL(624, bioseq1->GetInst().GetLength());
@@ -94,6 +97,83 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseq)
      CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
 
      BOOST_REQUIRE(handle2.State_NoData());
+}
+
+BOOST_AUTO_TEST_CASE(LocalFetchBatchData)
+{
+     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+     string dbname("nt");
+     string loader_name = 
+       CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eNucleotide, true,
+           CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
+     CScope scope(*objmgr);
+
+     scope.AddDataLoader(loader_name);
+
+     CScope::TSequenceLengths reference_L, test_L;
+     CScope::TSequenceTypes reference_T, test_T;
+     CScope::TTaxIds reference_TI, test_TI;
+
+     CScope::TSeq_id_Handles idhs;
+     idhs.push_back(CSeq_id_Handle::GetHandle(4));
+     reference_L.push_back(556);
+     reference_TI.push_back(9646);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle( 7 ));
+     reference_L.push_back(437);
+     reference_TI.push_back(9913);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(9));
+     reference_L.push_back(1512);
+     reference_TI.push_back(9913);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(11));
+     reference_L.push_back(2367);
+     reference_TI.push_back(9913);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(15));
+     reference_L.push_back(540);
+     reference_TI.push_back(9915);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(16));
+     reference_L.push_back(1759);
+     reference_TI.push_back(9771);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(17));
+     reference_L.push_back(1758);
+     reference_TI.push_back(9771);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(18));
+     reference_L.push_back(1758);
+     reference_TI.push_back(9771);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(19));
+     reference_L.push_back(422);
+     reference_TI.push_back(9771);
+
+     idhs.push_back(CSeq_id_Handle::GetHandle(20));
+     reference_L.push_back(410);
+     reference_TI.push_back(9771);
+
+     reference_T.assign(idhs.size(), CSeq_inst::eMol_na);
+     BOOST_REQUIRE_EQUAL(idhs.size(), reference_L.size());
+     BOOST_REQUIRE_EQUAL(idhs.size(), reference_T.size());
+     BOOST_REQUIRE_EQUAL(idhs.size(), reference_TI.size());
+
+     scope.GetSequenceLengths(&test_L, idhs);
+     scope.GetSequenceTypes(&test_T, idhs);
+     scope.GetTaxIds(&test_TI, idhs);
+
+     BOOST_REQUIRE_EQUAL(idhs.size(), test_L.size());
+     BOOST_REQUIRE_EQUAL(idhs.size(), test_T.size());
+     BOOST_REQUIRE_EQUAL(idhs.size(), test_TI.size());
+
+     BOOST_CHECK_EQUAL_COLLECTIONS(test_L.begin(), test_L.end(),
+                                   reference_L.begin(), reference_L.end());
+     BOOST_CHECK_EQUAL_COLLECTIONS(test_TI.begin(), test_TI.end(),
+                                   reference_TI.begin(), reference_TI.end());
+     BOOST_CHECK_EQUAL_COLLECTIONS(test_T.begin(), test_T.end(),
+                                   reference_T.begin(), reference_T.end());
 }
 
 BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
@@ -113,6 +193,8 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
      BOOST_REQUIRE_EQUAL(51304566, handle1.GetInst().GetLength());
+     BOOST_REQUIRE_EQUAL(9606, scope.GetTaxId(seqid1));
+     BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
      BOOST_REQUIRE_EQUAL(51304566, bioseq1->GetInst().GetLength());
@@ -137,6 +219,8 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
      BOOST_REQUIRE_EQUAL(232, handle1.GetInst().GetLength());
+     BOOST_REQUIRE_EQUAL(9031, scope.GetTaxId(seqid1));
+     BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_aa, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
      BOOST_REQUIRE_EQUAL(232, bioseq1->GetInst().GetLength());
@@ -145,6 +229,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      CBioseq_Handle handle2 = scope.GetBioseqHandle(seqid2);
      BOOST_REQUIRE(!handle2);
      BOOST_REQUIRE(handle2.State_NoData());
+     BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope.GetTaxId(seqid2));
 }
 
 END_SCOPE(blast)

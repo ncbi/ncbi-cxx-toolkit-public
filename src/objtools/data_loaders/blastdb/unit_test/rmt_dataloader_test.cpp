@@ -155,6 +155,8 @@ BOOST_AUTO_TEST_CASE(RemoteFetchNucleotideBioseq)
         CSeq_id seqid1(CSeq_id::e_Gi, 555); // nucleotide
         CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
         BOOST_REQUIRE_EQUAL((TSeqPos)624, handle1.GetInst().GetLength());
+        BOOST_REQUIRE_EQUAL(9913, scope.GetTaxId(seqid1));
+        BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
         CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
         BOOST_REQUIRE_EQUAL((TSeqPos)624, bioseq1->GetInst().GetLength());
@@ -191,6 +193,8 @@ static void RemoteFetchLongNucleotideBioseq(bool fixed_slice_size)
         BOOST_REQUIRE(handle1);
         const TSeqPos kLength(647850);
         BOOST_REQUIRE_EQUAL(kLength, handle1.GetInst().GetLength());
+        BOOST_REQUIRE_EQUAL(9606, scope.GetTaxId(seqid1));
+        BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
         CSeqVector sv = handle1.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         const string
@@ -296,6 +300,8 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinsAndNucleotides_FixedSlice)
         CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
         BOOST_REQUIRE(handle1);
         BOOST_REQUIRE_EQUAL((TSeqPos)232, handle1.GetInst().GetLength());
+        BOOST_REQUIRE_EQUAL(9031, scope->GetTaxId(seqid1));
+        BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_aa, scope->GetSequenceType(seqid1));
         
         CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
         BOOST_REQUIRE_EQUAL((TSeqPos)232, bioseq1->GetInst().GetLength());
@@ -304,6 +310,8 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinsAndNucleotides_FixedSlice)
         CBioseq_Handle handle2 = scope->GetBioseqHandle(seqid2);
         BOOST_REQUIRE(handle2);
         BOOST_REQUIRE_EQUAL((TSeqPos)624, handle2.GetInst().GetLength());
+        BOOST_REQUIRE_EQUAL(9913, scope->GetTaxId(seqid2));
+        BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope->GetSequenceType(seqid2));
 
         CConstRef<CBioseq> bioseq2 = handle2.GetCompleteBioseq();
         BOOST_REQUIRE_EQUAL((TSeqPos)624, bioseq2->GetInst().GetLength());

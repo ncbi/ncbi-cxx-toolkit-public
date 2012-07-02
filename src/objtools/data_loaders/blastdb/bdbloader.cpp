@@ -277,6 +277,26 @@ void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
     lock.SetLoaded();
 }
 
+int CBlastDbDataLoader::GetTaxId(const CSeq_id_Handle& idh)
+{
+    return m_BlastDb->GetTaxId(idh);
+}
+
+void CBlastDbDataLoader::GetTaxIds(const CDataLoader::TIds& ids,
+                                   TLoaded& loaded, TTaxIds& ret)
+{
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+
+    for (CDataLoader::TIds::size_type i = 0; i < ids.size(); i++) {
+        if (loaded[i]) { 
+            continue;
+        }
+        ret[i] = GetTaxId(ids[i]);
+        loaded[i] = true;
+    }
+}
+
 TSeqPos CBlastDbDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 {
     int oid = 0;
@@ -284,6 +304,21 @@ TSeqPos CBlastDbDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
         return m_BlastDb->GetSeqLength(oid);
     }
     return kInvalidSeqPos;
+}
+
+void CBlastDbDataLoader::GetSequenceLengths(const CDataLoader::TIds& ids,
+                                            TLoaded& loaded, TSequenceLengths& ret)
+{
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+
+    for (CDataLoader::TIds::size_type i = 0; i < ids.size(); i++) {
+        if (loaded[i]) { 
+            continue;
+        }
+        ret[i] = GetSequenceLength(ids[i]);
+        loaded[i] = true;
+    }
 }
 
 CSeq_inst::TMol CBlastDbDataLoader::GetSequenceType(const CSeq_id_Handle& /*idh*/)
@@ -298,14 +333,16 @@ CSeq_inst::TMol CBlastDbDataLoader::GetSequenceType(const CSeq_id_Handle& /*idh*
 void CBlastDbDataLoader::GetSequenceTypes(const CDataLoader::TIds& ids, TLoaded& loaded,
                                           TSequenceTypes& ret)
 {
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
     CSeq_inst::TMol retval = CSeq_inst::eMol_not_set;
     switch (m_DBType) {
-    case CBlastDbDataLoader::eNucleotide: retval = CSeq_inst::eMol_na;
-    case CBlastDbDataLoader::eProtein:    retval = CSeq_inst::eMol_aa;
-    default:                              retval = CSeq_inst::eMol_not_set;
+    case CBlastDbDataLoader::eNucleotide: retval = CSeq_inst::eMol_na; break;
+    case CBlastDbDataLoader::eProtein:    retval = CSeq_inst::eMol_aa; break;
+    default:                              retval = CSeq_inst::eMol_not_set; break;
     }
-    ret.clear();
     ret.assign(ids.size(), retval);
+    loaded.assign(ids.size(), true);
 }
 
 void CBlastDbDataLoader::GetChunk(TChunk chunk)

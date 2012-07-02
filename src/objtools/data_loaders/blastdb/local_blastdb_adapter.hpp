@@ -68,6 +68,8 @@ public:
     virtual CRef<CSeq_data> GetSequence(int oid, int begin = 0, int end = 0);
 	/** @inheritDoc */
     virtual bool SeqidToOid(const CSeq_id & id, int & oid);
+	/** @inheritDoc */
+    virtual int GetTaxId(const CSeq_id_Handle& id);
     
 private:
     /// The BLAST database handle

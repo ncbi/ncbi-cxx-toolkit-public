@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -122,6 +123,12 @@ public:
     /// @return True if the sequence was found in the database.
     virtual bool SeqidToOid(const CSeq_id & id, int & oid) = 0;
     
+    /// Retrieve the taxonomy ID for the requested sequence identifier
+    /// @param idh The Seq-id for which to get the taxonomy ID
+    /// @return taxonomy ID if found, otherwise kInvalidSeqPos
+    virtual int GetTaxId(const CSeq_id_Handle& idh) {
+        return kInvalidSeqPos;
+    }
 };
 
 END_SCOPE(objects)
