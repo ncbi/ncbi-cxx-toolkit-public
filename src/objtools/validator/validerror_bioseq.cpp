@@ -2029,6 +2029,24 @@ void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
     }
 }
 
+static bool s_IsConWithGaps(const CBioseq& seq)
+
+{
+
+    if (! seq.IsSetInst ()) return false;
+    const CSeq_inst& inst = seq.GetInst();
+    if (! inst.IsSetExt ()) return false;
+    if (! inst.GetExt().IsDelta()) return false;
+
+    ITERATE(CDelta_ext::Tdata, iter, inst.GetExt().GetDelta().Get()) {
+        if (! (*iter)->IsLiteral() ) continue;
+        const CSeq_literal& lit = (*iter)->GetLiteral();
+        if (!lit.IsSetSeq_data()) return true;
+        if  (lit.GetSeq_data().IsGap() && lit.GetLength() > 0) return true;
+    }
+
+    return false;
+}
 
 void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
 {
@@ -2051,7 +2069,7 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
                         seq);
                 }
             }
-            if (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+            if (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular && (! s_IsConWithGaps (seq))) {
                 PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
                     "Circular topology without complete flag set", seq);
             }
