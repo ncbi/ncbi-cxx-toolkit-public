@@ -105,18 +105,19 @@ void CBlastFormatterApp::Init()
                   + CBlastVersion().Print());
 
     arg_desc->SetCurrentGroup("Input options");
-    arg_desc->AddDefaultKey("rid", "BLAST_RID", "BLAST Request ID (RID), not compatiable with archive arg.", 
-                     CArgDescriptions::eString, "");
+    arg_desc->AddOptionalKey(kArgRid, "BLAST_RID", "BLAST Request ID (RID)", 
+                     CArgDescriptions::eString);
 
     // add input file for seq-align here?
-    arg_desc->AddOptionalKey("archive", "ArchiveFile", "Archive file of results, not compatiable with rid arg.", 
+    arg_desc->AddOptionalKey(kArgArchive, "ArchiveFile", "File containing BLAST Archive format in ASN.1 (i.e.: output format 11)", 
                      CArgDescriptions::eInputFile);
+    arg_desc->SetDependency(kArgRid, CArgDescriptions::eExcludes, kArgArchive);
 
     CFormattingArgs fmt_args;
     fmt_args.SetArgumentDescriptions(*arg_desc);
 
     arg_desc->SetCurrentGroup("Output configuration options");
-    arg_desc->AddDefaultKey("out", "output_file", "Output file name", 
+    arg_desc->AddDefaultKey(kArgOutput, "output_file", "Output file name", 
                             CArgDescriptions::eOutputFile, "-");
 
     arg_desc->SetCurrentGroup("Miscellaneous options");
@@ -240,8 +241,9 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
 {
     int retval = 0;
     const CArgs& args = GetArgs();
-    const string& kRid = args["rid"].AsString();
-    CNcbiOstream& out = args["out"].AsOutputFile();
+    const string& kRid = args[kArgRid].HasValue() 
+        ? args[kArgRid].AsString() : kEmptyStr;
+    CNcbiOstream& out = args[kArgOutput].AsOutputFile();
     CFormattingArgs fmt_args;
 
     CRef<CBlastOptionsHandle> opts_handle = m_RmtBlast->GetSearchOptions();
@@ -358,19 +360,28 @@ int CBlastFormatterApp::Run(void)
     const CArgs& args = GetArgs();
 
     try {
-        const string& kRid = args["rid"].AsString();
+        if (args[kArgArchive].HasValue()) {
+            CNcbiIstream& istr = args[kArgArchive].AsInputFile();
+            try { m_RmtBlast.Reset(new CRemoteBlast(istr)); }
+            catch (const CBlastException& e) {
+                if (e.GetErrCode() == CBlastException::eInvalidArgument) {
+                    NCBI_RETHROW(e, CInputException, eInvalidInput,
+                                 "Invalid input format for BLAST Archive.");
+                }
+            }
 
-        if (kRid == "")
-        {
-            CNcbiIstream& istr = args["archive"].AsInputFile();
-    		m_RmtBlast.Reset(new CRemoteBlast(istr));
-
-            while (m_RmtBlast->LoadFromArchive())
-                status = PrintFormattedOutput();
+            try {
+                while (m_RmtBlast->LoadFromArchive())
+                    status = PrintFormattedOutput();
+            } catch (const CSerialException& e) {
+                NCBI_RETHROW(e, CInputException, eInvalidInput,
+                             "Invalid input format for BLAST Archive.");
+            }
 
     		return status;
         }
 
+        const string kRid = args[kArgRid].AsString();
         m_RmtBlast.Reset(new CRemoteBlast(kRid));
         {{
             CDebugArgs debug_args;

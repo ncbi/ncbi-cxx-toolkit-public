@@ -800,11 +800,9 @@ void CRemoteBlast::x_Init(CNcbiIstream& f)
             m_ObjectStream.reset(new CObjectIStreamAsn(f));
             break;
 
-/* What's up here?
         case CFormatGuess::eXml:
-            m_ObjectStream.reset(new CObjectIStreamXml(f));
+            m_ObjectStream.reset(CObjectIStream::Open(eSerial_Xml, f));
             break;
-*/
 
          default:
             NCBI_THROW(CBlastException, eInvalidArgument,

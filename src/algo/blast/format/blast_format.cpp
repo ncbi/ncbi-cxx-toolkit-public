@@ -678,12 +678,30 @@ CConstRef<objects::CBioseq> CBlastFormat::x_CreateSubjectBioseq()
     return bhandle.GetBioseqCore();
 }
 
+/// Auxiliary function to print the BLAST Archive in multiple output formats
+static void s_PrintArchive(CRef<objects::CBlast4_archive> archive,
+                         CNcbiOstream& out)
+{
+    if (archive.Empty()) {
+        return;
+    }
+    string outfmt = CNcbiEnvironment().Get("ARCHIVE_FORMAT");
+    if (outfmt.empty()) {
+        out << MSerial_AsnText << *archive;
+    } else if (!NStr::CompareNocase(outfmt, "xml")) {
+        out << MSerial_Xml << *archive;
+    } else if (NStr::StartsWith(outfmt, "bin", NStr::eNocase)) {
+        out << MSerial_AsnBinary << *archive;
+    }
+}
+
 void 
 CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
                            blast::CBlastOptionsHandle& options_handle,
                            const CSearchResultSet& results,
                            unsigned int num_iters)
 {
+    CRef<objects::CBlast4_archive>  archive;
     if (m_IsBl2Seq)
     {
 	CRef<CBlastQueryVector> query_vector(new CBlastQueryVector);
@@ -697,20 +715,18 @@ CBlastFormat::WriteArchive(blast::IQueryFactory& queries,
                 query_vector->AddQuery(search_query);
         }
         CObjMgr_QueryFactory subjects(*query_vector);
-        m_Outfile << MSerial_AsnText << *(BlastBuildArchive(queries, options_handle, results, subjects));
+        archive = BlastBuildArchive(queries, options_handle, results, subjects);
         
     }
     else
     {
-   		CRef<objects::CBlast4_archive>  archive;
     	// Use only by psi blast
     	if(num_iters != 0)
     		archive = BlastBuildArchive(queries, options_handle, results,  m_DbName, num_iters);
     	else
     		archive = BlastBuildArchive(queries, options_handle, results,  m_DbName);
-
-    	m_Outfile << MSerial_AsnText << *archive;
     }
+    s_PrintArchive(archive, m_Outfile);
 }
 
 void
@@ -719,7 +735,8 @@ CBlastFormat::WriteArchive(objects::CPssmWithParameters & pssm,
                            const CSearchResultSet& results,
                            unsigned int num_iters)
 {
-       m_Outfile << MSerial_AsnText << *(BlastBuildArchive(pssm, options_handle, results,  m_DbName, num_iters));
+    CRef<objects::CBlast4_archive> archive(BlastBuildArchive(pssm, options_handle, results,  m_DbName, num_iters));
+    s_PrintArchive(archive, m_Outfile);
 }
 
 

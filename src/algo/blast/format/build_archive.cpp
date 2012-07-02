@@ -35,6 +35,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <serial/iterator.hpp>
 #include <algo/blast/format/build_archive.hpp>
+#include <algo/blast/api/version.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_options_builder.hpp>
 #include <algo/blast/api/uniform_search.hpp>
@@ -87,7 +88,8 @@ s_BuildArchiveAll(CRef<CExportStrategy>  export_strategy,
         CRef<objects::CBlast4_archive> archive(new objects::CBlast4_archive());
 
         CRef<CBlast4_request> net_request = export_strategy->GetSearchStrategy();
-        net_request->SetIdent("");
+        CBlastVersion v;
+        net_request->SetIdent(v.Print());
 
         archive->SetRequest(*net_request);
         bool isPsiblast = false;

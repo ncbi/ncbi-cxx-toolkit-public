@@ -204,6 +204,9 @@ const string kDfltArgRpsDb("cdd_delta");
 const string kArgDomainInclusionEThreshold("domain_inclusion_ethresh");
 const string kArgShowDomainHits("show_domain_hits");
 
+const string kArgRid("rid");
+const string kArgArchive("archive");
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

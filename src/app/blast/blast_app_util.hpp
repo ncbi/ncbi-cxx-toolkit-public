@@ -120,6 +120,7 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
     }                                                                       \
     catch (const blast::CInputException& e) {                               \
         LOG_POST(Error << "BLAST query/options error: " << e.GetMsg());     \
+        LOG_POST(Error << "Please refer to the BLAST+ user manual.");       \
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const CArgException& e) {                                        \
