@@ -2124,12 +2124,16 @@ TSeqPos CSeqportUtil_implementation::Pack
                               out_vec, coding, uLength);
     }
 
-    _ASSERT(coding == CSeqUtil::e_Ncbi2na  ||  coding == CSeqUtil::e_Ncbi4na);
-
-    CSeq_data::E_Choice out_code = (coding == CSeqUtil::e_Ncbi2na) ?
-        CSeq_data::e_Ncbi2na : CSeq_data::e_Ncbi4na;
-    CSeq_data temp(out_vec, out_code);
-    in_seq->Assign(temp);
+    switch (coding) {
+    case CSeqUtil::e_Ncbi2na:
+        in_seq->SetNcbi2na().Set(out_vec);
+        break;
+    case CSeqUtil::e_Ncbi4na:
+        in_seq->SetNcbi4na().Set(out_vec);
+        break;
+    default:
+        _TROUBLE;
+    }
 
     return retval;
 }
