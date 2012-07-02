@@ -1678,7 +1678,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         //drop low complexity terminal exons
         bool first_exon = true;
-        TSegment *last_exon;
+        TSegment *last_exon = NULL;
         NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
             if(ii->m_exon) {
                 //first exon
