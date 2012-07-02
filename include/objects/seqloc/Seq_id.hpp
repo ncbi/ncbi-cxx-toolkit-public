@@ -69,6 +69,26 @@ class NCBI_SEQLOC_EXPORT CSeq_id : public CSeq_id_Base,
     typedef CSeq_id_Base Tparent;
 
 public:
+    enum EParseFlags {
+        /// When a FASTA-style ID set contains a mix of parsable and unparsable
+        /// IDs, noisily skip over the latter rather than throwing an exception.
+        fParse_PartialOK  = 0x01,
+        fParse_RawText    = 0x02, ///< Try to ID raw non-numeric accessions
+        fParse_RawGI      = 0x04, ///< Treat raw numbers as GIs, not local IDs
+        fParse_AnyRaw     = fParse_RawText | fParse_RawGI,
+        /// Treat otherwise unidentified strings as raw accessions,
+        /// provided that they pass rudimentary validation.
+        fParse_ValidLocal = 0x08,
+        /// Treat otherwise unidentified strings as local accessions as long
+        /// as they don't resemble FASTA-style IDs (or ID sets).
+        fParse_AnyLocal   = 0x18,
+        fParse_NoFASTA    = 0x20, ///< Don't bother checking for a tag
+
+        /// By default, allow raw parsable non-numeric accessions and
+        /// plausible local accessions.
+        fParse_Default    = fParse_RawText | fParse_ValidLocal
+    };
+    typedef int TParseFlags; // binary OR of EParseFlags
 
     ///
     /// See also CSeq_id related functions in "util/sequence.hpp":
@@ -80,9 +100,13 @@ public:
     /// Default constructor
     CSeq_id(void);
 
-    /// Takes either a FastA-style string delimited by vertical bars or
-    /// a raw accession (with optional version) or GI.
-    explicit CSeq_id(const string& the_id);
+    /// Construct a Seq-id from a flat string.
+    /// @param the_id
+    ///   Input ID, preferably FASTA-style.
+    /// @param flags
+    ///   How to interpret non-FASTA-style IDs.
+    explicit CSeq_id(const CTempString& the_id,
+                     TParseFlags flags = fParse_AnyRaw);
 
     /// Construct a seq-id from a dbtag.
     /// @param tag
@@ -118,33 +142,33 @@ public:
     ///   Historically used to convey release identifiers; for patents,
     ///   may be set to "pgp" (case-insensitive) to indicate a
     ///   Pre-Grant Patent [application].
-    CSeq_id(E_Choice      the_type,
-            const string& acc_in,
-            const string& name_in    = kEmptyStr,
-            int           version    = 0,
-            const string& release_in = kEmptyStr);
+    CSeq_id(E_Choice           the_type,
+            const CTempString& acc_in,
+            const CTempString& name_in    = kEmptyStr,
+            int                version    = 0,
+            const CTempString& release_in = kEmptyStr);
 
     /// Reassign based on flat specifications; arguments interpreted
     /// as with constructors.  (Returns a reference to self.)
 
-    CSeq_id& Set(const string& the_id);
+    CSeq_id& Set(const CTempString& the_id, TParseFlags flags = fParse_AnyRaw);
 
     CSeq_id& Set(const CDbtag& tag, bool set_as_general = true);
 
     CSeq_id& Set(E_Choice the_type,
                  int      int_seq_id);
 
-    CSeq_id& Set(CSeq_id_Base::E_Choice the_type,
-                 const string&          acc_in,
-                 const string&          name_in    = kEmptyStr,
-                 int                    version    = 0,
-                 const string&          release_in = kEmptyStr);
+    CSeq_id& Set(E_Choice           the_type,
+                 const CTempString& acc_in,
+                 const CTempString& name_in    = kEmptyStr,
+                 int                version    = 0,
+                 const CTempString& release_in = kEmptyStr);
 
     /// Destructor
     virtual ~CSeq_id(void);
 
     /// Converts a string to a choice, no need to require a member.
-    static E_Choice WhichInverseSeqId(const char* SeqIdCode);
+    static E_Choice WhichInverseSeqId(const CTempString& SeqIdCode);
 
     /// For IdentifyAccession (below)
     enum EAccessionInfo {
@@ -360,7 +384,7 @@ public:
 
     /// Deduces information from a bare accession a la WHICH_db_accession;
     /// may report false negatives on properties.
-    static EAccessionInfo IdentifyAccession(const string& accession);
+    static EAccessionInfo IdentifyAccession(const CTempString& accession);
     EAccessionInfo IdentifyAccession(void) const;
 
     static void LoadAccessionGuide(const string& filename);
@@ -450,26 +474,6 @@ public:
     /// and certain punctuation characters (-_.:*# as of August 2010).
     static bool IsValidLocalID(const CTempString& s);
 
-    enum EParseFlags {
-        /// When a FASTA-style ID set contains a mix of parsable and unparsable
-        /// IDs, noisily skip over the latter rather than throwing an exception.
-        fParse_PartialOK  = 0x01,
-        fParse_RawText    = 0x02, ///< Try to ID raw non-numeric accessions
-        fParse_RawGI      = 0x04, ///< Treat raw numbers as GIs, not local IDs
-        fParse_AnyRaw     = fParse_RawText | fParse_RawGI,
-        /// Treat otherwise unidentified strings as raw accessions,
-        /// provided that they pass rudimentary validation.
-        fParse_ValidLocal = 0x08,
-        /// Treat otherwise unidentified strings as local accessions as long
-        /// as they don't resemble FASTA-style IDs (or ID sets).
-        fParse_AnyLocal   = 0x18,
-
-        /// By default, allow raw parsable non-numeric accessions and
-        /// plausible local accessions.
-        fParse_Default    = fParse_RawText | fParse_ValidLocal
-    };
-    typedef int TParseFlags; // binary OR of EParseFlags
-
     /// Parse a string representing one or more Seq-ids, appending the
     /// results to IDS.  Multiple IDs must appear in FASTA style.
     /// @param ids
@@ -500,7 +504,7 @@ public:
     ///   any exceptions.
     /// @return
     ///   The number of IDs successfully parsed.
-    static SIZE_TYPE ParseFastaIds(CBioseq::TId& ids, const string& s,
+    static SIZE_TYPE ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
                                    bool allow_partial_failure = false);
 
     /// Numerical quality ranking; lower is better.  (Text)Score, aka
@@ -544,11 +548,15 @@ public:
                         ESerialRecursionMode how = eRecursive);
 
 private:
-    void x_Init(list<CTempString>& fasta_pieces);
+    // returns next type if determined along the way
+    E_Choice x_Init(list<CTempString>& fasta_pieces, E_Choice type);
 
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);
     CSeq_id& operator= (const CSeq_id&);
+
+    static EAccessionInfo x_IdentifyAccession(const CTempString& main_acc,
+                                              bool has_version);
 
     //CRef<CAbstractObjectManager> m_ObjectManager;
 

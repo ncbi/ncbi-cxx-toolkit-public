@@ -86,9 +86,10 @@ CSeq_id::~CSeq_id(void)
 }
 
 
-static void s_SplitVersion(const string& acc_in, string& acc, int& ver)
+static void s_SplitVersion(const CTempString& acc_in, CTempString& acc,
+                           int& ver)
 {
-    string verstr;
+    CTempString verstr;
     NStr::SplitInTwo(acc_in, ".", acc, verstr);
     if (verstr.empty()) {
         ver = 0;
@@ -96,7 +97,7 @@ static void s_SplitVersion(const string& acc_in, string& acc, int& ver)
         ver = NStr::StringToNonNegativeInt(verstr);
         if (ver <= 0) {
             NCBI_THROW(CSeqIdException, eFormat,
-                       "Version embedded in accession " + acc_in
+                       "Version embedded in accession " + string(acc_in)
                        + " is not a positive integer");
         }
     }
@@ -489,8 +490,9 @@ static const TChoiceMapEntry sc_ChoiceArray[] = {
     { "tpg",          CSeq_id::e_Tpg },
     { "tr",           CSeq_id::e_Swissprot }
 };
-typedef CStaticPairArrayMap<const char*, CSeq_id::E_Choice, PNocase_CStr> TChoiceMap;
-DEFINE_STATIC_ARRAY_MAP(TChoiceMap, sc_ChoiceMap, sc_ChoiceArray);
+typedef CStaticPairArrayMap<CTempString, CSeq_id::E_Choice,
+                            PNocase_Generic<CTempString> > TChoiceMap;
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TChoiceMap, sc_ChoiceMap, sc_ChoiceArray);
 
 
 static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
@@ -520,13 +522,26 @@ static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
     ""  // Placeholder for end of list
 };
 
-CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const char* SeqIdCode)
+CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const CTempString& SeqIdCode)
 {
     TChoiceMap::const_iterator it = sc_ChoiceMap.find(SeqIdCode);
     if (it == sc_ChoiceMap.end()) {
         return e_not_set;
     } else {
         return it->second;
+    }
+}
+
+
+static CSeq_id::E_Choice s_CheckForFastaTag(const CTempString& s)
+{
+    // > rather than >= because there should be content after the bar.
+    if (s.size() > 3  &&  s[2] == '|') {
+        return CSeq_id::WhichInverseSeqId(s.substr(0, 2));
+    } else if (s.size() > 4  &&  s[3] == '|') {
+        return CSeq_id::WhichInverseSeqId(s.substr(0, 3));
+    } else {
+        return CSeq_id::e_not_set;
     }
 }
 
@@ -664,8 +679,9 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     { "unreserved_nuc",          CSeq_id::eAcc_unreserved_nuc },
     { "unreserved_prot",         CSeq_id::eAcc_unreserved_prot }
 };
-typedef CStaticPairArrayMap<const char*, CSeq_id::EAccessionInfo, PNocase_CStr> TAccInfoMap;
-DEFINE_STATIC_ARRAY_MAP(TAccInfoMap, sc_AccInfoMap, sc_AccInfoArray);
+typedef CStaticPairArrayMap<CTempString, CSeq_id::EAccessionInfo,
+                            PNocase_Generic<CTempString> > TAccInfoMap;
+DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TAccInfoMap, sc_AccInfoMap, sc_AccInfoArray);
 
 static const char kDigits[] = "0123456789";
 
@@ -687,7 +703,7 @@ struct SAccGuide
 
     SAccGuide(void) : count(0) { }
     void AddRule(const CTempString& rule);
-    TAccInfo Find(TFormatCode fmt, const string& acc_or_pfx,
+    TAccInfo Find(TFormatCode fmt, const CTempString& acc_or_pfx,
                   string* key_used = NULL);
     static TFormatCode s_Key(unsigned short letters, unsigned short digits)
         { return TFormatCode(letters) << 16 | digits; }
@@ -699,12 +715,12 @@ struct SAccGuide
 
 void SAccGuide::AddRule(const CTempString& rule)
 {
-    string         tmp1, tmp2;
-    vector<string> tokens;
-    SIZE_TYPE      pos, pos2;
+    CTempString         tmp1, tmp2;
+    vector<CTempString> tokens;
+    SIZE_TYPE           pos, pos2;
 
     ++count;
-    rule.Copy(tmp1, 0, rule.find("#")); // strip comment
+    tmp1.assign(rule, 0, rule.find("#")); // strip comment
     NStr::Tokenize(tmp1, " \t", tokens, NStr::eMergeDelims);
     if (tokens.empty()) {
         return;
@@ -726,7 +742,7 @@ void SAccGuide::AddRule(const CTempString& rule)
         TFormatCode fmt
             = s_Key(NStr::StringToUInt(tmp1, NStr::fConvErr_NoThrow),
                     NStr::StringToUInt(tmp2, NStr::fConvErr_NoThrow));
-        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
+        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2]);
         if (it == sc_AccInfoMap.end()) {
             string   key_used;
             TAccInfo old = Find(fmt, tokens[1], &key_used);
@@ -766,7 +782,7 @@ void SAccGuide::AddRule(const CTempString& rule)
         pos2 = tokens[1].find('-', pos);
         TFormatCode fmt
             = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
-        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
+        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2]);
         if (it == sc_AccInfoMap.end()) {
             string   key_used;
             TAccInfo old = Find(fmt, tokens[1], &key_used);
@@ -795,22 +811,23 @@ void SAccGuide::AddRule(const CTempString& rule)
             }
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
-        NStr::ToUpper(tokens[1]);
-        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2].c_str());
+        string key(tokens[1]);
+        NStr::ToUpper(key);
+        TAccInfoMap::const_iterator it = sc_AccInfoMap.find(tokens[2]);
         if (it == sc_AccInfoMap.end()) {
-            TPrefixes::const_iterator it2 = general.find(tokens[1]);
+            TPrefixes::const_iterator it2 = general.find(key);
             if (it2 == general.end()) {
                 ERR_POST_X(3, "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
-                           << " for " << tokens[1]);
+                           << " for " << key);
             } else {
                 ERR_POST_X(8, Warning << "SAccGuide::AddRule: " << count
-                           << ": ignoring refinement of " << tokens[1]
+                           << ": ignoring refinement of " << key
                            << " from 0x" << hex << it2->second
                            << " to unrecognized accession type " << tokens[2]);
             }
         } else {
-            general[tokens[1]] = it->second;
+            general[key] = it->second;
         }
     } else {
         ERR_POST_X(5, Warning << "SAccGuide::AddRule: " << count
@@ -818,7 +835,8 @@ void SAccGuide::AddRule(const CTempString& rule)
     }
 }
 
-SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt, const string& acc_or_pfx,
+SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt,
+                                    const CTempString& acc_or_pfx,
                                     string* key_used)
 {
     TMainMap::const_iterator it = rules.find(fmt);
@@ -828,7 +846,7 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt, const string& acc_or_pfx,
 
     const SSubMap&            submap = it->second;
     TAccInfo                  result = CSeq_id::eAcc_unknown;
-    string                    pfx     (acc_or_pfx, 0, fmt >> 16);
+    CTempString               pfx     (acc_or_pfx, 0, fmt >> 16);
     TPrefixes::const_iterator pit    = submap.prefixes.find(pfx);
     if (pit != submap.prefixes.end()) {
         result = pit->second;
@@ -846,7 +864,8 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt, const string& acc_or_pfx,
     if (acc_or_pfx != pfx  &&  result & CSeq_id::fAcc_specials) {
         TSpecialMap::const_iterator sit
             = submap.specials.lower_bound(acc_or_pfx);
-        if (sit != submap.specials.end()  &&  sit->second.first <= acc_or_pfx) {
+        if (sit != submap.specials.end()
+            &&  !(acc_or_pfx < sit->second.first) ) {
             if (key_used) {
                 key_used->erase();
             }
@@ -905,26 +924,49 @@ static void s_LoadGuide(void)
     }
 }
 
-CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
+CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc)
 {
     SIZE_TYPE main_size = acc.find('.');
+    bool has_version = true;
     if (main_size == NPOS) {
+        has_version = false;
         main_size = acc.size();
     } else if (main_size >= acc.size() - 1
                ||  acc.find_first_not_of(kDigits, main_size + 1) != NPOS) {
         return eAcc_unknown; // non-numeric "version"
     }
-    SIZE_TYPE digit_pos = acc.find_first_of(kDigits);
-    string main_acc = acc.substr(0, main_size);
-    NStr::ToUpper(main_acc);
+
+    static const SIZE_TYPE kMainAccBufSize = 16;
+    if (main_size <= kMainAccBufSize) {
+        const unsigned char* ucdata = (const unsigned char*)acc.data();
+        char main_acc_buf[kMainAccBufSize];
+        for (SIZE_TYPE i = 0;  i < main_size;  ++i) {
+            main_acc_buf[i] = toupper(ucdata[i]);
+        }
+        CTempString main_acc(main_acc_buf, main_size);
+        return x_IdentifyAccession(main_acc, has_version);
+    } else {
+        // Unlikely to prove recognizable (too long for any standard
+        // format as of June 2012), but try anyway.
+        string main_acc(acc, 0, main_size);
+        NStr::ToUpper(main_acc);
+        return x_IdentifyAccession(main_acc, has_version);
+    }
+}
+     
+CSeq_id::EAccessionInfo
+CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
+{
+    SIZE_TYPE digit_pos = main_acc.find_first_of(kDigits),
+              main_size = main_acc.size();
     if (digit_pos == NPOS) {
         return eAcc_unknown;
     } else {
-        SIZE_TYPE non_dig_pos = acc.find_first_not_of(kDigits, digit_pos);
-        const unsigned char* ucdata = (const unsigned char*)acc.data();
-        if (non_dig_pos < main_size  &&  non_dig_pos != NPOS) {
-            if (digit_pos == 0  &&  main_size >= 4  &&  main_size <= 7
-                &&  main_size == acc.size()  &&  isalnum(ucdata[1])
+        SIZE_TYPE non_dig_pos = main_acc.find_first_not_of(kDigits, digit_pos);
+        const unsigned char* ucdata = (const unsigned char*)main_acc.data();
+        if (non_dig_pos != NPOS) {
+            if ( !has_version  &&  digit_pos == 0  &&  main_size >= 4
+                &&  main_size <= 7  &&  isalnum(ucdata[1])
                 &&  isalnum(ucdata[2])  &&  isalnum(ucdata[3])) {
                 // Possible PDB (always unversioned); examine further
                 // to avoid false positives.
@@ -955,7 +997,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 &&  isalnum(ucdata[3])  &&  isalnum(ucdata[4])
                 &&  isdigit(ucdata[5])) {
                 return eAcc_swissprot;
-            } else if (digit_pos == 0  &&  main_size == acc.size()
+            } else if ( !has_version  &&  digit_pos == 0
                        &&  (non_dig_pos == 6  ||  non_dig_pos == 7)
                        &&  (main_size == non_dig_pos + 1
                             ||  main_acc[non_dig_pos + 1] == ':'
@@ -973,8 +1015,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
     }
 
     if (digit_pos == 0) {
-        if (acc.find_first_not_of(kDigits) == NPOS) { // just digits
-            return eAcc_gi;
+        if ( !has_version  &&  main_acc.find_first_not_of(kDigits) == NPOS) {
+            return eAcc_gi; // just digits
         } else {
             return eAcc_unknown; // PDB already handled
         }
@@ -1014,6 +1056,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
     {
         const CTextseq_id* tsid = GetTextseq_Id();
         if (tsid->IsSetAccession()) {
+            // Can't necessarily go straight to x_IdentifyAccession, as
+            // the accession may contain lowercase letters.
             EAccessionInfo ai = IdentifyAccession(tsid->GetAccession());
             if ((ai & eAcc_type_mask) == e_not_set) {
                 // We *know* what the type should be....
@@ -1481,8 +1525,9 @@ CSeq_id::CSeq_id(const CDbtag& dbtag, bool set_as_general)
 
 CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
 {
-    int version = -1;
-    string acc, accver;
+    int         version = -1;
+    CTempString acc;
+    string      accver;
 
     switch (dbtag.GetTag().Which()) {
     case CObject_id::e_Str:
@@ -1547,25 +1592,52 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
 
 
 //SeqIdFastAConstructors
-CSeq_id::CSeq_id( const string& the_id )
+CSeq_id::CSeq_id(const CTempString& the_id, TParseFlags flags)
 {
-    Set(the_id);
+    Set(the_id, flags);
 }
 
-CSeq_id& CSeq_id::Set(const string& the_id_in)
+CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
 {
-    string the_id = NStr::TruncateSpaces(the_id_in, NStr::eTrunc_Both);
-    if (the_id.empty()) {
-        NCBI_THROW(CSeqIdException, eFormat, "Empty bare accession supplied");
-    } else if (the_id.find('|') == NPOS
-               ||  isdigit((unsigned char)the_id[0])) {
-        // If no vertical bar, tries to interpret the string as a pure
-        // accession, inferring the type from the initial letter(s).
-        EAccessionInfo info = IdentifyAccession(the_id);
-        E_Choice       type = GetAccType(info);
+    CTempString the_id = NStr::TruncateSpaces(the_id_in, NStr::eTrunc_Both);
+    E_Choice    type   = e_not_set;
+
+    if ((flags & fParse_NoFASTA) == 0) {
+        type = s_CheckForFastaTag(the_id);
+    }
+    if (type == e_not_set) {
+        if (the_id.empty()) {
+            NCBI_THROW(CSeqIdException, eFormat,
+                       "Empty bare accession supplied");
+        }
+        // If no (attempt at a) valid tag, tries to interpret the string
+        // as a pure accession.
+        if ((flags & fParse_AnyRaw) != 0) {
+            type = GetAccType(IdentifyAccession(the_id));
+            if ((flags & fParse_RawText) == 0  &&  type != e_Gi) {
+                type = e_not_set;
+            }
+        }
         switch (type) {
+        case e_Gi:
+            if ((flags & fParse_RawGI) != 0) {
+                return Set(type, the_id);
+            } // else fall through
         case e_not_set:
-            NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID " + the_id);
+            if ((flags & fParse_ValidLocal != 0)
+                &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
+                     ||  IsValidLocalID(the_id))) {
+                // Reject internal vertical bars when otherwise permissive?
+                if (type == e_Gi  ||  (flags & fParse_AnyRaw) == 0) {
+                    return Set(e_Local, the_id);
+                } else {
+                    SetLocal().SetStr(the_id);
+                    return *this;
+                }
+            } else {
+                NCBI_THROW(CSeqIdException, eFormat,
+                           "Malformatted ID " + string(the_id));
+            }
         case e_Prf:
             // technically a name/locus, not an accession!
             return Set(type, kEmptyStr, the_id);
@@ -1582,8 +1654,8 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
         }
         default:
         {
-            string acc;
-            int    ver;
+            CTempString acc;
+            int         ver;
             s_SplitVersion(the_id, acc, ver);
             return Set(type, acc, kEmptyStr, ver);
         }
@@ -1591,14 +1663,20 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
     } else {
         list<CTempString> fasta_pieces;
         NStr::Split(the_id, "|", fasta_pieces, NStr::eNoMergeDelims);
-        x_Init(fasta_pieces);
+        x_Init(fasta_pieces, type);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.
             ITERATE(list<CTempString>, it, fasta_pieces) {
                 if ( !it->empty() ) {
-                    NCBI_THROW(CSeqIdException, eFormat,
-                               "FASTA-style ID " + the_id
-                               + " has too many parts.");
+                    if ((flags & fParse_PartialOK) != 0) {
+                        ERR_POST_X(10, Warning << "Ignoring extra parts"
+                                   " (synonyms?) in FASTA-style ID "
+                                   << the_id);
+                    } else {
+                        NCBI_THROW(CSeqIdException, eFormat,
+                                   "FASTA-style ID " + string(the_id)
+                                   + " has too many parts.");
+                    }
                 }
             }
         }
@@ -1614,7 +1692,7 @@ bool CSeq_id::IsValidLocalID(const CTempString& s)
     return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
 }
 
-SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
+SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
                                  bool allow_partial_failure)
 {
     TParseFlags flags = fParse_RawText | fParse_AnyLocal;
@@ -1631,39 +1709,20 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     if (ss.empty()) {
         return 0;
     }
+    E_Choice type = s_CheckForFastaTag(ss);
+    if (type == e_not_set) {
+        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
+        ids.push_back(id);
+        return 1;
+    }
     list<CTempString> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
-    if ((fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0]))) {
-        CRef<CSeq_id> id(new CSeq_id);
-        EParseFlags raw_flag = ((ss.find_first_not_of(kDigits) == NPOS)
-                                ? fParse_RawGI : fParse_RawText);
-
-        if (((flags & fParse_ValidLocal) != 0)
-            &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
-                 ||  IsValidLocalID(ss))) {
-            if ((flags & raw_flag) != 0) {
-                try {
-                    id->Set(ss);
-                } catch (CSeqIdException&) {
-                    id->Set(e_Local, ss);
-                }
-            } else {
-                id->Set(e_Local, ss);
-            }
-        } else if ((flags & raw_flag) != 0) {
-            id->Set(ss);
-        }
-        if (id->Which() != e_not_set) {
-            ids.push_back(id);
-            return 1;
-        }
-        return 0;
-    }
+    _ASSERT(fasta_pieces.size() >= 2);
     SIZE_TYPE count = 0;
     while ( !fasta_pieces.empty() ) {
         try {
             CRef<CSeq_id> id(new CSeq_id);
-            id->x_Init(fasta_pieces);
+            type = id->x_Init(fasta_pieces, type);
             ids.push_back(id);
             ++count;
         } catch (std::exception& e) {
@@ -1678,19 +1737,28 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
 }
 
 
-void CSeq_id::x_Init(list<CTempString>& fasta_pieces)
+CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
+                                  E_Choice type)
 {
     _ASSERT(!fasta_pieces.empty());
-    string typestr = fasta_pieces.front();
+    CTempString typestr = fasta_pieces.front();
     fasta_pieces.pop_front();
-    NStr::TruncateSpacesInPlace(typestr, NStr::eTrunc_Both);
-    E_Choice type = WhichInverseSeqId(typestr.c_str());
+    if (type == e_not_set) {
+        NStr::TruncateSpacesInPlace(typestr, NStr::eTrunc_Both);
+        type = WhichInverseSeqId(typestr);
+    } else {
+        _ASSERT(NStr::EqualNocase(typestr, s_TextId[type])
+                ||  (type == e_Patent && NStr::EqualNocase(typestr, "pgp"))
+                ||  (type == e_Swissprot && NStr::EqualNocase(typestr, "tr")));
+    }
     if (type == e_not_set  ||  typestr.size() > 3) {
-        NCBI_THROW(CSeqIdException, eFormat, "Unsupported ID type " + typestr);
+        NCBI_THROW(CSeqIdException, eFormat,
+                   "Unsupported ID type " + string(typestr));
     }
 
     CTempString fields[3];
     SIZE_TYPE   min_fields, max_fields;
+    E_Choice    next_type = e_not_set;
     switch (type) {
     case e_Local:
     case e_Gibbsq:
@@ -1723,11 +1791,14 @@ void CSeq_id::x_Init(list<CTempString>& fasta_pieces)
                 break;
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
-                           "Not enough fields for ID of type " + typestr);
+                           "Not enough fields for ID of type "
+                           + string(typestr));
             }
         } else {
             if (i >= min_fields  &&  fasta_pieces.size() > 1
-                &&  (WhichInverseSeqId(string(fasta_pieces.front()).c_str())
+                &&  (fasta_pieces.front().size() == 2
+                     ||  fasta_pieces.front().size() == 3)
+                &&  ((next_type = WhichInverseSeqId(fasta_pieces.front()))
                      != e_not_set)) {
                 // Likely mid-string optional-field omission;
                 // conservatively treat as such only if unable to
@@ -1735,7 +1806,11 @@ void CSeq_id::x_Init(list<CTempString>& fasta_pieces)
                 list<CTempString>::iterator it = fasta_pieces.begin();
                 ++it;
                 _ASSERT(it != fasta_pieces.end());
-                if (WhichInverseSeqId(string(*it).c_str()) == e_not_set) {
+                E_Choice next_type_2;
+                if ((it->size() == 2  ||  it->size() == 3)
+                    &&  (next_type_2 = WhichInverseSeqId(*it)) != e_not_set) {
+                    next_type = next_type_2;
+                } else {
                     break;
                 }
             }
@@ -1801,6 +1876,8 @@ void CSeq_id::x_Init(list<CTempString>& fasta_pieces)
 
     Set(type, fields[0] /* acc */, fields[1] /* name */, ver,
         fields[2] /* rel */);
+
+    return next_type;
 }
 
 
@@ -1845,26 +1922,24 @@ CSeq_id& CSeq_id::Set(E_Choice the_type, int the_id)
 }
 
 
-CSeq_id::CSeq_id(E_Choice      the_type,
-                 const string& acc_in,
-                 const string& name_in,
-                 int           version,
-                 const string& release_in)
+CSeq_id::CSeq_id(E_Choice           the_type,
+                 const CTempString& acc_in,
+                 const CTempString& name_in,
+                 int                version,
+                 const CTempString& release_in)
 {
     Set(the_type, acc_in, name_in, version, release_in);
 }
 
 // Karl Sirotkin 7/2001
 
-CSeq_id& CSeq_id::Set(E_Choice      the_type,
-                      const string& acc_in,
-                      const string& name_in,
-                      int           version,
-                      const string& release_in)
+CSeq_id& CSeq_id::Set(E_Choice           the_type,
+                      const CTempString& acc_in,
+                      const CTempString& name_in,
+                      int                version,
+                      const CTempString& release_in)
 {
-    string acc     = NStr::TruncateSpaces(acc_in,     NStr::eTrunc_Both);
-    string name    = NStr::TruncateSpaces(name_in,    NStr::eTrunc_Both);
-    string release = NStr::TruncateSpaces(release_in, NStr::eTrunc_Both);
+    CTempString  acc       = NStr::TruncateSpaces(acc_in, NStr::eTrunc_Both);
 
     int          the_id;
     CTextseq_id* tsid      = 0;
@@ -1876,10 +1951,8 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
 
     case e_Local:
         {
-            string::const_iterator it = acc.begin();
-
-            if ( (the_id = NStr::StringToNonNegativeInt(acc)) >= 0
-                && *it != '0' ) {
+            if ( !acc.empty()  &&  acc[0] >= '1'  &&  acc[0] <= '9'
+                &&  (the_id = NStr::StringToNonNegativeInt(acc)) >= 0) {
                 SetLocal().SetId(the_id);
             } else { // to cover case where embedded vertical bar in
                 // string, could add code here, to concat a
@@ -1900,7 +1973,7 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
             NCBI_THROW(CSeqIdException, eFormat,
                        "Negative, excessively large, or non-numeric "
                        + SelectionName(the_type)
-                       + " ID " + acc);
+                       + " ID " + string(acc));
         }
         break;
 
@@ -1920,8 +1993,12 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
 
     case e_Patent:
         {
-            CPatent_seq_id&  pat    = SetPatent();
-            CId_pat&         id_pat = pat.SetCit();
+            CTempString      name      = NStr::TruncateSpaces(name_in,
+                                                            NStr::eTrunc_Both);
+            CTempString      release   = NStr::TruncateSpaces(release_in,
+                                                            NStr::eTrunc_Both);
+            CPatent_seq_id&  pat       = SetPatent();
+            CId_pat&         id_pat    = pat.SetCit();
             CId_pat::C_Id&   id_pat_id = id_pat.SetId();
             id_pat.SetCountry(acc);
 
@@ -1937,7 +2014,9 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
 
     case e_General:
         {
-            CDbtag& dbt = SetGeneral();
+            CTempString name = NStr::TruncateSpaces(name_in,
+                                                    NStr::eTrunc_Both);
+            CDbtag&     dbt  = SetGeneral();
             dbt.SetDb(acc);
             CObject_id& oid = dbt.SetTag();
             the_id = NStr::StringToNonNegativeInt(name);
@@ -1951,7 +2030,9 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
 
     case e_Pdb:
         {
-            CPDB_seq_id& pdb = SetPdb();
+            CTempString  name = NStr::TruncateSpaces(name_in,
+                                                     NStr::eTrunc_Both);
+            CPDB_seq_id& pdb  = SetPdb();
             pdb.SetMol().Set(acc);
 
             // Consult name_in in addition to name as whitespace
@@ -1968,7 +2049,8 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
                 pdb.SetChain(tolower(static_cast<unsigned char>(name[0])));
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
-                           "Unexpected PDB chain id " + name + " for " + acc);
+                           "Unexpected PDB chain id " + string(name) + " for "
+                           + string(acc));
             }
             pdb.ResetRel();
             break;
@@ -1980,7 +2062,8 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
     }
 
     if (tsid) {
-        tsid->Set(acc, name, version, release, allow_dot);
+        // CTextseq_id::Set will take care of truncating any spaces.
+        tsid->Set(acc, name_in, version, release_in, allow_dot);
     }
 
     return *this;

@@ -56,22 +56,22 @@ CTextseq_id::~CTextseq_id(void)
 
 
 CTextseq_id& CTextseq_id::Set
-(const string&  acc_in,
- const string&  name_in,
- int            version,
- const string&  release_in,
- bool           allow_dot_version)
+(const CTempString& acc_in,
+ const CTempString& name_in,
+ int                version,
+ const CTempString& release_in,
+ bool               allow_dot_version)
 {
     // Perform general sanity checks up front.
     if (version < 0) {
         NCBI_THROW(CSeqIdException, eFormat,
                    "Unexpected negative version " + NStr::IntToString(version)
-                   + " for accession " + acc_in);
+                   + " for accession " + string(acc_in));
     }
 
-    string acc     = NStr::TruncateSpaces(acc_in,     NStr::eTrunc_Both);
-    string name    = NStr::TruncateSpaces(name_in,    NStr::eTrunc_Both);
-    string release = NStr::TruncateSpaces(release_in, NStr::eTrunc_Both);
+    CTempString acc     = NStr::TruncateSpaces(acc_in,     NStr::eTrunc_Both);
+    CTempString name    = NStr::TruncateSpaces(name_in,    NStr::eTrunc_Both);
+    CTempString release = NStr::TruncateSpaces(release_in, NStr::eTrunc_Both);
 
     if (acc.empty()  &&  name.empty()) {
     }
@@ -97,18 +97,18 @@ CTextseq_id& CTextseq_id::Set
             }
         } else {
             // accession.version
-            string accession = acc.substr(0, idx);
-            string acc_ver   = acc.substr(idx + 1);
-            int    ver       = NStr::StringToNonNegativeInt(acc_ver);
+            CTempString accession = acc.substr(0, idx);
+            CTempString acc_ver   = acc.substr(idx + 1);
+            int         ver       = NStr::StringToNonNegativeInt(acc_ver);
  
             if (ver <= 0) {
                 NCBI_THROW(CSeqIdException, eFormat,
-                           "Version embedded in accession " + acc
+                           "Version embedded in accession " + string(acc)
                            + " is not a positive integer");
             } else if (version > 0  &&  ver != version) {
                 NCBI_THROW(CSeqIdException, eFormat,
                            "Incompatible version " + NStr::IntToString(version)
-                           + " supplied for accession " + acc);
+                           + " supplied for accession " + string(acc));
             }
  
             SetAccession(accession);
@@ -126,7 +126,7 @@ CTextseq_id& CTextseq_id::Set
         NCBI_THROW(CSeqIdException, eFormat,
                    "Accession and name missing for Textseq-id (but got"
                    " version " + NStr::IntToString(version) + ", release "
-                   + release + ')');
+                   + string(release) + ')');
     } else if (release.empty()) {
         ResetRelease();
     } else {

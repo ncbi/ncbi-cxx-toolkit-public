@@ -71,11 +71,11 @@ public:
     /// @param allow_dot_version
     ///   Whether to parse an optional dot-delimited version off the
     ///   end of acc.
-    CTextseq_id& Set(const string& acc_in,
-                     const string& name_in    = kEmptyStr,
-                     int           version    = 0,
-                     const string& release_in = kEmptyStr,
-                     bool allow_dot_version   = true);
+    CTextseq_id& Set(const CTempString& acc_in,
+                     const CTempString& name_in           = kEmptyStr,
+                     int                version           = 0,
+                     const CTempString& release_in        = kEmptyStr,
+                     bool               allow_dot_version = true);
 
     /// Comparison functions.
     bool Match(const CTextseq_id& tsip2) const;
