@@ -556,7 +556,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
     buffer.resize(size, m_GapChar);
 
     string s; // current segment sequence
-    CSparse_CI it(*this, row, IAlnSegmentIterator::eSkipGaps, aln_range);
+    CSparse_CI it(*this, row, IAlnSegmentIterator::eSkipInserts, aln_range);
 
     while ( it )   {
         const IAlnSegment::TSignedRange& aln_r = it->GetAlnRange(); // in alignment
