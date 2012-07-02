@@ -489,7 +489,10 @@ bool CFastaReader::ParseIDs(const TStr& s)
     CBioseq::TId& ids = SetIDs();
     // CBioseq::TId  old_ids = ids;
     size_t count = 0;
-    CSeq_id::TParseFlags flags = CSeq_id::fParse_PartialOK; // be generous
+    // be generous overall, and give raw local IDs the benefit of the
+    // doubt for now
+    CSeq_id::TParseFlags flags
+        = CSeq_id::fParse_PartialOK | CSeq_id::fParse_AnyLocal;
     if (TestFlag(fParseRawID)) {
         flags |= CSeq_id::fParse_RawText;
     }
@@ -498,17 +501,15 @@ bool CFastaReader::ParseIDs(const TStr& s)
     } catch (CSeqIdException&) {
         // swap(ids, old_ids);
     }
-    if ( !count ) {
-        string str(s);
-        // Handled this way rather than by passing CSeq_id::fParse_ValidLocal
-        // so that subclasses can meaningfully overload IsValidLocalID.
-        if (IsValidLocalID(str)) {
-            ids.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, str)));
-        } else {
-            return false;
-        }
+    // recheck raw local IDs
+    if (count == 1  &&  ids.back()->IsLocal()
+        &&  !NStr::StartsWith(s, "lcl|", NStr::eNocase)
+        &&  !IsValidLocalID(s)) {
+        // swap(ids, old_ids);
+        ids.clear();
+        return false;
     }
-    return true;
+    return count > 0;
 }
 
 size_t CFastaReader::ParseRange(const TStr& s, TSeqPos& start, TSeqPos& end)
@@ -555,9 +556,13 @@ void CFastaReader::ParseTitle(const TStr& s)
     m_CurrentSeq->SetDescr().Set().push_back(desc);
 }
 
-bool CFastaReader::IsValidLocalID(const string& s)
+bool CFastaReader::IsValidLocalID(const TStr& s)
 {
-    return CSeq_id::IsValidLocalID(s);
+    if (TestFlag(fQuickIDCheck)) { // just check first character
+        return CSeq_id::IsValidLocalID(s.substr(0, 1));
+    } else {
+        return CSeq_id::IsValidLocalID(s);
+    }
 }
 
 void CFastaReader::GenerateID(void)
@@ -606,11 +611,18 @@ void CFastaReader::ParseDataLine(const TStr& s)
 {
     CheckDataLine(s);
 
-    size_t len = s.length();
+    size_t len = min(s.length(), s.find(';')); // ignore ;-delimited comments
     if (m_SeqData.capacity() < m_SeqData.size() + len) {
         // ensure exponential capacity growth to avoid quadratic runtime
         m_SeqData.reserve(2 * max(m_SeqData.capacity(), len));
     }
+    if ((GetFlags() & (fSkipCheck | fParseGaps | fValidate)) == fSkipCheck
+        &&  m_CurrentMask.Empty()) {
+        m_SeqData.append(s.data(), len);
+        m_CurrentPos += len;
+        return;
+    }
+        
     m_SeqData.resize(m_CurrentPos + len);
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
@@ -634,9 +646,6 @@ void CFastaReader::ParseDataLine(const TStr& s)
                 CloseMask();
             }
             ++m_CurrentPos;
-        } else if (c == ';') {
-            // comment -- ignore rest of line
-            break;
         } else if ( !isspace(c) ) {
             if (TestFlag(fValidate)) {
                 NCBI_THROW2(CBadResiduesException, eBadResidues,
@@ -743,7 +752,9 @@ void CFastaReader::AssembleSeq(void)
             inst.SetLength(GetCurrentPos(eRawPos));
             inst.SetRepr(CSeq_inst::eRepr_raw);
             CRef<CSeq_data> data(new CSeq_data(m_SeqData, format));
-            CSeqportUtil::Pack(data, inst.GetLength());
+            if ( !TestFlag(fLeaveAsText) ) {
+                CSeqportUtil::Pack(data, inst.GetLength());
+            }
             inst.SetSeq_data(*data);
         } else {
             inst.SetLength(GetCurrentPos(eRawPos));

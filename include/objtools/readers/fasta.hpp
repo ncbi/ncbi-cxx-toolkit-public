@@ -92,7 +92,9 @@ public:
         fLetterGaps   = 1<<18, ///< Parse runs of Ns when splitting data
         fNoUserObjs   = 1<<19, ///< Don't save raw deflines in User-objects
         fBadModThrow  = 1<<20, ///< Throw an exception if there's a bad modifier value (e.g. "[topology=nonsense]")
-        fUnknModThrow = 1<<21  ///< Throw if there are any unknown (unused) mods left over
+        fUnknModThrow = 1<<21, ///< Throw if there are any unknown (unused) mods left over
+        fLeaveAsText  = 1<<22, ///< Don't reencode at all, just parse
+        fQuickIDCheck = 1<<23  ///< Just check local IDs' first characters
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -158,7 +160,7 @@ protected:
     virtual bool   ParseIDs      (const TStr& s);
     virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end);
     virtual void   ParseTitle    (const TStr& s);
-    virtual bool   IsValidLocalID(const string& s);
+    virtual bool   IsValidLocalID(const TStr& s);
     virtual void   GenerateID    (void);
     virtual void   ParseDataLine (const TStr& s);
     virtual void   CheckDataLine (const TStr& s);
