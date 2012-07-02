@@ -493,8 +493,10 @@ s_ProcessListenEvent(Uint1 sock_idx, TSrvThreadNum thread_num)
 
         CSrvSocketTask* task = sock_info.factory->CreateSocketTask();
         task->m_Fd = new_sock;
+        task->m_PeerAddr = addr.sin_addr.s_addr;
+        task->m_PeerPort = addr.sin_port;
         s_CreateDiagRequest(task, s_ListenSocks[sock_idx].port,
-                            addr.sin_addr.s_addr, addr.sin_port);
+                            task->m_PeerAddr, task->m_PeerPort);
         s_Threads[thread_num]->stat->SockOpenPassive();
         if (!task->StartProcessing(thread_num))
             task->Terminate();
@@ -1298,19 +1300,8 @@ CSrvSocketTask::GetLocalPort(void)
 void
 CSrvSocketTask::GetPeerAddress(string& host, Uint2& port)
 {
-#ifdef NCBI_OS_LINUX
-    struct sockaddr_in addr;
-    socklen_t len = sizeof(addr);
-    memset(&addr, 0, len);
-    if (getpeername(m_Fd, (struct sockaddr*)&addr, &len) != 0) {
-        LOG_WITH_ERRNO(Critical, "Cannot read peer address of socket", errno);
-        port = 0;
-        host.clear();
-        return;
-    }
-    port = addr.sin_port;
-    host = CTaskServer::IPToString(addr.sin_addr.s_addr);
-#endif
+    port = m_PeerPort;
+    host = CTaskServer::IPToString(m_PeerAddr);
 }
 
 void

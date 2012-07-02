@@ -134,6 +134,8 @@ public:
     bool m_RegReadHup;
     bool m_RegError;
     bool m_ErrorPrinted;
+    Uint2 m_PeerPort;
+    Uint4 m_PeerAddr;
 };
 
 
