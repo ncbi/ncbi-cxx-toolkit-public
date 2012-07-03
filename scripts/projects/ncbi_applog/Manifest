@@ -1,0 +1,45 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Alexey Rafanovich
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# USE_DEFAULT_COMPONENTS
+
+APP: ncbi_applog 
+APP: $srcdir/src/misc/clog/app/ncbi_applog.cgi
+
+# The -t key prevents inclusion of the tree builder into the release
+# SVN_TAG_RELEASE_ADD_FLAGS: -t
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+Linux32-Centos  : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Centos  : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+
+FreeBSD32  : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+
+SunOSx86   : plain  : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+SunOSSparc : plain  : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+#SunOSSparc : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+
+#PowerMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+
+#Win32_9    : 900 : static  32  ReleaseMT
+Win32_10   : 1000 : static  32  ReleaseMT
+
+XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
+
+#USE_COMPONENTS
