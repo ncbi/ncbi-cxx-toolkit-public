@@ -126,6 +126,7 @@
 #  define NCBI_SUBMIT_EXPORTS
 #  define NCBI_TAXON1_EXPORTS
 #  define NCBI_TAXON3_EXPORTS
+#  define NCBI_VARIATION_EXPORTS
 #endif
 
 
@@ -829,6 +830,14 @@
 #  define NCBI_TAXON3_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_TAXON3_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library variation
+ */
+#ifdef NCBI_VARIATION_EXPORTS
+#  define NCBI_VARIATION_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_VARIATION_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library threader

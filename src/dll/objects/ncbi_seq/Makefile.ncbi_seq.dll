@@ -14,6 +14,7 @@ HOSTED_LIBS    = seq          \
                  blastxml     \
                  taxon1       \
                  taxon3       \
+                 variation    \
                  seqtest      \
                  genome_collection
 
