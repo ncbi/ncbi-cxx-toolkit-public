@@ -612,7 +612,7 @@ void CVariationUtil::s_UntranslateProt(const string& prot_str, vector<string>& c
         NCBI_THROW(CException, eUnknown, "Expected prot_str of length 1");
     }
 
-    static const string alphabet = "ACGT";
+    static const char* alphabet = "ACGT";
     string codon = "AAA";
     for(size_t i0 = 0; i0 < 4; i0++) {
         codon[0] = alphabet[i0];
@@ -701,7 +701,7 @@ string CVariationUtil::s_CollapseAmbiguities(const vector<string>& seqs)
         }
     }
 
-    static const string iupac_nuc_ambiguity_codes = "NTGKCYSBAWRDMHVN";
+    static const char* iupac_nuc_ambiguity_codes = "NTGKCYSBAWRDMHVN";
     collapsed_seq.resize(bits.size());
     for(size_t i = 0; i < collapsed_seq.size(); i++) {
         collapsed_seq[i] = iupac_nuc_ambiguity_codes[bits[i]];

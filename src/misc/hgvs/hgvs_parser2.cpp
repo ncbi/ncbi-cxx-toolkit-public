@@ -112,10 +112,10 @@ void SetComputational(CVariation& variation)
 
 bool SeqsMatch(const string& query, const char* text)
 {
-    static const string iupac_bases = ".TGKCYSBAWRDMHVN"; //position of the iupac literal = 4-bit mask for A|C|G|T
+    static const char* iupac_bases = ".TGKCYSBAWRDMHVN"; //position of the iupac literal = 4-bit mask for A|C|G|T
     for(size_t i = 0; i < query.size(); i++) {
-        size_t a = iupac_bases.find(query[i]);
-        size_t b = iupac_bases.find(text[i]);
+        size_t a = CTempString(iupac_bases).find(query[i]);
+        size_t b = CTempString(iupac_bases).find(text[i]);
         if(!(a & b)) {
             return false;
         }

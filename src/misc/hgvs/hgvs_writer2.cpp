@@ -338,20 +338,20 @@ string Ncbieaa2HgvsAA(const string& prot_str)
 {
     string out = "";
     //convert to 3-letter AA codes
-    const static string ncbieaa = "-ABCDEFGHIKLMNPQRSTVWXYZU*O";
+    const static char* ncbieaa = "-ABCDEFGHIKLMNPQRSTVWXYZU*O";
 
     //Note: with Hgvs-flavor "Xaa"
-    const static string iupac3aa = "---AlaAsxCysAspGluPheGlyHisIleLysLeuMetAsnProGlnArgSerThrValTrpXaaTyrGlxSecTerPyl";
+    const static char* iupac3aa = "---AlaAsxCysAspGluPheGlyHisIleLysLeuMetAsnProGlnArgSerThrValTrpXaaTyrGlxSecTerPyl";
 
     for(size_t i = 0; i < prot_str.size(); i++) {
         char aa = prot_str[i];
-        size_t pos = ncbieaa.find(aa);
+        size_t pos = CTempString(ncbieaa).find(aa);
         if(pos == NPOS) {
             //Can't convert. Use ncbistdaa alphabet
             out = prot_str;
             break;
         } else {
-            out += iupac3aa.substr(pos*3, 3);
+            out += CTempString(iupac3aa).substr(pos*3, 3);
         }
     }
 
