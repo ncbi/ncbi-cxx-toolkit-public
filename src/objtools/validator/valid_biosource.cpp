@@ -319,7 +319,7 @@ static void s_IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool&
 
     lat_value = 0.0;
     lon_value = 0.0;
-    
+
     if (NStr::IsBlank(lat_lon)) {
         return;
     } else if (sscanf (lat_lon.c_str(), "%lf %c %lf %c%n", &ns, &lat, &ew, &lon, &processed) != 4
@@ -354,7 +354,7 @@ static void s_IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool&
             if (pos != string::npos) {
                 precision_lon = pieces[2].length() - pos - 1;
             }
-            
+
             char reformatted[1000];
             sprintf (reformatted, "%.*lf %c %.*lf %c", precision_lat, ns, lat,
                                                        precision_lon, ew, lon);
@@ -656,7 +656,7 @@ void CValidError_imp::ValidateLatLonCountry
         // incorrect longitude range should be reported elsewhere
         return;
     }
-        
+
     // get rid of comments after semicolon or comma in country name
     size_t pos = NStr::Find(countryname, ";");
     if (pos != string::npos) {
@@ -949,7 +949,7 @@ void CValidError_imp::ValidateBioSource
     }
 
     const COrg_ref& orgref = bsrc.GetOrg();
-  
+
     // validate legal locations.
     if ( bsrc.GetGenome() == CBioSource::eGenome_transposon  ||
          bsrc.GetGenome() == CBioSource::eGenome_insertion_seq ) {
@@ -1014,7 +1014,7 @@ void CValidError_imp::ValidateBioSource
 
         int subtype = (*ssit)->GetSubtype();
         switch ( subtype ) {
-            
+
         case CSubSource::eSubtype_country:
             ++country_count;
             if (!NStr::IsBlank (countryname)) {
@@ -1039,7 +1039,7 @@ void CValidError_imp::ValidateBioSource
                            "Multiple lat_lon on BioSource", obj, ctx);
             }
             break;
-            
+
         case CSubSource::eSubtype_chromosome:
             ++chrom_count;
             if ( chromosome != 0 ) {
@@ -1064,7 +1064,7 @@ void CValidError_imp::ValidateBioSource
             }
             ++rev_primer_name_count;
             break;
-            
+
         case CSubSource::eSubtype_fwd_primer_seq:
             if ((*ssit)->IsSetName()) {
                 pcr_set_list.AddFwdSeq((*ssit)->GetName());
@@ -1082,10 +1082,10 @@ void CValidError_imp::ValidateBioSource
         case CSubSource::eSubtype_transposon_name:
         case CSubSource::eSubtype_insertion_seq_name:
             break;
-            
+
         case 0:
             break;
-            
+
         case CSubSource::eSubtype_other:
             break;
 
@@ -1185,7 +1185,7 @@ void CValidError_imp::ValidateBioSource
                 }
             }
             break;
-        
+
         case CSubSource::eSubtype_frequency:
             break;
 
@@ -1404,7 +1404,7 @@ void CValidError_imp::ValidateSubSource
 
     int subtype = subsrc.GetSubtype();
     switch ( subtype ) {
-        
+
     case CSubSource::eSubtype_country:
         {
             string countryname = subsrc.GetName();
@@ -1475,7 +1475,7 @@ void CValidError_imp::ValidateSubSource
             }
         }
         break;
-        
+
     case CSubSource::eSubtype_chromosome:
         break;
 
@@ -1504,7 +1504,7 @@ void CValidError_imp::ValidateSubSource
             }
         }
         break;
-        
+
     case CSubSource::eSubtype_fwd_primer_seq:
         {
             char bad_ch;
@@ -1545,12 +1545,12 @@ void CValidError_imp::ValidateSubSource
             "Transposon name and insertion sequence name are no "
             "longer legal qualifiers", obj, ctx);
         break;
-        
+
     case 0:
         PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BadSubSource,
             "Unknown subsource subtype 0", obj, ctx);
         break;
-        
+
     case CSubSource::eSubtype_other:
         ValidateSourceQualTags(subsrc.GetName(), obj, ctx);
         break;
@@ -1584,7 +1584,7 @@ void CValidError_imp::ValidateSubSource
 
     case CSubSource::eSubtype_plastid_name:
         break;
-    
+
     case CSubSource::eSubtype_cell_line:
         break;
 
@@ -1654,7 +1654,7 @@ void CValidError_imp::ValidateSubSource
                         is_bad = true;
                     }
                 }
-                      
+
                 if (!is_bad) {         
                     struct tm *tm;
                     time_t t;
@@ -1882,7 +1882,7 @@ void CValidError_imp::ValidateOrgName
         FOR_EACH_ORGMOD_ON_ORGNAME (omd_itr, orgname) {
             const COrgMod& omd = **omd_itr;
             int subtype = omd.GetSubtype();
-            
+
             switch (subtype) {
                 case 0:
                 case 1:
@@ -2485,7 +2485,7 @@ void CValidError_imp::ValidateSourceQualTags
     size_t str_len = str.length();
 
     int state = m_SourceQualTags->GetInitialState();
-    
+
     for ( size_t i = 0; i < str_len; ++i ) {
         state = m_SourceQualTags->GetNextState(state, str[i]);
         if ( m_SourceQualTags->IsMatchFound(state) ) {
@@ -2797,7 +2797,7 @@ void CValidError_imp::ValidateSpecificHost
                    && rq_it != org_rq_list.end()
                    && desc_it != local_src_descs.end()
                    && ctx_it != local_desc_ctxs.end()) {
-                
+
                 string host = (*rq_it)->GetTaxname();
                 if ((*reply_it)->IsError()) {
                     string err_str = "?";
@@ -3183,44 +3183,46 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
         }
     }
 
-    reply = taxon3.SendOrgRefList(org_rq_list);
-    if (reply) {
-        CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-        vector< CRef<COrg_ref> >::iterator rq_it = org_rq_list.begin();
+    if (org_rq_list.size() > 0) {
+        reply = taxon3.SendOrgRefList(org_rq_list);
+        if (reply) {
+            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+            vector< CRef<COrg_ref> >::iterator rq_it = org_rq_list.begin();
 
-        while (reply_it != reply->GetReply().end()
-               && rq_it != org_rq_list.end()) {
-            
-            string host = (*rq_it)->GetTaxname();
-            if ((*reply_it)->IsError()) {
-                string err_str = "?";
-                if ((*reply_it)->GetError().IsSetMessage()) {
-                    err_str = (*reply_it)->GetError().GetMessage();
-                }
-                if(NStr::Find(err_str, "ambiguous") != string::npos) {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-                                "Specific host value is ambiguous: " + host, org);
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-                                "Invalid value for specific host: " + host, org);
-                }
-            } else if ((*reply_it)->IsData()) {
-                if (s_HasMisSpellFlag((*reply_it)->GetData())) {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-                                "Specific host value is misspelled: " + host, org);
-                } else if ((*reply_it)->GetData().IsSetOrg()) {
-                    string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
-                    if (!NStr::EqualCase(match, host)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-                                    "Specific host value is incorrectly capitalized: " + host, org);
+            while (reply_it != reply->GetReply().end()
+                   && rq_it != org_rq_list.end()) {
+
+                string host = (*rq_it)->GetTaxname();
+                if ((*reply_it)->IsError()) {
+                    string err_str = "?";
+                    if ((*reply_it)->GetError().IsSetMessage()) {
+                        err_str = (*reply_it)->GetError().GetMessage();
                     }
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-                                "Invalid value for specific host: " + host, org);
+                    if(NStr::Find(err_str, "ambiguous") != string::npos) {
+                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+                                    "Specific host value is ambiguous: " + host, org);
+                    } else {
+                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+                                    "Invalid value for specific host: " + host, org);
+                    }
+                } else if ((*reply_it)->IsData()) {
+                    if (s_HasMisSpellFlag((*reply_it)->GetData())) {
+                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+                                    "Specific host value is misspelled: " + host, org);
+                    } else if ((*reply_it)->GetData().IsSetOrg()) {
+                        string match = s_FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
+                        if (!NStr::EqualCase(match, host)) {
+                            PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+                                        "Specific host value is incorrectly capitalized: " + host, org);
+                        }
+                    } else {
+                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
+                                    "Invalid value for specific host: " + host, org);
+                    }
                 }
+                ++reply_it;
+                ++rq_it;
             }
-            ++reply_it;
-            ++rq_it;
         }
     }
 
