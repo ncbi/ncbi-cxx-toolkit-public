@@ -1521,7 +1521,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);        
     }
     /*****************This block of code is for future use with AJAX begin***************************/ 
-    string deflId,deflFrmID,deflFastaSeq; 
+    string deflId,deflFrmID,deflFastaSeq,deflAccs; 
     if(sdl->gi == 0) {
         string accession;
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
@@ -1531,6 +1531,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     else {        
         deflFrmID = deflId = NStr::IntToString(sdl->gi);
         deflFastaSeq = "gi|" + NStr::IntToString(sdl->gi);
+        deflAccs = sdl->id->AsFastaString();
     }
     
     //If gi - deflFrmID and deflId are the same and equal to gi "555",deflFastaSeq will have "gi|555"
@@ -1539,6 +1540,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_id",deflId);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFrm_id",deflFrmID);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFASTA_id",deflFastaSeq);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnAccs",deflAccs);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum); 
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_blast_rank",m_StartIndex + iter->blast_rank); 

@@ -1955,8 +1955,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     //inits m_FeatObj,m_featScope,m_CanRetrieveSeq,m_ConfigFile,m_Reg,m_LinkoutOrder,m_DynamicFeature
     x_InitAlignParams(actual_aln_list);    
         
-    bool newDesign = false;
-    string sortOneAln = m_Ctx ? m_Ctx->GetRequestValue("SORT_ONE_ALN").GetValue() : kEmptyStr;
+    bool newDesign = false;    
     string oldBlastFormat = m_Ctx ? m_Ctx->GetRequestValue("OLD_BLAST").GetValue() : kEmptyStr;
     if(!oldBlastFormat.empty() && m_AlignOption & eHtml) {
         oldBlastFormat = NStr::ToLower(oldBlastFormat);
@@ -2025,7 +2024,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                       GetBioseqHandle(*previousId));
                                                       //release memory 
                         }                        
-                        bool showDefLine = (sortOneAln != "on") ? (previousId.Empty() || !subid->Match(*previousId)) : false;
+                        bool showDefLine = previousId.Empty() || !subid->Match(*previousId);
                         x_DisplayAlnvecInfo(out, alnvecInfo,showDefLine);                                            
                        
                         previousId = subid;
@@ -3469,13 +3468,17 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
 
     string hidePrevNaviagtion,hideNextNaviagtion;
     if(m_currAlignHsp == 0) {
-        hidePrevNaviagtion = "hidden";
+        hidePrevNaviagtion = "disabled=\"disabled\"";
     }
     if (m_currAlignHsp ==  m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber - 1) {
-        hideNextNaviagtion = "hidden";
+        hideNextNaviagtion = "disabled=\"disabled\"";
     }
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_prev",hidePrevNaviagtion);
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_next",hideNextNaviagtion);
+    alignParams  = CAlignFormatUtil::MapTemplate(alignParams,"firstSeqID",m_CurrAlnAccession);//displays the first accession if multiple    
+    //current segment number = m_currAlignHsp + 1
+    alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_next_num",NStr::IntToString(m_currAlignHsp + 2));
+    alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_prev_num",NStr::IntToString(m_currAlignHsp));
 
     if (m_SeqalignSetRef->Get().front()->CanGetType() && 
            m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
@@ -3677,7 +3680,8 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 		    m_CurrAlnID_Lbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
 			m_CurrAlnAccession = alnDispParams->label;
 			delete alnDispParams;
-			deflines = alnDefLine;
+			firstDefline = alnDefLine;
+            m_NumBlastDefLines++;
         } else {
             //format each defline             
             int numBdl = 0;            
@@ -3790,13 +3794,10 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnLinkOutLinks",linkOutStr);
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnCustomLinks",customLinkStr);
-    //The next line is not used for now
+    //The next two lines is not used for now
     //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnFASTA",m_FASTAlinkUrl);
-    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnRegFASTA",m_AlignedRegionsUrl);
+    //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnRegFASTA",m_AlignedRegionsUrl);
     
-
-    
-
 	//fill sort info
 	string sortInfo;	
 	if(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber > 1 &&	
@@ -3820,28 +3821,27 @@ void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out,
                                            bool show_defline,
                                            bool showSortControls) 
 {
+    string alignHeader;
+    string sortOneAln = m_Ctx ? m_Ctx->GetRequestValue("SORT_ONE_ALN").GetValue() : kEmptyStr;    
     if(show_defline) {        
         const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
-		if(m_AlignOption&eShowBlastInfo) {
-			if(!(m_AlignOption & eShowNoDeflineInfo)){            
-				//1. Display defline(s),Gene info
-				string alignHeader = x_FormatDefLinesHeader(bsp_handle, aln_vec_info);
-				/**2. Format Gene info
-				string geneInfo = x_DisplayGeneInfo(bsp_handle,aln_vec_info);				
-                alignHeader = CAlignFormatUtil::MapTemplate(alignHeader,"aln_gene_info",geneInfo); **/
-                out<< alignHeader;			            
-			}       
-        
-			if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
-				&& (m_AlignOption&eShowBl2seqLink)) {
-				//3. Display Bl2Seq TBLASTX link
-				x_DisplayBl2SeqLink(out);
-			}
-			out << "\n";
-		}        
+		//1. Display defline(s),Gene info
+		string alignHeader = x_FormatDefLinesHeader(bsp_handle, aln_vec_info);
+		/**2. Format Gene info
+		string geneInfo = x_DisplayGeneInfo(bsp_handle,aln_vec_info);				
+        alignHeader = CAlignFormatUtil::MapTemplate(alignHeader,"aln_gene_info",geneInfo); **/
+        if(sortOneAln.empty()) {
+
+            out<< alignHeader;			
+            if(m_AlignOption&eShowBl2seqLink) {
+			    //3. Display Bl2Seq TBLASTX link
+			    x_DisplayBl2SeqLink(out);
+		    }		
+
+        }
 		//start counting hsp
 		m_currAlignHsp = 0;
-    }
+    }    
     if (m_AlignOption&eShowBlastInfo) {
         //4. add id anchor for mapviewer link
         x_DisplayMpvAnchor(out,aln_vec_info);    
@@ -3944,7 +3944,7 @@ string CDisplaySeqalign:: x_FormatAlnHSPLinks(string &alignInfo)
             hspLinks += singleLink;
         }                    
         alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"fromHSP",from);
-        alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"toHSP",to);
+        alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"toHSP",to);        
     }    
     string multiHSP = (hspLinks.empty()) ? "hidden" : "" ;       
 
