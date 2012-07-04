@@ -43,8 +43,6 @@
 #include <corelib/ncbidiag.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objmgr/scope.hpp>
-
 // generated includes
 #include <objects/valerr/ValidErrItem_.hpp>
 
