@@ -1180,8 +1180,6 @@ BOOST_AUTO_TEST_CASE(testDeltaSeqSetup)
     SetupQueryInfo(query_v, kProgram, kStrand, &query_info);
 
     TSearchMessages msgs;
-    Blast_Message* blast_msg=NULL;
-
     CBLAST_SequenceBlk query_blk;
     SetupQueries(query_v, query_info, &query_blk, 
                     kProgram, kStrand, msgs);
