@@ -394,8 +394,12 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
              }
            break;
         case CSeq_id::e_Local:
-            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64 && (! m_Imp.IsIndexerVersion())) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
+            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64) {
+                if (! m_Imp.IsINSDInSep()) {
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
+                } else if (! m_Imp.IsIndexerVersion()) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
+                }
             }
             break;
         default:
