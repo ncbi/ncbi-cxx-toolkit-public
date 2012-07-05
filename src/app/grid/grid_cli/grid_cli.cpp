@@ -655,9 +655,9 @@ struct SCommandDefinition {
         "clearnode", "Fail incomplete jobs and clear client record.",
         "The '--" LOGIN_TOKEN_OPTION "' option must be provided for "
         "client identification. This command removes the corresponding "
-        "client registry record from all NetSchedule servers. If the "
-        "client had any running jobs, their status will be changed "
-        "back to Pending (or Failed if there are no retries left).",
+        "client registry record from all NetSchedule servers. If there "
+        "are running jobs assigned to the client, their status will be "
+        "changed back to Pending (or Failed if no retries left).",
         {eNetSchedule, eQueue, eLoginToken, eAuth,
             eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
