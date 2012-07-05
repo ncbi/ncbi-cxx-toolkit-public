@@ -31,7 +31,6 @@
 
 #include "ncbi_lb.h"
 #include "ncbi_priv.h"
-#include <assert.h>
 #include <stdlib.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_LBSM
