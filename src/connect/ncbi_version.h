@@ -74,17 +74,20 @@
 #endif /*NCBI_PACKAGE*/
 
 
-#define NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned int)              \
-                                            ((ma)*100000 + (mi)*1000 + (pa)))
+#define NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned short)            \
+                                            ((((ma) & 0xF) << 12) |     \
+                                             (((mi) & 0xF) << 8)  |     \
+                                             ( (pa) & 0xF)))
 
-#define NETDAEMONS_MAJOR_OF(ver)           ( (ver) / 100000)
-#define NETDAEMONS_MINOR_OF(ver)           (((ver) / 1000) % 100)
-#define NETDAEMONS_PATCH_OF(ver)           ( (ver) % 1000)
+#define NETDAEMONS_MAJOR_OF(ver)           (((ver) >> 12) & 0xF)
+#define NETDAEMONS_MINOR_OF(ver)           (((ver) >> 8)  & 0xF)
+#define NETDAEMONS_PATCH_OF(ver)           ( (ver)        & 0xF)
 
-#define NETDAEMONS_VERSION_INT             NETDAEMONS_VERSION_OF        \
+#define NETDAEMONS_VERSION_INT             ((unsigned int)              \
+                                            NETDAEMONS_VERSION_OF       \
                                            (NETDAEMONS_MAJOR,           \
                                             NETDAEMONS_MINOR,           \
-                                            NETDAEMONS_PATCH)
+                                            NETDAEMONS_PATCH))
 
 
 #ifdef NCBI_CXX_TOOLKIT
