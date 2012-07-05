@@ -1624,7 +1624,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                 return Set(type, the_id);
             } // else fall through
         case e_not_set:
-            if ((flags & fParse_ValidLocal != 0)
+            if ((flags & fParse_ValidLocal) != 0
                 &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
                      ||  IsValidLocalID(the_id))) {
                 // Reject internal vertical bars when otherwise permissive?
