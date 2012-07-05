@@ -1932,6 +1932,10 @@ void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantPlacement& p, int
         p.SetGene_location(0);
     }
 
+    if(sequence::GetStrand(loc, NULL) == eNa_strand_minus) {
+        offset *= -1;
+    }
+
     if(loc.GetStop(eExtreme_Positional) + 1 >= bsh.GetInst_Length() && offset > 0) {
         //at the 3'-end; check if near-gene or intergenic
         if(offset <= 500) {
