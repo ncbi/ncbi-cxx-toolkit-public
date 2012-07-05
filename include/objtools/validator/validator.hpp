@@ -39,6 +39,7 @@
 #include <serial/serialbase.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 #include <objects/valerr/ValidError.hpp>
+#include <objmgr/scope.hpp>
 
 #include <map>
 
