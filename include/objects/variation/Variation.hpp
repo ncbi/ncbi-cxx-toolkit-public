@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /////////////////////////////////////////////////////////////////////////////
-class CVariation : public CVariation_Base
+class NCBI_VARIATION_EXPORT CVariation : public CVariation_Base
 {
     typedef CVariation_Base Tparent;
 public:
