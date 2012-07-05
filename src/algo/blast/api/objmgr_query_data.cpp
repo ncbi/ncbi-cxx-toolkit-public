@@ -98,8 +98,11 @@ s_TSeqLocVectorToBioseqSet(const TSeqLocVector* queries)
     list< CRef<CSeq_entry> > se_list;
     
     ITERATE(TSeqLocVector, query, *queries) {
+        if ( !query->seqloc->GetId() ) {
+            continue;
+        }
         const CBioseq * cbs = 
-            query->scope->GetBioseqHandle(*query->seqloc).GetBioseqCore();
+            query->scope->GetBioseqHandle(*query->seqloc->GetId()).GetBioseqCore();
         
         CRef<CSeq_entry> se(new CSeq_entry);
         se->SetSeq(*const_cast<CBioseq*>(cbs));

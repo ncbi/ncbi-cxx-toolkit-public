@@ -1053,11 +1053,14 @@ TSeqLocVector2Bioseqs(const TSeqLocVector& input)
     retval.Reset(new objects::CBioseq_set);
 
     ITERATE(TSeqLocVector, itr, input) {
-        CBioseq_Handle bh = itr->scope->GetBioseqHandle(*itr->seqloc);
-        CSeq_entry_Handle seh = bh.GetTopLevelEntry();
-        CRef<objects::CSeq_entry> seq_entry
-            (const_cast<objects::CSeq_entry*>(&*seh.GetCompleteSeq_entry()));
-        retval->SetSeq_set().push_back(seq_entry);
+        if (itr->seqloc->GetId()) {
+            CBioseq_Handle bh =
+                itr->scope->GetBioseqHandle(*itr->seqloc->GetId());
+            CSeq_entry_Handle seh = bh.GetTopLevelEntry();
+            CRef<objects::CSeq_entry> seq_entry
+                (const_cast<objects::CSeq_entry*>(&*seh.GetCompleteSeq_entry()));
+            retval->SetSeq_set().push_back(seq_entry);
+        }
     }
 
     return retval;

@@ -265,7 +265,8 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     BOOST_REQUIRE_EQUAL(kRange, kTestRange);
     BOOST_REQUIRE_EQUAL(kTestRange.GetLength(), len);
 
-    CBioseq_Handle bh = scope->GetBioseqHandle(*sl);
+    BOOST_REQUIRE(sl->GetId());
+    CBioseq_Handle bh = scope->GetBioseqHandle(*sl->GetId());
     BOOST_REQUIRE(bh);
     BOOST_REQUIRE_EQUAL(is_protein, bh.IsAa());
     // N.B.: don't call GetCompleteBioseq or you'll fetch the whole enchilada!

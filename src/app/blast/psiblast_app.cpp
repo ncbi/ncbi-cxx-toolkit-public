@@ -141,9 +141,12 @@ s_GetQueryBioseq(CConstRef<CBlastQueryVector> query, CRef<CScope> scope,
         retval.Reset(&pssm->SetQuery().SetSeq());
     } else {
         _ASSERT(query.NotEmpty());
-        CBioseq_Handle bh = scope->GetBioseqHandle(*query->GetQuerySeqLoc(0));
-        _ASSERT(bh);
-        retval.Reset(bh.GetBioseqCore());
+        if (query->GetQuerySeqLoc(0)->GetId()) {
+            CBioseq_Handle bh =
+                scope->GetBioseqHandle(*query->GetQuerySeqLoc(0)->GetId());
+            _ASSERT(bh);
+            retval.Reset(bh.GetBioseqCore());
+        }
     }
     return retval;
 }

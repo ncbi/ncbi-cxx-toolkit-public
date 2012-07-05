@@ -369,9 +369,11 @@ s_ImportQueries(const CBlast4_queries& queries,
         CRef<CScope> scope(scope_src.NewScope());
 
         ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {
-            CBioseq_Handle bh = scope->GetBioseqHandle(**itr);
-            CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
-            out.Write(*bioseq);
+            if ((*itr)->GetId()) {
+                CBioseq_Handle bh = scope->GetBioseqHandle(*(*itr)->GetId());
+                CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
+                out.Write(*bioseq);
+            }
         }
         scope.Reset();
         scope_src.RevokeBlastDbDataLoader();

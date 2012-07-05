@@ -55,7 +55,7 @@ CLocalBlastDbAdapter::GetSequenceType()
 int 
 CLocalBlastDbAdapter::GetTaxId(const CSeq_id_Handle& idh)
 {
-    int retval = kInvalidSeqPos;
+    int retval = static_cast<int>(kInvalidSeqPos);
     CConstRef<CSeq_id> id = idh.GetSeqId();
     if (id.NotEmpty()) {
         int oid = 0;

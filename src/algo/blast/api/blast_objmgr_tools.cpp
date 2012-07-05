@@ -351,8 +351,17 @@ CBlastQuerySourceOM::GetTitle(int i) const
     }
     _ASSERT(seqloc.NotEmpty());
     _ASSERT(scope.NotEmpty());
-    CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
-    return bh ? sequence::GetTitle(bh) : kEmptyStr;
+    if ( !seqloc->GetId() ) {
+        return kEmptyStr;
+    }
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc->GetId());
+    CNcbiOstrstream oss;
+    if (bh) {
+        CFastaOstream fasta_stream(oss);
+        fasta_stream.WriteTitle(bh);
+    }
+    return bh ? CNcbiOstrstreamToString(oss) : kEmptyStr;
 }
 
 TSeqPos

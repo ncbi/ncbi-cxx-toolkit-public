@@ -53,7 +53,8 @@ USING_SCOPE(objects);
 //-------------------------------------------------------------------------
 void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool parsed_id )
 { 
-    string id_str = ">";
+    CNcbiOstrstream oss;
+    oss << ">";
 
     /*
     if( match_id ) {
@@ -69,11 +70,16 @@ void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool parsed_id )
     } else {
     */
     if( parsed_id ) {
-        id_str += CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(),
-                                          CSeq_id::eFormat_FastA) + " ";
+        oss << CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(), 
+                                       CSeq_id::eFormat_FastA) + " ";
     }
 
-    id_str += sequence::GetTitle( bsh ) + "\n";
+    {{
+        CFastaOstream fasta_stream(oss);
+        fasta_stream.WriteTitle(bsh);
+    }}
+    oss << endl;
+    const string id_str = CNcbiOstrstreamToString(oss);
     os << id_str;
 }
 
