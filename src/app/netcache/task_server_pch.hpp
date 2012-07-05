@@ -26,6 +26,12 @@
  * Authors:  Pavel Ivanov
  *
  * File Description:
+ *   File serving as precompiled header on Windows and that should be included
+ *   first in all task_server sources. This file ensures the correct order of
+ *   inclusion of core task_server headers and some corelib headers to avoid
+ *   any conflicts and provide correct symbol definitions. Also it defines
+ *   guards against inclusion of certain headers which should never be
+ *   included in any source of task_server or application linking with it.
  */
 
 
