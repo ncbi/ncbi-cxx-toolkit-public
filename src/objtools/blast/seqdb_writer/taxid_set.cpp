@@ -57,20 +57,14 @@ void CTaxIdSet::SetMappingFromFile(CNcbiIstream & f)
         // Remove leading/trailing spaces.
         s = NStr::TruncateSpaces(s);
         
-        size_t p = s.find(" ");
-        
-        if (p == s.npos) {
-            // GI with no taxid; is this an error?  Only if the
-            // file is strictly for setting the taxid field.  If
-            // the file could also be used for the ids file, then
-            // the lack of a taxid on this line simply means that
-            // no taxid is specified for this GI or other ID.
-                
-            continue;
+        vector<string> tokens;
+        NStr::Tokenize(s, " \t", tokens);
+
+        string gi_str = tokens.front();
+        string tx_str;
+        if (tokens.size() == 2) {
+            tx_str = tokens.back();
         }
-        
-        string gi_str(s, 0, p);
-        string tx_str(s, p+1, s.size()-(p+1));
         
         if (gi_str.size() && tx_str.size()) {
             int taxid = NStr::StringToInt(tx_str, NStr::fAllowLeadingSpaces);
