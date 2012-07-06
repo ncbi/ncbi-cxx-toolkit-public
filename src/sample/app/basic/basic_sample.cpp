@@ -35,8 +35,6 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
-#include <common/test_assert.h>  /* This header must go last, if used at all */
-
 USING_NCBI_SCOPE;
 
 
@@ -59,10 +57,10 @@ private:
 
 void CSampleBasicApplication::Init(void)
 {
-    // Set error posting and tracing on maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_All);
-    SetDiagPostLevel(eDiag_Info);
+    // // Set error posting and tracing on maximum
+    // SetDiagTrace(eDT_Enable);
+    // SetDiagPostFlag(eDPF_All);
+    // SetDiagPostLevel(eDiag_Info);
 
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -243,6 +241,8 @@ void CSampleBasicApplication::Exit(void)
 
 int main(int argc, const char* argv[])
 {
-    // Execute main application function
-    return CSampleBasicApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    // Execute main application function; change argument list to
+    // (argc, argv, 0, eDS_Default, 0) if there's no point in trying
+    // to look for an application-specific configuration file.
+    return CSampleBasicApplication().AppMain(argc, argv);
 }
