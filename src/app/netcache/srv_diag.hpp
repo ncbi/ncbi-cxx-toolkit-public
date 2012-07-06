@@ -58,12 +58,24 @@ struct SLogData;
 #define assert(x)   _ASSERT(x)
 
 
+/// Class used in all diagnostic logging.
+/// This class effectively replaces things like CNcbiDiag and CDiagContext.
+/// Any started messages should finish by call to Flush() or by destruction
+/// of the object. One shouldn't start any new messages before he finishes
+/// started one. After call to Flush() the same object can be reused to start
+/// a new message. All messages will have request number from request context
+/// assigned to currently executing task, except those methods that get
+/// pointer to CRequestContext as input parameter (these methods should be
+/// used very rarely).
+/// CSrvDiagMsg objects cannot persist upon return to TaskServer code and
+/// cannot be used in several threads simultaneously.
 class CSrvDiagMsg
 {
 public:
     CSrvDiagMsg(void);
     ~CSrvDiagMsg(void);
 
+    /// Severity levels for logging
     enum ESeverity {
         Trace,
         Info,
@@ -73,23 +85,40 @@ public:
         Fatal
     };
 
+    /// Checks if given severity level is visible, i.e. will make its way to
+    /// log file if someone will print anything on this level.
     static bool IsSeverityVisible(ESeverity sev);
 
+    /// Starts log message which will include severity, filename, line number
+    /// and function name.
     const CSrvDiagMsg& StartSrvLog(ESeverity sev,
                                    const char* file,
                                    int line,
                                    const char* func) const;
+    /// Starts informational message which doesn't need to have filename, line
+    /// number or function name.
     const CSrvDiagMsg& StartInfo(void) const;
     const CSrvDiagMsg& StartInfo(CRequestContext* ctx) const;
+    /// Starts "request-start" message. Use PrintParam() methods to include
+    /// parameters into the message.
     CSrvDiagMsg& StartRequest(void);
     CSrvDiagMsg& StartRequest(CRequestContext* ctx);
+    /// Starts "extra" message. Use PrintParam() methods to include
+    /// parameters into the message.
     CSrvDiagMsg& PrintExtra(void);
     CSrvDiagMsg& PrintExtra(CRequestContext* ctx);
+    /// Prints "request-stop" message. This is the only method that doesn't
+    /// start message, it prints the whole message which doesn't need to be
+    /// manually finished.
     void StopRequest(void);
     void StopRequest(CRequestContext* ctx);
+    /// Finishes current message and prepare to start new one.
     void Flush(void);
+    /// Starts the "old style" log message. Method shouldn't be used by
+    /// anybody except ERR_POST() macro used in legacy code.
     const CSrvDiagMsg& StartOldStyle(const char* file, int line, const char* func);
 
+    /// Adds parameter to "request-start" or "extra" message.
     CSrvDiagMsg& PrintParam(CTempString name, CTempString value);
     CSrvDiagMsg& PrintParam(CTempString name, Int4 value);
     CSrvDiagMsg& PrintParam(CTempString name, Uint4 value);
@@ -97,6 +126,7 @@ public:
     CSrvDiagMsg& PrintParam(CTempString name, Uint8 value);
     CSrvDiagMsg& PrintParam(CTempString name, double value);
 
+    /// Converts input value to string and adds to started log message.
     const CSrvDiagMsg& operator<< (CTempString str) const;
     const CSrvDiagMsg& operator<< (const string& str) const;
     const CSrvDiagMsg& operator<< (const char* str) const;
@@ -108,13 +138,21 @@ public:
     const CSrvDiagMsg& operator<< (const void* ptr) const;
     const CSrvDiagMsg& operator<< (const exception& ex) const;
 
+// Consider this section private as it's public for internal use only
+// to minimize implementation-specific clutter in headers.
 public:
+    /// Current thread created this object.
     SSrvThread* m_Thr;
+    /// Log data from current thread.
     SLogData* m_Data;
+    /// Flag showing if "old style" message was started.
     bool m_OldStyle;
 };
 
 
+/// Macro to be used for printing log messages.
+/// Macro usage is as follows:
+/// SRV_LOG(Error, message << some_param << " more message");
 #define SRV_LOG(sev, msg)                                       \
     do {                                                        \
         if (CSrvDiagMsg::IsSeverityVisible(CSrvDiagMsg::sev)) { \
@@ -127,6 +165,9 @@ public:
     while (0)                                                   \
 /**/
 
+/// Macro to be used for printing informational messages.
+/// Macro usage is as follows:
+/// INFO(message << some_param << " more message");
 #define INFO(msg)   CSrvDiagMsg().StartInfo() << msg
 
 

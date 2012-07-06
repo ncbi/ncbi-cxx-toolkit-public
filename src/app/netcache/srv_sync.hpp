@@ -28,6 +28,7 @@
  * Authors:  Pavel Ivanov
  *
  * File Description: 
+ *   Header defines several primitives to use for inter-thread synchronization.
  */
 
 
@@ -42,6 +43,11 @@ class CSrvTime;
 
 #ifdef NCBI_COMPILER_GCC
 
+/// Purpose of this macro is to force compiler to access variable exactly at
+/// the place it's written (no moving around and changing places with other
+/// variables reads or writes) and to avoid optimizations when several usages
+/// of local variable are replaced with direct access to global variable which
+/// should be read/written only once.
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 
 template <class T>
@@ -116,43 +122,75 @@ AtomicSub(T1 volatile& var, T2 sub_value)
 
 
 
+/// Wrapper around Linux's futex.
 class CFutex
 {
 public:
     CFutex(void);
 
+    /// Read value of the futex.
     int GetValue(void);
+    /// Atomically change value of the futex. If current futex value was
+    /// changed in another thread and doesn't match old_value then method
+    /// returns FALSE and value is not changed. Otherwise value is changed to
+    /// new_value and method returns TRUE.
     bool ChangeValue(int old_value, int new_value);
+    /// Atomically add some amount to futex's value. Result of addition is
+    /// returned.
     int AddValue(int cnt_to_add);
 
+    /// Set futex's value non-atomically, i.e. caller should ensure that
+    /// several threads don't race with each other with setting different
+    /// values.
     void SetValueNonAtomic(int new_value);
 
+    /// Type of result returned from WaitValueChange()
     enum EWaitResult {
+        /// Thread was woken up by call to WakeUpWaiters() from another thread.
         eWaitWokenUp,
+        /// Futex's value was changed in another thread before waiting was
+        /// started.
         eValueChanged,
+        /// Method returned because total waiting time exceeded given timeout.
         eTimedOut
     };
 
+    /// Wait for futex's value to change (with and without timeout).
+    /// Thread won't wake up automatically when value has changed -- thread
+    /// changing it should call WakeUpWaiters().
     EWaitResult WaitValueChange(int old_value);
     EWaitResult WaitValueChange(int old_value, const CSrvTime& timeout);
+    /// Wake up some threads waiting on this futex. cnt_to_wake is the maximum
+    /// number of threads to wake.
     int WakeUpWaiters(int cnt_to_wake);
 
 private:
     CFutex(const CFutex&);
     CFutex& operator= (const CFutex&);
 
+    /// Value of the futex.
     volatile int m_Value;
 };
 
 
+/// Mutex created to have minimum possible size (its size is 4 bytes) and
+/// to sleep using kernel capabilities (without busy-loops).
 class CMiniMutex
 {
 public:
     CMiniMutex(void);
     ~CMiniMutex(void);
 
+    /// Lock the mutex. Mutex doesn't support recursive locking. So if current
+    /// thread has already locked this mutex second call will result in
+    /// deadlock.
     void Lock(void);
+    /// Quickly try to lock mutex (without any retries). Returns TRUE if lock
+    /// was successful and Unlock() should be called, FALSE otherwise.
     bool TryLock(void);
+    /// Unlock the mutex. Mutex doesn't check whether this thread actually
+    /// locked it. If you call Unlock() without calling Lock() behavior is
+    /// undefined.
     void Unlock(void);
 
 private:
@@ -160,7 +198,7 @@ private:
     CMiniMutex(const CMiniMutex&);
     CMiniMutex& operator= (const CMiniMutex&);
 
-
+    /// Futex which is used as base for mutex implementation.
     CFutex m_Futex;
 };
 

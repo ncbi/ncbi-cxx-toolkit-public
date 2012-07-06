@@ -28,6 +28,11 @@
  * Authors:  Pavel Ivanov
  *
  * File Description:
+ *   This header contains special definitions of different classes, enums and
+ *   macros which are used by sources included in srv_lib.cpp but which don't
+ *   have definitions included. Many classes and macros are just stubs to make
+ *   code compilable (this code should never be called in run time) and some
+ *   are modified to use TaskServer infrastructure instead of corelib.
  */
 
 

@@ -34,6 +34,8 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Special variant of CRef that doesn't check for NULL when dereferencing.
+/// Segmentation fault in such case is much better than thrown exception.
 template <class C, class Locker = typename CLockerTraits<C>::TLockerType>
 class CSrvRef : public CRef<C, Locker>
 {

@@ -394,20 +394,6 @@ CSrvSocketTask::WriteText(CTempString message)
     return *this;
 }
 
-inline CSrvSocketTask&
-CSrvSocketTask::WriteText(const string& message)
-{
-    WriteData(message.data(), message.size());
-    return *this;
-}
-
-inline CSrvSocketTask&
-CSrvSocketTask::WriteText(const char* message)
-{
-    WriteData(message, strlen(message));
-    return *this;
-}
-
 template <typename NumType>
 inline CSrvSocketTask&
 CSrvSocketTask::WriteNumber(NumType num)
