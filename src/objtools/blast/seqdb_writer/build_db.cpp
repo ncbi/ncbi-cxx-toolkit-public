@@ -697,7 +697,9 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     
     typedef CFastaReader::EFlags TFlags;
     
-    int iflags = CFastaReader::fAllSeqIds | CFastaReader::fForceType;
+    int iflags = CFastaReader::fAllSeqIds |
+                 CFastaReader::fForceType |
+                 CFastaReader::fParseGaps;
     
     if (is_protein) {
         iflags |= CFastaReader::fAssumeProt;
