@@ -149,9 +149,9 @@ int CSampleBasicApplication::Run(void)
     cout << string(72, '=') << endl;
 
     // Self test
-    assert(args.Exist("f1"));
-    assert(args.Exist("logfile"));
-    assert(args["barfooetc"]);
+    _ASSERT(args.Exist("f1"));
+    _ASSERT(args.Exist("logfile"));
+    _ASSERT(args["barfooetc"]);
 
     // Stream to result output
     // (NOTE: "x_lg" is just a workaround for bug in SUN WorkShop 5.1 compiler)
@@ -191,14 +191,14 @@ int CSampleBasicApplication::Run(void)
             NCBI_REPORT_EXCEPTION("CArgException is thrown:",e);
             is_thrown = true;
         }
-        assert(is_thrown);
+        _ASSERT(is_thrown);
     }
 
     if ( args["f1"] ) {
-        assert(args["f1"].AsBoolean());
+        _ASSERT(args["f1"].AsBoolean());
     }
     if ( args["f2"] ) {
-        assert(args["f2"].AsBoolean());
+        _ASSERT(args["f2"].AsBoolean());
     }
 
     // Extra (unnamed positional) arguments
