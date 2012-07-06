@@ -937,6 +937,7 @@ CLDS2_Manager::CLDS2_Manager(const string& db_file)
                    CFastaReader::fAllSeqIds  |
                    CFastaReader::fOneSeq     |
                    CFastaReader::fNoSeqData  |
+                   CFastaReader::fParseGaps  |
                    CFastaReader::fParseRawID),
       m_SeqAlignGroupSize(0)
 {

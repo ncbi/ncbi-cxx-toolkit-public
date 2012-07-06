@@ -731,6 +731,7 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                       CFastaReader::fAllSeqIds  |
                       CFastaReader::fOneSeq     |
                       CFastaReader::fNoSeqData  |
+                      CFastaReader::fParseGaps  |
                       CFastaReader::fParseRawID);
     } else {
         LOG_POST_X(5, Info << "Unsupported file format: " << file_name);

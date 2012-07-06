@@ -66,6 +66,7 @@ CRef<CSeq_entry> LDS_LoadTSE(const CLDS_Query::SObjectDescr& obj_descr,
         if (fasta_flags == -1) { // invalid; stand-in for the default value
             fasta_flags = (CFastaReader::fAssumeNuc | CFastaReader::fOneSeq
                            | CFastaReader::fParseRawID
+                           | CFastaReader::fParseGaps
                            | CFastaReader::fStrictGuess);
         }
         CStreamLineReader lr(in);
