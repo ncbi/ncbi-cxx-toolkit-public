@@ -709,9 +709,11 @@ bool CFastaReader::ParseGapLine(const TStr& line)
                  NStr::StringToUInt(line.substr(2), NStr::fConvErr_NoThrow) };
     if (gap.len > 0) {
         m_Gaps.push_back(gap);
+        m_TotalGapLength += gap.len;
         return true;
     } else if (line == ">?unk100") {
         gap.len = -100;
+        m_TotalGapLength += 100;
         m_Gaps.push_back(gap);
         return true;
     } else {
