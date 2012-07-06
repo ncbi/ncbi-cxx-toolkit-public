@@ -1161,7 +1161,7 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
                 str = desc.GetComment();
                 TrimSpacesAndJunkFromEnds(str, true);
                 ConvertQuotes(str);
-                if( ! NStr::EndsWith(str, ".") ) {
+                if( ! NStr::EndsWith(str, ".") && ! NStr::EndsWith(str, "/") && ! NStr::EndsWith(str, "~") ) {
                     str += '.';
                 }
             }
