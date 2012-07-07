@@ -4121,7 +4121,7 @@ NHT	s	Tropical Pesticides Research Institute
 NHV	s	Institut fuer Landwirtschaftliche Botanik
 NI<JPN>	c	Nagao Institute
 NI<SVK>	s	Slovenska pol'nohospodarska Univerzita, Katedra botaniky
-NIAES	c	National Institute of Agro-Environmental Sciences
+NIAES	c	National Institute for Agro-Environmental Sciences
 NIAH	c	National Institute of Animal Health
 NIBH	c	National Institute of Bioscience and Human-Technology
 NIBR	s	National Institute of Biological Resources
@@ -5460,7 +5460,7 @@ STCR	s	Universite de la Reunion
 STD	s	Prittlewell Priory Museum
 STDCM	s	Southend Central Museum
 STE	s	National Botanical Institute
-STEU	s	University of Stellenbosch, Botany Department
+STEU	sc	University of Stellenbosch, Botany Department
 STFX	s	St. Francis Xavier University, Biology Department
 STG	s	St. Martin's Convent
 STI	s	Stirling Smith Art Gallery and Museum
