@@ -167,7 +167,7 @@ int CRPSTBlastnApp::Run(void)
                           m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
             } else {
-            	CLocalRPSBlast  local_search (query_batch, args[kArgDb].AsString(), opts_hndl, args[kArgNumThreads].AsInteger() );
+            	CLocalRPSBlast  local_search (query_batch, db_args->GetDatabaseName(), opts_hndl, args[kArgNumThreads].AsInteger() );
             	results = local_search.Run();
             }
 
