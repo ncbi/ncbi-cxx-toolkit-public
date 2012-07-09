@@ -46,6 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/format/blast_format.hpp>
 #include "blast_app_util.hpp"
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
+#include <algo/blast/api/rpsblast_local.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -166,8 +167,8 @@ int CRPSTBlastnApp::Run(void)
                           m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
             } else {
-                CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
-                results = lcl_blast.Run();
+            	CLocalRPSBlast  local_search (query_batch, args[kArgDb].AsString(), opts_hndl, args[kArgNumThreads].AsInteger() );
+            	results = local_search.Run();
             }
 
             if (fmt_args->ArchiveFormatRequested(args)) {
