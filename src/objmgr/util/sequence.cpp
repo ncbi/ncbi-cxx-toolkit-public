@@ -2858,7 +2858,6 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
     CSeqVector_CI::TResidue alt_gap_char
         = ((vec.GetGapChar() == '-') ? hard_mask_char : '-');
     string                  alt_gap_str(m_Width, alt_gap_char);
-    bool                    noted_unknown_gap = false;
 
     if ((m_Flags & fReverseStrand) != 0) {
         it.SetStrand(Reverse(it.GetStrand()));
@@ -2876,7 +2875,6 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
         }
         if ((m_GapMode != native_gap_mode || (m_Flags & fInstantiateGaps) == 0)
             &&  it.GetGapSizeForward()) {
-            noted_unknown_gap = false;
             TSeqPos gap_size = it.SkipGap();
             if (m_GapMode == eGM_one_dash
                 ||  (m_Flags & fInstantiateGaps) == 0) {
@@ -2922,17 +2920,7 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                     rem_state = ms_it->first - it.GetPos();
                 }
             }
-        } else if (it.HasZeroGapBefore()  &&  !noted_unknown_gap) {
-            noted_unknown_gap = true;
-            if (m_GapMode == eGM_one_dash
-                ||  (m_Flags & fInstantiateGaps) == 0) {
-                m_Out << "-\n";
-            } else {
-                m_Out << "\n>?unk100\n";
-            }
-            rem_line = m_Width;
         } else {
-            noted_unknown_gap = false;
             TSeqPos     count   = min(TSeqPos(it.GetBufferSize()), rem_state);
             TSeqPos     new_pos = it.GetPos() + count;
             const char* ptr     = it.GetBufferPtr();
