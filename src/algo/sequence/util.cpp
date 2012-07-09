@@ -42,14 +42,18 @@ USING_SCOPE(objects);
 CRef<objects::CBioseq>
 SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope)
 {
-
-    // Build a Seq-entry for the query Seq-loc
-    CBioseq_Handle handle = scope.GetBioseqHandle( loc );
-    if( !handle ){
-        return CRef<CBioseq>();
+    CRef<CBioseq> bioseq;
+    if ( !loc.GetId() ) {
+        return bioseq;
     }
 
-    CRef<CBioseq> bioseq( new CBioseq() );
+    // Build a Seq-entry for the query Seq-loc
+    CBioseq_Handle handle = scope.GetBioseqHandle(*loc.GetId());
+    if( !handle ){
+        return bioseq;
+    }
+
+    bioseq.Reset( new CBioseq() );
 
     // add an ID for our sequence
     CRef<CSeq_id> id(new CSeq_id());
