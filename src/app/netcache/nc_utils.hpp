@@ -63,7 +63,8 @@ enum ENCAccessType {
     eNCRead,        ///< Read meta information only
     eNCReadData,    ///< Read blob data
     eNCCreate,      ///< Create blob or re-write its contents
-    eNCCopyCreate
+    eNCCopyCreate   ///< (Re-)write blob from another NetCache (as opposed to
+                    ///< writing from client)
 } NCBI_PACKED_ENUM_END();
 
 
@@ -71,42 +72,82 @@ enum ENCAccessType {
 /// Additional statuses can be taken from
 /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 enum EHTTPStatus {
-    eStatus_OK          = 200,  ///< Command is ok and execution is good
+    /// Command is ok and execution is good.
+    eStatus_OK          = 200,
+    /// Inactivity timeout on connection.
     eStatus_Inactive    = 204,
+    /// SYNC_START command is ok but synchronization by blobs list will be
+    /// performed.
     eStatus_SyncBList   = 205,
+    /// Operation is not done as the same or newer blob is present on the
+    /// server.
     eStatus_NewerBlob   = 206,
+    /// "Fake" connection detected -- no data received from client at all.
     eStatus_FakeConn    = 207,
+    /// Status for PUT2 command or connection that used PUT2 command.
     eStatus_PUT2Used    = 301,
+    /// SETVALID cannot be executed as new version was already written.
     eStatus_RaceCond    = 302,
+    /// Synchronization cannot start because server is busy doing cleaning or
+    /// some other synchronization on this slot.
     eStatus_SyncBusy    = 303,
+    /// Synchronization is rejected because both servers tried to start it
+    /// simultaneously.
     eStatus_CrossSync   = 305,
+    /// Synchronization is aborted because cleaning thread waited for too much
+    /// or because server needs to shutdown.
     eStatus_SyncAborted = 306,
+    /// Caching of the database was canceled because server needs to shutdown.
     eStatus_OperationCanceled = 306,
+    /// Command cannot be executed because NetCache didn't cache the database
+    /// contents.
     eStatus_JustStarted = 308,
+    /// Connection was forcefully closed because server needs to shutdown.
     eStatus_ShuttingDown = 309,
-    eStatus_BadCmd      = 400,  ///< Command is incorrect
-    eStatus_BadPassword = 401,  ///< Bad password for accessing the blob
+    /// Command is incorrect.
+    eStatus_BadCmd      = 400,
+    /// Bad password for accessing the blob.
+    eStatus_BadPassword = 401,
+    /// Client was disabled in configuration.
     eStatus_Disabled    = 403,
-    eStatus_NotFound    = 404,  ///< Blob was not found
-    eStatus_NotAllowed  = 405,  ///< Operation not allowed with current
-                                ///< settings
+    /// Blob was not found.
+    eStatus_NotFound    = 404,
+    /// Operation not allowed with current settings (e.g. password given but
+    /// ini-file says that only blobs without password are allowed)
+    eStatus_NotAllowed  = 405,
+    /// Command requires admin privileges.
     eStatus_NeedAdmin   = 407,
-    eStatus_CmdTimeout  = 408,  ///< Command timeout is exceeded
-    eStatus_CondFailed  = 412,  ///< Precondition stated in command has
-                                ///< failed
+    /// Command timeout is exceeded.
+    eStatus_CmdTimeout  = 408,
+    /// Precondition stated in command has failed (size of blob was given but
+    /// data has a different size).
+    eStatus_CondFailed  = 412,
+    /// Connection was closed too early (client didn't send all data or didn't
+    /// get confirmation about successful execution).
     eStatus_PrematureClose = 499,
-    eStatus_ServerError = 500,  ///< Internal server error
-    eStatus_NoImpl      = 501,  ///< Command is not implemented
+    /// Internal server error.
+    eStatus_ServerError = 500,
+    /// Command is not implemented.
+    eStatus_NoImpl      = 501,
+    /// Synchronization command belongs to session that was already canceled
     eStatus_StaleSync   = 502,
+    /// Command should be proxied to peers but it's impossible to connect to
+    /// peers.
     eStatus_PeerError   = 503,
+    /// There's not enough disk space to execute the command.
     eStatus_NoDiskSpace = 504,
+    /// Command was aborted because server needs to shutdown.
     eStatus_CmdAborted  = 505
 };
 
 
+/// Maps between status codes and error texts sent to client
+/// to explain these codes.
 extern map<int, string> s_MsgForStatus;
 extern map<string, int> s_StatusForMsg;
 
+/// Initializes maps between status codes and error texts sent to client
+/// to explain these codes.
 void InitClientMessages(void);
 
 
