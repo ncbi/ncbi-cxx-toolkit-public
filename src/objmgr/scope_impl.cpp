@@ -2788,7 +2788,7 @@ void CScope_Impl::GetGis(TGIs& ret,
                          bool force_load)
 {
     int count = ids.size(), remaining = count;
-    ret.assign(count, -1);
+    ret.assign(count, 0);
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
@@ -2900,7 +2900,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
                             bool force_load)
 {
     int count = ids.size(), remaining = count;
-    ret.assign(count, 0);
+    ret.assign(count, -1);
     vector<bool> loaded(count);
     if ( !force_load ) {
         for ( int i = 0; i < count; ++i ) {
@@ -2977,7 +2977,7 @@ TSeqPos CScope_Impl::GetSequenceLength(const CSeq_id_Handle& idh,
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         CPrefetchManager::IsActive();
         TSeqPos length = it->GetDataSource().GetSequenceLength(idh);
-        if ( length ) {
+        if ( length != kInvalidSeqPos ) {
             return length;
         }
     }

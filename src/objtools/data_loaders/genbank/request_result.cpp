@@ -198,6 +198,12 @@ bool CLoadInfoSeq_ids::IsLoadedTaxId(void)
     if ( m_TaxIdLoaded ) {
         return true;
     }
+    if ( IsLoaded() && (m_State & CBioseq_Handle::fState_no_data) ) {
+        // update no taxid for unknown sequences
+        m_TaxId = 0;
+        m_TaxIdLoaded = true;
+        return true;
+    }
     return false;
 }
 

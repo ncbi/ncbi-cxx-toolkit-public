@@ -126,6 +126,19 @@ CDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/,
 
 
 CDataLoader::TTSE_LockSet
+CDataLoader::GetRecordsNoBlobState(const CSeq_id_Handle& idh,
+                                   EChoice choice)
+{
+    try {
+        return GetRecords(idh, choice);
+    }
+    catch ( CBlobStateException& /* ignored */ ) {
+        return TTSE_LockSet();
+    }
+}
+
+
+CDataLoader::TTSE_LockSet
 CDataLoader::GetDetailedRecords(const CSeq_id_Handle& idh,
                                 const SRequestDetails& details)
 {
@@ -205,7 +218,7 @@ CDataLoader::TBlobId CDataLoader::GetBlobIdFromString(const string& /*str*/) con
 
 void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
-    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
         CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
@@ -243,7 +256,7 @@ string CDataLoader::GetLabel(const CSeq_id_Handle& idh)
 int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
     int ret = -1;
-    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
         CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
@@ -258,7 +271,7 @@ int CDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 TSeqPos CDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 {
     TSeqPos ret = kInvalidSeqPos;
-    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
         CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
@@ -273,7 +286,7 @@ TSeqPos CDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 CSeq_inst::TMol CDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
 {
     CSeq_inst::TMol ret = CSeq_inst::eMol_not_set;
-    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    TTSE_LockSet locks = GetRecordsNoBlobState(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
         CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
@@ -296,8 +309,10 @@ void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
             continue;
         }
         GetIds(ids[i], seq_ids);
-        ret[i] = CScope::x_GetAccVer(seq_ids);
-        loaded[i] = true;
+        if ( !seq_ids.empty() ) {
+            ret[i] = CScope::x_GetAccVer(seq_ids);
+            loaded[i] = true;
+        }
     }
 }
 
@@ -313,8 +328,10 @@ void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
             continue;
         }
         GetIds(ids[i], seq_ids);
-        ret[i] = CScope::x_GetGi(seq_ids);
-        loaded[i] = true;
+        if ( !seq_ids.empty() ) {
+            ret[i] = CScope::x_GetGi(seq_ids);
+            loaded[i] = true;
+        }
     }
 }
 
@@ -349,17 +366,16 @@ void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
             continue;
         }
         
-        ret[i] = -1;
-        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
+        TTSE_LockSet locks = GetRecordsNoBlobState(ids[i], eBioseqCore);
         ITERATE(TTSE_LockSet, it, locks) {
             CConstRef<CBioseq_Info> bs_info =
                 (*it)->FindMatchingBioseq(ids[i]);
             if ( bs_info ) {
                 ret[i] = bs_info->GetTaxId();
+                loaded[i] = true;
                 break;
             }
         }
-        loaded[i] = true;
     }
 }
 
@@ -375,17 +391,16 @@ void CDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
             continue;
         }
         
-        ret[i] = kInvalidSeqPos;
-        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
+        TTSE_LockSet locks = GetRecordsNoBlobState(ids[i], eBioseqCore);
         ITERATE(TTSE_LockSet, it, locks) {
             CConstRef<CBioseq_Info> bs_info =
                 (*it)->FindMatchingBioseq(ids[i]);
             if ( bs_info ) {
                 ret[i] = bs_info->GetBioseqLength();
+                loaded[i] = true;
                 break;
             }
         }
-        loaded[i] = true;
     }
 }
 
@@ -401,17 +416,16 @@ void CDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
             continue;
         }
         
-        ret[i] = CSeq_inst::eMol_not_set;
-        TTSE_LockSet locks = GetRecords(ids[i], eBioseqCore);
+        TTSE_LockSet locks = GetRecordsNoBlobState(ids[i], eBioseqCore);
         ITERATE(TTSE_LockSet, it, locks) {
             CConstRef<CBioseq_Info> bs_info =
                 (*it)->FindMatchingBioseq(ids[i]);
             if ( bs_info ) {
                 ret[i] = bs_info->GetInst_Mol();
+                loaded[i] = true;
                 break;
             }
         }
-        loaded[i] = true;
     }
 }
 

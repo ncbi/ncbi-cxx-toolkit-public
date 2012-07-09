@@ -231,8 +231,16 @@ public:
 
     /// Request from a datasource using handles and ranges instead of seq-loc
     /// The TSEs loaded in this call will be added to the tse_set.
+    /// The GetRecords() may throw CBlobStateException if the sequence
+    /// is not available (not known or disabled), and blob state
+    /// is different from minimal fState_no_data.
+    /// The actual blob state can be read from the exception in this case.
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
+    /// The same as GetRecords() but always returns empty TSE lock set
+    /// instead of throwing CBlobStateException.
+    TTSE_LockSet GetRecordsNoBlobState(const CSeq_id_Handle& idh,
+                                       EChoice choice);
     /// Request from a datasource using handles and ranges instead of seq-loc
     /// The TSEs loaded in this call will be added to the tse_set.
     /// Default implementation will call GetRecords().

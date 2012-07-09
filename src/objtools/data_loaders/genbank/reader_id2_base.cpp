@@ -391,7 +391,7 @@ bool CId2ReaderBase::LoadSeq_idTaxId(CReaderRequestResult& result,
 
     if ( !ids->IsLoadedTaxId() ) {
         m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
-        return false;
+        return true; // repeat
     }
 
     return true;

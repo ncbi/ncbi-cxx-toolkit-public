@@ -1211,6 +1211,10 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
     _ASSERT(blobs.IsLoaded());
 
     if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
+        if ( blobs->GetState() == CBioseq_Handle::fState_no_data ) {
+            // default state - return empty lock set
+            return locks;
+        }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
                     "blob state error for "+sih.AsString(), blobs->GetState());
     }
@@ -1246,6 +1250,10 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
     _ASSERT(blobs.IsLoaded());
 
     if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
+        if ( blobs->GetState() == CBioseq_Handle::fState_no_data ) {
+            // default state - return empty name set
+            return names;
+        }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
                     "blob state error for "+sih.AsString(), blobs->GetState());
     }
@@ -1279,6 +1287,10 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
     _ASSERT(blobs.IsLoaded());
 
     if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
+        if ( blobs->GetState() == CBioseq_Handle::fState_no_data ) {
+            // default state - return empty name set
+            return names;
+        }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
                     "blob state error for "+sih.AsString(), blobs->GetState());
     }

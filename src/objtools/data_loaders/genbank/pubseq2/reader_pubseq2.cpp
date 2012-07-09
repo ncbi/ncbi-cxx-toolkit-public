@@ -387,6 +387,8 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
                        "Cannot create dbapi context with driver '"+
                        m_DbapiDriver+"'");
         }
+
+        m_Context->SetTimeout(20);
     }
 
     CPubseq2Validator validator(this, conn_, m_ExclWGSMaster);
