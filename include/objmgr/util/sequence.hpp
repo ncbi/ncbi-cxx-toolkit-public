@@ -252,6 +252,7 @@ CSeq_id_Handle FindLatestSequence(const CSeq_id_Handle& idh,
 
 /** @name GetTitle
  * Get sequence's title (used in various flat-file formats.)
+ * Deprecated in favor of CDeflineGenerator.
  * @{
  */
 
