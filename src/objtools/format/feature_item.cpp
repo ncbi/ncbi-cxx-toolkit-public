@@ -2626,6 +2626,13 @@ void CFeatureItem::x_AddQualsRna(
     switch ( rna_type ) {
     case CRNA_ref::eType_tRNA:
     {
+        if ( !pseudo  &&  cfg.ShowTranscript() ) {
+            CSeqVector vec(feat.GetLocation(), scope);
+            vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
+            string transcription;
+            vec.GetSeqData(0, vec.size(), transcription);
+            x_AddQual(eFQ_transcription, new CFlatStringQVal(transcription));
+        }
         if (rna.IsSetExt()) {
             const CRNA_ref::C_Ext& ext = rna.GetExt();
             switch (ext.Which()) {
@@ -6539,6 +6546,13 @@ void CFeatureItemGff::x_AddQualsRna(
     switch ( rna_type ) {
     case CRNA_ref::eType_tRNA:
     {
+        if ( !pseudo  &&  cfg.ShowTranscript() ) {
+            CSeqVector vec(feat.GetLocation(), scope);
+            vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
+            string transcription;
+            vec.GetSeqData(0, vec.size(), transcription);
+            x_AddQual(eFQ_transcription, new CFlatStringQVal(transcription));
+        }
         if (rna.IsSetExt()) {
             const CRNA_ref::C_Ext& ext = rna.GetExt();
             switch (ext.Which()) {
