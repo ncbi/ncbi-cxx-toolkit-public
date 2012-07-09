@@ -172,7 +172,7 @@ static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi
 //to test ranges use:
 //static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&tracks=[key:gene_model_track],[key:alignment_track]&v=<@from@>:<@to@>,<@fromTest@>:<@toTest@>&flip=<@flip@>";
 
-static const char kCustomLinkTemplate[] = "<a href=\"<@custom_url@>\" class=\"<@custom_cls@>\" title=\"<@custom_title@>\"><@custom_lnk_displ@></a>"; 
+static const char kCustomLinkTemplate[] = "<a href=\"<@custom_url@>\" class=\"<@custom_cls@>\" target=\"<@custom_trg@>\" title=\"<@custom_title@>\"><@custom_lnk_displ@></a>"; 
 static const char kCustomLinkTitle[]="Show <@custom_report_type@> report for <@seqid@>";
 ///Sub-sequence
 // .ncbirc alias: ENTREZ_SUBSEQ
