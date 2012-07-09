@@ -36,7 +36,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 
@@ -356,12 +356,7 @@ CBlastQuerySourceOM::GetTitle(int i) const
     }
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc->GetId());
-    CNcbiOstrstream oss;
-    if (bh) {
-        CFastaOstream fasta_stream(oss);
-        fasta_stream.WriteTitle(bh);
-    }
-    return bh ? CNcbiOstrstreamToString(oss) : kEmptyStr;
+    return bh ? sequence::CDeflineGenerator().GenerateDefline(bh) : kEmptyStr;
 }
 
 TSeqPos

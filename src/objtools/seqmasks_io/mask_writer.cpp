@@ -42,7 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
 #include <objtools/seqmasks_io/mask_writer.hpp>
@@ -74,11 +74,7 @@ void CMaskWriter::PrintId( objects::CBioseq_Handle& bsh, bool parsed_id )
                                        CSeq_id::eFormat_FastA) + " ";
     }
 
-    {{
-        CFastaOstream fasta_stream(oss);
-        fasta_stream.WriteTitle(bsh);
-    }}
-    oss << endl;
+    oss << endl << sequence::CDeflineGenerator().GenerateDefline(bsh);
     const string id_str = CNcbiOstrstreamToString(oss);
     os << id_str;
 }
