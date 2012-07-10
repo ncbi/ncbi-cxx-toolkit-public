@@ -35,6 +35,25 @@
 
 BEGIN_NCBI_SCOPE;
 
+                
+
+struct SRCUInfo
+{
+    TSrvRCUList calls;
+    CSrvRCUUser* gp_marker_cur;
+    CSrvRCUUser* gp_marker_next;
+    Uint1 seen_gp;
+};
+
+
+class CFakeRCUUser : public CSrvRCUUser
+{
+public:
+    CFakeRCUUser(void);
+    virtual ~CFakeRCUUser(void);
+
+    virtual void ExecuteRCU(void);
+};
 
 static CMiniMutex s_RCULock;
 static Uint1 s_FinishedGP = 0;

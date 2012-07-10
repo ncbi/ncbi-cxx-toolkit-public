@@ -38,8 +38,6 @@ BEGIN_NCBI_SCOPE
 
 
 struct SSrvThread;
-struct SSchedInfo;
-
 
 
 void ConfigureScheduler(CNcbiRegistry* reg, CTempString section);
@@ -50,66 +48,6 @@ void SchedExecuteTask(SSrvThread* thr);
 void SchedStartJiffy(SSrvThread* thr);
 bool SchedIsAllIdle(void);
 void MarkTaskTerminated(CSrvTask* task, bool immediate = true);
-
-
-
-enum ESrvTaskFlags {
-    fTaskRunnable        = 1 << 0,
-    fTaskQueued          = 1 << 1,
-    fTaskRunning         = 1 << 2,
-    fTaskOnTimer         = 1 << 3,
-    fTaskNeedTermination = 1 << 4,
-    fTaskTerminated      = 1 << 5
-};
-
-
-struct SPrtyExecMap_tag;
-typedef intr::set_base_hook<intr::tag<SPrtyExecMap_tag>,
-                            intr::optimize_size<true> >     TPrtyExecMapHook;
-
-struct SPrtyExecQueue : public TPrtyExecMapHook
-{
-    Uint1 priority;
-    Uint4 exec_time;
-    TSrvTaskList tasks;
-};
-
-struct SPrtyExecCompare
-{
-    bool operator() (const SPrtyExecQueue& left, const SPrtyExecQueue& right) const
-    {
-        return left.priority < right.priority;
-    }
-    bool operator() (Uint1 left, const SPrtyExecQueue& right) const
-    {
-        return left < right.priority;
-    }
-    bool operator() (const SPrtyExecQueue& left, Uint1 right) const
-    {
-        return left.priority < right;
-    }
-};
-
-typedef intr::set<SPrtyExecQueue,
-                  intr::base_hook<TPrtyExecMapHook>,
-                  intr::constant_time_size<false>,
-                  intr::compare<SPrtyExecCompare> >     TPrtyExecMap;
-
-
-struct SSchedInfo
-{
-    TPrtyExecMap tasks_map;
-    CMiniMutex tasks_lock;
-    CFutex cnt_signal;
-    Uint4 max_tasks;
-    Uint4 done_tasks;
-    Uint8 done_time;
-    Uint8 wait_time;
-    Uint8 max_slice;
-    CSrvTime jfy_start_time;
-    CSrvTime last_exec_time;
-    TSrvThreadNum prefer_thr_num;
-};
 
 
 END_NCBI_SCOPE

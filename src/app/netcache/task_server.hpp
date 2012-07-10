@@ -40,8 +40,17 @@ BEGIN_NCBI_SCOPE
 
 /// Type for thread number in TaskServer
 typedef Uint2 TSrvThreadNum;
+
 /// Type for flags in CSrvTask. It's needed only for internal use, shouldn't
 /// be necessary outside task_server library.
+enum ESrvTaskFlags {
+    fTaskRunnable        = 1 << 0,
+    fTaskQueued          = 1 << 1,
+    fTaskRunning         = 1 << 2,
+    fTaskOnTimer         = 1 << 3,
+    fTaskNeedTermination = 1 << 4,
+    fTaskTerminated      = 1 << 5
+};
 typedef Uint1 TSrvTaskFlags;
 
 

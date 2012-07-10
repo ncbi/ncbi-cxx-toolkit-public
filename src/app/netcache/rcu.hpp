@@ -43,25 +43,6 @@ void RCUPassQS(SRCUInfo* rcu);
 bool RCUHasCalls(SRCUInfo* rcu);
 
 
-
-struct SRCUInfo
-{
-    TSrvRCUList calls;
-    CSrvRCUUser* gp_marker_cur;
-    CSrvRCUUser* gp_marker_next;
-    Uint1 seen_gp;
-};
-
-
-class CFakeRCUUser : public CSrvRCUUser
-{
-public:
-    CFakeRCUUser(void);
-    virtual ~CFakeRCUUser(void);
-
-    virtual void ExecuteRCU(void);
-};
-
 END_NCBI_SCOPE
 
 #endif /* NETCACHE__RCU__HPP */

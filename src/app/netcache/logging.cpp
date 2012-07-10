@@ -46,6 +46,38 @@
 BEGIN_NCBI_SCOPE;
 
 
+struct SLogData
+{
+    char* buf;
+    char* end_ptr;
+    char* cur_ptr;
+    char* cur_msg_ptr;
+    Uint8 post_num;
+    string prefix;
+    string tmp_str;
+    bool has_params;
+    CSrvDiagMsg::ESeverity severity;
+
+    const char* msg_file;
+    const char* msg_func;
+    int msg_line;
+    int err_code;
+    int err_subcode;
+    int last_flush_time;
+};
+
+
+class CLogWriter : public CSrvTask
+{
+public:
+    CLogWriter(void);
+    virtual ~CLogWriter(void);
+
+private:
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
+};
+
+
 static CSrvDiagMsg::ESeverity s_VisibleSev = CSrvDiagMsg::Warning;
 static bool s_LogRequests = true;
 static string s_UnkClient = "UNK_CLIENT";

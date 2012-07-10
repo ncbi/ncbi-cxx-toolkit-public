@@ -46,66 +46,7 @@ void AssignThreadMemMgr(SSrvThread* thr);
 void ReleaseThreadMemMgr(SSrvThread* thr);
 size_t GetMemSize(void* ptr);
 
-
-
-static const Uint2 kMMCntBlocksInPool = 100;
-static const Uint2 kMMDrainBatchSize = 35;
 static const Uint2 kMMCntBlockSizes = 39;
-static const Uint1 kMMCntFreeGrades = 8;
-static const int kMMFlushPeriod = 60;
-
-static const Uint4 kMMAllocPageSize = 65536;
-static const size_t kMMAllocPageMask = ~size_t(kMMAllocPageSize - 1);
-static const Uint2 kMMOSPageSize = 4096;
-static const size_t kMMOSPageMask = ~size_t(kMMOSPageSize - 1);
-
-
-struct SMMBlocksPool
-{
-    CMiniMutex pool_lock;
-    Uint2 size_idx;
-    Uint2 cnt_avail;
-    Uint2 put_idx;
-    Uint2 get_idx;
-    void* blocks[kMMCntBlocksInPool];
-};
-
-
-struct SMMPageHeader
-{
-    size_t block_size;
-    void* free_list;
-    CMiniMutex page_lock;
-    Uint2 cnt_free;
-    Uint1 free_grade;
-    SMMPageHeader* next_page;
-    SMMPageHeader* prev_page;
-};
-
-
-struct SMMFreePageList
-{
-    CMiniMutex list_lock;
-    SMMPageHeader list_head;
-};
-
-
-struct SMMFreePageGrades
-{
-    SMMFreePageList lists[kMMCntFreeGrades];
-};
-
-
-class CMMFlusher : public CSrvTask
-{
-public:
-    CMMFlusher(void);
-    virtual ~CMMFlusher(void);
-
-private:
-    virtual void ExecuteSlice(TSrvThreadNum thr_num);
-};
-
 
 struct SMMStateStat
 {
@@ -147,14 +88,6 @@ struct SMMStat
     Uint8 m_BigFreedSize;
     CSrvStatTerm<Uint8> m_TotalSysMem;
     CSrvStatTerm<Uint8> m_TotalDataMem;
-};
-
-
-struct SMMMemPoolsSet
-{
-    Uint4 flush_counter;
-    SMMBlocksPool pools[kMMCntBlockSizes];
-    SMMStat stat;
 };
 
 END_NCBI_SCOPE

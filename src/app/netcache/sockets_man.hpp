@@ -57,43 +57,6 @@ void RequestStopListening(void);
 Uint4 SocksGetTotal(void);
 
 
-static const Uint1 kEpollEventsArraySize = 100;
-static const Uint2 kSockReadBufSize = 1000;
-static const Uint2 kSockMinWriteSize = 1000;
-static const Uint2 kSockWriteBufSize = 2000;
-static const Uint1 kMaxCntListeningSocks = 16;
-
-
-struct SSocketsData
-{
-    TSockList sock_list;
-    Int2 sock_cnt;
-};
-
-
-struct SListenSockInfo : public SSrvSocketInfo
-{
-    Uint1 index;
-    Uint2 port;
-    int fd;
-    CSrvSocketFactory* factory;
-};
-
-
-class CSrvListener : public CSrvTask
-{
-public:
-    CSrvListener(void);
-    virtual ~CSrvListener(void);
-
-    virtual void ExecuteSlice(TSrvThreadNum thread_idx);
-
-public:
-    Uint4 m_SeenEvents[kMaxCntListeningSocks];
-    Uint4 m_SeenErrors[kMaxCntListeningSocks];
-};
-
-
 END_NCBI_SCOPE
 
 #endif /* NETCACHE__SOCKETS_MAN__HPP */
