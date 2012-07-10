@@ -1922,6 +1922,24 @@ void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
     }
 }
 
+//transcript length less polyA
+TSeqPos GetEffectiveTranscriptLength(const CBioseq_Handle& bsh)
+{
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_polyA_site);
+
+    TSeqPos last_transcribed_pos(0);
+    for(CFeat_CI ci(bsh, sel); ci; ++ci) {
+        const CMappedFeat& mf = *ci;
+        last_transcribed_pos = max(last_transcribed_pos, sequence::GetStop(mf.GetLocation(), NULL));
+    }
+    if(last_transcribed_pos == 0) {
+        last_transcribed_pos = bsh.GetInst_Length() - 1;
+    }
+
+    return last_transcribed_pos + 1;
+}
 
 
 void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantPlacement& p, int offset, const CSeq_loc& loc, CBioseq_Handle& bsh)
@@ -1936,7 +1954,7 @@ void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantPlacement& p, int
         offset *= -1;
     }
 
-    if(loc.GetStop(eExtreme_Positional) + 1 >= bsh.GetInst_Length() && offset > 0) {
+    if(loc.GetStop(eExtreme_Positional) + 1 >= GetEffectiveTranscriptLength(bsh) && offset > 0) {
         //at the 3'-end; check if near-gene or intergenic
         if(offset <= 500) {
             p.SetGene_location() |= CVariantProperties::eGene_location_near_gene_3;
