@@ -2255,33 +2255,28 @@ public:
     static string PrintableString(const CTempString&  str,
                                   TPrintableMode mode = eNewLine_Quote);
 
-    /// C-style escape sequences parsing flags.
+    /// C-style escape sequences parsing mode.
     /// For escape sequences with a value outside the range of [0-255] 
-    /// the behavior of ParseEscapes() depends from these flags.
+    /// the behavior of ParseEscapes() depends from this mode.
     /// By default all escape sequences within a out or range
     /// will be converted to the least significant byte, with no warning.
-    /// You can specify only one flag.
-    enum EEscSeqFlags {
-        fEscSeqRange_Last   = 0,         ///< Set char to the last (least
-                                         ///< significant byte) of the escape
-                                         ///< sequence (default).
-        fEscSeqRange_First  = (1 << 1),  ///< Set char to the first byte of
-                                         ///< the escape sequence.
-        fEscSeqRange_Throw  = (1 << 2),  ///< Throw an exception.
-        fEscSeqRange_Errno  = (1 << 3),  ///< Set errno to ERANGE,
-                                         ///< return empty string.
-        fEscSeqRange_User   = (1 << 4)   ///< Set char to the user value
-                                         ///< passed in another parameter.
+    enum EEscSeqRange {
+        eEscSeqRange_LastByte,   ///< Set char to the last (least significant
+                                 ///< byte) of the escape sequence (default).
+        eEscSeqRange_FirstByte,  ///< Set char to the first byte of the
+        eEscSeqRange_Throw,      ///< escape sequence. Throw an exception.
+        eEscSeqRange_Errno,      ///< Set errno to ERANGE, return empty string.
+        eEscSeqRange_User        ///< Set char to the user value
+                                 ///< passed in another parameter.
     };
-    typedef int TEscSeqFlags;  ///< Bitwise OR of "EEscSeqFlags"
 
     /// Parse C-style escape sequences in the specified string.
     ///
     /// Parse escape sequences including all those produced by PrintableString.
     /// @param str
     ///   The string to be parsed.
-    /// @param flags
-    ///   Parsing flags.
+    /// @param mode
+    ///   Parsing mode.
     ///   By default all escape sequences with a value outside the range of [0-255]
     ///   will be converted to the least significant byte, with no warning.
     /// @param user_char
@@ -2298,7 +2293,7 @@ public:
     /// @sa 
     ///   EEscSeqFlags, PrintableString, CEncode, CParse
     static string ParseEscapes(const CTempString& str, 
-                               TEscSeqFlags flags = fEscSeqRange_Last, 
+                               EEscSeqRange mode = eEscSeqRange_LastByte,
                                char user_char = '?');
 
     /// Discard C-style backslash escapes and extract a quoted string.

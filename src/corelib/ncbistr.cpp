@@ -3601,7 +3601,7 @@ string NStr::ShellEncode(const string& str)
 }
 
 
-string NStr::ParseEscapes(const CTempString& str, TEscSeqFlags flags, char user_char)
+string NStr::ParseEscapes(const CTempString& str, EEscSeqRange mode, char user_char)
 {
     string out;
     out.reserve(str.size());  // result string can only be smaller
@@ -3640,28 +3640,29 @@ string NStr::ParseEscapes(const CTempString& str, TEscSeqFlags flags, char user_
                 }
                 if (pos > pos2) {
                     SIZE_TYPE len = pos-pos2;
-                    if ((flags & fEscSeqRange_First) && (len > 2)) {
-                        // Take only first 2 digits
+                    if ((mode == eEscSeqRange_FirstByte) && (len > 2)) {
+                        // Take only 2 first hex-digits
                         len = 2;
+                        pos = pos2 + 2;
                     }
                     unsigned int value =
                         StringToUInt(CTempString(str, pos2, len), 0, 16);
-                    if (flags  &&  (value > 255)) {
-                        // fEscSeqRange_LSB by default (flags == 0)
-                        switch (flags) {
-                        case fEscSeqRange_First:
+                    if ((mode != eEscSeqRange_LastByte)  &&  (value > 255)) {
+                        // eEscSeqRange_LastByte -- by default
+                        switch (mode) {
+                        case eEscSeqRange_FirstByte:
                             // Already have right value 
                             break;
-                        case fEscSeqRange_Throw:
+                        case eEscSeqRange_Throw:
                             NCBI_THROW2(CStringException, eFormat, 
                                 "Escape sequence '" + string(CTempString(str, pos2, len)) +
                                 "' is out of range [0-255]", pos2);
                             break;
-                        case fEscSeqRange_Errno:
+                        case eEscSeqRange_Errno:
                             errno = ERANGE;
                             is_error = true;
                             continue;
-                        case fEscSeqRange_User:
+                        case eEscSeqRange_User:
                             value = (unsigned)user_char;
                             break;
                         default:
@@ -3696,7 +3697,7 @@ string NStr::ParseEscapes(const CTempString& str, TEscSeqFlags flags, char user_
         }
         pos = pos2 + 1;
     }
-    if (flags & fEscSeqRange_Errno) {
+    if (mode == eEscSeqRange_Errno) {
         if (is_error) {
             return kEmptyStr;
         }

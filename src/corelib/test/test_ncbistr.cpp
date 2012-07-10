@@ -2102,31 +2102,31 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     // NStr::ParseEscapes() with out or range sequences
     {{
         string s;
-        // fEscSeqRange_Last
-        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Last), "\x47");
+        // eEscSeqRange_LastByte
+        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_LastByte), "\x47");
     
-        // fEscSeqRange_First
-        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_First), "\x45");
+        // eEscSeqRange_FirstByte
+        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_FirstByte), "E47");
     
-        // fEscSeqRange_Errno
+        // eEscSeqRange_Errno
         errno = kTestErrno;
-        s = NStr::ParseEscapes("\\x45", NStr::fEscSeqRange_Errno);
+        s = NStr::ParseEscapes("\\x45", NStr::eEscSeqRange_Errno);
         BOOST_CHECK(errno == 0);
         BOOST_CHECK_EQUAL(s, "\x45");
         errno = kTestErrno;
-        s = NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Errno);
+        s = NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_Errno);
         BOOST_CHECK(errno == ERANGE);
         BOOST_CHECK(s.empty());
 
-        // fEscSeqRange_Throw
+        // eEscSeqRange_Throw
         try {
-            s = NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_Throw);
+            s = NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_Throw);
             _TROUBLE;
         }
         catch (CStringException&) {}
 
-        // fEscSeqRange_User
-        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::fEscSeqRange_User, '?'), "?");
+        // eEscSeqRange_User
+        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_User, '?'), "?");
     }}
 
 
