@@ -3647,8 +3647,8 @@ string NStr::ParseEscapes(const CTempString& str, EEscSeqRange mode, char user_c
                     }
                     unsigned int value =
                         StringToUInt(CTempString(str, pos2, len), 0, 16);
-                    if ((mode != eEscSeqRange_LastByte)  &&  (value > 255)) {
-                        // eEscSeqRange_LastByte -- by default
+                    if ((mode != eEscSeqRange_Standard)  &&  (value > 255)) {
+                        // eEscSeqRange_Standard -- by default
                         switch (mode) {
                         case eEscSeqRange_FirstByte:
                             // Already have right value 

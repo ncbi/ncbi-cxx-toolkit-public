@@ -2261,7 +2261,7 @@ public:
     /// By default all escape sequences within a out or range
     /// will be converted to the least significant byte, with no warning.
     enum EEscSeqRange {
-        eEscSeqRange_LastByte,   ///< Set char to the last (least significant
+        eEscSeqRange_Standard,   ///< Set char to the last (least significant
                                  ///< byte) of the escape sequence (default).
         eEscSeqRange_FirstByte,  ///< Set char to the first byte of the
         eEscSeqRange_Throw,      ///< escape sequence. Throw an exception.
@@ -2280,20 +2280,19 @@ public:
     ///   By default all escape sequences with a value outside the range of [0-255]
     ///   will be converted to the least significant byte, with no warning.
     /// @param user_char
-    ///   If 'flags' have fEscSeqRange_User, replace all out of range
+    ///   If 'mode' have eEscSeqRange_User, replace all out of range
     ///   escape sequences with this char.
     /// @return
     ///   String with parsed C-style escape sequences.
-    ///   - If invalid flags are passed, or string have wrong format
-    ///     throw an CStringException exception.
+    ///   - If string have wrong format throw an CStringException exception.
     ///   - If parsing succeeds, return the converted value.
-    ///     Set errno to zero only if fEscSeqRange_Errno is set.
+    ///     Set errno to zero only if eEscSeqRange_Errno is set.
     ///   - Otherwise, if escape sequence is out of range [0-255],
-    ///     see fEscSeqRange* flags for behavior. 
+    ///     see eEscSeqRange* modes for behavior. 
     /// @sa 
     ///   EEscSeqFlags, PrintableString, CEncode, CParse
     static string ParseEscapes(const CTempString& str, 
-                               EEscSeqRange mode = eEscSeqRange_LastByte,
+                               EEscSeqRange mode = eEscSeqRange_Standard,
                                char user_char = '?');
 
     /// Discard C-style backslash escapes and extract a quoted string.

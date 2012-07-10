@@ -2103,7 +2103,7 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
     {{
         string s;
         // eEscSeqRange_LastByte
-        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_LastByte), "\x47");
+        BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_Standard), "\x47");
     
         // eEscSeqRange_FirstByte
         BOOST_CHECK_EQUAL(NStr::ParseEscapes("\\x4547", NStr::eEscSeqRange_FirstByte), "E47");
