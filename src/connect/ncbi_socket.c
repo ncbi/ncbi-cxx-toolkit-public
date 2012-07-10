@@ -32,20 +32,6 @@
  *
  */
 
-/* NCBI core headers
- */
-#include "ncbi_ansi_ext.h"
-#include "ncbi_connssl.h"
-#include "ncbi_priv.h"
-#ifdef NCBI_CXX_TOOLKIT
-#  include <corelib/ncbiatomic.h>
-#endif /*NCBI_CXX_TOOLKIT*/
-#include <connect/ncbi_connutil.h>
-#include <connect/ncbi_socket_unix.h>
-
-#define NCBI_USE_ERRCODE_X   Connect_Socket
-
-
 /* Uncomment these(or specify "-DHAVE_GETADDRINFO -DHAVE_GETNAMEINFO") only if:
  * 0) you are compiling this outside of the NCBI C or C++ Toolkits
  *    (USE_NCBICONF is not #define'd), and
@@ -82,14 +68,22 @@
 
 /* #define HAVE_SIN_LEN 1 */
 
+/* NCBI core headers
+ */
+#include "ncbi_ansi_ext.h"
+#include "ncbi_connssl.h"
+#include "ncbi_priv.h"
+#ifdef NCBI_CXX_TOOLKIT
+#  include <corelib/ncbiatomic.h>
+#endif /*NCBI_CXX_TOOLKIT*/
+#include <connect/ncbi_connutil.h>
+#include <connect/ncbi_socket_unix.h>
+
 /* Platform-specific system headers remaining
  */
-
 #ifdef NCBI_OS_UNIX
-
-#  include <unistd.h>
-#  include <netdb.h>
 #  include <fcntl.h>
+#  include <netdb.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
 #  ifdef NCBI_OS_LINUX
@@ -107,13 +101,16 @@
 #  endif /*HAVE_POLL_H*/
 #  include <sys/stat.h>
 #  include <sys/un.h>
-
+#  include <unistd.h>
 #endif /*NCBI_OS_UNIX*/
 
 /* Portable standard C headers
  */
 #include <ctype.h>
 #include <stdlib.h>
+
+#define NCBI_USE_ERRCODE_X   Connect_Socket
+
 
 #ifndef   MAXHOSTNAMELEN
 #  define MAXHOSTNAMELEN  255
@@ -3866,9 +3863,9 @@ static EIO_Status s_Connect(SOCK            sock,
         s_DoLog(eLOG_Trace, sock, eIO_Open, 0, 0, x_error ? 0 : "");
 
     if (x_error) {
-        if ((n != 0  ||  x_error != SOCK_EINPROGRESS)  &&
-            (n == 0  ||  x_error != SOCK_EALREADY)     &&
-            x_error != SOCK_EWOULDBLOCK) {
+        if (((n == 0  &&  x_error != SOCK_EINPROGRESS)  ||
+             (n != 0  &&  x_error != SOCK_EALREADY))
+            &&  x_error != SOCK_EWOULDBLOCK) {
             if (x_error != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(x_error);
                 CORE_LOGF_ERRNO_EXX(25, sock->log != eOff
