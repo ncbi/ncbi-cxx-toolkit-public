@@ -405,7 +405,7 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         BOOST_CHECK_EQUAL(1, gapped_stats->good_extensions);
         break;
     case eBlastx_555_129295:
-        BOOST_CHECK_EQUAL(280, (int)ungapped_stats->lookup_hits);
+        BOOST_CHECK_EQUAL(282, (int)ungapped_stats->lookup_hits);
         BOOST_CHECK_EQUAL(3, ungapped_stats->init_extends);
         BOOST_CHECK_EQUAL(1, ungapped_stats->good_init_extends);
         BOOST_CHECK_EQUAL(1, gapped_stats->extensions);
@@ -1437,6 +1437,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryBothStrands) {
     CBl2Seq blaster(*query, *subj, eBlastx);
     TSeqAlignVector sav(blaster.Run());
     CRef<CSeq_align> sar = *(sav[0]->Get().begin());
+            // cerr << "Align " << MSerial_AsnText << *sar << endl;
     BOOST_REQUIRE_EQUAL(1, (int)sar->GetSegs().GetStd().size());
     testBlastHitCounts(blaster, eBlastx_555_129295);
     testRawCutoffs(blaster, eBlastx, eBlastx_555_129295);
@@ -2271,6 +2272,7 @@ BOOST_AUTO_TEST_CASE(BlastxOutOfFrame) {
     CRef<CBlastxOptionsHandle> opts(new CBlastxOptionsHandle);
     opts->SetOutOfFrameMode();
     opts->SetFrameShiftPenalty(10);
+    opts->SetCompositionBasedStats(eNoCompositionBasedStats);
     opts->SetFilterString("m;L");/* NCBI_FAKE_WARNING */
     opts->SetEvalueThreshold(0.01);
 
@@ -2296,6 +2298,8 @@ BOOST_AUTO_TEST_CASE(BlastxOutOfFrame_DifferentFrames) {
     CRef<CBlastxOptionsHandle> opts(new CBlastxOptionsHandle);
     opts->SetOutOfFrameMode();
     opts->SetFrameShiftPenalty(10);
+    opts->SetFilterString("L");/* NCBI_FAKE_WARNING */
+    opts->SetCompositionBasedStats(eNoCompositionBasedStats);
 
     CBl2Seq blaster(*query, *subj, *opts);
     TSeqAlignVector sav(blaster.Run());

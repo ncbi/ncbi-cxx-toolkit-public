@@ -64,6 +64,16 @@ CBlastxOptionsHandle::SetQueryOptionDefaults()
     CBlastProteinOptionsHandle::SetQueryOptionDefaults();
     m_Opts->SetStrandOption(objects::eNa_strand_both);
     m_Opts->SetQueryGeneticCode(BLAST_GENETIC_CODE);
+    SetSegFiltering(false); // disable SEG filtering because of eCompositionMatrixAdjust mode
+}
+
+void
+CBlastxOptionsHandle::SetGappedExtensionDefaults()
+{
+    CBlastProteinOptionsHandle::SetGappedExtensionDefaults();
+    m_Opts->SetCompositionBasedStats(eCompositionMatrixAdjust);
+    m_Opts->SetSmithWatermanMode(false);
+    _ASSERT(!m_Opts->GetSegFiltering());
 }
 
 void

@@ -96,6 +96,32 @@ public:
     /// @param l LongestIntronLength [in]
     void SetLongestIntronLength(int l) { m_Opts->SetLongestIntronLength(l); }
 
+
+/******************* Gapped extension options *******************/
+
+    /// Returns this mode, which mostly specifies whether composition of db
+    /// sequence is taken into account when calculating expect values.
+    ECompoAdjustModes GetCompositionBasedStats() const {
+        return m_Opts->GetCompositionBasedStats();
+    }
+
+    /// Sets this mode, which mostly specifies whether composition of db
+    /// sequence is taken into account when calculating expect values.
+    /// @param mode composition-based statistics mode [in]
+    void SetCompositionBasedStats(ECompoAdjustModes mode)  {
+        m_Opts->SetCompositionBasedStats(mode);
+    }
+
+    /// Returns this mode, specifying that smith waterman rather than the normal blast heuristic
+    /// should be used for final extensions.
+    /// into account when calculating expect values.
+    bool GetSmithWatermanMode() const { return m_Opts->GetSmithWatermanMode(); }
+
+    /// Sets this mode, specifying that smith waterman rather than the normal blast heuristic
+    /// should be used for final extensions.
+    /// @param m use smith-waterman if true [in]
+    void SetSmithWatermanMode(bool m = false)  { m_Opts->SetSmithWatermanMode(m); }
+
 protected:
     /// Set the program and service name for remote blast.
     virtual void SetRemoteProgramAndService_Blast3()
@@ -111,6 +137,8 @@ protected:
     void SetScoringOptionsDefaults();
     /// Overrides HitSavingOptionsDefaults for blastx options
     void SetHitSavingOptionsDefaults();
+    /// Overrides SetGappedExtensionDefaults for blastx option
+    void SetGappedExtensionDefaults();
 
 private:
     /// Disallow copy constructor
