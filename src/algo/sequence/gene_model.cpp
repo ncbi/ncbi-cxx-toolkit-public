@@ -571,7 +571,9 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         for (CFeat_CI feat_iter(handle, CSeqFeatData::e_Rna);
              feat_iter;  ++feat_iter) {
             const CSeq_loc &rna_loc = feat_iter->GetLocation();
-            if (++rna_loc.begin() == rna_loc.end() &&
+            if (feat_iter->GetData().GetSubtype() !=
+                           CSeqFeatData::eSubtype_mRNA &&
+                    ++rna_loc.begin() == rna_loc.end() &&
                     rna_loc.GetTotalRange().GetLength() ==
                         handle.GetBioseqLength())
             {
