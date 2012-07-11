@@ -137,6 +137,20 @@ CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx) :
     }       
 }
 
+CCommentItem::CCommentItem(const CUser_object & userObject, CBioseqContext& ctx) :
+    CFlatItem(&ctx), 
+    m_CommentInternalIndent(0),
+    m_First(false), 
+    m_NeedPeriod(true)
+{
+    swap(m_First, sm_FirstComment);
+    x_SetObject(userObject);
+    x_GatherInfo(ctx);
+    if ( x_IsCommentEmpty() ) {
+        x_SetSkip();
+    }
+}
+
 
 void CCommentItem::Format
 (IFormatter& formatter,
@@ -1035,6 +1049,11 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
         const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
         if (feat != NULL) {
             x_GatherFeatInfo(*feat, ctx);
+        } else {
+            const CUser_object * userObject = dynamic_cast<const CUser_object*>(obj);
+            if(userObject != NULL) {
+                x_GatherUserObjInfo(*userObject);
+            }
         }
     }
 }
@@ -1240,6 +1259,17 @@ void CCommentItem::x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx)
     }
 
     x_SetCommentWithURLlinks(kEmptyStr, feat.GetComment(), kEmptyStr, ePeriod_Add);
+}
+
+void CCommentItem::x_GatherUserObjInfo(const CUser_object& userObject )
+{
+    // make sure the user object is really of type StructuredComment
+    const CUser_object::TType &type = userObject.GetType();
+    if( type.IsStr() && type.GetStr() == "StructuredComment" ) {
+        s_GetStrForStructuredComment( userObject.GetData(),  
+            m_Comment, m_CommentInternalIndent, IsFirst(), GetContext()->Config().DoHTML() );
+        SetNeedPeriod( false );
+    }
 }
 
 

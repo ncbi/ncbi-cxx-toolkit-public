@@ -746,6 +746,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_NameComments(ctx);
     x_StructuredComments(ctx);
     x_HTGSComments(ctx);
+    x_AnnotDescStrucComment(ctx);
 //    x_FeatComments(ctx);
 
     x_FlushComments();
@@ -1141,6 +1142,71 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
             objects::AddPeriod(tech_str);
             x_AddComment(new CCommentItem("Method: " + tech_str, ctx, &(*desc)));
         }
+    }
+}
+
+void CFlatGatherer::x_AnnotDescStrucComment(CBioseqContext& ctx) const
+{
+    // get structured comments from Seq-annot descr user objects
+    CConstRef<CUser_object> firstGenAnnotSCAD;
+    CAnnot_CI annot_ci( ctx.GetHandle() );
+    for( ; annot_ci; ++annot_ci ) {
+        if( ! annot_ci->Seq_annot_CanGetDesc() ) {
+            continue;
+        }
+
+        const CAnnot_descr & annot_descr = annot_ci->Seq_annot_GetDesc();
+        if( ! annot_descr.IsSet() ) {
+            continue;
+        }
+
+        const CAnnot_descr::Tdata & descrs = annot_descr.Get();
+        ITERATE( CAnnot_descr::Tdata, descr_iter, descrs  ) {
+            if( ! (*descr_iter)->IsUser() ) {
+                continue;
+            }
+
+            const CUser_object & descr_user = (*descr_iter)->GetUser();
+            if( descr_user.IsSetType() && descr_user.GetType().IsStr() && 
+                NStr::EqualNocase(descr_user.GetType().GetStr(), "StructuredComment") ) 
+            {
+                if( firstGenAnnotSCAD ) {
+                    // already found the first one
+                    continue;
+                }
+
+                CConstRef<CUser_field> prefix_field = descr_user.GetFieldRef("StructuredCommentPrefix");
+                if( ! prefix_field || ! prefix_field->IsSetData() || 
+                    ! prefix_field->GetData().IsStr() || 
+                    prefix_field->GetData().GetStr() != "##Genome-Annotation-Data-START##" )
+                {
+                    continue;
+                }
+
+                // we found our first match
+                firstGenAnnotSCAD.Reset( &descr_user );
+            }
+        }
+    }
+    
+    if( firstGenAnnotSCAD ) {
+        // remove GenomeBuild-related comments; that is, of type CGenomeAnnotComment
+        TCommentVec new_comment_vec;
+        ITERATE( TCommentVec, comment_iter, m_Comments ) {
+            const CCommentItem * pComment = &**comment_iter;
+            if( NULL == dynamic_cast<const CGenomeAnnotComment*>(pComment) ) {
+                new_comment_vec.push_back(*comment_iter);
+            }
+        }
+        if( m_Comments.size() != new_comment_vec.size() ) {
+            // swap is faster than assignment
+            m_Comments.swap(new_comment_vec);
+        }
+
+        if( m_Comments.empty() ) {
+            CCommentItem::ResetFirst();
+        }
+        x_AddComment(new CCommentItem(*firstGenAnnotSCAD, ctx));
     }
 }
 

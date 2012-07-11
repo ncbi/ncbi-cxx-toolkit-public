@@ -94,6 +94,7 @@ public:
         const CSerialObject* obj = 0);
     CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx);
     CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx);
+    CCommentItem(const CUser_object & userObject, CBioseqContext& ctx);
 
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
@@ -145,6 +146,7 @@ protected:
     void x_GatherInfo(CBioseqContext& ctx);
     void x_GatherDescInfo(const CSeqdesc& desc);
     void x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx);
+    void x_GatherUserObjInfo(const CUser_object& userObject );
 
     void x_SetComment(const string& comment);
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,

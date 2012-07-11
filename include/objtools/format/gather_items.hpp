@@ -143,6 +143,7 @@ protected:
     void x_MaplocComments(CBioseqContext& ctx) const;
     void x_RegionComments(CBioseqContext& ctx) const;
     void x_HTGSComments(CBioseqContext& ctx) const;
+    void x_AnnotDescStrucComment(CBioseqContext& ctx) const;
     void x_FeatComments(CBioseqContext& ctx) const;
     void x_NameComments(CBioseqContext& ctx) const;
     void x_StructuredComments(CBioseqContext& ctx) const;
