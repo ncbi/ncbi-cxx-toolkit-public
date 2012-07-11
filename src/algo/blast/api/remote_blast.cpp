@@ -2077,6 +2077,18 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
             }
         }
 
+        if((m_Service == "rpsblast") || (m_Service == "rpstblastn") )
+        {
+        	const string kTmp("Matrix: ");
+        	 NON_CONST_ITERATE(list<string>, itr, search_stats) {
+        		 if (NStr::Find(*itr, kTmp) != NPOS) {
+        			 NStr::ReplaceInPlace(*itr, kTmp, kEmptyStr);
+        			 m_CBOH->SetOptions().SetMatrixName((*itr).c_str());
+        			 break;
+        		 }
+        	 }
+        }
+
         /* Get the Karlin-Altschul parameters */
         bool found_gapped = false, found_ungapped = false;
         pair<double, double> lambdas, Ks, Hs;
