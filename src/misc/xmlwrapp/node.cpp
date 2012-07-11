@@ -354,7 +354,24 @@ const char* xml::node::get_name (void) const {
 }
 //####################################################################
 void xml::node::set_content (const char *content) {
-    xmlNodeSetContent(pimpl_->xmlnode_, reinterpret_cast<const xmlChar*>(content));
+    if (pimpl_->xmlnode_->type == XML_ELEMENT_NODE && content != NULL) {
+        xmlChar *  encoded_content =
+                    xmlEncodeSpecialChars(
+                            pimpl_->xmlnode_->doc,
+                            reinterpret_cast<const xmlChar*>(content));
+        if (encoded_content == NULL)
+            throw std::bad_alloc();
+        xmlNodeSetContent(pimpl_->xmlnode_, encoded_content);
+        xmlFree(encoded_content);
+        return;
+    }
+    xmlNodeSetContent(pimpl_->xmlnode_,
+                      reinterpret_cast<const xmlChar*>(content));
+}
+//####################################################################
+void xml::node::set_raw_content (const char *raw_content) {
+    xmlNodeSetContent(pimpl_->xmlnode_,
+                      reinterpret_cast<const xmlChar*>(raw_content));
 }
 //####################################################################
 const char* xml::node::get_content (void) const {

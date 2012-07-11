@@ -197,6 +197,9 @@ public:
     /**
      * Construct a new xml::node given a name and content. The content will
      * be used to create a new child text node.
+     * All the special symbols ('<', '>', '&', '"', '\r') in the given
+     * content are encoded before assigning the new content.
+     * If entities are needed in the content please use set_raw_content(...).
      *
      * @param name The name of the new element.
      * @param content The text that will be used to create a child node.
@@ -318,13 +321,35 @@ public:
     /**
      * Set the content of a node. If this node is an element node, this
      * function will remove all of its children nodes and replace them
-     * with one text node set to the given string.
+     * with one text node set to the new content.
+     * All the special symbols ('<', '>', '&', '"', '\r') in the given
+     * content are encoded before assigning the new content.
+     * If entities are needed in the content please use
+     * set_raw_content(...).
      *
      * @param content The content of the text node.
-     * @author Peter Jones
+     * @author Peter Jones, Sergey Satskiy
     **/
     //####################################################################
     void set_content (const char *content);
+
+    //####################################################################
+    /**
+     * Set the raw content of a node. If this node is an element node,
+     * this function will remove all of its children nodes and replace
+     * them with one text node set to the new content.
+     * The given content is checked for '<' and '>' characters. If found
+     * they will be replaced with '&lt;' and '&gt;' respectively and this
+     * is the only potential conversion done for the given raw content.
+     * This member is likely used if entities are needed in the node content.
+     * In any case it is the user responsibility to provide valid
+     * content for this member.
+     *
+     * @param raw_content The raw content of the text node.
+     * @author Sergey Satskiy
+    **/
+    //####################################################################
+    void set_raw_content (const char *raw_content);
 
     //####################################################################
     /**
