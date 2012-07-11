@@ -33,8 +33,31 @@
 #include "scheduler.hpp"
 
 
+namespace intr = boost::intrusive;
+
 BEGIN_NCBI_SCOPE;
 
+
+static const Uint1  kTimerLowBits = 8;
+static const Uint1  kTimerMidBits = 5;
+static const Uint1  kTimerMidLevels = 2;
+static const int    kTimerLowMask = (1 << kTimerLowBits) - 1;
+static const int    kTimerMidMask = (1 << kTimerMidBits) - 1;
+
+
+struct STimerList_tag;
+typedef intr::list_base_hook<intr::tag<STimerList_tag>,
+                             intr::link_mode<intr::auto_unlink> >   TTimerListHook;
+
+struct STimerTicket : public TTimerListHook
+{
+    int timer_time;
+    CSrvTask* task;
+};
+
+typedef intr::list<STimerTicket,
+                   intr::base_hook<TTimerListHook>,
+                   intr::constant_time_size<false> >    TTimerList;
 
 static CMiniMutex s_TimerLock;
 static int s_LastFiredTime = 0;

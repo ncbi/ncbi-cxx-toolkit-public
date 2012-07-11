@@ -81,6 +81,7 @@ static const char* kNCStorage_DiskCriticalParam = "critical_disk_free_limit";
 static const char* kNCStorage_MinRecNoSaveParam = "min_rec_no_save_period";
 
 
+// storage file type signatures
 static const Uint8 kMetaSignature = NCBI_CONST_UINT8(0xeed5be66cdafbfa3);
 static const Uint8 kDataSignature = NCBI_CONST_UINT8(0xaf9bedf24cfa05ed);
 static const Uint8 kMapsSignature = NCBI_CONST_UINT8(0xba6efd7b61fdff6c);

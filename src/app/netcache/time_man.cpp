@@ -37,6 +37,17 @@
 BEGIN_NCBI_SCOPE;
 
 
+class CTZAdjuster : public CSrvTask
+{
+public:
+    CTZAdjuster(void);
+    virtual ~CTZAdjuster(void);
+
+private:
+    virtual void ExecuteSlice(TSrvThreadNum thr_num);
+};
+
+
 CSrvTime s_SrvStartTime;
 CSrvTime s_LastJiffyTime;
 Uint4 s_CurJiffies = 0;

@@ -40,18 +40,6 @@ void ConfigureTimeMan(CNcbiRegistry* reg, CTempString section);
 void IncCurJiffies(void);
 
 
-
-class CTZAdjuster : public CSrvTask
-{
-public:
-    CTZAdjuster(void);
-    virtual ~CTZAdjuster(void);
-
-private:
-    virtual void ExecuteSlice(TSrvThreadNum thr_num);
-};
-
-
 END_NCBI_SCOPE
 
 #endif /* NETCACHE__TIME_MAN__HPP */

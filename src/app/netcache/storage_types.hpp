@@ -74,37 +74,40 @@ struct ATTR_PACKED SFileIndexRec
     SNCCacheData* cache_data;
 };
 
+// Meta-type records (kMetaSignature)
 struct ATTR_PACKED SFileMetaRec
 {
     Uint1   has_password;
     Uint1   align_reserve;
-    Uint2   map_size;
+    Uint2   map_size;       // max number of down_coords in map record - see SFileChunkMapRec
     Uint4   chunk_size;
-    Uint8   size;
-    Uint8   create_time;
-    Uint8   create_server;
-    Uint4   create_id;
-    Int4    dead_time;
-    Int4    ttl;
-    Int4    expire;
-    Int4    blob_ver;
-    Int4    ver_ttl;
-    Int4    ver_expire;
-    char    key_data[1];
+    Uint8   size;           // blob size
+    Uint8   create_time;    // time of completion of blob storage request
+    Uint8   create_server;  // unique server id
+    Uint4   create_id;      // blob id (unique for each server id)
+    Int4    dead_time;      // time when this blob should be deleted from db
+    Int4    ttl;            // time to live since last read, or creation
+    Int4    expire;         // blob expiration time (blob ceases to exist for client)
+    Int4    blob_ver;       // blob version (client supplied)
+    Int4    ver_ttl;        // time to live for this version
+    Int4    ver_expire;     // blob version expiration time
+    char    key_data[1];    // key + MD5 of password, if any
 };
 
+// Map-type records (kMapsSignature)
 struct ATTR_PACKED SFileChunkMapRec
 {
-    Uint2 map_idx;
-    Uint1 map_depth;
-    SNCDataCoord ATTR_ALIGNED_8 down_coords[1];
+    Uint2 map_idx;         // index of this map in higher level map, if that exists
+    Uint1 map_depth;       // map depth; it can be tree of maps
+    SNCDataCoord ATTR_ALIGNED_8 down_coords[1];  // coords of lower levels
 };
 
+// Data-type records (kDataSignature)
 struct ATTR_PACKED SFileChunkDataRec
 {
-    Uint8   chunk_num;
-    Uint2   chunk_idx;
-    Uint1   chunk_data[1];
+    Uint8   chunk_num;     // chunk index in blob
+    Uint2   chunk_idx;     // chunk index in map
+    Uint1   chunk_data[1]; // chunk data, see kNCMaxBlobChunkSize
 };
 
 
