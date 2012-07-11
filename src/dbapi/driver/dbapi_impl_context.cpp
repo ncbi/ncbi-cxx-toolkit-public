@@ -35,7 +35,6 @@
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/error_codes.hpp>
 
-#include <connect/ncbi_socket.hpp>
 #include <corelib/resource_info.hpp>
 #include <corelib/ncbifile.hpp>
 
@@ -308,32 +307,19 @@ unsigned int CDriverContext::NofConnections(const string& srv_name,
         return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
     }
 
-    string server;
-    Uint4 host = 0;
-    Uint2 port = 0;
-    if (CSocketAPI::StringToHostPort(srv_name, &host, &port) == NPOS) {
-        host = 0;
-        port = 0;
-        server = srv_name;
-    }
-
     int n = 0;
     TConnPool::value_type con;
 
     ITERATE(TConnPool, it, m_NotInUse) {
         con = *it;
-        if (host != 0  &&  (con->Host() != host  ||  con->Port() != port))
-            continue;
-        if((!server.empty()) && server.compare(con->ServerName())) continue;
+        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
         ++n;
     }
 
     ITERATE(TConnPool, it, m_InUse) {
         con = *it;
-        if (host != 0  &&  (con->Host() != host  ||  con->Port() != port))
-            continue;
-        if((!server.empty()) && server.compare(con->ServerName())) continue;
+        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
         ++n;
     }
