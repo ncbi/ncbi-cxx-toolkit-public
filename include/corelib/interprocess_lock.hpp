@@ -248,7 +248,7 @@ public:
         eLockError,     ///< Cannot acquire a lock (not eLockTimeout, eCreateError)
         eUnlockError,   ///< Cannot release the lock
         eMultipleLocks, ///< Attempt to lock already locked object in the same process
-        eNotLocked      ///< Attempt to unlock when the a not-yet-acquired lock
+        eNotLocked      ///< Attempt to unlock a not-yet-acquired lock
     };
 
     /// Translate from an error code value to its string representation.
