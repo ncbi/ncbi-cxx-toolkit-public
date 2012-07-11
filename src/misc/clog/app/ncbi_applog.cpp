@@ -150,7 +150,9 @@ void CNcbiApplogApp::Init(void)
     
     // Create command-line arguments
 
-    auto_ptr<CCommandArgDescriptions> cmd(new CCommandArgDescriptions);
+    auto_ptr<CCommandArgDescriptions> cmd(new 
+        CCommandArgDescriptions(true, 0, CCommandArgDescriptions::eCommandMandatory | 
+                                         CCommandArgDescriptions::eNoSortCommands));
     cmd->SetUsageContext(GetArguments().GetProgramBasename(), "Command-line utility to log to AppLog");
 
     // start_app
