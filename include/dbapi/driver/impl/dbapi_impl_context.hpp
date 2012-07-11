@@ -152,6 +152,8 @@ public:
     virtual unsigned int NofConnections(const string& srv_name  = "",
                                         const string& pool_name = "")
         const;
+    virtual unsigned int NofConnections(const TSvrRef& svr_ref,
+                                        const string& pool_name = "") const;
 
     /// Add message handler "h" to process 'context-wide' (not bound
     /// to any particular connection) error messages.

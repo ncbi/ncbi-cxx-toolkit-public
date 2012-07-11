@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbi_param.hpp>
+#include <corelib/impl/ncbi_dbsvcmapper.hpp>
 
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>
@@ -958,6 +959,8 @@ public:
     virtual unsigned int NofConnections(const string& srv_name  = "",
                                         const string& pool_name = "")
         const = 0;
+    virtual unsigned int NofConnections(const TSvrRef& svr_ref,
+                                        const string& pool_name = "") const = 0;
 
     /// @brief 
     ///   Add message handler "h" to process 'context-wide' (not bound

@@ -298,33 +298,50 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
     }
 }
 
-unsigned int CDriverContext::NofConnections(const string& srv_name,
-                                          const string& pool_name) const
+unsigned int CDriverContext::NofConnections(const TSvrRef& svr_ref,
+                                            const string& pool_name) const
 {
     CMutexGuard mg(m_CtxMtx);
 
-    if ( srv_name.empty() && pool_name.empty()) {
+    if ((!svr_ref  ||  !svr_ref->IsValid())  &&  pool_name.empty()) {
         return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
     }
 
-    int n = 0;
-    TConnPool::value_type con;
-
-    ITERATE(TConnPool, it, m_NotInUse) {
-        con = *it;
-        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
-        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
-        ++n;
+    string server;
+    Uint4 host = 0;
+    Uint2 port = 0;
+    if (svr_ref) {
+        host = svr_ref->GetHost();
+        port = svr_ref->GetPort();
+        if (host == 0)
+            server = svr_ref->GetName();
     }
 
-    ITERATE(TConnPool, it, m_InUse) {
-        con = *it;
-        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
-        if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
-        ++n;
+    const TConnPool* pools[] = {&m_NotInUse, &m_InUse};
+    int n = 0;
+    for (size_t i = 0; i < ArraySize(pools); ++i) {
+        ITERATE(TConnPool, it, (*pools[i])) {
+            TConnPool::value_type con = *it;
+            if(!server.empty()) {
+                if (server.compare(con->ServerName()))
+                    continue;
+            }
+            else if (host != con->Host()  ||  port != con->Port()) {
+                continue;
+            }
+            if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
+            ++n;
+        }
     }
 
     return n;
+}
+
+unsigned int CDriverContext::NofConnections(const string& srv_name,
+                                            const string& pool_name) const
+{
+    TSvrRef svr_ref(new CDBServer(srv_name, 0, 0));
+    return NofConnections(svr_ref, pool_name);
 }
 
 CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
