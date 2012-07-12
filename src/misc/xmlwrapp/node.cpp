@@ -893,6 +893,14 @@ xml::node::size_type xml::node::erase (const char *name) {
     return removed_count;
 }
 //####################################################################
+void xml::node::clear (void) {
+    if (!pimpl_->xmlnode_->children)
+        return;
+    xmlFreeNodeList(pimpl_->xmlnode_->children);
+    pimpl_->xmlnode_->children = NULL;
+    pimpl_->xmlnode_->last = NULL;
+}
+//####################################################################
 void xml::node::sort (const char *node_name, const char *attr_name) {
     xmlNodePtr i(pimpl_->xmlnode_->children), next(0);
     std::vector<xmlNodePtr> node_list;

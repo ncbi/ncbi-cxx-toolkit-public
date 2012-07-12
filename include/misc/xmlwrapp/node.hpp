@@ -1103,6 +1103,15 @@ public:
 
     //####################################################################
     /**
+     * Erase all children nodes.
+     *
+     * @author tbrowder2
+    */
+    //####################################################################
+    void clear (void);
+
+    //####################################################################
+    /**
      * Sort all the children nodes of this node using one of thier
      * attributes. Only nodes that are of xml::node::type_element will be
      * sorted, and they must have the given node_name.
