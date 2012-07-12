@@ -53,18 +53,18 @@ extern "C" {
 
 /* Create new CONNECTOR, which handles connection to a network socket.
  * Make up to "max_try" attempts to connect to "host:port" before giving up.
- * On successful connect, send the first "init_size" bytes from buffer
- * "init_data" (can be NULL -- then send nothing, regardless of "init_size")
- * to the newly opened connection.
- * NOTE:  the connector makes (and then uses) its own copy of the "init_data".
+ * On successful connect, send the first "size" bytes from buffer "data"
+ * (can be NULL -- then send nothing, regardless of "size") to the newly
+ * opened connection.
+ * NOTE:  the connector makes (and then uses) its own copy of the "data".
  * Return NULL on error.
  */
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorEx
 (const char*    host,      /* host to connect to                             */
  unsigned short port,      /* port to connect to                             */
  unsigned short max_try,   /* max.number of attempts to establish connection */
- const void*    init_data, /* data to send to server on connect              */
- size_t         init_size, /* size of the "init_data" buffer                 */
+ const void*    data,      /* block of data to send to server when connected */
+ size_t         size,      /* size of the "init_data" block                  */
  TSOCK_Flags    flags      /* bitwise OR of additional socket flags          */
  );
 

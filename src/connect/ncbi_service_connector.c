@@ -385,11 +385,11 @@ static char* s_HostPort(const char* host, unsigned short nport)
  * tunnel, but for buggy proxies that ignore HTTP body as connection data
  * (and thus violate the standard), this shortcut could not be utilized;
  * so the longer multi-step sequence was introduced below, instead.
- * Cf. ncbi_conn_stream.cpp: s_TunneledSocketConnector().
+ * Cf. ncbi_conn_stream.cpp: s_SocketConnectorBuilder().
  */
 static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
-                                          const void*         init_data,
-                                          size_t              init_size)
+                                          const void*         data,
+                                          size_t              size)
 {
     CONNECTOR   c;
     EIO_Status  status;
@@ -401,10 +401,10 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(status != eIO_Success));
-        if (status == eIO_Success  &&  init_size) {
+        if (status == eIO_Success  &&  size) {
             SOCK s;
             status = SOCK_CreateOnTopEx(sock, 0, &s,
-                                        init_data, init_size, flags);
+                                        data, size, flags);
             assert(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
@@ -417,7 +417,7 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         if (!proxy  &&  net_info->debug_printout)
             ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
         status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
-                               init_data, init_size, flags);
+                               data, size, flags);
         assert(!sock ^ !(status != eIO_Success));
     }
     hostport = s_HostPort(net_info->host, net_info->port);

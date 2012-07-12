@@ -1760,8 +1760,8 @@ extern CONNECTOR HTTP_CreateConnectorEx
 extern EIO_Status HTTP_CreateTunnelEx
 (const SConnNetInfo* net_info,
  THTTP_Flags         flags,
- const void*         init_data,
- size_t              init_size,
+ const void*         data,
+ size_t              size,
  SOCK*               sock)
 {
     EIO_Status      status;
@@ -1779,9 +1779,9 @@ extern EIO_Status HTTP_CreateTunnelEx
         return status;
     }
     assert(uuu  &&  !BUF_Size(uuu->w_buf));
-    if (!init_size  ||  BUF_Prepend(&uuu->w_buf, init_data, init_size)) {
-        if (init_size)
-            sprintf(uuu->net_info->args, "[%lu]", (unsigned long) init_size);
+    if (!size  ||  BUF_Prepend(&uuu->w_buf, data, size)) {
+        if (size)
+            sprintf(uuu->net_info->args, "[%lu]", (unsigned long) size);
         status = s_PreRead(uuu, uuu->net_info->timeout, eEM_Wait);
         if (status == eIO_Success) {
             assert(uuu->read_state == eRS_ReadBody);

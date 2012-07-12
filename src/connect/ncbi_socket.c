@@ -2451,7 +2451,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
             status = eIO_Unknown;
         return status;
     }
-  
+
     if (!sock->connected) {
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
@@ -3935,7 +3935,7 @@ static EIO_Status s_Create(const char*     hostpath,
                            const STimeout* timeout,
                            SOCK*           sock,
                            const void*     data,
-                           size_t          datalen,
+                           size_t          size,
                            TSOCK_Flags     flags)
 {
     size_t       x_n = port ? 0 : strlen(hostpath);
@@ -3944,7 +3944,7 @@ static EIO_Status s_Create(const char*     hostpath,
     EIO_Status   status;
     SOCK         x_sock;
 
-    *sock = 0;
+    assert(!*sock);
 
     /* allocate memory for the internal socket structure */
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + x_n)))
@@ -3967,9 +3967,9 @@ static EIO_Status s_Create(const char*     hostpath,
 
     /* setup the I/O data buffer properties */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
-    if (datalen) {
-        if (BUF_SetChunkSize(&x_sock->w_buf, datalen) < datalen  ||
-            !BUF_Write(&x_sock->w_buf, data, datalen)) {
+    if (size) {
+        if (BUF_SetChunkSize(&x_sock->w_buf, size) < size  ||
+            !BUF_Write(&x_sock->w_buf, data, size)) {
             CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
                               ("%s[SOCK::Create] "
                                " Cannot store initial data",
@@ -4286,18 +4286,8 @@ static EIO_Status s_CreateListening(const char*    path,
     char            _id[MAXIDLEN];
     unsigned int    x_id = ++s_ID_Counter;
 
-    *lsock = 0;
-
+    assert(!*lsock);
     assert(!path  ||  *path);
-
-    /* initialize internals */
-    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
-        return eIO_NotSupported;
-
-    if (flags & fSOCK_Secure) {
-        /*FIXME:  Add secure server support later*/
-        return eIO_NotSupported;
-    }
 
     memset(&addr, 0, sizeof(addr));
     if (path) {
@@ -4317,6 +4307,15 @@ static EIO_Status s_CreateListening(const char*    path,
 #endif /*NCBI_OS_UNIX*/
     } else
         addr.sa.sa_family = AF_INET;
+
+    /* initialize internals */
+    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
+        return eIO_NotSupported;
+
+    if (flags & fSOCK_Secure) {
+        /*FIXME:  Add secure server support later*/
+        return eIO_NotSupported;
+    }
 
     /* create new(listening) socket */
     if ((x_lsock = socket(addr.sa.sa_family, SOCK_STREAM, 0)) == SOCK_INVALID){
@@ -4599,6 +4598,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
                                unsigned short backlog,
                                LSOCK*         lsock)
 {
+    *lsock = 0;
     return s_CreateListening(0, port, backlog, lsock, fSOCK_LogDefault);
 }
 
@@ -4608,6 +4608,7 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
                                  LSOCK*         lsock,
                                  TSOCK_Flags    flags)
 {
+    *lsock = 0;
     return s_CreateListening(0, port, backlog, lsock, flags);
 }
 
@@ -4617,6 +4618,7 @@ extern EIO_Status LSOCK_CreateUNIX(const char*    path,
                                    LSOCK*         lsock,
                                    TSOCK_Flags    flags)
 {
+    *lsock = 0;
     if (!path  ||  !*path)
         return eIO_InvalidArg;
     return s_CreateListening(path, 0, backlog, lsock, flags);
@@ -5078,6 +5080,7 @@ extern EIO_Status SOCK_Create(const char*     host,
                               const STimeout* timeout,
                               SOCK*           sock)
 {
+    *sock = 0;
     if (!host  ||  !port)
         return eIO_InvalidArg;
     return s_Create(host, port, timeout, sock, 0, 0, fSOCK_LogDefault);
@@ -5089,12 +5092,13 @@ extern EIO_Status SOCK_CreateEx(const char*     host,
                                 const STimeout* timeout,
                                 SOCK*           sock,
                                 const void*     data,
-                                size_t          datalen,
+                                size_t          size,
                                 TSOCK_Flags     flags)
 {
+    *sock = 0;
     if (!host  ||  !port)
         return eIO_InvalidArg;
-    return s_Create(host, port, timeout, sock, data, datalen, flags);
+    return s_Create(host, port, timeout, sock, data, size, flags);
 }
 
 
@@ -5102,13 +5106,14 @@ extern EIO_Status SOCK_CreateUNIX(const char*     path,
                                   const STimeout* timeout,
                                   SOCK*           sock,
                                   const void*     data,
-                                  size_t          datalen,
+                                  size_t          size,
                                   TSOCK_Flags     flags)
 {
+    *sock = 0;
     if (!path  ||  !*path)
         return eIO_InvalidArg;
 #ifdef NCBI_OS_UNIX
-    return s_Create(path, 0, timeout, sock, data, datalen, flags);
+    return s_Create(path, 0, timeout, sock, data, size, flags);
 #else
     return eIO_NotSupported;
 #endif /*NCBI_OS_UNIX*/
@@ -5119,7 +5124,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
                                 size_t      handle_size,
                                 SOCK*       sock,
                                 const void* data,
-                                size_t      datalen,
+                                size_t      size,
                                 TSOCK_Flags flags)
 {
     union {
@@ -5142,9 +5147,8 @@ static EIO_Status s_CreateOnTop(const void* handle,
     char            _id[MAXIDLEN];
     unsigned int    x_id = ++s_ID_Counter * 1000;
 
-    *sock = 0;
-
-    assert(!datalen  ||  data);
+    assert(!*sock);
+    assert(!size  ||  data);
 
     if (!handle  ||  handle_size != sizeof(fd)) {
         CORE_LOGF_X(47, eLOG_Error,
@@ -5260,9 +5264,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
 #endif /*NCBI_OS_MSWIN*/
 
     /* store initial data */
-    if (datalen) {
-        if (BUF_SetChunkSize(&w_buf, datalen) < datalen  ||
-            !BUF_Write(&w_buf, data, datalen)) {
+    if (size) {
+        if (BUF_SetChunkSize(&w_buf, size) < size  ||
+            !BUF_Write(&w_buf, data, size)) {
             CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
                               ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                                " Cannot store initial data",
@@ -5314,7 +5318,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
     /* all timeout bits zeroed - infinite */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_buf     = w_buf;
-    x_sock->w_len     = datalen;
+    x_sock->w_len     = size;
 
     if (x_sock->session) {
         FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
@@ -5415,9 +5419,10 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
                                      size_t      handle_size,
                                      SOCK*       sock,
                                      const void* data,
-                                     size_t      datalen,
+                                     size_t      size,
                                      TSOCK_Flags flags)
 {
+    *sock = 0;
     if (!handle_size) {
         TSOCK_Handle fd     = SOCK_INVALID;
         SOCK         xsock  = (SOCK) handle;
@@ -5427,7 +5432,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
             assert(fd != SOCK_INVALID);
             SOCK_CloseEx(xsock, 0/*do not destroy*/);
             status  = s_CreateOnTop(&fd, sizeof(fd), sock,
-                                    data, datalen, flags);
+                                    data, size, flags);
             if (status != eIO_Success) {
                 SOCK_CloseOSHandle(&fd, sizeof(fd));
                 assert(!*sock);
@@ -5437,11 +5442,10 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
             if (xsock  &&  fd != SOCK_INVALID)
                 SOCK_Abort(xsock);
             SOCK_CloseEx(xsock, 0/*do not destroy*/);
-            *sock = 0;
         }
         return status;
     }
-    return s_CreateOnTop(handle, handle_size, sock, data, datalen, flags);
+    return s_CreateOnTop(handle, handle_size, sock, data, size, flags);
 }
     
 
@@ -5449,6 +5453,7 @@ extern EIO_Status SOCK_CreateOnTop(const void* handle,
                                    size_t      handle_size,
                                    SOCK*       sock)
 {
+    *sock = 0;
     return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
 }
 
@@ -6159,7 +6164,7 @@ extern unsigned short SOCK_GetLocalPortEx(SOCK          sock,
         return 0;
 
 #ifdef NCBI_OS_UNIX
-    if (*sock->path)
+    if (sock->path[0])
         return 0/*UNIX socket*/;
 #endif /*NCBI_OS_UNIX*/
 
@@ -6194,11 +6199,11 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
     }
     if ( host ) {
         *host = byte_order == eNH_HostByteOrder
-            ? ntohl(sock->host) :      sock->host;
+            ? ntohl(sock->host) :       sock->host;
     }
     if ( port ) {
         *port = byte_order == eNH_HostByteOrder
-            ?       sock->port : ntohs(sock->port);
+            ?       sock->port  : ntohs(sock->port);
     }
 }
 
@@ -6237,7 +6242,7 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
     switch (format) {
     case eSAF_Full:
 #ifdef NCBI_OS_UNIX
-        if (*sock->path) {
+        if (sock->path[0]) {
             size_t len = strlen(sock->path);
             if (len < bufsize)
                 memcpy(buf, sock->path, len + 1);

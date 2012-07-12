@@ -56,8 +56,8 @@ typedef struct {
     unsigned short port;      /* server:  service port                    */
     unsigned short try_own;   /* max.number of attempts to establish conn */
     TSOCK_Flags    flags;     /* see socket flags in ncbi_socket.h        */
-    size_t         init_size; /* size of the "init_data" buffer           */
-    const void*    init_data; /* data to send to the server on connect    */
+    size_t         size;      /* size of the "data" buffer                */
+    const void*    data;      /* data to send to the server on connect    */
 } SSockConnector;
 
 
@@ -142,7 +142,7 @@ static EIO_Status s_VT_Open
         for (i = 0;  i < xxx->try_own;  i++) {
             /* connect */
             status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->sock,
-                                   xxx->init_data, xxx->init_size, xxx->flags);
+                                   xxx->data, xxx->size, xxx->flags);
             if (xxx->sock)
                 break;
             assert(status != eIO_Success);
@@ -244,8 +244,8 @@ static void s_Destroy
     SSockConnector* xxx = (SSockConnector*) connector->handle;
     connector->handle = 0;
 
-    xxx->init_data = 0;
-    xxx->init_size = 0;
+    xxx->data = 0;
+    xxx->size = 0;
     xxx->host = 0;
     free(xxx);
     free(connector);
@@ -257,21 +257,20 @@ static CONNECTOR s_Init
  const char*    host,
  unsigned short port,
  unsigned short try_own,
- const void*    init_data,
- size_t         init_size,
+ const void*    data,
+ size_t         size,
  TSOCK_Flags    flags)
 {
     CONNECTOR       ccc;
     SSockConnector* xxx;
 
     /* some sanity checks */
-    assert(!sock  ||  !(init_size || init_data || flags));
-    assert(!init_size  ||  init_data);
+    assert(!sock  ||  !(size  ||  data  ||  flags));
 
     if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
         return 0;
     if (!(xxx = (SSockConnector*) malloc(sizeof(*xxx)
-                                         + (init_data ? init_size : 0)
+                                         + (data ? size : 0)
                                          + (host
                                             ? strlen(host) + 1
                                             : MAX_IP_ADDR_LEN)))) {
@@ -282,8 +281,8 @@ static CONNECTOR s_Init
     /* initialize internal data structures */
     if (sock  ||  !host  ||  !port) {
         xxx->sock      = sock;
-        xxx->init_size = 0;
-        xxx->init_data = 0;
+        xxx->size      = 0;
+        xxx->data      = 0;
         if (host) {
             xxx->host  = strcpy((char*) xxx + sizeof(*xxx), host);
             xxx->port  = 0;
@@ -301,11 +300,11 @@ static CONNECTOR s_Init
         }
         xxx->try_own   = try_own   ? 1         : 0;
     } else {
-        void* data     = (char*) xxx + sizeof(*xxx);
+        char* temp     = (char*) xxx + sizeof(*xxx);
         xxx->sock      = 0;
-        xxx->init_size = init_data ? init_size : 0;
-        xxx->init_data = memcpy(data, init_data, xxx->init_size);
-        xxx->host      = strcpy((char*) data + xxx->init_size, host);
+        xxx->size      = data ? size : 0;
+        xxx->data      = memcpy(temp, data, xxx->size);
+        xxx->host      = strcpy(temp + xxx->size, host);
         xxx->port      = port;
         xxx->try_own   = try_own   ? try_own   : 1;
         xxx->flags     = flags;
@@ -331,7 +330,7 @@ extern CONNECTOR SOCK_CreateConnector
  unsigned short port,
  unsigned short max_try)
 {
-    return s_Init(0,    host, port,  max_try,  0,         0, fSOCK_LogDefault);
+    return s_Init(0,    host, port,  max_try,  0,    0,    fSOCK_LogDefault);
 }
 
 
@@ -339,11 +338,11 @@ extern CONNECTOR SOCK_CreateConnectorEx
 (const char*    host,
  unsigned short port,
  unsigned short max_try,
- const void*    init_data,
- size_t         init_size,
+ const void*    data,
+ size_t         size,
  TSOCK_Flags    flags)
 {
-    return s_Init(0,    host, port,  max_try,  init_data, init_size, flags);
+    return s_Init(0,    host, port,  max_try,  data, size, flags);
 }
 
 
@@ -351,7 +350,7 @@ extern CONNECTOR SOCK_CreateConnectorOnTop
 (SOCK                   sock,
  unsigned short/*bool*/ own_sock)
 {
-    return s_Init(sock, 0,    0,     own_sock, 0,         0,         0);
+    return s_Init(sock, 0,    0,     own_sock, 0,    0,    0);
 }
 
 
@@ -360,5 +359,5 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
  unsigned short/*bool*/ own_sock,
  const char*            hostport)
 {
-    return s_Init(sock, hostport, 0, own_sock, 0,         0,         0);
+    return s_Init(sock, hostport, 0, own_sock, 0,    0,    0);
 }

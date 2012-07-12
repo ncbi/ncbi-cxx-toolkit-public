@@ -267,9 +267,10 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  * @note
  *  "net_info" can be passed as NULL to be constructed from the environment.
  * @note
- *  Some HTTP proxies do not process "init_data" correctly (e.g. Squid 3) when
- *  sent along with the tunnel creation request, so they may require separate
- *  SOCK I/O calls to write the data to the tunnel.
+ *  Some HTTP proxies do not process "data" correctly (e.g. Squid 3) when sent
+ *  along with the tunnel creation request (despite the standard specifically
+ *  allows such use), so they may require separate SOCK I/O calls to write the
+ *  data to the tunnel.
  * @return
  *  eIO_Success if the tunnel has been successfully created;
  *  otherwise, return an error code and set "*sock" to NULL upon return.
@@ -279,8 +280,8 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
 extern NCBI_XCONNECT_EXPORT EIO_Status HTTP_CreateTunnelEx
 (const SConnNetInfo* net_info,
  THTTP_Flags         flags,
- const void*         init_data,
- size_t              init_size,
+ const void*         data,    /**< initial data block to send via the tunnel */
+ size_t              size,    /**< size of the initial data block            */
  SOCK*               sock
  );
 

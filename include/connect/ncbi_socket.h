@@ -583,10 +583,10 @@ extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
  *  [in]  the connect timeout (infinite if NULL)
  * @param sock
  *  [out] handle of the created socket
- * @param init_data
- *  [in]  initial output data segment (may be NULL)
- * @param init_size
- *  [in]  size of initial data segment (may be 0)
+ * @param data
+ *  [in]  initial output data block (may be NULL)
+ * @param size
+ *  [in]  size of the initial data block (may be 0)
  * @param flags
  *  [in]  additional socket requirements
  * @sa
@@ -597,8 +597,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
  unsigned short  port,
  const STimeout* timeout,
  SOCK*           sock,
- const void*     init_data,
- size_t          init_size,
+ const void*     data,
+ size_t          size,
  TSOCK_Flags     flags
  );
 
@@ -652,10 +652,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  *  [in]  "handle" size (0 if a SOCK passed in "handle")
  * @param sock
  *  [out] SOCK built on top of the "handle"
- * @param init_data
- *  [in]  initial output data segment (may be NULL)
- * @param init_size
- *  [in]  size of the initial data segment (may be 0)
+ * @param data
+ *  [in]  initial output data block (may be NULL)
+ * @param size
+ *  [in]  size of the initial data block (may be 0)
  * @param flags
  *  [in]  additional socket requirements
  * @return
@@ -669,8 +669,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateOnTopEx
 (const void* handle,
  size_t      handle_size,
  SOCK*       sock,
- const void* init_data,
- size_t      init_size,
+ const void* data,
+ size_t      size,
  TSOCK_Flags flags
  );
 
