@@ -1796,10 +1796,11 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
     : m_DBImpl(db_impl),
       m_Stmt(NULL),
       m_CallStmt(NULL),
-      m_IgnoreBounds(false),
       m_CurRS(NULL),
+      m_IgnoreBounds(false),
       m_RSBeginned(false),
       m_RSFinished(true),
+      m_Executed(false),
       m_CurRSNo(0),
       m_CurRowNo(0),
       m_RowCount(-1),
@@ -1942,6 +1943,7 @@ CQueryImpl::SetSql(CTempString sql)
 {
     x_CheckCanWork();
     m_Sql = sql;
+    m_Executed = false;
 }
 
 void
@@ -1986,6 +1988,7 @@ CQueryImpl::Execute(void)
             const SQueryParamInfo& info = it->second;
             m_Stmt->SetParam(*info.value, it->first);
         }
+        m_Executed = true;
         m_Stmt->SendSql(m_Sql);
         HasMoreResultSets();
     }
@@ -2008,6 +2011,7 @@ CQueryImpl::ExecuteSP(CTempString sp)
             else
                 m_CallStmt->SetOutputParam(*info.value, it->first);
         }
+        m_Executed = true;
         m_CallStmt->Execute();
         HasMoreResultSets();
     }
@@ -2146,9 +2150,18 @@ CQueryImpl::HasMoreResultSets(void)
     return false;
 }
 
-inline void
+void
 CQueryImpl::BeginNewRS(void)
 {
+    x_CheckCanWork();
+    if (!m_Executed) {
+        NCBI_THROW(CSDB_Exception, eClosed,
+                   "CQuery::Execute() was not called");
+    }
+    if (!HasMoreResultSets()) {
+        NCBI_THROW(CSDB_Exception, eClosed,
+                   "All result sets in CQuery were already iterated through");
+    }
     while (HasMoreResultSets()  &&  !x_Fetch()  &&  m_IgnoreBounds)
         m_RSBeginned = true;
     m_RSBeginned = true;

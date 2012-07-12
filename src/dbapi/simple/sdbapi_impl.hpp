@@ -174,10 +174,11 @@ private:
     ICallableStatement* m_CallStmt;
     TParamsMap          m_Params;
     string              m_Sql;
-    bool                m_IgnoreBounds;
     IResultSet*         m_CurRS;
+    bool                m_IgnoreBounds;
     bool                m_RSBeginned;
     bool                m_RSFinished;
+    bool                m_Executed;
     unsigned int        m_CurRSNo;
     unsigned int        m_CurRowNo;
     int                 m_RowCount;
