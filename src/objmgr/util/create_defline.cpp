@@ -628,7 +628,7 @@ string CDeflineGenerator::x_TitleFromBioSrc (void)
     string title = NStr::TruncateSpaces
         (m_Taxname + stn + chr + cln + mp + pls + sfx);
 
-    if (islower ((unsigned char) title[0])) {
+    if (!title.empty() && islower ((unsigned char) title[0])) {
         title [0] = toupper ((unsigned char) title [0]);
     }
 
