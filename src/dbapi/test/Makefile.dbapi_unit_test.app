@@ -31,6 +31,8 @@ CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds       -S Sybase
+# Run tests against Sybase ASE 15.5 (below) as well as Sybase 12.x (above)
+CHECK_CMD = dbapi_unit_test -dr ftds       -S GLUCK
 
 CHECK_CMD = dbapi_unit_test -dr ftds -S MsSql --run_test=Test_Authentication
 
