@@ -132,11 +132,36 @@ protected:
 };
 
 
+class CSeqLocListSet : public ISequenceSet
+{
+public:
+    CSeqLocListSet();
+
+    list<CRef<objects::CSeq_loc> >& SetLocList();
+    void SetSeqMasker(CSeqMasker* SeqMasker);
+
+    void GetGiList(vector<int>& GiList, objects::CScope& Scope,
+                   const CAlignResultsSet& Alignments, int Threshold);
+
+    CRef<blast::IQueryFactory> CreateQueryFactory(
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
+    CRef<blast::IQueryFactory> CreateQueryFactory(
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts,
+            const CAlignResultsSet& Alignments, int Threshold);
+    CRef<blast::CLocalDbAdapter> CreateLocalDbAdapter(
+            objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
+
+protected:
+    list<CRef<objects::CSeq_loc> > m_SeqLocList;
+    CSeqMasker* m_SeqMasker;
+};
+
 
 class CFastaFileSet : public ISequenceSet
 {
 public:
     CFastaFileSet(CNcbiIstream* FastaStream);
+    CFastaFileSet(CNcbiIstream* FastaStream, int Start, int Count);
 
     void EnableLowerCaseMasking(bool LowerCaseMasking);
 
@@ -152,6 +177,8 @@ public:
 protected:
     CNcbiIstream* m_FastaStream;
     bool m_LowerCaseMasking;
+
+    int m_Start, m_Count;
 };
 
 

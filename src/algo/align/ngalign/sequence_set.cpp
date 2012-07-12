@@ -43,6 +43,10 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 #include <algo/align/util/score_builder.hpp>
 
 #include <algo/blast/api/blast_types.hpp>
@@ -58,6 +62,9 @@
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 
 #include <algo/dustmask/symdust.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
 BEGIN_SCOPE(ncbi)
 USING_SCOPE(objects);
@@ -116,7 +123,6 @@ CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
         NCBI_THROW(CException, eInvalid,
                    "CBLastDb::CreateLocalDbAdapter: BlastDb is empty.");
     }
-
     CRef<CSearchDatabase> SearchDb;
     SearchDb.Reset(new CSearchDatabase(m_BlastDb, CSearchDatabase::eBlastDbIsNucleotide));
 
@@ -131,7 +137,6 @@ CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
     if(!m_PositiveGiList.IsNull() && !m_PositiveGiList->NotEmpty()) {
         SearchDb->SetGiList(m_PositiveGiList);
     }
-
 
     CRef<CLocalDbAdapter> Result;
     Result.Reset(new CLocalDbAdapter(*SearchDb));
@@ -173,8 +178,8 @@ void CSeqIdListSet::GetGiList(vector<int>& GiList, CScope& Scope,
 
         int Gi;
         Gi = sequence::GetGiForId(**IdIter, Scope);
-        if(Gi != 0) {
-            GiList.push_back(Gi);
+        if(Gi != 0 && Gi != -1) {
+			GiList.push_back(Gi);
         }
     }
 }
@@ -236,6 +241,11 @@ CRef<CSeq_loc> s_GetClipLoc(const CSeq_id& Id,
                             CScope& Scope)
 {
     CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
+	if(!Handle) {
+		cerr << "s_GetClipLoc:  Could not get Handle for " << MSerial_AsnText << Id << endl;
+		cerr << Id.GetSeqIdString(true) << endl;
+		return CRef<CSeq_loc>();
+	}
 
     // Extract the Seq-annot.locs, for the clip region.
     CRef<CSeq_loc> ClipLoc;
@@ -287,6 +297,64 @@ CRef<CSeq_loc> s_GetClipLoc(const CSeq_id& Id,
 }
 
 
+CRef<CSeq_loc> s_GetUngapLoc(const CSeq_id& Id,
+                             CScope& Scope)
+{
+    CBioseq_Handle Handle = Scope.GetBioseqHandle(Id);
+	if(!Handle) {
+		cerr << "s_GetUngapLoc:  Could not get Handle for " << MSerial_AsnText << Id << endl;
+		cerr << Id.GetSeqIdString(true) << endl;
+		return CRef<CSeq_loc>();
+	}
+
+    // Extract the Seq-annot.locs, for the not-gap region.
+    CRef<CSeq_loc> UngapLoc;
+    
+    if(!Handle.IsSetInst_Ext()) {
+        CRef<CSeq_loc> WholeLoc(new CSeq_loc);
+        WholeLoc->SetWhole().Assign(Id);
+        return WholeLoc;
+    }
+    
+    const CSeq_ext& Ext = Handle.GetInst_Ext();
+
+    if(!Ext.IsDelta()) {
+        CRef<CSeq_loc> WholeLoc(new CSeq_loc);
+        WholeLoc->SetWhole().Assign(Id);
+        return WholeLoc;
+    }
+
+    UngapLoc.Reset(new CSeq_loc);
+    
+    TSeqPos Curr = 0;
+    ITERATE(CDelta_ext::Tdata, SeqIter, Ext.GetDelta().Get()) {
+        const CDelta_seq& Seq = **SeqIter;
+        
+        if(Seq.IsLiteral() && Seq.GetLiteral().IsSetLength()) {
+            Curr += Seq.GetLiteral().GetLength();
+            continue;
+        }
+        else if(Seq.IsLoc() && Seq.GetLoc().IsInt()) {
+            TSeqPos Length = Seq.GetLoc().GetInt().GetLength();
+
+            CSeq_loc IntLoc;
+            IntLoc.SetInt().SetId().Assign(Id);
+            IntLoc.SetInt().SetFrom() = Curr;
+            IntLoc.SetInt().SetTo() = Curr + Length - 1;
+            UngapLoc->Add(IntLoc);
+            
+            Curr += Length;
+        }
+    }
+   
+    UngapLoc = sequence::Seq_loc_Merge(*UngapLoc, CSeq_loc::fSortAndMerge_All,
+                                      &Scope);
+    UngapLoc->ChangeToPackedInt();
+
+    return UngapLoc;
+}
+
+
 CRef<IQueryFactory>
 CSeqIdListSet::CreateQueryFactory(CScope& Scope,
                                   const CBlastOptionsHandle& BlastOpts)
@@ -296,13 +364,13 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
                    "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
     }
 
-
     TSeqLocVector FastaLocVec;
     ITERATE(list<CRef<CSeq_id> >, IdIter, m_SeqIdList) {
 
         CRef<CSeq_loc> WholeLoc;
         WholeLoc = s_GetClipLoc(**IdIter, Scope);
         if(WholeLoc.IsNull()) {
+            //WholeLoc = s_GetUngapLoc(**IdIter, Scope);
             WholeLoc.Reset(new CSeq_loc);
             WholeLoc->SetWhole().Assign(**IdIter);
         }
@@ -340,9 +408,8 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
         NCBI_THROW(CException, eInvalid,
                    "CSeqIdListSet::CreateQueryFactory: Id List is empty.");
     }
-
-
-    TSeqLocVector FastaLocVec;
+    
+	TSeqLocVector FastaLocVec;
     ITERATE(list<CRef<CSeq_id> >, IdIter, m_SeqIdList) {
 
         if(Alignments.QueryExists(**IdIter)) {
@@ -354,10 +421,12 @@ CSeqIdListSet::CreateQueryFactory(CScope& Scope,
         }
     
         ERR_POST(Info << "Blast Including ID: " << (*IdIter)->GetSeqIdString(true));
-        
+
+		
         CRef<CSeq_loc> WholeLoc;
         WholeLoc = s_GetClipLoc(**IdIter, Scope);
         if(WholeLoc.IsNull()) {
+            //WholeLoc = s_GetUngapLoc(**IdIter, Scope);
             WholeLoc.Reset(new CSeq_loc);
             WholeLoc->SetWhole().Assign(**IdIter);
         }
@@ -405,8 +474,194 @@ CSeqIdListSet::CreateLocalDbAdapter(CScope& Scope,
 
 
 
+CSeqLocListSet::CSeqLocListSet() : m_SeqMasker(NULL)
+{
+    ;
+}
+
+
+list<CRef<CSeq_loc> >& CSeqLocListSet::SetLocList()
+{
+    return m_SeqLocList;
+}
+
+
+void CSeqLocListSet::SetSeqMasker(CSeqMasker* SeqMasker)
+{
+    m_SeqMasker = SeqMasker;
+}
+
+
+void CSeqLocListSet::GetGiList(vector<int>& GiList, CScope& Scope,
+                            const CAlignResultsSet& Alignments, int Threshold)
+{
+    ITERATE(list<CRef<CSeq_loc> >, LocIter, m_SeqLocList) {
+
+        const CSeq_id* Id = (*LocIter)->GetId();
+
+        if(Id == NULL)
+            continue;
+
+        if(Alignments.QueryExists(*Id)) {
+            CConstRef<CQuerySet> QuerySet = Alignments.GetQuerySet(*Id);
+            int BestRank = QuerySet->GetBestRank();
+            if(BestRank != -1 && BestRank <= Threshold) {
+                continue;
+            }
+        }
+
+        int Gi = -1;
+        try {
+            Gi = sequence::GetGiForId(*Id, Scope);
+        } catch(...) { Gi = -1; }
+        if(Gi != 0 && Gi != -1) {
+			GiList.push_back(Gi);
+        }
+    }
+}
+
+
+CRef<IQueryFactory>
+CSeqLocListSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts)
+{
+    if(m_SeqLocList.empty()) {
+        NCBI_THROW(CException, eInvalid,
+                   "CSeqLocListSet::CreateQueryFactory: Loc List is empty.");
+    }
+
+    TSeqLocVector FastaLocVec;
+    ITERATE(list<CRef<CSeq_loc> >, LocIter, m_SeqLocList) {
+        const CSeq_id* Id = (*LocIter)->GetId();
+        if(Id == NULL)
+            continue;
+
+        CRef<CSeq_loc> BaseLoc(new CSeq_loc);
+        BaseLoc->Assign(**LocIter);
+        CRef<CSeq_loc> ClipLoc = s_GetClipLoc(*Id, Scope);
+        if(!ClipLoc.IsNull()) {
+            CRef<CSeq_loc> Inters;
+            Inters = BaseLoc->Intersect(*ClipLoc, CSeq_loc::fSortAndMerge_All, NULL);
+            if(!Inters.IsNull()) {
+                BaseLoc->Assign(*Inters);
+            }
+        }
+
+        if(m_SeqMasker == NULL || !BlastOpts.GetMaskAtHash()) {
+            SSeqLoc BaseSLoc(*BaseLoc, Scope);
+            FastaLocVec.push_back(BaseSLoc);
+        } else {
+            CRef<CSeq_loc> MaskLoc;
+            MaskLoc = s_GetMaskLoc(*Id, m_SeqMasker, Scope);
+
+            if(MaskLoc.IsNull() /* || Vec.size() < 100*/ ) {
+                SSeqLoc BaseSLoc(*BaseLoc, Scope);
+                FastaLocVec.push_back(BaseSLoc);
+            } else {
+                SSeqLoc MaskSLoc(*BaseLoc, Scope, *MaskLoc);
+                FastaLocVec.push_back(MaskSLoc);
+            }
+        }
+    }
+
+    CRef<IQueryFactory> Result;
+    if(!FastaLocVec.empty())
+        Result.Reset(new CObjMgr_QueryFactory(FastaLocVec));
+    return Result;
+}
+
+
+CRef<blast::IQueryFactory>
+CSeqLocListSet::CreateQueryFactory(CScope& Scope,
+                                  const CBlastOptionsHandle& BlastOpts,
+                                  const CAlignResultsSet& Alignments, int Threshold)
+{
+    if(m_SeqLocList.empty()) {
+        NCBI_THROW(CException, eInvalid,
+                   "CSeqLocListSet::CreateQueryFactory: Loc List is empty.");
+    }
+    
+	TSeqLocVector FastaLocVec;
+    ITERATE(list<CRef<CSeq_loc> >, LocIter, m_SeqLocList) {
+        const CSeq_id* Id = (*LocIter)->GetId();
+        if(Id == NULL)
+            continue;
+
+        if(Alignments.QueryExists(*Id)) {
+            CConstRef<CQuerySet> QuerySet = Alignments.GetQuerySet(*Id);
+            int BestRank = QuerySet->GetBestRank();
+            if(BestRank != -1 && BestRank <= Threshold) {
+                continue;
+            }
+        }
+    
+        ERR_POST(Info << "Blast Including ID: " << Id->GetSeqIdString(true));
+
+		
+        CRef<CSeq_loc> BaseLoc(new CSeq_loc), ClipLoc;
+        BaseLoc->Assign(**LocIter);
+        ClipLoc = s_GetClipLoc(*Id, Scope);
+        if(!ClipLoc.IsNull()) {
+            CRef<CSeq_loc> Inters;
+            Inters = BaseLoc->Intersect(*ClipLoc, CSeq_loc::fSortAndMerge_All, NULL);
+            if(!Inters.IsNull()) {
+                BaseLoc->Assign(*Inters);
+            }
+        }
+     
+        if(m_SeqMasker == NULL) {
+            SSeqLoc BaseSLoc(*BaseLoc, Scope);
+            FastaLocVec.push_back(BaseSLoc);
+        } else {
+            CRef<CSeq_loc> MaskLoc;
+            MaskLoc = s_GetMaskLoc(*Id, m_SeqMasker, Scope);
+
+            if(MaskLoc.IsNull()) {
+                SSeqLoc BaseSLoc(*BaseLoc, Scope);
+                FastaLocVec.push_back(BaseSLoc);
+            } else {
+                SSeqLoc MaskSLoc(*BaseLoc, Scope, *MaskLoc);
+                FastaLocVec.push_back(MaskSLoc);
+            }
+        }
+    }
+
+    CRef<IQueryFactory> Result;
+    if(!FastaLocVec.empty())
+        Result.Reset(new CObjMgr_QueryFactory(FastaLocVec));
+    return Result;
+}
+
+
+CRef<CLocalDbAdapter>
+CSeqLocListSet::CreateLocalDbAdapter(CScope& Scope,
+                                    const CBlastOptionsHandle& BlastOpts)
+{
+    if(m_SeqLocList.empty()) {
+        NCBI_THROW(CException, eInvalid,
+                   "CSeqLocListSet::CreateLocalDbAdapter: Loc List is empty.");
+    }
+
+    CRef<CLocalDbAdapter> Result;
+    CRef<IQueryFactory> QueryFactory = CreateQueryFactory(Scope, BlastOpts);
+    Result.Reset(new CLocalDbAdapter(QueryFactory,
+                                     CConstRef<CBlastOptionsHandle>(&BlastOpts)));
+    return Result;
+}
+
+
+
 CFastaFileSet::CFastaFileSet(CNcbiIstream* FastaStream)
-            : m_FastaStream(FastaStream), m_LowerCaseMasking(true)
+            : m_FastaStream(FastaStream), m_LowerCaseMasking(true),
+              m_Start(-1), m_Count(-1)
+{
+    ;
+}
+
+
+CFastaFileSet::CFastaFileSet(CNcbiIstream* FastaStream, int Start, int Count)
+            : m_FastaStream(FastaStream), m_LowerCaseMasking(true),
+              m_Start(Start), m_Count(Count)
 {
     ;
 }
@@ -484,6 +739,31 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
     CBlastInput Input(&FastaSource, GetQueryBatchSize(kProgram));
 
     TSeqLocVector FastaLocVec = Input.GetAllSeqLocs(Scope);
+ 
+    if(m_Count > 0) {
+        int i = 0;
+        TSeqLocVector::iterator Curr;
+        for(Curr = FastaLocVec.begin(); Curr != FastaLocVec.end(); ) {
+            if( i < m_Start) {
+                Curr = FastaLocVec.erase(Curr);
+                i++;
+                continue;
+            }
+            else if( i > m_Start + m_Count) {
+                Curr = FastaLocVec.erase(Curr);
+                i++;
+                continue;
+            }
+            else {
+                ++Curr;
+                i++;
+                continue;
+            }
+        }
+        m_Start += m_Count;
+    cerr <<"*"<< FastaLocVec.size()<<"*" << endl;
+    }
+
 
     TSeqLocVector::iterator Curr;
     for(Curr = FastaLocVec.begin(); Curr != FastaLocVec.end(); ) {
@@ -497,6 +777,7 @@ CFastaFileSet::CreateQueryFactory(CScope& Scope,
         }
         ++Curr;
     }
+   
 
     m_FastaStream->clear();
     m_FastaStream->seekg(0, std::ios::beg);
