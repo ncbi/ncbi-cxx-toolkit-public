@@ -326,8 +326,9 @@ unsigned int CDriverContext::NofConnections(const TSvrRef& svr_ref,
                 if (server.compare(con->ServerName()))
                     continue;
             }
-            else if (host != con->Host()  ||  port != con->Port()) {
-                continue;
+            else if (host != 0) {
+                if (host != con->Host()  ||  port != con->Port())
+                    continue;
             }
             if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
             ++n;
