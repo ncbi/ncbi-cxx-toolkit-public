@@ -621,10 +621,10 @@ tds_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
 
     /* use charset nearest to client or nothing */
     server_charset = NULL;
-    if (!tds_dstr_isempty(&connection->server_charset))
+    /*if (!tds_dstr_isempty(&connection->server_charset))
         server_charset = tds_dstr_cstr(&connection->server_charset);
     else
-        server_charset = tds_sybase_charset_name(tds_dstr_cstr(&connection->client_charset));
+        server_charset = tds_sybase_charset_name(tds_dstr_cstr(&connection->client_charset));*/
     if (!server_charset)
         server_charset = "";
     tds_put_login_string(tds, server_charset, TDS_MAX_LOGIN_STR_SZ);    /* charset */

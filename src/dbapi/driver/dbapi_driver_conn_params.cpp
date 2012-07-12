@@ -743,6 +743,7 @@ CCPPToolkitConnParams::GetServerType(void) const
         return eMSSqlServer;
     } else if ( NStr::CompareNocase(server_name, "TAPER") == 0
         || NStr::CompareNocase(server_name, "THALBERG") == 0
+        || NStr::CompareNocase(server_name, "GLUCK") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUMANN") == 0
         || NStr::CompareNocase(server_name, 0, 8, "CLEMENTI") == 0
         || NStr::CompareNocase(server_name, 0, 10, "DBAPI_DEV1") == 0

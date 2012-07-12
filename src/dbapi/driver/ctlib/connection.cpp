@@ -76,6 +76,8 @@ GetTDSServerType(CS_CONNECTION* conn)
         if (product != NULL && strlen(product) != 0) {
             if (strcmp(product, "sql server") == 0) {
                 return CDBConnParams::eSybaseSQLServer;
+            } else if (strcmp(product, "ASE") == 0) {
+                return CDBConnParams::eSybaseSQLServer;
             } else if (strcmp(product, "Microsoft SQL Server") == 0) {
                 return CDBConnParams::eMSSqlServer;
             } else if (strcmp(product, "OpenServer") == 0
