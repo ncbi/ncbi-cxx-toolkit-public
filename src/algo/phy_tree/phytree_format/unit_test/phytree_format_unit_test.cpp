@@ -206,40 +206,65 @@ BOOST_AUTO_TEST_CASE(TestIsSingleBlastName)
 {
     CRef<CScope> scope = s_CreateScope();
 
-    CNcbiIfstream istr("data/bare_tree.asn");
+    // read tree with single blast name
+    CNcbiIfstream istr("data/tree_single_bn.asn");
     BOOST_REQUIRE(istr);
     CBioTreeContainer btc;
     istr >> MSerial_AsnText >> btc;
     istr.close();
 
-    // find number of leaves
-    int num = 0;
-    ITERATE (CNodeSet::Tdata, it, btc.GetNodes().Get()) {
+    // feature id for blast name
+    const int kBlastNameFeatureId = 6;
+    string blast_name;
+
+    // pointer to a blast name node feature
+    CNodeFeature* bn_node_feature = NULL;
+
+    // check pre condition -- the tree has single blast name
+    bool is_single_blast_name = true;
+    // for each node
+    ITERATE(CNodeSet::Tdata, node, btc.GetNodes().Get()) {
         // if root node
-        if (!(*it)->IsSetParent()) {
+        if (!(*node)->IsSetParent()) {
             continue;
         }
 
-        if (s_IsLeaf(**it)) {
-            num++;
+        // for each node feature
+        ITERATE (CNodeFeatureSet::Tdata, it, (*node)->GetFeatures().Get()) {
+            if ((*it)->CanGetFeatureid()
+                && (*it)->GetFeatureid() == kBlastNameFeatureId) {
+
+                if ((*it)->CanGetValue()) {
+                    if (blast_name.empty()) {
+                        blast_name = (*it)->GetValue();
+                    }
+                    else if (blast_name != (*it)->GetValue()) {
+                        is_single_blast_name = false;
+                        break;
+                    }
+
+                    // set the pointer to a node feature for later use
+                    if (!bn_node_feature) {
+                        bn_node_feature = const_cast<CNodeFeature*>(&**it);
+                    }
+                }
+            }
+        }
+        if (!is_single_blast_name) {
+            break;
         }
     }
+    // check pre condition
+    BOOST_REQUIRE(is_single_blast_name);
 
-    // create fake seq-ids
-    CRef<CSeq_id> seq_id(new CSeq_id("gi|129295"));
-    vector< CRef<CSeq_id> > ids(num, seq_id);
+    // check post condition
+    CRef<CPhyTreeFormatter> tree(new CPhyTreeFormatter(btc));
+    BOOST_REQUIRE(tree->IsSingleBlastName());
 
-    CRef<CPhyTreeFormatter> tree(new CPhyTreeFormatter(btc, ids, *scope));
-    BOOST_REQUIRE_EQUAL(tree->IsSingleBlastName(), true);
-
-    istr.open("data/bare_tree.asn");
-    BOOST_REQUIRE(istr);
-    istr >> MSerial_AsnText >> btc;
-
-    // This sequence has different Blast Name than 129295
-    ids[0].Reset(new CSeq_id("gi|297702745"));
-    tree.Reset(new CPhyTreeFormatter(btc, ids, *scope));
-    BOOST_REQUIRE_EQUAL(tree->IsSingleBlastName(), false);
+    // change blast name for a single node
+    bn_node_feature->SetValue(blast_name + "fake_name");
+    tree.Reset(new CPhyTreeFormatter(btc));
+    BOOST_REQUIRE(!tree->IsSingleBlastName());
 }
 
 
@@ -247,29 +272,48 @@ BOOST_AUTO_TEST_CASE(TestSimplifyByBlastName)
 {
     CRef<CScope> scope = s_CreateScope();
 
-    CNcbiIfstream istr("data/bare_tree.asn");
+    CNcbiIfstream istr("data/tree_single_bn.asn");
     BOOST_REQUIRE(istr);
     CBioTreeContainer btc;
     istr >> MSerial_AsnText >> btc;
 
-    // find number of leaves
-    int num = 0;
-    ITERATE (CNodeSet::Tdata, it, btc.GetNodes().Get()) {
+    // feature id for blast name
+    const int kBlastNameFeatureId = 6;
+    string blast_name;
+
+    // check pre condition -- the tree has single blast name
+    bool is_single_blast_name = true;
+    // for each node
+    ITERATE(CNodeSet::Tdata, node, btc.GetNodes().Get()) {
         // if root node
-        if (!(*it)->IsSetParent()) {
+        if (!(*node)->IsSetParent()) {
             continue;
         }
 
-        if (s_IsLeaf(**it)) {
-            num++;
+        // for each node feature
+        ITERATE (CNodeFeatureSet::Tdata, it, (*node)->GetFeatures().Get()) {
+            if ((*it)->CanGetFeatureid()
+                && (*it)->GetFeatureid() == kBlastNameFeatureId) {
+
+                if ((*it)->CanGetValue()) {
+                    if (blast_name.empty()) {
+                        blast_name = (*it)->GetValue();
+                    }
+                    else if (blast_name != (*it)->GetValue()) {
+                        is_single_blast_name = false;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!is_single_blast_name) {
+            break;
         }
     }
+    // check pre condition
+    BOOST_REQUIRE(is_single_blast_name);
 
-    // create fake seq-ids with the same blast name
-    CRef<CSeq_id> seq_id(new CSeq_id("gi|129295"));
-    vector< CRef<CSeq_id> > ids(num, seq_id);
-
-    CPhyTreeFormatter tree(btc, ids, *scope);
+    CPhyTreeFormatter tree(btc);
     tree.SimplifyTree(CPhyTreeFormatter::eByBlastName);
 
     const CBioTreeDynamic::CBioNode* node
