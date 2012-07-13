@@ -44,10 +44,10 @@
 #define _STR(x)           #x
 #define STRINGIFY(x)  _STR(x)
 
-#define HELP_EMAIL  (m_Email.empty()                                    \
-                     ? string("NCBI Help Desk info@ncbi.nlm.nih.gov")   \
-                     : m_Email)
-#define NCBI_FW_URL                                                     \
+#define HELP_EMAIL    (m_Email.empty()                                  \
+                       ? string("NCBI Help Desk info@ncbi.nlm.nih.gov") \
+                       : m_Email)
+#define NCBI_FWDOC_URL                                                  \
     "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
 
 
@@ -163,9 +163,19 @@ EIO_Status CConnTest::ConnStatus(bool failure, CConn_IOStream* io)
 }
 
 
+static SConnNetInfo* ConnNetInfo_Create(const char*    svc_name,
+                                        EDebugPrintout dbg_printout)
+{
+    SConnNetInfo* net_info = ::ConnNetInfo_Create(svc_name);
+    if (net_info  &&  (EDebugPrintout) net_info->debug_printout < dbg_printout)
+        net_info->debug_printout = dbg_printout;
+    return net_info;
+}
+
+
 EIO_Status CConnTest::HttpOkay(string* reason)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
     if (net_info) {
         if (*net_info->http_proxy_host  &&  net_info->http_proxy_port)
             m_HttpProxy = true;
@@ -264,7 +274,7 @@ static int s_ParseHeader(const char* header, void* data, int server_error)
 
 EIO_Status CConnTest::DispatcherOkay(string* reason)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
     ConnNetInfo_SetupStandardArgs(net_info, kTest);
 
     PreCheck(eDispatcher, 0/*main*/,
@@ -319,7 +329,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 {
     static const char kService[] = "bounce";
 
-    SConnNetInfo* net_info = ConnNetInfo_Create(kService);
+    SConnNetInfo* net_info = ConnNetInfo_Create(kService, m_DebugPrintout);
     if (net_info)
         net_info->lb_disable = 1/*no local LB to use even if available*/;
 
@@ -332,7 +342,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
     svc << kTest << NcbiEndl;
     string temp;
     svc >> temp;
-    bool responded = temp.size() > 0;
+    bool responded = temp.size() > 0 ? true : false;
     EIO_Status status = ConnStatus(NStr::Compare(temp, kTest) != 0, &svc);
 
     if (status == eIO_Interrupt)
@@ -459,7 +469,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
 
 EIO_Status CConnTest::GetFWConnections(string* reason)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
     if (net_info) {
         const char* user_header;
         net_info->req_method = eReqMethod_Post;
@@ -484,7 +494,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " and 165.112.7.12\n"
             "To set that up correctly, please have your network administrator"
             " read the following (if they have not already done so):"
-            " " NCBI_FW_URL "\n";
+            " " NCBI_FWDOC_URL "\n";
     } else {
         temp += "This is an obsolescent mode that requires keeping a wide port"
             " range [4444..4544] (inclusive) open to let through connections"
@@ -496,8 +506,9 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         _ASSERT(net_info);
         switch (net_info->firewall) {
         case eFWMode_Adaptive:
-            temp += "There are also fallback connection ports such as 22 and"
-                " 443 at 130.14.29.112.  They will be used if connections to"
+            temp += "There are also fallback connection ports such as "
+                STRINGIFY(CONN_PORT_SSH) " and " STRINGIFY(CONN_PORT_HTTPS)
+                " at 130.14.29.112.  They will be used if connections to"
                 " the ports in the range described above have failed\n";
             break;
         case eFWMode_Firewall:
@@ -638,11 +649,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
 {
     static const STimeout kZeroTmo = { 0, 0 };
 
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
-
-    TSOCK_Flags flags =
-        (net_info  &&  net_info->debug_printout == eDebugPrintout_Data
-         ? fSOCK_LogOn : fSOCK_LogDefault);
+    SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
 
     string temp("Checking individual connection points..\n");
     if (net_info) {
@@ -687,8 +694,9 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             net_info->port = cp->port;
             CConn_SocketStream* fw;
             if (cp->status == eIO_Success) {
-                fw = new CConn_SocketStream(*net_info, "\r\n"/*data*/,
-                                            2/*size*/, flags);
+                fw = new CConn_SocketStream(*net_info,
+                                            "\r\n"/*data*/, 2/*size*/,
+                                            fSOCK_LogDefault, &kZeroTmo);
                 if (!fw->good()  ||  !fw->GetCONN()) {
                     delete fw;
                     fw = 0;
@@ -839,7 +847,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     temp += n ? "fallback" : "non-conventional";
                     temp += " ports; please see your network administrator";
                     if (!url) {
-                        temp += " and let them read: " NCBI_FW_URL;
+                        temp += " and let them read: " NCBI_FWDOC_URL;
                         url = true;
                     }
                     temp += '\n';
@@ -851,7 +859,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                         " please check with your network administrator"
                         " that the proxy has been configured correctly";
                     if (!url) {
-                        temp += ": " NCBI_FW_URL;
+                        temp += ": " NCBI_FWDOC_URL;
                         url = true;
                     }
                     temp += '\n';
@@ -862,7 +870,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     temp += " please see your network administrator";
                     if (!url) {
                         temp += " and have them read the following: "
-                            NCBI_FW_URL;
+                            NCBI_FWDOC_URL;
                         url = true;
                     }
                     temp += '\n';
@@ -871,7 +879,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                         " configuration to use a more narrow"
                         " port range";
                     if (!url) {
-                        temp += " per: " NCBI_FW_URL;
+                        temp += " per: " NCBI_FWDOC_URL;
                         url = true;
                     }
                     temp += '\n';
@@ -915,7 +923,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         }
         if (note  &&  status != eIO_Interrupt) {
             temp += "\nYou may want to read this link for more information: "
-                NCBI_FW_URL;
+                NCBI_FWDOC_URL;
         }
     } else {
         if (m_Firewall)
@@ -954,7 +962,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     PreCheck(eStatefulService, 0/*main*/,
              "Checking reachability of a stateful service");
 
-    SConnNetInfo* net_info = ConnNetInfo_Create(kEcho);
+    SConnNetInfo* net_info = ConnNetInfo_Create(kEcho, m_DebugPrintout);
 
     CTime  time(CTime::eCurrent, CTime::eLocal);
     time_t seed = time.GetTimeT();

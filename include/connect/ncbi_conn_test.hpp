@@ -65,8 +65,8 @@ public:
 
     /// Create test suite
     /// @param timeout
-    ///  non-NULL pointer to a finite timeout, or NULL (infinite); or
-    ///  default timeout (which is 30 seconds).
+    ///  non-NULL pointer to a finite timeout, or kInfiniteTimeout (NULL);
+    ///  or kDefaultTimeout (which is 30 seconds).
     /// @param out
     ///  test results get posted to the stream pointed to by this parameter;
     ///  no output is produced if "out" is NULL.
@@ -75,9 +75,6 @@ public:
     CConnTest(const STimeout* timeout = kDefaultTimeout,
               CNcbiOstream* output = 0, SIZE_TYPE width = 72);
 
-    void     SetEmail(const string& email)
-    { m_Email = email; }
-
     void     SetWidth(SIZE_TYPE width = 72)
     { m_Width = width; }
 
@@ -85,6 +82,12 @@ public:
     { m_Output = output; }
 
     void     SetTimeout(const STimeout* timeout = kDefaultTimeout);
+
+    void     SetDebugPrintout(EDebugPrintout debug_printout)
+    { m_DebugPrintout = debug_printout; }
+
+    void     SetEmail(const string& email)
+    { m_Email = email; }
 
     // NB: ICanceled-impl must be derived from CObject (as a first subclass)
     void     SetCanceledCallback(const ICanceled* canceled)
@@ -214,7 +217,10 @@ protected:
     const STimeout*       m_Timeout;
     CNcbiOstream*         m_Output;
     SIZE_TYPE             m_Width;
+
+    /// Appearance
     string                m_Email;
+    EDebugPrintout        m_DebugPrintout;
 
     /// Certain properties of communication as determined by configuration
     bool                  m_HttpProxy;

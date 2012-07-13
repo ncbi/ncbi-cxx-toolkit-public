@@ -169,9 +169,7 @@ void CTestApp::Init(void)
 
 int CTestApp::Run(void)
 {
-    IRWRegistry& reg = GetConfig();
-    reg.Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "DATA");
-    CONNECT_Init(&reg);
+    CONNECT_Init(&GetConfig());
 
     const CArgs& args = GetArgs();
     size_t n = args.GetNExtra();
@@ -201,6 +199,7 @@ int CTestApp::Run(void)
     test.SetCanceledCallback(&canceled);
     CSocketAPI::SetInterruptOnSignal(eOn);
 
+    test.SetDebugPrintout(eDebugPrintout_Data);
     CConnTest::EStage everything = CConnTest::eStatefulService;
     EIO_Status status = test.Execute(everything);
 
