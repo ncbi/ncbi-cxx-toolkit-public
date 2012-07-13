@@ -26,17 +26,17 @@ rm -f $port $server_log $client_log
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
-$CHECK_EXEC test_ncbi_trigger -delay 20000 -port $port server >$server_log 2>&1 &
+$CHECK_EXEC test_ncbi_trigger -delay 20000 -port $port server </dev/null >$server_log 2>&1 &
 spid=$!
-trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; rm -f $port; echo "`date`."' 0 1 2 3 15
+trap 'kill -9 $spid 2>/dev/null; rm -f $port; echo "`date`."' 0 1 2 3 15
 
-t=0
+[At=0
 while true; do
   if [ -s "$port" ]; then
     sleep 1
     $CHECK_EXEC test_ncbi_trigger -port "`cat $port`" client >$client_log 2>&1 &
     cpid=$!
-    trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; kill -0 $cpid 2>/dev/null && kill -9 $cpid; rm -f $port; echo "`date`."' 0 1 2 3 15
+    trap 'kill -9 $spid 2>/dev/null; kill -9 $cpid 2>/dev/null; rm -f $port; echo "`date`."' 0 1 2 3 15
     break
   fi
   t="`expr $t + 1`"

@@ -23,9 +23,9 @@ client_log=test_ncbi_namedpipe_client.log
 
 rm -f $server_log $client_log
 
-test_ncbi_namedpipe -suffix $$ server >$server_log 2>&1 &
+$CHECK_EXE test_ncbi_namedpipe -suffix $$ server </dev/null >$server_log 2>&1 &
 spid=$!
-trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; rm -f ./.ncbi_test_pipename_$$; echo "`date`."' 0 1 2 3 15
+trap 'kill -9 $spid 2>/dev/null; rm -f ./.ncbi_test_pipename_$$; echo "`date`."' 0 1 2 3 15
 
 t=0
 while true; do

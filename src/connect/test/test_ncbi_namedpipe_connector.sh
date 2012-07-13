@@ -25,10 +25,10 @@ rm -f $server_log $client_log
 
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
-test_ncbi_namedpipe_connector -suffix $$ server >$server_log 2>&1 &
+$CHECK_EXEC test_ncbi_namedpipe_connector -suffix $$ server </dev/null >$server_log 2>&1 &
 
 spid=$!
-trap 'kill -0 $spid 2>/dev/null && kill -9 $spid; rm -f ./.ncbi_test_namedpipe_$$; echo "`date`."' 0 1 2 3 15
+trap 'kill -9 $spid 2>/dev/null; rm -f ./.ncbi_test_namedpipe_$$; echo "`date`."' 0 1 2 3 15
 
 t=0
 while true; do
