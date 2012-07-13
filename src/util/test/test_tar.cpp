@@ -194,16 +194,17 @@ void CTarTest::Init(void)
     args->AddFlag("u", "Update archive");
     args->AddFlag("t", "Table of contents");
     args->AddFlag("x", "Extract archive");
-    args->AddFlag("T", "Test archive by a walk-through [non-standard]");
+    args->AddFlag("T", "Test archive via walk-through [non-standard]");
     args->AddKey ("f", "archive_filename"
 #ifdef TEST_CONN_TAR
                   "_or_url"
 #endif // TEST_CONN_TAR
-                  , "Archive file name;  use '-' for stdin/stdout"
+                  , "Archive file name to operate on"
 #ifdef TEST_CONN_TAR
-                  ";  or a URL for list/extract/test/stream-through"
+                  ", or URL to list/extract/test/stream-through"
 #endif // TEST_CONN_TAR
-                  , CArgDescriptions::eString);
+                  ";\nuse '-' for stdin/stdout",
+                  CArgDescriptions::eString);
     args->AddOptionalKey("C", "directory",
                          "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey ("b", "blocking_factor",
@@ -432,6 +433,7 @@ int CTarTest::Run(void)
 #  ifdef HAVE_LIBGNUTLS
         SOCK_SetupSSL(NcbiSetupGnuTls);
 #  endif // HAVE_LIBGNUTLS
+        SOCK_SetInterruptOnSignalAPI(eOn);
         if (pipethru  &&  action != eCreate) {
             conn.reset(NcbiOpenURL(filename));
         } else if (action == eList || action == eExtract || action == eTest) {
