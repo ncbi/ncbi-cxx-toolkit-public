@@ -2206,6 +2206,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HMC	s	Jardin Botanico de Las Tunas",
 "HME	s	Haslemere Educational Museum",
 "HMH	s	Hoebarth Museum Horn",
+"HMJAU	sc	Herbarium of Mycology of Jilin Agricultural University",
 "HMLN	s	District Museum",
 "HMM	s	Horsham Museum",
 "HMN	s	Humbolt Museum fur Naturkunde, East Berlin",
