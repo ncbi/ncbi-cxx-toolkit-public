@@ -13,4 +13,4 @@ CHECK_COPY    = netcache_check.sh
 CHECK_TIMEOUT = 350
 CHECK_REQUIRES= in-house-resources
 
-WATCHERS = ivanovp
+WATCHERS = ivanovp rafanovi
