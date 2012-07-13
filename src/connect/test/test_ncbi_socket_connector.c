@@ -120,7 +120,7 @@ int main(int argc, const char* argv[])
     data_file = fopen("test_ncbi_socket_connector.log", "ab");
     assert(data_file);
 
-    if (net_info->debug_printout != eDebugPrintout_None)
+    if (net_info->debug_printout)
         SOCK_SetDataLoggingAPI(eOn);
     
     if (net_info->timeout) {

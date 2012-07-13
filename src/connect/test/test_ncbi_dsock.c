@@ -371,7 +371,7 @@ int main(int argc, const char* argv[])
     srand(g_NCBI_ConnectRandomSeed);
 
     assert((net_info = ConnNetInfo_Create(0)) != 0);
-    if (net_info->debug_printout != eDebugPrintout_None)
+    if (net_info->debug_printout)
         SOCK_SetDataLoggingAPI(eOn);
     ConnNetInfo_Destroy(net_info);
 

@@ -142,7 +142,7 @@ int main(int argc, const char* argv[])
         return 1/*error*/;
     }
 
-    if (net_info->debug_printout != eDebugPrintout_None)
+    if (net_info->debug_printout)
         SOCK_SetDataLoggingAPI(eOn);
 
     /* run */
