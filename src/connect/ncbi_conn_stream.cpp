@@ -248,8 +248,9 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 
 
 static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
-                                          const void*         init_data,
-                                          size_t              init_size,
+                                          const STimeout*     timeout,
+                                          const void*         data,
+                                          size_t              size,
                                           TSOCK_Flags         flags)
 {
     EIO_Status status;
@@ -266,10 +267,10 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
-            &&  ((flags & ~(fSOCK_LogOn | fSOCK_LogDefault))  ||  init_size)) {
+            &&  ((flags & ~(fSOCK_LogOn | fSOCK_LogDefault))  ||  size)) {
             SOCK s;
             status = SOCK_CreateOnTopEx(sock, 0, &s,
-                                        init_data, init_size, flags);
+                                        data, size, flags);
             _ASSERT(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
@@ -281,8 +282,8 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                             ? net_info->proxy_host : net_info->host);
         if (!proxy  &&  net_info->debug_printout)
             ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
-        status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
-                               init_data, init_size, flags);
+        status = SOCK_CreateEx(host, net_info->port, timeout, &sock,
+                               data, size, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
     }
     string hostport(net_info->host);
@@ -301,9 +302,11 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        const void*         data,
                                        size_t              size,
                                        TSOCK_Flags         flags,
+                                       const STimeout*     timeout,
                                        size_t              buf_size)
-    : CConn_IOStream(s_SocketConnectorBuilder(&net_info, data, size, flags),
-                     net_info.timeout, buf_size)
+    : CConn_IOStream(s_SocketConnectorBuilder(&net_info, timeout,
+                                              data, size, flags),
+                     timeout, buf_size)
 {
     return;
 }
@@ -910,7 +913,8 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
         if (net_info->req_method == eReqMethod_Connect) {
             return new CConn_SocketStream(*net_info, 0, 0,
-                                          fSOCK_LogDefault, buf_size);
+                                          fSOCK_LogDefault, net_info->timeout,
+                                          buf_size);
         }
         switch (net_info->scheme) {
         case eURL_Https:

@@ -373,10 +373,12 @@ public:
     ///  Host to connect to
     /// @param port
     ///  ... and port number
-    /// @data
+    /// @param data
     ///  Pointer to block of data to send once connection is ready
-    /// @size
+    /// @param size
     ///  Size of the data block to send (or 0 if to send nothing)
+    /// @param flags
+    ///  Socket flags
     /// @param max_try
     ///  Number of attempts
     /// @param timeout
@@ -401,20 +403,24 @@ public:
     ///
     /// scheme                          -- must be http or unspecified, checked
     /// host:port                       -- target server
-    /// http_proxy_host:http_proxy_port -- proxy server to tunnel via
+    /// http_proxy_host:http_proxy_port -- HTTP proxy server to tunnel via
     /// http_proxy_user:http_proxy_pass -- credentials for the proxy, if needed
     /// http_proxy_leak                 -- ignore bad proxy and connect direct
-    /// timeout                         -- I/O timeout (NB: no kDefaultTimeout)
+    /// timeout                         -- timeout to connect to HTTP proxy
     /// firewall                        -- if true then look at proxy_server
     /// proxy_server                    -- use as "host" if non-empty and FW
-    /// debug_printout                  -- how to log socket data
+    /// debug_printout                  -- how to log socket data by default
     ///
     /// @param net_info
     ///  Connection point and proxy tunnel location
-    /// @data
+    /// @param data
     ///  Pointer to block of data to send once connection is ready
-    /// @size
+    /// @param size
     ///  Size of the data block to send (or 0 if to send nothing)
+    /// @param flags
+    ///  Socket flags
+    /// @param timeout
+    ///  Default I/O timeout
     /// @param buf_size
     ///  Default buffer size
     /// @sa
@@ -424,6 +430,7 @@ public:
      const void*         data     = 0,
      size_t              size     = 0,
      TSOCK_Flags         flags    = fSOCK_LogDefault,
+     const STimeout*     timeout  = kDefaultTimeout,
      size_t              buf_size = kConn_DefaultBufSize);
 
     /// This variant uses an existing socket "sock" to build a stream upon it.
@@ -446,14 +453,14 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);
 
-    /// This variant uses existing CSocket to build a stream upon it.
+    /// This variant uses an existing CSocket to build a stream up on it.
     /// NOTE:  it revokes all ownership of the "socket"'s internals
     /// (effectively leaving the CSocket empty);  CIO_Exception(eInvalidArg)
     /// is thrown if the internal SOCK is not owned by the passed CSocket.
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
     ///
     /// @param socket
-    ///  Socket to build the stream on
+    ///  Socket to build the stream up on
     /// @sa
     ///  CSocket, ncbi_socket.hpp
     CConn_SocketStream
