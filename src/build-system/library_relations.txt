@@ -1704,7 +1704,6 @@ gpinit_utils needs axf
 gpinit_utils needs biblio
 gpinit_utils needs connect
 gpinit_utils needs connext
-gpinit_utils needs creaders
 gpinit_utils needs ct_ftds64
 gpinit_utils needs dbapi
 gpinit_utils needs dbapi_driver
@@ -1749,7 +1748,6 @@ gpinit_utils needs xconnext
 gpinit_utils needs xmlwrapp
 gpinit_utils needs xncbi
 gpinit_utils needs xobjmgr
-gpinit_utils needs xobjread
 gpinit_utils needs xobjutil
 gpinit_utils needs xregexp
 gpinit_utils needs xser
@@ -1856,7 +1854,6 @@ gpipe_attr needs axf
 gpipe_attr needs biblio
 gpipe_attr needs connect
 gpipe_attr needs connext
-gpipe_attr needs creaders
 gpipe_attr needs ct_ftds64
 gpipe_attr needs dbapi
 gpipe_attr needs dbapi_driver
@@ -1900,7 +1897,6 @@ gpipe_attr needs xconnext
 gpipe_attr needs xmlwrapp
 gpipe_attr needs xncbi
 gpipe_attr needs xobjmgr
-gpipe_attr needs xobjread
 gpipe_attr needs xobjutil
 gpipe_attr needs xregexp
 gpipe_attr needs xser
@@ -1910,7 +1906,6 @@ gpipe_common needs axf
 gpipe_common needs biblio
 gpipe_common needs connect
 gpipe_common needs connext
-gpipe_common needs creaders
 gpipe_common needs ct_ftds64
 gpipe_common needs dbapi
 gpipe_common needs dbapi_driver
@@ -1952,7 +1947,6 @@ gpipe_common needs xconnext
 gpipe_common needs xmlwrapp
 gpipe_common needs xncbi
 gpipe_common needs xobjmgr
-gpipe_common needs xobjread
 gpipe_common needs xobjutil
 gpipe_common needs xser
 gpipe_common needs xutil
@@ -2056,7 +2050,6 @@ gpipe_property needs axf
 gpipe_property needs biblio
 gpipe_property needs connect
 gpipe_property needs connext
-gpipe_property needs creaders
 gpipe_property needs ct_ftds64
 gpipe_property needs dbapi
 gpipe_property needs dbapi_driver
@@ -2099,7 +2092,6 @@ gpipe_property needs xconnext
 gpipe_property needs xmlwrapp
 gpipe_property needs xncbi
 gpipe_property needs xobjmgr
-gpipe_property needs xobjread
 gpipe_property needs xobjutil
 gpipe_property needs xregexp
 gpipe_property needs xser
@@ -2116,7 +2108,6 @@ gpxlib needs axf
 gpxlib needs biblio
 gpxlib needs connect
 gpxlib needs connext
-gpxlib needs creaders
 gpxlib needs ct_ftds64
 gpxlib needs dbapi
 gpxlib needs dbapi_driver
@@ -2161,7 +2152,6 @@ gpxlib needs xgp_manifest
 gpxlib needs xmlwrapp
 gpxlib needs xncbi
 gpxlib needs xobjmgr
-gpxlib needs xobjread
 gpxlib needs xobjutil
 gpxlib needs xser
 gpxlib needs xutil
