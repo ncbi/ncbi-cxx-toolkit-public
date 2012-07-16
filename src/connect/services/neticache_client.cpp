@@ -39,7 +39,6 @@
 #include <connect/services/netcache_api_expt.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/ncbi_conn_reader_writer.hpp>
 
 #include <util/cache/icache_cf.hpp>
 #include <util/transmissionrw.hpp>
