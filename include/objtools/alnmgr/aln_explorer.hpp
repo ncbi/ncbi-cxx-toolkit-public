@@ -103,11 +103,13 @@ public:
                              ///  the anchor).
 
         fIndel     = 1 << 3, ///< Either anchor or the selected row is not
-                             ///  present in the segment.
+                             ///  present in the segment. The corresponding
+                             ///  range (GetAlnRange or GetRange) is empty.
 
         fUnaligned = 1 << 4, ///< The range on the selected sequence does not
                              ///  participate in the alignment (the alignment
-                             ///  range of the segment is empty).
+                             ///  range of the segment is empty, the row range
+                             ///  is not).
 
         fInvalid   = (TSegTypeFlags) 0x80000000, ///< The iterator is in bad state.
 
@@ -127,7 +129,11 @@ public:
 
     inline bool IsInvalidType(void) const { return (GetType() & fInvalid) != 0; }
     inline bool IsAligned(void) const { return (GetType() & fAligned) != 0; }
-    inline bool IsGap(void) const { return (GetType() & fGap) != 0; }
+    /// Check if there's a gap on the selected row.
+    inline bool IsGap(void) const {
+        return !IsAligned()  &&  GetRange().Empty();
+    }
+    inline bool IsIndel(void) const { return (GetType() & fIndel) != 0; }
     inline bool IsReversed(void) const { return (GetType() & fReversed) != 0; }
 };
 
