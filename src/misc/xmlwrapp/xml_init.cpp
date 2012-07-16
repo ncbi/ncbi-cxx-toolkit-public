@@ -80,6 +80,7 @@ void xml::init::init_library() {
 
     // Register the nodes cleanup function
     xmlDeregisterNodeDefault(xml::impl::cleanup_node);
+    xmlThrDefDeregisterNodeDefault(xml::impl::cleanup_node);
 
     // init the parser (keeps libxml2 thread safe)
     xmlInitParser();
