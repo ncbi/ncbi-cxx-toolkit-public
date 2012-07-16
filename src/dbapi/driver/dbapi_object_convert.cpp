@@ -341,7 +341,7 @@ CValueConvert<SSafeCP, CDB_Object>::operator const CTime&(void) const
         ReportTypeConvError(cur_type, "CTime");
     }
 
-    CSafeStaticPtr<CTime> value;
+    static CSafeStaticPtr<CTime> value;
     return value.Get();
 }
 
@@ -591,7 +591,7 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
 
 CValueConvert<SSafeSqlCP, CDB_Object>::operator const CTime&(void) const
 {
-    CSafeStaticPtr<CTime> value;
+    static CSafeStaticPtr<CTime> value;
 
     if (m_Value.IsNULL()) {
        return value.Get();
@@ -772,7 +772,7 @@ CValueConvert<SRunTimeCP, CDB_Object>::operator const CTime&(void) const
         ReportTypeConvError(cur_type, "CTime");
     }
 
-    CSafeStaticPtr<CTime> value;
+    static CSafeStaticPtr<CTime> value;
     return value.Get();
 }
 
@@ -940,7 +940,7 @@ CValueConvert<SRunTimeSqlCP, CDB_Object>::operator const CTime&(void) const
         ReportTypeConvError(cur_type, "CTime");
     }
 
-    CSafeStaticPtr<CTime> value;
+    static CSafeStaticPtr<CTime> value;
     return value.Get();
 }
 
