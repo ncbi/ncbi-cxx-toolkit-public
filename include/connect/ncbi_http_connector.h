@@ -106,7 +106,6 @@ extern "C" {
  * @sa
  *  SConnNetInfo, ConnNetInfo_OverrideUserHeader, URL_Encode, URL_Decode
  */
-
 enum EHTTP_Flag {
     fHTTP_AutoReconnect   = 0x1,  /**< See HTTP_CreateConnectorEx()          */
     fHTTP_Flushable       = 0x2,  /**< Connector will really flush on Flush()*/
