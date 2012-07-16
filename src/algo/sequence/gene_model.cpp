@@ -129,6 +129,19 @@ void CGeneModel::RecomputePartialFlags(CScope& scope,
 }
 
 
+///
+/// Return the mol-info object for a given sequence
+///
+static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
+{
+    CSeqdesc_CI desc_iter(handle, CSeqdesc::e_Molinfo);
+    for ( ;  desc_iter;  ++desc_iter) {
+        return &desc_iter->GetMolinfo();
+    }
+
+    return NULL;
+}
+
 /////////////////////////////////////
 
 CFeatureGenerator::SImplementation::SImplementation(CScope& scope)
@@ -202,6 +215,102 @@ void CFeatureGenerator::ConvertAlignToAnnot(
     m_impl->ConvertAlignToAnnot(aligns, annot, seqs);
 }
 
+void CFeatureGenerator::ConvertLocToAnnot(
+        const objects::CSeq_loc &loc,
+        objects::CSeq_annot& annot,
+        objects::CBioseq_set& seqs,
+        CRef<objects::CSeq_id> prot_id,
+        CRef<objects::CSeq_id> rna_id)
+{
+    CBioseq_Handle bsh = m_impl->m_scope->GetBioseqHandle(*loc.GetId());
+    if (!bsh) {
+        NCBI_THROW(CException, eUnknown,
+            "Can't find genomic sequence " + loc.GetId()->AsFastaString());
+    }
+
+    const CMolInfo *mol_info = s_GetMolInfo(bsh);
+    if (!mol_info || !mol_info->CanGetBiomol() ||
+        mol_info->GetBiomol() != CMolInfo::eBiomol_genomic)
+    {
+        NCBI_THROW(CException, eUnknown,
+            "Not a genomic sequence: " + loc.GetId()->AsFastaString());
+    }
+
+    const COrg_ref &org = sequence::GetOrg_ref(bsh);
+
+    TFeatureGeneratorFlags old_flags = GetFlags();
+    TFeatureGeneratorFlags flags = old_flags;
+
+    /// Temporarily change flags to make sure the needed bioseqs are generated,
+    /// and that the input ids are used
+    flags &= ~fGenerateLocalIds;
+    if (flags & fCreateCdregion) {
+        flags |= fForceTranscribeMrna | fForceTranslateCds;
+    } else if (flags & fCreateMrna) {
+        flags |= fForceTranscribeMrna;
+    }
+    SetFlags(flags);
+
+    static CAtomicCounter counter;
+    size_t new_id_num = counter.Add(1);
+    CTime time(CTime::eCurrent);
+    if (!rna_id) {
+        string str("lcl|MRNA_");
+        str += time.AsString("YMD");
+        str += "_";
+        str += NStr::NumericToString(new_id_num);
+        rna_id.Reset(new CSeq_id(str));
+    }
+    if (!prot_id) {
+        string str("lcl|PROT_");
+        str += time.AsString("YMD");
+        str += "_";
+        str += NStr::NumericToString(new_id_num);
+        prot_id.Reset(new CSeq_id(str));
+    }
+
+    CSeq_align fake_align;
+    fake_align.SetType(CSeq_align::eType_not_set);
+    fake_align.SetDim(2);
+    fake_align.SetSegs().SetSpliced().SetProduct_id().Assign(*rna_id);
+    fake_align.SetSegs().SetSpliced().SetGenomic_id().Assign(*loc.GetId());
+    fake_align.SetSegs().SetSpliced().SetProduct_strand(eNa_strand_plus);
+    fake_align.SetSegs().SetSpliced().SetGenomic_strand(loc.GetStrand());
+    fake_align.SetSegs().SetSpliced().SetProduct_type(
+        CSpliced_seg::eProduct_type_transcript);
+
+    TSeqPos product_pos = 0;
+    ITERATE (CSeq_loc, loc_it, loc) {
+        CRef<CSpliced_exon> exon(new CSpliced_exon);
+        exon->SetProduct_start().SetNucpos(product_pos);
+        product_pos += loc_it.GetRange().GetLength();
+        exon->SetProduct_end().SetNucpos(product_pos-1);
+        exon->SetGenomic_start(loc_it.GetRange().GetFrom());
+        exon->SetGenomic_end(loc_it.GetRange().GetTo());
+        CRef<CSpliced_exon_chunk> match(new CSpliced_exon_chunk);
+        match->SetMatch(loc_it.GetRange().GetLength());
+        exon->SetParts().push_back(match);
+        fake_align.SetSegs().SetSpliced().SetExons().push_back(exon);
+    }
+    fake_align.SetSegs().SetSpliced().SetProduct_length(product_pos);
+
+    CSeq_loc cdregion_loc(*rna_id, 0, product_pos-1, eNa_strand_plus);
+    CSeq_feat cdregion;
+    cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    if (org.IsSetGcode()) {
+        CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);
+        code->SetId(org.GetGcode());
+        cdregion.SetData().SetCdregion().SetCode().Set().push_back(code);
+    }
+    cdregion.SetLocation(cdregion_loc);
+    cdregion.SetProduct().SetWhole(*prot_id);
+
+    m_impl->ConvertAlignToAnnot(fake_align, annot, seqs, 0, &cdregion, false);
+
+    /// Restore old flags
+    SetFlags(old_flags);
+}
+
 void CFeatureGenerator::SetFeatureExceptions(CSeq_feat& feat,
                                              const CSeq_align* align)
 {
@@ -221,19 +330,6 @@ void CFeatureGenerator::RecomputePartialFlags(CSeq_annot& annot)
     m_impl->RecomputePartialFlags(annot);
 }
 
-
-///
-/// Return the mol-info object for a given sequence
-///
-static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
-{
-    CSeqdesc_CI desc_iter(handle, CSeqdesc::e_Molinfo);
-    for ( ;  desc_iter;  ++desc_iter) {
-        return &desc_iter->GetMolinfo();
-    }
-
-    return NULL;
-}
 
 CFeatureGenerator::SImplementation::SMapper::SMapper(const CSeq_align& aln, CScope& scope,
                                                      TSeqPos allowed_unaligned,
@@ -516,6 +612,20 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
 
         cd_feat.Reset(new CSeq_feat);
         cd_feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(input_align.GetSeq_id(1));
+        if (!bsh) {
+            NCBI_THROW(CException, eUnknown,
+                "Can't find genomic sequence " +
+                    input_align.GetSeq_id(1).AsFastaString());
+        }
+        const COrg_ref &org = sequence::GetOrg_ref(bsh);
+        if (org.IsSetGcode()) {
+            CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);
+            code->SetId(org.GetGcode());
+            cd_feat->SetData().SetCdregion().SetCode().Set().push_back(code);
+        }
+
         cd_feat->SetLocation(*fake_prot_loc);
         cd_feat->SetProduct().SetWhole(*prot_id);
         cdregion = cd_feat.GetPointer();
@@ -540,9 +650,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     if (!ExtractGnomonModelNum(rna_id).empty()) {
         m_is_gnomon = true;
     } else {
-        CSeq_id::EAccessionInfo rna_acc_info =
+        CSeq_id_Handle best_id =
             sequence::GetId(rna_id, *m_scope,
-                            sequence::eGetId_Best).IdentifyAccession();
+                            sequence::eGetId_Best);
+        CSeq_id::EAccessionInfo rna_acc_info =
+            best_id ? best_id.IdentifyAccession() : rna_id.IdentifyAccession();
         m_is_best_refseq = rna_acc_info == CSeq_id::eAcc_refseq_mrna ||
                            rna_acc_info == CSeq_id::eAcc_refseq_ncrna;
     }

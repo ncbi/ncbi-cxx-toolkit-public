@@ -39,6 +39,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CScope;
+    class CSeq_id;
+    class CSeq_loc;
     class CSeq_feat;
     class CSeq_align;
     class CSeq_annot;
@@ -98,6 +100,16 @@ public:
     void ConvertAlignToAnnot(const list< CRef<objects::CSeq_align> > &aligns,
                              objects::CSeq_annot &annot,
                              objects::CBioseq_set &seqs);
+
+    /// Convert genomic location to an annotation. Populates seqs with mRna
+    /// and protein sequences, and populates annot with gene, mRna
+    /// and cdretgion features
+    void ConvertLocToAnnot(
+        const objects::CSeq_loc &loc,
+        objects::CSeq_annot& annot,
+        objects::CBioseq_set& seqs,
+        CRef<objects::CSeq_id> prot_id = CRef<objects::CSeq_id>(),
+        CRef<objects::CSeq_id> rna_id = CRef<objects::CSeq_id>());
 
     /// Correctly mark exceptions on a feature
     ///
