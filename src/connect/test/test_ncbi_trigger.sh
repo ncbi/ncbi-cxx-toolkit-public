@@ -30,7 +30,7 @@ $CHECK_EXEC test_ncbi_trigger -delay 20000 -port $port server </dev/null >$serve
 spid=$!
 trap 'kill -9 $spid 2>/dev/null; rm -f $port; echo "`date`."' 0 1 2 3 15
 
-[At=0
+t=0
 while true; do
   if [ -s "$port" ]; then
     sleep 1
