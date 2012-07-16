@@ -37,6 +37,9 @@
 #include <connect/ncbi_service.h>
 
 
+#define SERV_STANDBY_BOUND  0.01
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -45,7 +48,7 @@ extern "C" {
 #define xSERV_IsSuppressed(i) ((i)->time && (i)->time != NCBI_TIME_INFINITE \
                                &&  (i)->rate < 0.0)
 #define xSERV_IsStandby(i)    ((i)->time && (i)->time != NCBI_TIME_INFINITE \
-                               &&  fabs((i)->rate) < 0.01)
+                               &&  fabs((i)->rate) < SERV_STANDBY_BOUND)
 #define xSERV_IsDown(i)       ((i)->time && (i)->time != NCBI_TIME_INFINITE \
                                &&  !(i)->rate)
 
