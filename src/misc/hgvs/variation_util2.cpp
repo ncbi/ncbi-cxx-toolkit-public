@@ -1208,9 +1208,11 @@ CVariation_inst::EType CalcInstTypeForAA(const string& prot_ref_str, const strin
     if(prot_delta_str.size() == 0 && prot_ref_str.size() > 0) {
         inst_type = CVariation_inst::eType_del;
     } else if(prot_delta_str.size() != prot_ref_str.size()) {
-        inst_type  =CVariation_inst::eType_prot_other;
+        inst_type = CVariation_inst::eType_prot_other;
     } else if(prot_ref_str == prot_delta_str) {
         inst_type = CVariation_inst::eType_prot_silent;
+    } else if(prot_ref_str.size() > 1) {
+        inst_type = CVariation_inst::eType_prot_other;
     } else if(NStr::Find(prot_delta_str, "*") != NPOS) {
         inst_type = CVariation_inst::eType_prot_nonsense;
     } else {

@@ -743,9 +743,26 @@ string CHgvsParser::x_AsHgvsInstExpression(
         inst_str = (asserted_seq ? asserted_seq_str : "N" )+ ">";
         append_delta = true;
     } else if(inst.GetType() == CVariation_inst::eType_mnp
-              || inst.GetType() == CVariation_inst::eType_delins)
+              || inst.GetType() == CVariation_inst::eType_delins
+              || inst.GetType() == CVariation_inst::eType_prot_other)
     {
-        inst_str = "del" + asserted_seq_str + "ins";
+        if(inst.GetType() == CVariation_inst::eType_prot_other &&
+           placement && placement->GetLoc().IsPnt() &&
+              placement->GetLoc().GetPnt().GetPoint() == 0)
+        {   
+            inst_str = "extMet-";
+        } else if(inst.GetType() == CVariation_inst::eType_prot_other
+                  && placement && placement->GetLoc().IsPnt()
+                  && bsh 
+                  && placement->GetLoc().GetPnt().GetPoint() == bsh.GetInst_Length() - 1)
+        {   
+            inst_str = "ext*";
+        } else if(CVariation_inst::eType_prot_other) {
+            inst_str = "delins";
+        } else {
+            inst_str = "del" + asserted_seq_str + "ins";
+        }
+
         append_delta = true;
     } else if(inst.GetType() == CVariation_inst::eType_del) {
         if(placement && placement->GetLoc().IsWhole()) {
@@ -782,19 +799,6 @@ string CHgvsParser::x_AsHgvsInstExpression(
            || inst.GetType() == CVariation_inst::eType_prot_nonsense
            || inst.GetType() == CVariation_inst::eType_prot_neutral)
     {
-        append_delta = true;
-    } else if(inst.GetType() == CVariation_inst::eType_prot_other &&
-              placement && placement->GetLoc().IsPnt() &&
-              placement->GetLoc().GetPnt().GetPoint() == 0)
-    {
-        inst_str = "extMet-";
-        append_delta = true;
-    } else if(inst.GetType() == CVariation_inst::eType_prot_other
-              && placement && placement->GetLoc().IsPnt()
-              && bsh
-              && placement->GetLoc().GetPnt().GetPoint() == bsh.GetInst_Length() - 1)
-    {
-        inst_str = "ext*";
         append_delta = true;
     } else {
         inst_str = "?";
