@@ -279,7 +279,7 @@ private:
 
 /* @} */
 
-extern NCBI_DBAPI_CACHE_EXPORT const string kDBAPI_BlobCacheDriverName;
+extern NCBI_DBAPI_CACHE_EXPORT const char* kDBAPI_BlobCacheDriverName;
 
 extern "C"
 {

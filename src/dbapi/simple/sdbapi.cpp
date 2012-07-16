@@ -974,9 +974,7 @@ struct SMirrorInfo
 };
 
 typedef map<string, SMirrorInfo>  TMirrorsDataMap;
-
-
-static TMirrorsDataMap s_MirrorsData;
+static CSafeStaticPtr<TMirrorsDataMap> s_MirrorsData;
 
 
 class CUpdMirrorServerParams: public CDBConnParamsBase
@@ -1064,7 +1062,7 @@ CSDBAPI::UpdateMirror(const string& dbservice,
     }
 
     bool first_execution = false;
-    SMirrorInfo& mir_info = s_MirrorsData[dbservice];
+    SMirrorInfo& mir_info = (*s_MirrorsData)[dbservice];
     if (!mir_info.conn_params.get()) {
         mir_info.conn_params.reset(new CDBConnParamsBase);
         first_execution = true;

@@ -389,8 +389,6 @@ CDBUDRandomMapper::GetServer(const string& service)
 
     const TSvrMap& svr_map = m_PreferenceMap[service];
     if (!svr_map.empty()) {
-//         static CRandom rdm_gen(time(NULL));
-//         double cur_pref = rdm_gen.GetRand(0, 100000) / 1000;
         srand((unsigned int)time(NULL));
         double cur_pref = rand() / (RAND_MAX / 100);
         double pref = 0;

@@ -47,7 +47,7 @@ void DBAPI_Register_Cache(void)
 }
 
 
-const string kDBAPI_BlobCacheDriverName("dbapi");
+const char* kDBAPI_BlobCacheDriverName = "dbapi";
 
 
 /// Class factory for DBAPI BLOB cache

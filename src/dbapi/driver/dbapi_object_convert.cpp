@@ -33,6 +33,7 @@
 
 #include <dbapi/driver/dbapi_object_convert.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -340,8 +341,8 @@ CValueConvert<SSafeCP, CDB_Object>::operator const CTime&(void) const
         ReportTypeConvError(cur_type, "CTime");
     }
 
-    static CTime value;
-    return value;
+    CSafeStaticPtr<CTime> value;
+    return value.Get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -590,10 +591,10 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
 
 CValueConvert<SSafeSqlCP, CDB_Object>::operator const CTime&(void) const
 {
-    static CTime value;
+    CSafeStaticPtr<CTime> value;
 
     if (m_Value.IsNULL()) {
-       return value;
+       return value.Get();
     }
 
     CheckType(m_Value, eDB_SmallDateTime, eDB_DateTime);
@@ -608,7 +609,7 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator const CTime&(void) const
         ReportTypeConvError(cur_type, "CTime");
     }
 
-    return value;
+    return value.Get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -771,8 +772,8 @@ CValueConvert<SRunTimeCP, CDB_Object>::operator const CTime&(void) const
         ReportTypeConvError(cur_type, "CTime");
     }
 
-    static CTime value;
-    return value;
+    CSafeStaticPtr<CTime> value;
+    return value.Get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -939,8 +940,8 @@ CValueConvert<SRunTimeSqlCP, CDB_Object>::operator const CTime&(void) const
         ReportTypeConvError(cur_type, "CTime");
     }
 
-    static CTime value;
-    return value;
+    CSafeStaticPtr<CTime> value;
+    return value.Get();
 }
 
 } // namespace value_slice
