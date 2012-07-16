@@ -82,9 +82,9 @@ BOOST_AUTO_TEST_CASE(RefMainUsage)
 
 BOOST_AUTO_TEST_CASE(IRefMainUsage)
 {
+    CIRef<CTestInterface> ref2;
     CIRef<CTestInterface> ref(new CTestObject());
     CWeakIRef<CTestInterface> weak(ref);
-    CIRef<CTestInterface> ref2;
 
     // These blocks are for the sake of conformance with C++ standard:
     // temporary object returned from Lock() is not mandatory to be destroyed
@@ -161,9 +161,10 @@ class CNotWeakReferencable : public CWeakObject
 
 BOOST_AUTO_TEST_CASE(CWeakNotReferencable)
 {
-    BOOST_CHECK_THROW( CWeakRef<CNotWeakReferencable>
-                            weak(new CNotWeakReferencable()),
+    CNotWeakReferencable* ptr = new CNotWeakReferencable();
+    BOOST_CHECK_THROW( CWeakRef<CNotWeakReferencable> weak(ptr),
                        CCoreException );
+    delete ptr;
 }
 #endif
 
@@ -171,11 +172,12 @@ BOOST_AUTO_TEST_CASE(CWeakNotReferencable)
 
 BOOST_AUTO_TEST_CASE(CWeakNotCRefControllable)
 {
+    CWeakReferencable* ptr = new CWeakReferencable();
     // The new object is not controlled by CRef
     // so an exception is expected.
-    BOOST_CHECK_THROW( CWeakRef<CWeakReferencable>
-                            weak(new CWeakReferencable()),
+    BOOST_CHECK_THROW( CWeakRef<CWeakReferencable> weak(ptr),
                        CObjectException );
+    delete ptr;
 }
 
 
