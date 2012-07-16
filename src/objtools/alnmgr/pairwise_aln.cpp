@@ -80,8 +80,10 @@ CPairwise_CI& CPairwise_CI::operator++(void)
 void CPairwise_CI::x_Init(void)
 {
     // Mixed direction and empty alignments are iterated in direct order.
-    m_Direct = (m_Aln->GetFlags() & CPairwiseAln::fMixedDir == CPairwiseAln::fMixedDir)  &&
-        (m_Aln->empty()  ||  m_Aln->begin()->IsFirstDirect());
+    m_Direct =
+        ((m_Aln->GetFlags() & CPairwiseAln::fMixedDir) == CPairwiseAln::fMixedDir)  ||
+        m_Aln->empty()  ||
+        m_Aln->begin()->IsFirstDirect();
     if ( m_Direct ) {
         TCheckedIterator it = m_Aln->find_2(m_Range.GetFrom());
         m_It = it.first;
