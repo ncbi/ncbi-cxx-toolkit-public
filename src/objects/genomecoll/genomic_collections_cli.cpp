@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-const string GENCOLL_URL("http://www.ncbi.nlm.nih.gov/projects/r_gencoll/access/gc_get_assembly.cgi");
+const char* GENCOLL_URL = "http://www.ncbi.nlm.nih.gov/projects/r_gencoll/access/gc_get_assembly.cgi";
 
 
 // destructor

@@ -392,10 +392,10 @@ s_NofTokens( const string& s )
 COrgMod::ESubtype
 COrgRefCache::GetSubtypeFromName( string& sName )
 {
-    static const string s_sSubspCf( " subsp. cf." );
-    static const string s_sSubspAff( " subsp. aff." );
-    static const string s_sCf( " cf." );
-    static const string s_sAff( " aff." );
+    static const char* s_sSubspCf  = " subsp. cf.";
+    static const char* s_sSubspAff = " subsp. aff.";
+    static const char* s_sCf       = " cf.";
+    static const char* s_sAff      = " aff.";
 
     string::size_type pos;
     if( sName.find('.') == string::npos ) {

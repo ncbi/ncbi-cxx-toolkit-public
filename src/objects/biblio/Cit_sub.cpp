@@ -68,7 +68,7 @@ bool CCit_sub::GetLabelV1(string* label, TLabelFlags flags) const
 // Based on FormatCitSub from the C Toolkit's api/asn2gnb5.c.
 bool CCit_sub::GetLabelV2(string* label, TLabelFlags flags) const
 {
-    static const string kToINSD = " to the EMBL/GenBank/DDBJ databases.";
+    static const char* kToINSD = " to the EMBL/GenBank/DDBJ databases.";
 
     MaybeAddSpace(label);
 

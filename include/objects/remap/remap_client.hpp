@@ -74,7 +74,7 @@ public:
                                   const string& to_build,
                                   vector<CRef<objects::CSeq_loc> >& result);
 
-    static const string kDefaultUrl;
+    static const char* kDefaultUrl;
 
 protected:
     // we override this to use a server that's not a named service

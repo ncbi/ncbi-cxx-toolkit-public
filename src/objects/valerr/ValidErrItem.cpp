@@ -1770,7 +1770,7 @@ CValidErrItem::~CValidErrItem(void)
 }
 
 
-const string& CValidErrItem::GetErrCode(void) const
+const string CValidErrItem::GetErrCode(void) const
 {
     return ConvertErrCode(GetErrIndex());
 }
@@ -1782,18 +1782,18 @@ unsigned int CValidErrItem::GetErrCount(void)
 }
 
 
-const string& CValidErrItem::ConvertErrGroup(unsigned int err_int)
+const string CValidErrItem::ConvertErrGroup(unsigned int err_int)
 {
-    static const string kSeqInst  = "SEQ_INST";
-    static const string kSeqDescr = "SEQ_DESCR";
-    static const string kGeneric  = "GENERIC";
-    static const string kSeqPkg   = "SEQ_PKG";
-    static const string kSeqFeat  = "SEQ_FEAT";
-    static const string kSeqAlign = "SEQ_ALIGN";
-    static const string kSeqGraph = "SEQ_GRAPH";
-    static const string kSeqAnnot = "SEQ_ANNOT";
-    static const string kInternal = "INTERNAL";
-    static const string kUnknown   = "UNKNOWN";
+    static const char* kSeqInst  = "SEQ_INST";
+    static const char* kSeqDescr = "SEQ_DESCR";
+    static const char* kGeneric  = "GENERIC";
+    static const char* kSeqPkg   = "SEQ_PKG";
+    static const char* kSeqFeat  = "SEQ_FEAT";
+    static const char* kSeqAlign = "SEQ_ALIGN";
+    static const char* kSeqGraph = "SEQ_GRAPH";
+    static const char* kSeqAnnot = "SEQ_ANNOT";
+    static const char* kInternal = "INTERNAL";
+    static const char* kUnknown   = "UNKNOWN";
 
     TErrIndex errIndex = static_cast<TErrIndex> (err_int);
     
@@ -1826,13 +1826,13 @@ const string& CValidErrItem::ConvertErrGroup(unsigned int err_int)
     return kUnknown;
 }
 
-const string& CValidErrItem::GetErrGroup(void) const
+const string CValidErrItem::GetErrGroup(void) const
 {
     return ConvertErrGroup(GetErrIndex());
 }
 
 
-const string& CValidErrItem::GetVerbose(void) const
+const string CValidErrItem::GetVerbose(void) const
 {
     TErrIndex err = GetErrIndex();
     if (err <= eErr_MAX) {
@@ -1857,9 +1857,9 @@ bool CValidErrItem::IsSetObject(void) const
 }
 
 
-const string& CValidErrItem::ConvertSeverity(EDiagSev sev)
+const string CValidErrItem::ConvertSeverity(EDiagSev sev)
 {
-    static const string str_sev[] = {
+    static const char* str_sev[] = {
         "Info", "Warning", "Error", "Critical", "Fatal", "Trace"
     };
 
@@ -1867,7 +1867,7 @@ const string& CValidErrItem::ConvertSeverity(EDiagSev sev)
 }
 
 
-const string& CValidErrItem::ConvertErrCode(unsigned int err_int)
+const string CValidErrItem::ConvertErrCode(unsigned int err_int)
 {
     TErrIndex err = static_cast<TErrIndex> (err_int);
     if (err <= eErr_MAX) {
@@ -1876,7 +1876,7 @@ const string& CValidErrItem::ConvertErrCode(unsigned int err_int)
             return err_it->second.first;
         }
     }
-    return  sc_ErrStrsMap.find(eErr_UNKNOWN)->second.first ;
+    return sc_ErrStrsMap.find(eErr_UNKNOWN)->second.first;
 }
 
 

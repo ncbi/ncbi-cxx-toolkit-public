@@ -329,12 +329,12 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 // static consts here allow us to use reference counting
-static const string s_ncbi("NCBI");
-static const string s_expres("experimental_results");
-static const string s_exp("experiment");
-static const string s_sage("SAGE");
-static const string s_tag("tag");
-static const string s_count("count");
+static const char* s_ncbi("NCBI");
+static const char* s_expres("experimental_results");
+static const char* s_exp("experiment");
+static const char* s_sage("SAGE");
+static const char* s_tag("tag");
+static const char* s_count("count");
 
 
 // accessors: classify a given user object
@@ -474,14 +474,14 @@ static string s_GetUserObjectContent(const CUser_object& obj)
                     if ( !label.empty() ) {
                         label += " ";
                     }
-                    label += s_tag + "=" + tag->GetData().GetStr();
+                    label += string(s_tag) + "=" + tag->GetData().GetStr();
                 }
 
                 if (count  &&  count->GetData().IsInt()) {
                     if ( !label.empty() ) {
                         label += " ";
                     }
-                    label += s_count + "=" +
+                    label += string(s_count) + "=" +
                         NStr::IntToString(count->GetData().GetInt());
                 }
 

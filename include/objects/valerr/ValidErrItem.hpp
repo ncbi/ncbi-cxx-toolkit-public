@@ -564,20 +564,20 @@ public:
     // severity with proper type.
     EDiagSev                GetSeverity  (void) const;
     // Error code
-    const string&           GetErrCode  (void) const;
+    const string            GetErrCode  (void) const;
     static unsigned int     GetErrCount(void);
     // Error group (SEQ_FEAT, SEQ_INST etc.)
-    const string&           GetErrGroup (void) const;
+    const string            GetErrGroup (void) const;
     // Verbose message
-    const string&           GetVerbose  (void) const;
+    const string            GetVerbose  (void) const;
     // Offending object
     const CSerialObject&    GetObject   (void) const;
     bool                    IsSetObject (void) const;
 
     // Convert Severity from enum to a string representation
-    static const string&    ConvertSeverity(EDiagSev sev);
-    static const string&    ConvertErrCode(unsigned int);
-    static const string&    ConvertErrGroup(unsigned int);
+    static const string    ConvertSeverity(EDiagSev sev);
+    static const string    ConvertErrCode(unsigned int);
+    static const string    ConvertErrGroup(unsigned int);
 
     bool IsSetContext(void) const;
     const CSeq_entry& GetContext(void) const;
