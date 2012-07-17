@@ -186,14 +186,14 @@ static bool s_IsValidSexQualifierValue (string str)
 {
     str = NStr::ToLower(str);
 
-    const string *begin = sm_ValidSexQualifierValues;
-    const string *end = &(sm_ValidSexQualifierValues[sizeof(sm_ValidSexQualifierValues) / sizeof(string)]);
+    const char* *begin = sm_ValidSexQualifierValues;
+    const char* *end = &(sm_ValidSexQualifierValues[sizeof(sm_ValidSexQualifierValues) / sizeof(string)]);
 
     return find(begin, end, str) != end;
 }
 
 
-const string sm_ValidModifiedPrimerBases[] = {
+const char* sm_ValidModifiedPrimerBases[] = {
   "ac4c",
   "chm5u",
   "cm",
@@ -265,8 +265,8 @@ static bool s_IsValidPrimerSequence (string str, char& bad_ch)
         return false;
     }
 
-    const string *list_begin = sm_ValidModifiedPrimerBases;
-    const string *list_end = &(sm_ValidModifiedPrimerBases[sizeof(sm_ValidModifiedPrimerBases) / sizeof(string)]);
+    const char* *list_begin = sm_ValidModifiedPrimerBases;
+    const char* *list_end = &(sm_ValidModifiedPrimerBases[sizeof(sm_ValidModifiedPrimerBases) / sizeof(string)]);
 
     size_t pos = 0;
     string::iterator sit = str.begin();
