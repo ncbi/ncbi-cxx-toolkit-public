@@ -732,11 +732,22 @@ void CValidError_desc::ValidateUser
  const CSeqdesc& desc)
 {
     if ( !usr.CanGetType() ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
+                "User object with no type", *m_Ctx, desc);
         return;
     }
     const CObject_id& oi = usr.GetType();
     if ( !oi.IsStr() ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
+                "User object with no type", *m_Ctx, desc);
         return;
+    }
+    if ( !usr.IsSetData() || usr.GetData().size() == 0) {
+        if (! NStr::EqualNocase(oi.GetStr(), "NcbiAutofix")) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
+                    "User object with no data", *m_Ctx, desc);
+            return;
+        }
     }
     if ( NStr::EqualNocase(oi.GetStr(), "RefGeneTracking")) {
         bool has_ref_track_status = false;
