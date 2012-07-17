@@ -31,9 +31,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <util/smalldns.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+#include <util/smalldns.hpp>
 #include <util/error_codes.hpp>
 
 #if defined(NCBI_OS_MSWIN)
@@ -51,9 +52,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-
-string CSmallDNS::sm_localHostName;
 
 
 CSmallDNS::CSmallDNS(const string& local_hosts_file /* = "./hosts.ini" */)
@@ -119,7 +117,9 @@ string CSmallDNS::GetLocalIP(void) const
 
 string CSmallDNS::GetLocalHost(void)
 {
-    if ( sm_localHostName.empty() ) {
+    static CSafeStaticPtr<string> s_LocalHostName;
+
+    if ( s_LocalHostName->empty() ) {
 #if !defined(MAXHOSTNAMELEN)
 #  define MAXHOSTNAMELEN 256
 #endif
@@ -135,14 +135,14 @@ string CSmallDNS::GetLocalHost(void)
                 if ( dot_pos ) {
                     dot_pos[0] = '\0';
                 }
-                sm_localHostName = buffer;
+                *s_LocalHostName = buffer;
             }
         } else {
             ERR_POST_X(4, Warning <<
                 "CSmallDNS: Cannot detect host name, errno:" << errno);
         }
     }
-    return sm_localHostName;
+    return s_LocalHostName.Get();
 }
 
 

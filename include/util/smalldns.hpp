@@ -81,7 +81,6 @@ public:
     string LocalBackResolveDNS(const string& ip) const;
 
 protected:
-    static string sm_localHostName;
     map<string, string> m_map;
 };
 

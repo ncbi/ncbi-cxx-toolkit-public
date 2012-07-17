@@ -127,24 +127,25 @@ string g_GetPasswordFromConsole(const string& prompt)
 
 NCBI_PARAM_DECL  (string, NCBI, DataPath);
 NCBI_PARAM_DEF_EX(string, NCBI, DataPath, kEmptyStr, 0, NCBI_DATA_PATH);
-typedef   NCBI_PARAM_TYPE(NCBI, DataPath) TNCBIDataPath;
+typedef NCBI_PARAM_TYPE(NCBI, DataPath) TNCBIDataPath;
 
 NCBI_PARAM_DECL(string, NCBI, Data);
 NCBI_PARAM_DEF (string, NCBI, Data, kEmptyStr);
 typedef NCBI_PARAM_TYPE(NCBI, Data) TNCBIDataDir;
 
-static vector<string> s_IgnoredDataFiles;
+typedef vector<string> TIgnoreDataFiles;
+static CSafeStaticPtr<TIgnoreDataFiles> s_IgnoredDataFiles;
 
 string g_FindDataFile(const CTempString& name, CDirEntry::EType type)
 {
 #ifdef NCBI_OS_MSWIN
-    static const string kDelim = ";";
+    static const char* kDelim = ";";
 #else
-    static const string kDelim = ":";
+    static const char* kDelim = ":";
 #endif
 
-    if ( !s_IgnoredDataFiles.empty()
-        &&  CDirEntry::MatchesMask(name, s_IgnoredDataFiles) ) {
+    if ( !s_IgnoredDataFiles->empty()
+        &&  CDirEntry::MatchesMask(name, *s_IgnoredDataFiles) ) {
         return kEmptyStr;
     }
 
@@ -179,7 +180,7 @@ string g_FindDataFile(const CTempString& name, CDirEntry::EType type)
 
 void g_IgnoreDataFile(const string& pattern, bool do_ignore)
 {
-    vector<string>& idf = s_IgnoredDataFiles;
+    vector<string>& idf = *s_IgnoredDataFiles;
     if (do_ignore) {
         idf.push_back(pattern);
     } else {

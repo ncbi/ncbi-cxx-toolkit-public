@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <util/static_map.hpp>
 #include <util/dictionary_util.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -590,11 +591,10 @@ enum ECharType {
     eVowel
 };
 
-static ECharType s_char_type[256];
-
-struct SFillTypes
+class CFillTypes
 {
-    SFillTypes()
+public:
+    CFillTypes()
     {
         // This cycle is processed in backward order to avoid buggy
         // optimization by ICC 9.1 on 64-bit platforms.
@@ -615,13 +615,21 @@ struct SFillTypes
         s_char_type[(int)'o'] = eVowel;
         s_char_type[(int)'u'] = eVowel;
     }
+
+    ECharType GetChar(int c) {
+        return s_char_type[c];
+    }
+
+private:
+    ECharType s_char_type[256];
 };
-static SFillTypes s_AutoFiller;
+
 
 static inline ECharType s_GetCharType(int c)
 {
+    static CSafeStaticPtr<CFillTypes> fill_types;
     _ASSERT(c < 256  &&  c >= 0);
-    return s_char_type[c];
+    return fill_types->GetChar(c);
 }
 
 static inline int s_MeasureWord(string::const_iterator iter,
@@ -958,22 +966,20 @@ void CDictionaryUtil::Stem(const string& in_str, string* out_str)
     //s_ReplaceEnding(str, "u", "us");
 
     // step 3
-    typedef pair<const char*, const char*> TReplace;
-    static const TReplace rep_step3[] = {
-        TReplace("icate", "ic"),
-        TReplace("ative", ""),
-        TReplace("alize", "al"),
-        TReplace("iciti", "ic"),
-        TReplace("ical", "ic"),
-        TReplace("ful", ""),
-        TReplace("ness", ""),
-
-        /// end
-        TReplace((const char*)0, (const char*)0)
+	typedef SStaticPair<const char*, const char*> TReplace;
+	static const TReplace rep_step3[] = {
+        { "icate",  "ic" },
+        { "ative",  ""   },
+        { "alize", "al"  },
+        { "iciti", "ic"  },
+        { "ical",  "ic"  },
+        { "ful",   ""    },
+        { "ness",  ""    },
+        { NULL, NULL }  /// end
     };
     {{
-         static string s_Step3_Endings("eils");
-         if (s_Step3_Endings.find_first_of(str[ str.length()-1 ]) != string::npos) {
+         static const char* s_Step3_Endings("eils");
+         if (CTempString(s_Step3_Endings).find(str[str.length()-1]) != string::npos) {
              for (const TReplace* p = rep_step3;  p->first;  ++p) {
                  if (s_ReplaceEnding(str, p->first, p->second)) {
                      break;

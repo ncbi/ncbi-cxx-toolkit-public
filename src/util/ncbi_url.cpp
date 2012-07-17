@@ -552,8 +552,8 @@ const CUrlArgs& CUrl::GetArgs(void) const
 
 IUrlEncoder* CUrl::GetDefaultEncoder(void)
 {
-    static CDefaultUrlEncoder s_DefaultEncoder;
-    return &s_DefaultEncoder;
+    static CSafeStaticPtr<CDefaultUrlEncoder> s_DefaultEncoder;
+    return &s_DefaultEncoder.Get();
 }
 
 
