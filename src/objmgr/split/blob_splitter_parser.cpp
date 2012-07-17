@@ -92,13 +92,13 @@ C& NonConst(const C& c)
 /////////////////////////////////////////////////////////////////////////////
 
 
-static CAsnSizer s_Sizer;
+static CSafeStaticPtr<CAsnSizer> s_Sizer;
+static CSafeStaticPtr<CSize> small_annot;
 
-static CSize small_annot;
 
 void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
 {
-    small_annot.clear();
+    small_annot->clear();
 
     if ( src.IsSeq() ) {
         CopySkeleton(dst.SetSeq(), src.GetSeq());
@@ -109,15 +109,15 @@ void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
 
     if ( m_Params.m_Verbose ) {
         // annot statistics
-        if ( small_annot ) {
-            NcbiCout << "Small Seq-annots: " << small_annot << NcbiEndl;
+        if ( *small_annot ) {
+            NcbiCout << "Small Seq-annots: " << *small_annot << NcbiEndl;
         }
     }
 
     if ( m_Params.m_Verbose && m_Skeleton == &dst ) {
         // skeleton statistics
-        s_Sizer.Set(*m_Skeleton, m_Params);
-        CSize size(s_Sizer);
+        s_Sizer->Set(*m_Skeleton, m_Params);
+        CSize size(*s_Sizer);
         NcbiCout <<
             "\nSkeleton: " << size << NcbiEndl;
     }
@@ -646,7 +646,7 @@ bool CBlobSplitterImpl::CopyAnnot(CPlace_SplitInfo& place_info,
         }
     }
     else {
-        small_annot += info.m_Size;
+        *small_annot += info.m_Size;
     }
 
     return true;

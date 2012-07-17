@@ -62,7 +62,7 @@ NCBI_DEFINE_ERR_SUBCODE_X(10);
 
 BEGIN_SCOPE(objects)
 
-static CAsnSizer s_Sizer; // for size estimation
+static CSafeStaticPtr<CAsnSizer> s_Sizer; // for size estimation
 
 namespace {
     template<class C>
@@ -267,8 +267,8 @@ void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
                                         const SSplitterParams& params,
                                         const CBlobSplitterImpl& impl)
 {
-    s_Sizer.Set(annot, params);
-    m_Size = CSize(s_Sizer);
+    s_Sizer->Set(annot, params);
+    m_Size = CSize(*s_Sizer);
 
     double ratio = m_Size.GetRatio();
     _ASSERT(!m_Src_annot);
@@ -359,7 +359,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_feat& obj,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Ftable),
       m_Object(&obj),
-      m_Size(s_Sizer.GetAsnSize(obj), ratio)
+      m_Size(s_Sizer->GetAsnSize(obj), ratio)
 {
     m_Location.Add(obj, impl);
 }
@@ -370,7 +370,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_graph& obj,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Graph),
       m_Object(&obj),
-      m_Size(s_Sizer.GetAsnSize(obj), ratio)
+      m_Size(s_Sizer->GetAsnSize(obj), ratio)
 {
     m_Location.Add(obj, impl);
 }
@@ -381,7 +381,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_align& obj,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Align),
       m_Object(&obj),
-      m_Size(s_Sizer.GetAsnSize(obj), ratio)
+      m_Size(s_Sizer->GetAsnSize(obj), ratio)
 {
     m_Location.Add(obj, impl);
 }
@@ -392,7 +392,7 @@ CAnnotObject_SplitInfo::CAnnotObject_SplitInfo(const CSeq_table& obj,
                                                double ratio)
     : m_ObjectType(CSeq_annot::C_Data::e_Seq_table),
       m_Object(&obj),
-      m_Size(s_Sizer.GetAsnSize(obj), ratio)
+      m_Size(s_Sizer->GetAsnSize(obj), ratio)
 {
     m_Location.Add(obj, impl);
 }
@@ -477,8 +477,8 @@ CBioseq_SplitInfo::CBioseq_SplitInfo(const CBioseq& seq,
         m_Location.Add(CSeq_id_Handle::GetHandle(**it),
                        CSeqsRange::TRange::GetWhole());
     }
-    s_Sizer.Set(seq, params);
-    m_Size = CSize(s_Sizer);
+    s_Sizer->Set(seq, params);
+    m_Size = CSize(*s_Sizer);
     m_Priority = eAnnotPriority_regular;
 }
 
@@ -523,8 +523,8 @@ CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(const CPlaceId& place_id,
         // use dummy handle for Bioseq-sets
         m_Location.Add(CSeq_id_Handle(), CRange<TSeqPos>::GetWhole());
     }
-    s_Sizer.Set(descr, params);
-    m_Size = CSize(s_Sizer);
+    s_Sizer->Set(descr, params);
+    m_Size = CSize(*s_Sizer);
     m_Priority = eAnnotPriority_regular;
 }
 
@@ -571,8 +571,8 @@ CSeq_hist_SplitInfo::CSeq_hist_SplitInfo(const CPlaceId& place_id,
     m_Assembly = hist.GetAssembly();
     _ASSERT( place_id.IsBioseq() );
     m_Location.Add(place_id.GetBioseqId(), CRange<TSeqPos>::GetWhole());
-    s_Sizer.Set(hist, params);
-    m_Size = CSize(s_Sizer);
+    s_Sizer->Set(hist, params);
+    m_Size = CSize(*s_Sizer);
     m_Priority = eAnnotPriority_low;
 }
 
@@ -585,8 +585,8 @@ CSeq_hist_SplitInfo::CSeq_hist_SplitInfo(const CPlaceId& place_id,
     m_Assembly.push_back(dst);
     _ASSERT( place_id.IsBioseq() );
     m_Location.Add(place_id.GetBioseqId(), CRange<TSeqPos>::GetWhole());
-    s_Sizer.Set(align, params);
-    m_Size = CSize(s_Sizer);
+    s_Sizer->Set(align, params);
+    m_Size = CSize(*s_Sizer);
     m_Priority = eAnnotPriority_low;
 }
 
@@ -612,8 +612,8 @@ void CSeq_data_SplitInfo::SetSeq_data(const CPlaceId& place_id,
     m_Location.clear();
     m_Location.Add(place_id.GetBioseqId(), range);
     m_Data.Reset(&data);
-    s_Sizer.Set(data, params);
-    m_Size = CSize(s_Sizer);
+    s_Sizer->Set(data, params);
+    m_Size = CSize(*s_Sizer);
     m_Priority = eAnnotPriority_low;
     if ( seq_length <= 10000 ) {
         m_Priority = eAnnotPriority_regular;

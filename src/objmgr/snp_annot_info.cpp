@@ -98,16 +98,16 @@ const char* const SSNP_Info::s_SNP_Type_Label[eSNP_Type_last] = {
 };
 
 
-static const CTempString kId_variation        ("variation");
-static const CTempString kId_allele           ("allele");
-static const CTempString kId_replace          ("replace");
-static const CTempString kId_dbSnpSynonymyData("dbSnpSynonymyData");
-static const CTempString kId_dbSnpQAdata      ("dbSnpQAdata");
-static const CTempString kId_weight           ("weight");
-static const CTempString kId_QualityCodes     ("QualityCodes");
-static const CTempString kId_Extra            ("Extra");
-static const CTempString kVal_1               ("1");
-static const CTempString kId_dbSNP            ("dbSNP");
+static const char* kId_variation         = "variation";
+static const char* kId_allele            = "allele";
+static const char* kId_replace           = "replace";
+static const char* kId_dbSnpSynonymyData = "dbSnpSynonymyData";
+static const char* kId_dbSnpQAdata       = "dbSnpQAdata";
+static const char* kId_weight            = "weight";
+static const char* kId_QualityCodes      = "QualityCodes";
+static const char* kId_Extra             = "Extra";
+static const char* kVal_1                = "1";
+static const char* kId_dbSNP             = "dbSNP";
 
 static const size_t kMax_CommentLength = 65530;
 static const size_t kMax_AlleleLength  = 32;

@@ -1062,13 +1062,13 @@ CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
     typedef pair<TMainConversion, TConversionFlags> TConversionKey;
     typedef vector<char> TConversionTable;
     typedef map<TConversionKey, TConversionTable> TTables;
-    static TTables tables;
+    static CSafeStaticPtr<TTables> tables;
 
     TConversionKey key;
     key.first = TMainConversion(src, dst);
     key.second = TConversionFlags(reverse, case_cvt);
-    TTables::iterator it = tables.find(key);
-    if ( it != tables.end() ) {
+    TTables::iterator it = tables->find(key);
+    if ( it != tables->end() ) {
         // already created, but may be a stand-in
         switch (it->second.size()) {
         case 0:  return 0; // error -- incompatible codings or the like
@@ -1076,7 +1076,7 @@ CSeqVectorTypes::sx_GetConvertTable(TCoding src, TCoding dst,
         default: return &it->second[0];
         }
     }
-    TConversionTable& table = tables[key];
+    TConversionTable& table = (*tables)[key];
     if ( !CSeqportUtil::IsCodeAvailable(src) ||
          !CSeqportUtil::IsCodeAvailable(dst) ) {
         // invalid types

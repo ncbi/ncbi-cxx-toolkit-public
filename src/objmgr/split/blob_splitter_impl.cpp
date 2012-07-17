@@ -88,8 +88,6 @@ bool CBlobSplitter::Split(const CSeq_entry& entry)
 /////////////////////////////////////////////////////////////////////////////
 
 
-static CAsnSizer s_Sizer;
-
 bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
 {
     Reset();
