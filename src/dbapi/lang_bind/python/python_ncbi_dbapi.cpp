@@ -187,6 +187,12 @@ CCachedResultSet::Next(void)
     return false;
 }
 
+static CVariant*
+s_CreateUnsupported(void)
+{
+    return new CVariant(eDB_UnsupportedType);
+}
+
 const CVariant&
 CCachedResultSet::GetVariant(const CDBParamVariant& param)
 {
@@ -201,8 +207,8 @@ CCachedResultSet::GetVariant(const CDBParamVariant& param)
         }
     }
 
-    static CVariant value(eDB_UnsupportedType);
-    return value;
+    static CSafeStaticPtr<CVariant> value;
+    return value.Get(&s_CreateUnsupported);
 }
 
 unsigned int
@@ -4340,7 +4346,7 @@ void init_common(const string& module_name)
     python::CDateTimeType::GetType().SetName("DATETIME");
 
     // Declare CConnection
-    static const string connection_name(module_name + ".Connection");
+    const string connection_name(module_name + ".Connection");
     python::CConnection::
         Def("__enter__",    &python::CConnection::__enter__,    "__enter__").
         Def("__exit__",     &python::CConnection::close,        "__exit__").
@@ -4349,10 +4355,10 @@ void init_common(const string& module_name)
         Def("rollback",     &python::CConnection::rollback,     "rollback").
         Def("cursor",       &python::CConnection::cursor,       "cursor").
         Def("transaction",  &python::CConnection::transaction,  "transaction");
-    python::CConnection::Declare(connection_name.c_str());
+    python::CConnection::Declare(strdup(connection_name.c_str()));
 
     // Declare CTransaction
-    static const string transaction_name(module_name + ".Transaction");
+    const string transaction_name(module_name + ".Transaction");
     python::CTransaction::
         Def("__enter__",    &python::CTransaction::__enter__,    "__enter__").
         Def("__exit__",     &python::CTransaction::close,        "__exit__").
@@ -4360,10 +4366,10 @@ void init_common(const string& module_name)
         Def("cursor",       &python::CTransaction::cursor,       "cursor").
         Def("commit",       &python::CTransaction::commit,       "commit").
         Def("rollback",     &python::CTransaction::rollback,     "rollback");
-    python::CTransaction::Declare(transaction_name.c_str());
+    python::CTransaction::Declare(strdup(transaction_name.c_str()));
 
     // Declare CCursor
-    static const string cursor_name(module_name + ".Cursor");
+    const string cursor_name(module_name + ".Cursor");
     python::CCursor::
         Def("callproc",     &python::CCursor::callproc,     "callproc").
         Def("__enter__",    &python::CCursor::__enter__,    "__enter__").
@@ -4378,11 +4384,11 @@ void init_common(const string& module_name)
         Def("setinputsizes", &python::CCursor::setinputsizes, "setinputsizes").
         Def("setoutputsize", &python::CCursor::setoutputsize, "setoutputsize").
         Def("get_proc_return_status", &python::CCursor::get_proc_return_status, "get_proc_return_status");
-    python::CCursor::Declare(cursor_name.c_str());
+    python::CCursor::Declare(strdup(cursor_name.c_str()));
 
     // Declare CCursorIter
-    static const string cursor_iter_name(module_name + ".__CursorIterator__");
-    python::CCursorIter::Declare(cursor_iter_name.c_str());
+    const string cursor_iter_name(module_name + ".__CursorIterator__");
+    python::CCursorIter::Declare(strdup(cursor_iter_name.c_str()));
 
     ///////////////////////////////////
     // Declare types ...
