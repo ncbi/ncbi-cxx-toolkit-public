@@ -40,23 +40,73 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CWiggleRecord;
-class CWiggleTrack;
-class CTrackData;
+//  ============================================================================
+struct SValueInfo {
+//  ============================================================================
+    TSeqPos m_Pos;
+    TSeqPos m_Span;
+    double m_Value;
 
-//  ----------------------------------------------------------------------------
-enum CWiggleLineType
-//  ----------------------------------------------------------------------------
-{
-    TYPE_NONE,
-    TYPE_COMMENT,
-    TYPE_BROWSER,
-    TYPE_TRACK,
-    TYPE_DECLARATION_VARSTEP,
-    TYPE_DECLARATION_FIXEDSTEP,
-    TYPE_DATA_BED,
-    TYPE_DATA_VARSTEP,
-    TYPE_DATA_FIXEDSTEP
+    TSeqPos GetEnd(void) const {
+        return m_Pos + m_Span;
+    }
+    bool operator<(const SValueInfo& v) const {
+        return m_Pos < v.m_Pos;
+    }
+};
+
+//  ============================================================================
+struct SWiggleStat {
+//  ============================================================================
+    bool m_FixedSpan;
+    bool m_HaveGaps;
+    bool m_IntValues;
+    TSeqPos m_Span;
+    double m_Min, m_Max, m_Step, m_StepMul;
+
+    SWiggleStat()
+        : m_FixedSpan(true),
+          m_HaveGaps(false),
+          m_IntValues(true),
+          m_Span(1),
+          m_Min(0),
+          m_Max(0),
+          m_Step(1),
+          m_StepMul(1)
+        {
+        }
+    void SetFirstSpan(TSeqPos span)
+        {
+            m_FixedSpan = true;
+            m_Span = span;
+        }
+    void AddSpan(TSeqPos span)
+        {
+            if ( span != m_Span ) {
+                m_FixedSpan = false;
+            }
+        }
+    void SetFirstValue(double v)
+        {
+            m_Min = m_Max = v;
+            m_IntValues = v == int(v);
+        }
+    void AddValue(double v)
+        {
+            if ( v < m_Min ) {
+                m_Min = v;
+            }
+            if ( v > m_Max ) {
+                m_Max = v;
+            }
+            if ( m_IntValues && v != int(v) ) {
+                m_IntValues = false;
+            }
+        }
+    int AsByte(double v) const
+        {
+            return int((v-m_Min)*m_StepMul+.5);
+        }
 };
 
 //  ----------------------------------------------------------------------------
@@ -113,45 +163,156 @@ public:
     //  helpers:
     //
 protected:
-    bool x_ReadLineData( 
-        ILineReader&,
-        vector<string>& );
-
-    bool x_ProcessLineData(
-        const vector<string>&,
-        CWiggleTrack*& );
-
-    bool x_ParseSequence(
-        ILineReader&,
-        CWiggleTrack*&,
-        IErrorContainer* );
-
-    void x_ParseDataRecord(
-        const vector<string>& parts );
-
-    virtual void x_AssignBrowserData(
-        CRef<CSeq_annot>& );
-                
-    unsigned int x_GetLineType(
-        const vector<string>& parts);
-
-    virtual void x_DumpStats(
-        CNcbiOstream&,
-        CWiggleTrack* );    
-
     void
     xProcessError(
         CObjReaderLineException&,
         IErrorContainer* );
 
+    void 
+    xReadBrowser();
+
+    void 
+    xReadTrack(
+        IErrorContainer*);
+
+    void 
+    xReadFixedStep(
+        ILineReader&,
+        IErrorContainer*);
+    
+    void 
+    xReadVariableStep(
+        ILineReader&,
+        IErrorContainer*);
+
+    void 
+    xReadBedLine(
+        CTempString chrom,
+        IErrorContainer*);
+
+    CRef<CSeq_annot>
+    xGetAnnot();
+
+    bool 
+    xGetLine(
+        ILineReader&);
+
+    bool 
+    xCommentLine() const;
+
+    CTempString 
+    xGetWord(
+        IErrorContainer*);
+
+    bool 
+    xSkipWS();
+
+    CTempString 
+    xGetParamName(
+        IErrorContainer*);
+
+    CTempString 
+    xGetParamValue(
+        IErrorContainer*);
+
+    void 
+    xGetPos(
+        TSeqPos& v,
+        IErrorContainer*);
+
+    bool 
+    xTryGetDoubleSimple(
+        double& v);
+
+    bool 
+    xTryGetDouble(
+        double& v,
+        IErrorContainer*);
+
+    bool 
+    xTryGetPos(
+        TSeqPos& v,
+        IErrorContainer*);
+
+    void 
+    xGetDouble(
+        double& v,
+        IErrorContainer*);
+
+    CRef<CSeq_id> 
+    xMakeChromId();
+
+    CRef<CSeq_table> 
+    xMakeTable();
+
+    CRef<CSeq_graph> 
+    xMakeGraph();
+
+    CRef<CSeq_annot> 
+    xMakeAnnot();
+
+    CRef<CSeq_annot> 
+    xMakeTableAnnot();
+
+    CRef<CSeq_annot> 
+    xMakeGraphAnnot(
+        void);
+
+    void 
+    xPreprocessValues(
+        SWiggleStat&);
+
+    void 
+    xAddValue(const SValueInfo& value) {
+        if ( !m_OmitZeros || value.m_Value != 0 ) {
+            m_Values.push_back(value);
+        }
+    }
+
+    double 
+    xEstimateSize(
+        size_t rows, 
+        bool fixed_span) const;
+
+    void 
+    xSetTotalLoc(
+        CSeq_loc& loc, 
+        CSeq_id& chrom_id);
+
+    void 
+    xResetChromValues();
+
+    void
+    xDumpChromValues();
+
+    void 
+    xSetChrom(
+        CTempString chrom);
+
     //
     //  data:
     //
 protected:
-    static const string s_WiggleDelim;
-//    TFlags m_Flags;
-    unsigned int m_uCurrentRecordType;
-    CWiggleRecord* m_pControlData;
+    CTempStringEx m_CurLine;
+    string m_ChromId;
+    typedef vector<SValueInfo> TValues;
+    TValues m_Values;
+    double m_GapValue;
+    bool m_KeepInteger;
+    bool m_SingleAnnot;
+    bool m_OmitZeros;
+    string m_TrackName;
+    string m_TrackDescription;
+    typedef map<string, string> TTrackParams;
+    TTrackParams m_TrackParams;
+    string m_TrackTypeValue;
+    enum ETrackType {
+        eTrackType_invalid,
+        eTrackType_wiggle_0,
+        eTrackType_bedGraph
+    };
+    ETrackType m_TrackType;
+    CRef<CSeq_annot> m_Annot;
 };
 
 END_objects_SCOPE
