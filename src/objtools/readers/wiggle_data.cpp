@@ -435,7 +435,7 @@ void CWiggleTrack::MakeTable(
         col_loc->SetHeader().SetField_name( "Seq-table location" );
         col_loc->SetDefault().SetLoc().SetInt().SetId(*s_ResolveId(m_strChrom));
         col_loc->SetDefault().SetLoc().SetInt().SetFrom( m_uSeqStart );
-        col_loc->SetDefault().SetLoc().SetInt().SetTo( m_uSeqStop );
+        col_loc->SetDefault().SetLoc().SetInt().SetTo( m_uSeqStop-1 );
     }
 
     { // Seq-id
