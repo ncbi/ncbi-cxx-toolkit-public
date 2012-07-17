@@ -1178,7 +1178,7 @@ s_LineIndicatesOrder( const string & line )
 {
     // basically, this is true if the line starts with "order" (whitespaces disregarded)
 
-    const static string kOrder("ORDER");
+    const static char* kOrder = "ORDER";
 
     // find first non-whitespace character
     string::size_type pos = 0;
@@ -1192,7 +1192,7 @@ s_LineIndicatesOrder( const string & line )
     }
 
     // check if starts with "order" after whitespace
-    return ( 0 == NStr::CompareNocase( line, pos, kOrder.length(), kOrder ) );
+    return ( 0 == NStr::CompareNocase( line, pos, strlen(kOrder), kOrder ) );
 }
 
 // Turns a "join" location into an "order" by putting nulls between it

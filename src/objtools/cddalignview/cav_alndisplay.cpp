@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -58,11 +59,15 @@ BEGIN_NCBI_SCOPE
 const double AlignmentDisplay::SHOW_IDENTITY = 100000.0;
 
 // HTML colors
-static const int nBlockColors = 2;
-static const string
-    bgColor("#FFFFFF"), blockBGColors[nBlockColors] = { "#FFFFE0", "#FFE8FF" },
-    rulerColor("#700777"), numColor("#229922"), featColor("#888811"),
-    plainColor("#888888"), blockColor("#2233CC"), conservedColor("#FF4466");
+static const int   nBlockColors = 2;
+static const char* blockBGColors[nBlockColors] = { "#FFFFE0", "#FFE8FF" };
+static const char* bgColor        = "#FFFFFF";
+static const char* rulerColor     = "#700777";
+static const char* numColor       = "#229922";
+static const char* featColor      = "#888811";
+static const char* plainColor     = "#888888";
+static const char* blockColor     = "#2233CC";
+static const char* conservedColor = "#FF4466";
 
 #define LEFT_JUSTIFY resetiosflags(IOS_BASE::right) << setiosflags(IOS_BASE::left)
 #define RIGHT_JUSTIFY resetiosflags(IOS_BASE::left) << setiosflags(IOS_BASE::right)
@@ -431,22 +436,25 @@ void CondensedColumnAligned::AddRowChar(int row, char ch)
     info[row] = (int) ch;
 }
 
+
 class CondensedColumnUnaligned : public CondensedColumn
 {
 private:
-    static const string prefix, postfix;
+    static const char* prefix;
+    static const char* postfix;
     int nDigits;
 
 public:
     CondensedColumnUnaligned(int nRows, string color) : CondensedColumn(nRows, color) { nDigits = 1; }
-    int GetDisplayWidth(void) const { return prefix.size() + nDigits + postfix.size(); }
+    int GetDisplayWidth(void) const { return strlen(prefix) + nDigits + strlen(postfix); }
     int GetNResidues(int row) const { return info[row]; }
     void DumpRow(CNcbiOstream& os, int row) const;
     void AddRowChar(int row, char ch);
 };
 
-const string CondensedColumnUnaligned::prefix = ".[";
-const string CondensedColumnUnaligned::postfix = "].";
+const char* CondensedColumnUnaligned::prefix = ".[";
+const char* CondensedColumnUnaligned::postfix = "].";
+
 
 void CondensedColumnUnaligned::DumpRow(CNcbiOstream& os, int row) const
 {
@@ -1034,7 +1042,8 @@ const string& AlignmentDisplay::GetColumnColor(int alnLoc, double conservationTh
 {
     // standard probabilities (calculated by BLAST using BLOSUM62 - see conservation_colorer.cpp in Cn3D++)
     typedef map < char , double > Char2Double;
-    static Char2Double StandardProbabilities;
+    static CSafeStaticPtr<Char2Double> s_StandardProbabilities;
+    Char2Double& StandardProbabilities = *s_StandardProbabilities;
     if (StandardProbabilities.size() == 0) {
         StandardProbabilities['A'] = 0.07805;
         StandardProbabilities['C'] = 0.01925;

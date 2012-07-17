@@ -71,9 +71,8 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
 	*alignments = NULL;
 
     // try to decide what ASN type this is, and if it's binary or ascii
-    static const string
-        asciiMimeFirstWord = "Ncbi-mime-asn1",
-        asciiCDDFirstWord = "Cdd";
+    static const char* asciiMimeFirstWord = "Ncbi-mime-asn1";
+    static const char* asciiCDDFirstWord = "Cdd";
     bool isMime = false, /*isCDD = false,*/ isBinary = true;
 
     string firstWord;

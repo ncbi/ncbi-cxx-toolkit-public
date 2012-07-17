@@ -203,12 +203,12 @@ bool CWriteUtil::GetAaName(
     string& aaName )
 //  ----------------------------------------------------------------------------
 {
-    static const string AANames[] = {
+    static const char* AANames[] = {
         "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
         "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", "Ser", "Thr", "Val",
         "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM", "Pyl"
     };
-    static const string other = "OTHER";
+    static const char* other = "OTHER";
 
     unsigned char aa(0);
     switch (cb.GetAa().Which()) {

@@ -68,10 +68,9 @@ CLDS2_UrlHandler_Base::GetFileFormat(const SLDS2_File& file_info)
 
 // Default (file) handler implementation
 
-const string& CLDS2_UrlHandler_File::s_GetHandlerName(void)
+const string CLDS2_UrlHandler_File::s_GetHandlerName(void)
 {
-    static const string s_FileHandlerName = "file";
-    return s_FileHandlerName;
+    return "file";
 }
 
 
@@ -119,10 +118,9 @@ Int8 CLDS2_UrlHandler_File::GetFileTime(const SLDS2_File& file_info)
 
 
 // Default (file) handler implementation
-const string& CLDS2_UrlHandler_GZipFile::s_GetHandlerName(void)
+const string CLDS2_UrlHandler_GZipFile::s_GetHandlerName(void)
 {
-    static const string s_GZipFileHandlerName = "gzipfile";
-    return s_GZipFileHandlerName;
+    return "gzipfile";
 }
 
 

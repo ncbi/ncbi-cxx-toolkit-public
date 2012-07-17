@@ -168,8 +168,8 @@ protected:
 protected:
     CRef<CSeq_loc> m_pLoc;
 
-    static const string ATTR_SEPARATOR;
-    static const string MULTIVALUE_SEPARATOR;
+    static const char* ATTR_SEPARATOR;
+    static const char* MULTIVALUE_SEPARATOR;
 };
 
 END_objects_SCOPE

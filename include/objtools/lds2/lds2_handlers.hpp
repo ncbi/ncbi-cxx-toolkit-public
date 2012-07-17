@@ -111,7 +111,7 @@ public:
                                      Int8              stream_pos,
                                      CLDS2_Database*   db);
 
-    static const string& s_GetHandlerName(void);
+    static const string s_GetHandlerName(void);
 
 protected:
     virtual Int8 GetFileSize(const SLDS2_File& file_info);
@@ -138,7 +138,7 @@ public:
                                      Int8              stream_pos,
                                      CLDS2_Database*   db);
 
-    static const string& s_GetHandlerName(void);
+    static const string s_GetHandlerName(void);
 };
 
 

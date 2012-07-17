@@ -625,7 +625,7 @@ SLDS2_Blob::EBlobType CLDS2_ObjectParser::x_GetBlobType(void)
     // The data will be pushed back after testing.
     char buf[1024];
     m_Stream.read(buf, 1024);
-    int sz = m_Stream.gcount();
+    int sz = (int)m_Stream.gcount();
     m_Stream.clear();
     if (sz == 0) {
         // The stream is empty - nothing to check. Force eof detection.
@@ -907,7 +907,7 @@ void CLDS2_ObjectParser::AddAnnot(SLDS2_Annot::EType         annot_type,
 {
     SLDS2_Annot* annot = new SLDS2_Annot;
     annot->type = annot_type;
-    annot->is_named = annot_name;
+    annot->is_named = (annot_name != NULL);
     if ( annot_name ) {
         annot->name = *annot_name;
     }

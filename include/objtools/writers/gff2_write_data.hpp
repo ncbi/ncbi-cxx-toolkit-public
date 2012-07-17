@@ -133,7 +133,7 @@ protected:
     string m_strAttributes;    
     TAttributes m_Attributes;
 
-    static const string ATTR_SEPARATOR;
+    static const char* ATTR_SEPARATOR;
 };
 
 //  ============================================================================

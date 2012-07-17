@@ -1111,7 +1111,7 @@ bool CAgpValidateReader::x_PrintPatterns(
 {
   const int MaxPatterns=10;
   //const int MaxPatterns=2;
-  static const string SPACES="                                        ";
+  const string SPACES="                                        ";
 
   // Sorted by count to print most frequent first
   CAccPatternCounter::TMapCountToString cnt_pat; // multimap<int,string>

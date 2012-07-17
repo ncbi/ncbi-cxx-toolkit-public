@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
@@ -57,12 +58,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-const string CGff3WriteRecordFeature::ATTR_SEPARATOR
+const char* CGff3WriteRecordFeature::ATTR_SEPARATOR
 //  ----------------------------------------------------------------------------
     = ";";
 
 //  ----------------------------------------------------------------------------
-const string CGff3WriteRecordFeature::MULTIVALUE_SEPARATOR
+const char* CGff3WriteRecordFeature::MULTIVALUE_SEPARATOR
 //  ----------------------------------------------------------------------------
     = ",";
 
@@ -197,12 +198,12 @@ bool CGff3WriteRecordFeature::x_AssignType(
         }
     }
 
-    static CSofaMap SOFAMAP;
+    static CSafeStaticPtr<CSofaMap> SOFAMAP;
 
     if ( ! mf.IsSetData() ) {
-        m_strType = SOFAMAP.DefaultName();
+        m_strType = SOFAMAP->DefaultName();
     }
-    m_strType = SOFAMAP.MappedName( mf.GetFeatType(), mf.GetFeatSubtype() );
+    m_strType = SOFAMAP->MappedName( mf.GetFeatType(), mf.GetFeatSubtype() );
     return true;
 };
 

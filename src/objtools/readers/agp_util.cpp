@@ -1074,12 +1074,12 @@ string CAgpReader::GetErrorMessage(const string& filename)
 
 void CAgpReader::x_CheckPragmaComment(void)
 {
-    const static string kAgpVersionCommentStart("##agp-version");
+    static const char* kAgpVersionCommentStart = "##agp-version";
     if( NStr::StartsWith(m_line, kAgpVersionCommentStart) ) {
         // skip whitespace before and after version number
         const SIZE_TYPE versionStartPos = m_line.find_first_not_of(
             " \t\v\f",
-            kAgpVersionCommentStart.length() );
+            strlen(kAgpVersionCommentStart) );
         const SIZE_TYPE versionEndPos = m_line.find_last_not_of(
             " \t\v\f" );
         string version;

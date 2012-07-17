@@ -49,9 +49,8 @@ class NCBI_XOBJREAD_EXPORT CGff3SofaTypes
 {
     friend CGff3SofaTypes& SofaTypes();
 
-protected:
-    CGff3SofaTypes();
 public:
+    CGff3SofaTypes();
     ~CGff3SofaTypes();
 
     CSeqFeatData::ESubtype MapSofaTermToGenbankType(
@@ -61,7 +60,7 @@ public:
         const string& );
 
 protected:
-    static TLookupSofaToGenbank m_Lookup;
+    static CSafeStaticPtr<TLookupSofaToGenbank> m_Lookup;
 };
 
 //  ----------------------------------------------------------------------------

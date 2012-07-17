@@ -1011,7 +1011,7 @@ void CLDS2_Database::EndRead(void)
 
 const char* kLDS2_ListTables =
     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
-const string kLDS2_DumpTable = "SELECT * FROM ";
+const char* kLDS2_DumpTable = "SELECT * FROM ";
 
 
 void CLDS2_Database::Dump(const string& table, CNcbiOstream& out)

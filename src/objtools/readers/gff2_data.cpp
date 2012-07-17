@@ -127,7 +127,8 @@ CBioSource::EGenome s_StringToGenome(
 //  ----------------------------------------------------------------------------
 {
     typedef map<string, CBioSource::EGenome> GENOME_MAP;
-    static GENOME_MAP sGenomeMap;
+    static CSafeStaticPtr<GENOME_MAP> s_GenomeMap;
+    GENOME_MAP& sGenomeMap = *s_GenomeMap;
     if (sGenomeMap.empty()) {
         sGenomeMap["apicoplast"] = CBioSource::eGenome_apicoplast;
         sGenomeMap["chloroplast"] = CBioSource::eGenome_chloroplast;
@@ -732,7 +733,8 @@ bool CGff2Record::x_MigrateAttributesOrgName(
 //  ----------------------------------------------------------------------------
 {
     typedef map<string, COrgMod::ESubtype> ORGMOD_MAP;
-    static ORGMOD_MAP sOrgModMap;
+    static CSafeStaticPtr<ORGMOD_MAP> s_OrgModMap;
+    ORGMOD_MAP& sOrgModMap = *s_OrgModMap;
     if (sOrgModMap.empty()) {
         sOrgModMap["strain"] = COrgMod::eSubtype_strain;
         sOrgModMap["substrain"] = COrgMod::eSubtype_substrain;
@@ -798,7 +800,8 @@ bool CGff2Record::x_MigrateAttributesSubSource(
 //  ----------------------------------------------------------------------------
 {
     typedef map<string, CSubSource::ESubtype> SUBSOURCE_MAP;
-    static SUBSOURCE_MAP sSubSourceMap;
+    static CSafeStaticPtr<SUBSOURCE_MAP> s_SubSourceMap;
+    SUBSOURCE_MAP& sSubSourceMap = *s_SubSourceMap;
     if (sSubSourceMap.empty()) {
         sSubSourceMap["chromosome"] = CSubSource::eSubtype_chromosome;
         sSubSourceMap["map"] = CSubSource::eSubtype_map;

@@ -103,12 +103,14 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+typedef map<string, CVariantProperties::EAllele_state> TAlleleStateMap;
+
 //  ----------------------------------------------------------------------------
-const map<string, CVariantProperties::EAllele_state>&
-s_AlleleStateMap()
+const TAlleleStateMap& s_AlleleStateMap()
 //  ----------------------------------------------------------------------------
 {
-    static map<string, CVariantProperties::EAllele_state> m;
+    static CSafeStaticPtr<TAlleleStateMap> s_Map;
+    TAlleleStateMap& m = *s_Map;
     if ( m.empty() ) {
         m["heterozygous"] = CVariantProperties::eAllele_state_heterozygous;
         m["homozygous"] = CVariantProperties::eAllele_state_homozygous;

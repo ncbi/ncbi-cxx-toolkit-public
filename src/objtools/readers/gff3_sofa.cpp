@@ -43,15 +43,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  --------------------------------------------------------------------------
-TLookupSofaToGenbank CGff3SofaTypes::m_Lookup;
+CSafeStaticPtr<TLookupSofaToGenbank> CGff3SofaTypes::m_Lookup;
 //  --------------------------------------------------------------------------
 
 //  --------------------------------------------------------------------------
 CGff3SofaTypes& SofaTypes()
 //  --------------------------------------------------------------------------
 {
-    static CGff3SofaTypes m_Lookup;    
-    return m_Lookup;
+    static CSafeStaticPtr<CGff3SofaTypes> m_Lookup;    
+    return *m_Lookup;
 }
 
 //  --------------------------------------------------------------------------
@@ -63,8 +63,10 @@ CGff3SofaTypes::CGff3SofaTypes()
 
     CSofaMap SofaMap;
     const SOFAMAP& entries = SofaMap.Map();
+    TLookupSofaToGenbank& lookup = *m_Lookup;
+
     for (SOFAITER cit = entries.begin(); cit != entries.end(); ++cit) {
-        m_Lookup[cit->second.m_name] = cit->first;
+        lookup[cit->second.m_name] = cit->first;
     }
 };
 
@@ -79,8 +81,8 @@ CSeqFeatData::ESubtype CGff3SofaTypes::MapSofaTermToGenbankType(
     const string& strSofa )
 //  --------------------------------------------------------------------------
 {
-    TLookupSofaToGenbankCit cit = m_Lookup.find( strSofa );
-    if ( cit == m_Lookup.end() ) {
+    TLookupSofaToGenbankCit cit = m_Lookup->find( strSofa );
+    if ( cit == m_Lookup->end() ) {
         return CSeqFeatData::eSubtype_misc_feature;
     }
     return CSeqFeatData::ESubtype(cit->second.GetSubtype());
@@ -91,8 +93,8 @@ CFeatListItem CGff3SofaTypes::MapSofaTermToFeatListItem(
     const string& strSofa )
 //  --------------------------------------------------------------------------
 {
-    TLookupSofaToGenbankCit cit = m_Lookup.find( strSofa );
-    if ( cit == m_Lookup.end() ) {
+    TLookupSofaToGenbankCit cit = m_Lookup->find( strSofa );
+    if ( cit == m_Lookup->end() ) {
         return CFeatListItem(CSeqFeatData::e_Imp, 
             CSeqFeatData::eSubtype_misc_feature, "", "");
     }

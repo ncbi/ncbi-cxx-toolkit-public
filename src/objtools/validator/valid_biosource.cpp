@@ -168,7 +168,7 @@ static bool s_UnbalancedParentheses (string str)
 }
 
 
-const string sm_ValidSexQualifierValues[] = {
+const char* sm_ValidSexQualifierValues[] = {
   "asexual",
   "bisexual",
   "diecious",

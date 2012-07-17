@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-const string CGffWriteRecord::ATTR_SEPARATOR
+const char* CGffWriteRecord::ATTR_SEPARATOR
 //  ----------------------------------------------------------------------------
     = "; ";
 

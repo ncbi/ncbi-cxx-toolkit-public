@@ -39,9 +39,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-static const string sc_tag    ("tag");
-static const string sc_count  ("count");
-static const string sc_method ("method");
+static const char* sc_tag    = "tag";
+static const char* sc_count  = "count";
+static const char* sc_method = "method";
 
 
 
