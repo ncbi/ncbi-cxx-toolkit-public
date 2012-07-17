@@ -4,6 +4,7 @@ app/blast
 app/blastdb
 internal/aligndb
 internal/gbench
+misc/hgvs$
 misc/third_party
 -[^gi].*/app
 -[^g].*/unit_test
