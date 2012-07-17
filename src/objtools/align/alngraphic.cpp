@@ -52,8 +52,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
 USING_SCOPE (sequence);
 
-static string kDigitGif[] = {"0.gif", "1.gif", "2.gif", "3.gif", "4.gif",
-                             "5.gif", "6.gif", "7.gif", "8.gif", "9.gif"};
+static char* kDigitGif[] = {"0.gif", "1.gif", "2.gif", "3.gif", "4.gif",
+                            "5.gif", "6.gif", "7.gif", "8.gif", "9.gif"};
 
 static const TSeqPos kScoreMargin = 50;
 static const TSeqPos kScoreLength = 500;
@@ -83,12 +83,12 @@ static const int kDeflineLength = 55;
 static const int kOverlapDiff = 5;
 
 //gif images
-static const string kGifWhite = "white.gif";
-static const string kGifMaster ="query_no_scale.gif";
-static const string kGifScore = "score.gif";
-static const string kGifGrey = "grey.gif";
-static const string kGifScale = "scale.gif";
-static const string kGifBlack = "black.gif";
+static const char* kGifWhite  = "white.gif";
+static const char* kGifMaster ="query_no_scale.gif";
+static const char* kGifScore  = "score.gif";
+static const char* kGifGrey   = "grey.gif";
+static const char* kGifScale  = "scale.gif";
+static const char* kGifBlack  = "black.gif";
 
 static string s_GetGif(int bits){
     string gif = NcbiEmptyString;
