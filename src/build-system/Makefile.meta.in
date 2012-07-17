@@ -43,6 +43,7 @@ DEPFLAGS_POST = @DEPFLAGS_POST@
 obj_ext   = @obj_ext@
 EGREP     = @EGREP@
 EGREP_Q   = @EGREP_Q@
+OSTYPE    = @OSTYPE@
 
 deactivate = unlink
 @IF_DEACTIVATING@ deactivate = deactivate

@@ -28,8 +28,16 @@ $(builddir)/projects.pseudo.d: $(builddir)/projects.pseudo.c
 
 -include $(builddir)/projects.pseudo.d
 
-# This file contains the actual patterns to grep for, formed by
-# prepending "build/" to each original pattern as an anchor.
+# $(RELEVANT_FILE) contains the actual patterns to grep for, formed by
+# prepending "build/" to each original pattern as an anchor.  Creating
+# it correctly requires a kludge under Cygwin. :-/
+
+ifeq "$(OSTYPE)" "cygwin"
+  PATTERN_FILTER = | tr -d '\r'
+else
+  PATTERN_FILTER =
+endif
+
 RELEVANT_FILE = $(builddir)/relevant.patterns
 $(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
 	@if test -s "$(PROJECTS)"; then \
@@ -38,14 +46,14 @@ $(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
 	      $(PROJECTS); \
 	else \
 	    echo '.*'; \
-	fi > $@
+	fi $(PATTERN_FILTER) > $@
 
 IRRELEVANT_FILE = $(builddir)/irrelevant.patterns
 $(IRRELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
-	echo '^$$' > $@
+	echo '^$$' $(PATTERN_FILTER) > $@
 ifneq "$(wildcard $(PROJECTS_))" ""
 	sed -ne 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:; s@^-@build/@p' $(PROJECTS) \
-	    >> $@
+	    $(PATTERN_FILTER) >> $@
 endif
 
 # Commands to see whether project directories are relevant.
@@ -63,11 +71,13 @@ $(RELEVANT_SUB_FILE): $(RELEVANT_FILE)
 	        path=`dirname $$path` ; \
 	        echo "$$path/\$$"; \
 	    done; \
-	done < $(RELEVANT_FILE) | sort -u > $(RELEVANT_SUB_FILE)
+	done < $(RELEVANT_FILE) | \
+	    sort -u $(PATTERN_FILTER) > $(RELEVANT_SUB_FILE)
 
 IRRELEVANT_SUB_FILE = $(builddir)/irrelevant.prefixes
 $(IRRELEVANT_SUB_FILE): $(IRRELEVANT_FILE)
-	grep -v '[^^]\$$$$' $(IRRELEVANT_FILE) > $(IRRELEVANT_SUB_FILE)
+	grep -v '[^^]\$$$$' $(IRRELEVANT_FILE) \
+	    $(PATTERN_FILTER) > $(IRRELEVANT_SUB_FILE)
 
 auto-relevance.mk: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 	@(if $(call is_relevant,,_SUB) ; then echo "RELEVANT_SUB = 1" ; fi ; \
