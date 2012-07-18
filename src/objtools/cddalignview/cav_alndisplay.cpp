@@ -1038,7 +1038,7 @@ int AlignmentDisplay::DumpFASTA(int firstCol, int lastCol, int nColumns,
     return CAV_SUCCESS;
 }
 
-const string& AlignmentDisplay::GetColumnColor(int alnLoc, double conservationThreshhold) const
+const string AlignmentDisplay::GetColumnColor(int alnLoc, double conservationThreshhold) const
 {
     // standard probabilities (calculated by BLAST using BLOSUM62 - see conservation_colorer.cpp in Cn3D++)
     typedef map < char , double > Char2Double;

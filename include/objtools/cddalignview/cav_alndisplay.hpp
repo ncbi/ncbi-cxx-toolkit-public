@@ -119,7 +119,7 @@ public:
     int GetLastAlignedLoc(void) const { return lastAlnLoc; }
 
     static const double SHOW_IDENTITY;
-    const string& GetColumnColor(int alnLoc, double conservationThreshhold) const;
+    const string GetColumnColor(int alnLoc, double conservationThreshhold) const;
 
     // DumpText - plain text or HTML output controlled by 'options'
     int DumpText(CNcbiOstream& os, unsigned int options,
