@@ -743,7 +743,7 @@ void CValidError_desc::ValidateUser
         return;
     }
     if ( !usr.IsSetData() || usr.GetData().size() == 0) {
-        if (! NStr::EqualNocase(oi.GetStr(), "NcbiAutofix")) {
+        if (! NStr::EqualNocase(oi.GetStr(), "NcbiAutofix") && ! NStr::EqualNocase(oi.GetStr(), "Unverified")) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
                     "User object with no data", *m_Ctx, desc);
             return;
