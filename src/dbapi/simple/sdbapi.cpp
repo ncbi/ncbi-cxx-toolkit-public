@@ -1978,9 +1978,10 @@ CQueryImpl::Execute(void)
 {
     x_CheckCanWork();
 
-    x_Close();
-    x_InitBeforeExec();
     try {
+        x_Close();
+        x_InitBeforeExec();
+
         m_Stmt->ClearParamList();
         ITERATE(TParamsMap, it, m_Params) {
             const SQueryParamInfo& info = it->second;
@@ -1998,9 +1999,10 @@ CQueryImpl::ExecuteSP(CTempString sp)
 {
     x_CheckCanWork();
 
-    x_Close();
-    x_InitBeforeExec();
     try {
+        x_Close();
+        x_InitBeforeExec();
+
         m_CallStmt = m_DBImpl->GetConnection()->GetCallableStatement(sp);
         ITERATE(TParamsMap, it, m_Params) {
             const SQueryParamInfo& info = it->second;
