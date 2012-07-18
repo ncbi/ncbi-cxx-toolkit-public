@@ -69,3 +69,9 @@ use m_NewCleanup.x_RemoveRedundantComment
 {
     Seq-feat.data.gene AND Seq-feat
 }
+
+use m_NewCleanup.x_RemoveEmptyUserObject
+{
+    Bioseq.descr,
+    Bioseq-set.descr
+}

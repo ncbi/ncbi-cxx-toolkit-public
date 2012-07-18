@@ -97,6 +97,7 @@ void x_ExtendedCleanupBioseq_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_fe
   void x_ExtendedCleanupBioseq_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
+  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_ETC( CSeq_descr & arg0 );
   void x_ExtendedCleanupBioseq_inst_inst_ext_ext_map_map_E( CSeq_feat & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_feat_ >
 void x_ExtendedCleanupBioseq_inst_inst_ext_ext_map_map( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );

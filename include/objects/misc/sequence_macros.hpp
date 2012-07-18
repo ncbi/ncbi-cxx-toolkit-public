@@ -1045,6 +1045,10 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
     ( (Var).IsSet##Fld() && (Var).Get##Fld().Is##Chs() && \
       (Var).Get##Fld().Get##Chs() == (Value) )
 
+#define FIELD_CHOICE_EMPTY( Var, Fld, Chs) \
+    ( ! (Var).IsSet##Fld() || ! (Var).Get##Fld().Is##Chs() || \
+      (Var).Get##Fld().Get##Chs().empty() )
+
 /// CALL_IF_SET base macro
 
 #define CALL_IF_SET( Func, Var, Fld ) \

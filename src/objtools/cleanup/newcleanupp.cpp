@@ -9219,6 +9219,44 @@ void CNewCleanup_imp::x_RemoveRedundantComment( CGene_ref& gene, CSeq_feat & seq
     }
 }
 
+void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
+{
+    EDIT_EACH_SEQDESC_ON_SEQDESCR( descr_iter, seq_descr ) {
+        CSeqdesc &desc = **descr_iter;
+        if( ! FIELD_IS(desc, User) ) {
+            continue;
+        }
+
+        bool needs_removal = false;
+
+        // remove user-objects with no type
+        CUser_object & user_obj = GET_MUTABLE(desc, User);
+        if( ! FIELD_IS_SET(user_obj, Type) || 
+            ( FIELD_IS(user_obj.GetType(), Str) && user_obj.GetType().GetStr().empty() ) ) 
+        {
+            needs_removal = true;
+        }
+
+        // get type string, if any
+        const string *pTypeStr = &kEmptyStr;
+        if( FIELD_IS_SET_AND_IS(user_obj, Type, Str) ) {
+            pTypeStr = &(user_obj.GetType().GetStr());
+        }
+
+        // remove user-objects with no data (except certain types)
+        if( RAW_FIELD_IS_EMPTY_OR_UNSET(user_obj, Data) && 
+            ! NStr::EqualNocase(*pTypeStr, "NcbiAutofix") )
+        {
+            needs_removal = true;
+        }
+
+        if( needs_removal ) {
+            ERASE_SEQDESC_ON_SEQDESCR(descr_iter, seq_descr);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        }
+    }
+}
+
 void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )
 {
     EDIT_EACH_PCRREACTION_IN_PCRREACTIONSET( reaction_iter, pcr_reaction_set ) {
