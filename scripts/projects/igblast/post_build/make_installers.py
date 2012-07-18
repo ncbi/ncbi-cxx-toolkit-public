@@ -38,7 +38,8 @@ def main(): #IGNORE:R0911
     if platform == "FreeBSD32" or platform.startswith("SunOS"):
         return do_nothing(platform)
     if platform == "IntelMAC":
-        return mac_post_build(installdir, blast_version)
+        return do_nothing(platform)
+#return mac_post_build(installdir, blast_version)
     
     print >> sys.stderr, "Unknown OS identifier: " + platform
     print >> sys.stderr, "Exiting post build script."
