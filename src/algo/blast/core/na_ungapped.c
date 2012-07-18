@@ -1685,11 +1685,12 @@ Int2 MB_IndexedWordFinder(
         (T_MB_IdbCheckOid)lookup_wrap->check_index_oid;
     T_MB_IdbGetResults get_results = 
                         (T_MB_IdbGetResults)lookup_wrap->read_indexed_db;
+    Int4 last_vol_idx = LAST_VOL_IDX_NULL;
 
     /* In the case oid belongs to the non-indexed part of the
        database, route the call to the original word finder.
     */
-    if( check_oid( oid ) == eNotIndexed ) {
+    if( check_oid( oid, &last_vol_idx ) == eNotIndexed ) {
         return BlastNaWordFinder(
                 subject, query, query_info, lookup_wrap, matrix,word_params,
                 ewp, offset_pairs, max_hits, init_hitlist, ungapped_stats );

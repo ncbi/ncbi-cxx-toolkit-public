@@ -2174,10 +2174,6 @@ CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
             kArgIndexName, "string",
             "MegaBLAST database index name",
             CArgDescriptions::eString );
-    arg_desc.AddDefaultKey(
-            kArgOldStyleIndex, "boolean",
-            "Use old style index (deprecated)",
-            CArgDescriptions::eBoolean, kDfltArgOldStyleIndex );
     arg_desc.SetCurrentGroup( "" );
 }
 
@@ -2218,6 +2214,7 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
 
             if( args.Exist( kArgIndexName ) && args[kArgIndexName] ) {
                 index_name = args[kArgIndexName].AsString();
+                old_style_index = true;
             }
             else if( args.Exist( kArgDb ) && args[kArgDb] ) {
                 index_name = args[kArgDb].AsString();
@@ -2227,10 +2224,6 @@ CMbIndexArgs::ExtractAlgorithmOptions(const CArgs& args,
                         "Can not deduce database index name" );
             }
     
-            if( args.Exist( kArgOldStyleIndex ) ) {
-                old_style_index = args[kArgOldStyleIndex].AsBoolean();
-            }
-
             opts.SetUseIndex( true, index_name, force_index, old_style_index );
         }
     }

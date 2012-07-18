@@ -52,6 +52,10 @@ typedef struct LookupTableWrap {
                               from an indexed database */
    void* check_index_oid; /**< function used to check if seeds
                                for a given oid are present */
+   void * end_search_indication; /**< function used to report that
+                                      a thread is done iterating over
+                                      the database in preliminary
+                                      search */
    void* lookup_callback;    /**< function used to look up an
                                   index->q_off pair */
 } LookupTableWrap;

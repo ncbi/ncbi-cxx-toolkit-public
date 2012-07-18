@@ -77,6 +77,29 @@ class CIndexedDbException : public CException
 };
 
 //------------------------------------------------------------------------------
+/// Type of a callback to set the concurrency state in the index structure.
+/// @param multiple_threads 'true' if MegaBLAST is run with multiple threads
+typedef void (*DbIndexSetUsingThreadsFnType)( bool multiple_threads );
+
+/// Return the appropriate callback to set the concurrency state in the index
+/// structure.
+/// @return No-op function if indexing is not used;
+///         otherwise - the appropriate callback.
+extern DbIndexSetUsingThreadsFnType GetDbIndexSetUsingThreadsFn();
+
+//------------------------------------------------------------------------------
+/// Type of a callback to provide the number of threads to the indexing
+/// library, when multi-threaded search is used.
+/// @param n_threads number of threads
+typedef void (*DbIndexSetNumThreadsFnType)( size_t n_threads );
+
+/// Return the appropriate callback to set the number of threads in the 
+/// index structure.
+/// @return No-op function if indexing is not used;
+///         otherwise - the appropriate callback.
+extern DbIndexSetNumThreadsFnType GetDbIndexSetNumThreadsFn();
+
+//------------------------------------------------------------------------------
 /// Type of a callback to set the query information in the index structure.
 /// @param lt_wrap lookup table wrapper object
 /// @param locs_wrap lookup (unmasked) segments

@@ -55,13 +55,8 @@
 // #define TRACE_DBINDEX 1
 
 #ifdef TRACE_DBINDEX
-//#   define ENABLE_IDX_TRACE SetDiagTrace( eDT_Enable )
-//#   define DISABLE_IDX_TRACE SetDiagTrace( eDT_Disable )
-//#   define IDX_TRACE(_m) _TRACE(_m) {
 #   define IDX_TRACE(_m) { std::cerr << _m << std::endl; }
 #else
-//#   define ENABLE_IDX_TRACE
-//#   define DISABLE_IDX_TRACE
 #   define IDX_TRACE(_m)
 #endif
 
@@ -82,12 +77,12 @@ extern "C" {
     @return Word size used for search.
 */
 static unsigned long s_MB_IdbGetResults(
-        // void * idb_v,
         Int4 oid_i, Int4 chunk_i,
         BlastInitHitList * init_hitlist );
 
-static int s_MB_IdbCheckOid( Int4 oid );
+static int s_MB_IdbCheckOid( Int4 oid, Int4 * last_vol_oid );
 
+static void s_MB_IdxEndSearchIndication( Int4 last_vol_id );
 }
 
 BEGIN_NCBI_SCOPE
@@ -99,6 +94,16 @@ USING_SCOPE( ncbi::blastdbindex );
 /// Get the minimum acceptable word size to use with indexed search.
 /// @return the minimum acceptable word size
 int MinIndexWordSize() { return 16; }
+
+/** No-op callback for setting concurrency state. 
+    @sa DbIndexSetUsingThreadsFnType()
+*/
+static void NullSetUsingThreads( bool ) {}
+
+/** No-op callback for setting the number of threads.
+    @sa DbIndexSetNumThreadsFnType()
+*/
+static void NullSetNumThreads( size_t ) {}
 
 /** No-op callback for setting query info. Used when index search is not enabled.
     @sa DbIndexSetQueryInfoFnType()
@@ -113,6 +118,12 @@ static void NullSetQueryInfo(
 static void NullRunSearch(
         BLAST_SequenceBlk * , 
         LookupTableOptions * , BlastInitialWordOptions * ) {}
+
+/** Global pointer to the appropriate callback to set the state of concurrency. */
+static DbIndexSetUsingThreadsFnType SetUsingThreadsFn = &NullSetUsingThreads;
+
+/** Global pointer to the appropriate callback to set the number of threads. */
+static DbIndexSetNumThreadsFnType SetNumThreadsFn = &NullSetNumThreads;
 
 /** Global pointer to the appropriate callback to set query info, based
     on whether or not index search is enabled.
@@ -146,12 +157,20 @@ public:
 
     /** Check whether any results were reported for a given subject sequence.
 
-        @param oid The subject sequence id.
+        @param oid The subject sequence id
+        @param last_vol_id The volume id checked just before oid
         @return 0 --- if oid was handled by indexed search but no seeds found;
                 1 --- if oid was handled by indexed search and seeds were found;
                 2 --- if oid was not handled by indexed search
     */
-    virtual int CheckOid( Int4 oid ) = 0;
+    virtual int CheckOid( Int4 oid, Int4 * last_vol_id ) = 0;
+
+    /** Function used by threads to indicate that they are done with
+        iterating over the database sequences.
+
+        @param last_vol_id the last accessed volime index
+    */
+    virtual void EndSearchIndication( Int4 last_vol_id ) = 0;
 
     /** Run preliminary indexed search functionality.
 
@@ -220,7 +239,7 @@ private:
                                     that database index. */
 
     vector< string > index_names_;  /**< List of index volume names. */
-    CRef< CDbIndex > index_;   /**< Currently loaded index */
+    CRef< CDbIndex > index_;        /**< Currently loaded index */
 
 public:
 
@@ -240,13 +259,16 @@ public:
         @return 0 --- if no seeds were found for oid;
                 1 --- if seeds were found for oid;
     */
-    virtual int CheckOid( Int4 oid )
+    virtual int CheckOid( Int4 oid, Int4 * )
     {
         TSeqMap::size_type i = LocateIndex( oid );
         const CConstRef< CDbIndex::CSearchResults > & results = results_[i];
         if( i > 0 ) oid -= seqmap_[i-1];
         return results->CheckResults( oid ) ? eHasResults : eNoResults;
     }
+
+    /** Not used */
+    virtual void EndSearchIndication( Int4 ) {}
 
 private:
 
@@ -302,26 +324,37 @@ public:
 
 //------------------------------------------------------------------------------
 /** Index wrapper for new style MegaBLAST indexing functionality.
+
+    Each leaf volume of the BLAST database is indexed separately (with
+    possibly multiple index volumes) or not indexed at all. For the database
+    volumes that are not indexed processing is delegated back to the default
+    BLAST search.
 */
 class CIndexedDb_New : public CIndexedDb
 {
 private:
 
+    /** Alias for a vector os strings. */
     typedef std::vector< std::string > TStrVec;
 
+    /** Information about one leaf index volume. */
     struct SVolumeDescriptor
     {
-        SIZE_TYPE start_oid;
-        SIZE_TYPE n_oids;
-        std::string name;
-        bool has_index;
+        SIZE_TYPE start_oid;    ///< OId of the first sequence of the volume.
+        SIZE_TYPE n_oids;       ///< Number of sequences in the volume.
+        std::string name;       ///< Fully qualified name of the volume.
+        bool has_index;         ///< 'true' if the volume is indexed.
 
+        /** Volumes are compared by their starting ordinal ids. */
         friend bool operator<( 
                 const SVolumeDescriptor & a, const SVolumeDescriptor & b )
         {
             return a.start_oid < b.start_oid;
         }
 
+        /** This is only used for debug tracing. Print out information
+            about the volume.
+        */
         friend std::ostream & operator<<( 
                 std::ostream & os, const SVolumeDescriptor & vd )
         {
@@ -331,16 +364,45 @@ private:
         }
     };
 
+    /// List of leaf index volumes.
     typedef std::vector< SVolumeDescriptor > TVolList;
 
+    /// This type captures the seeds found by search of an index volume.
     typedef CConstRef< CDbIndex::CSearchResults > TVolResults;
-    typedef std::vector< TVolResults > TResults;
 
+    /** Reference count for the volume results.
+
+        Holds results for a given volume only while there is a search
+        thread potentially in need of those results.
+    */
+    struct SVolResults
+    {
+        SVolResults() : ref_count( 0 ) {}
+
+        TVolResults res; ///< Seed set or null.
+        int ref_count;   ///< How many threads still need the result set.
+    };
+
+    /// List of reference counted result holders.
+    typedef std::vector< SVolResults > TResultsHolder;
+
+    /** Generate a list of BLAST database names from a single string.
+
+        @param db_spec string containing space separated list of names
+        @param db_names [out] resulting list of database names
+    */
     static void ParseDBNames( const std::string db_spec, TStrVec & db_names );
 
+    /** Generate a list of leaf database volumes from a list of
+        database names.
+
+        @param db_names BLAST database names
+        @param db_vols [out] resulting list of leaf database volume names
+    */
     static void EnumerateDbVolumes( 
             const TStrVec & db_names, TStrVec & db_vols );
 
+    /** This is only used for debugging output. */
     static void TraceNames( const TStrVec & names )
     {
 #ifdef TRACE_DBINDEX
@@ -348,6 +410,7 @@ private:
 #endif
     }
 
+    /** This is only used for debugging output. */
     void TraceVolumes( void )
     {
 #ifdef TRACE_DBINDEX
@@ -355,12 +418,42 @@ private:
 #endif
     }
 
+    /** Auxiliary function thet returns the oid value
+        that is one more than the largest oid used so far.
+    */
     SIZE_TYPE GetNextUnusedOID( void ) const;
 
-    void UpdateIndex( Int4 oid );
+    /** Update the seed sets, if necessary.
 
+        If oid belongs to the volume at vol_idx, then does nothing.
+        Otherwise finds the index of the volume containing oid and
+        saves it in *vol_idx. Updates the reference counts of all
+        volumes between the old and new values of *vol_idx, releasing
+        the result sets if necessary. If the results for new volume
+        are not yet available, searches the new volume and stores
+        the results.
+
+        @param oid ordinal id of the subject sequence
+        @param vol_idx [in/out] index of the volume containing ordinal
+                       id of the sequence last accessed by this thread;
+                       updated to the index of the volume containing
+                       oid
+    */
+    void UpdateIndex( Int4 oid, Int4 * vol_idx );
+
+    /* Add index volumes corresponding to the given database volume.
+
+       If an index exists for the given database volume, adds information
+       about all corresponding index volumes to volumes_. Otherwise a single
+       entry is added to volumes_ with has_index flag set to 'false'.
+
+       @param vol_name database volume name
+       @param idx_not_resolved [out] returns 'true' if the database volume
+                               has no associated index
+    */
     void AddIndexInfo( const std::string & vol_name, bool & idx_not_resolved );
 
+    /** Find a volume containing the given subject ordinal id. */
     TVolList::const_iterator FindVolume( Int4 oid ) const
     {
         SVolumeDescriptor s = { oid };
@@ -370,12 +463,14 @@ private:
         return --r;
     }
 
-    TVolList volumes_;
-    // TVolList::const_iterator curr_vol_;
-    // CRef< CDbIndex > index_;
-    // CConstRef< CDbIndex::CSearchResults > results_;
-    TResults results_;
-    CDbIndex::SSearchOptions sopt_;
+    TVolList volumes_;                  ///< index volume descriptors
+    TResultsHolder results_holder_;     ///< reference counted seed set holders
+    CFastMutex mtx_;                    ///< mutex used for thread sync
+    BLAST_SequenceBlk * queries_;       ///< query data (from BLAST)
+    CDbIndex::SSearchOptions sopt_;     ///< common search parameters
+    bool multiple_threads_;             /**< flag indicating that multithreading
+                                             is in effect */
+    size_t n_threads_;                  ///< number of search threads running
 
 public:
 
@@ -400,11 +495,19 @@ public:
         @note Overrides CIndexedDb::CheckOid().
 
         @param oid The subject sequence id.
+        @param last_vol_id The volume id checked just before oid
         @return 0 --- if oid was handled by indexed search but no seeds found;
                 1 --- if oid was handled by indexed search and seeds were found;
                 2 --- if oid was not handled by indexed search
     */
-    virtual int CheckOid( Int4 oid );
+    virtual int CheckOid( Int4 oid, Int4 * last_vol_id );
+
+    /** Function used by threads to indicate that they are done with
+        iterating over the database sequences.
+
+        @param last_vol_id the last accessed volime index
+    */
+    virtual void EndSearchIndication( Int4 last_vol_id );
 
     /** Run preliminary indexed search functionality.
 
@@ -434,6 +537,30 @@ public:
             CDbIndex::TSeqNum oid,
             CDbIndex::TSeqNum chunk,
             BlastInitHitList * init_hitlist ) const;
+
+    /** Set the concurrency status.
+
+        @param multiple_threads 'true' if concurrent search is being performed;
+                                'false' otherwise
+    */
+    void SetMultipleThreads( bool multiple_threads )
+    { 
+        IDX_TRACE( "setting multiple threads to " << 
+                   (multiple_threads ? "true" : "false") );
+        multiple_threads_ = multiple_threads;
+        if( multiple_threads_ ) n_threads_ = 0;
+    }
+
+    /** Set the number of threads used for concurrent search.
+
+        @param n_threads number of search threads.
+    */
+    void SetNumThreads( size_t n_threads )
+    {
+        ASSERT( n_threads > 1 );
+        IDX_TRACE( "setting number of search threads to " << n_threads );
+        n_threads_ = n_threads;
+    }
 };
 
 //------------------------------------------------------------------------------
@@ -455,6 +582,31 @@ static void IndexedDbRunSearch(
 }
 
 //------------------------------------------------------------------------------
+/// Set state of concurrency in the index structure.
+/// @param multiple_threads 'true' if multiple search threads are used;
+///                         'false' otherwise
+static void IndexedDbSetUsingThreads( bool multiple_threads )
+{
+    CIndexedDb * idb( CIndexedDb::Index_Set_Instance.GetPointerOrNull() );
+    if( idb == 0 ) return;
+    CIndexedDb_New * idbn( dynamic_cast< CIndexedDb_New * >( idb ) );
+    ASSERT( idbn != 0 );
+    idbn->SetMultipleThreads( multiple_threads );
+}
+
+//------------------------------------------------------------------------------
+/// Set the number of concurrent search threads in the index structure.
+/// @param n_threads number of concurrent search threads.
+static void IndexedDbSetNumThreads( size_t n_threads )
+{
+    CIndexedDb * idb( CIndexedDb::Index_Set_Instance.GetPointerOrNull() );
+    if( idb == 0 ) return;
+    CIndexedDb_New * idbn( dynamic_cast< CIndexedDb_New * >( idb ) );
+    ASSERT( idbn != 0 );
+    idbn->SetNumThreads( n_threads );
+}
+
+//------------------------------------------------------------------------------
 /// Set information about unmasked query segments.
 /// @param lt_wrap lookup table information to update
 /// @param locs_wrap set of unmasked query segments
@@ -464,9 +616,9 @@ static void IndexedDbSetQueryInfo(
 {
     CIndexedDb * idb( CIndexedDb::Index_Set_Instance.GetPointerOrNull() );
     if( idb == 0 ) return;
-    // lt_wrap->lut = (void *)idb;
     lt_wrap->read_indexed_db = (void *)(&s_MB_IdbGetResults);
     lt_wrap->check_index_oid = (void *)(&s_MB_IdbCheckOid);
+    lt_wrap->end_search_indication = (void *)(&s_MB_IdxEndSearchIndication);
     idb->SetQueryInfo( locs_wrap );
 }
 
@@ -517,7 +669,7 @@ void CIndexedDb_New::AddIndexInfo(
     }
     catch( CException & e ) {
         ERR_POST( 
-            Info << "index superheader for volume " << vol_name 
+            Error << "index superheader for volume " << vol_name 
                  << " was not loaded (" << e.what() << ")" );
         idx_not_resolved = true;
     }
@@ -594,6 +746,7 @@ void CIndexedDb_New::AddIndexInfo(
 
 //------------------------------------------------------------------------------
 CIndexedDb_New::CIndexedDb_New( const string & indexname, bool & partial )
+    : queries_( 0 ), multiple_threads_( false ), n_threads_( 1 )
 {
     // ENABLE_IDX_TRACE;
     IDX_TRACE( "creating new style CIndexedDb object" );
@@ -620,6 +773,33 @@ CIndexedDb_New::CIndexedDb_New( const string & indexname, bool & partial )
     IDX_TRACE( "final index volume list:" );
     TraceVolumes();
 
+    // Check if any volume has index. If not, do not use indexing.
+    //
+    {
+        bool has_index( false );
+
+        ITERATE( TVolList, i, volumes_ ) 
+        { 
+            if( i->has_index ) {
+                has_index = true;
+                break;
+            }
+        }
+
+        if( !has_index ) {
+            NCBI_THROW( CDbIndex_Exception, eBadOption,
+                        "no database volume has an index" );
+        }
+    }
+
+    // Initialize the results contexts.
+    //
+    results_holder_.resize( volumes_.size() );
+
+    // Set up callback functions.
+    //
+    SetUsingThreadsFn = &IndexedDbSetUsingThreads;
+    SetNumThreadsFn = &IndexedDbSetNumThreads;
     SetQueryInfoFn = &IndexedDbSetQueryInfo;
     RunSearchFn = &IndexedDbRunSearch;
 }
@@ -628,62 +808,85 @@ CIndexedDb_New::CIndexedDb_New( const string & indexname, bool & partial )
 CIndexedDb_New::~CIndexedDb_New()
 {
     IDX_TRACE( "destroying new style CIndexedDb object" );
-    // DISABLE_IDX_TRACE;
 }
 
-/*
 //------------------------------------------------------------------------------
-void CIndexedDb_New::UpdateIndex( Int4 oid )
+void CIndexedDb_New::UpdateIndex( Int4 oid, Int4 * vol_idx_p )
 {
-    bool new_volume( false );
+    Int4 & vol_idx( *vol_idx_p );
+    Int4 new_vol_idx;
+    bool find_volume( true );
 
-    while( curr_vol_ != volumes_.end() && 
-            curr_vol_->start_oid + curr_vol_->n_oids < (SIZE_TYPE)oid ) {
-        ++curr_vol_;
-        new_volume = true;
+    if( vol_idx != LAST_VOL_IDX_INIT ) {
+        const SVolumeDescriptor & vd( volumes_[vol_idx] );
+        if( vd.start_oid + vd.n_oids > (SIZE_TYPE)oid ) find_volume = false;
     }
 
-    if( !new_volume ) return;
+    if( !find_volume ) return;
+    TVolList::const_iterator vi( FindVolume( oid ) );
+    new_vol_idx = vi - volumes_.begin();
+    if( !vi->has_index ) return;
+    CFastMutexGuard lock( mtx_ );
+    SVolResults & res( results_holder_[new_vol_idx] );
+    Int4 min_vol_idx( vol_idx == -1 ? 0 : vol_idx );
 
-    if( curr_vol_ == volumes_.end() ) {
-        size_t n_oids( 
-                volumes_.empty() 
-                    ? 0 
-                    : volumes_.rbegin()->start_oid + volumes_.rbegin()->n_oids );
-        std::ostringstream os;
-        os << "requested oid " << oid << " is greater than max reported "
-           << "by the database: " << n_oids;
-        NCBI_THROW( CIndexedDbException, eDBMismatch, os.str() );
-    }
-
-    if( curr_vol_->has_index ) {
-        index_ = CDbIndex::Load( curr_vol_->name );
-
-        if( index_ == 0 ){
+    if( res.ref_count <= 0 ) {
+        res.ref_count += n_threads_;
+        IDX_TRACE( "loading volume "  << new_vol_idx << ": " << vi->name );
+        ASSERT( vi->has_index );
+        CRef< CDbIndex > index( CDbIndex::Load( vi->name ) );
+        
+        if( index == 0 ) {
             std::ostringstream os;
-            os << "CIndexedDb: could not load index volume: " 
-               << curr_vol_->name;
+            os << "CIndexedDb: could not load index volume: " << vi->name;
             NCBI_THROW( CIndexedDbException, eIndexInitError, os.str() );
+        }
+
+        IDX_TRACE( "searching volume " << vi->name );
+        res.res = index->Search( queries_, locs_wrap_->getLocs(), sopt_ );
+        IDX_TRACE( "results loaded for " << vi->name );
+    }
+
+    for( ; min_vol_idx < new_vol_idx; ++min_vol_idx ) {
+        if( --results_holder_[min_vol_idx].ref_count == 0 ) {
+            results_holder_[min_vol_idx].res.Reset( 0 );
+            IDX_TRACE( "unloaded results for volume " << 
+                       volumes_[min_vol_idx].name );
         }
     }
 
-    IDX_TRACE( 
-            "new index volume " << curr_vol_->name << 
-            " starting at oid " << curr_vol_->start_oid <<
-            " containing " << curr_vol_->n_oids << " sequences; " <<
-            (curr_vol_->has_index ? "indexed" : "not indexed") );
+    vol_idx = new_vol_idx;
 }
-*/
 
 //------------------------------------------------------------------------------
-int CIndexedDb_New::CheckOid( Int4 oid )
+int CIndexedDb_New::CheckOid( Int4 oid, Int4 * last_vol_idx )
 {
-    // UpdateIndex( oid );
-    TVolList::const_iterator vi( FindVolume( oid ) );
+    if( *last_vol_idx == LAST_VOL_IDX_NULL ) {
+        TVolList::const_iterator vi( FindVolume( oid ) );
+        if( vi->has_index ) return eHasResults;
+        else return eNotIndexed;
+    }
+
+    UpdateIndex( oid, last_vol_idx );
+    TVolList::const_iterator vi( volumes_.begin() + *last_vol_idx );
     if( !vi->has_index ) return eNotIndexed;
     oid -= vi->start_oid;
-    return results_[vi - volumes_.begin()]->CheckResults( oid ) 
-                ? eHasResults : eNoResults;
+    return results_holder_[*last_vol_idx].res->CheckResults( oid ) ?
+                eHasResults : eNoResults;
+}
+
+//------------------------------------------------------------------------------
+void CIndexedDb_New::EndSearchIndication( Int4 last_vol_idx )
+{
+    CFastMutexGuard lock( mtx_ );
+    if( last_vol_idx == LAST_VOL_IDX_INIT ) last_vol_idx = 0;
+
+    for( Int4 i( last_vol_idx ); i < (Int4)volumes_.size(); ++i ) {
+        if( --results_holder_[i].ref_count == 0 ) {
+            results_holder_[i].res.Reset( 0 );
+            IDX_TRACE( "unloaded results for volume " << volumes_[i].name );
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -691,29 +894,11 @@ void CIndexedDb_New::DoPreSearch(
         BLAST_SequenceBlk * queries, LookupTableOptions * lut_options, 
         BlastInitialWordOptions * word_options )
 {
-    results_.clear();
+    queries_ = queries;
     sopt_.word_size = lut_options->word_size;
     sopt_.two_hits = word_options->window_size;
     IDX_TRACE( "set word size to " << sopt_.word_size );
     IDX_TRACE( "set two_hits to " << sopt_.two_hits );
-
-    ITERATE( TVolList, vi, volumes_ ) {
-        results_.push_back( TVolResults( null ) );
-
-        if( vi->has_index ) {
-            CRef< CDbIndex > index( CDbIndex::Load( vi->name ) );
-
-            if( index == 0 ) {
-                std::ostringstream os;
-                os << "CIndexedDb: could not load index volume: " << vi->name;
-                NCBI_THROW( CIndexedDbException, eIndexInitError, os.str() );
-            }
-
-            TVolResults & results( *results_.rbegin() );
-            IDX_TRACE( "searching volume " << vi->name );
-            results = index->Search( queries, locs_wrap_->getLocs(), sopt_ );
-        }
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -727,7 +912,8 @@ unsigned long CIndexedDb_New::GetResults(
     ASSERT( vi->has_index );
     oid -= vi->start_oid;
     BlastInitHitList * res( 0 );
-    const TVolResults & vr( results_[vi - volumes_.begin()] );
+    const TVolResults & vr( results_holder_[vi - volumes_.begin()].res );
+    ASSERT( vr != 0 );
 
     if( (res = vr->GetResults( oid, chunk )) != 0 ) {
         BlastInitHitListMove( init_hitlist, res );
@@ -886,27 +1072,43 @@ unsigned long CIndexedDb_Old::GetResults(
 std::string DbIndexInit( 
         const string & indexname, bool old_style, bool & partial )
 {
+    std::string result;
     partial = false;
 
-    try {
-        if( old_style ) {
-            CIndexedDb::Index_Set_Instance.Reset( 
-                    new CIndexedDb_Old( indexname ) );
-        }
-        else {
+    if( !old_style ) {
+        try {
             CIndexedDb::Index_Set_Instance.Reset(
                     new CIndexedDb_New( indexname, partial ) );
+
+            if( CIndexedDb::Index_Set_Instance != 0 ) return "";
+            else return "index allocation error";
         }
+        catch( CException & e ) {
+            result = e.what();
+        }
+    }
+
+    try{
+        CIndexedDb::Index_Set_Instance.Reset(
+                new CIndexedDb_Old( indexname ) );
 
         if( CIndexedDb::Index_Set_Instance != 0 ) return "";
         else return "index allocation error";
     }
     catch( CException & e ) {
-        return e.what();
+        result += '\n' + e.what();
     }
+
+    return result;
 }
 
 //------------------------------------------------------------------------------
+DbIndexSetUsingThreadsFnType GetDbIndexSetUsingThreadsFn() 
+{ return SetUsingThreadsFn; }
+
+DbIndexSetNumThreadsFnType GetDbIndexSetNumThreadsFn() 
+{ return SetNumThreadsFn; }
+
 DbIndexSetQueryInfoFnType GetDbIndexSetQueryInfoFn() { return SetQueryInfoFn; }
 DbIndexRunSearchFnType GetDbIndexRunSearchFn() { return RunSearchFn; }
 
@@ -919,31 +1121,32 @@ USING_SCOPE( ncbi::blast );
 extern "C" {
 
 //------------------------------------------------------------------------------
-static int s_MB_IdbCheckOid( Int4 oid )
+static void s_MB_IdxEndSearchIndication( Int4 last_vol_id )
+{
+    return CIndexedDb::Index_Set_Instance->EndSearchIndication( last_vol_id );
+}
+
+//------------------------------------------------------------------------------
+static int s_MB_IdbCheckOid( Int4 oid, Int4 * last_vol_id )
 {
     _ASSERT( oid >= 0 );
-    return CIndexedDb::Index_Set_Instance->CheckOid( oid );
-    // return (CIndexedDb::Index_Set_Instance->CheckOid( oid ) ? 1 : 0);
+    return CIndexedDb::Index_Set_Instance->CheckOid( oid, last_vol_id );
 }
 
 //------------------------------------------------------------------------------
 static unsigned long s_MB_IdbGetResults(
-        // void * idb_v,
         Int4 oid_i, Int4 chunk_i,
         BlastInitHitList * init_hitlist )
 {
-    // _ASSERT( idb_v != 0 );
     _ASSERT( oid_i >= 0 );
     _ASSERT( chunk_i >= 0 );
     _ASSERT( init_hitlist != 0 );
 
-    // CIndexedDb * idb = (CIndexedDb *)idb_v;
     CDbIndex::TSeqNum oid = (CDbIndex::TSeqNum)oid_i;
     CDbIndex::TSeqNum chunk = (CDbIndex::TSeqNum)chunk_i;
 
     return CIndexedDb::Index_Set_Instance->GetResults( 
             oid, chunk, init_hitlist );
-    // return idb->GetResults( oid, chunk, init_hitlist );
 }
 
 } /* extern "C" */

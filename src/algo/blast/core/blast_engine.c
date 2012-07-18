@@ -1142,6 +1142,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
     T_MB_IdbCheckOid check_index_oid = 
         (T_MB_IdbCheckOid)lookup_wrap->check_index_oid;
+    Int4 last_vol_idx = LAST_VOL_IDX_INIT;
 
     BlastInitialWordParametersNew(program_number, word_options, 
       hit_params, lookup_wrap, sbp, query_info, 
@@ -1189,7 +1190,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
        if (seq_arg.oid == BLAST_SEQSRC_ERROR)
            break;
 
-       if( check_index_oid != 0 && check_index_oid( seq_arg.oid ) == 0 ) {
+       if( check_index_oid != 0 && 
+               check_index_oid( seq_arg.oid, &last_vol_idx ) == eNoResults ) {
            continue;
        }
 
@@ -1252,6 +1254,14 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                             query_info, sbp, score_params, seq_src, 
                             seq_arg.seq->gen_code_string);
                if (status) {
+                  /* Tell the indexing library that this thread is done with
+                     preliminary search.
+                  */
+                  if( check_index_oid != 0 ) {
+                    ((T_MB_IdxEndSearchIndication)( 
+                        lookup_wrap->end_search_indication))( last_vol_idx );
+                  }
+         
                   BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
                   return status;
                }
@@ -1318,6 +1328,14 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       }
     }
     
+    /* Tell the indexing library that this thread is done with
+       preliminary search.
+    */
+    if( check_index_oid != 0 ) {
+        ((T_MB_IdxEndSearchIndication)( 
+            lookup_wrap->end_search_indication))( last_vol_idx );
+    }
+
     hsp_list = Blast_HSPListFree(hsp_list);  /* in case we were interrupted */
     BlastSequenceBlkFree(seq_arg.seq);
     itr = BlastSeqSrcIteratorFree(itr);

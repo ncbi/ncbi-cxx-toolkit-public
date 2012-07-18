@@ -42,6 +42,9 @@
 extern "C" {
 #endif
 
+#define LAST_VOL_IDX_INIT (-1)
+#define LAST_VOL_IDX_NULL (-2)
+
 enum EOidState {
     eNoResults = 0,
     eHasResults,
@@ -53,7 +56,12 @@ typedef unsigned long (*T_MB_IdbGetResults)(/* void * idb, */Int4 oid, Int4 chun
                                    BlastInitHitList * init_hitlist);
 
 /** Function pointer type to check index seeds availability for oid. */
-typedef int (*T_MB_IdbCheckOid)( Int4 oid );
+typedef int (*T_MB_IdbCheckOid)( Int4 oid, Int4 * last_vol_id );
+
+/** Function pointer type to indicate end of preliminary search by the
+    thread to the indexing library.
+*/
+typedef void (*T_MB_IdxEndSearchIndication)( Int4 last_vol_id );
 
 /** Finds all runs of a specified number of exact matches between 
  * two nucleotide sequences. Assumes the subject sequence is part

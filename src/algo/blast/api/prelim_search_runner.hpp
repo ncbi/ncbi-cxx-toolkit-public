@@ -85,6 +85,7 @@ public:
                                  m_InternalData.m_Diagnostics->GetPointer(),
                                  m_InternalData.m_FnInterrupt,
                                  m_InternalData.m_ProgressMonitor->Get());
+
         return static_cast<int>(retval);
     }
 

@@ -160,6 +160,11 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
         }
     }
 
+    // Inform indexing library about the number of concurrent
+    // search threads.
+    //
+    GetDbIndexSetNumThreadsFn()( GetNumberOfThreads() );
+
     // ... launch the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
         (*thread)->Run();
@@ -231,6 +236,7 @@ CBlastPrelimSearch::Run()
                         chunk_qf->MakeLocalQueryData( &*m_Options ) );
                 BLAST_SequenceBlk * chunk_queries = 
                     query_data->GetSequenceBlk();
+                GetDbIndexSetUsingThreadsFn()( IsMultiThreaded() );
                 GetDbIndexRunSearchFn()( 
                         chunk_queries, lut_options, word_options );
 
@@ -284,6 +290,7 @@ CBlastPrelimSearch::Run()
         }
     } else {
 
+        GetDbIndexSetUsingThreadsFn()( IsMultiThreaded() );
         GetDbIndexRunSearchFn()( queries, lut_options, word_options );
 
         if (IsMultiThreaded()) {
