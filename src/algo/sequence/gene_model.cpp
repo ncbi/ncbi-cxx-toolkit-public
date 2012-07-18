@@ -567,6 +567,28 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         CSeq_align *fake_transcript_align = new CSeq_align;
         align.Reset(fake_transcript_align);
         fake_transcript_align->Assign(input_align);
+
+        CRef<CSeq_id> prot_id(new CSeq_id);
+        prot_id->Assign(fake_transcript_align->GetSeq_id(0));
+
+        if (m_flags & (fForceTranscribeMrna | fForceTranslateCds) &&
+            !(m_flags & fGenerateLocalIds))
+        {
+            /// We're going to create new bioseqs, without generating local ids;
+            /// that's OK for the protein, but for the mRna we have to force
+            /// creating a local id, since the id we have in the alignment is a
+            /// protein id
+            static CAtomicCounter counter;
+            size_t new_id_num = counter.Add(1);
+            CTime time(CTime::eCurrent);
+            string str("lcl|MRNA_");
+            str += time.AsString("YMD");
+            str += "_";
+            str += NStr::NumericToString(new_id_num);
+            CRef<CSeq_id> fake_rna_id(new CSeq_id(str));
+            fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(
+                *fake_rna_id);
+        }
         fake_transcript_align->SetSegs().SetSpliced().SetProduct_type(
             CSpliced_seg::eProduct_type_transcript);
         NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
@@ -574,6 +596,17 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         {
             s_TransformToNucpos((*exon_it)->SetProduct_start());
             s_TransformToNucpos((*exon_it)->SetProduct_end());
+        }
+
+        TSeqPos offset = fake_transcript_align->GetSeqStart(0);
+        if (offset) {
+            /// change all coordinates to start at 0
+            NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
+                     fake_transcript_align->SetSegs().SetSpliced().SetExons())
+            {
+                (*exon_it)->SetProduct_start().SetNucpos() -= offset;
+                (*exon_it)->SetProduct_end().SetNucpos() -= offset;
+            }
         }
 
         if (found_stop_codon) {
@@ -598,17 +631,9 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             last_exon->SetParts().push_back(match_stop_codon);
         }
 
-        CRef<CSeq_id> prot_id(new CSeq_id);
-        prot_id->Assign(fake_transcript_align->GetSeq_id(0));
-        TSeqPos cds_length =
-            fake_transcript_align->GetSegs().GetSpliced().CanGetProduct_length()
-            ? fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()
-            : m_scope->GetBioseqHandle(*prot_id).GetBioseqLength();
-        if (found_stop_codon) {
-            cds_length += 1;
-        }
-        CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(*prot_id, 0,
-                                                  cds_length*3-1));
+        CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(
+            fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(),
+            0, fake_transcript_align->GetSeqStop(0)));
 
         cd_feat.Reset(new CSeq_feat);
         cd_feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
@@ -645,7 +670,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
 
     CTime time(CTime::eCurrent);
 
-    const CSeq_id& rna_id = align->GetSeq_id(mapper.GetRnaRow());
+    CSeq_id rna_id;
+    rna_id.Assign(align->GetSeq_id(mapper.GetRnaRow()));
 
     if (!ExtractGnomonModelNum(rna_id).empty()) {
         m_is_gnomon = true;
@@ -697,15 +723,25 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             }
         }
     }
-    else {
+    else if (!is_protein_align) {
+        /// With protein alignments, we're creating a fake rna id and don't
+        /// expect to find it, so don't issue a warning
         LOG_POST(Warning << "failed to retrieve sequence for: "
                  << CSeq_id_Handle::GetHandle(rna_id));
     }
 
-    if (m_flags & fForceTranscribeMrna) {
-        /// create a new bioseq for this mRNA
-        x_CreateMrnaBioseq(*align, loc, time, model_num,
-                           seqs, rna_id, cdregion);
+    if (m_flags & fForceTranscribeMrna ||
+        (is_protein_align && m_flags & fForceTranslateCds))
+    {
+        /// create a new bioseq for this mRNA; if the mRna sequence is not found,
+        /// this is needed in order to translate the protein
+        /// alignment, even if flag fForceTranscribeMrna wasn't set
+        const CBioseq &mrna_seq = x_CreateMrnaBioseq(
+            *align, loc, time, model_num, seqs, rna_id, cdregion);
+        if (is_protein_align && m_flags & fGenerateLocalIds)
+        {
+            cd_feat->SetLocation().SetInt().SetId().Assign(rna_id);
+        }
     }
 
     CRef<CSeq_feat> mrna_feat = full_length_rna && m_flags&fPropagateNcrnaFeats
@@ -761,7 +797,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         }
     }
 
-    if (!is_protein_align && mrna_feat) {
+    if (mrna_feat) {
         // NOTE: added after gene!
 
         _ASSERT(mrna_feat->GetData().Which() != CSeqFeatData::e_not_set);
@@ -1059,30 +1095,30 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
     inst.SetHist().SetAssembly().push_back(assembly);
 }
 
-void CFeatureGenerator::
+const CBioseq& CFeatureGenerator::
 SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
                                     CRef<CSeq_loc> loc,
                                     const CTime& time,
                                     size_t model_num,
                                     CBioseq_set& seqs,
-                                    const CSeq_id& rna_id,
+                                    CSeq_id& rna_id,
                                     const CSeq_feat* cdregion)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& bioseq = entry->SetSeq();
     
-    CRef<CSeq_id> id;
     if (m_flags & fGenerateLocalIds) {
         /// create a new seq-id for this
         string str("lcl|CDNA_");
         str += time.AsString("YMD");
         str += "_";
         str += NStr::SizetToString(model_num);
-        id.Reset(new CSeq_id(str));
-    } else {
-        id.Reset(new CSeq_id());
-        id->Assign(rna_id);
+        CSeq_id new_id(str);
+        rna_id.Assign(new_id);
     }
+
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(rna_id);
     bioseq.SetId().push_back(id);
     
     CRef<CSeqdesc> mdes(new CSeqdesc);
@@ -1121,7 +1157,9 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
     if ((m_flags & fForceTranscribeMrna) && (m_flags & fForceTranslateCds)) {
         seqs.SetClass(CBioseq_set::eClass_nuc_prot);
     }
-    seqs.SetSeq_set().push_back(entry);
+    if (m_flags & fForceTranscribeMrna) {
+        seqs.SetSeq_set().push_back(entry);
+    }
 
     CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
     if (!handle) {
@@ -1131,30 +1169,31 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
         CBioseq_EditHandle edithandle = m_scope->GetEditHandle(handle);
         edithandle.SetInst(bioseq.SetInst());
     }
+    return bioseq;
 }
 
-void CFeatureGenerator::
+const CBioseq& CFeatureGenerator::
 SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                                        CSeq_feat& cds_on_mrna,
                                        const CTime& time,
                                        size_t model_num,
-                                       CBioseq_set& seqs,
-                                       const CSeq_id& prot_id)
+                                       CBioseq_set& seqs)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& bioseq = entry->SetSeq();
     
     CRef<CSeq_id> id;
-    if ((m_flags & fGenerateLocalIds) || prot_id.Which() == CSeq_id::e_not_set) {
+    if ((m_flags & fGenerateLocalIds) || !cds_on_mrna.CanGetProduct()) {
         // create a new seq-id for this
         string str("lcl|PROT_");
         str += time.AsString("YMD");
         str += "_";
         str += NStr::SizetToString(model_num);
         id.Reset(new CSeq_id(str));
+        cds_on_mrna.SetProduct().SetWhole(*id);
     } else {
         id.Reset(new CSeq_id());
-        id->Assign(prot_id);
+        id->Assign(*cds_on_mrna.GetProduct().GetId());
     }
     bioseq.SetId().push_back(id);
 
@@ -1182,7 +1221,10 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     // set up the inst
 
     string strprot;
-    CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, false, false);
+    CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, true, false);
+    if (strprot[strprot.size()-1] == '*') {
+        strprot.resize(strprot.size()-1);
+    }
 
     CSeq_inst& seq_inst = bioseq.SetInst();
     seq_inst.SetMol(CSeq_inst::eMol_aa);
@@ -1245,7 +1287,6 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
     CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
     if (!handle) {
-        m_scope->ResetHistory(); //otherwise adding new entry to non-clean scope produces warnings
         m_scope->AddTopLevelSeqEntry(*entry);
     } else {
         CBioseq_EditHandle edithandle = m_scope->GetEditHandle(handle);
@@ -1261,6 +1302,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 #endif
     
     seqs.SetSeq_set().push_back(entry);
+    return bioseq;
 }
 
 CRef<CSeq_feat>
@@ -1472,13 +1514,14 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                 cds_feat->ResetId();
 
                 CBioseq_Handle prot_handle;
+                string gnomon_model_num;
 
-                CConstRef<CSeq_id> prot_id(new CSeq_id);
                 if (cds_feat->CanGetProduct()) {
-                    prot_id.Reset(cds_feat->GetProduct().GetId());
-                    prot_handle = m_scope->GetBioseqHandle(*prot_id);
+                    prot_handle = m_scope->GetBioseqHandle(
+                        *cds_feat->GetProduct().GetId());
+                    gnomon_model_num = ExtractGnomonModelNum(
+                        *cds_feat->GetProduct().GetId());
                 }
-                string gnomon_model_num = ExtractGnomonModelNum(*prot_id);
                 if (m_flags & fForceTranslateCds) {
                     /// create a new bioseq for the CDS
                     if (!gnomon_model_num.empty()) {
@@ -1489,7 +1532,7 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                         cds_feat->SetIds().push_back(feat_id);
                     }
                     x_CreateProteinBioseq(cds_loc, *cds_feat, time,
-                                          model_num, seqs, *prot_id);
+                                          model_num, seqs);
                 }
 
                 bool is_partial_5prime =
@@ -1637,7 +1680,6 @@ SImplementation::x_ConstructRnaName(const CBioseq_Handle& handle)
         }
     }
     catch (CException& e) {
-        ERR_POST(Warning << "no organism set: " << e);
     }
     NStr::ReplaceInPlace(name, ", nuclear gene encoding mitochondrial protein",
                                "");

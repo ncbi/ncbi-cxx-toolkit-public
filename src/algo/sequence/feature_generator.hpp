@@ -146,19 +146,18 @@ private:
                                bool add_unaligned_parts = true,
                                bool* has_gap = NULL,
                                bool* has_indel = NULL);
-    void x_CreateMrnaBioseq(const CSeq_align& align,
+    const CBioseq& x_CreateMrnaBioseq(const CSeq_align& align,
                             CRef<CSeq_loc> loc,
                             const CTime& time,
                             size_t model_num,
                             CBioseq_set& seqs,
-                            const CSeq_id& rna_id,
+                            CSeq_id& rna_id,
                             const CSeq_feat* cdregion);
-    void x_CreateProteinBioseq(CSeq_loc* cds_loc,
+    const CBioseq& x_CreateProteinBioseq(CSeq_loc* cds_loc,
                                CSeq_feat& cds_on_mrna,
                                const CTime& time,
                                size_t model_num,
-                               CBioseq_set& seqs,
-                               const CSeq_id& prot_id);
+                               CBioseq_set& seqs);
     CRef<CSeq_feat> x_CreateMrnaFeature(const CSeq_align& align,
                                         CRef<CSeq_loc> loc,
                                         const CTime& time,
