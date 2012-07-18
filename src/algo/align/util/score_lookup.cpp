@@ -699,14 +699,7 @@ public:
         }
 
         CRef<CSeq_loc> aligned_genomic;
-        if (is_protein) {
-            if(m_StartCodon ? align.GetSeqStart(0) > 0
-                            : align.GetSeqStop(0) < product_length - 1)
-            {
-                return 0;
-            }
-            aligned_genomic = align.CreateRowSeq_loc(1);
-        } else {
+
             ///
             /// complicated (copied from cds_internal_stops Get())
             ///
@@ -743,7 +736,6 @@ public:
                 return 0;
             }
             aligned_genomic.Reset(&cds->SetLocation());
-        }
 
         if(!m_StartCodon) {
 // extend location by a codon beyond stop
