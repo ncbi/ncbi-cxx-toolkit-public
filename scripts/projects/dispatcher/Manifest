@@ -30,15 +30,14 @@ COPY: $srcdir/include/internal/webenv2/id.h  $installdir/include/internal/webenv
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32-Centos  : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux32-Centos  : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64-Centos  : ICC   : ICC.sh         --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
-Linux64-Centos  : GCC   : GCC.sh 4.4.2   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
-FreeBSD32       : GCC   : GCC.sh 4.2.1   --without-debug --without-mt --with-static --without-version --without-serial --without-runpath --with-flat-makefile
-SunOSx86        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSx86        : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSSparc      : WS64  : WorkShop.sh 64 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSSparc      : WS32  : WorkShop.sh 32 --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-SunOSSparc      : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-IntelMAC        : GCC   : GCC.sh         --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal=i386,x86_64
-
+Linux32-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux32-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+Linux64-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
+Linux64-Centos  : GCC   : GCC.sh 4.4.2   --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
+FreeBSD32       : GCC   : GCC.sh 4.2.1   --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
+SunOSx86        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSx86        : WS32  : WorkShop.sh 32 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSSparc      : WS64  : WorkShop.sh 64 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSSparc      : WS32  : WorkShop.sh 32 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+SunOSSparc      : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal=i386,x86_64
