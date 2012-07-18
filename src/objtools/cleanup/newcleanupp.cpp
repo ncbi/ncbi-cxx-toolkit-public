@@ -9245,7 +9245,8 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
 
         // remove user-objects with no data (except certain types)
         if( RAW_FIELD_IS_EMPTY_OR_UNSET(user_obj, Data) && 
-            ! NStr::EqualNocase(*pTypeStr, "NcbiAutofix") )
+            ! NStr::EqualNocase(*pTypeStr, "NcbiAutofix") &&
+            ! NStr::EqualNocase(*pTypeStr, "Unverified") )
         {
             needs_removal = true;
         }
