@@ -175,6 +175,41 @@ typedef set<Uint4>              TRecNumsSet;
 typedef map<Uint4, TRecNumsSet> TFileRecsMap;
 
 
+/*
+    on startup:
+        loads blobs metadata into memory,
+        creates initial DB files
+        checks DB consistency
+
+    begin: x_StartCaching
+    -> x_StartCaching: get first DB file, goto  x_PreCacheRecNums
+    -> x_PreCacheRecNums: 
+        for each DB file, collect valid record numbers
+        goto x_StartCreateFiles
+    -> x_StartCreateFiles
+        goto x_CreateInitialFile
+    -> x_CreateInitialFile
+        create 3 'current' files and 3 'next' files
+        if file creatino failed, goto x_DelFileAndRetryCreate
+        when complete, goto x_StartCacheBlobs
+    -> x_DelFileAndRetryCreate
+        if cannot delete any files, request shutdown, goto x_CancelCaching
+        try to delete existing file (prefers data files)
+        goto x_CreateInitialFile
+    -> x_StartCacheBlobs: get first file, goto  x_CacheNextFile
+    -> x_CacheNextFile
+        if file type is eDBFileMeta, goto  x_CacheNextRecord
+        after that, goto x_CleanOrphanRecs
+    -> x_CacheNextRecord
+        for each record, check record validity, remember
+        goto x_CacheNextFile
+    -> x_CleanOrphanRecs
+        when all files are processed, delete abandoned records
+        goto x_FinishCaching
+    -> x_FinishCaching
+        notify NC that caching complete,
+        start DiskFlusher, RecNoSaver,  SpaceShrinker, ExpiredCleaner
+*/
 class CBlobCacher : public CSrvStatesTask<CBlobCacher>
 {
 public:
@@ -228,6 +263,9 @@ private:
 };
 
 
+/*
+    flush all DB files
+*/
 class CDiskFlusher : public CSrvStatesTask<CDiskFlusher>
 {
 public:
@@ -251,6 +289,37 @@ public:
 private:
     virtual void ExecuteSlice(TSrvThreadNum thr_num);
 };
+
+
+// move blob chunks, or data from old files (which are 'almost empty')
+// into new ones, then deletes old files
+/*
+    begin: x_PrepareToShrink
+    -> x_PrepareToShrink: analyze what to move and what to delete;
+    -> x_DeleteNextFile: has smth to delete ? delete : x_StartMoves
+    -> x_StartMoves: has smth to move ? x_MoveNextRecord : x_FinishSession
+    -> x_MoveNextRecord:
+           find what to move;
+           if not found, goto x_FinishMoves;
+           if VerMgr for this key exists, goto x_CheckCurVersion;
+           else x_MoveRecord;
+    -> x_CheckCurVersion
+        if this record already deleted (IndexDeleted), goto x_FinishMoveRecord;
+        if VerMgr has no current version (this is either prev version, or one
+            that was not written yet), goto x_FinishMoveRecord;
+        if record to move does not belong to current version of blob, goto x_FinishMoveRecord;
+            (this means this version will be deleted soon, probably)
+        if this record stores blob metadata, check that another thread BlobVerData does not update it;
+        if this record will be deeted soon, goto x_FinishMoveRecord;
+        goto x_MoveRecord
+    -> x_MoveRecord: move, goto x_FinishMoveRecord
+    -> x_FinishMoveRecord: release used resources;
+        if move failed ? x_FinishMoves :  x_MoveNextRecord
+    -> x_FinishMoves: if the file from which we moved records is empty now, delete it;
+        save some statistics
+        goto x_FinishSession
+    -> x_FinishSession: run again in a second, or sooner
+*/
 
 
 class CSpaceShrinker : public CSrvStatesTask<CSpaceShrinker>,
@@ -294,6 +363,27 @@ private:
     bool m_MovingMeta;
 };
 
+
+/*
+delete expired blobs:
+    by dead_time
+    or, when DB is too big, also delete oldest blobs
+
+slot is made of Buckets (see ini file: cnt_slot_buckets)
+
+    begin: x_StartSession
+    -> x_StartSession
+        analyze DB size (do we need to reduce it?)
+        goto x_CleanNextBucket
+    -> x_CleanNextBucket
+        if all buckets clean, goto x_FinishSession;
+        select bucket, goto x_DeleteNextData
+    -> x_DeleteNextData
+        if nothing to delete, goto x_CleanNextBucket
+        delete blob,  goto x_DeleteNextData
+    -> x_FinishSession
+        goto x_StartSession
+*/
 
 class CExpiredCleaner : public CSrvStatesTask<CExpiredCleaner>
 {

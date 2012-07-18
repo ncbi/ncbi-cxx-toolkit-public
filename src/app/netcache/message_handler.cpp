@@ -1153,6 +1153,7 @@ CNCMessageHandler::x_StartCommand(void)
 
     if (!x_IsFlagSet(fNeedsBlobAccess)) {
         diag_msg.Flush();
+        // if we do not need blob access
         return m_CmdProcessor;
     }
 

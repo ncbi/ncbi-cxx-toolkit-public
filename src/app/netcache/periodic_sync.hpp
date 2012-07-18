@@ -191,6 +191,74 @@ struct SSyncTaskInfo
 };
 
 
+/*
+    manages sychronization (blob data and metadata) between NC servers
+    
+    begin: x_StartScanSlots
+
+    -> x_StartScanSlots: pick first slot, goto  x_CheckSlotOurSync
+
+    -> x_CheckSlotOurSync
+        when all slots processed, goto x_FinishScanSlots
+        for a given slot, check if it is time to sync; if yes, goto x_DoPeriodicSync
+        goto x_CheckSlotTheirSync
+
+    -> x_CheckSlotTheirSync
+        check if there is a sync on this slot started by somebody else and was not active for too long
+            if yes, cancel it
+        pick next slot, goto x_CheckSlotOurSync
+
+    -> x_FinishScanSlots
+            calc when to run next time
+            goto x_StartScanSlots
+
+    ->  x_DoPeriodicSync:
+            once again, check that the sync does not start from both sides at the same time
+                if so, goto x_CheckSlotTheirSyn
+            get CNCActiveHandler which sends start sync (execute SyncStart command)
+                ok ? x_WaitSyncStarted : x_FinishSync
+
+    -> x_WaitSyncStarted
+            wait for sync started (check m_StartedCmds)
+                NCActiveHandler will report command result using  CmdFinished() method
+            depending on the reply, goto x_PrepareSyncByBlobs, or goto x_PrepareSyncByEvents
+
+    -> x_PrepareSyncByEvents
+            another server has sent us list of events,
+            now give this list to  CNCSyncLog, which will gve us the difference  (m_Events2Get,m_Events2Send)
+            if list not empty, goto x_ExecuteSyncCommands
+            
+            if CNCSyncLog cannot sync event lists (eg, some our info is lost), request blob list
+                goto x_WaitForBlobList
+
+    -> x_WaitForBlobList
+            once blob list received, goto x_PrepareSyncByBlobs
+    
+    -> x_PrepareSyncByBlobs
+            re-fill list of local blobs (in given slot)
+            goto x_ExecuteSyncCommands
+    
+    -> x_ExecuteSyncCommands
+            if no more commands, goto x_ExecuteFinalize
+            if network error, goto x_FinishSync
+            goto x_WaitForExecutingTasks
+
+    -> x_ExecuteFinalize
+            on success, finish sync, goto  x_WaitForExecutingTasks
+            on error,  goto x_FinishSync
+
+    -> x_WaitForExecutingTasks
+            woken up by CmdFinished
+            if all commands are executed ok, and need 'commit', goto x_ExecuteFinalize
+            after commit is done, goto x_FinishSync
+
+    -> x_FinishSync
+            log report
+            CommitSync
+            goto x_CheckSlotTheirSync
+
+*/
+
 class CNCActiveSyncControl : public CSrvStatesTask<CNCActiveSyncControl>
 {
 public:

@@ -708,8 +708,13 @@ CMMFlusher::~CMMFlusher(void)
 void
 CMMFlusher::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+
     if (CTaskServer::IsInShutdown())
         return;
+
+// move blocks from global pool into pages.
+// then, threads, when they see  s_GlobalPoolsSet.flush_counter changed,
+// return their pool blocks into pages
 
     void* buffer[kMMCntBlocksInPool];
     SMMStat* stat = &GetCurThread()->mm_pool->stat;
@@ -730,6 +735,7 @@ CMMFlusher::ExecuteSlice(TSrvThreadNum /* thr_num */)
     }
     ++s_GlobalPoolsSet.flush_counter;
 
+// once a minute
     RunAfter(kMMFlushPeriod);
 }
 

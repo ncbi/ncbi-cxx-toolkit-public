@@ -120,6 +120,7 @@ CNCHeartBeat::ExecuteSlice(TSrvThreadNum /* thr_num */)
     if (CTaskServer::IsInShutdown())
         return;
 
+// save server state into statistics
     CNCBlobStorage::CheckDiskSpace();
     SNCStateStat state;
     CNCServer::ReadCurState(state);

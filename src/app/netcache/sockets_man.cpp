@@ -492,6 +492,7 @@ s_ProcessListenError(Uint1 sock_idx)
 
     SListenSockInfo& sock_info = s_ListenSocks[sock_idx];
     LOG_SOCK_ERROR(Critical, sock_info.fd, "Error in listening socket");
+// try to reopen
     s_CloseSocket(sock_info.fd, true);
     s_CreateListeningSocket(sock_idx);
 }
@@ -996,6 +997,7 @@ CSrvListener::~CSrvListener(void)
 void
 CSrvListener::ExecuteSlice(TSrvThreadNum thread_idx)
 {
+// process events added by main thread
     Uint1 cnt_listen = ACCESS_ONCE(s_CntListeningSocks);
     for (Uint1 i = 0; i < cnt_listen; ++i) {
         if (m_SeenErrors[i] != s_ListenErrors[i])
@@ -1202,8 +1204,10 @@ CSrvSocketTask::StartProxyTo(CSrvSocketTask* dst_task,
 void
 CSrvSocketTask::InternalRunSlice(TSrvThreadNum thr_num)
 {
+// remember last activity time stamp (to close inactive ones later on)
     m_LastActive = CSrvTime::CurSecs();
 
+// if just connected, check for timeout
     if (m_ConnStartJfy != 0) {
         if (m_RegWriteEvts != m_SeenWriteEvts)
             m_ConnStartJfy = 0;
@@ -1215,6 +1219,7 @@ CSrvSocketTask::InternalRunSlice(TSrvThreadNum thr_num)
     }
 
     if (m_ProxyDst) {
+// to just forward data
         m_ProxyDst->m_LastActive = CSrvTime::CurSecs();
         s_DoDataProxy(this);
         if (!m_ProxyDst)

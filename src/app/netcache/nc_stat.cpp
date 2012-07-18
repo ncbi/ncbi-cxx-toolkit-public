@@ -1000,12 +1000,18 @@ CStatRotator::ExecuteSlice(TSrvThreadNum /* thr_num */)
             if (CTaskServer::IsInShutdown())
                 return;
 
+// collect statistics from all threads
+// and print it into log.
+
+// there are several types of stat; see  kStatPeriodName above
+
             s_CollectCurStats();
         }
         s_LastRotateSecs = cur_secs;
     }
     else if (CTaskServer::IsInShutdown())
         return;
+// every 5 sec
     CalcNextRun();
 }
 

@@ -754,6 +754,7 @@ CNCPeerControl::ExecuteSlice(TSrvThreadNum /* thr_num */)
     if (CTaskServer::IsInShutdown())
         return;
 
+// check for timeouts
     m_ObjLock.Lock();
 
     NON_CONST_ITERATE(TNCPeerConnsList, it, m_BusyConns) {

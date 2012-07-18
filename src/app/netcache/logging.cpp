@@ -1278,7 +1278,11 @@ CLogWriter::~CLogWriter(void)
 void
 CLogWriter::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+// those who add data into queue, make this runnable
+
     s_CheckFatalAbort();
+// if log file was open for too long, close it
+// so that app_log could move it 
     if (CSrvTime::CurSecs() - s_LastReopenTime >= s_FileReopenPeriod  &&  s_LogFd != -1)
     {
 #ifdef NCBI_OS_LINUX
@@ -1287,6 +1291,7 @@ CLogWriter::ExecuteSlice(TSrvThreadNum /* thr_num */)
         s_LogFd = -1;
     }
 
+// get from the queue, write into log
     s_WriteQueueLock.Lock();
     if (s_WriteQueue.empty()) {
         s_WriteQueueLock.Unlock();

@@ -327,6 +327,8 @@ s_CollectWBData(SWriteBackData* wb_data)
 static void
 s_ProcessWBAddDel(Uint4 was_del_size)
 {
+// add new verdata into map (s_VersMap) sorted by
+// last seen access time (ver_data->saved_access_time)
     for (Uint4 i = 0; i < s_WBToAddList.size(); ++i) {
         SNCBlobVerData* ver_data = s_WBToAddList[i];
         if (!ver_data->is_linked()  &&  ver_data->releasable_mem != 0
@@ -337,6 +339,8 @@ s_ProcessWBAddDel(Uint4 was_del_size)
         }
     }
     s_WBToAddList.clear();
+// remove from map and delete those about to be deleted
+//  (SNCBlobVerData request deletion)
     for (Uint4 i = 0; i < was_del_size; ++i) {
         SNCBlobVerData* ver_data = s_WBToDelList[i];
         if (ver_data->is_linked())
@@ -380,6 +384,8 @@ CWriteBackControl::Initialize(void)
 void
 CWriteBackControl::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+// monitor write-back cache statistics (where blobs are stored before being saved on disk)
+
     if (CTaskServer::IsInShutdown())
         return;
 
@@ -388,8 +394,11 @@ CWriteBackControl::ExecuteSlice(TSrvThreadNum /* thr_num */)
 
     Uint4 cnt_datas = CTaskServer::GetMaxRunningThreads();
     for (Uint4 i = 0; i < cnt_datas; ++i) {
+// collect stat from all threads
         s_CollectWBData(&s_WBData[i]);
     }
+
+// delete SNCBlobVerData
     s_ProcessWBAddDel(was_del_size);
 
     size_t cur_size_change = 0;
@@ -549,6 +558,9 @@ CNCBlobVerManager::x_ReleaseMgr(void)
 void
 CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+// CNCBlobAccessor has a reference to this one.
+// for each blob key there is only one CNCBlobVerManager.
+
     CSrvRef<SNCBlobVerData> cur_ver;
 
     m_CacheData->lock.Lock();
@@ -562,6 +574,8 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
         return;
     }
 
+// initially, blob is in memory
+// check if it is time to be saved onto disk
     int write_time = ACCESS_ONCE(cur_ver->need_write_time);
     if (write_time != 0) {
         m_CacheData->lock.Unlock();
@@ -572,6 +586,8 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
             RunAfter(write_time - cur_time);
         return;
     }
+
+// if requested, remove metadata from memory
     if (m_NeedReleaseMem  &&  !Referenced()) {
         x_ReleaseMgr();
         return;
@@ -700,6 +716,8 @@ CCurVerReader::ExecuteSlice(TSrvThreadNum thr_num)
 {
     if (IsTransStateFinal())
         return;
+
+// read current blob metadata from db
 
     SNCCacheData* cache_data = m_VerMgr->m_CacheData;
     if (cache_data->coord.empty()) {
@@ -1070,13 +1088,16 @@ SNCBlobVerData::x_DeleteVersion(void)
 void
 SNCBlobVerData::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+// writes blob data and metadata into db
     if (need_write_all  &&  x_ExecuteWriteAll())
         return;
 
+// remove blob from memory
     wb_mem_lock.Lock();
     CNCBlobVerManager* mgr = ACCESS_ONCE(manager);
     if (mgr) {
         if (need_mem_release) {
+            // if still has something to write, request that
             if (data_mem != 0  ||  (meta_has_changed  &&  is_cur_version)) {
                 need_write_all = true;
                 wb_mem_lock.Unlock();
@@ -1228,11 +1249,14 @@ CNCBlobAccessor::ExecuteSlice(TSrvThreadNum /* thr_num */)
         return;
 
     if (!m_MetaInfoReady) {
+// read blob metadata from db
         m_CurData = m_VerManager->GetCurVersion();
         m_MetaInfoReady = true;
         m_Owner->SetRunnable();
     }
     else if (m_WriteMemRequested) {
+// client sends data, we need memory
+// if no memory, wait a bit, then try again
         m_Buffer = s_AllocWriteBackMem(m_NewData->chunk_size, this);
         if (m_Buffer) {
             m_WriteMemRequested = false;

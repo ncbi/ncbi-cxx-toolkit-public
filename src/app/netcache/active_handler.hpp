@@ -91,6 +91,28 @@ struct SActiveList_tag;
 typedef intr::list_base_hook<intr::tag<SActiveList_tag> >   TActiveListHook;
 
 
+/*
+    sends command to other instances of NetCache.
+    processes results.
+    created by CNCPeerControl
+    used by CNCPeerControl, CNCActiveSyncControl, CNCMessageHandler 
+
+    begin: x_InvalidState
+    -> x_InvalidState: abort
+
+    Object becomes usable on SetClientHub (state becomes x_WaitClientRelease)
+    or, somebody (peercontrol) calls CopyPut, or CopyProlong or other methods
+    then, it sets proper State for itself.
+
+    All processing goes approx like this:
+    somebody calls a method (eg, ProxyRemove):
+        initial preparation;
+        create a command, goto x_SendCmdToExecute
+        check for errors, send command, wait for reply (x_WaitOneLineAnswer)
+        check for errors, read reply
+        do cmd, goto x_FinishCommand
+        clean resources, x_WaitClientRelease, x_PutSelfToPool (waiting for next cmd)
+*/
 class CNCActiveHandler : public CSrvStatesTask<CNCActiveHandler>,
                          public TActiveListHook
 {
@@ -103,10 +125,23 @@ public:
     bool IsBlobExists(void);
     const SNCBlobSummary& GetBlobSummary(void);
 
+    /*
+        request meta info, x_WaitForMetaInfo ->  x_SendCopyPutCmd -> 
+        on error, goto  x_FinishCommand
+        create command, goto x_SendCmdToExecute
+        -> x_SendCmdToExecute
+            on error, goto x_CloseCmdAndConn, or  x_ConnClosedReplaceable
+            write cmd, goto  x_WaitOneLineAnswer  -> x_ReadCopyPut
+        -> x_ReadCopyPut
+            on error, goto  x_FinishCommand, or x_FakeWritingBlob
+            goto x_WriteBlobData -> x_FinishWritingBlob ->
+                request confirmation -> x_WaitOneLineAnswer
+    */
     void CopyPut(CRequestContext* cmd_ctx,
                  const string& key,
                  Uint2 slot,
                  Uint8 orig_rec_no);
+    // x_SendCmdToExecute ->  x_WaitOneLineAnswer -> x_ReadCopyProlong -> x_FinishCommand
     void CopyProlong(const string& key,
                      Uint2 slot,
                      Uint8 orig_rec_no,

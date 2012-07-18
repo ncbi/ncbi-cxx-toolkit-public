@@ -2388,6 +2388,7 @@ wrap_index_and_return:
 
 finalize_and_return:
     s_LockFileMem(ind_rec, (prev_rec_num + 1) * sizeof(SFileIndexRec));
+// to next file
     ++m_CurFile;
     SetRunnable();
     return NULL;
@@ -2654,10 +2655,12 @@ CExpiredCleaner::x_CleanNextBucket(void)
 {
     if (CTaskServer::IsInShutdown())
         return NULL;
+    // if all buckets clean, finish
     if (m_CurBucket > CNCDistributionConf::GetCntTimeBuckets())
         return &Me::x_FinishSession;
 
     m_BatchSize = 0;
+    // s_TimeTables has blob info sorted by dead_time
     STimeTable* table = s_TimeTables[m_CurBucket];
     TTimeTableMap& time_map = table->time_map;
     table->lock.Lock();
@@ -2673,6 +2676,7 @@ CExpiredCleaner::x_CleanNextBucket(void)
 
         int dead_time = ACCESS_ONCE(cache_data->dead_time);
         if (dead_time != 0) {
+            // dead_time has changed, put blob back
             if (dead_time != cache_data->saved_dead_time) {
                 time_map.erase(time_map.iterator_to(*cache_data));
                 cache_data->saved_dead_time = dead_time;
@@ -2685,6 +2689,7 @@ CExpiredCleaner::x_CleanNextBucket(void)
                     it = time_map.begin();
                 continue;
             }
+            // increment ref counter
             CNCBlobStorage::ReferenceCacheData(cache_data);
             m_CacheDatas.push_back(cache_data);
         }
@@ -2694,6 +2699,7 @@ CExpiredCleaner::x_CleanNextBucket(void)
     table->lock.Unlock();
 
     if (m_BatchSize == 0) {
+        // goto next bucket
         ++m_CurBucket;
         SetRunnable();
         return NULL;
@@ -3265,6 +3271,8 @@ CRecNoSaver::~CRecNoSaver(void)
 void
 CRecNoSaver::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+// max record number used in sync logs
+
     int cur_time = CSrvTime::CurSecs();
     int next_save = s_LastRecNoSaveTime + s_MinRecNoSavePeriod;
     if (!s_NeedSaveLogRecNo)
@@ -3353,6 +3361,7 @@ CNewFileCreator::~CNewFileCreator(void)
 void
 CNewFileCreator::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+// create new (next) db file
     for (Uint1 i = 0; i < s_CntAllFiles; ++i) {
         if (s_AllWritings[i].next_file == NULL) {
             s_CreateNewFile(i);

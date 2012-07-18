@@ -209,6 +209,7 @@ CTZAdjuster::~CTZAdjuster(void)
 void
 CTZAdjuster::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
+// on one second after an hour, calculates difference with GMT time
     Uint4 delay = s_InitTZAdjustment();
     if (!CTaskServer::IsInShutdown())
         RunAfter(delay);

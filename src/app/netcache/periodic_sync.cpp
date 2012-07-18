@@ -164,6 +164,10 @@ CNCLogCleaner::ExecuteSlice(TSrvThreadNum /* thr_idx */)
 {
     if (CTaskServer::IsInShutdown())
         return;
+
+// clean operation log used for synchronization between peers
+// that is remove already synced ones
+
     if (m_NextSlotIt == s_SlotsList.end()) {
         m_NextSlotIt = s_SlotsList.begin();
         RunAfter(CNCDistributionConf::GetCleanAttemptInterval());
@@ -175,6 +179,7 @@ CNCLogCleaner::ExecuteSlice(TSrvThreadNum /* thr_idx */)
     SSyncSlotData* slot_data = m_NextSlotIt->second;
     Uint2 slot = slot_data->slot;
     slot_data->lock.Lock();
+// if no sync currently in progress
     if (slot_data->cnt_sync_started == 0) {
         slot_data->cleaning = true;
         slot_data->lock.Unlock();
@@ -528,6 +533,7 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
         else {
             Uint8 next_time = max(slot_srv->next_sync_time,
                                   slot_srv->peer->GetNextSyncTime());
+// calculate next time we need sync
             m_MinNextTime = min(m_MinNextTime, next_time);
         }
         slot_srv->lock.Unlock();
@@ -614,6 +620,8 @@ CNCActiveSyncControl::x_DoPeriodicSync(void)
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_WaitSyncStarted(void)
 {
+    // wait for sync started
+    // see CmdFinished()
     if (m_StartedCmds != 0)
         return NULL;
     if (CTaskServer::IsInShutdown())
@@ -623,6 +631,7 @@ CNCActiveSyncControl::x_WaitSyncStarted(void)
 
     m_LocalSyncedRecNo = 0;
     m_RemoteSyncedRecNo = 0;
+    // depending on the reply
     if (m_SlotSrv->is_by_blobs)
         return &Me::x_PrepareSyncByBlobs;
     else
@@ -632,9 +641,14 @@ CNCActiveSyncControl::x_WaitSyncStarted(void)
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_ExecuteSyncCommands(void)
 {
+    // next command to execute
     x_CalcNextTask();
+    // if no more commands
     if (m_NextTask == eSynNeedFinalize)
         return &Me::x_ExecuteFinalize;
+    // add to list of active
+    // as there are free connections between these two servers
+    // these commands will be executed
     if (m_SlotSrv->peer->AddSyncControl(this))
         return &Me::x_WaitForExecutingTasks;
 
@@ -673,8 +687,10 @@ CNCActiveSyncControl::x_WaitForExecutingTasks(void)
     if (started_cmds == 0) {
         switch (next_task) {
         case eSynNoTask:
+// normally, we come here later
             return &Me::x_FinishSync;
         case eSynNeedFinalize:
+// normally, we come here first
             if (!m_FinishSyncCalled)
                 return &Me::x_ExecuteFinalize;
             // fall through
@@ -777,6 +793,7 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
         return &Me::x_ExecuteSyncCommands;
     }
 
+    // sync by blob list
     m_SlotSrv->is_by_blobs = true;
     CNCActiveHandler* conn = m_SlotSrv->peer->GetBGConn();
     if (!conn) {
@@ -784,6 +801,7 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
         return &Me::x_FinishSync;
     }
 
+    // request blob list
     m_StartedCmds = 1;
     conn->SyncBlobsList(this);
     return &Me::x_WaitForBlobList;
