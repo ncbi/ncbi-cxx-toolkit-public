@@ -334,83 +334,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
 
         LOG_POST(Error << "pass 2: sorting");
         if (tmp_volumes.size()) {
-            LOG_POST(Error << "...performing merge sort...");
-
-            ///
-            /// Open each volume
-            /// NB: there is a hole here - if we have more than, say, 8k volumes,
-            /// the open may fail because we will run out of file descriptors
-            /// the solution to this is to do several partial merges
-            ///
-            typedef vector< AutoPtr<CObjectIStream> > TFiles;
-            TFiles files;
-            files.reserve(tmp_volumes.size());
-            ITERATE (vector<string>, it, tmp_volumes) {
-                AutoPtr<CObjectIStream> is
-                    (CObjectIStream::Open(eSerial_AsnBinary, *it));
-                files.push_back(is);
-            }
-
-            ///
-            /// seet a priority queue
-            /// the priority queue keeps track of which alignment is the next for
-            /// us to process, and provides overall an O(ln n) algorithmic
-            /// complexity
-            ///
-            typedef priority_queue<SKeyAndFile,
-                                   vector<SKeyAndFile>,
-                                   SPQSort> TQueue;
-            m_Extractor.sw.Restart();
-            m_Extractor.count = 0;
-            SPQSort pqs(m_Predicate);
-            TQueue q(pqs);
-            size_t count = 0;
-            ITERATE (TFiles, it, files) {
-                if ( !(*it)->EndOfData() ) {
-                    /// NB: this is expensive
-                    /// we are re-extracting our key information from our alignment
-                    /// we should try and make this less heavy
-                    /// one solution is to serialize the key from above and then
-                    /// only extract the binary strip of data corresponding to the
-                    /// actual alignment.
-                    CRef<CSeq_align> sa(new CSeq_align);
-                    (**it) >> *sa;
-
-                    SKeyAndFile kf;
-                    kf.first.first = m_Extractor(*sa);
-                    kf.first.second = sa;
-                    kf.second = count;
-                    q.push(kf);
-                }
-                ++count;
-            }
-
-            while ( !q.empty() ) {
-                SKeyAndFile kf = q.top();
-                q.pop();
-                sorted_output.Write(kf.first);
-
-                if ( !(*files[kf.second]).EndOfData() ) {
-                    /// NB: as above, this is expensive
-                    CRef<CSeq_align> sa(new CSeq_align);
-                    (*files[kf.second]) >> *sa;
-
-                    kf.first.first = m_Extractor(*sa);
-                    kf.first.second = sa;
-                    q.push(kf);
-                }
-                else {
-                    /// close our file once done
-                    files[kf.second].reset();
-                    LOG_POST(Error << "  freeing volume: "
-                             << tmp_volumes[kf.second]);
-                    if ( !CFile(tmp_volumes[kf.second]).Remove() ) {
-                        LOG_POST(Error << "    failed to remove temp file: "
-                                 << tmp_volumes[kf.second]);
-                    }
-                }
-            }
-
+            MergeSortedFiles(tmp_volumes, sorted_output, true, true);
         } else {
             ///
             /// this side is much simpler - all alignments fit into RAM
@@ -430,6 +354,93 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
         }
 
         throw;
+    }
+}
+
+void CAlignSort::MergeSortedFiles(const vector<string> &input_files,
+                                  IAlignSortedOutput &sorted_output,
+                                  bool remove_input_files,
+                                  bool filtered)
+{
+    LOG_POST(Error << "...performing merge sort...");
+
+    ///
+    /// Open each volume
+    /// NB: there is a hole here - if we have more than, say, 8k volumes,
+    /// the open may fail because we will run out of file descriptors
+    /// the solution to this is to do several partial merges
+    ///
+    typedef vector< AutoPtr<CObjectIStream> > TFiles;
+    TFiles files;
+    files.reserve(input_files.size());
+    ITERATE (vector<string>, it, input_files) {
+        AutoPtr<CObjectIStream> is
+            (CObjectIStream::Open(eSerial_AsnBinary, *it));
+        files.push_back(is);
+    }
+
+    ///
+    /// seet a priority queue
+    /// the priority queue keeps track of which alignment is the next for
+    /// us to process, and provides overall an O(ln n) algorithmic
+    /// complexity
+    ///
+    typedef priority_queue<SKeyAndFile,
+                           vector<SKeyAndFile>,
+                           SPQSort> TQueue;
+    m_Extractor.sw.Restart();
+    m_Extractor.count = 0;
+    SPQSort pqs(m_Predicate);
+    TQueue q(pqs);
+    size_t count = 0;
+    ITERATE (TFiles, it, files) {
+        if ( !(*it)->EndOfData() ) {
+            /// NB: this is expensive
+            /// we are re-extracting our key information from our alignment
+            /// we should try and make this less heavy
+            /// one solution is to serialize the key from above and then
+            /// only extract the binary strip of data corresponding to the
+            /// actual alignment.
+            CRef<CSeq_align> sa(new CSeq_align);
+            (**it) >> *sa;
+
+            SKeyAndFile kf;
+            kf.first.first = m_Extractor(*sa);
+            kf.first.second = sa;
+            kf.second = count;
+            q.push(kf);
+        }
+        ++count;
+    }
+
+    while ( !q.empty() ) {
+        SKeyAndFile kf = q.top();
+        q.pop();
+        if (filtered || !m_Filter  ||  m_Filter->Match(*kf.first.second)) {
+            sorted_output.Write(kf.first);
+        }
+
+        if ( !(*files[kf.second]).EndOfData() ) {
+            /// NB: as above, this is expensive
+            CRef<CSeq_align> sa(new CSeq_align);
+            (*files[kf.second]) >> *sa;
+
+            kf.first.first = m_Extractor(*sa);
+            kf.first.second = sa;
+            q.push(kf);
+        }
+        else {
+            /// close our file once done
+            files[kf.second].reset();
+            LOG_POST(Error << "  freeing volume: "
+                     << input_files[kf.second]);
+            if ( remove_input_files &&
+                 !CFile(input_files[kf.second]).Remove() )
+            {
+                LOG_POST(Error << "    failed to remove temp file: "
+                         << input_files[kf.second]);
+            }
+        }
     }
 }
 

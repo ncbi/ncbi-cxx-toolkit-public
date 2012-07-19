@@ -73,6 +73,11 @@ public:
     void SortAlignments(IAlignSource &align_source, 
                         IAlignSortedOutput &sorted_output);
 
+    void MergeSortedFiles(const vector<string> &input_files,
+                          IAlignSortedOutput &sorted_output,
+                          bool remove_input_files = false,
+                          bool filtered = false);
+
     size_t NumProcessed() const
     { return m_Extractor.count; }
 
