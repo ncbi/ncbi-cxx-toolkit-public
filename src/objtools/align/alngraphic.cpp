@@ -52,43 +52,43 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
 USING_SCOPE (sequence);
 
-static char* kDigitGif[] = {"0.gif", "1.gif", "2.gif", "3.gif", "4.gif",
-                            "5.gif", "6.gif", "7.gif", "8.gif", "9.gif"};
+const char* kDigitGif[] = {"0.gif", "1.gif", "2.gif", "3.gif", "4.gif",
+                           "5.gif", "6.gif", "7.gif", "8.gif", "9.gif"};
 
-static const TSeqPos kScoreMargin = 50;
-static const TSeqPos kScoreLength = 500;
-static const TSeqPos kScoreHeight = 40;
+const TSeqPos kScoreMargin = 50;
+const TSeqPos kScoreLength = 500;
+const TSeqPos kScoreHeight = 40;
 
-static const TSeqPos kBlankBarHeight = 4; 
+const TSeqPos kBlankBarHeight = 4; 
 
-static const TSeqPos kMasterHeight = 10;
-static const TSeqPos kMasterPixel = kScoreLength;
-static const TSeqPos kMasterBarLength = 550;
+const TSeqPos kMasterHeight = 10;
+const TSeqPos kMasterPixel = kScoreLength;
+const TSeqPos kMasterBarLength = 550;
 
-static const TSeqPos kScaleMarginAdj = 1;
-static const TSeqPos kScaleWidth = 2;
-static const TSeqPos kScaleHeight = 10;
+const TSeqPos kScaleMarginAdj = 1;
+const TSeqPos kScaleWidth = 2;
+const TSeqPos kScaleHeight = 10;
 
-static const TSeqPos kDigitWidth = 10;
-static const TSeqPos kDigitHeight = 13;
+const TSeqPos kDigitWidth = 10;
+const TSeqPos kDigitHeight = 13;
 
-static const TSeqPos kGapHeight = 1;
-static const TSeqPos kGreakHeight = 6;
-static const TSeqPos kNumMark = 6;
+const TSeqPos kGapHeight = 1;
+const TSeqPos kGreakHeight = 6;
+const TSeqPos kNumMark = 6;
 
-static const int kDeflineLength = 55;
+const int kDeflineLength = 55;
 
 /*two ranges are considered overlapping even if they do not overlap but
   they differ only by this number*/
 static const int kOverlapDiff = 5;
 
 //gif images
-static const char* kGifWhite  = "white.gif";
-static const char* kGifMaster ="query_no_scale.gif";
-static const char* kGifScore  = "score.gif";
-static const char* kGifGrey   = "grey.gif";
-static const char* kGifScale  = "scale.gif";
-static const char* kGifBlack  = "black.gif";
+const char* kGifWhite  = "white.gif";
+const char* kGifMaster ="query_no_scale.gif";
+const char* kGifScore  = "score.gif";
+const char* kGifGrey   = "grey.gif";
+const char* kGifScale  = "scale.gif";
+const char* kGifBlack  = "black.gif";
 
 static string s_GetGif(int bits){
     string gif = NcbiEmptyString;

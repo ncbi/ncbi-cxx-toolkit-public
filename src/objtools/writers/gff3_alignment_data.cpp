@@ -156,10 +156,10 @@ void CGffAlignmentRecord::SetMatchType(
     const CSeq_id& target)
 //  ----------------------------------------------------------------------------
 {
-    static char* strProtMatch     = "protein_match";
-    static char* strEstMatch      = "EST_match";
-    static char* strTransNucMatch = "translated_nucleotide_match";
-    static char* strCdnaMatch     = "cDNA_match";
+    const char* strProtMatch     = "protein_match";
+    const char* strEstMatch      = "EST_match";
+    const char* strTransNucMatch = "translated_nucleotide_match";
+    const char* strCdnaMatch     = "cDNA_match";
 
     CSeq_id::EAccessionInfo source_info = source.IdentifyAccession();
     CSeq_id::EAccessionInfo target_info = target.IdentifyAccession();
