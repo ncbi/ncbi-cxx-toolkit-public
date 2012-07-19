@@ -669,7 +669,7 @@ void CIndexedDb_New::AddIndexInfo(
     }
     catch( CException & e ) {
         ERR_POST( 
-            Error << "index superheader for volume " << vol_name 
+            Info << "index superheader for volume " << vol_name 
                  << " was not loaded (" << e.what() << ")" );
         idx_not_resolved = true;
     }
