@@ -582,15 +582,17 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
         else {
             _ASSERT(base_width == 3);
             IAlnSegment::TSignedRange prot_r = row_r;
-            prot_r.SetFrom(row_r.GetFrom() / 3);
-            prot_r.SetLength(row_r.GetLength() < 3 ? 1 : row_r.GetLength() / 3);
-            if (IsPositiveStrand(row)) {
-                seq_vector.GetSeqData(prot_r.GetFrom(),
-                                        prot_r.GetToOpen(), s);
-            }
-            else {
-                seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
-                                      vec_size - prot_r.GetFrom(), s);
+            if (prot_r.GetLength() > 0) {
+                prot_r.SetFrom(row_r.GetFrom() / 3);
+                prot_r.SetLength(row_r.GetLength() < 3 ? 1 : row_r.GetLength() / 3);
+                if (IsPositiveStrand(row)) {
+                    seq_vector.GetSeqData(prot_r.GetFrom(),
+                                            prot_r.GetToOpen(), s);
+                }
+                else {
+                    seq_vector.GetSeqData(vec_size - prot_r.GetToOpen(),
+                                          vec_size - prot_r.GetFrom(), s);
+                }
             }
             off = (aln_r.GetFrom() - aln_range.GetFrom()) / 3;
         }
