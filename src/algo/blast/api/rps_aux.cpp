@@ -458,6 +458,64 @@ CRpsObsrFile::operator()() const
     return m_Data;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// CRpsFreqRatiosFile
+//
+/////////////////////////////////////////////////////////////////////////////
+
+/// This class represents the .freq file in a RPS-BLAST file, which contains
+/// the frequency ratios for the database
+class CRpsFreqRatiosFile : public CRpsMmappedFile {
+public:
+    /// Extension associated with the RPS-BLAST database PSSM file
+    static const string kExtension;
+
+    /// Parametrized constructor
+    /// @param filename_no_extn name of the file without extension
+    CRpsFreqRatiosFile(const string& filename_no_extn, Int4 num_profiles,
+                       Int4* offsets);
+
+    virtual ~CRpsFreqRatiosFile();
+
+    /// Lend the caller the pointer to the data structure this object manages.
+    /// Caller MUST NOT deallocate the return value.
+    const BlastRPSFreqRatiosHeader* operator()() const;
+private:
+    /// The data this class manages
+    BlastRPSFreqRatiosHeader* m_Data;
+};
+
+const string CRpsFreqRatiosFile::kExtension(".freq");
+
+CRpsFreqRatiosFile::CRpsFreqRatiosFile(const string& filename_no_extn,
+                                       Int4 num_profiles,
+                                       Int4* offsets)
+    : CRpsMmappedFile(filename_no_extn + kExtension), m_Data(NULL)
+{
+    _ASSERT(num_profiles > 0);
+    _ASSERT(offsets);
+
+    m_Data = new BlastRPSFreqRatiosHeader;
+    m_Data->num_profiles = num_profiles;
+    m_Data->start_offsets = new Int4[num_profiles + 1];
+    memcpy(m_Data->start_offsets, offsets, (num_profiles + 1) * sizeof(Int4));
+
+    m_Data->data = (double*)m_MmappedFile->GetPtr();
+}
+
+CRpsFreqRatiosFile::~CRpsFreqRatiosFile()
+{
+    delete [] m_Data->start_offsets;
+    delete m_Data;
+}
+
+const BlastRPSFreqRatiosHeader*
+CRpsFreqRatiosFile::operator()() const
+{
+    return m_Data;
+}
+
 
 CBlastRPSInfo::CBlastRPSInfo(const string& rps_dbname)
 {
@@ -501,6 +559,7 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
     m_RpsInfo->profile_header = NULL;
     m_RpsInfo->freq_header = NULL;
     m_RpsInfo->obsr_header = NULL;
+    m_RpsInfo->freq_ratios_header = NULL;
 
         // Load the various files
     if (flags & fAuxInfoFile) {
@@ -546,6 +605,28 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
         // doesn't take const pointers, but these won't be modified at all
         m_RpsInfo->obsr_header =
             const_cast<BlastRPSProfileHeader*>((*m_ObsrFile)());
+    }
+
+    if (flags & fFreqRatiosFile) {
+        // load PSSM file to get offsets
+        if (m_PssmFile.Empty()) {
+            m_PssmFile.Reset(new CRpsPssmFile(path));
+            m_RpsInfo->profile_header = 
+                const_cast<BlastRPSProfileHeader*>((*m_PssmFile)());
+        }
+
+        // read frequency ratios data
+        m_FreqRatiosFile.Reset(new CRpsFreqRatiosFile(path,
+                                   m_RpsInfo->profile_header->num_profiles,
+                                   m_RpsInfo->profile_header->start_offsets));
+
+        m_RpsInfo->freq_ratios_header =
+            const_cast<BlastRPSFreqRatiosHeader*>((*m_FreqRatiosFile)());
+
+        // if the pssm file was not requested than free its memory
+        if (!(flags & fPssmFile)) {
+            m_PssmFile.Reset();
+        }
     }
 }
 

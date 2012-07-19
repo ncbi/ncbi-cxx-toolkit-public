@@ -174,6 +174,8 @@ CRef<CSearchResultSet> CDeltaBlast::x_FindDomainHits(void)
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eRPSBlast));
 
     opts->SetEvalueThreshold(m_Options->GetDomainInclusionThreshold());
+    opts->SetOptions().SetCompositionBasedStats
+                            (m_Options->GetCompositionBasedStats());
     opts->SetFilterString("F");
 
     CLocalBlast blaster(m_Queries, opts, m_DomainDb);

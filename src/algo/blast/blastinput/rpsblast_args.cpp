@@ -100,6 +100,9 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
     m_DebugArgs.Reset(new CDebugArgs);
     arg.Reset(m_DebugArgs);
     m_Args.push_back(arg);
+
+    arg.Reset(new CCompositionBasedStatsArgs(true));
+    m_Args.push_back(arg);
 }
 
 CRef<CBlastOptionsHandle> 

@@ -73,7 +73,10 @@ CRef<CBlastRPSInfo>
 CSetupFactory::CreateRpsStructures(const string& rps_dbname,
                                    CRef<CBlastOptions> options)
 {
-    CRef<CBlastRPSInfo> retval(new CBlastRPSInfo(rps_dbname));
+    CBlastRPSInfo::EOpenFlags mode = 
+             (options->GetCompositionBasedStats() == eNoCompositionBasedStats) 
+             ? CBlastRPSInfo::fRpsBlast : CBlastRPSInfo::fRpsBlastWithCBS;
+    CRef<CBlastRPSInfo> retval(new CBlastRPSInfo(rps_dbname, mode));
     options->SetMatrixName(retval->GetMatrixName());
     options->SetGapOpeningCost(retval->GetGapOpeningCost());
     options->SetGapExtensionCost(retval->GetGapExtensionCost());

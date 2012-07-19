@@ -59,10 +59,12 @@ extern "C" {
  * @param queryBlk query sequence [in]
  * @param query_info query information [in]
  * @param sbp (Karlin-Altschul) information for search [in]
+ * @param subjectBlk subject sequence [in]
  * @param seqSrc used to fetch database/match sequences [in]
  * @param db_genetic_code Genetic code to use if database sequences are
  *                        translated, and there is no other guidance on
  *                        which genetic code to use [in]
+ * @param thisMatch hit for further processing [in]
  * @param hsp_stream used to fetch hits for further processing [in]
  * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
  * @param extendParams parameters used for extension [in]
@@ -75,12 +77,14 @@ extern "C" {
 NCBI_XBLAST_EXPORT
 Int2
 Blast_RedoAlignmentCore(EBlastProgramType program_number,
-                  BLAST_SequenceBlk * queryBlk,
+                  BLAST_SequenceBlk* queryBlk,
                   BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
-                  BlastHSPStream* hsp_stream,
+                  BLAST_SequenceBlk* subjectBlk,
                   const BlastSeqSrc* seqSrc,
                   Int4 db_genetic_code,
+                  BlastHSPList* thisMatch,
+                  BlastHSPStream* hsp_stream,
                   BlastScoringParameters* scoringParams,
                   const BlastExtensionParameters* extendParams,
                   const BlastHitSavingParameters* hitParams,

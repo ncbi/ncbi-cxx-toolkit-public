@@ -354,8 +354,9 @@ void CRedoAlignmentTestFixture::
     BOOST_REQUIRE(results);
 
     rv = Blast_RedoAlignmentCore(program, query_blk, 
-                                        query_info, sbp, hsp_stream, seq_src, 
-                                        BLAST_GENETIC_CODE, scoring_params, 
+                                        query_info, sbp, NULL, seq_src, 
+                                        BLAST_GENETIC_CODE, NULL, hsp_stream,
+                                        scoring_params, 
                                         ext_params, hit_params, psi_options, 
                                         results);
     BOOST_REQUIRE_MESSAGE(rv == (Int2)0, "Blast_RedoAlignmentCore failed!");

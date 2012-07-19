@@ -746,6 +746,7 @@ s_SetCompositionBasedStats(CBlastOptions& opt,
     const EProgram program = opt.GetProgram();
     if (program == eBlastp || program == eTblastn || 
         program == ePSIBlast || program == ePSITblastn ||
+        program == eRPSBlast ||
         program == eBlastx  ||  program == eDeltaBlast) {
 
         ECompoAdjustModes compo_mode = eNoCompositionBasedStats;

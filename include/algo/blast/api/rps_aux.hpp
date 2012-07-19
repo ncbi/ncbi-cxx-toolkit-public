@@ -52,6 +52,7 @@ class CRpsLookupTblFile;
 class CRpsPssmFile;
 class CRpsFreqsFile;
 class CRpsObsrFile;
+class CRpsFreqRatiosFile;
 
 // The BLAST Engine currently needs the BlastRPSInfo structure for both the
 // preliminary stage and the traceback search. In practice, the setup code
@@ -79,12 +80,20 @@ public:
         fFrequenciesFile = 8,
         /// Open file with numbers of independent observations
         fObservationsFile = 16,
+        /// Open file with frequency ratios
+        fFreqRatiosFile = 32,
+
+        // The freq ratios file is large and needed only in the traceback.
+        // It may be needed to add closing and loading separate files.
 
         /// Flags set for RPS-BLAST
         fRpsBlast = fLookupTableFile | fPssmFile | fAuxInfoFile,
 
         /// Flags set for DELTA-BLAST
-        fDeltaBlast = fFrequenciesFile | fObservationsFile
+        fDeltaBlast = fFrequenciesFile | fObservationsFile,
+
+        /// Flags set for RPS-BLAST running in CBS mode
+        fRpsBlastWithCBS = fRpsBlast | fFreqRatiosFile
     };
 
 public:
@@ -147,6 +156,11 @@ private:
     /// Number of independent observations file (.obsr)
     /// used by delta-blast
     CRef<CRpsObsrFile> m_ObsrFile;
+
+    /// Frequency ratios file (.freq)
+    /// used for composition based statistics and cobalt
+    CRef<CRpsFreqRatiosFile> m_FreqRatiosFile;
+
     
     /// Pointer which contains pointers to data managed by the data members
     /// above

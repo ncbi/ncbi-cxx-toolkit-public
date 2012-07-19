@@ -1618,6 +1618,7 @@ static Int2 s_BlastExtensionScoringOptionsValidate(EBlastProgramType program_num
             if (!Blast_QueryIsPssm(program_number) && program_number != eBlastTypeTblastn && 
                  program_number != eBlastTypeBlastp &&
                  program_number != eBlastTypeBlastx &&
+                 program_number != eBlastTypeRpsBlast &&
                  program_number != eBlastTypePsiBlast) {
 			Blast_MessageWrite(blast_msg, eBlastSevWarning, kBlastMessageNoContext,
                             "Compositional adjustments are only supported with blastp, blastx, or tblastn");

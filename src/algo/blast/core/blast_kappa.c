@@ -172,7 +172,7 @@ s_AdjustEvaluesForComposition(
         }
 
 #ifdef KAPPA_PRINT_DIAGNOSTICS
-        {{
+        if (seqSrc){
             int    sequence_gi; /*GI of a sequence*/
             Blast_GiList* gi_list; /*list of GI's for a sequence*/
             gi_list = BlastSeqSrcGetGis(seqSrc, (void *) (&subject_id));
@@ -187,7 +187,7 @@ s_AdjustEvaluesForComposition(
                    sequence_gi, LambdaRatio, comp_p_value,
                    query_length, subject_length, old_e_value, hsp->evalue);
             Blast_GiListFree(gi_list);
-        }}
+        }
 #endif
     } /* end for all HSPs */
 
@@ -439,6 +439,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
 static void
 s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
                        const BlastQueryInfo* query_info,
+                       const BLAST_SequenceBlk* subject_blk,
                        const BlastSeqSrc* seq_src,
                        BlastHSPList* hsp_list,
                        const BlastScoringOptions* scoring_options,
@@ -452,7 +453,6 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     const Boolean kIsOutOfFrame = scoring_options->is_ooframe;
     const EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
     BlastSeqSrcGetSeqArg seq_arg;
-    BLAST_SequenceBlk* subject_blk = NULL;
     Int2 status = 0;
     int i;
     SBlastTargetTranslation* target_t = NULL;
@@ -460,7 +460,7 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
     if ( !hsp_list) return;
 
     /* Initialize the subject */
-    {
+    if (seq_src){
         memset((void*) &seq_arg, 0, sizeof(seq_arg));
         seq_arg.oid = hsp_list->oid;
         seq_arg.encoding = encoding;
@@ -468,15 +468,17 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
         status = BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
         ASSERT(status == 0);
         (void)status; /* to pacify compiler warning */
-    }
 
-    if (program_number == eBlastTypeTblastn) {
-        subject_blk = seq_arg.seq;
-	BlastTargetTranslationNew(subject_blk, gen_code_string, eBlastTypeTblastn,
-            kIsOutOfFrame, &target_t);
-    }
-    else {
-        subject = seq_arg.seq->sequence;
+        if (program_number == eBlastTypeTblastn) {
+            subject_blk = seq_arg.seq;
+    	BlastTargetTranslationNew(subject_blk, gen_code_string, eBlastTypeTblastn,
+                kIsOutOfFrame, &target_t);
+        }
+        else {
+            subject = seq_arg.seq->sequence;
+        }
+    } else {
+        subject = subject_blk->sequence;
     }
 
     for (i = 0; i < hsp_list->hspcnt; i++) {
@@ -506,8 +508,10 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
         ASSERT(status == 0);
     }
     target_t = BlastTargetTranslationFree(target_t);
-    BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
-    BlastSequenceBlkFree(seq_arg.seq);
+    if (seq_src) {
+        BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
+        BlastSequenceBlkFree(seq_arg.seq);
+    }
 }
 
 
@@ -877,13 +881,15 @@ static void
 s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
 {
     if (self != NULL) {
-        BlastKappa_SequenceInfo * local_data = self->local_data;
-        if (self->length > 0) {
-            BlastSeqSrcReleaseSequence(local_data->seq_src,
+        if (self->index >=0) {
+            BlastKappa_SequenceInfo * local_data = self->local_data;
+            if (self->length > 0) {
+                BlastSeqSrcReleaseSequence(local_data->seq_src,
                                    &local_data->seq_arg);
-            BlastSequenceBlkFree(local_data->seq_arg.seq);
+                BlastSequenceBlkFree(local_data->seq_arg.seq);
+            }
+            free(self->local_data);
         }
-        free(self->local_data);
         self->local_data = NULL;
     }
 }
@@ -1162,6 +1168,7 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
     Uint1     *origData;  /* the unfiltered data for the sequence */
     /* BLAST-specific sequence information */
     BlastKappa_SequenceInfo * local_data = self->local_data;
+    BLAST_SequenceBlk * seq = self->local_data;
 
     seqData->data = NULL;
     seqData->length = 0;
@@ -1175,7 +1182,8 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
     seqData->data    = seqData->buffer + 1;
     seqData->length  = self->length;
 
-    origData = local_data->seq_arg.seq->sequence;
+    origData = (self->index >= 0) ? local_data->seq_arg.seq->sequence
+                            : seq->sequence;
     for (idx = 0;  idx < seqData->length;  idx++) {
         /* Copy the sequence data, replacing occurrences of amino acid
          * number 24 (Selenocysteine) with number 21 (Undetermined or
@@ -1252,7 +1260,7 @@ s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
          * atypical). */
         queryData->data[idx] = (origData[idx] != 24) ? origData[idx] : 21;
     }
-    if (seq_info->prog_number ==  eBlastTypeTblastn) {
+    if (seq_info && seq_info->prog_number ==  eBlastTypeTblastn) {
         /* The sequence must be translated. */
       return s_SequenceGetTranslatedRange(self, s_range, seqData,
                 q_range, queryData, align, shouldTestIdentical, compo_adjust_mode, isSmithWaterman);
@@ -1674,6 +1682,7 @@ s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
             matrix = sbp->matrix->data;
             rows = BLASTAA_SIZE;
         }
+
         for (i = 0;  i < rows;  i++) {
             for (j = 0;  j < BLASTAA_SIZE;  j++) {
                 searchParams->origMatrix[i][j] = matrix[i][j];
@@ -2035,9 +2044,11 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                         BLAST_SequenceBlk * queryBlk,
                         BlastQueryInfo* queryInfo,
                         BlastScoreBlk* sbp,
-                        BlastHSPStream* hsp_stream,
+                        BLAST_SequenceBlk * subjectBlk,
                         const BlastSeqSrc* seqSrc,
                         Int4 default_db_genetic_code,
+                        BlastHSPList * thisMatch,
+                        BlastHSPStream* hsp_stream,
                         BlastScoringParameters* scoringParams,
                         const BlastExtensionParameters* extendParams,
                         const BlastHitSavingParameters* hitParams,
@@ -2088,8 +2099,6 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         (ECompoAdjustModes) extendParams->options->compositionBasedStats;
     Boolean smithWaterman =
         (Boolean) (extendParams->options->eTbackExt == eSmithWatermanTbck);
-    /* alignment data for the current query-subject match */
-    BlastHSPList* thisMatch = NULL;
     /* existing alignments for a match */
     BlastCompo_Alignment ** incoming_align_set = NULL;
     BlastCompo_Alignment * incoming_aligns = NULL;
@@ -2103,12 +2112,12 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
        p-value is desired; value needs to be passed in eventually*/
     int compositionTestIndex = extendParams->options->unifiedP;
     Uint1* genetic_code_string = GenCodeSingletonFind(default_db_genetic_code);
-    Boolean perform_partial_fetch = BlastSeqSrcGetSupportsPartialFetching(seqSrc);
 
-    ASSERT(program_number == eBlastTypeBlastp ||
-           program_number == eBlastTypeTblastn ||
+    ASSERT(program_number == eBlastTypeBlastp   ||
+           program_number == eBlastTypeTblastn  ||
+           program_number == eBlastTypeBlastx   ||
            program_number == eBlastTypePsiBlast ||
-           program_number == eBlastTypeBlastx);
+           program_number == eBlastTypeRpsBlast);
 
     if (positionBased) {
         matrix = sbp->psi_matrix->pssm->data;
@@ -2134,6 +2143,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         ASSERT(queryInfo->num_queries == 1);
         ASSERT(queryBlk->length == (Int4)sbp->psi_matrix->pssm->ncols);
     }
+
     if ((int) compo_adjust_mode > 1 &&
         !Blast_FrequencyDataIsAvailable(scoringParams->options->matrix)) {
         return -1;   /* Unsupported matrix */
@@ -2171,8 +2181,9 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     s_RescaleSearch(sbp, scoringParams, numContexts, localScalingFactor);
     status_code =
         BLAST_GapAlignStructNew(scoringParams, extendParams,
-                                BlastSeqSrcGetMaxSeqLen(seqSrc), sbp,
-                                &gapAlign);
+                                (seqSrc) ?  BlastSeqSrcGetMaxSeqLen(seqSrc) 
+                                         :  subjectBlk->length,
+                                sbp, &gapAlign);
     if (status_code != 0) {
         return (Int2) status_code;
     }
@@ -2232,7 +2243,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         status_code = -1;
         goto function_cleanup;
     }
-    while (BlastHSPStreamRead(hsp_stream, &thisMatch) != kBlastHSPStream_Eof) {
+   
+    while (1) {
         int numAligns[6];
         Blast_KarlinBlk * kbp = NULL;
         BlastCompo_MatchingSequence matchingSeq = {0,};
@@ -2241,32 +2253,45 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         Int4 best_score;
         void * discarded_aligns = NULL;
      
-        if(thisMatch->hsp_array == NULL) {
-            continue;
+        if (seqSrc
+           && BlastHSPStreamRead(hsp_stream, &thisMatch) == kBlastHSPStream_Eof) 
+           break;
+
+        if (thisMatch->hsp_array == NULL) {
+            if (seqSrc) continue;
+            break;
         }
+
         if (BlastCompo_EarlyTermination(thisMatch->best_evalue,
                                         redoneMatches, numQueries)) {
             Blast_HSPListFree(thisMatch);
-            continue;
+            if (seqSrc) continue;
+            break;
         }
 
         query_index = thisMatch->query_index;
         context_index = query_index * numFrames;
         /* Get the sequence for this match */
-        if (perform_partial_fetch) {
+        if (seqSrc && BlastSeqSrcGetSupportsPartialFetching(seqSrc)) {
             BLAST_SetupPartialFetching(program_number, (BlastSeqSrc*)seqSrc, 
                                        (const BlastHSPList**)&thisMatch, 1);
         }
 
-        status_code =
-            s_MatchingSequenceInitialize(&matchingSeq, program_number,
+        if (subjectBlk) {
+            matchingSeq.length = subjectBlk->length;
+            matchingSeq.index = -1;
+            matchingSeq.local_data = subjectBlk;
+        } else {
+            status_code =
+                s_MatchingSequenceInitialize(&matchingSeq, program_number,
                                          seqSrc, default_db_genetic_code,
                                          thisMatch->oid);
-        if (status_code != 0) {
-            /* some sequences may have been excluded by membit filtering 
-               so this is not really an exception */
-            status_code = 0;
-            goto match_loop_cleanup;
+            if (status_code != 0) {
+                /* some sequences may have been excluded by membit filtering 
+                   so this is not really an exception */
+                status_code = 0;
+                goto match_loop_cleanup;
+            }
         }
         status_code =
             s_ResultHspToDistinctAlign(incoming_align_set, numAligns,
@@ -2349,32 +2374,41 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         if (status_code != 0) {
             goto query_loop_cleanup;
         }
-        if (best_evalue <= hitParams->options->expect_value &&
-            BlastCompo_HeapWouldInsert(&redoneMatches[query_index],
-                                               best_evalue, best_score,
-                                               thisMatch->oid)) {
+        if (best_evalue <= hitParams->options->expect_value) {
             /* The best alignment is significant */
             s_HSPListNormalizeScores(hsp_list, kbp->Lambda, kbp->logK,
                                              localScalingFactor);
-            s_ComputeNumIdentities(queryBlk, queryInfo, seqSrc,
+            s_ComputeNumIdentities(queryBlk, queryInfo, subjectBlk, seqSrc,
                                            hsp_list, scoringParams->options,
                                            genetic_code_string, sbp);
-            status_code = BlastCompo_HeapInsert(&redoneMatches[query_index],
+            if (!seqSrc) goto query_loop_cleanup;
+            if ( BlastCompo_HeapWouldInsert(&redoneMatches[query_index],
+                                               best_evalue, best_score,
+                                               thisMatch->oid)) {
+                status_code = BlastCompo_HeapInsert(&redoneMatches[query_index],
                                               hsp_list, best_evalue,
                                               best_score, thisMatch->oid,
                                               &discarded_aligns);
-            if (status_code == 0) {
-                hsp_list = NULL;
+                if (status_code == 0) hsp_list = NULL;
             } else {
-                goto query_loop_cleanup;
+                status_code = -1;
             }
+
+            if (status_code) goto query_loop_cleanup;
             if (discarded_aligns != NULL) {
                 Blast_HSPListFree(discarded_aligns);
             }
         }
 query_loop_cleanup:
 match_loop_cleanup:
+        if (seqSrc) {
+            thisMatch = Blast_HSPListFree(thisMatch);
+        } else {
+            Blast_HSPListSwap(thisMatch, hsp_list);
+            thisMatch->oid = hsp_list->oid;
+        }
         hsp_list = Blast_HSPListFree(hsp_list);
+
         if (status_code != 0) {
             for (query_index = 0;  query_index < numContexts;  query_index++) {
                 BlastCompo_AlignmentsFree(&alignments[query_index],
@@ -2382,9 +2416,8 @@ match_loop_cleanup:
             }
         }
         s_MatchingSequenceRelease(&matchingSeq);
-        thisMatch = Blast_HSPListFree(thisMatch);
         BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
-        if (status_code != 0) {
+        if (status_code != 0 || !seqSrc) {
             goto function_cleanup;
         }
     }
@@ -2392,7 +2425,7 @@ match_loop_cleanup:
 function_cleanup:
     sfree(alignments);
     sfree(incoming_align_set);
-    if (status_code == 0) {
+    if (seqSrc && status_code == 0) {
         s_FillResultsFromCompoHeaps(results, redoneMatches,
                                     hitParams->options->hitlist_size);
     } else {

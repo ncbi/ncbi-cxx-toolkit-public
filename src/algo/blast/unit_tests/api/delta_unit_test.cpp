@@ -217,12 +217,12 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 1
     { 
-        expected_domain_results[0].score = 728;
-        expected_domain_results[0].evalue = 2.45396e-98;
-        expected_domain_results[0].bit_score = 2841082571e-7;
+        expected_domain_results[0].score = 742;
+        expected_domain_results[0].evalue = 3.16688e-100;
+        expected_domain_results[0].bit_score = 2.89507e+02;
         expected_domain_results[0].num_ident = 111;
-        int starts[] = {1, 139, 80, -1, 81, 218, 162, -1, 163, 299};
-        int lengths[] = {79, 1, 81, 1, 69};
+        int starts[] = {1, 139, 80, -1, 81, 218};
+        int lengths[] = {79, 1, 151};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_domain_results[0].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
@@ -231,9 +231,9 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 2
     { 
-        expected_domain_results[1].score = 698;
-        expected_domain_results[1].evalue = 7.61355e-94;
-        expected_domain_results[1].bit_score = 2725169055e-7;
+        expected_domain_results[1].score = 713;
+        expected_domain_results[1].evalue = 7.45834e-96;
+        expected_domain_results[1].bit_score = 2.78295e+02;
         expected_domain_results[1].num_ident = 107;
         int starts[] = {1, 135, 6, -1, 8, 140, -1, 190, 58, 191, 80, -1, 81,
                         213, 94, -1, 95, 226, 114, -1, 116, 245, 200, -1,
@@ -247,9 +247,9 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 3
     { 
-        expected_domain_results[2].score = 661;
-        expected_domain_results[2].evalue = 2.92318e-88;
-        expected_domain_results[2].bit_score = 2583366987e-7;
+        expected_domain_results[2].score = 673;
+        expected_domain_results[2].evalue = 8.40771e-90;
+        expected_domain_results[2].bit_score = 2.62959e+02;
         expected_domain_results[2].num_ident = 106;
         int starts[] = {0, 137, 115, -1, 117, 252 };
         int lengths[] = {115, 2, 112};
@@ -286,19 +286,19 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
                 results[0].GetSeqAlign()->Get().front()->GetSeq_id(0).GetGi(),
                 129295);
 
-    const int kNumExpectedMatchingSeqs = 7;
+    const int kNumExpectedMatchingSeqs = 8;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
 
     BOOST_REQUIRE_EQUAL(kNumExpectedMatchingSeqs, x_CountNumberUniqueIds(sas));
 
-    const size_t kNumExpectedHSPs = 8;
+    const size_t kNumExpectedHSPs = 9;
     qa::TSeqAlignSet expected_results(kNumExpectedHSPs);
 
     // HSP # 1
     { 
-        expected_results[0].score = 865;
-        expected_results[0].evalue = 1.41573e-108;
-        expected_results[0].bit_score = 3371923606e-7;
+        expected_results[0].score = 861;
+        expected_results[0].evalue = 4.90290e-108;
+        expected_results[0].bit_score = 3.35656e+02;
         expected_results[0].num_ident = 101; 
         int starts[] = {0, 941, -1, 1094, 153, 1095};
         int lengths[] = {153, 1, 79};
@@ -310,9 +310,9 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 2
     {
-        expected_results[1].score = 638;
-        expected_results[1].evalue = 3.93488e-77;
-        expected_results[1].bit_score = 2497520568e-7;
+        expected_results[1].score = 633;
+        expected_results[1].evalue = 1.59653e-76;
+        expected_results[1].bit_score = 2.47830e+02;
         expected_results[1].num_ident = 73; 
         int starts[] = {0, 154, -1, 307, 153, 308};
         int lengths[] = {153, 1, 25};
@@ -324,9 +324,9 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 3
     {
-        expected_results[2].score = 650;
-        expected_results[2].evalue = 2.54216e-83;
-        expected_results[2].bit_score = 2543744518e-7;
+        expected_results[2].score = 645;
+        expected_results[2].evalue = 1.88887e-82;
+        expected_results[2].bit_score = 2.52452e+02;
         expected_results[2].num_ident = 80; 
         int starts[] = {0, 190, 68, -1, 70, 258, 92, -1, 93, 280, 118, -1, 
                         119, 305, 151, -1, 152, 337, 161, -1, 162, 346, -1,
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP #4
     {
         expected_results[3].score = 53;
-        expected_results[3].evalue = 3.74227;
+        expected_results[3].evalue = 3.83197e+00;
         expected_results[3].bit_score = 244103049e-7;
         expected_results[3].num_ident = 7; 
         int starts[] = {127, 104, 132, -1, 134, 109};
@@ -355,9 +355,9 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 5
     {
-        expected_results[4].score = 52;
-        expected_results[4].evalue = 4.67139;
-        expected_results[4].bit_score = 240251054e-7;
+        expected_results[4].score = 51;
+        expected_results[4].evalue = 5.55808;
+        expected_results[4].bit_score = 23.6440;
         expected_results[4].num_ident = 5; 
         int starts[] = {137, 20, 151, -1, 156, 34};
         int lengths[] = {14, 5, 17};
@@ -369,12 +369,12 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 6
     {
-        expected_results[5].score = 50;
-        expected_results[5].evalue = 6.76621;
-        expected_results[5].bit_score = 2325470625e-8;
-        expected_results[5].num_ident = 6; 
-        int starts[] = {159, 0, 173, -1, 178, 14};
-        int lengths[] = {14, 5, 11};
+        expected_results[5].score = 51;
+        expected_results[5].evalue = 6.14178;
+        expected_results[5].bit_score = 23.6440;
+        expected_results[5].num_ident = 8; 
+        int starts[] = {153, 102, -1, 122, 173, 127};
+        int lengths[] = {20, 5, 12};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[5].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
@@ -383,9 +383,9 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 7
     {
-        expected_results[6].score = 50;
-        expected_results[6].evalue = 7.18326;
-        expected_results[6].bit_score = 2325470625e-8;
+        expected_results[6].score = 51;
+        expected_results[6].evalue = 6.33109;
+        expected_results[6].bit_score = 23.6440;
         expected_results[6].num_ident = 7; 
         int starts[] = {172, 305, 179, -1, 182, 312};
         int lengths[] = {7, 3, 33};
@@ -398,16 +398,31 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     // HSP # 8
     {
-        expected_results[7].score = 50;
-        expected_results[7].evalue = 7.87994;
-        expected_results[7].bit_score = 2325470625e-8;
-        expected_results[7].num_ident = 8; 
-        int starts[] = {153, 102, -1, 122, 173, 127};
-        int lengths[] = {20, 5, 12};
+        expected_results[7].score = 48;
+        expected_results[7].evalue = 8.36262;
+        expected_results[7].bit_score = 22.4884;
+        expected_results[7].num_ident = 5;
+        int starts[] = {155, 78};
+        int lengths[] = {18};
         copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
              back_inserter(expected_results[7].starts));
         copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
              back_inserter(expected_results[7].lengths));
+    }
+
+
+    // HSP # 9
+    {
+        expected_results[8].score = 49;
+        expected_results[8].evalue = 8.65824;
+        expected_results[8].bit_score = 22.8736;
+        expected_results[8].num_ident = 4;
+        int starts[] = {175, 11};
+        int lengths[] = {14};
+        copy(&starts[0], &starts[STATIC_ARRAY_SIZE(starts)],
+             back_inserter(expected_results[8].starts));
+        copy(&lengths[0], &lengths[STATIC_ARRAY_SIZE(lengths)],
+             back_inserter(expected_results[8].lengths));
     }
 
 
@@ -431,6 +446,11 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query));       
 
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
+    
+    // use CDD database that does not have freq ratios file,
+    // for no CBS option rpsblast does not need the '.freq' file
+    m_DomainDb.Reset(new CSearchDatabase("data/deltatest_nocbs",
+                                         CSearchDatabase::eBlastDbIsProtein));
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
     CDeltaBlast deltablast(query_factory, dbadapter, domain_dbadapter,
                            m_OptHandle);
