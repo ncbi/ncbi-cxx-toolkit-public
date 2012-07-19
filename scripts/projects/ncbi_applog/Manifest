@@ -12,7 +12,8 @@
 # USE_DEFAULT_COMPONENTS
 
 APP: ncbi_applog 
-APP: $srcdir/src/misc/clog/app/ncbi_applog.cgi
+
+POSTBUILD: cp $srcdir/src/misc/clog/app/ncbi_applog.cgi $installdir/bin
 
 # The -t key prevents inclusion of the tree builder into the release
 # SVN_TAG_RELEASE_ADD_FLAGS: -t
