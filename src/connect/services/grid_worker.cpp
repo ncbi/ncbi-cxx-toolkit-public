@@ -644,7 +644,7 @@ public:
     }
     void Schedule()
     {
-        CFastMutexGuard guard(m_Mutext);
+        CFastMutexGuard guard(m_Mutex);
         m_AutoShutdownSW.Restart();
         if (m_StopFlag) {
             m_StopFlag = false;
@@ -653,7 +653,7 @@ public:
     }
     void Suspend()
     {
-        CFastMutexGuard guard(m_Mutext);
+        CFastMutexGuard guard(m_Mutex);
         m_AutoShutdownSW.Restart();
         m_AutoShutdownSW.Stop();
         if (!m_StopFlag) {
@@ -675,19 +675,19 @@ private:
 
     unsigned int x_GetInterval() const
     {
-        CFastMutexGuard guard(m_Mutext);
+        CFastMutexGuard guard(m_Mutex);
         return  m_AutoShutdown > 0 ?
                 min( m_AutoShutdown - (unsigned int)m_AutoShutdownSW.Elapsed(), m_RunInterval )
                 : m_RunInterval;
     }
     bool x_GetStopFlag() const
     {
-        CFastMutexGuard guard(m_Mutext);
+        CFastMutexGuard guard(m_Mutex);
         return m_StopFlag;
     }
     bool x_IsAutoShutdownTime() const
     {
-        CFastMutexGuard guard(m_Mutext);
+        CFastMutexGuard guard(m_Mutex);
         return m_AutoShutdown > 0 ? m_AutoShutdownSW.Elapsed() > m_AutoShutdown : false;
     }
 
@@ -701,7 +701,7 @@ private:
     unsigned int        m_RunInterval;
     unsigned int        m_AutoShutdown;
     CStopWatch          m_AutoShutdownSW;
-    mutable CFastMutex  m_Mutext;
+    mutable CFastMutex  m_Mutex;
 
     CWorkerNodeIdleThread(const CWorkerNodeIdleThread&);
     CWorkerNodeIdleThread& operator=(const CWorkerNodeIdleThread&);
