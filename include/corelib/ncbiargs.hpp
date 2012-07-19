@@ -1216,7 +1216,7 @@ public:
 
 private:
     // not allowed
-    void SetArgsType(EArgSetType args_type) {}
+    void SetArgsType(EArgSetType /*args_type*/) { }
 
     bool x_IsCommandMandatory(void) const;
     size_t x_GetCommandGroupIndex(const string& group) const;
