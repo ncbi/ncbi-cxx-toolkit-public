@@ -201,6 +201,10 @@ public:
 
         /// Get Blob output stream. The existing connection is
         /// cloned for writing blob.
+        /// 
+        /// NOTE: You won't be able to write a blob using this method if its
+        /// value is set to NULL in the database. To use this method you should
+        /// pre-set blob value to empty string or anything else of your choice.
         ///
         /// @param blob_size
         ///   blob_size is the size of the BLOB to be written.
@@ -211,6 +215,13 @@ public:
 
         /// Get bookmark for the blob. This bookmark can be used to change
         /// blob data later when all results from this query are processed.
+        /// 
+        /// NOTE: You won't be able to write a blob using this method if its
+        /// value is set to NULL in the database. To use this method you should
+        /// pre-set blob value to empty string or anything else of your choice.
+        /// Blob value should be set before the query execution, i.e. query
+        /// should return non-NULL value. Setting non-NULL value after query
+        /// execution won't work.
         CBlobBookmark GetBookmark(void) const;
 
     private:
