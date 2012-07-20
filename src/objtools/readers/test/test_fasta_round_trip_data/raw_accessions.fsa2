@@ -1,0 +1,30 @@
+>dbj|N00068| 
+>gb|N20001.1| 
+>tpe|bn000123| TPA: sample
+>tpd|FAA00017| TPA: unnamed protein product
+>emb|CAAA01020304| 
+>gb|AACN011056789| 
+>gb|ABCD1234567890| 
+>tpg|DAAA02000001| TPA: sample
+>tpg|DAAA02000000| TPA: sample
+>gb|AACN010000000| 
+>gb|AACN011000000| 
+>prf||550086A unnamed protein product
+>prf||650771AF unnamed protein product
+>prf||0806162C unnamed protein product
+>prf||2015436HX unnamed protein product
+>prf||1309311A:PDB=1EMD,2CMD unnamed protein product
+>pdb|1GAV|  
+>pdb|1GAV|Z Chain Z
+>pdb|1GAV|X Chain X
+>pdb|1GAV|XX Chain x
+>pdb|1GAV|! Chain !
+>pdb|1GAV|VB Chain |
+>ref|NM_000170.1| 
+>ref|NM_001000170| 
+>ref|ZP_00345678| unnamed protein product
+>ref|NZ_CH959311.1| 
+>ref|NZ_AABC03000051| 
+>ref|NZ_ABJB030000051| 
+>gpp|GPC_123456789.1| 
+>nat|AT_123456789.1| 

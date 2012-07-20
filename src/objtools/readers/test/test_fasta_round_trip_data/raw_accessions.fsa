@@ -1,0 +1,33 @@
+>N00068
+>N20001.1
+>bn000123 TPA: sample
+>FAA00017 TPA: unnamed protein product
+>CAAA01020304
+>AACN011056789
+>ABCD1234567890
+>DAAA02000001 TPA: sample
+>DAAA02000000 TPA: sample
+>AACN010000000
+>AACN011000000
+>550086A unnamed protein product
+>650771AF unnamed protein product
+>0806162C unnamed protein product
+>2015436HX unnamed protein product
+>1309311A:PDB=1EMD,2CMD unnamed protein product
+>1GAV
+>1GAVZ Chain Z
+>1GAV|X Chain X
+>1GAV|XX Chain x
+>1GAV_! Chain !
+>1GAV|VB Chain |
+# Leaving off SwissProt IDs, which gain "reviewed" tags over the round trip
+#>q7cqj0 unnamed protein product
+#>A2ASS6.1 unnamed protein product
+>NM_000170.1
+>NM_001000170
+>ZP_00345678 unnamed protein product
+>NZ_CH959311.1
+>NZ_AABC03000051
+>NZ_ABJB030000051
+>GPC_123456789.1
+>AT_123456789.1

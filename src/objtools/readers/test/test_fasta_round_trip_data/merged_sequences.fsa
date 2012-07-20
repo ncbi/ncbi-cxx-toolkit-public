@@ -1,0 +1,4 @@
+# Not quite the usual setup, but constrained by CSeq_id::WriteAsFasta,
+# which yields at most one GI and one other ID, which must be "better".
+>gi|123 samplebbs|456
+ACTCAGATGCATGACAT
