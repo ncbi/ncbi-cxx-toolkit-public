@@ -1337,14 +1337,15 @@ CNCMessageHandler::State
 CNCMessageHandler::x_WriteInitWriteResponse(void)
 {
 check_again:
-    if (m_ActiveHub->GetStatus() == eNCHubError) {
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubError) {
         m_LastPeerError = m_ActiveHub->GetErrMsg();
         SRV_LOG(Warning, "Error executing command on peer: " << m_LastPeerError);
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &Me::x_ProxyToNextPeer;
     }
-    else if (m_ActiveHub->GetStatus() != eNCHubCmdInProgress)
+    else if (status != eNCHubCmdInProgress)
         abort();
     if (NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
@@ -1352,6 +1353,8 @@ check_again:
     CNCActiveHandler* active = m_ActiveHub->GetHandler();
     if (!active->GotClientResponse())
         return NULL;
+    // Intentionally re-reading the status because it could change since our
+    // previous read at the beginning of the function.
     if (m_ActiveHub->GetStatus() != eNCHubCmdInProgress)
         goto check_again;
 
@@ -1494,6 +1497,8 @@ CNCMessageHandler::x_AssignCmdParams(void)
             if (key == "ip") {
                 if (!val.empty())
                     GetDiagCtx()->SetClientIP(val);
+                // Erase parameter to not print it in request-start, it will be
+                // printed as a part of standard log header.
                 m_ParsedCmd.params.erase(it);
             }
             break;
@@ -1529,6 +1534,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
                 unsigned char digest[16];
                 md5.Finalize(digest);
                 m_BlobPass.assign((char*)digest, 16);
+                // Erase parameter to not expose passwords via logs.
                 m_ParsedCmd.params.erase(it);
             }
             else if (key == "prev") {
@@ -1555,6 +1561,8 @@ CNCMessageHandler::x_AssignCmdParams(void)
                 if (key == "sid") {
                     if (!val.empty())
                         GetDiagCtx()->SetSessionID(NStr::URLDecode(val));
+                    // Erase parameter to not print it in request-start,
+                    // it will be printed as a part of standard log header.
                     m_ParsedCmd.params.erase(it);
                 }
                 else if (key == "size") {
@@ -1690,7 +1698,7 @@ CNCMessageHandler::x_StartCommand(void)
     if (m_AppSetup->disable) {
         diag_msg.Flush();
         // We'll be here only if generally work for the client is enabled but
-        // for current particular cache is disabled.
+        // for current particular cache it is disabled.
         GetDiagCtx()->SetRequestStatus(eStatus_Disabled);
         WriteText(s_MsgForStatus[eStatus_Disabled]).WriteText("\n");
         m_Flags = 0;
@@ -1713,6 +1721,10 @@ CNCMessageHandler::x_StartCommand(void)
             diag_msg.Flush();
             WriteText("OK:SIZE=0, NEED_ABORT1\n");
             GetDiagCtx()->SetRequestStatus(eStatus_SyncAborted);
+            // Old NC servers (those which used CNetCacheAPI instead of
+            // CNCActiveHandler) always started to write blob data in SYNC_PUT
+            // even when we responded to them NEED_ABORT. To avoid breaking the protocol
+            // we need to read from them those fake blob writes.
             bool needs_fake = x_IsFlagSet(fReadExactBlobSize)  &&  m_CmdVersion == 0;
             if (start_res == eServerBusy)
                 m_Flags = 0;
@@ -1747,6 +1759,10 @@ CNCMessageHandler::x_StartCommand(void)
         diag_msg.PrintParam("gen_key", "1");
     }
     else {
+        // If key is given and it's NetCache key (not ICache key) then we need
+        // to strip service name from it. It's necessary for the case when new
+        // CNetCacheAPI with enabled_mirroring=true passes key to an old CNetCacheAPI
+        // which doesn't even know about mirroring.
         CNCDistributionConf::GetSlotByKey(m_BlobKey, m_BlobSlot, m_TimeBucket);
         if (m_BlobKey[0] == '\1') {
             try {
@@ -1783,15 +1799,11 @@ CNCMessageHandler::x_StartCommand(void)
     }
     if (x_IsFlagSet(fNeedsLowerPriority))
         SetPriority(CNCDistributionConf::GetSyncPriority());
-    bool no_disk_space = false;
     if ((x_IsFlagSet(fNeedsSpaceAsClient)
             &&  CNCBlobStorage::NeedStopWrite())
         ||  (x_IsFlagSet(fNeedsSpaceAsPeer)
             &&  !CNCBlobStorage::AcceptWritesFromPeers()))
     {
-        no_disk_space = true;
-    }
-    if (no_disk_space) {
         GetDiagCtx()->SetRequestStatus(eStatus_NoDiskSpace);
         WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
         return &Me::x_FinishCommand;
@@ -1861,6 +1873,11 @@ CNCMessageHandler::x_GetCurSlotServers(void)
         main_srv_ip = CNCDistributionConf::GetMainSrvIP(key);
     }
     if (main_srv_ip != 0) {
+        // Note: this check for "main" server for blob assumes that for each
+        // blob slot only one NetCache instance processing it works on each
+        // server. It will give false positive results if there are several
+        // NC instances on the same server processing the same slot. But there's
+        // no much sense in such setup, so it's pretty safe assumption.
         if (Uint4(CNCDistributionConf::GetSelfID() >> 32) == main_srv_ip) {
             m_ThisServerIsMain = true;
         }
@@ -1895,6 +1912,9 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     if (!x_IsFlagSet(fUsesPeerSearch))
         return m_CmdProcessor;
 
+    // All commands that have fUsesPeerSearch will operate on m_LatestExist and
+    // m_LatestBlobSum, so we need to fill it here even if in next "if" we'll go
+    // almost directly to m_CmdProcessor.
     m_LatestExist = m_BlobAccess->IsBlobExists()
                     &&  (x_IsFlagSet(fNoBlobVersionCheck)
                          ||  m_BlobAccess->GetCurBlobVersion() == m_BlobVersion);
@@ -2072,6 +2092,8 @@ CNCMessageHandler::x_FinishCommand(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_StartReadingBlob(void)
 {
+    // Flushing the initial response line that client should receive before it
+    // will start writing blob data.
     Flush();
     if (NeedEarlyClose())
         return &Me::x_FinishCommand;
@@ -2102,6 +2124,8 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     if (x_IsFlagSet(fConfirmOnFinish)  &&  NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
 
+    // Fill all new event data but not add it to CNCSyncLog until we execute
+    // m_BlobAccess->Finalize().
     SNCSyncEvent* write_event = new SNCSyncEvent();
     write_event->event_type = eSyncWrite;
     write_event->key = m_BlobKey;
@@ -2126,21 +2150,24 @@ CNCMessageHandler::x_FinishReadingBlob(void)
 
     m_BlobAccess->Finalize();
     if (m_BlobAccess->HasError()) {
+        delete write_event;
         GetDiagCtx()->SetRequestStatus(eStatus_ServerError);
-        if (x_IsFlagSet(fConfirmOnFinish)) {
-            WriteText("ERR:Error while writing blob\n");
-            x_UnsetFlag(fConfirmOnFinish);
-            return &Me::x_FinishCommand;
-        }
-        else {
+        if (!x_IsFlagSet(fConfirmOnFinish))
             return &Me::x_CloseCmdAndConn;
-        }
+
+        WriteText("ERR:Error while writing blob\n");
+        x_UnsetFlag(fConfirmOnFinish);
+        return &Me::x_FinishCommand;
     }
 
     if (!x_IsFlagSet(fCopyLogEvent)) {
         m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
         CNCPeerControl::MirrorWrite(m_BlobKey, m_BlobSlot,
                                     m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
+        // If fCopyLogEvent is not set then this blob comes from client and
+        // thus we need to check quorum value before answering to client.
+        // If fCopyLogEvent is set then this write comes from other server
+        // and we don't care about quorum in this case.
         if (m_Quorum != 1) {
             if (m_Quorum != 0)
                 --m_Quorum;
@@ -2152,8 +2179,12 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     else if (m_OrigRecNo != 0) {
         CNCSyncLog::AddEvent(m_BlobSlot, write_event);
     }
-    else
+    else {
+        // m_OrigRecNo can be 0 if blob comes from another server as a result
+        // of synchronization by blob lists. In this case there's no event to
+        // link to and thus we don't need to add event to our sync log.
         delete write_event;
+    }
 
     return &Me::x_FinishCommand;
 }
@@ -2198,6 +2229,9 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
 {
     if (m_ActiveHub) {
         if (ProxyHadError()) {
+            // If we were proxying blob data from client to another server and some
+            // error occurred protocol doesn't allow us to anything else but
+            // close both connections - to client and to other NC server.
             CSrvSocketTask* active_sock = m_ActiveHub->GetHandler()->GetSocket();
             if (active_sock  &&  active_sock->HasError())
                 return &Me::x_CloseOnPeerError;
@@ -2237,6 +2271,8 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         m_ChunkLen = CByteSwap::GetInt4((const unsigned char*)&m_ChunkLen);
     if (m_ChunkLen == 0xFFFFFFFF) {
         if (m_ActiveHub) {
+            // Data transfer is finished, CNCActiveHandler will wait for response
+            // from other NC server and wake us up.
             m_ActiveHub->GetHandler()->SetRunnable();
             return &Me::x_WaitForPeerAnswer;
         }
@@ -2244,6 +2280,8 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
     }
 
     if (!m_BlobAccess  &&  !m_ActiveHub) {
+        // We can be here only when expecting fake start of blob writing from old
+        // NC server, but for some reason we got non-EOF chunk length.
         GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
         SRV_LOG(Critical, "Received non-EOF chunk len from peer: " << m_ChunkLen);
         return &Me::x_CloseCmdAndConn;
@@ -2373,6 +2411,8 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
         return &Me::x_SendCmdAsProxy;
     }
 
+    // Either there's no servers to execute this command on or all servers were
+    // tried and some error was the result from all of them.
     SRV_LOG(Warning, "Got error on all peer servers");
     if (m_LastPeerError.empty())
         m_LastPeerError = "ERR:Cannot execute command on peer servers";
@@ -2409,6 +2449,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     case eProxyWrite:
         m_ActiveHub->GetHandler()->ProxyWrite(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
                                               m_BlobVersion, m_BlobTTL, m_Quorum);
+        // The only place that needs to go further to a different state.
         return &Me::x_WriteInitWriteResponse;
     case eProxyHasBlob:
         m_ActiveHub->GetHandler()->ProxyHasBlob(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
@@ -2523,11 +2564,12 @@ CNCMessageHandler::x_ReadMetaResults(void)
 {
     if (NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
-    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
+    ENCClientHubStatus status = m_ActiveHub->GetStatus();
+    if (status == eNCHubCmdInProgress)
         return NULL;
-    if (m_ActiveHub->GetStatus() == eNCHubError)
+    if (status == eNCHubError)
         goto results_processed;
-    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
+    if (status != eNCHubSuccess)
         abort();
 
     CNCActiveHandler* handler;
@@ -2580,6 +2622,9 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
     }
 
     CSrvDiagMsg().PrintExtra().PrintParam("proxy", "1");
+    // Changing parameters that will go to other server: that server have to
+    // execute command locally, without quorum (quorum equal to 1), and without
+    // searching on other servers.
     m_Quorum = 1;
     m_SearchOnRead = false;
     m_ForceLocal = true;
@@ -2837,6 +2882,12 @@ CNCMessageHandler::x_DoCmd_HasBlob(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Remove(void)
 {
+    // We delete blob only from client point of view. From our POV we create
+    // new blob version with expiration time one second in the past. This is
+    // necessary for proper synchronization with other servers (if we delete
+    // blob and then will synchronize using blob lists then other server will
+    // copy the blob back to us). And we can create this new blob version
+    // safely even when we haven't completed yet the initial synchronization.
     if ((!m_BlobAccess->IsBlobExists()  ||  m_BlobAccess->IsCurBlobExpired())
         &&  CNCServer::IsInitiallySynced())
     {
@@ -2918,6 +2969,8 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
         return &Me::x_FinishCommand;
     }
 
+    // Set fRunsInStartedSync flag so that x_CleanCmdResources() could properly call
+    // CNCPeriodicSync::SyncCommandFinished() or CNCPeriodicSync::Cancel().
     x_SetFlag(fRunsInStartedSync);
     string result;
     if (sync_res == eProceedWithEvents) {
@@ -3000,6 +3053,12 @@ CNCMessageHandler::x_DoCmd_CopyPut(void)
         x_UnsetFlag(fCopyLogEvent);
         WriteText("OK:HAVE_NEWER1\n");
     }
+    // Old NC servers (those which used CNetCacheAPI instead of
+    // CNCActiveHandler) always started to write blob data in SYNC_PUT and
+    // COPY_PUT even when we responded to them HAVE_NEWER. To avoid breaking
+    // the protocol we need to read from them those fake blob writes. So for
+    // old NC servers when we answered HAVE_NEWER we'll go to x_StartReadingBlob,
+    // for newer ones we'll go to x_FinishCommand.
     if (!need_read_blob  &&  m_CmdVersion != 0) {
         x_UnsetFlag(fConfirmOnFinish);
         x_UnsetFlag(fReadExactBlobSize);
@@ -3032,6 +3091,9 @@ CNCMessageHandler::x_DoCmd_CopyProlong(void)
             need_event = true;
         }
 
+        // m_OrigRecNo can be 0 if prolong happens as a result of synchronization
+        // using blob lists. In this case there's no event to link to and thus
+        // no need to create event here.
         if (need_event  &&  m_OrigRecNo != 0) {
             SNCSyncEvent* event = new SNCSyncEvent();
             event->event_type = eSyncProlong;

@@ -71,7 +71,7 @@ s_AddTimerTicket(STimerTicket* ticket)
 {
     int cur_time = CSrvTime::CurSecs();
     int ticket_time = ticket->timer_time;
-    if (ticket_time < cur_time + kTimerLowMask) {
+    if (ticket_time <= cur_time + kTimerLowMask) {
         if (ticket_time <= cur_time)
             ticket_time = ticket->timer_time = cur_time + 1;
         s_TimerLowQ[ticket_time & kTimerLowMask].push_back(*ticket);
