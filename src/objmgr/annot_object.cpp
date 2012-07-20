@@ -472,7 +472,7 @@ CDataSource& CAnnotObject_Info::GetDataSource(void) const
 }
 
 
-const string kAnnotTypePrefix = "Seq-annot.data.";
+const CTempString kAnnotTypePrefix = "Seq-annot.data.";
 
 void CAnnotObject_Info::GetLocsTypes(TTypeIndexSet& idx_set) const
 {
@@ -486,11 +486,11 @@ void CAnnotObject_Info::GetLocsTypes(TTypeIndexSet& idx_set) const
         if ( !obj.GetType().IsStr() ) {
             continue;
         }
-        string type = obj.GetType().GetStr();
+        CTempString type = obj.GetType().GetStr();
         if (type.substr(0, kAnnotTypePrefix.size()) != kAnnotTypePrefix) {
             continue;
         }
-        type.erase(0, kAnnotTypePrefix.size());
+        type = type.substr(kAnnotTypePrefix.size());
         if (type == "align") {
             idx_set.push_back(CAnnotType_Index::GetAnnotTypeRange(
                 C_Data::e_Align));

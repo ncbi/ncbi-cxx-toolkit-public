@@ -37,6 +37,8 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Seq_descr.hpp>
@@ -167,6 +169,7 @@ void CBioseq_Base_Info::x_SetAnnot(const CBioseq_Base_Info& annot,
 
 void CBioseq_Base_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
+    tse.GetMasterSeqSegments();
     TParent::x_UpdateAnnotIndexContents(tse);
     NON_CONST_ITERATE ( TAnnot, it, m_Annot ) {
         (*it)->x_UpdateAnnotIndex(tse);

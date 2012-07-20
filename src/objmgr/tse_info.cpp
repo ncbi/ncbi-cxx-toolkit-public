@@ -44,6 +44,7 @@
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/impl/handle_range.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 
@@ -738,6 +739,22 @@ CTSE_Info::GetSegSetMaster(void) const
         entry = first;
     }
     return null;
+}
+
+
+CConstRef<CMasterSeqSegments> CTSE_Info::GetMasterSeqSegments(void) const
+{
+    if ( !m_MasterSeqSegmentsLoaded ) {
+        TAnnotLockWriteGuard guard(m_AnnotLock);
+        if ( !m_MasterSeqSegmentsLoaded ) {
+            CConstRef<CBioseq_Info> master_seq = GetSegSetMaster();
+            if ( master_seq ) {
+                m_MasterSeqSegments = new CMasterSeqSegments(*master_seq);
+            }
+            m_MasterSeqSegmentsLoaded = true;
+        }
+    }
+    return m_MasterSeqSegments;
 }
 
 

@@ -678,18 +678,6 @@ void CSeq_annot_Info::x_UpdateObjectKeys(CAnnotObject_Info& info,
 }
 
 
-static
-CConstRef<CMasterSeqSegments> sx_GetMaster(const CTSE_Info& tse)
-{
-    //return null;
-    CConstRef<CBioseq_Info> master_seq = tse.GetSegSetMaster();
-    if ( master_seq ) {
-        return ConstRef(new CMasterSeqSegments(*master_seq));
-    }
-    return null;
-}
-
-
 void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
 {
     _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetFtable().size());
@@ -698,7 +686,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
-    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
+    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -774,7 +762,7 @@ void CSeq_annot_Info::x_InitGraphKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
-    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
+    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -827,7 +815,7 @@ void CSeq_annot_Info::x_InitAlignKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
-    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
+    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -887,7 +875,7 @@ void CSeq_annot_Info::x_InitLocsKeys(CTSE_Info& tse)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
-    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
+    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());
@@ -966,7 +954,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
     const CSeq_table& feat_table = m_Object->GetData().GetSeq_table();
     m_Table_Info = new CSeqTableInfo(feat_table);
     
-    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
+    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
 
     if ( !m_Table_Info->IsFeatTable() ) {
         // index whole Seq-table
@@ -1217,7 +1205,7 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
-    CConstRef<CMasterSeqSegments> master = sx_GetMaster(tse);
+    CConstRef<CMasterSeqSegments> master = tse.GetMasterSeqSegments();
     vector<CHandleRangeMap> hrmaps;
 
     CTSEAnnotObjectMapper mapper(tse, GetName());

@@ -80,6 +80,7 @@ class CTSE_Default_Assigner;
 class IEditSaver;
 
 class CSeq_annot_Finder;
+class CMasterSeqSegments;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -323,6 +324,7 @@ public:
     SSeqMatch_TSE GetSeqMatch(const CSeq_id_Handle& id) const;
 
     CConstRef<CBioseq_Info> GetSegSetMaster(void) const;
+    CConstRef<CMasterSeqSegments> GetMasterSeqSegments(void) const;
 
     // fill ids with all Bioseqs Seq-ids from this TSE
     // the result will be sorted and contain no duplicates
@@ -692,6 +694,9 @@ private:
     int                           m_InternalBioObjNumber;
     typedef map<CBioObjectId, CTSE_Info_Object*> TBioObjects;
     TBioObjects m_BioObjects;
+
+    mutable bool m_MasterSeqSegmentsLoaded;
+    mutable CConstRef<CMasterSeqSegments> m_MasterSeqSegments;
 
 private:
     // Hide copy methods
