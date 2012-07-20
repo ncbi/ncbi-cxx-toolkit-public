@@ -41,4 +41,4 @@ SunOSSparc      : WS64  : WorkShop.sh 64 --with-local-lbsm --without-debug --wit
 SunOSSparc      : WS32  : WorkShop.sh 32 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc      : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal=i386,x86_64
-Cygwin64        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
+Cygwin32        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
