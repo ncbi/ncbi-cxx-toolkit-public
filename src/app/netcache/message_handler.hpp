@@ -48,31 +48,58 @@ struct SNCBlobSummary;
 
 
 enum ENCCmdFlags {
+    /// Command needs access to the blob.
     fNeedsBlobAccess    = 1 <<  0,
+    /// Command needs to generate blob key if it's empty.
     fCanGenerateKey     = 1 <<  1,
+    /// Command needs finished database caching to be executed locally.
     fNeedsStorageCache  = 1 <<  2,
+    /// Do not check access password during command execution.
     fDoNotCheckPassword = 1 <<  3,
+    /// Always execute the command locally without proxying to peers.
     fDoNotProxyToPeers  = 1 <<  4,
+    /// Command needs to search for the latest version of the blob on all servers.
     fUsesPeerSearch     = 1 <<  5,
+    /// During the blob search on other servers command needs to know only
+    /// whether this blob exists or not, i.e. first positive response
+    /// of existence should finish the search.
     fPeerFindExistsOnly = 1 <<  6,
+    /// Command comes from client and needs disk space to execute.
     fNeedsSpaceAsClient = 1 <<  7,
+    /// Command comes from other NC server and needs disk space to execute.
     fNeedsSpaceAsPeer   = 1 <<  8,
-    fSwapLengthBytes    = 1 <<  9,  ///< Byte order should be swapped when
-                                    ///< reading length of chunks in blob
-                                    ///< transfer protocol
+    /// Byte order should be swapped when reading length of chunks in blob
+    /// transfer protocol.
+    fSwapLengthBytes    = 1 <<  9,
+    /// Command needs an "OK:" response at the end of successful execution.
     fConfirmOnFinish    = 1 << 10,
-    fReadExactBlobSize  = 1 << 11,  ///< There is exact size of the blob
-                                    ///< transferred to NetCache
+    /// There is exact size of the blob transferred to NetCache.
+    fReadExactBlobSize  = 1 << 11,
+    /// Client will send blob data for the command and won't send EOF marker.
     fSkipBlobEOF        = 1 << 12,
+    /// Command copies sync log event from other server, not creates a new one.
     fCopyLogEvent       = 1 << 13,
+    /// Command can be executed only by admin client.
     fNeedsAdminClient   = 1 << 14,
+    /// Command can be executed only after successful execution of SYNC_START.
     fRunsInStartedSync  = 1 << 15,
+    /// Command should be executed even if server wants to abort
+    /// the synchronization.
     fProhibitsSyncAbort = 1 << 16,
+    /// Command should be executed with a lower priority.
     fNeedsLowerPriority = 1 << 17,
+    /// Command shouldn't check the blob version (it doesn't come with
+    /// the command).
     fNoBlobVersionCheck = 1 << 18,
+    /// Access information about blob shouldn't be printed at the end
+    /// of the command.
     fNoBlobAccessStats  = 1 << 19,
+    /// Consider synchronization command to be successful even though
+    /// RequestStatus is not eStatus_OK.
     fSyncCmdSuccessful  = 1 << 20,
+    /// This is PUT2 command and connection that used PUT2 command.
     fCursedPUT2Cmd      = 1 << 21,
+    /// Command comes from client, not from other NC server.
     fComesFromClient    = 1 << 22,
 
 
@@ -105,11 +132,7 @@ enum ENCProxyCmd {
 /// Handler of all NetCache incoming requests.
 /// Handler written to be reusable object so that if one connection to
 /// NetCache is closed then handler from it can go to serve for another newly
-/// opened connection. All handling is implemented as finite state machine
-/// with central place of state dispatching - x_ManageCmdPipeline - and with
-/// transitions between states implemented inside state processors. So that
-/// each state processor knows where it can go then, central part only knows
-/// which method process which state.
+/// opened connection.
 class CNCMessageHandler : public CSrvSocketTask,
                           public CSrvStatesTask<CNCMessageHandler>
 {
@@ -182,8 +205,6 @@ private:
     State x_CloseCmdAndConn(void);
     State x_SaveStatsAndClose(void);
     State x_PrintCmdsCntAndClose(void);
-    /// Main dispatcher of state machine
-    void x_ManageCmdPipeline(void);
     /// Read authentication message from client
     State x_ReadAuthMessage(void);
     /// Read command and start it if it's available

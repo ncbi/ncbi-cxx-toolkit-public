@@ -54,565 +54,1135 @@ BEGIN_NCBI_SCOPE
 
 
 /// Definition of all NetCache commands
+/// 
+/// General format of a "NetCache" command is as follows:
+/// 
+/// CMD param1 param2 ...
+/// 
+/// Format of "ICache" command is as follows:
+/// 
+/// IC(cache) CMD param1 param2 ...
+/// 
+/// Here "IC" is two letters that appear in command literally. "cache" is name
+/// of the cache where blob is stored; it's mentioned in parameter list as
+/// first parameter with type eNSPA_ICPrefix. Every command parameter can be
+/// given as just value or as name=value pair. String parameter values can be
+/// enclosed in double quotes. If parameter is declared with the flag
+/// eNSPA_Optional then it can be skipped from the command, in this case its
+/// default value will be used (if any). If parameter flag eNSPA_Optchain has
+/// the same meaning except if it's not provided then all following parameters
+/// marked as eNSPA_Optional will be assumed not provided too.
+/// 
+/// If command needs some binary data along with it then it's sent split in
+/// chunks each having 4-byte integer prefix containing the length of the chunk.
+/// When all data is sent special chunk length 0xFFFFFFFF should be sent
+/// at the end. Successful response of each command is sent as one line
+/// starting with "OK:" and then space-separated parameters that need to be
+/// returned. If response should contain binary data then initial response
+/// line should have "SIZE=nnn" with the size of binary data to follow.
+/// Unsuccessful responses to commands always start with "ERR:" and then error
+/// explanation follows.
+/// 
+/// Descriptions of commands have
+///  - command name as it comes from client;
+///  - structure containing
+///    * state function processing this command;
+///    * command name as it appears in statistics;
+///    * flags controlling command behavior;
+///    * type of access to blob if needed;
+///    * type of proxy command that should be executed if command will need to
+///      be proxied to other servers;
+///  - set of structures explaining command parameters. Each structure has
+///    * parameter name which can be used by client if it passes parameters in
+///      name=value form. Also name is used to distinguish parameters in
+///      x_AssignCmdParams();
+///    * type of parameter - parser makes additional checks to see if given
+///      value is applicable for necessary parameter type;
+///    * parameter flags.
 static CNCMessageHandler::SCommandDef s_CommandMap[] = {
+    // "Are you alive?" command. This is old and deprecated command but it's
+    // executed a lot in old ICache clients. All that they need in response is
+    // "OK:".
     { "A?",
         {&CNCMessageHandler::x_FinishCommand,
             "A?",
             fConfirmOnFinish} },
+    // Requests version of the server.
     { "VERSION", {&CNCMessageHandler::x_DoCmd_Version, "VERSION"} },
+    // Requests some "health" information about the server.
     { "HEALTH",  {&CNCMessageHandler::x_DoCmd_Health,  "HEALTH"} },
+    // Check if blob exists. Command for "ICache" clients.
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "IC_HASB",
             eClientBlobRead + fPeerFindExistsOnly,
             eNCRead,
             eProxyHasBlob},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read blob contents. Command for "ICache" clients.
     { "READ",
         {&CNCMessageHandler::x_DoCmd_Get,
             "IC_READ",
             eClientBlobRead,
             eNCReadData,
             eProxyRead},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Write blob contents. Command for "ICache" clients.
     { "STOR",
         {&CNCMessageHandler::x_DoCmd_IC_Store,
             "IC_STOR",
             eClientBlobWrite,
             eNCCreate,
             eProxyWrite},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Time-to-live for the blob, 0 means default from server settings.
           { "ttl",     eNSPT_Int,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // 1 if client wants confirmation after blob has been written
+          // (by default it just assumes that everything is written and moves
+          // further).
           { "confirm", eNSPT_Int,  eNSPA_Optional },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Write blob contents. Old and deprecated command which probably is not
+    // used by modern ICache clients anymore. It has the size of the blob right
+    // in the command (so client should know it beforehand) and it doesn't use
+    // "EOF" marker at the end of blob data.
     { "STRS",
         {&CNCMessageHandler::x_DoCmd_IC_Store,
             "IC_STRS",
             eClientBlobWrite + fReadExactBlobSize + fSkipBlobEOF,
             eNCCreate,
             eProxyWrite},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Time-to-live for the blob, 0 means default from server settings.
           { "ttl",     eNSPT_Int,  eNSPA_Required },
+          // Size of the blob to be written.
           { "size",    eNSPT_Int,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read all or part of contents of the "last" version of the blob.
+    // In response to the command NC sends blob contents, blob version it has
+    // and flag showing if this version can be considered "valid", i.e. if it's
+    // not expired yet.
     { "READLAST",
         {&CNCMessageHandler::x_DoCmd_GetLast,
             "IC_READLAST",
             eClientBlobRead + fNoBlobVersionCheck,
             eNCReadData,
             eProxyReadLast},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Starting position of the data that needs to be sent.
           { "start",   eNSPT_Int,  eNSPA_Optional },
+          // Size of the data that needs to be sent.
           { "size",    eNSPT_Int,  eNSPA_Optional },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Mark the given blob version as "valid" and do that only if this version
+    // is still current and wasn't rewritten with another version.
     { "SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "IC_SETVALID",
             fNeedsBlobAccess,
             eNCRead,
             eProxySetValid},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Write blob contents. Command is issued only by other servers while
+    // mirroring just written blobs or processing quorum requirements,
+    // i.e. writing to other servers before answering to client that blob is
+    // written.
     { "COPY_PUT",
         {&CNCMessageHandler::x_DoCmd_CopyPut,
             "COPY_PUT",
             eCopyBlobFromPeer + fNeedsSpaceAsPeer + fReadExactBlobSize
                               + fCopyLogEvent,
             eNCCopyCreate},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Blob's version (for NC-generated blob keys this will be equal to 0).
           { "version", eNSPT_Int,  eNSPA_Required },
+          // MD5 checksum of blob's password.
           { "md5_pass",eNSPT_Str,  eNSPA_Required },
+          // Creation time of the blob (microseconds since epoch).
           { "cr_time", eNSPT_Int,  eNSPA_Required },
+          // Time-to-live for the blob.
           { "ttl",     eNSPT_Int,  eNSPA_Required },
+          // Dead-time for the blob (can be greater than expiration time).
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          // Expiration time for the blob
           { "exp",     eNSPT_Int,  eNSPA_Required },
+          // Blob size.
           { "size",    eNSPT_Int,  eNSPA_Required },
+          // Time-to-live for blob's version.
           { "ver_ttl", eNSPT_Int,  eNSPA_Required },
+          // Blob's version expiration time.
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
+          // Server_id of the server where blob was created.
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
+          // Id of the blob on the server where it was created.
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
+          // Record number of the event of blob creation in synchronization
+          // logs of the server where blob was created.
           { "log_rec", eNSPT_Int,  eNSPA_Required },
+          // Version of the command. Field exists for protocol backwards
+          // compatibility with previous versions of NC. In current NC this
+          // version is always 1.
           { "cmd_ver", eNSPT_Int,  eNSPA_Optional, "0" },
+          // Client IP for application that requested writing the blob.
+          // Parameter is not empty only if command is issued as part of
+          // quorum-related functionality, i.e. before client received
+          // confirmation of blob writing.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application that requested writing the blob.
+          // Parameter is not empty only if command is issued as part of
+          // quorum-related functionality, i.e. before client received
+          // confirmation of blob writing.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+    // Prolong blob lifetime. Command is issued only by other servers while
+    // mirroring prolonged blobs.
     { "COPY_PROLONG",
         {&CNCMessageHandler::x_DoCmd_CopyProlong,
             "COPY_PROLONG",
             eCopyBlobFromPeer,
             eNCRead},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Creation time of the blob (microseconds since epoch).
           { "cr_time", eNSPT_Int,  eNSPA_Required },
+          // Server_id of the server where blob was created.
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
+          // Id of the blob on the server where it was created.
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
+          // Dead-time for the blob (can be greater than expiration time).
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          // Expiration time for the blob
           { "exp",     eNSPT_Int,  eNSPA_Required },
+          // Blob's version expiration time.
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
+          // Time of creation of initial record in synchronization log about
+          // this operation.
           { "log_time",eNSPT_Int,  eNSPA_Optchain },
+          // Server that first made the blob's life prolongation.
           { "log_srv", eNSPT_Int,  eNSPA_Optional },
+          // Record number of the initial record in synchronization log about
+          // this operation.
           { "log_rec", eNSPT_Int,  eNSPA_Optional } } },
+    // Write blob contents. Command for "NetCache" clients.
     { "PUT3",
         {&CNCMessageHandler::x_DoCmd_Put,
             "PUT3",
             eClientBlobWrite + fCanGenerateKey + fConfirmOnFinish,
             eNCCreate,
             eProxyWrite},
+          // Time-to-live for the blob. If not given or 0 then default TTL
+          // is used.
         { { "ttl",     eNSPT_Int,  eNSPA_Optional },
+          // Key of the blob. If it's not given or empty then new key will be
+          // generated.
           { "key",     eNSPT_NCID, eNSPA_Optional },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read blob contents. Command for "NetCache" clients.
     { "GET2",
         {&CNCMessageHandler::x_DoCmd_Get,
             "GET2",
             eClientBlobRead,
             eNCReadData,
             eProxyRead},
+          // Key of the blob.
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          // Not used and not implemented parameter. Exists just for backwards
+          // compatibility with old clients.
           { "NW",      eNSPT_Id,   eNSPA_Obsolete | fNSPA_Match },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Check if blob exists. Command for "NetCache" clients.
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "HASB",
             eClientBlobRead + fPeerFindExistsOnly,
             eNCRead,
             eProxyHasBlob},
+          // Key of the blob.
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Delete blob. Command for "NetCache" clients.
+    // If the blob doesn't exist command is still considered successful.
     { "RMV2",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "RMV2",
             fNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
             eNCCreate,
             eProxyRemove},
+          // Key of the blob.
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Get size of the blob. Command for "NetCache" clients.
     { "GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
             "GetSIZe",
             eClientBlobRead,
             eNCRead,
             eProxyGetSize},
+          // Key of the blob.
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Delete blob. Command for "ICache" clients.
+    // If the blob doesn't exist command is still considered successful.
     { "REMO",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "IC_REMOve",
             fNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
             eNCCreate,
             eProxyRemove},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Get size of the blob. Command for "ICache" clients.
     { "GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
             "IC_GetSIZe",
             eClientBlobRead,
             eNCRead,
             eProxyGetSize},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read part of the blob contents. Command for "NetCache" clients.
     { "GETPART",
         {&CNCMessageHandler::x_DoCmd_Get,
             "GETPART",
             eClientBlobRead,
             eNCReadData,
             eProxyRead},
+          // Key of the blob.
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          // Starting position of the data that needs to be sent.
           { "start",   eNSPT_Int,  eNSPA_Required },
+          // Size of the data that needs to be sent.
           { "size",    eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read part of the blob contents. Command for "ICache" clients.
     { "READPART",
         {&CNCMessageHandler::x_DoCmd_Get,
             "IC_READPART",
             eClientBlobRead,
             eNCReadData,
             eProxyRead},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Starting position of the data that needs to be sent.
           { "start",   eNSPT_Int,  eNSPA_Required },
+          // Size of the data that needs to be sent.
           { "size",    eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Get meta information about the blob. This command is sent only by other
+    // NC servers. And it's used to determine which server has the latest
+    // version of the blob. Thus response to this command is a line containing
+    // enough information to compare the blob's creation time with the same
+    // blob on other servers.
     { "PROXY_META",
         {&CNCMessageHandler::x_DoCmd_ProxyMeta,
             "PROXY_META",
             fNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
                              + fDoNotCheckPassword,
             eNCRead},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Client IP for application on behalf of which the info is requested.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application on behalf of which the info is requested.
           { "sid",     eNSPT_Str,  eNSPA_Required } } },
+    // Write the blob contents. This command is sent only by other NC servers
+    // in response to client's PUT3 (or similar) command when the server where
+    // client have sent initial command cannot execute it locally for any
+    // reason (slot is not processed by that server or initial database caching
+    // is not completed yet).
     { "PROXY_PUT",
         {&CNCMessageHandler::x_DoCmd_Put,
             "PROXY_PUT",
             eProxyBlobWrite + fConfirmOnFinish,
             eNCCreate,
             eProxyWrite},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Blob's version (for NC-generated blob keys this will be equal to 0).
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Time-to-live for the blob.
           { "ttl",     eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read all or a part of the blob contents. This command is sent only
+    // by other NC servers in response to client's GET2 (or similar) command
+    // when the server where client have sent initial command cannot execute it
+    // locally for any reason (slot is not processed by that server, or initial
+    // database caching is not completed yet, or it was determined that this
+    // server has latest version of the blob).
     { "PROXY_GET",
         {&CNCMessageHandler::x_DoCmd_Get,
             "PROXY_GET",
             eProxyBlobRead,
             eNCReadData,
             eProxyRead},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Blob's version (for NC-generated blob keys this will be equal to 0).
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Starting position of the data that needs to be sent.
           { "start",   eNSPT_Int,  eNSPA_Required },
+          // Size of the data that needs to be sent.
           { "size",    eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Value of the flag "search_on_read" to use with this command, i.e.
+          // whether this server should search the blob if it's not found
+          // locally.
           { "srch",    eNSPT_Int,  eNSPA_Required },
+          // Flag whether local execution of this command should be forced
+          // no matter what, i.e. if this flag is set in cases when normal GET2
+          // command would have been proxied to other servers an error should
+          // be returned.
           { "local",   eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Check if the blob exists. This command is sent only by other NC servers
+    // in response to client's HASB command when the server where
+    // client have sent initial command cannot execute it locally for any
+    // reason (slot is not processed by that server or initial database caching
+    // is not completed yet).
     { "PROXY_HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "PROXY_HASB",
             eProxyBlobRead + fPeerFindExistsOnly,
             eNCRead,
             eProxyHasBlob},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Get size of the blob. This command is sent only
+    // by other NC servers in response to client's GSIZ command
+    // when the server where client have sent initial command cannot execute it
+    // locally for any reason (slot is not processed by that server, or initial
+    // database caching is not completed yet, or it was determined that this
+    // server has latest version of the blob).
     { "PROXY_GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
             "PROXY_GetSIZe",
             eProxyBlobRead,
             eNCRead,
             eProxyGetSize},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Blob's version (for NC-generated blob keys this will be equal to 0).
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Value of the flag "search_on_read" to use with this command, i.e.
+          // whether this server should search the blob if it's not found
+          // locally.
           { "srch",    eNSPT_Int,  eNSPA_Required },
+          // Flag whether local execution of this command should be forced
+          // no matter what, i.e. if this flag is set in cases when normal GET2
+          // command would have been proxied to other servers an error should
+          // be returned.
           { "local",   eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read all or a part of contents of the "last version" of the blob.
+    // This command is sent only by other NC servers in response to client's
+    // READLAST command when the server where client have sent initial command
+    // cannot execute it locally for any reason (slot is not processed by that
+    // server, or initial database caching is not completed yet, or it was
+    // determined that this server has latest version of the blob).
     { "PROXY_READLAST",
         {&CNCMessageHandler::x_DoCmd_GetLast,
             "PROXY_READLAST",
             eProxyBlobRead + fNoBlobVersionCheck,
             eNCReadData,
             eProxyReadLast},
-        { { "cache",   eNSPT_Str,   eNSPA_Required },
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
+        { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Starting position of the data that needs to be sent.
           { "start",   eNSPT_Int,  eNSPA_Required },
+          // Size of the data that needs to be sent.
           { "size",    eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Value of the flag "search_on_read" to use with this command, i.e.
+          // whether this server should search the blob if it's not found
+          // locally.
           { "srch",    eNSPT_Int,  eNSPA_Required },
+          // Flag whether local execution of this command should be forced
+          // no matter what, i.e. if this flag is set in cases when normal
+          // READLAST command would have been proxied to other servers an error
+          // should be returned.
           { "local",   eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Mark the "current version" of the blob as "valid".
+    // This command is sent only by other NC servers in response to client's
+    // SETVALID command when the server where client have sent initial command
+    // cannot execute it locally for any reason (slot is not processed by that
+    // server, or initial database caching is not completed yet).
     { "PROXY_SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "PROXY_SETVALID",
             fNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers,
             eNCRead,
             eProxySetValid},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Blob's version (for NC-generated blob keys this will be equal to 0).
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Remove the blob. This command is sent only by other NC servers in response
+    // to client's RMV2 (or similar) command when the server where client have
+    // sent initial command cannot execute it locally for any reason (slot is not
+    // processed by that server, or initial database caching is not completed yet).
     { "PROXY_RMV",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "PROXY_ReMoVe",
             fNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats,
             eNCCreate,
             eProxyRemove},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Blob's version (for NC-generated blob keys this will be equal to 0).
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Read meta information about the blob. This command is sent only by other
+    // NC servers in response to client's GETMETA command when the server where
+    // client have sent initial command cannot execute it locally for any reason
+    // (slot is not processed by that server, or initial database caching
+    // is not completed yet, or it was determined that this server has latest
+    // version of the blob).
     { "PROXY_GETMETA",
         {&CNCMessageHandler::x_DoCmd_GetMeta,
             "PROXY_GETMETA",
             eProxyBlobRead + fDoNotCheckPassword,
             eNCRead,
             eProxyGetMeta},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Flag whether local execution of this command should be forced
+          // no matter what, i.e. if this flag is set in cases when normal
+          // GETMETA command would have been proxied to other servers an error
+          // should be returned.
           { "local",   eNSPT_Int,  eNSPA_Required },
+          // Client IP for application requesting the info.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required } } },
+    // Start periodic synchronization session. Command is sent only by other
+    // NC servers when CNCActiveSyncControl in them decides to start
+    // synchronization. Response to this command contains list of events from
+    // sync logs of this server which need to be synchronized. Or if this
+    // server understands that synchronization using blob lists is needed then
+    // first line of response will contain ALL_BLOBS word and then full list
+    // of blobs in this slot will be sent.
     { "SYNC_START",
         {&CNCMessageHandler::x_DoCmd_SyncStart,
             "SYNC_START",
             fNeedsStorageCache + fNeedsLowerPriority + fNeedsAdminClient},
+          // Server id of the server starting synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot to start synchronization on.
           { "slot",    eNSPT_Int,  eNSPA_Required },
+          // Last synchronized record number (in sync log) of _that_ server
+          // as _that_ server thinks.
           { "rec_my",  eNSPT_Int,  eNSPA_Required },
+          // Last synchronized record number (in sync log) of _this_ server
+          // as _that_ server thinks.
           { "rec_your",eNSPT_Int,  eNSPA_Required } } },
+    // Get full list of blobs for the slot. Command is sent only by other NC
+    // servers when that server decides that synchronization using blob lists
+    // is needed. Command can be sent only after successful execution of
+    // SYNC_START command.
     { "SYNC_BLIST",
         {&CNCMessageHandler::x_DoCmd_SyncBlobsList,
             "SYNC_BLIST",
             eRunsInStartedSync},
+          // Server id of the server managing the synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot that synchronization is started on.
           { "slot",    eNSPT_Int,  eNSPA_Required } } },
+    // Write blob contents. This command is sent only by other NC servers
+    // during synchronization session if some blob was written on that server
+    // and the same data didn't make it to this server yet.
     { "SYNC_PUT",
         {&CNCMessageHandler::x_DoCmd_CopyPut,
             "SYNC_PUT",
             eSyncBlobCmd + fNeedsSpaceAsPeer + fConfirmOnFinish
                          + fReadExactBlobSize + fCopyLogEvent,
             eNCCopyCreate},
+          // Server id of the server managing the synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot that synchronization is started on.
           { "slot",    eNSPT_Int,  eNSPA_Required },
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
           { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Blob's version (for NC-generated blob keys this will be equal to 0).
           { "version", eNSPT_Int,  eNSPA_Required },
+          // MD5 checksum of blob's password.
           { "md5_pass",eNSPT_Str,  eNSPA_Required },
+          // Creation time of the blob (microseconds since epoch).
           { "cr_time", eNSPT_Int,  eNSPA_Required },
+          // Time-to-live for the blob.
           { "ttl",     eNSPT_Int,  eNSPA_Required },
+          // Dead-time for the blob (can be greater than expiration time).
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          // Expiration time for the blob
           { "exp",     eNSPT_Int,  eNSPA_Required },
+          // Blob size.
           { "size",    eNSPT_Int,  eNSPA_Required },
+          // Time-to-live for blob's version.
           { "ver_ttl", eNSPT_Int,  eNSPA_Required },
+          // Blob's version expiration time.
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
+          // Server_id of the server where blob was created.
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
+          // Id of the blob on the server where it was created.
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
+          // Record number of the event of blob creation in synchronization
+          // logs of the server where blob was created.
           { "log_rec", eNSPT_Int,  eNSPA_Required },
+          // Version of the command. Field exists for protocol backwards
+          // compatibility with previous versions of NC. In current NC this
+          // version is always 1.
           { "cmd_ver", eNSPT_Int,  eNSPA_Optional, "0" } } },
+    // Prolong the blob's life. This command is sent only by other NC servers
+    // during synchronization session if some blob was prolonged on that server
+    // and the same prolongation didn't happen on this server yet.
     { "SYNC_PROLONG",
         {&CNCMessageHandler::x_DoCmd_CopyProlong,
             "SYNC_PROLONG",
             eSyncBlobCmd + fConfirmOnFinish,
             eNCRead},
+          // Server id of the server managing the synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot that synchronization is started on.
           { "slot",    eNSPT_Int,  eNSPA_Required },
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
           { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Creation time of the blob (microseconds since epoch).
           { "cr_time", eNSPT_Int,  eNSPA_Required },
+          // Server_id of the server where blob was created.
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
+          // Id of the blob on the server where it was created.
           { "cr_id",   eNSPT_Int,  eNSPA_Required },
+          // Dead-time for the blob (can be greater than expiration time).
           { "dead",    eNSPT_Int,  eNSPA_Required },
+          // Expiration time for the blob
           { "exp",     eNSPT_Int,  eNSPA_Required },
+          // Blob's version expiration time.
           { "ver_dead",eNSPT_Int,  eNSPA_Required },
+          // Time of creation of initial record in synchronization log about
+          // this operation.
           { "log_time",eNSPT_Int,  eNSPA_Optchain },
+          // Server that first made the blob's life prolongation.
           { "log_srv", eNSPT_Int,  eNSPA_Optional },
+          // Record number of the initial record in synchronization log about
+          // this operation.
           { "log_rec", eNSPT_Int,  eNSPA_Optional } } },
+    // Read blob contents. This command is sent only by other NC servers
+    // during synchronization session if some blob was written on this server
+    // and the same data didn't make it to that server yet.
     { "SYNC_GET",
         {&CNCMessageHandler::x_DoCmd_SyncGet,
             "SYNC_GET",
             eSyncBlobCmd,
             eNCReadData},
+          // Server id of the server managing the synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot that synchronization is started on.
           { "slot",    eNSPT_Int,  eNSPA_Required },
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
           { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Time of creation of initial record in synchronization log about
+          // this operation.
           { "log_time",eNSPT_Int,  eNSPA_Required },
+          // Creation time of the blob (microseconds since epoch).
           { "cr_time", eNSPT_Int,  eNSPA_Required },
+          // Server_id of the server where blob was created.
           { "cr_srv",  eNSPT_Int,  eNSPA_Required },
+          // Id of the blob on the server where it was created.
           { "cr_id",   eNSPT_Int,  eNSPA_Required } } },
+    // Get information necessary to prolong the blob's life. This command
+    // is sent only by other NC servers during synchronization session if some
+    // blob was prolonged on this server and the same prolongation didn't
+    // happen on that server yet.
     { "SYNC_PROINFO",
         {&CNCMessageHandler::x_DoCmd_SyncProlongInfo,
             "SYNC_PROINFO",
             eSyncBlobCmd,
             eNCRead},
+          // Server id of the server managing the synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot that synchronization is started on.
           { "slot",    eNSPT_Int,  eNSPA_Required },
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
           { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required } } },
+    // "Commit" the synchronization session. This command is sent only by other
+    // NC servers at the end of synchronization session when all necessary
+    // commands have been executed successfully.
     { "SYNC_COMMIT",
         {&CNCMessageHandler::x_DoCmd_SyncCommit,
             "SYNC_COMMIT",
             eRunsInStartedSync + fProhibitsSyncAbort + fConfirmOnFinish},
+          // Server id of the server managing the synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot that synchronization is started on.
           { "slot",    eNSPT_Int,  eNSPA_Required },
+          // Last synchronized record number (in sync log) of _that_ server.
           { "rec_my",  eNSPT_Int,  eNSPA_Required },
+          // Last synchronized record number (in sync log) of _this_ server.
           { "rec_your",eNSPT_Int,  eNSPA_Required } } },
+    // "Cancel" the synchronization session. This command is sent only by other
+    // NC servers at the end of synchronization session when either this server
+    // requested or that server decided that synchronization should be aborted
+    // despite the successful execution of all commands. Reason for
+    // cancellation could be some server going to shutdown, or requirement to
+    // clean sync logs (and synchronization already executes for too long).
+    // The cancellation doesn't cancel any commands already executed in this
+    // synchronization session. It exists only to quickly mark this
+    // synchronization as no longer executing so that NC could start
+    // synchronization with some other server.
     { "SYNC_CANCEL",
         {&CNCMessageHandler::x_DoCmd_SyncCancel,
             "SYNC_CANCEL",
             eRunsInStartedSync + fProhibitsSyncAbort + fConfirmOnFinish},
+          // Server id of the server managing the synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
+          // Slot that synchronization is started on.
           { "slot",    eNSPT_Int,  eNSPA_Required } } },
+    // Get meta information about the blob. Command for "NetCache" clients.
     { "GETMETA",
         {&CNCMessageHandler::x_DoCmd_GetMeta,
             "GETMETA",
             eClientBlobRead + fDoNotCheckPassword,
             eNCRead,
             eProxyGetMeta},
+          // Key of the blob
         { { "key",     eNSPT_NCID, eNSPA_Required },
+          // Flag forcing local execution of the command (without forwarding
+          // to other servers and without searching for blob on them).
           { "local",   eNSPT_Int,  eNSPA_Optional },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional } } },
+    // Get meta information about the blob. Command for "ICache" clients.
     { "GETMETA",
         {&CNCMessageHandler::x_DoCmd_GetMeta,
             "IC_GETMETA",
             eClientBlobRead + fDoNotCheckPassword,
             eNCRead,
             eProxyGetMeta},
+          // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's version.
           { "version", eNSPT_Int,  eNSPA_Required },
+          // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Flag forcing local execution of the command (without forwarding
+          // to other servers and without searching for blob on them).
           { "local",   eNSPT_Int,  eNSPA_Optional },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional } } },
+    // Prolong blob's life for a specific number of seconds from current time.
+    // Command provides a minimum time this blob should be still available for.
+    // If blob's expiration time was already later than that this command is
+    // a no-op.
     { "PROLONG",
         {&CNCMessageHandler::x_DoCmd_Prolong,
             "PROLONG",
             eClientBlobRead + fConfirmOnFinish,
             eNCRead,
             eProxyProlong},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Period of time for the blob to be available.
           { "ttl",     eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Optional },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+    // Prolong blob's life for a specific number of seconds from current time.
+    // This command is sent only by other NC servers in response to client's
+    // PROLONG command when the server where client have sent initial command
+    // cannot execute it locally for any reason (slot is not processed by that
+    // server, or initial database caching is not completed yet, or it was
+    // determined that this server has latest version of the blob).
     { "PROXY_PROLONG",
         {&CNCMessageHandler::x_DoCmd_Prolong,
             "PROXY_PROLONG",
             eProxyBlobRead + fConfirmOnFinish,
             eNCRead,
             eProxyProlong},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
           { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
           { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // Period of time for the blob to be available.
           { "ttl",     eNSPT_Int,  eNSPA_Required },
+          // Quorum to use for this operation.
           { "qrum",    eNSPT_Int,  eNSPA_Required },
+          // Flag whether local execution of this command should be forced
+          // no matter what, i.e. if this flag is set in cases when normal GET2
+          // command would have been proxied to other servers an error should
+          // be returned.
           { "local",   eNSPT_Int,  eNSPA_Required },
+          // Value of the flag "search_on_read" to use with this command, i.e.
+          // whether this server should search the blob if it's not found
+          // locally.
           { "srch",    eNSPT_Int,  eNSPA_Required },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Required },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional } } },
     /*{ "BLOBSLIST",
         {&CNCMessageHandler::x_DoCmd_GetBlobsList,
             "BLOBSLIST",
             fNeedsStorageCache + fNeedsAdminClient} },*/
+    // Write blob contents. Deprecated command used now only by old clients.
+    // This command is the same as PUT3 except it uses connection closing as
+    // legitimate EOF marker for blob's data.
     { "PUT2",
         {&CNCMessageHandler::x_DoCmd_Put,
             "PUT2",
             eClientBlobWrite + fCanGenerateKey + fCursedPUT2Cmd,
             eNCCreate,
             eProxyWrite},
+          // Time-to-live for the blob.
         { { "ttl",     eNSPT_Int,  eNSPA_Optional },
+          // Key of the blob (if skipped or empty then new one will be created).
           { "key",     eNSPT_NCID, eNSPA_Optional } } },
+    // Shutdown the server
     { "SHUTDOWN",
         {&CNCMessageHandler::x_DoCmd_Shutdown,
             "SHUTDOWN",
             fNeedsAdminClient + fConfirmOnFinish},
+          // Client IP for application sending the command.
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+    // Get server statistics.
     { "GETSTAT",
         {&CNCMessageHandler::x_DoCmd_GetStat, "GETSTAT"},
+          // Flag showing whether current (value is 0) or previous (value is 1)
+          // statistics period should be shown.
         { { "prev",    eNSPT_Int,  eNSPA_Optchain, "0" },
+          // Type of statistics period to show. See top of nc_stat.cpp for
+          // list of all possible period types.
           { "type",    eNSPT_Str,  eNSPA_Optional, "life" },
+          // Client IP for application sending the command.
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+    // Read full ini-file used by NetCache for configuration.
     { "GETCONF",
         {&CNCMessageHandler::x_DoCmd_GetConfig,      "GETCONF"},
+          // Client IP for application sending the command.
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-    { "REINIT", {&CNCMessageHandler::x_DoCmd_NotImplemented, "REINIT"} },
-    { "REINIT", {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_REINIT"},
+
+    // All commands below are not implemented and mostly old ones not needed
+    // anymore. One exception is RECONF - it would be nice to have it but it
+    // needs some thinking on how to implement it.
+
+    { "REINIT",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "REINIT"} },
+    { "REINIT",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_REINIT"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "RECONF", {&CNCMessageHandler::x_DoCmd_NotImplemented, "RECONF"} },
+    { "RECONF",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "RECONF"} },
     { "LOG",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "LOG"} },
     { "STAT",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "STAT"} },
     { "MONI",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "MONITOR"} },
@@ -648,6 +1218,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { NULL }
 };
 
+// List of arguments that can be in client authentication line.
 static SNSProtoArgument s_AuthArgs[] = {
     { "client", eNSPT_Str, eNSPA_Optional, "Unknown client" },
     { "params", eNSPT_Str, eNSPA_Ellipsis },
