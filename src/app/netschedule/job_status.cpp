@@ -66,12 +66,6 @@ TJobStatus CJobStatusTracker::GetStatus(unsigned job_id) const
 {
     CReadLockGuard      guard(m_Lock);
 
-    return x_GetStatusNoLock(job_id);
-}
-
-
-TJobStatus CJobStatusTracker::x_GetStatusNoLock(unsigned job_id) const
-{
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
         const TNSBitVector &    bv = *m_StatusStor[g_ValidJobStatuses[k]];
 
@@ -159,17 +153,6 @@ void CJobStatusTracker::StatusStatistics(TJobStatus                  status,
     const TNSBitVector &    bv = *m_StatusStor[(int)status];
 
     bv.calc_stat(st);
-}
-
-
-void CJobStatusTracker::StatusSnapshot(TJobStatus      status,
-                                       TNSBitVector *  bv) const
-{
-    _ASSERT(bv);
-    CReadLockGuard          guard(m_Lock);
-    const TNSBitVector &    bv_s = *m_StatusStor[(int)status];
-
-    *bv |= bv_s;
 }
 
 
@@ -425,59 +408,6 @@ unsigned CJobStatusTracker::GetNext(TJobStatus status, unsigned job_id) const
     CReadLockGuard          guard(m_Lock);
 
     return bv.get_next(job_id);
-}
-
-
-void CJobStatusTracker::x_SetClearStatusNoLock(unsigned   job_id,
-                                               TJobStatus status,
-                                               TJobStatus old_status)
-{
-    SetExactStatusNoLock(job_id, status, true);
-    SetExactStatusNoLock(job_id, old_status, false);
-}
-
-
-void CJobStatusTracker::x_ReportInvalidStatus(unsigned   job_id,
-                                              TJobStatus status,
-                                              TJobStatus old_status)
-{
-    NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
-               "Invalid change job status from " +
-                CNetScheduleAPI::StatusToString(old_status) +
-                " to " +
-                CNetScheduleAPI::StatusToString(status));
-}
-
-
-TJobStatus CJobStatusTracker::x_IsStatusNoLock(unsigned job_id,
-                                              TJobStatus st1,
-                                              TJobStatus st2,
-                                              TJobStatus st3) const
-{
-    if (st1 == CNetScheduleAPI::eJobNotFound)
-        return CNetScheduleAPI::eJobNotFound;
-
-    const TNSBitVector&     bv_st1 = *m_StatusStor[(int)st1];
-    if (bv_st1[job_id])
-        return st1;
-
-
-    if (st2 == CNetScheduleAPI::eJobNotFound)
-        return CNetScheduleAPI::eJobNotFound;
-
-    const TNSBitVector&     bv_st2 = *m_StatusStor[(int)st2];
-    if (bv_st2[job_id])
-        return st2;
-
-
-    if (st3 == CNetScheduleAPI::eJobNotFound)
-        return CNetScheduleAPI::eJobNotFound;
-
-    const TNSBitVector&     bv_st3 = *m_StatusStor[(int)st3];
-    if (bv_st3[job_id])
-        return st3;
-
-    return CNetScheduleAPI::eJobNotFound;
 }
 
 

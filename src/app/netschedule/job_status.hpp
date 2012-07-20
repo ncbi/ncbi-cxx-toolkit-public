@@ -75,9 +75,6 @@ class CJobStatusTracker
 public:
     typedef vector<TNSBitVector*> TStatusStorage;
 
-    /// Status to number of jobs map
-    typedef map<TJobStatus, unsigned> TStatusSummaryMap;
-
 public:
     CJobStatusTracker();
     ~CJobStatusTracker();
@@ -148,10 +145,6 @@ public:
     void StatusStatistics(TJobStatus                status,
                           TNSBitVector::statistics* st) const;
 
-    /// Specified status is OR-ed with the target vector
-    void StatusSnapshot(TJobStatus    status,
-                        TNSBitVector* bv) const;
-
     /// Clear status storage
     ///
     /// @param bv
@@ -163,23 +156,6 @@ public:
     void OptimizeMem();
 
 private:
-    TJobStatus x_GetStatusNoLock(unsigned job_id) const;
-
-    /// Check if job is in specified status
-    /// @return -1 if no, status value otherwise
-    TJobStatus
-    x_IsStatusNoLock(unsigned   job_id,
-                     TJobStatus st1,
-                     TJobStatus st2 = CNetScheduleAPI::eJobNotFound,
-                     TJobStatus st3 = CNetScheduleAPI::eJobNotFound
-        ) const;
-
-    void x_ReportInvalidStatus(unsigned   job_id,
-                               TJobStatus status,
-                               TJobStatus old_status);
-    void x_SetClearStatusNoLock(unsigned   job_id,
-                                TJobStatus status,
-                                TJobStatus old_status);
     void x_IncDoneJobs(void);
 
 private:
@@ -192,7 +168,6 @@ private:
 
     // Done jobs counter
     unsigned                m_DoneCnt;
-
 };
 
 

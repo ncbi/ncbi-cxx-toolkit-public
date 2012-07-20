@@ -2089,15 +2089,6 @@ string  CQueue::GetAffinityTokenByID(unsigned int  aff_id) const
 }
 
 
-
-/// Specified status is OR-ed with the target vector
-void CQueue::JobsWithStatus(TJobStatus    status,
-                            TNSBitVector* bv) const
-{
-    m_StatusTracker.StatusSnapshot(status, bv);
-}
-
-
 void CQueue::ClearWorkerNode(const CNSClientId &  client)
 {
     // Get the running and reading jobs and move them to the corresponding

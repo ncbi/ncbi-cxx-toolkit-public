@@ -274,10 +274,6 @@ public:
 
     string  GetAffinityTokenByID(unsigned int  aff_id) const;
 
-    /// Specified status is OR-ed with the target vector
-    void JobsWithStatus(TJobStatus    status,
-                        TNSBitVector* bv) const;
-
     void ClearWorkerNode(const CNSClientId &  client);
 
     void NotifyListenersPeriodically(time_t  current_time);
