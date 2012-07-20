@@ -122,7 +122,7 @@ extern int HINFO_TaskCount(const HOST_INFO host_info)
 
 extern int HINFO_Memusage(const HOST_INFO host_info, double memusage[5])
 {
-    memset(memusage, 0, sizeof(memusage[0]) * 5);
+    memset(memusage, 0, 5 * sizeof(memusage[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0;
     return LBSM_HINFO_Memusage(host_info, memusage);
@@ -140,7 +140,7 @@ extern int HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p)
 
 extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
 {
-    memset(lavg, 0, sizeof(lavg[0]) * 2);
+    memset(lavg, 0, 2 * sizeof(lavg[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0;
     return LBSM_HINFO_LoadAverage(host_info, lavg);
@@ -149,7 +149,7 @@ extern int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2])
 
 extern int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2])
 {
-    memset(status, 0, sizeof(status[0]) * 2);
+    memset(status, 0, 2 * sizeof(status[0]));
     if (!host_info  ||  host_info->pad != HINFO_MAGIC)
         return 0;
     return LBSM_HINFO_Status(host_info, status);

@@ -102,8 +102,8 @@ int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
 
 
 typedef struct {
-    int                arch;    /* architecture ID, 0=unknown */
-    int                ostype;  /* OS type ID,      0=unknown */
+    unsigned int       arch;    /* architecture ID, 0=unknown */
+    unsigned int       ostype;  /* OS type ID,      0=unknown */
     struct {
         unsigned short major;
         unsigned short minor;
@@ -118,7 +118,7 @@ typedef struct {
         unsigned short minor;
         unsigned short patch;
     } daemon;                   /* LBSMD version */
-    unsigned short     pad;     /* MBZ */
+    unsigned short     svcpack; /* service pack (Hi=major, Lo=minor)        */
 } SHINFO_Params;
 
 extern NCBI_XCONNECT_EXPORT
