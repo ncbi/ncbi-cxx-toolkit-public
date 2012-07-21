@@ -3921,7 +3921,6 @@ ncbi_xloader_cdd needs xutil
 ncbi_xloader_csra needs align-reader
 ncbi_xloader_csra needs axf
 ncbi_xloader_csra needs biblio
-ncbi_xloader_csra needs creaders
 ncbi_xloader_csra needs general
 ncbi_xloader_csra needs genome_collection
 ncbi_xloader_csra needs judy
@@ -3952,9 +3951,6 @@ ncbi_xloader_csra needs vfs
 ncbi_xloader_csra needs vxf
 ncbi_xloader_csra needs xncbi
 ncbi_xloader_csra needs xobjmgr
-ncbi_xloader_csra needs xobjread
-ncbi_xloader_csra needs xobjreadex
-ncbi_xloader_csra needs xobjutil
 ncbi_xloader_csra needs xser
 ncbi_xloader_csra needs xutil
 ncbi_xloader_genbank needs biblio
