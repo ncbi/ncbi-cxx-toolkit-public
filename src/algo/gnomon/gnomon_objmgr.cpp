@@ -94,17 +94,25 @@ Int8 GetModelId(const CSeq_align& seq_align)
 }
 
 CAlignModel::CAlignModel(const CSeq_align& seq_align) :
-    CGeneModel(seq_align.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_minus?eMinus:ePlus,
-               GetModelId(seq_align),
-               seq_align.GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_protein? eProt:emRNA)
+    CGeneModel(seq_align.GetSegs().GetSpliced().GetGenomic_strand()==eNa_strand_minus?eMinus:ePlus, GetModelId(seq_align), emRNA)
 {
 #ifdef _DEBUG   
     debug();
 #endif
 
     const CSpliced_seg& sps = seq_align.GetSegs().GetSpliced();
-    if(sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus) 
+
+    bool is_protein = false;
+    if(sps.CanGetProduct_type() && sps.GetProduct_type()==CSpliced_seg::eProduct_type_protein) {
+        SetType(eProt);
+        is_protein = true;
+    }
+
+    bool is_product_reversed = false;
+    if(sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus) {
         Status() |= CGeneModel::eReversed;
+        is_product_reversed = true;
+    }
 
     SetTargetId(sps.GetProduct_id());
 
@@ -132,9 +140,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 */
     }
 
-    bool is_product_reversed = sps.CanGetProduct_strand() && sps.GetProduct_strand()==eNa_strand_minus;
     int product_len = sps.CanGetProduct_length()?sps.GetProduct_length():0;
-    bool is_protein = sps.GetProduct_type()==CSpliced_seg::eProduct_type_protein;
     if (is_protein)
         product_len *=3;
     int prod_prev = -1;
@@ -296,6 +302,11 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     }
 
     if (sps.IsSetPoly_a()) {
+        Status() |= CGeneModel::ePolyA;
+
+        /* 
+           This check is not needed for the modern Splign alignments
+       
         int product_alignable_end = sps.GetPoly_a() + (is_product_reversed ? +1 : -1);
         int product_aligned_end = (Strand() == ePlus ?
                                    m_alignmap.MapOrigToEdited(Limits().GetTo()) :
@@ -304,25 +315,29 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         if (product_aligned_end == product_alignable_end) {
             Status() |= CGeneModel::ePolyA;
         }
+        */
     }
 
 
-    const CSeq_align::TScore& score = seq_align.GetScore();
-    ITERATE(CSeq_align::TScore, it, score) {
-        if((*it)->CanGetId() && (*it)->GetId().IsStr()) {
-            string scr = (*it)->GetId().GetStr();
-            if((scr == "N of matches") || (scr == "num_ident") || (scr == "matches")) {
-                double ident = (*it)->GetValue().GetInt()*100;
-                ident /= seq_align.GetAlignLength();
-                SetIdent(ident);
-            } else if(scr == "rank" && (*it)->GetValue().GetInt() == 1) {
-                Status() |= CGeneModel::eBestPlacement;
-            } else if(scr == "ambiguous_orientation") {
-                Status() |= CGeneModel::eUnknownOrientation;
+    if(seq_align.CanGetScore()) {
+        const CSeq_align::TScore& score = seq_align.GetScore();
+        ITERATE(CSeq_align::TScore, it, score) {
+            if((*it)->CanGetId() && (*it)->GetId().IsStr()) {
+                string scr = (*it)->GetId().GetStr();
+                if((scr == "N of matches") || (scr == "num_ident") || (scr == "matches")) {
+                    double ident = (*it)->GetValue().GetInt()*100;
+                    ident /= seq_align.GetAlignLength();
+                    SetIdent(ident);
+                } else if(scr == "rank" && (*it)->GetValue().GetInt() == 1) {
+                    Status() |= CGeneModel::eBestPlacement;
+                } else if(scr == "ambiguous_orientation") {
+                    Status() |= CGeneModel::eUnknownOrientation;
+                } else if(scr == "count") {
+                    SetWeight((*it)->GetValue().GetInt());
+                }
             }
         }
     }
-
 }
 
 
