@@ -380,6 +380,7 @@ class CNcbiTestApplication : public CNcbiApplication
 {
 public:
     CNcbiTestApplication(void);
+    ~CNcbiTestApplication(void);
 
     virtual void Init  (void);
     virtual int  Run   (void);
@@ -838,6 +839,12 @@ CNcbiTestApplication::CNcbiTestApplication(void)
 
     // Do not show warning about inaccessible configuration file
     SetDiagFilter(eDiagFilter_Post, "!(106.11)");
+}
+
+CNcbiTestApplication::~CNcbiTestApplication(void)
+{
+    if (m_ReportOut.good())
+        but::results_reporter::set_stream(cerr);
 }
 
 /// Application for unit tests
