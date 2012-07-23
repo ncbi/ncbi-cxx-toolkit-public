@@ -341,12 +341,12 @@ public:
             int ret = m_Monitor->Run(args, out, err);
             switch(ret) {
             case 0:
-                if( out.pcount() > 0 )
+                if (out.pcount() > 0) {
                     out << '\0';
                     m_Context.PutProgressMessage(out.str(), true);
-                if( err.pcount() > 0 && m_Context.IsLogRequested()) {
-                    x_Log("Info", err);
                 }
+                if (err.pcount() > 0 && m_Context.IsLogRequested())
+                    x_Log("Info", err);
                 break;
             case 1:
                 x_Log("job is returned", err);
@@ -355,10 +355,10 @@ public:
                 {
                     x_Log("job failed", err);
                     string errmsg;
-                    if( out.pcount() > 0 ) {
+                    if (out.pcount() > 0) {
                         out << '\0';
                         errmsg = out.str();
-                    } else 
+                    } else
                         errmsg = "Monitor requested the job termination.";
                     throw runtime_error(errmsg);
                 }
