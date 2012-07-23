@@ -1364,6 +1364,7 @@ Remove-sequences-action ::= SEQUENCE {
   constraint Constraint-choice-set
 }
 
+
 Macro-action-choice ::= CHOICE {
   aecr AECR-action ,
   parse Parse-action ,
@@ -1404,7 +1405,8 @@ Macro-action-choice ::= CHOICE {
   add-file-descriptors Add-descriptor-list-action ,
   propagate-missing-old-name NULL ,
   autoapply-structured-comments NULL ,
-  reorder-structured-comments NULL }
+  reorder-structured-comments NULL ,
+  remove-duplicate-structured-comments NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
