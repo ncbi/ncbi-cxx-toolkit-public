@@ -537,10 +537,16 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
             (max_app_run_time == 0 || max_app_run_time > app_run_timeout))
             max_app_run_time = app_run_timeout;
 
+        string working_dir(tmp_path.empty() ? CDir::GetCwd() : tmp_path);
+
+#ifdef NCBI_OS_MSWIN
+        NStr::ReplaceInPlace(working_dir, "\\", "/");
+#endif
+
         CPipeProcessWatcher callback(context,
             max_app_run_time,
             m_KeepAlivePeriod,
-            tmp_path.empty() ? CDir::GetCwd() : tmp_path);
+            working_dir);
 
         auto_ptr<CRAMonitor> ra_monitor;
         if (!m_MonitorAppPath.empty() && m_MonitorPeriod > 0) {
