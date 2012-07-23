@@ -1078,7 +1078,7 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
    Int4 num_profiles;
    Int4 num_pssm_rows;
    Int4* pssm_start;
-   double* freq_start;
+   double* freq_start = NULL;
    BlastRPSProfileHeader *profile_header;
    BlastRPSFreqRatiosHeader *freq_header;
    Int4 index;

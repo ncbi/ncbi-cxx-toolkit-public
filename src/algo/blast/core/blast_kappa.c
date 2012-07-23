@@ -439,7 +439,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
 static void
 s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
                        const BlastQueryInfo* query_info,
-                       const BLAST_SequenceBlk* subject_blk,
+                       BLAST_SequenceBlk* subject_blk,
                        const BlastSeqSrc* seq_src,
                        BlastHSPList* hsp_list,
                        const BlastScoringOptions* scoring_options,
