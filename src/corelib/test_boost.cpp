@@ -823,6 +823,9 @@ CNcbiTestsTreeBuilder::FixUnitsOrder(void)
 }
 
 
+static CNcbiTestApplication* s_TestApp = NULL;
+
+
 inline
 CNcbiTestApplication::CNcbiTestApplication(void)
     : m_RunCalled(false),
@@ -851,7 +854,8 @@ CNcbiTestApplication::~CNcbiTestApplication(void)
 static CNcbiTestApplication&
 s_GetTestApp(void)
 {
-    static CSafeStaticPtr<CNcbiTestApplication> s_TestApp;
+    if (!s_TestApp)
+        s_TestApp = new CNcbiTestApplication();
     return *s_TestApp;
 }
 
@@ -2094,6 +2098,7 @@ main(int argc, char* argv[])
 
     results_reporter::make_report();
 
+    delete NCBI_NS_NCBI::s_TestApp;
     NCBI_NS_NCBI::GetDiagContext().SetExitCode(result);
     return result;
 }
