@@ -1222,9 +1222,12 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
     string strprot;
     CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, true, false);
+    /// Remove final stop codon from sequence
     if (strprot[strprot.size()-1] == '*') {
         strprot.resize(strprot.size()-1);
     }
+    /// Repair any internal stops with Xs
+    NStr::ReplaceInPlace(strprot, "*", "X");
 
     CSeq_inst& seq_inst = bioseq.SetInst();
     seq_inst.SetMol(CSeq_inst::eMol_aa);
@@ -2377,7 +2380,6 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     ///
     bool has_start         = false;
     bool has_stop          = false;
-    bool has_internal_stop = false;
     TSeqPos mismatch_count = 0;
     bool has_gap           = false;
     bool has_indel         = false;
@@ -2463,8 +2465,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         }
     }
 
-    if (xlate.size()  &&  xlate[xlate.size() - 1] == '*') {
-        /// strip a terminal stop
+    if (xlate.size()  &&  xlate[xlate.size() - 1] == '*') { /// strip a terminal stop
         xlate.resize(xlate.size() - 1);
         has_stop = true;
     }
@@ -2498,9 +2499,25 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it1_end = actual.end();
     string::const_iterator it2     = xlate.begin();
     string::const_iterator it2_end = xlate.end();
+    CSeq_loc_Mapper mapper(feat, CSeq_loc_Mapper::eProductToLocation);
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
         if (*it2 == '*') {
-            has_internal_stop = true;
+            /// Inte5rnal stop codon; annotate with a code-break instead
+            /// of an exception
+            TSeqPos pos = it1 - actual.begin();
+            CSeq_loc internal_stop_loc(feat.SetProduct().SetWhole(), pos, pos);
+            CRef<CSeq_loc> mapped = mapper.Map(internal_stop_loc);
+            CRef<CCode_break> code_break(new CCode_break);
+            code_break->SetLoc(*mapped);
+            char actual_aa = *it1;
+            if (!(m_flags & fTrustProteinSeq)) {
+                actual_aa = 'X';
+                if (*it1 != 'X') {
+                    ++mismatch_count;
+                }
+            }
+            code_break->SetAa().SetNcbieaa(actual_aa);
+            feat.SetData().SetCdregion().SetCode_break().push_back(code_break);
         } else if (*it2 == '-') {
             has_gap = true;
         } else if (*it1 != *it2) {
@@ -2511,7 +2528,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string except_text;
 
     if (actual.size() != xlate.size()  ||
-        has_internal_stop  ||  !has_stop  ||  !has_start  ||
+        !has_stop  ||  !has_start  ||
         has_gap || has_indel) {
         except_text = "unclassified translation discrepancy";
     }

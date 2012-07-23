@@ -67,6 +67,7 @@ public:
         fDensegAsExon        = 0x080,
         fGenerateLocalIds    = 0x100,
         fPropagateNcrnaFeats = 0x200,
+        fTrustProteinSeq     = 0x400,
 
         fDefaults = fCreateGene | fCreateMrna | fCreateCdregion |
                     fGenerateLocalIds | fPropagateNcrnaFeats
