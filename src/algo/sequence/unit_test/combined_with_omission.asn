@@ -217,6 +217,15 @@ Seq-annot ::= {
           }
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "glycerol-3-phosphate transporter"
+            }
+          }
+        }
+      },
       dbxref {
         {
           db "CCDS",
@@ -264,8 +273,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
- transcript variant 2, mRNA"
+        ext name "collagen, type XVIII, alpha 1, transcript variant 2"
       },
       except TRUE,
       comment "The RefSeq transcript has 1 indel compared to this genomic
@@ -803,6 +811,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_569712.2"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "collagen alpha-1(XVIII) chain isoform 2 precursor"
+            }
+          }
+        }
+      },
       dbxref {
         {
           db "CCDS",
@@ -834,7 +851,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Bos taurus Werner syndrome (WRN), mRNA"
+        ext name "Werner syndrome"
       },
       partial TRUE,
       except TRUE,
@@ -1077,6 +1094,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_001137329.1"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "Werner syndrome"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -1109,7 +1135,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Danio rerio catenin, beta like 1 (ctnnbl1), mRNA"
+        ext name "catenin, beta like 1"
       },
       partial TRUE,
       except TRUE,
@@ -1326,6 +1352,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_957160.1"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "beta-catenin-like protein 1"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -1349,7 +1384,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Bos taurus ornithine decarboxylase antizyme 1 (OAZ1), mRNA"
+        ext name "ornithine decarboxylase antizyme 1"
       },
       product whole gi 187829866,
       location packed-int {
@@ -1389,6 +1424,152 @@ Seq-annot ::= {
       data cdregion {
         code {
           id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 3144740,
+              to 3144742,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3144713,
+              to 3144715,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3144294,
+              to 3144296,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3144291,
+              to 3144293,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3144258,
+              to 3144260,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3144255,
+              to 3144257,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3144237,
+              to 3144239,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3144201,
+              to 3144203,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143699,
+              to 3143701,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143690,
+              to 3143692,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143672,
+              to 3143674,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143639,
+              to 3143641,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143636,
+              to 3143638,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143423,
+              to 3143425,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143354,
+              to 3143356,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 3143336,
+              to 3143338,
+              strand minus,
+              id gi 260082811
+            },
+            aa ncbieaa 88
+          }
         }
       },
       except TRUE,
@@ -1433,6 +1614,15 @@ Seq-annot ::= {
           id gi 260082811
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "ornithine decarboxylase antizyme 1"
+            }
+          }
+        }
+      },
       except-text "ribosomal slippage"
     },
     {
@@ -1472,8 +1662,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens paternally expressed 10 (PEG10), transcript
- variant 1, mRNA"
+        ext name "paternally expressed 10, transcript variant 1"
       },
       product whole gi 94421474,
       location packed-int {
@@ -1514,6 +1703,15 @@ Seq-annot ::= {
           id gi 224514692
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "retrotransposon-derived protein PEG10 isoform 1"
+            }
+          }
+        }
+      },
       except-text "ribosomal slippage"
     },
     {
@@ -1547,7 +1745,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Danio rerio dynamin2-like (dnm2l), mRNA"
+        ext name "dynamin2-like"
       },
       partial TRUE,
       except TRUE,
@@ -1596,8 +1794,8 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Danio rerio partial mRNA for SMG6 homolog nonsense mediated
- mRNA decay factor (C. elegans)cds (smg6 gene)"
+        ext name "partial mRNA for SMG6 homolog nonsense mediated mRNA decay
+ factor (C. elegans)cds (smg6 gene)"
       },
       partial TRUE,
       product whole gi 240248230,
@@ -1617,6 +1815,116 @@ Seq-annot ::= {
         frame two,
         code {
           id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 196058,
+              to 196060,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195995,
+              to 195997,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195920,
+              to 195922,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195887,
+              to 195889,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195725,
+              to 195727,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195668,
+              to 195670,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195263,
+              to 195265,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195242,
+              to 195244,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195233,
+              to 195235,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195104,
+              to 195106,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195071,
+              to 195073,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 195044,
+              to 195046,
+              strand minus,
+              id gi 258441149
+            },
+            aa ncbieaa 88
+          }
         }
       },
       partial TRUE,
@@ -1630,6 +1938,15 @@ Seq-annot ::= {
           id gi 258441149,
           fuzz-from lim lt,
           fuzz-to lim gt
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "SMG6 homolog nonsense mediated mRNA decay factor (C. elegans)cds"
+            }
+          }
         }
       },
       dbxref {
@@ -1646,13 +1963,12 @@ Seq-annot ::= {
           tag str "ZDB-GENE-081107-52"
         }
       },
-      except-text "unclassified translation discrepancy"
+      except-text "mismatches in translation"
     },
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens collagen, type XVIII, alpha 1 (COL18A1),
- transcript variant 2, mRNA"
+        ext name "collagen, type XVIII, alpha 1, transcript variant 2"
       },
       partial TRUE,
       except TRUE,
@@ -2195,6 +2511,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_569712.2"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "collagen alpha-1(XVIII) chain isoform 2 precursor"
+            }
+          }
+        }
+      },
       dbxref {
         {
           db "CCDS",
@@ -2233,8 +2558,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Danio rerio polymerase (DNA directed), delta 1, catalytic
- subunit (pold1), mRNA"
+        ext name "polymerase (DNA directed), delta 1, catalytic subunit"
       },
       except TRUE,
       comment "The RefSeq transcript has 17 substitutions and 1 indel compared
@@ -2588,6 +2912,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_001034899.1"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "DNA polymerase delta catalytic subunit"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -2632,8 +2965,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
+        ext name "USO1 vesicle docking protein homolog (yeast)"
       },
       partial TRUE,
       except TRUE,
@@ -3108,13 +3440,21 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_003706.1"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "general vesicular transport factor p115"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
+        ext name "USO1 vesicle docking protein homolog (yeast)"
       },
       partial TRUE,
       except TRUE,
@@ -3589,13 +3929,21 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_003706.1"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "general vesicular transport factor p115"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens USO1 vesicle docking protein homolog (yeast)
- (USO1), mRNA"
+        ext name "USO1 vesicle docking protein homolog (yeast)"
       },
       partial TRUE,
       except TRUE,
@@ -4030,6 +4378,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_003706.1"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "general vesicular transport factor p115"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -4071,8 +4428,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
+        ext name "coatomer protein complex, subunit gamma 2"
       },
       product whole other {
         accession "NM_012133",
@@ -4521,6 +4877,15 @@ Seq-annot ::= {
             version 1
           }
         }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
       }
     },
     {
@@ -4563,8 +4928,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
+        ext name "coatomer protein complex, subunit gamma 2"
       },
       partial TRUE,
       except TRUE,
@@ -4985,13 +5349,21 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
+        ext name "coatomer protein complex, subunit gamma 2"
       },
       partial TRUE,
       except TRUE,
@@ -5412,13 +5784,21 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
+        ext name "coatomer protein complex, subunit gamma 2"
       },
       partial TRUE,
       except TRUE,
@@ -5697,6 +6077,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -5727,7 +6116,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Bos taurus claudin 2 (CLDN2), mRNA"
+        ext name "claudin 2"
       },
       except TRUE,
       comment "The RefSeq transcript has 54 substitutions and 1 indel compared
@@ -5773,6 +6162,15 @@ Seq-annot ::= {
             version 2
           }
         }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "claudin-2"
+            }
+          }
+        }
       }
     },
     {
@@ -5797,8 +6195,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Canis lupus familiaris collagen, type II, alpha 1 (COL2A1),
- mRNA"
+        ext name "collagen, type II, alpha 1"
       },
       partial TRUE,
       except TRUE,
@@ -6452,6 +6849,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_001006952.1"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "collagen alpha-1(II) chain precursor"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -6496,7 +6902,7 @@ Seq-annot ::= {
         type ncRNA,
         ext gen {
           class "miRNA",
-          product "Homo sapiens microRNA 155 (MIR155), microRNA"
+          product "microRNA 155"
         }
       },
       product whole gi 269846817,
@@ -6597,8 +7003,8 @@ Seq-annot ::= {
     {
       data rna {
         type other,
-        ext name "Homo sapiens transmembrane phosphoinositide 3-phosphatase
- and tensin homolog 2 pseudogene 2 (TPTE2P2), non-coding RNA"
+        ext name "transmembrane phosphoinositide 3-phosphatase and tensin
+ homolog 2 pseudogene 2"
       },
       partial TRUE,
       except TRUE,
@@ -6637,8 +7043,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Oryctolagus cuniculus collagenase-1 precursor (MMP-1) gene,
- exons 7 and 8"
+        ext name "collagenase-1 precursor gene"
       },
       product whole gi 164885,
       location packed-int {
