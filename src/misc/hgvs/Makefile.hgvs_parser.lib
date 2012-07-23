@@ -8,7 +8,7 @@ SRC = hgvs_parser2 hgvs_writer2 variation_util2 \
 ASN_DEP = seq variation
 
 ifneq "" "$(filter GCC_41% GCC_42%,$(signature))"
- ifeq "" "$(filter darwin solaris,$(OSTYPE))"
+ ifneq "$(OSTYPE)" "darwin"
   hgvs_parser.o hgvs_parser2.o: CXXFLAGS = $(ORIG_CXXFLAGS:-O2=-O)
  endif
 endif
