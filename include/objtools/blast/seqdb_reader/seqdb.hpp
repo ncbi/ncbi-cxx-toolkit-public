@@ -435,7 +435,11 @@ public:
     /// Returns the sequence length in base pairs or residues.
     int GetSeqLength(int oid) const;
 
-    /// Returns the first Gi (if any) of the sequence
+    /// Returns the first Gi (if any) of the sequence. This method does NOT
+    /// check whether the OID in question belongs to the BLAST database after
+    /// all filtering is applied (e.g.: GI list restriction or membership bit).
+    /// If you need those checks, please use GetGis()
+    /// @sa GetGis
     int GetSeqGI(int oid) const;
     
     /// Returns an unbiased, approximate sequence length.
