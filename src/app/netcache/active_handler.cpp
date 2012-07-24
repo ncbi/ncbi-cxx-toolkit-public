@@ -67,8 +67,13 @@ CNCActiveHandler_Proxy::~CNCActiveHandler_Proxy(void)
 void
 CNCActiveHandler_Proxy::ExecuteSlice(TSrvThreadNum thr_num)
 {
+    // Lots of checks for NULL follows because these pointers can be nullified
+    // concurrently at any moment.
     CNCActiveHandler* handler = ACCESS_ONCE(m_Handler);
     if (handler) {
+        // All events coming to this proxy should be transfered to
+        // CNCActiveHandler except when we need to proxy data from this socket
+        // (from another NC server) to the client.
         if (m_NeedToProxy) {
             CNCActiveClientHub* client = ACCESS_ONCE(handler->m_Client);
             if (client)
@@ -139,12 +144,15 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
       m_CntCmds(0),
       m_BlobAccess(NULL),
       m_ReservedForBG(false),
-      m_AddedToPool(false),
+      m_ProcessingStarted(false),
       m_CmdStarted(false),
       m_GotAnyAnswer(false),
       m_CmdFromClient(false)
 {
     m_BlobSum = new SNCBlobSummary();
+    // Right after creation CNCActiveHandler shouldn't become runnable until
+    // it's assigned to CNCActiveHandlerHub or some command-executing method
+    // (like CopyPut(), SyncStart() etc.) is called.
     SetState(&Me::x_InvalidState);
 
     //Uint8 cnt = AtomicAdd(s_CntHndls, 1);
@@ -207,10 +215,16 @@ CNCActiveHandler::SetProxy(CNCActiveHandler_Proxy* proxy)
 {
     m_Proxy = proxy;
     SetDiagCtx(proxy->GetDiagCtx());
-    m_AddedToPool = false;
+    m_ProcessingStarted = false;
     m_GotAnyAnswer = false;
     m_GotCmdAnswer = false;
     m_GotClientResponse = false;
+    // SetProxy() will be called only when socket (CNCActiveHandler_Proxy) have
+    // been just created. So first line have to be client authentication. And
+    // although we call WriteText() right here this text won't go to the socket
+    // until we put first command in there and call Flush(). And we can't call
+    // Flush() here (even if we wanted to) because socket could be not writable
+    // yet.
     proxy->WriteText(s_PeerAuthString);
 }
 
@@ -230,6 +244,12 @@ CNCActiveHandler::IsReservedForBG(void)
 CNCActiveHandler::State
 CNCActiveHandler::x_ReplaceServerConn(void)
 {
+    // In the stack of diag contexts we always have socket's context first and
+    // command's context second. Here we change socket thus we need to change
+    // socket's context. To do that we need to "release" command's context
+    // first (if there is any -- some commands execute without command's
+    // context), then release (this time for real) socket's context, then put
+    // new socket's context, then put command's context (if there is any).
     CRequestContext* proxy_ctx = m_Proxy->GetDiagCtx();
     CSrvRef<CRequestContext> ctx(GetDiagCtx());
     if (ctx == proxy_ctx)
@@ -244,9 +264,9 @@ CNCActiveHandler::x_ReplaceServerConn(void)
 
     CNCActiveHandler* src_handler = m_Peer->GetPooledConn();
     if (src_handler) {
-        if (!src_handler->m_AddedToPool)
+        if (!src_handler->m_ProcessingStarted)
             abort();
-        m_AddedToPool = true;
+        m_ProcessingStarted = true;
         m_GotAnyAnswer = src_handler->m_GotAnyAnswer;
         m_Proxy = src_handler->m_Proxy;
         m_Proxy->SetHandler(this);
@@ -261,8 +281,8 @@ CNCActiveHandler::x_ReplaceServerConn(void)
     if (m_Peer->CreateNewSocket(this)) {
         if (ctx)
             SetDiagCtx(ctx);
-        x_AddConnToPool();
-        if (m_AddedToPool)
+        x_StartProcessing();
+        if (m_ProcessingStarted)
             return &Me::x_SendCmdToExecute;
     }
 
@@ -293,7 +313,7 @@ CNCActiveHandler::SearchMeta(CRequestContext* cmd_ctx, const string& raw_key)
     m_CmdToSend += cmd_ctx->GetSessionID();
     m_CmdToSend.append(1, '"');
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -349,7 +369,7 @@ CNCActiveHandler::ProxyRemove(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -384,7 +404,7 @@ CNCActiveHandler::ProxyHasBlob(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -428,7 +448,7 @@ CNCActiveHandler::ProxyGetSize(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -463,7 +483,7 @@ CNCActiveHandler::ProxySetValid(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -513,7 +533,7 @@ CNCActiveHandler::ProxyRead(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -560,7 +580,7 @@ CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -592,7 +612,7 @@ CNCActiveHandler::ProxyGetMeta(CRequestContext* cmd_ctx,
     m_CmdToSend += cmd_ctx->GetSessionID();
     m_CmdToSend.append(1, '"');
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -633,7 +653,7 @@ CNCActiveHandler::ProxyWrite(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -677,7 +697,7 @@ CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
         m_CmdToSend.append(1, '"');
     }
 
-    x_SendCmdToExecute();
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -717,7 +737,7 @@ CNCActiveHandler::SyncStart(CNCActiveSyncControl* ctrl,
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UInt8ToString(remote_rec_no);
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -734,7 +754,7 @@ CNCActiveHandler::SyncBlobsList(CNCActiveSyncControl* ctrl)
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UIntToString(ctrl->GetSyncSlot());
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -805,7 +825,7 @@ CNCActiveHandler::SyncProlongPeer(CNCActiveSyncControl* ctrl,
     m_CurCmd = eSyncProlongPeer;
     m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCRead, m_BlobKey,
                                                  kEmptyStr, m_TimeBucket);
-    x_SetStateAndAddToPool(&Me::x_WaitForMetaInfo);
+    x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);
 }
 
@@ -859,7 +879,7 @@ CNCActiveHandler::SyncProlongOur(CNCActiveSyncControl* ctrl,
     m_CmdToSend += subkey;
     m_CmdToSend += "\"";
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -897,7 +917,7 @@ CNCActiveHandler::SyncCancel(CNCActiveSyncControl* ctrl)
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UIntToString(ctrl->GetSyncSlot());
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 void
@@ -920,7 +940,7 @@ CNCActiveHandler::SyncCommit(CNCActiveSyncControl* ctrl,
     m_CmdToSend.append(1, ' ');
     m_CmdToSend += NStr::UInt8ToString(remote_rec_no);
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 CNCActiveHandler::State
@@ -928,9 +948,17 @@ CNCActiveHandler::x_ConnClosedReplaceable(void)
 {
     if (m_Proxy->NeedToClose())
         return &Me::x_CloseCmdAndConn;
-    if (m_GotAnyAnswer)
+    if (m_GotAnyAnswer) {
+        // In this case we already talked to server for some time and then got
+        // a disconnect. With old NC server this could mean that connection is
+        // closed because of inactivity timeout, in this NC server this can
+        // mean only some network glitch. i.e. normally it shouldn't happen.
         return &Me::x_ReplaceServerConn;
+    }
 
+    // Here we will be if we attempted to connect to another NC server and got
+    // some error as a result. This is a serious error, we cannot do anything
+    // about that.
     m_Peer->RegisterConnError();
     return &Me::x_CloseCmdAndConn;
 }
@@ -984,7 +1012,7 @@ CNCActiveHandler::x_DoCopyPut(void)
     m_CurCmd = eCopyPut;
     m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCReadData, m_BlobKey,
                                                  kEmptyStr, m_TimeBucket);
-    x_SetStateAndAddToPool(&Me::x_WaitForMetaInfo);
+    x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);
 }
 
@@ -999,16 +1027,16 @@ CNCActiveHandler::x_DoSyncGet(void)
     m_CurCmd = eSyncGet;
     m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCCopyCreate, m_BlobKey,
                                                  kEmptyStr, m_TimeBucket);
-    x_SetStateAndAddToPool(&Me::x_WaitForMetaInfo);
+    x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);
 }
 
 void
-CNCActiveHandler::x_AddConnToPool(void)
+CNCActiveHandler::x_StartProcessing(void)
 {
-    m_AddedToPool = true;
+    m_ProcessingStarted = true;
     if (!m_Proxy->StartProcessing()) {
-        m_AddedToPool = false;
+        m_ProcessingStarted = false;
         m_Proxy->AbortSocket();
         m_ErrMsg = "ERR:Error in TaskServer";
         SetState(&Me::x_CloseCmdAndConn);
@@ -1016,20 +1044,26 @@ CNCActiveHandler::x_AddConnToPool(void)
 }
 
 void
-CNCActiveHandler::x_SetStateAndAddToPool(State state)
+CNCActiveHandler::x_SetStateAndStartProcessing(State state)
 {
     if (m_Client)
         m_Client->SetStatus(eNCHubCmdInProgress);
-    if (ACCESS_ONCE(m_AddedToPool)) {
-        SetState(state);
-        // We really shouldn't read anything from the object at this point.
-        // Thus x_SetState() above cannot be before if.
+    // Theoretically there's a race here and m_ProcessingStarted should be checked
+    // before setting new state. But if processing was already started and
+    // m_ProcessingStarted was already changed to TRUE it will never be changed
+    // back to FALSE again. And even if as a result of changing state this object
+    // will become runnable on other thread, will proceed with execution and
+    // will terminate itself, even in this case object won't be physically deleted
+    // yet and reading of m_ProcessingStarted will still be valid. And calling
+    // SetRunnable() in this case won't do any harm. OTOH if processing for this
+    // object wasn't started yet and m_ProcessingStarted is FALSE then this
+    // object's socket wasn't added to main TaskServer's epoll yet. And in this
+    // case it's not possible for it to become runnable on the other thread.
+    SetState(state);
+    if (m_ProcessingStarted)
         SetRunnable();
-    }
-    else {
-        SetState(state);
-        x_AddConnToPool();
-    }
+    else
+        x_StartProcessing();
 }
 
 CNCActiveHandler::State
@@ -1066,6 +1100,9 @@ CNCActiveHandler::x_CleanCmdResources(void)
     CNCActiveClientHub* hub = ACCESS_ONCE(m_Client);
     if (hub) {
         hub->SetErrMsg(m_ErrMsg);
+        // SetStatus MUST be called after SetErrMsg because after SetStatus
+        // CNCMessageHandler can immediately check error message without giving
+        // us a chance to set it.
         hub->SetStatus(m_CmdSuccess? eNCHubSuccess: eNCHubError);
     }
     else {
@@ -1077,11 +1114,10 @@ CNCActiveHandler::x_CleanCmdResources(void)
     m_ErrMsg.clear();
     m_CmdStarted = false;
 
-    if (GetDiagCtx()
-        &&  (!m_Proxy  ||  GetDiagCtx() != m_Proxy->GetDiagCtx()))
-    {
+    // Releasing diag context only if we have command-related one. If we only
+    // have socket-related context we leave it intact.
+    if (GetDiagCtx()  &&  (!m_Proxy  ||  GetDiagCtx() != m_Proxy->GetDiagCtx()))
         ReleaseDiagCtx();
-    }
 }
 
 CNCActiveHandler::State
@@ -1293,7 +1329,7 @@ CNCActiveHandler::x_PrepareSyncProlongCmd(void)
     blob_sum.expire = m_BlobAccess->GetCurBlobExpire();
     blob_sum.ver_expire = m_BlobAccess->GetCurVerExpire();
 
-    // m_BlobAccess is not needed anymore and can be re-created later if
+    // m_BlobAccess is not needed anymore. It will be re-created later if
     // blob won't be found on peer and it will be necessary to execute
     // SYNC_PUT on this blob
     m_BlobAccess->Release();
@@ -1348,7 +1384,7 @@ CNCActiveHandler::x_SendCopyProlongCmd(const SNCBlobSummary& blob_sum)
         m_CmdToSend += NStr::UInt8ToString(m_OrigRecNo);
     }
 
-    x_SetStateAndAddToPool(&Me::x_SendCmdToExecute);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
 CNCActiveHandler::State
@@ -1357,6 +1393,8 @@ CNCActiveHandler::x_ReadCopyProlong(void)
     if (!m_BlobExists) {
         if (m_Proxy->NeedEarlyClose())
             return &Me::x_CloseCmdAndConn;
+        // Extract command-related context and pass it to CopyPut where it will
+        // be set as current again.
         CSrvRef<CRequestContext> ctx(GetDiagCtx());
         ReleaseDiagCtx();
         CopyPut(ctx, m_BlobKey, m_BlobSlot, 0);
@@ -1425,7 +1463,12 @@ CNCActiveHandler::x_ReadDataPrefix(void)
 
     CNCMessageHandler* client = hub->GetClient();
     client->WriteText(m_Response).WriteText("\n");
+    // After setting m_GotClientResponse to TRUE CNCMessageHandler can immediately
+    // continue its job. Thus we MUST set it after we (asynchronously) messed up
+    // with the CNCMessageHandler's socket.
     m_GotClientResponse = true;
+    // Make sure that m_Proxy does proxying with the correct diag context set
+    // (in case if it needs to log something).
     m_Proxy->SetDiagCtx(GetDiagCtx());
     m_Proxy->NeedToProxySocket();
     return &Me::x_ReadDataForClient;
@@ -1437,6 +1480,7 @@ CNCActiveHandler::x_ReadDataForClient(void)
     if (!m_Proxy->SocketProxyDone())
         return NULL;
 
+    // Don't forget to remove from m_Proxy diag context set in x_ReadDataPrefix().
     m_Proxy->ReleaseDiagCtx();
     if (!m_Proxy->ProxyHadError()) {
         CNCStat::PeerDataWrite(m_SizeToRead);
@@ -1825,6 +1869,7 @@ CNCActiveHandler::x_ReadSyncProInfoAnswer(void)
     if (m_Proxy->NeedEarlyClose())
         return &Me::x_CloseCmdAndConn;
 
+    // x_DoProlongOur will change our state to continue processing.
     x_DoProlongOur();
     return NULL;
 }
@@ -1834,7 +1879,7 @@ CNCActiveHandler::x_DoProlongOur(void)
 {
     m_BlobAccess = CNCBlobStorage::GetBlobAccess(eNCRead, m_BlobKey,
                                                  kEmptyStr, m_TimeBucket);
-    x_SetStateAndAddToPool(&Me::x_WaitForMetaInfo);
+    x_SetStateAndStartProcessing(&Me::x_WaitForMetaInfo);
     m_BlobAccess->RequestMetaInfo(this);
 }
 
