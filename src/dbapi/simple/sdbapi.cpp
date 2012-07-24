@@ -1474,9 +1474,12 @@ CBulkInsertImpl::CBulkInsertImpl(CDatabaseImpl* db_impl,
 
 CBulkInsertImpl::~CBulkInsertImpl(void)
 {
-    if (m_BI  &&  m_RowsWritten != 0) {
-        m_BI->Complete();
+    try {
+        if (m_BI  &&  m_RowsWritten != 0) {
+            m_BI->Complete();
+        }
     }
+    STD_CATCH_ALL_X(13, "Error destroying CBulkInsert");
     delete m_BI;
 }
 
