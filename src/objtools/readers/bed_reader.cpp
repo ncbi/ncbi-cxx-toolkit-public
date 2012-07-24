@@ -418,12 +418,14 @@ void CBedReader::x_SetFeatureLocation(
     const vector<string>& fields )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_loc> location( new CSeq_loc );
+    CRef<CSeq_loc> location(new CSeq_loc);
     int from, to;
     try {
 		string cleaned_from;
 		NStr::Replace(fields[1], ",", "", cleaned_from);
-        from = NStr::StringToInt( cleaned_from ) - 1;
+        // BED 0-based 1st-point-in to ASN 0-based 1st-point-in
+        //  no conversion necessary
+        from = NStr::StringToInt(cleaned_from);
     }
     catch ( ... ) {
         CObjReaderLineException err( 
@@ -435,13 +437,15 @@ void CBedReader::x_SetFeatureLocation(
     try {
     	string cleaned_to;
 		NStr::Replace(fields[2], ",", "", cleaned_to);
-        to = NStr::StringToInt( cleaned_to ) - 1;
+        // BED 0-based 1st-point-out to ASN 0-based last-point-in
+        //  need substract 1
+        to = NStr::StringToInt(cleaned_to) - 1;
     }
     catch ( ... ) {
         CObjReaderLineException err( 
             eDiag_Error,
             0,
-            "Invalid data line --- Bad \"SeqStop\" value." );
+            "Invalid data line --- Bad \"SeqStop\" value.");
         throw( err );
     }
     if (from == to) {
