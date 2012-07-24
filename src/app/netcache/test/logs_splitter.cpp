@@ -61,6 +61,11 @@ enum ERequestType
 
 struct SRequestInfo
 {
+    SRequestInfo(ERequestType req)
+        : req_type(req), finished(false), gen_key(false),
+            req_id(0), req_time(0), key_id(0), size(0)
+    {
+    }
     ERequestType req_type;
     bool finished;
     bool gen_key;
@@ -95,7 +100,18 @@ static Uint8 s_NextKeyId = 1;
 static Uint8 s_StartTime = 0;
 typedef map<Uint8, SRequestInfo*> TReqsByIndex;
 static TReqsByIndex s_StartedRequests;
-typedef list<SRequestInfo*> TReqsQueue;
+
+// input LOG is not chronological; output - must be. So, we should sort it here
+
+// amount of milliseconds to store before saving into output file
+static const Uint8 kMaxMsecToStore = 120000;
+// it is possible to have several requests per millisecond;
+// but, replay log does not distinguish fractions of msec
+static const Uint8 kMaxRequestsPerMsec = 10;
+// timestamp to request, and let map sort them
+typedef map<Uint8, SRequestInfo*> TReqsQueue;
+
+
 typedef vector<TReqsQueue> TOutReqsQueues;
 static TOutReqsQueues s_OutReqsQueues;
 
@@ -106,17 +122,29 @@ s_FlushRequests(bool skip_unfinished = false)
     for (size_t i = 0; i < s_OutReqsQueues.size(); ++i) {
         TReqsQueue& q = s_OutReqsQueues[i];
         CFileIO* io = s_OutFiles[i];
+        // we can save up to this time
+        Uint8 LastReqTime = (Uint8)-1;
+        if (!skip_unfinished && !q.empty()) {
+            LastReqTime = q.rbegin()->second->req_time;
+            if (LastReqTime > kMaxMsecToStore) {
+                LastReqTime -= kMaxMsecToStore;
+            } else {
+                continue;
+            }
+        }
         while (!q.empty()) {
-            SRequestInfo* req = q.front();
+            SRequestInfo* req = q.begin()->second;
+            if (!skip_unfinished && req->req_time >= LastReqTime) {
+                break;
+            }
             if (!req->finished) {
                 if (!skip_unfinished)
                     break;
-                q.pop_front();
+                q.erase(q.begin());
                 delete req;
                 continue;
             }
-            q.pop_front();
-
+                q.erase(q.begin());
             char buf[4096];
             const char* str_cmd = NULL;
             int gen_key = 0;
@@ -137,7 +165,12 @@ s_FlushRequests(bool skip_unfinished = false)
             int buf_size = snprintf(buf, sizeof(buf),
                                     "%" NCBI_UINT8_FORMAT_SPEC
                                     " %s %" NCBI_UINT8_FORMAT_SPEC
-                                    " %d %" NCBI_UINT8_FORMAT_SPEC "\n",
+                                    " %d %" NCBI_UINT8_FORMAT_SPEC
+#ifdef NCBI_COMPILER_MSVC
+                                    "\r\n",
+#else
+                                    "\n",
+#endif
                                     req->req_time, str_cmd, req->key_id,
                                     gen_key, size);
             io->Write(buf, buf_size);
@@ -246,7 +279,15 @@ s_ReadRequestKey(SRequestInfo* req,
         key_id = it_idx->second.id;
     }
     req->key_id = key_id;
-    s_OutReqsQueues[out_idx].push_back(req);
+
+    // add to queue
+    TReqsQueue& q = s_OutReqsQueues[out_idx];
+    Uint8 reqtimestamp = req->req_time * kMaxRequestsPerMsec;
+    Uint8 reqtimemax = reqtimestamp + kMaxRequestsPerMsec;
+    for ( ; q.find(reqtimestamp) != q.end() && reqtimestamp < reqtimemax; ++reqtimestamp)
+        ;
+
+    q[reqtimestamp] = req;
 
     return true;
 }
@@ -256,16 +297,14 @@ s_StartRequest(const SDiagMessage& msg)
 {
     const string& cmd = s_GetMsgParam(msg.m_ExtraArgs, "cmd");
     if (cmd == "PUT3") {
-        SRequestInfo* req = new SRequestInfo();
-        req->req_type = ePUT3;
+        SRequestInfo* req = new SRequestInfo(ePUT3);
         req->req_id = msg.m_RequestId;
         s_SetRequestTime(req, msg);
         s_StartedRequests[req->req_id] = req;
         s_ReadRequestKey(req, msg.m_ExtraArgs, true);
     }
     else if (cmd == "GET2") {
-        SRequestInfo* req = new SRequestInfo();
-        req->req_type = eGET2;
+        SRequestInfo* req = new SRequestInfo(eGET2);
         s_SetRequestTime(req, msg);
         req->finished = true;
         if (!s_ReadRequestKey(req, msg.m_ExtraArgs, false)) {
@@ -273,8 +312,7 @@ s_StartRequest(const SDiagMessage& msg)
         }
     }
     else if (cmd == "RMV2") {
-        SRequestInfo* req = new SRequestInfo();
-        req->req_type = eRMV2;
+        SRequestInfo* req = new SRequestInfo(eRMV2);
         s_SetRequestTime(req, msg);
         req->finished = true;
         if (!s_ReadRequestKey(req, msg.m_ExtraArgs, false)) {
@@ -293,7 +331,7 @@ s_AddRequestExtra(const SDiagMessage& msg)
     SRequestInfo* req = it->second;
     if (req->req_type == ePUT3  &&  req->key.empty())
         s_ReadRequestKey(req, msg.m_ExtraArgs, true);
-    const string& str_size = s_GetMsgParam(msg.m_ExtraArgs, "size");
+    const string& str_size = s_GetMsgParam(msg.m_ExtraArgs, "blob_size");
     if (!str_size.empty())
         req->size = NStr::StringToUInt8(str_size);
 }
