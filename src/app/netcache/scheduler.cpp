@@ -76,6 +76,10 @@ struct SSchedInfo
 {
     TPrtyExecMap tasks_map;
     CMiniMutex tasks_lock;
+    /// This futex has total number of tasks in the tasks_map as a value.
+    /// SchedExecuteTask() also uses it to wait for any tasks to be queued in
+    /// this thread (it waits for futex's value to change to something other
+    /// than 0).
     CFutex cnt_signal;
     Uint4 max_tasks;
     Uint4 done_tasks;
@@ -117,6 +121,9 @@ s_AddTaskToQueue(SSrvThread* thr, CSrvTask* task)
 {
     SSchedInfo* sched = thr->sched;
     sched->tasks_lock.Lock();
+    // In the rare event that thread thr started the process of stopping itself
+    // before we were able to queue new task into it we change thr to point either
+    // to current thread (if it's a worker thread) or to first worker thread.
     if (!IsThreadRunning(thr)) {
         sched->tasks_lock.Unlock();
         thr = GetCurThread();
@@ -146,10 +153,15 @@ s_UnqueueTask(SSchedInfo* sched)
     while (it_first != tasks_map.end()  &&  it_first->tasks.empty())
         ++it_first;
     if (it_first == tasks_map.end()) {
+        // This is a rare event when we saw that this thread has some tasks in
+        // the queue but by the time we were able to obtain the lock some other
+        // thread took all task from this one.
         sched->tasks_lock.Unlock();
         return NULL;
     }
 
+    // Check if enough tasks with this priority have been already executed and
+    // it's time to execute task with a lower priority (if there is any).
     SPrtyExecQueue* q_exec = &*it_first;
     TPrtyExecMap::iterator it_next = it_first;
     ++it_next;
@@ -162,6 +174,8 @@ s_UnqueueTask(SSchedInfo* sched)
         }
         ++it_next;
     }
+    // If we found task with lower priority that needs to be executed then
+    // change our pointers for execution.
     if (it_next != tasks_map.end()) {
         it_first = it_next;
         q_exec = &*it_first;
@@ -169,6 +183,7 @@ s_UnqueueTask(SSchedInfo* sched)
 
     CSrvTask* task = &q_exec->tasks.front();
     q_exec->tasks.pop_front();
+    // Take a note that task with this priority is going to be executed.
     q_exec->exec_time += q_exec->priority;
     sched->cnt_signal.SetValueNonAtomic(sched->cnt_signal.GetValue() - 1);
     sched->tasks_lock.Unlock();
@@ -186,26 +201,38 @@ s_IsThreadOverloaded(SSrvThread* thr, Uint4 max_coef)
 static SSrvThread*
 s_FindQueueThread(TSrvThreadNum prefer_num, SSrvThread* cur_thr)
 {
+    // First of all if current thread is not a worker thread or is in the process
+    // of stopping then it shouldn't be mentioned anywhere in the function.
     if (cur_thr  &&  !IsThreadRunning(cur_thr))
         cur_thr = NULL;
+    // We will prefer either thread number given, or current thread, or 1st
+    // worker thread.
     SSrvThread* prefer_thr = s_Threads[prefer_num];
     if (!IsThreadRunning(prefer_thr))
         prefer_thr = cur_thr? cur_thr: s_Threads[1];
     Uint4 max_coef = ACCESS_ONCE(s_MaxTasksCoef);
 
 try_all_checks_again:
+    // Start checking with preferred thread. Later we'll check others.
     SSrvThread* queue_thr = prefer_thr;
     Uint1 pref_chain_tries = 2;
 
 check_thr_overload:
     if (!s_IsThreadOverloaded(queue_thr, max_coef)) {
+        // If thread is not overloaded then just queue the task here and return.
 select_queue_thr:
-        if (queue_thr != prefer_thr)
+        if (queue_thr != prefer_thr) {
+            // If we walked some preference chains or worse yet checked each thread
+            // one-by-one then remember what we chose eventually so that later calls
+            // to s_FindQueueThread with the same prefer_num would complete faster.
             prefer_thr->sched->prefer_thr_num = queue_thr->thread_num;
+        }
         return queue_thr;
     }
 
     if (pref_chain_tries != 0) {
+        // If preferred thread is overloaded then we'll try to walk preference
+        // chain first (if there is any).
         --pref_chain_tries;
         TSrvThreadNum pref_chain_num = ACCESS_ONCE(queue_thr->sched->prefer_thr_num);
         queue_thr = s_Threads[pref_chain_num];
@@ -213,21 +240,48 @@ select_queue_thr:
             goto check_thr_overload;
     }
 
+    // If preferred thread is overloaded and there's no preference chain or we
+    // walked it all through, then we'll just check each thread one-by-one and
+    // put the task to the first thread that have some available capacity in the
+    // queue. Because of this loop and because of the preference given to 1st
+    // thread in several other places (search for s_Threads[1] to find them) we
+    // effectively implement the rule "all our tasks should use as few threads
+    // as possible and all these threads should be compacted into lower thread
+    // numbers, i.e. if we use n threads their numbers should be 1..n".
     TSrvThreadNum thr_num = 1;
     for (; thr_num <= s_MaxRunningThreads; ++thr_num) {
         queue_thr = s_Threads[thr_num];
-        if (!IsThreadRunning(queue_thr))
+        if (!IsThreadRunning(queue_thr)) {
+            // As we meet first inactive thread we can be sure that there's no
+            // more active worker threads with bigger numbers.
             break;
+        }
         if (!s_IsThreadOverloaded(queue_thr, max_coef))
             goto select_queue_thr;
     }
     if (thr_num <= s_MaxRunningThreads) {
+        // If we didn't find suitable thread for queuing and there's still some
+        // capacity for new threads then we should start one. While it will be
+        // starting we'll queue the task to the current or preferred thread,
+        // even though we have found earlier that it's overloaded. When new thread
+        // starts it will check all threads and if it finds overloaded one it
+        // will take tasks from it.
         RequestThreadStart(s_Threads[thr_num]);
         return cur_thr? cur_thr: prefer_thr;
     }
-    if (max_coef >= numeric_limits<Uint2>::max())
+    if (max_coef >= numeric_limits<Uint2>::max()) {
+        // This if should never be entered but for protection against infinite
+        // loop in this function we should put it here.
         return cur_thr? cur_thr: prefer_thr;
+    }
 
+    // So we checked all available threads -- they all are overloaded and we can't
+    // start new thread. Now we'll pretend that all our per-thread limits on
+    // amount of tasks allowed to be queued before overloading became twice as big
+    // and repeat the whole calculation procedure once again. This is done to
+    // make task distribution more even between threads even in face of very slow
+    // processing of those tasks (or in face of huge amounts of tasks).
+    // TODO: s_MaxTasksCoef should be lowered back to 1 somewhere.
     AtomicCAS(s_MaxTasksCoef, max_coef, max_coef * 2);
     max_coef *= 2;
     goto try_all_checks_again;
@@ -238,6 +292,7 @@ s_BalanceTasks(SSchedInfo* sched, SSrvThread* cur_thr)
 {
     TSrvTaskList task_lst;
 
+    // Task all the tasks from given sched structure.
     sched->tasks_lock.Lock();
     NON_CONST_ITERATE(TPrtyExecMap, it, sched->tasks_map) {
         SPrtyExecQueue* exec_q = &*it;
@@ -246,6 +301,11 @@ s_BalanceTasks(SSchedInfo* sched, SSrvThread* cur_thr)
     sched->cnt_signal.SetValueNonAtomic(0);
     sched->tasks_lock.Unlock();
 
+    // Now distribute these tasks using standard distribution rules. This function
+    // is called on sched either from overloaded (or unresponsive) thread, or from
+    // stopped thread. Either way standard distribution rules will prevent tasks
+    // from going back to the same sched queue (unless that thread became
+    // responsive again, without any tasks and thus without any overload).
     while (!task_lst.empty()) {
         CSrvTask* task = &task_lst.front();
         task_lst.pop_front();
@@ -255,12 +315,14 @@ s_BalanceTasks(SSchedInfo* sched, SSrvThread* cur_thr)
 }
 
 static void
-s_FindRebalanceTasks(SSrvThread* thr)
+s_FindRebalanceTasks(SSrvThread* cur_thr)
 {
-    for (TSrvThreadNum i = s_MaxRunningThreads; i > thr->thread_num; --i) {
+    // Find thread with maximum number that has any tasks queued and redistribute
+    // all the tasks preferring current thread as a queuing destination.
+    for (TSrvThreadNum i = s_MaxRunningThreads; i > cur_thr->thread_num; --i) {
         SSrvThread* src_thr = s_Threads[i];
         if (src_thr->sched->cnt_signal.GetValue() != 0) {
-            s_BalanceTasks(src_thr->sched, thr);
+            s_BalanceTasks(src_thr->sched, cur_thr);
             return;
         }
     }
@@ -324,12 +386,26 @@ SchedStartJiffy(SSrvThread* thr)
 
     sched->jfy_start_time = cur_time;
     if (jiffy_time.Sec() != 0) {
+        // Jiffy time can be longer than a second only in 2 cases:
+        //  - if some task was executing for too long. In this case updating
+        //    last_exec_time won't hurt and idle state calculation below are not
+        //    needed anyway.
+        //  - if this thread was stopped and now started again. In this case
+        //    trying to do any idle state related calculations will hurt and
+        //    update to last_exec_time is necessary, because this thread have been
+        //    just started and we need to start counting for s_IdleStopTimeout
+        //    starting from this very moment.
         sched->last_exec_time = cur_time;
     }
     else if (sched->cnt_signal.GetValue() == 0) {
         CSrvTime idle_time = cur_time;
         idle_time -= sched->last_exec_time;
         if (idle_time.Sec() >= s_IdleStopTimeout) {
+            // If this thread didn't execute any tasks for a significant amount
+            // of time then this thread should be either stopped or (if it's not
+            // running worker thread with maximum number) all tasks from thread
+            // with maximum number should be redistributed preferrably to this
+            // thread.
             if (IsThreadRunning(s_Threads[thr->thread_num + 1]))
                 s_FindRebalanceTasks(thr);
             else if (thr->thread_num != 1)
@@ -425,6 +501,13 @@ SchedExecuteTask(SSrvThread* thr)
 {
     SSchedInfo* sched = thr->sched;
     if (sched->cnt_signal.GetValue() == 0) {
+        // If there's no tasks to execute thread will sleep for up to s_JiffyTime.
+        // If thread will sleep for the whole s_JiffyTime then we'll return to
+        // caller who then will execute per-jiffy tasks. If this thread will be
+        // woken up by somebody else because new tasks are available we'll return
+        // to the caller, check if jiffy number was changed (if yes then per-jiffy
+        // tasks will be executed) and then re-enter this function to actually
+        // execute tasks that were queued in this thread.
         CSrvTime start_time = CSrvTime::Current();
         sched->cnt_signal.WaitValueChange(0, s_JiffyTime);
         CSrvTime end_time = CSrvTime::Current();
@@ -433,8 +516,11 @@ SchedExecuteTask(SSrvThread* thr)
         return;
     }
     CSrvTask* task = s_UnqueueTask(sched);
-    if (!task)
+    if (!task) {
+        // This can happen in a rare case when somebody else took all tasks
+        // from us and redistributed it somewhere else.
         return;
+    }
 
     if (!IsThreadRunning(thr))
         RequestThreadRevive(thr);
@@ -492,24 +578,33 @@ CSrvTask::SetRunnable(void)
 {
 retry:
     TSrvTaskFlags old_flags = ACCESS_ONCE(m_TaskFlags);
+    // If task has been already terminated then do nothing.
     if (old_flags & (fTaskNeedTermination + fTaskTerminated))
         return;
+    // If task is currently running then we need it to mark as runnable so that
+    // it will get queued again when it finishes its execution.
     if (old_flags & fTaskRunning) {
+        // If task is already marked as runnable then are job is done already.
         if (old_flags & fTaskRunnable)
             return;
         TSrvTaskFlags new_flags = old_flags + fTaskRunnable;
         if (!AtomicCAS(m_TaskFlags, old_flags, new_flags))
             goto retry;
+        // Don't forget to cancel the timer if there was any.
         RemoveTaskFromTimer(this, new_flags);
         return;
     }
+    // If task is already queued then we don't need to do anything.
     if (old_flags & fTaskQueued)
         return;
 
+    // Now we need to mark task as queued and actually put into queue of some
+    // thread.
     TSrvTaskFlags new_flags = old_flags + fTaskQueued;
     if (!AtomicCAS(m_TaskFlags, old_flags, new_flags))
         goto retry;
 
+    // Don't forget to cancel the timer if there was any.
     RemoveTaskFromTimer(this, new_flags);
     SSrvThread* cur_thr = GetCurThread();
     TSrvThreadNum prefer_num = m_LastThread? m_LastThread: 1;
