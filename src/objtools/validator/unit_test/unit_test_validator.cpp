@@ -4570,6 +4570,11 @@ static void AddTpaAssemblyUserObject(CRef<CSeq_entry> entry)
     CRef<CSeqdesc> desc(new CSeqdesc());
     desc->SetUser().SetType().SetStr("TpaAssembly");
     entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr("Label");
+    field->SetData().SetStr("Data");
+    desc->SetUser().SetData().push_back(field);
 }
 
 
@@ -4606,8 +4611,11 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     gi_id->SetGi(21914627);
     member1->SetSeq().SetId().push_back(gi_id);
     seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    /*
     delete expected_errors[0];
     expected_errors[0] = new CExpectedError("AY123456.1", eDiag_Warning, "UnexpectedIdentifierChange", "Loss of accession (gb|AY123456.1|) on gi (21914627) compared to the NCBI sequence repository");
+    */
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "TpaAssmeblyProblem", "There are 1 TPAs with history and 1 without history in this record."));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Warning, "TpaAssmeblyProblem", "There are 1 TPAs without history in this record, but the record has a gi number assignment."));
     eval = validator.Validate(seh, options);
@@ -6713,6 +6721,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingWithoutStatus)
     CRef<CSeqdesc> desc(new CSeqdesc());
     desc->SetUser().SetType().SetStr("RefGeneTracking");
     entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr("Label");
+    field->SetData().SetStr("Data");
+    desc->SetUser().SetData().push_back(field);
 
     STANDARD_SETUP
 
@@ -9037,11 +9050,22 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     desc->SetUser().SetType().SetStr("StructuredComment");
     entry->SetSeq().SetDescr().Set().push_back(desc);
 
+    /*
+    CRef<CUser_field> fld(new CUser_field());
+    fld->SetLabel().SetStr("Label");
+    fld->SetData().SetStr("Data");
+    desc->SetUser().SetData().push_back(fld);
+    */
+
     STANDARD_SETUP
 
     // no prefix only empty errors
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UserObjectProblem",
                                                  "Structured Comment user object descriptor is empty"));
+    */
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UserObjectProblem",
+                                                 "User object with no data"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
