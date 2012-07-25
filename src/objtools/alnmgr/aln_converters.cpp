@@ -157,6 +157,7 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
     CDense_seg::TNumseg seg;
     int pos_1, pos_2;
     TSignedSeqPos last_to_1 = 0;
+
     for (seg = 0, pos_1 = row_1, pos_2 = row_2;
          seg < numseg;
          ++seg, pos_1 += dim, pos_2 += dim) {
@@ -204,8 +205,23 @@ ConvertDensegToPairwiseAln(CPairwiseAln& pairwise_aln,
             }
             else if (from_1 < 0  &&  from_2 >= 0) {
                 // Store gaps
+                TSignedSeqPos ins_pos = last_to_1;
+                if (!first_direct  &&  ins_pos == 0) {
+                    // Special case: first is on minus strand and starts with a gap.
+                    // Instead of using '0' for insertion position, place it after
+                    // the first non-gap segment.
+                    CDense_seg::TNumseg skip_seg = 1;
+                    while (seg + skip_seg < numseg) {
+                        int p = starts[pos_1 + skip_seg*dim];
+                        if (p >= 0) {
+                            ins_pos = p + lens[seg + skip_seg];
+                            break;
+                        }
+                        skip_seg++;
+                    }
+                }
                 pairwise_aln.AddInsertion(CPairwiseAln::TAlnRng(
-                    last_to_1, from_2, len, direct, first_direct));
+                    ins_pos, from_2, len, direct, first_direct));
             }
             else if (from_1 >= 0) {
                 // Adjust next possible gap start

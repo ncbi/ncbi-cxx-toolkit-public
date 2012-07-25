@@ -303,7 +303,7 @@ CRef<CAnchoredAln> CreateAnchoredAlnFromAln(
             anchor_row,
             row,
             row == anchor_row ? CAlnUserOptions::eDirect : options.m_Direction,
-            &aln_stats.GetIdVec());
+            &aln_stats.GetSeqIdsForAln(aln_idx));
 
         if ( force_widths ) {
             // Need to convert coordinates to genomic.

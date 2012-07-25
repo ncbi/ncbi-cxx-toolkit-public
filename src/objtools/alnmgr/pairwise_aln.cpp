@@ -105,7 +105,7 @@ void CPairwise_CI::x_Init(void)
         m_It = it.first;
         m_GapIt = it.first;
         if ( !it.second ) {
-            if (m_GapIt != last) {
+            if (m_GapIt != m_Aln->end()  &&  m_GapIt != last) {
                 ++m_GapIt;
             }
         }

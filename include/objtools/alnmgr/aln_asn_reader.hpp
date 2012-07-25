@@ -41,6 +41,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <serial/iterator.hpp>
 
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqalign/Seq_align.hpp>

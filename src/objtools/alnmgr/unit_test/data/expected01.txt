@@ -1,0 +1,7 @@
+16
+
+1 Seq-id ::= gi 2
+1 Seq-id ::= gi 3
+1 Seq-id ::= gi 4
+3 Seq-id ::= gi 6
+1 Seq-id ::= gi 2

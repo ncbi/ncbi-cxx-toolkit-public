@@ -1,0 +1,10 @@
+# $Id$
+
+APP_PROJ = unit_test_alnmgr
+SUB_PROJ =
+PROJ_TAG = test
+
+REQUIRES = Boost.Test.Included
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -172,7 +172,7 @@ public:
     ///   Reference to the output buffer.
     string& GetSeqString(TNumrow       row,
                          string&       buffer,
-                         const TRange& seq_rng,
+                         const TRange& rq_seq_rng,
                          bool          force_translation = false) const;
 
     /// Fetch alignment sequence data. Unaligned ranges of the selected row
@@ -189,7 +189,7 @@ public:
     ///   Reference to the output buffer.
     string& GetAlnSeqString(TNumrow             row,
                             string&             buffer,
-                            const TSignedRange& aln_rng,
+                            const TSignedRange& rq_aln_rng,
                             bool                force_translation = false) const;
 
     /// Get bioseq handle for the row. Throw exception if the handle can not be

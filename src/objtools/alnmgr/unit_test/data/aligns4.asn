@@ -1,0 +1,631 @@
+-- Denseg
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1000, 2000,
+      1062, -1,
+      1183, 2111,
+      -1, 2159,
+      1221, 2249
+    },
+    lens {
+      25,
+      56,
+      15,
+      62,
+      70
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 5,
+    ids {
+      gi 2,
+      gi 3
+    },
+    starts {
+      1000, 2294,
+      1062, -1,
+      1183, 2193,
+      -1, 2098,
+      1221, 2000
+    },
+    lens {
+      25,
+      56,
+      15,
+      62,
+      70
+    },
+    strands {
+      plus, minus,
+      plus, minus,
+      plus, minus,
+      plus, minus,
+      plus, minus
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs denseg {
+    dim 2,
+    numseg 7,
+    ids {
+      gi 2,
+      gi 6
+    },
+    starts {
+      1741, 2000,
+      1627, 2021,
+      1558, 2069,
+      1477, -1,
+      1435, 2125,
+      -1, 2139,
+      1000, 2212
+    },
+    lens {
+      21,
+      31,
+      23,
+      27,
+      14,
+      73,
+      49
+    },
+    strands {
+      minus, plus,
+      minus, plus,
+      minus, plus,
+      minus, plus,
+      minus, plus,
+      minus, plus,
+      minus, plus
+    }
+  }
+}
+
+-- Dendiag
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 3
+      },
+      starts {
+        1000, 2000
+      },
+      len 25
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 3
+      },
+      starts {
+        1183, 2111
+      },
+      len 15
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 3
+      },
+      starts {
+        1221, 2249
+      },
+      len 70
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 3
+      },
+      starts {
+        1000, 2294
+      },
+      len 25,
+      strands {
+        plus, minus
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 3
+      },
+      starts {
+        1183, 2193
+      },
+      len 15,
+      strands {
+        plus, minus
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 3
+      },
+      starts {
+        1221, 2000
+      },
+      len 70,
+      strands {
+        plus, minus
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs dendiag {
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 6
+      },
+      starts {
+        1741, 2000
+      },
+      len 21,
+      strands {
+        minus, plus
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 6
+      },
+      starts {
+        1627, 2021
+      },
+      len 31,
+      strands {
+        minus, plus
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 6
+      },
+      starts {
+        1558, 2069
+      },
+      len 23,
+      strands {
+        minus, plus
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 6
+      },
+      starts {
+        1435, 2125
+      },
+      len 14,
+      strands {
+        minus, plus
+      }
+    },
+    {
+      dim 2,
+      ids {
+        gi 2,
+        gi 6
+      },
+      starts {
+        1000, 2212
+      },
+      len 49,
+      strands {
+        minus, plus
+      }
+    }
+  }
+}
+
+-- Std-seg
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 1000,
+          to 1024,
+          id gi 2
+        },
+        int {
+          from 2000,
+          to 2024,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 1183,
+          to 1197,
+          id gi 2
+        },
+        int {
+          from 2111,
+          to 2125,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 1221,
+          to 1290,
+          id gi 2
+        },
+        int {
+          from 2249,
+          to 2318,
+          id gi 3
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 1000,
+          to 1024,
+          strand plus,
+          id gi 2
+        },
+        int {
+          from 2294,
+          to 2318,
+          strand minus,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 1183,
+          to 1197,
+          strand plus,
+          id gi 2
+        },
+        int {
+          from 2193,
+          to 2207,
+          strand minus,
+          id gi 3
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 1221,
+          to 1290,
+          strand plus,
+          id gi 2
+        },
+        int {
+          from 2000,
+          to 2069,
+          strand minus,
+          id gi 3
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 1741,
+          to 1803,
+          strand minus,
+          id gi 2
+        },
+        int {
+          from 2000,
+          to 2020,
+          id gi 6
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 1627,
+          to 1719,
+          strand minus,
+          id gi 2
+        },
+        int {
+          from 2021,
+          to 2051,
+          id gi 6
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 1435,
+          to 1476,
+          strand minus,
+          id gi 2
+        },
+        int {
+          from 2125,
+          to 2138,
+          id gi 6
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 1000,
+          to 1146,
+          strand minus,
+          id gi 2
+        },
+        int {
+          from 2212,
+          to 2260,
+          id gi 6
+        }
+      }
+    }
+  }
+}
+
+-- Spliced-seg
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 2,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 2000,
+        product-end nucpos 2318,
+        genomic-start 1000,
+        genomic-end 1290,
+        parts {
+          match 25,
+          genomic-ins 72,
+          mismatch 86,
+          diag 15,
+          product-ins 100,
+          mismatch 23,
+          match 70
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 2,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 2000,
+        product-end nucpos 2024,
+        genomic-start 1000,
+        genomic-end 1024,
+        parts {
+          match 25
+        }
+      },
+      {
+        product-start nucpos 2111,
+        product-end nucpos 2125,
+        genomic-start 1183,
+        genomic-end 1197,
+        parts {
+          match 15
+        }
+      },
+      {
+        product-start nucpos 2249,
+        product-end nucpos 2318,
+        genomic-start 1221,
+        genomic-end 1290,
+        parts {
+          match 70
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 2,
+    product-strand minus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 2000,
+        product-end nucpos 2318,
+        genomic-start 1000,
+        genomic-end 1290,
+        parts {
+          match 25,
+          genomic-ins 72,
+          mismatch 86,
+          diag 15,
+          product-ins 100,
+          mismatch 23,
+          match 70
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 2,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 2294,
+        product-end nucpos 2318,
+        genomic-start 1000,
+        genomic-end 1024,
+        product-strand minus,
+        genomic-strand plus,
+        parts {
+          match 25
+        }
+      },
+      {
+        product-start nucpos 2193,
+        product-end nucpos 2207,
+        genomic-start 1183,
+        genomic-end 1197,
+        product-strand minus,
+        genomic-strand plus,
+        parts {
+          match 15
+        }
+      },
+      {
+        product-start nucpos 2000,
+        product-end nucpos 2069,
+        genomic-start 1221,
+        genomic-end 1290,
+        product-strand minus,
+        genomic-strand plus,
+        parts {
+          match 70
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type partial,
+  dim 2,
+  segs spliced {
+    product-id gi 6,
+    genomic-id gi 2,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos { amin 2000, frame 0 },
+        product-end protpos { amin 2260, frame 2 },
+        genomic-start 1000,
+        genomic-end 1803,
+        parts {
+          match 63,
+          genomic-ins 21,
+          match 93,
+          product-ins 51,
+          match 69,
+          mismatch 81,
+          product-ins 18,
+          diag 42,
+          mismatch 219,
+          genomic-ins 69,
+          match 147
+        }
+      }
+    }
+  }
+}
+
+-- Sparse-seg
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs sparse {
+    rows {
+      {
+        first-id gi 2,
+        second-id gi 3,
+        numseg 3,
+        first-starts { 1000, 1183, 1221 },
+        second-starts { 2000, 2111, 2249 },
+        lens { 25, 15, 70 }
+      }
+    }
+  }
+}

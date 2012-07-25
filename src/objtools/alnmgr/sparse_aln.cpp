@@ -454,6 +454,8 @@ void CSparseAln::TranslateNAToAA(const string& na,
         aa.resize(na_size / 3 + (na_remainder ? 1 : 0));
     }
 
+    if ( na.empty() ) return;
+
     size_t aa_i = 0;
     int state = 0;
     for (size_t na_i = 0;  na_i < na_size; ) {
@@ -510,10 +512,15 @@ string& CSparseAln::GetSeqString(TNumrow row,
 
 string& CSparseAln::GetSeqString(TNumrow row,
                                  string &buffer,
-                                 const TRange &seq_range,
+                                 const TRange &rq_seq_range,
                                  bool force_translation) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
+
+    TRange seq_range = rq_seq_range;
+    if ( seq_range.IsWhole() ) {
+        seq_range = GetSeqRange(row);
+    }
 
     return GetSeqString(row,
                         buffer,
@@ -524,12 +531,17 @@ string& CSparseAln::GetSeqString(TNumrow row,
 
 string& CSparseAln::GetAlnSeqString(TNumrow row,
                                     string &buffer,
-                                    const TSignedRange &aln_range,
+                                    const TSignedRange &rq_aln_range,
                                     bool force_translation) const
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
     bool translate = force_translation  ||  IsTranslated();
+
+    TSignedRange aln_range(rq_aln_range);
+    if ( aln_range.IsWhole() ) {
+        aln_range = GetSeqAlnRange(row);
+    }
 
     buffer.erase();
     if (aln_range.GetLength() <= 0) {
