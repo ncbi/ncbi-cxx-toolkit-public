@@ -50,23 +50,130 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+/// Index of remote BLAST options.
+/// The blast4 server only supports a subset of these
+enum EBlastOptIdx {
+    eBlastOpt_Program = 100,
+    eBlastOpt_WordThreshold,
+    eBlastOpt_LookupTableType,
+    eBlastOpt_WordSize,
+    eBlastOpt_AlphabetSize,
+    eBlastOpt_MBTemplateLength,
+    eBlastOpt_MBTemplateType,
+    eBlastOpt_FilterString,
+    eBlastOpt_MaskAtHash,
+    eBlastOpt_DustFiltering,
+    eBlastOpt_DustFilteringLevel,
+    eBlastOpt_DustFilteringWindow,
+    eBlastOpt_DustFilteringLinker,
+    eBlastOpt_SegFiltering,
+    eBlastOpt_SegFilteringWindow,
+    eBlastOpt_SegFilteringLocut,
+    eBlastOpt_SegFilteringHicut,
+    eBlastOpt_RepeatFiltering,
+    eBlastOpt_RepeatFilteringDB,
+    eBlastOpt_StrandOption,
+    eBlastOpt_QueryGeneticCode,
+    eBlastOpt_WindowSize,
+    eBlastOpt_SeedContainerType,
+    eBlastOpt_SeedExtensionMethod,
+    eBlastOpt_XDropoff,
+    eBlastOpt_GapXDropoff,
+    eBlastOpt_GapXDropoffFinal,
+    eBlastOpt_GapTrigger,
+    eBlastOpt_GapExtnAlgorithm,
+    eBlastOpt_HitlistSize,
+    eBlastOpt_MaxNumHspPerSequence,
+    eBlastOpt_CullingLimit,
+    eBlastOpt_EvalueThreshold,
+    eBlastOpt_CutoffScore,
+    eBlastOpt_PercentIdentity,
+    eBlastOpt_SumStatisticsMode,
+    eBlastOpt_LongestIntronLength,
+    eBlastOpt_GappedMode,
+    eBlastOpt_ComplexityAdjMode,
+    eBlastOpt_MaskLevel,
+    eBlastOpt_MatrixName,
+    eBlastOpt_MatrixPath,
+    eBlastOpt_MatchReward,
+    eBlastOpt_MismatchPenalty,
+    eBlastOpt_GapOpeningCost,
+    eBlastOpt_GapExtensionCost,
+    eBlastOpt_FrameShiftPenalty,
+    eBlastOpt_OutOfFrameMode,
+    eBlastOpt_DbLength,
+    eBlastOpt_DbSeqNum,
+    eBlastOpt_EffectiveSearchSpace,
+    eBlastOpt_DbGeneticCode,
+    eBlastOpt_PHIPattern,
+    eBlastOpt_InclusionThreshold,
+    eBlastOpt_PseudoCount,
+    eBlastOpt_GapTracebackAlgorithm,
+    eBlastOpt_CompositionBasedStats,
+    eBlastOpt_SmithWatermanMode,
+    eBlastOpt_UnifiedP,
+    eBlastOpt_WindowMaskerDatabase,
+    eBlastOpt_WindowMaskerTaxId,
+    eBlastOpt_ForceMbIndex,         // corresponds to -use_index flag
+    eBlastOpt_MbIndexName,          // corresponds to -index_name flag
+    eBlastOpt_BestHitScoreEdge,
+    eBlastOpt_BestHitOverhang,
+    eBlastOpt_IgnoreMsaMaster,
+    eBlastOpt_DomainInclusionThreshold, // options for DELTA-BLAST
+
+    eBlastOpt_Culling,
+    eBlastOpt_EntrezQuery,
+    eBlastOpt_FinalDbSeq,
+    eBlastOpt_FirstDbSeq,
+    eBlastOpt_GiList,
+    eBlastOpt_DbFilteringAlgorithmId,
+    eBlastOpt_HspRangeMax,
+    eBlastOpt_LCaseMask,
+    eBlastOpt_MatrixTable,
+    eBlastOpt_NegativeGiList,
+    eBlastOpt_RequiredEnd,
+    eBlastOpt_RequiredStart,
+    eBlastOpt_UseRealDbSize,
+    eBlastOpt_Web_BlastSpecialPage,
+    eBlastOpt_Web_EntrezQuery,
+    eBlastOpt_Web_JobTitle,
+    eBlastOpt_Web_NewWindow,
+    eBlastOpt_Web_OrganismName,
+    eBlastOpt_Web_RunPsiBlast,
+    eBlastOpt_Web_ShortQueryAdjust,
+    eBlastOpt_Web_StepNumber,
+    eBlastOpt_Web_DBInput,
+    eBlastOpt_Web_DBGroup,
+    eBlastOpt_Web_DBSubgroupName,
+    eBlastOpt_Web_DBSubgroup,
+    eBlastOpt_Web_ExclModels,
+    eBlastOpt_Web_ExclSeqUncult,
+    eBlastOpt_MaxValue       // For testing/looping, not an actual parameter
+};
+
+
 /// Field properties for options in a Blast4 parameter list.
 class NCBI_BLAST_EXPORT CBlast4Field {
 public:
     /// Default constructor (for STL)
-    CBlast4Field();
+    CBlast4Field() : m_Name("-"), m_Type(CBlast4_value::e_not_set) {}
     
     /// Construct field with name and type.
-    CBlast4Field(const std::string& nm, CBlast4_value::E_Choice ch);
+    CBlast4Field(const std::string& nm, CBlast4_value::E_Choice ch)
+        : m_Name(nm), m_Type(ch) {}
+
+    static CBlast4Field& Get(EBlastOptIdx opt);
+    static const string& GetName(EBlastOptIdx opt);
     
     /// Get field name (key).
     const string& GetName() const;
     
+    /// Match field name and type to parameter.
+    bool Match(const CBlast4_parameter& p) const;
+
     /// Get field type.
     CBlast4_value::E_Choice GetType() const;
     
-    /// Match field name and type to parameter.
-    bool Match(const CBlast4_parameter& p) const;
     
     /// Verify parameter name and type, and get boolean value.
     bool GetBoolean(const CBlast4_parameter& p) const;
@@ -98,9 +205,6 @@ public:
     /// Verify parameter name and type, and get string value.
     string GetString(const CBlast4_parameter& p) const;
     
-    /// Check whether a field of the given name exists.
-    static bool KnownField(const string& name);
-    
 private:
     /// Field name string as used in Blast4_parameter objects.
     string m_Name;
@@ -109,116 +213,29 @@ private:
     CBlast4_value::E_Choice m_Type;
     
     /// Type for map of all blast4 field objects.
-    typedef map<string, CBlast4Field> TFieldMap;
+    typedef map<EBlastOptIdx, CBlast4Field> TFieldMap;
     
     /// Map of all blast4 field objects.
     static TFieldMap m_Fields;
 };
 
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_BestHitScoreEdge;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_BestHitOverhang;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CompositionBasedStats;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Culling;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CullingLimit;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_CutoffScore;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbGeneticCode;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbLength;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFiltering;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFilteringLevel;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFilteringLinker;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DustFilteringWindow;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_EffectiveSearchSpace;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_EntrezQuery;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_EvalueThreshold;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_FilterString;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_FinalDbSeq;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_FirstDbSeq;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapExtensionCost;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapExtnAlgorithm;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapOpeningCost;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapTracebackAlgorithm;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GiList;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DbFilteringAlgorithmId;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_NegativeGiList;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_HitlistSize;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_HspRangeMax;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_InclusionThreshold;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_LCaseMask;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MaskAtHash;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MatchReward;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MatrixName;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MatrixTable;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MismatchPenalty;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_PercentIdentity;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_PHIPattern;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_PseudoCountWeight;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_QueryGeneticCode;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_RepeatFiltering;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_RepeatFilteringDB;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_RequiredEnd;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_RequiredStart;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_StrandOption;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MBTemplateLength;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MBTemplateType;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_OutOfFrameMode;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SegFiltering;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SegFilteringWindow;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SegFilteringLocut;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SegFilteringHicut;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UngappedMode;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_ComplexityAdjustMode;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MaskLevel;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UseRealDbSize;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowSize;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WordSize;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WordThreshold;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SumStatistics;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_LongestIntronLength;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapTrigger;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapXDropoff;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_GapXDropoffFinal;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_SmithWatermanMode;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_UnifiedP;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerDatabase;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_WindowMaskerTaxId;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_ForceMbIndex;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_IgnoreMsaMaster;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_MbIndexName;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_DomainInclusionThreshold;
-
-// List of web-related options
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_BlastSpecialPage;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_EntrezQuery;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_JobTitle;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_NewWindow;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_OrganismName;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_RunPsiBlast;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ShortQueryAdjust;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_StepNumber;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBInput;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBGroup;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBSubgroupName;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_DBSubgroup;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ExclModels;
-NCBI_BLAST_EXPORT extern  CBlast4Field B4Param_Web_ExclSeqUncult;
-
 /*****************************************************************************/
 // String pairs used to support for get-search-info request
 
 /// Used to retrieve information about the BLAST search
-NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqName_Search;
+NCBI_BLAST_EXPORT extern  const char* kBlast4SearchInfoReqName_Search;
 /// Used to retrieve information about the BLAST alignments
-NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqName_Alignment;
+NCBI_BLAST_EXPORT extern  const char* kBlast4SearchInfoReqName_Alignment;
 
 /// Used to retrieve the BLAST search status
-NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Status;
+NCBI_BLAST_EXPORT extern  const char* kBlast4SearchInfoReqValue_Status;
 /// Used to retrieve the BLAST search title
-NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Title;
+NCBI_BLAST_EXPORT extern  const char* kBlast4SearchInfoReqValue_Title;
 /// Used to retrieve the BLAST search subjects
-NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_Subjects;
+NCBI_BLAST_EXPORT extern  const char* kBlast4SearchInfoReqValue_Subjects;
 
 /// Used to retrieve the PSI-BLAST iteration number
-NCBI_BLAST_EXPORT extern  string kBlast4SearchInfoReqValue_PsiIterationNum;
+NCBI_BLAST_EXPORT extern  const char* kBlast4SearchInfoReqValue_PsiIterationNum;
 
 /// This function builds the reply name token in the get-search-info reply
 /// objects, provided a pair of strings such as those defined above

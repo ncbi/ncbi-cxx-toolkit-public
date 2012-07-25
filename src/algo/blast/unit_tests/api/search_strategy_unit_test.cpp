@@ -177,8 +177,8 @@ BOOST_AUTO_TEST_CASE(ExportStrategy_FullQuery) {
 
     // These are the parameters that we are looking for
     vector<string> param_names;
-    param_names.push_back(B4Param_RequiredStart.GetName());
-    param_names.push_back(B4Param_RequiredEnd.GetName());
+    param_names.push_back(CBlast4Field::GetName(eBlastOpt_RequiredStart));
+    param_names.push_back(CBlast4Field::GetName(eBlastOpt_RequiredEnd));
 
     // Get the program options
     if (qsr.CanGetProgram_options()) {
@@ -240,8 +240,8 @@ BOOST_AUTO_TEST_CASE(ExportStrategy_QueryWithRange) {
 
     // These are the parameters that we are looking for
     vector<string> param_names;
-    param_names.push_back(B4Param_RequiredStart.GetName());
-    param_names.push_back(B4Param_RequiredEnd.GetName());
+    param_names.push_back(CBlast4Field::GetName(eBlastOpt_RequiredStart));
+    param_names.push_back(CBlast4Field::GetName(eBlastOpt_RequiredEnd));
 
     // Get the program options
     if (qsr.CanGetProgram_options()) {
@@ -251,11 +251,11 @@ BOOST_AUTO_TEST_CASE(ExportStrategy_QueryWithRange) {
             if (p.NotEmpty()) {
                 BOOST_REQUIRE(p->CanGetValue());
                 found_query_range = true;
-                if (*pname == B4Param_RequiredStart.GetName()) {
+                if (*pname == CBlast4Field::GetName(eBlastOpt_RequiredStart)) {
                     BOOST_REQUIRE_EQUAL((int)query_range.GetFrom(),
                                         (int)p->GetValue().GetInteger());
                 }
-                if (*pname == B4Param_RequiredEnd.GetName()) {
+                if (*pname == CBlast4Field::GetName(eBlastOpt_RequiredEnd)) {
                     BOOST_REQUIRE_EQUAL((int)query_range.GetTo(),
                                         (int)p->GetValue().GetInteger());
                 }

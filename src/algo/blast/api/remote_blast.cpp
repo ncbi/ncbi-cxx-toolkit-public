@@ -1121,7 +1121,7 @@ CRemoteBlast::x_QueryMaskingLocationsToNetwork()
         CRemoteBlast::ConvertToRemoteMasks(m_QueryMaskingLocations,
                                            program, &m_Warn);
     ITERATE(CBlast4_get_search_results_reply::TMasks, itr, network_masks) {
-        x_SetOneParam(B4Param_LCaseMask, *itr);
+        x_SetOneParam(CBlast4Field::Get(eBlastOpt_LCaseMask), *itr);
     }
 
 }
@@ -1309,8 +1309,8 @@ void CRemoteBlast::x_InitQueries(CRef<IQueryFactory> queries)
                 bss->GetSeq_set().front()->GetSeq().GetInst().GetLength();
 
             if (kFullLength != kRangeLength) {
-                x_SetOneParam(B4Param_RequiredStart, &kStart);
-                x_SetOneParam(B4Param_RequiredEnd, &kStop);
+                x_SetOneParam(CBlast4Field::Get(eBlastOpt_RequiredStart), &kStart);
+                x_SetOneParam(CBlast4Field::Get(eBlastOpt_RequiredEnd), &kStop);
             }
         }
     
@@ -1437,7 +1437,7 @@ void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
         NCBI_THROW(CBlastException, eNotSupported, 
            "Submitting gi lists remotely is currently not supported");
     }
-    x_SetOneParam(B4Param_GiList, & gi_list);
+    x_SetOneParam(CBlast4Field::Get(eBlastOpt_GiList), & gi_list);
     
     m_GiList.clear();
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_GiList));
@@ -1448,7 +1448,7 @@ void CRemoteBlast::SetDbFilteringAlgorithmId(int algo_id)
     if (algo_id == -1) 
         return;
 
-    x_SetOneParam(B4Param_DbFilteringAlgorithmId, &algo_id);
+    x_SetOneParam(CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmId), &algo_id);
     m_DbFilteringAlgorithmId = algo_id;
 }
 
@@ -1460,7 +1460,7 @@ void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
         NCBI_THROW(CBlastException, eNotSupported, 
            "Submitting negative gi lists remotely is currently not supported");
     }
-    x_SetOneParam(B4Param_NegativeGiList, & gi_list);
+    x_SetOneParam(CBlast4Field::Get(eBlastOpt_NegativeGiList), & gi_list);
     
     m_NegativeGiList.clear();
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_NegativeGiList));
@@ -1545,7 +1545,7 @@ void CRemoteBlast::SetEntrezQuery(const char * x)
     }
     
     if (*x) { // Ignore empty strings.
-        x_SetOneParam(B4Param_EntrezQuery, &x);
+        x_SetOneParam(CBlast4Field::Get(eBlastOpt_EntrezQuery), &x);
         m_EntrezQuery.assign(x);
     }
 }
@@ -2523,7 +2523,7 @@ unsigned int CRemoteBlast::GetPsiNumberOfIterations(void)
 	unsigned int iter_num = 0;
 	if(!m_FormatOpts.Empty())
 	{
-		CRef< CBlast4_parameter > param = m_FormatOpts->GetParamByName (B4Param_Web_StepNumber.GetName());
+		CRef< CBlast4_parameter > param = m_FormatOpts->GetParamByName (CBlast4Field::GetName(eBlastOpt_Web_StepNumber));
         if( param.NotEmpty())
         {
         	iter_num  = param->GetValue().GetInteger();

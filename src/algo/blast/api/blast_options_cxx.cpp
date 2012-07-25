@@ -58,77 +58,6 @@ BEGIN_SCOPE(blast)
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
-/// Index of remote BLAST options.
-enum EBlastOptIdx {
-    eBlastOpt_Program = 100,
-    eBlastOpt_WordThreshold,
-    eBlastOpt_LookupTableType,
-    eBlastOpt_WordSize,
-    eBlastOpt_AlphabetSize,
-    eBlastOpt_MBTemplateLength,
-    eBlastOpt_MBTemplateType,
-    eBlastOpt_FilterString,
-    eBlastOpt_MaskAtHash,
-    eBlastOpt_DustFiltering,
-    eBlastOpt_DustFilteringLevel,
-    eBlastOpt_DustFilteringWindow,
-    eBlastOpt_DustFilteringLinker,
-    eBlastOpt_SegFiltering,
-    eBlastOpt_SegFilteringWindow,
-    eBlastOpt_SegFilteringLocut,
-    eBlastOpt_SegFilteringHicut,
-    eBlastOpt_RepeatFiltering,
-    eBlastOpt_RepeatFilteringDB,
-    eBlastOpt_StrandOption,
-    eBlastOpt_QueryGeneticCode,
-    eBlastOpt_WindowSize,
-    eBlastOpt_SeedContainerType,
-    eBlastOpt_SeedExtensionMethod,
-    eBlastOpt_XDropoff,
-    eBlastOpt_GapXDropoff,
-    eBlastOpt_GapXDropoffFinal,
-    eBlastOpt_GapTrigger,
-    eBlastOpt_GapExtnAlgorithm,
-    eBlastOpt_HitlistSize,
-    eBlastOpt_MaxNumHspPerSequence,
-    eBlastOpt_CullingLimit,
-    eBlastOpt_EvalueThreshold,
-    eBlastOpt_CutoffScore,
-    eBlastOpt_PercentIdentity,
-    eBlastOpt_SumStatisticsMode,
-    eBlastOpt_LongestIntronLength,
-    eBlastOpt_GappedMode,
-    eBlastOpt_ComplexityAdjMode,  // -RMH-
-    eBlastOpt_MaskLevel,  // -RMH-
-    eBlastOpt_MatrixName,
-    eBlastOpt_MatrixPath,
-    eBlastOpt_MatchReward,
-    eBlastOpt_MismatchPenalty,
-    eBlastOpt_GapOpeningCost,
-    eBlastOpt_GapExtensionCost,
-    eBlastOpt_FrameShiftPenalty,
-    eBlastOpt_OutOfFrameMode,
-    eBlastOpt_DbLength,
-    eBlastOpt_DbSeqNum,
-    eBlastOpt_EffectiveSearchSpace,
-    eBlastOpt_DbGeneticCode,
-    eBlastOpt_PHIPattern,
-    eBlastOpt_InclusionThreshold,
-    eBlastOpt_PseudoCount,
-    eBlastOpt_GapTracebackAlgorithm,
-    eBlastOpt_CompositionBasedStats,
-    eBlastOpt_SmithWatermanMode,
-    eBlastOpt_UnifiedP,
-    eBlastOpt_WindowMaskerDatabase,
-    eBlastOpt_WindowMaskerTaxId,
-    eBlastOpt_ForceMbIndex,         // corresponds to -use_index flag
-    eBlastOpt_MbIndexName,          // corresponds to -index_name flag
-    eBlastOpt_BestHitScoreEdge,
-    eBlastOpt_BestHitOverhang,
-    eBlastOpt_IgnoreMsaMaster,
-    eBlastOpt_DomainInclusionThreshold  // options for DELTA-BLAST
-};
-
 /// Encapsulates all blast input parameters
 class NCBI_XBLAST_EXPORT CBlastOptionsRemote : public CObject
 {
@@ -448,12 +377,12 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
     
     switch(opt) {
     case eBlastOpt_WordSize:
-        x_SetParam(B4Param_WordSize, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     // Added for rmblastn and the new masklevel option. -RMH-
     case eBlastOpt_MaskLevel:
-         x_SetParam(B4Param_MaskLevel,v);
+         x_SetParam(CBlast4Field::Get(opt),v);
          return;
 
     case eBlastOpt_LookupTableType: 
@@ -484,25 +413,25 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
             }
             
             if (set_strand) {
-                x_SetParam(B4Param_StrandOption, strand);
+                x_SetParam(CBlast4Field::Get(opt), strand);
                 return;
             }
         }
         
     case eBlastOpt_WindowSize:
-        x_SetParam(B4Param_WindowSize, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_GapOpeningCost:
-        x_SetParam(B4Param_GapOpeningCost, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_GapExtensionCost:
-        x_SetParam(B4Param_GapExtensionCost, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_HitlistSize:
-        x_SetParam(B4Param_HitlistSize, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_CutoffScore:
@@ -511,86 +440,86 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
             CRef<TCutoff> cutoff(new TCutoff);
             cutoff->SetRaw_score(v);
             
-            x_SetParam(B4Param_CutoffScore, cutoff);
+            x_SetParam(CBlast4Field::Get(opt), cutoff);
         }
         return;
         
     case eBlastOpt_MatchReward:
-        x_SetParam(B4Param_MatchReward, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_MismatchPenalty:
-        x_SetParam(B4Param_MismatchPenalty, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_WordThreshold:
-        x_SetParam(B4Param_WordThreshold, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_PseudoCount:
-        x_SetParam(B4Param_PseudoCountWeight, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_CompositionBasedStats:
         if (v < eNumCompoAdjustModes) {
-            x_SetParam(B4Param_CompositionBasedStats, v);
+            x_SetParam(CBlast4Field::Get(opt), v);
             return;
         }
         
     case eBlastOpt_MBTemplateLength:
-        x_SetParam(B4Param_MBTemplateLength, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_MBTemplateType:
-        x_SetParam(B4Param_MBTemplateType, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_GapExtnAlgorithm:
-        x_SetParam(B4Param_GapExtnAlgorithm, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_GapTracebackAlgorithm:
-        x_SetParam(B4Param_GapTracebackAlgorithm, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_SegFilteringWindow:
-        x_SetParam(B4Param_SegFilteringWindow, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_DustFilteringLevel:
-        x_SetParam(B4Param_DustFilteringLevel, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_DustFilteringWindow:
-        x_SetParam(B4Param_DustFilteringWindow, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_DustFilteringLinker:
-        x_SetParam(B4Param_DustFilteringLinker, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_CullingLimit:
-        x_SetParam(B4Param_CullingLimit, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_LongestIntronLength:
-        x_SetParam(B4Param_LongestIntronLength, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_QueryGeneticCode:
-        x_SetParam(B4Param_QueryGeneticCode, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_DbGeneticCode:
-        x_SetParam(B4Param_DbGeneticCode, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_UnifiedP:
-        x_SetParam(B4Param_UnifiedP, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_WindowMaskerTaxId:
-        x_SetParam(B4Param_WindowMaskerTaxId, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     default:
@@ -618,24 +547,24 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
             CRef<TCutoff> cutoff(new TCutoff);
             cutoff->SetE_value(v);
             
-            x_SetParam(B4Param_EvalueThreshold, cutoff);
+            x_SetParam(CBlast4Field::Get(opt), cutoff);
         }
         return;
         
     case eBlastOpt_PercentIdentity:
-        x_SetParam(B4Param_PercentIdentity, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_InclusionThreshold:
-        x_SetParam(B4Param_InclusionThreshold, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_GapXDropoff:
-        x_SetParam(B4Param_GapXDropoff, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_GapXDropoffFinal:
-        x_SetParam(B4Param_GapXDropoffFinal, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_XDropoff:
@@ -643,27 +572,27 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
         return;
         
     case eBlastOpt_SegFilteringLocut:
-        x_SetParam(B4Param_SegFilteringLocut, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_SegFilteringHicut:
-        x_SetParam(B4Param_SegFilteringHicut, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_GapTrigger:
-        x_SetParam(B4Param_GapTrigger, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_BestHitScoreEdge:
-        x_SetParam(B4Param_BestHitScoreEdge, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_BestHitOverhang:
-        x_SetParam(B4Param_BestHitOverhang, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_DomainInclusionThreshold:
-        x_SetParam(B4Param_DomainInclusionThreshold, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     default:
@@ -686,27 +615,27 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
     
     switch(opt) {
     case eBlastOpt_FilterString:
-        x_SetParam(B4Param_FilterString, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_RepeatFilteringDB:
-        x_SetParam(B4Param_RepeatFilteringDB, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_MatrixName:
-        x_SetParam(B4Param_MatrixName, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_WindowMaskerDatabase:
-        x_SetParam(B4Param_WindowMaskerDatabase, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_PHIPattern:
-        x_SetParam(B4Param_PHIPattern, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_MbIndexName:
-        x_SetParam(B4Param_MbIndexName, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     default:
@@ -759,49 +688,49 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     case eBlastOpt_GappedMode:
         {
             bool ungapped = ! v;
-            x_SetParam(B4Param_UngappedMode, ungapped); // inverted
+            x_SetParam(CBlast4Field::Get(opt), ungapped); // inverted
             return;
         }
 
     // Added for rmblastn and the new complexity adjusted scoring -RMH-
     case eBlastOpt_ComplexityAdjMode:
-        x_SetParam(B4Param_ComplexityAdjustMode, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_OutOfFrameMode:
-        x_SetParam(B4Param_OutOfFrameMode, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_SegFiltering:
-        x_SetParam(B4Param_SegFiltering, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_DustFiltering:
-        x_SetParam(B4Param_DustFiltering, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_RepeatFiltering:
-        x_SetParam(B4Param_RepeatFiltering, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_MaskAtHash:
-        x_SetParam(B4Param_MaskAtHash, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     case eBlastOpt_SumStatisticsMode:
-        x_SetParam(B4Param_SumStatistics, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_SmithWatermanMode:
-        x_SetParam(B4Param_SmithWatermanMode, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_ForceMbIndex:
-        x_SetParam(B4Param_ForceMbIndex, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_IgnoreMsaMaster:
-        x_SetParam(B4Param_IgnoreMsaMaster, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
     default:
         break;
@@ -823,11 +752,11 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
     
     switch(opt) {
     case eBlastOpt_EffectiveSearchSpace:
-        x_SetParam(B4Param_EffectiveSearchSpace, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
     case eBlastOpt_DbLength:
-        x_SetParam(B4Param_DbLength, v);
+        x_SetParam(CBlast4Field::Get(opt), v);
         return;
         
     default:
@@ -1070,10 +999,10 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
             do_seg = m_Local->GetSegFiltering();
             m_Remote->SetValue(eBlastOpt_SegFiltering, do_seg);
         } else {
-            m_Remote->ResetValue(B4Param_SegFiltering);
-            m_Remote->ResetValue(B4Param_SegFilteringWindow);
-            m_Remote->ResetValue(B4Param_SegFilteringLocut);
-            m_Remote->ResetValue(B4Param_SegFilteringHicut);
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_SegFiltering));
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_SegFilteringWindow));
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_SegFilteringLocut));
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_SegFilteringHicut));
         }
         
         if (Blast_QueryIsNucleotide(GetProgramType()) &&
@@ -1084,13 +1013,13 @@ CBlastOptions::SetFilterString(const char* f, bool clear)
             m_Remote->SetValue(eBlastOpt_DustFiltering, do_dust);
             m_Remote->SetValue(eBlastOpt_RepeatFiltering, do_rep);
         } else {
-            m_Remote->ResetValue(B4Param_DustFiltering);
-            m_Remote->ResetValue(B4Param_DustFilteringLevel);
-            m_Remote->ResetValue(B4Param_DustFilteringWindow);
-            m_Remote->ResetValue(B4Param_DustFilteringLinker);
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_DustFiltering));
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_DustFilteringLevel));
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_DustFilteringWindow));
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_DustFilteringLinker));
             
-            m_Remote->ResetValue(B4Param_RepeatFiltering);
-            m_Remote->ResetValue(B4Param_RepeatFilteringDB);
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_RepeatFiltering));
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_RepeatFilteringDB));
         }
         
         if (do_dust) {
@@ -1347,7 +1276,7 @@ CBlastOptions::SetWindowMaskerTaxId(int value)
         if (value) {
             m_Remote->SetValue(eBlastOpt_WindowMaskerTaxId, value);
         } else {
-            m_Remote->ResetValue(B4Param_WindowMaskerTaxId);
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_WindowMaskerTaxId));
         }
     }
 }
@@ -1371,7 +1300,7 @@ CBlastOptions::SetWindowMaskerDatabase(const char * value)
         if (value) {
             m_Remote->SetValue(eBlastOpt_WindowMaskerDatabase, value); 
         } else {
-            m_Remote->ResetValue(B4Param_WindowMaskerDatabase); 
+            m_Remote->ResetValue(CBlast4Field::Get(eBlastOpt_WindowMaskerDatabase)); 
         }
     }
 }

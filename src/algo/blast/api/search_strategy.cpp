@@ -104,7 +104,7 @@ CImportStrategy::FetchData() const
         if(req.CanGetFormat_options())
         {
         	const CBlast4_queue_search_request::TFormat_options	& format_options = req.GetFormat_options();
-        	CRef<CBlast4_parameter> p = format_options.GetParamByName(B4Param_Web_StepNumber.GetName());
+        	CRef<CBlast4_parameter> p = format_options.GetParamByName(CBlast4Field::GetName(eBlastOpt_Web_StepNumber));
         	if(p.NotEmpty())
         	{
         		if(p->CanGetValue())
@@ -343,12 +343,12 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
 	if(!entrez_query_limit.empty())
 	{
 		CRef<CBlast4_parameter> p(new CBlast4_parameter);
-		p->SetName(B4Param_EntrezQuery.GetName());
+		p->SetName(CBlast4Field::GetName(eBlastOpt_EntrezQuery));
 
 		CRef<CBlast4_value> v(new CBlast4_value);
 		v->SetString().assign(entrez_query_limit);
 		p->SetValue(*v);
-		_ASSERT(B4Param_EntrezQuery.Match(*p));
+		_ASSERT(CBlast4Field::Get(eBlastOpt_EntrezQuery).Match(*p));
 
 		m_QueueSearchRequest->SetProgram_options().Set().push_back(p);
 	}
@@ -357,21 +357,21 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
     const CSearchDatabase::TGiList& gi_list_limit = db->GetGiListLimitation();
     if (!gi_list_limit.empty())
     {
-    	x_AddParameterToProgramOptions(B4Param_GiList, gi_list_limit);
+    	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_GiList), gi_list_limit);
     }
 
     // Set the negative GI list
     const CSearchDatabase::TGiList& neg_gi_list = db->GetNegativeGiListLimitation();
     if (!neg_gi_list.empty())
     {
-    	x_AddParameterToProgramOptions(B4Param_NegativeGiList, neg_gi_list);
+    	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeGiList), neg_gi_list);
     }
 
     // Set the filtering algorithms
     int algo_id = db->GetFilteringAlgorithm();
     if (algo_id != -1)
     {
-       	x_AddParameterToProgramOptions(B4Param_DbFilteringAlgorithmId, algo_id);
+       	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmId), algo_id);
     }
 }
 
@@ -458,8 +458,8 @@ void CExportStrategy::x_Process_Query(CRef<IQueryFactory> & query)
 
             if (kFullLength != kRangeLength)
             {
-            	x_AddParameterToProgramOptions(B4Param_RequiredStart, kStart);
-            	x_AddParameterToProgramOptions(B4Param_RequiredEnd, kStop);
+            	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_RequiredStart), kStart);
+            	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_RequiredEnd), kStop);
             }
         }
 
@@ -489,12 +489,12 @@ void CExportStrategy::x_Process_Query(CRef<IQueryFactory> & query)
         	NON_CONST_ITERATE(CBlast4_get_search_results_reply::TMasks, itr, network_masks)
         	{
             	CRef<CBlast4_parameter> p(new CBlast4_parameter);
-            	p->SetName(B4Param_LCaseMask.GetName());
+            	p->SetName(CBlast4Field::GetName(eBlastOpt_LCaseMask));
 
             	CRef<CBlast4_value> v(new CBlast4_value);
             	v->SetQuery_mask(**itr);
             	p->SetValue(*v);
-            	_ASSERT(B4Param_LCaseMask.Match(*p));
+            	_ASSERT(CBlast4Field::Get(eBlastOpt_LCaseMask).Match(*p));
 
             	m_QueueSearchRequest->SetProgram_options().Set().push_back(p);
         	}
@@ -570,7 +570,7 @@ void CExportStrategy::x_AddParameterToProgramOptions(objects::CBlast4Field & fie
 void CExportStrategy::x_AddPsiNumOfIterationsToFormatOptions(unsigned int num_iters)
 {
 	CRef<CBlast4_parameter> p(new CBlast4_parameter);
-	p->SetName(B4Param_Web_StepNumber.GetName());
+	p->SetName(CBlast4Field::GetName(eBlastOpt_Web_StepNumber));
 
 	CRef<CBlast4_value> v(new CBlast4_value);
 	v->SetInteger(num_iters);

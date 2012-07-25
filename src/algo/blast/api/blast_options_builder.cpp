@@ -154,9 +154,9 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
 
     switch(nm[0]) {
     case 'B':
-        if (B4Param_BestHitScoreEdge.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_BestHitScoreEdge).Match(p)) {
             bo.SetBestHitScoreEdge(v.GetReal());
-        } else if (B4Param_BestHitOverhang.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_BestHitOverhang).Match(p)) {
             bo.SetBestHitOverhang(v.GetReal());
         } else {
             found = false;
@@ -164,14 +164,14 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
 
     case 'C':
-        if (B4Param_CompositionBasedStats.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_CompositionBasedStats).Match(p)) {
             ECompoAdjustModes adjmode = (ECompoAdjustModes) v.GetInteger();
             bo.SetCompositionBasedStats(adjmode);
-        } else if (B4Param_Culling.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_Culling).Match(p)) {
             m_PerformCulling = v.GetBoolean();
-        } else if (B4Param_CullingLimit.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_CullingLimit).Match(p)) {
             bo.SetCullingLimit(v.GetInteger());
-        } else if (B4Param_CutoffScore.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_CutoffScore).Match(p)) {
             opts.SetCutoffScore(v.GetInteger());
         } else {
             found = false;
@@ -179,21 +179,21 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'D':
-        if (B4Param_DbGeneticCode.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_DbGeneticCode).Match(p)) {
             bo.SetDbGeneticCode(v.GetInteger());
-        } else if (B4Param_DbLength.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_DbLength).Match(p)) {
             opts.SetDbLength(v.GetBig_integer());
-        } else if (B4Param_DustFiltering.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_DustFiltering).Match(p)) {
             bo.SetDustFiltering(v.GetBoolean());
-        } else if (B4Param_DustFilteringLevel.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_DustFilteringLevel).Match(p)) {
             bo.SetDustFilteringLevel(v.GetInteger());
-        } else if (B4Param_DustFilteringWindow.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_DustFilteringWindow).Match(p)) {
             bo.SetDustFilteringWindow(v.GetInteger());
-        } else if (B4Param_DustFilteringLinker.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_DustFilteringLinker).Match(p)) {
             bo.SetDustFilteringLinker(v.GetInteger());
-        } else if (B4Param_DbFilteringAlgorithmId.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_DbFilteringAlgorithmId).Match(p)) {
             m_DbFilteringAlgorithmId = v.GetInteger();
-        } else if (B4Param_DomainInclusionThreshold.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_DomainInclusionThreshold).Match(p)) {
             bo.SetDomainInclusionThreshold(v.GetReal());
         } else {
             found = false;
@@ -201,11 +201,11 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'E':
-        if (B4Param_EffectiveSearchSpace.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_EffectiveSearchSpace).Match(p)) {
             opts.SetEffectiveSearchSpace(v.GetBig_integer());
-        } else if (B4Param_EntrezQuery.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_EntrezQuery).Match(p)) {
             m_EntrezQuery = v.GetString();
-        } else if (B4Param_EvalueThreshold.Match(p)
+        } else if (CBlast4Field::Get(eBlastOpt_EvalueThreshold).Match(p)
                    ||  p.GetName() == "EvalueThreshold") {
             if (v.IsReal()) {
                 opts.SetEvalueThreshold(v.GetReal());
@@ -221,13 +221,13 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'F':
-        if (B4Param_FilterString.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_FilterString).Match(p)) {
             opts.SetFilterString(v.GetString().c_str(), true);  /* NCBI_FAKE_WARNING */
-        } else if (B4Param_FinalDbSeq.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_FinalDbSeq).Match(p)) {
             m_FinalDbSeq = v.GetInteger();
-        } else if (B4Param_FirstDbSeq.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_FirstDbSeq).Match(p)) {
             m_FirstDbSeq = v.GetInteger();
-        } else if (B4Param_ForceMbIndex.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_ForceMbIndex).Match(p)) {
             m_ForceMbIndex = v.GetBoolean();
         } else {
             found = false;
@@ -235,21 +235,21 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'G':
-        if (B4Param_GapExtensionCost.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_GapExtensionCost).Match(p)) {
             bo.SetGapExtensionCost(v.GetInteger());
-        } else if (B4Param_GapOpeningCost.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_GapOpeningCost).Match(p)) {
             bo.SetGapOpeningCost(v.GetInteger());
-        } else if (B4Param_GiList.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_GiList).Match(p)) {
             m_GiList = v.GetInteger_list();
-        } else if (B4Param_GapTracebackAlgorithm.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_GapTracebackAlgorithm).Match(p)) {
             bo.SetGapTracebackAlgorithm((EBlastTbackExt) v.GetInteger());
-        } else if (B4Param_GapTrigger.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_GapTrigger).Match(p)) {
             bo.SetGapTrigger(v.GetReal());
-        } else if (B4Param_GapXDropoff.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_GapXDropoff).Match(p)) {
             bo.SetGapXDropoff(v.GetReal());
-        } else if (B4Param_GapXDropoffFinal.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_GapXDropoffFinal).Match(p)) {
             bo.SetGapXDropoffFinal(v.GetReal());
-        } else if (B4Param_GapExtnAlgorithm.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_GapExtnAlgorithm).Match(p)) {
             bo.SetGapExtnAlgorithm(static_cast<EBlastPrelimGapExt>
                                    (v.GetInteger()));
         } else {
@@ -258,9 +258,9 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'H':
-        if (B4Param_HitlistSize.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_HitlistSize).Match(p)) {
             opts.SetHitlistSize(v.GetInteger());
-        } else if (B4Param_HspRangeMax.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_HspRangeMax).Match(p)) {
             m_HspRangeMax = v.GetInteger();
         } else {
             found = false;
@@ -268,9 +268,9 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
 
     case 'I':
-        if (B4Param_InclusionThreshold.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_InclusionThreshold).Match(p)) {
             bo.SetInclusionThreshold(v.GetReal());
-        } else if (B4Param_IgnoreMsaMaster.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_IgnoreMsaMaster).Match(p)) {
             bo.SetIgnoreMsaMaster(v.GetBoolean());
         } else {
             found = false;
@@ -278,7 +278,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'L':
-        if (B4Param_LCaseMask.Match(p))
+        if (CBlast4Field::Get(eBlastOpt_LCaseMask).Match(p))
         {
             if (!m_IgnoreQueryMasks)
             {
@@ -293,7 +293,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
                 }
                 m_QueryMasks.GetRef().push_back(refMask);
             }
-        } else if (B4Param_LongestIntronLength.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_LongestIntronLength).Match(p)) {
             bo.SetLongestIntronLength(v.GetInteger());
         } else {
             found = false;
@@ -301,21 +301,21 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'M':
-        if (B4Param_MBTemplateLength.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_MBTemplateLength).Match(p)) {
             bo.SetMBTemplateLength(v.GetInteger());
-        } else if (B4Param_MBTemplateType.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_MBTemplateType).Match(p)) {
             bo.SetMBTemplateType(v.GetInteger());
-        } else if (B4Param_MatchReward.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_MatchReward).Match(p)) {
             bo.SetMatchReward(v.GetInteger());
-        } else if (B4Param_MatrixName.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_MatrixName).Match(p)) {
             bo.SetMatrixName(v.GetString().c_str());
-        } else if (B4Param_MatrixTable.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_MatrixTable).Match(p)) {
             // This is no longer used.
-        } else if (B4Param_MismatchPenalty.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_MismatchPenalty).Match(p)) {
             bo.SetMismatchPenalty(v.GetInteger());
-        } else if (B4Param_MaskAtHash.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_MaskAtHash).Match(p)) {
             bo.SetMaskAtHash(v.GetBoolean());
-        } else if (B4Param_MbIndexName.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_MbIndexName).Match(p)) {
             m_MbIndexName = v.GetString();
         } else {
             found = false;
@@ -323,7 +323,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'O':
-        if (B4Param_OutOfFrameMode.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_OutOfFrameMode).Match(p)) {
             bo.SetOutOfFrameMode(v.GetBoolean());
         } else {
             found = false;
@@ -331,7 +331,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
 
     case 'N':
-        if (B4Param_NegativeGiList.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_NegativeGiList).Match(p)) {
             m_NegativeGiList = v.GetInteger_list();
         } else {
             found = false;
@@ -339,14 +339,14 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'P':
-        if (B4Param_PHIPattern.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_PHIPattern).Match(p)) {
             if (v.GetString() != "") {
                 bool is_na = !! Blast_QueryIsNucleotide(bo.GetProgramType());
                 bo.SetPHIPattern(v.GetString().c_str(), is_na);
             }
-        } else if (B4Param_PercentIdentity.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_PercentIdentity).Match(p)) {
             opts.SetPercentIdentity(v.GetReal());
-        } else if (B4Param_PseudoCountWeight.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_PseudoCount).Match(p)) {
             bo.SetPseudoCount(v.GetInteger());
         } else {
             found = false;
@@ -354,7 +354,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'Q':
-        if (B4Param_QueryGeneticCode.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_QueryGeneticCode).Match(p)) {
             bo.SetQueryGeneticCode(v.GetInteger());
         } else {
             found = false;
@@ -362,13 +362,13 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'R':
-        if (B4Param_RepeatFiltering.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_RepeatFiltering).Match(p)) {
             bo.SetRepeatFiltering(v.GetBoolean());
-        } else if (B4Param_RepeatFilteringDB.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_RepeatFilteringDB).Match(p)) {
             bo.SetRepeatFilteringDB(v.GetString().c_str());
-        } else if (B4Param_RequiredStart.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_RequiredStart).Match(p)) {
             m_QueryRange.SetFrom(v.GetInteger());
-        } else if (B4Param_RequiredEnd.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_RequiredEnd).Match(p)) {
             m_QueryRange.SetToOpen(v.GetInteger());
         } else {
             found = false;
@@ -376,21 +376,21 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'S':
-        if (B4Param_StrandOption.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_StrandOption).Match(p)) {
             // These encodings use the same values.
             ENa_strand strand = (ENa_strand) v.GetStrand_type();
             bo.SetStrandOption(strand);
-        } else if (B4Param_SegFiltering.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_SegFiltering).Match(p)) {
             bo.SetSegFiltering(v.GetBoolean());
-        } else if (B4Param_SegFilteringWindow.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_SegFilteringWindow).Match(p)) {
             bo.SetSegFilteringWindow(v.GetInteger());
-        } else if (B4Param_SegFilteringLocut.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_SegFilteringLocut).Match(p)) {
             bo.SetSegFilteringLocut(v.GetReal());
-        } else if (B4Param_SegFilteringHicut.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_SegFilteringHicut).Match(p)) {
             bo.SetSegFilteringHicut(v.GetReal());
-        } else if (B4Param_SumStatistics.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_SumStatisticsMode).Match(p)) {
             bo.SetSumStatisticsMode(v.GetBoolean());
-        } else if (B4Param_SmithWatermanMode.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_SmithWatermanMode).Match(p)) {
             bo.SetSmithWatermanMode(v.GetBoolean());
         } else {
             found = false;
@@ -398,13 +398,13 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'U':
-        if (B4Param_UngappedMode.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_GappedMode).Match(p)) {
             // Notes: (1) this is the inverse of the corresponding
             // blast4 concept (2) blast4 always returns this option
             // regardless of whether the value matches the default.
             
             opts.SetGappedMode(! v.GetBoolean());
-        } else if (B4Param_UnifiedP.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_UnifiedP).Match(p)) {
             bo.SetUnifiedP(v.GetInteger());
         } else {
             found = false;
@@ -412,13 +412,13 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         break;
         
     case 'W':
-        if (B4Param_WindowMaskerTaxId.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_WindowMaskerTaxId).Match(p)) {
             opts.SetOptions().SetWindowMaskerTaxId(v.GetInteger());
-        } else if (B4Param_WindowSize.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_WindowSize).Match(p)) {
             opts.SetWindowSize(v.GetInteger());
-        } else if (B4Param_WordSize.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_WordSize).Match(p)) {
             bo.SetWordSize(v.GetInteger());
-        } else if (B4Param_WordThreshold.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_WordThreshold).Match(p)) {
             bo.SetWordThreshold(v.GetInteger());
         } else {
             found = false;
@@ -487,11 +487,11 @@ CBlastOptionsBuilder::AdjustProgram(const TValueList * L,
         CBlast4_parameter & p = const_cast<CBlast4_parameter&>(**iter);
         const CBlast4_value & v = p.GetValue();
         
-        if (B4Param_MBTemplateLength.Match(p)) {
+        if (CBlast4Field::Get(eBlastOpt_MBTemplateLength).Match(p)) {
             if (v.GetInteger() != 0) {
                 return eDiscMegablast;
             }
-        } else if (B4Param_PHIPattern.Match(p)) {
+        } else if (CBlast4Field::Get(eBlastOpt_PHIPattern).Match(p)) {
             switch(program) {
             case ePHIBlastn:
             case eBlastn:
