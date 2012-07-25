@@ -186,9 +186,19 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
         } else {
             int max_hole_len = max(prod_hole_len, genomic_hole_len);
             int min_hole_len = min(prod_hole_len, genomic_hole_len);
-            if (min_hole_len > 1) {
+            int left_mismatch_len = 0;
+            int right_mismatch_len = min_hole_len;
+
+            // does not matter for transcripts, but for proteins ensures insersions at codon boundary
+            int bases_needed_to_complete_codon = 2 - (exons[i-1].prod_to % 3);
+
+            if (right_mismatch_len >= bases_needed_to_complete_codon) {
+                left_mismatch_len = bases_needed_to_complete_codon + ((right_mismatch_len-bases_needed_to_complete_codon)/2/3)*3;
+                right_mismatch_len -= left_mismatch_len;
+            }
+            if (left_mismatch_len > 0) {
                 CRef< CSpliced_exon_chunk > part(new CSpliced_exon_chunk);
-                part->SetMismatch(min_hole_len/2);
+                part->SetMismatch(left_mismatch_len);
                 prev_exon->SetParts().push_back(part);
             }
             {
@@ -200,10 +210,11 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
                 }
                 prev_exon->SetParts().push_back(part);
             }
-            if (min_hole_len > 0) {
+            if (right_mismatch_len > 0) {
                 CRef< CSpliced_exon_chunk > part(new CSpliced_exon_chunk);
-                part->SetMismatch(min_hole_len-min_hole_len/2);
+                part->SetMismatch(right_mismatch_len);
                 prev_exon->SetParts().push_back(part);
+
             }
         }
         if (!exon.IsSetParts() || exon.GetParts().empty()) {
@@ -457,7 +468,7 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
         } else {
             if (is_protein) {
                 CProt_pos& prot_pos = (*spl_exon_it)->SetProduct_start().SetProtpos();
-                _ASSERT( prot_pos.GetFrame() + trim_amount == 3 );
+                _ASSERT( prot_pos.GetFrame() -1 + trim_amount == 3 );
                 ++prot_pos.SetAmin();
                 prot_pos.SetFrame(1);
             } else {

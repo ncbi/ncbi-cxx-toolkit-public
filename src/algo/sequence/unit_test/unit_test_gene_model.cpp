@@ -536,6 +536,196 @@ BOOST_AUTO_TEST_CASE(TestCaseTrim)
     BOOST_CHECK_EQUAL((*++i)->GetGenomic_start(), TSeqPos(2002) );
 }
 
+BOOST_AUTO_TEST_CASE(TestCaseTrimProtein)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+    
+    CSeq_align align;
+    CSpliced_seg& seg = align.SetSegs().SetSpliced();
+    seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    CRef<CSeq_id> seq_id;
+    seq_id.Reset(new CSeq_id("lcl|prot"));
+    seg.SetProduct_id(*seq_id);
+    seq_id.Reset(new CSeq_id("lcl|genomic"));
+    seg.SetGenomic_id(*seq_id);
+    CSpliced_seg::TExons& exons = seg.SetExons();
+    CRef<CSpliced_exon> exon;
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(3);
+    exon->SetProduct_start().SetProtpos().SetFrame(1);
+    exon->SetProduct_end().SetProtpos().SetAmin(3);
+    exon->SetProduct_end().SetProtpos().SetFrame(2);
+    exon->SetGenomic_start(20);
+    exon->SetGenomic_end(21);
+    exons.push_back(exon);
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(5);
+    exon->SetProduct_start().SetProtpos().SetFrame(2);
+    exon->SetProduct_end().SetProtpos().SetAmin(7);
+    exon->SetProduct_end().SetProtpos().SetFrame(2);
+    exon->SetGenomic_start(1031);
+    exon->SetGenomic_end(1037);
+    CRef<CSpliced_exon_chunk> chunk;
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetProduct_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetMatch(2);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetGenomic_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetMatch(4);
+    exon->SetParts().push_back(chunk);
+    exons.push_back(exon);
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(66);
+    exon->SetProduct_start().SetProtpos().SetFrame(3);
+    exon->SetProduct_end().SetProtpos().SetAmin(100);
+    exon->SetProduct_end().SetProtpos().SetFrame(1);
+    exon->SetGenomic_start(2000);
+    exon->SetGenomic_end(2100);
+    exons.push_back(exon);
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CConstRef<CSeq_align> trimmed_align;
+    trimmed_align = feat_gen.CleanAlignment(align);
+
+    BOOST_CHECK_NO_THROW(trimmed_align->Validate(true));
+
+    BOOST_CHECK_EQUAL(trimmed_align->GetSegs().GetSpliced().GetExons().size(), size_t(2));
+
+    CSpliced_seg::TExons::const_iterator i = trimmed_align->GetSegs().GetSpliced().GetExons().begin();
+
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_start(), TSeqPos(1032) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(1035) );
+    BOOST_CHECK_EQUAL((*++i)->GetGenomic_start(), TSeqPos(2001) );
+}
+
+BOOST_AUTO_TEST_CASE(TestCaseStitchProtein)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+    
+    CSeq_align align;
+    align.SetType(CSeq_align::eType_partial);
+    CSpliced_seg& seg = align.SetSegs().SetSpliced();
+    seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    CRef<CSeq_id> seq_id;
+    seq_id.Reset(new CSeq_id("lcl|prot"));
+    seg.SetProduct_id(*seq_id);
+    seq_id.Reset(new CSeq_id("lcl|genomic"));
+    seg.SetGenomic_id(*seq_id);
+    CSpliced_seg::TExons& exons = seg.SetExons();
+    CRef<CSpliced_exon> exon;
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(3);
+    exon->SetProduct_start().SetProtpos().SetFrame(1);
+    exon->SetProduct_end().SetProtpos().SetAmin(3);
+    exon->SetProduct_end().SetProtpos().SetFrame(2);
+    exon->SetGenomic_start(20);
+    exon->SetGenomic_end(21);
+    exons.push_back(exon);
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(5);
+    exon->SetProduct_start().SetProtpos().SetFrame(2);
+    exon->SetProduct_end().SetProtpos().SetAmin(7);
+    exon->SetProduct_end().SetProtpos().SetFrame(2);
+    exon->SetGenomic_start(31);
+    exon->SetGenomic_end(37);
+    CRef<CSpliced_exon_chunk> chunk;
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetProduct_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetMatch(2);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetGenomic_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetMatch(4);
+    exon->SetParts().push_back(chunk);
+    exons.push_back(exon);
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(36);
+    exon->SetProduct_start().SetProtpos().SetFrame(3);
+    exon->SetProduct_end().SetProtpos().SetAmin(70);
+    exon->SetProduct_end().SetProtpos().SetFrame(1);
+    exon->SetGenomic_start(137);
+    exon->SetGenomic_end(237);
+    exons.push_back(exon);
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CConstRef<CSeq_align> trimmed_align;
+    trimmed_align = feat_gen.CleanAlignment(align);
+
+    BOOST_CHECK_NO_THROW(trimmed_align->Validate(true));
+
+    BOOST_CHECK_EQUAL(trimmed_align->GetSegs().GetSpliced().GetExons().size(), size_t(1));
+
+    CSpliced_seg::TExons::const_iterator i = trimmed_align->GetSegs().GetSpliced().GetExons().begin();
+
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_start(), TSeqPos(20) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(237) );
+
+    TSeqPos product_pos = 0;
+    ITERATE(CSpliced_exon::TParts, p, (*i)->GetParts()) {
+        const CSpliced_exon_chunk& chunk = **p;
+        switch (chunk.Which()) {
+        case CSpliced_exon_chunk::e_Match:
+            product_pos += chunk.GetMatch();
+            break;
+        case CSpliced_exon_chunk::e_Mismatch:
+            product_pos += chunk.GetMismatch();
+            break;
+        case CSpliced_exon_chunk::e_Product_ins:
+            product_pos += chunk.GetProduct_ins();
+            break;
+        case CSpliced_exon_chunk::e_Genomic_ins:
+            if (chunk.GetGenomic_ins() > 1) {
+                BOOST_CHECK_EQUAL(product_pos % 3, TSeqPos(0) );
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+
+// CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
+//                                             cerr);
+// *ostr << *trimmed_align;
+// delete ostr;
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 

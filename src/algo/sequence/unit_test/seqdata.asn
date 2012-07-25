@@ -12157,9 +12157,9 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                     genomic-end 134289,
                     parts {
                       match 2091,
-                      mismatch 26,
+                      mismatch 24,
                       product-ins 130,
-                      mismatch 27,
+                      mismatch 29,
                       match 336,
                       mismatch 1,
                       match 61
