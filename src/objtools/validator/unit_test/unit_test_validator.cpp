@@ -4002,7 +4002,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetLength(120);
+    /*
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[lcl|part1, lcl|part2]]"));
+    */
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set contains too many Bioseqs"));
 
     eval = validator.Validate(seh, options);
@@ -4611,11 +4613,11 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     gi_id->SetGi(21914627);
     member1->SetSeq().SetId().push_back(gi_id);
     seh = scope.AddTopLevelSeqEntry(*entry);
+
     CLEAR_ERRORS
-    /*
-    delete expected_errors[0];
-    expected_errors[0] = new CExpectedError("AY123456.1", eDiag_Warning, "UnexpectedIdentifierChange", "Loss of accession (gb|AY123456.1|) on gi (21914627) compared to the NCBI sequence repository");
-    */
+
+    expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Warning, "UnexpectedIdentifierChange", "Loss of accession (gb|AY123456.1|) on gi (21914627) compared to the NCBI sequence repository"));
+
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "TpaAssmeblyProblem", "There are 1 TPAs with history and 1 without history in this record."));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Warning, "TpaAssmeblyProblem", "There are 1 TPAs without history in this record, but the record has a gi number assignment."));
     eval = validator.Validate(seh, options);
