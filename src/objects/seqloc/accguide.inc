@@ -404,6 +404,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  JY  gb_gss",
     "2+6  JZ  gb_est",
     "2+6  KA  gb_tsa_nuc",
+    "2+6  KB  gb_con",
     "2+6  K?  gb_other_nuc",
     "2+6  LA  ddbj_other_nuc",
     "2+6  LB  ddbj_other_nuc",
@@ -9571,10 +9572,11 @@ static const char* const kBuiltInGuide[] = {
     "special  CBZ41165           embl_tpa_prot",
     "special  CBZ41168           embl_tpa_prot",
     "special  CBZ41768           embl_tpa_prot",
+    "special  CCB84813           embl_tpa_prot",
     "special  CCC21095-CCC21104  embl_tpa_prot",
     "special  CCD22089-CCD22162  embl_tpa_prot",
     "special  CCE69367-CCE71257  embl_tpa_prot",
     "## Err on the side of caution on as yet unassigned IDs, and hope that",
     "## there's not *too* much more backfilling.",
-    "#special CCG55254-CZZ99999  unreserved_prot"
+    "#special CCJ47273-CZZ99999  unreserved_prot"
 };
