@@ -1360,7 +1360,11 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
     paths[0] = CDirEntry::NormalizePath(CDir::GetCwd(), eFollowLinks);
     paths[1] = CDirEntry::NormalizePath(env.Get("IGDATA"), eFollowLinks);
-    paths[2] = CDirEntry::NormalizePath(sentry.registry->Get("BLAST","IGDATA"), eFollowLinks);
+    if (sentry.registry) {
+       paths[2] = CDirEntry::NormalizePath(sentry.registry->Get("BLAST","IGDATA"), eFollowLinks);
+    } else {
+       paths[2] = paths[0];
+    }
 
     m_IgOptions.Reset(new CIgBlastOptions());
     
