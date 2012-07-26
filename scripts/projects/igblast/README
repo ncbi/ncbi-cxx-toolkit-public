@@ -29,7 +29,7 @@ c).  To query one or more human Ig sequences (contained in myseq) against custom
 Please be aware that you need to specify your own coding frame start and chain_type information (see details on optional files above) if your custom database has different sequence entries from NCBI database.  
 
 2).  Searching other databases in addition to germline database.
-Igblast allows you to search any other databases (such as NCBI IG V gene sequence database or NCBI nr database) as well as the germline database at the same time.  You'll get top hits from germline sequences followed by hits from non-germline database.
+Igblast allows you to search an additional database (such as NCBI IG V gene sequence database or NCBI nr database) as well as the germline database at the same time.  You'll get hits from germline sequences followed by hits from non-germline database.
 You MUST use -db option to specify the non-germline database which may not contain any sequences identifiers that exist in germline databases.  Note this option is ONLY for non-germline database (germline databases MUST be used with -germline_db_V, -germline_db_D or -germline_db_J option).  
 
 a).  To query one or more human Ig sequences (contained in myseq) against NCBI  IG V gene sequence database:
