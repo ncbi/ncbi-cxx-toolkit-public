@@ -2250,6 +2250,8 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             p.second->ResetStrand();
 
 #if 0
+  //Note: disabling subtraction of gene ranges because want to report neargene-ness regardless of other loci SNP-5000
+#if
             //all_gene_ranges is a big complex loc, and subtracting with Seq_loc_Subtract
             //for every neighborhood is slow (takes almost 10 seconds for NC_000001),
             //so we'll use fast map-based subtractor instead
@@ -2259,7 +2261,7 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             subtract_gene_ranges_from(*p.first);
             subtract_gene_ranges_from(*p.second);
 #endif
-
+#endif
             x_Add(*p.first, gene_id, CVariantProperties::eGene_location_near_gene_5);
             x_Add(*p.second, gene_id, CVariantProperties::eGene_location_near_gene_3);
 
@@ -2405,8 +2407,19 @@ CVariationUtil::CVariantPropertiesIndex::s_GetNeighborhoodLocs(const CSeq_loc& g
     p.second.Reset(new CSeq_loc);
     p.second->Assign(*p.first);
 
-    p.first->SetInt().SetFrom(p.first->GetTotalRange().GetFrom() < flank1_len ? 0 : p.first->GetTotalRange().GetFrom() - flank1_len);
-    p.second->SetInt().SetTo(p.second->GetTotalRange().GetTo() > max_pos ? max_pos : p.second->GetTotalRange().GetTo() + flank2_len);
+    if(p.first->GetTotalRange().GetFrom() == 0) {
+        p.first->SetNull();
+    } else {
+        p.first->SetInt().SetTo(p.first->GetTotalRange().GetFrom() - 1);
+        p.first->SetInt().SetFrom(p.first->GetTotalRange().GetFrom() < flank1_len ? 0 : p.first->GetTotalRange().GetFrom() - flank1_len); 
+    }
+
+    if(p.second->GetTotalRange().GetTo() == max_pos) {
+        p.second->SetNull();
+    } else {
+        p.second->SetInt().SetFrom(p.second->GetTotalRange().GetTo() + 1);
+        p.second->SetInt().SetTo(p.second->GetTotalRange().GetTo() > max_pos ? max_pos : p.second->GetTotalRange().GetTo() + flank2_len);
+    }
 
     if(IsReverse(gene_loc.GetStrand())) {
         swap(p.first, p.second);
