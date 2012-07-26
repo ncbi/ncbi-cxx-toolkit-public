@@ -54,7 +54,6 @@ void CheckConnectsTimeout(SSocketsData* socks);
 void CleanSocketList(SSocketsData* socks);
 void SetAllSocksRunnable(SSocketsData* socks);
 void RequestStopListening(void);
-Uint4 SocksGetTotal(void);
 
 
 END_NCBI_SCOPE

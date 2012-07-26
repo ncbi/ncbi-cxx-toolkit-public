@@ -41,6 +41,11 @@ BEGIN_NCBI_SCOPE
 static const Uint4  kNCMaxDBFileId = 0xFFFFFFFF;
 /// Maximum size of blob chunk stored in database.
 /// It's a little bit uneven to be efficient in the current memory manager.
+/// I.e. memory manager in TaskServer allocates memory with pages of 65536 bytes,
+/// uses some of that memory for page header and then splits the rest in half to
+/// obtain the maximum block size it can allocate this way. kNCMaxBlobChunkSize
+/// should be equal or less than that size (which is kMMMaxBlockSize in
+/// memory_man.cpp in task_server library).
 static const size_t kNCMaxBlobChunkSize = 32740;
 static const Uint2  kNCMaxChunksInMap = 128;
 

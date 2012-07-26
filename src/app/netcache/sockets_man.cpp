@@ -70,24 +70,43 @@ BEGIN_NCBI_SCOPE;
 
 
 static const Uint1 kEpollEventsArraySize = 100;
+/// 1000 below is chosen to be a little bit less than maximum packet size in
+/// Ethernet (~1500 bytes).
 static const Uint2 kSockReadBufSize = 1000;
 static const Uint2 kSockMinWriteSize = 1000;
+/// In calculations in the file it's assumed that kSockWriteBufSize is at least
+/// twice as large as kSockMinWriteSize.
 static const Uint2 kSockWriteBufSize = 2000;
+/// 16 Uint4s on x86_64 is the size of CPU's cacheline. And it should be more
+/// than enough for NetCache.
 static const Uint1 kMaxCntListeningSocks = 16;
 
 
+/// Per-thread structure containing information about sockets.
 struct SSocketsData
 {
+    /// List of all open and not yet deleted sockets which were opened in this
+    /// thread.
     TSockList sock_list;
+    /// "Number of sockets" that this thread created/deleted. When new socket is
+    /// created in this thread this number is increased by 1, when this thread
+    /// deletes socket this number is decreased by 1. From time to time this
+    /// number is added to the global variable of number of sockets. At that
+    /// time 0 is written to sock_cnt to avoid adding the same number several
+    /// times.
     Int2 sock_cnt;
 };
 
 
 struct SListenSockInfo : public SSrvSocketInfo
 {
+    /// Index in the s_ListenSocks array.
     Uint1 index;
+    /// Port to listen to.
     Uint2 port;
+    /// File descriptor for the listening socket.
     int fd;
+    /// Factory that will create CSrvSocketTask for each incoming socket.
     CSrvSocketFactory* factory;
 };
 
@@ -101,7 +120,11 @@ public:
     virtual void ExecuteSlice(TSrvThreadNum thread_idx);
 
 public:
+    /// Per-listening-socket numbers copied from s_ListenEvents when events are
+    /// processed.
     Uint4 m_SeenEvents[kMaxCntListeningSocks];
+    /// Per-listening-socket numbers copied from s_ListenErrors when errors are
+    /// processed.
     Uint4 m_SeenErrors[kMaxCntListeningSocks];
 };
 
@@ -630,6 +653,8 @@ s_DeleteOldestSockets(TSockList& lst)
     memset(old_socks, 0, sizeof(old_socks));
     memset(old_active, 0, sizeof(old_active));
 
+    // Search in the socket list sockets that were used least recently and
+    // that were not used for at least s_SocketTimeout seconds.
     int limit_time = CSrvTime::CurSecs() - s_SocketTimeout;
     Uint1 cnt_old = 0;
     NON_CONST_ITERATE(TSockList, it, lst) {
@@ -638,6 +663,8 @@ s_DeleteOldestSockets(TSockList& lst)
         if (active >= limit_time)
             continue;
 
+        // Binary search to find the place where to put new socket in our sorted
+        // list of candidates for closing.
         Uint1 low = 0, high = cnt_old;
         while (high > low) {
             Uint1 mid = (high + low) / 2;
@@ -664,6 +691,10 @@ s_DeleteOldestSockets(TSockList& lst)
     for (Uint1 i = 0; i < cnt_old; ++i) {
         CSrvSocketTask* task = old_socks[i];
         if (task->m_LastActive < limit_time) {
+            // We cannot physically close here not only because it can race with
+            // socket actually starting to do something but also because it can
+            // need to do some finalization before it will be possible to close
+            // and delete it.
             task->m_NeedToClose = true;
             task->SetRunnable();
         }
@@ -673,6 +704,7 @@ s_DeleteOldestSockets(TSockList& lst)
 void
 MoveAllSockets(SSocketsData* dst_socks, SSocketsData* src_socks)
 {
+    // Move all sockets from src_socks to dst_socks.
     dst_socks->sock_list.splice(dst_socks->sock_list.begin(), src_socks->sock_list);
     dst_socks->sock_cnt += src_socks->sock_cnt;
     src_socks->sock_cnt = 0;
@@ -705,6 +737,7 @@ CheckConnectsTimeout(SSocketsData* socks)
 void
 CleanSocketList(SSocketsData* socks)
 {
+    // Terminate all sockets which have their Terminate() method called already.
     TSockList& lst = socks->sock_list;
     ERASE_ITERATE(TSockList, it, lst) {
         CSrvSocketTask* task = &*it;
@@ -714,14 +747,9 @@ CleanSocketList(SSocketsData* socks)
         }
     }
 
+    // Also ask some unused sockets to close if necessary
     if (s_TotalSockets >= s_SoftSocketLimit)
         s_DeleteOldestSockets(lst);
-}
-
-Uint4
-SocksGetTotal(void)
-{
-    return Uint4(s_TotalSockets);
 }
 
 void
@@ -892,33 +920,49 @@ s_DoDataProxy(CSrvSocketTask* src)
 
     while (size != 0) {
         if (src->m_RdPos < src->m_RdSize) {
+            // If there's something in src's read buffer we should copy it first.
             Uint2 to_write = src->m_RdSize - src->m_RdPos;
             if (to_write > size)
                 to_write = Uint2(size);
+            // We call Write() so that it could figure out by itself whether
+            // the new data should go to dst's write buffer, or to socket directly,
+            // or some combination of that.
             Uint2 n_done = Uint2(dst->Write(src->m_RdBuf + src->m_RdPos, to_write));
             size -= n_done;
             src->m_RdPos += n_done;
             if (dst->NeedEarlyClose())
                 goto finish_with_error;
-            if (n_done < to_write)
+            if (n_done < to_write) {
+                // If there's still something left in src's read buffer then return
+                // now.
                 return;
+            }
             continue;
         }
+        // Read buffer in src is empty, we'll need to read directly from src's
+        // socket. Now let's see how much we should read from there.
         Uint2 to_read = dst->m_WrMemSize - dst->m_WrSize;
         if (to_read == 0) {
+            // Write buffer in dst is full, we need to flush it first.
             s_FlushData(dst);
             if (dst->NeedEarlyClose())
                 goto finish_with_error;
             s_CompactWrBuffer(dst);
             to_read = dst->m_WrMemSize - dst->m_WrSize;
-            if (to_read == 0)
+            if (to_read == 0) {
+                // If nothing was flushed we can't continue further.
                 return;
+            }
         }
         if (to_read > size)
             to_read = Uint2(size);
 
         Uint2 n_done;
         if (to_read < kSockReadBufSize) {
+            // If very small amount is needed (either because nothing else should
+            // be proxied or because the rest of write buffer in dst is filled)
+            // then we better read into src's read buffer first and then copy
+            // whatever is necessary into dst's write buffer.
             src->ReadToBuf();
             if (src->NeedEarlyClose())
                 goto finish_with_error;
@@ -930,17 +974,25 @@ s_DoDataProxy(CSrvSocketTask* src)
             src->m_RdPos = n_done;
         }
         else {
+            // If amount we need is pretty big we'll read directly from src's
+            // socket into dst's write buffer. And later dst's write buffer will
+            // be flushed into dst's socket.
             n_done = Uint2(s_ReadFromSocket(src, dst->m_WrBuf + dst->m_WrSize,
                                             to_read));
             if (src->NeedEarlyClose())
                 goto finish_with_error;
         }
-        if (n_done == 0)
+        if (n_done == 0) {
+            // If nothing was copied in the above if/else then we should return
+            // and wait when more data will be available in src's socket.
             return;
+        }
 
         dst->m_WrSize += n_done;
         size -= n_done;
         if (dst->m_WrSize >= kSockMinWriteSize) {
+            // If dst's write buffer is already filled enough we can flush data
+            // into the socket right now.
             s_FlushData(dst);
             if (dst->NeedEarlyClose())
                 goto finish_with_error;
@@ -1134,14 +1186,25 @@ CSrvSocketTask::Write(const void* buf, size_t size)
 {
     Uint2 has_size = m_WrSize - m_WrPos;
     if (has_size == 0) {
+        // If there's nothing in our write buffer then we either copy given data
+        // into write buffer or (if it's too much of data) write directly into
+        // socket.
         return s_WriteNoPending(this, buf, size);
     }
     else if (has_size + size <= kSockWriteBufSize) {
+        // If write buffer has room for the new data then just copy data into
+        // the write buffer.
         s_CompactWrBuffer(this);
         s_CopyData(this, buf, Uint2(size));
         return size;
     }
     else if (has_size < kSockMinWriteSize) {
+        // If write buffer doesn't have enough room to fit the new data and
+        // amount of data it already has is too small then we copy part of the new
+        // data to fulfill minimum requirements and then write the rest to the
+        // socket directly, because it's guaranteed that the rest will be more
+        // than kSockMinWriteSize (see comment to kSockWriteBufSize - it's guaranteed
+        // that kSockWriteBufSize is at least 2 times bigger than kSockMinWriteSize).
         Uint2 to_copy = kSockMinWriteSize - has_size;
         s_CompactWrBuffer(this);
         s_CopyData(this, buf, to_copy);
@@ -1156,6 +1219,10 @@ CSrvSocketTask::Write(const void* buf, size_t size)
         return to_copy + n_written;
     }
     else {
+        // If write buffer already has enough data to fulfill requirement of minimum
+        // amount to write to socket then we just flush it and then we are back
+        // to the very first "if" above when we don't have anything in our
+        // write buffer.
         s_FlushData(this);
         if (IsWriteDataPending())
             return 0;
@@ -1227,14 +1294,26 @@ CSrvSocketTask::InternalRunSlice(TSrvThreadNum thr_num)
     }
     else {
         CSrvSocketTask* src = ACCESS_ONCE(m_ProxySrc);
-        if (src)
+        if (src) {
+            // Proxying is in progress and by design all proxying should be done
+            // by source socket. So we just transfer this event to it -- probably
+            // we just became writable and this proxying will be able to continue.
             src->SetRunnable();
+        }
         else if (!m_NeedToFlush) {
+            // In the most often "standard" situation (when there's no proxying
+            // involved and there's no need to flush write buffers) we will end up
+            // here and call code from derived class.
             ExecuteSlice(thr_num);
         }
         else {
             s_FlushData(this);
             if (!IsWriteDataPending()  ||  NeedEarlyClose()) {
+                // If this socket was already closed by client or server should
+                // urgently shutdown then we don't care about lost data in the
+                // write buffers. Otherwise we'll be here when all data has been
+                // flushed and thus it's time for code in the derived class
+                // to execute.
                 s_CompactWrBuffer(this);
                 m_NeedToFlush = false;
                 ACCESS_ONCE(m_FlushIsDone) = true;
@@ -1246,6 +1325,7 @@ CSrvSocketTask::InternalRunSlice(TSrvThreadNum thr_num)
     if (m_RegReadEvts == m_SeenReadEvts  &&  !m_SockHasRead  &&  m_SockCanReadMore
         &&  m_Fd != -1)
     {
+        // Ask kernel to give us data from client as quickly as possible.
         s_SetSocketQuickAck(m_Fd);
     }
 

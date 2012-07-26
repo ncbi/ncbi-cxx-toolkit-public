@@ -46,8 +46,14 @@ static const Uint2 kMMDrainBatchSize = 35;
 static const Uint1 kMMCntFreeGrades = 8;
 static const int kMMFlushPeriod = 60;
 
+/// If for some reason kMMAllocPageSize is changed then kMMMaxBlockSize will change
+/// too and thus probably kNCMaxBlobChunkSize in nc_db_info.hpp in NetCache should
+/// change correspondingly too.
 static const Uint4 kMMAllocPageSize = 65536;
 static const size_t kMMAllocPageMask = ~size_t(kMMAllocPageSize - 1);
+/// This is Linux standard on x86_64. If it ever changes or some portability will
+/// be desired then this constant will need to be obtained from OS during
+/// initialization.
 static const Uint2 kMMOSPageSize = 4096;
 static const size_t kMMOSPageMask = ~size_t(kMMOSPageSize - 1);
 
