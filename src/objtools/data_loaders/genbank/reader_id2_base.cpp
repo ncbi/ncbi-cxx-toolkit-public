@@ -176,11 +176,13 @@ struct SId2LoadedSet
     typedef pair<int, TBlob_ids> TBlob_idsInfo;
     typedef map<CSeq_id_Handle, TBlob_idsInfo> TBlob_idSet;
     typedef map<CBlob_id, CConstRef<CID2_Reply_Data> > TSkeletons;
+    typedef map<CBlob_id, int> TBlobStates;
 
     TStringSet  m_Seq_idsByString;
     TSeq_idSet  m_Seq_ids;
     TBlob_idSet m_Blob_ids;
     TSkeletons  m_Skeletons;
+    TBlobStates m_BlobStates;
 };
 
 
@@ -1936,8 +1938,21 @@ void CId2ReaderBase::x_ProcessGetBlob(
         return;
     }
 
+    TBlobState blob_state = 0;
+    if ( errors & fError_warning_dead ) {
+        //ERR_POST_X(7, "blob.SetBlobState(CBioseq_Handle::fState_dead)");
+        blob_state = CBioseq_Handle::fState_dead;
+    }
+    if ( errors & fError_warning_suppressed ) {
+        //ERR_POST_X(8, "blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
+        blob_state = CBioseq_Handle::fState_suppress_perm;
+    }
+
     if ( !reply.IsSetData() ) {
         // assume only blob info reply
+        if ( blob_state ) {
+            loaded_set.m_BlobStates[blob_id] = blob_state;
+        }
         return;
     }
 
@@ -1957,15 +1972,6 @@ void CId2ReaderBase::x_ProcessGetBlob(
         return;
     }
 
-    TBlobState blob_state = 0;
-    if ( errors & fError_warning_dead ) {
-        //ERR_POST_X(7, "blob.SetBlobState(CBioseq_Handle::fState_dead)");
-        blob_state = CBioseq_Handle::fState_dead;
-    }
-    if ( errors & fError_warning_suppressed ) {
-        //ERR_POST_X(8, "blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
-        blob_state = CBioseq_Handle::fState_suppress_perm;
-    }
     if ( blob_state ) {
         m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
     }
@@ -1992,7 +1998,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
 void CId2ReaderBase::x_ProcessGetSplitInfo(
     CReaderRequestResult& result,
     SId2LoadedSet& loaded_set,
-    const CID2_Reply& /*main_reply*/,
+    const CID2_Reply& main_reply,
     const CID2S_Reply_Get_Split_Info& reply)
 {
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
@@ -2019,6 +2025,38 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
         return;
     }
 
+    TErrorFlags errors = x_GetMessageError(main_reply);
+    if ( errors & fError_no_data ) {
+        int state = CBioseq_Handle::fState_no_data;
+        if ( errors & fError_restricted ) {
+            state |= CBioseq_Handle::fState_confidential;
+        }
+        if ( errors & fError_withdrawn ) {
+            state |= CBioseq_Handle::fState_withdrawn;
+        }
+        blob.SetBlobState(state);
+        SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
+        _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+        return;
+    }
+
+    TBlobState blob_state = 0;
+    if ( errors & fError_warning_dead ) {
+        //ERR_POST_X(7, "blob.SetBlobState(CBioseq_Handle::fState_dead)");
+        blob_state = CBioseq_Handle::fState_dead;
+    }
+    if ( errors & fError_warning_suppressed ) {
+        //ERR_POST_X(8, "blob.SetBlobState(CBioseq_Handle::fState_suppress_perm)");
+        blob_state = CBioseq_Handle::fState_suppress_perm;
+    }
+    {{
+        SId2LoadedSet::TBlobStates::iterator iter =
+            loaded_set.m_BlobStates.find(blob_id);
+        if ( iter != loaded_set.m_BlobStates.end() ) {
+            blob_state |= iter->second;
+        }
+    }}
+
     CConstRef<CID2_Reply_Data> skel;
     {{
         SId2LoadedSet::TSkeletons::iterator iter =
@@ -2027,6 +2065,10 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
             skel = iter->second;
         }
     }}
+
+    if ( blob_state ) {
+        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
+    }
 
     dynamic_cast<const CProcessor_ID2&>
         (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))

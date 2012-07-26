@@ -1448,6 +1448,8 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             }}
         }
 
+        blob->SetBlobState(blob_state);
+
         CSplitParser::Attach(*blob, *split_info);
         blob->GetSplitInfo().SetSplitVersion(split_version);
         
