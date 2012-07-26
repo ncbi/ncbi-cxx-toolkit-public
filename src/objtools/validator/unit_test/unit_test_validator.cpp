@@ -4593,7 +4593,7 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     AddTpaAssemblyUserObject(member2);
     entry->SetSet().SetSeq_set().push_back(member2);
 
-    STANDARD_SETUP
+    STANDARD_SETUP_WITH_DATABASE
 
     // two Tpa sequences, but neither has assembly and neither has GI, so no errors expected
     eval = validator.Validate(seh, options);
