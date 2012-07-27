@@ -920,7 +920,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
 
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success)
-        return eIO_NotSupported;
+        return -1/*failure*/;
 
     CORE_TRACE("[SOCK::gethostname]");
 
