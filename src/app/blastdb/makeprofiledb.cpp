@@ -27,7 +27,7 @@
  *
  */
 
-/** @file makeblastrpsdb.cpp
+/** @file makeprofiledb.cpp
  * Command line tool to create RPS,COBALT & DELTA BLAST databases.
  * This is the successor to formatrpsdb from the C toolkit
  */
@@ -239,6 +239,7 @@ private:
     bool x_ValidateCd(const list<double>& freqs, const list<double>& observ, unsigned int alphabet_size);
     void x_WrapUpDelta(CTmpFile & tmp_obsr_file, CTmpFile & tmp_freq_file);
     vector<string> x_CreateDeltaList(void);
+    void x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_size);
 
     // Data
     CNcbiOstream * m_LogFile;
@@ -302,16 +303,16 @@ CMakeProfileDBApp::~CMakeProfileDBApp()
 			string rps_str = m_OutDbName + ".rps";
 		 	string lookup_str = m_OutDbName + ".loo";
 		 	string aux_str = m_OutDbName + ".aux";
+		 	string freq_str = m_OutDbName + ".freq";
 		 	CFile(rps_str).Remove();
 		 	CFile(lookup_str).Remove();
 		 	CFile(aux_str).Remove();
+		 	CFile(freq_str).Remove();
 
 		 	if(op_cobalt == m_op_mode)
 		 	{
 				string blocks_str = m_OutDbName + ".blocks";
-		 		string freq_str = m_OutDbName + ".freq";
 		 		CFile(blocks_str).Remove();
-		 		CFile(freq_str).Remove();
 		 	}
 
 		 	if(op_delta == m_op_mode)
@@ -562,6 +563,12 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 
+		if(!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetFreqRatios())
+		{
+			string err = filename + " contains no frequence ratios for building database";
+			NCBI_THROW(CInputException, eInvalidInput,  err);
+		}
+
 		if(op_cobalt == m_op_mode)
 		{
 			if(!pssm_w_parameters.IsSetParams() || !pssm_w_parameters.GetParams().IsSetConstraints() ||
@@ -570,13 +577,6 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 				string err = filename + " contains no core block to build cobalt database";
 				NCBI_THROW(CInputException, eInvalidInput,  err);
 			}
-
-			if(!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetFreqRatios())
-			{
-				string err = filename + " contains no frequence ratios for building cobalt database";
-				NCBI_THROW(CInputException, eInvalidInput,  err);
-			}
-
 		}
 
 		if(pssm.IsSetFinalData())
@@ -653,12 +653,12 @@ void CMakeProfileDBApp::x_InitRPSDbInfo(Int4 num_files)
     	 m_RpsDbInfo.blocks_file.open(blocks_str.c_str());
     	 if (!m_RpsDbInfo.blocks_file.is_open())
     		 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .blocks file");
-
-    	 string freq_str = m_OutDbName + ".freq";
-    	 m_RpsDbInfo.freq_file.open(freq_str.c_str(), IOS_BASE::out|IOS_BASE::binary);
-    	 if (!m_RpsDbInfo.freq_file.is_open())
-    		 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .freq file");
      }
+
+	 string freq_str = m_OutDbName + ".freq";
+	 m_RpsDbInfo.freq_file.open(freq_str.c_str(), IOS_BASE::out|IOS_BASE::binary);
+	 if (!m_RpsDbInfo.freq_file.is_open())
+		 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .freq file");
 
      m_RpsDbInfo.curr_seq_offset = 0;
      //Init them to input arg values first , may change after reading in the first sequence
@@ -884,7 +884,11 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
 		 count++;
 		 ++itr;
 	 }
-
+	 return;
+ }
+void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_size)
+ {
+	 const CPssm & pssm = pssm_p.GetPssm();
 	 // Update .freq file
 	 Int4 i = 0;
 	 Int4 j = 0;
@@ -919,7 +923,7 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
 	    }
     }
 
-	 memset(row, 0, sizeof(row));
+	memset(row, 0, sizeof(row));
 	m_RpsDbInfo.freq_file.write((const char *)row, sizeof(double)*BLASTAA_SIZE);
 
 	return;
@@ -1153,13 +1157,13 @@ void CMakeProfileDBApp::x_RPS_DbClose(void)
     m_RpsDbInfo.pssm_file.close();
     m_RpsDbInfo.aux_file.flush();
     m_RpsDbInfo.aux_file.close();
+	m_RpsDbInfo.freq_file.flush();
+	m_RpsDbInfo.freq_file.close();
 
     if(op_cobalt == m_op_mode)
     {
     	m_RpsDbInfo.blocks_file.flush();
     	m_RpsDbInfo.blocks_file.close();
-    	m_RpsDbInfo.freq_file.flush();
-    	m_RpsDbInfo.freq_file.close();
     }
 
 }
@@ -1238,6 +1242,7 @@ int CMakeProfileDBApp::Run(void)
 
 		x_RPSUpdatePSSM(pssm, seq_index, seq_size);
 		x_RPSUpdateLookup(seq_size);
+		x_UpdateFreqRatios(pssm_w_parameters, seq_size);
 
 		m_RpsDbInfo.aux_file << seq_size << "\n";
 		m_RpsDbInfo.aux_file << scientific << pssm.GetFinalData().GetKappa() << "\n";
