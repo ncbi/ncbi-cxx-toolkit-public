@@ -1807,15 +1807,21 @@ typedef struct {
     EIO_Event revent;
 } SPOLLABLE_Poll;
 
-/**
+/** Poll for I/O readiness.
  * @param n
- *
+ *  [in]      how many elements to scan in the "polls" array parameter
  * @param polls[]
- *
+ *  [in/out]  array of handles and event masks to check for I/O, and return
  * @param timeout
- *
+ *  [in]      how long to wait for at least one handle to get ready.
  * @param n_ready
- *
+ *  [out]     how many elements of the "polls" array returned with their
+ *            I/O marked ready
+ * @return
+ *  eIO_Success if at least one element was found ready, eIO_Timeout if
+ *  none were and the specified time interval had elapsed, other error code
+ *  for some other error condition (in which case the "revent" fields in the
+ *  array may not have been updated with valid values).
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
 (size_t          n,
@@ -1825,7 +1831,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
  );
 
 
-/**
+/** Conversion utilities from handles to POLLABLEs, and back.
  * @return
  *  Return 0 if conversion cannot be made; otherwise the converted handle
  */
@@ -1843,7 +1849,7 @@ extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
  */
 
 
-/**
+/** Convert IP address to a string in dotted notation.
  * @param addr
  *  [in]  must be in the network byte-order
  * @param buf
@@ -1861,7 +1867,7 @@ extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
  );
 
 
-/**
+/** Check whether the given string represents a valid IP address.
  * @param host
  *  [in]  '\0'-terminated string to check against being a plain IP address
  * @param fullquad
@@ -1888,7 +1894,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
 
 /** See man for the BSDisms, htonl() and htons().
  * @param value
- *
+ *  The value to convert from host to network byte order.
  */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_HostToNetLong
 (unsigned int value
@@ -1896,9 +1902,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_HostToNetLong
 
 #define SOCK_NetToHostLong SOCK_HostToNetLong
 
-/**
+/** See man for the BSDisms, htonl() and htons().
  * @param value
- *
+ *  The value to convert from host to network byte order.
  */
 extern NCBI_XCONNECT_EXPORT unsigned short SOCK_HostToNetShort
 (unsigned short value
@@ -1921,7 +1927,7 @@ unsigned short SOCK_htons(unsigned short);
 #define        SOCK_ntohs SOCK_htons
 
 
-/**
+/** Get the local host name.
  * @param name
  *  [out] (guaranteed to be '\0'-terminated)
  * @param namelen
@@ -1951,15 +1957,17 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  );
 
 
-/**
+/** Find and return IP address of a named host.  The call also accepts dotted
+ * IP notation, in which case the conversion is done without consulting the
+ * name resolver).
  * @param hostname
  *  [in]  specified host, or the current host if hostname is 0
  * @param log
  *  [in]  whether to log failures
  * @return
  *  INET host address (in network byte order) of the specified host
- *  (or local host, if hostname is passed as NULL), which can be either
- *  domain name or an IP address in the dotted notation
+ *  (or local host, if hostname is passed as NULL), which could have been
+ *  specified as either domain name or an IP address in the dotted notation
  *  (e.g. "123.45.67.89\0").  Return 0 on error.
  *  @note  "0.0.0.0" and "255.255.255.255" are both considered invalid.
  * @sa
@@ -2017,7 +2025,7 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
  );
 
 
-/**
+/** Get loopback IP address.
  * @return
  *  Loopback address (in network byte order).
  */
