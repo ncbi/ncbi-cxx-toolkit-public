@@ -3516,7 +3516,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MFC	c	Matsushima Fungus Collection",
 "MFGC	c	Margot Forde Germplasm Centre, AgResearch GrasslandsWar",
 "MFLB	s	Marine Fisheries Laboratory",
-"MFLU<THA>	s	Mae Fah Laung University Herbarium",
+"MFLU<THA>	sc	Mae Fah Laung University Herbarium",
 "MFLUCC<THA>	c	Mae Fah Luang University Culture Collection",
 "MfN<DEU>	s	Museum fur Naturkunde",
 "MFNB	s	Museo Friulano di Storia Naturale",
