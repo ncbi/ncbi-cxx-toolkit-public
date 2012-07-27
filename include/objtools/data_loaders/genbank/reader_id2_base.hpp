@@ -198,6 +198,8 @@ protected:
     TErrorFlags x_GetError(CReaderRequestResult& result,
                            const CID2_Reply& reply);
     TErrorFlags x_GetMessageError(const CID2_Reply& reply);
+    TBlobState x_GetBlobState(const CID2_Reply& reply,
+                              TErrorFlags* errors_ptr = 0);
 
     void x_ProcessReply(CReaderRequestResult& result,
                         SId2LoadedSet& loaded_set,
