@@ -802,7 +802,8 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
     if ((data_index->m_GiIndexLen + (1<<kPageSize))*sizeof(Uint4) >= kFullOffsetMask)
         return 0; /* can not map this amount of data anyway */
     
-    /* For 32-bit version check the data file length too */
+    /* For 32-bit version check the data file length too, and return error if
+       that file has reached maximal size. */
     if (!is_64bit &&  
         data_index->m_DataLen + sizeof(Uint4)*(1<<kPageSize) >= kFullOffsetMask)
         return 0;
