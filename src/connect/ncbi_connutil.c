@@ -1211,7 +1211,11 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                            ? x_Scheme((EURLScheme)info->scheme,
                                                       buf)
                                            : "(unspec)"));
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
     s_SaveString    (s, "user",            info->user);
+#else
+    s_SaveKeyval    (s, "user",           *info->user ? "(set)" : "\"\"");
+#endif /*_DEBUG && !NDEBUG*/
     if (*info->pass)
         s_SaveKeyval(s, "pass",           *info->user ? "(set)" : "(ignored)");
     else
@@ -1228,7 +1232,12 @@ extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveKeyval    (s, "http_proxy_port",(info->http_proxy_port
                                            ? x_Port(info->http_proxy_port, buf)
                                            : "(none)"));
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
     s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
+#else
+    s_SaveKeyval    (s, "http_proxy_user",(info->http_proxy_user[0] ?
+                                           "(set)" : "\"\""));
+#endif /*_DEBUG && !NDEBUG*/
     if (*info->http_proxy_pass)
         s_SaveKeyval(s, "http_proxy_pass", "(set)");
     else
