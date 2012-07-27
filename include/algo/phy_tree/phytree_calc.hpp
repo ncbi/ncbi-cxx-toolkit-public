@@ -154,6 +154,19 @@ public:
     ///
     vector<string>& SetLabels(void) {return m_Labels;}
 
+    /// Set query sequence by index in alignment. Query sequence is always
+    /// included in the tree.
+    /// @param index Index of the query sequence in the alignment [in]
+    ///
+    void SetQuery(int index) {m_QueryIdx = index;}
+
+    /// Set query sequence by sequence id. Query sequence is always included
+    /// in the tree. Exception is thrown if sequence is not found in the
+    /// input alignment.
+    /// @param seqid Sequence id for the query sequence
+    ///
+    void SetQuery(const CSeq_id& seqid);
+
 
     //--- Getters ---
 
@@ -346,6 +359,10 @@ protected:
 
     /// Labels for tree leaves
     vector<string> m_Labels;
+
+    /// Index of query sequence in the input alignment. Query sequence is
+    /// always included in the tree.
+    int m_QueryIdx;
 
     /// Error/warning messages
     vector<string> m_Messages;    

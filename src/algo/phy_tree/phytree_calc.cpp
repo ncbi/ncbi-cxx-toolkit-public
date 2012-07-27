@@ -131,6 +131,32 @@ CPhyTreeCalc::CPhyTreeCalc(const CSeq_align_set& seq_align_set,
     x_InitAlignDS(seq_align_set);
 }
 
+
+void CPhyTreeCalc::SetQuery(const CSeq_id& seqid)
+{
+    const CDense_seg::TIds& ids = m_AlignDataSource->GetDenseg().GetIds();
+    CSeq_id_Handle query_handle = CSeq_id_Handle::GetHandle(seqid);
+    size_t i;
+    // for each sequence id in the alignment
+    for (i=0;i < ids.size();i++) {
+        CSeq_id_Handle id_handle = CSeq_id_Handle::GetHandle(*ids[i]);
+
+        // check whether seqid and id_handle point to the same sequence
+        if (m_Scope->IsSameBioseq(query_handle, id_handle,
+                                  CScope::eGetBioseq_All)) {
+            m_QueryIdx = i;
+            break;
+        }
+    }
+
+    // throw if no sequence is found
+    if (i != m_QueryIdx) {
+        NCBI_THROW(CPhyTreeCalcException, eInvalidOptions,
+                   (string)"Sequence id " + seqid.AsFastaString()
+                   + " not found in alignment");
+    }
+}
+
 CRef<CBioTreeContainer> CPhyTreeCalc::GetSerialTree(void) const
 {
     if (!m_Tree) {
@@ -184,8 +210,8 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
     list<SLink> links;       // for storing dissimilariues between sequences
     vector<string> sequences(num_seqs);  // buffer for AA sequences
 
-    // query has always zero index and is always included
-    const int query_idx = 0;
+    // query sequence is always included
+    const int query_idx = m_QueryIdx;
 
     m_AlignDataSource->GetWholeAlnSeqString(query_idx, sequences[query_idx]);
     const string& query_seq = sequences[query_idx];
@@ -195,10 +221,15 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
     // Compute distances between query and each sequence
     // and include only sequences that are similar enough to the query
 
-    // for each sequence except for query
-    for (int i=1;i < num_seqs;i++) {
+    // for each sequence
+    for (int i=0;i < num_seqs;i++) {
 
-        // find divergence
+        // except for the query
+        if (i == query_idx) {
+            continue;
+        }
+
+        // find divergence between query and and sequence
         m_AlignDataSource->GetWholeAlnSeqString(i, sequences[i]);
         double dist = CDistMethods::Divergence(query_seq, sequences[i]);
         _ASSERT(!isfinite(dist) || dist >= 0.0);
@@ -529,6 +560,7 @@ bool CPhyTreeCalc::CalcBioTree(void)
 // Init parameters to default values
 void CPhyTreeCalc::x_Init(void)
 {
+    m_QueryIdx = 0;
     m_DistMethod = eGrishin;
     m_TreeMethod = eFastME;
     m_MaxDivergence = 0.85;
