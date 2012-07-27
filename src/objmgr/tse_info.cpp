@@ -123,7 +123,8 @@ SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& _DEBUG_ARG(objs))
 
 
 CTSE_Info::CTSE_Info(void) 
-    : m_InternalBioObjNumber(0)
+    : m_InternalBioObjNumber(0),
+      m_MasterSeqSegmentsLoaded(false)
 {
     x_Initialize();
 
@@ -133,8 +134,8 @@ CTSE_Info::CTSE_Info(void)
 
 CTSE_Info::CTSE_Info(const TBlobId& blob_id,
                      TBlobVersion blob_version)
-    : m_InternalBioObjNumber(0)
-
+    : m_InternalBioObjNumber(0),
+      m_MasterSeqSegmentsLoaded(false)
 {
     x_Initialize();
 
@@ -149,8 +150,8 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
                      TBlobState blob_state,
                      const TBlobId& blob_id,
                      TBlobVersion blob_version)
-    : m_InternalBioObjNumber(0)
-
+    : m_InternalBioObjNumber(0),
+      m_MasterSeqSegmentsLoaded(false)
 {
     x_Initialize();
 
@@ -167,8 +168,8 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
 
 CTSE_Info::CTSE_Info(CSeq_entry& entry,
                      TBlobState blob_state)
-    : m_InternalBioObjNumber(0)
-
+    : m_InternalBioObjNumber(0),
+      m_MasterSeqSegmentsLoaded(false)
 {
     x_Initialize();
 
@@ -183,8 +184,8 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
 
 CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
     : m_BaseTSE(new SBaseTSE(tse)),
-      m_InternalBioObjNumber(0)
-
+      m_InternalBioObjNumber(0),
+      m_MasterSeqSegmentsLoaded(false)
 {
     x_Initialize();
 
