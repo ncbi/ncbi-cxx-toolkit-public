@@ -896,26 +896,37 @@ void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
                                             vector<string>& ids)
 {
 
-    sort(ids.begin(), ids.end());
-
+    vector< pair< CNode*, string> > nodes;
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
         if ((*node)->CanGetFeatures()) {
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
                                (*node)->SetFeatures().Set()) {
 
-                if (((*node_feature)->GetFeatureid() == eSeqIdId
-                     || (*node_feature)->GetFeatureid() == eAccessionNbrId)
-                    && binary_search(ids.begin(), ids.end(),
-                                     (*node_feature)->GetValue())) {
+                if ((*node_feature)->GetFeatureid() == eSeqIdId
+                    || (*node_feature)->GetFeatureid() == eAccessionNbrId) {
 
-                    // set features
-                    // color for query node
-                    x_AddFeature(eLabelBgColorId,
-                                 s_kQueryNodeBgColor, node); 
-
-                    x_AddFeature(eNodeInfoId, kNodeInfoQuery, node);
+                    pair<CNode*, string> p;
+                    p.first = node->GetNonNullPointer();
+                    p.second = (*node_feature)->GetValue();
+                    nodes.push_back(p);
                 }
             }
+        }
+    }
+    sort(nodes.begin(), nodes.end(), compare_nodes_by_seqid());
+
+    ITERATE (vector<string>, sid, ids) {
+        pair<CNode*, string> p(NULL, *sid);
+        vector< pair<CNode*, string> >::iterator node
+            = lower_bound(nodes.begin(), nodes.end(), p,
+                          compare_nodes_by_seqid());
+
+        if (node != nodes.end() && node->second == *sid) {
+
+            // set features
+            // color for query node
+            x_AddFeature(eLabelBgColorId, s_kQueryNodeBgColor, node->first); 
+            x_AddFeature(eNodeInfoId, kNodeInfoQuery, node->first);
         }
     }
 }
@@ -941,6 +952,16 @@ void CPhyTreeFormatter::x_AddFeature(int id, const string& value,
     node_feature->SetValue(value);
     (*iter)->SetFeatures().Set().push_back(node_feature);
 }
+
+// Add feature to a node in bio tree
+void CPhyTreeFormatter::x_AddFeature(int id, const string& value, CNode* node) 
+{
+    CRef<CNodeFeature> node_feature(new CNodeFeature);
+    node_feature->SetFeatureid(id);
+    node_feature->SetValue(value);
+    node->SetFeatures().Set().push_back(node_feature);
+}
+
 
 ETreeTraverseCode
 CPhyTreeFormatter::CExpander::operator()(CBioTreeDynamic::CBioNode& node,

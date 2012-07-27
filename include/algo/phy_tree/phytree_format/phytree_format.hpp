@@ -416,6 +416,12 @@ private:
     static void x_AddFeature(int id, const string& value,
                              CNodeSet::Tdata::iterator iter);    
 
+    /// Add feature to tree node
+    /// @param id Feature id [in]
+    /// @param value Feature value [in]
+    /// @param node Pointer to the node [in|out]
+    static void x_AddFeature(int id, const string& value, CNode* node);
+
 
     // Tree visitor classes used for manipulating the guide tree
 
@@ -578,6 +584,18 @@ private:
     private:
         bool m_HasQueryNode;
     };
+
+
+    /// Compare pairs (node, sequence id as string) by sequence id
+    class compare_nodes_by_seqid {
+    public:
+        bool operator()(const pair<CNode*, string>& a,
+                        const pair<CNode*, string>& b)
+        {
+            return a.second <  b.second;
+        }
+    };
+
 
 protected:
 
