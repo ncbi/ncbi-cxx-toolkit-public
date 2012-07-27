@@ -3984,7 +3984,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     CRef<CSeq_entry> entry = BuildGoodSegSet();
     CRef<CSeq_entry> master_seg = entry->SetSet().SetSeq_set().front();
 
-    STANDARD_SETUP
+    STANDARD_SETUP_WITH_DATABASE
 
     CRef<CSeq_loc> loc4(new CSeq_loc());
     loc4->SetWhole().SetLocal().SetStr("part1");
