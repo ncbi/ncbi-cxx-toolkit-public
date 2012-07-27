@@ -105,7 +105,7 @@ public:
     /// check to likely succeed).
     ///
     /// @param stage
-    ///  final stage requested or performed, when the call returns
+    ///  the last stage requested or performed, when the call returns
     /// @param reason
     ///  a pointer to a string to get a failure explanation
     /// @return
