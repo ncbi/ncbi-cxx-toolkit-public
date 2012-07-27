@@ -1043,10 +1043,8 @@ CRef<CSeq_literal> CHgvsParser::x_raw_seq(TIterator const& i, const CContext& co
         s_hgvsaa2ncbieaa(seq_str, seq_str);
         literal->SetSeq_data().SetNcbieaa().Set(seq_str);
     } else {
-        if(context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna) {
-            seq_str = NStr::ToUpper(seq_str);
-            NStr::ReplaceInPlace(seq_str, "U", "T");
-        }
+        seq_str = NStr::ToUpper(seq_str);
+        NStr::ReplaceInPlace(seq_str, "U", "T");
         literal->SetSeq_data().SetIupacna().Set(seq_str);
     }
 

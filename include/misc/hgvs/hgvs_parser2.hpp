@@ -86,11 +86,12 @@ USING_SCOPE(objects);
 class CHgvsParser : public CObject
 {
 public:
-    CHgvsParser(CScope& scope)
+    CHgvsParser(CScope& scope, int tax_id = 9606)
        : m_scope(&scope)
     {
         m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__LRG(scope)));
         m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__CCDS(scope)));
+        //m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver__GeneSymbol(scope, tax_id)));
         m_seq_id_resolvers.push_back(CRef<CSeq_id_Resolver>(new CSeq_id_Resolver(scope)));
     }
 
@@ -569,7 +570,9 @@ protected:
                                              | +aminoacid2
                                              | +aminoacid3
                                              | +chset<>("TGKCYSBAWRDMHVN")   //dna IUPAC with ambiguity codes
-                                             | +chset<>("ugkcysbawrdmhvn")]; //rna IUPAC with ambiguity codes
+                                             | +chset<>("tugkcysbawrdmhvn")]; //rna IUPAC with ambiguity codes.
+                    //note that we also include 't', beacuse we'll support lowercased DNA seq-literal whenever possible
+                                                                    
                     /*
                      * Note: there's no distinction between protein, DNA and RNA sequences, as
                      * at the parse time it is not known without context which sequence it is - i.e.
