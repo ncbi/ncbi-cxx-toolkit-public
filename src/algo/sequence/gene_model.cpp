@@ -564,6 +564,28 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             }
         }
 
+        const CProt_pos &starting_pos =
+            input_align.GetSegs().GetSpliced().GetExons().front()
+                -> GetProduct_start().GetProtpos();
+        CCdregion_Base::EFrame starting_frame = CCdregion::eFrame_one;
+
+        /// Set starting frame to reverse of what it intuitively seems it
+        /// should be, to fit the way CSeqTranslator handles Seq-feat frames
+        if (starting_pos.CanGetFrame()) {
+            switch (starting_pos.GetFrame()) {
+            case 2:
+                starting_frame = CCdregion::eFrame_three;
+                break;
+
+            case 3:
+                starting_frame = CCdregion::eFrame_two;
+                break;
+
+            default:
+                break;
+            }
+        }
+
         CSeq_align *fake_transcript_align = new CSeq_align;
         align.Reset(fake_transcript_align);
         fake_transcript_align->Assign(input_align);
@@ -636,7 +658,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             0, fake_transcript_align->GetSeqStop(0)));
 
         cd_feat.Reset(new CSeq_feat);
-        cd_feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+        cd_feat->SetData().SetCdregion().SetFrame(starting_frame);
 
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(input_align.GetSeq_id(1));
         if (!bsh) {
@@ -736,7 +758,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         /// create a new bioseq for this mRNA; if the mRna sequence is not found,
         /// this is needed in order to translate the protein
         /// alignment, even if flag fForceTranscribeMrna wasn't set
-        const CBioseq &mrna_seq = x_CreateMrnaBioseq(
+        x_CreateMrnaBioseq(
             *align, loc, time, model_num, seqs, rna_id, cdregion);
         if (is_protein_align && m_flags & fGenerateLocalIds)
         {
