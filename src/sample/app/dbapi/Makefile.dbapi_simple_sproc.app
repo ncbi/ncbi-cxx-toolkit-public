@@ -19,4 +19,4 @@ LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 # CHECK_CMD =
 # CHECK_COPY =
 
-WATCHERS = ivanovp mcelhany
+WATCHERS = ucko mcelhany

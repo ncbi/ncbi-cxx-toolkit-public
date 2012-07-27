@@ -27,4 +27,4 @@ CHECK_CMD = dbapi_context_test -dr odbc       -S MsSql
 CHECK_CMD = dbapi_context_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_context_test -dr ftds       -S Sybase
 
-WATCHERS = ivanovp
+WATCHERS = ucko

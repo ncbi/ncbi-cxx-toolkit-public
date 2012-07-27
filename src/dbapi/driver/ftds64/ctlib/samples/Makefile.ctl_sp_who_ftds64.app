@@ -12,4 +12,4 @@ CHECK_REQUIRES = in-house-resources
 # CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds64
 CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds64 -S MSDEV1 /CHECK_NAME=ctl_sp_who_ftds64 -S MSDEV1
 
-WATCHERS = ivanovp
+WATCHERS = ucko

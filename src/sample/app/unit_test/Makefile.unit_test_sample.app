@@ -22,4 +22,4 @@ CHECK_CMD =
 #CHECK_COPY = unit_test_sample.ini
 ### END COPIED SETTINGS
 
-WATCHERS = ivanovp
+WATCHERS = vakatov

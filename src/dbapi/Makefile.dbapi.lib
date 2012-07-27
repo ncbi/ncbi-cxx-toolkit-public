@@ -9,4 +9,4 @@ LIB    = dbapi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
 
-WATCHERS = ivanovp
+WATCHERS = ucko

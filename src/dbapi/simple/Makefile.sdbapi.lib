@@ -3,5 +3,5 @@
 SRC = sdbapi
 LIB = sdbapi
 
-WATCHERS = ivanovp
+WATCHERS = ucko
 

@@ -12,4 +12,4 @@ LIB_OR_DLL = both
 DLL_LIB = dbapi_driver
 LIBS = $(ODBC_LIBS) $(ORIG_LIBS)
 
-WATCHERS = ivanovp
+WATCHERS = ucko

@@ -16,4 +16,4 @@ DLL_LIB = dbapi_driver$(DLL)
 DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-WATCHERS = ivanovp
+WATCHERS = ucko

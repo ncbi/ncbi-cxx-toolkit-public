@@ -14,4 +14,4 @@ DLL_LIB = ct_$(ftds64)$(STATIC) tds_$(ftds64)$(STATIC) dbapi_driver
 DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(RUNPATH_ORIGIN) $(ICONV_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-WATCHERS = ivanovp
+WATCHERS = ucko

@@ -6,4 +6,4 @@ LIB = xncbi
 
 LIBS = $(ORIG_LIBS)
 
-WATCHERS = ivanovp
+WATCHERS = gouriano

@@ -36,4 +36,4 @@ CHECK_CMD = dbapi_unit_test -dr ftds       -S GLUCK
 
 CHECK_CMD = dbapi_unit_test -dr ftds -S MsSql --run_test=Test_Authentication
 
-WATCHERS = ivanovp
+WATCHERS = ucko

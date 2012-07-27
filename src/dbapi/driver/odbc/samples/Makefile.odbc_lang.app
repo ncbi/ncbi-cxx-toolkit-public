@@ -14,4 +14,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_COPY = odbc_lang.ini
 CHECK_CMD =
 
-WATCHERS = ivanovp
+WATCHERS = ucko

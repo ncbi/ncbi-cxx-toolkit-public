@@ -6,4 +6,4 @@ PROJ_TAG = core
 LIBS     = $(NETWORK_LIBS)
 DLL_LIB  = xutil xconnect
 
-WATCHERS = ivanovp
+WATCHERS = vakatov

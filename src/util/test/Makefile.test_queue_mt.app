@@ -6,4 +6,4 @@ LIB = test_mt xncbi xutil
 
 CHECK_CMD =
 
-WATCHERS = ivanovp
+WATCHERS = vakatov

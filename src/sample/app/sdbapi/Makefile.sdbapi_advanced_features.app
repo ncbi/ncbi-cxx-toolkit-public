@@ -14,4 +14,4 @@ LIB  = $(SDBAPI_LIB) xconnect xutil xncbi
 LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
 
-WATCHERS = ivanovp
+WATCHERS = ucko mcelhany

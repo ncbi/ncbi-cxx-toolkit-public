@@ -9,4 +9,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_ic_client -service NC_UnitTest blobs
 
-WATCHERS = kazimird ivanovp
+WATCHERS = kazimird gouriano

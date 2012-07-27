@@ -21,4 +21,4 @@ CHECK_CMD = python_ncbi_dbapi_test -dr ftds  -S MsSql
 CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S MsSql
 
 
-WATCHERS = ivanovp
+WATCHERS = ucko

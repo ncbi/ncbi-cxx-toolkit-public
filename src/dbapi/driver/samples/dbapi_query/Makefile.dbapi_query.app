@@ -11,4 +11,4 @@ STATIC_LIBS = $(SYBASE_LIBS) $(ODBC_LIBS) $(FTDS_LIBS) $(LIBS)
 
 CHECK_COPY = dbapi_query.ini
 
-WATCHERS = ivanovp
+WATCHERS = ucko

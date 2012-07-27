@@ -11,4 +11,4 @@ CPPFLAGS = $(MYSQL_INCLUDE) $(Z_INCLUDE) $(ORIG_CPPFLAGS)
 # CHECK_REQUIRES = in-house-resources
 # CHECK_CMD = mysql_lang -S mysql-dev.ncbi.nlm.nih.gov -U cppcore -P chan8me -D cppcore
 
-WATCHERS = ivanovp
+WATCHERS = ucko

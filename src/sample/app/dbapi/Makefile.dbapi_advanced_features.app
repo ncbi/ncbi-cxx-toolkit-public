@@ -17,4 +17,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 # CHECK_CMD = dbapi_advanced_features.sh
 # CHECK_COPY = dbapi_advanced_features.sh
 
-WATCHERS = ivanovp
+WATCHERS = ucko

@@ -14,4 +14,4 @@ CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 REQUIRES = Sybase Boost.Test.Included
 
 
-WATCHERS = ivanovp
+WATCHERS = ucko

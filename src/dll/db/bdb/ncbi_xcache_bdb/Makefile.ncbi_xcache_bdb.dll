@@ -8,4 +8,4 @@ DEPENDENCIES   = ncbi_core ncbi_bdb
 
 CPPFLAGS = -DNCBI_BDB_CACHE_EXPORTS
 
-WATCHERS = kuznets ivanovp
+WATCHERS = kuznets vakatov

@@ -12,4 +12,4 @@ CHECK_CMD = test_netcache_api.sh
 CHECK_COPY = test_netcache_api.sh
 CHECK_TIMEOUT = 800
 
-WATCHERS = kazimird ivanovp
+WATCHERS = kazimird gouriano

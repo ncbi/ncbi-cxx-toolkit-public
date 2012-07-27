@@ -14,4 +14,4 @@ REQUIRES = MT Boost.Test.Included Linux GCC
 CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
 
-WATCHERS = ivanovp
+WATCHERS = gouriano

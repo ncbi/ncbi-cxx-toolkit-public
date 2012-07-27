@@ -13,4 +13,4 @@ CHECK_REQUIRES = connext in-house-resources
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_MS_TEST /CHECK_NAME=ctl_lang_ftds64 -S MS_TEST
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_SYB_TEST -v 50 /CHECK_NAME=ctl_lang_ftds64 -S SYB_TEST -v 50
 
-WATCHERS = ivanovp
+WATCHERS = ucko

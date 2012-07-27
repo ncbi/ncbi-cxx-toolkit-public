@@ -9,4 +9,4 @@ REQUIRES = MT
 
 CHECK_CMD =
 
-WATCHERS = ivanovp
+WATCHERS = vakatov

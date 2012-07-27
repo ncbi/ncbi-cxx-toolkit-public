@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = ivanovp
+WATCHERS = vakatov
 
 APP = bdb_env_keeper
 SRC = bdb_env_keeper

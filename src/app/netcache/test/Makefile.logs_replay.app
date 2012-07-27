@@ -9,4 +9,4 @@ LIBS = $(DL_LIBS) $(ORIG_LIBS)
 #REQUIRES = MT
 REQUIRES = MT Linux
 
-WATCHERS = ivanovp
+WATCHERS = gouriano

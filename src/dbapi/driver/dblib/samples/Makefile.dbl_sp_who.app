@@ -14,4 +14,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_COPY = dbl_sp_who.ini
 CHECK_CMD = run_sybase_app.sh dbl_sp_who /CHECK_NAME=dbl_sp_who
 
-WATCHERS = ivanovp
+WATCHERS = ucko

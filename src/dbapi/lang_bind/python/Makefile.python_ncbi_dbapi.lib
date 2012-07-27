@@ -15,4 +15,4 @@ LIBS    = $(RUNPATH_ORIGIN)/python_ncbi_dbapi/$(NCBI_PACKAGE_VERSION) $(ORIG_LIB
 # Drop other flags to build with full dependencies under ICC.
 DLL_LDFLAGS = $(DLL_UNDEF_FLAGS)
 
-WATCHERS = ivanovp
+WATCHERS = ucko

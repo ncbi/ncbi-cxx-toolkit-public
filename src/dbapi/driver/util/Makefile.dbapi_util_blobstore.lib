@@ -13,4 +13,4 @@ LIB_OR_DLL = both
 DLL_LIB = dbapi_driver$(DLL) xcompress $(CMPRS_LIB) xutil xncbi
 LIBS    = $(CMPRS_LIBS) $(ORIG_LIBS)
 
-WATCHERS = ivanovp
+WATCHERS = ucko
