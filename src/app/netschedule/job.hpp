@@ -202,21 +202,22 @@ public:
              NStr::SizetToString(m_Events.size()); }
     TJobStatus     GetStatus() const
     { return m_Status; }
-    time_t         GetTimeSubmit() const
-    { _ASSERT(!m_Events.empty());
-      return m_Events[0].m_Timestamp; }
     time_t         GetTimeout() const
     { return m_Timeout; }
     unsigned       GetRunTimeout() const
     { return m_RunTimeout; }
 
     unsigned       GetSubmAddr() const
-    { _ASSERT(!m_Events.empty());
-      return m_Events[0].m_NodeAddr; }
+    { return m_Events[0].m_NodeAddr; }
     unsigned short GetSubmNotifPort() const
     { return m_SubmNotifPort; }
     unsigned       GetSubmNotifTimeout() const
     { return m_SubmNotifTimeout; }
+
+    unsigned int   GetListenerNotifAddr() const
+    { return m_ListenerNotifAddress; }
+    unsigned short GetListenerNotifPort() const
+    { return m_ListenerNotifPort; }
 
     unsigned       GetRunCount() const
     { return m_RunCount; }
@@ -274,6 +275,16 @@ public:
       m_Dirty |= fJobPart; }
     void           SetSubmNotifTimeout(unsigned t)
     { m_SubmNotifTimeout = t;
+      m_Dirty |= fJobPart; }
+
+    void           SetListenerNotifAddr(unsigned int  address)
+    { m_ListenerNotifAddress = address;
+      m_Dirty |= fJobPart; }
+    void           SetListenerNotifPort(unsigned short  port)
+    { m_ListenerNotifPort = port;
+      m_Dirty |= fJobPart; }
+    void           SetListenerNotifAbsTime(time_t  abs_time)
+    { m_ListenerNotifAbsTime = abs_time;
       m_Dirty |= fJobPart; }
 
     void           SetRunCount(unsigned count)
@@ -351,8 +362,8 @@ public:
     // EJobFetchResult FetchNext(CQueue* queue);
     bool Flush(CQueue* queue);
 
-    // Should we notify submitter in the moment of time 'curr'
-    bool ShouldNotify(time_t curr);
+    bool ShouldNotifySubmitter(time_t current_time) const;
+    bool ShouldNotifyListener(time_t current_time) const;
 
     void Print(CNetScheduleHandler &        handler,
                const CQueue &               queue,
@@ -376,6 +387,10 @@ private:
 
     unsigned short      m_SubmNotifPort;    ///< Submit notification port
     unsigned            m_SubmNotifTimeout; ///< Submit notification timeout
+
+    unsigned int        m_ListenerNotifAddress;
+    unsigned short      m_ListenerNotifPort;
+    time_t              m_ListenerNotifAbsTime;
 
     unsigned            m_RunCount;
     unsigned            m_ReadCount;

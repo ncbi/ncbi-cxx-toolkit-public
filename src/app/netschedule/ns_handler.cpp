@@ -190,6 +190,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "DROJ",     { &CNetScheduleHandler::x_ProcessDropJob,
                     eNSCR_Submitter },
         { { "job_key", eNSPT_Id, eNSPA_Required } } },
+    { "LISTEN",   { &CNetScheduleHandler::x_ProcessListenJob,
+                    eNSCR_Submitter },
+        { { "job_key", eNSPT_Id,  eNSPA_Required },
+          { "port",    eNSPT_Int, eNSPA_Required },
+          { "timeout", eNSPT_Int, eNSPA_Required } } },
     { "BSUB",     { &CNetScheduleHandler::x_ProcessSubmitBatch,
                     eNSCR_Submitter },
         { { "port",         eNSPT_Int, eNSPA_Optional },
@@ -1787,6 +1792,27 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 void CNetScheduleHandler::x_ProcessDropJob(CQueue* q)
 {
     x_ProcessCancel(q);
+}
+
+
+void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
+{
+    TJobStatus      status = q->SetJobListener(
+                                    m_CommandArguments.job_id,
+                                    m_ClientId.GetAddress(),
+                                    m_CommandArguments.port,
+                                    m_CommandArguments.timeout);
+
+    if (status == CNetScheduleAPI::eJobNotFound) {
+        x_WriteMessageNoThrow("ERR:eJobNotFound:");
+        ERR_POST(Warning << "LISTEN for unknown job "
+                         << m_CommandArguments.job_key);
+        x_PrintRequestStop(eStatus_NotFound);
+        return;
+    }
+
+    WriteMessage("OK:job_status=", CNetScheduleAPI::StatusToString(status));
+    x_PrintRequestStop(eStatus_OK);
 }
 
 

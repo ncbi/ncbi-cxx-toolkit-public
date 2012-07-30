@@ -155,6 +155,7 @@ private:
     void x_ProcessReturn(CQueue*);
     void x_ProcessJobDelayExpiration(CQueue*);
     void x_ProcessDropJob(CQueue*);
+    void x_ProcessListenJob(CQueue*);
     void x_ProcessStatistics(CQueue*);
     void x_ProcessStatusSnapshot(CQueue*);
     void x_ProcessReloadConfig(CQueue*);

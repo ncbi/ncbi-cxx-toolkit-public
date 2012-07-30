@@ -74,6 +74,10 @@ struct SJobDB : public CBDB_File
     CBDB_FieldUint4        subm_notif_port;    ///< notification port
     CBDB_FieldUint4        subm_notif_timeout; ///< notification timeout
 
+    CBDB_FieldUint4        listener_notif_addr;
+    CBDB_FieldUint4        listener_notif_port;
+    CBDB_FieldUint4        listener_notif_abstime;
+
     // This field shows the number of attempts from submission or last
     // reschedule, so the number of actual attempts in SEventsDB can be more
     // than this number
@@ -111,6 +115,10 @@ struct SJobDB : public CBDB_File
 
         BindData("subm_notif_port",    &subm_notif_port);
         BindData("subm_notif_timeout", &subm_notif_timeout);
+
+        BindData("listener_notif_addr",    &listener_notif_addr);
+        BindData("listener_notif_port",    &listener_notif_port);
+        BindData("listener_notif_abstime", &listener_notif_abstime);
 
         BindData("run_counter",        &run_counter);
         BindData("read_counter",       &read_counter);

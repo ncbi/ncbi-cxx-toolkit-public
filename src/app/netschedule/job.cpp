@@ -323,6 +323,10 @@ CJob::EJobFetchResult CJob::Fetch(CQueue* queue)
     m_SubmNotifPort    = job_db.subm_notif_port;
     m_SubmNotifTimeout = job_db.subm_notif_timeout;
 
+    m_ListenerNotifAddress = job_db.listener_notif_addr;
+    m_ListenerNotifPort    = job_db.listener_notif_port;
+    m_ListenerNotifAbsTime = job_db.listener_notif_abstime;
+
     m_RunCount      = job_db.run_counter;
     m_ReadCount     = job_db.read_counter;
     m_AffinityId    = job_db.aff_id;
@@ -447,6 +451,10 @@ bool CJob::Flush(CQueue* queue)
         job_db.subm_notif_port    = m_SubmNotifPort;
         job_db.subm_notif_timeout = m_SubmNotifTimeout;
 
+        job_db.listener_notif_addr    = m_ListenerNotifAddress;
+        job_db.listener_notif_port    = m_ListenerNotifPort;
+        job_db.listener_notif_abstime = m_ListenerNotifAbsTime;
+
         job_db.run_counter    = m_RunCount;
         job_db.read_counter   = m_ReadCount;
         job_db.aff_id         = m_AffinityId;
@@ -525,11 +533,21 @@ bool CJob::Flush(CQueue* queue)
 }
 
 
-bool CJob::ShouldNotify(time_t curr)
+bool CJob::ShouldNotifySubmitter(time_t current_time) const
 {
     // The very first event is always a submit
     if (m_SubmNotifTimeout && m_SubmNotifPort)
-        return m_Events[0].m_Timestamp + m_SubmNotifTimeout >= curr;
+        return m_Events[0].m_Timestamp + m_SubmNotifTimeout >= current_time;
+    return false;
+}
+
+
+bool CJob::ShouldNotifyListener(time_t current_time) const
+{
+    if (m_ListenerNotifAbsTime != 0 &&
+        m_ListenerNotifAddress != 0 &&
+        m_ListenerNotifPort != 0)
+        return m_ListenerNotifAbsTime >= current_time;
     return false;
 }
 
@@ -586,18 +604,20 @@ void CJob::Print(CNetScheduleHandler &        handler,
                              NStr::ULongToString(run_timeout) + " sec)");
     } else {
         if (m_Status == CNetScheduleAPI::eRunning) {
-            handler.WriteMessage("OK:", "run_expiration: " + exp_time.AsString() +
-                                        " (timeout: " +
-                                        NStr::ULongToString(run_timeout) + " sec)");
+            handler.WriteMessage("OK:",
+                                 "run_expiration: " + exp_time.AsString() +
+                                 " (timeout: " +
+                                 NStr::ULongToString(run_timeout) + " sec)");
             handler.WriteMessage("OK:read_expiration: n/a (timeout: " +
                                  NStr::ULongToString(run_timeout) + " sec)");
         } else {
             // Reading job
             handler.WriteMessage("OK:run_expiration: n/a (timeout: " +
                                  NStr::ULongToString(run_timeout) + " sec)");
-            handler.WriteMessage("OK:", "read_expiration: " + exp_time.AsString() +
-                                        " (timeout: " +
-                                        NStr::ULongToString(run_timeout) + " sec)");
+            handler.WriteMessage("OK:",
+                                 "read_expiration: " + exp_time.AsString() +
+                                 " (timeout: " +
+                                 NStr::ULongToString(run_timeout) + " sec)");
         }
     }
 
@@ -612,12 +632,35 @@ void CJob::Print(CNetScheduleHandler &        handler,
         CTime       subm_exp_time(submit_timestamp + m_SubmNotifTimeout);
 
         subm_exp_time.ToLocalTime();
-        handler.WriteMessage("OK:", "subm_notif_expiration: " +
-                                    subm_exp_time.AsString() + " (timeout: " +
-                                    NStr::IntToString(m_SubmNotifTimeout) + " sec)");
+        handler.WriteMessage("OK:",
+                             "subm_notif_expiration: " +
+                             subm_exp_time.AsString() + " (timeout: " +
+                             NStr::IntToString(m_SubmNotifTimeout) + " sec)");
     }
     else
         handler.WriteMessage("OK:subm_notif_expiration: n/a");
+
+    string      listener("OK:listener_notif: ");
+    if (m_ListenerNotifAddress != 0 && m_ListenerNotifPort != 0)
+        listener += "n/a";
+    else
+        listener += CSocketAPI::gethostbyaddr(m_ListenerNotifAddress) + ":" +
+                    NStr::IntToString(m_ListenerNotifPort);
+    handler.WriteMessage(listener);
+
+    if (m_ListenerNotifAbsTime != 0) {
+        CTime       listener_exp_time(m_ListenerNotifAbsTime);
+
+        listener_exp_time.ToLocalTime();
+        handler.WriteMessage("OK:",
+                             "listener_notif_expiration: " +
+                             listener_exp_time.AsString() + " (timeout: " +
+                             NStr::NumericToString(m_ListenerNotifAbsTime) +
+                             " sec)");
+    }
+    else
+        handler.WriteMessage("OK:listener_notif_expiration: n/a");
+
 
     // Print detailed information about the job events
     int                         event = 1;
@@ -679,8 +722,10 @@ void CJob::Print(CNetScheduleHandler &        handler,
         handler.WriteMessage("OK:group: n/a");
 
     handler.WriteMessage("OK:", "mask: " + NStr::IntToString(m_Mask));
-    handler.WriteMessage("OK:", "input: '" + NStr::PrintableString(m_Input) + "'");
-    handler.WriteMessage("OK:", "output: '" + NStr::PrintableString(m_Output) + "'");
+    handler.WriteMessage("OK:", "input: '" +
+                                NStr::PrintableString(m_Input) + "'");
+    handler.WriteMessage("OK:", "output: '" +
+                                NStr::PrintableString(m_Output) + "'");
     handler.WriteMessage("OK:", "progress_msg: '" + m_ProgressMsg + "'");
     handler.WriteMessage("OK:", "remote_client_sid: " + m_ClientSID);
     handler.WriteMessage("OK:", "remote_client_ip: " + m_ClientIP);

@@ -192,6 +192,11 @@ public:
                                      bool          need_touch,
                                      time_t *      lifetime);
 
+    TJobStatus  SetJobListener(unsigned int     job_id,
+                               unsigned int     address,
+                               unsigned short   port,
+                               time_t           timeout);
+
     // Worker node-specific methods
     bool PutProgressMessage(unsigned      job_id,
                             const string& msg);
