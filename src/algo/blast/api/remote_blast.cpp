@@ -2252,12 +2252,13 @@ string CRemoteBlast::GetTitle(void)
 {
 	    // Build the request
 	    CRef<CBlast4_request_body> request_body =
-	        s_BuildSearchInfoRequest(m_RID, kBlast4SearchInfoReqName_Search,
-	                                 kBlast4SearchInfoReqValue_Title);
+	        s_BuildSearchInfoRequest(m_RID,
+                                     CTempString(kBlast4SearchInfoReqName_Search),
+	                                 CTempString(kBlast4SearchInfoReqValue_Title));
 	    CRef<CBlast4_reply> reply = x_SendRequest(request_body);
 	    return x_GetStringFromSearchInfoReply(reply,
-	                                          kBlast4SearchInfoReqName_Search,
-	                                          kBlast4SearchInfoReqValue_Title);
+	                                          CTempString(kBlast4SearchInfoReqName_Search),
+	                                          CTempString(kBlast4SearchInfoReqValue_Title));
 
 }
 // Disk Cache version: x_CheckResults
@@ -2445,8 +2446,8 @@ void CRemoteBlast::x_GetSubjects(void)
     // Build the request
     CRef<CBlast4_get_search_info_request> info_request( new CBlast4_get_search_info_request );
     info_request->SetRequest_id( m_RID );
-    info_request->SetInfo().Add(kBlast4SearchInfoReqName_Search, 
-                                kBlast4SearchInfoReqValue_Subjects);
+    info_request->SetInfo().Add(CTempString(kBlast4SearchInfoReqName_Search), 
+                                CTempString(kBlast4SearchInfoReqValue_Subjects));
 
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_search_info( *info_request );
@@ -2491,8 +2492,8 @@ void CRemoteBlast::x_GetSubjects(void)
                 if( info_reply.CanGetInfo() ){
                     const CBlast4_parameters &params = info_reply.GetInfo();
                     string reply_name =
-                          Blast4SearchInfo_BuildReplyName(kBlast4SearchInfoReqName_Search,
-                                                          kBlast4SearchInfoReqValue_Subjects);
+                          Blast4SearchInfo_BuildReplyName(CTempString(kBlast4SearchInfoReqName_Search),
+                                                          CTempString(kBlast4SearchInfoReqValue_Subjects));
                     CRef< CBlast4_parameter > search_param = params.GetParamByName (reply_name);
                     // reply could have string, seq-loc-list or 
                     // bioseq-list, but we don't care about string result for bl2seq
@@ -2542,12 +2543,13 @@ unsigned int CRemoteBlast::x_GetPsiIterationsFromServer()
 	unsigned int retval=0;
 
      CRef<CBlast4_request_body> request_body =
-         s_BuildSearchInfoRequest(m_RID, kBlast4SearchInfoReqName_Search,
-                                  kBlast4SearchInfoReqValue_PsiIterationNum);
+         s_BuildSearchInfoRequest(m_RID,
+                                  CTempString(kBlast4SearchInfoReqName_Search),
+                                  CTempString(kBlast4SearchInfoReqValue_PsiIterationNum));
      CRef<CBlast4_reply> reply = x_SendRequest(request_body);
      string num = x_GetStringFromSearchInfoReply(reply,
-                                                 kBlast4SearchInfoReqName_Search,
-                                                 kBlast4SearchInfoReqValue_PsiIterationNum);
+                                                 CTempString(kBlast4SearchInfoReqName_Search),
+                                                 CTempString(kBlast4SearchInfoReqValue_PsiIterationNum));
       if ( !num.empty() ) {
          try { retval = NStr::StringToUInt(num); }
          catch (...) {}  // ignore errors and leave as unset
