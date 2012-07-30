@@ -1476,16 +1476,17 @@ CRef<CSeq_interval> CDense_seg::CreateRowSeq_interval(TDim row) const
 }
 
 
-NCBI_PARAM_DECL(int, OBJECTS, DENSE_SEG_RESERVE);
-NCBI_PARAM_DEF_EX(int, OBJECTS, DENSE_SEG_RESERVE, 1,
+NCBI_PARAM_DECL(bool, OBJECTS, DENSE_SEG_RESERVE);
+NCBI_PARAM_DEF_EX(bool, OBJECTS, DENSE_SEG_RESERVE, true,
                   eParam_NoThread, OBJECTS_DENSE_SEG_RESERVE);
-static NCBI_PARAM_TYPE(OBJECTS, DENSE_SEG_RESERVE) s_Reserve;
-
 
 void CDense_seg::CReserveHook::PreReadClassMember(CObjectIStream& in,
                                                   const CObjectInfoMI& member)
 {
-    if ( !s_Reserve.Get() ) {
+    static const bool s_Reserve =
+        NCBI_PARAM_TYPE(OBJECTS, DENSE_SEG_RESERVE)::GetDefault();
+
+    if ( !s_Reserve ) {
         return;
     }
     CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());

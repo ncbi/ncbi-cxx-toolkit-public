@@ -335,17 +335,17 @@ NCBI_PARAM_ENUM_ARRAY(ESerialSkipUnknown, SERIAL, SKIP_UNKNOWN_VARIANTS)
 };
 NCBI_PARAM_ENUM_DECL(ESerialSkipUnknown, SERIAL, SKIP_UNKNOWN_VARIANTS);
 NCBI_PARAM_ENUM_DEF(ESerialSkipUnknown, SERIAL, SKIP_UNKNOWN_VARIANTS, eSerialSkipUnknown_No);
-static NCBI_PARAM_TYPE(SERIAL, SKIP_UNKNOWN_VARIANTS) ms_SkipUnknownVariantsDefault;
+typedef NCBI_PARAM_TYPE(SERIAL, SKIP_UNKNOWN_VARIANTS) TSkipUnknownVariantsDefault;
 
 void CObjectIStream::SetSkipUnknownVariantsThread(ESerialSkipUnknown skip)
 {
-    ESerialSkipUnknown now = ms_SkipUnknownVariantsDefault.GetThreadDefault();
+    ESerialSkipUnknown now = TSkipUnknownVariantsDefault::GetThreadDefault();
     if (now != eSerialSkipUnknown_Never &&
         now != eSerialSkipUnknown_Always) {
         if (skip == eSerialSkipUnknown_Default) {
-            ms_SkipUnknownVariantsDefault.ResetThreadDefault();
+            TSkipUnknownVariantsDefault::ResetThreadDefault();
         } else {
-            ms_SkipUnknownVariantsDefault.SetThreadDefault(skip);
+            TSkipUnknownVariantsDefault::SetThreadDefault(skip);
         }
     }
 }
@@ -355,20 +355,20 @@ void CObjectIStream::SetSkipUnknownVariantsGlobal(ESerialSkipUnknown skip)
     if (skip == eSerialSkipUnknown_Default) {
         return;
     }
-    ESerialSkipUnknown now = ms_SkipUnknownVariantsDefault.GetDefault();
+    ESerialSkipUnknown now = TSkipUnknownVariantsDefault::GetDefault();
     if (now != eSerialSkipUnknown_Never &&
         now != eSerialSkipUnknown_Always) {
         if (skip == eSerialSkipUnknown_Default) {
-            ms_SkipUnknownVariantsDefault.ResetDefault();
+            TSkipUnknownVariantsDefault::ResetDefault();
         } else {
-            ms_SkipUnknownVariantsDefault.SetDefault(skip);
+            TSkipUnknownVariantsDefault::SetDefault(skip);
         }
     }
 }
 
 ESerialSkipUnknown CObjectIStream::x_GetSkipUnknownVariantsDefault(void)
 {
-    return ms_SkipUnknownVariantsDefault.GetThreadDefault();
+    return TSkipUnknownVariantsDefault::GetThreadDefault();
 }
 
 

@@ -77,7 +77,7 @@ BEGIN_NCBI_SCOPE
 
 NCBI_PARAM_DECL(bool, SERIAL, FastWriteDouble);
 NCBI_PARAM_DEF(bool, SERIAL, FastWriteDouble, true);
-static NCBI_PARAM_TYPE(SERIAL, FastWriteDouble) s_FastWriteDouble;
+typedef NCBI_PARAM_TYPE(SERIAL, FastWriteDouble) TFastWriteDouble;
 
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
@@ -260,7 +260,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_DataFormat(format),
       m_WriteNamedIntegersByValue(false),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
-      m_FastWriteDouble(s_FastWriteDouble.Get()),
+      m_FastWriteDouble(TFastWriteDouble::GetDefault()),
       m_VerifyData(x_GetVerifyDataDefault())
 {
 }

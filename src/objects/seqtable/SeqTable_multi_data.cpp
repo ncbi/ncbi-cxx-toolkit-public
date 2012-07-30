@@ -87,17 +87,18 @@ size_t CSeqTable_multi_data::GetSize(void) const
 }
 
 
-NCBI_PARAM_DECL(int, OBJECTS, SEQ_TABLE_RESERVE);
-NCBI_PARAM_DEF_EX(int, OBJECTS, SEQ_TABLE_RESERVE, 1,
+NCBI_PARAM_DECL(bool, OBJECTS, SEQ_TABLE_RESERVE);
+NCBI_PARAM_DEF_EX(bool, OBJECTS, SEQ_TABLE_RESERVE, true,
                   eParam_NoThread, OBJECTS_SEQ_TABLE_RESERVE);
-static NCBI_PARAM_TYPE(OBJECTS, SEQ_TABLE_RESERVE) s_Reserve;
-
 
 void CSeqTable_multi_data::CReserveHook::PreReadChoiceVariant(
     CObjectIStream& in,
     const CObjectInfoCV& variant)
 {
-    if ( !s_Reserve.Get() ) {
+    static const bool s_Reserve =
+        NCBI_PARAM_TYPE(OBJECTS, SEQ_TABLE_RESERVE)::GetDefault();
+
+    if ( !s_Reserve ) {
         return;
     }
     if ( CSeq_table* table = CType<CSeq_table>::GetParent(in, 2, 2) ) {

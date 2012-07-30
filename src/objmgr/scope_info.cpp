@@ -69,8 +69,9 @@ NCBI_PARAM_DEF_EX(bool, OBJMGR, SCOPE_AUTORELEASE, true,
 
 static bool s_GetScopeAutoReleaseEnabled(void)
 {
-    static NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE) sx_Value;
-    return sx_Value.Get();
+    static const bool sx_Value =
+        NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE)::GetDefault();
+    return sx_Value;
 }
 
 
@@ -80,8 +81,9 @@ NCBI_PARAM_DEF_EX(unsigned, OBJMGR, SCOPE_AUTORELEASE_SIZE, 10,
 
 static unsigned s_GetScopeAutoReleaseSize(void)
 {
-    static NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE_SIZE) sx_Value;
-    return sx_Value.Get();
+    static const unsigned sx_Value =
+        NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE_SIZE)::GetDefault();
+    return sx_Value;
 }
 
 

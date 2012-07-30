@@ -1631,8 +1631,9 @@ NCBI_PARAM_DEF_EX(unsigned, OBJMGR, BLOB_CACHE, 10,
 
 static unsigned s_GetCacheSize(void)
 {
-    static NCBI_PARAM_TYPE(OBJMGR, BLOB_CACHE) sx_Value;
-    return sx_Value.Get();
+    static const unsigned sx_Value =
+        NCBI_PARAM_TYPE(OBJMGR, BLOB_CACHE)::GetDefault();
+    return sx_Value;
 }
 
 

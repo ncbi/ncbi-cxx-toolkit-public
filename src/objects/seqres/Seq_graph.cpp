@@ -55,16 +55,18 @@ CSeq_graph::~CSeq_graph(void)
 }
 
 
-NCBI_PARAM_DECL(int, OBJECTS, SEQ_GRAPH_RESERVE);
-NCBI_PARAM_DEF_EX(int, OBJECTS, SEQ_GRAPH_RESERVE, 1,
+NCBI_PARAM_DECL(bool, OBJECTS, SEQ_GRAPH_RESERVE);
+NCBI_PARAM_DEF_EX(bool, OBJECTS, SEQ_GRAPH_RESERVE, true,
                   eParam_NoThread, OBJECTS_SEQ_GRAPH_RESERVE);
-static NCBI_PARAM_TYPE(OBJECTS, SEQ_GRAPH_RESERVE) s_Reserve;
 
 void CSeq_graph::CReserveHook::PreReadChoiceVariant(
     CObjectIStream& in,
     const CObjectInfoCV& variant)
 {
-    if ( !s_Reserve.Get() ) {
+    static const bool s_Reserve =
+        NCBI_PARAM_TYPE(OBJECTS, SEQ_GRAPH_RESERVE)::GetDefault();
+
+    if ( !s_Reserve ) {
         return;
     }
     if ( CSeq_graph* graph = CType<CSeq_graph>::GetParent(in) ) {

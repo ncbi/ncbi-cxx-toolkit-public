@@ -64,8 +64,9 @@ NCBI_PARAM_DEF(bool, OBJMGR, DEBUG_SCOPE, false);
 
 static bool s_DebugScope(void)
 {
-    static NCBI_PARAM_TYPE(OBJMGR, DEBUG_SCOPE) sx_Value;
-    return sx_Value.Get();
+    static const bool sx_Value =
+        NCBI_PARAM_TYPE(OBJMGR, DEBUG_SCOPE)::GetDefault();
+    return sx_Value;
 }
 
 typedef map<const CScope_Impl*, AutoPtr<CStackTrace> > TScopeRegisterMap;

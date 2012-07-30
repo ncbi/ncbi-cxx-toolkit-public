@@ -247,8 +247,9 @@ NCBI_PARAM_DEF_EX(int, SERIAL, READ_ANY_VISIBLESTRING_TAG, 1,
 void CObjectIStreamAsnBinary::ExpectStringTag(EStringType type)
 {
     if ( type == eStringTypeUTF8 ) {
-        static NCBI_PARAM_TYPE(SERIAL, READ_ANY_UTF8STRING_TAG) sx_ReadAnyUtf8;
-        if ( sx_ReadAnyUtf8.Get() ) {
+        static const bool sx_ReadAnyUtf8 =
+            NCBI_PARAM_TYPE(SERIAL, READ_ANY_UTF8STRING_TAG)::GetDefault();
+        if ( sx_ReadAnyUtf8 ) {
             // may be eVisibleString
             TByte alt_tag = MakeTagByte(eUniversal,ePrimitive,eVisibleString);
             if ( PeekTagByte() == alt_tag ) {
@@ -259,13 +260,14 @@ void CObjectIStreamAsnBinary::ExpectStringTag(EStringType type)
         ExpectSysTag(eUniversal, ePrimitive, eUTF8String);
     }
     else {
-        static NCBI_PARAM_TYPE(SERIAL, READ_ANY_VISIBLESTRING_TAG) sx_ReadAny;
-        if ( int allow = sx_ReadAny.Get() ) {
+        static const int sx_ReadAny =
+            NCBI_PARAM_TYPE(SERIAL, READ_ANY_VISIBLESTRING_TAG)::GetDefault();
+        if ( sx_ReadAny ) {
             // may be eUTF8String
             TByte alt_tag = MakeTagByte(eUniversal,ePrimitive,eUTF8String);
             if ( PeekTagByte() == alt_tag ) {
                 // optionally issue a warning
-                if ( allow == 1 ) {
+                if ( sx_ReadAny == 1 ) {
                     ERR_POST_X_ONCE(10, Warning<<
                                     "CObjectIStreamAsnBinary: UTF8String data for VisibleString member "<<GetStackTraceASN()<<", ASN.1 specification may need an update");
                 }

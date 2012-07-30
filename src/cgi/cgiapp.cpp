@@ -63,19 +63,19 @@ BEGIN_NCBI_SCOPE
 NCBI_PARAM_DECL(bool, CGI, Print_Http_Referer);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_Http_Referer, true, eParam_NoThread,
                   CGI_PRINT_HTTP_REFERER);
-static NCBI_PARAM_TYPE(CGI, Print_Http_Referer) s_PrintRefererParam;
+typedef NCBI_PARAM_TYPE(CGI, Print_Http_Referer) TPrintRefererParam;
 
 
 NCBI_PARAM_DECL(bool, CGI, Print_User_Agent);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_User_Agent, true, eParam_NoThread,
                   CGI_PRINT_USER_AGENT);
-static NCBI_PARAM_TYPE(CGI, Print_User_Agent) s_PrintUserAgentParam;
+typedef NCBI_PARAM_TYPE(CGI, Print_User_Agent) TPrintUserAgentParam;
 
 
 NCBI_PARAM_DECL(bool, CGI, Print_Self_Url);
 NCBI_PARAM_DEF_EX(bool, CGI, Print_Self_Url, true, eParam_NoThread,
                   CGI_PRINT_SELF_URL);
-static NCBI_PARAM_TYPE(CGI, Print_Self_Url) s_PrintSelfUrlParam;
+typedef NCBI_PARAM_TYPE(CGI, Print_Self_Url) TPrintSelfUrlParam;
 
 NCBI_PARAM_DECL(bool, CGI, Allow_Sigpipe);
 NCBI_PARAM_DEF_EX(bool, CGI, Allow_Sigpipe, false, eParam_NoThread,
@@ -402,7 +402,7 @@ void CCgiApplication::LogRequest(void) const
 {
     const CCgiContext& ctx = GetContext();
     string str;
-    if ( s_PrintSelfUrlParam.Get() ) {
+    if ( TPrintSelfUrlParam::GetDefault() ) {
         // Print script URL
         string self_url = ctx.GetSelfURL();
         if ( !self_url.empty() ) {
@@ -431,14 +431,14 @@ void CCgiApplication::LogRequest(void) const
         }
     }
     // Print HTTP_REFERER
-    if ( s_PrintRefererParam.Get() ) {
+    if ( TPrintRefererParam::GetDefault() ) {
         str = ctx.GetRequest().GetProperty(eCgi_HttpReferer);
         if ( !str.empty() ) {
             GetDiagContext().Extra().Print("HTTP_REFERER", str);
         }
     }
     // Print USER_AGENT
-    if ( s_PrintUserAgentParam.Get() ) {
+    if ( TPrintUserAgentParam::GetDefault() ) {
         str = ctx.GetRequest().GetProperty(eCgi_HttpUserAgent);
         if ( !str.empty() ) {
             GetDiagContext().Extra().Print("USER_AGENT", str);
@@ -478,12 +478,12 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 NCBI_PARAM_DECL(bool, CGI, Merge_Log_Lines);
 NCBI_PARAM_DEF_EX(bool, CGI, Merge_Log_Lines, true, eParam_NoThread,
                   CGI_MERGE_LOG_LINES);
-static NCBI_PARAM_TYPE(CGI, Merge_Log_Lines) s_MergeLogLines;
+typedef NCBI_PARAM_TYPE(CGI, Merge_Log_Lines) TMergeLogLines;
 
 
 void CCgiApplication::Init(void)
 {
-    if ( s_MergeLogLines.Get() ) {
+    if ( TMergeLogLines::GetDefault() ) {
         // Convert multi-line diagnostic messages into one-line ones by default.
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);

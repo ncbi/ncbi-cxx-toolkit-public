@@ -81,8 +81,9 @@ NCBI_PARAM_DEF_EX(int, GENBANK, CONN_DEBUG, 0,
 
 static int s_GetDebugLevel(void)
 {
-    static NCBI_PARAM_TYPE(GENBANK, CONN_DEBUG) s_Value;
-    return s_Value.Get();
+    static const int s_Value =
+        NCBI_PARAM_TYPE(GENBANK, CONN_DEBUG)::GetDefault();
+    return s_Value;
 }
 
 

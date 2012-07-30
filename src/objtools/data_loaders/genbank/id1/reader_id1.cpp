@@ -134,8 +134,9 @@ NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID1, DEFAULT_SERVICE,
 
 static int GetDebugLevel(void)
 {
-    static NCBI_PARAM_TYPE(GENBANK, ID1_DEBUG) s_Value;
-    return s_Value.Get();
+    static const int s_Value =
+        NCBI_PARAM_TYPE(GENBANK, ID1_DEBUG)::GetDefault();
+    return s_Value;
 }
 
 

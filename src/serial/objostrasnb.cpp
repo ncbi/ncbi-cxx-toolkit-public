@@ -247,8 +247,9 @@ NCBI_PARAM_DEF_EX(bool, SERIAL, WRITE_UTF8STRING_TAG, false,
 
 CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::MakeUTF8StringTag(void)
 {
-    static NCBI_PARAM_TYPE(SERIAL, WRITE_UTF8STRING_TAG) s_WriteUTF8StringTag;
-    ETagValue value = s_WriteUTF8StringTag.Get()? eUTF8String: eVisibleString;
+    static const bool s_WriteUTF8StringTag =
+        NCBI_PARAM_TYPE(SERIAL, WRITE_UTF8STRING_TAG)::GetDefault();
+    ETagValue value = s_WriteUTF8StringTag ? eUTF8String: eVisibleString;
     return MakeTagByte(eUniversal, ePrimitive, value);
 }
 
