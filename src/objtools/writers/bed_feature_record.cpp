@@ -174,7 +174,7 @@ bool CBedFeatureRecord::AssignLocation(
         m_strChrom = interval.GetId().GetSeqIdString(true);
     }
     if ( interval.IsSetFrom() ) {
-        m_strChromStart = NStr::UIntToString( interval.GetFrom() + 1 );
+        m_strChromStart = NStr::UIntToString( interval.GetFrom() );
     }
     if ( interval.IsSetTo() ) {
         m_strChromEnd = NStr::UIntToString( interval.GetTo() + 1 );
