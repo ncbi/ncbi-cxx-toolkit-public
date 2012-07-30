@@ -573,6 +573,10 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
     while ( it )   {
         const IAlnSegment::TSignedRange& aln_r = it->GetAlnRange(); // in alignment
         const IAlnSegment::TSignedRange& row_r = it->GetRange(); // on sequence
+        if ( row_r.Empty() ) {
+            ++it;
+            continue;
+        }
 
         size_t off;
         if (base_width == 1) {
