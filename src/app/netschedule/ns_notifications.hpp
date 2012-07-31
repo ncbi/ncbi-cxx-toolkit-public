@@ -108,7 +108,8 @@ class CNSNotificationList
         void NotifyJobStatus(unsigned int    address,
                              unsigned short  port,
                              const string &  job_key,
-                             TJobStatus      job_status);
+                             TJobStatus      job_status,
+                             size_t          last_event_index);
         void CheckTimeout(time_t                 current_time,
                           CNSClientsRegistry &   clients_registry,
                           CNSAffinityRegistry &  aff_registry);

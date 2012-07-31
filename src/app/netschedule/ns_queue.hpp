@@ -195,7 +195,8 @@ public:
     TJobStatus  SetJobListener(unsigned int     job_id,
                                unsigned int     address,
                                unsigned short   port,
-                               time_t           timeout);
+                               time_t           timeout,
+                               size_t *         last_event_index);
 
     // Worker node-specific methods
     bool PutProgressMessage(unsigned      job_id,

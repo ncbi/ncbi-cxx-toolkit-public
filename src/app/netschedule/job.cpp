@@ -165,6 +165,9 @@ CJob::CJob() :
     m_RunTimeout(0),
     m_SubmNotifPort(0),
     m_SubmNotifTimeout(0),
+    m_ListenerNotifAddress(0),
+    m_ListenerNotifPort(0),
+    m_ListenerNotifAbsTime(0),
     m_RunCount(0),
     m_ReadCount(0),
     m_AffinityId(0),
@@ -183,6 +186,9 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_RunTimeout(0),
     m_SubmNotifPort(request.port),
     m_SubmNotifTimeout(request.timeout),
+    m_ListenerNotifAddress(0),
+    m_ListenerNotifPort(0),
+    m_ListenerNotifAbsTime(0),
     m_RunCount(0),
     m_ReadCount(0),
     m_ProgressMsg(""),
@@ -641,7 +647,7 @@ void CJob::Print(CNetScheduleHandler &        handler,
         handler.WriteMessage("OK:subm_notif_expiration: n/a");
 
     string      listener("OK:listener_notif: ");
-    if (m_ListenerNotifAddress != 0 && m_ListenerNotifPort != 0)
+    if (m_ListenerNotifAddress == 0 || m_ListenerNotifPort == 0)
         listener += "n/a";
     else
         listener += CSocketAPI::gethostbyaddr(m_ListenerNotifAddress) + ":" +
@@ -652,11 +658,8 @@ void CJob::Print(CNetScheduleHandler &        handler,
         CTime       listener_exp_time(m_ListenerNotifAbsTime);
 
         listener_exp_time.ToLocalTime();
-        handler.WriteMessage("OK:",
-                             "listener_notif_expiration: " +
-                             listener_exp_time.AsString() + " (timeout: " +
-                             NStr::NumericToString(m_ListenerNotifAbsTime) +
-                             " sec)");
+        handler.WriteMessage("OK:listener_notif_expiration: ",
+                             listener_exp_time.AsString());
     }
     else
         handler.WriteMessage("OK:listener_notif_expiration: n/a");

@@ -1797,11 +1797,13 @@ void CNetScheduleHandler::x_ProcessDropJob(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
 {
+    size_t          last_event_index = 0;
     TJobStatus      status = q->SetJobListener(
                                     m_CommandArguments.job_id,
                                     m_ClientId.GetAddress(),
                                     m_CommandArguments.port,
-                                    m_CommandArguments.timeout);
+                                    m_CommandArguments.timeout,
+                                    &last_event_index);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
         x_WriteMessageNoThrow("ERR:eJobNotFound:");
@@ -1811,7 +1813,8 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
         return;
     }
 
-    WriteMessage("OK:job_status=", CNetScheduleAPI::StatusToString(status));
+    WriteMessage("OK:job_status=", CNetScheduleAPI::StatusToString(status) +
+                 "&last_event_index=" + NStr::NumericToString(last_event_index));
     x_PrintRequestStop(eStatus_OK);
 }
 

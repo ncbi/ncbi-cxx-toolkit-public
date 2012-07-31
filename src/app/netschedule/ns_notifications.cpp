@@ -268,7 +268,8 @@ void CNSNotificationList::UnregisterListener(unsigned int         address,
 void CNSNotificationList::NotifyJobStatus(unsigned int    address,
                                           unsigned short  port,
                                           const string &  job_key,
-                                          TJobStatus      job_status
+                                          TJobStatus      job_status,
+                                          size_t          last_event_index  // zero based
                                           )
 {
     char    buffer[k_MessageBufferSize];
@@ -278,7 +279,9 @@ void CNSNotificationList::NotifyJobStatus(unsigned int    address,
             job_key.c_str(), k_MessageBufferSize - m_JobStateConstPartLength);
     snprintf(buffer + m_JobStateConstPartLength + job_key.size(),
              k_MessageBufferSize - m_JobStateConstPartLength - job_key.size(),
-             "&job_status=%s", CNetScheduleAPI::StatusToString(job_status).c_str());
+             "&job_status=%s&last_event_index=%ld",
+             CNetScheduleAPI::StatusToString(job_status).c_str(),
+             last_event_index);
 
 
     m_StatusNotificationSocket.Send(

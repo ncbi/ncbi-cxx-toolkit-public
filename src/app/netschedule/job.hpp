@@ -242,6 +242,8 @@ public:
 
     const vector<CJobEvent>& GetEvents() const
     { return m_Events; }
+    size_t  GetLastEventIndex(void) const
+    { return m_Events.size() - 1; }
     const string&  GetInput() const
     { return m_Input; }
     const string GetQuotedInput() const
