@@ -135,6 +135,9 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 }
 #endif
 
+#if !CHECK_OUTSTREAM_INTEGRITY
+inline
+#endif
 void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
 {
 #if CHECK_OUTSTREAM_INTEGRITY
@@ -201,6 +204,9 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
     m_Output.PutChar(byte);
 }
 
+#if !CHECK_OUTSTREAM_INTEGRITY
+inline
+#endif
 void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 {
     if ( size == 0 )
@@ -221,6 +227,7 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 }
 
 template<typename T>
+inline
 void CObjectOStreamAsnBinary::WriteBytesOf(const T& value, size_t count)
 {
     for ( size_t shift = (count - 1) * 8; shift > 0; shift -= 8 ) {
@@ -229,6 +236,7 @@ void CObjectOStreamAsnBinary::WriteBytesOf(const T& value, size_t count)
     WriteByte(Uint1(value));
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteShortTag(ETagClass tag_class,
                                             ETagConstructed tag_constructed,
                                             ETagValue tag_value)
@@ -236,6 +244,7 @@ void CObjectOStreamAsnBinary::WriteShortTag(ETagClass tag_class,
     WriteByte(MakeTagByte(tag_class, tag_constructed, tag_value));
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteSysTag(ETagValue tag_value)
 {
     WriteShortTag(eUniversal, ePrimitive, tag_value);
@@ -253,6 +262,7 @@ CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::MakeUTF8StringTag(void)
     return MakeTagByte(eUniversal, ePrimitive, value);
 }
 
+inline
 CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::GetUTF8StringTag(void)
 {
     static TByte s_UTF8StringTag = 0;
@@ -262,6 +272,7 @@ CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::GetUTF8StringTag(void)
     return s_UTF8StringTag;
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteStringTag(EStringType type)
 {
     WriteByte(type == eStringTypeUTF8?
@@ -295,6 +306,7 @@ void CObjectOStreamAsnBinary::WriteLongTag(ETagClass tag_class,
     WriteByte(tag_value & 0x7f);
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteTag(ETagClass tag_class,
                                        ETagConstructed tag_constructed,
                                        TLongTag tag_value)
@@ -325,11 +337,13 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
     }
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteIndefiniteLength(void)
 {
     WriteByte(eIndefiniteLengthByte);
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteShortLength(size_t length)
 {
     WriteByte(TByte(length));
@@ -359,6 +373,7 @@ void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
     WriteBytesOf(length, count);
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteLength(size_t length)
 {
     if ( length <= 127 )
@@ -367,6 +382,7 @@ void CObjectOStreamAsnBinary::WriteLength(size_t length)
         WriteLongLength(length);
 }
 
+inline
 void CObjectOStreamAsnBinary::WriteEndOfContent(void)
 {
     WriteSysTag(eNone);

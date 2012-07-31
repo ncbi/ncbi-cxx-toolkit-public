@@ -118,7 +118,7 @@ public:
         return m_CStyleBigInt;
     }
 
-protected:
+private:
     void WriteByte(Uint1 byte);
     template<typename T> void WriteBytesOf(const T& value, size_t count);
     void WriteBytes(const char* bytes, size_t size);
@@ -137,6 +137,7 @@ protected:
     void WriteLength(size_t length);
     void WriteEndOfContent(void);
 
+protected:
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
     virtual void WriteInt4(Int4 data);
