@@ -750,7 +750,12 @@ CConstRef<CMasterSeqSegments> CTSE_Info::GetMasterSeqSegments(void) const
         if ( !m_MasterSeqSegmentsLoaded ) {
             CConstRef<CBioseq_Info> master_seq = GetSegSetMaster();
             if ( master_seq ) {
-                m_MasterSeqSegments = new CMasterSeqSegments(*master_seq);
+                try {
+                    m_MasterSeqSegments = new CMasterSeqSegments(*master_seq);
+                }
+                catch ( CException& exc ) {
+                    ERR_POST("Segment set cannot be initialized: "<<exc);
+                }
             }
             m_MasterSeqSegmentsLoaded = true;
         }
