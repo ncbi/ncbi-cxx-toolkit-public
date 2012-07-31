@@ -108,6 +108,12 @@
 #define UNKNOWN_APPNAME      "UNK_APP"
 
 
+/*****************************************************************************
+ *  Global constants
+ */
+
+static const char* kBaseLogDir  = "/log/";
+
 
 /*****************************************************************************
  *  Global variables 
@@ -127,7 +133,6 @@ static volatile TNcbiLog_Info*    sx_Info      = NULL;
 
 /* Pointer to the context (single-threaded applications only, otherwise use TLS) */
 static volatile TNcbiLog_Context  sx_ContextST = NULL;
-
 
 
 /******************************************************************************
@@ -415,6 +420,49 @@ static char* s_StrDup(const char* str)
         memcpy(res, str, size);
     }
     return res;
+}
+
+
+/** Concatenate two parts of the path for the current OS.
+ */
+static const char* s_ConcatPathEx(
+    const char* p1, size_t p1_len,  /* [in]     non-NULL */
+    const char* p2, size_t p2_len,  /* [in]     non-NULL */
+    char*       dst,                /* [in/out] non-NULL */
+    size_t      dst_size            /* [in]              */
+)
+{
+    size_t n = 0;
+    assert(p1);
+    assert(p2);
+    assert(dst);
+    assert(dst_size);
+
+    if (p1_len + p2_len + 2 >= dst_size) {
+        return NULL;
+    }
+    memcpy(dst, p1, p1_len);
+    n += p1_len;
+    if (dst[n-1] != DIR_SEPARATOR) {
+        dst[n++] = DIR_SEPARATOR;
+    }
+    memcpy(dst + n, p2, p2_len);
+    n += p2_len;
+    dst[n] = '\0';
+    return dst;
+}
+
+
+/** Concatenate two parts of the path (zero-terminated strings) for the current OS.
+ */
+static const char* s_ConcatPath(
+    const char* p1,         /* [in]     non-NULL */
+    const char* p2,         /* [in]     non-NULL */
+    char*       dst,        /* [in/out] non-NULL */
+    size_t      dst_size    /* [in]              */
+)
+{
+    return s_ConcatPathEx(p1, strlen(p1), p2, strlen(p2), dst, dst_size);
 }
 
 
@@ -964,10 +1012,9 @@ static void s_DestroyContext(void)
 
 /** Determine logs location on the base of TOOLKITRC_FILE.
  */
-static const char* s_GetDefaultLogLocation()
+static const char* s_GetToolkitRCLogLocation()
 {
     static const char* log_path     = NULL;
-    static const char* kBaseLogDir  = "/log/";
     static const char* kToolkitRc   = "/etc/toolkitrc";
     static const char* kSectionName = "[Web_dir_to_port]";
 
@@ -975,13 +1022,11 @@ static const char* s_GetDefaultLogLocation()
     char   buf[256];
     char   *line, *token, *p;
     int    inside_section = 0 /*false*/;
-    size_t n, line_size;
+    size_t line_size;
 
     if (log_path) {
         return log_path;
     }
-    /* Default location */
-    log_path = kBaseLogDir;
 
     /* Try to get more specific location from configuration file */
     fp = fopen(kToolkitRc, "rt");
@@ -1044,12 +1089,7 @@ static const char* s_GetDefaultLogLocation()
             /* Compose full directory name */
             {{
                 char path[FILENAME_MAX + 1];
-                n = strlen(kBaseLogDir);
-                memcpy(path, kBaseLogDir, n);
-                memcpy(path + n, token, p - token);
-                n += (p - token);
-                path[n++] = DIR_SEPARATOR;
-                path[n] = '\0';
+                s_ConcatPath(kBaseLogDir, token, path, FILENAME_MAX + 1);
                 log_path = s_StrDup(path);
                 break;
             }}
@@ -1134,11 +1174,7 @@ static int /*bool*/ s_SetLogFiles(const char* dir)
 
     /* Check max possible file name (dir/basename.trace) */
     assert((n + 1 + nlen + 6) < sizeof(path));
-    memcpy(path, dir, n);
-    if (path[n-1] != DIR_SEPARATOR) {
-        path[n++] = DIR_SEPARATOR;
-    }
-    memcpy(path + n, sx_Info->app_base_name, nlen);
+    s_ConcatPathEx(dir, n,  sx_Info->app_base_name, nlen, path, FILENAME_MAX + 1);
     n += nlen;
 
     /* Trace */
@@ -1229,11 +1265,40 @@ static void s_InitDestination()
 
         /* Try default log location */
         {{
+            char path[FILENAME_MAX + 1];
             const char* dir;
 
             /* /log */
             if (sx_Info->destination != eNcbiLog_Cwd) {
-                dir = s_GetDefaultLogLocation();
+                /* toolkitrc file */
+                dir = s_GetToolkitRCLogLocation();
+                if (dir) {
+                    if (s_SetLogFiles(dir)) {
+                        sx_Info->reuse_file_names = 1;
+                        return;
+                    }
+                }
+                /* server port */
+                if (sx_Info->server_port) {
+                    int n;
+                    n = sprintf(path, "%s%d", kBaseLogDir, sx_Info->server_port);
+                    VERIFY(n > 0);
+                    if (s_SetLogFiles(path)) {
+                        sx_Info->reuse_file_names = 1;
+                        return;
+                    }
+                }
+
+                /* /log/srv */ 
+                dir = s_ConcatPath(kBaseLogDir, "srv", path, FILENAME_MAX + 1);
+                if (dir) {
+                    if (s_SetLogFiles(dir)) {
+                        sx_Info->reuse_file_names = 1;
+                        return;
+                    }
+                }
+                /* /log/fallback */
+                dir = s_ConcatPath(kBaseLogDir, "fallback", path, FILENAME_MAX + 1);
                 if (dir) {
                     if (s_SetLogFiles(dir)) {
                         sx_Info->reuse_file_names = 1;
@@ -1873,11 +1938,12 @@ ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 }
 
 
-ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds)
+ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port)
 {
     MT_LOCK_API;
     /* Set new destination */
     sx_Info->destination = ds;
+    sx_Info->server_port = port;
     if (sx_Info->destination != eNcbiLog_Disable) {
         /* and force to initialize it */
         sx_Info->last_reopen_time = 0;

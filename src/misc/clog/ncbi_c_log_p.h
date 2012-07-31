@@ -116,12 +116,13 @@ struct SInfo_tag {
     ENcbiLog_Severity post_level;               /**< Posting level                                */
     STime             app_start_time;           /**< Application start time                       */
     char*             app_full_name;            /**< Pointer to a full application name (argv[0]) */
-    char*             app_base_name;            /**< Poiter to application base name              */
+    char*             app_base_name;            /**< Pointer to application base name             */
 
 
     /* Log file names and handles */
 
     ENcbiLog_Destination destination;           /**< Current logging destination            */
+    unsigned int      server_port;              /**< $SERVER_PORT on calling host           */
     time_t            last_reopen_time;         /**< Last reopen time for log files         */
     FILE*             file_trace;               /**< Saved files for log files              */
     FILE*             file_err;
@@ -168,9 +169,21 @@ extern int /*bool*/ NcbiLogP_DisableChecks(int /*bool*/ disable);
 
 /** Variant of NcbiLog_SetDestination. 
  *  Try to force set new destination without additional checks.
+ *  The 'port' parameter redefine value of $SERVER_PORT environment variable.
+ *  Use 0 if undefined. Can be used only for redirect mode. See for details:
+ *  http://www.ncbi.nlm.nih.gov/books/NBK7185/#ch_core.Where_Diagnostic_Messages_Go
  *  @sa NcbiLog_SetDestination, ENcbiLog_Destination, NcbiLog_Init
  */
-extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds);
+extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port);
+
+
+/** Redefine value of $SERVER_PORT environment variable.
+ *  Can be used only for redirect mode.
+ *  See this for details:
+ *  http://www.ncbi.nlm.nih.gov/books/NBK7185/#ch_core.Where_Diagnostic_Messages_Go
+ *  @sa NcbiLog_SetDestination
+ */
+extern unsigned int NcbiLogP_SetServerPort(unsigned int server_port);
 
 
 /** Variant of NcbiLog_ReqStart, that use already prepared string with

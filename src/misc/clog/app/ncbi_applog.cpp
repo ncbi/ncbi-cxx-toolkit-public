@@ -94,6 +94,7 @@ struct SInfo {
     STime             app_start_time;   ///< Application start time
     STime             req_start_time;   ///< Request start time
     STime             post_time;        ///< Posting time (defined only for redirect mode)
+    unsigned int      server_port;      ///< Value of $SERVER_PORT environment variable
 
     SInfo() :
         state(eNcbiLog_NotSet), pid(0), rid(0), guid(0)
@@ -175,6 +176,9 @@ void CNcbiApplogApp::Init(void)
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
         arg->AddDefaultKey
             ("htime", "TIME", "Current time in 'time_t' format (will be used automatically for 'redirect' mode)", 
+            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
+        arg->AddDefaultKey
+            ("srvport", "PORT", "Server port (will be used automatically for 'redirect' mode)",
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("start_app", arg.release());
     }}
@@ -369,12 +373,18 @@ int CNcbiApplogApp::Redirect() const
             }
         }
     }
+    // Add value of if environment variable $SERVER_PORT on this host
+    string port = GetEnvironment().Get("SERVER_PORT");
+    if (!port.empty()) {
+        s_args += string(" \"-srvport=") + port + "\"";
+    }
     // Add current time on this host
     time_t timer;
     long ns;
     CTime::GetCurrentTimeT(&timer, &ns);
-    s_args += string(" \"-htime=") + NStr::UInt8ToString(timer) + "." 
-                                   + NStr::ULongToString(ns) + "\"";
+    s_args += string(" \"-htime=")   + NStr::UInt8ToString(timer) + "." 
+                                     + NStr::ULongToString(ns) + "\"";
+
 #if 0
     cout << url << endl;
     cout << s_args << endl;
@@ -418,6 +428,9 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
     if (!m_Info.sid_app.empty()) {
         token += "&asid="  + m_Info.sid_app;
     }
+    if (m_Info.server_port) {
+        token += "&srvport=" + NStr::UIntToString(m_Info.server_port);
+    }
     token += "&atime=" + NStr::UInt8ToString(m_Info.app_start_time.sec) + "." 
                        + NStr::ULongToString(m_Info.app_start_time.ns);
     if (type ==  eRequest) {
@@ -439,7 +452,7 @@ ETokenType CNcbiApplogApp::ParseToken()
 {
     // Minimal token looks as:
     //     "name=STR&pid=NUM&guid=HEX&asid=STR&atime=N.N"
-    // Also, can have: 'rsid', 'rtime', 'client', 'host'.
+    // Also, can have: 'rsid', 'rtime', 'client', 'host', 'srvport'.
 
     ETokenType type = eApp;
 
@@ -469,6 +482,8 @@ ETokenType CNcbiApplogApp::ParseToken()
             have_guid = true;
         } else if ( key == "host") {
             m_Info.host = value;
+        } else if ( key == "srvport") {
+            m_Info.server_port =  NStr::StringToUInt(value);
         } else if ( key == "client") {
             m_Info.client = value;
         } else if ( key == "asid") {
@@ -586,6 +601,11 @@ int CNcbiApplogApp::Run(void)
     if (cmd == "start_app") {
         // We need application name first to try initialize the local logging
         m_Info.appname = args["appname"].AsString();
+        // Get value of $SERVER_PORT on original host (if specified; redirect mode only)
+        string srvport = args["srvport"].AsString();
+        if ( !srvport.empty() ) {
+            m_Info.server_port = NStr::StringToUInt(srvport);
+        }
 
     } else {
         // Initialize session from existing token
@@ -614,7 +634,7 @@ int CNcbiApplogApp::Run(void)
     is_api_init = true;
     // Try to set output to /log (forced)
 #if 1
-    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Default);
+    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
     if (dst != eNcbiLog_Default) {
 #else
     ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Stdout);

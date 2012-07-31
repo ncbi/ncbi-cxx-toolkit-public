@@ -86,7 +86,8 @@
  * By default the module is dependent on the /etc/toolkitrc file in order to
  * determine which applications should log to which /log sub-directory. 
  * If this file can't be found or can't be read, or the log files can not
- * be open, the module will immediately fall back to logging to STDERR.
+ * be open, it fall back to logging to destination specified here:
+ * http://www.ncbi.nlm.nih.gov/books/NBK7185/#ch_core.Where_Diagnostic_Messages_Go
  *
  * Thread-specific serial number is always 0. We cannot provide mechanism
  * to maintain correct value for each thread.
@@ -226,8 +227,8 @@ extern int/*bool*/ NcbiLog_Default_MTLock_Handler
  *  @sa NcbiLog_SetDestination
  */
 typedef enum {
-    eNcbiLog_Default,         /**< Try /log/<appname>.log,  fallback to STDERR */
-    eNcbiLog_Stdlog,          /**< Try /log/<appname>.log,
+    eNcbiLog_Default,         /**< Try /log/<*>/<appname>.log, fallback to STDERR */
+    eNcbiLog_Stdlog,          /**< Try /log/<*>/<appname>.log,
                                    fallback to ./<appname>.log, then to STDERR */
     eNcbiLog_Cwd,             /**< Try ./<appname>.log, fallback to to STDERR */
     eNcbiLog_Stdout,          /**< To standard output stream */
