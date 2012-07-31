@@ -1436,7 +1436,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         DEF_FAST_FLAGS="-O2"
         ;;
       GCC:* )
-        DEF_FAST_FLAGS="-O9 -finline-functions -fstrict-aliasing"
+        DEF_FAST_FLAGS="-O3 -finline-functions -fstrict-aliasing"
         case "$host_os" in
            freebsd* ) ;;
            * )        DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
@@ -4537,6 +4537,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          with_boost=no
          ;;
       1_3[[5-9]] | 1_3[[5-9]]_* | 1_4[[0-5]] | 1_4[[0-5]]_* ) ;;
+      '' ) with_boost=no ;;
       * )
          AC_MSG_WARN(
             [Untested Boost version; may prove incompatible.])
