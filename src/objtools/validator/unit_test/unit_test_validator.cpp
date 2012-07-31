@@ -3986,10 +3986,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
 
     STANDARD_SETUP_WITH_DATABASE
 
+    scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_loc> loc4(new CSeq_loc());
     loc4->SetWhole().SetLocal().SetStr("part1");
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc4);
     master_seg->SetSeq().SetInst().SetLength(240);
+    seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[lcl|part1, lcl|part2, lcl|part3, lcl|part1]]"));
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "DuplicateSegmentReferences", "Segmented sequence has multiple references to lcl|part1"));
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set does not contain enough Bioseqs"));
@@ -3999,9 +4001,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
 
     CLEAR_ERRORS
     
+    scope.RemoveTopLevelSeqEntry(seh);
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetLength(120);
+    seh = scope.AddTopLevelSeqEntry(*entry);
     /*
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "SeqLocOrder", "Segmented BioseqIntervals out of order in SeqLoc [[lcl|part1, lcl|part2]]"));
     */
@@ -4030,17 +4034,23 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartsOutOfOrder)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    scope.RemoveTopLevelSeqEntry(seh);
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().pop_back();
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc2);
     loc3->SetWhole().SetLocal().SetStr("part4");
     master_seg->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc3);
     master_seg->SetSeq().SetInst().SetLength(120);
+    seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSet().SetSeq_set().back()->SetSet().SetSeq_set().front()->SetSet().SetClass(CBioseq_set::eClass_parts);
-    expected_errors[0]->SetErrMsg("Parts set component is not Bioseq");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.clear();
+    expected_errors.push_back(new CExpectedError("master", eDiag_Critical, "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [120]"));
+    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "PartsOutOfOrder", "Parts set component is not Bioseq"));
     expected_errors.push_back(new CExpectedError("", eDiag_Critical, "PartsSetHasSets", "Parts set contains unwanted Bioseq-set, its class is \"parts\"."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
