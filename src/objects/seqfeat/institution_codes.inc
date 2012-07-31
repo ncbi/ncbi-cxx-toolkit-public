@@ -6233,6 +6233,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USF:CBD	c	University of South Florida, Biology Department, Center for Biological Defense",
 "USFC	s	U. S. Fish Commission",
 "USFS	s	Rocky Mountain Forest and Range Experiment Station",
+"USGS	s	U.S. Geological Survey",
+"USGS:ASC	s	U.S. Geological Survey, Alaska Science Center",
 "USH	s	Ushaw College",
 "USI	s	University of Southern Indiana",
 "USJ	s	Universidad de Costa Rica",
