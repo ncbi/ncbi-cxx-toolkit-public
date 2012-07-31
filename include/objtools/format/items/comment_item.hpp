@@ -120,8 +120,14 @@ public:
     static const string& GetNsAreGapsStr(void);
     static string GetStringForTPA(const CUser_object& uo, CBioseqContext& ctx);
     static string GetStringForBankIt(const CUser_object& uo);
+    enum EGenomeBuildComment {
+        eGenomeBuildComment_No = 0,
+        eGenomeBuildComment_Yes
+    };
     static string GetStringForRefTrack(const CUser_object& uo,
-        const CBioseq_Handle& seq, ECommentFormat format = eFormat_Text);
+        const CBioseq_Handle& seq, ECommentFormat format = eFormat_Text,
+        EGenomeBuildComment eGenomeBuildComment = eGenomeBuildComment_Yes
+        );
     static string GetStringForWGS(CBioseqContext& ctx);
     static string GetStringForTSA(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);

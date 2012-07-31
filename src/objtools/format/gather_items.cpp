@@ -724,11 +724,17 @@ void CFlatGatherer::x_GatherComments(void) const
 {
     CBioseqContext& ctx = *m_Current;
 
+    // There are some comments that we want to know the existence of right away, but we don't
+    // want to add until later:
+    CConstRef<CUser_object> firstGenAnnotSCAD = x_PrepareAnnotDescStrucComment(ctx);
+
     x_UnverifiedComment(ctx);
 
     // Gather comments related to the seq-id
-    x_IdComments(ctx);
-    x_RefSeqComments(ctx);
+    x_IdComments(ctx, 
+        ( firstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
+    x_RefSeqComments(ctx,
+        ( firstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
 
     if ( s_NsAreGaps(ctx.GetHandle(), ctx) ) {
         x_AddComment(new CCommentItem(CCommentItem::GetNsAreGapsStr(), ctx));
@@ -746,7 +752,9 @@ void CFlatGatherer::x_GatherComments(void) const
     x_NameComments(ctx);
     x_StructuredComments(ctx);
     x_HTGSComments(ctx);
-    x_AnnotDescStrucComment(ctx);
+    if( firstGenAnnotSCAD ) {
+        x_AddComment(new CCommentItem(*firstGenAnnotSCAD, ctx));
+    }
 //    x_FeatComments(ctx);
 
     x_FlushComments();
@@ -857,7 +865,8 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
     x_AddComment( new CCommentItem(kUnverifiedPrefix + type_string + kUnverifiedSuffix, ctx) );
 }
 
-void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
+void CFlatGatherer::x_IdComments(CBioseqContext& ctx, 
+    EGenomeAnnotComment eGenomeAnnotComment) const
 {
     const CObject_id* local_id = 0;
 
@@ -875,7 +884,8 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
             {{
                 if ( ctx.IsRSCompleteGenomic() ) {  // NC
                     if ( !genome_build_number.empty()   &&
-                         !has_ref_track_status) {
+                         !has_ref_track_status &&
+                         eGenomeAnnotComment == eGenomeAnnotComment_Yes ) {
                         x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
                     }
                 }
@@ -885,7 +895,7 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
                         if ( !NStr::IsBlank(encode) ) {
                             x_AddComment(new CCommentItem(encode, ctx));
                         }
-                    } else if ( !has_ref_track_status ) {
+                    } else if ( !has_ref_track_status && eGenomeAnnotComment == eGenomeAnnotComment_Yes ) {
                         x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
                     }
                 }
@@ -935,7 +945,8 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
 }
 
 
-void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx) const
+void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
+    EGenomeAnnotComment eGenomeAnnotComment) const
 {
     bool did_tpa = false, did_ref_track = false, did_genome = false;
     
@@ -969,7 +980,10 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx) const
                 CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ?
                     CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
                 string str = 
-                    CCommentItem::GetStringForRefTrack(uo, ctx.GetHandle(), format);
+                    CCommentItem::GetStringForRefTrack(uo, ctx.GetHandle(), format, 
+                    ( eGenomeAnnotComment == eGenomeAnnotComment_Yes ? 
+                      CCommentItem::eGenomeBuildComment_Yes : 
+                      CCommentItem::eGenomeBuildComment_No ) );
                 if ( !str.empty() ) {
                     x_AddComment(new CCommentItem(str, ctx, &uo));
                     did_ref_track = true;
@@ -1145,7 +1159,7 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
     }
 }
 
-void CFlatGatherer::x_AnnotDescStrucComment(CBioseqContext& ctx) const
+CConstRef<CUser_object> CFlatGatherer::x_PrepareAnnotDescStrucComment(CBioseqContext& ctx) const
 {
     // get structured comments from Seq-annot descr user objects
     CConstRef<CUser_object> firstGenAnnotSCAD;
@@ -1188,26 +1202,8 @@ void CFlatGatherer::x_AnnotDescStrucComment(CBioseqContext& ctx) const
             }
         }
     }
-    
-    if( firstGenAnnotSCAD ) {
-        // remove GenomeBuild-related comments; that is, of type CGenomeAnnotComment
-        TCommentVec new_comment_vec;
-        ITERATE( TCommentVec, comment_iter, m_Comments ) {
-            const CCommentItem * pComment = &**comment_iter;
-            if( NULL == dynamic_cast<const CGenomeAnnotComment*>(pComment) ) {
-                new_comment_vec.push_back(*comment_iter);
-            }
-        }
-        if( m_Comments.size() != new_comment_vec.size() ) {
-            // swap is faster than assignment
-            m_Comments.swap(new_comment_vec);
-        }
 
-        if( m_Comments.empty() ) {
-            CCommentItem::ResetFirst();
-        }
-        x_AddComment(new CCommentItem(*firstGenAnnotSCAD, ctx));
-    }
+    return firstGenAnnotSCAD;
 }
 
 // add comment features that are full length on appropriate segment

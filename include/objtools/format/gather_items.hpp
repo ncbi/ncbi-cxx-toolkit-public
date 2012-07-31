@@ -127,13 +127,19 @@ protected:
     void x_GatherAlignments(void) const;
 
     // comments
+    enum EGenomeAnnotComment {
+        eGenomeAnnotComment_No = 0,
+        eGenomeAnnotComment_Yes
+    };
     void x_GatherComments  (void) const;
     void x_AddComment(CCommentItem* comment) const;
     void x_AddGSDBComment(const CDbtag& dbtag, CBioseqContext& ctx) const;
     void x_FlushComments(void) const;
     void x_UnverifiedComment(CBioseqContext& ctx) const;
-    void x_IdComments(CBioseqContext& ctx) const;
-    void x_RefSeqComments(CBioseqContext& ctx) const;
+    void x_IdComments(CBioseqContext& ctx, 
+        EGenomeAnnotComment eGenomeAnnotComment) const;
+    void x_RefSeqComments(CBioseqContext& ctx, 
+        EGenomeAnnotComment eGenomeAnnotComment) const;
     void x_HistoryComments(CBioseqContext& ctx) const;
     void x_WGSComment(CBioseqContext& ctx) const;
     void x_TSAComment(CBioseqContext& ctx) const;
@@ -143,7 +149,7 @@ protected:
     void x_MaplocComments(CBioseqContext& ctx) const;
     void x_RegionComments(CBioseqContext& ctx) const;
     void x_HTGSComments(CBioseqContext& ctx) const;
-    void x_AnnotDescStrucComment(CBioseqContext& ctx) const;
+    CConstRef<CUser_object> x_PrepareAnnotDescStrucComment(CBioseqContext& ctx) const;
     void x_FeatComments(CBioseqContext& ctx) const;
     void x_NameComments(CBioseqContext& ctx) const;
     void x_StructuredComments(CBioseqContext& ctx) const;

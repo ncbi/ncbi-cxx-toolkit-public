@@ -441,7 +441,8 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
 string CCommentItem::GetStringForRefTrack
 (const CUser_object& uo,
  const CBioseq_Handle& bsh,
- ECommentFormat format)
+ ECommentFormat format,
+ EGenomeBuildComment eGenomeBuildComment )
 {
     if ( !uo.IsSetType()  ||  !uo.GetType().IsStr()  ||
          uo.GetType().GetStr() != "RefGeneTracking") {
@@ -519,62 +520,64 @@ string CCommentItem::GetStringForRefTrack
 
     CNcbiOstrstream oss;
     if (status == eRefTrackStatus_Pipeline) {
-        oss << ( format == eFormat_Html ? kRefSeqInformationLink : kRefSeqInformation ) << ": ";
+        oss << ( format == eFormat_Html ? kRefSeqInformationLink : kRefSeqInformation ) << ":";
     } else {
         oss << status_str << ' ' 
-            << ( format == eFormat_Html ? kRefSeqLink : kRefSeq ) << ": ";
+            << ( format == eFormat_Html ? kRefSeqLink : kRefSeq ) << ":";
     }
     switch ( status ) {
     case eRefTrackStatus_Inferred:
-        oss << "This record is predicted by genome sequence analysis and is "
+        oss << " This record is predicted by genome sequence analysis and is "
             << "not yet supported by experimental evidence.";
         break;
     case eRefTrackStatus_Pipeline:
-        if ( !build_num.empty() ) {
-            oss << "Features on this sequence have been produced for build "
-                << build_num << " of the NCBI's genome annotation"
-                << " [see ";
-            if( format == eFormat_Html ) {
-                oss << "<a href=\"" << strDocLink << "\">" ;
+        if( eGenomeBuildComment == eGenomeBuildComment_Yes ) {
+            if ( !build_num.empty() ) {
+                oss << " Features on this sequence have been produced for build "
+                    << build_num << " of the NCBI's genome annotation"
+                    << " [see ";
+                if( format == eFormat_Html ) {
+                    oss << "<a href=\"" << strDocLink << "\">" ;
+                }
+                oss << "documentation";
+                if( format == eFormat_Html ) {
+                    oss << "</a>";
+                }
+                oss << "].";
+            } else {
+                oss << " NCBI contigs are derived from assembled genomic sequence data.~"
+                    << "Also see:~"
+                    << "    Documentation of NCBI's Annotation Process~ ";
             }
-            oss << "documentation";
-            if( format == eFormat_Html ) {
-                oss << "</a>";
-            }
-            oss << "].";
-        } else {
-            oss << "NCBI contigs are derived from assembled genomic sequence data.~"
-                << "Also see:~"
-                << "    Documentation of NCBI's Annotation Process~ ";
         }
         break;
     case eRefTrackStatus_Provisional:
         if (collaborator.empty()) {
-            oss << "This record has not yet been subject to final NCBI review.";
+            oss << " This record has not yet been subject to final NCBI review.";
         } else {
-            oss << "This record is based on preliminary "
+            oss << " This record is based on preliminary "
                 "annotation provided by " << collaborator << '.';
         }
         break;
     case eRefTrackStatus_Predicted:
-        oss << "This record has not been reviewed and the function is unknown.";
+        oss << " This record has not been reviewed and the function is unknown.";
         break;
     case eRefTrackStatus_Validated:
-        oss << "This record has undergone validation or preliminary review.";
+        oss << " This record has undergone validation or preliminary review.";
         break;
     case eRefTrackStatus_Reviewed:
-        oss << "This record has been curated by " 
+        oss << " This record has been curated by " 
             << (collaborator.empty() ? "NCBI staff" : collaborator) << '.';
         break;
     case eRefTrackStatus_Model:
-        oss << "This record is predicted by automated computational analysis.";
+        oss << " This record is predicted by automated computational analysis.";
         break;
     case eRefTrackStatus_WGS:
-        oss << "This record is provided to represent a collection of "
+        oss << " This record is provided to represent a collection of "
             << "whole genome shotgun sequences.";
         break;
     case eRefTrackStatus_TSA:
-        oss << "This record is provided to represent a collection of "
+        oss << " This record is provided to represent a collection of "
             << "transcriptome shotgun assembly sequences.";
         break;
     default:
