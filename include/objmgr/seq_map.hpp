@@ -339,7 +339,7 @@ protected:
     bool x_UpdateSeq_inst(CSeq_inst& inst);
     virtual bool x_DoUpdateSeq_inst(CSeq_inst& inst);
 
-    CBioseq_Handle x_GetBioseqHandle(const CSegment& seg, CScope* scope) const;
+    const CBioseq_Info& x_GetBioseqInfo(const CSegment& seg, CScope* scope) const;
 
     CConstRef<CSeqMap> x_GetSubSeqMap(const CSegment& seg, CScope* scope,
                                       bool resolveExternal = false) const;

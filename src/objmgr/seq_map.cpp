@@ -274,23 +274,27 @@ CSeqMap::CSegment& CSeqMap::x_SetSegment(size_t index)
 }
 
 
-CBioseq_Handle CSeqMap::x_GetBioseqHandle(const CSegment& seg,
-                                          CScope* scope) const
+const CBioseq_Info& CSeqMap::x_GetBioseqInfo(const CSegment& seg,
+                                             CScope* scope) const
 {
-    const CSeq_id& seq_id = x_GetRefSeqid(seg);
+    CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(x_GetRefSeqid(seg));
     if ( !scope ) {
-        NCBI_THROW(CSeqMapException, eNullPointer,
-                   "Cannot resolve "+
-                   seq_id.AsFastaString()+": null scope pointer");
+        if ( m_Bioseq ) {
+            CConstRef<CBioseq_Info> seq =
+                m_Bioseq->GetTSE_Info().FindBioseq(seq_id);
+            if ( seq ) {
+                return *seq;
+            }
+        }
+        NCBI_THROW_FMT(CSeqMapException, eNullPointer,
+                       "Cannot resolve "<<seq_id<<": null scope pointer");
     }
     CBioseq_Handle bh = scope->GetBioseqHandle(seq_id);
     if ( !bh ) {
-        bh = scope->GetBioseqHandle(seq_id);
-        NCBI_THROW(CSeqMapException, eFail,
-                   "Cannot resolve "+
-                   seq_id.AsFastaString()+": unknown");
+        NCBI_THROW_FMT(CSeqMapException, eFail,
+                       "Cannot resolve "<<seq_id<<": unknown");
     }
-    return bh;
+    return bh.x_GetInfo();
 }
 
 
@@ -314,7 +318,7 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
                 }
             }
             if ( length == kInvalidSeqPos ) {
-                length = x_GetBioseqHandle(seg, scope).GetBioseqLength();
+                length = x_GetBioseqInfo(seg, scope).GetBioseqLength();
             }
         }
         if (length == kInvalidSeqPos) {
@@ -476,7 +480,7 @@ CConstRef<CSeqMap> CSeqMap::x_GetSubSeqMap(const CSegment& seg, CScope* scope,
         ret.Reset(static_cast<const CSeqMap*>(x_GetObject(seg)));
     }
     else if ( resolveExternal && seg.m_SegType == eSeqRef ) {
-        ret.Reset(&x_GetBioseqHandle(seg, scope).GetSeqMap());
+        ret.Reset(&x_GetBioseqInfo(seg, scope).GetSeqMap());
     }
     return ret;
 }
