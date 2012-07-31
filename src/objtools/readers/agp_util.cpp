@@ -51,7 +51,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "column X is empty",
     "empty line",
     "invalid value for X",
-    "invalid linkage \"yes\" for gap_type ",
+    "invalid linkage",
 
     "X must be a positive integer not exceeding 2e+9",
     "object_end is less than object_beg",
@@ -571,11 +571,10 @@ int CAgpRow::ParseGapCols(bool log_errors)
             gap_type != eGapFragment &&
             gap_type != eGapScaffold )
         {
-            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidYes, GetGapType() );
-            return CAgpErr::E_InvalidYes;
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidLinkage, " \"yes\" for gap_type "+GetGapType() );
+            return CAgpErr::E_InvalidLinkage;
         }
     }
-
     if( log_errors && m_agp_version==eAgpVersion_auto ) {
         string msg;
         if( GetLinkageEvidence().size()==0 ) {
@@ -597,6 +596,12 @@ int CAgpRow::ParseGapCols(bool log_errors)
             // if(log_errors)
             m_AgpErr->Msg(CAgpErr::W_OldGapType, ". Recommended replacement: " + SubstOldGap(false) );
         }
+        if(!linkage && gap_type==eGapScaffold)
+        {
+            if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidLinkage, " \"no\" for gap_type "+GetGapType() );
+            return CAgpErr::E_InvalidLinkage;
+        }
+
     }
     if(m_agp_version == eAgpVersion_1_1){
         // gap-type not in AGP 1.1

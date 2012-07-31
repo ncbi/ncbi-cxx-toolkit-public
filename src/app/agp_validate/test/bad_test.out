@@ -196,7 +196,7 @@
       8  e02  column X is empty
       1  e03  empty line
      11  e04  invalid value for X
-      5  e05  invalid linkage "yes" for gap_type 
+      5  e05  invalid linkage
       6  e06  X must be a positive integer not exceeding 2e+9
       1  e07  object_end is less than object_beg
       1  e08  component_end is less than component_beg

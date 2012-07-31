@@ -431,7 +431,7 @@ public:
         E_EmptyColumn   ,
         E_EmptyLine     ,
         E_InvalidValue  ,
-        E_InvalidYes    ,
+        E_InvalidLinkage    ,
 
         E_MustBePositive,
         E_ObjEndLtBeg   ,
