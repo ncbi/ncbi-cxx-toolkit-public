@@ -711,14 +711,22 @@ xml::node::const_iterator xml::node::self (void) const {
     return const_iterator(pimpl_->xmlnode_);
 }
 //####################################################################
+bool xml::node::is_root (void) const {
+    if (pimpl_->xmlnode_->parent == NULL)
+        return true;
+    return pimpl_->xmlnode_->parent->type == XML_DOCUMENT_NODE;
+}
+//####################################################################
 xml::node::iterator xml::node::parent (void) {
-    if (pimpl_->xmlnode_->parent) return iterator(pimpl_->xmlnode_->parent);
-    return iterator();
+    if (is_root())
+        iterator();
+    return iterator(pimpl_->xmlnode_->parent);
 }
 //####################################################################
 xml::node::const_iterator xml::node::parent (void) const {
-    if (pimpl_->xmlnode_->parent) return const_iterator(pimpl_->xmlnode_->parent);
-    return const_iterator();
+    if (is_root())
+        const_iterator();
+    return const_iterator(pimpl_->xmlnode_->parent);
 }
 //####################################################################
 xml::node::iterator xml::node::find (const char *name,

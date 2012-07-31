@@ -747,13 +747,11 @@ public:
      * external subset after the validation. If there is already an external
      * DTD attached to this document it will be removed and deleted.
      *
-     * The method is deprecated. Use xml::document::validate(xml::dtd&)
-     * or xml::dtd::validate(xml::document&) instead.
-     *
      * @param dtdname A filename or URL for the DTD to use.
      * @return True if the document is valid.
      * @return False if there was a problem with the DTD or XML doc.
-     * @deprecated
+     * @deprecated Use xml::document::validate(xml::dtd&)
+     *             or xml::dtd::validate(xml::document&) instead.
      * @author Peter Jones
     **/
     //####################################################################

@@ -837,9 +837,24 @@ public:
 
     //####################################################################
     /**
+     * Find out if this node is a root one, i.e. has no parent.
+     *
+     * @return true if the node is root.
+     * @author Sergey Satskiy
+    **/
+    //####################################################################
+    bool is_root (void) const;
+
+    //####################################################################
+    /**
      * Get an iterator that points at the parent of this node. If this node
      * does not have a parent, this member function will return an "end"
      * iterator.
+     *
+     * @note
+     *  It is recommended to call is_root() function before calling parent().
+     *  If is_root() returns true then the parent() provided iterator cannot
+     *  be dereferenced.
      *
      * @return An iterator that points to this nodes parent.
      * @return If no parent, returns the same iterator that xml::node::end() returns.
@@ -853,6 +868,11 @@ public:
      * Get a const_iterator that points at the parent of this node. If this
      * node does not have a parent, this member function will return an
      * "end" const_iterator.
+     *
+     * @note
+     *  It is recommended to call is_root() function before calling parent().
+     *  If is_root() returns true then the parent() provided iterator cannot
+     *  be dereferenced.
      *
      * @return A const_iterator that points to this nodes parent.
      * @return If no parent, returns the same const_iterator that xml::node::end() returns.

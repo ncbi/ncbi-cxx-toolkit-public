@@ -77,7 +77,9 @@
 /// Macro used to mark a class as deprecated.
 ///
 /// @sa NCBI_DEPRECATED_CTOR
-#define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
+#ifndef NCBI_DEPRECATED_CLASS
+#  define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
+#endif
 
 
 
