@@ -41,6 +41,8 @@
 // generated includes
 #include <objects/seqfeat/SubSource.hpp>
 
+#include <math.h>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
