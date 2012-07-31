@@ -279,6 +279,687 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
 }
 
 
+string CSubSource::GetCollectionDateProblem (const string& date_string)
+{
+    string problem = "";
+
+    try {
+        CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (date_string);
+
+        // if there are two dashes, then the first token needs to be the day, and the
+        // day has to have two numbers, a leading zero if the day is less than 10
+        bool is_bad = false;
+        size_t pos = NStr::Find(date_string, "-");
+        if (pos != string::npos) {
+            size_t pos2 = NStr::Find(date_string, "-", pos + 1);
+            if (pos2 != string::npos && pos != 2) {
+                problem = "Collection_date format is not in DD-Mmm-YYYY format";
+                is_bad = true;
+            }
+        }
+
+        if (!is_bad) {         
+            struct tm *tm;
+            time_t t;
+
+            time(&t);
+            tm = localtime(&t);
+
+            if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
+                problem = "Collection_date is in the future";
+            } else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
+                       && coll_date->GetStd().IsSetMonth()) {
+                if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
+                    problem = "Collection_date is in the future";
+                } else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
+                           && coll_date->GetStd().IsSetDay()) {
+                    if (coll_date->GetStd().GetDay() > tm->tm_mday) {
+                        problem = "Collection_date is in the future";
+                    }
+                }
+            }
+        }
+    } catch (CException ) {
+        problem = "Collection_date format is not in DD-Mmm-YYYY format";
+    }
+    return problem;
+}
+
+
+string CSubSource::ReformatDate (string orig_date, bool month_first, bool& month_ambiguous)
+{
+    string reformatted_date = "";
+    string month = "";
+    int year = 0, day = 0;
+    string token_delimiters = " ,-/";
+    size_t i;
+
+    month_ambiguous = false;
+    NStr::TruncateSpacesInPlace (orig_date);
+    vector<string> tokens;
+    string one_token;    
+    for (i = 0; i < 4; i++) {
+        one_token = NStr::GetField (orig_date, i, token_delimiters, NStr::eMergeDelims);
+        if (NStr::IsBlank (one_token)) {
+            break;
+        } else {
+            tokens.push_back (one_token);
+        }
+    }
+    if (tokens.size() < 1 || tokens.size() > 3) {
+        // no tokens or too many tokens
+        return "";
+    }
+
+    vector<string>::iterator it = tokens.begin();
+    while (it != tokens.end()) {
+        one_token = *it;
+        bool found = false;
+        if (isalpha(one_token.c_str()[0])) {
+            if (!NStr::IsBlank (month)) {
+                // already have month, error
+                return "";
+            }
+            for (size_t i = 0; i < sizeof(sm_LegalMonths) / sizeof(string); i++) {
+                if (NStr::StartsWith(one_token, sm_LegalMonths[i], NStr::eNocase)) {
+                    month = sm_LegalMonths[i];
+                    found = true;
+                    break;
+                }
+            }
+        } else {
+            try {
+                int val = NStr::StringToInt (one_token);
+                if (val > 31) {
+                    year = val;
+                    found = true;
+                } else if (val < 1) {
+                    // numbers should not be less than 1
+                    return "";
+                }
+            } catch ( const exception& ) {
+                // threw exception while converting to int
+                return "";
+            }
+        }
+        if (found) {
+            it = tokens.erase(it);
+        } else {
+            it++;
+        }
+    }
+
+    if (tokens.size() == 0) {
+        // good - all tokens assigned to values
+    } else if (tokens.size() > 2) {
+        // three numbers, none of them are year, can't resolve
+        return "";
+    } else if (tokens.size() == 1) {
+        int val = NStr::StringToInt (tokens[0]);
+        if (year == 0) {
+            year = val;
+        } else {
+            if (NStr::IsBlank (month)) {
+                if (val > 0 && val < 13) {
+                    month = sm_LegalMonths[val - 1];
+                } else {
+                    // month number out of range
+                    return "";
+                }
+            } else {
+                day = val;
+            }
+        }
+    } else if (!NStr::IsBlank (month)) {
+        // shouldn't happen
+        return "";
+    } else {
+        int val1 = NStr::StringToInt (tokens[0]); 
+        int val2 = NStr::StringToInt (tokens[1]);
+        if (val1 > 12 && val2 > 12) {
+            // both numbers too big for month
+            return "";
+        } else if (val1 < 13 && val2 < 13) {
+            // both numbers could be month
+            month_ambiguous = true;
+            if (month_first) {
+                month = sm_LegalMonths[val1 - 1];
+                day = val2;
+            } else {
+                month = sm_LegalMonths[val2 - 1];
+                day = val1;
+            }
+        } else if (val1 < 13) {
+            month = sm_LegalMonths[val1 - 1];
+            day = val2;
+        } else {
+            month = sm_LegalMonths[val2 - 1];
+            day = val1;
+        }
+    }
+                
+    if (year > 0) {
+        reformatted_date = NStr::NumericToString (year);
+        if (!NStr::IsBlank (month)) {
+            reformatted_date = month + "-" + reformatted_date;
+            if (day > 0) {
+                string day_str = NStr::NumericToString (day);
+                if (day_str.length() < 2) {
+                    day_str = "0" + day_str;
+                }
+                reformatted_date = day_str + "-" + reformatted_date;
+            }
+        }
+    }
+
+    return reformatted_date;
+}
+
+
+void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& precision_correct,
+                                     bool& lat_in_range, bool& lon_in_range,
+                                     double& lat_value, double& lon_value)
+{
+    format_correct = false;
+    lat_in_range = false;
+    lon_in_range = false;
+    precision_correct = false;
+    double ns, ew;
+    char lon, lat;
+    int processed;
+
+    lat_value = 0.0;
+    lon_value = 0.0;
+
+    if (NStr::IsBlank(lat_lon)) {
+        return;
+    } else if (sscanf (lat_lon.c_str(), "%lf %c %lf %c%n", &ns, &lat, &ew, &lon, &processed) != 4
+               || processed != lat_lon.length()) {
+        return;
+    } else if ((lat != 'N' && lat != 'S') || (lon != 'E' && lon != 'W')) {
+        return;
+    } else {
+        // init values found
+        if (lat == 'N') {
+            lat_value = ns;
+        } else {
+            lat_value = 0.0 - ns;
+        }
+        if (lon == 'E') {
+            lon_value = ew;
+        } else {
+            lon_value = 0.0 - ew;
+        }
+
+    // make sure format is correct
+        vector<string> pieces;
+        NStr::Tokenize(lat_lon, " ", pieces);
+        if (pieces.size() > 3) {
+            int precision_lat = 0;
+            size_t pos = NStr::Find(pieces[0], ".");
+            if (pos != string::npos) {
+                precision_lat = pieces[0].length() - pos - 1;
+            }
+            int precision_lon = 0;
+            pos = NStr::Find(pieces[2], ".");
+            if (pos != string::npos) {
+                precision_lon = pieces[2].length() - pos - 1;
+            }
+
+            char reformatted[1000];
+            sprintf (reformatted, "%.*lf %c %.*lf %c", precision_lat, ns, lat,
+                                                       precision_lon, ew, lon);
+
+            size_t len = strlen (reformatted);
+            if (NStr::StartsWith(lat_lon, reformatted)
+                && (len == lat_lon.length() 
+                  || (len < lat_lon.length() 
+                      && lat_lon.c_str()[len] == ';'))) {
+                format_correct = true;
+                if (ns <= 90 && ns >= 0) {
+                    lat_in_range = true;
+                }
+                if (ew <= 180 && ew >= 0) {
+                    lon_in_range = true;
+                }
+                if (precision_lat < 3 && precision_lon < 3) {
+                    precision_correct = true;
+                }
+            }
+        }
+    }
+}
+
+
+static void s_TrimInternalSpaces (string& token)
+{
+    size_t pos;
+
+    while ((pos = NStr::Find (token, "  ")) != string::npos) {
+        string before = token.substr(0, pos);
+        string after = token.substr(pos + 1);
+        token = before + after;
+    }
+    while ((pos = NStr::Find (token, " '")) != string::npos) {
+        string before = token.substr(0, pos);
+        string after = token.substr(pos + 1);
+        token = before + after;
+    }
+}
+
+
+static string s_GetNumFromLatLonToken (string token)
+{
+    NStr::TruncateSpacesInPlace(token);
+    string dir = "";
+    if (NStr::StartsWith (token, "N") || NStr::StartsWith (token, "S") || NStr::StartsWith (token, "E") || NStr::StartsWith (token, "W")) {
+        dir = token.substr(0, 1);
+        token = token.substr(1);
+    } else {
+        dir = token.substr(token.length() - 1, 1);
+        token = token.substr(0, token.length() - 1);
+    }
+    NStr::TruncateSpacesInPlace(token);
+    // clean up double spaces, spaces between numbers and '
+    s_TrimInternalSpaces(token);
+
+    size_t pos = 0;
+    double val = 0;
+    size_t num_sep = 0, prev_start = 0;
+    int prec = 0;
+    while (pos < token.length()) {
+        char ch = token.c_str()[pos];
+        if (ch == ' ' || ch == ':' || ch == '-') {
+            string num_str = token.substr(prev_start, pos - prev_start);
+            double this_val = NStr::StringToDouble (num_str);
+            if (num_sep == 0) {
+                val += this_val;
+            } else if (num_sep == 1) {
+                val += (this_val) / (60.0);
+                prec += 2;
+            } else if (num_sep == 2) {
+                val += (this_val) / (3600.0);
+                prec += 2;
+            } else {
+                // too many separators
+                return "";
+            }
+            size_t p_pos = NStr::Find (num_str, ".");
+            if (p_pos != string::npos) {
+                prec += num_str.substr(p_pos + 1).length();
+            }
+            num_sep++;
+            pos++;
+            prev_start = pos;
+        } else if (ch == '\'') {
+            string num_str = token.substr(prev_start, pos - prev_start);
+            double this_val = NStr::StringToDouble (num_str);
+            if (token.c_str()[pos + 1] == '\'') {
+                if (num_sep == 2) {
+                    // already found seconds
+                    return "";
+                }
+                // seconds
+                val += (this_val) / (3600.0);
+                prec += 2;
+                if (NStr::Find (token, "'") == pos) {
+                    // seconds specified without minutes
+                    prec += 2;
+                }
+                pos++;
+                num_sep = 2;
+            } else {
+                if (num_sep > 1) {
+                    // already found seconds
+                    return "";
+                }
+                val += (this_val) / (60.0);
+                prec += 2;
+                num_sep = 1;
+            }
+            size_t p_pos = NStr::Find (num_str, ".");
+            if (p_pos != string::npos) {
+                prec += num_str.substr(p_pos + 1).length();
+            }
+            pos++;
+            while (isspace (token.c_str()[pos])) {
+                pos++;
+            }
+            prev_start = pos;
+        } else if (isdigit(ch) || ch == '.') {
+            pos++;
+        } else {
+            return "";
+        }
+    }
+
+    if (prev_start == 0) {
+        return token + " " + dir;
+    } else {
+        if (prev_start < pos) {
+            string num_str = token.substr(prev_start, pos - prev_start);
+            double this_val = NStr::StringToDouble (num_str);
+            if (num_sep == 0) {
+                val += this_val;
+            } else if (num_sep == 1) {
+                val += (this_val) / (60.0);
+                prec += 2;
+            } else if (num_sep == 2) {
+                val += (this_val) / (3600.0);
+                prec += 2;
+            } else {
+                // too many separators
+                return "";
+            }
+            size_t p_pos = NStr::Find (num_str, ".");
+            if (p_pos != string::npos) {
+                prec += num_str.substr(p_pos + 1).length();
+            }
+        }
+        if (prec > 0) {
+            double mult = pow ((double)10.0, prec);
+            bool round_down = true;
+            double remainder = (val * mult) - floor (val * mult);
+            if (remainder > 0.5) {
+                round_down = false;
+            }
+            double tmp;
+            if (round_down) {
+                tmp = floor(val * mult);
+            } else {
+                tmp = ceil(val * mult);
+            }
+            val = tmp / mult;
+        }
+        string val_str = NStr::NumericToString (val, NStr::fDoubleFixed);
+        pos = NStr::Find (val_str, ".");
+        if (pos != string::npos && prec > 0) {
+            while (val_str.substr(pos + 1).length() < prec) {
+                val_str += "0";
+            }
+            if (val_str.substr(pos + 1).length() > prec) {
+                val_str = val_str.substr (0, pos + prec + 1);
+            }
+        }
+        return val_str + " " + dir;
+    }            
+}
+
+
+static void s_RemoveLeadingCommaOrSemicolon(string& token)
+{
+    NStr::TruncateSpacesInPlace(token);
+    if (NStr::StartsWith (token, ",") || NStr::StartsWith (token, ";")) {
+        token = token.substr(1);
+        NStr::TruncateSpacesInPlace(token);
+    }
+}
+
+
+static void s_RemoveExtraText (string& token, string& extra_text)
+{
+    size_t comma_pos = NStr::Find (token, ",");
+    size_t semicolon_pos = NStr::Find (token, ";");
+    size_t sep_pos = string::npos;
+
+    if (comma_pos == string::npos) {
+        sep_pos = semicolon_pos;
+    } else if (semicolon_pos != string::npos) {
+        if (semicolon_pos < comma_pos) {
+            sep_pos = semicolon_pos;
+        } else {
+            sep_pos = comma_pos;
+        }
+    }
+    if (sep_pos != string::npos) {
+        extra_text = token.substr(sep_pos + 1);
+        NStr::TruncateSpacesInPlace(extra_text);
+        token = token.substr(0, sep_pos - 1);
+        NStr::TruncateSpacesInPlace(token);
+    }        
+}
+
+
+string CSubSource::FixLatLonFormat (string orig_lat_lon)
+{
+    string cpy;
+    size_t pos;
+
+    if (NStr::IsBlank (orig_lat_lon))
+    {
+        return "";
+    }
+
+    cpy = orig_lat_lon;
+    
+    // replace all 'O' (capital o) following non-alpha characters with '0' (zero)
+    pos = NStr::Find (cpy, "O");
+    while (pos != string::npos) {
+        if (pos > 0 && !isalpha(cpy.c_str()[pos - 1])) {
+            string before = cpy.substr(0, pos);
+            string after = cpy.substr(pos + 1);
+            cpy = before + "0" + after;
+        }
+        pos = NStr::Find (cpy, "O", pos + 1);
+    }
+    // replace all 'o' with non-alpha characters before and after with space
+    pos = NStr::Find (cpy, "o");
+    while (pos != string::npos) {
+        if ((pos == 0 || !isalpha(cpy.c_str()[pos - 1]))
+            && !isalpha (cpy.c_str()[pos + 1])) {
+            string before = cpy.substr(0, pos);
+            string after = cpy.substr(pos + 1);
+            cpy = before + " " + after;
+        }
+        pos = NStr::Find (cpy, "o", pos + 1);
+    }
+
+    // replace all '#' with ' '
+    NStr::ReplaceInPlace (cpy, "#", " ");
+
+    // now make all letters uppercase (note, do not do this before converting 'o' and 'O'(
+    cpy = NStr::ToUpper (cpy);
+
+    // replace commas that should be periods
+    pos = NStr::Find (cpy, ",");
+    while (pos != string::npos) {
+        if (pos > 0 && isdigit (cpy.c_str()[pos + 1]) && isdigit (cpy.c_str()[pos - 1])) {
+            // follow digits all the way back, make sure character before digits is not '.'
+            size_t dpos = pos - 2;
+            while (dpos > 0 && isdigit (cpy.c_str()[dpos])) {
+                dpos--;
+            }
+            if (cpy.c_str()[dpos] != '.') {
+                string before = cpy.substr(0, pos);
+                string after = cpy.substr(pos + 1);
+                cpy = before + " " + after;
+            }
+        }
+        pos = NStr::Find (cpy, "o", pos + 1);
+    }
+
+    // replace typo semicolon with colon
+    pos = NStr::Find (cpy, ";");
+    while (pos != string::npos) {
+        if (pos > 0 && isdigit (cpy.c_str()[pos - 1]) && isdigit (cpy.c_str()[pos + 1])) {
+            string before = cpy.substr(0, pos);
+            string after = cpy.substr(pos + 1);
+            cpy = before + ":" + after;
+            pos = NStr::Find (cpy, ";");
+        } else {
+          pos = NStr::Find (cpy, ";", pos + 1);
+        }
+    }
+
+    NStr::ReplaceInPlace (cpy, "LONGITUDE", "LONG");
+    NStr::ReplaceInPlace (cpy, "LON.",      "LONG");
+    NStr::ReplaceInPlace (cpy, "LONG",      "LO");
+    NStr::ReplaceInPlace (cpy, "LO:",       "LO");
+    NStr::ReplaceInPlace (cpy, "LATITUDE",  "LAT");
+    NStr::ReplaceInPlace (cpy, "LAT.",      "LAT");
+    NStr::ReplaceInPlace (cpy, "LAT:",      "LAT");
+    NStr::ReplaceInPlace (cpy, "DEGREES",   " " );
+    NStr::ReplaceInPlace (cpy, "DEGREE",    " ");
+    NStr::ReplaceInPlace (cpy, "DEG.",      " ");
+    NStr::ReplaceInPlace (cpy, "DEG",       " " );
+    NStr::ReplaceInPlace (cpy, "MASCULINE", " "); // masculine ordinal indicator U+00BA often confused with degree sign U+00B0
+    NStr::ReplaceInPlace (cpy, "MIN.",      "'");
+    NStr::ReplaceInPlace (cpy, "MINUTES",   "'");
+    NStr::ReplaceInPlace (cpy, "MINUTE",    "'");
+    NStr::ReplaceInPlace (cpy, "MIN",       "'");
+    NStr::ReplaceInPlace (cpy, "SEC.",      "''");
+    NStr::ReplaceInPlace (cpy, "SEC",       "''");
+    NStr::ReplaceInPlace (cpy, "NORTH",     "N");
+    NStr::ReplaceInPlace (cpy, "SOUTH",     "S");
+    NStr::ReplaceInPlace (cpy, "EAST",      "E");
+    NStr::ReplaceInPlace (cpy, "WEST",      "W");
+    NStr::ReplaceInPlace (cpy, "  ", " "); // double-spaces become single spaces
+
+    size_t lat_pos = NStr::Find (cpy, "LAT");
+    size_t lon_pos = NStr::Find (cpy, "LO");
+    if ((lat_pos == string::npos && lon_pos != string::npos)
+        || (lat_pos != string::npos && lon_pos == string::npos)) {
+        // must specify both lat and lon or neither
+        return "";
+    }
+    if (lat_pos != string::npos && NStr::Find (cpy, "LAT", lat_pos + 1) != string::npos) {
+        // better not find two
+        return "";
+    }
+    if (lon_pos != string::npos && NStr::Find (cpy, "LO", lon_pos + 1) != string::npos) {
+        // better not find two
+        return "";
+    }
+
+    size_t ns_pos = NStr::Find (cpy, "N");
+    if (ns_pos == string::npos) {
+        ns_pos = NStr::Find (cpy, "S");
+        if (ns_pos != string::npos && NStr::Find(cpy, "S", ns_pos + 1) != string::npos) {
+            // better not find two
+            return "";
+        }
+    } else if (NStr::Find (cpy, "S") != string::npos || NStr::Find (cpy, "N", ns_pos + 1) != string::npos) {
+        // better not find two
+        return "";
+    }
+
+    size_t ew_pos = NStr::Find (cpy, "E");
+    if (ew_pos == string::npos) {
+        ew_pos = NStr::Find (cpy, "W");
+        if (ew_pos != string::npos && NStr::Find(cpy, "W", ew_pos + 1) != string::npos) {
+            // better not find two
+            return "";
+        }
+    } else if (NStr::Find (cpy, "W") != string::npos || NStr::Find (cpy, "E", ew_pos + 1) != string::npos) {
+        // better not find two
+        return "";
+    }
+
+    // todo - figure out how to use degrees as ew_pos markers
+
+    // need to have both or neither
+    if ((ns_pos == string::npos && ew_pos != string::npos)
+        || (ns_pos != string::npos && ew_pos == string::npos)) {
+        return "";
+    }
+
+    string extra_text = "";
+    string la_token = "";
+    string lo_token = "";
+    bool la_first = true;
+
+    if (lat_pos == string::npos) {
+        if (ns_pos == string::npos) {
+            return "";
+        }
+        if (ns_pos < ew_pos) {
+            // as it should be
+            if (ns_pos == 0) {
+                // letter is first, token ends with ew_pos
+                la_token = cpy.substr(0, ew_pos);
+                lo_token = cpy.substr(ew_pos);
+            } else {
+                // letter is last, token ends here
+                la_token = cpy.substr(0, ns_pos + 1);
+                lo_token = cpy.substr(ns_pos + 1);
+            }
+        } else {
+            // positions reversed
+            la_first = false;
+            if (ew_pos == 0) {
+                // letter is first, token ends with ns_pos
+                lo_token = cpy.substr(0, ns_pos);
+                la_token = cpy.substr(ns_pos);
+            } else {
+                // letter is last, token ends here
+                lo_token = cpy.substr(0, ew_pos + 1);
+                la_token = cpy.substr(ew_pos + 1);
+            }
+        }            
+    } else {
+        if (lat_pos < lon_pos) {
+            // as it should be
+            if (lat_pos == 0) {
+                // letter is first, token ends with lon_pos
+                la_token = cpy.substr(3, lon_pos - 3);
+                lo_token = cpy.substr(lon_pos + 2);
+            } else {
+                // letter is last, token ends here
+                la_token = cpy.substr(0, lat_pos);
+                lo_token = cpy.substr(lat_pos + 3);
+            }
+        } else {
+            // positions reversed
+            la_first = false;
+            if (lon_pos == 0) {
+                // letter is first, token ends with lat_pos
+                lo_token = cpy.substr(2, lat_pos);
+                la_token = cpy.substr(lat_pos + 3);
+            } else {
+                // letter is last, token ends here
+                lo_token = cpy.substr(0, lon_pos);
+                la_token = cpy.substr(lon_pos + 2);
+            }
+        }
+        NStr::ReplaceInPlace (la_token, "LAT", "");
+        NStr::ReplaceInPlace (lo_token, "LO", "");
+        if (NStr::Find (la_token, "E") != string::npos || NStr::Find (la_token, "W") != string::npos) {
+            return "";
+        } else if (NStr::Find (lo_token, "N") != string::npos || NStr::Find (lo_token, "S") != string::npos) {
+            return "";
+        }
+    }
+    if (la_first) {
+        NStr::ReplaceInPlace (la_token, ",", "");
+        NStr::ReplaceInPlace (la_token, ";", "");
+        s_RemoveLeadingCommaOrSemicolon (lo_token);
+        s_RemoveExtraText (lo_token, extra_text);
+    } else {
+        NStr::ReplaceInPlace (lo_token, ",", "");
+        NStr::ReplaceInPlace (lo_token, ";", "");
+        s_RemoveLeadingCommaOrSemicolon (la_token);
+        s_RemoveExtraText (lo_token, extra_text);
+    }
+
+    la_token = s_GetNumFromLatLonToken (la_token);
+    if (NStr::IsBlank (la_token)) {
+        return "";
+    }
+
+    lo_token = s_GetNumFromLatLonToken (lo_token);
+    if (NStr::IsBlank (lo_token)) {
+        return "";
+    }
+
+    string fix = la_token + " " + lo_token;
+    if (!NStr::IsBlank (extra_text)) {
+        fix += ",";
+        fix += " " + extra_text;
+    }
+    return fix;
+}
+
+
 // =============================================================================
 //                                 Country Names
 // =============================================================================

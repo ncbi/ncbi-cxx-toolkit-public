@@ -90,6 +90,14 @@ public:
 	// read collection date from string
     static CRef<CDate> DateFromCollectionDate (const string& str) THROWS((CException));
 
+    static string GetCollectionDateProblem (const string& date_string);
+    static string ReformatDate(string orig_date, bool month_first, bool& month_ambiguous);
+    static void IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& precision_correct,
+                                     bool& lat_in_range, bool& lon_in_range,
+                                     double& lat_value, double& lon_value);
+    static string FixLatLonFormat (string orig_lat_lon);
+
+
 private:
     // Prohibit copy constructor and assignment operator
     CSubSource(const CSubSource& value);
