@@ -134,9 +134,11 @@ void CGeneModel::RecomputePartialFlags(CScope& scope,
 ///
 static const CMolInfo* s_GetMolInfo(const CBioseq_Handle& handle)
 {
-    CSeqdesc_CI desc_iter(handle, CSeqdesc::e_Molinfo);
-    for ( ;  desc_iter;  ++desc_iter) {
-        return &desc_iter->GetMolinfo();
+    if (handle) {
+        CSeqdesc_CI desc_iter(handle, CSeqdesc::e_Molinfo);
+        for ( ;  desc_iter;  ++desc_iter) {
+            return &desc_iter->GetMolinfo();
+        }
     }
 
     return NULL;
