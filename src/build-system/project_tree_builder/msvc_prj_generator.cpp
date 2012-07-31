@@ -912,6 +912,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
     }
     
+    bool customtargetname =  false;
     {
         // File version
         CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
@@ -927,15 +928,20 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             string cfg_condition("'$(Configuration)|$(Platform)'=='");
             cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
 
-            string outputfile(msvc_tool.Linker()->OutputFile()), targetname, targetext;
-            bool customtargetname =  false;
+            string outputfile(msvc_tool.Linker()->OutputFile());
+            string targetdir, targetname, targetext;
             if (!outputfile.empty()) {
-                targetname = CDirEntry(outputfile).GetBase();
-                targetext  = CDirEntry(outputfile).GetExt();
+                CDirEntry out(outputfile);
+                targetname = out.GetBase();
                 customtargetname =  !targetname.empty() && (targetname.find('$') == string::npos);
+                if (customtargetname) {
+                    targetext  = out.GetExt();
+                    targetdir = NStr::Replace(out.GetDir(), "/", "\\");
+                    NStr::ReplaceInPlace(targetdir,"$(OutDir)\\", msvc_tool.Configuration()->OutputDirectory());
+                }
             }
 
-            __SET_PROPGROUP_ELEMENT(t, "OutDir",          msvc_tool.Configuration()->OutputDirectory(), cfg_condition);
+            __SET_PROPGROUP_ELEMENT(t, "OutDir",          customtargetname ? targetdir : msvc_tool.Configuration()->OutputDirectory(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "IntDir",          msvc_tool.Configuration()->IntermediateDirectory(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "TargetName",      customtargetname ? targetname : project_context.ProjectId(), cfg_condition);
             __SET_PROPGROUP_ELEMENT(t, "LinkIncremental", msvc_tool.Linker()->LinkIncremental(), cfg_condition);
@@ -1044,8 +1050,16 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                 __SET_LINK(p, IgnoreDefaultLibraryNames);
                 __SET_LINK(p, LargeAddressAware);
                 __SET_LINK(p, OptimizeReferences);
-                __SET_LINK(p, OutputFile);
-                __SET_LINK(p, ProgramDatabaseFile);
+#if 0
+                if (!customtargetname) {
+                    __SET_LINK(p, OutputFile);
+                    __SET_LINK(p, ProgramDatabaseFile);
+                }
+                else {
+                    __SET_LINK_ELEMENT(p, "OutputFile",          "$(OutDir)$(TargetName)$(TargetExt)");
+                    __SET_LINK_ELEMENT(p, "ProgramDatabaseFile", "$(OutDir)$(TargetName).pdb");
+                }
+#endif
                 __SET_LINK(p, SubSystem);
                 __SET_LINK(p, TargetMachine);
             }
