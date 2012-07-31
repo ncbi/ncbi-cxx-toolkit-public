@@ -281,26 +281,24 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
 }
 
 
-string CSubSource::GetCollectionDateProblem (const string& date_string)
+void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future)
 {
-    string problem = "";
-
+    bad_format = false;
+    in_future = false;
     try {
         CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (date_string);
 
         // if there are two dashes, then the first token needs to be the day, and the
         // day has to have two numbers, a leading zero if the day is less than 10
-        bool is_bad = false;
         size_t pos = NStr::Find(date_string, "-");
         if (pos != string::npos) {
             size_t pos2 = NStr::Find(date_string, "-", pos + 1);
             if (pos2 != string::npos && pos != 2) {
-                problem = "Collection_date format is not in DD-Mmm-YYYY format";
-                is_bad = true;
+                bad_format = true;
             }
         }
 
-        if (!is_bad) {         
+        if (!bad_format) {         
             struct tm *tm;
             time_t t;
 
@@ -308,27 +306,42 @@ string CSubSource::GetCollectionDateProblem (const string& date_string)
             tm = localtime(&t);
 
             if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
-                problem = "Collection_date is in the future";
+                in_future = true;
             } else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
                        && coll_date->GetStd().IsSetMonth()) {
                 if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
-                    problem = "Collection_date is in the future";
+                    in_future = true;
                 } else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
                            && coll_date->GetStd().IsSetDay()) {
                     if (coll_date->GetStd().GetDay() > tm->tm_mday) {
-                        problem = "Collection_date is in the future";
+                        in_future = true;
                     }
                 }
             }
         }
     } catch (CException ) {
+        bad_format = true;;
+    }
+}
+
+
+string CSubSource::GetCollectionDateProblem (const string& date_string)
+{
+    string problem = "";
+    bool bad_format = false;
+    bool in_future = false;
+
+    IsCorrectDateFormat(date_string, bad_format, in_future);
+    if (bad_format) {
         problem = "Collection_date format is not in DD-Mmm-YYYY format";
+    } else if (in_future) {
+        problem = "Collection_date is in the future";
     }
     return problem;
 }
 
 
-string CSubSource::ReformatDate (string orig_date, bool month_first, bool& month_ambiguous)
+string CSubSource::FixDateFormat (string orig_date, bool month_first, bool& month_ambiguous)
 {
     string reformatted_date = "";
     string month = "";
