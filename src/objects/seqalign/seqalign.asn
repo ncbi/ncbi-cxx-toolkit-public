@@ -191,14 +191,13 @@ Product-pos ::= CHOICE {
 }
 
 
--- codon based position on protein (1/3 of aminoacid)
+-- position on protein (1/3 of amino-acid resolution)
 Prot-pos ::= SEQUENCE {
-    -- standard protein position
+    -- amino-acid position (0-based)
     amin INTEGER ,
 
-    -- 0, 1, 2, or 3 as for Cdregion
-    -- 0 = not set
-    -- 1, 2, 3 = actual frame
+    -- position within codon (1-based)
+    -- 0 = not set (meaning 1)
     frame INTEGER DEFAULT 0
 }
 
