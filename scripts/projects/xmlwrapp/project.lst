@@ -1,15 +1,15 @@
-# Source code
+#define  LST_COMMENT1   Source code
 misc$
 misc/xmlwrapp
 
-# Required for boost test framework which is used by tests
+#define  LST_COMMENT2   Required for boost test framework which is used by tests
 corelib$
 
-# Requires to copy third party libs on WinXX
+#define  LST_COMMENT3   Requires to copy third party libs on WinXX
 misc/third_party
 misc/third_party_static
 
-# Tests and demo
+#define  LST_COMMENT4   Tests and demo
 internal$
 internal/test$
 internal/test/misc$
@@ -19,7 +19,7 @@ internal/demo$
 internal/demo/misc$
 internal/demo/misc/xmlwrapp
 
-# Make it independent on the pre-installed PTB
+#define  LST_COMMENT5    Make it independent on the pre-installed PTB
 util$
 util/regexp$
 util/bitset$
