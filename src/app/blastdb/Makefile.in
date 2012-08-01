@@ -13,23 +13,23 @@ include @builddir@/Makefile.meta
 .PHONY: all $(APP_PROJ)
 
 makeblastdb:
-	make -f Makefile.makeblastdb_app
+	${MAKE} ${MFLAGS} -f Makefile.makeblastdb_app
 
 blastdbcmd:
-	make -f Makefile.blastdbcmd_app
+	${MAKE} ${MFLAGS} -f Makefile.blastdbcmd_app
 
 blastdbcp:
-	make -f Makefile.blastdbcp_app
+	${MAKE} ${MFLAGS} -f Makefile.blastdbcp_app
 
 blastdb_aliastool:
-	make -f Makefile.blastdb_aliastool_app
+	${MAKE} ${MFLAGS} -f Makefile.blastdb_aliastool_app
 
 blastdbcheck:
-	make -f Makefile.blastdbcheck_app
+	${MAKE} ${MFLAGS} -f Makefile.blastdbcheck_app
 
 convert2blastmask:
-	make -f Makefile.convert2blastmask_app
+	${MAKE} ${MFLAGS} -f Makefile.convert2blastmask_app
 
 makeprofiledb:
-	make -f Makefile.makeprofiledb_app
+	${MAKE} ${MFLAGS} -f Makefile.makeprofiledb_app
 
