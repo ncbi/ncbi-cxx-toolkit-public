@@ -102,23 +102,23 @@ int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
 
 
 typedef struct {
-    unsigned int       arch;    /* architecture ID, 0=unknown */
+    unsigned int       arch;    /* Architecture ID, 0=unknown */
     unsigned int       ostype;  /* OS type ID,      0=unknown */
     struct {
         unsigned short major;
         unsigned short minor;
         unsigned short patch;
-    } kernel;                   /* kernel/OS version #, if available         */
-    unsigned short     bits;    /* platform bitness, 32/64/0=unknown         */
-    size_t             pgsize;  /* hardware page size in bytes, if available */
-    TNCBI_Time         bootup;  /* boot time, time_t-compatible              */
-    TNCBI_Time         start;   /* LB start time, time_t-compatible          */
+    } kernel;                   /* Kernel/OS version #, if available         */
+    unsigned short     bits;    /* Platform bitness, 32/64/0=unknown         */
+    size_t             pgsize;  /* Hardware page size in bytes, if available */
+    TNCBI_Time         bootup;  /* System boot time, time_t-compatible       */
+    TNCBI_Time         startup; /* LBSMD start time, time_t-compatible       */
     struct {
         unsigned short major;
         unsigned short minor;
         unsigned short patch;
-    } daemon;                   /* LBSMD version */
-    unsigned short     svcpack; /* service pack (Hi=major, Lo=minor)        */
+    } daemon;                   /* LBSMD daemon version                      */
+    unsigned short     svcpack; /* Kernel service pack (Hi=major, Lo=minor)  */
 } SHINFO_Params;
 
 extern NCBI_XCONNECT_EXPORT
