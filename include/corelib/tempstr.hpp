@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 /// CTempString implements a light-weight string on top of a storage buffer
 /// whose lifetime management is known and controlled.  CTempString is designed
 /// to perform no memory allocation but provide a string interaction interface
-/// conrguent with std::basic_string<char>.  As such, CTempString provides a
+/// congruent with std::basic_string<char>.  As such, CTempString provides a
 /// const-only access interface to its underlying storage.  Care has been taken
 /// to avoid allocations and other expensive operations wherever possible.
 ///
@@ -536,7 +536,7 @@ CTempString::size_type CTempString::find_last_of(const CTempString& match,
 {
     if (match.length()  &&  match.length() <= length() ) {
         if (pos >= length()) {
-            pos = length() - match.length();
+            pos = length() - 1;
         }
         const_iterator it = begin() + pos;
         const_iterator end_it = begin();
@@ -566,7 +566,7 @@ CTempString::size_type CTempString::find_last_not_of(const CTempString& match,
 {
     if (match.length()  &&  match.length() <= length() ) {
         if (pos >= length()) {
-            pos = length() - match.length();
+            pos = length() - 1;
         }
         const_iterator it = begin() + pos;
         const_iterator end_it = begin();
@@ -665,9 +665,7 @@ CTempString::size_type CTempString::rfind(const CTempString& match,
     if (match.length() == 0) {
         return length();
     }
-    if (pos >= length()) {
-        pos = length() - match.length();
-    }
+    pos = min(pos, length() - match.length());
     while ( (pos = find_last_of(CTempString(match, 0, 1), pos)) !=
             string::npos) {
         int res = memcmp(begin() + pos + 1,
