@@ -43,7 +43,7 @@ Cygwin32          : GCC            : GCC.sh           --without-debug --with-mt 
 
 # --with-flat-makefile is ommited for IntelMAC with the test purposes. Should
 # work similar to the configurations where it is mentioned explicitly
-IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile --with-universal=i386,x86_64 
+IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system
 IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
 
 
