@@ -407,40 +407,33 @@ void CScoreBuilder::AddScore(CScope& scope,
 {
     NON_CONST_ITERATE (list< CRef<CSeq_align> >, iter, aligns) {
         CSeq_align& align = **iter;
-        try {
-            switch (score) {
-            case eScore_Blast:
-                AddScore(scope, align, CSeq_align::eScore_Blast);
-                break;
+        switch (score) {
+        case eScore_Blast:
+            AddScore(scope, align, CSeq_align::eScore_Blast);
+            break;
 
-            case eScore_Blast_BitScore:
-                AddScore(scope, align, CSeq_align::eScore_BitScore);
-                break;
+        case eScore_Blast_BitScore:
+            AddScore(scope, align, CSeq_align::eScore_BitScore);
+            break;
 
-            case eScore_Blast_EValue:
-                AddScore(scope, align, CSeq_align::eScore_EValue);
-                break;
+        case eScore_Blast_EValue:
+            AddScore(scope, align, CSeq_align::eScore_EValue);
+            break;
 
-            case eScore_MismatchCount:
-                AddScore(scope, align, CSeq_align::eScore_MismatchCount);
-                break;
+        case eScore_MismatchCount:
+            AddScore(scope, align, CSeq_align::eScore_MismatchCount);
+            break;
 
-            case eScore_IdentityCount:
-                AddScore(scope, align, CSeq_align::eScore_IdentityCount);
-                break;
+        case eScore_IdentityCount:
+            AddScore(scope, align, CSeq_align::eScore_IdentityCount);
+            break;
 
-            case eScore_PercentIdentity:
-                AddScore(scope, align, CSeq_align::eScore_PercentIdentity);
-                break;
-            case eScore_PercentCoverage:
-                AddScore(scope, align, CSeq_align::eScore_PercentCoverage);
-                break;
-            }
-        }
-        catch (CException& e) {
-            LOG_POST(Error
-                << "CScoreBuilder::AddScore(): error computing score: "
-                << e);
+        case eScore_PercentIdentity:
+            AddScore(scope, align, CSeq_align::eScore_PercentIdentity);
+            break;
+        case eScore_PercentCoverage:
+            AddScore(scope, align, CSeq_align::eScore_PercentCoverage);
+            break;
         }
     }
 }
