@@ -262,7 +262,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
         switch(errcode) {
             case ERROR_ACCESS_DENIED:
                 // Mutex with specified name already exists, 
-                // but we don't have enougth rigths to open it.
+                // but we don't have enough rights to open it.
                 NCBI_THROW(CInterProcessLockException, eLockError,
                            "The lock already exists");
                 break;
@@ -301,7 +301,7 @@ void CInterProcessLock::Lock(const CTimeout& timeout,
                 case WAIT_ABANDONED:
                     // The lock is in abandoned state... Other thread/process
                     // owning it was terminated. We can reuse this mutex, but 
-                    // it is better to wait until it will released by OS.
+                    // it is better to wait until it will be released by OS.
                     /* FALLTHRU */
                 default:
                     ::CloseHandle(handle);
