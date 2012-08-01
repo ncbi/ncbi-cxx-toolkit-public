@@ -134,7 +134,7 @@ int main(int argc, const char* argv[])
                                           params.bits));
                     CORE_LOGF(eLOG_Note, ("    Page size:  %lu",
                                           (unsigned long) params.pgsize));
-                    t = (time_t) params.start;
+                    t = (time_t) params.startup;
                     strftime(buf, sizeof(buf), kTimeFormat, localtime(&t));
                     CORE_LOGF(eLOG_Note, ("    LBSMD:      %hu.%hu.%hu @ %s",
                                           params.daemon.major,
