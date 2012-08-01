@@ -128,15 +128,13 @@
 
 /* Macros for platform-dependent constants, error codes and functions
  */
-#if defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)
 
 #  define SOCK_GHB_THREAD_SAFE  1  /* for gethostby...() */
 #  define SOCK_INVALID          INVALID_SOCKET
 #  define SOCK_ERRNO            WSAGetLastError()
 #  define SOCK_NFDS(s)          0
 #  define SOCK_CLOSE(s)         closesocket(s)
-#  define SOCK_SHUTDOWN(s,h)    shutdown(s,h)
-#  define SOCK_STRERROR(err)    s_StrError(0, (err))
 #  define SOCK_EVENTS           (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
 /* NCBI_OS_MSWIN */
 
@@ -150,11 +148,9 @@
 #  else
 #    define SOCK_CLOSE(s)       close(s)
 #  endif /*NCBI_OS_BEOS*/
-#  define SOCK_SHUTDOWN(s,h)    shutdown(s,h)
 #  ifndef   INADDR_NONE
-#    define INADDR_NONE         ((unsigned int)(-1))
+#    define INADDR_NONE         ((unsigned int)(~0UL))
 #  endif  /*INADDR_NONE*/
-#  define SOCK_STRERROR(err)    s_StrError(0, (err))
 /* NCBI_OS_UNIX */
 
 #endif /*NCBI_OS*/
@@ -163,23 +159,16 @@
 #  undef sun
 #endif
 
-#define SESSION_INVALID         ((void*)(-1L))
+#define SESSION_INVALID       ((void*)(-1L))
 
-#if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
-typedef socklen_t  TSOCK_socklen_t;
-#else
-typedef int        TSOCK_socklen_t;
-#endif /*HAVE_SOCKLEN_T || _SOCKLEN_T*/
-
-
-#define MAXIDLEN                80
+#define MAXIDLEN              80
 #if MAXIDLEN > SOCK_BUF_CHUNK_SIZE
 #  error "SOCK_BUF_CHUNK_SIZE too small"
 #endif /*MAXIDLEN<SOCK_BUF_CHUNK_SIZE*/
 
+#define SOCK_STRERROR(err)    s_StrError(0, (err))
 
-#define SOCK_LOOPBACK  (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
-
+#define SOCK_LOOPBACK         (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
 
 #define _SOCK_CATENATE(x, y)  x##y
 
@@ -189,6 +178,12 @@ typedef int        TSOCK_socklen_t;
 #define SOCK_SET_TIMEOUT(s, t, v)                                       \
     (((s)->_SOCK_CATENATE(t,_tv_set) = (v) ? 1 : 0)                     \
      ? (void)((s)->_SOCK_CATENATE(t,_tv) = *(v)) : (void) (s))
+
+#if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
+typedef socklen_t  TSOCK_socklen_t;
+#else
+typedef int        TSOCK_socklen_t;
+#endif /*HAVE_SOCKLEN_T || _SOCKLEN_T*/
 
 
 
@@ -270,17 +265,22 @@ static const char* s_StrError(SOCK sock, int error)
 #ifdef NCBI_OS_MSWIN
 static const char* s_WinStrerror(DWORD error)
 {
-    TCHAR* str = NULL;
-    DWORD rv = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                             FORMAT_MESSAGE_FROM_SYSTEM     |
-                             FORMAT_MESSAGE_MAX_WIDTH_MASK  |
-                             FORMAT_MESSAGE_IGNORE_INSERTS,
-                             NULL, error,
-                             MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
-                             (LPTSTR) &str, 0, NULL);
+    TCHAR* str;
+    DWORD  rv;
+
+    if (!error)
+        return 0;
+    str = NULL;
+    rv  = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                        FORMAT_MESSAGE_FROM_SYSTEM     |
+                        FORMAT_MESSAGE_MAX_WIDTH_MASK  |
+                        FORMAT_MESSAGE_IGNORE_INSERTS,
+                        NULL, error,
+                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                        (LPTSTR) &str, 0, NULL);
     if (!rv  &&  str) {
         LocalFree((HLOCAL) str);
-        str = NULL;
+        return 0;
     }
     return UTIL_TcharToUtf8OnHeap(str);
 }
@@ -454,7 +454,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
 
     case eIO_Read:
     case eIO_Write:
-        {
+        {{
             const char* strerr = NULL;
             what = (event == eIO_Read
                     ? (sock->type != eDatagram  &&  !size
@@ -499,7 +499,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                             head, tail));
 
             UTIL_ReleaseBuffer(strerr);
-        }
+        }}
         break;
 
     case eIO_Close:
@@ -959,6 +959,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 {
     CORE_DEBUG_ARG(char addr[40];)
     char buf[MAXHOSTNAMELEN + 1];
+    CORE_DEBUG_ARG(int trace;)
     unsigned int host;
 
     /* initialize internals */
@@ -971,7 +972,13 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
         hostname = buf;
     }
 
-    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+    if (!SOCK_isipEx(hostname, 1)) {
+        CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
+        trace = 1/*true*/;
+    } else
+        trace = 0/*false*/;
+#endif /*_DEBUG && !NDEBUG*/
 
     if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
         int x_error;
@@ -987,7 +994,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
             if (log) {
                 const char* strerr;
                 if (x_error == EAI_SYSTEM)
-                    x_error =  SOCK_ERRNO;
+                    x_error  = SOCK_ERRNO;
                 else
                     x_error += EAI_BASE;
                 strerr = SOCK_STRERROR(x_error);
@@ -1050,7 +1057,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
             const char* strerr;
 #  ifdef NETDB_INTERNAL
             if (x_error == NETDB_INTERNAL + DNS_BASE)
-                x_error =  SOCK_ERRNO;
+                x_error  = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
             strerr = SOCK_STRERROR(x_error);
             CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
@@ -1064,10 +1071,15 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 #endif /*HAVE_GETADDR_INFO*/
     }
 
-    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s", hostname,
-                 SOCK_ntoa(host, addr, sizeof(addr)) == 0
-                 ? addr : sprintf(addr, "0x%08X", (unsigned int) ntohl(host))
-                 ? addr : "(unknown)"));
+#ifdef _DEBUG
+    if (trace  ||  !host) {
+        CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s", hostname,
+                     SOCK_ntoa(host, addr, sizeof(addr)) == 0
+                     ? addr : sprintf(addr, "0x%08X",
+                                      (unsigned int) ntohl(host))
+                     ? addr : "(unknown)"));
+    }
+#endif /*_DEBUG*/
     return host;
 }
 
@@ -3418,7 +3430,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         return status;
 #  endif /*NCBI_OS_UNIX*/
 
-    if (s_Initialized > 0  &&  SOCK_SHUTDOWN(sock->sock, how) != 0) {
+    if (s_Initialized > 0  &&  shutdown(sock->sock, how) != 0) {
         x_error = SOCK_ERRNO;
 #  ifdef NCBI_OS_MSWIN
         if (x_error == WSANOTINITIALISED)
