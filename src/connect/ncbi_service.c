@@ -64,6 +64,12 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
+void SERV_InitFirewallPort(void)
+{
+    memset(s_FWPorts, 0, sizeof(s_FWPorts));
+}
+
+
 int/*bool*/ SERV_AddFirewallPort(unsigned short port)
 {
     unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
