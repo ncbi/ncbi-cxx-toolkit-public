@@ -52,9 +52,8 @@ BEGIN_NCBI_SCOPE
 #if   defined(NCBI_OS_UNIX)
     const int    kInvalidLockHandle = -1;
 #elif defined(NCBI_OS_MSWIN)
-    const HANDLE kInvalidLockHandle = INVALID_HANDLE_VALUE;
+    const HANDLE kInvalidLockHandle = NULL;
 #endif
-
 
 // List of all locks in the current process <name, ref_counter>.
 typedef map<string, int> TLocks;
