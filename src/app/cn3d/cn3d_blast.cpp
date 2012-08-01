@@ -35,8 +35,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 
+#include <objmgr/object_manager.hpp>
 #include <algo/blast/api/psibl2seq.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/objmgr_query_data.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -230,6 +231,33 @@ static void MapBlockFromConsensusToMaster(int consensusStart, int dependentStart
         ERRORMSG("MapBlockFromConsensusToMaster() - unterminated sub-block");
 }
 
+static void RemoveAllDataLoaders() {
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CObjectManager::TRegisteredNames loader_names;
+    om->GetRegisteredNames(loader_names);
+    ITERATE(CObjectManager::TRegisteredNames, itr, loader_names) {
+        om->RevokeDataLoader(*itr);
+    }
+}
+
+static bool SimpleSeqLocFromBioseq(const CRef< CBioseq>& bs, CSeq_loc& seqLoc)
+{
+    bool result = true;
+    CSeq_interval& seqInt = seqLoc.SetInt();
+    CSeq_id& seqId = seqInt.SetId();
+    seqInt.SetFrom(0);
+    
+    //  Assign the first identifier from the bioseq
+    if (bs.NotEmpty() && bs->GetFirstId() != 0) {
+        seqInt.SetTo(bs->GetLength() - 1);
+        seqId.Assign(*(bs->GetFirstId()));
+    } else {
+        result = false;
+    }
+
+    return result;
+}
+
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
     const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM)
 {
@@ -252,9 +280,17 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &extension))
             WARNINGMSG("Can't get footprint residue extension from registry");
 
+        //  Make sure object manager loads only data from our alignment object.
+        RemoveAllDataLoaders();
+        CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+        CScope scope(*objmgr);
+        CRef< CBioseq > queryBioseq, subjectBioseq;
+        CRef<CSeq_loc> querySeqLoc(new CSeq_loc);
+        blast::CBlastQueryVector queryVector, subjectVector;
+        scope.ResetDataAndHistory();
+
         // collect subject(s) - second sequence of each realignment
         TruncatedSequences subjectTSs;
-        CBioseq_set bss;
         int localID = 0;
         AlignmentList::const_iterator a, ae = toRealign.end();
         for (a=toRealign.begin(); a!=ae; ++a, ++localID) {
@@ -269,9 +305,18 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                 return;
             }
             subjectTSs.push_back(CreateTruncatedSequence(multiple, *a, localID, false, extension));
-            bss.SetSeq_set().push_back(subjectTSs.back()->truncatedSequence);
+
+            CRef< CSeq_loc > subjectSeqLoc(new CSeq_loc);
+            subjectBioseq = &(subjectTSs.back()->truncatedSequence->SetSeq());
+            scope.AddBioseq(*subjectBioseq);
+            //  Set up the QueryFactory for the subject sequences
+            if (SimpleSeqLocFromBioseq(subjectBioseq, *subjectSeqLoc)) {
+                CRef< blast::CBlastSearchQuery > bsqSubject(new blast::CBlastSearchQuery(*subjectSeqLoc, scope));
+                subjectVector.AddQuery(bsqSubject);
+            }
+
         }
-        CRef < blast::IQueryFactory > sequenceSubjects(new blast::CObjMgrFree_QueryFactory(CConstRef<CBioseq_set>(&bss)));
+        CRef < blast::IQueryFactory > sequenceSubjects(new blast::CObjMgr_QueryFactory(subjectVector));
 
         // main blast engine
         CRef < blast::CPsiBl2Seq > blastEngine;
@@ -305,9 +350,16 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         CRef < blast::CBlastProteinOptionsHandle > sequenceOptions;
         if (!usePSSM) {
             masterTS = CreateTruncatedSequence(multiple, toRealign.front(), -1, true, extension);
-            sequenceQuery.Reset(new
-                blast::CObjMgrFree_QueryFactory(
-                    CConstRef < CBioseq > (&(masterTS->truncatedSequence->GetSeq()))));
+
+            //  Set up a QueryFactory for the query sequence
+            queryBioseq = &(masterTS->truncatedSequence->SetSeq());
+            scope.AddBioseq(*queryBioseq);
+            if (SimpleSeqLocFromBioseq(queryBioseq, *querySeqLoc)) {
+                CRef< blast::CBlastSearchQuery> bsqQuery(new blast::CBlastSearchQuery(*querySeqLoc, scope));
+                queryVector.AddQuery(bsqQuery);
+            }
+            sequenceQuery.Reset(new blast::CObjMgr_QueryFactory(queryVector));
+
             sequenceOptions.Reset(new blast::CBlastProteinOptionsHandle);
             sequenceOptions->SetMatrixName("BLOSUM62");
             sequenceOptions->SetHitlistSize(subjectTSs.size());
