@@ -46,6 +46,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
@@ -651,7 +652,7 @@ public:
             bool score_precalculated=false;
             const CSpliced_seg& seg = align.GetSegs().GetSpliced();
             is_protein = seg.GetProduct_type() ==
-                         CSpliced_seg::eProduct_type_protein;
+                CSpliced_seg::eProduct_type_protein;
             if (seg.CanGetProduct_length()) {
                 product_length = seg.GetProduct_length();
             }
@@ -673,100 +674,227 @@ public:
                 return 0;
             }
         }
+
         if (!product_length) {
             CBioseq_Handle product_bsh =
                 scope->GetBioseqHandle(align.GetSeq_id(0));
             if (!product_bsh) {
                 NCBI_THROW(CSeqalignException, eUnsupported,
                            "Can't get sequence " +
-                               align.GetSeq_id(0).AsFastaString());
+                           align.GetSeq_id(0).AsFastaString());
             }
-            switch (product_bsh.GetSequenceType()) {
-            case CSeq_inst::eMol_aa:
-                is_protein = true;
-                break;
-
-            case CSeq_inst::eMol_rna:
-                is_protein = false;
-                break;
-
-            default:
-                NCBI_THROW(CSeqalignException, eUnsupported,
-                           "Invalid sequence type for " +
-                               align.GetSeq_id(0).AsFastaString());
-            }
+            is_protein = product_bsh.IsAa();
             product_length = product_bsh.GetBioseqLength();
         }
 
         CRef<CSeq_loc> aligned_genomic;
 
-            ///
-            /// complicated (copied from cds_internal_stops Get())
-            ///
+        //
+        // generate the cleaned alignment
+        //
 
-            /// first, generate a gene model
-            CFeatureGenerator generator(*scope);
-            generator.SetFlags(CFeatureGenerator::fDefaults |
-                               CFeatureGenerator::fGenerateLocalIds);
-            generator.SetAllowedUnaligned(10);
+        CFeatureGenerator generator(*scope);
+        generator.SetAllowedUnaligned(10);
+        CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
 
-            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
-            CSeq_annot annot;
-            CBioseq_set bset;
-            generator.ConvertAlignToAnnot(*clean_align, annot, bset);
+        // we can't call CFeatureGenerator because CFeatureGenerator depends on
+        // having certain fields set (such as Spliced-seg modifiers indicating
+        // (wait for it...) that the stop codon or start codon was found.  This
+        // here function is to be called to verify that the star/stop are
+        // included, hence we have a circular logical relationship...
+        const CSeq_id& query_id = clean_align->GetSeq_id(0);
+        const CSeq_id& subject_id = clean_align->GetSeq_id(1);
+        CBioseq_Handle genomic_bsh = scope->GetBioseqHandle(subject_id);
 
-            /// extract the CDS and translate it
-            CRef<CSeq_feat> cds;
-            ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
-                if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
-                    cds = *it;
-                    break;
+        CSeq_loc_Mapper mapper(*clean_align, 1);
+
+        CRef<CSeq_loc> start_codon;
+        CRef<CSeq_loc> stop_codon;
+
+        ENa_strand s_strand = eNa_strand_plus;
+        CRef<CSeq_loc> cds_loc;
+        if (is_protein) {
+            CSeq_loc loc;
+            loc.SetWhole().Assign(query_id);
+            cds_loc = mapper.Map(loc);
+            s_strand = sequence::GetStrand(*cds_loc, scope);
+            TSeqRange total_s_range = cds_loc->GetTotalRange();
+
+            if (s_strand == eNa_strand_minus) {
+                start_codon.Reset(new CSeq_loc);
+                start_codon->SetInt().SetFrom(total_s_range.GetTo() - 2);
+                start_codon->SetInt().SetTo(total_s_range.GetTo());
+                start_codon->SetInt().SetStrand(s_strand);
+                start_codon->SetId(subject_id);
+                if (total_s_range.GetFrom() > 2) {
+                    stop_codon.Reset(new CSeq_loc);
+                    stop_codon->SetInt().SetFrom(total_s_range.GetFrom() - 3);
+                    stop_codon->SetInt().SetTo(total_s_range.GetFrom() - 1);
+                    stop_codon->SetInt().SetStrand(s_strand);
+                    stop_codon->SetId(subject_id);
                 }
             }
-
-            if (!cds) {
-                NCBI_THROW(CSeqalignException, eUnsupported,
-                           "No CDS for " + align.GetSeq_id(0).AsFastaString());
-            }
-
-            if(m_StartCodon
-                ? cds->GetLocation().IsPartialStart(eExtreme_Biological)
-                : cds->GetLocation().IsPartialStop(eExtreme_Biological))
-            {
-                return 0;
-            }
-            aligned_genomic.Reset(&cds->SetLocation());
-
-        if(!m_StartCodon) {
-// extend location by a codon beyond stop
-            TSeqPos stop = aligned_genomic->GetStop(eExtreme_Biological);
-            bool plus = aligned_genomic->GetStrand() != eNa_strand_minus;
-            TSeqPos new_stop=stop+(plus?3:-3);
-            CBioseq_Handle genomic_bsh =
-                scope->GetBioseqHandle(*(aligned_genomic->GetId()));
-            if (!genomic_bsh) {
-                NCBI_THROW(CSeqalignException, eUnsupported,
-                           "could not get nucleotide length for 'stop_codon' score");
-            }
-
-            TSeqPos genomic_length = genomic_bsh.GetBioseqLength();
-            if(new_stop>=genomic_length) {  
-                return 0;
-            }
-            for(CTypeIterator<CSeq_interval> i(*aligned_genomic); i; ++i) {
-                if(plus) {
-                     if(i->GetTo()==stop){i->SetTo(new_stop); break; }
-                } else {
-                     if(i->GetFrom()==stop){i->SetFrom(new_stop); break; }
+            else {
+                start_codon.Reset(new CSeq_loc);
+                start_codon->SetInt().SetFrom(total_s_range.GetFrom());
+                start_codon->SetInt().SetTo(total_s_range.GetFrom() + 2);
+                start_codon->SetInt().SetStrand(s_strand);
+                start_codon->SetId(subject_id);
+                if (total_s_range.GetTo() + 3 < genomic_bsh.GetBioseqLength()) {
+                    stop_codon.Reset(new CSeq_loc);
+                    stop_codon->SetInt().SetFrom(total_s_range.GetTo() + 1);
+                    stop_codon->SetInt().SetTo(total_s_range.GetTo() + 3);
+                    stop_codon->SetInt().SetStrand(s_strand);
+                    stop_codon->SetId(subject_id);
                 }
             }
         }
+        else {
+            CBioseq_Handle bsh = scope->GetBioseqHandle(query_id);
+            CFeat_CI feat_it(bsh,
+                             SAnnotSelector()
+                             .IncludeFeatType(CSeqFeatData::e_Cdregion));
 
-        string trans="";
-        CSeqTranslator::Translate(*aligned_genomic, *scope, trans,
-                                  s_GetGeneticCode(align.GetSeq_id(1), scope));
+            CMappedFeat mf;
+            for ( ;  feat_it;  ++feat_it) {
+                mf = *feat_it;
+                break;
+            }
 
-        return m_StartCodon ? trans[0]=='M' : NStr::EndsWith(trans, "*");
+            if ( !mf ) {
+                // no CDS == no start or stop
+                return 0.0;
+            }
+
+            const CSeq_loc& orig_loc = mf.GetLocation();
+            s_strand = sequence::GetStrand(orig_loc, scope);
+            TSeqRange total_s_range = orig_loc.GetTotalRange();
+
+            /**
+            cerr << "orig loc: " << MSerial_AsnText << orig_loc;
+            cerr << "orig strand: " << s_strand << endl;
+            cerr << "orig range: " << total_s_range << endl;
+            **/
+
+            if (mf.GetData().GetCdregion().IsSetFrame()) {
+                TSeqPos offs = mf.GetData().GetCdregion().GetFrame();
+                if (offs) {
+                    offs -= 1;
+                }
+                if (s_strand == eNa_strand_minus) {
+                    total_s_range.SetFrom(total_s_range.GetFrom() - offs);
+                }
+                else {
+                    total_s_range.SetTo(total_s_range.GetTo() + offs);
+                }
+            }
+
+            if (s_strand == eNa_strand_minus) {
+                start_codon.Reset(new CSeq_loc);
+                start_codon->SetInt().SetFrom(total_s_range.GetTo() - 2);
+                start_codon->SetInt().SetTo(total_s_range.GetTo());
+                start_codon->SetInt().SetStrand(s_strand);
+                start_codon->SetId(query_id);
+                if (total_s_range.GetFrom() > 2) {
+                    stop_codon.Reset(new CSeq_loc);
+                    stop_codon->SetInt().SetFrom(total_s_range.GetFrom() - 3);
+                    stop_codon->SetInt().SetTo(total_s_range.GetFrom() - 1);
+                    stop_codon->SetInt().SetStrand(s_strand);
+                    stop_codon->SetId(query_id);
+                }
+            }
+            else {
+                start_codon.Reset(new CSeq_loc);
+                start_codon->SetInt().SetFrom(total_s_range.GetFrom());
+                start_codon->SetInt().SetTo(total_s_range.GetFrom() + 2);
+                start_codon->SetInt().SetStrand(s_strand);
+                start_codon->SetId(query_id);
+                if (total_s_range.GetTo() + 3 < genomic_bsh.GetBioseqLength()) {
+                    stop_codon.Reset(new CSeq_loc);
+                    stop_codon->SetInt().SetFrom(total_s_range.GetTo() + 1);
+                    stop_codon->SetInt().SetTo(total_s_range.GetTo() + 3);
+                    stop_codon->SetInt().SetStrand(s_strand);
+                    stop_codon->SetId(query_id);
+                }
+            }
+
+            // map the mRNA locations for start/stop to the genome
+            start_codon = mapper.Map(*start_codon);
+            stop_codon = mapper.Map(*stop_codon);
+
+            /**
+            if (start_codon) {
+                cerr << "start codon: " << MSerial_AsnText << *start_codon;
+            }
+            if (stop_codon) {
+                cerr << "stop codon: " << MSerial_AsnText << *stop_codon;
+            }
+            **/
+        }
+
+        // basic sanity check
+        if (m_StartCodon) {
+            if ( !start_codon  ||  start_codon->IsEmpty()  ||
+                 start_codon->IsNull()  ||
+                 start_codon->GetTotalRange().GetLength() != 3) {
+                //cerr << "insane start codon..." << endl;
+                return 0.0;
+            }
+        }
+        else {
+            if ( !stop_codon  ||  stop_codon->IsEmpty()  ||
+                 stop_codon->IsNull()  ||
+                 stop_codon->GetTotalRange().GetLength() != 3) {
+                //cerr << "insane stop codon..." << endl;
+                return 0.0;
+            }
+        }
+
+        //
+        // evaluate for start-stop codon as needed
+        //
+
+        int gcode = 11;
+        const CGenetic_code* gc = s_GetGeneticCode(align.GetSeq_id(1), scope);
+        if (gc) {
+            gcode = gc->GetId();
+        }
+        const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
+
+        if (m_StartCodon) {
+            CSeqVector v(*start_codon, scope,
+                         CBioseq_Handle::eCoding_Iupac);
+
+            /**
+            cerr << MSerial_AsnText << *start_codon;
+            cerr << "gcode: " << gcode << endl;
+            cerr << "bases: "
+                << v[0] << v[1] << v[2] << endl;
+                **/
+
+            int state = tbl.SetCodonState(v[0], v[1], v[2]);
+            if (tbl.IsAnyStart(state)) {
+                return 1.0;
+            }
+        }
+        else {
+            CSeqVector v(*stop_codon, scope,
+                         CBioseq_Handle::eCoding_Iupac);
+
+            /**
+            cerr << MSerial_AsnText << *stop_codon;
+            cerr << "gcode: " << gcode << endl;
+            cerr << "bases: "
+                << v[0] << v[1] << v[2] << endl;
+                **/
+
+            int state = tbl.SetCodonState(v[0], v[1], v[2]);
+            if (tbl.IsOrfStop(state)) {
+                return 1.0;
+            }
+        }
+
+        return 0.0;
     }
 
 
@@ -796,45 +924,62 @@ public:
     {
         double score = 0;
 
-            ///
-            /// complicated
-            ///
+        //
+        // complicated
+        //
 
-            /// first, generate a gene model
-            CFeatureGenerator generator(*scope);
-            generator.SetFlags(CFeatureGenerator::fDefaults |
-                               CFeatureGenerator::fGenerateLocalIds);
-            generator.SetAllowedUnaligned(10);
+        // first, generate a gene model
+        CFeatureGenerator generator(*scope);
+        generator.SetFlags(CFeatureGenerator::fDefaults |
+                           CFeatureGenerator::fGenerateLocalIds);
+        generator.SetAllowedUnaligned(10);
 
-            CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
-            CSeq_annot annot;
-            CBioseq_set bset;
-            generator.ConvertAlignToAnnot(*clean_align, annot, bset);
+        CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
+        CSeq_annot annot;
+        CBioseq_set bset;
+        generator.ConvertAlignToAnnot(*clean_align, annot, bset);
 
-            /// extract the CDS and translate it
-            CRef<CSeq_feat> cds;
-            ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
-                if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
-                    cds = *it;
-                    break;
-                }
+        // extract the CDS and translate it
+        CRef<CSeq_feat> cds;
+        ITERATE (CSeq_annot::TData::TFtable, it, annot.GetData().GetFtable()) {
+            if ((*it)->GetData().Which() == CSeqFeatData::e_Cdregion) {
+                cds = *it;
+                break;
+            }
+        }
+
+        if (cds) {
+            string trans;
+            CSeqTranslator::Translate(cds->GetLocation(), *scope, trans,
+                                      s_GetGeneticCode(align.GetSeq_id(1),
+                                                       scope));
+            if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
+                 NStr::EndsWith(trans, "*"))
+            {
+                trans.resize(trans.size() - 1);
             }
 
-            if (cds) {
-                string trans;
-                CSeqTranslator::Translate(cds->GetLocation(), *scope, trans,
-                                          s_GetGeneticCode(align.GetSeq_id(1),
-                                                           scope));
-                if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
-                     NStr::EndsWith(trans, "*"))
-                {
-                    trans.resize(trans.size() - 1);
-                }
-
-                ITERATE (string, i, trans) {
-                    score += (*i == '*');
-                }
+            ITERATE (string, i, trans) {
+                score += (*i == '*');
             }
+
+            /**
+            cerr << "align: "
+                << CSeq_id_Handle::GetHandle(align.GetSeq_id(0))
+                << " x "
+                << CSeq_id_Handle::GetHandle(align.GetSeq_id(1))
+                << endl;
+
+            if (cds->IsSetProduct()) {
+                string seq;
+                CSeqVector v(cds->GetProduct(), *scope, CBioseq_Handle::eCoding_Iupac);
+                v.GetSeqData(v.begin(), v.end(), seq);
+                cerr << "product: " << seq << endl;
+            }
+            cerr << "xlate:   " << trans << endl;
+            cerr << "count: " << score << endl;
+            **/
+        }
 
         return score;
     }

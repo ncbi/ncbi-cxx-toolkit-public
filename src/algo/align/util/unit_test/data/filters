@@ -111,6 +111,6 @@ sframe > 5
 qframe > 5
 0
 start_codon = 1
-1 2 4
+1 2 4 5
 stop_codon = 1
-4
+4 5
