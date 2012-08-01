@@ -29,7 +29,6 @@ FreeBSD32         : plain          : GCC.sh           --without-debug --with-mt 
 
 SunOSx86          : plain-GCC      : GCC.sh 4.5.3     --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
 SunOSx86          : plain-WS32     : WorkShop59.sh 32 --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
-SunOSx86          : plain-WS64     : WorkShop59.sh 64 --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
 
 SunOSSparc        : plain-GCC      : GCC.sh 4.5.3     --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
 SunOSSparc        : plain-WS32     : WorkShop59.sh 32 --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
