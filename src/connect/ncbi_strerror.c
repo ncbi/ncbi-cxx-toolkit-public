@@ -35,8 +35,6 @@
 
 #  ifdef _FREETDS_LIBRARY_SOURCE
 
-#    define s_WinStrdup               s_WinStrdup_ftds64
-#    define s_StrErrorInternal        s_StrErrorInternal_ftds64
 #    define s_StrError                s_StrErrorInternal
 #    define UTIL_TcharToUtf8          UTIL_TcharToUtf8_ftds64
 #    define UTIL_ReleaseBufferOnHeap  UTIL_ReleaseBufferOnHeap_ftds64
@@ -76,7 +74,6 @@ static const char* s_WinStrdup(const char* s)
 
 #  ifdef NCBI_OS_MSWIN
 
-
 #    ifdef _UNICODE
 
 extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
@@ -99,13 +96,11 @@ extern const char* UTIL_TcharToUtf8(const TCHAR* buffer)
 
 #    endif /*_UNICODE*/
 
-
 extern void UTIL_ReleaseBufferOnHeap(const void* buffer)
 {
     if (buffer)
         LocalFree((HLOCAL) buffer);
 }
-
 
 #  endif /*NCBI_OS_MSWIN*/
 
