@@ -2420,6 +2420,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ICF	s	INIFAP",
 "ICFC	c	IIB-INTECH Collection of Fungal Cultures",
 "ICGC	s	Istituto Calasanzio",
+"ICHUM	s	Invertebrate Collection of the Hokkaido University Museum",
 "ICIS	s	Idaho Museum of Natural History",
 "ICM	s	Instituto de Ciencias del Mar",
 "ICMP	c	International Collection of Micro-organisms from Plants",
