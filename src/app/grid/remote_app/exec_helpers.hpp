@@ -69,7 +69,16 @@ public:
         {return m_NonZeroExitAction;}
 
     const CNcbiEnvironment& GetLocalEnv() const { return m_LocalEnv; }
-    const map<string,string>& GetAddedEnv() const { return m_AddedEnv; }
+
+#ifdef NCBI_OS_MSWIN
+    // Use case-insensitive comparison on Windows so that
+    // duplicate entries do not appear in m_EnvValues.
+    typedef map<string, string, PNocase> TEnvMap;
+#else
+    typedef map<string, string> TEnvMap;
+#endif
+
+    const TEnvMap& GetAddedEnv() const { return m_AddedEnv; }
     const list<string>& GetExcludedEnv() const { return m_ExcludeEnv; }
     const list<string>& GetIncludedEnv() const { return m_IncludeEnv; }
 
@@ -88,7 +97,7 @@ private:
     int m_KillTimeout;
 
     CNcbiEnvironment m_LocalEnv;
-    map<string,string> m_AddedEnv;
+    TEnvMap m_AddedEnv;
     list<string> m_ExcludeEnv;
     list<string> m_IncludeEnv;
 };

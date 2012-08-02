@@ -208,9 +208,10 @@ const char* const* CRemoteAppJob:: x_GetEnv()
     if (!m_Env.empty())
         return &m_Env[0];
 
-    typedef map<string,string> TMapStr;
-    const TMapStr& added_env = m_RemoteAppLauncher.GetAddedEnv();
-    ITERATE(TMapStr, it, added_env) {
+    const CRemoteAppLauncher::TEnvMap& added_env =
+            m_RemoteAppLauncher.GetAddedEnv();
+
+    ITERATE(CRemoteAppLauncher::TEnvMap, it, added_env) {
         m_EnvValues.push_back(it->first + "=" +it->second);
     }
     list<string> names;
