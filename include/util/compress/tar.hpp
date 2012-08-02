@@ -318,9 +318,9 @@ public:
     /// @enum eExtractMask
     ///   CMask can select both inclusions and exclusions (in this order) of
     ///   fully-qualified archive entries for list or extraction, so that e.g.
-    ///   the mask ".svn" does not match an entry like "a/.svn" for procesing.
+    ///   the mask ".svn" does not match an entry like "a/.svn" for processing.
     /// @enum eExcludeMask
-    ///   CMask can select both exlusions and inclusions (in this order) of
+    ///   CMask can select both exclusions and inclusions (in this order) of
     ///   patterns of archive entries for all operations (excepting eTest),
     ///   and so the mask ".svn" matches "a/b/c/.svn" for processing.
     enum EMaskType {
@@ -501,7 +501,7 @@ public:
     /// Return archive size as if all specified input entries were put in it.
     /// Note that the return value is not the exact but the upper bound of
     /// what the archive size can be expected.  This call does not recurse
-    /// into any subdirectries but relies solely upon the information as
+    /// into any subdirectories but relies solely upon the information as
     /// passed via the parameter.
     ///
     /// The returned size includes all necessary alignments and padding.
