@@ -25,26 +25,27 @@ DEFAULT_CONFIGURATIONS: SunOSx86:plain-WS32 SunOSSparc:plain-WS64 Linux32-Centos
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-FreeBSD32         : plain          : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
+FreeBSD32         : plain          : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-SunOSx86          : plain-GCC      : GCC.sh 4.2.3     --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
-SunOSx86          : plain-WS32     : WorkShop59.sh 32 --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
+SunOSx86          : plain-GCC      : GCC.sh 4.2.3     --without-debug --with-mt    --without-runpath --with-flat-makefile
+SunOSx86          : plain-WS32     : WorkShop59.sh 32 --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-SunOSSparc        : plain-GCC      : GCC.sh 4.5.3     --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
-SunOSSparc        : plain-WS32     : WorkShop59.sh 32 --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
-SunOSSparc        : plain-WS64     : WorkShop59.sh 64 --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
+SunOSSparc        : plain-GCC      : GCC.sh 4.5.3     --without-debug --with-mt    --without-runpath --with-flat-makefile
+SunOSSparc        : plain-WS32     : WorkShop59.sh 32 --without-debug --with-mt    --without-runpath --with-flat-makefile
+SunOSSparc        : plain-WS64     : WorkShop59.sh 64 --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-Linux64-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
-Linux64-Centos    : GCC-nomt       : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux32-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
-Linux32-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
+Linux64-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux64-Centos    : GCC-nomt       : GCC.sh           --without-debug --without-mt --without-runpath --with-flat-makefile
+Linux64-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux32-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+Linux32-Centos    : plain-ICC      : ICC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-Cygwin32          : GCC            : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
+Linux64-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-# Universal configuration is commented out because LIBXSLT (and LIBEXSLT) are
-# detected as disabled so the package is not built
-# IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system
-IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
+Cygwin32          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+
+IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system --without-ncbi-public
+IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 
 Win32_10          : 1000-static-32 : static 32 ReleaseDLL
