@@ -139,9 +139,9 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
                               not1(HasValue<list<string> >(remote_app_launcher.GetIncludedEnv()))),
                     inc_names.end());
     names.insert(names.begin(),inc_names.begin(), inc_names.end());
-    typedef map<string,string> TMapStr;
-    const TMapStr& added_env = remote_app_launcher.GetAddedEnv();
-    ITERATE(TMapStr, it, added_env) {
+    const CRemoteAppLauncher::TEnvMap& added_env =
+            remote_app_launcher.GetAddedEnv();
+    ITERATE(CRemoteAppLauncher::TEnvMap, it, added_env) {
         m_EnvValues.push_back(it->first + "=" +it->second);
     }
 
