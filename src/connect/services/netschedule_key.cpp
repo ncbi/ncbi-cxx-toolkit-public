@@ -72,8 +72,8 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
             ++ch;
         }
         if (*ch == 0 || id == 0) {
-            NCBI_THROW(CNetScheduleException,
-                eKeyFormatError, "Key syntax error.");
+            NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
+                    key_str << ": key syntax error.");
         }
         ++ch;
 
@@ -82,8 +82,8 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
             host += *ch;
         }
         if (*ch == 0) {
-            NCBI_THROW(CNetScheduleException,
-                eKeyFormatError, "Key syntax error.");
+            NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
+                    key_str << ": key syntax error.");
         }
         ++ch;
 
@@ -127,8 +127,8 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
         if (*ch) {
             ch += 1;
             if (!isdigit(*ch))
-                NCBI_THROW(CNetScheduleException,
-                    eKeyFormatError, "Key syntax error.");
+                NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
+                        key_str << ": key syntax error.");
             // run
             run = atoi(ch);
         } else {
@@ -136,7 +136,9 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
         }
         return;
     }
-    NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
+
+    NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
+            key_str << ": key syntax error.");
 }
 
 #define MAX_INT_TO_STR_LEN(type) (sizeof(type) * 3 / 2)
