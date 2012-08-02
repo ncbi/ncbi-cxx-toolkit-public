@@ -403,10 +403,18 @@ private:
 
 void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
 {
+	try {
 	while(!data.eof())
 	{
 		CSeqEntrySource src(data, fmt);
 		m_DB->AddSequences(src);
+	}
+	} catch (const CEofException& e) {
+		if (e.GetErrCode() == CEofException::eEof) {
+			/* ignore */
+		} else {
+			throw e;
+		}
 	}
 }
 
