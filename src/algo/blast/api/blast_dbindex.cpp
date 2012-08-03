@@ -1032,12 +1032,16 @@ void CIndexedDb_Old::PreSearch(
 
     for( vector< string >::size_type v = 0; 
             v < index_names_.size(); v += 1 ) {
-        CRef< CDbIndex > index = CDbIndex::Load( index_names_[v] );
+        CRef< CDbIndex > index;
+        string result;
+
+        try { index = CDbIndex::Load( index_names_[v] ); }
+        catch( CException & e ) { result = e.what(); }
 
         if( index == 0 ) { 
-            throw std::runtime_error( 
-                    (string( "CIndexedDb: could not load index" ) 
-                     + index_names_[v]).c_str() );
+            NCBI_THROW( CIndexedDbException, eIndexInitError,
+                    string( "CIndexedDb: could not load index" ) +
+                    index_names_[v] + ": " + result );
         }
 
         index_ = index;

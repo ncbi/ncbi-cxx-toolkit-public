@@ -42,6 +42,7 @@ static char const rcsid[] =
 #include "blast_aux_priv.hpp"
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
+#include <algo/blast/api/blast_dbindex.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -125,6 +126,8 @@ CLocalBlast::Run()
     try {
         m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
         m_InternalData = m_PrelimSearch->Run();
+    } catch( CIndexedDbException & e ) { 
+        throw;
     } catch (...) {
     }
     if (status != 0)
