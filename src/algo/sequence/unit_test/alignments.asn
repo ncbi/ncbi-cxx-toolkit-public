@@ -12560,3 +12560,142 @@ Seq-align ::= {
         }
       }
 }
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 120
+    },
+    {
+      id str "num_positives",
+      value int 156
+    },
+    {
+      id str "num_negatives",
+      value int 63
+    },
+    {
+      id str "product_gap_length",
+      value int 0
+    },
+    {
+      id str "genomic_gap_length",
+      value int 0
+    },
+    {
+      id str "align_length",
+      value int 219
+    }
+  },
+  segs spliced {
+    product-id gi 29143757,
+    genomic-id gi 18466424,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 27,
+          frame 2
+        },
+        product-end protpos {
+          amin 27,
+          frame 3
+        },
+        genomic-start 122446,
+        genomic-end 122447,
+        parts {
+          diag 2
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 28,
+          frame 2
+        },
+        product-end protpos {
+          amin 48,
+          frame 3
+        },
+        genomic-start 122449,
+        genomic-end 122510,
+        parts {
+          diag 62
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 54,
+          frame 1
+        },
+        product-end protpos {
+          amin 84,
+          frame 3
+        },
+        genomic-start 122526,
+        genomic-end 122618,
+        parts {
+          diag 93
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 106,
+          frame 1
+        },
+        product-end protpos {
+          amin 126,
+          frame 3
+        },
+        genomic-start 122691,
+        genomic-end 122753,
+        parts {
+          diag 63
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 127,
+          frame 2
+        },
+        product-end protpos {
+          amin 128,
+          frame 2
+        },
+        genomic-start 122755,
+        genomic-end 122758,
+        parts {
+          diag 4
+        },
+        partial TRUE
+      }
+    },
+    product-length 188
+  },
+  bounds {
+    whole gi 29143757,
+    int {
+      from 122347,
+      to 123047,
+      strand plus,
+      id gi 18466424
+    }
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 13159 -- 0x3367: fMaximizeTranslation + fTrimEnds + fDefaults
+        }
+      }
+    }
+  }
+}

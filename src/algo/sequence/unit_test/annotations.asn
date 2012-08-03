@@ -7798,3 +7798,69 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 122448,
+        to 122756,
+        strand plus,
+        id gi 18466424,
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "CDNA_20120801_27",
+      location packed-int {
+        {
+          from 122448,
+          to 122756,
+          strand plus,
+          id gi 18466424,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "PROT_20120801_27",
+      location packed-int {
+        {
+          from 122448,
+          to 122756,
+          strand plus,
+          id gi 18466424,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "DNA-invertase"
+            }
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}

@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,6 +57,17 @@ public:
     ~CFeatureGenerator();
 
     enum EGeneModelCreateFlags {
+
+        // CleanAlignment flags
+        fTrimEnds            = 0x1000, // trim ends to codon boundaries (protein or mrna with CDS partially aligned)
+        fMaximizeTranslation = 0x2000, // leave only 1-2 base indels: 
+                                       // minimize product-ins modulo 3,
+                                       // replace complete genomic-ins triplets with diags 
+                                       // recalculate query positions.
+                                       // Need to be careful with transcript queries -
+                                       // cdregion passed to convert should correspond to the modified
+                                       // query positions
+        // Convert flags
         fCreateGene          = 0x001,
         fCreateMrna          = 0x002,
         fCreateCdregion      = 0x004,
@@ -87,6 +98,16 @@ public:
     /// parts. Eg. stitching small gaps, trimming to codon boundaries.
     CConstRef<objects::CSeq_align>
     CleanAlignment(const objects::CSeq_align& align);
+
+    /// Expand alignment to the specified range
+    /// Won't shrink.
+    /// Will add necessary 'diags' at ends.
+    /// Will recalculate product positions to start at zero.
+    /// Note: range should not include stop codon!
+    /// Works on Spliced-seg alignments only.
+    CConstRef<objects::CSeq_align>
+    ExpandAlignment(const objects::CSeq_align& align, TSeqRange range);
+
 
     /// Convert an alignment to an annotation.
     /// This will optionally promote all features through the alignment

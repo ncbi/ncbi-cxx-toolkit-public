@@ -6,7 +6,7 @@ SRC = unit_test_gene_model
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xalgoseq xalnmgr xobjutil taxon1 xregexp tables test_boost $(OBJMGR_LIBS)
+LIB = xalgoseq xalnmgr xobjread xobjutil taxon1 xregexp tables test_boost $(OBJMGR_LIBS)
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included

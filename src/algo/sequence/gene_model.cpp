@@ -513,6 +513,10 @@ SImplementation::CleanAlignment(const CSeq_align& align_in)
     StitchSmallHoles(*align);
     TrimHolesToCodons(*align);
 
+    if (m_flags & fMaximizeTranslation) {
+        MaximizeTranslation(*align);
+    }
+
     return align;
 }
 
@@ -566,27 +570,27 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             }
         }
 
-        const CProt_pos &starting_pos =
-            input_align.GetSegs().GetSpliced().GetExons().front()
-                -> GetProduct_start().GetProtpos();
-        CCdregion_Base::EFrame starting_frame = CCdregion::eFrame_one;
+//         const CProt_pos &starting_pos =
+//             input_align.GetSegs().GetSpliced().GetExons().front()
+//                 -> GetProduct_start().GetProtpos();
+//         CCdregion_Base::EFrame starting_frame = CCdregion::eFrame_one;
 
-        /// Set starting frame to reverse of what it intuitively seems it
-        /// should be, to fit the way CSeqTranslator handles Seq-feat frames
-        if (starting_pos.CanGetFrame()) {
-            switch (starting_pos.GetFrame()) {
-            case 2:
-                starting_frame = CCdregion::eFrame_three;
-                break;
+//         /// Set starting frame to reverse of what it intuitively seems it
+//         /// should be, to fit the way CSeqTranslator handles Seq-feat frames
+//         if (starting_pos.CanGetFrame()) {
+//             switch (starting_pos.GetFrame()) {
+//             case 2:
+//                 starting_frame = CCdregion::eFrame_three;
+//                 break;
 
-            case 3:
-                starting_frame = CCdregion::eFrame_two;
-                break;
+//             case 3:
+//                 starting_frame = CCdregion::eFrame_two;
+//                 break;
 
-            default:
-                break;
-            }
-        }
+//             default:
+//                 break;
+//             }
+//         }
 
         CSeq_align *fake_transcript_align = new CSeq_align;
         align.Reset(fake_transcript_align);
@@ -595,12 +599,9 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         CRef<CSeq_id> prot_id(new CSeq_id);
         prot_id->Assign(fake_transcript_align->GetSeq_id(0));
 
-        if (m_flags & (fForceTranscribeMrna | fForceTranslateCds) &&
-            !(m_flags & fGenerateLocalIds))
         {
-            /// We're going to create new bioseqs, without generating local ids;
-            /// that's OK for the protein, but for the mRna we have to force
-            /// creating a local id, since the id we have in the alignment is a
+            /// for the mRna we have to 
+            /// create a local id, since the id we have in the alignment is a
             /// protein id
             static CAtomicCounter counter;
             size_t new_id_num = counter.Add(1);
@@ -621,17 +622,19 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             s_TransformToNucpos((*exon_it)->SetProduct_start());
             s_TransformToNucpos((*exon_it)->SetProduct_end());
         }
+        fake_transcript_align->SetSegs().SetSpliced().SetProduct_length() = 
+            fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()*3+3;
 
-        TSeqPos offset = fake_transcript_align->GetSeqStart(0);
-        if (offset) {
-            /// change all coordinates to start at 0
-            NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
-                     fake_transcript_align->SetSegs().SetSpliced().SetExons())
-            {
-                (*exon_it)->SetProduct_start().SetNucpos() -= offset;
-                (*exon_it)->SetProduct_end().SetNucpos() -= offset;
-            }
-        }
+//         TSeqPos offset = (fake_transcript_align->GetSeqStart(0)/3)*3;
+//         if (offset) {
+//             /// change all coordinates to start at 0
+//             NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
+//                      fake_transcript_align->SetSegs().SetSpliced().SetExons())
+//             {
+//                 (*exon_it)->SetProduct_start().SetNucpos() -= offset;
+//                 (*exon_it)->SetProduct_end().SetNucpos() -= offset;
+//             }
+//         }
 
         if (found_stop_codon) {
             /// Extend last exon to include stop codon
@@ -657,10 +660,10 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
 
         CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(
             fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(),
-            0, fake_transcript_align->GetSeqStop(0)));
+            0, fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()-1));
 
         cd_feat.Reset(new CSeq_feat);
-        cd_feat->SetData().SetCdregion().SetFrame(starting_frame);
+        cd_feat->SetData().SetCdregion();
 
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(input_align.GetSeq_id(1));
         if (!bsh) {
@@ -774,7 +777,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         ? x_CreateNcRnaFeature(&full_length_rna.GetOriginalFeature(),
                                *align, loc, opts)
         : x_CreateMrnaFeature(*align, loc, time, model_num,
-                              seqs, rna_id, cdregion);
+                              seqs, rna_id);
 
     CRef<CSeq_feat> gene_feat;
 
@@ -1020,7 +1023,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
     to_genomic.KeepNonmappingRanges();
 
     int seq_size = 0;
-    int prev_to = -1;
+    int prev_product_to = -1;
     bool prev_fuzz = false;
 
     for (CSeq_loc_CI loc_it(loc,
@@ -1031,7 +1034,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
         CConstRef<CSeq_loc> exon = GetSeq_loc(loc_it);
         CRef<CSeq_loc> mrna_loc = to_mrna.Map(*exon);
 
-        if ((prev_to > -1  &&
+        if ((prev_product_to > -1  &&
              (loc_it.GetStrand() != eNa_strand_minus ?
               loc_it.GetFuzzFrom() : loc_it.GetFuzzTo()) != NULL)  ||
             prev_fuzz) {
@@ -1043,7 +1046,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                     (inst.GetSeq_data().GetIupacna().Get(),CSeq_inst::eMol_rna);
                 inst.ResetSeq_data();
             }
-            int gap_len = add_unaligned_parts ? mrna_loc->GetTotalRange().GetFrom()-(prev_to+1) : 0;
+            int gap_len = add_unaligned_parts ? mrna_loc->GetTotalRange().GetFrom()-(prev_product_to+1) : 0;
             inst.SetExt().SetDelta().AddLiteral(gap_len);
             if (gap_len == 0)
                 inst.SetExt().SetDelta().Set().back()
@@ -1051,36 +1054,61 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
         }
 
         int part_count = 0;
+//NEW        int prev_genomic_pos = loc_it.GetStrand() != eNa_strand_minus ? exon->GetTotalRange().GetFrom() : exon->GetTotalRange().GetTo();
         for (CSeq_loc_CI part_it(*mrna_loc);  part_it;  ++part_it) {
             ++part_count;
-            if (prev_to<0) {
-                prev_to = part_it.GetRange().GetFrom()-1;
+            if (prev_product_to<0) {
+                prev_product_to = part_it.GetRange().GetFrom()-1;
                 if (add_unaligned_parts && part_it.GetRange().GetFrom() > 0) {
                     seq_size = part_it.GetRange().GetFrom();
                     inst.SetExt().SetDelta().AddLiteral(seq_size);
                 }
             }
-            int deletion_len = part_it.GetRange().GetFrom()-(prev_to+1);
+            int deletion_len = part_it.GetRange().GetFrom()-(prev_product_to+1);
             if (deletion_len > 0) {
                 if (has_indel != NULL) {
                     *has_indel = true;
                 }
                 string deletion(deletion_len, 'N');
+//NEW                string deletion((add_unaligned_parts ? deletion_len : deletion_len % 3), 'N');
                 AddLiteral(inst, deletion, CSeq_inst::eMol_rna);
+                seq_size += deletion.size();
             }
 
             CConstRef<CSeq_loc> part = GetSeq_loc(part_it);
             CRef<CSeq_loc> genomic_loc = to_genomic.Map(*part);
+            //NEW
+            /*
+            if (!genomic_loc->IsInt())
+                NCBI_THROW(CException, eUnknown,
+                           "Mapped exon piece should be an interval");
 
+            if (add_unaligned_parts) {
+                int genomic_insertion_len = 0;
+                if (loc_it.GetStrand() != eNa_strand_minus) {
+                    genomic_insertion_len = genomic_loc->GetInt().GetFrom() - prev_genomic_pos;
+                    if (genomic_insertion_len >=3) {
+                        genomic_loc->SetInt().SetFrom(prev_genomic_pos+genomic_insertion_len%3);
+                    }
+                    prev_genomic_pos = genomic_loc->GetInt().GetTo()+1;
+                } else {
+                    genomic_insertion_len = prev_genomic_pos - genomic_loc->GetInt().GetTo();
+                    if (genomic_insertion_len >=3) {
+                        genomic_loc->SetInt().SetTo(prev_genomic_pos-genomic_insertion_len%3);
+                    }
+                    prev_genomic_pos = genomic_loc->GetInt().GetFrom()-1;
+                }
+            }
+            */
             CSeqVector vec(*genomic_loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
             string seq;
             vec.GetSeqData(0, vec.size(), seq);
 
             AddLiteral(inst, seq, CSeq_inst::eMol_rna);
 
-            seq_size += part_it.GetRange().GetTo()-prev_to;
+            seq_size += vec.size();
 
-            prev_to = part_it.GetRange().GetTo();
+            prev_product_to = part_it.GetRange().GetTo();
         }
         if (part_count > 1 && has_indel != NULL) {
             *has_indel = true;
@@ -1339,8 +1367,7 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
                                      const CTime& time,
                                      size_t model_num,
                                      CBioseq_set& seqs,
-                                     const CSeq_id& rna_id,
-                                     const CSeq_feat* cdregion)
+                                     const CSeq_id& rna_id)
 {
     CRef<CSeq_feat> mrna_feat;
     if (m_flags & fCreateMrna) {
@@ -2207,7 +2234,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         has_length_mismatch = true;
     }
 
-    if (al) {
+    if (al && al->GetSegs().GetSpliced().GetProduct_type()==CSpliced_seg::eProduct_type_transcript) {
         ///
         /// can do full comparison
         ///

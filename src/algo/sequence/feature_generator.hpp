@@ -74,6 +74,8 @@ struct CFeatureGenerator::SImplementation {
 
     void StitchSmallHoles(objects::CSeq_align& align);
     void TrimHolesToCodons(objects::CSeq_align& align);
+    void TrimEnds(objects::CSeq_align& align);
+    void MaximizeTranslation(objects::CSeq_align& align);
 
     CConstRef<objects::CSeq_align> CleanAlignment(const objects::CSeq_align& align_in);
     CRef<CSeq_feat> ConvertAlignToAnnot(const objects::CSeq_align& align,
@@ -163,8 +165,7 @@ private:
                                         const CTime& time,
                                         size_t model_num,
                                         CBioseq_set& seqs,
-                                        const CSeq_id& rna_id,
-                                        const CSeq_feat* cdregion);
+                                        const CSeq_id& rna_id);
     void x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
                              const CBioseq_Handle& handle,
                              SMapper& mapper,

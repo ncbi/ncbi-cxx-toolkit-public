@@ -15341,3 +15341,170 @@ B802E089DC50DDD383251E925DD8C6B31D203548421554224239E3C27143CD33D3EEDF3FEFFEFC
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_YMD_27"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 567,
+        ext delta {
+          literal {
+            length 84
+          },
+          literal {
+            length 309,
+            seq-data ncbi2na '6AEF458429F7A4284549B5627A029E7A5F6D662A6116EBAE
+4C93A129E91905F8E179964DB50A9E1106A9B993A2F6D020A9E0BD1698A1D163A50DE39EDAD3A8
+97D9E2F6266578D6606D2662A0DB80'H
+          },
+          literal {
+            length 174
+          }
+        },
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              score {
+                {
+                  id str "num_ident",
+                  value int 120
+                },
+                {
+                  id str "num_positives",
+                  value int 156
+                },
+                {
+                  id str "num_negatives",
+                  value int 63
+                },
+                {
+                  id str "product_gap_length",
+                  value int 0
+                },
+                {
+                  id str "genomic_gap_length",
+                  value int 0
+                },
+                {
+                  id str "align_length",
+                  value int 219
+                }
+              },
+              segs spliced {
+                product-id local str "MRNA_YMD_1",
+                genomic-id gi 18466424,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 84,
+                    product-end nucpos 392,
+                    genomic-start 122448,
+                    genomic-end 122756,
+                    parts {
+                      mismatch 1,
+                      diag 62,
+                      mismatch 15,
+                      diag 93,
+                      mismatch 30,
+                      diag 9,
+                      mismatch 33,
+                      diag 63,
+                      mismatch 1,
+                      diag 2
+                    },
+                    scores {
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 567
+              },
+              bounds {
+                whole gi 29143757,
+                int {
+                  from 122347,
+                  to 123047,
+                  strand plus,
+                  id gi 18466424
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 13159
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              product whole gi 29143757,
+              location int {
+                from 0,
+                to 566,
+                id local str "MRNA_YMD_1"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_YMD_27"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        }
+      },
+      inst {
+        repr delta,
+        mol aa,
+        length 189,
+        ext delta {
+          literal {
+            length 28
+          },
+          literal {
+            length 103,
+            seq-data iupacaa "RVFTDKASGKDTQRPELERLLAFVREGDTVVVHSMDRLARNLDDLRRI
+VQGLTQRGVRMEFVKEGLKFTGEDSPMANLMLSVMGAFAEFERALIRERQREGIV"
+          },
+          literal {
+            length 58
+          }
+        }
+      }
+    }
+  }
+}
