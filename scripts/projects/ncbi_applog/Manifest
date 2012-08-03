@@ -29,6 +29,8 @@ POSTBUILD: cp $srcdir/src/misc/clog/app/ncbi_applog.cgi $installdir/bin
 Linux32-Centos  : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux64-Centos  : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
+Linux64-Ubuntu    : plain      : GCC.sh           --without-debug --with-mt --with-static --without-runpath --with-flat-makefile
+
 FreeBSD32  : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 SunOSx86   : plain  : WorkShop59.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
@@ -41,6 +43,6 @@ IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-stati
 #Win32_9    : 900 : static  32  ReleaseMT
 Win32_10   : 1000 : static  32  ReleaseMT
 
-XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
+#XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
 
 #USE_COMPONENTS
