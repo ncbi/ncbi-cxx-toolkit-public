@@ -666,6 +666,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 " firewall ports may fail to operate.  Only those ports found"
                 " in working order will be used to access NCBI services\n";
         }
+        net_info->path[0] = '\0';
+        net_info->args[0] = '\0';
     }
 
     PreCheck(eFirewallConnections, 0/*main*/, temp);
