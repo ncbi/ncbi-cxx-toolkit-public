@@ -243,9 +243,10 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
-    // Set error posting and tracing at maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostLevel(eDiag_Trace);
+    // Set error posting and tracing at what regular use would do.
+    // If traces are needed, they can be enabled from the environment.
+    //SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
     SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
