@@ -203,27 +203,44 @@ inline
 #  endif /*__GNUC__*/
 static int x_GnuTlsStatusToError(EIO_Status status, int/*bool*/ timeout)
 {
+    int error;
+
     assert(status != eIO_Success);
 
     switch (status) {
-    case eIO_Closed:
-        return SOCK_ENOTCONN;
     case eIO_Timeout:
-        if (timeout)
-            return SOCK_ETIMEDOUT;
+        if (!timeout) {
 #  ifdef NCBI_OS_MSWIN
-        return SOCK_EWOULDBLOCK;
+            error = SOCK_EWOULDBLOCK;
 #  else
-        return SOCK_EAGAIN;
+            error = SOCK_EAGAIN;
 #  endif /*NCBI_OS_MSWIN*/
-    case eIO_Unknown:
-        return 0/*keep*/;
+        } else
+            error = SOCK_ETIMEDOUT;
+        break;
+    case eIO_Closed:
+        error = SOCK_ENOTCONN;
+        break;
+    case eIO_Interrupt:
+        error = SOCK_EINTR;
+        break;
     case eIO_NotSupported:
-        return NCBI_NOTSUPPORTED;
+        error = NCBI_NOTSUPPORTED;
+        break;
+    case eIO_Unknown:
+        error = 0/*keep*/;
+        break;
     default:
+        /*NB:eIO_InvalidArg*/
+        error = EINVAL;
         break;
     }
-    return EINVAL;
+#if 0
+    CORE_TRACEF(("CONNECT status %s -> errno %d%s", IO_StatusStr(status),
+                 error ? error : errno,
+                 error ? ""    : " (kept)"));
+#endif
+    return error;
 }
 
 
@@ -232,18 +249,25 @@ inline
 #  endif /*__GNUC__*/
 static EIO_Status x_GnuTlsErrorToStatus(int error)
 {
+    EIO_Status status;
+
     assert(error <= 0);
 
     if (!error)
         return eIO_Success;
-    else if (error == GNUTLS_E_INTERRUPTED)
-        return eIO_Interrupt;
     else if (error == GNUTLS_E_AGAIN)
-        return eIO_Timeout;
-    else if (error  &&  !gnutls_error_is_fatal(error))
-        return eIO_Unknown;
+        status = eIO_Timeout;
+    else if (error == GNUTLS_E_INTERRUPTED)
+        status = eIO_Interrupt;
+    else if (gnutls_error_is_fatal(error))
+        status = eIO_Closed;
     else
-        return eIO_Closed;
+        status = eIO_Unknown;
+#if 0
+    CORE_TRACEF(("GNUTLS error %d -> CONNECT status %s",
+                 error, IO_StatusStr(status)));
+#endif
+    return status;
 }
 
 
