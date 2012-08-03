@@ -415,7 +415,7 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
         if (!proxy  &&  net_info->debug_printout)
-            ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+            ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
         status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
                                data, size, flags);
         assert(!sock ^ !(status != eIO_Success));

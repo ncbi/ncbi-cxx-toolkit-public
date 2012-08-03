@@ -484,13 +484,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
 
 /* Log the contents of "*info" into specified "log" with severity "sev".
  */
-extern NCBI_XCONNECT_EXPORT void ConnNetInfo_LogEx
+extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Log
 (const SConnNetInfo* info,
  ELOG_Level          sev,
  LOG                 log
  );
-
-#define ConnNetInfo_Log(i, l) ConnNetInfo_LogEx((i), eLOG_Trace, (l))
 
 
 /* Reconstruct text URL out of the SConnNetInfo's components

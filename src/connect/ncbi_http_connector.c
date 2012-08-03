@@ -546,7 +546,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 reset_user_header = 0;
 
             if (uuu->net_info->debug_printout)
-                ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
+                ConnNetInfo_Log(uuu->net_info, eLOG_Note, CORE_GetLOG());
 
             status = URL_ConnectEx(host, port, path, args,
                                    (EReqMethod) uuu->net_info->req_method, len,

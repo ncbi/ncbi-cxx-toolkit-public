@@ -633,7 +633,7 @@ int main(int argc, const char* argv[])
         ERR_POST(Warning << "Username not provided, defaulted to `ftp'");
         strcpy(net_info->user, "ftp");
     }
-    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     // Reassemble the URL from the connection parameters
     url = ConnNetInfo_URL(net_info);

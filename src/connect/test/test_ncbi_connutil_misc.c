@@ -291,7 +291,7 @@ static void TEST_ConnNetInfo(void)
     strcpy(net_info->user, "user");
     strcpy(net_info->pass, "pass");
 
-    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     str = ConnNetInfo_URL(net_info);
     assert(str);
@@ -308,7 +308,7 @@ static void TEST_ConnNetInfo(void)
     assert(strcmp(net_info->path, "/path4/../path6")   == 0);
     assert(strcmp(net_info->args, "args")              == 0);
 
-    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     str = ConnNetInfo_URL(net_info);
     assert(str);
@@ -448,7 +448,7 @@ static void TEST_ConnNetInfo(void)
     ConnNetInfo_DeleteAllArgs(net_info, "a=b&p=q&f=d");
     printf("HTTP Arg after delete-all: \"%s\"\n", net_info->args);
 
-    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     ConnNetInfo_Destroy(net_info);
 

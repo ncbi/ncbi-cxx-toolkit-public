@@ -281,7 +281,7 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
         if (!proxy  &&  net_info->debug_printout)
-            ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+            ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
         status = SOCK_CreateEx(host, net_info->port, timeout, &sock,
                                data, size, flags);
         _ASSERT(!sock ^ !(status != eIO_Success));
@@ -926,11 +926,11 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
             if (*net_info->host  ||  net_info->port)
                 break; /*not supported*/
             if (net_info->debug_printout)
-                ConnNetInfo_LogEx(net_info.get(), eLOG_Note, CORE_GetLOG());
+                ConnNetInfo_Log(net_info.get(), eLOG_Note, CORE_GetLOG());
             return new CConn_FileStream(net_info->path);
         case eURL_Ftp:
             if (net_info->debug_printout)
-                ConnNetInfo_LogEx(net_info.get(), eLOG_Note, CORE_GetLOG());
+                ConnNetInfo_Log(net_info.get(), eLOG_Note, CORE_GetLOG());
             return new CConn_FTPDownloadStream(net_info->host,
                                                net_info->path,
                                                net_info->user,

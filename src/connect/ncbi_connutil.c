@@ -1150,7 +1150,7 @@ static void s_SaveUserHeader(char* s, const char* name,
         memcpy(s, "NULL\n", 6);
 }
 
-extern void ConnNetInfo_LogEx(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
+extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 {
     char   buf[40];
     size_t uhlen;

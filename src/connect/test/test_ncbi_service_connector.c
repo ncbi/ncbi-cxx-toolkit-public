@@ -62,7 +62,7 @@ int main(int argc, const char* argv[])
     ConnNetInfo_AppendArg(net_info, "service",  "none");
     ConnNetInfo_AppendArg(net_info, "platform", "none");
     ConnNetInfo_AppendArg(net_info, "address",  "2010");
-    ConnNetInfo_LogEx(net_info, eLOG_Note, CORE_GetLOG());
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
 
