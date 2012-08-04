@@ -727,7 +727,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         ("[%s]  Fallback port :%hu is not in the set",
                          uuu->service, uuu->port));
         }
-        net_info->port = uuu->port;
+        net_info->port    = uuu->port;
+        net_info->path[0] = '\0';
+        net_info->args[0] = '\0';
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         return s_SocketConnectorBuilder(net_info, &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0);

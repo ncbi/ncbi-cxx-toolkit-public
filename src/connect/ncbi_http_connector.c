@@ -252,7 +252,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                     ||  (uuu->flags & fHTTP_InsecureRedirect)
                     ||  !uuu->w_len) {
                     int secure = uuu->net_info->scheme == eURL_Https ? 1 : 0;
-                    *uuu->net_info->args = '\0'/*arguments not inherited*/;
+                    uuu->net_info->args[0] = '\0'/*arguments not inherited*/;
                     fail = !ConnNetInfo_ParseURL(uuu->net_info, retry->data);
                     if (!fail  &&  secure
                         &&  uuu->net_info->scheme != eURL_Https
@@ -1636,8 +1636,8 @@ static EIO_Status s_CreateHttpConnector
     ConnNetInfo_OverrideUserHeader(xxx, user_header);
     if (tunnel) {
         xxx->req_method = eReqMethod_Connect;
-        *xxx->path = '\0';
-        *xxx->args = '\0';
+        xxx->path[0] = '\0';
+        xxx->args[0] = '\0';
         if (xxx->http_referer) {
             free((void*) xxx->http_referer);
             xxx->http_referer = 0;

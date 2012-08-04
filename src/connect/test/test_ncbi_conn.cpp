@@ -60,6 +60,9 @@ BEGIN_NCBI_SCOPE
 static const char kLogfile[] = "test_ncbi_conn.log";
 
 
+static bool s_Run = true;
+
+
 static volatile bool s_Canceled = false;
 
 
@@ -148,6 +151,8 @@ bool CTestApp::LoadConfig(CNcbiRegistry& reg, const string* conf)
 
 void CTestApp::Init(void)
 {
+    s_Run = false;
+
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist ("h"))
         args->Delete("h");
@@ -169,6 +174,8 @@ void CTestApp::Init(void)
 
 int CTestApp::Run(void)
 {
+    s_Run = true;
+
     CONNECT_Init(&GetConfig());
 
     const CArgs& args = GetArgs();
@@ -294,7 +301,7 @@ int main(int argc, const char* argv[])
 #ifdef NCBI_OS_MSWIN
     if (retval < 0)
         retval = ~retval;
-    else {
+    else if (s_Run) {
         NcbiCout << "Hit any key or program will bail out in 1 minute..."
                  << NcbiFlush;
         for (int n = 0;  n < 120;  n++) {
