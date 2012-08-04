@@ -937,13 +937,20 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                                                net_info->pass,
                                                kEmptyStr/*path*/,
                                                net_info->port,
-                                               net_info->debug_printout
-                                               == eDebugPrintout_Data
-                                               ? fFTP_LogAll
-                                               : net_info->debug_printout
-                                               == eDebugPrintout_Some
-                                               ? fFTP_LogControl
-                                               : 0, 0, 0,
+                                               (net_info->debug_printout
+                                                == eDebugPrintout_Some
+                                                ? fFTP_LogControl
+                                                : net_info->debug_printout
+                                                == eDebugPrintout_Data
+                                                ? fFTP_LogAll
+                                                : 0) |
+                                               (net_info->req_method
+                                                == eReqMethod_Post
+                                                ? fFTP_UsePassive
+                                                : net_info->req_method
+                                                == eReqMethod_Get
+                                                ? fFTP_UseActive
+                                                : 0), 0, 0,
                                                net_info->timeout,
                                                buf_size);
         default:

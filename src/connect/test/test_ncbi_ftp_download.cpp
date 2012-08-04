@@ -641,15 +641,15 @@ int main(int argc, const char* argv[])
 
     // Figure out what FTP flags to use
     TFTP_Flags flags = 0;
-    if        (net_info->debug_printout == eDebugPrintout_Data) {
-        flags |= fFTP_LogAll;
-    } else if (net_info->debug_printout == eDebugPrintout_Some) {
+    if        (net_info->debug_printout == eDebugPrintout_Some) {
         flags |= fFTP_LogControl;
+    } else if (net_info->debug_printout == eDebugPrintout_Data) {
+        flags |= fFTP_LogAll;
     }
     if        (net_info->req_method == eReqMethod_Post) {
-        flags |= fFTP_UseActive;
-    } else if (net_info->req_method == eReqMethod_Get) {
         flags |= fFTP_UsePassive;
+    } else if (net_info->req_method == eReqMethod_Get) {
+        flags |= fFTP_UseActive;
     }
     char val[40];
     ConnNetInfo_GetValue(0, "DELAYRESTART", val, sizeof(val), 0);
