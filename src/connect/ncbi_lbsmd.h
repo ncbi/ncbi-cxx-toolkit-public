@@ -55,7 +55,7 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
  * LBSMD_FastHeapAccess() was set to "eOff" and there is a cached copy
  * of LBSM heap kept in-core, it will be released by this call.
  */
-extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
+NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
 
 
 /* Get (perhaps cached) copy of LBSM heap, which is guaranteed to be
@@ -74,7 +74,7 @@ extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetConfig(void);
  * call LBSMD_GetConfig() provided that LBSM_FastHeapAccess() has
  * been set to "eOff" (which is the default setting).
  */
-extern NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
+NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
 
 
 /* Get a value of a host parameter from the LBSMD host environment.
@@ -84,12 +84,11 @@ extern NCBI_XCONNECT_EXPORT HEAP LBSMD_GetHeapCopy(TNCBI_Time time);
  * or SERV_LOCALHOST(or 0) to get the information as defined for the current
  * (local) host.
  */
-extern NCBI_XCONNECT_EXPORT const char* LBSMD_GetHostParameter
-(unsigned int addr,
- const char*  name);
+NCBI_XCONNECT_EXPORT const char* LBSMD_GetHostParameter(unsigned int addr,
+                                                        const char*  name);
 
 
-extern NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
+NCBI_XCONNECT_EXPORT ESwitch LBSMD_FastHeapAccess(ESwitch onoff);
 
 
 int LBSM_HINFO_CpuCount(const HOST_INFO hinfo);
