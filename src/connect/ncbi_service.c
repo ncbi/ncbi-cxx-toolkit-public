@@ -41,11 +41,21 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Service
 
+
+/*
+ * FIXME FIXME FIXME FIXME FIXME ---->
+ *
+ * NOTE: For fSERV_ReverseDns lookups the following rules apply to "skip"
+ *       contents:  a service would not be selected if there is a same-named
+ *       entry with matching host[:port] is found in the "skip" list, or
+ *       there is a nameless...
+ * NOTE:  Lookup by mask cancels fSERV_ReverseDns mode, if both are used.
+ */
+
+
 #define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
 
 
-/* Use a property that "&a" for an array is equivalent to just "a", but for
- * pointers it will increase indirection, so SizeOf() will always be 1. */
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
 
