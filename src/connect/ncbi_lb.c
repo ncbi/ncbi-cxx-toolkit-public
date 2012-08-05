@@ -36,6 +36,29 @@
 #define NCBI_USE_ERRCODE_X   Connect_LBSM
 
 
+/*
+ * Note parameters' ranges here:
+ * 0.0 <= pref <= 1.0
+ * 0.0 <  gap  <= 1.0
+ * n >= 2
+ * Hence, the formula below always yields in a value from the range [0..1].
+ */
+static double s_Preference(double pref, double gap, size_t n)
+{
+    double spread;
+    assert(0.0 <= pref && pref <= 1.0);
+    assert(0.0 <  gap  && gap  <= 1.0);
+    assert(n >= 2);
+    if (gap >= pref)
+        return gap;
+    spread = 14.0/(n + 12.0);
+    if (gap >= spread/((double) n))
+        return pref;
+    else
+        return 2.0/spread*gap*pref;
+}
+
+
 size_t LB_Select(SERV_ITER     iter,          void*  data,
                  FGetCandidate get_candidate, double bonus)
 {
@@ -98,7 +121,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
     } else {
         if (iter->pref > 0.0) {
             if (point > 0.0  &&  access > 0.0  &&  total != access) {
-                p = SERV_Preference(iter->pref, access/total, n);
+                p = s_Preference(iter->pref, access/total, n);
 #ifdef NCBI_LB_DEBUG
                 CORE_LOGF(eLOG_Note,
                           ("(P=%lf,\tA=%lf,\tT=%lf,\tA/T=%lf,\tN=%d) "

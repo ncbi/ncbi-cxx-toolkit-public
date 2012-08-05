@@ -52,13 +52,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-    static void        s_Reset      (SERV_ITER);
     static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
     static int/*bool*/ s_Update     (SERV_ITER, const char*, int);
+    static void        s_Reset      (SERV_ITER);
     static void        s_Close      (SERV_ITER);
 
     static const SSERV_VTable s_op = {
-        s_Reset, s_GetNextInfo, s_Update, 0/*Feedback*/, s_Close, "DISPD"
+        s_GetNextInfo, 0/*Feedback*/, s_Update, s_Reset, s_Close, "DISPD"
     };
 #ifdef __cplusplus
 } /* extern "C" */
@@ -409,7 +409,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         data->net_info->firewall = eFWMode_Adaptive;
     ConnNetInfo_ExtendUserHeader(data->net_info,
                                  "User-Agent: NCBIServiceDispatcher/"
-                                 DISP_PROTOCOL_VERSION
+                                 HTTP_DISP_VERSION
 #ifdef NCBI_CXX_TOOLKIT
                                  " (CXX Toolkit)"
 #else

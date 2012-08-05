@@ -42,12 +42,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-    static void        s_Reset      (SERV_ITER);
     static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
+    static void        s_Reset      (SERV_ITER);
     static void        s_Close      (SERV_ITER);
 
     static const SSERV_VTable s_op = {
-        s_Reset, s_GetNextInfo, 0/*Update*/, 0/*Penalize*/, s_Close, "LOCAL"
+        s_GetNextInfo, 0/*Feedback*/, 0/*Update*/, s_Reset, s_Close, "LOCAL"
     };
 #ifdef __cplusplus
 } /* extern "C" */

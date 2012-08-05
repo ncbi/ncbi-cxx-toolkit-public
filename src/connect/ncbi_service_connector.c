@@ -42,7 +42,7 @@
 #define NCBI_USE_ERRCODE_X   Connect_Service
 
 
-typedef unsigned short TBSERV_Type;
+typedef unsigned short TSERV_SafeType;
 
 
 typedef struct SServiceConnectorTag {
@@ -55,8 +55,8 @@ typedef struct SServiceConnectorTag {
     unsigned int   host;                /* Parsed connection info... (n.b.o) */
     unsigned short port;                /*                       ... (h.b.o) */
     unsigned short retry;               /* Open retry count since last okay  */
-    unsigned char  reset;               /* Non-zero if iter was just reset   */
-    TBSERV_Type    types;               /* Server types, abridged to 16 bits */
+    TSERV_SafeType types;               /* Server types, abridged to 16 bits */
+    unsigned       reset:1;             /* Non-zero if iter was just reset   */
     ticket_t       ticket;              /* Network byte order (none if zero) */
     EIO_Status     status;              /* Status of last op                 */
     SSERVICE_Extra params;              /* Extra params as passed to ctor    */
@@ -670,7 +670,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 
     ConnNetInfo_ExtendUserHeader
         (net_info, "User-Agent: NCBIServiceConnector/"
-         DISP_PROTOCOL_VERSION
+         HTTP_DISP_VERSION
 #ifdef NCBI_CXX_TOOLKIT
          " (CXX Toolkit)"
 #else

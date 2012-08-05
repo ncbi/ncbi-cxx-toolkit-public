@@ -147,9 +147,9 @@ char* SERV_ServiceName(const char* service)
 }
 
 
-static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
-                                 const char* name,
-                                 SSERV_Info* info)
+static int/*bool*/ s_AddSkipInfo(SERV_ITER      iter,
+                                 const char*    name,
+                                 SSERV_InfoCPtr info)
 {
     size_t n;
     assert(name);
@@ -161,15 +161,15 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
             /* Replace older version */
             if (iter->last == iter->skip[n])
                 iter->last  = info;
-            free(iter->skip[n]);
+            free((void*) iter->skip[n]);
             iter->skip[n] = info;
             return 1;
         }
     }
     if (iter->n_skip == iter->a_skip) {
-        SSERV_Info** temp;
+        SSERV_InfoCPtr* temp;
         n = iter->a_skip + 10;
-        temp = (SSERV_Info**)
+        temp = (SSERV_InfoCPtr*)
             (iter->skip
              ? realloc(iter->skip, n * sizeof(*temp))
              : malloc (            n * sizeof(*temp)));
@@ -379,7 +379,7 @@ static void s_SkipSkip(SERV_ITER iter)
         return;
     n = 0;
     while (n < iter->n_skip) {
-        SSERV_Info* temp = iter->skip[n];
+        SSERV_InfoCPtr temp = iter->skip[n];
         if (temp->time != NCBI_TIME_INFINITE
             &&  (!iter->time/*iterator reset*/
                  ||  ((temp->type != fSERV_Dns  ||  temp->host)
@@ -390,7 +390,7 @@ static void s_SkipSkip(SERV_ITER iter)
             }
             if (iter->last == temp)
                 iter->last  = 0;
-            free(temp);
+            free((void*) temp);
         } else
             n++;
     }
@@ -577,7 +577,7 @@ void SERV_Close(SERV_ITER iter)
         return;
     SERV_Reset(iter);
     for (i = 0;  i < iter->n_skip;  i++)
-        free(iter->skip[i]);
+        free((void*) iter->skip[i]);
     iter->n_skip = 0;
     if (iter->op) {
         if (iter->op->Close)
@@ -845,29 +845,6 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         str = 0;
     BUF_Destroy(buf);
     return str;
-}
-
-
-/*
- * Note parameters' ranges here:
- * 0.0 <= pref <= 1.0
- * 0.0 <  gap  <= 1.0
- * n >= 2
- * Hence, the formula below always yields in a value from the range [0..1].
- */
-double SERV_Preference(double pref, double gap, size_t n)
-{
-    double spread;
-    assert(0.0 <= pref && pref <= 1.0);
-    assert(0.0 <  gap  && gap  <= 1.0);
-    assert(n >= 2);
-    if (gap >= pref)
-        return gap;
-    spread = 14.0/(n + 12.0);
-    if (gap >= spread/((double) n))
-        return pref;
-    else
-        return 2.0/spread*gap*pref;
 }
 
 
