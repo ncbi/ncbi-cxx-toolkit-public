@@ -3175,7 +3175,7 @@ static EIO_Status s_WriteData(SOCK        sock,
 
         /* statistics & logging */
         if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
-            s_DoLog(n_written > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Write,
+            s_DoLog(*n_written > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Write,
                     status == eIO_Success ? data : (void*) &x_error,
                     status != eIO_Success ? 0    : *n_written, " [encrypt]");
         }
