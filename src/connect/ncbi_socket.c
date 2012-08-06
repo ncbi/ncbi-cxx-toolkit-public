@@ -112,6 +112,18 @@
 #define NCBI_USE_ERRCODE_X   Connect_Socket
 
 
+#ifndef   INADDR_LOOPBACK
+#  define INADDR_LOOPBACK  0x1F000001
+#endif /*!INADDR_LOOPBACK*/
+#ifndef   IN_LOOPBACKNET
+#  define IN_LOOPBACKNET   127
+#endif /*!IN_LOOPBACKNET*/
+#ifdef IN_CLASSA_MAX
+#  if IN_CLASSA_MAX <= IN_LOOPBACKNET
+#    error "IN_LOOPBACKNET is out of range"
+#  endif /*IN_CLASSA_MAX<=IN_LOOPBACKNET*/
+#endif /*IN_CLASSA_MAX*/
+
 #ifndef   MAXHOSTNAMELEN
 #  define MAXHOSTNAMELEN  255
 #endif /* MAXHOSTNAMELEN */
@@ -7492,6 +7504,22 @@ extern int/*bool*/ SOCK_isipEx(const char* host, int/*bool*/ fullquad)
 }
 
 
+extern int/*bool*/ SOCK_IsLoopbackAddress(unsigned int ip)
+{
+    /* 127/8 */
+    if (ip) {
+        unsigned int addr = ntohl(ip);
+#if defined(IN_CLASSA) && defined(IN_CLASSA_NET) && defined(IN_CLASSA_NSHIFT)
+        return IN_CLASSA(addr)
+            &&  (addr & IN_CLASSA_NET) == (IN_LOOPBACKNET << IN_CLASSA_NSHIFT);
+#else
+        return !((addr & 0xFF000000) ^ (INADDR_LOOPBACK-1));
+#  endif /*IN_CLASSA && IN_CLASSA_NET && IN_CLASSA_NSHIFT*/
+    }
+    return 0/*false*/;
+}
+
+
 extern unsigned int SOCK_HostToNetLong(unsigned int value)
 {
     return htonl(value);
@@ -7534,7 +7562,7 @@ extern unsigned int SOCK_gethostbynameEx(const char* hostname,
     static int s_Warning = 0;
     unsigned int retval = s_gethostbyname(hostname, log);
     if (!s_Warning  &&  retval
-        &&  !hostname  &&  retval == SOCK_LOOPBACK) {
+        &&  !hostname  &&  SOCK_IsLoopbackAddress(retval)) {
         char addr[40];
         s_Warning = 1;
         if (SOCK_ntoa(retval, addr + 1, sizeof(addr) - 1) != 0)
@@ -7563,7 +7591,7 @@ extern char* SOCK_gethostbyaddrEx(unsigned int host,
     static int s_Warning = 0;
     char* retval = s_gethostbyaddr(host, name, namelen, log);
     if (!s_Warning  &&  retval
-        &&  (( host == SOCK_LOOPBACK
+        &&  ((SOCK_IsLoopbackAddress(host)
               &&  strncasecmp(retval, "localhost", 9) != 0)  ||
              (!host
               &&  strncasecmp(retval, "localhost", 9) == 0))) {

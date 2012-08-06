@@ -127,6 +127,7 @@
  *
  *  SOCK_ntoa
  *  SOCK_isip[Ex]
+ *  SOCK_IsLoopbackAddress
  *  SOCK_HostToNetShort
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
@@ -1889,6 +1890,15 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
 (const char* host
+ );
+
+
+/** Check whether an address is a loopback one.
+ * Return non-zero (true) if the IP address (in network byte order)
+ * provided as an agrument, is a loopback one;  zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress
+(unsigned int ip
  );
 
 
