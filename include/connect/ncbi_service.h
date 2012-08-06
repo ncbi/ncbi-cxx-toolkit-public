@@ -37,15 +37,18 @@
 #include <connect/ncbi_host_info.h>
 
 
-/* Revision 6.260 */
-#define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  260
-
-
 /** @addtogroup ServiceSupport
  *
  * @{
  */
+
+/* Revision 6.260 */
+#define SERV_CLIENT_REVISION_MAJOR  6
+#define SERV_CLIENT_REVISION_MINOR  260
+
+/* Special values for 'preferred_host' parameter */
+#define SERV_LOCALHOST  ((unsigned int) ~0UL)
+#define SERV_ANYHOST    0
 
 
 #ifdef __cplusplus
@@ -53,8 +56,7 @@ extern "C" {
 #endif
 
 
-/* Iterator through the servers
- */
+/* Iterator through the servers, forward declaration for an opaque type */
 struct SSERV_IterTag;
 typedef struct SSERV_IterTag* SERV_ITER;
 
@@ -83,15 +85,12 @@ typedef struct SSERV_IterTag* SERV_ITER;
  * parameter 'net_info', which has to be explicitly passed in the two
  * subsequent variations of this call, is filled out internally by
  * ConnNetInfo_Create(service), and then automatically used).
- * NOTE that no preferred host (0) is set in the resultant iterator.
+ * NOTE that there is no preferred host set in the resultant iterator.
  */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 (const char*          service        /* service name                         */
  );
 
-/* Special values for 'preferred_host' parameter */
-#define SERV_LOCALHOST ((unsigned int)(~0UL))
-#define SERV_ANYHOST   0             /* default, may be used as just 0       */
 
 /* Special "type" bit values that may be combined with server types.
  * NB:  Also, MSBs should be kept compatible with EMGHBN_Option */
@@ -101,20 +100,32 @@ enum ESpecialType {
     /* Only stateless servers should be returned */
     fSERV_Stateless         = 0x00100000,
     fSERV_Reserved          = 0x00200000, /* Reserved, MBZ */
-    /* Do reverse DNS translation of the would-be resulting info */
+    /* Do reverse LB-DNS translation of the would-be resulting info */
     fSERV_ReverseDns        = 0x00800000,
-    /* Allows to get even down services (but not the off ones!)
-     * NB: most flex preference params are ignored */
-    fSERV_IncludeReserved   = 0x10000000, /* w/local LBSMD only */
-    fSERV_IncludeDown       = 0x20000000,
-    fSERV_IncludeSuppressed = 0x40000000,
-    fSERV_Promiscuous       = 0x60000000
+    /* The following allow to get currently inactive service instances */
+    fSERV_IncludeDown       = 0x08000000,
+    fSERV_IncludeStandby    = 0x10000000,
+    fSERV_IncludeReserved   = 0x20000000, /* NB: not yet implemented */
+    fSERV_IncludePenalized  = 0x40000000,
+    fSERV_IncludeSuppressed = 0x70000000,
+    fSERV_Promiscuous       = 0x78000000
 };
 typedef unsigned int TSERV_Type;     /* Bitwise OR of ESERV_[Special]Type    */
+
 
 /* Simplified (uncluttered) type to use in 'skip' parameter below */
 typedef const SSERV_Info* SSERV_InfoCPtr;
 
+
+/* "skip" array below contains server-info elements that are not to return
+ * from the search (whose server-infos match the would-be result);  however,
+ * special additional rules apply to "skip" elements when the fSERV_ReverseDns
+ * lookup is performed.  The result-to-be is not considered if, either:
+ * 1. There is an fSERV_Dns type entry found in "skip" that matches host[:port]
+ *    (any port if 0), or;
+ * 2. The reverse lookup of the host:port turns up an fSERV_Dns type server
+ *    whose name matches an fSERV_Dns type server from "skip".
+ */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
 (const char*          service,       /* service name                         */
  TSERV_Type           types,         /* mask of type(s) of servers requested */
@@ -124,6 +135,7 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
  size_t               n_skip         /* number of servers in preceding array */
  );
 
+/* Same as SERV_OpenEx(., ., ., ., 0, 0) */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
 (const char*          service,
  TSERV_Type           types,
@@ -139,25 +151,26 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
  * Only when completing successfully, i.e. returning a non-NULL info,
  * this function can also provide the host information as follows: if
  * 'host_info' parameter is passed as a non-NULL pointer, then a copy of the
- * host information is allocated, and the pointer is stored at *host_info.
- * Using this information, various host parameters like load, host
- * environment, number of CPUs can be retrieved (see ncbi_host_info.h).
+ * host information is allocated, and the handle is stored at *host_info.
+ * Using this handle, various host parameters like load, host environment,
+ * number of CPUs can be retrieved (see ncbi_host_info.h).
  * Resulting DNS server info (only if coming out for the first time) may
- * contain 0 in the host field to denote that the name is known but
- * is currently down.
+ * contain 0 in the host field to denote that the name exists but the service
+ * is currently not serving (down / unavailable).
  * NOTE:  Application program should NOT destroy the returned server info:
  *        it will be freed automatically upon iterator destruction.
- *        On the other hand, returned host information has to be
+ *        On the other hand, returned host information handle has to be
  *        explicitly free()'d when no longer needed.
  * NOTE:  Returned server info is valid only until either of the two events:
  *        1) SERV_GetNextInfo[Ex] is called for the same iterator again;
- *        2) iterator closed (SERV_Close() called).
+ *        2) iterator reset / closed (SERV_Reset() / SERV_Close() called).
  */
 extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfoEx
 (SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
  HOST_INFO*           host_info      /* ptr to store host info at [may be 0] */
  );
 
+/* Same as SERV_GetNextInfoEx(., 0) */
 extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfo
 (SERV_ITER            iter
  );
