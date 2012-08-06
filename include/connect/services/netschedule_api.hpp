@@ -171,6 +171,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
         eReading     = 6,  ///< Job has its output been reading
         eConfirmed   = 7,  ///< Final state - read confirmed
         eReadFailed  = 8,  ///< Final state - read failed
+        eDeleted     = 9,  ///< The job has been wiped out of the database.
 
         eLastStatus        ///< Fake status (do not use)
     };

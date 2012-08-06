@@ -387,6 +387,7 @@ string CNetScheduleAPI::StatusToString(EJobStatus status)
     case eReading:     return "Reading";
     case eConfirmed:   return "Confirmed";
     case eReadFailed:  return "ReadFailed";
+    case eDeleted:     return "Deleted";
 
     default: _ASSERT(0);
     }
@@ -396,46 +397,24 @@ string CNetScheduleAPI::StatusToString(EJobStatus status)
 CNetScheduleAPI::EJobStatus
 CNetScheduleAPI::StringToStatus(const string& status_str)
 {
-    if (NStr::CompareNocase(status_str, "Pending") == 0) {
+    if (NStr::CompareNocase(status_str, "Pending") == 0)
         return ePending;
-    }
-    if (NStr::CompareNocase(status_str, "Running") == 0) {
+    if (NStr::CompareNocase(status_str, "Running") == 0)
         return eRunning;
-    }
-    if (NStr::CompareNocase(status_str, "Canceled") == 0) {
+    if (NStr::CompareNocase(status_str, "Canceled") == 0)
         return eCanceled;
-    }
-    if (NStr::CompareNocase(status_str, "Failed") == 0) {
+    if (NStr::CompareNocase(status_str, "Failed") == 0)
         return eFailed;
-    }
-    if (NStr::CompareNocase(status_str, "Done") == 0) {
+    if (NStr::CompareNocase(status_str, "Done") == 0)
         return eDone;
-    }
-    if (NStr::CompareNocase(status_str, "Reading") == 0) {
+    if (NStr::CompareNocase(status_str, "Reading") == 0)
         return eReading;
-    }
-    if (NStr::CompareNocase(status_str, "Confirmed") == 0) {
+    if (NStr::CompareNocase(status_str, "Confirmed") == 0)
         return eConfirmed;
-    }
-    if (NStr::CompareNocase(status_str, "ReadFailed") == 0) {
+    if (NStr::CompareNocase(status_str, "ReadFailed") == 0)
         return eReadFailed;
-    }
-
-
-    // check acceptable synonyms
-
-    if (NStr::CompareNocase(status_str, "Pend") == 0) {
-        return ePending;
-    }
-    if (NStr::CompareNocase(status_str, "Run") == 0) {
-        return eRunning;
-    }
-    if (NStr::CompareNocase(status_str, "Cancel") == 0) {
-        return eCanceled;
-    }
-    if (NStr::CompareNocase(status_str, "Fail") == 0) {
-        return eFailed;
-    }
+    if (NStr::CompareNocase(status_str, "Deleted") == 0)
+        return eDeleted;
 
     return eJobNotFound;
 }
