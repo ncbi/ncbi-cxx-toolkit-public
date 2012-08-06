@@ -2500,6 +2500,7 @@ int CScope_Impl::GetTaxId(const CSeq_id_Handle& idh, bool force_load)
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
         if ( info ) {
             if ( info->HasBioseq() ) {
+                TBioseq_Lock bioseq = info->GetLock(null);
                 ret = info->GetObjectInfo().GetTaxId();
             }
         }
@@ -2931,6 +2932,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
                                       match);
                 if ( info ) {
                     if ( info->HasBioseq() ) {
+                        TBioseq_Lock bioseq = info->GetLock(null);
                         ret[i] = info->GetObjectInfo().GetTaxId();
                         loaded[i] = true;
                         --remaining;
@@ -2967,6 +2969,7 @@ TSeqPos CScope_Impl::GetSequenceLength(const CSeq_id_Handle& idh,
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
         if ( info ) {
             if ( info->HasBioseq() ) {
+                TBioseq_Lock bioseq = info->GetLock(null);
                 return info->GetObjectInfo().GetBioseqLength();
             }
             return kInvalidSeqPos;
@@ -2996,6 +2999,7 @@ CSeq_inst::TMol CScope_Impl::GetSequenceType(const CSeq_id_Handle& idh,
             x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
         if ( info ) {
             if ( info->HasBioseq() ) {
+                TBioseq_Lock bioseq = info->GetLock(null);
                 return info->GetObjectInfo().GetInst_Mol();
             }
             return CSeq_inst::eMol_not_set;
@@ -3036,6 +3040,7 @@ void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
                                   match);
             if ( info ) {
                 if ( info->HasBioseq() ) {
+                    TBioseq_Lock bioseq = info->GetLock(null);
                     ret[i] = info->GetObjectInfo().GetBioseqLength();
                     loaded[i] = true;
                     --remaining;
@@ -3082,6 +3087,7 @@ void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
                                   match);
             if ( info ) {
                 if ( info->HasBioseq() ) {
+                    TBioseq_Lock bioseq = info->GetLock(null);
                     ret[i] = info->GetObjectInfo().GetInst_Mol();
                     loaded[i] = true;
                     --remaining;
