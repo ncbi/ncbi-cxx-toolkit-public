@@ -153,12 +153,12 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
  *        1) SERV_GetNextInfo[Ex] is called for the same iterator again;
  *        2) iterator closed (SERV_Close() called).
  */
-extern NCBI_XCONNECT_EXPORT const SSERV_Info* SERV_GetNextInfoEx
+extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfoEx
 (SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
  HOST_INFO*           host_info      /* ptr to store host info at [may be 0] */
  );
 
-extern NCBI_XCONNECT_EXPORT const SSERV_Info* SERV_GetNextInfo
+extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfo
 (SERV_ITER            iter
  );
 

@@ -520,16 +520,16 @@ SSERV_Info* SERV_GetInfoP(const char*          service,
 }
 
 
-const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER  iter,
-                                     HOST_INFO* host_info)
+SSERV_InfoCPtr SERV_GetNextInfoEx(SERV_ITER  iter,
+                                  HOST_INFO* host_info)
 {
     return iter  &&  iter->op ? s_GetNextInfo(iter, host_info, 0) : 0;
 }
 
 
-const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
+SSERV_InfoCPtr SERV_GetNextInfo(SERV_ITER iter)
 {
-    return iter  &&  iter->op ? s_GetNextInfo(iter, 0, 0) : 0;
+    return iter  &&  iter->op ? s_GetNextInfo(iter, 0,         0) : 0;
 }
 
 
