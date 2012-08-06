@@ -399,32 +399,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 }
             }
         }
-        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef);        
-        if (advancedView){
-            if (m_Option & eLinkout && (sdl->gi > 0) ) {                    
-                    sdl->linkout_list = CAlignFormatUtil::GetFullLinkoutUrl(bdl,
-                                           m_Rid, 
-                                           m_CddRid, 
-                                           m_EntrezTerm, 
-                                           handle.GetBioseqCore()->IsNa(),
-                                           sdl->gi,
-                                           true, false,
-                                           blast_rank,
-                                           m_LinkoutOrder,
-                                           seqUrlInfo.taxid,
-                                           m_Database,
-                                           m_QueryNumber,                                                 
-                                           user_url,
-                                           m_PreComputedResID, m_LinkoutDB,
-                                           m_MapViewerBuildName);
-            }
-            //Links to GenBank,FASTA,Graphics
-            list <string> customLinksList = 
-            CAlignFormatUtil::GetCustomLinksList(&seqUrlInfo,
-                           aln_id,
-                           *m_ScopeRef);                           
-            sdl->linkout_list.splice(sdl->linkout_list.begin(),customLinksList);
-        }
+        sdl->id_url = CAlignFormatUtil::GetIDUrl(&seqUrlInfo,aln_id,*m_ScopeRef);                
     }
 
     //get defline
