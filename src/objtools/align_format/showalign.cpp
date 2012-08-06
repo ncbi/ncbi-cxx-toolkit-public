@@ -3794,6 +3794,9 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnLinkOutLinks",linkOutStr);
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnCustomLinks",customLinkStr);
+    if(NStr::Find(customLinkStr,"GenBank") == NPOS) {
+        alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"dwGnbn","hidden");
+    }
     //The next two lines is not used for now
     //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnFASTA",m_FASTAlinkUrl);
     //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnRegFASTA",m_AlignedRegionsUrl);
