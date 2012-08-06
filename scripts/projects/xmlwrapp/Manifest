@@ -44,7 +44,7 @@ Linux64-Ubuntu    : plain-GCC      : GCC.sh           --without-debug --with-mt 
 
 Cygwin32          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
-IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system --without-ncbi-public
+IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system:netopt --without-ncbi-public
 IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 
