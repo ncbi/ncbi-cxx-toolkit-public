@@ -100,15 +100,13 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
     while (ch != ch_end  &&  isdigit(*ch))
         ++ch;
 
-    if (key_obj) {
+    if (key_obj != NULL) {
         key_obj->m_Port = atoi(port_str);
         key_obj->m_CreationTime = (time_t) strtoul(creation_time_str, NULL, 10);
         key_obj->m_Random = (Uint4) strtoul(random_str, NULL, 10);
         key_obj->m_PrimaryKeyLength = ch - key_str;
-    }
 
-    // Key extensions
-    if (key_obj) {
+        // Key extensions
         key_obj->m_ServiceName = kEmptyStr;
         key_obj->m_ServiceNameExtLen = key_obj->m_ServiceNameExtPos = 0;
     }

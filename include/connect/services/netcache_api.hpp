@@ -330,6 +330,16 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// Print meta information about the specified blob.
     void PrintBlobInfo(const string& blob_id);
 
+    /// Mirroring modes. eIfKeyMirrored means unconditionally
+    /// enable mirroring for blobs that were created in mirroring
+    /// mode.
+    enum EMirroringMode {
+        eMirroringDisabled,
+        eMirroringEnabled,
+        eIfKeyMirrored
+    };
+    void SetMirroringMode(EMirroringMode mirroring_mode);
+
     CNetCacheAdmin GetAdmin();
 
     CNetService GetService();

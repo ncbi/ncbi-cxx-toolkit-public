@@ -46,8 +46,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
 
     if (IsOptionSet(eEnableMirroring))
         reg.Set(kConfigSection, kEnableMirroringParam, "true");
-    else if (reg.Get(kConfigSection, kEnableMirroringParam).empty())
-        reg.Set(kConfigSection, kEnableMirroringParam, "on_read");
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionSet(eAllowXSiteConn))
