@@ -731,6 +731,20 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         }
     }
 
+    if (m_flags & fForceTranscribeMrna ||
+        (is_protein_align && m_flags & fForceTranslateCds))
+    {
+        /// create a new bioseq for this mRNA; if the mRna sequence is not found,
+        /// this is needed in order to translate the protein
+        /// alignment, even if flag fForceTranscribeMrna wasn't set
+        x_CreateMrnaBioseq(
+            *align, loc, time, model_num, seqs, rna_id, cdregion);
+        if (is_protein_align && m_flags & fGenerateLocalIds)
+        {
+            cd_feat->SetLocation().SetInt().SetId().Assign(rna_id);
+        }
+    }
+
     CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
     if (handle) {
         for (CFeat_CI feat_iter(handle, CSeqFeatData::e_Rna);
@@ -752,23 +766,10 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     }
     else if (!is_protein_align) {
         /// With protein alignments, we're creating a fake rna id and don't
-        /// expect to find it, so don't issue a warning
-        LOG_POST(Warning << "failed to retrieve sequence for: "
-                 << CSeq_id_Handle::GetHandle(rna_id));
-    }
-
-    if (m_flags & fForceTranscribeMrna ||
-        (is_protein_align && m_flags & fForceTranslateCds))
-    {
-        /// create a new bioseq for this mRNA; if the mRna sequence is not found,
-        /// this is needed in order to translate the protein
-        /// alignment, even if flag fForceTranscribeMrna wasn't set
-        x_CreateMrnaBioseq(
-            *align, loc, time, model_num, seqs, rna_id, cdregion);
-        if (is_protein_align && m_flags & fGenerateLocalIds)
-        {
-            cd_feat->SetLocation().SetInt().SetId().Assign(rna_id);
-        }
+        /// expect to find it; otherwise rna id should always be found
+        NCBI_THROW(CException, eUnknown,
+                   "failed to retrieve sequence for: " +
+                   CSeq_id_Handle::GetHandle(rna_id).AsString());
     }
 
     CRef<CSeq_feat> mrna_feat = full_length_rna && m_flags&fPropagateNcrnaFeats
@@ -780,10 +781,6 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                               seqs, rna_id);
 
     CRef<CSeq_feat> gene_feat;
-
-    if (!handle) {
-        handle = m_scope->GetBioseqHandle(rna_id);
-    }
 
     if(!call_on_align_list){
         const CSeq_id& genomic_id = align->GetSeq_id(mapper.GetGenomicRow());
@@ -1726,29 +1723,32 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
 string CFeatureGenerator::
 SImplementation::x_ConstructRnaName(const CBioseq_Handle& handle)
 {
-    string name = sequence::GetTitle(handle);
-    try {
-        const COrg_ref &org = sequence::GetOrg_ref(handle);
-        if (org.IsSetTaxname() && NStr::StartsWith(name, org.GetTaxname())) {
-            name.erase(0, org.GetTaxname().size());
+    string name;
+    if (handle) {
+        name = sequence::GetTitle(handle);
+        try {
+            const COrg_ref &org = sequence::GetOrg_ref(handle);
+            if (org.IsSetTaxname() && NStr::StartsWith(name, org.GetTaxname())) {
+                name.erase(0, org.GetTaxname().size());
+            }
         }
+        catch (CException& e) {
+        }
+        NStr::ReplaceInPlace(name, ", nuclear gene encoding mitochondrial protein",
+                                   "");
+        CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
+        if (feat_iter && feat_iter.GetSize() &&
+            feat_iter->GetData().GetGene().IsSetLocus())
+        {
+            NStr::ReplaceInPlace(
+                name, " (" + feat_iter->GetData().GetGene().GetLocus() + ')', "");
+        }
+        size_t last_comma = name.rfind(',');
+        if (last_comma != string::npos) {
+            name.erase(last_comma);
+        }
+        NStr::TruncateSpacesInPlace(name);
     }
-    catch (CException& e) {
-    }
-    NStr::ReplaceInPlace(name, ", nuclear gene encoding mitochondrial protein",
-                               "");
-    CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_gene);
-    if (feat_iter && feat_iter.GetSize() &&
-        feat_iter->GetData().GetGene().IsSetLocus())
-    {
-        NStr::ReplaceInPlace(
-            name, " (" + feat_iter->GetData().GetGene().GetLocus() + ')', "");
-    }
-    size_t last_comma = name.rfind(',');
-    if (last_comma != string::npos) {
-        name.erase(last_comma);
-    }
-    NStr::TruncateSpacesInPlace(name);
     return name;
 }
 
@@ -2224,9 +2224,9 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
 
     CBioseq_Handle prod_bsh    = m_scope->GetBioseqHandle(*feat.GetProduct().GetId());
     if ( !prod_bsh ) {
-        NCBI_THROW(CException, eUnknown,
-                   "failed to retrieve bioseq for "
-                   + sequence::GetIdHandle(feat.GetProduct(), NULL).GetSeqId()->AsFastaString());
+        /// Product doesn't exist (will happen for fake transcript when handling
+        /// protein alignments); no basis for creating exceptions
+        return;
     }
 
     TSeqPos loc_len = sequence::GetLength(feat.GetLocation(), m_scope.GetPointer());
