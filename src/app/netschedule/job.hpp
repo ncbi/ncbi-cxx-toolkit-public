@@ -365,7 +365,8 @@ public:
     bool Flush(CQueue* queue);
 
     bool ShouldNotifySubmitter(time_t current_time) const;
-    bool ShouldNotifyListener(time_t current_time) const;
+    bool ShouldNotifyListener(time_t          current_time,
+                              TNSBitVector &  jobs_to_notify) const;
 
     void Print(CNetScheduleHandler &        handler,
                const CQueue &               queue,

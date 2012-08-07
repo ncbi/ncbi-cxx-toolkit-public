@@ -281,7 +281,7 @@ void CNSNotificationList::NotifyJobStatus(unsigned int    address,
              k_MessageBufferSize - m_JobStateConstPartLength - job_key.size(),
              "&job_status=%s&last_event_index=%ld",
              CNetScheduleAPI::StatusToString(job_status).c_str(),
-             last_event_index);
+             (long int)last_event_index);
 
 
     m_StatusNotificationSocket.Send(

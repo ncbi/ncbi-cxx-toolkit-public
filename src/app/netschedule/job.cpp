@@ -548,12 +548,23 @@ bool CJob::ShouldNotifySubmitter(time_t current_time) const
 }
 
 
-bool CJob::ShouldNotifyListener(time_t current_time) const
+bool CJob::ShouldNotifyListener(time_t          current_time,
+                                TNSBitVector &  jobs_to_notify) const
 {
     if (m_ListenerNotifAbsTime != 0 &&
         m_ListenerNotifAddress != 0 &&
-        m_ListenerNotifPort != 0)
-        return m_ListenerNotifAbsTime >= current_time;
+        m_ListenerNotifPort != 0) {
+        if (m_ListenerNotifAbsTime >= current_time) {
+            // Still need to notify
+            return true;
+        }
+
+        // Notifications timed out
+        jobs_to_notify.set_bit(m_Id, false);
+        return false;
+    }
+
+    // There was no need to notify at all
     return false;
 }
 

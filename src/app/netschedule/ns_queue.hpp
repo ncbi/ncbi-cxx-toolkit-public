@@ -483,17 +483,20 @@ private:
     // Registry of all the job affinities
     CNSAffinityRegistry         m_AffinityRegistry;
 
-    /// Last valid id for queue
+    // Last valid id for queue
     unsigned int                m_LastId;      // Last used job ID
     unsigned int                m_SavedId;     // The ID we will start next time
                                                // the netschedule is loaded
     CFastMutex                  m_LastIdLock;
 
-    /// Lock for deleted jobs vectors
+    // Lock for deleted jobs vectors
     CFastMutex                   m_JobsToDeleteLock;
-    /// Vector of jobs to be deleted from db unconditionally
-    /// keeps jobs still to be deleted from main DB
+    // Vector of jobs to be deleted from db unconditionally
+    // keeps jobs still to be deleted from main DB
     TNSBitVector                 m_JobsToDelete;
+
+    // Vector of jobs which have been set for notifications
+    TNSBitVector                 m_JobsToNotify;
 
     // Configurable queue parameters
     // When modifying this, modify all places marked with PARAMETERS

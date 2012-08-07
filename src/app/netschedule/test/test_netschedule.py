@@ -17,6 +17,8 @@ import netschedule_tests_pack as pack
 import netschedule_tests_pack_4_10 as pack_4_10
 import netschedule_tests_pack_4_11 as pack_4_11
 import netschedule_tests_pack_4_13 as pack_4_13
+import netschedule_tests_pack_4_14 as pack_4_14
+
 
 defaultGridCliPath = ""
 defaultNetschedulePath = "netscheduled"
@@ -28,7 +30,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.13.0"
+latestNetscheduleVersion = "4.14.0"
 
 
 # The map below describes what tests should be excluded for a certain
@@ -37,9 +39,12 @@ excludeTestsMap = \
 {
     "4.10.0":   [ 300, 301, 302, 303, 304, 305, 306, 307, 308, 309,
                   310, 311, 312, 313,
-                  400, 401 ],
-    "4.11.0":   [ 400, 401 ],
-    "4.13.0":   [ ]
+                  400, 401,
+                  500, 501, 502, 503, 504 ],
+    "4.11.0":   [ 400, 401,
+                  500, 501, 502, 503, 504 ],
+    "4.13.0":   [ 500, 501, 502, 503, 504 ],
+    "4.14.0":   []
 }
 
 
@@ -402,6 +407,12 @@ def main():
 
               pack_4_13.Scenario400( netschedule ),
               pack_4_13.Scenario401( netschedule ),
+
+              pack_4_14.Scenario500( netschedule ),
+              pack_4_14.Scenario501( netschedule ),
+              pack_4_14.Scenario502( netschedule ),
+              pack_4_14.Scenario503( netschedule ),
+              pack_4_14.Scenario504( netschedule ),
             ]
 
     # Calculate the start test index
