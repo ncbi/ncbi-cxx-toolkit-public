@@ -125,7 +125,7 @@ inline
 CDense_diag::TDim CDense_diag::CheckNumRows() const
 {
     TDim dim = GetDim();
-    if (dim != GetIds().size()  ||  dim != GetStarts().size()) {
+    if (size_t(dim) != GetIds().size() || size_t(dim) != GetStarts().size()) {
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                    "CDense_diag::CheckNumRows()"
                    " dim is not consistent with ids.size & starts.size");
