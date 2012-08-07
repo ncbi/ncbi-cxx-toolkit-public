@@ -617,7 +617,7 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
     // Get a function/method name
     const char* start_str = NULL;
 
-    // Get a finction start position.
+    // Get a function start position.
     const char* start_str_tmp =
         str_rev_str(m_CurrFunctName, end_str, "::");
     bool has_class = start_str_tmp != NULL;
@@ -632,6 +632,10 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
 
     const char* cur_funct_name =
         (start_str == NULL ? m_CurrFunctName : start_str);
+    while (cur_funct_name  &&  *cur_funct_name  &&
+        (*cur_funct_name == '*'  ||  *cur_funct_name == '&')) {
+        ++cur_funct_name;
+    }
     size_t cur_funct_name_len = end_str - cur_funct_name;
     m_FunctName = string(cur_funct_name, cur_funct_name_len);
 
@@ -641,6 +645,10 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
         start_str = str_rev_str(m_CurrFunctName, end_str, " ");
         const char* cur_class_name =
             (start_str == NULL ? m_CurrFunctName : start_str + 1);
+        while (cur_class_name  &&  *cur_class_name  &&
+            (*cur_class_name == '*'  ||  *cur_class_name == '&')) {
+            ++cur_class_name;
+        }
         size_t cur_class_name_len = end_str - cur_class_name;
         m_ClassName = string(cur_class_name, cur_class_name_len);
     }
