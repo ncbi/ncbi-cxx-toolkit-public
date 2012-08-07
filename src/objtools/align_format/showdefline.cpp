@@ -192,7 +192,7 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
             != string::npos) {
             vector<string> title_tokens;
             id_token = 
-                NStr::Tokenize(sequence::GetTitle(bh), " ", title_tokens)[0];
+                NStr::Tokenize(sequence::CDeflineGenerator().GenerateDefline(bh), " ", title_tokens)[0];
         }
         if (id_token != NcbiEmptyString) {
             // Create a new local id with a label containing the extracted
@@ -225,7 +225,7 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
         list<CRef<objects::CSeq_id> > ids;
         GetSeqIdList(handle, ids);
         seqid = GetSeqIdListString(ids, show_gi);
-        defline = GetTitle(handle);
+        defline = sequence::CDeflineGenerator().GenerateDefline(handle);
     } else { 
         bdlRef->PutTargetGiFirst(this_gi_first);
         const list< CRef< CBlast_def_line > >& bdl = bdlRef->Get();
@@ -403,7 +403,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     }
 
     //get defline
-    sdl->defline = GetTitle(m_ScopeRef->GetBioseqHandle(*(sdl->id)));
+    sdl->defline = CDeflineGenerator().GenerateDefline(m_ScopeRef->GetBioseqHandle(*(sdl->id)));
     if (!(bdl.empty())) { 
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){

@@ -1132,7 +1132,7 @@ CBlastFormat::x_ReverseQuery(blast::CIgBlastResults& results)
     CRef<CBioseq> q_new(new CBioseq(loc, new_id));
     CConstRef<CSeq_id> new_qid = m_Scope->AddBioseq(*q_new).GetSeqId();
     if (qid->IsLocal()) {
-        string title = sequence::GetTitle(q_bh);
+        string title = sequence::CDeflineGenerator().GenerateDefline(q_bh);
         if (title != "") {
             CRef<CSeqdesc> des(new CSeqdesc());
             des->SetTitle("reversed|" + title);

@@ -759,7 +759,7 @@ static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat,
         const CBioseq_Handle& productHandle 
             = scope.GetBioseqHandle(productId );
         feat_id = "CDS:" + 
-            GetTitle(productHandle).substr(0, k_FeatureIdLen);
+            CDeflineGenerator().GenerateDefline(productHandle).substr(0, k_FeatureIdLen);
         productHandle.
             GetSeqVector(CBioseq_Handle::eCoding_Iupac).
             GetSeqData(0, productHandle.
@@ -1701,7 +1701,7 @@ string CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo)
                     if(m_AlignOption&eHtml &&
                        m_AlignOption&eShowInfoOnMouseOverSeqid) {
                         out << "<span>" <<
-                            GetTitle(m_AV->GetBioseqHandle(row)) << "</span>";
+                            CDeflineGenerator().GenerateDefline(m_AV->GetBioseqHandle(row)) << "</span>";
                     }
                     out<<"</a>";   
                 }
@@ -2308,7 +2308,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
         int linksDisplayOption = (m_AlignTemplates != NULL) ? eDisplayResourcesLinks : 0;            
         alnDispParams->id_url =  x_GetUrl(bsp_handle,alnDispParams->gi,alnDispParams->label,0,0,bsp_handle.GetBioseqCore()->GetId(),linksDisplayOption);                        
 	}			
-	alnDispParams->title = GetTitle(bsp_handle);			
+	alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);			
 	return alnDispParams;
 }
 

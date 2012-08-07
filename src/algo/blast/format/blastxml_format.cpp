@@ -561,7 +561,7 @@ s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
         const CBioseq& kQueryBioseq = *bh.GetBioseqCore();
         one_query_iter->SetQuery_ID(
             CBlastFormatUtil::GetSeqIdString(kQueryBioseq));
-        query_def = sequence::GetTitle(bh);
+        query_def = sequence::CDeflineGenerator().GenerateDefline(bh);
     } catch (const CException&) {
         one_query_iter->SetQuery_ID(kSeqId.AsFastaString());
     };
@@ -706,7 +706,7 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
         // Get the full query Seq-id string.
         const CBioseq& kQueryBioseq = *bh.GetBioseqCore();
         bxmlout.SetQuery_ID(CBlastFormatUtil::GetSeqIdString(kQueryBioseq));
-        query_def = sequence::GetTitle(bh);
+        query_def = sequence::CDeflineGenerator().GenerateDefline(bh);
     } catch (const CException&) {
         bxmlout.SetQuery_ID(kSeqId.AsFastaString());
     };
