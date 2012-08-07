@@ -96,7 +96,7 @@ public:
     static void IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& precision_correct,
                                      bool& lat_in_range, bool& lon_in_range,
                                      double& lat_value, double& lon_value);
-    static string FixLatLonFormat (string orig_lat_lon);
+    static string FixLatLonFormat (string orig_lat_lon, bool guess = false);
 
 
 private:

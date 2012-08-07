@@ -55,6 +55,8 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -4168,3 +4170,251 @@ GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
     }\
   }\
 }";
+
+
+static const char * sc_TestFramePlus = "\
+Seq-entry ::= set {\
+  class nuc-prot ,\
+  descr {\
+    source {\
+      genome genomic ,\
+      org {\
+        taxname \"Homo sapiens\" ,\
+        common \"human\" ,\
+        db {\
+          {\
+            db \"taxon\" ,\
+            tag\
+              id 9606 } } ,\
+        syn {\
+          \"woman\" ,\
+          \"man\" } ,\
+        orgname {\
+          name\
+            binomial {\
+              genus \"Homo\" ,\
+              species \"sapiens\" } ,\
+          lineage \"Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;\
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;\
+ Catarrhini; Hominidae; Homo\" ,\
+          gcode 1 ,\
+          mgcode 2 ,\
+          div \"PRI\" } } ,\
+      subtype {\
+        {\
+          subtype chromosome ,\
+          name \"22\" } ,\
+        {\
+          subtype map ,\
+          name \"22q13.31-q13.33\" } } } } ,\
+  seq-set {\
+    seq {\
+      id {\
+        other {\
+          accession \"NG_032160\" } } ,\
+      descr {\
+        title \"Homo sapiens tubulin, gamma complex associated protein 6\
+ (TUBGCP6), RefSeqGene on chromosome 22\" ,\
+        molinfo {\
+          biomol genomic } ,\
+        create-date\
+          std {\
+            year 2012 ,\
+            month 3 ,\
+            day 15 ,\
+            hour 15 ,\
+            minute 39 ,\
+            second 2 } } ,\
+      inst {\
+        repr raw ,\
+        mol dna ,\
+        length 1683 ,\
+        seq-data\
+          ncbi2na '527578925EEF52B961F44045F71F9E275F54BA2722D94A5E9A0F5E94A78\
+E892EE5D5E8A278A7A5F5A5523A355AEAC74BD71F7FA3FBF5200A0930D201229EAA209C88489E9\
+EA952BA79D6754A848F4B4A9F4A937798E7AA5AFAD122C88BA629E112BBAA9212EB779EEAEA7D2\
+2025DEAFDCA883A9D522B427F544537D40A82A795EDE08B56546E4A3886E8033EF9FC1F0004214\
+BAAFA7A8916949295E78930155D47A20A6E9579517A15F7A038A82E70492E54D51093C076A2BA2\
+1DD492027A9248BAD7957695102A5FA5893A9397AEEE547AAD4D5E52EABD4A85DAA16A79FA95FA\
+1DCAE25B889A9EA929A249E5E4A92A11AD2A9C5D52115E9775129273538E78E7A64B405649EF66\
+7CEA456A4A4D94A89E89BBA2492DDA7A249E2E692279224A052A51EA787A7129B12B895E6D4EB4\
+5AA869AB66E7A002D495A7B87522568ED3D4895A7A10A17A0A67AA19E597A4A7891B99B8E46504\
+1582C6E78A07136648394D8A796266A87DD229091197B57BAD5EA2AAB6954855DD15D78D752B9A\
+6AE78071E8855F14798A6AA59448658A51A0961AA6869292675C492C255677A92481EE6E138DF6\
+C18'H } ,\
+      annot {\
+        {\
+          data\
+            ftable {\
+              {\
+                data\
+                  cdregion {\
+                    frame three ,\
+                    code {\
+                      id 1 } ,\
+                    code-break {\
+                      {\
+                        loc\
+                          int {\
+                            from 30 ,\
+                            to 32 ,\
+                            strand plus ,\
+                            id\
+                              other {\
+                                accession \"NG_032160\" } } ,\
+                        aa\
+                          ncbieaa 85 } } } ,\
+                partial TRUE ,\
+                product\
+                  whole\
+                    local\
+                      id 32880229 ,\
+                location\
+                  int {\
+                    from 28 ,\
+                    to 178 ,\
+                    strand plus ,\
+                    id\
+                      other {\
+                        accession \"NG_032160\" } ,\
+                    fuzz-from\
+                      lim lt } ,\
+                dbxref {\
+                  {\
+                    db \"CCDS\" ,\
+                    tag\
+                      str \"CCDS43034.1\" } ,\
+                  {\
+                    db \"GeneID\" ,\
+                    tag\
+                      id 83642 } } } ,\
+              {\
+                data\
+                  gene {\
+                    locus \"SELO\" } ,\
+                partial TRUE ,\
+                location\
+                  int {\
+                    from 28 ,\
+                    to 1680 ,\
+                    strand plus ,\
+                    id\
+                      other {\
+                        accession \"NG_032160\" } ,\
+                    fuzz-from\
+                      lim lt } } } } } } ,\
+    seq {\
+      id {\
+        local\
+          id 32880229 } ,\
+      descr {\
+        molinfo {\
+          biomol peptide ,\
+          tech concept-trans ,\
+          completeness no-left } } ,\
+      inst {\
+        repr raw ,\
+        mol aa ,\
+        length 218 ,\
+        seq-data\
+          ncbieaa \"ADFTNTFYLLSSFPVELESPGLAEFLARLMEQCASLEELRLAFRPQMDPRQLSMMLMLA\
+QSNPQLFALMGTRAGIARELERVEQQSRLEQLSAAELQSRNQGHWADWLQAYRARLDKDLEGAGDAAAWQAEHVRVMH\
+ANNPKYVLRNYIAQNAIEAAERGDFSEVRRVLKLLETPYHCEAGAATDAEATEADGADGRQRSYSSKPPLWAAELCVT\
+USS\" } ,\
+      annot {\
+        {\
+          data\
+            ftable {\
+              {\
+                data\
+                  prot {\
+                    name {\
+                      \"selenoprotein O\" } } ,\
+                partial TRUE ,\
+                location\
+                  int {\
+                    from 0 ,\
+                    to 217 ,\
+                    id\
+                      local\
+                        id 32880229 ,\
+                    fuzz-from\
+                      lim lt } } } } } } } }\
+";
+
+
+static void TestOneCDS (CRef<CSeq_feat> feat, CScope * scope, int expected_frame)
+{
+    CCdregion& cds = feat->SetData().SetCdregion();
+    CRef<CCode_break> cbr = cds.GetCode_break().front();
+    CSeq_loc& cbr_loc = cbr->SetLoc();
+    int frame = 0;
+    int cbr_stop_adjust = 2;
+    if (cbr_loc.GetStrand() == eNa_strand_minus) {
+      cbr_loc.SetInt().SetTo(feat->GetLocation().GetStart(eExtreme_Biological) - 3);
+      cbr_loc.SetInt().SetFrom(cbr_loc.SetInt().SetTo() - 2);
+    } else {
+      cbr_loc.SetInt().SetFrom(feat->GetLocation().GetStart(eExtreme_Biological) + 3);
+      cbr_loc.SetInt().SetTo(cbr_loc.SetInt().SetFrom() + 2);
+    }
+
+    CRef<CSeq_loc> p_loc = SourceToProduct(*feat, cbr_loc, fS2P_AllowTer, scope, &frame);
+    BOOST_CHECK_EQUAL(expected_frame, frame);
+    if (cbr_loc.GetStrand() == eNa_strand_minus) {
+      cbr_loc.SetInt().SetTo(cbr_loc.GetInt().GetTo() - 1);
+      cbr_loc.SetInt().SetFrom(cbr_loc.SetInt().SetTo() - 2);
+    } else {
+      cbr_loc.SetInt().SetFrom(cbr_loc.GetInt().GetFrom() + 1);
+      cbr_loc.SetInt().SetTo(cbr_loc.SetInt().SetFrom() + 2);
+    }
+    p_loc = SourceToProduct(*feat, cbr_loc, fS2P_AllowTer, scope, &frame);
+    expected_frame ++;
+    if (expected_frame > 3) {
+      expected_frame = 1;
+    }
+    BOOST_CHECK_EQUAL(expected_frame, frame);
+    if (cbr_loc.GetStrand() == eNa_strand_minus) {
+      cbr_loc.SetInt().SetTo(cbr_loc.GetInt().GetTo() - 1);
+      cbr_loc.SetInt().SetFrom(cbr_loc.SetInt().SetTo() - 2);
+    } else {
+      cbr_loc.SetInt().SetFrom(cbr_loc.GetInt().GetFrom() + 1);
+      cbr_loc.SetInt().SetTo(cbr_loc.SetInt().SetFrom() + 2);
+    }
+    p_loc = SourceToProduct(*feat, cbr_loc, fS2P_AllowTer, scope, &frame);
+    expected_frame ++;
+    if (expected_frame > 3) {
+      expected_frame = 1;
+    }
+    BOOST_CHECK_EQUAL(expected_frame, frame);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SourceToProductFrame)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_entry> s_Entry (new CSeq_entry);
+    CNcbiIstrstream istr(sc_TestFramePlus);
+    istr >> MSerial_AsnText >> *s_Entry;
+    scope.AddTopLevelSeqEntry(*s_Entry);
+
+    CRef<CSeq_annot> annot = s_Entry->SetSet().SetSeq_set().front()->SetSeq().SetAnnot().front();
+    CRef<CSeq_feat> feat = annot->SetData().SetFtable().front();
+    CCdregion& cds = feat->SetData().SetCdregion();
+    cds.SetFrame (CCdregion::eFrame_one);
+    TestOneCDS (feat, &scope, 1); 
+    cds.SetFrame (CCdregion::eFrame_two);
+    TestOneCDS (feat, &scope, 3); 
+    cds.SetFrame (CCdregion::eFrame_three);
+    TestOneCDS (feat, &scope, 2); 
+
+    feat->SetLocation().SetStrand(eNa_strand_minus);
+    cds.SetCode_break().front()->SetLoc().SetStrand(eNa_strand_minus);
+    cds.SetFrame (CCdregion::eFrame_one);
+    TestOneCDS (feat, &scope, 1); 
+    cds.SetFrame (CCdregion::eFrame_two);
+    TestOneCDS (feat, &scope, 3); 
+    cds.SetFrame (CCdregion::eFrame_three);
+    TestOneCDS (feat, &scope, 2); 
+
+    
+}

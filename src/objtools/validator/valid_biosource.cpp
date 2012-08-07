@@ -305,81 +305,6 @@ static bool s_IsValidPrimerSequence (string str, char& bad_ch)
 }
 
 
-static void s_IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& precision_correct,
-                                     bool& lat_in_range, bool& lon_in_range,
-                                     double& lat_value, double& lon_value)
-{
-    format_correct = false;
-    lat_in_range = false;
-    lon_in_range = false;
-    precision_correct = false;
-    double ns, ew;
-    char lon, lat;
-    int processed;
-
-    lat_value = 0.0;
-    lon_value = 0.0;
-
-    if (NStr::IsBlank(lat_lon)) {
-        return;
-    } else if (sscanf (lat_lon.c_str(), "%lf %c %lf %c%n", &ns, &lat, &ew, &lon, &processed) != 4
-               || processed != lat_lon.length()) {
-        return;
-    } else if ((lat != 'N' && lat != 'S') || (lon != 'E' && lon != 'W')) {
-        return;
-    } else {
-        // init values found
-        if (lat == 'N') {
-            lat_value = ns;
-        } else {
-            lat_value = 0.0 - ns;
-        }
-        if (lon == 'E') {
-            lon_value = ew;
-        } else {
-            lon_value = 0.0 - ew;
-        }
-
-    // make sure format is correct
-        vector<string> pieces;
-        NStr::Tokenize(lat_lon, " ", pieces);
-        if (pieces.size() > 3) {
-            int precision_lat = 0;
-            size_t pos = NStr::Find(pieces[0], ".");
-            if (pos != string::npos) {
-                precision_lat = pieces[0].length() - pos - 1;
-            }
-            int precision_lon = 0;
-            pos = NStr::Find(pieces[2], ".");
-            if (pos != string::npos) {
-                precision_lon = pieces[2].length() - pos - 1;
-            }
-
-            char reformatted[1000];
-            sprintf (reformatted, "%.*lf %c %.*lf %c", precision_lat, ns, lat,
-                                                       precision_lon, ew, lon);
-
-            size_t len = strlen (reformatted);
-            if (NStr::StartsWith(lat_lon, reformatted)
-                && (len == lat_lon.length() 
-                  || (len < lat_lon.length() 
-                      && lat_lon.c_str()[len] == ';'))) {
-                format_correct = true;
-                if (ns <= 90 && ns >= 0) {
-                    lat_in_range = true;
-                }
-                if (ew <= 180 && ew >= 0) {
-                    lon_in_range = true;
-                }
-                if (precision_lat < 3 && precision_lon < 3) {
-                    precision_correct = true;
-                }
-            }
-        }
-    }
-}
-
-
 bool CValidError_imp::IsSyntheticConstruct (const CBioSource& src) 
 {
     if (!src.IsSetOrg()) {
@@ -635,7 +560,7 @@ void CValidError_imp::ValidateLatLonCountry
     // only do these checks if the latlon format is good
     bool format_correct, lat_in_range, lon_in_range, precision_correct;
     double lat_value = 0.0, lon_value = 0.0;
-    s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
+    CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                                lat_in_range, lon_in_range,
                                lat_value, lon_value);
     if (!format_correct) {
@@ -643,7 +568,7 @@ void CValidError_imp::ValidateLatLonCountry
         size_t pos = NStr::Find(lat_lon, ",", 0, string::npos, NStr::eLast);
         if (pos != string::npos) {
             lat_lon = lat_lon.substr(0, pos);
-            s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
+            CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                                        lat_in_range, lon_in_range,
                                        lat_value, lon_value);
         }
@@ -1028,7 +953,7 @@ void CValidError_imp::ValidateBioSource
             if ((*ssit)->IsSetName()) {
                 lat_lon = (*ssit)->GetName();
                 bool format_correct = false, lat_in_range = false, lon_in_range = false, precision_correct = false;
-                s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
+                CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                          lat_in_range, lon_in_range,
                          lat_value, lon_value);
             }
@@ -1435,13 +1360,13 @@ void CValidError_imp::ValidateSubSource
             bool format_correct = false, lat_in_range = false, lon_in_range = false, precision_correct = false;
             double lat_value = 0.0, lon_value = 0.0;
             string lat_lon = subsrc.GetName();
-            s_IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
+            CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                                      lat_in_range, lon_in_range,
                                      lat_value, lon_value);
             if (!format_correct) {
                 size_t pos = NStr::Find(lat_lon, ",");
                 if (pos != string::npos) {
-                    s_IsCorrectLatLonFormat (lat_lon.substr(0, pos), format_correct, precision_correct, lat_in_range, lon_in_range, lat_value, lon_value);
+                    CSubSource::IsCorrectLatLonFormat (lat_lon.substr(0, pos), format_correct, precision_correct, lat_in_range, lon_in_range, lat_value, lon_value);
                     if (format_correct) {
                         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonFormat, 
                                    "lat_lon format has extra text after correct dd.dd N|S ddd.dd E|W format",
@@ -1637,55 +1562,9 @@ void CValidError_imp::ValidateSubSource
                         "Collection_date format is not in DD-Mmm-YYYY format",
                         obj, ctx);
         } else {
-            try {
-                const string& date_string = subsrc.GetName();
-                CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (date_string);
-
-                // if there are two dashes, then the first token needs to be the day, and the
-                // day has to have two numbers, a leading zero if the day is less than 10
-                bool is_bad = false;
-                size_t pos = NStr::Find(date_string, "-");
-                if (pos != string::npos) {
-                    size_t pos2 = NStr::Find(date_string, "-", pos + 1);
-                    if (pos2 != string::npos && pos != 2) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-                                    "Collection_date format is not in DD-Mmm-YYYY format",
-                                    obj, ctx);
-                        is_bad = true;
-                    }
-                }
-
-                if (!is_bad) {         
-                    struct tm *tm;
-                    time_t t;
-
-                    time(&t);
-                    tm = localtime(&t);
-
-                    if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-                                   "Collection_date is in the future",
-                                   obj, ctx);
-                    } else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
-                               && coll_date->GetStd().IsSetMonth()) {
-                        if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
-                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-                                       "Collection_date is in the future",
-                                       obj, ctx);
-                        } else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
-                                   && coll_date->GetStd().IsSetDay()) {
-                            if (coll_date->GetStd().GetDay() > tm->tm_mday) {
-                                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-                                           "Collection_date is in the future",
-                                           obj, ctx);
-                            }
-                        }
-                    }
-                }
-            } catch (CException ) {
-                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, 
-                            "Collection_date format is not in DD-Mmm-YYYY format",
-                            obj, ctx);
+            string problem = CSubSource::GetCollectionDateProblem(subsrc.GetName());
+            if (!NStr::IsBlank(problem)) {
+                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, problem, obj, ctx);
             }
         } 
         break;

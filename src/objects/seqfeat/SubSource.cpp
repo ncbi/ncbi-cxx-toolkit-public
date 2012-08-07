@@ -735,7 +735,7 @@ static void s_RemoveExtraText (string& token, string& extra_text)
 }
 
 
-string CSubSource::FixLatLonFormat (string orig_lat_lon)
+string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 {
     string cpy;
     size_t pos;
@@ -885,9 +885,34 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon)
 
     if (lat_pos == string::npos) {
         if (ns_pos == string::npos) {
-            return "";
-        }
-        if (ns_pos < ew_pos) {
+            if (guess) {
+                // do we have just two numbers, separated by either a comma or just a space?
+                s_TrimInternalSpaces(cpy);
+                size_t sep_pos = NStr::Find (cpy, ",");
+                if (sep_pos == string::npos) {
+                    sep_pos = NStr::Find (cpy, " ");
+                    if (sep_pos == string::npos || NStr::Find (cpy, " ", sep_pos + 1) != string::npos) {
+                        return "";
+                    }
+                } else if (NStr::Find (cpy, ",", sep_pos + 1) != string::npos) {
+                    return "";
+                }
+                la_token = cpy.substr(0, sep_pos);
+                lo_token = cpy.substr(sep_pos + 1);  
+                if (NStr::StartsWith (la_token, "-")) {
+                  la_token = "S " + la_token.substr(1);
+                } else {
+                  la_token = "N " + la_token;
+                }
+                if (NStr::StartsWith (lo_token, "-")) {
+                  lo_token = "W " + lo_token.substr(1);
+                } else {
+                  lo_token = "E " + lo_token;
+                }
+            } else {
+                return "";
+            }
+        } else if (ns_pos < ew_pos) {
             // as it should be
             if (ns_pos == 0) {
                 // letter is first, token ends with ew_pos
