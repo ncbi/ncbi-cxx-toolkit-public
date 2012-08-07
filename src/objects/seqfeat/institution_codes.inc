@@ -6010,6 +6010,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UGM	s	University of Guam",
 "UGMD	s	Zoology Museum of the University of Ghent",
 "UH	s	University of Hawaii",
+"UHCC	c	University of Helsinki Cyanobacteria Culture Collection",
 "UHI	s	Ussishkin House, Botany Department",
 "UHM	s	Manoa, College of Tropical Agriculture, Department of Entomology",
 "UI<NGA>	s	University of Ibadan",
