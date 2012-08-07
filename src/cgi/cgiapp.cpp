@@ -246,6 +246,9 @@ int CCgiApplication::Run(void)
         GetDiagContext().SetAppState(eDiagAppState_RequestBegin);
 
         m_Context.reset( CreateContext() );
+        _ASSERT(m_Context.get());
+        m_Context->CheckStatus();
+
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
         try {
@@ -350,7 +353,7 @@ int CCgiApplication::Run(void)
 
         // Exception reporting. Use different severity for broken connection.
         ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
-        CNcbiOstream* os = m_Context->GetResponse().GetOutput();
+        CNcbiOstream* os = m_Context.get() ? m_Context->GetResponse().GetOutput() : NULL;
         if (fex  &&  os  &&  !os->good()) {
             if ( !TClientConnIntOk::GetDefault() ) {
                 ERR_POST_X(13, Severity(TClientConnIntSeverity::GetDefault()) <<
@@ -822,7 +825,8 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             // to check the output stream and change the status to 299/499.
             if ( !m_ErrorStatus ) {
                 // Log broken connection as 299/499 status
-                CNcbiOstream* os = m_Context->GetResponse().GetOutput();
+                CNcbiOstream* os = m_Context.get() ?
+                    m_Context->GetResponse().GetOutput() : NULL;
                 if (os  &&  !os->good()) {
                     if (TClientConnIntOk::GetDefault()  ||
                         m_Context->GetResponse().AcceptRangesBytes()) {

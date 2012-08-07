@@ -36,6 +36,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgi_session.hpp>
 #include <connect/ncbi_types.h>
+#include <cgi/cgi_exception.hpp>
 
 
 /** @addtogroup CGIBase
@@ -221,9 +222,16 @@ public:
     TStreamStatus GetStreamStatus(void) const; // supplies {0,0}
 
     string RetrieveTrackingId() const;
+
+    /// Check if the context has any pending errors, perform any required actions
+    /// (e.g. throw an exception).
+    void CheckStatus(void) const;
+
 private:
     CCgiServerContext& x_GetServerContext(void) const;
     void x_InitSession(CCgiRequest::TFlags flags);
+
+    void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
 
     CCgiApplication&      m_App;
     auto_ptr<CCgiRequest> m_Request;  // CGI request  information
@@ -239,6 +247,11 @@ private:
 
     mutable string m_SelfURL;
     mutable string m_TrackingId; // cached tracking id
+
+    // Request status code and message. The status is non-zero if there
+    // is an error to report.
+    mutable CCgiException::EStatusCode m_StatusCode;
+    mutable string m_StatusMessage;
 
     // forbidden
     CCgiContext(const CCgiContext&);

@@ -43,6 +43,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/error_codes.hpp>
 
+
 #ifdef NCBI_OS_UNIX
 #  ifdef _AIX32 // version 3.2 *or higher*
 #    include <strings.h> // needed for bzero()
@@ -117,7 +118,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
       m_Request(new CCgiRequest(args ? args : &app.GetArguments(),
                                 env  ? env  : &app.GetEnvironment(),
                                 inp, flags, ifd, errbuf_size)),
-      m_Response(out, ofd)
+      m_Response(out, ofd),
+      m_StatusCode(CCgiException::eStatusNotSet)
 {
     if (flags & CCgiRequest::fDisableTrackingCookie) {
         m_Response.DisableTrackingCookie();
@@ -133,7 +135,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          CCgiRequest::TFlags     flags)
     : m_App(app),
       m_Request(new CCgiRequest()),
-      m_Response(os, -1)
+      m_Response(os, -1),
+      m_StatusCode(CCgiException::eStatusNotSet)
 {
     m_Request->Deserialize(*is,flags);
     x_InitSession(flags);
@@ -160,13 +163,25 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
     m_Request->x_SetSession(*m_Session);
     m_Response.x_SetSession(*m_Session);
     string track_cookie_value = RetrieveTrackingId();
+    bool bad_tracking_cookie = false;
     if ((flags & CCgiRequest::fSkipDiagProperties) == 0) {
-        GetDiagContext().GetRequestContext().SetSessionID(track_cookie_value);
+        try {
+            CRequestContext& ctx = GetDiagContext().GetRequestContext();
+            ctx.SetSessionID(track_cookie_value);
+            if (ctx.GetSessionID() != track_cookie_value) {
+                // Bad session-id was ignored
+                bad_tracking_cookie = true;
+            }
+        }
+        catch (CRequestContextException& e) {
+            x_SetStatus(CCgiException::e400_BadRequest, e.GetMsg());
+            bad_tracking_cookie = true;
+        }
     }
-    if( !TCGI_DisableTrackingCookie::GetDefault() ) {
-        m_Response.SetTrackingCookie(TCGI_TrackingCookieName::GetDefault(), 
+    if( !bad_tracking_cookie  &&  !TCGI_DisableTrackingCookie::GetDefault() ) {
+        m_Response.SetTrackingCookie(TCGI_TrackingCookieName::GetDefault(),
                                      track_cookie_value,
-                                     TCGI_TrackingCookieDomain::GetDefault(), 
+                                     TCGI_TrackingCookieDomain::GetDefault(),
                                      TCGI_TrackingCookiePath::GetDefault());
     }
 
@@ -438,6 +453,24 @@ string CCgiContext::RetrieveTrackingId() const
     return CDiagContext::GetRequestContext().IsSetSessionID() ?
         CDiagContext::GetRequestContext().GetSessionID() :
         CDiagContext::GetRequestContext().SetSessionID();
+}
+
+
+void CCgiContext::x_SetStatus(CCgiException::EStatusCode code, const string& msg) const
+{
+    m_StatusCode = code;
+    m_StatusMessage = msg;
+}
+
+
+void CCgiContext::CheckStatus(void) const
+{
+    if (m_StatusCode == CCgiException::eStatusNotSet) return;
+
+    NCBI_EXCEPTION_VAR(ex, CCgiException, eUnknown,
+        m_StatusMessage);
+    ex.SetStatus(m_StatusCode);
+    NCBI_EXCEPTION_THROW(ex);
 }
 
 

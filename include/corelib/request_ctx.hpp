@@ -161,6 +161,32 @@ public:
     /// Get default auto-increment flag.
     static bool GetDefaultAutoIncRequestIDOnPost(void);
 
+    /// Session ID format
+    enum ESessionIDFormat {
+        eSID_Ncbi,     ///< Strict NCBI format: (UID:16)_(RqID:4)SID
+        eSID_Standard, ///< Alpanum, underscore, -.:@, (default)
+        eSID_Other     ///< Any other format
+    };
+    /// Session ID error actions
+    enum EOnBadSessionID {
+        eOnBadSID_Allow,           ///< Don't validate session id.
+        eOnBadSID_AllowAndReport,  ///< Accept but show warning (default).
+        eOnBadSID_Ignore,          ///< Ignore bad session id.
+        eOnBadSID_IgnoreAndReport, ///< Ignore and show warning.
+        eOnBadSID_Throw            ///< Throw on bad session id.
+    };
+
+    /// Check if session id fits the allowed format.
+    static bool IsValidSessionID(const string& session_id);
+
+    /// Get/set session id error action.
+    static EOnBadSessionID GetBadSessionIDAction(void);
+    static void SetBadSessionIDAction(EOnBadSessionID action);
+
+    /// Get/set allowed session id format.
+    static ESessionIDFormat GetAllowedSessionIDFormat(void);
+    static void SetAllowedSessionIDFormat(ESessionIDFormat fmt);
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -210,6 +236,25 @@ private:
     TPropSet       m_PropSet;
     bool           m_IsRunning;
     bool           m_AutoIncOnPost;
+};
+
+
+class NCBI_XNCBI_EXPORT CRequestContextException :
+    EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    /// Error types that  CRequestContext can generate.
+    ///
+    /// These generic error conditions can occur for corelib applications.
+    enum EErrCode {
+        eBadSession    ///< Invalid session id
+    };
+
+    /// Translate from the error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const;
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CRequestContextException, CException);
 };
 
 
@@ -281,13 +326,6 @@ const string& CRequestContext::GetEncodedSessionID(void) const
     return x_IsSetProp(eProp_SessionID) ?
         m_SessionID.GetEncodedString()
         : GetDiagContext().GetEncodedSessionID();
-}
-
-inline
-void CRequestContext::SetSessionID(const string& session)
-{
-    x_SetProp(eProp_SessionID);
-    m_SessionID.SetString(session);
 }
 
 inline

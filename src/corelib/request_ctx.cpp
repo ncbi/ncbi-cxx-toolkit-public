@@ -34,6 +34,11 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbi_param.hpp>
+#include <corelib/error_codes.hpp>
+
+
+#define NCBI_USE_ERRCODE_X   Corelib_Diag
 
 BEGIN_NCBI_SCOPE
 
@@ -144,7 +149,7 @@ void CRequestContext::SetClientIP(const string& client)
     // Verify IP
     if ( !NStr::IsIPAddress(client) ) {
         m_ClientIP = kBadIP;
-        ERR_POST("Bad client IP value: " << client);
+        ERR_POST_X(25, "Bad client IP value: " << client);
         return;
     }
 
@@ -185,6 +190,129 @@ void CRequestContext::SetDefaultAutoIncRequestIDOnPost(bool enable)
 bool CRequestContext::GetDefaultAutoIncRequestIDOnPost(void)
 {
     return sx_GetDefaultAutoIncRequestIDOnPost();
+}
+
+
+void CRequestContext::SetSessionID(const string& session)
+{
+    if ( !IsValidSessionID(session) ) {
+        EOnBadSessionID action = GetBadSessionIDAction();
+        switch ( action ) {
+        case eOnBadSID_Ignore:
+            return;
+        case eOnBadSID_AllowAndReport:
+        case eOnBadSID_IgnoreAndReport:
+            ERR_POST_X(26, "Bad session ID format: " << session);
+            if (action == eOnBadSID_IgnoreAndReport) {
+                return;
+            }
+            break;
+        case eOnBadSID_Throw:
+            NCBI_THROW(CRequestContextException, eBadSession,
+                "Bad session ID format: " + session);
+            break;
+        case eOnBadSID_Allow:
+            break;
+        }
+    }
+    x_SetProp(eProp_SessionID);
+    m_SessionID.SetString(session);
+}
+
+
+bool CRequestContext::IsValidSessionID(const string& session_id)
+{
+    switch ( GetAllowedSessionIDFormat() ) {
+    case eSID_Ncbi:
+        {
+            if ( !NStr::EndsWith(session_id, "SID") ) return false;
+            CTempString uid(session_id, 0, 16);
+            if (NStr::StringToUInt8(uid, NStr::fConvErr_NoThrow, 16) == 0  &&  errno !=0) {
+                return false;
+            }
+            CTempString rqid(session_id, 18, session_id.size() - 20);
+            if (NStr::StringToUInt(rqid, NStr::fConvErr_NoThrow) == 0  &&  errno != 0) {
+                return false;
+            }
+            break;
+        }
+    case eSID_Standard:
+        {
+            string id_std = "_-.:@";
+            ITERATE (string, c, session_id) {
+                if (!isalnum(*c)  &&  id_std.find(*c) == NPOS) {
+                    return false;
+                }
+            }
+            break;
+        }
+    case eSID_Other:
+        return true;
+    }
+    return true;
+}
+
+
+NCBI_PARAM_ENUM_DECL(CRequestContext::EOnBadSessionID, Log, On_Bad_Session_Id);
+NCBI_PARAM_ENUM_ARRAY(CRequestContext::EOnBadSessionID, Log, On_Bad_Session_Id)
+{
+    {"Allow", CRequestContext::eOnBadSID_Allow},
+    {"AllowAndReport", CRequestContext::eOnBadSID_AllowAndReport},
+    {"Ignore", CRequestContext::eOnBadSID_Ignore},
+    {"IgnoreAndReport", CRequestContext::eOnBadSID_IgnoreAndReport},
+    {"Throw", CRequestContext::eOnBadSID_Throw}
+};
+NCBI_PARAM_ENUM_DEF_EX(CRequestContext::EOnBadSessionID, Log, On_Bad_Session_Id,
+                       CRequestContext::eOnBadSID_AllowAndReport,
+                       eParam_NoThread,
+                       LOG_ON_BAD_SESSION_ID);
+typedef NCBI_PARAM_TYPE(Log, On_Bad_Session_Id) TOnBadSessionId;
+
+
+NCBI_PARAM_ENUM_DECL(CRequestContext::ESessionIDFormat, Log, Session_Id_Format);
+NCBI_PARAM_ENUM_ARRAY(CRequestContext::ESessionIDFormat, Log, Session_Id_Format)
+{
+    {"Ncbi", CRequestContext::eSID_Ncbi},
+    {"Standard", CRequestContext::eSID_Standard},
+    {"Other", CRequestContext::eSID_Other}
+};
+NCBI_PARAM_ENUM_DEF_EX(CRequestContext::ESessionIDFormat, Log, Session_Id_Format,
+                       CRequestContext::eSID_Standard,
+                       eParam_NoThread,
+                       LOG_SESSION_ID_FORMAT);
+typedef NCBI_PARAM_TYPE(Log, Session_Id_Format) TSessionIdFormat;
+
+
+CRequestContext::EOnBadSessionID CRequestContext::GetBadSessionIDAction(void)
+{
+    return TOnBadSessionId::GetDefault();
+}
+
+
+void CRequestContext::SetBadSessionIDAction(EOnBadSessionID action)
+{
+    TOnBadSessionId::SetDefault(action);
+}
+
+
+CRequestContext::ESessionIDFormat CRequestContext::GetAllowedSessionIDFormat(void)
+{
+    return TSessionIdFormat::GetDefault();
+}
+
+
+void CRequestContext::SetAllowedSessionIDFormat(ESessionIDFormat fmt)
+{
+    TSessionIdFormat::SetDefault(fmt);
+}
+
+
+const char* CRequestContextException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eBadSession: return "eBadSession";
+    default:          return CException::GetErrCodeString();
+    }
 }
 
 
