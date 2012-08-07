@@ -66,6 +66,7 @@ USING_SCOPE (sequence);
 static const double k_MinOverlapLenFactor = 0.45;
 static const double k_Min_Percent_Identity = 0.64999;
 static const int k_MaxReliableGapNum = 3;
+static const int k_Max_Overhang = 5;
 
 COligoSpecificityCheck::COligoSpecificityCheck(const CBioseq_Handle& template_handle,
                                                const CSeq_align_set& input_seqalign,
@@ -1165,7 +1166,9 @@ x_IsPcrLengthInRange(const CSeq_align& left_primer_hit_align,
             (m_PrimerInfo->left.GetLength() -1); 
     }
                 
-    if (product_len > 0 && 
+    if (product_len > (min((int)left_primer_hit_align.GetSeqRange(0).GetLength(),
+                           (int)right_primer_hit_align.GetSeqRange(0).GetLength()) - 
+                       k_Max_Overhang) && 
         product_len <= (int)(m_SpecifiedProductLen + m_ProductLenMargin) && 
         (int)product_len >= (int)m_SpecifiedProductLen - (int)m_ProductLenMargin) { 
         result = true;
