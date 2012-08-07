@@ -124,7 +124,7 @@ CRange<TSeqPos> CDense_diag::GetSeqRange(TDim row) const
 inline
 CDense_diag::TDim CDense_diag::CheckNumRows() const
 {
-    const size_t& dim = GetDim();
+    TDim dim = GetDim();
     if (dim != GetIds().size()  ||  dim != GetStarts().size()) {
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                    "CDense_diag::CheckNumRows()"
