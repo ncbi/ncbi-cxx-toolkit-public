@@ -2551,12 +2551,21 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it2     = xlate.begin();
     string::const_iterator it2_end = xlate.end();
     CSeq_loc_Mapper mapper(feat, CSeq_loc_Mapper::eProductToLocation);
+    CRef<CSeq_id> cds_id(new CSeq_id);
+    cds_id->Assign(*feat.GetProduct().GetId());
+    TSeqPos start_pos = feat.GetProduct().GetStart(eExtreme_Positional);
+    bool single_interval_product = ++feat.GetProduct().begin()
+                                  == feat.GetProduct().end();
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
         if (*it2 == '*') {
             /// Inte5rnal stop codon; annotate with a code-break instead
             /// of an exception
-            TSeqPos pos = it1 - actual.begin();
-            CSeq_loc internal_stop_loc(feat.SetProduct().SetWhole(), pos, pos);
+            if (!single_interval_product) {
+                NCBI_THROW(CException, eUnknown,
+                           "product is required to be a single interval");
+            }
+            TSeqPos pos = it1 - actual.begin() + start_pos;
+            CSeq_loc internal_stop_loc(*cds_id, pos, pos);
             CRef<CSeq_loc> mapped = mapper.Map(internal_stop_loc);
             CRef<CCode_break> code_break(new CCode_break);
             code_break->SetLoc(*mapped);
@@ -2791,8 +2800,19 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                                     CSeq_loc_Mapper::eProductToLocation);
             CSeq_loc_Mapper to_genomic(
                 *align, CSeq_loc_Mapper::eSplicedRow_Gen);
-            for (TSeqPos pos = 0; pos < prot.size(); ++pos) {
-                CSeq_loc aa_loc(cds_feat->SetProduct().SetWhole(), pos, pos);
+            CRef<CSeq_id> cds_id(new CSeq_id);
+            cds_id->Assign(*cds_feat->GetProduct().GetId());
+            TSeqPos start_pos =
+                cds_feat->GetProduct().GetStart(eExtreme_Positional);
+            bool single_interval_product = ++cds_feat->GetProduct().begin()
+                                          == cds_feat->GetProduct().end();
+            if (!single_interval_product) {
+                NCBI_THROW(CException, eUnknown,
+                           "product is required to be a single interval");
+            }
+            for (TSeqPos pos = start_pos; pos < start_pos + prot.size(); ++pos)
+            {
+                CSeq_loc aa_loc(*cds_id, pos, pos);
                 CRef<CSeq_loc> rna_codon = to_mrna.Map(aa_loc);
                 CRef<CSeq_loc> genomic_codon = to_genomic.Map(*rna_codon);
                 CSeqVector codon(*genomic_codon, *m_scope,
