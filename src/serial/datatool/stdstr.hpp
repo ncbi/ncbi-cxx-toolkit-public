@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 class CStdTypeStrings : public CTypeStrings
 {
 public:
-    CStdTypeStrings(const string& type, const CComments& comments);
+    CStdTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
     EKind GetKind(void) const;
 
@@ -76,7 +76,7 @@ class CStringTypeStrings : public CStdTypeStrings
 {
     typedef CStdTypeStrings CParent;
 public:
-    CStringTypeStrings(const string& type, const CComments& comments);
+    CStringTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
     EKind GetKind(void) const;
 
@@ -91,7 +91,7 @@ class CStringStoreTypeStrings : public CStringTypeStrings
 {
     typedef CStringTypeStrings CParent;
 public:
-    CStringStoreTypeStrings(const string& type, const CComments& comments);
+    CStringStoreTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
     bool HaveSpecialRef(void) const;
 
@@ -103,7 +103,7 @@ class CAnyContentTypeStrings : public CStdTypeStrings
 {
     typedef CStdTypeStrings CParent;
 public:
-    CAnyContentTypeStrings(const string& type, const CComments& comments);
+    CAnyContentTypeStrings(const string& type, const CComments& comments, bool full_ns_name);
 
     EKind GetKind(void) const;
 

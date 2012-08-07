@@ -36,13 +36,14 @@
 
 BEGIN_NCBI_SCOPE
 
-CStdTypeStrings::CStdTypeStrings(const string& type, const CComments& comments)
+CStdTypeStrings::CStdTypeStrings(const string& type, const CComments& comments, bool full_ns_name)
     : CTypeStrings(comments), m_CType(type)
 {
     SIZE_TYPE colon = type.rfind("::");
     if ( colon != NPOS ) {
         m_CType = type.substr(colon + 2);
         m_Namespace = type.substr(0, colon);
+        m_Namespace.UseFullname(full_ns_name);
     }
 }
 
@@ -112,8 +113,8 @@ string CNullTypeStrings::GetInitializer(void) const
 }
 
 CStringTypeStrings::CStringTypeStrings(const string& type,
-    const CComments& comments)
-    : CParent(type,comments)
+    const CComments& comments, bool full_ns_name)
+    : CParent(type,comments,full_ns_name)
 {
 }
 
@@ -138,8 +139,8 @@ void CStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 }
 
 CStringStoreTypeStrings::CStringStoreTypeStrings(const string& type,
-    const CComments& comments)
-    : CParent(type,comments)
+    const CComments& comments, bool full_ns_name)
+    : CParent(type,comments,full_ns_name)
 {
 }
 
@@ -154,8 +155,8 @@ string CStringStoreTypeStrings::GetRef(const CNamespace& /*ns*/) const
 }
 
 CAnyContentTypeStrings::CAnyContentTypeStrings(const string& type,
-    const CComments& comments)
-    : CParent(type,comments)
+    const CComments& comments, bool full_ns_name)
+    : CParent(type,comments,full_ns_name)
 {
 }
 
@@ -181,7 +182,7 @@ void CAnyContentTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
 
 CBitStringTypeStrings::CBitStringTypeStrings(const string& type,
     const CComments& comments)
-    : CParent(type,comments)
+    : CParent(type,comments,false)
 {
 }
 

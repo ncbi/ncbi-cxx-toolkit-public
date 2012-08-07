@@ -49,10 +49,19 @@ public:
     void Set(const CNamespace& ns, CNcbiOstream& out, bool mainHeader = true);
 
     string GetNamespaceRef(const CNamespace& ns) const;
+    void UseFullname(bool full)
+    {
+        m_UseFullname = full;
+    }
+    bool UseFullname(void) const
+    {
+        return m_UseFullname;
+    }
 
     void Reset(void)
         {
             m_Namespaces.clear();
+            m_UseFullname = false;
         }
     void Reset(CNcbiOstream& out)
         {
@@ -140,6 +149,7 @@ protected:
     void ToStringTo(string& s) const;
 
     TNamespaces m_Namespaces;
+    bool m_UseFullname;
 };
 
 inline

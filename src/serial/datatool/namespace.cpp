@@ -47,10 +47,12 @@ const CNamespace CNamespace::KNCBINamespace(KNCBINamespaceName);
 const CNamespace CNamespace::KSTDNamespace(KSTDNamespaceName);
 
 CNamespace::CNamespace(void)
+    : m_UseFullname(false)
 {
 }
 
 CNamespace::CNamespace(const string& ns)
+    : m_UseFullname(false)
 {
     SIZE_TYPE pos = 0;
     if ( NStr::StartsWith(ns, "::") )
@@ -110,16 +112,21 @@ string CNamespace::GetNamespaceRef(const CNamespace& ns) const
             s = KSTDNamespaceDefine;
             equal = 1;
         }
-        if ( equal == 1 ) {
-            // std or ncbi
-            if ( InNCBI() )
-                s.erase();
-            else
-                s += "::";
+        if (!ns.UseFullname()) {
+            if ( equal == 1 ) {
+                // std or ncbi
+                if ( InNCBI() )
+                    s.erase();
+                else
+                    s += "::";
+            }
+            else {
+                // from root
+                s = "::";
+            }
         }
-        else {
-            // from root
-            s = "::";
+        else if (!s.empty()) {
+            s += "::";
         }
     }
     for ( size_t i = equal, end = ns.GetNamespaceLevel(); i < end; ++i ) {

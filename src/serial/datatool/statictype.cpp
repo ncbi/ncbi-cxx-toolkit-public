@@ -171,9 +171,10 @@ void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) con
 AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
 {
     string type = GetAndVerifyVar("_type");
+    bool full_ns = !type.empty();
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type,Comments()));
+    return AutoPtr<CTypeStrings>(new CStdTypeStrings(type,Comments(),full_ns));
 }
 
 const char* CNullDataType::GetASNKeyword(void) const
@@ -520,9 +521,10 @@ bool CStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
 {
     string type = GetAndVerifyVar("_type");
+    bool full_ns = !type.empty();
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type,Comments()));
+    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type,Comments(),full_ns));
 }
 
 const char* CStringDataType::GetDefaultCType(void) const
@@ -560,9 +562,10 @@ bool CStringStoreDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 AutoPtr<CTypeStrings> CStringStoreDataType::GetFullCType(void) const
 {
     string type = GetAndVerifyVar("_type");
+    bool full_ns = !type.empty();
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type,Comments()));
+    return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type,Comments(),full_ns));
 }
 
 const char* CBitStringDataType::GetASNKeyword(void) const
@@ -739,7 +742,7 @@ bool CIntDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CIntDataType::CreateDefault(const CDataValue& value) const
 {
-    return new Int4((Int4)dynamic_cast<const CIntDataValue&>(value).GetValue());
+    return new Int8((Int8)dynamic_cast<const CIntDataValue&>(value).GetValue());
 }
 
 string CIntDataType::GetDefaultString(const CDataValue& value) const
@@ -750,8 +753,8 @@ string CIntDataType::GetDefaultString(const CDataValue& value) const
 CTypeRef CIntDataType::GetTypeInfo(void)
 {
     if ( HaveModuleName() )
-        return UpdateModuleName(CStdTypeInfo<Int4>::CreateTypeInfo());
-    return &CStdTypeInfo<Int4>::GetTypeInfo;
+        return UpdateModuleName(CStdTypeInfo<Int8>::CreateTypeInfo());
+    return &CStdTypeInfo<Int8>::GetTypeInfo;
 }
 
 const char* CIntDataType::GetDefaultCType(void) const
@@ -865,11 +868,12 @@ TObjectPtr CAnyContentDataType::CreateDefault(const CDataValue& value) const
 
 AutoPtr<CTypeStrings> CAnyContentDataType::GetFullCType(void) const
 {
-// TO BE CHANGED !!!
+// TO BE CHANGED ?!!
     string type = GetAndVerifyVar("_type");
+    bool full_ns = !type.empty();
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type,Comments()));
+    return AutoPtr<CTypeStrings>(new CAnyContentTypeStrings(type,Comments(),full_ns));
 }
 
 const char* CAnyContentDataType::GetDefaultCType(void) const
