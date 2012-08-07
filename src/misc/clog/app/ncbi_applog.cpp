@@ -637,8 +637,10 @@ int CNcbiApplogApp::Run(void)
     ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Default, m_Info.server_port);
     if (dst != eNcbiLog_Default) {
 #else
-    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Stdout);
-    if (dst != eNcbiLog_Stdout) {
+    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Cwd, 0);
+    if (dst != eNcbiLog_Cwd) {
+//    ENcbiLog_Destination dst = NcbiLogP_SetDestination(eNcbiLog_Stdout, 0);
+//    if (dst != eNcbiLog_Stdout) {
 #endif
         // The /log is not writable, use external CGI for logging
         redirect = true;
@@ -777,7 +779,7 @@ int CNcbiApplogApp::Run(void)
     // Print token (start_app, start_request)
     if (token_gen_type != eUndefined) {
         token = GenerateToken(token_gen_type);
-        cout << token << endl;
+        cout << token;
     }
     return 0;
 
