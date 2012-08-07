@@ -219,5 +219,9 @@ version 3.8.0
 Added analysis of build order information and warnings on out of order builds.
 Added analysis of library order to report out of order and redundant entries.
 
+August 07, 2012
+version 3.8.1
+In MSVC2010 projects, corrected generation of output file name settings.
+
 
 
