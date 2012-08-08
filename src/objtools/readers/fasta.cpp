@@ -437,6 +437,7 @@ void CFastaReader::ParseDefLine(const TStr& s)
         sa->SetDim(2);
         CDense_seg& ds = sa->SetSegs().SetDenseg();
         ds.SetNumseg(1);
+        ds.SetDim(2); // redundant, but required by validator
         ds.SetIds().push_back(GetIDs().front());
         ds.SetIds().push_back(m_BestID);
         ds.SetStarts().push_back(0);
