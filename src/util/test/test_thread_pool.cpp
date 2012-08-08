@@ -44,15 +44,11 @@
 #include <common/test_assert.h>  // This header must go last
 
 
-USING_NCBI_SCOPE;
+// Add timestamp to the progress messages
+#define MSG_POST(msg)  ERR_POST(Message << msg)
 
-#define MY_LOG_POST(message)                              \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO,          \
-      eDiag_Error,                                        \
-      eDPF_Log).GetRef()                                  \
-      << CTime(CTime::eCurrent).AsString("M/D/Y h:m:s.l") \
-      << "  " << message                                  \
-      << NCBI_NS_NCBI::Endm )
+
+USING_NCBI_SCOPE;
 
 
 const int kTasksPerThread     = 120;
@@ -93,6 +89,7 @@ protected:
     virtual bool TestApp_Exit(void);
     virtual bool Thread_Run(int idx);
 };
+
 
 bool CThreadPoolTester::TestApp_Init(void)
 {
@@ -144,23 +141,25 @@ bool CThreadPoolTester::TestApp_Init(void)
         s_PostTimes[i] = 100 * (i / 20) + s_RNG.GetRand(50, 100);
     }
 
-    MY_LOG_POST("Starting test for CThreadPool");
+    MSG_POST("Starting test for CThreadPool");
 
     s_Timer.Start();
 
     return true;
 }
 
+
 bool CThreadPoolTester::TestApp_Exit(void)
 {
-    MY_LOG_POST("Destroying pool");
+    MSG_POST("Destroying pool");
     delete s_Pool;
     s_Pool = NULL;
-    MY_LOG_POST("Exiting from app");
-    MY_LOG_POST("Test for CThreadPool is finished");
+    MSG_POST("Exiting from app");
+    MSG_POST("Test for CThreadPool is finished");
 
     return true;
 }
+
 
 class CTestTask : public CThreadPool_Task
 {
@@ -177,34 +176,35 @@ private:
     int m_Serial;
 };
 
+
 CTestTask::EStatus CTestTask::Execute(void)
 {
     int duration = s_WaitPeriods[m_Serial];
     CStopWatch timer(CStopWatch::eStart);
 
     if (s_CancelTypes[m_Serial] == eCheckCancel) {
-        MY_LOG_POST("Task " << m_Serial << ": " << duration << " with checking");
+        MSG_POST("Task " << m_Serial << ": " << duration << " with checking");
         for (int i = 0; i < 10; ++i) {
             SleepMicroSec(duration * 100);
             if (IsCancelRequested()) {
-                MY_LOG_POST("Task " << m_Serial << " was cancelled");
+                MSG_POST("Task " << m_Serial << " was cancelled");
                 return eCanceled;
             }
         }
     }
     else {
-        MY_LOG_POST("Task " << m_Serial << ": " << duration);
+        MSG_POST("Task " << m_Serial << ": " << duration);
         SleepMilliSec(duration);
     }
 
     if (IsCancelRequested()) {
-        MY_LOG_POST("Task " << m_Serial
+        MSG_POST("Task " << m_Serial
                     << " was cancelled without check (time spent - "
                     << timer.Elapsed() << ")");
         return eCanceled;
     }
     else {
-        MY_LOG_POST("Task " << m_Serial << " complete (time spent - "
+        MSG_POST("Task " << m_Serial << " complete (time spent - "
                     << timer.Elapsed() << ")");
         return eCompleted;
     }
@@ -228,7 +228,7 @@ private:
 
 CExclusiveTask::EStatus CExclusiveTask::Execute(void)
 {
-    MY_LOG_POST("Task " << m_Serial << ": exclusive running");
+    MSG_POST("Task " << m_Serial << ": exclusive running");
     return eCompleted;
 }
 
@@ -249,46 +249,46 @@ bool CThreadPoolTester::Thread_Run(int idx)
             int req_num = s_ActionTasks[serial_num];
             switch (s_Actions[serial_num]) {
             case eAddTask:
-                MY_LOG_POST("Task " << req_num << " to be queued");
+                MSG_POST("Task " << req_num << " to be queued");
                 s_Pool->AddTask(new CTestTask(req_num));
-                MY_LOG_POST("Task " << req_num << " queued");
+                MSG_POST("Task " << req_num << " queued");
                 break;
 
             case eAddExclusiveTask:
-                MY_LOG_POST("Task " << req_num << " to be queued");
+                MSG_POST("Task " << req_num << " to be queued");
                 s_Pool->RequestExclusiveExecution(new CExclusiveTask(req_num),
                                 CThreadPool::fFlushThreads
                                 + CThreadPool::fCancelExecutingTasks
                                 + CThreadPool::fCancelQueuedTasks);
-                MY_LOG_POST("Task " << req_num << " queued");
+                MSG_POST("Task " << req_num << " queued");
                 break;
 
             case eCancelTask:
                 while (!s_Tasks[req_num]) {
                     SleepMilliSec(10);
                 }
-                MY_LOG_POST("Task " << req_num << " to be cancelled");
+                MSG_POST("Task " << req_num << " to be cancelled");
                 s_Pool->CancelTask(s_Tasks[req_num]);
-                MY_LOG_POST("Cancelation of task " << req_num << " requested");
+                MSG_POST("Cancelation of task " << req_num << " requested");
                 break;
 
             case eFlushWaiting:
             case eFlushNoWait:
-                MY_LOG_POST("Flushing threads with "
+                MSG_POST("Flushing threads with "
                             << (s_Actions[serial_num] == eFlushWaiting?
                                     "waiting": "immediate restart"));
                 s_Pool->FlushThreads(
                                 s_Actions[serial_num] == eFlushWaiting?
                                         CThreadPool::eWaitToFinish:
                                         CThreadPool::eStartImmediately);
-                MY_LOG_POST("Flushing process began");
+                MSG_POST("Flushing process began");
                 break;
 
             case eCancelAll:
-                MY_LOG_POST("Cancelling all tasks");
+                MSG_POST("Cancelling all tasks");
                 s_Pool->CancelTasks(CThreadPool::fCancelExecutingTasks
                                      + CThreadPool::fCancelQueuedTasks);
-                MY_LOG_POST("Cancellation of all tasks requested");
+                MSG_POST("Cancellation of all tasks requested");
                 break;
             }
         }
@@ -297,9 +297,10 @@ bool CThreadPoolTester::Thread_Run(int idx)
     return status;
 }
 
+
 int main(int argc, const char* argv[])
 {
-    string env_var("LOG_TRUNCATE=yes");
-    putenv(&env_var[0]);
+    CDiagContext::SetLogTruncate(true);
+    SetDiagPostFlag(eDPF_DateTime);
     return CThreadPoolTester().AppMain(argc, argv, 0, eDS_Default, 0);
 }
