@@ -261,6 +261,7 @@ static int s_Client(int x_port, unsigned int max_try)
 
     for (m = 1; m <= max_try; m++) {
         unsigned long tmp;
+        unsigned int  k;
 
         if (m != 1)
             CORE_LOGF(eLOG_Note, ("[Client]  Attempt #%u", (unsigned int) m));
@@ -284,6 +285,7 @@ static int s_Client(int x_port, unsigned int max_try)
             return 1;
         }
 
+        k = 0;
     again:
         if ((status = DSOCK_RecvMsg(client, buf + msglen, msglen, 0, &n, 0, 0))
             != eIO_Success) {
@@ -300,11 +302,11 @@ static int s_Client(int x_port, unsigned int max_try)
 
         memcpy(&tmp, buf + msglen, sizeof(tmp));
         if (SOCK_NetToHostLong(tmp) != id) {
-            m++;
-            CORE_LOGF(m < max_try ? eLOG_Warning : eLOG_Error,
+            k++;
+            CORE_LOGF(k < max_try ? eLOG_Warning : eLOG_Error,
                       ("[Client]  Stale message received%s",
-                       m <= max_try ? ", reattempting to fetch" : ""));
-            if (m <= max_try)
+                       k < max_try ? ", reattempting to fetch" : ""));
+            if (k < max_try)
                 goto again;
             break;
         }
