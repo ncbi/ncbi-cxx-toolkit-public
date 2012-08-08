@@ -1,0 +1,9 @@
+[-]
+_export = NCBI_TRACKMGR_EXPORT
+_extra_headers = internal/trackmgr/trackmgr_export.h
+clients = trackmgr_client
+
+[trackmgr_client]
+class = CTrackMgrClient
+request = TMgr-Request
+reply = TMgr-Reply

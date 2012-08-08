@@ -1,0 +1,11 @@
+# $Id$
+
+ASN = trackmgr
+
+SRC = $(ASN:%=%__) $(ASN:%=%___)
+
+LIB = trackmgr
+
+LIB_OR_DLL = lib
+
+WATCHERS = meric clausen
