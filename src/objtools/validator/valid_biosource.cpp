@@ -267,7 +267,7 @@ static bool s_IsValidPrimerSequence (string str, char& bad_ch)
     }
 
     const char* *list_begin = sm_ValidModifiedPrimerBases;
-    const char* *list_end = &(sm_ValidModifiedPrimerBases[sizeof(sm_ValidModifiedPrimerBases) / sizeof(string)]);
+    const char* *list_end = &(sm_ValidModifiedPrimerBases[sizeof(sm_ValidModifiedPrimerBases) / sizeof(const char*)]);
 
     size_t pos = 0;
     string::iterator sit = str.begin();
