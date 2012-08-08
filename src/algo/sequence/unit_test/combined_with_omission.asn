@@ -1762,7 +1762,7 @@ Seq-annot ::= {
           fuzz-to lim gt
         },
         {
-          from 201461,
+          from 201460,
           to 201822,
           strand plus,
           id gi 258443136,

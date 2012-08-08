@@ -1987,7 +1987,7 @@ Seq-annot ::= {
           fuzz-to lim gt
         },
         {
-          from 201461,
+          from 201460,
           to 201822,
           strand plus,
           id gi 258443136,
@@ -7819,7 +7819,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "CDNA_20120801_27",
+      product whole local str "CDNA_1_27",
       location packed-int {
         {
           from 122448,
@@ -7840,7 +7840,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "PROT_20120801_27",
+      product whole local str "PROT_1_27",
       location packed-int {
         {
           from 122448,

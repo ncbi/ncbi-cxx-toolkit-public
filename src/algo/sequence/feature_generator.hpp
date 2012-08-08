@@ -96,15 +96,15 @@ struct CFeatureGenerator::SImplementation {
 
     void RecomputePartialFlags(objects::CSeq_annot& annot);
 
-    TSignedSeqPos GetCdsStart(const objects::CSeq_id& seqid);
+    TSignedSeqRange GetCds(const objects::CSeq_id& seqid);
 
-    void TrimLeftExon(int trim_amount,
+    static void TrimLeftExon(int trim_amount,
                       vector<SExon>::reverse_iterator left_edge,
                       vector<SExon>::reverse_iterator& exon_it,
                       objects::CSpliced_seg::TExons::reverse_iterator& spl_exon_it,
                       objects::ENa_strand product_strand,
                       objects::ENa_strand genomic_strand);
-    void TrimRightExon(int trim_amount,
+    static void TrimRightExon(int trim_amount,
                        vector<SExon>::iterator& exon_it,
                        vector<SExon>::iterator right_edge,
                        objects::CSpliced_seg::TExons::iterator& spl_exon_it,

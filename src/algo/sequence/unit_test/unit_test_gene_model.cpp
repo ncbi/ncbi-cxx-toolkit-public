@@ -40,6 +40,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/validator/validator.hpp>
 #include <objmgr/scope.hpp>
 
 #include <serial/serial.hpp>
@@ -147,14 +148,7 @@ void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
 
             BOOST_CHECK_EQUAL(f1.IsSetProduct(), f2.IsSetProduct());
             if (f1.IsSetProduct() && f2.IsSetProduct()) {
-                BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()) ||
-
-                            // CFeatureGenerator creates local ids with date inside so they won't match
-                            (f1.GetProduct().GetId()!= NULL &&
-                             f1.GetProduct().GetId()->IsLocal() &&
-                             f2.GetProduct().GetId()!= NULL &&
-                             f2.GetProduct().GetId()->IsLocal())
-                            );
+                BOOST_CHECK(f1.GetProduct().Equals(f2.GetProduct()));
             }
 
             BOOST_CHECK_EQUAL(f1.IsSetPseudo(), f2.IsSetPseudo());
@@ -264,6 +258,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     CGBDataLoader::RegisterInObjectManager(*om);
     CScope scope(*om);
     scope.AddDefaults();
+    validator::CValidator validator(*om);
 
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     CNcbiIstream& align_istr = args["data-in"].AsInputFile();
@@ -299,10 +294,13 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                                             combined_annot_with_omission_ostr));
     }
     output_test_stream seqdata_test_stream( args["seqdata-expected"].AsString(), true );
-
-    CNcbiOstream* seqdata_ostr = NULL;
+    auto_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
+                                                                  seqdata_test_stream));
+    auto_ptr<CObjectOStream> seqdata_os;
     if (args["seqdata-out"]) {
-        seqdata_ostr = &args["seqdata-out"].AsOutputFile();
+        CNcbiOstream& seqdata_ostr = args["seqdata-out"].AsOutputFile();
+        seqdata_os.reset(CObjectOStream::Open(eSerial_AsnText,
+                                            seqdata_ostr));
     }
 
     if (args["seqdata-in"]) {
@@ -363,7 +361,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         BOOST_CHECK_NO_THROW(align->Validate(true));
 
 
-        CBioseq_set seqs;
+        CRef<CSeq_entry> seq_entry(new CSeq_entry);
+        CBioseq_set& seqs = seq_entry->SetSet();
         seqs.SetSeq_set();
         CSeq_annot actual_annot;
         CSeq_annot::C_Data::TFtable &actual_features = 
@@ -383,6 +382,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
             CConstRef<CSeq_align> clean_align = generator.CleanAlignment(*align);
             generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs);
+//            BOOST_CHECK( validator.Validate(*seq_entry, &scope)->FatalSize()==0 );
             CSeq_id_Handle id = CSeq_id_Handle::GetHandle(*actual_features.front()->GetLocation().GetId());
             if(id == gene_for_combined_aligns)
                 combined_aligns.push_back(align);
@@ -410,22 +410,11 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         if (annot_os.get() != NULL) {
             *annot_os << actual_annot;
         }
-
-        CNcbiOstrstream seqdata_strstream;
-        auto_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
-                                                                  seqdata_strstream));
-        *seqdata_test_os << seqs;
-
-        string seqdata = CNcbiOstrstreamToString(seqdata_strstream);
-        CTime time(CTime::eCurrent);
-        NStr::ReplaceInPlace(seqdata, time.AsString("YMD"), "YMD");
-
-        if (seqdata_ostr != NULL) {
-            *seqdata_ostr << seqdata;
+        if (seqdata_os.get() != NULL) {
+            *seqdata_os << seqs;
         }
 
-        seqdata_test_stream << seqdata;
-
+        *seqdata_test_os << seqs;
         BOOST_CHECK( seqdata_test_stream.match_pattern() );
 
         s_CompareFtables(actual_features, expected_features);
@@ -596,6 +585,7 @@ BOOST_AUTO_TEST_CASE(TestCaseTrimProtein)
     CSeq_align align;
     CSpliced_seg& seg = align.SetSegs().SetSpliced();
     seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    seg.SetProduct_length(101);
     CRef<CSeq_id> seq_id;
     seq_id.Reset(new CSeq_id("lcl|prot"));
     seg.SetProduct_id(*seq_id);
@@ -677,6 +667,7 @@ BOOST_AUTO_TEST_CASE(TestCaseStitchProtein)
     align.SetType(CSeq_align::eType_partial);
     CSpliced_seg& seg = align.SetSegs().SetSpliced();
     seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    seg.SetProduct_length(101);
     CRef<CSeq_id> seq_id;
     seq_id.Reset(new CSeq_id("lcl|prot"));
     seg.SetProduct_id(*seq_id);
@@ -791,6 +782,7 @@ BOOST_AUTO_TEST_CASE(TestCaseExpandAlignment)
     align.SetType(CSeq_align::eType_partial);
     CSpliced_seg& seg = align.SetSegs().SetSpliced();
     seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    seg.SetProduct_length(101);
     CRef<CSeq_id> seq_id;
     seq_id.Reset(new CSeq_id("lcl|prot"));
     seg.SetProduct_id(*seq_id);
@@ -848,7 +840,7 @@ BOOST_AUTO_TEST_CASE(TestCaseExpandAlignment)
 
     CConstRef<CSeq_align> modified_align;
     TSeqRange range(8, 248);
-    modified_align = feat_gen.ExpandAlignment(align, range);
+    modified_align = feat_gen.AdjustAlignment(align, range);
 // *ostr << *modified_align;
 
     BOOST_CHECK_NO_THROW(modified_align->Validate(true));
@@ -887,7 +879,133 @@ BOOST_AUTO_TEST_CASE(TestCaseExpandAlignment)
     BOOST_CHECK_EQUAL(exon.GetGenomic_start(), range.GetFrom() );
     BOOST_CHECK_EQUAL(exon.GetGenomic_end(), range.GetTo() );
 
-    BOOST_CHECK_EQUAL(exon.GetProduct_start().GetProtpos().GetAmin(), 0 );
+    BOOST_CHECK_EQUAL(exon.GetProduct_start().GetProtpos().GetAmin(), unsigned(0) );
+    BOOST_CHECK_EQUAL(exon.GetProduct_end().GetProtpos().GetAmin(), modified_align->GetSegs().GetSpliced().GetProduct_length() -1 );
+    
+
+
+
+// CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
+//                                             cerr);
+// *ostr << *trimmed_align;
+//  delete ostr;
+    }
+}
+BOOST_AUTO_TEST_CASE(TestCaseShrinkAlignment)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+
+    for (int strand = -1 ; strand <= 1; strand +=2) {
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+
+    CSeq_align align;
+    {
+    align.SetType(CSeq_align::eType_partial);
+    CSpliced_seg& seg = align.SetSegs().SetSpliced();
+    seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    seg.SetProduct_length(101);
+    CRef<CSeq_id> seq_id;
+    seq_id.Reset(new CSeq_id("lcl|prot"));
+    seg.SetProduct_id(*seq_id);
+    seq_id.Reset(new CSeq_id("lcl|genomic"));
+    seg.SetGenomic_id(*seq_id);
+    CSpliced_seg::TExons& exons = seg.SetExons();
+    CRef<CSpliced_exon> exon;
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(3);
+    exon->SetProduct_start().SetProtpos().SetFrame(3);
+    exon->SetProduct_end().SetProtpos().SetAmin(75);
+    exon->SetProduct_end().SetProtpos().SetFrame(1);
+    exon->SetGenomic_start(22);
+    exon->SetGenomic_end(237);
+    exon->SetGenomic_strand() = strand > 0 ? eNa_strand_plus : eNa_strand_minus;
+
+    CRef<CSpliced_exon_chunk> chunk;
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(2);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetGenomic_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(6);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetProduct_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(2);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetGenomic_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(204);
+    exon->SetParts().push_back(chunk);
+
+    exons.push_back(exon);
+    }
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+// CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
+//                                             cerr);
+// *ostr << align;
+
+    CConstRef<CSeq_align> modified_align;
+    TSeqRange range(23, 236);
+    modified_align = feat_gen.AdjustAlignment(align, range);
+// *ostr << *modified_align;
+
+    BOOST_CHECK_NO_THROW(modified_align->Validate(true));
+    BOOST_CHECK_EQUAL(modified_align->GetSegs().GetSpliced().GetExons().size(), size_t(1));
+    const CSpliced_exon& exon = **modified_align->GetSegs().GetSpliced().GetExons().begin();
+
+    int cumulative_indel_len = 0;
+    TSeqPos product_pos = 0;
+    ITERATE(CSpliced_exon::TParts, p, exon.GetParts()) {
+        const CSpliced_exon_chunk& chunk = **p;
+        switch (chunk.Which()) {
+        case CSpliced_exon_chunk::e_Match:
+            product_pos += chunk.GetMatch();
+            break;
+        case CSpliced_exon_chunk::e_Mismatch:
+            product_pos += chunk.GetMismatch();
+            break;
+        case CSpliced_exon_chunk::e_Product_ins:
+            product_pos += chunk.GetProduct_ins();
+            cumulative_indel_len += 1;
+            break;
+        case CSpliced_exon_chunk::e_Genomic_ins:
+            if (chunk.GetGenomic_ins() > 1) {
+                BOOST_CHECK_EQUAL(product_pos % 3, TSeqPos(0) );
+            }
+            cumulative_indel_len -= 1;
+            break;
+        default:
+            break;
+        }
+    }
+    
+    
+    BOOST_CHECK_EQUAL(modified_align->GetSegs().GetSpliced().GetProduct_length(), (range.GetLength()+cumulative_indel_len)/3 );
+
+    BOOST_CHECK_EQUAL(exon.GetGenomic_start(), range.GetFrom() );
+    BOOST_CHECK_EQUAL(exon.GetGenomic_end(), range.GetTo() );
+
+    BOOST_CHECK_EQUAL(exon.GetProduct_start().GetProtpos().GetAmin(), unsigned(0) );
     BOOST_CHECK_EQUAL(exon.GetProduct_end().GetProtpos().GetAmin(), modified_align->GetSegs().GetSpliced().GetProduct_length() -1 );
     
 

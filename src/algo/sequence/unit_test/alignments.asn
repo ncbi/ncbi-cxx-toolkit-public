@@ -12693,7 +12693,7 @@ Seq-align ::= {
       data {
         {
           label str "Flags", 
-          data int 13159 -- 0x3367: fMaximizeTranslation + fTrimEnds + fDefaults
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
         }
       }
     }

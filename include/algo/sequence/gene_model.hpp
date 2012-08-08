@@ -76,9 +76,10 @@ public:
         fForceTranslateCds   = 0x020,
         fForceTranscribeMrna = 0x040,
         fDensegAsExon        = 0x080,
-        fGenerateLocalIds    = 0x100,
-        fPropagateNcrnaFeats = 0x200,
-        fTrustProteinSeq     = 0x400,
+        fGenerateLocalIds    = 0x100,     // uses current date
+        fGenerateStableLocalIds = 0x200,  // reproducible ids
+        fPropagateNcrnaFeats = 0x400,
+        fTrustProteinSeq     = 0x800,
 
         fDefaults = fCreateGene | fCreateMrna | fCreateCdregion |
                     fGenerateLocalIds | fPropagateNcrnaFeats
@@ -99,14 +100,14 @@ public:
     CConstRef<objects::CSeq_align>
     CleanAlignment(const objects::CSeq_align& align);
 
-    /// Expand alignment to the specified range
-    /// Won't shrink.
+    /// Adjust alignment to the specified range
     /// Will add necessary 'diags' at ends.
     /// Will recalculate product positions to start at zero.
-    /// Note: range should not include stop codon!
+    /// Throws an exception on attempt to shink past an indel in CDS
     /// Works on Spliced-seg alignments only.
+    /// Note: for a protein alignment do not expand it to include stop codon.
     CConstRef<objects::CSeq_align>
-    ExpandAlignment(const objects::CSeq_align& align, TSeqRange range);
+    AdjustAlignment(const objects::CSeq_align& align, TSeqRange range);
 
 
     /// Convert an alignment to an annotation.

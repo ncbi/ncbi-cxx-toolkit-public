@@ -176,7 +176,11 @@ CFeatureGenerator::~CFeatureGenerator()
 
 void CFeatureGenerator::SetFlags(TFeatureGeneratorFlags flags)
 {
+    if ((flags & fGenerateStableLocalIds) != 0) {
+        flags |= fGenerateLocalIds;
+    }
     m_impl->m_flags = flags;
+
 }
 
 CFeatureGenerator::TFeatureGeneratorFlags CFeatureGenerator::GetFlags() const
@@ -607,8 +611,10 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             size_t new_id_num = counter.Add(1);
             CTime time(CTime::eCurrent);
             string str("lcl|MRNA_");
-            str += time.AsString("YMD");
-            str += "_";
+            if ((m_flags & fGenerateStableLocalIds) == 0) {
+                str += time.AsString("YMD");
+                str += "_";
+            }
             str += NStr::NumericToString(new_id_num);
             CRef<CSeq_id> fake_rna_id(new CSeq_id(str));
             fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(
@@ -1044,6 +1050,8 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                 inst.ResetSeq_data();
             }
             int gap_len = add_unaligned_parts ? mrna_loc->GetTotalRange().GetFrom()-(prev_product_to+1) : 0;
+            seq_size += gap_len;
+            prev_product_to += gap_len;
             inst.SetExt().SetDelta().AddLiteral(gap_len);
             if (gap_len == 0)
                 inst.SetExt().SetDelta().Set().back()
@@ -1051,7 +1059,6 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
         }
 
         int part_count = 0;
-//NEW        int prev_genomic_pos = loc_it.GetStrand() != eNa_strand_minus ? exon->GetTotalRange().GetFrom() : exon->GetTotalRange().GetTo();
         for (CSeq_loc_CI part_it(*mrna_loc);  part_it;  ++part_it) {
             ++part_count;
             if (prev_product_to<0) {
@@ -1067,37 +1074,13 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                     *has_indel = true;
                 }
                 string deletion(deletion_len, 'N');
-//NEW                string deletion((add_unaligned_parts ? deletion_len : deletion_len % 3), 'N');
                 AddLiteral(inst, deletion, CSeq_inst::eMol_rna);
                 seq_size += deletion.size();
             }
 
             CConstRef<CSeq_loc> part = GetSeq_loc(part_it);
             CRef<CSeq_loc> genomic_loc = to_genomic.Map(*part);
-            //NEW
-            /*
-            if (!genomic_loc->IsInt())
-                NCBI_THROW(CException, eUnknown,
-                           "Mapped exon piece should be an interval");
-
-            if (add_unaligned_parts) {
-                int genomic_insertion_len = 0;
-                if (loc_it.GetStrand() != eNa_strand_minus) {
-                    genomic_insertion_len = genomic_loc->GetInt().GetFrom() - prev_genomic_pos;
-                    if (genomic_insertion_len >=3) {
-                        genomic_loc->SetInt().SetFrom(prev_genomic_pos+genomic_insertion_len%3);
-                    }
-                    prev_genomic_pos = genomic_loc->GetInt().GetTo()+1;
-                } else {
-                    genomic_insertion_len = prev_genomic_pos - genomic_loc->GetInt().GetTo();
-                    if (genomic_insertion_len >=3) {
-                        genomic_loc->SetInt().SetTo(prev_genomic_pos-genomic_insertion_len%3);
-                    }
-                    prev_genomic_pos = genomic_loc->GetInt().GetFrom()-1;
-                }
-            }
-            */
-            CSeqVector vec(*genomic_loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
+           CSeqVector vec(*genomic_loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
             string seq;
             vec.GetSeqData(0, vec.size(), seq);
 
@@ -1156,10 +1139,16 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& bioseq = entry->SetSeq();
     
+    static CAtomicCounter counter;
     if (m_flags & fGenerateLocalIds) {
         /// create a new seq-id for this
         string str("lcl|CDNA_");
-        str += time.AsString("YMD");
+        if ((m_flags & fGenerateStableLocalIds) == 0) {
+            str += time.AsString("YMD");
+        } else {
+            size_t new_id_num = counter.Add(1);
+            str += NStr::NumericToString(new_id_num);
+        }
         str += "_";
         str += NStr::SizetToString(model_num);
         CSeq_id new_id(str);
@@ -1232,10 +1221,16 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     CBioseq& bioseq = entry->SetSeq();
     
     CRef<CSeq_id> id;
+    static CAtomicCounter counter;
     if ((m_flags & fGenerateLocalIds) || !cds_on_mrna.CanGetProduct()) {
         // create a new seq-id for this
         string str("lcl|PROT_");
-        str += time.AsString("YMD");
+        if ((m_flags & fGenerateStableLocalIds) == 0) {
+            str += time.AsString("YMD");
+        } else {
+            size_t new_id_num = counter.Add(1);
+            str += NStr::NumericToString(new_id_num);
+        }
         str += "_";
         str += NStr::SizetToString(model_num);
         id.Reset(new CSeq_id(str));

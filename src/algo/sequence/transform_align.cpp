@@ -48,12 +48,31 @@ USING_SCOPE(objects);
 
 namespace {
 
+pair <ENa_strand, ENa_strand> GetSplicedStrands(const CSpliced_seg& spliced_seg)
+{
+    ENa_strand product_strand =
+        spliced_seg.IsSetProduct_strand() ?
+        spliced_seg.GetProduct_strand() :
+        (spliced_seg.GetExons().front()->IsSetProduct_strand() ?
+         spliced_seg.GetExons().front()->GetProduct_strand() :
+         eNa_strand_unknown);
+    ENa_strand genomic_strand =
+        spliced_seg.IsSetGenomic_strand() ?
+        spliced_seg.GetGenomic_strand() :
+        (spliced_seg.GetExons().front()->IsSetGenomic_strand()?
+         spliced_seg.GetExons().front()->GetGenomic_strand():
+         eNa_strand_unknown);
+
+    return make_pair(product_strand, genomic_strand);
+}
+
 void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons)
 {
     bool is_protein = (spliced_seg.GetProduct_type()==CSpliced_seg::eProduct_type_protein);
 
-    ENa_strand product_strand = spliced_seg.IsSetProduct_strand() ? spliced_seg.GetProduct_strand() : eNa_strand_unknown;
-    ENa_strand genomic_strand = spliced_seg.IsSetGenomic_strand() ? spliced_seg.GetGenomic_strand() : eNa_strand_unknown;
+    pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
+    ENa_strand product_strand = strands.first;
+    ENa_strand genomic_strand = strands.second;
 
     exons.resize(spliced_seg.GetExons().size());
     int i = 0;
@@ -117,8 +136,9 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
 
     bool is_protein = (spliced_seg.GetProduct_type()==CSpliced_seg::eProduct_type_protein);
 
-    ENa_strand product_strand = spliced_seg.IsSetProduct_strand() ? spliced_seg.GetProduct_strand() : eNa_strand_unknown;
-    ENa_strand genomic_strand = spliced_seg.IsSetGenomic_strand() ? spliced_seg.GetGenomic_strand() : eNa_strand_unknown;
+    pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
+    ENa_strand product_strand = strands.first;
+    ENa_strand genomic_strand = strands.second;
 
     int product_min_pos;
     int product_max_pos;
@@ -269,15 +289,18 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
 
     bool is_protein = (spliced_seg.GetProduct_type()==CSpliced_seg::eProduct_type_protein);
 
-    ENa_strand product_strand = spliced_seg.IsSetProduct_strand() ? spliced_seg.GetProduct_strand() : eNa_strand_unknown;
-    ENa_strand genomic_strand = spliced_seg.IsSetGenomic_strand() ? spliced_seg.GetGenomic_strand() : eNa_strand_unknown;
+    pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
+    ENa_strand product_strand = strands.first;
+    ENa_strand genomic_strand = strands.second;
 
-    TSignedSeqPos cds_start = 0;
-    if (!is_protein) {
+    TSignedSeqRange cds;
+    if (is_protein) {
+        cds = TSignedSeqRange(0, spliced_seg.GetProduct_length()*3 - 1);
+    } else {
         if (!spliced_seg.CanGetProduct_id())
             return;
-        cds_start = GetCdsStart(spliced_seg.GetProduct_id());
-        if (cds_start == -1)
+        cds = GetCds(spliced_seg.GetProduct_id());
+        if (cds.Empty())
             return;
         if (product_strand == eNa_strand_minus) {
             NCBI_THROW(CException, eUnknown,
@@ -289,7 +312,7 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
     vector<SExon> exons;
     GetExonStructure(spliced_seg, exons);
 
-    int frame_offset = (exons.back().prod_to/3+1)*3+cds_start; // to make modulo operands always positive
+    int frame_offset = (exons.back().prod_to/3+1)*3+cds.GetFrom(); // to make modulo operands always positive
 
     vector<SExon>::iterator right_exon_it = exons.begin();
     CSpliced_seg::TExons::iterator right_spl_exon_it = spliced_seg.SetExons().begin();
@@ -306,12 +329,16 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
             continue;
         }
 
-        if (right_exon_it != exons.begin() && (right_exon_it != exons.end() || (m_flags & fTrimEnds)))
-            TrimLeftExon((left_exon_it->prod_to - cds_start + 1) % 3,
+        if (right_exon_it != exons.begin() && (right_exon_it != exons.end() || (m_flags & fTrimEnds)) &&
+            cds.GetFrom() < left_exon_it->prod_to && left_exon_it->prod_to < cds.GetTo()
+            )
+            TrimLeftExon((left_exon_it->prod_to - cds.GetFrom() + 1) % 3,
                          exons.rend(), left_exon_it, left_spl_exon_it,
                          product_strand, genomic_strand);
 
-        if (right_exon_it != exons.end() && (right_exon_it != exons.begin() || (m_flags & fTrimEnds)))
+        if (right_exon_it != exons.end() && (right_exon_it != exons.begin() || (m_flags & fTrimEnds)) &&
+            cds.GetFrom() < right_exon_it->prod_from && right_exon_it->prod_from < cds.GetTo()
+            )
             TrimRightExon((frame_offset-right_exon_it->prod_from) % 3,
                           right_exon_it, exons.end(), right_spl_exon_it,
                           product_strand, genomic_strand);
@@ -386,7 +413,7 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
     }
 }
 
-CConstRef<CSeq_align> CFeatureGenerator::ExpandAlignment(const CSeq_align& align_in, TSeqRange range)
+CConstRef<CSeq_align> CFeatureGenerator::AdjustAlignment(const CSeq_align& align_in, TSeqRange range)
 {
     if (!align_in.CanGetSegs() || !align_in.GetSegs().IsSpliced())
         return CConstRef<CSeq_align>(&align_in);
@@ -401,13 +428,61 @@ CConstRef<CSeq_align> CFeatureGenerator::ExpandAlignment(const CSeq_align& align
 
     bool is_protein_align =
         spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
-    bool plus_strand = !(
-                         (spliced_seg.CanGetGenomic_strand() &&
-                          spliced_seg.GetGenomic_strand() == eNa_strand_minus) ||
-                         (!spliced_seg.CanGetGenomic_strand() &&
-                          spliced_seg.GetExons().front()->CanGetGenomic_strand() &&
-                          spliced_seg.GetExons().front()->GetGenomic_strand() == eNa_strand_minus)
-                         );
+
+    pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
+    ENa_strand product_strand = strands.first;
+    ENa_strand genomic_strand = strands.second;
+
+    if (product_strand == eNa_strand_minus) {
+        NCBI_THROW(CException, eUnknown,
+                   "AdjustAlignment(): "
+                   "product minus strand not supported");
+        
+    }
+
+    bool plus_strand = !(genomic_strand == eNa_strand_minus);
+
+    vector<SExon>::iterator right_exon_it = exons.begin();
+    CSpliced_seg::TExons::iterator right_spl_exon_it = spliced_seg.SetExons().begin();
+
+    int range_right = plus_strand ? range.GetFrom() : -range.GetTo();
+    int range_left = plus_strand ? range.GetTo() : -range.GetFrom();
+
+    TSignedSeqRange expected_genomic_range(max(range_right, exons.front().genomic_from), min(range_left, exons.back().genomic_to));
+
+    for(;;++right_exon_it, ++right_spl_exon_it) {
+
+        vector<SExon>::reverse_iterator left_exon_it(right_exon_it); 
+        CSpliced_seg::TExons::reverse_iterator left_spl_exon_it(right_spl_exon_it);
+
+        if (right_exon_it == exons.end() &&
+            left_exon_it->genomic_to > range_left
+            )
+            CFeatureGenerator::SImplementation::TrimLeftExon(left_exon_it->genomic_to - range_left,
+                         exons.rend(), left_exon_it, left_spl_exon_it,
+                         product_strand, genomic_strand);
+
+        if (right_exon_it == exons.begin() &&
+            right_exon_it->genomic_from < range_right
+            )
+            CFeatureGenerator::SImplementation::TrimRightExon(range_right - right_exon_it->genomic_from,
+                          right_exon_it, exons.end(), right_spl_exon_it,
+                          product_strand, genomic_strand);
+        
+        if (left_exon_it.base() != right_exon_it) {
+            right_exon_it = exons.erase(left_exon_it.base(), right_exon_it);
+            right_spl_exon_it = spliced_seg.SetExons().erase(left_spl_exon_it.base(), right_spl_exon_it);
+        }
+
+        if (right_exon_it == exons.end())
+            break;
+    }
+
+    if (exons.front().genomic_from != expected_genomic_range.GetFrom() || exons.back().genomic_to != expected_genomic_range.GetTo()) {
+        NCBI_THROW(CException, eUnknown,
+                   "AdjustAlignment(): "
+                   "result's ends do not match the range, most likely indel(s) outside or right at range border(s)");
+    }
 
     CSpliced_exon& first_exon = *spliced_seg.SetExons().front();
     CSpliced_exon& last_exon = *spliced_seg.SetExons().back();
@@ -416,47 +491,56 @@ CConstRef<CSeq_align> CFeatureGenerator::ExpandAlignment(const CSeq_align& align
     int last_exon_extension = 0;
 
     if (plus_strand) {
-        if (range.GetFrom() < first_exon.GetGenomic_start()) {
+        first_exon_extension = first_exon.GetGenomic_start() - range.GetFrom();
+        if (first_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
-            first_exon_extension = first_exon.GetGenomic_start() - range.GetFrom();
             chunk->SetDiag(first_exon.IsSetParts() ? first_exon_extension : (first_exon.GetGenomic_end() - range.GetFrom() + 1));
             first_exon.SetParts().insert(first_exon.SetParts().begin(), chunk);
             first_exon.SetGenomic_start() = range.GetFrom();
         }
 
-        if (last_exon.GetGenomic_end() < range.GetTo()) {
+        last_exon_extension = range.GetTo() - last_exon.GetGenomic_end();
+        if (last_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
-            last_exon_extension = range.GetTo() - last_exon.GetGenomic_end();
             chunk->SetDiag(last_exon.IsSetParts() ? last_exon_extension : (range.GetTo() - last_exon.GetGenomic_start() + 1));
             last_exon.SetParts().push_back(chunk);
             last_exon.SetGenomic_end() = range.GetTo();
         }
     } else {
-        if (range.GetFrom() < last_exon.GetGenomic_start()) {
+        last_exon_extension = last_exon.GetGenomic_start() - range.GetFrom();
+        if (last_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
-            last_exon_extension = last_exon.GetGenomic_start() - range.GetFrom();
             chunk->SetDiag(last_exon.IsSetParts() ? last_exon_extension : (last_exon.GetGenomic_end() - range.GetFrom() + 1));
             last_exon.SetParts().push_back(chunk);
             last_exon.SetGenomic_start() = range.GetFrom();
         }
 
-        if (first_exon.GetGenomic_end() < range.GetTo()) {
+        first_exon_extension = range.GetTo() - first_exon.GetGenomic_end();
+        if (first_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
-            first_exon_extension = range.GetTo() - first_exon.GetGenomic_end();
             chunk->SetDiag(first_exon.IsSetParts() ? first_exon_extension : (range.GetTo() - first_exon.GetGenomic_start() + 1));
             first_exon.SetParts().insert(first_exon.SetParts().begin(), chunk);
             first_exon.SetGenomic_end() = range.GetTo();
         }
-        
     }
 
     exons.front().prod_from -= first_exon_extension;
+    exons.front().genomic_from -= first_exon_extension;
     exons.back().prod_to += last_exon_extension;
+    exons.back().genomic_to += last_exon_extension;
+
+
+    if ((plus_strand && ((int)range.GetFrom() != exons.front().genomic_from || (int)range.GetTo() != exons.back().genomic_to)) ||
+        (!plus_strand && ((int)range.GetFrom() != -exons.back().genomic_to || (int)range.GetTo() != -exons.front().genomic_from))) {
+        NCBI_THROW(CException, eUnknown,
+                   "AdjustAlignment(): "
+                   "result's ends do not match the range. This is a bug in AdjustAlignment implementation");
+    }
 
     if (is_protein_align && (exons.front().prod_from %3 != 0 || exons.back().prod_to %3 != 2)) {
         NCBI_THROW(CException, eUnknown,
-                   "ExtendAlignment(): "
-                   "range not at codon boundaries");
+                   "AdjustAlignment(): "
+                   "result's ends not at codon boundaries");
     }
 
     int offset = exons.front().prod_from;
@@ -502,17 +586,16 @@ CMappedFeat CFeatureGenerator::SImplementation::GetCdsOnMrna(const objects::CSeq
     return cdregion_handle;
 }
 
-TSignedSeqPos CFeatureGenerator::SImplementation::GetCdsStart(const objects::CSeq_id& rna_id)
+TSignedSeqRange CFeatureGenerator::SImplementation::GetCds(const objects::CSeq_id& rna_id)
 {
-    TSignedSeqPos cds_start = -1;
-
     CMappedFeat cdregion = GetCdsOnMrna(rna_id);
-
-    if (cdregion) {
-        cds_start = cdregion.GetLocation().GetTotalRange().GetFrom();
+    if (!cdregion) {
+        return TSignedSeqRange();
     }
 
-    return cds_start;
+    TSeqRange cds = cdregion.GetLocation().GetTotalRange();
+
+    return TSignedSeqRange(cds.GetFrom(), cds.GetTo());
 }
 
 void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
@@ -545,6 +628,7 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
                     (*spl_exon_it)->SetProduct_start().SetNucpos() += trim_amount;
                 }
             }
+            exon_it->prod_to -= trim_amount;
 
             (*spl_exon_it)->SetPartial(true);
             (*spl_exon_it)->ResetDonor_after_exon();
@@ -615,6 +699,7 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
             } else {
                 (*spl_exon_it)->SetGenomic_start() += genomic_trim_amount;
             }
+            exon_it->genomic_to -= genomic_trim_amount;
         }
     }
 }
@@ -648,6 +733,7 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
                     (*spl_exon_it)->SetProduct_end().SetNucpos() -= trim_amount;
                 }
             }
+            exon_it->prod_from += trim_amount;
 
             (*spl_exon_it)->SetPartial(true);
             (*spl_exon_it)->ResetAcceptor_before_exon();
@@ -717,6 +803,7 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
             } else {
                 (*spl_exon_it)->SetGenomic_end() -= genomic_trim_amount;
             }
+            exon_it->genomic_from += genomic_trim_amount;
         }
     }
 }
