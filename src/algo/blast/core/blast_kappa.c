@@ -2391,7 +2391,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                               &discarded_aligns);
                 if (status_code == 0) hsp_list = NULL;
             } else {
-                status_code = -1;
+                hsp_list = Blast_HSPListFree(hsp_list);
             }
 
             if (status_code) goto query_loop_cleanup;
