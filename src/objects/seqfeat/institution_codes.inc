@@ -1919,7 +1919,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GGM	s	Gosudarstvennyi Geologicheskii Musei - State Geological Museum",
 "GGO	s	University of Strathclyde, Biology Department",
 "GGW	s	Botanical Society of Glasgow",
-"GH	s	Harvard University",
+"GH	s	Harvard University (The Gray Herbarium)",
 "GHD	s	Shipley Art Gallery and Saltwell Tower Museum",
 "GHG	s	Council for Geosciences",
 "GHPG	s	Harold Porter National Botanical Garden",
