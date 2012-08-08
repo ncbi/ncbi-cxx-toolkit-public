@@ -39,7 +39,6 @@
 #include <corelib/ncbiutil.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objtools/align_format/showdefline.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
