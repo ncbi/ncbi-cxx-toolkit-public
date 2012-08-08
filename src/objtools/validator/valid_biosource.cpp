@@ -185,9 +185,10 @@ static bool s_IsValidSexQualifierValue (string str)
 
 {
     str = NStr::ToLower(str);
+    size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
 
     const char* *begin = sm_ValidSexQualifierValues;
-    const char* *end = &(sm_ValidSexQualifierValues[sizeof(sm_ValidSexQualifierValues) / sizeof(string)]);
+    const char* *end = &(sm_ValidSexQualifierValues[max]);
 
     return find(begin, end, str) != end;
 }
