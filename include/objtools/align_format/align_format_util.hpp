@@ -43,6 +43,7 @@
 #include <util/math/matrix.hpp>
 #include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
 #include <algo/blast/core/blast_stat.h>
+#include <objtools/align_format/ilinkoutdb.hpp>
 
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
@@ -53,22 +54,6 @@
 /**setting up scope*/
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(align_format)
-
-/// Interface to LinkoutDB
-class NCBI_ALIGN_FORMAT_EXPORT ILinkoutDB : public CObject {
-public:
-    /// Retrieve the Linkout for a given GI
-    /// @param gi GI of interest [in]
-    /// @param mv_build_name MapViewer build name for this GI [in]
-    /// @return integer encoding linkout bits or 0 if not found
-    virtual int GetLinkout(int gi, const string& mv_build_name) = 0;
-
-    /// Retrieve the Linkout for a given Seq-id
-    /// @param id Seq-id of interest [in]
-    /// @param mv_build_name MapViewer build name for this Seq-id [in]
-    /// @return integer encoding linkout bits or 0 if not found
-    virtual int GetLinkout(const objects::CSeq_id& id, const string& mv_build_name) = 0;
-};
 
 
 ///blast related url
