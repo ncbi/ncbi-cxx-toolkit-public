@@ -1417,6 +1417,7 @@ CThreadPool_Impl::x_Init(CThreadPool*             pool_intf,
     m_TotalTasks.Set(0);
     m_Aborted = false;
     m_Suspended = false;
+    m_FlushRequested = false;
     m_ThreadsMode = (threads_mode | CThread::fRunDetached)
                      & ~CThread::fRunAllowST;
 
