@@ -2693,7 +2693,7 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
                                              fwd_prelim_tback);
       //TODO check for possible gap elimination
       ASSERT(!compressed_subject);
-      s_ReduceGaps(esp, query+q_off-q_ext_l, subject+s_off-s_ext_l);
+      if (esp) s_ReduceGaps(esp, query+q_off-q_ext_l, subject+s_off-s_ext_l);
    }
    else {
        /* estimate the best alignment start point. This is the middle

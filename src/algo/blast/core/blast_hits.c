@@ -408,6 +408,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    
    best_end_esp_num = -1;
    esp = hsp->gap_info;
+   if (!esp) return TRUE;
    for (index=0; index<esp->size; index++)
    {
        int op_index = 0;  /* Index of an operation within a single edit script. */
