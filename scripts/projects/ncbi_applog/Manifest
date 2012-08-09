@@ -14,6 +14,7 @@
 APP: ncbi_applog 
 
 POSTBUILD: cp $srcdir/src/misc/clog/app/ncbi_applog.cgi $installdir/bin
+POSTBUILD: cp $srcdir/src/misc/clog/app/test_ncbi_applog.sh $installdir/bin
 
 # The -t key prevents inclusion of the tree builder into the release
 # SVN_TAG_RELEASE_ADD_FLAGS: -t
