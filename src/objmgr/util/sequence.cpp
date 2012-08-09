@@ -387,17 +387,27 @@ CSeq_id_Handle GetId(const CSeq_id_Handle& idh, CScope& scope,
             }
         }
         else if ( (type & eGetId_TypeMask) == eGetId_Canonical) {
-            if (idh.IsGi()) {
-                /// short-cut: a gi is always the canonical form
-                return idh;
+            /// Short-cuts for commonly used IDs that are
+            /// known unambiguously to be canonical:
+            /// - ID/GenBank: GI
+            /// - Trace: gnl|ti|<tid> in the C++ Toolkit;
+            ///          note that in the C Toolkit, the
+            ///          canonical ID appears to be gnl|TRACE|<tid>.
+            /// - Short Read Archive: gnl|SRA|...
+            if (idh.IsGi()) return idh;
+            if (idh.Which() == CSeq_id::e_General) {
+                CConstRef<CSeq_id> id = idh.GetSeqId();
+                _ASSERT(id  &&  id->IsGeneral());
+                const CSeq_id::TGeneral::TDb& db = id->GetGeneral().GetDb();
+                if (db == "ti"  ||  db == "SRA") return idh;
             }
-            else {
-                ret = x_GetId(scope.GetIds(idh), type);
-                if ( !ret ) {
-                    /// failed to retrieve IDs
-                    /// assume input is the best that we can do
-                    ret = idh;
-                }
+
+            /// Fallback to retrieve IDs.
+            ret = x_GetId(scope.GetIds(idh), type);
+            if ( !ret ) {
+                /// failed to retrieve IDs
+                /// assume input is the best that we can do
+                ret = idh;
             }
         }
         else if ( (type & eGetId_TypeMask) == eGetId_ForceAcc ) {
