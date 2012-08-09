@@ -85,3 +85,10 @@ May 18, 2012
 version 2.5.0
 Fixed bug in matching ASN binary data against known data types.
 
+
+August 09, 2012
+version 2.6.0
+Enhanced code generation of SOAP clients: keep track of element, attribute
+and type definition namespaces, analyze name clashes, define C++ subnamespaces if needed.
+Added rudimentary support of union and list type schema elements.
+
