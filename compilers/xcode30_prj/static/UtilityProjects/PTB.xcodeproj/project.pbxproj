@@ -5029,6 +5029,7 @@
           <string>ABCDABCDABCDABCD0000016A</string>
           <string>ABCDABCDABCDABCD0000016C</string>
           <string>ABCDABCDABCDABCD0000016E</string>
+          <string>BBCDABCDABCDABCD0000016E</string>
           <string>ABCDABCDABCDABCD00000170</string>
           <string>ABCDABCDABCDABCD00000172</string>
           <string>ABCDABCDABCDABCD00000174</string>
@@ -5271,6 +5272,26 @@
       <dict>
         <key>fileRef</key>
         <string>ABCDABCDABCDABCD0000016E</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>BBCDABCDABCDABCD0000016E</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>ncbierror.cpp</string>
+        <key>path</key>
+        <string>../../../../src/corelib/ncbierror.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>BBCDABCDABCDABCD0000016F</key>
+      <dict>
+        <key>fileRef</key>
+        <string>BBCDABCDABCDABCD0000016E</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
@@ -7272,6 +7293,7 @@
           <string>ABCDABCDABCDABCD0000016B</string>
           <string>ABCDABCDABCDABCD0000016D</string>
           <string>ABCDABCDABCDABCD0000016F</string>
+          <string>BBCDABCDABCDABCD0000016F</string>
           <string>ABCDABCDABCDABCD00000171</string>
           <string>ABCDABCDABCDABCD00000173</string>
           <string>ABCDABCDABCDABCD00000175</string>
