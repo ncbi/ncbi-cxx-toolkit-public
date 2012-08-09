@@ -2674,7 +2674,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ISPaVe	c	Istituto Sperimentale per la Patologia Vegetale",
 "ISRA	s	Royal Academy",
 "ISRI	c	Indonesian Sugar Research Institute, Pusat Penelitian Perkebunan Gula Indonesia",
-"ISS	c	Collection of Bacteria",
+"ISS	c	Institute of Soil Science Collection of Bacteria",
 "ISTC	s	University of Northern Iowa, Biology Department",
 "ISTE	s	University of Istanbul, Department of Pharmaceutical Botany",
 "ISTF	s	Istanbul University, Botany Department",
