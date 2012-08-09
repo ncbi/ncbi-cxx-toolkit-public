@@ -246,7 +246,7 @@ struct SOptionDefinition {
         "verbose", "Produce more verbose output.", {-1}},
 
     {OPT_DEF(eSwitch, eBrief),
-        "brief", "Produce less verbose output.", {-1}},
+        BRIEF_OPTION, "Produce less verbose output.", {-1}},
 
     {OPT_DEF(eSwitch, eStatusOnly),
         "status-only", "Print job status only.", {-1}},
@@ -460,13 +460,18 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
-        "jobinfo|ji", "Print information about a NetSchedule job.",
+        JOBINFO_COMMAND "|ji", "Print information about a NetSchedule job.",
         "Print vital information about the specified NetSchedule job. "
-        "Expired jobs will be reported as not found.",
+        "Expired jobs will be reported as not found."
+        "\n\nThe following output formats are supported: \""
+        HUMAN_READABLE_OUTPUT_FORMAT "\", \"" RAW_OUTPUT_FORMAT
+        "\", and \"" JSON_OUTPUT_FORMAT "\". "
+        "The default is \"" HUMAN_READABLE_OUTPUT_FORMAT "\".",
         {eID, eNetSchedule, eQueue, eBrief, eStatusOnly, eDeferExpiration,
             eProgressMessageOnly, eLoginToken, eAuth,
-            eClientNode, eClientSession,
-            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+            eClientNode, eClientSession, eOutputFormat,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1},
+        {eHumanReadable, eRaw, eJSON, -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_SubmitJob,
         "submitjob", "Submit one or more jobs to a NetSchedule queue.",
@@ -743,9 +748,9 @@ struct SCommandDefinition {
         "Dump accumulated statistics on server access and "
         "performance.\n\n"
         "When applied to a NetSchedule server, this operation "
-        "supports the following format options: \"raw\", "
-        "\"human-readable\", \"json\".  If none specified, "
-        "\"human-readable\" is assumed.",
+        "supports the following format options: \"" RAW_OUTPUT_FORMAT "\", "
+        "\"" HUMAN_READABLE_OUTPUT_FORMAT "\", \"" JSON_OUTPUT_FORMAT "\".  "
+        "If none specified, \"" HUMAN_READABLE_OUTPUT_FORMAT "\" is assumed.",
         {eNetCache, eNetSchedule, eWorkerNode, eQueue, eBrief,
             eJobGroupInfo, eClientInfo, eNotificationInfo, eAffinityInfo,
             eActiveJobCount, eJobsByAffinity, eJobsByStatus,
@@ -809,8 +814,9 @@ struct SCommandDefinition {
     {eExtendedCLICommand, &CGridCommandLineInterfaceApp::Cmd_Exec,
         "exec", "Execute an arbitrary command on one or more servers.",
         "This command is intended for testing and debugging purposes."
-        "\n\nThe following output formats are supported: \"raw\" and "
-        "\"json\". The default is \"raw\".",
+        "\n\nThe following output formats are supported: \""
+        RAW_OUTPUT_FORMAT "\" and \"" JSON_OUTPUT_FORMAT "\". "
+        "The default is \"" RAW_OUTPUT_FORMAT "\".",
         {eCommand, eNetCache, eNetSchedule, eQueue, eMultiline,
             eLoginToken, eAuth, eClientNode, eClientSession, eOutputFormat,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1},
@@ -828,9 +834,9 @@ struct SCommandDefinition {
     sizeof(*s_CommandDefinitions))
 
 static const char* const s_OutputFormats[eNumberOfOutputFormats] = {
-    "human-readable",   /* eHumanReadable   */
-    "raw",              /* eRaw             */
-    "json"              /* eJSON            */
+    HUMAN_READABLE_OUTPUT_FORMAT,       /* eHumanReadable   */
+    RAW_OUTPUT_FORMAT,                  /* eRaw             */
+    JSON_OUTPUT_FORMAT                  /* eJSON            */
 };
 
 int CGridCommandLineInterfaceApp::Run()
@@ -1171,7 +1177,7 @@ CGridCommandLineInterfaceApp::~CGridCommandLineInterfaceApp()
 
 void CGridCommandLineInterfaceApp::PrintLine(const string& line)
 {
-    printf("%s\n", line.c_str());
+    puts(line.c_str());
 }
 
 #define TRUE_VALUES '1': case 'E': case 'T': \

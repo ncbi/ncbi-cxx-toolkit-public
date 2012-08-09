@@ -35,6 +35,9 @@
 #include "ns_cmd_impl.hpp"
 #include "util.hpp"
 
+#define MAX_VISIBLE_DATA_LENGTH 50
+
+
 BEGIN_NCBI_SCOPE
 
 static void NormalizeStatKeyName(CTempString& key)
@@ -82,6 +85,21 @@ static inline string UnquoteIfQuoted(const CTempString& str)
     default:
         return str;
     }
+}
+
+static void DetectTypeAndSet(CJsonNode& node,
+        const string& key, const string& value)
+{
+    if (IsInteger(value))
+        node.SetNumber(key, NStr::StringToInt8(value));
+    else if (NStr::CompareNocase(value, "FALSE") == 0)
+        node.SetBoolean(key, false);
+    else if (NStr::CompareNocase(value, "TRUE") == 0)
+        node.SetBoolean(key, true);
+    else if (NStr::CompareNocase(value, "NONE") == 0)
+        node.SetNull(key);
+    else
+        node.SetString(key, UnquoteIfQuoted(value));
 }
 
 struct {
@@ -140,17 +158,8 @@ CJsonNode GenericStatToJson(CNetServer server,
                 if (value.empty())
                     entity_info.SetNode(key_norm, array_value =
                             CJsonNode::NewArrayNode());
-                else if (IsInteger(value))
-                    entity_info.SetNumber(key_norm,
-                            NStr::StringToInt8(value));
-                else if (NStr::CompareNocase(value, "FALSE") == 0)
-                    entity_info.SetBoolean(key_norm, false);
-                else if (NStr::CompareNocase(value, "TRUE") == 0)
-                    entity_info.SetBoolean(key_norm, true);
-                else if (NStr::CompareNocase(value, "NONE") == 0)
-                    entity_info.SetNull(key_norm);
                 else
-                    entity_info.SetString(key_norm, UnquoteIfQuoted(value));
+                    DetectTypeAndSet(entity_info, key_norm, value);
             }
         }
     }
@@ -360,6 +369,286 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
 
         m_NetScheduleAPI.GetService().PrintCmdOutput(cmd,
                 NcbiCout, CNetService::eMultilineOutput);
+    }
+}
+
+CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
+    CTempString& attr_name, string& attr_value)
+{
+    while (isspace(*m_Position))
+        ++m_Position;
+
+    if (*m_Position == '\0')
+        return eNoMoreAttributes;
+
+    const char* start_pos = m_Position;
+
+    for (;;)
+        if (*m_Position == '=') {
+            attr_name.assign(start_pos, m_Position - start_pos);
+            break;
+        } else if (isspace(*m_Position)) {
+            attr_name.assign(start_pos, m_Position - start_pos);
+            while (isspace(*++m_Position))
+                ;
+            if (*m_Position == '=')
+                break;
+            else
+                return eStandAloneAttribute;
+        } else if (*++m_Position == '\0') {
+            attr_name.assign(start_pos, m_Position - start_pos);
+            return eStandAloneAttribute;
+        }
+
+    // Skip the equals sign and the spaces that may follow it.
+    while (isspace(*++m_Position))
+        ;
+
+    start_pos = m_Position;
+
+    switch (*m_Position) {
+    case '\0':
+        NCBI_THROW_FMT(CArgException, eInvalidArg,
+            "empty attribute value must be specified as " <<
+                attr_name << "=\"\"");
+    case '\'':
+    case '"':
+        {
+            size_t n_read;
+            attr_value = NStr::ParseQuoted(CTempString(start_pos,
+                m_EOL - start_pos), &n_read);
+            m_Position += n_read;
+        }
+        break;
+    default:
+        while (*++m_Position != '\0' && !isspace(*m_Position))
+            ;
+        attr_value = NStr::ParseEscapes(
+            CTempString(start_pos, m_Position - start_pos));
+    }
+
+    return eAttributeWithValue;
+}
+
+void CPrintJobInfo::ProcessJobMeta(const CNetScheduleKey& key)
+{
+    printf("server_address: %s:%u\nid: %u\n",
+        g_NetService_TryResolveHost(key.host).c_str(), key.port, key.id);
+
+    if (!key.queue.empty())
+        printf("queue_name: %s\n", key.queue.c_str());
+}
+
+void CPrintJobInfo::BeginJobEvent(const CTempString& event_header)
+{
+    printf("[%.*s]\n", int(event_header.length()), event_header.data());
+}
+
+void CPrintJobInfo::ProcessJobEventField(const CTempString& attr_name,
+        const string& attr_value)
+{
+    printf("    %.*s: %s\n", int(attr_name.length()),
+            attr_name.data(), attr_value.c_str());
+}
+
+void CPrintJobInfo::ProcessJobEventField(const CTempString& attr_name)
+{
+    printf("    %.*s\n", int(attr_name.length()), attr_name.data());
+}
+
+void CPrintJobInfo::ProcessInputOutput(const string& data,
+        const CTempString& input_or_output)
+{
+    if (NStr::StartsWith(data, "K "))
+        printf("%.*s_storage: netcache, key=%s\n",
+                (int) input_or_output.length(), input_or_output.data(),
+                data.c_str() + 2);
+    else {
+        const char* format;
+        CTempString raw_data;
+
+        if (NStr::StartsWith(data, "D ")) {
+            format = "embedded";
+            raw_data.assign(data.data() + 2, data.length() - 2);
+        } else {
+            format = "raw";
+            raw_data = data;
+        }
+
+        printf("%.*s_storage: %s, size=%lu\n",
+            (int) input_or_output.length(), input_or_output.data(),
+            format, (unsigned long) raw_data.length());
+
+        if (data.length() <= MAX_VISIBLE_DATA_LENGTH)
+            printf("%s_%.*s_data: \"%s\"\n", format,
+                    (int) input_or_output.length(), input_or_output.data(),
+                    NStr::PrintableString(raw_data).c_str());
+        else
+            printf("%s_%.*s_data_preview: \"%s\"...\n", format,
+                    (int) input_or_output.length(), input_or_output.data(),
+                    NStr::PrintableString(CTempString(raw_data.data(),
+                            MAX_VISIBLE_DATA_LENGTH)).c_str());
+    }
+}
+
+void CPrintJobInfo::ProcessJobInfoField(const CTempString& field_name,
+        const CTempString& field_value)
+{
+    printf("%.*s: %.*s\n", (int) field_name.length(), field_name.data(),
+            (int) field_value.length(), field_value.data());
+}
+
+void CPrintJobInfo::ProcessRawLine(const string& line)
+{
+    CGridCommandLineInterfaceApp::PrintLine(line.c_str());
+}
+
+void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
+{
+    m_JobInfo.SetString("server_host", g_NetService_TryResolveHost(key.host));
+    m_JobInfo.SetNumber("server_port", key.port);
+
+    m_JobInfo.SetNumber("id", key.id);
+
+    if (!key.queue.empty())
+        m_JobInfo.SetString("queue_name", UnquoteIfQuoted(key.queue));
+}
+
+void CJobInfoToJSON::BeginJobEvent(const CTempString& event_header)
+{
+    if (!m_JobEvents)
+        m_JobInfo.SetNode("events", m_JobEvents = CJsonNode::NewArrayNode());
+
+    m_JobEvents.PushNode(m_CurrentEvent = CJsonNode::NewObjectNode());
+}
+
+void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name,
+        const string& attr_value)
+{
+    DetectTypeAndSet(m_CurrentEvent, attr_name, attr_value);
+}
+
+void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name)
+{
+    m_CurrentEvent.SetNull(attr_name);
+}
+
+void CJobInfoToJSON::ProcessInputOutput(const string& data,
+        const CTempString& input_or_output)
+{
+    CJsonNode node(CJsonNode::NewObjectNode());
+
+    if (NStr::StartsWith(data, "D ")) {
+        node.SetString("storage", "embedded");
+        node.SetString("embedded_data", data.substr(2));
+    } else if (NStr::StartsWith(data, "K ")) {
+        node.SetString("storage", "netcache");
+        node.SetString("netcache_key", data.substr(2));
+    } else {
+        node.SetString("storage", "raw");
+        node.SetString("raw_data", data);
+    }
+
+    m_JobInfo.SetNode(input_or_output, node);
+}
+
+void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
+        const CTempString& field_value)
+{
+    DetectTypeAndSet(m_JobInfo, field_name, field_value);
+}
+
+void CJobInfoToJSON::ProcessRawLine(const string& line)
+{
+    if (!m_UnparsableLines)
+        m_JobInfo.SetNode("unparsable_lines",
+                m_UnparsableLines = CJsonNode::NewArrayNode());
+
+    m_UnparsableLines.PushString(line);
+}
+
+void ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
+        IJobInfoProcessor* processor, bool verbose)
+{
+    processor->ProcessJobMeta(CNetScheduleKey(job_key));
+
+    if (verbose) {
+        CNetServerMultilineCmdOutput output(ns_api.GetAdmin().DumpJob(job_key));
+
+        string line;
+
+        while (output.ReadLine(line)) {
+            if (!line.empty() && line[0] != '[' && !NStr::StartsWith(line,
+                    TEMP_STRING_CTOR("NCBI NetSchedule"))) {
+                CTempString field_name, field_value;
+
+                if (!NStr::SplitInTwo(line, TEMP_STRING_CTOR(": "),
+                        field_name, field_value, NStr::eMergeDelims))
+                    processor->ProcessRawLine(line);
+                else if (field_name == TEMP_STRING_CTOR("input") ||
+                        field_name == TEMP_STRING_CTOR("output"))
+                    processor->ProcessInputOutput(
+                            NStr::ParseQuoted(field_value), field_name);
+                else if (NStr::StartsWith(field_name,
+                        TEMP_STRING_CTOR("event"))) {
+                    processor->BeginJobEvent(field_name);
+
+                    try {
+                        CAttrListParser attr_parser;
+                        attr_parser.Reset(field_value);
+                        CAttrListParser::ENextAttributeType next_attr_type;
+                        CTempString attr_name;
+                        string attr_value;
+
+                        while ((next_attr_type = attr_parser.NextAttribute(
+                                attr_name, attr_value)) !=
+                                CAttrListParser::eNoMoreAttributes)
+                            if (next_attr_type ==
+                                    CAttrListParser::eAttributeWithValue)
+                                processor->ProcessJobEventField(attr_name,
+                                        attr_value);
+                            else // CAttrListParser::eStandAloneAttribute
+                                processor->ProcessJobEventField(attr_name);
+                    }
+                    catch (CArgException&) {
+                        // Ignore this exception type.
+                    }
+                } else if (field_name != TEMP_STRING_CTOR("id") &&
+                        field_name != TEMP_STRING_CTOR("key"))
+                    processor->ProcessJobInfoField(field_name, field_value);
+            }
+        }
+    } else {
+        CNetScheduleJob job;
+        job.job_id = job_key;
+        CNetScheduleAPI::EJobStatus status(ns_api.GetJobDetails(job));
+
+        processor->ProcessJobInfoField(TEMP_STRING_CTOR("status"),
+                CNetScheduleAPI::StatusToString(status));
+
+        if (status == CNetScheduleAPI::eJobNotFound)
+            return;
+
+        processor->ProcessInputOutput(job.input, TEMP_STRING_CTOR("input"));
+
+        switch (status) {
+        default:
+            if (job.output.empty())
+                break;
+            /* FALL THROUGH */
+
+        case CNetScheduleAPI::eDone:
+        case CNetScheduleAPI::eReading:
+        case CNetScheduleAPI::eConfirmed:
+        case CNetScheduleAPI::eReadFailed:
+            processor->ProcessInputOutput(job.output,
+                    TEMP_STRING_CTOR("output"));
+            break;
+        }
+
+        if (!job.error_msg.empty())
+            processor->ProcessJobInfoField(TEMP_STRING_CTOR("err_msg"),
+                    job.error_msg);
     }
 }
 

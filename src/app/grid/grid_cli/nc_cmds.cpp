@@ -99,20 +99,20 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
 
     generation_time.SetTimeT((time_t) key.GetCreationTime());
 
-    printf("Blob number: %u\n"
-        "Primary server: %s:%u\n"
-        "Blob ID generation time: %s\n"
-        "Random: %u\n",
-        key.GetId(),
+    printf("server_address: %s:%u\n"
+        "id: %u\n"
+        "key_generation_time: %s\n"
+        "random: %u\n",
         g_NetService_TryResolveHost(key.GetHost()).c_str(),
         key.GetPort(),
+        key.GetId(),
         generation_time.AsString().c_str(),
         (unsigned) key.GetRandomPart());
 
     string service(key.GetServiceName());
 
     if (!service.empty())
-        printf("Service name: %s\n", service.c_str());
+        printf("service_name: %s\n", service.c_str());
 }
 
 void CGridCommandLineInterfaceApp::ParseICacheKey(

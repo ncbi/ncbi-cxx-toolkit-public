@@ -31,16 +31,14 @@
 
 #include <ncbi_pch.hpp>
 
-#include "grid_cli.hpp"
+#include "ns_cmd_impl.hpp"
 #include "util.hpp"
 
 #include <connect/services/grid_rw_impl.hpp>
 
 #include <ctype.h>
 
-USING_NCBI_SCOPE;
-
-#define MAX_VISIBLE_DATA_LENGTH 50
+BEGIN_NCBI_SCOPE
 
 void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
@@ -143,216 +141,31 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
 }
 
-void CGridCommandLineInterfaceApp::PrintJobMeta(const CNetScheduleKey& key)
+void CGridCommandLineInterfaceApp::JobInfo_PrintStatus(
+        CNetScheduleAPI::EJobStatus status)
 {
-    printf("Job number: %u\n"
-        "Created by: %s:%u\n",
-        key.id,
-        g_NetService_TryResolveHost(key.host).c_str(),
-        key.port);
+    string job_status(CNetScheduleAPI::StatusToString(status));
 
-    if (!key.queue.empty())
-        printf("Queue name: %s\n", key.queue.c_str());
-}
-
-void CGridCommandLineInterfaceApp::PrintStorageType(
-    const string& data, const char* prefix)
-{
-    if (NStr::StartsWith(data, "D "))
-        printf("%sstorage: embedded, size=%lu\n",
-            prefix, (unsigned long) data.length() - 2);
-    else if (NStr::StartsWith(data, "K "))
-        printf("%sstorage: netcache, key=%s\n",
-            prefix, data.c_str() + 2);
+    if (m_Opts.output_format == eJSON)
+        printf("{\"status\": \"%s\"}\n", job_status.c_str());
     else
-        printf("%sstorage: raw, size=%lu\n",
-            prefix, (unsigned long) data.length());
-}
-
-bool CGridCommandLineInterfaceApp::MatchPrefixAndPrintStorageTypeAndData(
-    const string& line, const CTempString& prefix,
-    const char* new_prefix)
-{
-    if (!NStr::StartsWith(line, prefix))
-        return false;
-
-    const char* data_begin = line.data() + prefix.length();
-    const char* data_end = line.data() + line.length();
-
-    while (data_begin < data_end && isspace(*data_begin))
-        ++data_begin;
-
-    --data_end;
-
-    if (data_begin >= data_end || *data_begin != *data_end ||
-            (*data_begin != '\'' && *data_begin != '"'))
-        return false;
-
-    ++data_begin;
-
-    string data(NStr::ParseEscapes(CTempString(data_begin,
-        data_end - data_begin)));
-
-    PrintStorageType(data, new_prefix);
-
-    if (data.length() <= MAX_VISIBLE_DATA_LENGTH)
-        printf("%sdata: '%s'\n", new_prefix,
-            NStr::PrintableString(data).c_str());
-    else
-        printf("%sdata: '%s'...\n", new_prefix,
-            NStr::PrintableString(CTempString(data.data(),
-                MAX_VISIBLE_DATA_LENGTH)).c_str());
-
-    return true;
-}
-
-class CAttrListParser
-{
-public:
-    enum ENextAttributeType {
-        eAttributeWithValue,
-        eStandAloneAttribute,
-        eNoMoreAttributes
-    };
-
-    void Reset(const char* position, const char* eol)
-    {
-        m_Position = position;
-        m_EOL = eol;
-    }
-
-    void Reset(const string& line)
-    {
-        const char* line_buf = line.c_str();
-        Reset(line_buf, line_buf + line.size());
-    }
-
-    ENextAttributeType NextAttribute(CTempString& attr_name,
-        string& attr_value);
-
-private:
-    const char* m_Position;
-    const char* m_EOL;
-};
-
-CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
-    CTempString& attr_name, string& attr_value)
-{
-    while (isspace(*m_Position))
-        ++m_Position;
-
-    if (*m_Position == '\0')
-        return eNoMoreAttributes;
-
-    const char* start_pos = m_Position;
-
-    for (;;)
-        if (*m_Position == '=') {
-            attr_name.assign(start_pos, m_Position - start_pos);
-            break;
-        } else if (isspace(*m_Position)) {
-            attr_name.assign(start_pos, m_Position - start_pos);
-            while (isspace(*++m_Position))
-                ;
-            if (*m_Position == '=')
-                break;
-            else
-                return eStandAloneAttribute;
-        } else if (*++m_Position == '\0') {
-            attr_name.assign(start_pos, m_Position - start_pos);
-            return eStandAloneAttribute;
-        }
-
-    // Skip the equals sign and the spaces that may follow it.
-    while (isspace(*++m_Position))
-        ;
-
-    start_pos = m_Position;
-
-    switch (*m_Position) {
-    case '\0':
-        NCBI_THROW_FMT(CArgException, eInvalidArg,
-            "empty attribute value must be specified as " <<
-                attr_name << "=\"\"");
-    case '\'':
-    case '"':
-        {
-            size_t n_read;
-            attr_value = NStr::ParseQuoted(CTempString(start_pos,
-                m_EOL - start_pos), &n_read);
-            m_Position += n_read;
-        }
-        break;
-    default:
-        while (*++m_Position != '\0' && !isspace(*m_Position))
-            ;
-        attr_value = NStr::ParseEscapes(
-            CTempString(start_pos, m_Position - start_pos));
-    }
-
-    return eAttributeWithValue;
-}
-
-#define EVENT_WORD "event"
-#define EVENT_WORD_LEN (sizeof(EVENT_WORD) - 1)
-
-bool CGridCommandLineInterfaceApp::ParseAndPrintJobEvents(const string& line)
-{
-    static const CTempString event_word(EVENT_WORD, EVENT_WORD_LEN);
-    if (!NStr::StartsWith(line, event_word))
-        return false;
-
-    const char* event_info = line.c_str() + EVENT_WORD_LEN;
-    if (*event_info < '0' || *event_info > '9')
-        return false;
-
-    while (*++event_info >= '0' && *event_info <= '9')
-        ;
-    printf("[%.*s]\n", int(event_info - line.data()), line.data());
-    if (*event_info != ':')
-        return false;
-    ++event_info;
-
-    const char* eol = event_info + line.size();
-
-    try {
-        CAttrListParser attr_parser;
-        attr_parser.Reset(event_info, eol);
-        CTempString attr_name;
-        string attr_value;
-        CAttrListParser::ENextAttributeType next_attr_type;
-        for (;;)
-            if ((next_attr_type = attr_parser.NextAttribute(attr_name,
-                    attr_value)) == CAttrListParser::eAttributeWithValue)
-                printf("    %.*s: %s\n", int(attr_name.length()),
-                    attr_name.data(), attr_value.c_str());
-            else if (next_attr_type == CAttrListParser::eNoMoreAttributes)
-                break;
-            else // CAttrListParser::eStandAloneAttribute
-                printf("    %.*s\n", int(attr_name.length()), attr_name.data());
-    }
-    catch (CArgException&) {
-        return false;
-    }
-
-    return true;
+        PrintLine(job_status);
 }
 
 int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
 
-    CNetScheduleAPI::EJobStatus status;
-
     if (IsOptionSet(eDeferExpiration)) {
-        status = m_NetScheduleAPI.GetSubmitter().GetJobStatus(m_Opts.id);
+        CNetScheduleAPI::EJobStatus status =
+                m_NetScheduleAPI.GetSubmitter().GetJobStatus(m_Opts.id);
         if (IsOptionSet(eStatusOnly)) {
-            PrintLine(CNetScheduleAPI::StatusToString(status));
+            JobInfo_PrintStatus(status);
             return 0;
         }
     } else if (IsOptionSet(eStatusOnly)) {
-        PrintLine(CNetScheduleAPI::StatusToString(
-            m_NetScheduleAPI.GetExecutor().GetJobStatus(m_Opts.id)));
+        JobInfo_PrintStatus(
+                m_NetScheduleAPI.GetExecutor().GetJobStatus(m_Opts.id));
         return 0;
     }
 
@@ -360,70 +173,43 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         CNetScheduleJob job;
         job.job_id = m_Opts.id;
         m_NetScheduleAPI.GetProgressMsg(job);
-        if (!job.progress_msg.empty())
-            PrintLine(job.progress_msg);
+        if (m_Opts.output_format == eJSON)
+            printf("{\"progress_message\": \"%s\"}\n",
+                    job.progress_msg.c_str());
+        else
+            if (!job.progress_msg.empty())
+                PrintLine(job.progress_msg);
         return 0;
     }
 
-    PrintJobMeta(CNetScheduleKey(m_Opts.id));
-
-    if (!IsOptionSet(eBrief)) {
-        CNetServerMultilineCmdOutput output =
-            m_NetScheduleAdmin.DumpJob(m_Opts.id);
-
-        string line;
-
-        static const char s_VersionString[] = "NCBI NetSchedule";
-        static const char s_IdPrefix[] = "id:";
-        static const char s_InputPrefix[] = "input:";
-        static const char s_OutputPrefix[] = "output:";
-
-        while (output.ReadLine(line)) {
-            if (!line.empty() &&
-                    line[0] != '[' &&
-                    !NStr::StartsWith(line, CTempString(s_VersionString,
-                        sizeof(s_VersionString) - 1)) &&
-                    // Skip job ID -- it's already printed.
-                    !NStr::StartsWith(line,
-                        CTempString(s_IdPrefix, sizeof(s_IdPrefix) - 1)) &&
-                    !MatchPrefixAndPrintStorageTypeAndData(line,
-                        CTempString(s_InputPrefix, sizeof(s_InputPrefix) - 1),
-                            "input_") &&
-                    !MatchPrefixAndPrintStorageTypeAndData(line,
-                        CTempString(s_OutputPrefix, sizeof(s_OutputPrefix) - 1),
-                            "output_") &&
-                    !ParseAndPrintJobEvents(line))
-                PrintLine(line);
+    switch (m_Opts.output_format) {
+    case eRaw:
+        if (IsOptionSet(eBrief)) {
+            fprintf(stderr, GRID_APP_NAME " " JOBINFO_COMMAND ": option '--"
+                    BRIEF_OPTION "' cannot be used with '"
+                    RAW_OUTPUT_FORMAT "' output format.\n");
+            return 2;
         }
-    } else {
-        CNetScheduleJob job;
-        job.job_id = m_Opts.id;
-        status = m_NetScheduleAPI.GetJobDetails(job);
+        m_NetScheduleAdmin.DumpJob(NcbiCout, m_Opts.id);
+        break;
 
-        printf("Status: %s\n", CNetScheduleAPI::StatusToString(status).c_str());
-
-        if (status == CNetScheduleAPI::eJobNotFound)
-            return 0;
-
-        PrintStorageType(job.input, "Input ");
-
-        switch (status) {
-        default:
-            if (job.output.empty())
-                break;
-            /* FALL THROUGH */
-
-        case CNetScheduleAPI::eDone:
-        case CNetScheduleAPI::eReading:
-        case CNetScheduleAPI::eConfirmed:
-        case CNetScheduleAPI::eReadFailed:
-            PrintStorageType(job.output, "Output ");
-            break;
+    case eJSON:
+        {
+            CJobInfoToJSON job_info_to_json;
+            ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
+                    &job_info_to_json, !IsOptionSet(eBrief));
+            PrintJSON(stdout, job_info_to_json.GetRootNode());
         }
+        break;
 
-        if (!job.error_msg.empty())
-            printf("Error message: %s\n", job.error_msg.c_str());
+    default:
+        {
+            CPrintJobInfo print_job_info;
+            ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
+                    &print_job_info, !IsOptionSet(eBrief));
+        }
     }
+
     return 0;
 }
 
@@ -1135,3 +921,5 @@ int CGridCommandLineInterfaceApp::Cmd_DeleteQueue()
 
     return 0;
 }
+
+END_NCBI_SCOPE

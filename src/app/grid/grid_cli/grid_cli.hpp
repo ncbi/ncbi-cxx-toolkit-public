@@ -79,6 +79,7 @@
 #define ROLLBACK_READ_OPTION "rollback-read"
 #define FAIL_READ_OPTION "fail-read"
 #define JOB_ID_OPTION "job-id"
+#define BRIEF_OPTION "brief"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
 #define SWITCH_ARG "SWITCH"
@@ -87,7 +88,12 @@
 #define DRAIN_OPTION "drain"
 
 #define LOGIN_COMMAND "login"
+#define JOBINFO_COMMAND "jobinfo"
 #define READJOB_COMMAND "readjob"
+
+#define HUMAN_READABLE_OUTPUT_FORMAT "human-readable"
+#define RAW_OUTPUT_FORMAT "raw"
+#define JSON_OUTPUT_FORMAT "json"
 
 BEGIN_NCBI_SCOPE
 
@@ -196,6 +202,8 @@ enum ENetScheduleStatTopic {
 #define OPTION_SET 2
 #define OPTION_EXPLICITLY_SET 4
 #define OPTION_N(number) (1 << number)
+
+class IJobInfoProcessor;
 
 class CGridCommandLineInterfaceApp : public CNcbiApplication
 {
@@ -408,11 +416,7 @@ private:
     void PrintICacheServerUsed();
     void SetUp_NetScheduleCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
-    void PrintJobMeta(const CNetScheduleKey& key);
-    static void PrintStorageType(const string& data, const char* prefix);
-    static bool MatchPrefixAndPrintStorageTypeAndData(const string& line,
-        const CTempString& prefix, const char* new_prefix);
-    static bool ParseAndPrintJobEvents(const string& line);
+    void JobInfo_PrintStatus(CNetScheduleAPI::EJobStatus status);
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);
 

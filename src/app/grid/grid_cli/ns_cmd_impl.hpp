@@ -36,14 +36,117 @@
 #include "json_over_uttp.hpp"
 #include "grid_cli.hpp"
 
-#include <connect/services/netservice_api.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 BEGIN_NCBI_SCOPE
+
+#define TEMP_STRING_CTOR(str) CTempString(str, sizeof(str) - 1)
 
 CJsonNode GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose);
 
 CJsonNode LegacyStatToJson(CNetServer server, bool verbose);
+
+class CAttrListParser
+{
+public:
+    enum ENextAttributeType {
+        eAttributeWithValue,
+        eStandAloneAttribute,
+        eNoMoreAttributes
+    };
+
+    void Reset(const char* position, const char* eol)
+    {
+        m_Position = position;
+        m_EOL = eol;
+    }
+
+    void Reset(const CTempString& line)
+    {
+        const char* line_buf = line.data();
+        Reset(line_buf, line_buf + line.size());
+    }
+
+    ENextAttributeType NextAttribute(CTempString& attr_name,
+        string& attr_value);
+
+private:
+    const char* m_Position;
+    const char* m_EOL;
+};
+
+class IJobInfoProcessor
+{
+public:
+    virtual void ProcessJobMeta(const CNetScheduleKey& key) = 0;
+
+    virtual void BeginJobEvent(const CTempString& event_header) = 0;
+    virtual void ProcessJobEventField(const CTempString& attr_name,
+            const string& attr_value) = 0;
+    virtual void ProcessJobEventField(const CTempString& attr_name) = 0;
+
+    virtual void ProcessInputOutput(const string& data,
+            const CTempString& input_or_output) = 0;
+
+    virtual void ProcessJobInfoField(const CTempString& field_name,
+            const CTempString& field_value) = 0;
+
+    virtual void ProcessRawLine(const string& line) = 0;
+
+    virtual ~IJobInfoProcessor() {}
+};
+
+class CPrintJobInfo : public IJobInfoProcessor
+{
+public:
+    virtual void ProcessJobMeta(const CNetScheduleKey& key);
+
+    virtual void BeginJobEvent(const CTempString& event_header);
+    virtual void ProcessJobEventField(const CTempString& attr_name,
+            const string& attr_value);
+    virtual void ProcessJobEventField(const CTempString& attr_name);
+
+    virtual void ProcessInputOutput(const string& data,
+            const CTempString& input_or_output);
+
+    virtual void ProcessJobInfoField(const CTempString& field_name,
+        const CTempString& field_value);
+
+    virtual void ProcessRawLine(const string& line);
+};
+
+class CJobInfoToJSON : public IJobInfoProcessor
+{
+public:
+    CJobInfoToJSON() : m_JobInfo(CJsonNode::NewObjectNode()) {}
+
+    virtual void ProcessJobMeta(const CNetScheduleKey& key);
+
+    virtual void BeginJobEvent(const CTempString& event_header);
+    virtual void ProcessJobEventField(const CTempString& attr_name,
+            const string& attr_value);
+    virtual void ProcessJobEventField(const CTempString& attr_name);
+
+    virtual void ProcessInputOutput(const string& data,
+            const CTempString& input_or_output);
+
+    virtual void ProcessJobInfoField(const CTempString& field_name,
+        const CTempString& field_value);
+
+    virtual void ProcessRawLine(const string& line);
+
+    CJsonNode GetRootNode() const {return m_JobInfo;}
+
+private:
+    CJsonNode m_JobInfo;
+    CJsonNode m_JobEvents;
+    CJsonNode m_CurrentEvent;
+    CJsonNode m_UnparsableLines;
+};
+
+void ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
+        IJobInfoProcessor* processor, bool verbose);
 
 END_NCBI_SCOPE
 

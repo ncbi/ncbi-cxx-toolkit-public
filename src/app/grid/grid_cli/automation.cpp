@@ -462,7 +462,12 @@ void SNetScheduleServerAutomationObject::Call(const string& method,
     } else if (method == "server_status")
         reply.PushNode(LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
-    else if (method == "job_group_info")
+    else if (method == "job_info") {
+        CJobInfoToJSON job_info_to_json;
+        ProcessJobInfo(m_NetScheduleAPI, arg_array.NextString(),
+            &job_info_to_json, arg_array.NextBoolean(true));
+        reply.PushNode(job_info_to_json.GetRootNode());
+    } else if (method == "job_group_info")
         reply.PushNode(GenericStatToJson(m_NetServer,
                 eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
     else if (method == "client_info")

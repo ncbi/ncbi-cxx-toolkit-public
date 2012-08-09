@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "grid_cli.hpp"
+#include "ns_cmd_impl.hpp"
 #include "util.hpp"
 
 USING_NCBI_SCOPE;
@@ -43,7 +43,9 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
     CNetCacheKey nc_key;
     if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
             m_Opts.id.length(), &nc_key)) {
-        printf("Type: NetCache blob ID, version %u\n", nc_key.GetVersion());
+        printf("type: NetCacheBlobKey\n"
+                "key_version: %u\n",
+                nc_key.GetVersion());
 
         PrintBlobMeta(nc_key);
 
@@ -52,9 +54,13 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
     } else {
         try {
             CNetScheduleKey ns_key(m_Opts.id);
-            printf("Type: NetSchedule job ID, version %u\n", ns_key.version);
+            printf("type: NetScheduleJobKey\n"
+                    "key_version: %u\n",
+                    ns_key.version);
 
-            PrintJobMeta(ns_key);
+            CPrintJobInfo print_job_info;
+
+            print_job_info.ProcessJobMeta(ns_key);
 
             printf("\nTo retrieve job attributes from the server, use\n"
                 GRID_APP_NAME " jobinfo %s\n", m_Opts.id.c_str());
