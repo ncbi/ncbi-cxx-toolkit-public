@@ -37,9 +37,9 @@
 #include <ncbi_pch.hpp>
 #include <serial/serialimpl.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <internal/trackmgr/objects/trackmgr/trackmgr_client.hpp>
-#include <internal/trackmgr/objects/trackmgr/TMgr_DisplayTrackRequest.hpp>
-#include <internal/trackmgr/objects/trackmgr/TMgr_DisplayTrackReply.hpp>
+#include <objects/trackmgr/trackmgr_client.hpp>
+#include <objects/trackmgr/TMgr_DisplayTrackRequest.hpp>
+#include <objects/trackmgr/TMgr_DisplayTrackReply.hpp>
 
 
 BEGIN_NCBI_SCOPE

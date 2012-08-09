@@ -1,6 +1,6 @@
 [-]
 _export = NCBI_TRACKMGR_EXPORT
-_extra_headers = internal/trackmgr/trackmgr_export.h
+_extra_headers = objects/trackmgr/trackmgr_export.h
 clients = trackmgr_client
 
 [trackmgr_client]

@@ -35,7 +35,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <internal/trackmgr/objects/trackmgr/TMgr_Message.hpp>
+#include <objects/trackmgr/TMgr_Message.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE

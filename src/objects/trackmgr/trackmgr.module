@@ -1,2 +1,2 @@
-MODULE_PATH=internal/trackmgr/objects/trackmgr
+MODULE_PATH=objects/trackmgr
 MODULE_IMPORT=objects/seqloc/seqloc

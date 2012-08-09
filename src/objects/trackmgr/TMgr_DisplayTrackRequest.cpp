@@ -38,8 +38,8 @@
 #include <ncbi_pch.hpp>
 
 // generated includes
-#include <internal/trackmgr/objects/trackmgr/TMgr_DisplayTrackRequest.hpp>
-#include <internal/trackmgr/objects/trackmgr/TMgr_GenomeContext.hpp>
+#include <objects/trackmgr/TMgr_DisplayTrackRequest.hpp>
+#include <objects/trackmgr/TMgr_GenomeContext.hpp>
 
 // generated classes
 

@@ -38,7 +38,7 @@
 #include <ncbi_pch.hpp>
 
 // generated includes
-#include <internal/trackmgr/objects/trackmgr/TMgr_Request.hpp>
+#include <objects/trackmgr/TMgr_Request.hpp>
 
 // generated classes
 
