@@ -254,7 +254,12 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\src\corelib\ncbimempool.cpp" />
+    <ClCompile Include="..\..\..\..\..\src\corelib\ncbimempool.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\..\src\corelib\ncbimtx.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
@@ -317,7 +322,12 @@
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\src\corelib\rwstreambuf.cpp" />
+    <ClCompile Include="..\..\..\..\..\src\corelib\rwstreambuf.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\..\src\corelib\syslog.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
@@ -355,6 +365,12 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\src\corelib\expr.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\corelib\ncbierror.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>

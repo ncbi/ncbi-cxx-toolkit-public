@@ -663,6 +663,24 @@
 			<File
 				RelativePath="..\..\..\..\..\src\corelib\ncbimempool.cpp"
 				>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\src\corelib\ncbimtx.cpp"
@@ -889,6 +907,24 @@
 			<File
 				RelativePath="..\..\..\..\..\src\corelib\rwstreambuf.cpp"
 				>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\src\corelib\syslog.cpp"
@@ -1024,6 +1060,28 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\src\corelib\expr.cpp"
+				>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbierror.cpp"
 				>
 				<FileConfiguration
 					Name="ReleaseDLL|Win32"
