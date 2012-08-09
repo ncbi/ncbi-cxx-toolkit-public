@@ -183,6 +183,12 @@ public:
 		eTGPOnlyNotExclusive			= 58,   // RS Cluster has TGP Submission as of June 2011 (include all current RS from TGP): VCF - KGPROD
 		eTGPNoneNotExclusive			= 59,	// RS Cluster has none TGP Submission (set VCF OTHERKG)
 
+		// F9 Quality
+		eIsSuspect                      = 60,   // Is suspect. The variants are paralogous sequence differences. (added 01/19/11 ver 5.4) val=64
+
+		// F4 Allele Frequency
+		eGMAF0dot01                     = 61,   // GMAF>=0.01(Global population Minor Allele Frequency. Population includes all samples in TGP(1000Genome project).
+
 		/// Add additional properties here.
 		ePropertyLast
     };
