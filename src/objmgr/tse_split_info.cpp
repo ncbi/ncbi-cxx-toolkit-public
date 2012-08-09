@@ -338,10 +338,19 @@ CTSE_Split_Info::x_FindChunk(const CSeq_id_Handle& id) const
 // load requests
 void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
-    CMutexGuard guard(m_SeqIdToChunksMutex);
-    for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
-          iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-        GetChunk(iter->second).x_GetRecords(id, bioseq);
+    vector< CConstRef<CTSE_Chunk_Info> > chunks;
+    {{
+        CMutexGuard guard(m_SeqIdToChunksMutex);
+        for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
+              iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
+            const CTSE_Chunk_Info& chunk = GetChunk(iter->second);
+            if ( !chunk.IsLoaded() ) {
+                chunks.push_back(ConstRef(&chunk));
+            }
+        }
+    }}
+    ITERATE ( vector< CConstRef<CTSE_Chunk_Info> >, it, chunks ) {
+        (*it)->x_GetRecords(id, bioseq);
     }
 }
 
