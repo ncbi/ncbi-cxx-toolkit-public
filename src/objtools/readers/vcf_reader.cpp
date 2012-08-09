@@ -83,6 +83,7 @@
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/error_container.hpp>
@@ -562,7 +563,7 @@ CVcfReader::x_AssignFeatureLocation(
     CRef<CSeq_feat> pFeature )
 //  ---------------------------------------------------------------------------
 {
-    CRef< CSeq_id > pId( new CSeq_id( CSeq_id::e_Local, data.m_strChrom ) );
+    CRef<CSeq_id> pId(CReadUtil::AsSeqId(data.m_strChrom, m_iFlags));
 
     pFeature->SetLocation().SetInt().SetId( *pId );
     pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
