@@ -670,6 +670,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         net_info->args[0] = '\0';
     }
 
+    SERV_InitFirewallMode();
+
     PreCheck(eFirewallConnections, 0/*main*/, temp);
 
     vector<CFWConnPoint>* fwd[] = { &m_Fwd, &m_FwdFB };

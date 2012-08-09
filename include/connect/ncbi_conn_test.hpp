@@ -122,7 +122,7 @@ public:
     ///  behavior of service-related stateful data retrievals.  That is, when
     ///  the test is complete, only the safest route found operational will be
     ///  used to connect to NCBI for the life of the program.  Re-running the
-    ///  test may clobber these results and, thus, is highly unrecommended!
+    ///  test may reset these results and, thus, is highly unrecommended!
     ///
     virtual EIO_Status Execute(EStage& stage, string* reason = 0);
 
