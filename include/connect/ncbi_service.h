@@ -131,7 +131,7 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
  TSERV_Type           types,         /* mask of type(s) of servers requested */
  unsigned int         preferred_host,/* preferred host to use service on, nbo*/
  const SConnNetInfo*  net_info,      /* connection information               */
- const SSERV_InfoCPtr skip[],        /* array of servers NOT to select       */
+ SSERV_InfoCPtr       skip[],        /* array of servers NOT to select       */
  size_t               n_skip         /* number of servers in preceding array */
  );
 
@@ -190,7 +190,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoEx
  TSERV_Type           types,         /* mask of type(s) of servers requested */
  unsigned int         preferred_host,/* preferred host to use service on, nbo*/
  const SConnNetInfo*  net_info,      /* connection information               */
- const SSERV_InfoCPtr skip[],        /* array of servers NOT to select       */
+ SSERV_InfoCPtr       skip[],        /* array of servers NOT to select       */
  size_t               n_skip,        /* number of servers in preceding array */
  HOST_INFO*           host_info      /* ptr to store host info at [may be 0] */
  );

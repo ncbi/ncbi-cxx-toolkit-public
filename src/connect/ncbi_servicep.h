@@ -137,7 +137,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
  unsigned short       preferred_port,/* preferred port to use service on, hbo*/
  double               preference,    /* [0,100] preference in %, or -1(latch)*/
  const SConnNetInfo*  net_info,      /* for network dispatcher (0 to disable)*/
- const SSERV_InfoCPtr skip[],        /* array of servers NOT to select       */
+ SSERV_InfoCPtr       skip[],        /* array of servers NOT to select       */
  size_t               n_skip,        /* number of servers in preceding array */
  int/*bool*/          external,      /* whether mapping is not local to NCBI */
  const char*          arg,           /* environment variable name to search  */
@@ -157,7 +157,7 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
  unsigned short       preferred_port,
  double               preference,
  const SConnNetInfo*  net_info,
- const SSERV_InfoCPtr skip[],        /* must be "named" if service is a mask!*/
+ SSERV_InfoCPtr       skip[],        /* must be "named" if service is a mask!*/
  size_t               n_skip,
  int/*bool*/          external,
  const char*          arg,
@@ -221,6 +221,9 @@ extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
  * is limited to a search depth of 8.
  */
 extern NCBI_XCONNECT_EXPORT char* SERV_ServiceName(const char* service);
+
+
+extern NCBI_XCONNECT_EXPORT void SERV_InitFirewallMode(void);
 
 
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_AddFirewallPort
