@@ -535,7 +535,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_ApiDB_ToxoDB, "http://www.toxodb.org/toxo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&project_id=&primary_key=" },
     { CDbtag::eDbtagType_BB, "http://beetlebase.org/cgi-bin/cmap/feature_search?features=" },
     { CDbtag::eDbtagType_BEETLEBASE, "http://www.beetlebase.org/cgi-bin/report.cgi?name=" },
-    { CDbtag::eDbtagType_BGD, "http://genomes.arc.georgetown.edu/bovine/genepages/genes/" },
+    { CDbtag::eDbtagType_BGD, "http://bovinegenome.org/genepages/btau40/genes/" },
     { CDbtag::eDbtagType_BoLD, "http://www.boldsystems.org/connectivity/specimenlookup.php?processid=" },
     { CDbtag::eDbtagType_CCDS, "http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=" },
     { CDbtag::eDbtagType_CDD, "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=" },
@@ -595,7 +595,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RATMAP, "http://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
     { CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/" },
     { CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?" },
-    { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/generalSearch/RgdSearch.jsp?quickSearch=1&searchKeyword=" },
+    { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/rgdweb/search/search.html?term=" },
     { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" },
     { CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id=" },
     { CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus=" },
@@ -628,8 +628,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_miRBase, "http://www.mirbase.org/cgi-bin/mirna_entry.pl?acc=" },
     { CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1=" },
     { CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" },
-    { CDbtag::eDbtagType_BEEBASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/bee_genome4/?name=" },
-    { CDbtag::eDbtagType_NASONIABASE, "http://genomes.arc.georgetown.edu/cgi-bin/gbrowse/nasonia10_scaffold/?name=" },
+    { CDbtag::eDbtagType_BEEBASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/bee_genome4/?name=" },
+    { CDbtag::eDbtagType_NASONIABASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/nasonia10_scaffold/?name=" },
     { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
     { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" }
 };
