@@ -40,7 +40,7 @@
 #define INTERNAL_TRACKMGR_OBJECTS_TRACKMGR_TRACKMGR_CLIENT_HPP
 
 
-#include <internal/trackmgr/objects/trackmgr/trackmgr_client_.hpp>
+#include <objects/trackmgr/trackmgr_client_.hpp>
 
 
 BEGIN_NCBI_SCOPE

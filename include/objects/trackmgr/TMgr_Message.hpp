@@ -40,7 +40,7 @@
 #define INTERNAL_TRACKMGR_OBJECTS_TRACKMGR_TMGR_MESSAGE_HPP
 
 
-#include <internal/trackmgr/objects/trackmgr/TMgr_Message_.hpp>
+#include <objects/trackmgr/TMgr_Message_.hpp>
 #include <serial/enumvalues.hpp>
 
 
