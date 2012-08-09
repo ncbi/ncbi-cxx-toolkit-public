@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:
+ * Author:  Andrei Gourianov
  *
  *
  */
@@ -131,128 +131,130 @@ EXDEV
 */
 // define missing errno codes
 
+#define NCBI_ERRNO_BASE 1000
+
 #ifndef EADDRINUSE
-#    define EADDRINUSE      100
+#    define EADDRINUSE      NCBI_ERRNO_BASE
 #endif
 #ifndef EADDRNOTAVAIL
-#    define EADDRNOTAVAIL   101
+#    define EADDRNOTAVAIL   NCBI_ERRNO_BASE+1
 #endif
 #ifndef EAFNOSUPPORT
-#    define EAFNOSUPPORT    102
+#    define EAFNOSUPPORT    NCBI_ERRNO_BASE+2
 #endif
 #ifndef EALREADY
-#    define EALREADY        103
+#    define EALREADY        NCBI_ERRNO_BASE+3
 #endif
 #ifndef EBADMSG
-#    define EBADMSG         104
+#    define EBADMSG         NCBI_ERRNO_BASE+4
 #endif
 #ifndef ECANCELED
-#    define ECANCELED       105
+#    define ECANCELED       NCBI_ERRNO_BASE+5
 #endif
 #ifndef ECONNABORTED
-#    define ECONNABORTED    106
+#    define ECONNABORTED    NCBI_ERRNO_BASE+6
 #endif
 #ifndef ECONNREFUSED
-#    define ECONNREFUSED    107
+#    define ECONNREFUSED    NCBI_ERRNO_BASE+7
 #endif
 #ifndef ECONNRESET
-#    define ECONNRESET      108
+#    define ECONNRESET      NCBI_ERRNO_BASE+8
 #endif
 #ifndef EDESTADDRREQ
-#    define EDESTADDRREQ    109
+#    define EDESTADDRREQ    NCBI_ERRNO_BASE+9
 #endif
 #ifndef EHOSTUNREACH
-#    define EHOSTUNREACH    110
+#    define EHOSTUNREACH    NCBI_ERRNO_BASE+10
 #endif
 #ifndef EIDRM
-#    define EIDRM           111
+#    define EIDRM           NCBI_ERRNO_BASE+11
 #endif
 #ifndef EINPROGRESS
-#    define EINPROGRESS     112
+#    define EINPROGRESS     NCBI_ERRNO_BASE+12
 #endif
 #ifndef EISCONN
-#    define EISCONN         113
+#    define EISCONN         NCBI_ERRNO_BASE+13
 #endif
 #ifndef ELOOP
-#    define ELOOP           114
+#    define ELOOP           NCBI_ERRNO_BASE+14
 #endif
 #ifndef EMSGSIZE
-#    define EMSGSIZE        115
+#    define EMSGSIZE        NCBI_ERRNO_BASE+15
 #endif
 #ifndef ENETDOWN
-#    define ENETDOWN        116
+#    define ENETDOWN        NCBI_ERRNO_BASE+16
 #endif
 #ifndef ENETRESET
-#    define ENETRESET       117
+#    define ENETRESET       NCBI_ERRNO_BASE+17
 #endif
 #ifndef ENETUNREACH
-#    define ENETUNREACH     118
+#    define ENETUNREACH     NCBI_ERRNO_BASE+18
 #endif
 #ifndef ENOBUFS
-#    define ENOBUFS         119
+#    define ENOBUFS         NCBI_ERRNO_BASE+19
 #endif
 #ifndef ENODATA
-#    define ENODATA         120
+#    define ENODATA         NCBI_ERRNO_BASE+20
 #endif
 #ifndef ENOLINK
-#    define ENOLINK         121
+#    define ENOLINK         NCBI_ERRNO_BASE+21
 #endif
 #ifndef ENOMSG
-#    define ENOMSG          122
+#    define ENOMSG          NCBI_ERRNO_BASE+22
 #endif
 #ifndef ENOPROTOOPT
-#    define ENOPROTOOPT     123
+#    define ENOPROTOOPT     NCBI_ERRNO_BASE+23
 #endif
 #ifndef ENOSR
-#    define ENOSR           124
+#    define ENOSR           NCBI_ERRNO_BASE+24
 #endif
 #ifndef ENOSTR
-#    define ENOSTR          125
+#    define ENOSTR          NCBI_ERRNO_BASE+25
 #endif
 #ifndef ENOTCONN
-#    define ENOTCONN        126
+#    define ENOTCONN        NCBI_ERRNO_BASE+26
 #endif
 #ifndef ENOTRECOVERABLE
-#    define ENOTRECOVERABLE 127
+#    define ENOTRECOVERABLE NCBI_ERRNO_BASE+27
 #endif
 #ifndef ENOTSOCK
-#    define ENOTSOCK        128
+#    define ENOTSOCK        NCBI_ERRNO_BASE+28
 #endif
 #ifndef ENOTSUP
-#    define ENOTSUP         129
+#    define ENOTSUP         NCBI_ERRNO_BASE+29
 #endif
 #ifndef EOPNOTSUPP
-#    define EOPNOTSUPP      130
+#    define EOPNOTSUPP      NCBI_ERRNO_BASE+30
 #endif
 #ifndef EOTHER
-#    define EOTHER          131
+#    define EOTHER          NCBI_ERRNO_BASE+31
 #endif
 #ifndef EOVERFLOW
-#    define EOVERFLOW       132
+#    define EOVERFLOW       NCBI_ERRNO_BASE+32
 #endif
 #ifndef EOWNERDEAD
-#    define EOWNERDEAD      133
+#    define EOWNERDEAD      NCBI_ERRNO_BASE+33
 #endif
 #ifndef EPROTO
-#    define EPROTO          134
+#    define EPROTO          NCBI_ERRNO_BASE+34
 #endif
 #ifndef EPROTONOSUPPORT
-#    define EPROTONOSUPPORT 135
+#    define EPROTONOSUPPORT NCBI_ERRNO_BASE+35
 #endif
 #ifndef EPROTOTYPE
-#    define EPROTOTYPE      136
+#    define EPROTOTYPE      NCBI_ERRNO_BASE+36
 #endif
 #ifndef ETIME
-#    define ETIME           137
+#    define ETIME           NCBI_ERRNO_BASE+37
 #endif
 #ifndef ETIMEDOUT
-#    define ETIMEDOUT       138
+#    define ETIMEDOUT       NCBI_ERRNO_BASE+38
 #endif
 #ifndef ETXTBSY
-#    define ETXTBSY         139
+#    define ETXTBSY         NCBI_ERRNO_BASE+39
 #endif
 #ifndef EWOULDBLOCK
-#    define EWOULDBLOCK     140
+#    define EWOULDBLOCK     NCBI_ERRNO_BASE+40
 #endif
 
 class NCBI_XNCBI_EXPORT CNcbiError
