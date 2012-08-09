@@ -5,7 +5,7 @@ SRC = test_qparse
 
 CPPFLAGS = $(ORIG_CPPFLAGS) 
 
-LIB  = xncbi xqueryparse
+LIB  = xqueryparse xncbi
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 WATCHERS = kuznets

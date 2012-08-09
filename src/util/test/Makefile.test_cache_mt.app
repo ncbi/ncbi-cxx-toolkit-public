@@ -2,7 +2,7 @@
 
 APP = test_cache_mt
 SRC = test_cache_mt
-LIB = xncbi xutil test_mt
+LIB = xutil test_mt xncbi
 
 REQUIRES = MT
 

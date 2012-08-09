@@ -2,6 +2,6 @@
 
 APP = cache_demo
 SRC = cache_demo
-LIB = xncbi xutil
+LIB = xutil xncbi
 
 WATCHERS = grichenk
