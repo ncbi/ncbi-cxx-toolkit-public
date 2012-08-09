@@ -28,7 +28,6 @@
 #ifndef OBJTOOLS_ALIGN_FORMAT___ALIGN_FORMAT_UTIL_HPP
 #define OBJTOOLS_ALIGN_FORMAT___ALIGN_FORMAT_UTIL_HPP
 
-#include <cgi/cgictx.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbireg.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -53,6 +52,9 @@
 
 /**setting up scope*/
 BEGIN_NCBI_SCOPE
+
+class CCgiContext;
+
 BEGIN_SCOPE(align_format)
 
 

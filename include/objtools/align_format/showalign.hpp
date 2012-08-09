@@ -50,9 +50,11 @@
 
 #include <objmgr/object_manager.hpp>
 
-#include <cgi/cgictx.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CCgiContext;
+
 BEGIN_SCOPE(align_format)
 
 /// Auxiliary type to embed a CConstRef<objects::CSeq_id> in STL containers that require

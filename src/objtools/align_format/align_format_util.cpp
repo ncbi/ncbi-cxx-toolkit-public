@@ -47,6 +47,7 @@ static char const rcsid[] = "$Id$";
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbifile.hpp>
 #include <html/htmlhelper.hpp>
+#include <cgi/cgictx.hpp>
 #include <util/tables/raw_scoremat.h>
 
 #include <objects/seqalign/Seq_align.hpp>

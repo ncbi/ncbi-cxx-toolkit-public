@@ -45,12 +45,6 @@ static char const rcsid[] = "$Id$";
 
 #include <util/range.hpp>
 #include <util/md5.hpp>
-
-//#include <objects/general/Object_id.hpp>
-//#include <objects/general/User_object.hpp>
-//#include <objects/general/User_field.hpp>
-//#include <objects/general/Dbtag.hpp>
-
 #include <objtools/blast/seqdb_reader/seqdb.hpp>    // for CSeqDB::ExtractBlastDefline
 
 #include <objmgr/scope.hpp>
@@ -84,6 +78,7 @@ static char const rcsid[] = "$Id$";
 #include <objtools/readers/getfeature.hpp>
 #include <objtools/alnmgr/score_builder_base.hpp>
 #include <html/htmlhelper.hpp>
+#include <cgi/cgictx.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
