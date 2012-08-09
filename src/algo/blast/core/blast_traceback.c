@@ -308,7 +308,8 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
          are rounded down to the nearest even number. */
       Blast_HSPListAdjustOddBlastnScores(hsp_list, kGapped, sbp);
 
-      Blast_HSPListGetEvalues(query_info, subject_length, hsp_list, kGapped, FALSE, sbp, 0,
+      Blast_HSPListGetEvalues(program_number, query_info, subject_length,
+                              hsp_list, kGapped, FALSE, sbp, 0,
                               scale_factor);
    }
 
@@ -1306,26 +1307,40 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
          sbp->psi_matrix->pssm->data = rpsblast_pssms + db_seq_start;
       } else {
          const double* karlin_k = rps_info->aux_info.karlin_k;
-         /* replace the PSSM and the Karlin values for this DB sequence
-            and this query sequence. */
-         sbp->psi_matrix->pssm->data = 
-            RPSRescalePssm(score_params->scale_factor,
-                           one_query->length, one_query->sequence, 
-                           seq_arg.seq->length,
-                           rpsblast_pssms + db_seq_start, sbp);
-         /* The composition of the query could have caused this one
-            subject sequence to produce a bad PSSM. This should
-            not be a fatal error, so just go on to the next subject
-            sequence */
-         if (sbp->psi_matrix->pssm->data == NULL) {
-            /** @todo FIXME Results should not be silently skipped,
-             *        need a warning here
-             */
-            hsp_list = Blast_HSPListFree(hsp_list);
-            BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
-            continue;
+
+
+         /* for CBS only allocate memory for PSSM matrix */
+         if (ext_params->options->compositionBasedStats > 0) {
+
+             sbp->psi_matrix->pssm->data = (Int4**)_PSIAllocateMatrix(
+                                                          seq_arg.seq->length,
+                                                          BLASTAA_SIZE,
+                                                          sizeof(Int4));
          }
-         
+         else {
+
+             /* for no CBS option rescale PSSM matrix with the half-way CBS */
+             /* replace the PSSM and the Karlin values for this DB sequence
+                and this query sequence. */
+             sbp->psi_matrix->pssm->data = 
+                 RPSRescalePssm(score_params->scale_factor,
+                                one_query->length, one_query->sequence, 
+                                seq_arg.seq->length,
+                                rpsblast_pssms + db_seq_start, sbp);
+             /* The composition of the query could have caused this one
+                subject sequence to produce a bad PSSM. This should
+                not be a fatal error, so just go on to the next subject
+                sequence */
+             if (sbp->psi_matrix->pssm->data == NULL) {
+                 /** @todo FIXME Results should not be silently skipped,
+                  *        need a warning here
+                  */
+                 hsp_list = Blast_HSPListFree(hsp_list);
+                 BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
+                 continue;
+             }
+         }
+
          sbp->kbp_gap[0]->K = RPS_K_MULT * karlin_k[hsp_list->oid];
          sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
       }

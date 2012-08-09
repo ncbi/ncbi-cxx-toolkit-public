@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 1
     { 
         expected_domain_results[0].score = 742;
-        expected_domain_results[0].evalue = 3.16688e-100;
+        expected_domain_results[0].evalue = 1.99110e-100;
         expected_domain_results[0].bit_score = 2.89507e+02;
         expected_domain_results[0].num_ident = 111;
         int starts[] = {1, 139, 80, -1, 81, 218};
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 2
     { 
         expected_domain_results[1].score = 713;
-        expected_domain_results[1].evalue = 7.45834e-96;
+        expected_domain_results[1].evalue = 4.81988e-96;
         expected_domain_results[1].bit_score = 2.78295e+02;
         expected_domain_results[1].num_ident = 107;
         int starts[] = {1, 135, 6, -1, 8, 140, -1, 190, 58, 191, 80, -1, 81,
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     // HSP # 3
     { 
         expected_domain_results[2].score = 673;
-        expected_domain_results[2].evalue = 8.40771e-90;
+        expected_domain_results[2].evalue = 5.35876e-90;
         expected_domain_results[2].bit_score = 2.62959e+02;
         expected_domain_results[2].num_ident = 106;
         int starts[] = {0, 137, 115, -1, 117, 252 };

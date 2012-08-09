@@ -785,7 +785,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
             isRPS = TRUE;
             scale_factor = score_params->scale_factor;
         }
-        status = Blast_HSPListGetEvalues(query_info, stat_length, hsp_list_out, 
+        status = Blast_HSPListGetEvalues(program_number, query_info,
+                                         stat_length, hsp_list_out, 
                                          score_options->gapped_calculation, 
                                          isRPS, gap_align->sbp, 0, scale_factor);
         sbp->matrix_only_scoring = FALSE;
@@ -1277,8 +1278,9 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                                       hit_params->link_hsp_params, 
                                       gapped_calculation);
                } else {
-                  Blast_HSPListGetEvalues(query_info, stat_length,
-                                          hsp_list, gapped_calculation, FALSE,
+                  Blast_HSPListGetEvalues(program_number, query_info,
+                                          stat_length, hsp_list,
+                                          gapped_calculation, FALSE,
                                           sbp, 0, 1.0);
                }
                /* Use score threshold rather than evalue if 

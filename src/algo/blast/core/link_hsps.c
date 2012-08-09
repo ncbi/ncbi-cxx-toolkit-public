@@ -1793,7 +1793,7 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
            compare with sum e-values. Use decay rate to compensate for 
            multiple tests. */
         
-        Blast_HSPListGetEvalues(query_info, 
+        Blast_HSPListGetEvalues(program_number, query_info, 
                                 Blast_SubjectIsTranslated(program_number) ?
                                 subject_length / CODON_LENGTH : subject_length,
                                 hsp_list, gapped_calculation, FALSE,sbp, 

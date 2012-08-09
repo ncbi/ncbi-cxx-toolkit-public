@@ -462,6 +462,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
  * the sum statistics. In case of multiple queries, the offsets are assumed 
  * to be already adjusted to individual query coordinates, and the contexts 
  * are set for each HSP.
+ * @param program_number Type of BLAST program [in]
  * @param query_info Auxiliary query information - needed only for effective
  *                   search space calculation if it is not provided [in]
  * @param subject_length Subject length - needed for Spouge's new FSC [in]
@@ -476,7 +477,8 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
  *                       
  */
 NCBI_XBLAST_EXPORT
-Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
+Int2 Blast_HSPListGetEvalues(EBlastProgramType program_number,
+                             const BlastQueryInfo* query_info,
                              Int4 subject_length,
                              BlastHSPList* hsp_list,
                              Boolean gapped_calculation, 

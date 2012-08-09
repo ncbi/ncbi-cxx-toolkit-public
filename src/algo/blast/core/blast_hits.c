@@ -1652,7 +1652,8 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
    return status;
 }
 
-Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
+Int2 Blast_HSPListGetEvalues(EBlastProgramType program_number,
+                             const BlastQueryInfo* query_info,
                              Int4 subject_length,
                              BlastHSPList* hsp_list, 
                              Boolean gapped_calculation, 
@@ -1667,7 +1668,7 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
    Int4 index;
    Int4 kbp_context;
    double gap_decay_divisor = 1.;
-   Boolean isRPS = (fabs(scaling_factor - 1.0) > 1.0e-6);
+   Boolean isRPS = Blast_ProgramIsRpsBlast(program_number);
    
    if (hsp_list == NULL || hsp_list->hspcnt == 0)
       return 0;
