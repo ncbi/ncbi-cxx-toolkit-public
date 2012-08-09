@@ -76,6 +76,9 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
         case CSnpBitfield::eIsSomatic:
             ret = (m_listBytes[11] & BIT_6); // on byte 11 (F9), bit 6
             break;
+        case CSnpBitfield::eIsSuspect:
+            ret = (m_listBytes[11] & BIT_7); // on byte 11 (F9), bit 7
+            break;
         case CSnpBitfield::eTGP2009Pilot:
             ret = 0; // obsolete
             break;
@@ -108,6 +111,9 @@ bool CSnpBitfield5::IsTrue(CSnpBitfield::EProperty prop) const
             break;
         case CSnpBitfield::eTGPNoneNotExclusive:
             ret = (m_listBytes[8] & BIT_2); // on byte 8 (F6), bit 2
+            break;
+        case CSnpBitfield::eGMAF0dot01:
+            ret = (m_listBytes[6] & BIT_5); // on byte 6 (F4), bit 5
             break;
         default:
             ret = CSnpBitfield4::IsTrue(prop);

@@ -66,7 +66,7 @@ bool CSnpBitfield3::IsTrue(CSnpBitfield::EProperty prop) const
         return false;
 
     if (prop == CSnpBitfield::eIsContigAlleleAbsent)
-        ret = (m_listBytes[11] & 0x10) != 0;  // on byte 11, bit 4
+        ret = (m_listBytes[11] & 0x10) != 0;  // on byte 11, bit 5
     else
         ret = CSnpBitfield2::IsTrue(prop);
 
