@@ -52,6 +52,7 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
+#define END_OF_MULTILINE_OUTPUT "END"
 
 BEGIN_NCBI_SCOPE
 
@@ -94,7 +95,7 @@ bool CNetServerMultilineCmdOutput::ReadLine(string& output)
         }
     }
 
-    if (output != "END")
+    if (output != END_OF_MULTILINE_OUTPUT)
         return true;
     else {
         m_Impl->m_ReadCompletely = true;
@@ -181,7 +182,7 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
         result.erase(0, sizeof("ERR:") - 1);
         result = NStr::ParseEscapes(result);
         m_Server->m_Service->m_Listener->OnError(result, m_Server);
-        result = kEmptyStr;
+        result = END_OF_MULTILINE_OUTPUT;
     }
 }
 
