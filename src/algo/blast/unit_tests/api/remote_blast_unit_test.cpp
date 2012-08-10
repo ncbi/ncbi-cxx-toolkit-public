@@ -784,7 +784,7 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     BOOST_REQUIRE(dbinfo.NotEmpty());
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
 
-    const string swissprot_title("Non-redundant SwissProt sequences");
+    const string swissprot_title("Non-redundant UniProtKB/SwissProt sequences");
     BOOST_REQUIRE_EQUAL(swissprot_title, dbinfo->GetDescription());
 
     BOOST_REQUIRE(dbinfo->GetTotal_length() > (Int8)7e+7);
