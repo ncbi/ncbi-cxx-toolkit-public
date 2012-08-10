@@ -464,7 +464,8 @@ void SNetScheduleServerAutomationObject::Call(const string& method,
                 arg_array.NextBoolean(false)));
     else if (method == "job_info") {
         CJobInfoToJSON job_info_to_json;
-        ProcessJobInfo(m_NetScheduleAPI, arg_array.NextString(),
+        string job_key(arg_array.NextString());
+        ProcessJobInfo(m_NetScheduleAPI, job_key,
             &job_info_to_json, arg_array.NextBoolean(true));
         reply.PushNode(job_info_to_json.GetRootNode());
     } else if (method == "job_group_info")
