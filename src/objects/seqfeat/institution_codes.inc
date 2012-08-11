@@ -4028,6 +4028,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NBME	s	National Butterfly Museum (Saruman Museum)",
 "NBNM	s	National Park Service",
 "NBPC	s	National Birds of Prey Centre",
+"NBPGR	b	National Bureau of Plant Genetic Resources",
 "NBRC	c	NITE Biological Resource Center",
 "NBSB	s	National Biomonitoring Specimen Bank, U.S. Geological Survey",
 "NBSB:Bird	s	National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection",
