@@ -1929,7 +1929,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(!disableLink) {        
             lnkTitleInfo = "UniGene cluster"; 
             url_link = CAlignFormatUtil::MapTemplate(url_link,"db",is_na ? "nucleotide" : "protein");
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"dopt",is_na ? "nucleotide" : "protein");                                
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"dopt",is_na ? "nucleotide" : "protein");                                            
             url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
         }
         else {
@@ -1975,6 +1975,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
         lnk_displ = textLink ? "GEO" : kGeoImg; 
         if(!disableLink) {        
             lnkTitleInfo = "Expression profiles";
+            //gilist contains comma separated gis, change it to the following
+            giList = NStr::Replace(giList,",","[gi] OR ");
             url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
         }
         else {
@@ -1997,7 +1999,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
       }
       if(!disableLink) {        
         string uid = !is_na ? "PUID" : "NUID";
-        url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);              
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"uid",uid);
+        //gilist contains comma separated gis, change it to the following
+        giList = NStr::Replace(giList,",","[" + uid + "] OR ");
         url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
       }
       else {
@@ -2061,6 +2065,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
         lnk_displ = textLink ? "PubChem Bio Assay" : kBioAssayNucImg;            
         if(!disableLink) {                    
             string linkTitle = " title=\"View Bioassays involving <@label@>\"";
+            //gilist contains comma separated gis, change it to the following
+            giList = NStr::Replace(giList,",","[RNATargetGI] OR ");
             url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
         }
         else {
@@ -2077,6 +2083,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(!disableLink) {        
             lnkTitleInfo ="Bioassay data";
             string linkTitle = " title=\"View Bioassays involving <@label@>\"";
+            //gilist contains comma separated gis, change it to the following
+            giList = NStr::Replace(giList,",","[PigGI] OR ");
             url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,"",linkTitle);
         }
         else {
@@ -2231,8 +2239,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
                                                  const string& rid,
                                                  const string& cdd_rid, 
                                                  const string& entrez_term,
-                                                 bool is_na,                                                  
-                                                 int first_gi,
+                                                 bool is_na,                                                                                                   
                                                  bool structure_linkout_as_group,
                                                  bool for_alignment, 
                                                  int cur_align,
@@ -2255,6 +2262,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
     vector<string> linkLetters;
     NStr::Tokenize(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B"   
 	for(size_t i = 0; i < linkLetters.size(); i++) {
+        int first_gi = 0;
         vector < CBioseq::TId > idList;
         int linkout = s_LinkLetterToType(linkLetters[i]);        
         string taxName;
