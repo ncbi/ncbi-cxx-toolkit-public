@@ -61,15 +61,15 @@ void CNetScheduleAdmin::ReloadServerConfig()
 }
 
 void CNetScheduleAdmin::CreateQueue(const string& qname, const string& qclass,
-                                    const string& comment)
+                                    const string& description)
 {
     string cmd = "QCRE " + qname;
     cmd += ' ';
     cmd += qclass;
 
-    if (!comment.empty()) {
+    if (!description.empty()) {
         cmd += " \"";
-        cmd += comment;
+        cmd += description;
         cmd += '"';
     }
 

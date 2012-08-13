@@ -692,15 +692,17 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     ///    Map of affinity tokens to job and worker node counters.
     void AffinitySnapshot(TAffinityMap& affinity_map);
 
-    /// Create queue of given queue class
+    /// Create an instance of the given queue class.
     /// @param qname
     ///    Name of the queue to create
     /// @param qclass
-    ///    Parameter set described in config file in qclass_* section
+    ///    Parameter set described in config file in a qclass_<qname> section.
+    /// @param description
+    ///    Brief free text description of the queue.
     void CreateQueue(
         const string& qname,
         const string& qclass,
-        const string& comment = kEmptyStr);
+        const string& description = kEmptyStr);
 
     /// Delete queue
     /// Applicable only to queues, created through CreateQueue method
