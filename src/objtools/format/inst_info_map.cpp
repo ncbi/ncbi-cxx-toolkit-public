@@ -53,7 +53,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_ccap_base("http://www.ccap.ac.uk/strain_info.php?Strain_No=");
     static const string s_ccmp_base("https://ccmp.bigelow.org/node/1/strain/CCMP");
     static const string s_ccug_base("http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=");
-    static const string s_cori_base("http://ccr.coriell.org/Sections/Search/Sample_Detail.aspx?Ref=");
+    static const string s_cori_base("http://ccr.coriell.org/Sections/Search/Search.aspx?q=");
     static const string s_dsmz_base("http://www.dsmz.de/catalogues/details/culture/DSM-");
     static const string s_fsu_base("http://www.prz.uni-jena.de/data.php?fsu=");
     static const string s_kctc_base("http://www.brc.re.kr/English/_SearchView.aspx?sn=");
