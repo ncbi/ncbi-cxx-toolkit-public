@@ -944,6 +944,12 @@ const TSeqPos kInvalidSeqPos = ((TSeqPos) (-1));
 /// Use this typedef rather than its expansion, which may change.
 typedef int TSignedSeqPos;
 
+/// Type for sequence GI.
+///
+/// Use this typedef rather than its expansion, which may change.
+typedef int TGi;
+
+
 /// Helper address class
 class CRawPointer
 {
