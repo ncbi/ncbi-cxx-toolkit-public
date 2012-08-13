@@ -58,6 +58,7 @@ static char const rcsid[] = "";
 #include <objects/scoremat/LoopConstraint.hpp>
 #include <algo/blast/core/blast_aalookup.h>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/ncbi_math.h>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
 #include <objtools/blast/seqdb_writer/taxid_set.hpp>
 
@@ -903,7 +904,7 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 	        for (j = 0; j < alphabet_size; j++) {
 	            if (itr_fr == freq_ratios.end())
 	                break;
-	            row[j] = (Int4) round(*itr_fr * FREQ_RATIO_SCALE);
+	            row[j] = (Int4) BLAST_Nint(*itr_fr * FREQ_RATIO_SCALE);
 	            ++itr_fr;
 	        }
 	        for ( ;j < BLASTAA_SIZE; j++) {
