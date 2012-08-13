@@ -360,7 +360,7 @@ struct SCommandCategoryDefinition {
 } static const s_CategoryDefinitions[eNumberOfCommandCategories] = {
     {eGeneralCommand, "General commands"},
     {eNetCacheCommand, "NetCache commands"},
-    {eNetScheduleCommand, "General NetSchedule commands"},
+    {eNetScheduleCommand, "Universal NetSchedule commands"},
     {eSubmitterCommand, "Submitter commands"},
     {eWorkerNodeCommand, "Worker node commands"},
     {eAdministrativeCommand, "Administrative commands"},
