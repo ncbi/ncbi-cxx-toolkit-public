@@ -918,7 +918,7 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 
 	    for (i = 0; i < seq_size; i++) {
 	        for (j = 0; j < BLASTAA_SIZE; j++) {
-	            row[j] = (Int4) round((*matrix)(i,j ) * FREQ_RATIO_SCALE);
+	            row[j] = (Int4) BLAST_Nint((*matrix)(i,j ) * FREQ_RATIO_SCALE);
 	        }
 	        m_RpsDbInfo.freq_file.write((const char *)row, sizeof(Int4)*BLASTAA_SIZE);
 	    }
