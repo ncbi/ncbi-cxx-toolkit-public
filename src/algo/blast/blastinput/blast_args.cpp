@@ -709,7 +709,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                       "    2005, unconditionally\n"
                       "For programs other than tblastn, must either be "
                       "absent or be D, F or 0"),
-                      CArgDescriptions::eString, m_IsDeltaBlast ? "1" :
+                      CArgDescriptions::eString, m_IsDeltaBlast ? kDfltArgCompBasedStatsDelta :
                                                       kDfltArgCompBasedStats);
 
     arg_desc.SetCurrentGroup("Miscellaneous options");
@@ -2476,14 +2476,16 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
 
     // this stores the arguments (and their defaults) that cannot be overriden
     map<string, string> has_defaults;
-    has_defaults[kArgCompBasedStats] = kDfltArgCompBasedStats;
+    EBlastProgramType prog = m_OptsHandle->GetOptions().GetProgramType();
+    has_defaults[kArgCompBasedStats] =
+    		Blast_ProgramIsRpsBlast(prog) ? kDfltArgCompBasedStatsDelta:kDfltArgCompBasedStats;
     // FIX the line below for igblast, and add igblast options
     has_defaults[kArgEvalue] = NStr::DoubleToString(BLAST_EXPECT_VALUE);
     has_defaults[kTask] = m_Task;
     has_defaults[kArgOldStyleIndex] = kDfltArgOldStyleIndex;
     has_defaults[kArgMaxHSPsPerSubject] =
         NStr::IntToString(kDfltArgMaxHSPsPerSubject);
-    if (Blast_QueryIsProtein(m_OptsHandle->GetOptions().GetProgramType())) {
+    if (Blast_QueryIsProtein(prog)) {
         if (NStr::Find(m_Task, "blastp") != NPOS || 
             NStr::Find(m_Task, "psiblast") != NPOS) {
             has_defaults[kArgSegFiltering] = kDfltArgNoFiltering;

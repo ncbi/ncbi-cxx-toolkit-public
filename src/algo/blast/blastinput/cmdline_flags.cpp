@@ -139,6 +139,7 @@ const string kArgUngapped("ungapped");
 
 const string kArgCompBasedStats("comp_based_stats");
 const string kDfltArgCompBasedStats("2");
+const string kDfltArgCompBasedStatsDelta("1");
 
 const string kDfltArgNoFiltering("no");
 const string kDfltArgApplyFiltering("yes");

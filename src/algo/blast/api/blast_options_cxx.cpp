@@ -522,6 +522,11 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
+    //For handling rpsblast save search strategy with mutli-dbs
+    case eBlastOpt_DbSeqNum:
+    case eBlastOpt_DbLength:
+    	return;
+
     default:
         break;
     }

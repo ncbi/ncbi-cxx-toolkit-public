@@ -80,6 +80,8 @@ typedef struct BlastRPSProfileHeader {
 
 /** header for RPS blast frequency ratios ('.freq') file */
 
+#define FREQ_RATIO_SCALE 1000000000
+
 typedef struct BlastRPSFreqRatiosHeader {
     Int4 num_profiles;     /**< number of PSSMs in the file */
     Int4* start_offsets;   /**< start of an Int4 array that gives the starting 
@@ -90,7 +92,7 @@ typedef struct BlastRPSFreqRatiosHeader {
                               the length of each sequence includes one byte
                               at the end for an end-of-sequence sentinel */
 
-    double* data;         /**< List of frequency ratio rows. There is one 
+    Int4 * data;           /**< List of frequency ratio rows. There is one
                              row for each letter in the RPS sequence database,
                              and each row has BLASTAA_SIZE entries. Because
                              there is a sentinel byte at the end of each

@@ -499,9 +499,11 @@ CRpsFreqRatiosFile::CRpsFreqRatiosFile(const string& filename_no_extn,
     m_Data = new BlastRPSFreqRatiosHeader;
     m_Data->num_profiles = num_profiles;
     m_Data->start_offsets = new Int4[num_profiles + 1];
+
     memcpy(m_Data->start_offsets, offsets, (num_profiles + 1) * sizeof(Int4));
 
-    m_Data->data = (double*)m_MmappedFile->GetPtr();
+    m_Data->data = (Int4 *)m_MmappedFile->GetPtr();
+
 }
 
 CRpsFreqRatiosFile::~CRpsFreqRatiosFile()
@@ -614,12 +616,16 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
             m_RpsInfo->profile_header = 
                 const_cast<BlastRPSProfileHeader*>((*m_PssmFile)());
         }
-
+        try {
         // read frequency ratios data
         m_FreqRatiosFile.Reset(new CRpsFreqRatiosFile(path,
                                    m_RpsInfo->profile_header->num_profiles,
                                    m_RpsInfo->profile_header->start_offsets));
-
+        } catch (const CBlastException& e) {
+        	string msg = rps_dbname + " contains no frequency ratios needed for composition-based statistics.\n" \
+        			     "Please disable composition-based statistics when searching against " + rps_dbname + ".";
+            NCBI_RETHROW(e, CBlastException, eRpsInit, msg);
+        }
         m_RpsInfo->freq_ratios_header =
             const_cast<BlastRPSFreqRatiosHeader*>((*m_FreqRatiosFile)());
 

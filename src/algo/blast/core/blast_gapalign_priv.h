@@ -146,10 +146,9 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
  * structure.
  * @param sbp BlastScoreBlk structure to modify [in|out]
  * @param rps_pssm PSSMs in RPS-BLAST database to use [in]
- * @param rps_freq frequency counts in RPS-BLAST database to use [in]
  * @param alphabet_size Elements in one pssm row [in]
  */
-void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm, double** rps_freq,
+void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm,
                         Int4 alphabet_size);
 
 /** Remove the artificially built SPsiBlastScoreMatrix structure allocated by

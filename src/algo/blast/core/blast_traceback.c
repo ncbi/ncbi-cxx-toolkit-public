@@ -1032,7 +1032,7 @@ s_BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
    }
 }
 
-void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm, double** rps_freq,
+void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm,
                         Int4 alphabet_size)
 {
     ASSERT(sbp);
@@ -1051,7 +1051,6 @@ void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm, double** rps_freq,
     /* The only data fields that RPS-BLAST really needs */
     sbp->psi_matrix->pssm->data = rps_pssm;
     sbp->psi_matrix->pssm->nrows = alphabet_size;
-    sbp->psi_matrix->freq_ratios = rps_freq;
 }
 
 void RPSPsiMatrixDetach(BlastScoreBlk* sbp)
@@ -1072,14 +1071,14 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp)
 static Int2 
 s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info, 
                          BlastGapAlignStruct* gap_align, 
-                         const BlastRPSInfo* rps_info)
+                         const BlastRPSInfo* rps_info,
+                         Int4 *** rps_freq)
 {
    Int4** rps_pssm = NULL;
-   double** rps_freq = NULL;
    Int4 num_profiles;
    Int4 num_pssm_rows;
    Int4* pssm_start;
-   double* freq_start = NULL;
+   Int4 * freq_start = NULL;
    BlastRPSProfileHeader *profile_header;
    BlastRPSFreqRatiosHeader *freq_header;
    Int4 index;
@@ -1111,26 +1110,26 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
    pssm_start = profile_header->start_offsets + num_profiles + 1;
 
    if (freq_header) {
-      rps_freq = (double **)malloc((num_pssm_rows+1) * sizeof(double *));
-      freq_start = (double*) freq_header->data;
+      *rps_freq = (Int4 **)malloc((num_pssm_rows+1) * sizeof(Int4 *));
+      freq_start = (Int4 *) freq_header->data;
    }
 
    for (index = 0; index < num_pssm_rows + 1; index++) {
       rps_pssm[index] = pssm_start;
       pssm_start += alphabet_size;
       if (freq_header) {
-          rps_freq[index] = freq_start;
+          (*rps_freq)[index] = freq_start;
           freq_start += alphabet_size;
       }
    }
 
    gap_align->positionBased = TRUE;
-   RPSPsiMatrixAttach(gap_align->sbp, rps_pssm, rps_freq, alphabet_size);
+   RPSPsiMatrixAttach(gap_align->sbp, rps_pssm, alphabet_size);
    return 0;
 }
 
-static void s_RPSFillPsiMatrix(SPsiBlastScoreMatrix* psi_matrix, 
-                            double **freq, Int4 ncol) 
+static void s_RPSFillFreqRatiosInPsiMatrix(SPsiBlastScoreMatrix* psi_matrix,
+                            Int4 ** freq, Int4 ncol)
 {
    Int4 ic, ir;
    psi_matrix->pssm->ncols = ncol;
@@ -1138,7 +1137,7 @@ static void s_RPSFillPsiMatrix(SPsiBlastScoreMatrix* psi_matrix,
            _PSIAllocateMatrix(ncol, BLASTAA_SIZE, sizeof(double));
    for (ic=0; ic<ncol; ic++) {
        for (ir=0; ir<psi_matrix->pssm->nrows; ir++) {
-           psi_matrix->freq_ratios[ic][ir] = freq[ic][ir];
+           psi_matrix->freq_ratios[ic][ir] = (double) freq[ic][ir]/ (double) FREQ_RATIO_SCALE;
        }
        for (;  ir<BLASTAA_SIZE; ir++) {
            psi_matrix->freq_ratios[ic][ir] = 0.0;
@@ -1203,7 +1202,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    BlastHSPList* hsp_list;
    BlastScoreBlk* sbp;
    Int4 **rpsblast_pssms = NULL;
-   double **rpsblast_freqs = NULL;
+   Int4 **rpsblast_freqs = NULL;
    Int4 db_seq_start;
    EBlastEncoding encoding;
    BlastSeqSrcGetSeqArg seq_arg;
@@ -1220,13 +1219,18 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
    
    concat_db_info = BlastQueryInfoNew(program_number,
                                       rps_info->profile_header->num_profiles);
+   // Note that if rpsblast_freqs is not NULL, memory has been allocated in s_RPSGAPAlignDataPrepare
    if ((status = 
-        s_RPSGapAlignDataPrepare(concat_db_info, gap_align, rps_info)) != 0)
+        s_RPSGapAlignDataPrepare(concat_db_info, gap_align, rps_info, &rpsblast_freqs)) != 0)
+   {
+	  if(NULL != rpsblast_freqs)
+		  sfree(rpsblast_freqs);
+
       return status;
+   }
       
    sbp = gap_align->sbp;
    rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
-   rpsblast_freqs = gap_align->sbp->psi_matrix->freq_ratios;
 
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
@@ -1286,7 +1290,11 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
       if (Blast_GetOneQueryStructs(&one_query_info, &one_query, 
                                    query_info, query, 
                                    hsp_list->query_index) != 0)
+      {
+    	  if(NULL != rpsblast_freqs)
+    	  		  sfree(rpsblast_freqs);
           return -1;
+      }
 
       /* Pick out one of the sequences from the concatenated DB (given by the 
          OID of this HSPList). The sequence length does not include the 
@@ -1345,13 +1353,12 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
          sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
       }
 
-
       /* compute the traceback information and calculate E values
          for all HSPs in the list */
 
       if (ext_params->options->compositionBasedStats > 0) {
           Int4 offsets[2], query_index;
-          s_RPSFillPsiMatrix(sbp->psi_matrix, rpsblast_freqs + db_seq_start, seq_arg.seq->length);
+          s_RPSFillFreqRatiosInPsiMatrix(sbp->psi_matrix, rpsblast_freqs + db_seq_start, seq_arg.seq->length);
           one_query_info->first_context = one_query_info->last_context = 0;
           one_query_info->num_queries = 1;
           offsets[0] = 0;
@@ -1410,6 +1417,9 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
 
    /* Free the allocated array of memory mapped matrix columns and restore
       the original settings in the gapped alignment structure. */
+   if(NULL != rpsblast_freqs)
+	   sfree(rpsblast_freqs);
+
    sfree(rpsblast_pssms);
    gap_align->positionBased = FALSE;
    RPSPsiMatrixDetach(sbp);

@@ -208,6 +208,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgUngapped;
 NCBI_BLASTINPUT_EXPORT extern const string kArgCompBasedStats;
 /// Default argument for composition based statistics
 NCBI_BLASTINPUT_EXPORT extern const string kDfltArgCompBasedStats;
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgCompBasedStatsDelta;
 
 /// Default argument to specify no filtering
 NCBI_BLASTINPUT_EXPORT extern const string kDfltArgNoFiltering;

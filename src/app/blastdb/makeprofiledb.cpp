@@ -892,7 +892,7 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 	 // Update .freq file
 	 Int4 i = 0;
 	 Int4 j = 0;
-	 double row[BLASTAA_SIZE];
+	 Int4 row[BLASTAA_SIZE];
 	 Int4 alphabet_size = pssm.GetNumRows();
 
 	 const list<double> & freq_ratios = pssm.GetIntermediateData().GetFreqRatios();
@@ -903,13 +903,13 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 	        for (j = 0; j < alphabet_size; j++) {
 	            if (itr_fr == freq_ratios.end())
 	                break;
-	            row[j] = *itr_fr;
+	            row[j] = (Int4) round(*itr_fr * FREQ_RATIO_SCALE);
 	            ++itr_fr;
 	        }
 	        for ( ;j < BLASTAA_SIZE; j++) {
 	        	row[j] = 0;
 	        }
-	        m_RpsDbInfo.freq_file.write((const char *)row, sizeof(double)*BLASTAA_SIZE);
+	        m_RpsDbInfo.freq_file.write((const char *)row, sizeof(Int4)*BLASTAA_SIZE);
 	    }
     }
     else {
@@ -917,14 +917,14 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 
 	    for (i = 0; i < seq_size; i++) {
 	        for (j = 0; j < BLASTAA_SIZE; j++) {
-	            row[j] = (*matrix)(i,j );
+	            row[j] = (Int4) round((*matrix)(i,j ) * FREQ_RATIO_SCALE);
 	        }
-	        m_RpsDbInfo.freq_file.write((const char *)row, sizeof(double)*BLASTAA_SIZE);
+	        m_RpsDbInfo.freq_file.write((const char *)row, sizeof(Int4)*BLASTAA_SIZE);
 	    }
     }
 
 	memset(row, 0, sizeof(row));
-	m_RpsDbInfo.freq_file.write((const char *)row, sizeof(double)*BLASTAA_SIZE);
+	m_RpsDbInfo.freq_file.write((const char *)row, sizeof(Int4)*BLASTAA_SIZE);
 
 	return;
  }
