@@ -87,6 +87,7 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 ///unigene
 // .ncbirc alias: UNIGEN
 static const char kUnigeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=<@db@>&cmd=Display&dopt=<@dopt@>_unigene&from_uid=<@gi@>&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+
 //substitues <@lnk_displ@>
 static const char kUnigeneImg[] = "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
@@ -117,7 +118,8 @@ static const string kGeoDispl =  "<div><@lnk@>-<span class=\"rlLink\">microarray
 
 ///Gene
 // .ncbirc alias: GENE
-static const char kGeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=search&term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kGeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/gene?term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+
 //substitues <@lnk_displ@>
 static const char kGeneImg[] = "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
@@ -989,8 +991,7 @@ public:
                                                  const string& rid,
                                                  const string& cdd_rid, 
                                                  const string& entrez_term,
-                                                 bool is_na,           
-                                                 int first_gi,
+                                                 bool is_na,                                                            
                                                  bool structure_linkout_as_group,
                                                  bool for_alignment, 
                                                  int cur_align,
