@@ -101,14 +101,12 @@ CTrackMgrClient::AskDefault_display_tracks(
 CRef<CTMgr_DisplayTrackReply>
 CTrackMgrClient::s_Ask(const CTMgr_DisplayTrackRequest& request)
 {
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    const string type =
-        app->GetConfig().GetString("TrackMgr", "type", "service");
-    const string name =
-        app->GetConfig().GetString("TrackMgr", "name", "TrackMgr");
-    const string port_str =
-        app->GetConfig().GetString("TrackMgr", "port", "47228");
-    const unsigned int port = (unsigned int) NStr::StringToInt(port_str);
+    static const CNcbiApplication* app = CNcbiApplication::Instance();
+    const CNcbiRegistry& cfg = app->GetConfig();
+    const string type = cfg.GetString("TrackMgr", "type", "service");
+    const string name = cfg.GetString("TrackMgr", "name", "TrackMgr");
+    const string port_str = cfg.GetString("TrackMgr", "port", "47228");
+    const unsigned int port(NStr::StringToInt(port_str));
 
     CRef<CTrackMgrClient> client;
 
@@ -118,12 +116,13 @@ CTrackMgrClient::s_Ask(const CTMgr_DisplayTrackRequest& request)
     else if (!NStr::EqualNocase(type, "sock")) {
         NCBI_THROW(CException, eUnknown, "Invalid connection type");
     }
-    else  {
+    else {
         client.Reset(new CTrackMgrClient(name, port));
     }
 
-    return client.NotNull() ?
-        client->AskDefault_display_tracks(request) : null;
+    return client.NotNull()
+        ? client->AskDefault_display_tracks(request)
+        : CRef<CTMgr_DisplayTrackReply>();
 }
 
 
