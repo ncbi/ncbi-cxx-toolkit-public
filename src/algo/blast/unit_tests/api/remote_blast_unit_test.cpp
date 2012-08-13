@@ -581,6 +581,7 @@ BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
     BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetWarnings());
     const string error("Substitution scores 2 and -1 are not supported");
+    //cerr << "Errors: '" << rmt_blaster.GetErrors() << "'" << endl;
     BOOST_REQUIRE(NStr::FindNoCase(rmt_blaster.GetErrors(), error) != NPOS);
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed, 
                         rmt_blaster.CheckStatus());
@@ -784,7 +785,7 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     BOOST_REQUIRE(dbinfo.NotEmpty());
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
 
-    const string swissprot_title("Non-redundant UniProtKB/SwissProt sequences");
+    const string swissprot_title("Non-redundant UniProtKB/SwissProt sequences.");
     BOOST_REQUIRE_EQUAL(swissprot_title, dbinfo->GetDescription());
 
     BOOST_REQUIRE(dbinfo->GetTotal_length() > (Int8)7e+7);
@@ -803,9 +804,11 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     BOOST_REQUIRE(dbinfo.NotEmpty());
 
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
-    BOOST_REQUIRE(dbinfo->GetDescription().empty());
-    BOOST_REQUIRE_EQUAL(string("12/12/2002 14:17:00"),
-                         dbinfo->GetLast_updated());
+    //cerr << MSerial_AsnText << * dbinfo << endl;
+    BOOST_REQUIRE_EQUAL("ecoli", dbinfo->GetDescription());
+    // Last_updated is now the date in which the statistics are collected?
+    //BOOST_REQUIRE_EQUAL(string("12/12/2002 14:17:00"),
+    //                     dbinfo->GetLast_updated());
     BOOST_REQUIRE_EQUAL((Int8)400, dbinfo->GetNum_sequences());
     BOOST_REQUIRE_EQUAL((Int8)4662239, dbinfo->GetTotal_length());
 
