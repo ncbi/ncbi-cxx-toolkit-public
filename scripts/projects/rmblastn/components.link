@@ -1,0 +1,10 @@
+[components]
+infrastructure  10.0
+core            10.0
+dbase           10.0
+web             10.0
+objects         10.0
+objtools        10.0
+algo            10.0
+blast           10.0
+app             10.0

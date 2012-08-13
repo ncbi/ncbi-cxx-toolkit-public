@@ -1,0 +1,47 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Christiam Camacho
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+# The APP: statement describes binaries
+# The LIB: statement describes libraries
+# The DLL: statement describes shared objects
+# The ETC: statement describes configuration files
+# It is allowed to have more than one of each statements
+# NOTE: When applications are added/removed from this list, please update
+# the application listings in post_build/win/{make_win.py,ncbi-blast.nsi},
+# post_build/macosx/ncbi-blast.sh, and post_build/rpm/ncbi-blast.spec
+APP: rmblastn
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+
+# ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
+# that. The build-root is needed so that rpmbuild can find the proper directories
+# to copy the binaries from
+Linux32-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
+Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
+#Linux64-Centos     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-flat-makefile
+
+DEFAULT_CONFIGURATIONS: Linux32-Centos:icc Linux64-Centos:icc
+
+Win32_9     : plain : static  32  ReleaseMT
+Win64_9     : plain : static  64  ReleaseMT
+
+SunOSx86    : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
+SunOSSparc  : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
+
+IntelMAC    : universal : GCC.sh 4.0     --without-debug --without-pcre --with-mt --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+
+USE_COMPONENTS
