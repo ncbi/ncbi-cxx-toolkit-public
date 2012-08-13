@@ -445,8 +445,8 @@ CConstRef<CSeq_align> CFeatureGenerator::AdjustAlignment(const CSeq_align& align
     vector<SExon>::iterator right_exon_it = exons.begin();
     CSpliced_seg::TExons::iterator right_spl_exon_it = spliced_seg.SetExons().begin();
 
-    int range_right = plus_strand ? range.GetFrom() : -range.GetTo();
-    int range_left = plus_strand ? range.GetTo() : -range.GetFrom();
+    int range_right = plus_strand ? int(range.GetFrom()) : -int(range.GetTo());
+    int range_left = plus_strand ? int(range.GetTo()) : -int(range.GetFrom());
 
     TSignedSeqRange expected_genomic_range(max(range_right, exons.front().genomic_from), min(range_left, exons.back().genomic_to));
 
