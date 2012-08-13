@@ -428,6 +428,7 @@ void CBlastDBCmdApp::Init()
                  "Input file for batch processing (Format: one entry per line)",
                  CArgDescriptions::eInputFile);
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "entry");
+    arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "range");
 
     arg_desc->AddOptionalKey("pig", "PIG", "PIG to retrieve", 
                              CArgDescriptions::eInteger);
