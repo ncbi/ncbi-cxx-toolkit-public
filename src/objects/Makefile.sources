@@ -16,7 +16,7 @@ MODULES = omssa access biblio blast blastdb blastxml cdd cn3d docsum biotree \
           proj pub pubmed scoremat seq seqalign seqblock seqcode \
           seqfeat seqloc seqsplit seqres seqset submit taxon1 taxon3 tinyseq \
           pcsubstance pcassay remap homologene seqedit seqtable seqtest \
-          valerr valid
+          trackmgr valerr valid
 
 new_module = $(builddir)/new_module.sh
 

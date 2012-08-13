@@ -9,7 +9,7 @@ SUB_PROJ = general biblio medline pub seqcode seq seqset submit \
            seqedit seqsplit id1 id2 entrez2 pubmed medlars mla proj \
            scoremat blast blastdb blastxml mmdb cn3d cdd ncbimime \
            pcsubstance pcassay gbseq insdseq tinyseq biotree entrezgene \
-           omssa remap seqtest taxon1 taxon3 valerr valid \
+           omssa remap seqtest taxon1 taxon3 trackmgr valerr valid \
            access docsum featdef genomecoll homologene mim objprt \
            variation macro
 
