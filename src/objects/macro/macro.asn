@@ -1406,7 +1406,8 @@ Macro-action-choice ::= CHOICE {
   propagate-missing-old-name NULL ,
   autoapply-structured-comments NULL ,
   reorder-structured-comments NULL ,
-  remove-duplicate-structured-comments NULL }
+  remove-duplicate-structured-comments NULL ,
+  lookup-taxonomy NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
