@@ -51,8 +51,6 @@ igblastp: lib
 	${MAKE} ${MFLAGS} -f Makefile.igblastp_app
 blast_formatter: lib
 	${MAKE} ${MFLAGS} -f Makefile.blast_formatter_app
-rmblastn: lib
-	${MAKE} ${MFLAGS} -f Makefile.rmblastn_app
 seedtop: lib
 	${MAKE} ${MFLAGS} -f Makefile.seedtop_app
 deltablast: lib
