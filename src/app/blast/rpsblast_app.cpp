@@ -54,44 +54,6 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 
-static void
-s_CheckForFreqRatioFile(const string& rps_dbname, CRef<CBlastOptionsHandle>  opt_handle)
-{
-    bool use_cbs = (opt_handle->GetOptions().GetCompositionBasedStats() == eNoCompositionBasedStats) ? false : true;
-    if(use_cbs) {
-        vector<string> db;
-        NStr::Tokenize(rps_dbname, " ", db);
-        list<string> failed_db;
-        for (unsigned int i=0; i < db.size(); i++) {
-    	    string path;
-    	    try {
-                vector<string> dbpath;
-       	        CSeqDB::FindVolumePaths(db[i], CSeqDB::eProtein, dbpath);
-                path = *dbpath.begin();
-            } catch (const CSeqDBException& e) {
-                 NCBI_RETHROW(e, CBlastException, eRpsInit,
-                              "Cannot retrieve path to RPS database");
-            }
-
-    	    CFile f(path + ".freq");
-            if(!f.Exists()) {
-            	failed_db.push_back(db[i]);
-            }
-		
-        }
-        if(!failed_db.empty()) {
-        	opt_handle->SetOptions().SetCompositionBasedStats(eNoCompositionBasedStats);
-        	string all_failed = NStr::Join(failed_db, ", ");
-        	string msg = all_failed + " contain(s) no freq ratios " \
-                     	 + "needed for composition-based statistics." \
-                     	 + "\nRPSBLAST will be run without composition-based statistics.";
-        	ERR_POST(Warning << msg);
-        }
-
-    }
-    return;
-}
-
 class CRPSBlastApp : public CNcbiApplication
 {
 public:
@@ -142,8 +104,8 @@ int CRPSBlastApp::Run(void)
         	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
         }
 
-        s_CheckForFreqRatioFile(m_CmdLineArgs->GetBlastDatabaseArgs()->GetDatabaseName(),
-        		               opts_hndl);
+        CheckForFreqRatioFile(m_CmdLineArgs->GetBlastDatabaseArgs()->GetDatabaseName(),
+        		               opts_hndl, true);
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
         /*** Get the query sequence(s) ***/

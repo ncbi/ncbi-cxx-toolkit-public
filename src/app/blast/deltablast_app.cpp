@@ -174,6 +174,8 @@ int CDeltaBlastApp::Run(void)
         const CArgs& args = GetArgs();
         RecoverSearchStrategy(args, m_CmdLineArgs);
         CRef<CBlastOptionsHandle> opts_hndl(&*m_CmdLineArgs->SetOptions(args));
+        CheckForFreqRatioFile(m_CmdLineArgs->GetDomainDatabase()->GetDatabaseName(),
+                		               opts_hndl, false);
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
         /*** Get the query sequence(s) ***/

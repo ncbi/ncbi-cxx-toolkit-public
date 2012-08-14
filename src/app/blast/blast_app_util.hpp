@@ -221,6 +221,9 @@ BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
 CRef<blast::CBlastAncillaryData>
 ExtractPssmAncillaryData(const objects::CPssmWithParameters& pssm);
 
+void
+CheckForFreqRatioFile(const string& rps_dbname, CRef<blast::CBlastOptionsHandle>  & opt_handle, bool isRpsblast);
+
 
 END_NCBI_SCOPE
 
