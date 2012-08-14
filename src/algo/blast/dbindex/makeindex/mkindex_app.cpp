@@ -204,9 +204,11 @@ int CMkIndexApplication::Run()
     unsigned int vol_num = 0;
 
     CDbIndex::TSeqNum start, orig_stop( kMax_UI4 ), stop = 0;
+    /*
     string ofname_base = 
         GetArgs()["show_filters"] ? "" : GetArgs()["output"].AsString();
     string odir_name( CFile( ofname_base ).GetDir() );
+    */
     CSequenceIStream * seqstream = 0;
     string iformat = GetArgs()["iformat"].AsString();
 
@@ -257,6 +259,11 @@ int CMkIndexApplication::Run()
     }
 
     if( !old_style && iformat == "blastdb" ) {
+        if( GetArgs()["output"] ) {
+            ERR_POST( Warning << 
+                      "option 'output' is ignored for new style indices" );
+        }
+
         typedef std::vector< std::string > TStrVec;
         TStrVec db_vols;
 
@@ -276,8 +283,11 @@ int CMkIndexApplication::Run()
             CDbIndex::TSeqNum start, orig_stop( kMax_UI4 ), stop = 0;
             Uint4 num_seq( 0 ), num_vol( 0 );
             vol_num = 0;
+            /*
             std::string dbv_name( 
                     CFile::ConcatPath( odir_name, CFile( *dbvi ).GetName() ) );
+            */
+            std::string dbv_name( *dbvi );
             
             do {
                 start = stop;
@@ -306,6 +316,8 @@ int CMkIndexApplication::Run()
     }
 
     Uint4 num_seq( 0 ), num_vol( 0 );
+    string ofname_base = 
+        GetArgs()["show_filters"] ? "" : GetArgs()["output"].AsString();
 
     do { 
         start = stop;
