@@ -2839,7 +2839,13 @@ CRef<CVariation> CVariationUtil::AsVariation(const CSeq_feat& variation_feat)
 
     CRef<CVariantPlacement> p(new CVariantPlacement);
     p->SetLoc().Assign(variation_feat.GetLocation());
+    if(p->GetLoc().GetId()) {
+        p->SetMol(GetMolType(sequence::GetId(p->GetLoc(), NULL)));
+    } else {
+        p->SetMol(CVariantPlacement::eMol_unknown);
+    }
     v->SetPlacements().push_back(p);
+
 
     if(variation_feat.IsSetCit()) {
        v->SetPub().Assign(variation_feat.GetCit());
