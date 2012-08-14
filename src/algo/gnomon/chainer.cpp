@@ -264,10 +264,11 @@ void SChainMember::MarkExtraCopiesForDeletion(const TSignedSeqRange& cds)
     NON_CONST_ITERATE (TContained, i, m_contained) {
         SChainMember* mi = *i;
         CGeneModel& algn = *mi->m_align;
-        CAlignMap& amap = *mi->m_align_map;
 
         TSignedSeqRange overlap = cds&algn.Limits();
 
+        /*
+        CAlignMap& amap = *mi->m_align_map;
         bool retain = false;
         if(overlap == algn.Limits())   // all alignment in cds
             retain = true;
@@ -275,6 +276,9 @@ void SChainMember::MarkExtraCopiesForDeletion(const TSignedSeqRange& cds)
             retain = true;
         else if(amap.FShiftedLen(overlap, false) > 0.5*amap.FShiftedLen(algn.Limits(), false))  // most of the alignment in cds
             retain = true;
+        */
+
+        bool retain = Include(cds, algn.ReadingFrame());
 
         if(retain) {
             mi->m_marked_for_retention = true;
