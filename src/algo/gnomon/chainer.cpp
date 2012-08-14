@@ -1871,18 +1871,17 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
 
 pair<string,int> GetAccVer(const CAlignModel& a, CScope& scope)
 {
-    string accession = sequence::GetAccessionForId(*a.GetTargetId(), scope);
-    if (accession.empty())
+    if((a.Type()&CGeneModel::eProt) == 0)
         return make_pair(a.TargetAccession(), 0);
 
-    string::size_type dot = accession.find('.');
-    int version = 0;
-    if(dot != string::npos) {
-        version = atoi(accession.substr(dot+1).c_str());
-        accession = accession.substr(0,dot);
+    try {
+        CSeq_id_Handle idh = sequence::GetId(*a.GetTargetId(), scope); 
+        const CTextseq_id* txtid = idh.GetSeqId()->GetTextseq_Id(); 
+        return (txtid  &&  txtid->IsSetAccession() && txtid->IsSetVersion()) ? 
+            make_pair(txtid->GetAccession(), txtid->GetVersion()) : make_pair(idh.AsString(), 0);
+    } catch (sequence::CSeqIdFromHandleException& e) {
+        return make_pair(a.TargetAccession(), 0);
     }
-    
-    return make_pair(accession,version);
 }
 
 static int s_ExonLen(const CGeneModel& a);
