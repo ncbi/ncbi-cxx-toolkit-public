@@ -129,9 +129,10 @@ void CHgvs2variationApplication::Init(void)
     arg_desc->AddFlag("prot_effect", "attach effect on the protein");
     arg_desc->AddFlag("precursor", "calculate precursor variation");
     arg_desc->AddFlag("tr_precursor", "calculate precursor variation");
-    arg_desc->AddFlag("compute_hgvs", "calculate hgvs expressions");
+    arg_desc->AddFlag("hgvs", "calculate hgvs expressions");
     arg_desc->AddFlag("roundtrip_hgvs", "roundtrip hgvs expression");
     arg_desc->AddFlag("asn_in", "in is text-asn");
+    arg_desc->AddFlag("feat", "asn is seq-feat");
 
     // Program description
     string prog_description = "Convert hgvs expression to a variation\n";
@@ -238,7 +239,7 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
         v.Assign(*v2);
 
     }
-    if(args["compute_hgvs"]) {
+    if(args["hgvs"]) {
         parser.AttachHgvs(v);
     }
 }
@@ -283,7 +284,14 @@ int CHgvs2variationApplication::Run(void)
         while(true) {
             CRef<CVariation> v (new CVariation);
             try {
-                args["in"].AsInputFile() >> MSerial_AsnText>> *v;
+                if(args["feat"]) {
+                    CRef<CSeq_feat> feat(new CSeq_feat);
+                    args["in"].AsInputFile() >> MSerial_AsnText >> *feat;
+                    CVariationUtil vu(*scope);
+                    v = vu.AsVariation(*feat);
+                } else {
+                    args["in"].AsInputFile() >> MSerial_AsnText>> *v;
+                }                
             } catch(CEofException& e) {
                 break;
             }
