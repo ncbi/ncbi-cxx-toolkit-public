@@ -757,6 +757,8 @@ void CFlatGatherer::x_GatherComments(void) const
     }
 //    x_FeatComments(ctx);
 
+    x_RemoveDupComments();
+
     x_FlushComments();
 }
 
@@ -780,6 +782,26 @@ void CFlatGatherer::x_AddGSDBComment
     }
 }
 
+void CFlatGatherer::x_RemoveDupComments(void) const
+{
+    // Note: we want to remove duplicate comments WITHOUT changing the order
+
+    // holds the comments we've seen so far
+    set< list<string> > setCommentsSeen;
+
+    TCommentVec newComments;
+    ERASE_ITERATE(TCommentVec, com_iter, m_Comments) {
+        // add to newComments only if not seen before
+        if( setCommentsSeen.find((*com_iter)->GetCommentList()) == setCommentsSeen.end() ) {
+            // hasn't been seen before
+            setCommentsSeen.insert((*com_iter)->GetCommentList());
+            newComments.push_back(*com_iter);
+        }
+    }
+
+    // swap is faster than assignment
+    m_Comments.swap(newComments);
+}
 
 void CFlatGatherer::x_FlushComments(void) const
 {

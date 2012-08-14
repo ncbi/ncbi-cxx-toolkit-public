@@ -134,6 +134,7 @@ protected:
     void x_GatherComments  (void) const;
     void x_AddComment(CCommentItem* comment) const;
     void x_AddGSDBComment(const CDbtag& dbtag, CBioseqContext& ctx) const;
+    void x_RemoveDupComments(void) const;
     void x_FlushComments(void) const;
     void x_UnverifiedComment(CBioseqContext& ctx) const;
     void x_IdComments(CBioseqContext& ctx, 
