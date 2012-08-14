@@ -8,7 +8,7 @@
 
 APP = formatguess
 SRC = formatguess
-LIB = xobjread creaders seqset $(SEQ_LIBS) pub medline biblio general \
+LIB = $(OBJREAD_LIBS) seqset $(SEQ_LIBS) pub medline biblio general \
       xser xutil xncbi
 
 REQUIRES = objects -Cygwin

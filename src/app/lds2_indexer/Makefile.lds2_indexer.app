@@ -12,7 +12,7 @@ SRC = lds2_indexer
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = lds2 xobjread xobjutil sqlitewrapp xcompress $(COMPRESS_LIBS) $(SOBJMGR_LIBS) submit
+LIB = lds2 $(OBJREAD_LIBS) xobjutil sqlitewrapp xcompress $(COMPRESS_LIBS) $(SOBJMGR_LIBS) submit
 LIBS = $(SQLITE3_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 ### END COPIED SETTINGS
