@@ -1184,8 +1184,65 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
 CConstRef<CUser_object> CFlatGatherer::x_PrepareAnnotDescStrucComment(CBioseqContext& ctx) const
 {
     // get structured comments from Seq-annot descr user objects
-    CConstRef<CUser_object> firstGenAnnotSCAD;
-    CAnnot_CI annot_ci( ctx.GetHandle() );
+    CConstRef<CUser_object> firstGenAnnotSCAD( x_GetAnnotDescStrucCommentFromBioseqHandle(ctx.GetHandle()) );
+
+    // if not found, fall back on first far sequence component of NCBI_GENOMES records, if possible
+    if( ! firstGenAnnotSCAD && ctx.IsNcbiGenomes() && 
+        ctx.GetRepr() == CSeq_inst::eRepr_delta && 
+        ctx.GetHandle() &&
+        ctx.GetHandle().IsSetInst_Ext() &&
+        ctx.GetHandle().GetInst_Ext().IsDelta() &&
+        ctx.GetHandle().GetInst_Ext().GetDelta().IsSet() )
+    {
+        const CDelta_ext::Tdata & delta_ext = ctx.GetHandle().GetInst_Ext().GetDelta().Get();
+        ITERATE(CDelta_ext::Tdata, ext_iter, delta_ext) {
+            if( ! (*ext_iter)->IsLoc() ) {
+                continue;
+            }
+
+            const CSeq_loc & loc = (*ext_iter)->GetLoc();
+            const CSeq_id *seq_id = loc.GetId();
+            if( ! seq_id ) {
+                continue;
+            }
+
+            CBioseq_Handle far_bsh = ctx.GetScope().GetBioseqHandle(*seq_id);
+            if( ! far_bsh ) {
+                continue;
+            }
+
+            firstGenAnnotSCAD.Reset( x_GetAnnotDescStrucCommentFromBioseqHandle(far_bsh) );
+            if( firstGenAnnotSCAD ) {
+                return firstGenAnnotSCAD;
+            }
+
+            // then try the remote user-object
+            for (CSeqdesc_CI it(far_bsh, CSeqdesc::e_User); it; ++it) {
+                const CUser_object & descr_user = (*it).GetUser();
+                if( descr_user.IsSetType() && descr_user.GetType().IsStr() && 
+                    NStr::EqualNocase(descr_user.GetType().GetStr(), "StructuredComment") ) 
+                {
+                    CConstRef<CUser_field> prefix_field = descr_user.GetFieldRef("StructuredCommentPrefix");
+                    if( ! prefix_field || ! prefix_field->IsSetData() || 
+                        ! prefix_field->GetData().IsStr() || 
+                        prefix_field->GetData().GetStr() != "##Genome-Annotation-Data-START##" )
+                    {
+                        continue;
+                    }
+
+                    // we found our first match
+                    return CConstRef<CUser_object>( &descr_user );
+                }
+            }
+        }
+    }
+
+    return firstGenAnnotSCAD;
+}
+
+CConstRef<CUser_object> CFlatGatherer::x_GetAnnotDescStrucCommentFromBioseqHandle( CBioseq_Handle bsh ) const
+{
+    CAnnot_CI annot_ci( bsh );
     for( ; annot_ci; ++annot_ci ) {
         if( ! annot_ci->Seq_annot_CanGetDesc() ) {
             continue;
@@ -1206,11 +1263,6 @@ CConstRef<CUser_object> CFlatGatherer::x_PrepareAnnotDescStrucComment(CBioseqCon
             if( descr_user.IsSetType() && descr_user.GetType().IsStr() && 
                 NStr::EqualNocase(descr_user.GetType().GetStr(), "StructuredComment") ) 
             {
-                if( firstGenAnnotSCAD ) {
-                    // already found the first one
-                    continue;
-                }
-
                 CConstRef<CUser_field> prefix_field = descr_user.GetFieldRef("StructuredCommentPrefix");
                 if( ! prefix_field || ! prefix_field->IsSetData() || 
                     ! prefix_field->GetData().IsStr() || 
@@ -1220,12 +1272,13 @@ CConstRef<CUser_object> CFlatGatherer::x_PrepareAnnotDescStrucComment(CBioseqCon
                 }
 
                 // we found our first match
-                firstGenAnnotSCAD.Reset( &descr_user );
+                return CConstRef<CUser_object>( &descr_user );
             }
         }
     }
 
-    return firstGenAnnotSCAD;
+    // not found
+    return CConstRef<CUser_object>();
 }
 
 // add comment features that are full length on appropriate segment

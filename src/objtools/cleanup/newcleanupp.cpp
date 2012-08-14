@@ -3952,17 +3952,25 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
     s_TokenizeTRnaString (comment, head);
     bool justt = true;
     list<string>::const_iterator head_iter = head.begin();
-    for( ; (aa == '\0' || aa == 'A') && head_iter != head.end(); ++head_iter ) {
+    bool is_A = false;
+    bool is_ambig = false;
+    for( ; head_iter != head.end(); ++head_iter ) {
         const string &str = *head_iter;
+        if( str.empty() ) continue;
         char curraa = '\0';
         if (noSingleLetter && str.length() == 1) {
             curraa = '\0';
         } else {
             curraa = s_FindTrnaAA (str);
         }
-        if (curraa != '\0') {
-            if (aa == '\0' || aa == 'A') {
+        if( curraa == 'A' && str.length() == 1 ) {
+            is_A = true;
+            curraa = 0;
+        } else if (curraa != '\0') {
+            if (aa == '\0') {
                 aa = curraa;
+            } else if( curraa != aa) {
+                is_ambig = true;
             }
         } else if ( ! NStr::EqualNocase ("tRNA", str) &&
             ! NStr::EqualNocase ("transfer", str) &&
@@ -3984,28 +3992,11 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
             }
         }
     }
-    for( ; head_iter != head.end(); ++head_iter ) {
-        const string &str = *head_iter;
-        char curraa = s_FindTrnaAA (str);
-        if (curraa != '\0') {
-        } else if ( ! NStr::EqualNocase ("tRNA", str) &&
-            ! NStr::EqualNocase ("transfer", str) &&
-            ! NStr::EqualNocase ("RNA", str) &&
-            ! NStr::EqualNocase ("product", str) ) {
-                if ( str.length() == 3) {
-                    tRNA_codon = str;
-                    NStr::ReplaceInPlace( tRNA_codon, "U", "T" );
-                    if (s_ParseDegenerateCodon( *tr, tRNA_codon) ) {
-                        tRNA_codon.clear();
-                        copy( tr->GetCodon().begin(), tr->GetCodon().end(), back_inserter(tRNA_codon) );
-                        justt = false;
-                    } else {
-                        justt = false;
-                    }
-                } else {
-                    justt = false;
-                }
-        }
+    if( is_A && aa == 0 ) {
+        aa = 'A';
+    }
+    if( is_ambig ) {
+        aa = 0;
     }
 
     if (justt) {
@@ -6255,8 +6246,8 @@ int s_GetBarcodeOrder( const CRef<CUser_field> &field )
     static const TBarcodeOrderElem sc_barcode_order_map[] = {
         { "Barcode Index Number", 2 },
         { "Order Assignment", 3 },
-        { "StructuredCommentPrefix", 1 },
-        { "StructuredCommentSuffix", 7 },
+        { "StructuredCommentPrefix", 1 }, // must be first
+        { "StructuredCommentSuffix", kMax_Int }, // must be last
         { "Tentative Name", 6 },
         { "iBOL Release Status", 5 },
         { "iBOL Working Group", 4 }
@@ -6265,14 +6256,16 @@ int s_GetBarcodeOrder( const CRef<CUser_field> &field )
     DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TBarcodeOrderMap, sc_BarcodeOrderMap, sc_barcode_order_map);
 
     if( ! field || ! field->IsSetLabel() || ! field->GetLabel().IsStr() ) {
-        return 0;
+        // "-1" because we want the StructuredCommentSuffix to be last
+        return (kMax_Int - 1);
     }
 
     const string & label_str = field->GetLabel().GetStr();
 
     TBarcodeOrderMap::const_iterator find_iter = sc_BarcodeOrderMap.find(label_str);
     if( find_iter == sc_BarcodeOrderMap.end() ) {
-        return 0;
+        // "-1" because we want the StructuredCommentSuffix to be last
+        return (kMax_Int - 1);
     }
 
     return find_iter->second;

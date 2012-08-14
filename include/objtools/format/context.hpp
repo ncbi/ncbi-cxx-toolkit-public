@@ -175,6 +175,7 @@ public:
     bool IsPatent         (void) const { return m_IsPatent; }  // patent
     bool IsGbGenomeProject(void) const { return m_IsGbGenomeProject; } // AE
     bool IsNcbiCONDiv     (void) const { return m_IsNcbiCONDiv; }      // CH
+    bool IsNcbiGenomes    (void) const { return m_IsNcbiGenomes; } // db NCBI_GENOMES
     
     // RefSeq ID queries
     bool IsRefSeq(void) const { return m_IsRefSeq; }
@@ -292,6 +293,7 @@ private:
     unsigned int m_RefseqInfo;
     bool m_IsGbGenomeProject;  // GenBank Genome project data
     bool m_IsNcbiCONDiv;       // NCBI CON division
+    bool m_IsNcbiGenomes;      // NCBI_GENOMES
     bool m_IsPatent;
     bool m_IsGI;
     bool m_IsWGS;

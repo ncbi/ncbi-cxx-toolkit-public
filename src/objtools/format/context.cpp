@@ -97,6 +97,7 @@ CBioseqContext::CBioseqContext
     m_RefseqInfo(0),
     m_IsGbGenomeProject(false),  // GenBank Genome project data (AE)
     m_IsNcbiCONDiv(false),       // NCBI CON division (CH)
+    m_IsNcbiGenomes(false),
     m_IsPatent(false),
     m_IsGI(false),
     m_IsWGS(false),
@@ -150,6 +151,7 @@ CBioseqContext::CBioseqContext
     m_RefseqInfo(0),
     m_IsGbGenomeProject(false),  // GenBank Genome project data (AE)
     m_IsNcbiCONDiv(false),       // NCBI CON division (CH)
+    m_IsNcbiGenomes(false),
     m_IsPatent(false),
     m_IsGI(false),
     m_IsWGS(false),
@@ -538,6 +540,9 @@ void CBioseqContext::x_SetId(void)
             if ( id.GetGeneral().CanGetDb() ) {
                 if ( !NStr::CompareCase(id.GetGeneral().GetDb(), "BankIt") ) {
                     m_IsTPA = bTpaAssemblyPresent;
+                }
+                if( NStr::Equal(id.GetGeneral().GetDb(), "NCBI_GENOMES") ) {
+                    m_IsNcbiGenomes = true;
                 }
             }
             break;
