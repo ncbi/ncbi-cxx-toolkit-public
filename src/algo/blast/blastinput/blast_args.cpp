@@ -706,9 +706,7 @@ CCompositionBasedStatsArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                       "    2005, conditioned on sequence properties\n"
                       "    3: Composition-based score adjustment as in "
                                       "Bioinformatics 21:902-911,\n"
-                      "    2005, unconditionally\n"
-                      "For programs other than tblastn, must either be "
-                      "absent or be D, F or 0"),
+                      "    2005, unconditionally\n"),
                       CArgDescriptions::eString, m_IsDeltaBlast ? kDfltArgCompBasedStatsDelta :
                                                       kDfltArgCompBasedStats);
 
