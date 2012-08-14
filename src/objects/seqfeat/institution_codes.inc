@@ -2438,6 +2438,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ICUI	s	University of Iowa",
 "ICVI	s	The Volcani Center",
 "ID	s	University of Idaho, Biological Sciences Department",
+"IDAC	cb	The International Depositary Authority of Canada",
 "IDEA	s	Instituto de Agronomia",
 "IDF	s	University of Idaho",
 "IDS	s	Idaho State University, Biological Sciences Department",
