@@ -129,7 +129,7 @@ CConstRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
         //arise when we compute a nucleotide precursor variation from a protein variation, and truncate
         //common suffix and prefix. The variant allele may be truncated differently than the asserted allele,
         //and they each will get different placements.
-        if(v2.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_asserted
+        if(v2.GetData().GetInstance().GetObservation() & (CVariation_inst::eObservation_asserted | CVariation_inst::eObservation_reference)
            && !v2.IsSetPlacements())
         {
             asserted_seq.Reset(&v2.GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral());
