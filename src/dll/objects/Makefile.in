@@ -6,7 +6,8 @@ SUB_PROJ =  \
     ncbi_mmdb \
     ncbi_pub \
     ncbi_seq \
-    ncbi_seqext
+    ncbi_seqext \
+    ncbi_trackmgr
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
