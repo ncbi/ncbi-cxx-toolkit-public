@@ -1554,9 +1554,9 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
 
         string title(fasta, 1, fasta.size());
         // Replace ^A with space
-        for(size_t pos=0; pos < title.size(); ++pos) {
-            if (title[pos] == '\001') title[pos] = ' ';
-        }
+        NStr::ReplaceInPlace(title, "\001", " ");
+        // Replace tabs with three spaces
+        NStr::ReplaceInPlace(title, "\t", "   ");
         defline->SetTitle(title);
 
         if (mship_i < membits.size()) {
