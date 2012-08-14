@@ -8,7 +8,7 @@ APP = dustmasker
 SRC = main dust_mask_app
 
 LIB = xalgodustmask seqmasks_io $(OBJREAD_LIBS) xobjutil \
-	seqdb blastdb $(OBJMGR_LIBS:%=%$(STATIC))
+	xobjread seqdb blastdb $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
