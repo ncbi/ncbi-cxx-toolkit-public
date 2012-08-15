@@ -510,7 +510,7 @@ CVcfReader::x_ParseData(
 //  ----------------------------------------------------------------------------
 {
     vector<string> columns;
-    NStr::Tokenize( line, " \t", columns, NStr::eMergeDelims );
+    NStr::Tokenize( line, "\t", columns, NStr::eMergeDelims );
     if ( columns.size() < 8 ) {
         return false;
     }
