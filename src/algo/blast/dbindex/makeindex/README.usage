@@ -40,6 +40,17 @@ OPTIONS
 
         Print a comprehensive usage information and exit.
 
+    -old_style_index [true/false]
+
+        Default: true
+
+        If set to 'false' the new style index is created. New style
+        indices should have -iformat blastdb specified and are only
+        used for creating indices from BLAST databases. Option
+        -output is ignored when creating a new style index. New style
+        indices are always created at the same location as the 
+        corresponding BLAST database.
+
     -input input_file_name
 
         default: stdin
@@ -53,6 +64,8 @@ OPTIONS
         The resulting index name. The index itself can consist of
         multiple files, called volumes, called <index_name>.00.idx,
         <index_name>.01.idx,...
+
+        This options should not be used with new style indices.
 
     -iformat input_format
 

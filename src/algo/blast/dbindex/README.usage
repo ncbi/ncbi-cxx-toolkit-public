@@ -1,0 +1,152 @@
+----------------------------------------------------------------------
+ DATABASE INDEXING IMPLEMENTATION FOR NUCLEOTIDE SEARCH IN NCBI BLAST
+----------------------------------------------------------------------
+
+INTRODUCTION
+USAGE
+
+----------------------------------------------------------------------
+I. INTRODUCTION
+
+Indexing feature provides an alternative way to search for initial
+matches in nucleotide-nucleotide searches (blastn and megablast) by
+pre-indexing the N-mer locations in a special data structure, called
+database index.
+
+Using index can improve search times significantly under certain 
+conditions. It is most beneficial when the queries are much shorter
+than the database and works best for queries under 1 Mbases long.
+The advantage comes from the fact that the whole database does not
+have to be scanned during the search.
+
+Indices can capture masking information, thereby enabling search
+against databases masked for repeats, low complexity, etc.
+
+There are, however, limitations to using indexed search in blast:
+
+        * Index files are about 4 times larger than the blast 
+          databases. If an index does not fit into computer
+          operating memory, then the advantage of using it is
+          eliminated.
+
+        * Word size must be set to 16 or more in order to use indexed
+          search.
+
+        * Discontiguous search is not supported.
+
+Reference:
+    Morgulis A, Coulouris G, Raytselis Y, Madden TL, Agarwala R, Schäffer AA.
+    Database Indexing for Production MegaBLAST Searches.
+    PMID: 18567917 
+
+----------------------------------------------------------------------
+II. USAGE
+
+NOTE: Some of the functionality has changed in BLAST verison 2.2.27.
+Old funcionality is still but will be removed in one of the future
+versions. In the following text we refer to old functionality as 
+"old style indexing" and to the new functionality as "new style 
+indexing".
+
+1. INDEX CREATION
+
+An index can be created by a utility 'makembindex' that is available as
+part of the C++ toolkit under algo/blast/dbindex/makeindex/. It can
+take either a fasta formatted file or an existing BLAST database as
+input. 'makembindex' accepts the following command line options:
+
+-old_style_index [true/false]
+
+If set to 'true', the old style index is generated; otherwose the
+new style index is generated. Default value is 'true'.
+
+-input <string>
+
+This option specifies the input that must be in the form of either a
+fasta formatted file or a BLAST database. The type is selected by
+'iformat' option and is fasta by default. BLAST databases are 
+searched using the same rules as used by other NCBI BLAST applications.
+If fasta format is used and the 'input' option is not explicitly
+specified, then the input is taken from the process standard input
+stream. Bases represented by the lower case letters in the fasta
+formatted input will be soft-masked in the index, i.e. they will
+not be used during the initial short matches search, but will be
+used for extensions.
+
+-output <string>
+
+This option is required for old style indexing and is used to specify 
+the prefix for the index file names. Multiple index volumes may be 
+generated based on the value of 'volsize' option. The names of the 
+generated index files will be <string>.00.idx, <string>.01.idx, etc.
+
+This option should not be used when creating a new style index.
+New style indices are considered part of the BLAST database and
+are created in the same location as the database from which they
+are derived.
+
+NOTE: Index files are binary files designed to be memory mapped
+into the running blastn process. Indices generated on little endian
+platforms can not be used on big endian ones.
+
+-iformat <string>
+
+This option specifies the input data format. The possible values are 
+'fasta' (default) and 'blastdb'. New style indices must use value
+'blastdb'.
+
+-volsize <integer>
+
+This options specifies the maximum allowed index volume size in 
+megabytes. The default value is 1536.
+
+2. STEPS TO BUILD MAKEMBINDEX UTILITY (NCBI only)
+
+This section describes the steps necessary to build 'makembindex'
+utility on UNIX platforms.
+
+a. run command:
+
+/am/ncbiapdata/svn/scripts/import_project.sh algo/blast/dbindex/makeindex
+
+   Select 'metastable' for stability and 'Release' for configuration.
+
+b. cd trunk/c++/src/algo/blast/dbindex/makeindex
+c. make
+
+3. RUNNING BLASTN WITH INDEXED DATABASE
+
+Indices created with 'makembindex' can be used with 'blastn' application
+available as part of the C++ toolkit. Its location in the source tree
+is app/blast/. Indices are searched in exactly the same way as 
+BLAST databases. Indices do not replace BLAST databases completely:
+both must be present.
+
+The following command line options control how indexing is used and
+where index files are searched for.
+
+-use_index <boolean>
+
+Setting this option to 'true' forces use of indexed search. 'blastn'
+exits with an error if index files are not found.
+
+Setting this option to 'false' forces non-indexed search. No attempt
+to locate index files will be made.
+
+If 'use_index' option is not specified at all 'blastn' will try to 
+use index with the same name prefix as the name of the database. 
+If such index is not found 'blastn' silently falls back to a 
+non-indexed search.
+
+-index_name <string>
+
+This option should be used to specify an index file name prefix 
+different from the name of the BLAST database. This option can
+be useful if the index is in a non-standard location, or if multiple
+indices exist for the same database, e.g. for using different
+types of masking.
+
+This options should not be used with new style indices. New style
+indexing always tries to find index files at location of 
+corresponding the BLAST database.
+
