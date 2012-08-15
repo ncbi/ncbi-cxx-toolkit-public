@@ -122,7 +122,7 @@ static CSafeStaticRef< CFileDeleteList > s_DeleteAtExitFileList;
 //     [NCBI]
 //     TmpDir = ...
 // Environment variable:
-//     NCBI_CONFIG__TmpDir
+//     NCBI_CONFIG__NCBI__TmpDir
 //
 NCBI_PARAM_DECL(string, NCBI, TmpDir); 
 NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
@@ -133,7 +133,7 @@ NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
 //     [NCBI]
 //     DeleteReadOnlyFiles = true/false
 // Environment variable:
-//     NCBI_CONFIG__DeleteReadOnlyFiles
+//     NCBI_CONFIG__NCBI__DeleteReadOnlyFiles
 //
 NCBI_PARAM_DECL(bool, NCBI, DeleteReadOnlyFiles);
 NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
@@ -146,7 +146,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
 //     [NCBI]
 //     FileAPIHonorUmask = true/false
 // Environment variable:
-//     NCBI_CONFIG__FileAPIHonorUmask
+//     NCBI_CONFIG__NCBI__FileAPIHonorUmask
 //
 // On WINDOWS: umask affect only CRT function, the part of API that
 // use Windows API directly just ignore umask setting.
@@ -163,7 +163,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPIHonorUmask, DEFAULT_HONOR_UMASK_VALUE,
 //     [NCBI]
 //     FileAPILogging = true/false
 // Environment variable:
-//     NCBI_CONFIG__FileAPILogging
+//     NCBI_CONFIG__NCBI__FileAPILogging
 //
 #define DEFAULT_LOGGING_VALUE false
 
