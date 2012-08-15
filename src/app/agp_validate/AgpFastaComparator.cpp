@@ -249,6 +249,13 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     CRef<CLDS2_Manager> lds_mgr;
     ldsdb_file.reset( new CTmpFile ); // file deleted on object destruction
     lds_mgr.Reset(new CLDS2_Manager( ldsdb_file->GetFileName() ));
+
+    // adjust FASTA flags
+    // (workaround for CXX-3453 which caused WGS-246 )
+    CFastaReader::TFlags fasta_flags = lds_mgr->GetFastaFlags();
+    fasta_flags &= ~CFastaReader::fParseGaps;
+    lds_mgr->SetFastaFlags(fasta_flags);
+
     list<string> objfiles;
     ITERATE( list<string>, file_iter, compAndObjFiles ) {
         // check if file is a FASTA component file
@@ -632,8 +639,10 @@ void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
             CSeq_id_Handle seq_id_h =
                 CSeq_id_Handle::GetHandle(seq_int.GetId());
 
-            CBioseq_Handle inner_bioseq_h = scope.GetBioseqHandle(seq_id_h);
-            if( ! inner_bioseq_h ) {
+            CBioseq_Handle inner_bioseq_h;
+            try {
+                inner_bioseq_h = scope.GetBioseqHandle(seq_id_h);
+            } catch(...) {
                 LOG_POST(Error << "    Could not find bioseq for "
                          << seq_id_h
                          << ".  Maybe you need to specify component file(s)." );
