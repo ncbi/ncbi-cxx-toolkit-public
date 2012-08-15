@@ -80,6 +80,8 @@
 #define FAIL_READ_OPTION "fail-read"
 #define JOB_ID_OPTION "job-id"
 #define BRIEF_OPTION "brief"
+#define WAIT_FOR_JOB_STATUS_OPTION "wait-for-job-status"
+#define WAIT_FOR_JOB_EVENT_AFTER_OPTION "wait-for-job-event-after"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
 #define SWITCH_ARG "SWITCH"
@@ -90,6 +92,7 @@
 #define LOGIN_COMMAND "login"
 #define JOBINFO_COMMAND "jobinfo"
 #define READJOB_COMMAND "readjob"
+#define WATCHJOB_COMMAND "watchjob"
 
 #define HUMAN_READABLE_OUTPUT_FORMAT "human-readable"
 #define RAW_OUTPUT_FORMAT "raw"
@@ -155,6 +158,8 @@ enum EOption {
     eStatusOnly,
     eProgressMessageOnly,
     eDeferExpiration,
+    eWaitForJobStatus,
+    eWaitForJobEventAfter,
     eExtendLifetime,
     eProgressMessage,
     eJobGroup,
@@ -243,6 +248,8 @@ private:
         string start_after_job;
         size_t job_count;
         CNetScheduleAPI::EJobStatus job_status;
+        int job_status_mask;
+        int last_event_index;
         time_t extend_lifetime_by;
         string client_node;
         string client_session;
@@ -270,7 +277,8 @@ private:
 
         SOptions() : offset(0), size(0), ttl(0), return_code(0),
             batch_size(0), limit(0), timeout(0), job_count(0),
-            job_status(CNetScheduleAPI::eJobNotFound), extend_lifetime_by(0),
+            job_status(CNetScheduleAPI::eJobNotFound), job_status_mask(0),
+            last_event_index(kMax_Int), extend_lifetime_by(0),
             on_off_switch(eDefault),
             input_stream(NULL), output_stream(NULL), protocol_dump(NULL)
         {
@@ -279,6 +287,7 @@ private:
     } m_Opts;
 
 private:
+    CNetScheduleAPI::EJobStatus StringToJobStatus(const char* status_str);
     void ParseLoginToken(const char* token);
     void DefineClientNode(const string& user, const string& host);
     void DefineClientSession(const string& pid,
@@ -360,6 +369,7 @@ public:
 public:
     int Cmd_JobInfo();
     int Cmd_SubmitJob();
+    int Cmd_WatchJob();
     int Cmd_GetJobInput();
     int Cmd_GetJobOutput();
     int Cmd_ReadJob();
@@ -417,6 +427,10 @@ private:
     void SetUp_NetScheduleCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void JobInfo_PrintStatus(CNetScheduleAPI::EJobStatus status);
+    void PrintJobStatusNotification(
+            CNetScheduleNotificationHandler& submit_job_handler,
+            const string& job_key,
+            const string& server_host);
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);
 

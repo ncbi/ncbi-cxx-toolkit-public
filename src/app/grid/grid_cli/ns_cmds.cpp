@@ -323,6 +323,29 @@ bool CBatchSubmitAttrParser::NextAttribute()
 
 static const string s_NotificationTimestampFormat("Y/M/D h:m:s.l");
 
+void CGridCommandLineInterfaceApp::PrintJobStatusNotification(
+        CNetScheduleNotificationHandler& submit_job_handler,
+        const string& job_key,
+        const string& server_host)
+{
+    CNetScheduleAPI::EJobStatus job_status = CNetScheduleAPI::eJobNotFound;
+    int last_event_index = -1;
+
+    const char* format = "%s \"%s\" from %s [invalid]\n";
+
+    if (submit_job_handler.CheckJobStatusNotification(job_key,
+            &job_status, &last_event_index))
+        format = "%s \"%s\" from %s [valid, "
+                "job_status=%s, last_event_index=%d]\n";
+
+    printf(format, GetFastLocalTime().
+            AsString(s_NotificationTimestampFormat).c_str(),
+            submit_job_handler.GetMessage().c_str(),
+            server_host.c_str(),
+            CNetScheduleAPI::StatusToString(job_status).c_str(),
+            last_event_index);
+}
+
 int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleSubmitter);
@@ -476,35 +499,20 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
                 CNetScheduleAPI::EJobStatus status =
                         submit_job_handler.WaitForJobCompletion(job,
                                 abs_timeout, m_NetScheduleAPI);
+
                 PrintLine(CNetScheduleAPI::StatusToString(status));
 
-                if (status == CNetScheduleAPI::eDone) {
-                    m_NetScheduleAPI.GetJobDetails(job);
+                if (status == CNetScheduleAPI::eDone)
                     DumpJobInputOutput(job.output);
-                }
             } else {
-                printf("Using UDP port %hu\n", submit_job_handler.GetPort());
+                submit_job_handler.PrintPortNumber();
 
                 string server_host;
 
-                submit_job_handler.WaitForNotification(abs_timeout,
-                        &server_host);
-
-                CNetScheduleAPI::EJobStatus job_status =
-                        CNetScheduleAPI::eJobNotFound;
-
-                const char* format = "%s \"%.*s\" from %s [invalid]\n";
-
-                if (submit_job_handler.CheckSubmitJobNotification(job,
-                        &job_status))
-                    format = "%s \"%.*s\" from %s [valid, job_status=%s]\n";
-
-                printf(format, GetFastLocalTime().
-                        AsString(s_NotificationTimestampFormat).c_str(),
-                        (int) submit_job_handler.GetMessage().size(),
-                        submit_job_handler.GetMessage().data(),
-                        server_host.c_str(),
-                        CNetScheduleAPI::StatusToString(job_status).c_str());
+                if (submit_job_handler.WaitForNotification(abs_timeout,
+                        &server_host))
+                    PrintJobStatusNotification(submit_job_handler,
+                            job.job_id, server_host);
             }
         }
     }
@@ -514,6 +522,69 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 ErrorExit:
     fprintf(stderr, GRID_APP_NAME ": error while writing job input.\n");
     return 3;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_WatchJob()
+{
+    SetUp_NetScheduleCmd(eNetScheduleSubmitter);
+
+    if (!IsOptionSet(eWaitTimeout)) {
+        fprintf(stderr, GRID_APP_NAME " " WATCHJOB_COMMAND
+            ": option '--" WAIT_TIMEOUT_OPTION "' is required.\n");
+        return 2;
+    }
+
+    if (!IsOptionSet(eWaitForJobStatus) && !IsOptionSet(eWaitForJobEventAfter))
+        m_Opts.job_status_mask = ~((1 << CNetScheduleAPI::ePending) |
+                (1 << CNetScheduleAPI::eRunning));
+
+    CAbsTimeout abs_timeout(m_Opts.timeout, 0);
+
+    CNetScheduleNotificationHandler submit_job_handler;
+
+    CNetScheduleAPI::EJobStatus job_status;
+    int last_event_index = -1;
+
+    if (!submit_job_handler.RequestJobWatching(m_NetScheduleAPI, m_Opts.id,
+            abs_timeout, &job_status, &last_event_index)) {
+        fprintf(stderr, GRID_APP_NAME ": unexpected error while "
+                "setting up a job event listener.\n");
+        return 3;
+    }
+
+    if (!IsOptionSet(eDumpNSNotifications)) {
+        if (last_event_index <= m_Opts.last_event_index &&
+                (m_Opts.job_status_mask & (1 << job_status)) == 0)
+            job_status = submit_job_handler.WaitForJobEvent(m_Opts.id,
+                    abs_timeout, m_NetScheduleAPI, m_Opts.job_status_mask,
+                    m_Opts.last_event_index, &last_event_index);
+
+        printf("%d\n%s\n", last_event_index,
+                CNetScheduleAPI::StatusToString(job_status).c_str());
+    } else {
+        if (last_event_index > m_Opts.last_event_index) {
+            fprintf(stderr, "Job event index (%d) has already "
+                    "exceeded %d; won't wait.\n",
+                    last_event_index, m_Opts.last_event_index);
+            return 6;
+        }
+        if ((m_Opts.job_status_mask & (1 << job_status)) != 0) {
+            fprintf(stderr, "Job is already '%s'; won't wait.\n",
+                    CNetScheduleAPI::StatusToString(job_status).c_str());
+            return 6;
+        }
+
+        submit_job_handler.PrintPortNumber();
+
+        string server_host;
+
+        while (submit_job_handler.WaitForNotification(abs_timeout,
+                &server_host))
+            PrintJobStatusNotification(submit_job_handler,
+                    m_Opts.id, server_host);
+    }
+
+    return 0;
 }
 
 int CGridCommandLineInterfaceApp::DumpJobInputOutput(
@@ -716,43 +787,40 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         if (m_NetScheduleExecutor.GetJob(job, m_Opts.timeout, m_Opts.affinity))
             return PrintJobAttrsAndDumpInput(job);
     } else {
-        CNetScheduleJob job;
-
         CAbsTimeout abs_timeout(m_Opts.timeout, 0);
 
         CNetScheduleNotificationHandler wait_job_handler;
 
-        printf("Using UDP port %hu\n", wait_job_handler.GetPort());
+        wait_job_handler.PrintPortNumber();
 
         if (wait_job_handler.RequestJob(m_NetScheduleExecutor, job,
                 wait_job_handler.CmdAppendTimeout(
-                    CNetScheduleNotificationHandler::MkBaseGETCmd(
-                        affinity_preference, m_Opts.affinity), &abs_timeout)))
-            printf("%s\nA job has been returned; won't wait.\n",
-                job.job_id.c_str());
-        else {
-            string server_host;
-            CNetServer server;
-            string server_address;
+                CNetScheduleNotificationHandler::MkBaseGETCmd(
+                affinity_preference, m_Opts.affinity), &abs_timeout))) {
+            fprintf(stderr, "%s\nA job has been returned; won't wait.\n",
+                    job.job_id.c_str());
+            return 6;
+        }
 
-            while (wait_job_handler.WaitForNotification(abs_timeout,
-                    &server_host)) {
-                const char* format = "%s \"%.*s\" from %s [invalid]\n";
+        string server_host;
+        CNetServer server;
+        string server_address;
 
-                if (wait_job_handler.CheckRequestJobNotification(
-                        m_NetScheduleExecutor, &server)) {
-                    server_address = server.GetServerAddress();
-                    format = "%s \"%.*s\" from %s [valid, server=%s]\n";
-                }
+        while (wait_job_handler.WaitForNotification(abs_timeout,
+                &server_host)) {
+            const char* format = "%s \"%s\" from %s [invalid]\n";
 
-                printf(format,
-                        GetFastLocalTime().AsString(
-                            s_NotificationTimestampFormat).c_str(),
-                        (int) wait_job_handler.GetMessage().size(),
-                        wait_job_handler.GetMessage().data(),
-                        server_host.c_str(),
-                        server_address.c_str());
+            if (wait_job_handler.CheckRequestJobNotification(
+                    m_NetScheduleExecutor, &server)) {
+                server_address = server.GetServerAddress();
+                format = "%s \"%s\" from %s [valid, server=%s]\n";
             }
+
+            printf(format, GetFastLocalTime().AsString(
+                    s_NotificationTimestampFormat).c_str(),
+                    wait_job_handler.GetMessage().c_str(),
+                    server_host.c_str(),
+                    server_address.c_str());
         }
     }
 

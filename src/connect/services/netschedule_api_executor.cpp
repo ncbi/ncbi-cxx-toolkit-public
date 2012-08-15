@@ -408,7 +408,7 @@ bool CNetScheduleNotificationHandler::RequestJob(
 bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
         CNetScheduleExecutor::TInstance executor, CNetServer* server)
 {
-    static const string attr_names[GET2_NOTIF_ATTR_COUNT] =
+    static const char* const attr_names[GET2_NOTIF_ATTR_COUNT] =
         {"ns_node", "queue"};
 
     string attr_values[GET2_NOTIF_ATTR_COUNT];

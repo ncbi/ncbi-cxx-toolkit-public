@@ -190,7 +190,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     ///
     /// @return eJobNotFound if string cannot be parsed
     static
-    EJobStatus StringToStatus(const string& status_str);
+    EJobStatus StringToStatus(const CTempString& status_str);
 
     /// Job masks
     ///
@@ -807,7 +807,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 public:
     CNetScheduleNotificationHandler();
 
-    int ParseNotification(const string* attr_names,
+    int ParseNotification(const char* const* attr_names,
             string* attr_values, int attr_count);
 
     bool WaitForNotification(CAbsTimeout& abs_timeout,
@@ -815,19 +815,40 @@ public:
 
     unsigned short GetPort() const {return m_UDPPort;}
 
-    const CTempString& GetMessage() const {return m_Message;}
+    const string& GetMessage() const {return m_Message;}
 
-// Utility methods.
+    void PrintPortNumber();
+
+// Submitter methods.
 public:
     void SubmitJob(CNetScheduleSubmitter::TInstance submitter,
             CNetScheduleJob& job,
             CAbsTimeout& abs_timeout,
             CNetServer* server = NULL);
-    bool CheckSubmitJobNotification(CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* status);
+
+    bool CheckJobStatusNotification(const string& job_id,
+            CNetScheduleAPI::EJobStatus* job_status,
+            int* last_event_index = NULL);
+
     CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
             CAbsTimeout& abs_timeout, CNetScheduleAPI ns_api);
 
+    bool RequestJobWatching(CNetScheduleAPI::TInstance ns_api,
+            const string& job_id,
+            CAbsTimeout& abs_timeout,
+            CNetScheduleAPI::EJobStatus* job_status,
+            int* last_event_index);
+
+    CNetScheduleAPI::EJobStatus WaitForJobEvent(
+            const string& job_key,
+            CAbsTimeout& abs_timeout,
+            CNetScheduleAPI ns_api,
+            int status_mask,
+            int last_event_index,
+            int *new_event_index);
+
+// Worker node methods.
+public:
     static string MkBaseGETCmd(
         CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list);
@@ -843,7 +864,7 @@ protected:
     unsigned short m_UDPPort;
 
     char m_Buffer[1024];
-    CTempString m_Message;
+    string m_Message;
 };
 
 /// @internal

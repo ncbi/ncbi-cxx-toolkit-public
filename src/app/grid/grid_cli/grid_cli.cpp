@@ -44,6 +44,8 @@
 
 USING_NCBI_SCOPE;
 
+#define ANY_JOB_STATUS "Any"
+
 CGridCommandLineInterfaceApp::CGridCommandLineInterfaceApp(
         int argc, const char* argv[]) :
     m_ArgC(argc),
@@ -257,6 +259,16 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eDeferExpiration),
         "defer-expiration", "Prolong job lifetime by "
             "updating its last access timestamp.", {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eWaitForJobStatus),
+        WAIT_FOR_JOB_STATUS_OPTION, "Wait until the job status "
+            "changes to the given value. The option can be given "
+            "more than once to wait for any one of multiple values. "
+            "Use the keyword 'Any' to wait for any status change.", {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eWaitForJobEventAfter),
+        WAIT_FOR_JOB_EVENT_AFTER_OPTION, "Wait for a job event with "
+            "the index greater than ARG.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eExtendLifetime),
         "extend-lifetime", "Extend job lifetime by "
@@ -516,6 +528,30 @@ struct SCommandDefinition {
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
             eGroup, eAffinity, eExclusiveJob, eOutputFile,
             eWaitTimeout, eLoginToken, eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications, -1}},
+
+    {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_WatchJob,
+        WATCHJOB_COMMAND, "Wait for a job to change status.",
+        "Listen to the job status change notifications and return "
+        "when one of the following conditions has been met:\n\n"
+        "* The wait timeout specified by the '--" WAIT_TIMEOUT_OPTION
+        "' option has passed. This option is required.\n\n"
+        "* The job has come to a status indicated by one or "
+        "more '--" WAIT_FOR_JOB_STATUS_OPTION "' options.\n\n"
+        "* A new job history event with the index greater than the "
+        "one specified by the '--" WAIT_FOR_JOB_EVENT_AFTER_OPTION
+        "' option has occurred.\n\n"
+        "If neither '--" WAIT_FOR_JOB_STATUS_OPTION "' nor '--"
+        WAIT_FOR_JOB_STATUS_OPTION "' option is specified, the '"
+        WATCHJOB_COMMAND "' command waits until the job "
+        "progresses to a status other than 'Pending' or 'Running'.\n\n"
+        "The output of this command is independent of the reason it "
+        "exits: the latest job event index is printed to the standard "
+        "output on the first line and the current job status is printed "
+        "on the second line.",
+        {eID, eNetSchedule, eQueue, eWaitTimeout,
+            eWaitForJobStatus, eWaitForJobEventAfter,
+            eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications, -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetJobInput,
@@ -1037,12 +1073,16 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.job_count = NStr::StringToSizet(opt_value);
                 break;
             case eSelectByStatus:
-                if ((m_Opts.job_status = CNetScheduleAPI::StringToStatus(
-                        opt_value)) == CNetScheduleAPI::eJobNotFound) {
-                    fprintf(stderr, GRID_APP_NAME
-                        ": invalid job status '%s'\n", opt_value);
-                    return 2;
-                }
+                m_Opts.job_status = StringToJobStatus(opt_value);
+                break;
+            case eWaitForJobStatus:
+                if (NStr::CompareNocase(opt_value, ANY_JOB_STATUS) == 0)
+                    m_Opts.job_status_mask = -1;
+                else
+                    m_Opts.job_status_mask |= 1 << StringToJobStatus(opt_value);
+                break;
+            case eWaitForJobEventAfter:
+                m_Opts.last_event_index = NStr::StringToInt(opt_value);
                 break;
             case eExtendLifetime:
                 m_Opts.extend_lifetime_by = NStr::StringToUInt(opt_value);
@@ -1180,6 +1220,19 @@ void CGridCommandLineInterfaceApp::PrintLine(const string& line)
     puts(line.c_str());
 }
 
+CNetScheduleAPI::EJobStatus CGridCommandLineInterfaceApp::StringToJobStatus(
+        const char* status_str)
+{
+    CNetScheduleAPI::EJobStatus job_status =
+            CNetScheduleAPI::StringToStatus(status_str);
+
+    if (job_status != CNetScheduleAPI::eJobNotFound)
+        return job_status;
+
+    NCBI_THROW_FMT(CArgException, eInvalidArg,
+            "invalid job status '%s'\n" << status_str);
+}
+
 #define TRUE_VALUES '1': case 'E': case 'T': \
         case 'Y': case 'e': case 't': case 'y'
 
@@ -1203,7 +1256,7 @@ void CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
 
         end = strchr(token, '_');
         if (end == NULL) {
-            NCBI_THROW_FMT(CArgException, eInvalidArg,
+            NCBI_THROW(CArgException, eInvalidArg,
                     "Invalid login token format.\n");
         }
 

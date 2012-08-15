@@ -69,7 +69,7 @@ CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
 }
 
 int CNetScheduleNotificationHandler::ParseNotification(
-        const string* attr_names, string* attr_values, int attr_count)
+        const char* const* attr_names, string* attr_values, int attr_count)
 {
     try {
         CUrlArgs attr_parser(m_Message);
@@ -130,6 +130,11 @@ bool CNetScheduleNotificationHandler::WaitForNotification(
     }
 
     return false;
+}
+
+void CNetScheduleNotificationHandler::PrintPortNumber()
+{
+    printf("Using UDP port %hu\n", GetPort());
 }
 
 /**********************************************************************/
@@ -395,7 +400,7 @@ string CNetScheduleAPI::StatusToString(EJobStatus status)
 }
 
 CNetScheduleAPI::EJobStatus
-CNetScheduleAPI::StringToStatus(const string& status_str)
+CNetScheduleAPI::StringToStatus(const CTempString& status_str)
 {
     if (NStr::CompareNocase(status_str, "Pending") == 0)
         return ePending;
