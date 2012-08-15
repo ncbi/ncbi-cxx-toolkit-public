@@ -462,13 +462,7 @@ void SNetScheduleServerAutomationObject::Call(const string& method,
     } else if (method == "server_status")
         reply.PushNode(LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
-    else if (method == "job_info") {
-        CJobInfoToJSON job_info_to_json;
-        string job_key(arg_array.NextString());
-        ProcessJobInfo(m_NetScheduleAPI, job_key,
-            &job_info_to_json, arg_array.NextBoolean(true));
-        reply.PushNode(job_info_to_json.GetRootNode());
-    } else if (method == "job_group_info")
+    else if (method == "job_group_info")
         reply.PushNode(GenericStatToJson(m_NetServer,
                 eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
     else if (method == "client_info")
@@ -527,6 +521,12 @@ void SNetScheduleServiceAutomationObject::Call(const string& method,
         arg = arg_array.NextNode();
         if (!arg.IsNull())
             m_NetScheduleAPI.SetClientSession(arg_array.GetString(arg));
+    } else if (method == "job_info") {
+        CJobInfoToJSON job_info_to_json;
+        string job_key(arg_array.NextString());
+        ProcessJobInfo(m_NetScheduleAPI, job_key,
+            &job_info_to_json, arg_array.NextBoolean(true));
+        reply.PushNode(job_info_to_json.GetRootNode());
     } else if (method == "jobs_by_status") {
         CNetScheduleAdmin::TStatusMap status_map;
         string affinity(arg_array.NextString(kEmptyStr));
@@ -552,7 +552,7 @@ void SNetScheduleServiceAutomationObject::Call(const string& method,
         reply.PushNode(object_ids);
     } else {
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                "Unknown NetSchedule method '" << method << "'");
+                "Unknown NetScheduleService method '" << method << "'");
     }
 }
 
