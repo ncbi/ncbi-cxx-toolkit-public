@@ -97,7 +97,7 @@ struct SInfo {
     unsigned int      server_port;      ///< Value of $SERVER_PORT environment variable
 
     SInfo() :
-        state(eNcbiLog_NotSet), pid(0), rid(0), guid(0)
+        state(eNcbiLog_NotSet), pid(0), rid(0), guid(0), server_port(0)
     {
         app_start_time.sec = 0;
         app_start_time.ns  = 0;
