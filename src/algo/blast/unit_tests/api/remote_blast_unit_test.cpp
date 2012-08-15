@@ -523,7 +523,8 @@ BOOST_AUTO_TEST_CASE(SubmitNullQueries) {
 BOOST_AUTO_TEST_CASE_TIMEOUT(CheckPrimerBlastRID, 45);
 BOOST_AUTO_TEST_CASE(CheckPrimerBlastRID) {
     // Permanent RID provided by Jian
-    const string rid("1295554329-7380-64666159365.BLASTQ3");
+    const string rid("TNNF2YHZ016"); 
+
     CRemoteBlast rmt_blaster(rid);
     
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
@@ -570,7 +571,7 @@ BOOST_AUTO_TEST_CASE(CheckColoRID) {
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("1214512158-10611-186074495131.BLASTQ23"); // Permanent RID
+    const string rid("2MSX0X8M01N" );
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
     
@@ -580,8 +581,8 @@ BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
     BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetWarnings());
-    const string error("Substitution scores 2 and -1 are not supported");
-    //cerr << "Errors: '" << rmt_blaster.GetErrors() << "'" << endl;
+    
+    const string error("CPU usage limit was exceeded");
     BOOST_REQUIRE(NStr::FindNoCase(rmt_blaster.GetErrors(), error) != NPOS);
     BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed, 
                         rmt_blaster.CheckStatus());
@@ -607,23 +608,20 @@ BOOST_AUTO_TEST_CASE(RetrieveInvalidRID) {
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithError) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("1213977851-19717-200807286580.BLASTQ23");
+    const string rid("2RCK3CZR01N");
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    //cerr << "Errors: '" << rmt_blaster.GetErrors() << "'" << endl;
-    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), "Error: File") != NPOS);
-    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), "not found.") != NPOS);
-    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed,
-                        rmt_blaster.CheckStatus());
+    BOOST_REQUIRE(NStr::Find(rmt_blaster.GetErrors(), "CPU usage limit was exceeded, resulting in SIGXCPU") != NPOS);
+    BOOST_REQUIRE_EQUAL(CRemoteBlast::eStatus_Failed, rmt_blaster.CheckStatus());
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveRIDWithSIGXCPU) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
-    const string rid("1219425735-25988-94487186920.BLASTQ1");
+    const string rid("2RCWHBTS01N");
     CRemoteBlast rmt_blaster(rid);
     //rmt_blaster.SetVerbose();
 
