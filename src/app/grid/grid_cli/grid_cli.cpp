@@ -542,8 +542,8 @@ struct SCommandDefinition {
         "one specified by the '--" WAIT_FOR_JOB_EVENT_AFTER_OPTION
         "' option has occurred.\n\n"
         "If neither '--" WAIT_FOR_JOB_STATUS_OPTION "' nor '--"
-        WAIT_FOR_JOB_STATUS_OPTION "' option is specified, the '"
-        WATCHJOB_COMMAND "' command waits until the job "
+        WAIT_FOR_JOB_EVENT_AFTER_OPTION "' option is specified, "
+        "the '" WATCHJOB_COMMAND "' command waits until the job "
         "progresses to a status other than 'Pending' or 'Running'.\n\n"
         "The output of this command is independent of the reason it "
         "exits: the latest job event index is printed to the standard "
