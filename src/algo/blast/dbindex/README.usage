@@ -100,21 +100,7 @@ This option specifies the input data format. The possible values are
 This options specifies the maximum allowed index volume size in 
 megabytes. The default value is 1536.
 
-2. STEPS TO BUILD MAKEMBINDEX UTILITY (NCBI only)
-
-This section describes the steps necessary to build 'makembindex'
-utility on UNIX platforms.
-
-a. run command:
-
-/am/ncbiapdata/svn/scripts/import_project.sh algo/blast/dbindex/makeindex
-
-   Select 'metastable' for stability and 'Release' for configuration.
-
-b. cd trunk/c++/src/algo/blast/dbindex/makeindex
-c. make
-
-3. RUNNING BLASTN WITH INDEXED DATABASE
+2. RUNNING BLASTN WITH INDEXED DATABASE
 
 Indices created with 'makembindex' can be used with 'blastn' application
 available as part of the C++ toolkit. Its location in the source tree
