@@ -75,7 +75,7 @@ const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncb
 ///     [NCBI]
 ///     NcbiApplogCGI = ...
 /// Environment variable:
-///     NCBI_CONFIG__NcbiApplogCGI
+///     NCBI_CONFIG__NCBI__NcbiApplogCGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
 NCBI_PARAM_DEF (string, NCBI, NcbiApplogCGI, kDefaultCGI);
 
