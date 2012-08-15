@@ -5050,6 +5050,15 @@ test_stat_ext needs xutil
 tinyseq needs xncbi
 tinyseq needs xser
 tinyseq needs xutil
+trackmgr needs xncbi
+trackmgr needs xser
+trackmgr needs xutil
+trackmgrcli needs connect
+trackmgrcli needs trackmgr
+trackmgrcli needs xconnect
+trackmgrcli needs xncbi
+trackmgrcli needs xser
+trackmgrcli needs xutil
 txserv includes txservbase
 txserv needs connect
 txserv needs txxmldoc
