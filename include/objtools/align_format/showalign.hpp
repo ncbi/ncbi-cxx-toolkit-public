@@ -50,11 +50,9 @@
 
 #include <objmgr/object_manager.hpp>
 
+#include <cgi/cgictx.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CCgiContext;
-
 BEGIN_SCOPE(align_format)
 
 /// Auxiliary type to embed a CConstRef<objects::CSeq_id> in STL containers that require
@@ -929,7 +927,7 @@ protected:
 	SAlnDispParams *x_FillAlnDispParams(const objects::CBioseq_Handle& bsp_handle);	
 	string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
     string x_InitDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
-	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline);
+	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline,int seqLength);
 	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
 	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);    
 

@@ -157,7 +157,8 @@ static const char kDownloadLink[] = "<a href=\"<@download_url@>&segs=<@segs@>\">
 //substitues <@lnk_displ@>
 static const char kDownloadImg[] = "<img border=0 height=16 width=16 src=\"images/D.gif\" alt=\"Download subject sequence <@label@> spanning the HSP\">";
 
-static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&tracks=[key:gene_model_track],[key:alignment_track]&v=<@from@>:<@to@>";
+static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&<@seqViewerParams@>&v=<@from@>:<@to@>";
+static const string kSeqViewerParams = "tracks=[key:gene_model_track,CDSProductFeats:false][key:alignment_track,name:other alignments,annots:NG Alignments|Refseq Alignments|Gnomon Alignments|Unnamed,shown:false]";
 //to test ranges use:
 //static const char kSeqViewerUrl[] = "http://www.ncbi.nlm.nih.gov/<@dbtype@>/<@gi@>?report=graph&rid=<@rid@>&tracks=[key:gene_model_track],[key:alignment_track]&v=<@from@>:<@to@>,<@fromTest@>:<@toTest@>&flip=<@flip@>";
 
