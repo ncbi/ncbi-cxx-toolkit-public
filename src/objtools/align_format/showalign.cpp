@@ -280,7 +280,7 @@ string CDisplaySeqalign::x_FormatIdentityInfo(string alignInfo, SAlnInfo* aln_ve
     } else if (master_frame != 0){
         //out <<" Frame = " << ((master_frame > 0) ? "+" : "") 
         //    << master_frame << "\n";
-        alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame",(master_frame > 0) ? "+" : "" + NStr::IntToString(master_frame));
+        alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame",((master_frame > 0) ? "+" : "") + NStr::IntToString(master_frame));
         alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_frame_show","shown");        
     }  else if (slave_frame != 0){
         //out <<" Frame = " << ((slave_frame > 0) ? "+" : "") 
@@ -3605,7 +3605,7 @@ void CDisplaySeqalign::x_ShowAlnvecInfo(CNcbiOstream& out,
 
 //fill one defline info, using  <@ALN_DEFLINE_ROW@>
 string
-CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool linkout,bool hideDefline)
+CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool linkout,bool hideDefline,int seqLength)
 {
 	/*
     string firstSeqClassInfo = (isFirst) ? "" : "hidden"; //hide ">" sign if not first seq align	
@@ -3631,12 +3631,17 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	else {
 		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"seq_info",alnGi + seqid); 
 	}
-    string hspNum;
+    string hspNum,isFirstDflAttr;
     if(isFirst) {
         hspNum = NStr::IntToString(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber);
-        hspNum = (hspNum == "0") ? "" : hspNum;
+        hspNum = (hspNum == "0") ? "" : hspNum;        
     }
+    else {
+        isFirstDflAttr =  "hidden";
+    }
+    alnDefLine  = CAlignFormatUtil::MapTemplate(alnDefLine,"alnSeqLength", NStr::IntToString(seqLength));
     alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnHspNum",hspNum);
+    alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"frstDfl",isFirstDflAttr);
 	string alnIdLbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->seqID->GetSeqIdString();
 	alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"alnIdLbl",alnIdLbl);
 	string linkoutStr, dnldLinkStr;
@@ -3666,11 +3671,13 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 		m_NumBlastDefLines = 0;
         m_cur_align++;		
 		SAlnDispParams *alnDispParams;
+        //fill length
+	    int seqLength = bsp_handle.GetBioseqLength();	    
         if(bdl.empty()){ //no blast defline struct, should be no such case now
             //actually not so fast...as we now fetch from entrez even when it's not in blast db
             //there is no blast defline in such case.
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
-			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false);
+			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
 		    m_CurrAlnID_Lbl = (alnDispParams->gi != 0) ? NStr::IntToString(alnDispParams->gi) : alnDispParams->label;
 			m_CurrAlnAccession = alnDispParams->label;
 			delete alnDispParams;
@@ -3685,7 +3692,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 				if(alnDispParams) {
                     numBdl++;                
                     bool hideDefline = (numBdl > 1)? true : false;                    
-					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline);                    
+					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline,seqLength);                    
                     if(isFirst){
                         const CSeq_id& aln_id = m_AV->GetSeqId(1);
                         int alnGi;
@@ -3762,15 +3769,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 	//fill deflines
 	string alignInfo = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alignHeaderTmpl,"aln_deflines",deflines);
 
-	//fill length
-	int seqLength = bsp_handle.GetBioseqLength();
-	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqLength", NStr::IntToString(seqLength));    
-
-    string hspNum = NStr::IntToString(m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber);
-    hspNum = (hspNum == "0") ? "" : hspNum;
-    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnHspNum", hspNum);
-
-	//fill multiple titles
+	//fill multiple titles - not used now
 	int alnSeqTitlesNum = (m_NumBlastDefLines > k_MaxDeflinesToShow) ? m_NumBlastDefLines - k_MinDeflinesToShow : 0;
 	string alnSeqTitlesShow = (m_NumBlastDefLines > k_MaxDeflinesToShow) ? "" : "hidden";
 	alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnSeqTitlesNum", NStr::IntToString(alnSeqTitlesNum));
@@ -3788,10 +3787,14 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnLinkOutLinks",linkOutStr);
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnCustomLinks",customLinkStr);
-    if(NStr::Find(customLinkStr,"GenBank") == NPOS) {
-        alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"dwGnbn","hidden");
-    }
-    //The next two lines is not used for now
+
+    string isGenbankAttr = (NStr::Find(customLinkStr,"GenBank") == NPOS)? "hidden" : "";    
+    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"dwGnbn",isGenbankAttr);
+    
+    string hideDndl = (m_BlastType == "sra")? "hidden":"";
+    alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"hideDndl",hideDndl);
+    
+    //The next two lines are not used for now
     //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnFASTA",m_FASTAlinkUrl);
     //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnRegFASTA",m_AlignedRegionsUrl);
     
@@ -3982,9 +3985,7 @@ string CDisplaySeqalign::x_FormatSingleAlign(SAlnInfo* aln_vec_info)
     alignRows = CAlignFormatUtil::MapTemplate(alignRows,"aln_curr_num",NStr::IntToString(m_currAlignHsp));
     
     alignInfo += alignRows;
-    return alignInfo;
-    //if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine)){///ignore eShowMiddleLine for templates
-    //}   
+    return alignInfo;    
 }
 
 

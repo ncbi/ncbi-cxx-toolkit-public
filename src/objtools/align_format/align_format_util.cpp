@@ -2270,8 +2270,11 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
             linkout = (linkout_map[eGenomicSeq].size() != 0) ? eGenomicSeq : eMapviewer;                        
             taxName = s_GetTaxName(taxid);
         }
-        idList = linkout_map[linkout];                 
-        bool disableLink = (linkout == 0 || idList.size() == 0);
+        if(linkout_map.find(linkout) != linkout_map.end()) {
+            idList = linkout_map[linkout];                 
+        }
+        bool disableLink = (linkout == 0 || idList.size() == 0 || ( (linkout & eStructure) && (cdd_rid == "" || cdd_rid == "0")));
+        
 
         string giList,labelList;        
         for (size_t i = 0; i < idList.size(); i++) {
@@ -3033,6 +3036,14 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         //seqviewer
         string dbtype = (seqUrlInfo->isDbNa) ? "nuccore" : "protein";
 	    linkUrl = CAlignFormatUtil::MapTemplate(kSeqViewerUrl,"rid",seqUrlInfo->rid);
+
+        string seqViewerParams;
+        if(m_Reg && !seqUrlInfo->blastType.empty() && seqUrlInfo->blastType != "newblast") {
+            seqViewerParams = m_Reg->Get(seqUrlInfo->blastType, "SEQVIEW_PARAMS");            
+        }
+        seqViewerParams = seqViewerParams.empty() ? kSeqViewerParams : seqViewerParams;
+        linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"seqViewerParams",seqViewerParams);
+         
 	    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"dbtype",dbtype);			
 	    linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",seqUrlInfo->gi);
         string linkTitle = "Show alignment to <@seqid@> in <@custom_report_type@>";	
@@ -3044,12 +3055,6 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         }
         else {
             linkTitle += " for <@fromHSP@> to <@toHSP@> range";
-        }
-        if(m_Reg && !seqUrlInfo->blastType.empty()) {
-            string extraSeqViewParams = m_Reg->Get(seqUrlInfo->blastType, "SEQVIEW_PARAMS");
-            if(!extraSeqViewParams.empty()) {
-                linkUrl += "&" +  extraSeqViewParams;
-            }
         }        
         string title = (seqUrlInfo->isDbNa) ? "Nucleotide Graphics" : "Protein Graphics";
     
