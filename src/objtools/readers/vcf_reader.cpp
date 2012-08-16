@@ -568,7 +568,7 @@ CVcfReader::x_AssignFeatureLocation(
     pFeature->SetLocation().SetInt().SetId( *pId );
     pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
     pFeature->SetLocation().SetInt().SetTo( 
-        data.m_iPos + data.m_strRef.length() - 1 );
+        data.m_iPos + data.m_strRef.length() - 2 );
     return true;
 }
 
