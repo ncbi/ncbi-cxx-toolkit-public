@@ -54,7 +54,7 @@ struct SPatternUnit {
     size_t at_most;
     bool is_x;
     SPatternUnit(const string unit) {
-        unsigned int tail_start = 0;
+        size_t tail_start = 0;
         bool parse_failed = false;
         is_x = false;
         switch(unit[0]) {
