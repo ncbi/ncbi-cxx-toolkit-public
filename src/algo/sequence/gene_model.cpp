@@ -730,7 +730,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     vector<CMappedFeat> ncRNAs;
     CMappedFeat cdregion_handle;
 
-    if (!cdregion) {
+    if (!cdregion && !(m_flags & fDeNovoProducts)) {
         cdregion_handle = GetCdsOnMrna(rna_id);
         if (cdregion_handle) {
             cdregion = &cdregion_handle.GetMappedFeature();
@@ -1199,7 +1199,10 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
         seqs.SetSeq_set().push_back(entry);
     }
 
-    CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
+    CBioseq_Handle handle;
+    if (!(m_flags & fDeNovoProducts)) {
+        handle = m_scope->GetBioseqHandle(*id);
+    }
     if (!handle) {
         m_scope->ResetHistory(); //otherwise adding new entry to non-clean scope produces warnings
         m_scope->AddTopLevelSeqEntry(*entry);
@@ -1332,7 +1335,10 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         seq_inst.ResetExt();
     }
 
-    CBioseq_Handle handle = m_scope->GetBioseqHandle(*id);
+    CBioseq_Handle handle;
+    if (!(m_flags & fDeNovoProducts)) {
+        handle = m_scope->GetBioseqHandle(*id);
+    }
     if (!handle) {
         m_scope->AddTopLevelSeqEntry(*entry);
     } else {
@@ -1559,12 +1565,9 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                 cds_feat->Assign(*cdregion_on_mrna);
                 cds_feat->ResetId();
 
-                CBioseq_Handle prot_handle;
                 string gnomon_model_num;
 
                 if (cds_feat->CanGetProduct()) {
-                    prot_handle = m_scope->GetBioseqHandle(
-                        *cds_feat->GetProduct().GetId());
                     gnomon_model_num = ExtractGnomonModelNum(
                         *cds_feat->GetProduct().GetId());
                 }
@@ -1586,20 +1589,26 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
 
                 cds_feat->SetLocation(*cds_loc);
 
-                if (prot_handle) {
-                    for (CFeat_CI feat_iter(prot_handle, CSeqFeatData::e_Prot);
-                         feat_iter; ++feat_iter)
-                    {
-                        const CProt_ref &prot_ref =
-                            feat_iter->GetData().GetProt();
-                        if (prot_ref.IsSetName() &&
-                            !prot_ref.GetName().empty())
-                        {
-                            CRef< CSeqFeatXref > prot_xref(new CSeqFeatXref());
-                            prot_xref->SetData().SetProt().SetName().push_back(
-                                prot_ref.GetName().front());
-                            cds_feat->SetXref().push_back(prot_xref);
-                            break;
+                if (cds_feat->CanGetProduct()) {
+                    CBioseq_Handle prot_handle = m_scope->GetBioseqHandle(
+                        *cds_feat->GetProduct().GetId());
+                    if (prot_handle) {
+                        for (CFeat_CI feat_iter(prot_handle,
+                                                CSeqFeatData::e_Prot);
+                             feat_iter; ++feat_iter)
+                         {
+                            const CProt_ref &prot_ref =
+                                feat_iter->GetData().GetProt();
+                            if (prot_ref.IsSetName() &&
+                                !prot_ref.GetName().empty())
+                            {
+                                CRef< CSeqFeatXref > prot_xref(
+                                    new CSeqFeatXref());
+                                prot_xref->SetData().SetProt().SetName()
+                                    . push_back(prot_ref.GetName().front());
+                                cds_feat->SetXref().push_back(prot_xref);
+                                break;
+                            }
                         }
                     }
                 }

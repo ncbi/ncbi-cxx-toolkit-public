@@ -80,6 +80,7 @@ public:
         fGenerateStableLocalIds = 0x200,  // reproducible ids
         fPropagateNcrnaFeats = 0x400,
         fTrustProteinSeq     = 0x800,
+        fDeNovoProducts      = 0x1000,
 
         fDefaults = fCreateGene | fCreateMrna | fCreateCdregion |
                     fGenerateLocalIds | fPropagateNcrnaFeats

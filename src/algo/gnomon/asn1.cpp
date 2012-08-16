@@ -187,7 +187,7 @@ CAnnotationASN1::CImplementationData::CImplementationData(const string& a_contig
     scope.Reset(new CScope(*obj_mgr));
     scope->AddDefaults();
     feature_generator.reset(new CFeatureGenerator(*scope));
-    feature_generator->SetFlags(CFeatureGenerator::fCreateGene | CFeatureGenerator::fCreateMrna | CFeatureGenerator::fCreateCdregion | CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna);
+    feature_generator->SetFlags(CFeatureGenerator::fCreateGene | CFeatureGenerator::fCreateMrna | CFeatureGenerator::fCreateCdregion | CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna | CFeatureGenerator::fDeNovoProducts);
     feature_generator->SetMinIntron(numeric_limits<TSeqPos>::max());
     feature_generator->SetAllowedUnaligned(0);
 }
