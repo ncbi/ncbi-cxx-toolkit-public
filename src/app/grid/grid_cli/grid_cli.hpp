@@ -72,6 +72,7 @@
 #define CLAIM_NEW_AFFINITIES_OPTION "claim-new-affinities"
 #define ANY_AFFINITY_OPTION "any-affinity"
 #define JOB_OUTPUT_OPTION "job-output"
+#define JOB_OUTPUT_BLOB_OPTION "job-output-blob"
 #define LIMIT_OPTION "limit"
 #define TIMEOUT_OPTION "timeout"
 #define RELIABLE_READ_OPTION "reliable-read"
@@ -133,6 +134,7 @@ enum EOption {
     eAnyAffinity,
     eExclusiveJob,
     eJobOutput,
+    eJobOutputBlob,
     eReturnCode,
     eLimit,
     eTimeout,
@@ -240,6 +242,7 @@ private:
         string queue;
         string affinity;
         string job_output;
+        string job_output_blob;
         int return_code;
         unsigned batch_size;
         unsigned limit;

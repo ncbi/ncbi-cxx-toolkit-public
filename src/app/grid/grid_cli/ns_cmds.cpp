@@ -837,25 +837,29 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
     job.ret_code = m_Opts.return_code;
     job.auth_token = m_Opts.auth_token;
 
-    auto_ptr<IEmbeddedStreamWriter> writer(new CStringOrBlobStorageWriter(
-        m_NetScheduleAPI.GetServerParams().max_output_size,
-        m_NetCacheAPI, job.output));
+    if (IsOptionSet(eJobOutputBlob))
+        job.output = "K " + m_Opts.job_output_blob;
+    else {
+        auto_ptr<IEmbeddedStreamWriter> writer(new CStringOrBlobStorageWriter(
+                m_NetScheduleAPI.GetServerParams().max_output_size,
+                m_NetCacheAPI, job.output));
 
-    char buffer[16 * 1024];
-    size_t bytes_read;
+        char buffer[16 * 1024];
+        size_t bytes_read;
 
-    if (!IsOptionSet(eJobOutput))
-        while ((bytes_read = fread(buffer, 1,
-                sizeof(buffer), m_Opts.input_stream)) > 0) {
-            if (writer->Write(buffer, bytes_read) != eRW_Success)
+        if (!IsOptionSet(eJobOutput))
+            while ((bytes_read = fread(buffer, 1,
+                    sizeof(buffer), m_Opts.input_stream)) > 0) {
+                if (writer->Write(buffer, bytes_read) != eRW_Success)
+                    goto ErrorExit;
+                if (feof(m_Opts.input_stream))
+                    break;
+            }
+        else
+            if (writer->Write(m_Opts.job_output.data(),
+                    m_Opts.job_output.length()) != eRW_Success)
                 goto ErrorExit;
-            if (feof(m_Opts.input_stream))
-                break;
-        }
-    else
-        if (writer->Write(m_Opts.job_output.data(),
-                m_Opts.job_output.length()) != eRW_Success)
-            goto ErrorExit;
+    }
 
     if (!IsOptionSet(eFailJob))
         m_NetScheduleExecutor.PutResult(job);

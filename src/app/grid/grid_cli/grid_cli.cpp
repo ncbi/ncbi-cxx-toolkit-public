@@ -170,6 +170,10 @@ struct SOptionDefinition {
             "(inhibits reading from the standard input stream or an "
             "input file).", {-1}},
 
+    {OPT_DEF(eOptionWithParameter, eJobOutputBlob),
+        JOB_OUTPUT_BLOB_OPTION, "Specify a NetCache blob "
+            "to use as the job output.", {-1}},
+
     {OPT_DEF(eOptionWithParameter, eReturnCode),
         "return-code", "Job return code.", {-1}},
 
@@ -668,14 +672,15 @@ struct SCommandDefinition {
         "Change the state of the job to either 'Done' or 'Failed'. This "
         "command can only be executed on jobs that are in the 'Running' "
         "state.\n\n"
-        "Unless the '--" JOB_OUTPUT_OPTION "' option is given, job "
-        "output is read from the standard input stream or a file.\n\n"
+        "Unless one of the '--" JOB_OUTPUT_OPTION "', '--"
+        JOB_OUTPUT_BLOB_OPTION "', or '--" INPUT_FILE_OPTION "' options is "
+        "given, the job output is read from the standard input stream.\n\n"
         "If the job is being reported as failed, an error message "
         "must be provided with the '--" FAIL_JOB_OPTION "' command "
         "line option.",
-        {eID, eAuthToken, eNetSchedule, eQueue,
-            eNetCache, eReturnCode, eJobOutput, eInputFile, eFailJob,
-            eAffinity, eOutputFile, eLoginToken, eAuth,
+        {eID, eAuthToken, eNetSchedule, eQueue, eNetCache,
+            eReturnCode, eJobOutput, eJobOutputBlob, eInputFile,
+            eFailJob, eAffinity, eOutputFile, eLoginToken, eAuth,
             eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -1041,6 +1046,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eJobOutput:
                 m_Opts.job_output = opt_value;
+                break;
+            case eJobOutputBlob:
+                m_Opts.job_output_blob = opt_value;
                 break;
             case eReturnCode:
                 m_Opts.return_code = NStr::StringToInt(opt_value);
