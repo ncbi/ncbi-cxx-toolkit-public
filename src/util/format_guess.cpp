@@ -816,9 +816,14 @@ CFormatGuess::TestFormatGlimmer3(
     if (it->empty()  ||  (*it)[0] != '>') {
         return false;
     }
-
-    /// next lines should be easily parseable, with five columns
-    for (++it;  it != m_TestLines.end();  ++it) {
+    
+    /// there should be additional data lines, and they should be easily parseable, 
+    ///  with five columns
+    ++it;
+    if (it == m_TestLines.end()) {
+        return false;
+    }
+    for ( /**/;  it != m_TestLines.end();  ++it) {
         if ( !IsLineGlimmer3( *it ) ) {
             return false;
         }
