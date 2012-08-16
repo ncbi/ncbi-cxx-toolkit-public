@@ -614,6 +614,12 @@ require a taxonomy consult." } },
    { eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
    { "TaxonomyNucleomorphProblem",
 "Taxonomy lookup indicates that the nucleomorph flag should be set for this organism." } },
+   { eErr_SEQ_DESCR_InconsistentMolTypeBiomol,
+   { "InconsistentMolTypeBiomol",
+"The Bioseq instance molecule field is inconsistent with the Mol-info biomol field." } },
+   { eErr_SEQ_DESCR_BadInstitutionCountry,
+   { "BadInstitutionCountry",
+"The institution (or institution: collection) code should not have a <country> modifier." } },
 
 /* SEQ_GENERIC */
 

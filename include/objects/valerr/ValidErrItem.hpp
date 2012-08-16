@@ -233,6 +233,8 @@ enum EErrType {
     eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
     eErr_SEQ_DESCR_TaxonomyConsultRequired,
     eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
+    eErr_SEQ_DESCR_InconsistentMolTypeBiomol,
+    eErr_SEQ_DESCR_BadInstitutionCountry,
     ERR_CODE_END(SEQ_DESCR),
 
 
