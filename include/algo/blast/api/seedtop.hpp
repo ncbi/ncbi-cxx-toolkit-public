@@ -59,19 +59,21 @@ struct SPatternUnit {
         is_x = false;
         switch(unit[0]) {
             case '[':
-                tail_start = unit.find(']') + 1;
-                if (tail_start == string::npos + 1){
+                tail_start = unit.find(']');
+                if (tail_start == string::npos){
                     parse_failed = true;
                     break;
                 }
+                tail_start++;
                 allowed_letters = string(unit, 1, tail_start - 2);
                 break;
             case '{':
-                tail_start = unit.find('}') + 1;
-                if (tail_start == string::npos + 1){
+                tail_start = unit.find('}');
+                if (tail_start == string::npos){
                     parse_failed = true;
                     break;
                 }
+                tail_start++;
                 disallowed_letters = string(unit, 1, tail_start - 2);
                 break;
             case 'X':
