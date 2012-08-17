@@ -63,6 +63,7 @@
 #include <objtools/readers/gtf_reader.hpp>
 #include <objtools/readers/gvf_reader.hpp>
 #include <objtools/readers/aln_reader.hpp>
+#include <objtools/readers/agp_read.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
@@ -117,6 +118,7 @@ private:
     void xProcessGff2(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGvf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessAlignment(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessAgp(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
@@ -201,7 +203,8 @@ void CMultiReaderApp::Init(void)
             "microarray", "bed15", 
             "wig", "wiggle", 
             "gtf", "gff3", "gff2",
-            "gvf", 
+            "gvf",
+            "agp",
             "newick", "tree", "tre",
             "vcf",
             "aln", "align",
@@ -408,6 +411,9 @@ CMultiReaderApp::Run(void)
         case CFormatGuess::eGvf:
             xProcessGvf(args, istr, ostr);
             break;
+        case CFormatGuess::eAgp:
+            xProcessAgp(args, istr, ostr);
+            break;
         case CFormatGuess::eAlignment:
             xProcessAlignment(args, istr, ostr);
             break;
@@ -587,6 +593,23 @@ void CMultiReaderApp::xProcessNewick(
     }
 }
 
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xProcessAgp(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CSeq_entry> > TEntries;
+    TEntries entries;
+    AgpRead(istr, entries);
+    NON_CONST_ITERATE (TEntries, it, entries) {
+        xWriteObject(**it, ostr);
+    }
+}
+
+
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessAlignment(
     const CArgs& args,
@@ -633,6 +656,10 @@ void CMultiReaderApp::xSetFormat(
         format == "gff3" || format == "gff2") {
         m_uFormat = CFormatGuess::eGff3;
     }
+    if (NStr::StartsWith(strProgramName, "agp")) {
+        m_uFormat = CFormatGuess::eAgp;
+    }
+
     if (NStr::StartsWith(strProgramName, "newick") || 
         format == "newick" || format == "tree" || format == "tre") {
         m_uFormat = CFormatGuess::eNewick;
