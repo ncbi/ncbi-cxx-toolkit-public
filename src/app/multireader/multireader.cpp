@@ -446,13 +446,14 @@ void CMultiReaderApp::xProcessWiggle(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    
     CWiggleReader reader(m_iFlags);
     CStreamLineReader lr(istr);
-    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
-    while(pAnnot) {
-        xWriteObject(*pAnnot, ostr);
-        pAnnot.Reset();
-        pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        xWriteObject(**cit, ostr);
     }
 }
 

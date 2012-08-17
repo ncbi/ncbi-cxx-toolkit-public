@@ -68,7 +68,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
-    CReaderBase(flags){
+    CReaderBase(flags),
+    m_TrackType(eTrackType_invalid)
+{
     m_uLineNumber = 0;
     m_GapValue = 0.0; 
 }
@@ -98,6 +100,8 @@ CWiggleReader::ReadSeqAnnot(
     IErrorContainer* pErrorContainer ) 
 //  ----------------------------------------------------------------------------                
 {
+    m_ChromId.clear();
+    m_Values.clear();
     if (lr.AtEOF()) {
         return CRef<CSeq_annot>();
     }
@@ -113,9 +117,17 @@ CWiggleReader::ReadSeqAnnot(
             xReadTrack(pErrorContainer);
         }
         else if ( s == "fixedStep" ) {
+            if (!m_ChromId.empty()) {
+                lr.UngetLine();
+                return xGetAnnot();
+            }
             xReadFixedStep(lr, pErrorContainer);
         }
         else if ( s == "variableStep" ) {
+            if (!m_ChromId.empty()) {
+                lr.UngetLine();
+                return xGetAnnot();
+            }
             xReadVariableStep(lr, pErrorContainer);
         }
         else {
@@ -779,6 +791,7 @@ CRef<CSeq_annot> CWiggleReader::xGetAnnot()
     else {
         pAnnot->SetData().SetSeq_table(*xMakeTable());
     }
+    m_ChromId.clear();
     return pAnnot;
 }
 
@@ -800,7 +813,7 @@ void CWiggleReader::xDumpChromValues(void)
         m_Annot->SetData().SetSeq_table(*xMakeTable());
     }
     if ( !m_SingleAnnot ) {
-//!        DumpAnnot();
+//        xDumpAnnot();
     }
     xResetChromValues();
 }
@@ -875,13 +888,17 @@ void CWiggleReader::xReadFixedStep(
     IErrorContainer* pErrorContainer)
 //  =========================================================================
 {
-    if ( m_TrackType != eTrackType_wiggle_0 &&
-        m_TrackType != eTrackType_invalid ) {
-        CObjReaderLineException err(
-            eDiag_Warning,
-            0,
-            "Track \"type=wiggle_0\" is required");
-        xProcessError(err, pErrorContainer);
+    if ( m_TrackType != eTrackType_wiggle_0 ) {
+        if ( m_TrackType != eTrackType_invalid ) {
+            CObjReaderLineException err(
+                eDiag_Warning,
+                0,
+                "Track \"type=wiggle_0\" is required");
+            xProcessError(err, pErrorContainer);
+        }
+        else {
+            m_TrackType = eTrackType_wiggle_0;
+        }
     }
 
     size_t start = 0;
@@ -951,13 +968,17 @@ void CWiggleReader::xReadVariableStep(
     IErrorContainer* pErrorContainer)
 //  =========================================================================
 {
-    if ( m_TrackType != eTrackType_wiggle_0 &&
-        m_TrackType != eTrackType_invalid ) {
-        CObjReaderLineException err(
-            eDiag_Warning,
-            0,
-            "Track \"type=wiggle_0\" is required");
-        xProcessError(err, pErrorContainer);
+    if ( m_TrackType != eTrackType_wiggle_0 ) {
+        if ( m_TrackType != eTrackType_invalid ) {
+            CObjReaderLineException err(
+                eDiag_Warning,
+                0,
+                "Track \"type=wiggle_0\" is required");
+            xProcessError(err, pErrorContainer);
+        }
+        else {
+            m_TrackType = eTrackType_wiggle_0;
+        }
     }
 
     size_t span = 1;
