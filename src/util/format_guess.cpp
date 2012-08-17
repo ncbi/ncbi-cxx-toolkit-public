@@ -1361,6 +1361,17 @@ CFormatGuess::TestFormatWiggle(
                 return true;
             }
         }
+        if ( NStr::StartsWith(*it, "fixedStep") ) { /* MSS-140 */
+            if ( NStr::Find(*it, "chrom=")  &&  NStr::Find(*it, "start=") ) {
+                return true;
+            } 
+        }
+        if ( NStr::StartsWith(*it, "variableStep") ) { /* MSS-140 */
+            if ( NStr::Find(*it, "chrom=") ) {
+                return true;
+            }
+            return true;
+        }
     }
     return false;
 }
