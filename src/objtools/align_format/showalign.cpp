@@ -3788,7 +3788,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnLinkOutLinks",linkOutStr);
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnCustomLinks",customLinkStr);
 
-    string isGenbankAttr = (NStr::Find(customLinkStr,"GenBank") == NPOS)? "hidden" : "";    
+    string isGenbankAttr = (NStr::Find(customLinkStr,"GenBank") == NPOS && NStr::Find(customLinkStr,"GenPept") == NPOS)? "hidden" : "";    
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"dwGnbn",isGenbankAttr);
     
     string hideDndl = (m_BlastType == "sra")? "hidden":"";
