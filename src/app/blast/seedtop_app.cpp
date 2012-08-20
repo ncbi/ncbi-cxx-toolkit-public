@@ -210,11 +210,8 @@ int CSeedTopApp::Run(void)
                         int index = idst.find_last_not_of('|');
                         f_output << string(idst, 0, index + 1) << "|" ;
                     }
-                    CNcbiOstrstream oss;
-                    CFastaOstream fasta_str(oss);
-                    fasta_str.WriteTitle(bhl);
-                    string title = CNcbiOstrstreamToString(oss);
-                    f_output << title << endl << endl;
+                    
+                    f_output << sequence::CDeflineGenerator().GenerateDefline(bhl) << endl << endl;
                     f_output << "ID " << pattern.name << endl;;
                     f_output << "PA " << pattern.pattern << endl;
                     old_id.Reset(sid);
