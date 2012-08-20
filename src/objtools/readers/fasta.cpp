@@ -188,14 +188,12 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
                 need_defline = false;
                 continue;
             } else {
-                if (TestFlag(fParseGaps)) {
-                    CTempString next_line = *++GetLineReader();
-                    if (next_line.size() > 2  &&  next_line[1] == '?'
-                        &&  ParseGapLine(next_line) ) {
-                        continue;
-                    } else {
-                        GetLineReader().UngetLine();
-                    }
+                CTempString next_line = *++GetLineReader();
+                if (next_line.size() > 2  &&  next_line[1] == '?'
+                    &&  ParseGapLine(next_line) ) {
+                    continue;
+                } else {
+                    GetLineReader().UngetLine();
                 }
                 // start of the next sequence
                 break;
@@ -745,6 +743,27 @@ void CFastaReader::AssembleSeq(void)
         }
     }
 
+    if ( !TestFlag(fParseGaps)  &&  m_TotalGapLength > 0 ) {
+        // Encountered >? lines; substitute runs of Ns or Xs as appropriate.
+        string    new_data;
+        char      gap_char(inst.IsAa() ? 'X' : 'N');
+        SIZE_TYPE pos = 0;
+        new_data.reserve(GetCurrentPos(ePosWithGaps));
+        ITERATE (TGaps, it, m_Gaps) {
+            if (it->pos > pos) {
+                new_data.append(m_SeqData, pos, it->pos - pos);
+                pos = it->pos;
+            }
+            new_data.append((it->len >= 0) ? it->len : -it->len, gap_char);
+        }
+        if (m_CurrentPos > pos) {
+            new_data.append(m_SeqData, pos, m_CurrentPos - pos);
+        }
+        swap(m_SeqData, new_data);
+        m_Gaps.clear();
+        m_CurrentPos += m_TotalGapLength;
+        m_TotalGapLength = 0;
+    }
 
     if (m_Gaps.empty()) {
         _ASSERT(m_TotalGapLength == 0);
