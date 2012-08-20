@@ -154,7 +154,7 @@ void
 CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm,
                                        ESubjectMaskingType mask_type)
 {
-    m_FilteringAlgorithmId = NStr::StringToNumeric(filt_algorithm);
+    m_FilteringAlgorithmId = NStr::StringToInt(filt_algorithm);
     m_MaskType = mask_type;
     if (m_FilteringAlgorithmId < 0) {
         // This is a string id, must translate to numeric id first

@@ -121,7 +121,7 @@ public:
     /// @param scope Scope for Bioseq retrieval [in]
     /// @param matrix Matrix to calculate positives; NULL if not applicable. [in]
     /// @return 0 on success, 1 if query or subject Bioseq is not found.
-    virtual int SetFields(const objects::CSeq_align& sal, 
+    int SetFields(const objects::CSeq_align& sal, 
                           objects::CScope& scope, 
                           CNcbiMatrix<int>* matrix=0);
 
@@ -136,7 +136,7 @@ public:
     /// @param iteration Iteration number (for PSI-BLAST), use default
     /// parameter value when not applicable [in]
     /// @param align_set All alignments for this query [in]
-    virtual void PrintHeader(const string& program, 
+    void PrintHeader(const string& program, 
                              const objects::CBioseq& bioseq, 
                              const string& dbname, 
                              const string& rid = kEmptyStr,

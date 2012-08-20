@@ -372,6 +372,7 @@ s_SplitHsp(BlastHSPList* hsp_list,
             qid = hsp->query.offset;
             sid = hsp->subject.offset;
             qs = qid;
+            qe = 0;
             ss = sid;
             se = 0;
             es = 0;

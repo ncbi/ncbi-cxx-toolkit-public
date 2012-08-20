@@ -663,7 +663,7 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp,
     if (slp->IsInt()) {
         output.reserve(1);
         CSeqDB::TOffsetPair p;
-        p.first = MAX(slp->GetInt().GetFrom() - offset, 0);
+        p.first = (slp->GetInt().GetFrom() > offset)? slp->GetInt().GetFrom() - offset : 0;
         p.second = MIN(slp->GetInt().GetTo() - offset, length-1);
 
         if (slp->GetInt().GetTo() >= offset && p.first < length) {
@@ -673,7 +673,7 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp,
         output.reserve(slp->GetPacked_int().Get().size());
         ITERATE(CPacked_seqint::Tdata, itr, slp->GetPacked_int().Get()) {
     	    CSeqDB::TOffsetPair p;
-            p.first = MAX((*itr)->GetFrom() - offset, 0);
+            p.first = ((*itr)->GetFrom() > offset)? (*itr)->GetFrom() - offset : 0;
             p.second = MIN((*itr)->GetTo() - offset, length-1);
 
             if ((*itr)->GetTo() >= offset && p.first < length) {
@@ -685,13 +685,13 @@ s_SeqLoc2MaskedSubjRanges(const CSeq_loc* slp,
         ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
     	    CSeqDB::TOffsetPair p;
             if ((*itr)->IsInt()) {
-                p.first = MAX((*itr)->GetInt().GetFrom() - offset, 0);
+                p.first = ((*itr)->GetInt().GetFrom() > offset)? (*itr)->GetInt().GetFrom() - offset : 0;
                 p.second = MIN((*itr)->GetInt().GetTo() - offset, length-1);
                 if ((*itr)->GetInt().GetTo() >= offset && p.first < length) {
                     output.push_back(p);
                 }
             } else if ((*itr)->IsPnt()) {
-                p.first = MAX((*itr)->GetPnt().GetPoint() - offset, 0);
+                p.first = ((*itr)->GetPnt().GetPoint() > offset)? (*itr)->GetPnt().GetPoint() - offset : 0;
                 p.second = MIN((*itr)->GetPnt().GetPoint() - offset, length-1);
                 if ((*itr)->GetPnt().GetPoint() >= offset && p.first < length) {
                     output.push_back(p);
