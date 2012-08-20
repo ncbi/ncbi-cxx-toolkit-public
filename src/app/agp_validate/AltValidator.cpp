@@ -63,6 +63,10 @@
 using namespace ncbi;
 using namespace objects;
 
+#ifndef s2i
+#define s2i(x) NStr::StringToNonNegativeInt(x)
+#endif
+
 BEGIN_NCBI_SCOPE
 
 static CRef<CObjectManager> m_ObjectManager;
@@ -132,7 +136,7 @@ int CAltValidator::GetAccDataFromObjMan( const string& acc, SGiVerLenTaxid& acc_
         string acc_ver = sequence::GetAccessionForGi( acc_data.gi, *m_Scope );
         SIZE_TYPE pos_dot = acc_ver.find('.');
         if( pos_dot!=NPOS && pos_dot<acc_ver.size()-1 ) {
-          acc_data.ver = NStr::StringToNumeric( acc_ver.substr(pos_dot+1) );
+          acc_data.ver = s2i( acc_ver.substr(pos_dot+1) );
         }
       }
       catch (...) {
@@ -423,8 +427,8 @@ void CAltValidator::QueryAccessions()
       SIZE_TYPE pos=s.find("|"+acc+".");
       if(pos!=NPOS) gvt.ver=atoi(s.c_str()+pos+2+acc.size());
 
-      gvt.len   = NStr::StringToNumeric( (*it_docsum)->GetValue("Slen" ) );
-      gvt.taxid = NStr::StringToNumeric( (*it_docsum)->GetValue("TaxId") );
+      gvt.len   = s2i( (*it_docsum)->GetValue("Slen" ) );
+      gvt.taxid = s2i( (*it_docsum)->GetValue("TaxId") );
     }
   }
   catch(CException e){
@@ -466,7 +470,7 @@ void CAltValidator::ProcessQueue()
     else {
       SIZE_TYPE pos_ver = acc.find('.');
       int ver=0;
-      if(pos_ver!=NPOS) ver=NStr::StringToNumeric( acc.substr(pos_ver+1) );
+      if(pos_ver!=NPOS) ver=s2i( acc.substr(pos_ver+1) );
       string acc_nover= acc.substr(0, pos_ver );
 
       SGiVerLenTaxid acc_data;
@@ -560,7 +564,7 @@ string ExtractAccession(const string& long_acc)
   CBioseq::TId ids;
   try{
     CSeq_id::ParseFastaIds(ids, long_acc.substr(pos2));
-    string s=ids.front()->GetSeqIdString(true);
+    string s = ids.front()->GetSeqIdString(true);
     // remove undesirable "XXXX:" from "XXXX:Scaffold1_1".
     pos1 = s.find(':');
     if( pos1 != NPOS ) return s.substr(pos1+1);
