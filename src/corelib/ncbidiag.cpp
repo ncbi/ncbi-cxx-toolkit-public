@@ -1003,6 +1003,20 @@ EDiagAppState s_StrToAppState(const string& state)
 }
 
 
+NCBI_PARAM_DECL(bool, Diag, UTC_Timestamp);
+NCBI_PARAM_DEF_EX(bool, Diag, UTC_Timestamp, false,
+                  eParam_NoThread, DIAG_UTC_TIMESTAMP);
+typedef NCBI_PARAM_TYPE(Diag, UTC_Timestamp) TUtcTimestamp;
+
+
+static CTime s_GetFastTime(void)
+{
+    const static bool s_UtcTimestamp = TUtcTimestamp::GetDefault();
+    bool use_gmt = s_UtcTimestamp  &&  !CDiagContext::IsApplogSeverityLocked();
+    return use_gmt ? CTime(CTime::eCurrent, CTime::eGmt) : GetFastLocalTime();
+}
+
+
 struct SDiagMessageData
 {
     SDiagMessageData(void);
@@ -1030,7 +1044,7 @@ struct SDiagMessageData
 
 SDiagMessageData::SDiagMessageData(void)
     : m_UID(0),
-      m_Time(GetFastLocalTime()),
+      m_Time(s_GetFastTime()),
       m_AppState(eDiagAppState_NotSet)
 {
 }
@@ -2128,7 +2142,7 @@ const char* CDiagContext::kProperty_ReqTime     = "request_time";
 const char* CDiagContext::kProperty_BytesRd     = "bytes_rd";
 const char* CDiagContext::kProperty_BytesWr     = "bytes_wr";
 
-static const char* kDiagTimeFormat = "Y-M-DTh:m:s.r";
+static const char* kDiagTimeFormat = "Y-M-DTh:m:s.rZ";
 // Fixed fields' widths
 static const int   kDiagW_PID      = 5;
 static const int   kDiagW_TID      = 3;
@@ -4011,7 +4025,7 @@ CDiagContext::TUID SDiagMessage::GetUID(void) const
 
 CTime SDiagMessage::GetTime(void) const
 {
-    return m_Data ? m_Data->m_Time : GetFastLocalTime();
+    return m_Data ? m_Data->m_Time : s_GetFastTime();
 }
 
 
@@ -4444,7 +4458,7 @@ void SDiagMessage::x_InitData(void) const
         m_Data->m_UID = GetDiagContext().GetUID();
     }
     if ( m_Data->m_Time.IsEmpty() ) {
-        m_Data->m_Time = GetFastLocalTime();
+        m_Data->m_Time = s_GetFastTime();
     }
 }
 
