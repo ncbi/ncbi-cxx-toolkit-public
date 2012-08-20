@@ -206,6 +206,17 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
          if (bioseq.Empty()) {
              continue;
          }
+         // TODO: remove gnl|BL_ORD_ID
+         list<CRef<CSeq_id> > & id_list = bioseq->SetId();
+         list<CRef<CSeq_id> >::iterator it = id_list.begin();
+         while (it != id_list.end()) {
+            if ((*it)->IsGeneral() &&
+                (*it)->GetGeneral().GetDb() == "BL_ORD_ID") {
+                id_list.erase(it);
+                break;
+            }
+            ++it;
+         }
          if (config.m_UseCtrlA) {
              s_ReplaceCtrlAsInTitle(bioseq);
          }

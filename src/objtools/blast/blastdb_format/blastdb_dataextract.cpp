@@ -113,6 +113,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
         } else {
             m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, target_gi, target_seq_id)); 
         }
+
     } catch (const CSeqDBException& e) {
         // this happens when CSeqDB detects a GI that doesn't belong to a
         // filtered database (e.g.: swissprot as a subset of nr)
@@ -190,14 +191,20 @@ string CBlastDBExtractor::ExtractMembershipInteger()
 }
 
 string CBlastDBExtractor::ExtractAccession() {
-    string acc;
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
+    if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {
+        return "No ID available";
+    }
+    string acc;
     theId->GetLabel(&acc, CSeq_id::eContent);
     return acc;
 }
 
 string CBlastDBExtractor::ExtractSeqId() {
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
+    if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {
+        return "No ID available";
+    }
     return theId->AsFastaString();
 }
 
