@@ -35,7 +35,7 @@
 
 #ifndef i2s
 #define i2s(x) NStr::NumericToString(x)
-#define s2i(x) NStr::StringToNumeric(x)
+#define s2i(x) NStr::StringToNonNegativeInt(x)
 #endif
 
 BEGIN_NCBI_SCOPE
