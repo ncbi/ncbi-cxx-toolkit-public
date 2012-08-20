@@ -443,6 +443,7 @@ public:
     virtual ~CCPPToolkitConnParams(void);
 
 public:
+    static EServerType GetServerType(const CTempString& server_name);
     virtual EServerType GetServerType(void) const;
 
 private:

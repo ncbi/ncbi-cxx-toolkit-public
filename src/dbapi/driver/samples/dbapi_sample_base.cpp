@@ -46,6 +46,7 @@
 #include <corelib/ncbi_process.hpp>
 #include <util/smalldns.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/error_codes.hpp>
@@ -126,27 +127,15 @@ CDbapiSampleApp::ExitSample(void)
 CDbapiSampleApp::EServerType
 CDbapiSampleApp::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS"
-         || GetServerName() == "MOZART"
-         || GetServerName() == "SCHUMANN"
-         || GetServerName() == "CLEMENTI"
-         || GetServerName() == "DBAPI_DEV1"
-         || GetServerName() == "OBERON"
-         || GetServerName() == "TAPER"
-         || GetServerName() == "THALBERG"
-         || GetServerName() == "DBAPI_SYB_TEST"
-         || NStr::StartsWith(GetServerName(), "DBAPI_DEV")
-         || NStr::StartsWith(GetServerName(), "BARTOK")
-         ) {
+    switch (CCPPToolkitConnParams::GetServerType(GetServerName())) {
+    case CDBConnParams::eSybaseSQLServer:
+    case CDBConnParams::eSybaseOpenServer:
         return eSybase;
-    } else if (NStr::StartsWith(GetServerName(), "MS_DEV")
-               || NStr::StartsWith(GetServerName(), "MSSQL")
-               || GetServerName() == "DBAPI_MS_TEST"
-               ) {
+    case CDBConnParams::eMSSqlServer:
         return eMsSql;
+    default:
+        return eUnknown;
     }
-
-    return eUnknown;
 }
 
 

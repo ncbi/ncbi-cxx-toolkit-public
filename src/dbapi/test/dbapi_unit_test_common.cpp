@@ -437,10 +437,10 @@ CUnitTestParams::GetServerType(void) const
     const string driver_name = GetThis().GetDriverName();
 
     if (driver_name == "dblib") {
-        if (NStr::CompareNocase(server_name, 0, 10, "DBAPI_DEV1") == 0
-            || NStr::CompareNocase(server_name, 0, 14, "DBAPI_SYB_TEST") == 0
-            )
-        {
+        if (NStr::EqualNocase(server_name, 0, 6, "DBAPI_")
+            &&  (NStr::EqualNocase(server_name, 6, 3, "DEV")
+                 ||  NStr::EqualNocase(server_name, 6, 3, "SYB")))
+        { // DBAPI_DEV1, DBAPI_SYB_TEST, etc.
             return eSybaseSQLServer;
         }
     }

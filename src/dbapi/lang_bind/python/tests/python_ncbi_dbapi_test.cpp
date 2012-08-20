@@ -43,6 +43,7 @@
 #include "python_ncbi_dbapi_test.hpp"
 
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -1310,30 +1311,15 @@ CTestArguments::CTestArguments(void)
 CTestArguments::EServerType
 CTestArguments::GetServerType(void) const
 {
-    if ( NStr::CompareNocase(GetServerName(), "STRAUSS") == 0
-         || NStr::CompareNocase(GetServerName(), "MOZART") == 0
-         || NStr::CompareNocase(GetServerName(), "OBERON") == 0
-         || NStr::CompareNocase(GetServerName(), "TAPER") == 0
-         || NStr::CompareNocase(GetServerName(), "THALBERG") == 0
-         || NStr::CompareNocase(GetServerName(), "SCHUMANN") == 0
-         || NStr::CompareNocase(GetServerName(), "CLEMENTI") == 0
-         || NStr::CompareNocase(GetServerName(), "DBAPI_DEV1") == 0
-         || NStr::CompareNocase(GetServerName(), "BARTOK") == 0
-         || NStr::CompareNocase(GetServerName(), "DBAPI_SYB_TEST") == 0
-     || NStr::StartsWith(GetServerName(), "DBAPI_DEV")
-         ) {
+    switch (CCPPToolkitConnParams::GetServerType(GetServerName())) {
+    case CDBConnParams::eSybaseSQLServer:
+    case CDBConnParams::eSybaseOpenServer:
         return eSybase;
-    } else if ( NStr::StartsWith(GetServerName(), "MS_DEV")
-                || NStr::StartsWith(GetServerName(), "MSSQL")
-                || NStr::StartsWith(GetServerName(), "MSDEV")
-                || NStr::StartsWith(GetServerName(), "OAMSDEV")
-                || NStr::StartsWith(GetServerName(), "QMSSQL")
-        || NStr::CompareNocase(GetServerName(), "DBAPI_MS_TEST") == 0
-                ) {
+    case CDBConnParams::eMSSqlServer:
         return eMsSql;
+    default:
+        return eUnknown;
     }
-
-    return eUnknown;
 }
 
 void
