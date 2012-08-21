@@ -46,6 +46,7 @@
 #include <objects/seqalign/seqalign_exception.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 #include <html/html.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -303,7 +304,9 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
             aln_info->id = wid;
             aln_info->gi =  FindGi(ids);
             wid->GetLabel(&info, CSeq_id::eContent, 0);
-            title = GetTitle(handle);
+            CDeflineGenerator defline_gen;
+            title = defline_gen.GenerateDefline(*(handle.GetCompleteObject()),
+                                                *m_Scope);
             
             if ((int)title.size() > kDeflineLength){
                 title = title.substr(0, kDeflineLength) + "..";
