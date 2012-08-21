@@ -209,8 +209,25 @@ protected:
         CRef<CSeq_annot> );
         
     virtual bool
+    xProcessDataLine(
+        const string&,
+        CRef<CSeq_annot> );
+        
+    virtual bool
+    xProcessVariant(
+        const CVcfData&,
+        unsigned int,
+        CRef<CSeq_annot> );
+
+    virtual bool
     x_AssignFeatureLocation(
         const CVcfData&,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    xAssignFeatureLocation(
+        const CVcfData&,
+        unsigned int,
         CRef<CSeq_feat> );
 
     virtual bool
@@ -221,6 +238,36 @@ protected:
     virtual bool
     x_AssignVariationAlleles(
         const CVcfData&,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    xAssignVariationAlleles(
+        const CVcfData&,
+        unsigned int,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    xAssignVariantSnv(
+        const CVcfData&,
+        unsigned int,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    xAssignVariantDel(
+        const CVcfData&,
+        unsigned int,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    xAssignVariantIns(
+        const CVcfData&,
+        unsigned int,
+        CRef<CSeq_feat> );
+
+    virtual bool
+    xAssignVariantDelins(
+        const CVcfData&,
+        unsigned int,
         CRef<CSeq_feat> );
 
     virtual bool

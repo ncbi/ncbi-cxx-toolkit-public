@@ -61,6 +61,9 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seq_data.hpp>
+
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -82,6 +85,7 @@
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
+#include <objects/seqfeat/Delta_item.hpp>
 
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
@@ -112,6 +116,7 @@ public:
 //    bool ParseData(
 //        const string& );
 
+    string m_strLine;
     string m_strChrom;
     int m_iPos;
     vector<string> m_Ids;
@@ -123,7 +128,64 @@ public:
     vector<string> m_FormatKeys;
 //    vector< vector<string> > m_GenotypeData;
     GTDATA m_GenotypeData;
+
+    bool IsSnv(
+        unsigned int) const;
+    bool IsDel(
+        unsigned int) const;
+    bool IsIns(
+        unsigned int) const;
+    bool IsDelins(
+        unsigned int) const;
 };
+
+//  ----------------------------------------------------------------------------
+bool CVcfData::IsSnv(
+    unsigned int index) const
+//  ----------------------------------------------------------------------------
+{
+    const string& strAlt = m_Alt[index];
+    if (m_strRef.size()==1  &&  strAlt.size()==1) {
+        return true;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CVcfData::IsIns(
+    unsigned int index) const
+//  ----------------------------------------------------------------------------
+{
+    const string& strAlt = m_Alt[index];
+    if (m_strRef.size()==1  &&  NStr::StartsWith(strAlt, m_strRef)) {
+        return true;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CVcfData::IsDel(
+    unsigned int index) const
+//  ----------------------------------------------------------------------------
+{
+    const string& strAlt = m_Alt[index];
+    if (strAlt.size()==1  &&  NStr::StartsWith(m_strRef, strAlt)) {
+        return true;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CVcfData::IsDelins(
+    unsigned int index) const
+//  ----------------------------------------------------------------------------
+{
+    const string& strAlt = m_Alt[index];
+    if (strAlt.size()>1  &&  m_strRef.size()>1  &&  strAlt[0]==m_strRef[0]) {
+        return true;
+    }
+    return false;
+}
 
 //  ----------------------------------------------------------------------------
 ESpecType SpecType( 
@@ -208,7 +270,7 @@ CVcfReader::ReadSeqAnnot(
         if ( x_ProcessHeaderLine( line, annot ) ) {
             continue;
         }
-        if ( x_ProcessDataLine( line, annot ) ) {
+        if ( xProcessDataLine( line, annot ) ) {
             continue;
         }
         // still here? not good!
@@ -467,7 +529,7 @@ CVcfReader::x_ProcessDataLine(
     }
     CRef<CSeq_feat> pFeat( new CSeq_feat );
     pFeat->SetData().SetVariation().SetData().SetSet().SetType(
-        CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
+        CVariation_ref::C_Data::C_Set::eData_set_type_package );
     pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
     CSeq_feat::TExt& ext = pFeat->SetExt();
     ext.SetType().SetStr( "VcfAttributes" );
@@ -504,6 +566,286 @@ CVcfReader::x_ProcessDataLine(
 
 //  ----------------------------------------------------------------------------
 bool
+CVcfReader::xProcessVariant(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_annot> pAnnot)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_feat> pFeat( new CSeq_feat );
+    pFeat->SetData().SetVariation().SetData().SetSet().SetType(
+        CVariation_ref::C_Data::C_Set::eData_set_type_package );
+    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
+    CSeq_feat::TExt& ext = pFeat->SetExt();
+    ext.SetType().SetStr( "VcfAttributes" );
+
+    if ( ! xAssignFeatureLocation( data, index, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_AssignVariationIds( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! xAssignVariationAlleles( data, index, pFeat ) ) {
+        return false;
+    }
+
+    if ( ! x_ProcessScore( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessFilter( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessInfo( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessFormat( data, pFeat ) ) {
+        return false;
+    }
+
+    if ( pFeat->GetExt().GetData().empty() ) {
+        pFeat->ResetExt();
+    }
+    pAnnot->SetData().SetFtable().push_back( pFeat );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariationAlleles(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    if (data.IsSnv(index)) {
+        return xAssignVariantSnv(data, index, pFeature);
+    }
+    if (data.IsDel(index)) {
+        return xAssignVariantDel(data, index, pFeature);
+    }
+    if (data.IsIns(index)) {
+        return xAssignVariantIns(data, index, pFeature);
+    }
+    if (data.IsDelins(index)) {
+        return xAssignVariantDelins(data, index, pFeature);
+    }
+    CVariation_ref::TData::TSet::TVariations& variants =
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+    CRef<CVariation_ref> pVariant(new CVariation_ref);
+    string note("Warning: Could not place variation for record \"" + 
+        NStr::Replace(data.m_strLine.substr(0, 40), "\t", "  "));
+    if (data.m_strLine.size() > 40) {
+        note += "...";
+    }
+    note += "\". Offending values: ref=\"" + data.m_strRef + 
+        "\", alt=\"" + data.m_Alt[index] + "\"";
+    pVariant->SetData().SetNote(note);
+    variants.push_back(pVariant);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariantSnv(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CVariation_ref::TData::TSet::TVariations& variants =
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+
+    CRef<CVariation_ref> pVariant(new CVariation_ref);
+    {{
+        vector<string> variant;
+        variant.push_back(data.m_Alt[index]);
+        pVariant->SetSNV(variant, CVariation_ref::eSeqType_na);
+    }}
+    variants.push_back(pVariant);
+
+    CRef<CVariation_ref> pIdentity(new CVariation_ref);
+    {{
+        vector<string> variant;
+        variant.push_back(data.m_strRef);
+        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
+        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
+        instance.SetType(CVariation_inst::eType_identity);
+        instance.SetObservation(CVariation_inst::eObservation_asserted);
+    }}
+    variants.push_back(pIdentity);
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariantDel(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CVariation_ref::TData::TSet::TVariations& variants =
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+
+    CRef<CVariation_ref> pVariant(new CVariation_ref);
+    {{
+        //pVariant->SetData().SetNote("DEL");
+        pVariant->SetDeletion();
+        CVariation_inst& instance =  pVariant->SetData().SetInstance();
+        CRef<CDelta_item> pItem(new CDelta_item);
+        pItem->SetAction(CDelta_item::eAction_del_at);
+        pItem->SetSeq().SetThis();
+        instance.SetDelta().push_back(pItem);
+    }}
+    variants.push_back(pVariant);
+
+    CRef<CVariation_ref> pIdentity(new CVariation_ref);
+    {{
+        //pIdentity->SetData().SetNote("IDENTITY");
+        vector<string> variant;
+        variant.push_back(data.m_strRef);
+        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
+        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
+        instance.SetType(CVariation_inst::eType_identity);
+        instance.SetObservation(CVariation_inst::eObservation_asserted);
+    }}
+    variants.push_back(pIdentity);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariantIns(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CVariation_ref::TData::TSet::TVariations& variants =
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+
+    CRef<CVariation_ref> pVariant(new CVariation_ref);
+    {{
+        string insertion(data.m_Alt[index].substr(1));
+        CRef<CSeq_literal> pLiteral(new CSeq_literal);
+        pLiteral->SetSeq_data().SetIupacna().Set(insertion);
+        pLiteral->SetLength(insertion.size());
+        CRef<CDelta_item> pItem(new CDelta_item);
+        pItem->SetAction(CDelta_item::eAction_ins_before);
+        pItem->SetSeq().SetLiteral(*pLiteral); 
+        CVariation_inst& instance =  pVariant->SetData().SetInstance();
+        instance.SetType(CVariation_inst::eType_ins);
+        instance.SetDelta().push_back(pItem);       
+    }}
+    variants.push_back(pVariant);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariantDelins(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CVariation_ref::TData::TSet::TVariations& variants =
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+
+    CRef<CVariation_ref> pVariant(new CVariation_ref);
+    {{
+        string insertion(data.m_Alt[index].substr(1));
+        CRef<CSeq_literal> pLiteral(new CSeq_literal);
+        pLiteral->SetSeq_data().SetIupacna().Set(insertion);
+        pLiteral->SetLength(insertion.size());
+        CRef<CDelta_item> pItem(new CDelta_item);
+        pItem->SetSeq().SetLiteral(*pLiteral); 
+        CVariation_inst& instance =  pVariant->SetData().SetInstance();
+        instance.SetType(CVariation_inst::eType_mnp);
+        instance.SetDelta().push_back(pItem);       
+    }}
+    variants.push_back(pVariant);
+
+    CRef<CVariation_ref> pIdentity(new CVariation_ref);
+    {{
+        string insertion(data.m_strRef.substr(1));
+        CRef<CSeq_literal> pLiteral(new CSeq_literal);
+        pLiteral->SetSeq_data().SetIupacna().Set(insertion);
+        pLiteral->SetLength(insertion.size());
+        CRef<CDelta_item> pItem(new CDelta_item);
+        pItem->SetSeq().SetLiteral(*pLiteral); 
+        CVariation_inst& instance =  pIdentity->SetData().SetInstance();
+        instance.SetType(CVariation_inst::eType_identity);
+        instance.SetDelta().push_back(pItem);       
+        instance.SetObservation(CVariation_inst::eObservation_asserted);
+    }}
+    variants.push_back(pIdentity);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xProcessDataLine(
+    const string& line,
+    CRef<CSeq_annot> pAnnot)
+//  ----------------------------------------------------------------------------
+{
+    if ( NStr::StartsWith( line, "#" ) ) {
+        return false;
+    }
+    CVcfData data;
+    if ( ! x_ParseData( line, data ) ) {
+        return false;
+    }
+
+    for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
+        if (!xProcessVariant(data, i, pAnnot)) {
+            return false;
+        }
+    }
+    return true;
+    /*
+    CRef<CSeq_feat> pFeat( new CSeq_feat );
+    pFeat->SetData().SetVariation().SetData().SetSet().SetType(
+        CVariation_ref::C_Data::C_Set::eData_set_type_alleles );
+    pFeat->SetData().SetVariation().SetVariant_prop().SetVersion( 5 );
+    CSeq_feat::TExt& ext = pFeat->SetExt();
+    ext.SetType().SetStr( "VcfAttributes" );
+
+    if ( ! x_AssignFeatureLocation( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_AssignVariationIds( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_AssignVariationAlleles( data, pFeat ) ) {
+        return false;
+    }
+
+    if ( ! x_ProcessScore( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessFilter( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessInfo( data, pFeat ) ) {
+        return false;
+    }
+    if ( ! x_ProcessFormat( data, pFeat ) ) {
+        return false;
+    }
+
+    if ( pFeat->GetExt().GetData().empty() ) {
+        pFeat->ResetExt();
+    }
+    pAnnot->SetData().SetFtable().push_back( pFeat );
+    return true;
+    */
+}
+
+//  ----------------------------------------------------------------------------
+bool
 CVcfReader::x_ParseData(
     const string& line,
     CVcfData& data )
@@ -515,6 +857,8 @@ CVcfReader::x_ParseData(
         return false;
     }
     try {
+        data.m_strLine = line;
+
         data.m_strChrom = columns[0];
         data.m_iPos = NStr::StringToInt( columns[1] );
         NStr::Tokenize( columns[2], ";", data.m_Ids, NStr::eNoMergeDelims );
@@ -565,6 +909,58 @@ CVcfReader::x_AssignFeatureLocation(
 {
     CRef<CSeq_id> pId(CReadUtil::AsSeqId(data.m_strChrom, m_iFlags));
 
+    pFeature->SetLocation().SetInt().SetId( *pId );
+    pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
+    pFeature->SetLocation().SetInt().SetTo( 
+        data.m_iPos + data.m_strRef.length() - 2 );
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool
+CVcfReader::xAssignFeatureLocation(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_feat> pFeature )
+//  ---------------------------------------------------------------------------
+{
+    CRef<CSeq_id> pId(CReadUtil::AsSeqId(data.m_strChrom, m_iFlags));
+
+    if (data.IsSnv(index)) {
+        pFeature->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
+        pFeature->SetLocation().SetPnt().SetId(*pId);
+        return true;
+    }
+    if (data.IsDel(index)) {
+        if (data.m_strRef.size()==2) {
+            pFeature->SetLocation().SetPnt().SetPoint(data.m_iPos);
+            pFeature->SetLocation().SetPnt().SetId(*pId);
+            return true;
+        }
+        else {
+            pFeature->SetLocation().SetInt().SetFrom(data.m_iPos);
+            pFeature->SetLocation().SetInt().SetTo( 
+                data.m_iPos + data.m_strRef.length()-2);
+            pFeature->SetLocation().SetInt().SetId(*pId);
+            return true;
+        }
+    }
+    if (data.IsIns(index)) {
+        pFeature->SetLocation().SetInt().SetFrom(data.m_iPos);
+        pFeature->SetLocation().SetInt().SetTo( 
+            data.m_iPos+1);
+        pFeature->SetLocation().SetInt().SetId(*pId);
+        return true;
+    }
+   
+    if (data.IsDelins(index)) {
+        pFeature->SetLocation().SetInt().SetFrom(data.m_iPos);
+        pFeature->SetLocation().SetInt().SetTo( 
+            data.m_iPos+1);
+        pFeature->SetLocation().SetInt().SetId(*pId);
+        return true;
+    }
+   
     pFeature->SetLocation().SetInt().SetId( *pId );
     pFeature->SetLocation().SetInt().SetFrom( data.m_iPos - 1 );
     pFeature->SetLocation().SetInt().SetTo( 
@@ -728,7 +1124,23 @@ CVcfReader::x_AssignVariationAlleles(
         alternative.push_back( *cit );
         CRef<CVariation_ref> pAllele( new CVariation_ref );
         pAllele->SetVariant_prop().SetVersion( 5 );
-        pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
+        ///
+        string ref = data.m_strRef;
+        string alt = *cit;
+        if (ref.size()==1  &&  alt.size()==1) {
+            pAllele->SetSNV( alternative, CVariation_ref::eSeqType_na );
+        }
+        else if (NStr::StartsWith(ref, alt)) {
+            //deletion
+        }
+        else if (NStr::StartsWith(alt, ref)) {
+            //insertion
+        }
+        else {
+            //something more complicated
+        }
+
+        ///
         pAllele->SetData().SetInstance().SetObservation( 
             CVariation_inst::eObservation_variant );
 
