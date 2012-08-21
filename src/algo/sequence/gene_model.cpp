@@ -340,14 +340,12 @@ void CFeatureGenerator::RecomputePartialFlags(CSeq_annot& annot)
 CFeatureGenerator::SImplementation::SMapper::SMapper(const CSeq_align& aln, CScope& scope,
                                                      TSeqPos allowed_unaligned,
                                                      CSeq_loc_Mapper::TMapOptions opts)
-    : m_aln(aln), m_scope(scope), m_allowed_unaligned(allowed_unaligned)
+    : m_aln(aln), m_scope(scope), m_genomic_row(-1)
+    , m_allowed_unaligned(allowed_unaligned), m_opts(opts)
 {
     if(aln.GetSegs().IsSpliced()) {
         //row 1 is always genomic in spliced-segs
         m_genomic_row = 1;
-        m_mapper.Reset
-            (new CSeq_loc_Mapper(aln, aln.GetSeq_id(1),
-                                 &scope, opts));
     } else {
         //otherwise, find exactly one genomic row
         CSeq_align::TDim num_rows = aln.CheckNumRows();
@@ -369,10 +367,7 @@ CFeatureGenerator::SImplementation::SMapper::SMapper(const CSeq_align& aln, CSco
             if (info && info->IsSetBiomol()
                 && info->GetBiomol() == CMolInfo::eBiomol_genomic)
                 {
-                    if(m_mapper.IsNull()) {
-                        m_mapper.Reset
-                            (new CSeq_loc_Mapper(aln, aln.GetSeq_id(i),
-                                                 &scope, opts));
+                    if(m_genomic_row < 0) {
                         m_genomic_row = i;
                     } else {
                         NCBI_THROW(CException, eUnknown,
@@ -381,7 +376,7 @@ CFeatureGenerator::SImplementation::SMapper::SMapper(const CSeq_align& aln, CSco
                     }
                 }
         }
-        if (m_mapper.IsNull()) {
+        if (m_genomic_row < 0) {
             NCBI_THROW(CException, eUnknown,
                        "CreateGeneModelFromAlign(): "
                        "No genomic sequence found in alignment");
@@ -402,7 +397,7 @@ const CSeq_loc& CFeatureGenerator::SImplementation::SMapper::GetRnaLoc()
             //todo: truncate the range loc not to include polyA, or
             //else the remapped loc will be erroneously partial
             //not a huge issue as it only applies to seg alignments only.
-            rna_loc = m_mapper->Map(*range_loc);
+            rna_loc = x_Mapper()->Map(*range_loc);
         }
     }
     return *rna_loc;
@@ -421,22 +416,18 @@ CSeq_align::TDim CFeatureGenerator::SImplementation::SMapper::GetRnaRow() const
 
 CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::Map(const CSeq_loc& loc)
 {
-    CRef<CSeq_loc> mapped_loc  = m_mapper->Map(loc);
+    CRef<CSeq_loc> mapped_loc  = x_Mapper()->Map(loc);
     return mapped_loc;
 }
 
 void CFeatureGenerator::SImplementation::SMapper::IncludeSourceLocs(bool b)
 {
-    if (m_mapper) {
-        m_mapper->IncludeSourceLocs(b);
-    }
+    x_Mapper()->IncludeSourceLocs(b);
 }
 
 void CFeatureGenerator::SImplementation::SMapper::SetMergeNone()
 {
-    if (m_mapper) {
-        m_mapper->SetMergeNone();
-    }
+    x_Mapper()->SetMergeNone();
 }
 
 CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::x_GetLocFromSplicedExons(const CSeq_align& aln) const
@@ -502,6 +493,16 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::x_GetLocFromSplicedE
     }
     return loc;
     
+}
+
+CRef<CSeq_loc_Mapper> CFeatureGenerator::SImplementation::SMapper::x_Mapper()
+{
+    if (!m_mapper) {
+        m_mapper.Reset
+            (new CSeq_loc_Mapper(m_aln, m_aln.GetSeq_id(m_genomic_row),
+                                 &m_scope, m_opts));
+    }
+    return m_mapper;
 }
 
 CConstRef<CSeq_align>
@@ -696,10 +697,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
     }
 
-    CScope mapper_scope(*CObjectManager::GetInstance());
-    mapper_scope.AddScope(*m_scope);
+    SMapper mapper(*align, *m_scope, m_allowed_unaligned, opts);
 
-    SMapper mapper(*align, mapper_scope, m_allowed_unaligned, opts);
 
     CTime time(CTime::eCurrent);
 
@@ -709,9 +708,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     if (!ExtractGnomonModelNum(rna_id).empty()) {
         m_is_gnomon = true;
     } else {
-        CSeq_id_Handle best_id =
-            sequence::GetId(rna_id, *m_scope,
-                            sequence::eGetId_Best);
+        CSeq_id_Handle best_id;
+        if (!(m_flags & fDeNovoProducts)) {
+            best_id = sequence::GetId(rna_id, *m_scope,
+                                      sequence::eGetId_Best);
+        }
         CSeq_id::EAccessionInfo rna_acc_info =
             best_id ? best_id.IdentifyAccession() : rna_id.IdentifyAccession();
         m_is_best_refseq = rna_acc_info == CSeq_id::eAcc_refseq_mrna ||
@@ -900,9 +901,6 @@ SImplementation::ConvertAlignToAnnot(
                          CSeq_annot &annot,
                          CBioseq_set &seqs)
 {
-    CScope mapper_scope(*CObjectManager::GetInstance());
-    mapper_scope.AddScope(*m_scope);
-    
     CSeq_loc_Mapper::TMapOptions opts = 0;
     if (m_flags & fDensegAsExon) {
         opts |= CSeq_loc_Mapper::fAlign_Dense_seg_TotalRange;
@@ -915,7 +913,7 @@ SImplementation::ConvertAlignToAnnot(
         CConstRef<CSeq_align> clean_align = CleanAlignment(**align_it);
         CRef<CSeq_feat> mrna_feat = ConvertAlignToAnnot(*clean_align, gene_annot, seqs, 0, NULL, true);
 
-        SMapper mapper(*clean_align, mapper_scope, m_allowed_unaligned, opts);
+        SMapper mapper(*clean_align, *m_scope, m_allowed_unaligned, opts);
         const CSeq_id& genomic_id = clean_align->GetSeq_id(mapper.GetGenomicRow());
         const CSeq_id& rna_id = clean_align->GetSeq_id(mapper.GetRnaRow());
         if(!gene_handle)

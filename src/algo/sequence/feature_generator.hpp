@@ -133,6 +133,7 @@ private:
         /// properties
         /// In addition, we need to interpret partial exons correctly
         CRef<CSeq_loc> x_GetLocFromSplicedExons(const CSeq_align& aln) const;
+        CRef<CSeq_loc_Mapper> x_Mapper();
 
         const CSeq_align& m_aln;
         CScope& m_scope;
@@ -140,6 +141,7 @@ private:
         CSeq_align::TDim m_genomic_row;
         CRef<CSeq_loc> rna_loc;
         TSeqPos m_allowed_unaligned;
+        CSeq_loc_Mapper::TMapOptions m_opts;
     };
 
     void x_CollectMrnaSequence(CSeq_inst& inst,
