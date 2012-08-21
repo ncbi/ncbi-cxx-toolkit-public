@@ -564,6 +564,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         /// This is a protein alignment; transform it into a fake transcript alignment
         /// so the rest of the processing can go on
         bool found_stop_codon = false;
+        bool found_start_codon = false;
         ITERATE (CSpliced_seg::TModifiers, mod_it,
                  input_align.GetSegs().GetSpliced().GetModifiers())
         {
@@ -571,8 +572,14 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                 (*mod_it)->GetStop_codon_found())
             {
                 found_stop_codon = true;
-                break;
             }
+            if ((*mod_it)->IsStart_codon_found() &&
+                (*mod_it)->GetStart_codon_found())
+            {
+                found_start_codon = true;
+            }
+
+
         }
 
 //         const CProt_pos &starting_pos =
@@ -668,6 +675,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(
             fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(),
             0, fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()-1));
+        fake_prot_loc->SetPartialStart(!found_start_codon,eExtreme_Biological);
+        fake_prot_loc->SetPartialStop (!found_stop_codon, eExtreme_Biological);
 
         cd_feat.Reset(new CSeq_feat);
         cd_feat->SetData().SetCdregion();
