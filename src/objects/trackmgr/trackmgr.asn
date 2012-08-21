@@ -6,8 +6,6 @@
 NCBI-TrackManager DEFINITIONS ::=
 BEGIN
 
-IMPORTS Seq-id FROM NCBI-Seqloc;
-
 EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-ClientInfo, TMgr-DisplayTrackRequest,
         TMgr-DisplayTrackReply, TMgr-AssemblySpec,TMgr-AttrSpec,
