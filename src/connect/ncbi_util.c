@@ -164,18 +164,6 @@ extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
 }
 
 
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
-static int/*bool*/ s_IsQuoted(unsigned char c)
-{
-    return (c == '\t'  ||  c == '\v'  ||  c == '\b'  ||
-            c == '\r'  ||  c == '\f'  ||  c == '\a'  ||
-            c == '\n'  ||  c == '\\'  ||  c == '\''  ||
-            c == '"' ? 1/*true*/ : 0/*false*/);
-}
-
-
 extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
 {
     const unsigned char* c;
@@ -186,11 +174,11 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
         size = strlen(data);
     retval = size;
     for (c = (const unsigned char*) data;  size;  size--, c++) {
-        if (*c == '\n')
-            retval += 3;
-        else if (s_IsQuoted(*c))
+        if (*c == '\t'  ||  *c == '\v'  ||  *c == '\b'  ||
+            *c == '\r'  ||  *c == '\f'  ||  *c == '\a'  ||
+            *c == '\\'  ||  *c == '\''  ||  *c == '"') {
             retval++;
-        else if (!isprint(*c))
+        } else if (*c == '\n'  ||  !isascii(*c)  ||  !isprint(*c))
             retval += 3;
     }
     return retval;
@@ -245,16 +233,16 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
             *d++ = '\\';
             break;
         default:
-            if (!isprint(*s)) {
+            if (!isascii(*s)  ||  !isprint(*s)) {
                 int/*bool*/ reduce;
                 unsigned char v;
                 if (full_octal)
                     reduce = 0/*false*/;
                 else {
-                    reduce = (size == 1       ||  s_IsQuoted(s[1])  ||
-                              !isprint(s[1])  ||  s[1] < '0'  ||  s[1] > '7');
+                    reduce = (size == 1  ||
+                              s[1] < '0' || s[1] > '7' ? 1/*t*/ : 0/*f*/);
                 }
-                *d++ = '\\';
+                *d++     = '\\';
                 v =  *s >> 6;
                 if (v  ||  !reduce) {
                     *d++ = '0' + v;
@@ -263,13 +251,13 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
                 v = (*s >> 3) & 7;
                 if (v  ||  !reduce)
                     *d++ = '0' + v;
-                v =  *s & 7;
-                *d++ =     '0' + v;
+                v =  *s       & 7;
+                *d++     = '0' + v;
                 continue;
             }
             break;
         }
-        *d++ = (char) *s;
+        *d++ = *s;
     }
 
     return (char*) d;

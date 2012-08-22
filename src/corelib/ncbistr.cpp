@@ -3226,16 +3226,6 @@ enum ELanguage {
 };
 
 
-static inline bool s_IsQuoted(char c, ELanguage lang)
-{
-    return (c == '\t'  ||   c == '\v'  ||  c == '\b'                      ||
-            c == '\r'  ||   c == '\f'  ||  c == '\a'                      ||
-            c == '\n'  ||   c == '\\'  ||  c == '\''                      ||
-            c == '"'   ||  (c == '&'   &&  lang == eLanguage_Javascript)  ||
-            !isprint((unsigned char) c) ? true : false);
-}
-
-
 static string s_PrintableString(const CTempString&   str,
                                 NStr::TPrintableMode mode,
                                 ELanguage            lang)
@@ -3244,6 +3234,7 @@ static string s_PrintableString(const CTempString&   str,
     SIZE_TYPE i, j = 0;
 
     for (i = 0;  i < str.size();  i++) {
+        bool octal = false;
         char c = str[i];
         switch (c) {
         case '\t':
@@ -3277,9 +3268,17 @@ static string s_PrintableString(const CTempString&   str,
                 continue;
             break;
         default:
-            if (isprint((unsigned char) c))
-                continue;
-            break;
+            if (!isascii((unsigned char) c)) {
+                if (mode & NStr::fNonAscii_Quote) {
+                    octal = true;
+                    break;
+                }
+            }
+            if (!isprint((unsigned char) c)) {
+                octal = true;
+                break;
+            }
+            continue;
         }
         if (!out.get()) {
             out.reset(new CNcbiOstrstream);
@@ -3290,29 +3289,29 @@ static string s_PrintableString(const CTempString&   str,
         out->put('\\');
         if (c == '\n') {
             out->write("n\\\n", 3);
-        } else if (!isprint((unsigned char) c)) {
+        } else if (octal) {
             bool reduce;
             if (!(mode & NStr::fPrintable_Full)) {
-                reduce = (i == str.size() - 1  ||  s_IsQuoted(str[i + 1], lang)
-                          ||  str[i + 1] < '0'  ||  str[i + 1] > '7');
+                reduce = (i == str.size() - 1  ||
+                          str[i + 1] < '0' || str[i + 1] > '7' ? true : false);
             } else {
                 reduce = false;
             }
             unsigned char v;
-            char octal[3];
+            char val[3];
             int k = 0;
             v =  (unsigned char) c >> 6;
             if (v  ||  !reduce) {
-                octal[k++] = '0' + v;
+                val[k++] = '0' + v;
                 reduce = false;
             }
             v = ((unsigned char) c >> 3) & 7;
             if (v  ||  !reduce) {
-                octal[k++] = '0' + v;
+                val[k++] = '0' + v;
             }
-            v =  (unsigned char) c & 7;
-            octal    [k++] = '0' + v;
-            out->write(octal, k);
+            v =  (unsigned char) c       & 7;
+            val    [k++] = '0' + v;
+            out->write(val, k);
         } else {
             out->put(c);
         }
@@ -3327,7 +3326,7 @@ static string s_PrintableString(const CTempString&   str,
         return CNcbiOstrstreamToString(*out);
     }
 
-    // All characters are good - return original string
+    // All characters are good - return (a copy of) the original string
     return str;
 }
 
@@ -3341,7 +3340,9 @@ string NStr::PrintableString(const CTempString&   str,
 
 string NStr::JavaScriptEncode(const CTempString& str)
 {
-    return s_PrintableString(str, eNewLine_Quote, eLanguage_Javascript);
+    return s_PrintableString(str,
+                             fNewLine_Quote | fNonAscii_Passthru,
+                             eLanguage_Javascript);
 }
 
 
@@ -3498,7 +3499,7 @@ string NStr::ShellEncode(const string& str)
     // Aesthetic issue: Most people are not familiar with the BASH-only
     //     quoting style. Avoid it as much as possible.
 
-    if (find_if(str.begin(), str.end(), not1(ptr_fun(::isprint))) != str.end()) {
+    if (find_if(str.begin(),str.end(),not1(ptr_fun(::isprint))) != str.end()) {
         return "$'" + NStr::PrintableString(str) + "'";
     }
 
@@ -3571,7 +3572,7 @@ string NStr::ShellEncode(const string& str)
     //       '\'''\'''\'' -> '"'''"'
 
     bool avoid_double_quotes = (str.find('"') == NPOS  ||
-                                 str.find('\\') != NPOS);
+                                str.find('\\') != NPOS);
     string s = "'" + NStr::Replace(str, "'",
             avoid_double_quotes ? "'\\''" : "'\"'\"'") + "'";
 

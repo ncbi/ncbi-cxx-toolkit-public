@@ -2222,18 +2222,18 @@ public:
     ///
     /// Assists in making a printable version of "str".
     enum EPrintableMode {
-        fNewLine_Quote    = 0,   ///< Display "\n" instead of actual linebreak
-        eNewLine_Quote    = fNewLine_Quote,
-        fNewLine_Passthru = 1,   ///< Break the line at every "\n" occurrence
-        eNewLine_Passthru = fNewLine_Passthru,
-        fPrintable_Full   = 2    ///< Show all octal digits at all times
+        fNewLine_Quote     = 0,  ///< Display "\n" instead of actual linebreak
+        fNewLine_Passthru  = 1,  ///< Break the line at every "\n" occurrence
+        fNonAscii_Passthru = 0,  ///< Allow non-ASCII but printable characters
+        fNonAscii_Quote    = 4,  ///< Octal for all non-ASCII characters
+        fPrintable_Full    = 64  ///< Show all octal digits at all times
     };
     typedef int TPrintableMode;  ///< Bitwise OR of EPrintableMode flags
 
     /// Get a printable version of the specified string. 
     ///
     /// All non-printable characters will be represented as "\r", "\n", "\v",
-    /// "\t", "\"", "\\", etc, or "\ooo" where 'ooo' is the octal code of the
+    /// "\t", "\"", "\\", etc, or "\ooo" where 'ooo' is an octal code of the
     /// character.  The resultant string is a well-formed C string literal,
     /// which, without alterations, can be compiled by a C/C++ compiler.
     /// In many instances, octal representations of non-printable characters
@@ -2253,7 +2253,8 @@ public:
     /// @sa
     ///   ParseEscapes, CEncode, CParse
     static string PrintableString(const CTempString&  str,
-                                  TPrintableMode mode = eNewLine_Quote);
+                                  TPrintableMode mode =
+                                  fNewLine_Quote | fNonAscii_Passthru);
 
     /// C-style escape sequences parsing mode.
     /// For escape sequences with a value outside the range of [0-255] 
