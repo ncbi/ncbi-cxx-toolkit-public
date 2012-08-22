@@ -145,7 +145,11 @@ CTempString CStreamLineReader::operator*(void) const
 
 CT_POS_TYPE CStreamLineReader::GetPosition(void) const
 {
-    return m_Stream->tellg();
+    CT_POS_TYPE pos = m_Stream->tellg();
+    if (m_UngetLine) {
+        pos -= m_Line.size();
+    }
+    return pos;
 }
 
 
@@ -522,7 +526,11 @@ CTempString CBufferedLineReader::operator*(void) const
 
 CT_POS_TYPE CBufferedLineReader::GetPosition(void) const
 {
-    return m_InputPos + CT_OFF_TYPE(m_Pos - m_Buffer.get());
+    CT_OFF_TYPE offset = m_Pos - m_Buffer.get();
+    if (m_UngetLine) {
+        offset -= m_Line.size();
+    }
+    return m_InputPos + offset;
 }
 
 
