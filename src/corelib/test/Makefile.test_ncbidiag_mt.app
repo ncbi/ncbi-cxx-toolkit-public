@@ -2,7 +2,7 @@
 
 APP = test_ncbidiag_mt
 SRC = test_ncbidiag_mt
-LIB = xncbi test_mt
+LIB = test_mt xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -DNCBI_SHOW_FUNCTION_NAME
 

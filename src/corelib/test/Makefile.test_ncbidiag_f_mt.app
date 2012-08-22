@@ -2,7 +2,7 @@
 
 APP = test_ncbidiag_f_mt
 SRC = test_ncbidiag_f_mt
-LIB = xncbi test_mt
+LIB = test_mt xncbi
 
 CHECK_CMD = test_ncbidiag_f_mt 1
 CHECK_CMD = test_ncbidiag_f_mt 2
