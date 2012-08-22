@@ -1831,8 +1831,10 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
         info_ptr = (SNCTempBlobInfo*)big_block;
         for (Uint8 i = 0; i < cnt_blobs; ++i) {
             Uint2 key_slot = 0, key_bucket = 0;
-            CNCDistributionConf::GetSlotByKey(info_ptr->key, key_slot, key_bucket);
-            if (key_slot != slot  ||  key_bucket != bucket_num)
+            if (!CNCDistributionConf::GetSlotByKey(info_ptr->key,
+                            key_slot, key_bucket) ||
+                    key_slot != slot ||
+                    key_bucket != bucket_num)
                 abort();
 
             SNCBlobSummary* blob_sum = new SNCBlobSummary();
@@ -2065,7 +2067,10 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         return false;
     }
     Uint2 slot = 0, time_bucket = 0;
-    CNCDistributionConf::GetSlotByKey(key, slot, time_bucket);
+    if (!CNCDistributionConf::GetSlotByKey(key, slot, time_bucket)) {
+        SRV_LOG(Critical, "Could not extract slot number from key: " << key);
+        return false;
+    }
 
     SNCCacheData* cache_data = new SNCCacheData();
     cache_data->key = key;

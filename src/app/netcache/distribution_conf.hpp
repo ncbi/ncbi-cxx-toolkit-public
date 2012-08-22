@@ -48,7 +48,12 @@ public:
     static void Finalize(void);
 
     // Provides the slot number for the given key
-    static void GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bucket);
+    static bool GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bucket);
+    static bool GetSlotByNetCacheKey(const string& key,
+            Uint2& slot, Uint2& time_bucket);
+    static void GetSlotByICacheKey(const string& key,
+            Uint2& slot, Uint2& time_bucket);
+    static void GetSlotByRnd(Uint4 key_rnd, Uint2& slot, Uint2& time_bucket);
 
     // Provides server IDs which serve the given slot
     static TServersList GetServersForSlot(Uint2 slot);

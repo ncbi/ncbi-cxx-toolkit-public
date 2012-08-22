@@ -357,28 +357,64 @@ CNCDistributionConf::GenerateBlobKey(Uint2 local_port,
                                   s_SelfHostIP, local_port, 1, key_rnd);
 }
 
-void
+bool
 CNCDistributionConf::GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bucket)
 {
-    Uint4 key_rnd;
-    if (key[0] == '\1') {
+    if (key[0] == '\1')
         // NetCache-generated key
-        size_t ind = key.find('_', 0);  // version
-        ind = key.find('_', ind + 1);   // id
-        ind = key.find('_', ind + 1);   // host
-        ind = key.find('_', ind + 1);   // port
-        ind = key.find('_', ind + 1);   // time
-        ind = key.find('_', ind + 1);   // random
-        ++ind;
-        key_rnd = NStr::StringToUInt(CTempString(&key[ind], key.size() - ind),
-                                     NStr::fAllowTrailingSymbols);
-    }
+        return GetSlotByNetCacheKey(key, slot, time_bucket);
     else {
         // ICache key provided by client
-        CChecksum crc32(CChecksum::eCRC32);
-        crc32.AddChars(key.data(), key.size());
-        key_rnd = crc32.GetChecksum();
+        GetSlotByICacheKey(key, slot, time_bucket);
+        return true;
     }
+}
+
+bool
+CNCDistributionConf::GetSlotByNetCacheKey(const string& key,
+        Uint2& slot, Uint2& time_bucket)
+{
+#define SKIP_UNDERSCORE(key, ind) \
+    ind = key.find('_', ind + 1); \
+    if (ind == string::npos) \
+        return false;
+
+    size_t ind = 0;
+    SKIP_UNDERSCORE(key, ind);      // version
+    SKIP_UNDERSCORE(key, ind);      // id
+    SKIP_UNDERSCORE(key, ind);      // host
+    SKIP_UNDERSCORE(key, ind);      // port
+    SKIP_UNDERSCORE(key, ind);      // time
+    SKIP_UNDERSCORE(key, ind);      // random
+    ++ind;
+
+    unsigned key_rnd = NStr::StringToUInt(
+            CTempString(&key[ind], key.size() - ind),
+            NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols);
+
+    if (key_rnd == 0 && errno != 0)
+        return false;
+
+    GetSlotByRnd(key_rnd, slot, time_bucket);
+
+    return true;
+}
+
+void
+CNCDistributionConf::GetSlotByICacheKey(const string& key,
+        Uint2& slot, Uint2& time_bucket)
+{
+    CChecksum crc32(CChecksum::eCRC32);
+
+    crc32.AddChars(key.data(), key.size());
+
+    GetSlotByRnd(crc32.GetChecksum(), slot, time_bucket);
+}
+
+void
+CNCDistributionConf::GetSlotByRnd(Uint4 key_rnd,
+        Uint2& slot, Uint2& time_bucket)
+{
     // Slot numbers are 1-based
     slot = Uint2(key_rnd / s_SlotRndShare) + 1;
     time_bucket = Uint2((slot - 1) * s_CntSlotBuckets

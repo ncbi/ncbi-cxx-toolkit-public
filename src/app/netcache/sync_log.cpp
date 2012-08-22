@@ -557,8 +557,8 @@ CNCSyncLog::AddEvent(Uint2 slot, SNCSyncEvent* event)
 {
     Uint2 real_slot = 0;
     Uint2 time_bucket = 0;
-    CNCDistributionConf::GetSlotByKey(event->key, real_slot, time_bucket);
-    if (real_slot != slot)
+    if (!CNCDistributionConf::GetSlotByKey(event->key,
+            real_slot, time_bucket) || real_slot != slot)
         abort();
 
     SSlotData& data = s_GetSlotData(slot);

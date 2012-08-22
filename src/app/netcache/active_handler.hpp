@@ -34,6 +34,7 @@
 
 #include "nc_utils.hpp"
 #include "periodic_sync.hpp"
+#include "distribution_conf.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -311,6 +312,8 @@ private:
     State x_ReadSyncProInfoAnswer(void);
     State x_ExecuteProInfoCmd(void);
 
+    void x_SetSlotAndBucketAndVerifySlot(Uint2 slot);
+
 
     Uint8   m_SrvId;
     string  m_CmdToSend;
@@ -347,6 +350,13 @@ private:
     TNCBufferType m_ReadBuf;
 };
 
+inline void
+CNCActiveHandler::x_SetSlotAndBucketAndVerifySlot(Uint2 slot)
+{
+    if (!CNCDistributionConf::GetSlotByKey(m_BlobKey,
+            m_BlobSlot, m_TimeBucket) || m_BlobSlot != slot)
+        abort();
+}
 
 class CNCActiveHandler_Proxy : public CSrvSocketTask
 {
