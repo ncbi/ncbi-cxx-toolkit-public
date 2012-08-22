@@ -2254,8 +2254,8 @@ public:
     ///   Return a printable version of "str".
     /// @sa
     ///   ParseEscapes, CEncode, CParse
-    static string PrintableString(const CTempString&  str,
-                                  TPrintableMode mode =
+    static string PrintableString(const CTempString& str,
+                                  TPrintableMode     mode =
                                   fNewLine_Quote | fNonAscii_Passthru);
 
     /// C-style escape sequences parsing mode.
