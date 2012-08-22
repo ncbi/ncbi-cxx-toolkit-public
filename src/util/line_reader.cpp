@@ -175,10 +175,10 @@ CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLUnknown(void)
         // which will be responsible for reading the next line and
         // supports switching to eEOL_lf as appropriate.
         //
-        // An alternative approach would have been to pass \r\n rather
-        // than \n\r, and then check for an immediately following \n
+        // An alternative approach would have been to pass \n\r rather
+        // than \r\n, and then check for an immediately following \n
         // if eol turned out to be \r, but that would miscount an
-        // actual(!) \r\n sequence as a single line break.
+        // actual(!) \n\r sequence as a single line break.
         m_EOLStyle = eEOL_crlf;
     }
     return m_EOLStyle;
