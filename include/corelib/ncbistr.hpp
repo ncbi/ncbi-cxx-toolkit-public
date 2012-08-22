@@ -2223,9 +2223,11 @@ public:
     /// Assists in making a printable version of "str".
     enum EPrintableMode {
         fNewLine_Quote     = 0,  ///< Display "\n" instead of actual linebreak
+        eNewLine_Quote     = fNewLine_Quote,
         fNewLine_Passthru  = 1,  ///< Break the line at every "\n" occurrence
+        eNewLine_Passthru  = fNewLine_Passthru,
         fNonAscii_Passthru = 0,  ///< Allow non-ASCII but printable characters
-        fNonAscii_Quote    = 4,  ///< Octal for all non-ASCII characters
+        fNonAscii_Quote    = 2,  ///< Octal for all non-ASCII characters
         fPrintable_Full    = 64  ///< Show all octal digits at all times
     };
     typedef int TPrintableMode;  ///< Bitwise OR of EPrintableMode flags
