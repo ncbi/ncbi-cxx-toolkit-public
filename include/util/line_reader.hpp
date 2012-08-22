@@ -132,6 +132,7 @@ private:
     AutoPtr<CNcbiIstream> m_Stream;
     string                m_Line;
     unsigned int          m_LineNumber;
+    SIZE_TYPE             m_LastReadSize;
     bool                  m_UngetLine;
     bool                  m_AutoEOL;
     EEOLStyle             m_EOLStyle;
@@ -204,6 +205,7 @@ private:
     AutoPtr<IReader> m_Reader;
     bool          m_Eof;
     bool          m_UngetLine;
+    SIZE_TYPE     m_LastReadSize;
     size_t        m_BufferSize;
     AutoArray<char> m_Buffer;
     const char*   m_Pos;

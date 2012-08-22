@@ -77,16 +77,17 @@ CRef<ILineReader> ILineReader::New(CNcbiIstream& is, EOwnership ownership)
 CStreamLineReader::CStreamLineReader(CNcbiIstream& is,
                                      EEOLStyle eol_style,
                                      EOwnership ownership)
-    : m_Stream(&is, ownership), m_LineNumber(0), m_UngetLine(false),
-      m_AutoEOL(eol_style == eEOL_unknown), m_EOLStyle(eol_style)
+    : m_Stream(&is, ownership), m_LineNumber(0), m_LastReadSize(0),
+      m_UngetLine(false), m_AutoEOL(eol_style == eEOL_unknown),
+      m_EOLStyle(eol_style)
 {
 }
 
 
 CStreamLineReader::CStreamLineReader(CNcbiIstream& is,
                                      EOwnership ownership)
-    : m_Stream(&is, ownership), m_LineNumber(0), m_UngetLine(false),
-      m_AutoEOL(true), m_EOLStyle(eEOL_unknown)
+    : m_Stream(&is, ownership), m_LineNumber(0), m_LastReadSize(0),
+      m_UngetLine(false), m_AutoEOL(true), m_EOLStyle(eEOL_unknown)
 {
 }
 
@@ -147,7 +148,7 @@ CT_POS_TYPE CStreamLineReader::GetPosition(void) const
 {
     CT_POS_TYPE pos = m_Stream->tellg();
     if (m_UngetLine) {
-        pos -= m_Line.size();
+        pos -= m_LastReadSize;
     }
     return pos;
 }
@@ -162,7 +163,7 @@ unsigned int CStreamLineReader::GetLineNumber(void) const
 CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLUnknown(void)
 {
     _ASSERT(m_AutoEOL);
-    NcbiGetline(*m_Stream, m_Line, "\r\n");
+    NcbiGetline(*m_Stream, m_Line, "\r\n", &m_LastReadSize);
     m_Stream->unget();
     CT_INT_TYPE eol = m_Stream->get();
     if (CT_EQ_INT_TYPE(eol, CT_TO_INT_TYPE('\r'))) {
@@ -189,7 +190,7 @@ CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLSimple(char eol,
                                                                    char alt_eol)
 {
     SIZE_TYPE pos;
-    NcbiGetline(*m_Stream, m_Line, eol);
+    NcbiGetline(*m_Stream, m_Line, eol, &m_LastReadSize);
     if (m_AutoEOL  &&  (pos = m_Line.find(alt_eol)) != NPOS) {
         ++pos;
         if (eol != '\n'  ||  pos != m_Line.size()) {
@@ -198,11 +199,13 @@ CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLSimple(char eol,
                                    m_Line.size() - pos);
             m_EOLStyle = eEOL_mixed;
         }
-        m_Line.resize(pos - 1);
+        m_Line.resize(pos - 2);
+        m_LastReadSize = pos;
         return (m_EOLStyle == eEOL_mixed) ? m_EOLStyle : eEOL_crlf;
     } else if (m_AutoEOL  &&  eol == '\r'  &&
                CT_EQ_INT_TYPE(m_Stream->peek(), CT_TO_INT_TYPE(alt_eol))) {
         m_Stream->get();
+        ++m_LastReadSize;
         return eEOL_crlf;
     }
     return (eol == '\r') ? eEOL_cr : eEOL_lf;
@@ -221,11 +224,13 @@ CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLCRLF(void)
         }
     } else {
         string extra;
-        NcbiGetline(*m_Stream, m_Line, '\n');
+        NcbiGetline(*m_Stream, m_Line, '\n', &m_LastReadSize);
         while ( !AtEOF()  &&  !NStr::EndsWith(m_Line, "\r") ) {
+            SIZE_TYPE extra_count;
             m_Line += '\n';
-            NcbiGetline(*m_Stream, extra, '\n');
+            NcbiGetline(*m_Stream, extra, '\n', &extra_count);
             m_Line += extra;
+            m_LastReadSize += extra_count + 1;
         }
         if (NStr::EndsWith(m_Line, "\r")) {
             m_Line.resize(m_Line.size() - 1);
@@ -399,6 +404,7 @@ CBufferedLineReader& CBufferedLineReader::operator++(void)
     for ( const char* p = start; p < end; ++p ) {
         if ( *p == '\n' ) {
             m_Line = CTempString(start, p - start);
+            m_LastReadSize = p + 1 - start;
             m_Pos = ++p;
             if ( p == end ) {
                 m_String = m_Line;
@@ -409,6 +415,7 @@ CBufferedLineReader& CBufferedLineReader::operator++(void)
         }
         else if ( *p == '\r' ) {
             m_Line = CTempString(start, p - start);
+            m_LastReadSize = p + 1 - start;
             if ( ++p == end ) {
                 m_String = m_Line;
                 m_Line = m_String;
@@ -416,11 +423,13 @@ CBufferedLineReader& CBufferedLineReader::operator++(void)
                     p = m_Pos;
                     if ( *p == '\n' ) {
                         m_Pos = p+1;
+                        ++m_LastReadSize;
                     }
                 }
                 return *this;
             }
             if ( *p != '\n' ) {
+                ++m_LastReadSize;
                 return *this;
             }
             m_Pos = ++p;
@@ -450,6 +459,7 @@ void CBufferedLineReader::x_LoadLong(void)
             if ( c == '\r' || c == '\n' ) {
                 m_String.append(start, p - start);
                 m_Line = m_String;
+                m_LastReadSize = m_Line.size() + 1;
                 if ( ++p == end ) {
                     m_String = m_Line;
                     m_Line = m_String;
@@ -459,6 +469,7 @@ void CBufferedLineReader::x_LoadLong(void)
                         if ( p < end && c == '\r' && *p == '\n' ) {
                             ++p;
                             m_Pos = p;
+                            ++m_LastReadSize;
                         }
                     }
                 }
@@ -467,6 +478,7 @@ void CBufferedLineReader::x_LoadLong(void)
                         if ( ++p == end ) {
                             x_ReadBuffer();
                             p = m_Pos;
+                            ++m_LastReadSize;
                         }
                     }
                     m_Pos = p;
@@ -477,6 +489,7 @@ void CBufferedLineReader::x_LoadLong(void)
         m_String.append(start, end - start);
     }
     m_Line = m_String;
+    m_LastReadSize = m_Line.size();
     return;
 }
 
@@ -528,7 +541,7 @@ CT_POS_TYPE CBufferedLineReader::GetPosition(void) const
 {
     CT_OFF_TYPE offset = m_Pos - m_Buffer.get();
     if (m_UngetLine) {
-        offset -= m_Line.size();
+        offset -= m_LastReadSize;
     }
     return m_InputPos + offset;
 }
