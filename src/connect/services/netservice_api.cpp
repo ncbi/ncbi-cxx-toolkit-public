@@ -440,10 +440,17 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section)
             m_IOFailureThresholdNumerator = numerator;
             m_IOFailureThresholdDenominator = denominator;
 
-            m_MaxConsecutiveIOFailures = config->GetInt(section,
-                "throttle_by_subsequent_connection_failures",
-                    CConfig::eErr_NoThrow,
+            try {
+                m_MaxConsecutiveIOFailures = config->GetInt(section,
+                        "throttle_by_consecutive_connection_failures",
+                        CConfig::eErr_NoThrow, 0);
+            }
+            catch (exception&) {
+                m_MaxConsecutiveIOFailures = config->GetInt(section,
+                        "throttle_by_subsequent_connection_failures",
+                        CConfig::eErr_NoThrow,
                         THROTTLE_BY_SUBSEQUENT_CONNECTION_FAILURES_DEFAULT);
+            }
 
             m_ThrottleUntilDiscoverable = config->GetBool(section,
                 "throttle_hold_until_active_in_lb", CConfig::eErr_NoThrow,
