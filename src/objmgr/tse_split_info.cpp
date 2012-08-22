@@ -310,7 +310,6 @@ void CTSE_Split_Info::x_UpdateAnnotIndex(void)
 
 void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
-    CMutexGuard guard(m_SeqIdToChunksMutex);
     if ( !chunk.m_AnnotIndexEnabled ) {
         NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
             CTSE_Info& tse = *it->first;
