@@ -179,6 +179,10 @@ public:
     // Similar to above, except verify exon boundary using exon annotation on refseq transcripts, if exists
     ETestStatus CheckExonBoundary(const CVariantPlacement& p); 
 
+    /// if placement is invalid SeqLocCheck fails, or offsets out of order, attach VariationException and return true
+    /// otherwise return false;
+    bool CheckPlacement(CVariantPlacement& p);
+
     /// Calculate upstream (first) and downstream(second) flanks for loc
     struct SFlankLocs
     {

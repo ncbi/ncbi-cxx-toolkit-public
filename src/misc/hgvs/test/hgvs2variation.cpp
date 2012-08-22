@@ -125,6 +125,8 @@ void CHgvs2variationApplication::Init(void)
             CArgDescriptions::eInteger,
             "0");
 
+    
+    arg_desc->AddFlag("reference_seq", "attach reference seq");
     arg_desc->AddFlag("loc_prop", "attach location properties");
     arg_desc->AddFlag("prot_effect", "attach effect on the protein");
     arg_desc->AddFlag("precursor", "calculate precursor variation");
@@ -211,6 +213,12 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
 
     if(args["loc_prop"]) {
         variation_util.SetVariantProperties(v);
+    }
+
+    if(args["reference_seq"]) {
+        NON_CONST_ITERATE(CVariation::TPlacements, it, v.SetPlacements()) {
+            variation_util.AttachSeq(**it);
+        }
     }
 
     if(args["prot_effect"]) {

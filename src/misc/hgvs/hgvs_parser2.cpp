@@ -884,6 +884,7 @@ CRef<CVariantPlacement> CHgvsParser::x_location(TIterator const& i, const CConte
         exception->SetMessage("HGVS exon-boundary position not represented in the transcript annotation");
         placement->SetExceptions().push_back(exception);    
     }
+    util.CheckPlacement(*placement);
 
     return placement;
 }

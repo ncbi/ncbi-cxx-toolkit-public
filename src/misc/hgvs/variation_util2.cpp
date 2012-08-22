@@ -84,6 +84,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <misc/hgvs/variation_util2.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
@@ -378,8 +379,40 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
             
         s_ResolveIntronicOffsets(*p3);
     }
-
     return p3;
+}
+
+
+bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
+{
+    bool invalid_location = false;
+    bool out_of_order = false;
+
+    if(sequence::SeqLocCheck(p.GetLoc(), m_scope) == sequence::eSeqLocCheck_error) {
+        invalid_location = true;
+    }
+
+    if(sequence::GetStart(p.GetLoc(), NULL) > sequence::GetStop(p.GetLoc(), NULL)) {
+        out_of_order = true;    
+    }
+
+    if(p.IsSetStart_offset() && p.IsSetStop_offset() && sequence::GetLength(p.GetLoc(), NULL) == 1) {
+        if(sequence::GetStrand(p.GetLoc(), NULL) == eNa_strand_minus ? 
+              p.GetStart_offset() < p.GetStop_offset() 
+            : p.GetStart_offset() > p.GetStop_offset() )
+        {
+            out_of_order = true;
+            invalid_location = true;
+        }
+    }
+
+    if(invalid_location) {
+        CRef<CVariationException> exception(new CVariationException);
+        exception->SetCode(CVariationException::eCode_hgvs_parsing);
+        exception->SetMessage(out_of_order ? "Invalid location - start and stop are out of order" : "Invalid location");
+        p.SetExceptions().push_back(exception);
+    }
+    return invalid_location;
 }
 
 
@@ -455,6 +488,8 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     }
 
     ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
+
+    CheckPlacement(*p2);
     return p2;
 }
 
