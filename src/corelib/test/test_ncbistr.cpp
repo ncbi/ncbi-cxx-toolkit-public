@@ -2064,7 +2064,11 @@ BOOST_AUTO_TEST_CASE(s_Replace)
 
 BOOST_AUTO_TEST_CASE(s_PrintableString)
 {
-    NcbiCout << NcbiEndl << "NStr::{PrintableString|ParseEscapes}() tests...";
+    NcbiCout << NcbiEndl << "NStr::{PrintableString|ParseEscapes}() tests";
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+    NcbiCout << " (UNICODE)";
+#endif // NCBI_OS_MSWIN & _UNICODE
+    NcbiCout << "..." << NcbiFlush;
 
     // NStr::PrintableString()
 
@@ -2073,12 +2077,12 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
                 ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"").compare
                 ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"") == 0);
     BOOST_CHECK(NStr::PrintableString
-                ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD").compare
-                ("A\\1\\r\\202\\17\\0205B\\0CD") == 0);
+                ("A\x01\r\177\x000F\0205B" + string(1,'\0') + "CD").compare
+                ("A\\1\\r\\177\\17\\0205B\\0CD") == 0);
     BOOST_CHECK(NStr::PrintableString
-                ("A\x01\r\202\x000F\0205B" + string(1,'\0') + "CD",
-                 NStr::fPrintable_Full).compare
-                ("A\\001\\r\\202\\017\\0205B\\000CD") == 0);
+                ("A\x01\r\xC1\xF7\x07\x3A\252\336\202\x000F\0205B" + string(1,'\0') + "CD",
+                 NStr::fNonAscii_Quote | NStr::fPrintable_Full).compare
+                ("A\\001\\r\\301\\367\\a:\\252\\336\\202\\017\\0205B\\000CD") == 0);
     BOOST_CHECK(NStr::PrintableString
                 ("A\nB\\\nC").compare
                 ("A\\nB\\\\\\nC") == 0);
