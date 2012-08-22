@@ -1052,7 +1052,7 @@ void CLDS2_Database::Dump(const string& table, CNcbiOstream& out)
                 if (i > 0) {
                     out << "\t";
                 }
-                out << NStr::PrintableString(st.GetString(i), NStr::eNewLine_Quote);
+                out << NStr::PrintableString(st.GetString(i));
             }
             out << endl;
         }
