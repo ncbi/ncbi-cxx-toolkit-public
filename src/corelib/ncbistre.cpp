@@ -84,7 +84,8 @@ void CNcbiFstream::open(
 #endif
 
 
-CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
+CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims,
+                          SIZE_TYPE* count)
 {
     str.erase();
 
@@ -110,6 +111,7 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
     SIZE_TYPE pos = 0;
     SIZE_TYPE size = 0;
     SIZE_TYPE max_size = str.max_size();
+    SIZE_TYPE delim_count = 0;
     IOS_BASE::iostate iostate = NcbiGoodbit/*0*/;
     for (;;) {
         CT_INT_TYPE ch = is.rdbuf()->sbumpc();
@@ -127,6 +129,9 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
             if (!CT_EQ_INT_TYPE(ch, CT_EOF)
                 &&  delims.find(CT_TO_CHAR_TYPE(ch), delim_pos + 1) != NPOS) {
                 is.rdbuf()->sbumpc();
+                delim_count = 2;
+            } else {
+                delim_count = 1;
             }
             break;
         }
@@ -145,6 +150,8 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
     }
     if (pos > 0)
         str.append(buf, pos);
+    if (count != NULL)
+        *count = size + delim_count;
 
 #ifdef NO_PUBSYNC
     is.isfx();
@@ -165,15 +172,11 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 #  endif
 #endif
 
-extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
+extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim,
+                                 SIZE_TYPE* count)
 {
 #if   defined(NCBI_USE_OLD_IOSTREAM)
-    return NcbiGetline(is, str, string(1, delim));
-#elif defined(NCBI_COMPILER_GCC29x)
-    // The code below is normally somewhat faster than this call,
-    // which typically appends only one character to "str" at a time;
-    // however, it blows up when is built with some GCC versions.
-    getline(is, str, delim);
+    return NcbiGetline(is, str, string(1, delim), count);
 #else
     str.erase();
 
@@ -189,6 +192,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
         CT_INT_TYPE nextc = is.get();
         if (CT_EQ_INT_TYPE(nextc, CT_EOF) 
             ||  CT_EQ_INT_TYPE(nextc, CT_TO_INT_TYPE(delim))) {
+            ++size;
             break;
         }
         if ( !is.unget() )
@@ -208,6 +212,8 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 
     if (is.rdstate() == NcbiEofbit  &&  str.empty())
         is.setstate(NcbiFailbit);
+    if (count != NULL)
+        *count = size;
     return is;
 }
 
@@ -225,16 +231,16 @@ const char* Endl(void)
 
 
 // Get a line taking into account platform-specific of End-Of-Line
-CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
+CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str, SIZE_TYPE* count)
 {
 #if   defined(NCBI_OS_MSWIN)
-    NcbiGetline(is, str, '\n');
+    NcbiGetline(is, str, '\n', count);
     if (!str.empty()  &&  str[str.length() - 1] == '\r')
         str.resize(str.length() - 1);
 #elif defined(NCBI_OS_DARWIN)
-    NcbiGetline(is, str, "\r\n");
+    NcbiGetline(is, str, "\r\n", count);
 #else /* assume UNIX-like EOLs */
-    NcbiGetline(is, str, '\n');
+    NcbiGetline(is, str, '\n', count);
 #endif //NCBI_OS_...
     return is;
 }

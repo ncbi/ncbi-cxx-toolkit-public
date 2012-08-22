@@ -420,17 +420,20 @@ extern const char* Endl(void);
 
 /// Read from "is" to "str" up to the delimiter symbol "delim" (or EOF)
 NCBI_XNCBI_EXPORT
-extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
+extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim,
+                                 string::size_type* count = NULL);
 
 /// Read from "is" to "str" up to any symbol contained within "delims" (or EOF)
 NCBI_XNCBI_EXPORT
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str,
-                                 const string& delims);
+                                 const string& delims,
+                                 string::size_type* count = NULL);
 
 /// Read from "is" to "str" the next line 
 /// (taking into account platform specifics of End-of-Line)
 NCBI_XNCBI_EXPORT
-extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
+extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str,
+                                    string::size_type* count = NULL);
 
 
 /// Copy entire contents of stream "is" into "os".
