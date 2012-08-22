@@ -1277,12 +1277,21 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
     }
     // [NCBI.MemorySizeLimit]
     if ( !reg->Get("NCBI", "MemorySizeLimit").empty() ) {
-        int mem_size_limit = reg->GetInt("NCBI", "MemorySizeLimit", 0);
-        if (mem_size_limit < 0) {
-            NCBI_THROW(CAppException, eLoadConfig,
-                       "Configuration file error:  [NCBI.MemorySizeLimit] < 0");
+        size_t mem_size_limit = 0;
+        string s = reg->GetString("NCBI", "MemorySizeLimit", kEmptyStr);
+        size_t pos = s.find("%");
+        if (pos != NPOS) {
+            // Size in percents of total memory
+            size_t percents = NStr::StringToUInt(CTempString(s, 0, pos));
+            if (percents > 100) {
+                NCBI_THROW(CAppException, eLoadConfig,
+                           "Configuration file error:  [NCBI.HeapSizeLimit] > 100%");
+            }
+            mem_size_limit = (size_t)(GetPhysicalMemorySize() * percents / 100);
+        } else {
+            // Size in MB
+            mem_size_limit = (size_t)(NStr::StringToUInt(s) * 1024 * 1024);
         }
-        mem_size_limit *= 1024 * 1024;
         if ( !SetMemoryLimit(mem_size_limit) ) {
             ERR_POST_X(13, Warning
                            << "Failed to set memory size limit to "
