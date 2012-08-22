@@ -4092,24 +4092,28 @@ string SDiagMessage::x_GetModule(void) const
         return kEmptyStr;
     }
     char sep_chr = CDirEntry::GetPathSeparator();
-    const char* last_sep = m_File;
-    while (last_sep  &&  *last_sep) {
-        if (*last_sep == sep_chr) break;
-        last_sep++;
+    const char* mod_start = 0;
+    const char* mod_end = m_File;
+    const char* c = strchr(m_File, sep_chr);
+    while (c  &&  *c) {
+        if (c > mod_end) {
+            mod_start = mod_end;
+            mod_end = c;
+        }
+        c = strchr(c + 1, sep_chr);
     }
-    if (last_sep == m_File) {
+    if ( !mod_start ) {
+        mod_start = m_File;
+    }
+    while (*mod_start == sep_chr) {
+        mod_start++;
+    }
+    if (mod_end < mod_start + 1) {
         return kEmptyStr;
     }
-    const char* cur = last_sep - 1;
-    while (cur  &&  *cur  &&  cur >= m_File) {
-        if (*cur == sep_chr) {
-            string ret(cur + 1, last_sep - cur - 1);
-            NStr::ToUpper(ret);
-            return ret;
-        }
-        cur--;
-    }
-    return kEmptyStr;
+    string ret(mod_start, mod_end - mod_start);
+    NStr::ToUpper(ret);
+    return ret;
 }
 
 
