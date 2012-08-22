@@ -199,7 +199,7 @@ CStreamLineReader::EEOLStyle CStreamLineReader::x_AdvanceEOLSimple(char eol,
                                    m_Line.size() - pos);
             m_EOLStyle = eEOL_mixed;
         }
-        m_Line.resize(pos - 2);
+        m_Line.resize(pos - 1);
         m_LastReadSize = pos;
         return (m_EOLStyle == eEOL_mixed) ? m_EOLStyle : eEOL_crlf;
     } else if (m_AutoEOL  &&  eol == '\r'  &&
