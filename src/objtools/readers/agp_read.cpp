@@ -113,6 +113,11 @@ void AgpRead(CNcbiIstream& is,
             continue;
         }
 
+        // remove Windows-style endline, if it exists
+        if( ! line.empty() && *line.rbegin() == '\r' ) {
+            line.resize( line.size() - 1 );
+        }
+
         // split into fields, as delimited by tabs
         fields.clear();
         NStr::Tokenize(line, "\t", fields);
