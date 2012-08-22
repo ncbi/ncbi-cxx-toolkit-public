@@ -15212,7 +15212,7 @@ Bioseq-set ::= {
       descr {
         molinfo {
           biomol mRNA,
-          completeness unknown
+          completeness no-ends
         }
       },
       inst {
@@ -15331,7 +15331,9 @@ Bioseq-set ::= {
               location int {
                 from 0,
                 to 566,
-                id local str "MRNA_1"
+                id local str "MRNA_1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
               }
             }
           }
