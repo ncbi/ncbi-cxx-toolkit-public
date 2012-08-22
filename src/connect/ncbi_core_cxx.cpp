@@ -165,7 +165,8 @@ static void s_LOG_Handler(void*       /*user_data*/,
                 " byte" << (call_data->raw_size != 1 ? "s" : "") << ")\n" <<
                 NStr::PrintableString
                 (string(static_cast<const char*> (call_data->raw_data),
-                        call_data->raw_size), NStr::eNewLine_Passthru) <<
+                        call_data->raw_size),
+                 NStr::fNewLine_Passthru | NStr::fNonAscii_Quote) <<
                 "\n#################### [END] Raw Data";
         }
     }
