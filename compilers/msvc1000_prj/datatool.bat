@@ -41,7 +41,7 @@ set input_def_path=
 set subtree=
 set srcroot=
 :PARSEARGS
-if "%1"=="" goto ENDPARSEARGS
+if _%1==_ goto ENDPARSEARGS
 if "%dest%"=="inASN"    (set input_asn_path=%~1& set input_asn_name=%~n1& set dest=& goto CONTINUEPARSEARGS)
 if "%dest%"=="inDEF"    (set input_def_path=%~1& set dest=& goto CONTINUEPARSEARGS)
 if "%dest%"=="subtree"  (set subtree=%1&     set dest=& goto CONTINUEPARSEARGS)
