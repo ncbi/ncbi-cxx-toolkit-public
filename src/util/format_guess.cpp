@@ -2324,7 +2324,7 @@ bool CFormatGuess::IsLineHgvs(
     const string& line )
 {
     // This simple check can mistake Newwick, so Newwick is checked first
-    //  /:(g|c|r|p|m|mt)\./  as in NC_000001.9:g.1234567C>T
+    //  /:(g|c|r|p|m|mt|n)\./  as in NC_000001.9:g.1234567C>T
     int State = 0;
     ITERATE(string, Iter, line) {
         char Char = *Iter;
@@ -2342,9 +2342,12 @@ bool CFormatGuess::IsLineHgvs(
                 Char == 'c' ||
                 Char == 'r' ||
                 Char == 'p' ||
-               (Char == 'm' && Next == 't') ||
+                Char == 'n' ||
                 Char == 'm' ) {
                 State = 2;
+                if (Char=='m' && Next == 't') {
+                    ++Iter;
+                }
             }
         } else if(State == 2) {
             if(Char == '.') 

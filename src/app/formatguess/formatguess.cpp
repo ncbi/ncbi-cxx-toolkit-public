@@ -116,6 +116,7 @@ CFormatGuessApp::Run(void)
     FormatStrings[ CFormatGuess::eWiggle ] = "UCSC Wiggle file";
     FormatStrings[ CFormatGuess::eBed ] = "UCSC BED file";
     FormatStrings[ CFormatGuess::eBed15 ] = "UCSC microarray file";
+    FormatStrings[ CFormatGuess::eHgvs ] = "HGVS Variation file";
                 
     CFormatGuess Guesser( strFileName );
     CFormatGuess::EFormat uFormat = Guesser.GuessFormat();
