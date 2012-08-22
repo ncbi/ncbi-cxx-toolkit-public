@@ -245,7 +245,7 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
 
     opts.SetGapOpeningCost(5);
     opts.SetGapExtensionCost(2);
-    opts_hndl->SetEvalueThreshold(1000.0);
+    opts_hndl->SetEvalueThreshold((db_type == 2) ? 1000.0 : 100000.0);
     opts_hndl->SetFilterString("F");
     opts_hndl->SetHitlistSize(max(max(50, 
                m_IgOptions->m_NumAlign[1]), 
