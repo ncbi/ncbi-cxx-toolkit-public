@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined(UNICODE)
+#if defined(_UNICODE)
 #  define NCBI_TEXT(x)      L ## x
 #else
 #  define NCBI_TEXT(x)      x
