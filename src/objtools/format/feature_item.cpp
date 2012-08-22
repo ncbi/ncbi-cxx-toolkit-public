@@ -1198,7 +1198,7 @@ void CFeatureItem::x_AddQualPseudo(
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatureItem::x_AddQualSeqfeatNote()
+void CFeatureItem::x_AddQualSeqfeatNote(CBioseqContext &ctx)
 //  ----------------------------------------------------------------------------
 {
     string precursor_comment;
@@ -1235,22 +1235,24 @@ void CFeatureItem::x_AddQualSeqfeatNote()
         }
     }
 
-    /// also scan the annot to see if there is a comment there
-    if (m_Feat.GetAnnot().Seq_annot_IsSetDesc()) {
-        ITERATE (CSeq_annot::TDesc::Tdata, it,
-                 m_Feat.GetAnnot().Seq_annot_GetDesc().Get()) {
-            if ((*it)->IsComment()) {
-                const string & comment = (*it)->GetComment();
-                // certain comments require special handling
-                const static string ktRNAscanSE = "tRNA features were annotated by tRNAscan-SE";
-                if( NStr::StartsWith(comment, ktRNAscanSE, NStr::eNocase) && 
-                    ! x_HasMethodtRNAscanSE() ) 
-                {
-                    // don't propagate tRNAscan-SE comments to irrelevant features
-                    continue;
-                }
-                x_AddQual(eFQ_seqfeat_note,
-                          new CFlatStringQVal(comment));
+    /// also scan the annot to see if there is a comment there, if required
+    if( ! ctx.ShowAnnotCommentAsCOMMENT() ) {
+        if (m_Feat.GetAnnot().Seq_annot_IsSetDesc()) {
+            ITERATE (CSeq_annot::TDesc::Tdata, it,
+                m_Feat.GetAnnot().Seq_annot_GetDesc().Get()) {
+                    if ((*it)->IsComment()) {
+                        const string & comment = (*it)->GetComment();
+                        // certain comments require special handling
+                        const static string ktRNAscanSE = "tRNA features were annotated by tRNAscan-SE";
+                        if( NStr::StartsWith(comment, ktRNAscanSE, NStr::eNocase) && 
+                            ! x_HasMethodtRNAscanSE() ) 
+                        {
+                            // don't propagate tRNAscan-SE comments to irrelevant features
+                            continue;
+                        }
+                        x_AddQual(eFQ_seqfeat_note,
+                            new CFlatStringQVal(comment));
+                    }
             }
         }
     }
@@ -2508,7 +2510,7 @@ void CFeatureItem::x_AddQuals(
     x_AddQualsGene( gene_ref, gene_feat, gene_ref ? false : gene_feat.NotEmpty() );
 
     x_AddQualPseudo( ctx, type, subtype, pseudo );
-    x_AddQualSeqfeatNote();
+    x_AddQualSeqfeatNote(ctx);
     x_AddQualsGb( ctx );
 
     // cleanup (drop illegal quals, duplicate information etc.)

@@ -215,7 +215,7 @@ protected:
     void x_AddQualNote( CConstRef<CSeq_feat> );
     void x_AddQualOldLocusTag( CConstRef<CSeq_feat> );
     void x_AddQualDb( const CGene_ref* );
-    void x_AddQualSeqfeatNote();
+    void x_AddQualSeqfeatNote( CBioseqContext & );
     void x_AddQualTranslation( CBioseq_Handle&, CBioseqContext&, bool );
     void x_AddQualTranslationTable( const CCdregion&, CBioseqContext& );
     void x_AddQualCodonStart( const CCdregion&, CBioseqContext& );

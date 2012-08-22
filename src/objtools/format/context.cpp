@@ -40,6 +40,8 @@
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
@@ -56,6 +58,7 @@
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/annot_ci.hpp>
 
 #include <objtools/format/context.hpp>
 
@@ -112,6 +115,7 @@ CBioseqContext::CBioseqContext
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
     m_fUnverified(fUnverified_None),
+    m_ShowAnnotCommentAsCOMMENT(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
@@ -166,6 +170,7 @@ CBioseqContext::CBioseqContext
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
     m_fUnverified(fUnverified_None),
+    m_ShowAnnotCommentAsCOMMENT(false),
     m_FFCtx(ffctx),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
@@ -230,6 +235,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     m_Encode.Reset(x_GetEncode());
 
     x_SetDataFromUserObjects();
+
+    x_SetDataFromAnnot();
     
     m_HasOperon = x_HasOperon();
 
@@ -430,6 +437,52 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                 // default in the past was to use feature
                 if( m_fUnverified == fUnverified_None ) {
                     m_fUnverified = fUnverified_SequenceOrAnnotation;
+                }
+            }
+        }
+    }
+}
+
+void CBioseqContext::x_SetDataFromAnnot(void)
+{
+    CAnnot_CI annot_ci(m_Handle);
+    for( ; annot_ci; ++annot_ci ) {
+        if( ! annot_ci->Seq_annot_IsSetDesc() ) {
+            continue;
+        }
+
+        const CSeq_annot::TDesc & desc = annot_ci->Seq_annot_GetDesc();
+        ITERATE( CSeq_annot::TDesc::Tdata, one_desc_iter, desc.Get() ) {
+            const CAnnotdesc & one_desc = **one_desc_iter;
+            if( ! one_desc.IsUser() ) {
+                continue;
+            }
+
+            // we finally got down to an annot desc user object.  See if it indicates any
+            // relevant information
+            const CUser_object & user_obj = one_desc.GetUser();
+            if( ! user_obj.IsSetType() || ! user_obj.GetType().IsStr() || 
+                ! user_obj.IsSetData() ||
+                user_obj.GetType().GetStr() != "AnnotDescCommentPolicy" )
+            {
+                continue;
+            }
+
+            // check policy flags
+            ITERATE( CUser_object::TData, policy_field_iter, user_obj.GetData() ) {
+                const CUser_field & policy_field = **policy_field_iter;
+                if( ! policy_field.IsSetLabel() || ! policy_field.GetLabel().IsStr() ||
+                    ! policy_field.IsSetData() ||
+                    policy_field.GetLabel().GetStr() != "Policy" )
+                {
+                    continue;
+                }
+
+                if( policy_field.GetData().IsStr() ) { 
+                    const string & policy_str = policy_field.GetData().GetStr();
+                    if( policy_str == "ShowInComment" ) {
+                        m_ShowAnnotCommentAsCOMMENT = true;
+                    }
                 }
             }
         }

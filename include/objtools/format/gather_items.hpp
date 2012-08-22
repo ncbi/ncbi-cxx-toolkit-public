@@ -150,6 +150,7 @@ protected:
     void x_MaplocComments(CBioseqContext& ctx) const;
     void x_RegionComments(CBioseqContext& ctx) const;
     void x_HTGSComments(CBioseqContext& ctx) const;
+    void x_AnnotComments(CBioseqContext& ctx) const;
     CConstRef<CUser_object> x_PrepareAnnotDescStrucComment(CBioseqContext& ctx) const;
     CConstRef<CUser_object> x_GetAnnotDescStrucCommentFromBioseqHandle( CBioseq_Handle bsh ) const;
     void x_FeatComments(CBioseqContext& ctx) const;

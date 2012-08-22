@@ -752,6 +752,9 @@ void CFlatGatherer::x_GatherComments(void) const
     x_NameComments(ctx);
     x_StructuredComments(ctx);
     x_HTGSComments(ctx);
+    if( ctx.ShowAnnotCommentAsCOMMENT() ) {
+        x_AnnotComments(ctx);
+    }
     if( firstGenAnnotSCAD ) {
         x_AddComment(new CCommentItem(*firstGenAnnotSCAD, ctx));
     }
@@ -1178,6 +1181,30 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
             objects::AddPeriod(tech_str);
             x_AddComment(new CCommentItem("Method: " + tech_str, ctx, &(*desc)));
         }
+    }
+}
+
+void CFlatGatherer::x_AnnotComments(CBioseqContext& ctx) const
+{
+    CAnnot_CI annot_ci(ctx.GetHandle());
+    for( ; annot_ci; ++annot_ci ) {
+        if( ! annot_ci->Seq_annot_IsSetDesc() ) {
+            continue;
+        }
+
+         const CAnnot_descr & descr = annot_ci->Seq_annot_GetDesc();
+         if( ! descr.IsSet() ) {
+             continue;
+         }
+
+         const CAnnot_descr::Tdata & vec_desc = descr.Get();
+         ITERATE(CAnnot_descr::Tdata, desc_iter, vec_desc) {
+             const CAnnotdesc & desc = **desc_iter;
+             if( ! desc.IsComment() ) {
+                 continue;
+             }
+             x_AddComment(new CCommentItem(desc.GetComment(), ctx));
+         }
     }
 }
 

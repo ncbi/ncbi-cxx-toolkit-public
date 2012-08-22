@@ -209,7 +209,7 @@ public:
     };
     typedef Int8 TUnverified;
     TUnverified GetUnverifiedType(void) const;
-
+    bool ShowAnnotCommentAsCOMMENT(void) const { return m_ShowAnnotCommentAsCOMMENT; }
 
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
 
@@ -245,6 +245,7 @@ private:
     void x_SetMapper(const CSeq_loc& loc);
     void x_SetHasMultiIntervalGenes(void);
     void x_SetDataFromUserObjects(void);
+    void x_SetDataFromAnnot(void);
     void x_SetTaxname(void);
 
     CSeq_inst::TRepr x_GetRepr(void) const;
@@ -308,6 +309,7 @@ private:
     bool m_HasMultiIntervalGenes;
     bool m_IsGenomeAssembly;
     TUnverified m_fUnverified;
+    bool m_ShowAnnotCommentAsCOMMENT;
 
     CConstRef<CUser_object> m_Encode;
     
