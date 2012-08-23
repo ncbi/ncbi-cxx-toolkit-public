@@ -1268,12 +1268,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
                        "Configuration file error:  [NCBI.HeapSizeLimit] < 0");
         }
         mem_size_limit *= 1024 * 1024;
-        if ( !SetMemoryLimit(mem_size_limit) ) {
-            ERR_POST_X(13, Warning
-                           << "Failed to set memory size limit to "
-                           << mem_size_limit
-                           << "Mb (as per the config param [NCBI.HeapSizeLimit])");
-        }
+        SetMemoryLimit(mem_size_limit);
     }
     // [NCBI.MemorySizeLimit]
     if ( !reg->Get("NCBI", "MemorySizeLimit").empty() ) {
@@ -1292,12 +1287,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             // Size in MB
             mem_size_limit = (size_t)(NStr::StringToUInt(s) * 1024 * 1024);
         }
-        if ( !SetMemoryLimit(mem_size_limit) ) {
-            ERR_POST_X(13, Warning
-                           << "Failed to set memory size limit to "
-                           << mem_size_limit
-                           << "Mb (as per the config param [NCBI.MemorySizeLimit])");
-        }
+        SetMemoryLimit(mem_size_limit);
     }
 
     // [NCBI.CpuTimeLimit]
@@ -1307,12 +1297,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             NCBI_THROW(CAppException, eLoadConfig,
                        "Configuration file error:  [NCBI.CpuTimeLimit] < 0");
         }
-        if ( !SetCpuTimeLimit(cpu_time_limit) ) {
-            ERR_POST_X(14, Warning
-                           << "Failed to set the CPU time limit to "
-                           << cpu_time_limit
-                           << " sec (as per the config param [NCBI.CpuTimeLimit])");
-        }
+        SetCpuTimeLimit(cpu_time_limit);
     }
 
     // TRACE and POST filters
