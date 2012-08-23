@@ -281,6 +281,13 @@ int CMkIndexApplication::Run()
             seqstream = 
                 new CSequenceIStreamBlastDB( *dbvi, enable_mask, filter );
             CDbIndex::TSeqNum start, orig_stop( kMax_UI4 ), stop = 0;
+            Uint4 vol_num_seq( 0 );
+
+            {
+                CSeqDB db( *dbvi, CSeqDB::eNucleotide, 0, 0, false );
+                vol_num_seq = db.GetNumOIDs();
+            }
+
             Uint4 num_seq( 0 ), num_vol( 0 );
             vol_num = 0;
             /*
@@ -301,14 +308,31 @@ int CMkIndexApplication::Run()
                 num_seq += (stop - start);
 
                 if( start == stop ) cerr << "removed (empty)" << endl;
-                else{ ++num_vol; cerr << "done" << endl; }
+                else{ 
+                    ++num_vol; 
+                    cerr << "done" << endl;
+                    ERR_POST( Info << 
+                              "generated index volume with OIDs: " <<
+                              start << "--" << stop );
+                }
             }
             while( start != stop );
+
+            if( num_seq != vol_num_seq ) {
+                ERR_POST( Error << 
+                          "number of sequence reported by BLAST database"
+                          " volume (" << vol_num_seq << ") is not the same"
+                          " as in the index (" << num_seq << ")" );
+                return 1;
+            }
 
             CIndexSuperHeader< 
                 CIndexSuperHeader_Base::INDEX_FORMAT_VERSION_1 > shdr( 
                         num_seq, num_vol );
             shdr.Save( dbv_name + ".shd" );
+            ERR_POST( Info << 
+                      "index generated for BLAST database volume " <<
+                      dbv_name << " with " << num_seq << " sequences" );
             delete seqstream;
         }
 

@@ -661,7 +661,7 @@ void CIndexedDb_New::AddIndexInfo(
 {
     bool idx_not_resolved( false );
     CSeqDB db( vol_name, CSeqDB::eNucleotide, 0, 0, false );
-    size_t dbnseq( (size_t)db.GetNumSeqs() );
+    size_t dbnseq( (size_t)db.GetNumOIDs() );
     CRef< CIndexSuperHeader_Base > shdr;
     
     try {
