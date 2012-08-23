@@ -528,6 +528,7 @@ SRequestDetails CDataLoader::ChoiceToDetails(EChoice choice) const
         break;
     case eBlob:
     case eBioseq:
+    case eBioseqCore:
         sequence = true;
         // internal only
         details.m_AnnotBlobType = SRequestDetails::fAnnotBlobInternal;
