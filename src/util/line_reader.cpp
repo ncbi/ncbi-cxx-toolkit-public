@@ -428,8 +428,9 @@ CBufferedLineReader& CBufferedLineReader::operator++(void)
                 }
                 return *this;
             }
-            if ( *p != '\n' ) {
+            if ( *p == '\n' ) {
                 ++m_LastReadSize;
+            } else {
                 return *this;
             }
             m_Pos = ++p;
