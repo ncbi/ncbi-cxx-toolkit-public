@@ -946,9 +946,9 @@ CVcfReader::xAssignFeatureLocation(
         }
     }
     if (data.IsIns(index)) {
-        pFeature->SetLocation().SetInt().SetFrom(data.m_iPos);
+        pFeature->SetLocation().SetInt().SetFrom(data.m_iPos-1);
         pFeature->SetLocation().SetInt().SetTo( 
-            data.m_iPos+1);
+            data.m_iPos);
         pFeature->SetLocation().SetInt().SetId(*pId);
         return true;
     }
