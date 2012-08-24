@@ -105,7 +105,15 @@ public:
     /// Get bioseq handle by seq-id handle
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
 
-    /// Get bioseq handle by seq-id location
+    /// Get bioseq handle by seq-loc.
+    /// If the seq-loc contains no seq-ids or there's a single seq-id which
+    /// can not be resolved, returns empty handle.
+    /// If the seq-loc references only parts of a segmented set, the method
+    /// returns bioseq handle for the master bioseq.
+    /// If the seq-loc contains a single seq-id, the bioseq handle for this
+    /// id is returned.
+    /// If there are multiple seq-ids not belonging to the same seg-set,
+    /// the method throws CObjMgrException.
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
 
     enum EGetBioseqFlag {
