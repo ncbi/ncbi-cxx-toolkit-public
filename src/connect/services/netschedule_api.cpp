@@ -195,7 +195,7 @@ void CNetScheduleServerListener::OnInit(
                 "Could not get queue name");
         }
         ns_impl->m_Queue = config->GetString(config_section,
-            "queue_name", CConfig::eErr_Throw, "noname");
+            "queue_name", CConfig::eErr_NoThrow, "noname");
     }
     if (config == NULL) {
         ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
