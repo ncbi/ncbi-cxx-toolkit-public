@@ -56,6 +56,7 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/priority.hpp>
 #include <objmgr/impl/synonyms.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -1871,13 +1872,68 @@ CScope_Impl::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_loc& loc, int get_flag)
 {
     CBioseq_Handle bh;
-    for ( CSeq_loc_CI citer (loc); citer; ++citer) {
-        bh = GetBioseqHandle(CSeq_id_Handle::GetHandle(citer.GetSeq_id()),
-                             get_flag);
+    TSeq_idSet ids;
+    for (CSeq_loc_CI citer(loc); citer; ++citer) {
+        ids.insert(citer.GetSeq_id_Handle());
+    }
+    if ( ids.empty() ) {
+        // No ids found
+        return bh;
+    }
+
+    // Find at least one bioseq handle
+    ITERATE(TSeq_idSet, id, ids) {
+        bh = GetBioseqHandle(*ids.begin(), get_flag);
         if ( bh ) {
             break;
         }
     }
+    if ( !bh ) {
+        if (ids.size() == 1) {
+            return bh;
+        }
+        // Multiple unresolvable ids
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                    "CScope_Impl::GetBioseqHandle: "
+                    "Seq-loc references multiple unresolvable seq-ids");
+    }
+
+    const CTSE_Info& tse = bh.GetTSE_Handle().x_GetTSE_Info();
+    CConstRef<CBioseq_Info> master = tse.GetSegSetMaster();
+
+    bool valid = true;
+    if ( master ) {
+        CConstRef<CMasterSeqSegments> segs = tse.GetMasterSeqSegments();
+        // Segmented set - check if all ids are parts of the segset,
+        // return master sequence.
+        ITERATE(TSeq_idSet, id, ids) {
+            if (segs->FindSeg(*id) < 0) {
+                if (ids.size() > 1) {
+                    valid = false;
+                }
+                else {
+                    // Allow a single bioseq which is not a segment (it can be
+                    // the master sequence or a standalone sequence).
+                    master.Reset();
+                }
+                break;
+            }
+        }
+        if (valid  &&  master) {
+            bh = GetBioseqHandle(*master, bh.GetTSE_Handle());
+        }
+    }
+    else if (ids.size() > 1) {
+        // Multiple ids, not a segset.
+        valid = false;
+    }
+
+    if ( !valid ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                    "CScope_Impl::GetBioseqHandle: "
+                    "Seq-loc references multiple seq-ids");
+    }
+
     return bh;
 }
 

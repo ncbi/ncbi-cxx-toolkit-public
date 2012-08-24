@@ -106,8 +106,7 @@ public:
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
 
     /// Get bioseq handle by seq-id location
-    /// @deprecated  This method is hard to use correctly.
-    NCBI_DEPRECATED CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
+    CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
 
     enum EGetBioseqFlag {
         eGetBioseq_Resolved, ///< Search only in already resolved ids
