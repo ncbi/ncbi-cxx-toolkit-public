@@ -6215,6 +6215,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USAM	s	University of South Alabama, Department of Biological Sciences",
 "USANHC	s	University of South Alabama, Vertebrate Natural History Collection",
 "USAS	s	University of Regina, Biology Department",
+"USB	c	Bacterial collection of Universita degli studi della basilicata, Dipartimento di Biologia",
 "USBCF	s	U. S. Bureau of Commercial Fisheries",
 "USBS	s	School of Biological Sciences, University of Science",
 "USC	s	University of Southern California, Biological Sciences Department",
