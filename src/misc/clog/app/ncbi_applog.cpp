@@ -372,11 +372,11 @@ int CNcbiApplogApp::Redirect() const
                 s_args += string(" \"-host=") + hostname + "\"";
             }
         }
-    }
-    // Add value of if environment variable $SERVER_PORT on this host
-    string port = GetEnvironment().Get("SERVER_PORT");
-    if (!port.empty()) {
-        s_args += string(" \"-srvport=") + port + "\"";
+        // Add value of if environment variable $SERVER_PORT on this host
+        string port = GetEnvironment().Get("SERVER_PORT");
+        if (!port.empty()) {
+            s_args += string(" \"-srvport=") + port + "\"";
+        }
     }
     // Add current time on this host
     time_t timer;
