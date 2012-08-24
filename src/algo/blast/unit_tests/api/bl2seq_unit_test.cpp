@@ -1627,6 +1627,42 @@ BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback2) {
     }
 }
 
+BOOST_AUTO_TEST_CASE(MegablastGreedyTracebackSelfHits) {
+    // the following tests are for JIRA SB-1041, where the greedy
+    // traceback may stop prematurely.
+    CSeq_id query_id("gi|56384585");
+    auto_ptr<SSeqLoc> ql(
+        CTestObjMgr::Instance().CreateSSeqLoc(query_id, 
+                                              eNa_strand_plus));
+
+    CSeq_id subject_id("gi|56384585");
+    auto_ptr<SSeqLoc> sl(
+        CTestObjMgr::Instance().CreateSSeqLoc(subject_id, 
+                                              eNa_strand_plus));
+
+    CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
+    opts->SetTraditionalMegablastDefaults();
+    opts->SetMatchReward(1);
+    opts->SetMismatchPenalty(-2);
+    opts->SetGapOpeningCost(0);
+    opts->SetGapExtensionCost(0);
+    opts->SetWordSize(28);
+    opts->SetGapExtnAlgorithm(eGreedyScoreOnly);
+    opts->SetGapTracebackAlgorithm(eGreedyTbck);
+
+    CBl2Seq blaster(*ql, *sl, *opts);
+
+    CRef<CSearchResultSet> res = blaster.RunEx();
+    BOOST_REQUIRE_EQUAL(eSequenceComparison, res->GetResultType());
+    BOOST_REQUIRE_EQUAL(1U, res->size());
+    CConstRef<CSeq_align_set> sas = (*res)[0].GetSeqAlign();
+    BOOST_REQUIRE(sas.NotEmpty());
+    CRef<CSeq_align> sa = sas->Get().front();
+    int score = 0;
+    sa->GetNamedScore(CSeq_align::eScore_Score, score);
+    BOOST_REQUIRE_EQUAL(3794584, score);
+}
+
 BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
     CSeq_id qid("gi|555");
     auto_ptr<SSeqLoc> query(
