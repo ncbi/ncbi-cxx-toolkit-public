@@ -47,7 +47,7 @@ extern "C" {
 #define GREEDY_MAX_COST_FRACTION 2
 
 /** The largest distance to be examined for an optimal alignment */
-#define GREEDY_MAX_COST 1000
+#define GREEDY_MAX_COST 10000
 
 /* ----- pool allocator ----- */
 
