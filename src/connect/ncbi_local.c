@@ -93,7 +93,7 @@ static int/*bool*/ s_AddService(const SSERV_Info* info,
 static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    const TSERV_Type type = iter->type & ~fSERV_Firewall;
+    const TSERV_Type types = iter->types & ~fSERV_Firewall;
     char key[sizeof(REG_CONN_LOCAL_SERVER) + 10];
     int/*bool*/ ok = 0/*failed*/;
     SSERV_Info* info;
@@ -126,9 +126,9 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
                 continue;  /* private server */
         }
         if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {
-            if (type != fSERV_Any  &&  !(type & info->type))
+            if (types != fSERV_Any  &&  !(types & info->type))
                 continue;  /* type doesn't match */
-            if (type == fSERV_Any  &&  info->type == fSERV_Dns)
+            if (types == fSERV_Any  &&  info->type == fSERV_Dns)
                 continue;  /* DNS entries have to be req'd explicitly */
             if (iter->stateless && info->sful && !(info->type & fSERV_Http))
                 continue;  /* skip stateful only servers */
@@ -219,7 +219,7 @@ static SLB_Candidate* s_GetCandidate(void* user_data, size_t i)
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    const TSERV_Type type = iter->type & ~fSERV_Firewall;
+    const TSERV_Type types = iter->types & ~fSERV_Firewall;
     int/*bool*/ dns_info_seen = 0/*false*/;
     SSERV_Info* info;
     size_t i, n;
@@ -261,10 +261,10 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         } else
             n = 0;
         if (!iter->ismask) {
-            if (type == fSERV_Any) {
+            if (types == fSERV_Any) {
                 if (iter->reverse_dns  &&  info->type != fSERV_Dns)
                     dns_info_seen = 1/*true*/;
-            } else if ((type & info->type)  &&  info->type == fSERV_Dns)
+            } else if ((types & info->type)  &&  info->type == fSERV_Dns)
                 dns_info_seen = 1/*true*/;
         }
         if (n < iter->n_skip) {
@@ -274,9 +274,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
             }
             free(info);
         } else {
-            if (type != fSERV_Any  &&  !(type & info->type))
+            if (types != fSERV_Any  &&  !(types & info->type))
                 break;
-            if (type == fSERV_Any  &&  info->type == fSERV_Dns)
+            if (types == fSERV_Any  &&  info->type == fSERV_Dns)
                 break;
             data->i_cand++;
             data->cand[i].status = info->rate < 0.0 ? 0.0 : info->rate;

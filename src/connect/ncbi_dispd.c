@@ -397,7 +397,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     }
 
     if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed  = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
     }
 
@@ -405,7 +405,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     data->net_info->req_method = eReqMethod_Get;
     if ( iter->stateless)
         data->net_info->stateless = 1/*true*/;
-    if ((iter->type & fSERV_Firewall)  &&  !data->net_info->firewall)
+    if ((iter->types & fSERV_Firewall)  &&  !data->net_info->firewall)
         data->net_info->firewall = eFWMode_Adaptive;
     ConnNetInfo_ExtendUserHeader(data->net_info,
                                  "User-Agent: NCBIServiceDispatcher/"

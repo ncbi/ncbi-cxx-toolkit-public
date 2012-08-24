@@ -46,7 +46,7 @@ typedef unsigned short TSERV_SafeType;
 
 
 typedef struct SServiceConnectorTag {
-    const char*    name;                /* Verbal connector type             */
+    const char*    type;                /* Verbal connector type             */
     const char*    descr;               /* Verbal connector description      */
     SConnNetInfo*  net_info;            /* Connection information            */
     const char*    user_header;         /* User header currently set         */
@@ -749,9 +749,9 @@ static void s_Close(CONNECTOR       connector,
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
 
-    if (uuu->name) {
-        free((void*) uuu->name);
-        uuu->name = 0;
+    if (uuu->type) {
+        free((void*) uuu->type);
+        uuu->type = 0;
     }
     if (uuu->descr) {
         free((void*) uuu->descr);
@@ -780,7 +780,7 @@ static void s_Close(CONNECTOR       connector,
 static const char* s_VT_GetType(CONNECTOR connector)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
-    return uuu->name ? uuu->name : uuu->service;
+    return uuu->type ? uuu->type : uuu->service;
 }
 
 
@@ -803,14 +803,15 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         CONNECTOR conn;
         int stateless;
 
-        assert(!uuu->meta.list  &&  !uuu->name  &&  !uuu->descr);
+        assert(!uuu->meta.list  &&  !uuu->type  &&  !uuu->descr);
 
         if (!uuu->iter  &&  !s_OpenDispatcher(uuu))
             break;
 
-        if (uuu->net_info->firewall  &&  strcasecmp(uuu->iter->name, "local"))
+        if (uuu->net_info->firewall
+            &&  strcasecmp(uuu->iter->op->mapper, "local") == 0) {
             info = 0;
-        else if (!(info = s_GetNextInfo(uuu, 0/*any*/)))
+        } else if (!(info = s_GetNextInfo(uuu, 0/*any*/)))
             break;
 
         if (!(net_info = ConnNetInfo_Clone(uuu->net_info))) {
@@ -845,18 +846,17 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         CONN_SET_METHOD    (meta, read,   uuu->meta.read,  uuu->meta.c_read);
         CONN_SET_METHOD    (meta, status, uuu->meta.status,uuu->meta.c_status);
         if (uuu->meta.get_type) {
-            const char* type;
-            if ((type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
+            const char* temp;
+            if ((temp = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
                 size_t slen = strlen(uuu->service);
-                size_t tlen = strlen(type);
-                char*  name = (char*) malloc(slen + tlen + 2);
-                if (name) {
-                    memcpy(name,        uuu->service, slen);
-                    name[slen++] = '/';
-                    memcpy(name + slen, type,         tlen);
-                    tlen += slen;
-                    name[tlen]   = '\0';
-                    uuu->name = name;
+                size_t tlen = strlen(temp);
+                char*  type = (char*) malloc(slen + tlen + 2);
+                if (type) {
+                    memcpy(type,        uuu->service, slen);
+                    type[slen++]      = '/';
+                    memcpy(type + slen, temp,         tlen);
+                    type[slen + tlen] = '\0';
+                    uuu->type = type;
                 }
             }
         }
@@ -931,7 +931,7 @@ static void s_Destroy(CONNECTOR connector)
         uuu->params.cleanup(uuu->params.data);
     s_CloseDispatcher(uuu);
     ConnNetInfo_Destroy(uuu->net_info);
-    assert(!uuu->name);
+    assert(!uuu->type);
     assert(!uuu->descr);
     free(uuu);
     free(connector);

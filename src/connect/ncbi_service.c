@@ -105,7 +105,7 @@ int/*bool*/ SERV_IsFirewallPort(unsigned short port)
 
 
 static char* s_ServiceName(const char* service,
-                           int/*bool*/ ismask, size_t depth)
+                           int/*bool*/ ismask, unsigned int depth)
 {
     char   buf[128];
     char   srv[128];
@@ -115,8 +115,8 @@ static char* s_ServiceName(const char* service,
     if (depth > 7) {
         assert(service  &&  *service);
         CORE_LOGF_X(7, eLOG_Error,
-                    ("[%s]  Maximal service name recursion depth reached: %lu",
-                     service, (unsigned long) depth));
+                    ("[%s]  Maximal service name recursion depth reached: %u",
+                     service, depth));
         return 0/*failure*/;
     }
     len = 0;
@@ -145,7 +145,7 @@ static char* s_ServiceName(const char* service,
             s = srv;
         }
         if (*s  &&  strcasecmp(s, service) != 0)
-            return s_ServiceName(s, ismask, ++depth);
+            return s_ServiceName(s, ismask, depth + 1);
     }
     return strdup(service);
 }
@@ -235,7 +235,6 @@ static SERV_ITER s_Open(const char*         service,
     assert(ismask  ||  *s);
 
     iter->name              = s;
-    iter->type              = types & fSERV_All;
     iter->host              = (preferred_host == SERV_LOCALHOST
                                ? SOCK_GetLocalHostAddress(eDefault)
                                : preferred_host);
@@ -245,6 +244,7 @@ static SERV_ITER s_Open(const char*         service,
                                :  0.01 * (preference > 100.0
                                           ? 100.0
                                           : preference));
+    iter->types             = types & fSERV_All;
     if (ismask)
         iter->ismask        = 1;
     if (types & fSERV_IncludeDown)
@@ -291,7 +291,7 @@ static SERV_ITER s_Open(const char*         service,
 
     if (net_info) {
         if (net_info->firewall)
-            iter->type |= fSERV_Firewall;
+            iter->types |= fSERV_Firewall;
         if (net_info->stateless)
             iter->stateless = 1;
         if (net_info->lb_disable)
@@ -327,7 +327,7 @@ static SERV_ITER s_Open(const char*         service,
 SERV_ITER SERV_OpenSimple(const char* service)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service);
-    SERV_ITER iter = SERV_Open(service, fSERV_Any, 0, net_info);
+    SERV_ITER iter = SERV_Open(service, fSERV_Any, SERV_ANYHOST, net_info);
     ConnNetInfo_Destroy(net_info);
     return iter;
 }
@@ -462,7 +462,8 @@ static SSERV_Info* s_GetInfo(const char*         service,
                             net_info, skip, n_skip,
                             external, arg, val,
                             &info, host_info);
-    if (iter  &&  iter->op  &&  !info) {
+    assert(!iter  ||  iter->op);
+    if (iter  &&  !info) {
         /* All LOCAL/DISPD searches end up here, but none LBSMD ones */
         info = s_GetNextInfo(iter, host_info, 1/*internal*/);
     }
@@ -524,19 +525,22 @@ SSERV_Info* SERV_GetInfoP(const char*         service,
 SSERV_InfoCPtr SERV_GetNextInfoEx(SERV_ITER  iter,
                                   HOST_INFO* host_info)
 {
-    return iter  &&  iter->op ? s_GetNextInfo(iter, host_info, 0) : 0;
+    assert(!iter  ||  iter->op);
+    return iter ? s_GetNextInfo(iter, host_info, 0) : 0;
 }
 
 
 SSERV_InfoCPtr SERV_GetNextInfo(SERV_ITER iter)
 {
-    return iter  &&  iter->op ? s_GetNextInfo(iter, 0,         0) : 0;
+    assert(!iter  ||  iter->op);
+    return iter ? s_GetNextInfo(iter, 0,         0) : 0;
 }
 
 
 const char* SERV_MapperName(SERV_ITER iter)
 {
-    return iter  &&  iter->op ? iter->op->name : 0;
+    assert(!iter  ||  iter->op);
+    return iter ? iter->op->mapper : 0;
 }
 
 
@@ -549,7 +553,8 @@ const char* SERV_CurrentName(SERV_ITER iter)
 
 int/*bool*/ SERV_PenalizeEx(SERV_ITER iter, double fine, TNCBI_Time time)
 {
-    if (!iter  ||  !iter->op  ||  !iter->op->Feedback  ||  !iter->last)
+    assert(!iter  ||  iter->op);
+    if (!iter  ||  !iter->op->Feedback  ||  !iter->last)
         return 0/*false*/;
     return iter->op->Feedback(iter, fine, time ? time : 1/*NB: always != 0*/);
 }
@@ -563,7 +568,8 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 
 int/*bool*/ SERV_Rerate(SERV_ITER iter, double rate)
 {
-    if (!iter  ||  !iter->op  ||  !iter->op->Feedback  ||  !iter->last)
+    assert(!iter  ||  iter->op);
+    if (!iter  ||  !iter->op->Feedback  ||  !iter->last)
         return 0/*false*/;
     return iter->op->Feedback(iter, rate, 0/*i.e.rate*/);
 }
@@ -607,7 +613,8 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
     static const char used_server_info[] = "Used-Server-Info-";
     int retval = 0/*not updated yet*/;
 
-    if (iter  &&  iter->op  &&  text) {
+    assert(!iter  ||  iter->op);
+    if (iter  &&  text) {
         const char *c, *b;
         iter->time = (TNCBI_Time) time(0);
         for (b = text;  (c = strchr(b, '\n')) != 0;  b = c + 1) {
@@ -621,9 +628,9 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
                 continue;
             memcpy(t, b, len);
             if (t[len - 1] == '\r')
-                t[len - 1] =  '\0';
+                t[len - 1]  = '\0';
             else
-                t[len] = '\0';
+                t[len    ]  = '\0';
             p = t;
             if (iter->op->Update  &&  iter->op->Update(iter, p, code))
                 retval = 1/*updated*/;
@@ -688,9 +695,9 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
 {
     char* str, *referer = 0;
 
-    if (strcasecmp(iter->op->name, "DISPD") == 0)
+    if (strcasecmp(iter->op->mapper, "DISPD") == 0)
         referer = ConnNetInfo_URL(net_info);
-    else if ((str = strdup(iter->op->name)) != 0) {
+    else if ((str = strdup(iter->op->mapper)) != 0) {
         const char* host = net_info->client_host;
         const char* args = net_info->args;
         const char* name = iter->name;
@@ -744,13 +751,14 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         return 0;
     }
     if (iter) {
-        if (net_info && !net_info->http_referer && iter->op && iter->op->name)
+        assert(iter->op);
+        if (net_info  &&  !net_info->http_referer  &&  iter->op->mapper)
             s_SetDefaultReferer(iter, net_info);
         /* Accepted server types */
         buflen = sizeof(kAcceptedServerTypes) - 1;
         memcpy(buffer, kAcceptedServerTypes, buflen);
         for (t = 1;  t;  t <<= 1) {
-            if (iter->type & t) {
+            if (iter->types & t) {
                 const char* name = SERV_TypeStr((ESERV_Type) t);
                 size_t namelen = strlen(name);
                 if (!namelen  ||  buflen + 1 + namelen + 2 >= sizeof(buffer))
@@ -779,7 +787,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 return 0;
             }
         }
-        if (iter->type & fSERV_Firewall) {
+        if (iter->types & fSERV_Firewall) {
             /* Firewall */
             s_PrintFirewallPorts(buffer, sizeof(buffer), net_info);
             if (*buffer
