@@ -1347,7 +1347,8 @@ Apply-table-extra-data ::= CHOICE {
 Apply-table-action ::= SEQUENCE {
   filename VisibleString ,
   match-type Table-match ,
-  in-memory-table Apply-table-extra-data OPTIONAL
+  in-memory-table Apply-table-extra-data OPTIONAL ,
+  also-change-mrna BOOLEAN DEFAULT FALSE
 }
 
 Add-file-action ::= SEQUENCE {
