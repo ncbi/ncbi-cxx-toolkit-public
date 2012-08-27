@@ -87,6 +87,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 #if 1
     string sln_path_par = "$(ProjectDir)" + 
         CDirEntry::CreateRelativePath(m_ProjectDir, GetApp().m_Solution);
+    sln_path_par = CDirEntry(sln_path_par).GetDir() + "$(SolutionFileName)";
 #else
     string sln_path_par  = "$(SolutionPath)";
 #endif
