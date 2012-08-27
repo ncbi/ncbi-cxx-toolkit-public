@@ -36,6 +36,7 @@
 #include <connect/services/netschedule_api.hpp>
 
 #include "ns_types.hpp"
+#include "ns_db.hpp"
 #include "job_status.hpp"
 #include "ns_command_arguments.hpp"
 
@@ -313,10 +314,12 @@ public:
       m_Dirty |= fJobPart; }
 
     void           SetClientIP(const string& client_ip)
-    { m_ClientIP = client_ip;
+    { if (client_ip.size() < kMaxClientIpSize) m_ClientIP = client_ip;
+      else m_ClientIP = client_ip.substr(0, kMaxClientIpSize);
       m_Dirty |= fJobPart; }
     void           SetClientSID(const string& client_sid)
-    { m_ClientSID = client_sid;
+    { if (client_sid.size() < kMaxSessionIdSize) m_ClientSID = client_sid;
+      else m_ClientSID = client_sid.substr(0, kMaxSessionIdSize);
       m_Dirty |= fJobPart; }
 
     void           SetEvents(const vector<CJobEvent>& events)

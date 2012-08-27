@@ -54,9 +54,10 @@
 
 BEGIN_NCBI_SCOPE
 
-const unsigned kNetScheduleSplitSize = 64;
-const unsigned kMaxClientIpSize      = 64;
-const unsigned kMaxSessionIdSize     = 64;
+const unsigned kNetScheduleSplitSize = 96;  // Changed from 64; See CXX-3449
+const unsigned kMaxClientIpSize      = 48;  // Changed from 64; See CXX-3449
+const unsigned kMaxSessionIdSize     = 48;  // Changed from 64; See CXX-3449
+
 
 /// BDB table to store frequently used job info
 ///
