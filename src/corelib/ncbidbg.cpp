@@ -72,4 +72,20 @@ EValidateAction xncbi_GetValidateAction(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CCheckMe reporting
+
+
+void xncbi_CCheckMe_ReportError(ECheckMeError _DEBUG_ARG(error))
+{
+#if defined(_DEBUG)
+    if (error == eCheckMe_Unused) {
+        NCBI_TROUBLE("CCheckMe -- The value has not been used");
+    } else /*if (error == eCheckMe_Unset)*/ {
+        NCBI_TROUBLE("CCheckMe -- Attempt to read value that is not set");
+    }
+#endif
+}
+
+
 END_NCBI_SCOPE

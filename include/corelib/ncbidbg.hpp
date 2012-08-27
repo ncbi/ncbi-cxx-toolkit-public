@@ -159,6 +159,149 @@ extern NCBI_XNCBI_EXPORT void xncbi_SetValidateAction(EValidateAction action);
 extern NCBI_XNCBI_EXPORT EValidateAction xncbi_GetValidateAction(void);
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+// template CCheckMe
+
+// Auxiliary (and, internal) function to report a CCheckMe error
+enum ECheckMeError {
+    eCheckMe_Unused,  ///< The value has not been checked
+    eCheckMe_Unset    ///< Invalid op with a not set value
+};
+extern NCBI_XNCBI_EXPORT void xncbi_CCheckMe_ReportError(ECheckMeError error);
+#if defined(_DEBUG)
+#  define CHECKME_VALIDATE(condition, error_type) \
+      do { if ( !(condition) ) \
+              xncbi_CCheckMe_ReportError(error_type); \
+      } while ( 0 )
+#else
+#  define CHECKME_VALIDATE(condition, error_type) ((void)0)
+#endif
+
+
+/// Wrapper around an object of type TValue, that makes it mandatory
+/// to check object value somehow after each assignment.
+/// 'Object value checks' include comparison with another CCheckMe object,
+/// with object of type TValue, and with anything that can be compared with
+/// TValue.
+///
+/// NOTE: Initialization is also an assignment.
+///     this code will fail at run time:
+///         CCheckMeBool b(true);
+///         b = true;
+///     while this is fine:
+///         CCheckMeBool b;
+///         b = true;
+
+template <typename TValue>
+class CCheckMe
+{
+public:
+    // Constructors
+    CCheckMe(void)
+        : m_Value(), m_IsSet(false), m_IsChecked(true)
+    {}
+
+    CCheckMe(const TValue& val)
+        : m_Value(val), m_IsSet(true), m_IsChecked(false)
+    {}
+
+    CCheckMe(const CCheckMe& t)
+        : m_Value(t.m_Value), m_IsSet(t.m_IsSet), m_IsChecked(t.m_IsChecked)
+    {
+        t.m_IsChecked = true;
+    }
+
+    // Destructor
+    ~CCheckMe(void)
+    {
+        CHECKME_VALIDATE(m_IsChecked, eCheckMe_Unused);
+    }
+
+    /// Assignment
+    CCheckMe& operator= (const CCheckMe& t)
+    {
+        CHECKME_VALIDATE(m_IsChecked, eCheckMe_Unused);
+        m_Value       = t.m_Value;
+        m_IsSet       = t.m_IsSet;
+        m_IsChecked   = !m_IsSet;
+        t.m_IsChecked = true;
+        return *this;
+    }
+
+    CCheckMe& operator= (const TValue& value)
+    {
+        CHECKME_VALIDATE(m_IsChecked, eCheckMe_Unused);
+        m_Value     = value;
+        m_IsSet     = true;
+        m_IsChecked = false;
+        return *this;
+    }
+
+    /// Force-set to the "checked" state
+    void SetChecked(bool is_checked = true) const
+    {
+        m_IsChecked = is_checked;
+    }
+
+    // Comparisons
+    bool operator== (const CCheckMe& t) const
+    {
+        CHECKME_VALIDATE((m_IsSet && t.m_IsSet), eCheckMe_Unset);
+        m_IsChecked   = true;
+        t.m_IsChecked = true;
+        return m_Value == t.m_Value;
+    }
+
+    bool operator!= (const CCheckMe& t) const
+    {
+        CHECKME_VALIDATE((m_IsSet && t.m_IsSet), eCheckMe_Unset);
+        m_IsChecked   = true;
+        t.m_IsChecked = true;
+        return m_Value != t.m_Value;
+    }
+
+    template <typename T> 
+    bool operator== (const T& t) const
+    {
+        CHECKME_VALIDATE(m_IsSet, eCheckMe_Unset);
+        m_IsChecked = true;
+        return m_Value == t;
+    }
+
+    template <typename T> 
+    bool operator!= (const T& t) const
+    {
+        CHECKME_VALIDATE(m_IsSet, eCheckMe_Unset);
+        m_IsChecked = true;
+        return m_Value != t;
+    }
+
+    /// Conversion to value type
+    operator TValue(void) const
+    {
+        CHECKME_VALIDATE(m_IsSet, eCheckMe_Unset);
+        m_IsChecked = true;
+        return m_Value;
+    }
+
+    bool IsChecked(void) const
+    {
+        return m_IsChecked;
+    }
+
+private:
+    TValue        m_Value;
+    bool          m_IsSet;
+    mutable bool  m_IsChecked;
+};
+
+#undef CHECKME_VALIDATE
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 END_NCBI_SCOPE
 
 
