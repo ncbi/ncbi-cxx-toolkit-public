@@ -36,6 +36,9 @@
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
 
+#define BOOST_AUTO_TEST_MAIN
+#include <corelib/test_boost.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
@@ -43,325 +46,10 @@
 USING_NCBI_SCOPE;
 
 
-
-/////////////////////////////////
-// I/O stream extensions
-//
-
-static void TestIostream(void)
-{
-    CNcbiIstrstream is("abc\r\nx0123456789\ny012345\r \tcba");
-    string str;
-
-    while (NcbiGetline(is, str, "\r\n")) {
-        NcbiCout << str << NcbiEndl;
-        _ASSERT(!str.empty());
-    }
-    is.clear();
-    is.seekg(0, IOS_BASE::beg);
-
-    NcbiGetline(is, str, '\n');
-    assert( is.good() );
-    assert( str.compare("abc\r") == 0 );
-
-    is >> str;
-    assert( is.good() );
-    assert( str.compare("x0123456789") == 0 );
-
-    is >> str;
-    assert( is.good() );
-    assert( str.compare("y012345") == 0 );
-
-    is >> str;
-    assert( is.eof() );
-    assert( str.compare("cba") == 0 );
-
-    is >> str;
-    assert( !is.good() );
-
-    is.clear();
-    is >> str;
-    assert( !is.good() );
-
-    str = "0 1 2 3 4 5\n6 7 8 9";
-    NcbiCout << "String output: "  << str << NcbiEndl;
-
-    const char kNullDev[] =
-#ifdef NCBI_OS_MSWIN
-        "NUL"
-#else
-        "/dev/null"
-#endif /*NCBI_OS_MSWIN*/
-        ;
-    CNcbiOfstream ofs(kNullDev);
-    CNcbiIfstream ifs(kNullDev);
-
-    assert(NcbiStreamCopy(ofs, ifs));
-
-    NcbiCout << "NcbiStreamCopy() test passed" << NcbiEndl;
-}
-
-
-
-/////////////////////////////////
-// Registry
-//
-
-static void TestRegistry(void)
-{
-    CNcbiRegistry reg;
-    CConstRef<IRegistry> env_reg
-        = reg.FindByName(CNcbiRegistry::sm_EnvRegName);
-    if (env_reg.Empty()) {
-        ERR_POST("Environment-based subregistry missing");
-    } else {
-        reg.Remove(*env_reg);
-    }
-    assert( reg.Empty() );
-
-    list<string> sections;
-    reg.EnumerateSections(&sections);
-    assert( sections.empty() );
-
-    list<string> entries;
-    reg.EnumerateEntries(kEmptyStr, &entries);
-    assert( entries.empty() );
-
-    // Compose a test registry
-    assert(  reg.Set("Section0", "Name01", "Val01_BAD!!!") );
-    assert(  reg.Set("Section1 ", "\nName11", "Val11_t") );
-    assert( !reg.Empty() );
-    assert(  reg.Get(" Section1", "Name11\t") == "Val11_t" );
-    assert(  reg.Get("Section1", "Name11",
-                      CNcbiRegistry::ePersistent).empty() );
-    assert(  reg.Set("Section1", "Name11", "Val11_t") );
-    assert( !reg.Set("Section1", "Name11", "Val11_BAD!!!",
-                      CNcbiRegistry::eNoOverride) );
-
-    assert(  reg.Set("   Section2", "\nName21  ", "Val21",
-                      CNcbiRegistry::ePersistent |
-                      CNcbiRegistry::eNoOverride) );
-    assert(  reg.Set("Section2", "Name21", "Val21_t") );
-    assert( !reg.Empty() );
-    assert(  reg.Set("Section3", "Name31", "Val31_t") );
-
-    assert( reg.Get(" \nSection1", " Name11  ") == "Val11_t" );
-    assert( reg.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
-             "Val21" );
-    assert( reg.Get(" Section2", " Name21\n") == "Val21_t" );
-    assert( reg.Get("SectionX", "Name21").empty() );
-
-    assert( reg.Set("Section4", "Name41", "Val410 Val411 Val413",
-                     CNcbiRegistry::ePersistent) );
-    assert(!reg.Set("Sect ion4", "Name41", "BAD1",
-                     CNcbiRegistry::ePersistent) );
-    assert(!reg.Set("Section4", "Na me41", "BAD2") );
-    assert( reg.Set("SECTION4", "Name42", "V420 V421\nV422 V423 \"",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("Section4", "NAME43",
-                     " \tV430 V431  \n V432 V433 ",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("\tSection4", "Name43T",
-                     " \tV430 V431  \n V432 V433 ",
-                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
-    assert( reg.Set("Section4", "Name44", "\n V440 V441 \r\n",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("\r Section4", "  \t\rName45", "\r\n V450 V451  \n  ",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("Section4 \n", "  Name46  ", "\n\nV460\" \n \t \n\t",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set(" Section4", "Name46T", "\n\nV460\" \n \t \n\t",
-                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
-    assert( reg.Set("Section4", "Name47", "470\n471\\\n 472\\\n473\\",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("Section4", "Name47T", "470\n471\\\n 472\\\n473\\",
-                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
-    string xxx("\" V481\" \n\"V482 ");
-    assert( reg.Set("Section4", "Name48", xxx, CNcbiRegistry::ePersistent) );
-
-    assert( reg.Set("Section5", "Name51", "Section5/Name51",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("_Section_5", "Name51", "_Section_5/Name51",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("_Section_5_", "_Name52", "_Section_5_/_Name52",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("_Section_5_", "Name52", "_Section_5_/Name52",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("_Section_5_", "_Name53_", "_Section_5_/_Name53_",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("Section-5.6", "Name-5.6", "Section-5.6/Name-5.6",
-                     CNcbiRegistry::ePersistent) );
-    assert( reg.Set("-Section_5", ".Name.5-3", "-Section_5/.Name.5-3",
-                     CNcbiRegistry::ePersistent) );
-
-
-    // Dump
-    CNcbiOstrstream os;
-    assert ( reg.Write(os) );
-    os << '\0';
-    const char* os_str = os.str();  os.rdbuf()->freeze(false);
-    NcbiCerr << "\nRegistry:\n" << os_str << NcbiEndl;
-
-    // "Persistent" load
-    CNcbiIstrstream is1(os_str);
-    CNcbiRegistry  reg1(is1);
-    assert(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
-              "Val21" );
-    assert(  reg1.Get("Section2", "Name21") == "Val21" );
-    assert(  reg1.Set("Section2", "Name21", NcbiEmptyString) );
-    assert( !reg1.Set("Section2", "Name21", NcbiEmptyString,
-                       CNcbiRegistry::ePersistent |
-                       CNcbiRegistry::eNoOverride) );
-    assert( !reg1.Empty() );
-    assert(  reg1.Set("Section2", "Name21", NcbiEmptyString,
-                       CNcbiRegistry::ePersistent) );
-
-    // "Transient" load
-    CNcbiIstrstream is2(os_str);
-    CNcbiRegistry  reg2(is2, CNcbiRegistry::eTransient);
-    assert(  reg2.Get("Section2", "Name21",
-                       CNcbiRegistry::ePersistent).empty() );
-    assert(  reg2.Get("Section2", "Name21") == "Val21" );
-    assert( !reg2.Set("Section2", "Name21", NcbiEmptyString,
-                       CNcbiRegistry::ePersistent) );
-    assert( !reg2.Set("Section2", "Name21", NcbiEmptyString,
-                       CNcbiRegistry::ePersistent |
-                       CNcbiRegistry::eNoOverride) );
-    assert( !reg2.Empty() );
-    assert(  reg2.Set("Section2", "Name21", NcbiEmptyString) );
-
-
-    assert( reg.Get("Sect ion4 ", "Name41 ").empty() );
-    assert( reg.Get("Section4 ", "Na me41 ").empty() );
-
-    assert( reg.Get("Section4 ", "Name41 ") == "Val410 Val411 Val413" );
-    assert( reg.Get("Section4",  " Name42") == "V420 V421\nV422 V423 \"" );
-    assert( reg.Get("Section4",  "Name43")  == " \tV430 V431  \n V432 V433 ");
-    assert( reg.Get("Section4",  "Name43T") == "V430 V431  \n V432 V433" );
-    assert( reg.Get("Section4",  " Name44") == "\n V440 V441 \r\n" );
-    assert( reg.Get(" SecTIon4", "Name45")  == "\r\n V450 V451  \n  " );
-    assert( reg.Get("SecTion4 ", "Name46")  == "\n\nV460\" \n \t \n\t" );
-    assert( reg.Get("Section4",  "NaMe46T") == "\n\nV460\" \n \t \n" );
-    assert( reg.Get(" Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
-    assert( reg.Get("Section4 ", "NAme47T") == "470\n471\\\n 472\\\n473\\" );
-    assert( reg.Get("Section4",  "Name48")  == xxx );
-
-    assert( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
-    assert( reg2.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
-    assert( reg2.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
-    assert( reg2.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
-    assert( reg2.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
-    assert( reg2.Get("Section4", "NaMe45")  == "\r\n V450 V451  \n  " );
-    assert( reg2.Get("SecTIOn4", "NAme46")  == "\n\nV460\" \n \t \n\t" );
-    assert( reg2.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
-    assert( reg2.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
-    assert( reg2.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
-    assert( reg2.Get("Section4", "Name48")  == xxx );
-
-    assert( reg2.Get(" Section5",    "Name51 ")   == "Section5/Name51" );
-    assert( reg2.Get("_Section_5",   " Name51")   == "_Section_5/Name51" );
-    assert( reg2.Get(" _Section_5_", " _Name52")  == "_Section_5_/_Name52");
-    assert( reg2.Get("_Section_5_ ", "Name52")    == "_Section_5_/Name52");
-    assert( reg2.Get("_Section_5_",  "_Name53_ ") == "_Section_5_/_Name53_" );
-    assert( reg2.Get(" Section-5.6", "Name-5.6 ") == "Section-5.6/Name-5.6");
-    assert( reg2.Get("-Section_5",   ".Name.5-3") == "-Section_5/.Name.5-3");
-
-    // Printout of the whole registry content
-    assert( reg.Set("Section0", "Name01", "") );
-    reg.EnumerateSections(&sections);
-    assert( find(sections.begin(), sections.end(), "Section0")
-             == sections.end() );
-    assert( find(sections.begin(), sections.end(), "Section1")
-             != sections.end() );
-    assert( !sections.empty() );
-    NcbiCout << "\nRegistry Content:\n";
-    for (list<string>::const_iterator itSection = sections.begin();
-         itSection != sections.end();   itSection++) {
-        NcbiCout << "Section: " << *itSection << NcbiEndl;
-        reg.EnumerateEntries(*itSection, &entries);
-        for (list<string>::const_iterator itEntry = entries.begin();
-             itEntry != entries.end();   itEntry++) {
-            NcbiCout << "  Entry: " << *itEntry << NcbiEndl;
-            NcbiCout << "    Default:    "
-                     << reg.Get(*itSection, *itEntry) << NcbiEndl;
-            NcbiCout << "    Persistent: "
-                     << reg.Get(*itSection, *itEntry,
-                                CNcbiRegistry::ePersistent) << NcbiEndl;
-        }
-    }
-
-    reg.Clear();
-    assert( reg.Empty() );
-    
-    // Test read/write registry
-
-    NcbiCout << endl;
-    NcbiCout << "---------------------------------------------------" << endl;
-
-    CNcbiIstrstream is("\n\
-############################################\n\
-#\n\
-#  Registry file comment\n\
-#\n\
-############################################\n\
-\n\
-; comment for section1\n\
-\n\
-[section1]\n\
-; This is a comment for n11\n\
-#\n\
-#  File comment also\n\
-#\n\
-n11 = value11\n\
-\n\
-; This is a comment for n12 line 1\n\
-; This is a comment for n12 line 2\n\
-\n\
-n12 = value12\n\
-\n\
-; This is a comment for n13\n\
-n13 = value13\n\
-; new comment for n13\n\
-n13 = new_value13\n\
-\n\
-[ section2 ]\n\
-; This is a comment for n21\n\
-n21 = value21\n\
-   ; This is a comment for n22\n\
-n22 = value22\n\
-[section3]\n\
-n31 = value31\n\
-");
-
-    reg.Read(is);
-    reg.Write(NcbiCout);
-    NcbiCout << "---------------------------------------------------" << endl;
-    NcbiCout << "File comment:" << endl;
-    NcbiCout << reg.GetComment() << endl;
-    NcbiCout << "Section comment:" << endl;
-    NcbiCout << reg.GetComment("section1") << endl;
-    NcbiCout << "Entry comment:" << endl;
-    NcbiCout << reg.GetComment("section1","n12") << endl;
-
-    reg.SetComment(" new comment\n# for registry\n\n  # ...\n\n\n");
-    reg.SetComment(";new comment for section1\n","section1");
-    reg.SetComment("new comment for section3","section3");
-    reg.SetComment("new comment for entry n11","section1","n11");
-    reg.SetComment("  ; new comment for entry n31","section3","n31");
-    reg.SetComment("","section2","n21");
-
-    NcbiCout << "---------------------------------------------------" << endl;
-    reg.Write(NcbiCout);
-    NcbiCout << "---------------------------------------------------" << endl;
-}
-
-
-
-/////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // Start-up (cmd.-line args, config file)
-//
 
-static void TestStartup(void)
+BOOST_AUTO_TEST_CASE(TestStartup)
 {
     // Command-line arguments
     SIZE_TYPE n_args = CNcbiApplication::Instance()->GetArguments().Size();
@@ -386,7 +74,7 @@ static void TestStartup(void)
 }
 
 
-/////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // Diagnostics
 //
 
@@ -406,7 +94,7 @@ static void s_TestDiagHandler(const SDiagMessage& mess)
 }
 
 
-static void TestDiag(void)
+BOOST_AUTO_TEST_CASE(TTestDiag)
 {
     CNcbiDiag diag;
     double d = 123.45;
@@ -434,8 +122,8 @@ static void TestDiag(void)
     diag << "01234";
 
     SetDiagStream(&NcbiCerr);
-    assert(  IsDiagStream(&NcbiCerr) );
-    assert( !IsDiagStream(&NcbiCout) );
+    BOOST_CHECK(  IsDiagStream(&NcbiCerr) );
+    BOOST_CHECK( !IsDiagStream(&NcbiCout) );
     diag << "56789" << Endm;
     diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
     ERR_POST("[Set Diag Stream(cerr)]  Std.Diag. double = "    << d );
@@ -518,7 +206,9 @@ static void TestDiag(void)
 }
 
 
-static void TestDiag_ErrCodeInfo(void)
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TTestDiag_ErrCodeInfo)
 {
     CNcbiDiag diag;
     SetDiagStream(&NcbiCout);
@@ -554,24 +244,24 @@ Message for warning error PRINT_BadFormat.\n\
                         SDiagErrCodeDescription("Err 2.4", "Error 2.4",
                                                 eDiag_Error));
 
-    assert(info.GetDescription(ErrCode(1,1), &desc));
-    assert(desc.m_Message     == "Short message for error code (1,1)");
-    assert(desc.m_Explanation == "This is a long message for error code (1,1).");
-    assert(desc.m_Severity    == 3);
+    BOOST_CHECK(info.GetDescription(ErrCode(1,1), &desc));
+    BOOST_CHECK_EQUAL(desc.m_Message, "Short message for error code (1,1)");
+    BOOST_CHECK_EQUAL(desc.m_Explanation, "This is a long message for error code (1,1).");
+    BOOST_CHECK_EQUAL(desc.m_Severity, 3);
 
-    assert(info.GetDescription(ErrCode(9,0), &desc));
-    assert(desc.m_Severity    == 2);
-    assert(info.GetDescription(ErrCode(9,1), &desc));
-    assert(desc.m_Severity    == eDiag_Info);
-    assert(info.GetDescription(ErrCode(9,2), &desc));
-    assert(desc.m_Severity    == 2);
+    BOOST_CHECK(info.GetDescription(ErrCode(9,0), &desc));
+    BOOST_CHECK_EQUAL(desc.m_Severity, 2);
+    BOOST_CHECK(info.GetDescription(ErrCode(9,1), &desc));
+    BOOST_CHECK_EQUAL(desc.m_Severity, eDiag_Info);
+    BOOST_CHECK(info.GetDescription(ErrCode(9,2), &desc));
+    BOOST_CHECK_EQUAL(desc.m_Severity, 2);
 
-    assert(info.GetDescription(ErrCode(2,4), &desc));
-    assert(desc.m_Message     == "Err 2.4");
-    assert(desc.m_Explanation == "Error 2.4");
-    assert(desc.m_Severity    == eDiag_Error);
+    BOOST_CHECK(info.GetDescription(ErrCode(2,4), &desc));
+    BOOST_CHECK_EQUAL(desc.m_Message, "Err 2.4");
+    BOOST_CHECK_EQUAL(desc.m_Explanation, "Error 2.4");
+    BOOST_CHECK_EQUAL(desc.m_Severity, eDiag_Error);
 
-    assert(!info.GetDescription(ErrCode(1,3), &desc));
+    BOOST_CHECK(!info.GetDescription(ErrCode(1,3), &desc));
 
     SetDiagErrCodeInfo(&info, false);
     SetDiagPostFlag(eDPF_All);
@@ -599,7 +289,7 @@ Message for warning error PRINT_BadFormat.\n\
 }
 
 
-/////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // Exceptions
 //
 
@@ -641,8 +331,10 @@ static void s_ThrowXXX(void) {
    
 }
 
-static void TestException_Features(void)
+BOOST_AUTO_TEST_CASE(TestException_Features)
 {
+    CNcbiOstream* prevDiag = GetDiagStream();
+    SetDiagStream(&NcbiCout);
     try {
         s_ThrowXXX();
     } catch (XXX& x) {
@@ -654,11 +346,14 @@ static void TestException_Features(void)
     } catch (XXX x) {
         NcbiCerr << "Catch (XXX x): " << x.what() << NcbiEndl << NcbiEndl;
     }
+    SetDiagStream(prevDiag);
 }
 
 
-static void TestException_Std(void)
+BOOST_AUTO_TEST_CASE(TestException_Std)
 {
+    CNcbiOstream* prevDiag = GetDiagStream();
+    SetDiagStream(&NcbiCout);
     try { TE_runtime(); }
     catch (runtime_error& e) {
         NcbiCerr << "CATCH TE_runtime::runtime_error : " << e.what()<<NcbiEndl;
@@ -684,13 +379,16 @@ static void TestException_Std(void)
     catch (logic_error& e) {
         NcbiCerr << "CATCH TE_logic " << e.what() << NcbiEndl; }
     STD_CATCH_ALL ("try { TE_logic(); }  SOMETHING IS WRONG!");
+    SetDiagStream(prevDiag);
 }
 
 
-static void TestException_Aux(void)
+BOOST_AUTO_TEST_CASE(TestException_Aux)
 {
+    CNcbiOstream* prevDiag = GetDiagStream();
+    SetDiagStream(&NcbiCout);
     try {
-        assert( !strtod("1e-999999", 0) );
+        BOOST_CHECK( !strtod("1e-999999", 0) );
         NCBI_THROW(CErrnoTemplException<CCoreException>,eErrno,
             "Failed strtod(\"1e-999999\", 0)");
     }
@@ -708,13 +406,46 @@ static void TestException_Aux(void)
         // Should never be here
         _TROUBLE;
     }
+    SetDiagStream(prevDiag);
+}
+
+BOOST_AUTO_TEST_CASE(TestStreamposConvert)
+{
+    Int8 p1 = 1;
+    p1 <<= 45;
+
+    CT_POS_TYPE pos = NcbiInt8ToStreampos(p1);
+    Int8        p2  = NcbiStreamposToInt8(pos);
+
+    if ( sizeof(CT_POS_TYPE) < sizeof(Int8)  ||
+         sizeof(CT_OFF_TYPE) < sizeof(Int8) ) {
+        ERR_POST(Warning <<
+                 "Large streams are not supported, skipping the test");
+        return;
+    }
+    BOOST_CHECK(p1 == p2);
+    BOOST_CHECK(p1 && p2);
 }
 
 
-static void TestException_AuxTrace(void)
+#if 0
+BOOST_AUTO_TEST_CASE(TestException)
+{
+    SetDiagStream(&NcbiCout);
+
+    TestException_Features();
+    TestException_Std();
+    TestException_Aux();
+    TestStreamposConvert();
+}
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TestException_AuxTrace)
 {
     try {
-        assert( !strtod("1e-999999", 0) );
+        BOOST_CHECK( !strtod("1e-999999", 0) );
         NCBI_THROW(CErrnoTemplException<CCoreException>,eErrno,
             "Failed strtod('1e-999999', 0)");
     }
@@ -753,38 +484,322 @@ static void TestException_AuxTrace(void)
     }
 }
 
-static void TestStreamposConvert(void)
+
+/////////////////////////////////////////////////////////////////////////////
+// I/O stream extensions
+//
+
+BOOST_AUTO_TEST_CASE(TestIostream)
 {
-    Int8 p1 = 1;
-    p1 <<= 45;
+    CNcbiIstrstream is("abc\r\nx0123456789\ny012345\r \tcba");
+    string str;
 
-    CT_POS_TYPE pos = NcbiInt8ToStreampos(p1);
-    Int8        p2  = NcbiStreamposToInt8(pos);
-
-    if ( sizeof(CT_POS_TYPE) < sizeof(Int8)  ||
-         sizeof(CT_OFF_TYPE) < sizeof(Int8) ) {
-        ERR_POST(Warning <<
-                 "Large streams are not supported, skipping the test");
-        return;
+    while (NcbiGetline(is, str, "\r\n")) {
+        NcbiCout << str << NcbiEndl;
+        BOOST_CHECK(!str.empty());
     }
-    assert(p1 == p2);
-    assert(p1 && p2);
+    is.clear();
+    is.seekg(0, IOS_BASE::beg);
+
+    NcbiGetline(is, str, '\n');
+    BOOST_CHECK( is.good() );
+    BOOST_CHECK( str.compare("abc\r") == 0 );
+
+    is >> str;
+    BOOST_CHECK( is.good() );
+    BOOST_CHECK( str.compare("x0123456789") == 0 );
+
+    is >> str;
+    BOOST_CHECK( is.good() );
+    BOOST_CHECK( str.compare("y012345") == 0 );
+
+    is >> str;
+    BOOST_CHECK( is.eof() );
+    BOOST_CHECK( str.compare("cba") == 0 );
+
+    is >> str;
+    BOOST_CHECK( !is.good() );
+
+    is.clear();
+    is >> str;
+    BOOST_CHECK( !is.good() );
+
+    str = "0 1 2 3 4 5\n6 7 8 9";
+    NcbiCout << "String output: "  << str << NcbiEndl;
+
+    const char kNullDev[] =
+#ifdef NCBI_OS_MSWIN
+        "NUL"
+#else
+        "/dev/null"
+#endif /*NCBI_OS_MSWIN*/
+        ;
+    CNcbiOfstream ofs(kNullDev);
+    CNcbiIfstream ifs(kNullDev);
+
+    BOOST_CHECK(NcbiStreamCopy(ofs, ifs));
+
+    NcbiCout << "NcbiStreamCopy() test passed" << NcbiEndl;
 }
 
 
 
-static void TestException(void)
+/////////////////////////////////////////////////////////////////////////////
+// Registry
+//
+
+BOOST_AUTO_TEST_CASE(TestRegistry)
 {
-    SetDiagStream(&NcbiCout);
+    CNcbiRegistry reg;
+    CConstRef<IRegistry> env_reg
+        = reg.FindByName(CNcbiRegistry::sm_EnvRegName);
+    if (env_reg.Empty()) {
+        ERR_POST("Environment-based subregistry missing");
+    } else {
+        reg.Remove(*env_reg);
+    }
+    BOOST_CHECK( reg.Empty() );
 
-    TestException_Features();
-    TestException_Std();
-    TestException_Aux();
-    TestStreamposConvert();
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+    BOOST_CHECK( sections.empty() );
+
+    list<string> entries;
+    reg.EnumerateEntries(kEmptyStr, &entries);
+    BOOST_CHECK( entries.empty() );
+
+    // Compose a test registry
+    BOOST_CHECK(  reg.Set("Section0", "Name01", "Val01_BAD!!!") );
+    BOOST_CHECK(  reg.Set("Section1 ", "\nName11", "Val11_t") );
+    BOOST_CHECK( !reg.Empty() );
+    BOOST_CHECK(  reg.Get(" Section1", "Name11\t") == "Val11_t" );
+    BOOST_CHECK(  reg.Get("Section1", "Name11",
+                      CNcbiRegistry::ePersistent).empty() );
+    BOOST_CHECK(  reg.Set("Section1", "Name11", "Val11_t") );
+    BOOST_CHECK( !reg.Set("Section1", "Name11", "Val11_BAD!!!",
+                      CNcbiRegistry::eNoOverride) );
+
+    BOOST_CHECK(  reg.Set("   Section2", "\nName21  ", "Val21",
+                      CNcbiRegistry::ePersistent |
+                      CNcbiRegistry::eNoOverride) );
+    BOOST_CHECK(  reg.Set("Section2", "Name21", "Val21_t") );
+    BOOST_CHECK( !reg.Empty() );
+    BOOST_CHECK(  reg.Set("Section3", "Name31", "Val31_t") );
+
+    BOOST_CHECK( reg.Get(" \nSection1", " Name11  ") == "Val11_t" );
+    BOOST_CHECK( reg.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
+             "Val21" );
+    BOOST_CHECK( reg.Get(" Section2", " Name21\n") == "Val21_t" );
+    BOOST_CHECK( reg.Get("SectionX", "Name21").empty() );
+
+    BOOST_CHECK( reg.Set("Section4", "Name41", "Val410 Val411 Val413",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK(!reg.Set("Sect ion4", "Name41", "BAD1",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK(!reg.Set("Section4", "Na me41", "BAD2") );
+    BOOST_CHECK( reg.Set("SECTION4", "Name42", "V420 V421\nV422 V423 \"",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("Section4", "NAME43",
+                     " \tV430 V431  \n V432 V433 ",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("\tSection4", "Name43T",
+                     " \tV430 V431  \n V432 V433 ",
+                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
+    BOOST_CHECK( reg.Set("Section4", "Name44", "\n V440 V441 \r\n",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("\r Section4", "  \t\rName45", "\r\n V450 V451  \n  ",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("Section4 \n", "  Name46  ", "\n\nV460\" \n \t \n\t",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set(" Section4", "Name46T", "\n\nV460\" \n \t \n\t",
+                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
+    BOOST_CHECK( reg.Set("Section4", "Name47", "470\n471\\\n 472\\\n473\\",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("Section4", "Name47T", "470\n471\\\n 472\\\n473\\",
+                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
+    string xxx("\" V481\" \n\"V482 ");
+    BOOST_CHECK( reg.Set("Section4", "Name48", xxx, CNcbiRegistry::ePersistent) );
+
+    BOOST_CHECK( reg.Set("Section5", "Name51", "Section5/Name51",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("_Section_5", "Name51", "_Section_5/Name51",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("_Section_5_", "_Name52", "_Section_5_/_Name52",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("_Section_5_", "Name52", "_Section_5_/Name52",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("_Section_5_", "_Name53_", "_Section_5_/_Name53_",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("Section-5.6", "Name-5.6", "Section-5.6/Name-5.6",
+                     CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( reg.Set("-Section_5", ".Name.5-3", "-Section_5/.Name.5-3",
+                     CNcbiRegistry::ePersistent) );
+
+
+    // Dump
+    CNcbiOstrstream os;
+    BOOST_CHECK ( reg.Write(os) );
+    os << '\0';
+    const char* os_str = os.str();  os.rdbuf()->freeze(false);
+    NcbiCerr << "\nRegistry:\n" << os_str << NcbiEndl;
+
+    // "Persistent" load
+    CNcbiIstrstream is1(os_str);
+    CNcbiRegistry  reg1(is1);
+    BOOST_CHECK(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
+              "Val21" );
+    BOOST_CHECK(  reg1.Get("Section2", "Name21") == "Val21" );
+    BOOST_CHECK(  reg1.Set("Section2", "Name21", NcbiEmptyString) );
+    BOOST_CHECK( !reg1.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent |
+                       CNcbiRegistry::eNoOverride) );
+    BOOST_CHECK( !reg1.Empty() );
+    BOOST_CHECK(  reg1.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent) );
+
+    // "Transient" load
+    CNcbiIstrstream is2(os_str);
+    CNcbiRegistry  reg2(is2, CNcbiRegistry::eTransient);
+    BOOST_CHECK(  reg2.Get("Section2", "Name21",
+                       CNcbiRegistry::ePersistent).empty() );
+    BOOST_CHECK(  reg2.Get("Section2", "Name21") == "Val21" );
+    BOOST_CHECK( !reg2.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent) );
+    BOOST_CHECK( !reg2.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent |
+                       CNcbiRegistry::eNoOverride) );
+    BOOST_CHECK( !reg2.Empty() );
+    BOOST_CHECK(  reg2.Set("Section2", "Name21", NcbiEmptyString) );
+
+
+    BOOST_CHECK( reg.Get("Sect ion4 ", "Name41 ").empty() );
+    BOOST_CHECK( reg.Get("Section4 ", "Na me41 ").empty() );
+
+    BOOST_CHECK( reg.Get("Section4 ", "Name41 ") == "Val410 Val411 Val413" );
+    BOOST_CHECK( reg.Get("Section4",  " Name42") == "V420 V421\nV422 V423 \"" );
+    BOOST_CHECK( reg.Get("Section4",  "Name43")  == " \tV430 V431  \n V432 V433 ");
+    BOOST_CHECK( reg.Get("Section4",  "Name43T") == "V430 V431  \n V432 V433" );
+    BOOST_CHECK( reg.Get("Section4",  " Name44") == "\n V440 V441 \r\n" );
+    BOOST_CHECK( reg.Get(" SecTIon4", "Name45")  == "\r\n V450 V451  \n  " );
+    BOOST_CHECK( reg.Get("SecTion4 ", "Name46")  == "\n\nV460\" \n \t \n\t" );
+    BOOST_CHECK( reg.Get("Section4",  "NaMe46T") == "\n\nV460\" \n \t \n" );
+    BOOST_CHECK( reg.Get(" Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
+    BOOST_CHECK( reg.Get("Section4 ", "NAme47T") == "470\n471\\\n 472\\\n473\\" );
+    BOOST_CHECK( reg.Get("Section4",  "Name48")  == xxx );
+
+    BOOST_CHECK( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
+    BOOST_CHECK( reg2.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
+    BOOST_CHECK( reg2.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
+    BOOST_CHECK( reg2.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
+    BOOST_CHECK( reg2.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
+    BOOST_CHECK( reg2.Get("Section4", "NaMe45")  == "\r\n V450 V451  \n  " );
+    BOOST_CHECK( reg2.Get("SecTIOn4", "NAme46")  == "\n\nV460\" \n \t \n\t" );
+    BOOST_CHECK( reg2.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
+    BOOST_CHECK( reg2.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
+    BOOST_CHECK( reg2.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
+    BOOST_CHECK( reg2.Get("Section4", "Name48")  == xxx );
+
+    BOOST_CHECK( reg2.Get(" Section5",    "Name51 ")   == "Section5/Name51" );
+    BOOST_CHECK( reg2.Get("_Section_5",   " Name51")   == "_Section_5/Name51" );
+    BOOST_CHECK( reg2.Get(" _Section_5_", " _Name52")  == "_Section_5_/_Name52");
+    BOOST_CHECK( reg2.Get("_Section_5_ ", "Name52")    == "_Section_5_/Name52");
+    BOOST_CHECK( reg2.Get("_Section_5_",  "_Name53_ ") == "_Section_5_/_Name53_" );
+    BOOST_CHECK( reg2.Get(" Section-5.6", "Name-5.6 ") == "Section-5.6/Name-5.6");
+    BOOST_CHECK( reg2.Get("-Section_5",   ".Name.5-3") == "-Section_5/.Name.5-3");
+
+    // Printout of the whole registry content
+    BOOST_CHECK( reg.Set("Section0", "Name01", "") );
+    reg.EnumerateSections(&sections);
+    BOOST_CHECK( find(sections.begin(), sections.end(), "Section0")
+             == sections.end() );
+    BOOST_CHECK( find(sections.begin(), sections.end(), "Section1")
+             != sections.end() );
+    BOOST_CHECK( !sections.empty() );
+    NcbiCout << "\nRegistry Content:\n";
+    for (list<string>::const_iterator itSection = sections.begin();
+         itSection != sections.end();   itSection++) {
+        NcbiCout << "Section: " << *itSection << NcbiEndl;
+        reg.EnumerateEntries(*itSection, &entries);
+        for (list<string>::const_iterator itEntry = entries.begin();
+             itEntry != entries.end();   itEntry++) {
+            NcbiCout << "  Entry: " << *itEntry << NcbiEndl;
+            NcbiCout << "    Default:    "
+                     << reg.Get(*itSection, *itEntry) << NcbiEndl;
+            NcbiCout << "    Persistent: "
+                     << reg.Get(*itSection, *itEntry,
+                                CNcbiRegistry::ePersistent) << NcbiEndl;
+        }
+    }
+
+    reg.Clear();
+    BOOST_CHECK( reg.Empty() );
+    
+    // Test read/write registry
+
+    NcbiCout << endl;
+    NcbiCout << "---------------------------------------------------" << endl;
+
+    CNcbiIstrstream is("\n\
+############################################\n\
+#\n\
+#  Registry file comment\n\
+#\n\
+############################################\n\
+\n\
+; comment for section1\n\
+\n\
+[section1]\n\
+; This is a comment for n11\n\
+#\n\
+#  File comment also\n\
+#\n\
+n11 = value11\n\
+\n\
+; This is a comment for n12 line 1\n\
+; This is a comment for n12 line 2\n\
+\n\
+n12 = value12\n\
+\n\
+; This is a comment for n13\n\
+n13 = value13\n\
+; new comment for n13\n\
+n13 = new_value13\n\
+\n\
+[ section2 ]\n\
+; This is a comment for n21\n\
+n21 = value21\n\
+   ; This is a comment for n22\n\
+n22 = value22\n\
+[section3]\n\
+n31 = value31\n\
+");
+
+    reg.Read(is);
+    reg.Write(NcbiCout);
+    NcbiCout << "---------------------------------------------------" << endl;
+    NcbiCout << "File comment:" << endl;
+    NcbiCout << reg.GetComment() << endl;
+    NcbiCout << "Section comment:" << endl;
+    NcbiCout << reg.GetComment("section1") << endl;
+    NcbiCout << "Entry comment:" << endl;
+    NcbiCout << reg.GetComment("section1","n12") << endl;
+
+    reg.SetComment(" new comment\n# for registry\n\n  # ...\n\n\n");
+    reg.SetComment(";new comment for section1\n","section1");
+    reg.SetComment("new comment for section3","section3");
+    reg.SetComment("new comment for entry n11","section1","n11");
+    reg.SetComment("  ; new comment for entry n31","section3","n31");
+    reg.SetComment("","section2","n21");
+
+    NcbiCout << "---------------------------------------------------" << endl;
+    reg.Write(NcbiCout);
+    NcbiCout << "---------------------------------------------------" << endl;
 }
 
 
-static void TestThrowTrace(void)
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TestThrowTrace)
 {
     SetDiagTrace(eDT_Enable);
     NcbiCerr << "The following lines should be equal pairs:" << NcbiEndl;
@@ -840,50 +855,53 @@ public:
     virtual void bar() const {}
 };
 
-static void TestHeapStack(void)
+
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TestHeapStack)
 {
     SetDiagTrace(eDT_Enable);
     {
       NcbiCerr << "Test CObjectInt in stack:" << NcbiEndl;
       CObjectInt stackObj;
-      assert(!stackObj.CanBeDeleted());
+      BOOST_CHECK(!stackObj.CanBeDeleted());
     }
     {
       NcbiCerr << "Test CObjectInt on heap:" << NcbiEndl;
       CObjectInt* heapObj = new CObjectInt();
-      assert(heapObj->CanBeDeleted());
+      BOOST_CHECK(heapObj->CanBeDeleted());
       delete heapObj; 
     }
     {
       NcbiCerr << "Test static CObjectInt:" << NcbiEndl;
       static CObjectInt staticObj;
-      assert(!staticObj.CanBeDeleted());
+      BOOST_CHECK(!staticObj.CanBeDeleted());
     }
     {
       NcbiCerr << "Test CRef on CObjectInt on heap:" << NcbiEndl;
       CRef<CObjectInt> objRef(new CObjectInt());
-      assert(objRef->CanBeDeleted());
+      BOOST_CHECK(objRef->CanBeDeleted());
     }
     {
       NcbiCerr << "Test CObject in stack:" << NcbiEndl;
       CObject stackObj;
-      assert(!stackObj.CanBeDeleted());
+      BOOST_CHECK(!stackObj.CanBeDeleted());
     }
     {
       NcbiCerr << "Test CObject on heap:" << NcbiEndl;
       CObject* heapObj = new CObject();
-      assert(heapObj->CanBeDeleted());
+      BOOST_CHECK(heapObj->CanBeDeleted());
       delete heapObj; 
     }
     {
       NcbiCerr << "Test static CObject:" << NcbiEndl;
       static CObject staticObj;
-      assert(!staticObj.CanBeDeleted());
+      BOOST_CHECK(!staticObj.CanBeDeleted());
     }
     {
       NcbiCerr << "Test CRef on CObject on heap:" << NcbiEndl;
       CRef<CObject> objRef(new CObject());
-      assert(objRef->CanBeDeleted());
+      BOOST_CHECK(objRef->CanBeDeleted());
     }
     SetDiagTrace(eDT_Default);
 
@@ -937,7 +955,9 @@ public:
 };
 
 
-static void TestObjectSizes(void)
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TestObjectSizes)
 {
     NcbiCout <<
         "Check if compiler supports empty-base optimization" << NcbiEndl;
@@ -955,13 +975,15 @@ static void TestObjectSizes(void)
         NcbiCerr <<
             "Test for empty-base optimization failed!" << NcbiEndl;
 #ifndef NO_EMPTY_BASE_OPTIMIZATION
-        assert(!error);
+        BOOST_CHECK(!error);
 #endif
     }
 }
 
 
-static void TestBASE64Encoding(void)
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
 {
     const char test_string[] = "Quick brown fox jumps over the lazy dog";
     char buf1[1024], buf2[1024], buf3[1024];
@@ -969,16 +991,16 @@ static void TestBASE64Encoding(void)
 
     BASE64_Encode(test_string, strlen(test_string) + 1, &read,
                   buf1, sizeof(buf1), &written, &len);
-    _ASSERT(read == strlen(test_string) + 1);
-    _ASSERT(written < sizeof(buf1));
-    _ASSERT(buf1[written] == '\0');
+    BOOST_CHECK(read == strlen(test_string) + 1);
+    BOOST_CHECK(written < sizeof(buf1));
+    BOOST_CHECK(buf1[written] == '\0');
 
-    _ASSERT(BASE64_Decode(buf1, written, &read,
+    BOOST_CHECK(BASE64_Decode(buf1, written, &read,
                           buf2, sizeof(buf2), &written));
-    _ASSERT(strlen(buf1) == read);
-    _ASSERT(written == strlen(test_string) + 1);
-    _ASSERT(buf2[written - 1] == '\0');
-    _ASSERT(strcmp(buf2, test_string) == 0);
+    BOOST_CHECK(strlen(buf1) == read);
+    BOOST_CHECK(written == strlen(test_string) + 1);
+    BOOST_CHECK(buf2[written - 1] == '\0');
+    BOOST_CHECK(strcmp(buf2, test_string) == 0);
 
     for (i = 0; i < 100; i++) {
         len = rand() % 250;
@@ -993,9 +1015,9 @@ static void TestBASE64Encoding(void)
         BASE64_Encode(buf1, len, &read, buf2, sizeof(buf2), &written, &j);
         if (len != read)
             NcbiCerr << "len = " << len << ", read = " << read << NcbiEndl;
-        _ASSERT(len == read);
-        _ASSERT(written < sizeof(buf2));
-        _ASSERT(buf2[written] == '\0');
+        BOOST_CHECK(len == read);
+        BOOST_CHECK(written < sizeof(buf2));
+        BOOST_CHECK(buf2[written] == '\0');
 
         if (rand() & 1) {
             buf2[written] = '=';
@@ -1004,11 +1026,14 @@ static void TestBASE64Encoding(void)
         BASE64_Decode(buf2, j, &read, buf3, sizeof(buf3), &written);
         if (j != read)
             NcbiCerr << "j = " << len << ", read = " << read << NcbiEndl;
-        _ASSERT(j == read);
-        _ASSERT(len == written);
-        _ASSERT(memcmp(buf1, buf3, len) == 0);
+        BOOST_CHECK(j == read);
+        BOOST_CHECK(len == written);
+        BOOST_CHECK(memcmp(buf1, buf3, len) == 0);
     }
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 template<class C>
 void TestEraseIterateFor(const C&)
@@ -1036,12 +1061,12 @@ void TestEraseIterateFor(const C&)
                 }
             }
             pc.erase(remove(pc.begin(), pc.end(), v), pc.end());
-            assert(pc == nc);
+            BOOST_CHECK(pc == nc);
             nc.clear();
             ITERATE ( typename Cont, it, c ) {
                 nc.push_back(*it);
             }
-            assert(pc == nc);
+            BOOST_CHECK(pc == nc);
         }
     }
 }
@@ -1073,18 +1098,18 @@ void TestEraseIterateForVec(const C&)
                 }
             }
             pc.erase(remove(pc.begin(), pc.end(), v), pc.end());
-            assert(pc == nc);
+            BOOST_CHECK(pc == nc);
             nc.clear();
             ITERATE ( typename Cont, it, c ) {
                 nc.push_back(*it);
             }
-            assert(pc == nc);
+            BOOST_CHECK(pc == nc);
         }
     }
 }
 
 
-static void TestEraseIterate(void)
+BOOST_AUTO_TEST_CASE(TestEraseIterate)
 {
     set<int> ts;
     list<int> tl;
@@ -1095,17 +1120,190 @@ static void TestEraseIterate(void)
 }
 
 
-static void TestStringNpos(void)
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TestStringNpos)
 {
-    assert(string::npos == static_cast<string::size_type>(-1));
-    assert(NPOS == static_cast<SIZE_TYPE>(-1));
+    BOOST_CHECK(string::npos == static_cast<string::size_type>(-1));
+    BOOST_CHECK(NPOS == static_cast<SIZE_TYPE>(-1));
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+CCheckMe<bool> chk1_True(void)
+{
+    return true;
+}
+CCheckMe<bool> chk1_False(void)
+{
+    return CCheckMe<bool>(false);
+}
+CCheckMe<bool> chk2_False(void)
+{
+    CCheckMe<bool> f(chk1_False());
+    return f;
+}
+CCheckMe<bool> chk3_False(void)
+{
+    CCheckMe<bool> f(chk1_False());
+    return CCheckMe<bool>(f);
+}
+
+class TwoInt
+{
+    public:
+        TwoInt(int lo, int hi)
+            : m_Lo(lo), m_Hi(hi)
+        {
+        }
+        TwoInt(const TwoInt& t)
+            : m_Lo(t.m_Lo), m_Hi(t.m_Hi)
+        {
+        }
+        bool operator==(const int& lo) const
+        {
+            return m_Lo == lo && m_Hi == 0;
+        }
+    private:
+        int m_Lo, m_Hi;
+};
+
+BOOST_AUTO_TEST_CASE(TestCheckMeType)
+{
+    {
+        CCheckMe<bool> b(false);
+        BOOST_CHECK(!b.IsChecked());
+        bool v = b;
+        BOOST_CHECK(!v);
+        BOOST_CHECK(b.IsChecked());
+    }
+    {
+        CCheckMe<bool> b(false);
+        BOOST_CHECK(!b.IsChecked());
+        bool v = !b;
+        BOOST_CHECK(v);
+        BOOST_CHECK(b.IsChecked());
+    }
+    {
+        CCheckMe<bool> b(false);
+        BOOST_CHECK(!b.IsChecked());
+        bool v = (b == false);
+        BOOST_CHECK(v);
+        BOOST_CHECK(b.IsChecked());
+    }
+    {
+        CCheckMe<bool> b(false);
+        BOOST_CHECK(!b.IsChecked());
+        bool v = (b != false);
+        BOOST_CHECK(!v);
+        BOOST_CHECK(b.IsChecked());
+    }
+
+    {
+        CCheckMe<bool> b(false);
+        BOOST_CHECK(!b.IsChecked());
+
+        CCheckMe<bool> x = b;
+        BOOST_CHECK(b.IsChecked());
+        BOOST_CHECK(!x.IsChecked());
+
+        CCheckMe<bool> y(false);
+        BOOST_CHECK(!y.IsChecked());
+        bool v = x == y;
+        BOOST_CHECK(v);
+        BOOST_CHECK(x.IsChecked());
+        BOOST_CHECK(y.IsChecked());
+
+        y = false;
+        BOOST_CHECK(!y.IsChecked());
+        y.SetChecked();
+    }
+    {
+        CCheckMe<bool> x(true);
+        BOOST_CHECK(!x.IsChecked());
+        CCheckMe<bool> y(false);
+        BOOST_CHECK(!y.IsChecked());
+        bool v = x != y;
+        BOOST_CHECK(v);
+        BOOST_CHECK(x.IsChecked());
+        BOOST_CHECK(y.IsChecked());
+    }
+    {
+        // test that it does not crash here
+        bool v = chk1_True();
+        v = chk1_False();
+        v = chk2_False();
+        v = chk3_False();
+        BOOST_CHECK(!v);
+    }
+    {
+        CCheckMe<bool> x = chk1_True();
+        BOOST_CHECK(!x.IsChecked());
+        x.SetChecked();
+
+        x = chk1_False();
+        BOOST_CHECK(!x.IsChecked());
+        x.SetChecked();
+
+        x = chk2_False();
+        BOOST_CHECK(!x.IsChecked());
+        x.SetChecked();
+
+        x = chk3_False();
+        BOOST_CHECK(!x.IsChecked());
+        x.SetChecked();
+    }
+    {
+        CCheckMe<bool> b;
+        BOOST_CHECK(b.IsChecked());
+
+        CCheckMe<bool> z;
+        BOOST_CHECK(z.IsChecked());
+        z = b;
+        BOOST_CHECK(b.IsChecked());
+        BOOST_CHECK(z.IsChecked());
+
+        CCheckMe<bool> x = b;
+        BOOST_CHECK(b.IsChecked());
+        BOOST_CHECK(x.IsChecked());
+        x = true;
+        BOOST_CHECK(!x.IsChecked());
+
+        CCheckMe<bool> y(false);
+        BOOST_CHECK(!y.IsChecked());
+        bool v = x == y;
+        BOOST_CHECK(!v);
+        BOOST_CHECK(x.IsChecked());
+        BOOST_CHECK(y.IsChecked());
+    }
+    {
+        CCheckMe<TwoInt> x(TwoInt(3,0));
+        BOOST_CHECK(!x.IsChecked());
+        bool v = x == 3;
+        BOOST_CHECK(v);
+        BOOST_CHECK(x.IsChecked());
+    }
 }
 
 
-/////////////////////////////////
+NCBITEST_AUTO_INIT()
+{
+    // Post error message
+    ERR_POST("This message goes to the default diag.stream, CERR (2 times)");
+}
+
+NCBITEST_AUTO_FINI()
+{
+    SetDiagStream(0);
+    assert( IsDiagStream(0) );
+    assert( !IsDiagStream(&NcbiCout) );
+}
+
+#if 0
+/////////////////////////////////////////////////////////////////////////////
 // Test application
 //
-
 class CTestApplication : public CNcbiApplication
 {
 public:
@@ -1156,3 +1354,4 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
     // Execute main application function
     return CTestApplication().AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }
+#endif

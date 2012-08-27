@@ -8,7 +8,11 @@
 
 APP = coretest
 SRC = coretest
-LIB = xncbi
+LIB = test_boost xncbi
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+
+REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
