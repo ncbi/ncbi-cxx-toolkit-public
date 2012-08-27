@@ -71,19 +71,15 @@ static const unsigned int       s_ReserveDelta = 10000;
 
 CQueue::CQueue(CRequestExecutor&     executor,
                const string&         queue_name,
-               const string&         qclass_name,
                TQueueKind            queue_kind,
                CNetScheduleServer *  server)
   :
     m_RunTimeLine(NULL),
-    m_DeleteDatabase(false),
     m_Executor(executor),
     m_QueueName(queue_name),
-    m_QueueClass(qclass_name),
     m_Kind(queue_kind),
     m_QueueDbBlock(0),
-
-    m_BecameEmpty(-1),
+    m_TruncateAtDetach(false),
 
     m_LastId(0),
     m_SavedId(s_ReserveDelta),
@@ -94,10 +90,8 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_RunTimeoutPrecision(-1),
     m_FailedRetries(0),
     m_BlacklistTime(0),
-    m_EmptyLifetime(0),
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
-    m_DenyAccessViolations(false),
     m_WNodeTimeout(40),
     m_PendingTimeout(604800),
     m_KeyGenerator(server->GetHost(), server->GetPort()),
@@ -172,6 +166,10 @@ private:
 
 void CQueue::Detach()
 {
+    m_AffinityRegistry.Detach();
+    if (!m_QueueDbBlock)
+        return;
+
     // We are here have synchronized access to m_QueueDbBlock without mutex
     // because we are here only when the last reference to CQueue is
     // destroyed. So as long m_QueueDbBlock->allocated is true it cannot
@@ -181,17 +179,16 @@ void CQueue::Detach()
     // set m_QueueDbBlock->allocated to false. Boolean write is atomic by
     // definition and test-and-set is executed from synchronized code in
     // CQueueDbBlockArray::Allocate.
-    m_AffinityRegistry.Detach();
-    if (!m_QueueDbBlock)
-        return;
 
-    if (m_DeleteDatabase) {
+    if (m_TruncateAtDetach) {
         CRef<CStdRequest> request(new CTruncateRequest(m_QueueDbBlock));
         m_Executor.SubmitRequest(request);
-        m_DeleteDatabase = false;
-    } else
+    } else {
         m_QueueDbBlock->allocated = false;
+    }
+
     m_QueueDbBlock = 0;
+    return;
 }
 
 
@@ -211,10 +208,8 @@ void CQueue::SetParameters(const SQueueParameters &  params)
 
     m_FailedRetries         = params.failed_retries;
     m_BlacklistTime         = params.blacklist_time;
-    m_EmptyLifetime         = params.empty_lifetime;
     m_MaxInputSize          = params.max_input_size;
     m_MaxOutputSize         = params.max_output_size;
-    m_DenyAccessViolations  = params.deny_access_violations;
     m_WNodeTimeout          = params.wnode_timeout;
     m_PendingTimeout        = params.pending_timeout;
     m_MaxPendingWaitTimeout = CNSPreciseTime(params.max_pending_wait_timeout);
@@ -1102,6 +1097,7 @@ TJobStatus  CQueue::SetJobListener(unsigned int     job_id,
             job.SetListenerNotifAbsTime(curr + timeout);
         }
 
+        job.SetLastTouch(curr);
         job.Flush(this);
         transaction.Commit();
     }}
@@ -1322,9 +1318,6 @@ void CQueue::Truncate(void)
     }}
 
     x_Erase(bv);
-
-    // Next call updates 'm_BecameEmpty' timestamp
-    IsExpired(); // locks CQueue lock
 }
 
 
@@ -1523,30 +1516,10 @@ TJobStatus  CQueue::GetJobStatus(unsigned int  job_id) const
 }
 
 
-bool CQueue::IsExpired()
+bool CQueue::IsEmpty() const
 {
-    time_t              empty_lifetime = GetEmptyLifetime();
     CFastMutexGuard     guard(m_OperationLock);
-
-    if (m_Kind && empty_lifetime > 0) {
-        if (m_StatusTracker.Count()) {
-            m_BecameEmpty = -1;
-        } else {
-            if (m_BecameEmpty != -1 &&
-                m_BecameEmpty + empty_lifetime < time(0))
-            {
-                LOG_POST(Message << Warning << "Queue " << m_QueueName
-                                 << " expired. Became empty: "
-                                 << CTime(m_BecameEmpty).ToLocalTime().AsString()
-                                 << " Empty lifetime: " << empty_lifetime
-                                 << " sec." );
-                return true;
-            }
-            if (m_BecameEmpty == -1)
-                m_BecameEmpty = time(0);
-        }
-    }
-    return false;
+    return !m_StatusTracker.AnyJobs();
 }
 
 
@@ -3189,7 +3162,7 @@ bool CQueue::x_UnregisterGetListener(const CNSClientId &  client,
 }
 
 
-void CQueue::PrintStatistics(size_t &  aff_count)
+void CQueue::PrintStatistics(size_t &  aff_count) const
 {
     size_t      affinities = m_AffinityRegistry.size();
     aff_count += affinities;
@@ -3211,7 +3184,7 @@ void CQueue::PrintStatistics(size_t &  aff_count)
 }
 
 
-void CQueue::PrintTransitionCounters(CNetScheduleHandler &  handler)
+void CQueue::PrintTransitionCounters(CNetScheduleHandler &  handler) const
 {
     m_StatisticsCounters.PrintTransitions(handler);
     handler.WriteMessage("OK:garbage_jobs: " +
@@ -3226,7 +3199,7 @@ void CQueue::PrintTransitionCounters(CNetScheduleHandler &  handler)
 
 void CQueue::PrintJobsStat(CNetScheduleHandler &  handler,
                            const string &         group_token,
-                           const string &         aff_token)
+                           const string &         aff_token) const
 {
     size_t              jobs_per_state[g_ValidJobStatusesSize];
     TNSBitVector        group_jobs;

@@ -64,17 +64,11 @@ public:
     time_t GetBlacklistTime() const
     { return m_Queue.m_BlacklistTime; }
 
-    time_t GetEmptyLifetime() const
-    { return m_Queue.m_EmptyLifetime; }
-
     unsigned int GetMaxInputSize() const
     { return m_Queue.m_MaxInputSize; }
 
     unsigned int GetMaxOutputSize() const
     { return m_Queue.m_MaxOutputSize; }
-
-    bool GetDenyAccessViolations() const
-    { return m_Queue.m_DenyAccessViolations; }
 
     const CQueueClientInfoList &  GetProgramVersionList() const
     { return m_Queue.m_ProgramVersionList; }
@@ -92,7 +86,7 @@ public:
     { return m_Queue.m_NotifLofreqMult; }
 
     unsigned GetNumParams() const
-    { return 16; }
+    { return 14; }
 
     string GetParamName(unsigned int  n) const {
         switch (n) {
@@ -105,13 +99,11 @@ public:
         case 6:  return "run_timeout_precision";
         case 7:  return "failed_retries";
         case 8:  return "blacklist_time";
-        case 9:  return "empty_lifetime";
-        case 10: return "max_input_size";
-        case 11: return "max_output_size";
-        case 12: return "deny_access_violations";
-        case 13: return "program";
-        case 14: return "subm_host";
-        case 15: return "wnode_host";
+        case 9:  return "max_input_size";
+        case 10: return "max_output_size";
+        case 11: return "program";
+        case 12: return "subm_host";
+        case 13: return "wnode_host";
         default: return "";
         }
     }
@@ -127,13 +119,11 @@ public:
         case 6:  return NStr::IntToString(m_Queue.m_RunTimeoutPrecision);
         case 7:  return NStr::IntToString(m_Queue.m_FailedRetries);
         case 8:  return NStr::Int8ToString(m_Queue.m_BlacklistTime);
-        case 9:  return NStr::Int8ToString(m_Queue.m_EmptyLifetime);
-        case 10: return NStr::IntToString(m_Queue.m_MaxInputSize);
-        case 11: return NStr::IntToString(m_Queue.m_MaxOutputSize);
-        case 12: return m_Queue.m_DenyAccessViolations ? "true" : "false";
-        case 13: return m_Queue.m_ProgramVersionList.Print();
-        case 14: return m_Queue.m_SubmHosts.Print("", ",");
-        case 15: return m_Queue.m_WnodeHosts.Print("", ",");
+        case 9:  return NStr::IntToString(m_Queue.m_MaxInputSize);
+        case 10: return NStr::IntToString(m_Queue.m_MaxOutputSize);
+        case 11: return m_Queue.m_ProgramVersionList.Print();
+        case 12: return m_Queue.m_SubmHosts.Print("", ",");
+        case 13: return m_Queue.m_WnodeHosts.Print("", ",");
         default: return "";
         }
     }

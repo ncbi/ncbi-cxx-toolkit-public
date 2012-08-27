@@ -71,19 +71,26 @@ class CQueueDbBlockArray
 public:
     CQueueDbBlockArray();
     ~CQueueDbBlockArray();
-    void Init(CBDB_Env& env, const std::string& path, unsigned count);
+
+    void Init(CBDB_Env &  env, const string &  path, unsigned int  count);
+
     void Close();
+
     // Allocate a block from array.
-    // @return position of allocated block, negative if no more free blocks
-    int  Allocate();
+    // Returns position of an allocated block, negative if no more free blocks
+    int  Allocate(void);
+
     // Allocate a block at position
     // @return true if block is successfully allocated
-    bool Allocate(int pos);
+    bool Allocate(int  pos);
+
     // Return block at position 'pos' to the array
-    // Can not be used due to possible deadlock, see comment in
-    // CQueueDataBase::DeleteQueue
-    // void Free(int pos);
-    SQueueDbBlock* Get(int pos);
+    SQueueDbBlock *  Get(int  pos);
+
+    unsigned int  Count(void) const
+    { return m_Count; }
+
+    unsigned int  CountAvailable(void) const;
 
 private:
     unsigned            m_Count;

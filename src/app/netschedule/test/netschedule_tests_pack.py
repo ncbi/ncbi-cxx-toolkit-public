@@ -310,7 +310,7 @@ class Scenario08( TestBase ):
         try:
             self.ns.getQueueInfo( 'not_existed' )
         except Exception, exc:
-            if "Job queue not found" in str( exc ):
+            if "not found" in str( exc ):
                 return True
             raise
 

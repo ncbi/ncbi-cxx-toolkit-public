@@ -8,7 +8,7 @@
 Netschedule server tests pack for the features appeared in NS-4.14.0
 """
 
-import time
+import time, os
 import socket
 from netschedule_tests_pack import TestBase
 from netschedule_tests_pack_4_10 import getClientInfo, NON_EXISTED_JOB, \
@@ -331,3 +331,199 @@ class Scenario504( TestBase ):
             raise Exception( "Did not receive job_status=Pending&last_event_index=2" )
 
         return True
+
+class Scenario505( TestBase ):
+    " Scenario 505 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "RECOnfiguring queues and classes on the fly"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( "505-1" )
+
+        self.ns.connect( 10 )
+        try:
+            self.ns.directLogin( '', 'netschedule_admin' )
+
+            # Step 1: Check that there are no queues
+            self.ns.directSendCmd( 'QLST' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'QLST failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != '':
+                raise Exception( 'Unexpected list of queues. ' \
+                                 'Expected no queues, received: ' + reply[ 1 ] )
+
+            # Step 2: touch config and RECO
+            if os.system( "touch netscheduled.ini" ) != 0:
+                raise Exception( "error touching config file" )
+            self.ns.directSendCmd( 'RECO' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'RECO failed: ' + reply[ 1 ] )
+            if 'No changeable parameters' not in reply[ 1 ]:
+                raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
+
+            # Step 3: RECO without touching
+            self.ns.directSendCmd( 'RECO' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'RECO failed: ' + reply[ 1 ] )
+            if 'file has not been changed' not in reply[ 1 ]:
+                raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
+
+            # Step 4: Add 2 queue classes and two queues and RECO
+            self.ns.setConfig( "505-2" )
+            self.ns.directSendCmd( 'RECO' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'RECO failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != '"server_changes" ' \
+                '{"log_notification_thread" [false true], ' \
+                '"log_statistics_thread" [true false]}, ' \
+                '"added_queue_classes" ["class1", "class2"], ' \
+                '"added_queues" {"q1" "", "q2" "class2"}':
+                raise Exception( 'Unexpected output for RECO (step 4): ' + reply[ 1 ] )
+
+            # Step 5: Create dynamic queue of a configured class
+            self.ns.directSendCmd( 'QCRE dqueue class1' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'QCRE failed: ' + reply[ 1 ] )
+            self.ns.directSendCmd( 'QLST' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'QLST failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != 'dqueue;q1;q2;':
+                raise Exception( 'Unexpected list of queues. Received: ' + \
+                                 reply[ 1 ] )
+
+            # Step 6: replace config with: del q1, class1, alter q2, class2
+            self.ns.setConfig( "505-3" )
+            self.ns.directSendCmd( 'RECO' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'RECO failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != '"deleted_queue_classes" ["class1"], ' \
+                '"queue_class_changes" {"class2" {"timeout" [1, 2], ' \
+                '"description" ["class two", "class two updated"]}}, ' \
+                '"deleted_queues" ["q1"], "queue_changes" ' \
+                '{"q2" {"max_input_size" [33, 77], "description" ' \
+                '["class two", "class two updated"]}}':
+                raise Exception( 'Unexpected output for RECO (step 6): ' + reply[ 1 ] )
+
+            time.sleep( 3 )     # give a chance for deleting q1
+            self.ns.directSendCmd( 'QLST' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'QLST failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != 'dqueue;q2;':
+                raise Exception( 'Unexpected QLST output (step 6): ' + reply[ 1 ] )
+
+            self.ns.directSendCmd( 'STAT QCLASSES' )
+            reply = self.ns.directReadMultiReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'STAT QCLASSES failed: ' + reply[ 1 ] )
+            if 'delete_request: true' not in reply[ 1 ]:
+                raise Exception( 'Unexpected output of STAT QCLASSES: ' + \
+                                 str( reply[ 1 ] ) )
+
+            self.ns.directSendCmd( 'SETQUEUE dqueue' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'SETQUEUE failed: ' + reply[ 1 ] )
+            self.ns.directSendCmd( 'SUBMIT bla' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'SUBMIT failed: ' + reply[ 1 ] )
+
+            self.ns.directSendCmd( 'QDEL dqueue' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'QDEL failed: ' + reply[ 1 ] )
+
+            self.ns.directSendCmd( 'QLST' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'QLST failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != 'dqueue;q2;':
+                raise Exception( 'Unexpected QLST output (step 6-2): ' + reply[ 1 ] )
+
+            self.ns.directSendCmd( 'CANCELQ' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'CANCELQ failed: ' + reply[ 1 ] )
+            self.ns.directSendCmd( 'SETQUEUE' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'SETQUEUE failed: ' + reply[ 1 ] )
+
+            time.sleep( 15 )    # wait till the job is actually deleted and the
+                                # queue is deleted
+
+            self.ns.directSendCmd( 'QLST' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'QLST failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != 'q2;':
+                raise Exception( 'Unexpected QLST output (step 6-3): ' + reply[ 1 ] )
+
+            self.ns.directSendCmd( 'STAT QCLASSES' )
+            reply = self.ns.directReadMultiReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'STAT QCLASSES failed (6-2): ' + reply[ 1 ] )
+            if '[qclass class1]' in reply[ 1 ]:
+                raise Exception( "Queue class1 had to be deleted but it's not" )
+
+            # Step 7: changes in a queue and in a class
+            self.ns.setConfig( "505-4" )
+            self.ns.directSendCmd( 'RECO' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'RECO failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != '"queue_class_changes" {"class2" ' \
+                '{"failed_retries" [3333, 87]}}, "queue_changes" ' \
+                '{"q2" {"failed_retries" [3333, 87], ' \
+                '"max_output_size" [333, 444]}}':
+                raise Exception( 'Unexpected output for RECO (step 7): ' + reply[ 1 ] )
+
+            # Step 8: restart NS and make sure the queues are still there
+            self.ns.disconnect()
+            self.ns.kill( "SIGKILL" )
+            time.sleep( 5 )
+            self.ns.start()
+            time.sleep( 5 )
+
+            reply = self.ns.getQueueList()
+
+            if len( reply ) != 1 or reply[ 0 ] != 'q2':
+                raise Exception( 'Unexpected QLST output (step 8): ' + str( reply ) )
+
+            # Step 9: remove all the queueus and restart NS
+            self.ns.setConfig( "505-5" )
+
+            self.ns.disconnect()
+            self.ns.kill( "SIGKILL" )
+            time.sleep( 5 )
+            self.ns.start()
+            time.sleep( 5 )
+
+            reply = self.ns.getQueueList()
+
+            if len( reply ) != 1 or reply[ 0 ] != '':
+                raise Exception( 'Unexpected QLST output (step 9): ' + str( reply ) )
+
+        except Exception, exc:
+            self.ns.disconnect()
+            raise
+
+        self.ns.disconnect()
+        return True
+

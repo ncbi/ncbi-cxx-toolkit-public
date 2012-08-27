@@ -5,7 +5,7 @@
 WATCHERS = satskyse
 
 APP = netscheduled
-SRC = netscheduled queue_coll job_status queue_clean_thread \
+SRC = netscheduled job_status queue_clean_thread \
       ns_affinity ns_queue access_list ns_util \
       job ns_server_misc ns_server_params ns_handler \
       ns_server ns_queue_db_block ns_queue_parameters queue_database \

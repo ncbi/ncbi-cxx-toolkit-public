@@ -234,25 +234,63 @@ struct SGroupDictDB : public CBDB_File
 };
 
 
-/// BDB table for storing queue descriptions
-///
-/// @internal
-///
+// BDB table for storing:
+// - description of currently served queues
+// - description of known queue classes
 struct SQueueDescriptionDB : public CBDB_File
 {
-    CBDB_FieldLString queue;
-    CBDB_FieldUint4   kind; // static - 0 or dynamic - 1
-    CBDB_FieldUint4   pos;
-    CBDB_FieldLString qclass;
-    CBDB_FieldLString comment;
+    CBDB_FieldLString   queue;
+    CBDB_FieldUint4     kind; // static - 0 or dynamic - 1
+    CBDB_FieldUint4     pos;
+    CBDB_FieldUint1     delete_request; // it's bool really
+
+    CBDB_FieldLString   qclass;
+    CBDB_FieldUint4     timeout;
+    CBDB_FieldDouble    notif_hifreq_interval;
+    CBDB_FieldUint4     notif_hifreq_period;
+    CBDB_FieldUint4     notif_lofreq_mult;
+    CBDB_FieldUint4     dump_buffer_size;
+    CBDB_FieldUint4     run_timeout;
+    CBDB_FieldLString   program_name;
+    CBDB_FieldUint4     failed_retries;
+    CBDB_FieldUint4     blacklist_time;
+    CBDB_FieldUint4     max_input_size;
+    CBDB_FieldUint4     max_output_size;
+    CBDB_FieldLString   subm_hosts;
+    CBDB_FieldLString   wnode_hosts;
+    CBDB_FieldUint4     wnode_timeout;
+    CBDB_FieldUint4     pending_timeout;
+    CBDB_FieldDouble    max_pending_wait_timeout;
+    CBDB_FieldLString   description;
+    CBDB_FieldUint4     run_timeout_precision;
+
     SQueueDescriptionDB()
     {
         DisableNull();
-        BindKey("queue",      &queue);
-        BindData("kind",      &kind);
-        BindData("pos",       &pos);
-        BindData("qclass",    &qclass);
-        BindData("comment",   &comment);
+        BindKey("queue",                     &queue);
+        BindData("kind",                     &kind);
+        BindData("pos",                      &pos);
+        BindData("delete_request",           &delete_request);
+
+        BindData("qclass",                   &qclass);
+        BindData("timeout",                  &timeout);
+        BindData("notif_hifreq_interval",    &notif_hifreq_interval);
+        BindData("notif_hifreq_period",      &notif_hifreq_period);
+        BindData("notif_lofreq_mult",        &notif_lofreq_mult);
+        BindData("dump_buffer_size",         &dump_buffer_size);
+        BindData("run_timeout",              &run_timeout);
+        BindData("program_name",             &program_name);
+        BindData("failed_retries",           &failed_retries);
+        BindData("blacklist_time",           &blacklist_time);
+        BindData("max_input_size",           &max_input_size);
+        BindData("max_output_size",          &max_output_size);
+        BindData("subm_hosts",               &subm_hosts);
+        BindData("wnode_hosts",              &wnode_hosts);
+        BindData("wnode_timeout",            &wnode_timeout);
+        BindData("pending_timeout",          &pending_timeout);
+        BindData("max_pending_wait_timeout", &max_pending_wait_timeout);
+        BindData("description",              &description);
+        BindData("run_timeout_precision",    &run_timeout_precision);
     }
 };
 

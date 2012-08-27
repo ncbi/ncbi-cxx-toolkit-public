@@ -57,6 +57,7 @@ void SNSCommandArguments::x_Reset()
     job_key.erase();
     err_msg.erase();
     comment.erase();
+    description.erase();
     ip.erase();
     option.erase();
     progress_msg.erase();
@@ -132,6 +133,8 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
                                "drain accepted values are 0 and 1.");
                 drain = (tmp == 1);
             }
+            else if (key == "description")
+                description = val;
             break;
         case 'e':
             if (key == "err_msg")

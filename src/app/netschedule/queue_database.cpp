@@ -164,11 +164,12 @@ string SNSDBEnvironmentParams::GetParamValue(unsigned n) const
 /////////////////////////////////////////////////////////////////////////////
 // CQueueDataBase implementation
 
-CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server)
+CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
+                               const SNSDBEnvironmentParams &  params,
+                               bool                            reinit)
 : m_Host(server->GetBackgroundHost()),
   m_Executor(server->GetRequestExecutor()),
   m_Env(0),
-  m_QueueCollection(*this),
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
@@ -176,23 +177,59 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server)
   m_PurgeQueue(""),
   m_PurgeStatusIndex(0),
   m_PurgeJobScanned(0)
-{}
+{
+    // Creates/re-creates if needed and opens DB tables
+    x_Open(params, reinit);
+
+    // Read queue classes and queues descriptions from the DB
+    m_QueueClasses = x_ReadDBQueueDescriptions("qclass");
+    TQueueParams    queues_from_db = x_ReadDBQueueDescriptions("queue");
+
+    // Mount all the queues in accordance with the DB info
+    for (TQueueParams::const_iterator  k = queues_from_db.begin();
+         k != queues_from_db.end(); ++k ) {
+         SQueueDbBlock *   block = m_QueueDbBlockArray.Get(k->second.position);
+
+        if (block == NULL) {
+            // That means the DB has more a queue allocated in a slot which
+            // index exceeds the max tables configured in .ini file
+            try {
+                // No drain closing
+                Close(false);
+            } catch (...) {}
+
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Error detected: the DB has a queue allocated in a "
+                       "slot (" + NStr::NumericToString(k->second.position) +
+                       ") which index exceeds the max configured number "
+                       "of queues. Consider increasing the "
+                       "[bdb]/max_queues value.");
+        }
+
+        // OK, the block is available
+        m_QueueDbBlockArray.Allocate(k->second.position);
+
+        // This will actually create CQueue and insert it to m_Queues
+        x_CreateAndMountQueue(k->first, k->second, block);
+    }
+    return;
+}
 
 
 CQueueDataBase::~CQueueDataBase()
 {
     try {
+        // No drain closing
         Close(false);
-    } catch (exception& )
-    {}
+    } catch (...) {}
 }
 
 
-bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
-                          bool reinit)
+void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
+                             bool                            reinit)
 {
-    const string&   db_path     = params.db_path;
-    const string&   db_log_path = params.db_log_path;
+    const string &   db_path     = params.db_path;
+    const string &   db_log_path = params.db_log_path;
     if (reinit) {
         CDir    dir(db_path);
 
@@ -250,12 +287,10 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
             NStr::TruncateSpacesInPlace(db_storage_ver, NStr::eTrunc_End);
             f.Close();
         }
-        if (db_storage_ver != params.db_storage_ver) {
-            ERR_POST("Storage version mismatch, required: " <<
-                     params.db_storage_ver <<
-                     ", present: " << db_storage_ver);
-            return false;
-        }
+        if (db_storage_ver != params.db_storage_ver)
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Error detected: Storage version mismatch, required: " +
+                       params.db_storage_ver + ", found: " + db_storage_ver);
     }
 
     delete m_Env;
@@ -363,247 +398,758 @@ bool CQueueDataBase::Open(const SNSDBEnvironmentParams& params,
 
     // Allocate SQueueDbBlock's here, open/create corresponding databases
     m_QueueDbBlockArray.Init(*m_Env, m_Path, params.max_queues);
-    return true;
+    return;
 }
 
 
-int CQueueDataBase::x_AllocateQueue(const string& qname, const string& qclass,
-                                    int kind, const string& comment)
+TQueueParams
+CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
 {
-    int pos = m_QueueDbBlockArray.Allocate();
-    if (pos < 0)
-        return pos;
+    // Reads what is stored in the DB about currently served queues
+    m_QueueDescriptionDB.SetTransaction(NULL);
 
-    m_QueueDescriptionDB.queue      = qname;
-    m_QueueDescriptionDB.kind       = kind;
-    m_QueueDescriptionDB.pos        = pos;
-    m_QueueDescriptionDB.qclass     = qclass;
-    m_QueueDescriptionDB.comment    = comment;
-    m_QueueDescriptionDB.UpdateInsert();
-    return pos;
-}
+    CBDB_FileCursor     cur(m_QueueDescriptionDB);
+    TQueueParams        queues;
 
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    while (cur.Fetch() == eBDB_Ok) {
+        string      prefix;
+        string      queue_name;
 
-struct SQueueInfo
-{
-    int    kind;
-    int    pos;
-    bool   remove; ///< if this queue has a conflict and should be removed?
-    string qclass;
-};
+        NStr::SplitInTwo(m_QueueDescriptionDB.queue.GetString(),
+                         "_", prefix, queue_name);
+        if (NStr::CompareNocase(prefix, expected_prefix) != 0)
+            continue;
 
-typedef map<string, SQueueInfo> TDbQueuesMap;
+        SQueueParameters    params;
+        params.kind = m_QueueDescriptionDB.kind;
+        params.position = m_QueueDescriptionDB.pos;
+        params.delete_request = m_QueueDescriptionDB.delete_request;
+        params.qclass = m_QueueDescriptionDB.qclass;
+        params.timeout = m_QueueDescriptionDB.timeout;
+        params.notif_hifreq_interval = m_QueueDescriptionDB.notif_hifreq_interval;
+        params.notif_hifreq_period = m_QueueDescriptionDB.notif_hifreq_period;
+        params.notif_lofreq_mult = m_QueueDescriptionDB.notif_lofreq_mult;
+        params.dump_buffer_size = m_QueueDescriptionDB.dump_buffer_size;
+        params.run_timeout = m_QueueDescriptionDB.run_timeout;
+        params.program_name = m_QueueDescriptionDB.program_name;
+        params.failed_retries = m_QueueDescriptionDB.failed_retries;
+        params.blacklist_time = m_QueueDescriptionDB.blacklist_time;
+        params.max_input_size = m_QueueDescriptionDB.max_input_size;
+        params.max_output_size = m_QueueDescriptionDB.max_output_size;
+        params.subm_hosts = m_QueueDescriptionDB.subm_hosts;
+        params.wnode_hosts = m_QueueDescriptionDB.wnode_hosts;
+        params.wnode_timeout = m_QueueDescriptionDB.wnode_timeout;
+        params.pending_timeout = m_QueueDescriptionDB.pending_timeout;
+        params.max_pending_wait_timeout = m_QueueDescriptionDB.max_pending_wait_timeout;
+        params.description = m_QueueDescriptionDB.description;
+        params.run_timeout_precision = m_QueueDescriptionDB.run_timeout_precision;
 
-// Add queue to interim map. If the queue with the same name is already
-// present, check for consistency.
-// @return true if queue was not there, or duplicate is consistent
-bool x_AddQueueToMap(TDbQueuesMap& db_queues_map,
-                     const string& qname,
-                     const string& qclass,
-                     int           kind,
-                     int           pos)
-{
-    bool                    res = true;
-    TDbQueuesMap::iterator  it;
-
-    if ((it = db_queues_map.find(qname)) != db_queues_map.end()) {
-        // check that queue info matches
-        SQueueInfo &    qi = it->second;
-        if (qi.qclass != qclass) {
-            ERR_POST("Class mismatch for queue '" << qname << "', expected '"
-                     << qi.qclass << "', registered '" << qclass << "'.");
-            res = false;
-        }
-        // Definite positions must match, if one of positions is indefinite,
-        // i.e. < 0, they are incomparable so it is not an error.
-        if (qi.pos != pos  &&  qi.pos >= 0  &&  pos >= 0) {
-            ERR_POST("Position mismatch for queue '" << qname << "', expected "
-                     << qi.pos << ", registered " << pos << ".");
-            res = false;
-        }
-    } else {
-        db_queues_map[qname] = SQueueInfo();
-        db_queues_map[qname].kind = kind;
-        // Mark queue for allocation
-        db_queues_map[qname].pos = pos;
-        db_queues_map[qname].remove = false;
-        db_queues_map[qname].qclass = qclass;
+        // It is impossible to have the same entries twice in the DB
+        queues[queue_name] = params;
     }
-    return res;
+    return queues;
 }
 
 
-unsigned CQueueDataBase::Configure(const IRegistry& reg)
+void
+CQueueDataBase::x_DeleteDBRecordsWithPrefix(const string &  prefix)
 {
-    unsigned    min_run_timeout = 3600;
-    bool        no_default_queues = reg.GetBool("server", "no_default_queues",
-                                                false, 0, IRegistry::eReturn);
+    // Transaction must be created outside
 
-    CFastMutexGuard     guard(m_ConfigureLock);
+    vector<string>      to_delete;
+    CBDB_FileCursor     cur(m_QueueDescriptionDB);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
 
-    // Temporary storage for merging info from database and config file
-    TDbQueuesMap        db_queues_map;
+    while (cur.Fetch() == eBDB_Ok) {
+        string      qprefix;
+        string      queue_name;
 
-    // Read in registered queues from database into db_queues_map
-    {{
-        m_QueueDescriptionDB.SetTransaction(NULL);
-        CBDB_FileCursor cur(m_QueueDescriptionDB);
-        cur.SetCondition(CBDB_FileCursor::eFirst);
+        NStr::SplitInTwo(m_QueueDescriptionDB.queue.GetString(),
+                         "_", qprefix, queue_name);
+        if (NStr::CompareNocase(qprefix, prefix) == 0)
+            to_delete.push_back(m_QueueDescriptionDB.queue);
+    }
 
-        while (cur.Fetch() == eBDB_Ok) {
-            x_AddQueueToMap(db_queues_map,
-                            m_QueueDescriptionDB.queue,
-                            m_QueueDescriptionDB.qclass,
-                            m_QueueDescriptionDB.kind,
-                            m_QueueDescriptionDB.pos);
-        }
-    }}
+    for (vector<string>::const_iterator  k = to_delete.begin();
+         k != to_delete.end(); ++k) {
+        m_QueueDescriptionDB.queue = *k;
+        m_QueueDescriptionDB.Delete(CBDB_File::eIgnoreError);
+    }
 
-    x_CleanParamMap();
+    return;
+}
 
-    // Merge queue data from config file into db_queues_map, filling class
-    // info (m_QueueParamMap) too.
+
+void
+CQueueDataBase::x_InsertParamRecord(const string &            key,
+                                    const SQueueParameters &  params)
+{
+    // Transaction must be created outside
+
+    m_QueueDescriptionDB.queue = key;
+
+    m_QueueDescriptionDB.kind = params.kind;
+    m_QueueDescriptionDB.pos = params.position;
+    m_QueueDescriptionDB.delete_request = params.delete_request;
+    m_QueueDescriptionDB.qclass = params.qclass;
+    m_QueueDescriptionDB.timeout = params.timeout;
+    m_QueueDescriptionDB.notif_hifreq_interval = params.notif_hifreq_interval;
+    m_QueueDescriptionDB.notif_hifreq_period = params.notif_hifreq_period;
+    m_QueueDescriptionDB.notif_lofreq_mult = params.notif_lofreq_mult;
+    m_QueueDescriptionDB.dump_buffer_size = params.dump_buffer_size;
+    m_QueueDescriptionDB.run_timeout = params.run_timeout;
+    m_QueueDescriptionDB.program_name = params.program_name;
+    m_QueueDescriptionDB.failed_retries = params.failed_retries;
+    m_QueueDescriptionDB.blacklist_time = params.blacklist_time;
+    m_QueueDescriptionDB.max_input_size = params.max_input_size;
+    m_QueueDescriptionDB.max_output_size = params.max_output_size;
+    m_QueueDescriptionDB.subm_hosts = params.subm_hosts;
+    m_QueueDescriptionDB.wnode_hosts = params.wnode_hosts;
+    m_QueueDescriptionDB.wnode_timeout = params.wnode_timeout;
+    m_QueueDescriptionDB.pending_timeout = params.pending_timeout;
+    m_QueueDescriptionDB.max_pending_wait_timeout = params.max_pending_wait_timeout;
+    m_QueueDescriptionDB.description = params.description;
+    m_QueueDescriptionDB.run_timeout_precision = params.run_timeout_precision;
+
+    m_QueueDescriptionDB.UpdateInsert();
+    return;
+}
+
+
+void
+CQueueDataBase::x_WriteDBQueueDescriptions(const TQueueParams &   queue_classes)
+{
+    CBDB_Transaction        trans(*m_Env, CBDB_Transaction::eEnvDefault,
+                                          CBDB_Transaction::eNoAssociation);
+
+    m_QueueDescriptionDB.SetTransaction(&trans);
+
+    // First, delete all the records with the appropriate prefix
+    x_DeleteDBRecordsWithPrefix("qclass");
+
+    // Second, write down the new records
+    for (TQueueParams::const_iterator  k = queue_classes.begin();
+         k != queue_classes.end(); ++k )
+        x_InsertParamRecord("qclass_" + k->first, k->second);
+
+    trans.Commit();
+    return;
+}
+
+
+void
+CQueueDataBase::x_WriteDBQueueDescriptions(const TQueueInfo &  queues)
+{
+    CBDB_Transaction        trans(*m_Env, CBDB_Transaction::eEnvDefault,
+                                          CBDB_Transaction::eNoAssociation);
+
+    m_QueueDescriptionDB.SetTransaction(&trans);
+
+    // First, delete all the records with the appropriate prefix
+    x_DeleteDBRecordsWithPrefix("queue");
+
+    // Second, write down the new records
+    for (TQueueInfo::const_iterator  k = queues.begin();
+         k != queues.end(); ++k )
+        x_InsertParamRecord("queue_" + k->first, k->second.first);
+
+    trans.Commit();
+    return;
+}
+
+
+
+TQueueParams
+CQueueDataBase::x_ReadIniFileQueueClassDescriptions(const IRegistry &  reg)
+{
+    TQueueParams        queue_classes;
     list<string>        sections;
+
     reg.EnumerateSections(&sections);
 
     ITERATE(list<string>, it, sections) {
-        string              qclass, tmp;
-        const string&       sname = *it;
+        string              queue_class;
+        string              prefix;
+        const string &      section_name = *it;
 
-        NStr::SplitInTwo(sname, "_", tmp, qclass);
-        if (NStr::CompareNocase(tmp, "queue") != 0 &&
-            NStr::CompareNocase(tmp, "qclass") != 0) {
+        NStr::SplitInTwo(section_name, "_", prefix, queue_class);
+        if (NStr::CompareNocase(prefix, "qclass") != 0 ||
+            queue_class.empty())
             continue;
-        }
-        if (m_QueueParamMap.find(qclass) != m_QueueParamMap.end()) {
-            ERR_POST(tmp << " section " << sname << " conflicts with previous "
-                     << (NStr::CompareNocase(tmp, "queue") == 0 ?
-                                 "qclass_" : "queue_")
-                     << qclass << " section. Ignored.");
-            continue;
-        }
 
-        // Register queue class
-        SQueueParameters*   params = new SQueueParameters;
-        params->Read(reg, sname);
-        m_QueueParamMap[qclass] = params;
-        min_run_timeout = std::min(min_run_timeout,
-                                   (unsigned)params->run_timeout_precision);
+        SQueueParameters    params;
+        params.Read(reg, section_name);
 
-        // Compatibility with previous convention - create a queue for every
-        // class, declared as queue_*
-        if (!no_default_queues && NStr::CompareNocase(tmp, "queue") == 0) {
-            // The queue name for this case is the same as class name
-            string&     qname = qclass;
-            x_AddQueueToMap(db_queues_map, qname, qclass,
-                            CQueue::eKindStatic, -1);
-        }
+        // The same sections cannot appear twice
+        queue_classes[queue_class] = params;
     }
 
-    list<string>        queues;
-    reg.EnumerateEntries("queues", &queues);
-    ITERATE(list<string>, it, queues) {
-        const string&   qname = *it;
-        string          qclass = reg.GetString("queues", qname, "");
-        if (!qclass.empty()  &&
-            m_QueueParamMap.find(qclass) != m_QueueParamMap.end())
-        {
-            x_AddQueueToMap(db_queues_map, qname, qclass,
-                            CQueue::eKindStatic, -1);
+    return queue_classes;
+}
+
+
+// Reads the queues from ini file and respects inheriting queue classes
+// parameters
+TQueueParams
+CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
+                                               const TQueueParams &  classes)
+{
+    TQueueParams        queues;
+    list<string>        sections;
+
+    reg.EnumerateSections(&sections);
+    ITERATE(list<string>, it, sections) {
+        string              queue_name;
+        string              prefix;
+        const string &      section_name = *it;
+
+        NStr::SplitInTwo(section_name, "_", prefix, queue_name);
+        if (NStr::CompareNocase(prefix, "queue") != 0 ||
+            queue_name.empty())
+            continue;
+
+        string  qclass = reg.GetString(section_name, "class", kEmptyStr);
+        if (qclass.empty()) {
+            // This queue does not have a class so read it with defaults
+            SQueueParameters    params;
+            params.Read(reg, section_name);
+
+            queues[queue_name] = params;
+            continue;
         }
+
+        // This queue derives from a class
+        TQueueParams::const_iterator  found = classes.find(qclass);
+        if (found == classes.end())
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Configuration error. The queue '" +
+                       queue_name +
+                       "' refers to undefined queue class '" +
+                       qclass + "'.");
+
+        // Take the class parameters
+        SQueueParameters    params = found->second;
+
+        // Override the class with what found in the section
+        list<string>        values;
+        reg.EnumerateEntries(section_name, &values);
+
+        for (list<string>::const_iterator  val = values.begin();
+             val != values.end(); ++val) {
+            if (*val == "timeout")
+                params.timeout =
+                        params.ReadTimeout(reg, section_name);
+            else if (*val == "notif_hifreq_interval")
+                params.notif_hifreq_interval =
+                        params.ReadNotifHifreqInterval(reg, section_name);
+            else if (*val == "notif_hifreq_period")
+                params.notif_hifreq_period =
+                        params.ReadNotifHifreqPeriod(reg, section_name);
+            else if (*val == "notif_lofreq_mult")
+                params.notif_lofreq_mult =
+                        params.ReadNotifLofreqMult(reg, section_name);
+            else if (*val == "dump_buffer_size")
+                params.dump_buffer_size =
+                        params.ReadDumpBufferSize(reg, section_name);
+            else if (*val == "run_timeout")
+                params.run_timeout =
+                        params.ReadRunTimeout(reg, section_name);
+            else if (*val == "program")
+                params.program_name = params.ReadProgram(reg, section_name);
+            else if (*val == "failed_retries")
+                params.failed_retries =
+                        params.ReadFailedRetries(reg, section_name);
+            else if (*val == "blacklist_time")
+                params.blacklist_time =
+                        params.ReadBlacklistTime(reg, section_name);
+            else if (*val == "max_input_size")
+                params.max_input_size =
+                        params.ReadMaxInputSize(reg, section_name);
+            else if (*val == "max_output_size")
+                params.max_output_size =
+                        params.ReadMaxOutputSize(reg, section_name);
+            else if (*val == "subm_host")
+                params.subm_hosts =
+                        params.ReadSubmHosts(reg, section_name);
+            else if (*val == "wnode_host")
+                params.wnode_hosts =
+                        params.ReadWnodeHosts(reg, section_name);
+            else if (*val == "wnode_timeout")
+                params.wnode_timeout =
+                        params.ReadWnodeTimeout(reg, section_name);
+            else if (*val == "pending_timeout")
+                params.pending_timeout =
+                        params.ReadPendingTimeout(reg, section_name);
+            else if (*val == "max_pending_wait_timeout")
+                params.max_pending_wait_timeout = 
+                        params.ReadMaxPendingWaitTimeout(reg, section_name);
+            else if (*val == "description")
+                params.description =
+                        params.ReadDescription(reg, section_name);
+            else if (*val == "run_timeout_precision")
+                params.run_timeout_precision =
+                        params.ReadRunTimeoutPrecision(reg, section_name);
+        }
+        params.qclass = qclass;
+        queues[queue_name] = params;
     }
 
-    {{
-        CBDB_Transaction    trans(*m_Env, CBDB_Transaction::eEnvDefault,
-                                          CBDB_Transaction::eNoAssociation);
-        m_QueueDescriptionDB.SetTransaction(&trans);
-        // Allocate/deallocate queue db blocks according to merged info,
-        // merge this info back into database.
-        // NB! We don't actually remove conflicting queues from the database because
-        // corrective actions in config file can be taken. We just mask queues and do
-        // not attempt to load them.
-        NON_CONST_ITERATE(TDbQueuesMap, it, db_queues_map) {
-            const string& qname = it->first;
-            SQueueInfo& qi = it->second;
-            int pos = qi.pos;
-            bool qexists = m_QueueCollection.QueueExists(qname);
-            if (pos < 0) {
-                pos = x_AllocateQueue(qname, qi.qclass, qi.kind, "");
-                if (pos < 0) {
-                    qi.remove = true;
-                    ERR_POST("Queue '" << qname << "' can not "
-                             "be allocated: max_queues limit");
-                }
+    return queues;
+}
+
+
+// Validates the config from an ini file for the following:
+// - a queue references a class which is not defined
+// - a static queue redefines existed dynamic queue
+void
+CQueueDataBase::x_ValidateConfiguration(
+                        const TQueueParams &  queues_from_ini,
+                        const TQueueParams &  classes_from_ini) const
+{
+    // Check that all queues refer to defined classes
+    for (TQueueParams::const_iterator  k = queues_from_ini.begin();
+         k != queues_from_ini.end(); ++k) {
+        if (k->second.qclass.empty())
+            continue;
+        if (classes_from_ini.find(k->second.qclass) == classes_from_ini.end())
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Configuration error. The queue '" +
+                       k->first +
+                       "' refers to undefined queue class '" +
+                       k->second.qclass + "'.");
+    }
+
+    // Check that static queues do not mess with existing dynamic queues
+    for (TQueueParams::const_iterator  k = queues_from_ini.begin();
+         k != queues_from_ini.end(); ++k) {
+        TQueueInfo::const_iterator  existing = m_Queues.find(k->first);
+
+        if (existing == m_Queues.end())
+            continue;
+        if (existing->second.first.kind == CQueue::eKindDynamic)
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Configuration error. The queue '" + k->first +
+                       "' clashes with a currently existing "
+                       "dynamic queue of the same name.");
+    }
+
+    // Config file is OK for the current configuration
+    return;
+}
+
+
+unsigned int
+CQueueDataBase::x_CountQueuesToAdd(const TQueueParams &  queues_from_ini) const
+{
+    unsigned int        add_count = 0;
+
+    for (TQueueParams::const_iterator  k = queues_from_ini.begin();
+         k != queues_from_ini.end(); ++k) {
+
+        if (m_Queues.find(k->first) == m_Queues.end())
+            ++add_count;
+    }
+
+    return add_count;
+}
+
+
+// Updates what is stored in memory.
+// Forms the diff string. Tells if there were changes.
+bool
+CQueueDataBase::x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
+                                        string &              diff)
+{
+    bool            has_changes = false;
+    vector<string>  classes;    // Used to store added and deleted classes
+
+    // Delete from existed what was not found in the new classes
+    for (TQueueParams::iterator    k = m_QueueClasses.begin();
+         k != m_QueueClasses.end(); ++k) {
+        string      old_queue_class = k->first;
+
+        if (classes_from_ini.find(old_queue_class) != classes_from_ini.end())
+            continue;
+
+        // The queue class is not in the configuration any more however it
+        // still could be in use for a dynamic queue. Leave it for the GC
+        // to check if the class has no reference to it and delete it
+        // accordingly.
+        // So, just mark it as for removal.
+
+        if (k->second.delete_request)
+            continue;   // Has already been marked for deletion
+
+        k->second.delete_request = true;
+        classes.push_back(old_queue_class);
+    }
+
+    if (!classes.empty()) {
+        has_changes = true;
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"deleted_queue_classes\" [";
+        for (vector<string>::const_iterator  k = classes.begin();
+             k != classes.end(); ++k) {
+                if (k != classes.begin())
+                    diff += ", ";
+                diff += "\"" + *k + "\"";
+        }
+        diff += "]";
+    }
+
+
+    // Check the updates in the classes
+    classes.clear();
+
+    bool        section_started = false;
+    for (TQueueParams::iterator    k = m_QueueClasses.begin();
+         k != m_QueueClasses.end(); ++k) {
+
+        string                        queue_class = k->first;
+        TQueueParams::const_iterator  new_class =
+                                classes_from_ini.find(queue_class);
+
+        if (new_class == classes_from_ini.end())
+            continue;   // It is a candidate for deletion, so no diff
+
+        // The same class found in the new configuration
+        if (k->second.delete_request) {
+            // The class was restored before GC deleted it. Update the flag
+            // and parameters
+            k->second = new_class->second;
+            classes.push_back(queue_class);
+            continue;
+        }
+
+        // That's the same class which possibly was updated
+        // Do not compare class name here, this is a class itself
+        // Description should be compared
+        string      class_diff = k->second.Diff(new_class->second,
+                                                false, true);
+
+        if (!class_diff.empty()) {
+            // There is a difference, update the class info
+            k->second = new_class->second;
+
+            if (section_started == false) {
+                section_started = true;
+                if (!diff.empty())
+                    diff += ", ";
+                diff += "\"queue_class_changes\" {";
             } else {
-                if (!qexists  &&  !m_QueueDbBlockArray.Allocate(pos)) {
-                    qi.remove = true;
-                    ERR_POST("Queue '" << qname <<
-                             "' position conflict at block #" << pos);
-                }
+                diff += ", ";
             }
-            qi.pos = pos;
+
+            diff += "\"" + queue_class + "\" {" + class_diff + "}";
+            has_changes = true;
         }
-        trans.Commit();
-        m_QueueDescriptionDB.Sync();
-        m_QueueDescriptionDB.SetTransaction(NULL);
-    }}
-
-//    CBDB_FileCursor cur(m_QueueDescriptionDB);
-//    cur.SetCondition(CBDB_FileCursor::eFirst);
-//    while (cur.Fetch() == eBDB_Ok) {
-//        string qname(m_QueueDescriptionDB.queue);
-//        int kind = m_QueueDescriptionDB.kind;
-//        unsigned pos = m_QueueDescriptionDB.pos;
-//        string qclass(m_QueueDescriptionDB.qclass);
-    ITERATE(TDbQueuesMap, it, db_queues_map) {
-        const string&       qname = it->first;
-        const SQueueInfo&   qi = it->second;
-
-        if (qi.remove)
-            continue;
-
-        int                         kind = qi.kind;
-        int                         pos = qi.pos;
-        const string &              qclass = qi.qclass;
-        TQueueParamMap::iterator    it1 = m_QueueParamMap.find(qclass);
-
-        if (it1 == m_QueueParamMap.end()) {
-            ERR_POST("Can not find class " << qclass << " for queue " << qname);
-            // NB: Class (defined in config file) does not exist anymore for the already
-            // loaded queue. I do not know how intelligently handle it, postpone it.
-            // ??? Mark queue as dynamic, so we can delete it
-//            m_QueueDescriptionDB.kind = CQueue::eKindDynamic;
-//            cur.Update();
-            continue;
-        }
-
-        const SQueueParameters&     params = *(it1->second);
-        bool                        qexists = m_QueueCollection.QueueExists(qname);
-
-        if (!qexists) {
-            _ASSERT(m_QueueDbBlockArray.Get(pos) != NULL);
-            MountQueue(qname, qclass, kind, params, m_QueueDbBlockArray.Get(pos));
-        } else {
-            UpdateQueueParameters(qname, params);
-        }
-
-        // Logging queue parameters
-        const char*             action = qexists ? "Reconfiguring" : "Mounting";
-        string                  sparams;
-        CRef<CQueue>            queue(m_QueueCollection.GetQueue(qname));
-        CQueue::TParameterList  parameters;
-
-        parameters = queue->GetParameters();
-        ITERATE(CQueue::TParameterList, it1, parameters) {
-            if (!sparams.empty())
-                sparams += ';';
-            sparams += it1->first + '=' + it1->second;
-        }
-        LOG_POST(Message << Warning << action << " queue '" << qname
-                         << "' of class '" << qclass
-                         << "' " << sparams);
     }
-    return min_run_timeout;
+
+    if (section_started)
+        diff += "}";
+
+    // Check what was added
+    for (TQueueParams::const_iterator  k = classes_from_ini.begin();
+         k != classes_from_ini.end(); ++k) {
+        string      new_queue_class = k->first;
+
+        if (m_QueueClasses.find(new_queue_class) == m_QueueClasses.end()) {
+            m_QueueClasses[new_queue_class] = k->second;
+            classes.push_back(new_queue_class);
+        }
+    }
+
+    if (!classes.empty()) {
+        has_changes = true;
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"added_queue_classes\" [";
+        for (vector<string>::const_iterator  k = classes.begin();
+             k != classes.end(); ++k) {
+                if (k != classes.begin())
+                    diff += ", ";
+                diff += "\"" + *k + "\"";
+        }
+        diff += "]";
+    }
+
+    return has_changes;
+}
+
+
+// Updates the queue info in memory and creates/marks for deletion
+// queues if necessary.
+bool
+CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
+                                  string &              diff)
+{
+    bool            has_changes = false;
+    vector<string>  deleted_queues;
+
+    // Mark for deletion what disappeared
+    for (TQueueInfo::iterator    k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        if (k->second.first.kind == CQueue::eKindDynamic)
+            continue;   // It's not the config business to deal
+                        // with dynamic queues
+
+        string      old_queue = k->first;
+        if (queues_from_ini.find(old_queue) != queues_from_ini.end())
+            continue;
+
+        // The queue is not in the configuration any more. It could
+        // still be in use or jobs could be still there. So mark it
+        // for deletion and forbid submits for the queue.
+        // GC will later delete it.
+
+        if (k->second.first.delete_request)
+            continue;   // Has already been marked for deletion
+
+        CRef<CQueue>    queue = k->second.second;
+        queue->SetRefuseSubmits(true);
+
+        k->second.first.delete_request = true;
+        deleted_queues.push_back(k->first);
+    }
+
+    if (!deleted_queues.empty()) {
+        has_changes = true;
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"deleted_queues\" [";
+        for (vector<string>::const_iterator  k = deleted_queues.begin();
+             k != deleted_queues.end(); ++k) {
+                if (k != deleted_queues.begin())
+                    diff += ", ";
+                diff += "\"" + *k + "\"";
+        }
+        diff += "]";
+    }
+
+    // Check the updates in the queue parameters
+    vector< pair<string, string> >      added_queues;
+    bool                                section_started = false;
+
+    for (TQueueInfo::iterator    k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+
+        if (k->second.first.kind == CQueue::eKindDynamic)
+            continue;   // It's not the config business to deal
+                        // with dynamic queues
+
+        string                        queue_name = k->first;
+        TQueueParams::const_iterator  new_queue =
+                                        queues_from_ini.find(queue_name);
+
+        if (new_queue == queues_from_ini.end())
+            continue;   // It is a candidate for deletion, or a dynamic queue;
+                        // So no diff
+
+        // The same queue is in the new configuration
+        if (k->second.first.delete_request) {
+            // The queue was restored before GC deleted it. Update the flag,
+            // parameters and allows submits and update parameters if so.
+            CRef<CQueue>    queue = k->second.second;
+            queue->SetParameters(new_queue->second);
+            queue->SetRefuseSubmits(false);
+
+            // The queue position must be preserved.
+            // The queue kind could not be changed here.
+            // The delete request is just checked.
+            int     pos = k->second.first.position;
+
+            k->second.first = new_queue->second;
+            k->second.first.position = pos;
+            added_queues.push_back(make_pair(queue_name, k->second.first.qclass));
+            continue;
+        }
+
+
+        // That's the same queue which possibly was updated
+        // Class name should also be compared here
+        // Description should be compared here
+        string      queue_diff = k->second.first.Diff(new_queue->second,
+                                                      true, true);
+
+        if (!queue_diff.empty()) {
+            // There is a difference, update the queue info and the queue
+            CRef<CQueue>    queue = k->second.second;
+            queue->SetParameters(new_queue->second);
+
+            // The queue position must be preserved.
+            // The queue kind could not be changed here.
+            // The queue delete request could not be changed here.
+            int     pos = k->second.first.position;
+
+            k->second.first = new_queue->second;
+            k->second.first.position = pos;
+
+            if (section_started == false) {
+                section_started = true;
+                if (!diff.empty())
+                    diff += ", ";
+                diff += "\"queue_changes\" {";
+            } else {
+                diff += ", ";
+            }
+
+            diff += "\"" + queue_name + "\" {" + queue_diff + "}";
+            has_changes = true;
+        }
+    }
+
+    // Check dynamic queues classes. They might be updated.
+    for (TQueueInfo::iterator    k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+
+        if (k->second.first.kind != CQueue::eKindDynamic)
+            continue;
+        if (k->second.first.delete_request == true)
+            continue;
+
+        // OK, this is dynamic queue, alive and not set for deletion
+        // Check if its class parameters have been  updated/
+        TQueueParams::const_iterator    queue_class =
+                            m_QueueClasses.find(k->second.first.qclass);
+        if (queue_class == m_QueueClasses.end()) {
+            ERR_POST("Cannot find class '" + k->second.first.qclass +
+                     "' for dynamic queue '" + k->first +
+                     "'. Unexpected internal data inconsistency.");
+            continue;
+        }
+
+        // Do not compare classes
+        // Do not compare description
+        // They do not make sense for dynamic queues because they are created
+        // with their own descriptions and the class does not have the 'class'
+        // field
+        string  class_diff = k->second.first.Diff(queue_class->second,
+                                                  false, false);
+        if (!class_diff.empty()) {
+            // There is a difference in the queue class - update the
+            // parameters.
+            string      old_class = k->second.first.qclass;
+            int         old_pos = k->second.first.position;
+            string      old_description = k->second.first.description;
+
+            CRef<CQueue>    queue = k->second.second;
+            queue->SetParameters(queue_class->second);
+
+            k->second.first = queue_class->second;
+            k->second.first.qclass = old_class;
+            k->second.first.position = old_pos;
+            k->second.first.description = old_description;
+
+            if (section_started == false) {
+                section_started = true;
+                if (!diff.empty())
+                    diff += ", ";
+                diff += "\"queue_changes\" {";
+            } else {
+                diff += ", ";
+            }
+
+            diff += "\"" + k->first + "\" {" + class_diff + "}";
+            has_changes = true;
+        }
+    }
+
+    if (section_started)
+        diff += "}";
+
+    // Check what was added
+    for (TQueueParams::const_iterator  k = queues_from_ini.begin();
+         k != queues_from_ini.end(); ++k) {
+        string      new_queue_name = k->first;
+
+        if (m_Queues.find(new_queue_name) == m_Queues.end()) {
+            // No need to check the allocation success here. It was checked
+            // before that the server has enough resources for the new
+            // configuration.
+            int     new_position = m_QueueDbBlockArray.Allocate();
+
+            x_CreateAndMountQueue(new_queue_name, k->second,
+                                  m_QueueDbBlockArray.Get(new_position));
+
+            m_Queues[new_queue_name].first.position = new_position;
+
+            added_queues.push_back(make_pair(new_queue_name, k->second.qclass));
+        }
+    }
+
+    if (!added_queues.empty()) {
+        has_changes = true;
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"added_queues\" {";
+        for (vector< pair<string, string> >::const_iterator  k = added_queues.begin();
+             k != added_queues.end(); ++k) {
+                if (k != added_queues.begin())
+                    diff += ", ";
+                diff += "\"" + k->first + "\" \"" + k->second + "\"";
+        }
+        diff += "}";
+    }
+
+    return has_changes;
+}
+
+
+unsigned int  CQueueDataBase::Configure(const IRegistry &  reg,
+                                        string &           diff)
+{
+    CFastMutexGuard     guard(m_ConfigureLock);
+
+    // Read the configured queues and classes from the ini file
+    TQueueParams        classes_from_ini =
+                            x_ReadIniFileQueueClassDescriptions(reg);
+    TQueueParams        queues_from_ini =
+                            x_ReadIniFileQueueDescriptions(reg,
+                                                           classes_from_ini);
+
+    // Validate basic consistency of the incoming configuration
+    x_ValidateConfiguration(queues_from_ini, classes_from_ini);
+
+    // Check that the there are enough slots for the new queues if so
+    // configured
+    unsigned int        to_add_count = x_CountQueuesToAdd(queues_from_ini);
+    unsigned int        available_count = m_QueueDbBlockArray.CountAvailable();
+
+    if (to_add_count > available_count)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "New configuration slots requirement: " +
+                   NStr::NumericToString(to_add_count) +
+                   ". Number of available slots: " +
+                   NStr::NumericToString(available_count) + ".");
+
+    // Here: validation is finished. There is enough resources for the new
+    // configuration.
+    bool    has_changes = false;
+
+    has_changes = x_ConfigureQueueClasses(classes_from_ini, diff);
+    if (has_changes)
+        x_WriteDBQueueDescriptions(m_QueueClasses);
+
+
+    has_changes = x_ConfigureQueues(queues_from_ini, diff);
+    if (has_changes)
+        x_WriteDBQueueDescriptions(m_Queues);
+
+
+    // Calculate the new min_run_timeout: required at the time of loading
+    // NetSchedule and not used while reconfiguring on the fly
+    unsigned int        min_run_timeout_precision = 3600;
+    for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
+         k != m_QueueClasses.end(); ++k)
+        min_run_timeout_precision = std::min(min_run_timeout_precision,
+                                             k->second.run_timeout_precision);
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k)
+        min_run_timeout_precision = std::min(min_run_timeout_precision,
+                                             k->second.first.run_timeout_precision);
+    return min_run_timeout_precision;
 }
 
 
@@ -612,9 +1158,10 @@ unsigned int  CQueueDataBase::CountActiveJobs(void) const
     unsigned int        cnt = 0;
     CFastMutexGuard     guard(m_ConfigureLock);
 
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
-        cnt += (*it).CountActiveJobs();
-    }
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k)
+        cnt += k->second.second->CountActiveJobs();
+
     return cnt;
 }
 
@@ -624,9 +1171,10 @@ unsigned int  CQueueDataBase::CountAllJobs(void) const
     unsigned int        cnt = 0;
     CFastMutexGuard     guard(m_ConfigureLock);
 
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
-        cnt += (*it).CountAllJobs();
-    }
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k)
+        cnt += k->second.second->CountAllJobs();
+
     return cnt;
 }
 
@@ -635,146 +1183,163 @@ bool  CQueueDataBase::AnyJobs(void) const
 {
     CFastMutexGuard     guard(m_ConfigureLock);
 
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
-        if ((*it).AnyJobs())
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k)
+        if (k->second.second->AnyJobs())
             return true;
-    }
+
     return false;
 }
 
 
-CRef<CQueue> CQueueDataBase::OpenQueue(const string& name)
+CRef<CQueue> CQueueDataBase::OpenQueue(const string &  name)
 {
-    return m_QueueCollection.GetQueue(name);
+    CFastMutexGuard             guard(m_ConfigureLock);
+    TQueueInfo::const_iterator  found = m_Queues.find(name);
+
+    if (found == m_Queues.end())
+        NCBI_THROW(CNetScheduleException, eUnknownQueue,
+                   "Queue '" + name + "' is not found.");
+
+    return found->second.second;
 }
 
 
-void CQueueDataBase::MountQueue(const string&               qname,
-                                const string&               qclass,
-                                TQueueKind                  kind,
-                                const SQueueParameters&     params,
-                                SQueueDbBlock*              queue_db_block)
+void
+CQueueDataBase::x_CreateAndMountQueue(const string &            qname,
+                                      const SQueueParameters &  params,
+                                      SQueueDbBlock *           queue_db_block)
 {
-    _ASSERT(m_Env);
-
-    auto_ptr<CQueue>    q(new CQueue(m_Executor, qname, qclass, kind, m_Server));
+    auto_ptr<CQueue>    q(new CQueue(m_Executor, qname,
+                                     params.kind, m_Server));
 
     q->Attach(queue_db_block);
     q->SetParameters(params);
 
-    CQueue&             queue = m_QueueCollection.AddQueue(qname, q.release());
-    unsigned            recs = queue.LoadStatusMatrix();
+    unsigned int        recs = q->LoadStatusMatrix();
+    m_Queues[qname] = make_pair(params, q.release());
 
-    LOG_POST(Message << Warning << "Queue records = " << recs);
+    if (params.qclass.empty())
+        LOG_POST(Message << Warning << "Queue '" << qname
+                                    << "' (without any class) mounted. "
+                                       "Number of records: " << recs);
+
+    else
+        LOG_POST(Message << Warning << "Queue '" << qname << "' of class '"
+                                    << params.qclass
+                                    << "' mounted. Number of records: "
+                                    << recs);
+    return;
 }
 
 
-void CQueueDataBase::CreateQueue(const string&  qname,
-                                 const string&  qclass,
-                                 const string&  comment)
+bool CQueueDataBase::QueueExists(const string &  qname) const
+{
+    CFastMutexGuard     guard(m_ConfigureLock);
+    return m_Queues.find(qname) != m_Queues.end();
+}
+
+
+void CQueueDataBase::CreateDynamicQueue(const string &  qname,
+                                        const string &  qclass,
+                                        const string &  description)
 {
     CFastMutexGuard     guard(m_ConfigureLock);
 
-    if (m_QueueCollection.QueueExists(qname))
+    // Queue name clashes
+    if (m_Queues.find(qname) != m_Queues.end())
         NCBI_THROW(CNetScheduleException, eDuplicateName,
-                   "Queue \"" + qname + "\" already exists");
+                   "Queue '" + qname + "' already exists.");
 
-
-    TQueueParamMap::iterator    it = m_QueueParamMap.find(qclass);
-    if (it == m_QueueParamMap.end())
+    // Queue class existance
+    TQueueParams::const_iterator  queue_class = m_QueueClasses.find(qclass);
+    if (queue_class == m_QueueClasses.end())
         NCBI_THROW(CNetScheduleException, eUnknownQueueClass,
-                   "Can not find class \"" + qclass +
-                   "\" for queue \"" + qname + "\"");
+                   "Queue class '" + qclass +
+                   "' for queue '" + qname + "' is not found.");
 
-    // Find vacant position in queue block for new queue
-    CBDB_Transaction    trans(*m_Env, CBDB_Transaction::eEnvDefault,
-                                      CBDB_Transaction::eNoAssociation);
-    m_QueueDescriptionDB.SetTransaction(&trans);
+    // And class is not marked for deletion
+    if (queue_class->second.delete_request)
+        NCBI_THROW(CNetScheduleException, eUnknownQueueClass,
+                   "Queue class '" + qclass +
+                   "' for queue '" + qname + "' is marked for deletion.");
 
-    int     pos = x_AllocateQueue(qname, qclass,
-                                  CQueue::eKindDynamic, comment);
-
-    if (pos < 0)
+    // Slot availability
+    if (m_QueueDbBlockArray.CountAvailable() <= 0)
         NCBI_THROW(CNetScheduleException, eUnknownQueue,
-                   "Cannot allocate queue: max_queues limit");
+                   "Cannot allocate queue '" + qname +
+                   "'. max_queues limit reached.");
 
-    trans.Commit();
-    m_QueueDescriptionDB.Sync();
-    const SQueueParameters&     params = *(it->second);
-    MountQueue(qname, qclass,
-               CQueue::eKindDynamic, params, m_QueueDbBlockArray.Get(pos));
+
+    // All the preconditions are met. Create the queue
+    int     new_position = m_QueueDbBlockArray.Allocate();
+
+    SQueueParameters    params = queue_class->second;
+
+    params.kind = CQueue::eKindDynamic;
+    params.position = new_position;
+    params.delete_request = false;
+    params.qclass = qclass;
+    params.description = description;
+
+    x_CreateAndMountQueue(qname, params, m_QueueDbBlockArray.Get(new_position));
+
+    x_WriteDBQueueDescriptions(m_Queues);
+    return;
 }
 
 
-void CQueueDataBase::DeleteQueue(const string&      qname)
+void  CQueueDataBase::DeleteDynamicQueue(const string &  qname)
 {
     CFastMutexGuard         guard(m_ConfigureLock);
-    CBDB_Transaction        trans(*m_Env, CBDB_Transaction::eEnvDefault,
-                                          CBDB_Transaction::eNoAssociation);
+    TQueueInfo::iterator    found_queue = m_Queues.find(qname);
 
-    m_QueueDescriptionDB.SetTransaction(&trans);
-    m_QueueDescriptionDB.queue = qname;
-    if (m_QueueDescriptionDB.Fetch() != eBDB_Ok)
+    if (found_queue == m_Queues.end())
         NCBI_THROW(CNetScheduleException, eUnknownQueue,
-                   "Job queue not found: " + qname);
+                   "Queue '" + qname + "' is not found." );
 
-    int                     kind = m_QueueDescriptionDB.kind;
-    if (!kind)
-        NCBI_THROW(CNetScheduleException, eAccessDenied,
-                   "Static queue \"" + qname + "\" can not be deleted");
+    if (found_queue->second.first.kind != CQueue::eKindDynamic)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Queue '" + qname + "' is static and cannot be deleted.");
 
-    // Signal queue to wipe out database files.
-    CRef<CQueue>            queue(m_QueueCollection.GetQueue(qname));
-    queue->MarkForDeletion();
-    // Remove it from collection
-    if (!m_QueueCollection.RemoveQueue(qname))
-        NCBI_THROW(CNetScheduleException, eUnknownQueue,
-                   "Job queue not found: " + qname);
+    found_queue->second.first.delete_request = true;
+    x_WriteDBQueueDescriptions(m_Queues);
 
-    // To call CQueueDbBlockArray::Free here was a deadlock error - we can't
-    // reset transaction until it is executing. So we moved setting 'allocated'
-    // flag to CQueue::Detach where everything is in single threaded mode,
-    // and access to boolean seems to be atomic anyway.
 
-    // Remove it from DB
-    m_QueueDescriptionDB.Delete(CBDB_File::eIgnoreError);
-    trans.Commit();
+    CRef<CQueue>    queue = found_queue->second.second;
+    queue->SetRefuseSubmits(true);
+    return;
 }
 
 
-void CQueueDataBase::QueueInfo(const string& qname, int& kind,
-                               string* qclass, string* comment)
+SQueueParameters CQueueDataBase::QueueInfo(const string &  qname) const
 {
-    CFastMutexGuard     guard(m_ConfigureLock);
+    CFastMutexGuard             guard(m_ConfigureLock);
+    TQueueInfo::const_iterator  found_queue = m_Queues.find(qname);
 
-    m_QueueDescriptionDB.SetTransaction(NULL);
-    m_QueueDescriptionDB.queue = qname;
-    if (m_QueueDescriptionDB.Fetch() != eBDB_Ok)
+    if (found_queue == m_Queues.end())
         NCBI_THROW(CNetScheduleException, eUnknownQueue,
-                   "Job queue not found: " + qname);
+                   "Queue '" + qname + "' is not found." );
 
-    kind = m_QueueDescriptionDB.kind;
-    *qclass = m_QueueDescriptionDB.qclass;
-    *comment = m_QueueDescriptionDB.comment;
+    SQueueParameters    params = found_queue->second.first;
+
+    // refuse_submits field is used as a transport.
+    // Usually used by QINF2
+    params.refuse_submits = found_queue->second.second->GetRefuseSubmits();
+    return params;
 }
 
 
-string CQueueDataBase::GetQueueNames(const string& sep) const
+string CQueueDataBase::GetQueueNames(const string &  sep) const
 {
-    string      names;
+    string                      names;
+    CFastMutexGuard             guard(m_ConfigureLock);
 
-    ITERATE(CQueueCollection, it, m_QueueCollection) {
-        names += it.GetName(); names += sep;
-    }
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k)
+        names += k->first + sep;
+
     return names;
-}
-
-
-void CQueueDataBase::UpdateQueueParameters(const string& qname,
-                                           const SQueueParameters& params)
-{
-    CRef<CQueue> queue(m_QueueCollection.GetQueue(qname));
-    queue->SetParameters(params);
 }
 
 
@@ -792,44 +1357,36 @@ void CQueueDataBase::Close(bool  drained_shutdown)
     if (drained_shutdown) {
         LOG_POST(Message << Warning <<
                  "Drained shutdown: DB is not closed gracefully.");
-
-        x_CleanParamMap();
         m_QueueDescriptionDB.Close();
+        x_SetSignallingFile(true);  // Create/update signalling file
+    } else {
+        m_Env->ForceTransactionCheckpoint();
+        m_Env->CleanLog();
 
-        delete m_Env;
-        m_Env = 0;
+        m_QueueClasses.clear();
+        m_Queues.clear();
 
-        // Put signalling file
-        x_SetSignallingFile(true);
-        return;
+        // Close pre-allocated databases
+        m_QueueDbBlockArray.Close();
+
+        m_QueueDescriptionDB.Close();
+        try {
+            if (m_Env->CheckRemove())
+                LOG_POST(Message << Warning << "JS: '" << m_Name
+                                 << "' Unmounted. BDB ENV deleted.");
+            else
+                LOG_POST(Message << Warning << "JS: '" << m_Name
+                                 << "' environment still in use.");
+        }
+        catch (exception &  ex) {
+            ERR_POST("JS: '" << m_Name << "' Exception in Close() " <<
+                     ex.what() << " (ignored.)");
+        }
     }
 
-
-    m_Env->ForceTransactionCheckpoint();
-    m_Env->CleanLog();
-
-    x_CleanParamMap();
-
-    m_QueueCollection.Close();
-
-    // Close pre-allocated databases
-    m_QueueDbBlockArray.Close();
-
-    m_QueueDescriptionDB.Close();
-    try {
-        if (m_Env->CheckRemove())
-            LOG_POST(Message << Warning << "JS: '" << m_Name
-                             << "' Unmounted. BDB ENV deleted.");
-        else
-            LOG_POST(Message << Warning << "JS: '" << m_Name
-                             << "' environment still in use.");
-    }
-    catch (exception& ex) {
-        ERR_POST("JS: '" << m_Name << "' Exception in Close() " <<
-                 ex.what() << " (ignored.)");
-    }
-
-    delete m_Env; m_Env = 0;
+    delete m_Env;
+    m_Env = 0;
+    return;
 }
 
 
@@ -843,48 +1400,170 @@ void CQueueDataBase::TransactionCheckPoint(bool clean_log)
 
 void CQueueDataBase::PrintTransitionCounters(CNetScheduleHandler &  handler)
 {
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        handler.WriteMessage("OK:[queue " + it.GetName() + "]");
-        (*it).PrintTransitionCounters(handler);
+    CFastMutexGuard             guard(m_ConfigureLock);
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        handler.WriteMessage("OK:[queue " + k->first + "]");
+        k->second.second->PrintTransitionCounters(handler);
     }
+    return;
 }
 
 
 void CQueueDataBase::PrintJobsStat(CNetScheduleHandler &  handler)
 {
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        handler.WriteMessage("OK:[queue " + it.GetName() + "]");
+    CFastMutexGuard             guard(m_ConfigureLock);
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        handler.WriteMessage("OK:[queue " + k->first + "]");
         // Group and affinity tokens make no sense for the server,
         // so they are both "".
-        (*it).PrintJobsStat(handler, "", "");
+        k->second.second->PrintJobsStat(handler, "", "");
     }
+    return;
+}
+
+
+string CQueueDataBase::GetQueueClassesInfo(void)
+{
+    string              output;
+    CFastMutexGuard     guard(m_ConfigureLock);
+    for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
+         k != m_QueueClasses.end(); ++k) {
+        if (!output.empty())
+            output += "\n";
+        output += "OK:[qclass " + k->first + "]\n";
+        // false - not to include qclass
+        output += k->second.GetPrintableParameters(false);
+    }
+    return output;
+}
+
+
+string CQueueDataBase::GetQueueInfo(void)
+{
+    string              output;
+    CFastMutexGuard     guard(m_ConfigureLock);
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        if (!output.empty())
+            output += "\n";
+        output += "OK:[queue " + k->first + "]\n";
+        // true - include qclass
+        output += k->second.first.GetPrintableParameters(true);
+    }
+    return output;
 }
 
 
 void CQueueDataBase::NotifyListeners(void)
 {
     time_t      current_time = time(0);
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).NotifyListenersPeriodically(current_time);
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->NotifyListenersPeriodically(current_time);
     }
+    return;
 }
 
 
 void CQueueDataBase::PrintStatistics(size_t &  aff_count)
 {
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).PrintStatistics(aff_count);
-    }
+    CFastMutexGuard             guard(m_ConfigureLock);
+
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k)
+        k->second.second->PrintStatistics(aff_count);
+
+    return;
 }
 
 
 void CQueueDataBase::CheckExecutionTimeout(bool  logging)
 {
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).CheckExecutionTimeout(logging);
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->CheckExecutionTimeout(logging);
     }
+    return;
 }
 
+
+// Checks if the queues marked for deletion could be really deleted
+// and deletes them if so. Deletes queue classes which are marked
+// for deletion if there are no links to them.
+void  CQueueDataBase::x_DeleteQueuesAndClasses(void)
+{
+    // It's better to avoid quering the queues under a lock so
+    // let's first build a list of CRefs to the candidate queues.
+    list< pair< string, CRef< CQueue > > >    candidates;
+
+    {{
+        CFastMutexGuard             guard(m_ConfigureLock);
+        for (TQueueInfo::const_iterator  k = m_Queues.begin();
+             k != m_Queues.end(); ++k)
+            if (k->second.first.delete_request)
+                candidates.push_back(make_pair(k->first, k->second.second));
+    }}
+
+    // Now the queues are queiried if they are empty without a lock
+    list< pair< string, CRef< CQueue > > >::iterator
+                                            k = candidates.begin();
+    while (k != candidates.end()) {
+        if (k->second->IsEmpty() == false)
+            k = candidates.erase(k);
+        else
+            ++k;
+    }
+
+    if (candidates.empty())
+        return;
+
+    // Here we have a list of the queues which can be deleted
+    // Take a lock and delete the queues plus check queue classes
+    CFastMutexGuard             guard(m_ConfigureLock);
+    for (k = candidates.begin(); k != candidates.end(); ++k) {
+        // It's only here where a queue can be deleted so it's safe not
+        // to check the iterator
+        TQueueInfo::iterator    queue = m_Queues.find(k->first);
+
+        // Deallocation of the DB block will be done later when the queue
+        // is actually deleted
+        queue->second.second->MarkForTruncating();
+        m_Queues.erase(queue);
+    }
+
+    // Now, while still holding the lock, let's check queue classes
+    vector< string >    classes_to_delete;
+    for (TQueueParams::const_iterator  j = m_QueueClasses.begin();
+         j != m_QueueClasses.end(); ++j) {
+        if (j->second.delete_request) {
+            bool    in_use = false;
+            for (TQueueInfo::const_iterator m = m_Queues.begin();
+                m != m_Queues.end(); ++m) {
+                if (m->second.first.qclass == j->first) {
+                    in_use = true;
+                    break;
+                }
+            }
+            if (in_use == false)
+                classes_to_delete.push_back(j->first);
+        }
+    }
+
+    for (vector< string >::const_iterator  k = classes_to_delete.begin();
+         k != classes_to_delete.end(); ++k) {
+        // It's only here where a queue class can be deleted so
+        // it's safe not  to check the iterator
+        m_QueueClasses.erase(m_QueueClasses.find(*k));
+    }
+
+    return;
+}
 
 
 /* Data used in CQueueDataBase::Purge() only */
@@ -901,7 +1580,6 @@ const size_t kStatusesSize = sizeof(statuses_to_delete_from) /
 
 void CQueueDataBase::Purge(void)
 {
-    vector<string>      queues_to_delete;
     size_t              max_mark_deleted = m_Server->GetMarkdelBatchSize();
     size_t              max_scanned = m_Server->GetScanBatchSize();
     size_t              total_scanned = 0;
@@ -909,20 +1587,19 @@ void CQueueDataBase::Purge(void)
     time_t              current_time = time(0);
     bool                limit_reached = false;
 
+    // Cleanup the queues and classes if possible
+    x_DeleteQueuesAndClasses();
+
     // Part I: from the last end till the end of the list
-    CQueueCollection::iterator      start_iterator = x_GetPurgeQueueIterator();
-    size_t                          start_status_index = m_PurgeStatusIndex;
-    unsigned int                    start_job_id = m_PurgeJobScanned;
+    CRef<CQueue>        start_queue = x_GetLastPurged();
+    CRef<CQueue>        current_queue = start_queue;
+    size_t              start_status_index = m_PurgeStatusIndex;
+    unsigned int        start_job_id = m_PurgeJobScanned;
 
-    for (CQueueCollection::iterator  it = start_iterator;
-         it != m_QueueCollection.end(); ++it) {
-        if ((*it).IsExpired()) {
-            queues_to_delete.push_back(it.GetName());
-            continue;
-        }
-
-        m_PurgeQueue = it.GetName();
-        if (x_PurgeQueue(*it, m_PurgeStatusIndex, kStatusesSize - 1,
+    while (current_queue.IsNull() == false) {
+        m_PurgeQueue = current_queue->GetQueueName();
+        if (x_PurgeQueue(current_queue.GetObject(),
+                         m_PurgeStatusIndex, kStatusesSize - 1,
                          m_PurgeJobScanned, 0,
                          max_scanned, max_mark_deleted,
                          current_time,
@@ -934,20 +1611,20 @@ void CQueueDataBase::Purge(void)
             limit_reached = true;
             break;
         }
+        current_queue = x_GetNext(m_PurgeQueue);
     }
 
 
     // Part II: from the beginning of the list till the last end
     if (limit_reached == false) {
-        for (CQueueCollection::iterator  it = m_QueueCollection.begin();
-             it != start_iterator; ++it) {
-            if ((*it).IsExpired()) {
-                queues_to_delete.push_back(it.GetName());
-                continue;
-            }
+        current_queue = x_GetFirst();
+        while (current_queue.IsNull() == false) {
+            if (current_queue->GetQueueName() == start_queue->GetQueueName())
+                break;
 
-            m_PurgeQueue = it.GetName();
-            if (x_PurgeQueue(*it, m_PurgeStatusIndex, kStatusesSize - 1,
+            m_PurgeQueue = current_queue->GetQueueName();
+            if (x_PurgeQueue(current_queue.GetObject(),
+                             m_PurgeStatusIndex, kStatusesSize - 1,
                              m_PurgeJobScanned, 0,
                              max_scanned, max_mark_deleted,
                              current_time,
@@ -959,16 +1636,18 @@ void CQueueDataBase::Purge(void)
                 limit_reached = true;
                 break;
             }
+            current_queue = x_GetNext(m_PurgeQueue);
         }
     }
 
     // Part III: it might need to check the statuses in the queue we started
     // with if the start status was not the first one.
     if (limit_reached == false) {
-        if (start_iterator != m_QueueCollection.end()) {
-            m_PurgeQueue = start_iterator.GetName();
+        if (start_queue.IsNull() == false) {
+            m_PurgeQueue = start_queue->GetQueueName();
             if (start_status_index > 0) {
-                if (x_PurgeQueue(*start_iterator, 0, start_status_index - 1,
+                if (x_PurgeQueue(start_queue.GetObject(),
+                                 0, start_status_index - 1,
                                  m_PurgeJobScanned, 0,
                                  max_scanned, max_mark_deleted,
                                  current_time,
@@ -979,9 +1658,9 @@ void CQueueDataBase::Purge(void)
     }
 
     if (limit_reached == false) {
-        if (start_iterator != m_QueueCollection.end()) {
-            m_PurgeQueue = start_iterator.GetName();
-            if (x_PurgeQueue(*start_iterator,
+        if (start_queue.IsNull() == false) {
+            m_PurgeQueue = start_queue->GetQueueName();
+            if (x_PurgeQueue(start_queue.GetObject(),
                              start_status_index, start_status_index,
                              0, start_job_id,
                              max_scanned, max_mark_deleted,
@@ -998,51 +1677,72 @@ void CQueueDataBase::Purge(void)
 
     x_OptimizeStatusMatrix(current_time);
 
-    ITERATE(vector<string>, q_it, queues_to_delete) {
-        try {
-            DeleteQueue(*q_it);
-        }
-        catch (const CNetScheduleException &  ex) {
-            ERR_POST("Error deleting the queue '" << *q_it << "': " << ex);
-        }
-        catch (const CBDB_Exception &  ex) {
-            ERR_POST("Error deleting the queue '" << *q_it << "': " << ex);
-        }
-        catch (...) {
-            ERR_POST("Unknown error while deleting the queue '" << (*q_it)
-                                                                << "'.");
-        }
-    }
-
     return;
 }
 
 
-CQueueCollection::iterator  CQueueDataBase::x_GetPurgeQueueIterator(void)
+CRef<CQueue>  CQueueDataBase::x_GetLastPurged(void)
 {
-    if (m_PurgeQueue.empty())
-        return m_QueueCollection.begin();
+    CFastMutexGuard             guard(m_ConfigureLock);
 
-    for (CQueueCollection::iterator  it = m_QueueCollection.begin();
-         it != m_QueueCollection.end(); ++it)
-        if (it.GetName() == m_PurgeQueue)
-            return it;
+    if (m_PurgeQueue.empty()) {
+        if (m_Queues.empty())
+            return CRef<CQueue>(NULL);
+        return m_Queues.begin()->second.second;
+    }
+
+    for (TQueueInfo::iterator  it = m_Queues.begin();
+         it != m_Queues.end(); ++it)
+        if (it->first == m_PurgeQueue)
+            return it->second.second;
 
     // Not found, which means the queue was deleted. Pick a random one
     m_PurgeStatusIndex = 0;
     m_PurgeJobScanned = 0;
 
-    int     queue_num = ((rand() * 1.0) / RAND_MAX) * m_QueueCollection.GetSize();
+    int     queue_num = ((rand() * 1.0) / RAND_MAX) * m_Queues.size();
     int     k = 1;
-    for (CQueueCollection::iterator  it = m_QueueCollection.begin();
-         it != m_QueueCollection.end(); ++it) {
+    for (TQueueInfo::iterator  it = m_Queues.begin();
+         it != m_Queues.end(); ++it) {
         if (k >= queue_num)
-            return it;
+            return it->second.second;
         ++k;
     }
 
     // Cannot happened, so just be consistent with the return value
-    return m_QueueCollection.begin();
+    return m_Queues.begin()->second.second;
+}
+
+
+CRef<CQueue>  CQueueDataBase::x_GetFirst(void)
+{
+    CFastMutexGuard             guard(m_ConfigureLock);
+
+    if (m_Queues.empty())
+        return CRef<CQueue>(NULL);
+    return m_Queues.begin()->second.second;
+}
+
+
+CRef<CQueue>  CQueueDataBase::x_GetNext(const string &  current_name)
+{
+    CFastMutexGuard             guard(m_ConfigureLock);
+
+    if (m_Queues.empty())
+        return CRef<CQueue>(NULL);
+
+    for (TQueueInfo::iterator  it = m_Queues.begin();
+         it != m_Queues.end(); ++it) {
+        if (it->first == current_name) {
+            ++it;
+            if (it == m_Queues.end())
+                return CRef<CQueue>(NULL);
+            return it->second.second;
+        }
+    }
+
+    // May not really happen. Let's have just in case.
+    return CRef<CQueue>(NULL);
 }
 
 
@@ -1077,7 +1777,8 @@ bool  CQueueDataBase::x_PurgeQueue(CQueue &      queue,
         if (x_CheckStopPurge())
             return true;
 
-        if (total_mark_deleted >= max_mark_deleted || total_scanned >= max_scanned) {
+        if (total_mark_deleted >= max_mark_deleted ||
+            total_scanned >= max_scanned) {
             m_PurgeStatusIndex = status;
             return false;
         }
@@ -1136,8 +1837,12 @@ unsigned int  CQueueDataBase::x_PurgeUnconditional(void) {
     unsigned int        del_rec = 0;
     unsigned int        max_deleted = m_Server->GetDeleteBatchSize();
 
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        del_rec += (*it).DeleteBatch(max_deleted - del_rec);
+
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        del_rec += queue->DeleteBatch(max_deleted - del_rec);
         if (del_rec >= max_deleted)
             break;
     }
@@ -1156,21 +1861,15 @@ void CQueueDataBase::x_OptimizeStatusMatrix(time_t  current_time)
         m_FreeStatusMemCnt = 0;
         m_LastFreeMem = current_time;
 
-        NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-            (*it).OptimizeMem();
+        for (unsigned int  index = 0; ; ++index) {
+            CRef<CQueue>  queue = x_GetQueueAt(index);
+            if (queue.IsNull())
+                break;
+            queue->OptimizeMem();
             if (x_CheckStopPurge())
-                return;
+                break;
         }
     }
-}
-
-
-void CQueueDataBase::x_CleanParamMap(void)
-{
-    NON_CONST_ITERATE(TQueueParamMap, it, m_QueueParamMap) {
-        delete it->second;
-    }
-    m_QueueParamMap.clear();
 }
 
 
@@ -1217,10 +1916,13 @@ void CQueueDataBase::StopPurgeThread(void)
 
 void CQueueDataBase::PurgeAffinities(void)
 {
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).PurgeAffinities();
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->PurgeAffinities();
         if (x_CheckStopPurge())
-            return;
+            break;
     }
     return;
 }
@@ -1228,10 +1930,13 @@ void CQueueDataBase::PurgeAffinities(void)
 
 void CQueueDataBase::PurgeGroups(void)
 {
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).PurgeGroups();
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->PurgeGroups();
         if (x_CheckStopPurge())
-            return;
+            break;
     }
     return;
 }
@@ -1248,12 +1953,31 @@ void CQueueDataBase::PurgeWNodes(void)
         return;
     last_purge = current_time;
 
-    NON_CONST_ITERATE(CQueueCollection, it, m_QueueCollection) {
-        (*it).PurgeWNodes(current_time);
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->PurgeWNodes(current_time);
         if (x_CheckStopPurge())
-            return;
+            break;
     }
     return;
+}
+
+
+// Safely provides a queue at the given index
+CRef<CQueue>  CQueueDataBase::x_GetQueueAt(unsigned int  index)
+{
+    unsigned int                current_index = 0;
+    CFastMutexGuard             guard(m_ConfigureLock);
+
+    for (TQueueInfo::iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        if (current_index == index)
+            return k->second.second;
+        ++current_index;
+    }
+    return CRef<CQueue>(NULL);
 }
 
 

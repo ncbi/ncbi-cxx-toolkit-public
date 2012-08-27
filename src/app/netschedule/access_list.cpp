@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-/// is host allowed to connect
+// is host allowed to connect
 bool CNetScheduleAccessList::IsAllowed(unsigned ha) const
 {
     CReadLockGuard guard(m_Lock);
@@ -50,13 +50,15 @@ bool CNetScheduleAccessList::IsAllowed(unsigned ha) const
 }
 
 
-/// Delimited lists of hosts allowed into the system
-void CNetScheduleAccessList::SetHosts(const string& host_names)
+// Delimited lists of hosts allowed into the system
+string CNetScheduleAccessList::SetHosts(const string& host_names)
 {
+    string              accepted_hosts;
     vector<string>      hosts;
     NStr::Tokenize(host_names, ";, \n\r", hosts, NStr::eMergeDelims);
 
     CWriteLockGuard guard(m_Lock);
+    TNSBitVector        old_hosts = m_Hosts;
     m_Hosts.clear();
 
     ITERATE(vector<string>, it, hosts) {
@@ -68,16 +70,27 @@ void CNetScheduleAccessList::SetHosts(const string& host_names)
 
             if (ha != 0) {
                 m_Hosts.set_bit(ha, true);
+                if (!accepted_hosts.empty())
+                    accepted_hosts += ", ";
+                accepted_hosts += my_name;
                 continue;
             }
         }
 
         unsigned int        ha = CSocketAPI::gethostbyname(hn);
-        if (ha != 0)
+        if (ha != 0) {
             m_Hosts.set_bit(ha, true);
+            if (!accepted_hosts.empty())
+                accepted_hosts += ", ";
+            accepted_hosts += hn;
+        }
         else
             ERR_POST("'" << hn << "' is not a valid host name. Ignored.");
     }
+
+    if (old_hosts == m_Hosts)
+        return "";
+    return accepted_hosts;
 }
 
 

@@ -55,11 +55,11 @@ public:
     CNetScheduleAccessList()
     {}
 
-    /// is host allowed to connect
+    // is host allowed to connect
     bool IsAllowed(unsigned int  ha) const;
 
-    /// Delimited lists of hosts allowed into the system
-    void SetHosts(const string &  host_names);
+    // Delimited lists of hosts allowed into the system
+    string SetHosts(const string &  host_names);
 
     string Print(const string &  prefix,
                  const string &  separator) const;

@@ -102,7 +102,6 @@ public:
     // Constructor/destructor
     CQueue(CRequestExecutor&     executor,
            const string&         queue_name,
-           const string&         qclass_name,
            TQueueKind            queue_kind,
            CNetScheduleServer *  server);
     ~CQueue();
@@ -124,8 +123,6 @@ public:
     int GetRunTimeoutPrecision() const;
     unsigned GetFailedRetries() const;
     time_t GetBlacklistTime() const;
-    time_t GetEmptyLifetime() const;
-    bool GetDenyAccessViolations() const;
     bool IsVersionControl() const;
     bool IsMatchingClient(const CQueueClientInfo& cinfo) const;
     bool IsSubmitAllowed(unsigned host) const;
@@ -225,8 +222,7 @@ public:
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
-    /// Is the queue empty long enough to be deleted?
-    bool IsExpired();
+    bool IsEmpty() const;
 
     /// get next job id (counter increment)
     unsigned int GetNextId();
@@ -254,10 +250,6 @@ public:
 
     /// Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id);
-
-    void MarkForDeletion() {
-        m_DeleteDatabase = true;
-    }
 
     // Optimize bitvectors
     void OptimizeMem();
@@ -343,11 +335,11 @@ public:
 
     void TouchClientsRegistry(CNSClientId &  client);
 
-    void PrintStatistics(size_t &  aff_count);
-    void PrintTransitionCounters(CNetScheduleHandler &  handler);
+    void PrintStatistics(size_t &  aff_count) const;
+    void PrintTransitionCounters(CNetScheduleHandler &  handler) const;
     void PrintJobsStat(CNetScheduleHandler &  handler,
                        const string &         group_token,
-                       const string &         aff_token);
+                       const string &         aff_token) const;
     void CountTransition(CNetScheduleAPI::EJobStatus  from,
                          CNetScheduleAPI::EJobStatus  to)
     { m_StatisticsCounters.CountTransition(from, to); }
@@ -356,6 +348,9 @@ public:
     { return m_StatusTracker.Count(); }
     bool  AnyJobs(void) const
     { return m_StatusTracker.AnyJobs(); }
+
+    void MarkForTruncating(void)
+    { m_TruncateAtDetach = true; }
 
 private:
     friend class CNSTransaction;
@@ -458,24 +453,19 @@ private:
     CJobTimeLine*               m_RunTimeLine;
     CRWLock                     m_RunTimeLineLock;
 
-    // Should we delete db upon close?
-    bool                        m_DeleteDatabase;
-
     // Background executor
     CRequestExecutor&           m_Executor;
 
     string                      m_QueueName;
-    string                      m_QueueClass;      ///< Parameter class
     TQueueKind                  m_Kind;            ///< 0 - static, 1 - dynamic
 
-    SQueueDbBlock*              m_QueueDbBlock;
+    SQueueDbBlock *             m_QueueDbBlock;
+    bool                        m_TruncateAtDetach;
 
     auto_ptr<CBDB_FileCursor>   m_EventsCursor;    ///< DB cursor for EventsDB
 
-    CFastMutex                  m_OperationLock;   ///< Lock for a queue operations.
-
-    ///< When the queue became empty, guarded by 'm_OperationLock'
-    time_t                      m_BecameEmpty;
+    // Lock for a queue operations
+    mutable CFastMutex          m_OperationLock;
 
     // Registry of all the clients for the queue
     CNSClientsRegistry          m_ClientsRegistry;
@@ -509,11 +499,8 @@ private:
     unsigned                     m_FailedRetries;
     /// How long a job lives in blacklist
     time_t                       m_BlacklistTime;
-    /// How long to live after becoming empty, if -1 - infinitely
-    time_t                       m_EmptyLifetime;
     unsigned                     m_MaxInputSize;
     unsigned                     m_MaxOutputSize;
-    bool                         m_DenyAccessViolations;
     time_t                       m_WNodeTimeout;
     time_t                       m_PendingTimeout;
     CNSPreciseTime               m_MaxPendingWaitTimeout;
@@ -593,15 +580,6 @@ inline time_t CQueue::GetBlacklistTime() const
     // processor word size, so we need to lock parameters
     CReadLockGuard guard(m_ParamLock);
     return m_BlacklistTime;
-}
-inline time_t CQueue::GetEmptyLifetime() const
-{
-    CReadLockGuard guard(m_ParamLock);
-    return m_EmptyLifetime;
-}
-inline bool CQueue::GetDenyAccessViolations() const
-{
-    return m_DenyAccessViolations;
 }
 inline bool CQueue::IsVersionControl() const
 {

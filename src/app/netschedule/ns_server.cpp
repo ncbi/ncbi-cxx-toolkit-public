@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 
 #include "ns_server.hpp"
-#include "queue_coll.hpp"
 #include "queue_database.hpp"
 
 
@@ -87,31 +86,93 @@ void CNetScheduleServer::AddDefaultListener(IServer_ConnectionFactory* factory)
 }
 
 
-void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
-                                         bool                    limited)
+static void s_AddSeparator(string &  what)
 {
-    m_LogFlag = params.is_log;
-    if (m_LogFlag) {
-        m_LogBatchEachJobFlag           = params.log_batch_each_job;
-        m_LogNotificationThreadFlag     = params.log_notification_thread;
-        m_LogCleaningThreadFlag         = params.log_cleaning_thread;
-        m_LogExecutionWatcherThreadFlag = params.log_execution_watcher_thread;
-        m_LogStatisticsThreadFlag       = params.log_statistics_thread;
+    if (what.empty())
+        what += "\"server_changes\" {";
+    else
+        what += ", ";
+}
+
+// Returs a string which describes what was changed
+string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
+                                           bool                    limited)
+{
+    string      what_changed = "";
+    bool        new_val;
+
+    if (m_LogFlag != params.is_log) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"log\" [" + NStr::BoolToString(m_LogFlag) +
+                        " " + NStr::BoolToString(params.is_log) + "]";
     }
-    else {
-        // [server]/log key is a top level logging key
-        m_LogBatchEachJobFlag           = false;
-        m_LogNotificationThreadFlag     = false;
-        m_LogCleaningThreadFlag         = false;
-        m_LogExecutionWatcherThreadFlag = false;
-        m_LogStatisticsThreadFlag       = false;
+    m_LogFlag = params.is_log;
+
+    new_val = (params.log_batch_each_job && m_LogFlag);
+    if (m_LogBatchEachJobFlag != new_val) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"log_batch_each_job\" [" +
+                        NStr::BoolToString(m_LogBatchEachJobFlag) +
+                        " " + NStr::BoolToString(new_val) + "]";
+    }
+    m_LogBatchEachJobFlag = new_val;
+
+    new_val = (params.log_notification_thread && m_LogFlag);
+    if (m_LogNotificationThreadFlag != new_val) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"log_notification_thread\" [" +
+                        NStr::BoolToString(m_LogNotificationThreadFlag) +
+                        " " + NStr::BoolToString(new_val) + "]";
+    }
+    m_LogNotificationThreadFlag = new_val;
+
+    new_val = (params.log_cleaning_thread && m_LogFlag);
+    if (m_LogCleaningThreadFlag != new_val) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"log_cleaning_thread\" [" +
+                        NStr::BoolToString(m_LogCleaningThreadFlag) +
+                        " " + NStr::BoolToString(new_val) + "]";
+    }
+    m_LogCleaningThreadFlag = new_val;
+
+    new_val = (params.log_execution_watcher_thread&& m_LogFlag);
+    if (m_LogExecutionWatcherThreadFlag != new_val) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"log_execution_watcher_thread\" [" +
+                        NStr::BoolToString(m_LogExecutionWatcherThreadFlag) +
+                        " " + NStr::BoolToString(new_val) + "]";
+    }
+    m_LogExecutionWatcherThreadFlag = new_val;
+
+    new_val = (params.log_statistics_thread && m_LogFlag);
+    if (m_LogStatisticsThreadFlag != new_val) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"log_statistics_thread\" [" +
+                        NStr::BoolToString(m_LogStatisticsThreadFlag) +
+                        " " + NStr::BoolToString(new_val) + "]";
+    }
+    m_LogStatisticsThreadFlag = new_val;
+
+
+    string  accepted_hosts = m_AdminHosts.SetHosts(params.admin_hosts);
+    if (!accepted_hosts.empty()) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"admin_host\" [" +
+                        accepted_hosts + "]";
     }
 
-    m_AdminHosts.SetHosts(params.admin_hosts);
-    x_SetAdminClientNames(params.admin_client_names);
+    string  accepted_admins = x_SetAdminClientNames(params.admin_client_names);
+    if (!accepted_admins.empty()) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"admin_client_name\" [" +
+                        accepted_admins + "]";
+    }
+
+    if (!what_changed.empty())
+        what_changed += "}";
 
     if (limited)
-        return;
+        return what_changed;
 
 
     CServer::SetParameters(params);
@@ -136,6 +197,7 @@ void CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     m_AffinityHighRemoval = params.affinity_high_removal;
     m_AffinityLowRemoval = params.affinity_low_removal;
     m_AffinityDirtPercentage = params.affinity_dirt_percentage;
+    return "";
 }
 
 
@@ -168,9 +230,10 @@ unsigned CNetScheduleServer::GetCommandNumber()
 
 
 // Queue handling
-unsigned CNetScheduleServer::Configure(const IRegistry& reg)
+unsigned int  CNetScheduleServer::Configure(const IRegistry &  reg,
+                                            string &           diff)
 {
-    return m_QueueDB->Configure(reg);
+    return m_QueueDB->Configure(reg, diff);
 }
 
 
@@ -186,30 +249,28 @@ CRef<CQueue> CNetScheduleServer::OpenQueue(const std::string& name)
 }
 
 
-void CNetScheduleServer::CreateQueue(const std::string& qname,
-                                     const std::string& qclass,
-                                     const std::string& comment)
+void CNetScheduleServer::CreateDynamicQueue(const string &  qname,
+                                            const string &  qclass,
+                                            const string &  description)
 {
-    m_QueueDB->CreateQueue(qname, qclass, comment);
+    m_QueueDB->CreateDynamicQueue(qname, qclass, description);
 }
 
 
-void CNetScheduleServer::DeleteQueue(const std::string& qname)
+void CNetScheduleServer::DeleteDynamicQueue(const std::string& qname)
 {
-    m_QueueDB->DeleteQueue(qname);
+    m_QueueDB->DeleteDynamicQueue(qname);
 }
 
 
-void CNetScheduleServer::QueueInfo(const std::string& qname,
-                                   int&               kind,
-                                   std::string*       qclass,
-                                   std::string*       comment)
+SQueueParameters
+CNetScheduleServer::QueueInfo(const string &  qname) const
 {
-    m_QueueDB->QueueInfo(qname, kind, qclass, comment);
+    return m_QueueDB->QueueInfo(qname);
 }
 
 
-std::string CNetScheduleServer::GetQueueNames(const std::string& sep) const
+std::string CNetScheduleServer::GetQueueNames(const string &  sep) const
 {
     return m_QueueDB->GetQueueNames(sep);
 }
@@ -242,6 +303,18 @@ void CNetScheduleServer::PrintTransitionCounters(CNetScheduleHandler &  handler)
 void CNetScheduleServer::PrintJobsStat(CNetScheduleHandler &  handler)
 {
     m_QueueDB->PrintJobsStat(handler);
+}
+
+
+string CNetScheduleServer::GetQueueClassesInfo(void)
+{
+    return m_QueueDB->GetQueueClassesInfo();
+}
+
+
+string CNetScheduleServer::GetQueueInfo(void)
+{
+    return m_QueueDB->GetQueueInfo();
 }
 
 
@@ -332,13 +405,30 @@ string  CNetScheduleServer::x_GenerateGUID(void) const
 }
 
 
-void CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
+string CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
 {
     CWriteLockGuard     guard(m_AdminClientsLock);
+    vector<string>      old_admins = m_AdminClientNames;
 
     m_AdminClientNames.clear();
     NStr::Tokenize(client_names, ";, \n\r", m_AdminClientNames,
                    NStr::eMergeDelims);
-    return;
+    sort(m_AdminClientNames.begin(), m_AdminClientNames.end());
+
+    if (old_admins != m_AdminClientNames) {
+        string      accepted_names;
+        for (vector<string>::const_iterator  k = m_AdminClientNames.begin();
+             k != m_AdminClientNames.end(); ++k) {
+            if (!accepted_names.empty())
+                accepted_names += ", ";
+            accepted_names += *k;
+        }
+
+        if (accepted_names.empty())
+            accepted_names = "none";
+        return accepted_names;
+    }
+
+    return "";
 }
 

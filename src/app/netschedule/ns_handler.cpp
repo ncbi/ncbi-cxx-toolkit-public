@@ -96,6 +96,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "QINF",     { &CNetScheduleHandler::x_ProcessQueueInfo,
                     eNSCR_Any },
         { { "qname", eNSPT_Id, eNSPA_Required } } },
+    { "QINF2",    { &CNetScheduleHandler::x_ProcessQueueInfo,
+                    eNSCR_Any },
+        { { "qname", eNSPT_Id, eNSPA_Required } } },
     { "SETQUEUE", { &CNetScheduleHandler::x_ProcessSetQueue,
                     eNSCR_Any },
         { { "qname", eNSPT_Id, eNSPA_Optional } } },
@@ -105,14 +108,14 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                     eNSCR_QueueAdmin } },
 
     /*** DynClassAdmin role ***/
-    // QCRE qname : id  qclass : id [ comment : str ]
-    { "QCRE",     { &CNetScheduleHandler::x_ProcessCreateQueue,
+    // QCRE qname : id  qclass : id [ description : str ]
+    { "QCRE",     { &CNetScheduleHandler::x_ProcessCreateDynamicQueue,
                     eNSAC_DynClassAdmin },
-        { { "qname",   eNSPT_Id,  eNSPA_Required },
-          { "qclass",  eNSPT_Id,  eNSPA_Required },
-          { "comment", eNSPT_Str, eNSPA_Optional } } },
+        { { "qname",       eNSPT_Id,  eNSPA_Required },
+          { "qclass",      eNSPT_Id,  eNSPA_Required },
+          { "description", eNSPT_Str, eNSPA_Optional } } },
     // QDEL qname : id
-    { "QDEL",     { &CNetScheduleHandler::x_ProcessDeleteQueue,
+    { "QDEL",     { &CNetScheduleHandler::x_ProcessDeleteDynamicQueue,
                     eNSAC_DynQueueAdmin },
         { { "qname", eNSPT_Id, eNSPA_Required } } },
 
@@ -1825,6 +1828,38 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     const string &      what   = m_CommandArguments.option;
     time_t              curr   = time(0);
 
+    if (!what.empty() && what != "QCLASSES" && what != "QUEUES" &&
+        what != "JOBS" && what != "ALL" && what != "CLIENTS" &&
+        what != "NOTIFICATIONS" && what != "AFFINITIES" &&
+        what != "GROUPS" && what != "WNODE") {
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Unsupported '" + what +
+                   "' parameter for the STAT command.");
+    }
+
+
+    if (what == "QCLASSES") {
+        string      info = m_Server->GetQueueClassesInfo();
+
+        if (!info.empty())
+            WriteMessage(info);
+
+        WriteMessage("OK:END");
+        x_PrintRequestStop(eStatus_OK);
+        return;
+    }
+    if (what == "QUEUES") {
+        string      info = m_Server->GetQueueInfo();
+
+        if (!info.empty())
+            WriteMessage(info);
+
+        WriteMessage("OK:END");
+        x_PrintRequestStop(eStatus_OK);
+        return;
+    }
+
+
     if (q == NULL) {
         if (what == "JOBS")
             m_Server->PrintJobsStat(*this);
@@ -1972,16 +2007,38 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
     if (reloaded) {
         const CNcbiRegistry &   reg = app->GetConfig();
+        string                  diff;
 
-        m_Server->Configure(reg);
+        m_Server->Configure(reg, diff);
 
         // Logging from the [server] section
         SNS_Parameters          params;
 
         params.Read(reg, "server");
-        m_Server->SetNSParameters(params, true);
+        string      what_changed = m_Server->SetNSParameters(params, true);
+        bool        is_log = m_Server->IsLog();
 
-        WriteMessage("OK:");
+        if (what_changed.empty() && diff.empty()) {
+            if (is_log)
+                 GetDiagContext().Extra().Print("accepted_changes", "none");
+            WriteMessage("OK:WARNING:No changeable parameters were "
+                         "identified in the new cofiguration file;");
+            x_PrintRequestStop(eStatus_OK);
+            return;
+        }
+
+        string      total_changes;
+        if (!what_changed.empty() && !diff.empty())
+            total_changes = what_changed + ", " + diff;
+        else if (what_changed.empty())
+            total_changes = diff;
+        else
+            total_changes = what_changed;
+
+        if (is_log)
+            GetDiagContext().Extra().Print("config_changes", total_changes);
+
+        WriteMessage("OK:", total_changes);
     }
     else
         WriteMessage("OK:WARNING:Configuration file has not "
@@ -2104,19 +2161,20 @@ void CNetScheduleHandler::x_ProcessQuitSession(CQueue*)
 }
 
 
-void CNetScheduleHandler::x_ProcessCreateQueue(CQueue*)
+void CNetScheduleHandler::x_ProcessCreateDynamicQueue(CQueue*)
 {
-    m_Server->CreateQueue(m_CommandArguments.qname,
-                          m_CommandArguments.qclass,
-                          NStr::ParseEscapes(m_CommandArguments.comment));
+    m_Server->CreateDynamicQueue(
+                        m_CommandArguments.qname,
+                        m_CommandArguments.qclass,
+                        NStr::ParseEscapes(m_CommandArguments.description));
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
 
 
-void CNetScheduleHandler::x_ProcessDeleteQueue(CQueue*)
+void CNetScheduleHandler::x_ProcessDeleteDynamicQueue(CQueue*)
 {
-    m_Server->DeleteQueue(m_CommandArguments.qname);
+    m_Server->DeleteDynamicQueue(m_CommandArguments.qname);
     WriteMessage("OK:");
     x_PrintRequestStop(eStatus_OK);
 }
@@ -2124,13 +2182,45 @@ void CNetScheduleHandler::x_ProcessDeleteQueue(CQueue*)
 
 void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
 {
-    int             kind;
-    string          qclass;
-    string          comment;
+    bool                cmdv2(m_CommandArguments.cmd == "QINF2");
+    SQueueParameters    params = m_Server->QueueInfo(m_CommandArguments.qname);
 
-    m_Server->QueueInfo(m_CommandArguments.qname, kind, &qclass, &comment);
-    WriteMessage("OK:", NStr::IntToString(kind) + "\t" + qclass + "\t\"" +
-                        NStr::PrintableString(comment) + "\"");
+    if (cmdv2) {
+        string      reply;
+
+        reply = "kind=";
+        if (params.kind == CQueue::eKindStatic)
+            reply += "static&";
+        else
+            reply += "dynamic&";
+        reply += "position=" + NStr::NumericToString(params.position) + "&"
+                 "qclass=" + params.qclass + "&"
+                 "delete_request=" + NStr::BoolToString(params.delete_request) + "&"
+                 "timeout=" + NStr::NumericToString(params.timeout) + "&"
+                 "notif_hifreq_interval=" + NStr::NumericToString(params.notif_hifreq_interval) + "&"
+                 "notif_hifreq_period=" + NStr::NumericToString(params.notif_hifreq_period) + "&"
+                 "notif_lofreq_mult=" + NStr::NumericToString(params.notif_lofreq_mult) + "&"
+                 "dump_buffer_size=" + NStr::NumericToString(params.dump_buffer_size) + "&"
+                 "run_timeout=" + NStr::NumericToString(params.run_timeout) + "&"
+                 "program_name=" + NStr::URLEncode(params.program_name) + "&"
+                 "failed_retries=" + NStr::NumericToString(params.failed_retries) + "&"
+                 "blacklist_time=" + NStr::NumericToString(params.blacklist_time) + "&"
+                 "max_input_size=" + NStr::NumericToString(params.max_input_size) + "&"
+                 "max_output_size=" + NStr::NumericToString(params.max_output_size) + "&"
+                 "subm_hosts=" + NStr::URLEncode(params.subm_hosts) + "&"
+                 "wnode_hosts=" + NStr::URLEncode(params.wnode_hosts) + "&"
+                 "wnode_timeout=" + NStr::NumericToString(params.wnode_timeout) + "&"
+                 "pending_timeout=" + NStr::NumericToString(params.pending_timeout) + "&"
+                 "max_pending_wait_timeout=" + NStr::NumericToString(params.max_pending_wait_timeout) + "&"
+                 "description=" + NStr::URLEncode(params.description) + "&"
+                 "run_timeout_precision=" + NStr::NumericToString(params.run_timeout_precision) + "&"
+                 "refuse_submits=" + NStr::BoolToString(params.refuse_submits);
+        WriteMessage("OK:", reply);
+    } else {
+        WriteMessage("OK:", NStr::IntToString(params.kind) + "\t" +
+                            params.qclass + "\t\"" +
+                            NStr::PrintableString(params.description) + "\"");
+    }
     x_PrintRequestStop(eStatus_OK);
 }
 

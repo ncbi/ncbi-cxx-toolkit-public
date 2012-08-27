@@ -53,7 +53,6 @@
 
 #include <db/bdb/bdb_expt.hpp>
 
-#include "queue_coll.hpp"
 #include "queue_database.hpp"
 #include "ns_types.hpp"
 #include "ns_util.hpp"
@@ -214,12 +213,11 @@ int CNetScheduleDApp::Run(void)
         // two transactions per thread should be enough
         bdb_params.max_trans = params.max_threads * 2;
 
-        auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get()));
-
         LOG_POST(Message << Warning
                          << "Mounting database at " << bdb_params.db_path);
-        if (qdb->Open(bdb_params, reinit) == false)
-            return 1;
+        auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
+                                                           bdb_params, reinit));
+
         if (server->InitNodeID(bdb_params.db_path) == false)
             return 1;
 
@@ -244,7 +242,8 @@ int CNetScheduleDApp::Run(void)
 
         // [queue_*], [qclass_*] and [queues] sections
         // Scan and mount queues
-        unsigned min_run_timeout = qdb->Configure(reg);
+        string        diff;
+        unsigned int  min_run_timeout = qdb->Configure(reg, diff);
 
         min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
         LOG_POST(Message << Warning
@@ -277,17 +276,21 @@ int CNetScheduleDApp::Run(void)
             NcbiCout << "Server stopped" << NcbiEndl;
 
     }
-    catch (CBDB_ErrnoException& ex)
+    catch (const CNetScheduleException &  ex) {
+        ERR_POST("NetSchedule exception: " << ex);
+        return 1;
+    }
+    catch (const CBDB_ErrnoException &  ex)
     {
         ERR_POST("Error: DBD errno exception:" << ex.what());
         return ex.BDB_GetErrno();
     }
-    catch (CBDB_LibException& ex)
+    catch (const CBDB_LibException &  ex)
     {
         ERR_POST("Error: DBD library exception:" << ex.what());
         return 1;
     }
-    catch (exception& ex)
+    catch (const exception &  ex)
     {
         ERR_POST("Error: STD exception:" << ex.what());
         return 1;

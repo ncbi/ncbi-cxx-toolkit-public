@@ -166,8 +166,8 @@ private:
     void x_ProcessVersion(CQueue*);
     void x_ProcessQList(CQueue*);
     void x_ProcessQuitSession(CQueue*);
-    void x_ProcessCreateQueue(CQueue*);
-    void x_ProcessDeleteQueue(CQueue*);
+    void x_ProcessCreateDynamicQueue(CQueue*);
+    void x_ProcessDeleteDynamicQueue(CQueue*);
     void x_ProcessQueueInfo(CQueue*);
     void x_ProcessSetQueue(CQueue*);
     void x_ProcessGetParam(CQueue*);

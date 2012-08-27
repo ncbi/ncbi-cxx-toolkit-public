@@ -189,8 +189,6 @@ void CNSClientId::CheckAccess(TNSClientRole   role,
     bool deny =
         (deficit & eNSAC_AnyAdminMask)    ||  // for any admin access
         ((~m_Capabilities) & eNSAC_Queue);    // or if no queue
-    if (queue != NULL)
-        deny |= queue->GetDenyAccessViolations();
 
     if (deny)
         NCBI_THROW(CNetScheduleException, eAccessDenied,

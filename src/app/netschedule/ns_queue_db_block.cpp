@@ -150,7 +150,7 @@ void SQueueDbBlock::Truncate()
 // CQueueDbBlockArray
 
 CQueueDbBlockArray::CQueueDbBlockArray()
-  : m_Count(0), m_Array(0)
+  : m_Count(0), m_Array(NULL)
 {}
 
 
@@ -194,7 +194,7 @@ int CQueueDbBlockArray::Allocate()
 }
 
 
-bool CQueueDbBlockArray::Allocate(int pos)
+bool CQueueDbBlockArray::Allocate(int  pos)
 {
     if (pos < 0  || pos >= int(m_Count))
         return false;
@@ -207,12 +207,24 @@ bool CQueueDbBlockArray::Allocate(int pos)
 }
 
 
-SQueueDbBlock* CQueueDbBlockArray::Get(int pos)
+SQueueDbBlock *  CQueueDbBlockArray::Get(int  pos)
 {
     if (pos < 0 || unsigned(pos) >= m_Count)
         return NULL;
 
     return &m_Array[pos];
+}
+
+
+unsigned int  CQueueDbBlockArray::CountAvailable(void) const
+{
+    unsigned int    count = 0;
+
+    for (unsigned int  n = 0; n < m_Count; ++n)
+        if (m_Array[n].allocated == false)
+            ++count;
+
+    return count;
 }
 
 

@@ -60,6 +60,7 @@ struct SNSCommandArguments
     string          job_key;
     string          err_msg;
     string          comment;
+    string          description;
     string          ip;                 // ?
     string          option;
     string          progress_msg;

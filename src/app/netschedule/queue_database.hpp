@@ -44,6 +44,8 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
 
+#include <utility>
+
 #include <connect/services/netschedule_api.hpp>
 #include "ns_util.hpp"
 #include "job_status.hpp"
@@ -52,7 +54,6 @@
 #include "ns_queue.hpp"
 #include "queue_vc.hpp"
 #include "background_host.hpp"
-#include "queue_coll.hpp"
 #include "ns_service_thread.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -64,22 +65,22 @@ class CNetScheduleHandler;
 
 struct SNSDBEnvironmentParams
 {
-    string    db_storage_ver;      ///< Version of DB schema, should match
-                                   ///  NETSCHEDULED_STORAGE_VERSION
+    string    db_storage_ver;      // Version of DB schema, should match
+                                   //  NETSCHEDULED_STORAGE_VERSION
     string    db_path;
     string    db_log_path;
-    unsigned  max_queues;          ///< Number of pre-allocated queues
-    unsigned  cache_ram_size;      ///< Size of database cache
-    unsigned  mutex_max;           ///< Number of mutexes
-    unsigned  max_locks;           ///< Number of locks
-    unsigned  max_lockers;         ///< Number of lockers
-    unsigned  max_lockobjects;     ///< Number of lock objects
+    unsigned  max_queues;          // Number of pre-allocated queues
+    unsigned  cache_ram_size;      // Size of database cache
+    unsigned  mutex_max;           // Number of mutexes
+    unsigned  max_locks;           // Number of locks
+    unsigned  max_lockers;         // Number of lockers
+    unsigned  max_lockobjects;     // Number of lock objects
 
-    ///    Size of in-memory LOG (when 0 log is put to disk)
-    ///    In memory LOG is not durable, put it to memory
-    ///    only if you need better performance
+    //    Size of in-memory LOG (when 0 log is put to disk)
+    //    In memory LOG is not durable, put it to memory
+    //    only if you need better performance
     unsigned  log_mem_size;
-    unsigned  max_trans;           ///< Maximum number of active transactions
+    unsigned  max_trans;           // Maximum number of active transactions
     unsigned  checkpoint_kb;
     unsigned  checkpoint_min;
     bool      sync_transactions;
@@ -96,56 +97,45 @@ struct SNSDBEnvironmentParams
 
 
 
-/// Top level queue database.
-/// (Thread-Safe, synchronized.)
-///
-/// @internal
-///
+// Holds all the queue parameters - used for queue classes
+// and for reading from DB and ini files
+typedef map<string, SQueueParameters>               TQueueParams;
+// Holds parameters together with a queue instance
+typedef map<string,
+            pair<SQueueParameters, CRef<CQueue> > > TQueueInfo;
+
+
+
+// Top level queue database. (Thread-Safe, synchronized.)
 class CQueueDataBase
 {
 public:
-    CQueueDataBase(CNetScheduleServer* server);
+    CQueueDataBase(CNetScheduleServer *            server,
+                   const SNSDBEnvironmentParams &  params,
+                   bool                            reinit);
     ~CQueueDataBase();
-
-    /// @param params
-    ///    Parameters of DB environment
-    /// @param reinit
-    ///    Whether to clean out database
-    /// @return whether it was successful
-    bool Open(const SNSDBEnvironmentParams& params, bool reinit);
 
     // Read queue information from registry and configure queues
     // accordingly.
     // returns minimum run timeout, necessary for watcher thread
-    unsigned Configure(const IRegistry& reg);
+    unsigned int  Configure(const IRegistry &  reg,
+                            string &           diff);
 
     // Count Pending and Running jobs in all queues
     unsigned int  CountActiveJobs(void) const;
     unsigned int  CountAllJobs(void) const;
     bool  AnyJobs(void) const;
 
-    CRef<CQueue> OpenQueue(const string& name);
+    CRef<CQueue> OpenQueue(const string &  name);
 
-    typedef CQueue::TQueueKind TQueueKind;
-    void MountQueue(const string& qname,
-                    const string& qclass,
-                    TQueueKind    kind,
-                    const SQueueParameters& params,
-                    SQueueDbBlock* queue_db_block);
-
-    void CreateQueue(const string& qname, const string& qclass,
-                     const string& comment = "");
-    void DeleteQueue(const string& qname);
-    void QueueInfo(const string& qname, int& kind,
-                   string* qclass, string* comment);
-    string GetQueueNames(const string& sep) const;
-
-    void UpdateQueueParameters(const string& qname,
-                               const SQueueParameters& params);
+    void CreateDynamicQueue(const string &  qname, const string &  qclass,
+                            const string &  description = "");
+    void DeleteDynamicQueue(const string &  qname);
+    SQueueParameters QueueInfo(const string &  qname) const;
+    string GetQueueNames(const string &  sep) const;
 
     void Close(bool  drained_shutdown);
-    bool QueueExists(const string& qname) const
-    { return m_QueueCollection.QueueExists(qname); }
+    bool QueueExists(const string &  qname) const;
 
     // Remove old jobs
     void Purge(void);
@@ -169,12 +159,12 @@ public:
     void StopServiceThread(void);
 
     void CheckExecutionTimeout(bool  logging);
-    void RunExecutionWatcherThread(unsigned run_delay);
+    void RunExecutionWatcherThread(unsigned int  run_delay);
     void StopExecutionWatcherThread(void);
 
 
     /// Force transaction checkpoint
-    void TransactionCheckPoint(bool clean_log=false);
+    void TransactionCheckPoint(bool  clean_log = false);
 
     // BerkeleyDB-specific statistics
     void PrintMutexStat(CNcbiOstream& out)
@@ -194,6 +184,8 @@ public:
 
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
     void PrintJobsStat(CNetScheduleHandler &  handler);
+    string GetQueueClassesInfo(void);
+    string GetQueueInfo(void);
 
 private:
     // No copy
@@ -201,47 +193,52 @@ private:
     CQueueDataBase& operator=(const CQueueDataBase&);
 
 protected:
-    /// get next job id (counter increment)
-    unsigned GetNextId();
+    // get next job id (counter increment)
+    unsigned int  GetNextId();
 
-    /// Returns first id for the batch
-    unsigned GetNextIdBatch(unsigned count);
+    // Returns first id for the batch
+    unsigned int  GetNextIdBatch(unsigned int  count);
 
 private:
-    int x_AllocateQueue(const string& qname, const string& qclass,
-                        int kind, const string& comment);
+    void x_Open(const SNSDBEnvironmentParams &  params, bool  reinit);
+    void x_CreateAndMountQueue(const string &            qname,
+                               const SQueueParameters &  params,
+                               SQueueDbBlock *           queue_db_block);
 
     unsigned x_PurgeUnconditional(void);
     void     x_OptimizeStatusMatrix(time_t  current_time);
     bool     x_CheckStopPurge(void);
-    void     x_CleanParamMap(void);
 
-    CBackgroundHost&                        m_Host;
-    CRequestExecutor&                       m_Executor;
-    CBDB_Env*                               m_Env;
-    string                                  m_Path;
-    string                                  m_Name;
+    CBackgroundHost &    m_Host;
+    CRequestExecutor &   m_Executor;
+    CBDB_Env*            m_Env;
+    string               m_Path;
+    string               m_Name;
 
-    mutable CFastMutex                      m_ConfigureLock;
-    typedef map<string, SQueueParameters*>  TQueueParamMap;
-    TQueueParamMap                          m_QueueParamMap;
-    SQueueDescriptionDB                     m_QueueDescriptionDB;
-    CQueueCollection                        m_QueueCollection;
+    mutable CFastMutex   m_ConfigureLock;
+    SQueueDescriptionDB  m_QueueDescriptionDB;
+
+    // Effective queue classes
+    TQueueParams         m_QueueClasses;
+    // Effective queues
+    TQueueInfo           m_Queues;
+
 
     // Pre-allocated Berkeley DB blocks
-    CQueueDbBlockArray                      m_QueueDbBlockArray;
+    CQueueDbBlockArray   m_QueueDbBlockArray;
+
+
+    bool                 m_StopPurge;         // Purge stop flag
+    CFastMutex           m_PurgeLock;
+    unsigned int         m_FreeStatusMemCnt;  // Free memory counter
+    time_t               m_LastFreeMem;       // time of the last memory opt
 
     CRef<CJobQueueCleanerThread>            m_PurgeThread;
     CRef<CServiceThread>                    m_ServiceThread;
+    CRef<CGetJobNotificationThread>         m_NotifThread;
+    CRef<CJobQueueExecutionWatcherThread>   m_ExeWatchThread;
 
-    bool                 m_StopPurge;         ///< Purge stop flag
-    CFastMutex           m_PurgeLock;
-    unsigned             m_FreeStatusMemCnt;  ///< Free memory counter
-    time_t               m_LastFreeMem;       ///< time of the last memory opt
-
-    CRef<CGetJobNotificationThread>          m_NotifThread;
-    CRef<CJobQueueExecutionWatcherThread>    m_ExeWatchThread;
-    CNetScheduleServer*                      m_Server;
+    CNetScheduleServer *                    m_Server;
 
 private:
     // Last scan attributes
@@ -249,19 +246,45 @@ private:
     size_t              m_PurgeStatusIndex;     // Scanned status index
     unsigned int        m_PurgeJobScanned;      // Scanned job ID within status
 
-    CQueueCollection::iterator  x_GetPurgeQueueIterator(void);
-    bool                        x_PurgeQueue(CQueue &       queue,
-                                             size_t         status_to_start,
-                                             size_t         status_to_end,
-                                             unsigned int   start_job_id,
-                                             unsigned int   end_job_id,
-                                             size_t         max_scanned,
-                                             size_t         max_mark_deleted,
-                                             time_t         current_time,
-                                             size_t &       total_scanned,
-                                             size_t &       total_mark_deleted);
+    bool                  x_PurgeQueue(CQueue &       queue,
+                                       size_t         status_to_start,
+                                       size_t         status_to_end,
+                                       unsigned int   start_job_id,
+                                       unsigned int   end_job_id,
+                                       size_t         max_scanned,
+                                       size_t         max_mark_deleted,
+                                       time_t         current_time,
+                                       size_t &       total_scanned,
+                                       size_t &       total_mark_deleted);
+    void  x_DeleteQueuesAndClasses(void);
+    CRef<CQueue>  x_GetLastPurged(void);
+    CRef<CQueue>  x_GetFirst(void);
+    CRef<CQueue>  x_GetNext(const string &  current_name);
     void  x_SetSignallingFile(bool  drained);
     bool  x_IsDBDrained(void) const;
+
+    bool  x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
+                                  string &              diff);
+    bool  x_ConfigureQueues(const TQueueParams &  queues_from_ini,
+                            string &              diff);
+
+    // Used to read/write both queues and queue classes
+    TQueueParams  x_ReadDBQueueDescriptions(const string &  expected_prefix);
+    void  x_WriteDBQueueDescriptions(const TQueueParams &  queue_classes);
+    void  x_WriteDBQueueDescriptions(const TQueueInfo &  queues);
+    void  x_DeleteDBRecordsWithPrefix(const string &  prefix);
+    void  x_InsertParamRecord(const string &            key,
+                              const SQueueParameters &  params);
+    TQueueParams  x_ReadIniFileQueueClassDescriptions(const IRegistry &   reg);
+    TQueueParams  x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
+                                                 const TQueueParams &  classes);
+
+    void  x_ValidateConfiguration(const TQueueParams &  queues_from_ini,
+                                  const TQueueParams &  classes_from_ini) const;
+    unsigned int
+    x_CountQueuesToAdd(const TQueueParams &  queues_from_ini) const;
+
+    CRef<CQueue>  x_GetQueueAt(unsigned int  index);
 
 }; // CQueueDataBase
 

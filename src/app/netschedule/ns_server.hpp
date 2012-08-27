@@ -58,8 +58,8 @@ public:
     virtual ~CNetScheduleServer();
 
     void AddDefaultListener(IServer_ConnectionFactory* factory);
-    void SetNSParameters(const SNS_Parameters &  new_params,
-                         bool                    limited);
+    string SetNSParameters(const SNS_Parameters &  new_params,
+                           bool                    limited);
 
     virtual bool ShutdownRequested(void);
 
@@ -78,23 +78,23 @@ public:
     unsigned GetCommandNumber();
 
     // Queue handling
-    unsigned Configure(const IRegistry& reg);
+    unsigned int  Configure(const IRegistry &  reg,
+                            string &           diff);
     unsigned CountActiveJobs() const;
     CRef<CQueue> OpenQueue(const std::string& name);
-    void CreateQueue(const std::string& qname,
-                     const std::string& qclass,
-                     const std::string& comment);
-    void DeleteQueue(const std::string& qname);
-    void QueueInfo(const std::string& qname,
-                   int&               kind,
-                   std::string*       qclass,
-                   std::string*       comment);
-    std::string GetQueueNames(const std::string& sep) const;
+    void CreateDynamicQueue(const string &  qname,
+                            const string &  qclass,
+                            const string &  description);
+    void DeleteDynamicQueue(const string &  qname);
+    SQueueParameters  QueueInfo(const string &  qname) const;
+    string  GetQueueNames(const std::string& sep) const;
     void PrintMutexStat(CNcbiOstream& out);
     void PrintLockStat(CNcbiOstream& out);
     void PrintMemStat(CNcbiOstream& out);
     void PrintTransitionCounters(CNetScheduleHandler &  handler);
     void PrintJobsStat(CNetScheduleHandler &  handler);
+    string GetQueueClassesInfo(void);
+    string GetQueueInfo(void);
 
     bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }
@@ -195,7 +195,7 @@ private:
 
 private:
     string  x_GenerateGUID(void) const;
-    void    x_SetAdminClientNames(const string &  client_names);
+    string  x_SetAdminClientNames(const string &  client_names);
 };
 
 
