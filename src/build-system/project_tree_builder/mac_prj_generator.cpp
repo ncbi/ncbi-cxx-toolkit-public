@@ -1382,7 +1382,7 @@ string CMacProjectGenerator::AddConfigureTarget(
     string script;
     script += "export PTB_PLATFORM=\"$ARCHS\"\n";
     script += "export PTB_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
-    script += "export SLN_PATH=" + m_OutputDir + solution_name + "\n";
+    script += "export SLN_PATH=" + m_OutputDir + "\"$PROJECT_NAME\""/*solution_name*/ + "\n";
     script += "export TREE_ROOT=" +
         CDirEntry::DeleteTrailingPathSeparator( GetRelativePath( GetApp().m_Root)) + "\n";
     script += "export BUILD_TREE_ROOT=" +
