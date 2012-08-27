@@ -220,7 +220,6 @@ CAtomicCounter::TValue sx_PopLastNewPtrMultiple(void* ptr)
 static inline
 void sx_PushLastNewPtr(void* ptr, CAtomicCounter::TValue type)
 {
-    //cerr << "sx_PushLastNewPtr(" << ptr << ", "<<s_LastNewPtr<<")"<<endl;
     if ( s_LastNewPtr ) {
         // multiple
         sx_PushLastNewPtrMultiple(ptr, type);
@@ -234,7 +233,6 @@ void sx_PushLastNewPtr(void* ptr, CAtomicCounter::TValue type)
 static inline
 CAtomicCounter::TValue sx_PopLastNewPtr(void* ptr)
 {
-    //cerr << "sx_PopLastNewPtr(" << ptr << ", "<<s_LastNewPtr<<")"<<endl;
     void* last_ptr = s_LastNewPtr;
     if ( !last_ptr ) {
         return 0;
@@ -901,7 +899,6 @@ void CObject::ThrowNullPointerException(void)
         CCoreException, eNullPtr, "Attempt to access NULL pointer.");
     ex.SetSeverity(eDiag_Critical);
     NCBI_EXCEPTION_THROW(ex);
-    // NCBI_THROW(CCoreException, eNullPtr, "Attempt to access NULL pointer.");
 }
 
 
@@ -915,8 +912,6 @@ void CObject::ThrowNullPointerException(const type_info& type)
                        string("Attempt to access NULL pointer: ")+type.name());
     ex.SetSeverity(eDiag_Critical);
     NCBI_EXCEPTION_THROW(ex);
-    // NCBI_THROW(CCoreException, eNullPtr,
-    //            string("Attempt to access NULL pointer: ")+type.name());
 }
 
 
@@ -1383,7 +1378,6 @@ void memchk(const void* ptr, char byte, size_t size)
 
 void* s_alloc_mem(size_t size, bool array) throw()
 {
-    //fprintf(stderr, "s_alloc_mem(%u, %d)\n", (unsigned)size, array);
     unsigned number = seq_number.Add(1);
     SAllocLog& log =
         start_log(number, array? SAllocLog::eNewArr: SAllocLog::eNew);
@@ -1421,7 +1415,6 @@ void* s_alloc_mem(size_t size, bool array) throw()
 
 void s_free_mem(void* ptr, bool array)
 {
-    //fprintf(stderr, "s_free_mem(%p, %d)\n", ptr, array);
     unsigned number = seq_number.Add(1);
     SAllocLog& log =
         start_log(number, array ? SAllocLog::eDeleteArr: SAllocLog::eDelete);
