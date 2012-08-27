@@ -2156,11 +2156,15 @@ class Scenario156( TestBase ):
         if jobID != jobIDReceived:
             raise Exception( "Inconsistency detected" )
         try:
-            self.ns.rollbackRead2( 'TEST', jobID, "7" + passport + "7",
+            parts = passport.split( '_' )
+            if len( parts ) != 2:
+                raise Exception( "Unexpected passport format" )
+            badPassport = str( int( parts[ 0 ] ) + 1 ) + '_' + parts[ 1 ] + '7'
+            self.ns.rollbackRead2( 'TEST', jobID, badPassport,
                                    'mynode', 'mysession' )
             raise Exception( "Wrong RDRB but no exception" )
         except Exception, excpt:
-            if "Invalid authorization" not in str( excpt ):
+            if "Authorization token does not match" not in str( excpt ):
                 raise
 
         # Check the status
