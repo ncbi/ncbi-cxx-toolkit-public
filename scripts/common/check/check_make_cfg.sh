@@ -516,10 +516,10 @@ saved_path="\$PATH"
 FEATURES="$x_features"
 export FEATURES
 
-# Add current configuration's build and dll build directories to PATH
-export PATH=".:\${build_dir}/\${build_tree}/bin/\${build_cfg}:\${build_dir}/\${build_tree}/lib/\${build_cfg}:\${build_dir}/dll/bin/\${build_cfg}:\${saved_path}"
+# Add current configuration's build 'bin' and 'lib' directories to PATH
+export PATH=".:\${build_dir}/\${build_tree}/bin/\${build_cfg}:\${build_dir}/\${build_tree}/lib/\${build_cfg}:\${saved_path}"
 
-# Export bin and lib pathes
+# Export bin and lib paths
 export CFG_BIN="\${build_dir}/\${build_tree}/bin/\${build_cfg}"
 export CFG_LIB="\${build_dir}/\${build_tree}/lib/\${build_cfg}"
 
