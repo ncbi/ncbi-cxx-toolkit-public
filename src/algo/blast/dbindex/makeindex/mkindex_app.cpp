@@ -258,6 +258,11 @@ int CMkIndexApplication::Run()
         exit( 1 );
     }
 
+    if( !old_style && iformat == "fasta" ) {
+        ERR_POST( Error << "new style index requires input format 'blastdb'" );
+        exit( 1 );
+    }
+
     if( !old_style && iformat == "blastdb" ) {
         if( GetArgs()["output"] ) {
             ERR_POST( Warning << 
