@@ -1,4 +1,4 @@
-August 1, 2012
+September 24, 2012
 * 2.2.27 release.
 New features:
 * Composition-based statistics for blastx.
@@ -19,6 +19,11 @@ Bug fixes:
 * Fixed formatting bug when GI input format is provided to blastn.
 * Fixed incorrect composition-statistics default for DELTA-BLAST.
 * Bug fixes in blast_formatter, blastdbcmd.
+* An asterix (stop-codon) in sequence was not rendered properly.
+* The Smith-Waterman option in blastp would cause seg filtering on the subject
+  sequence even if the composition-based statistics were not being used.
+* The makeblastdb taxid_map option is broken.
+
 
 January 31, 2012
 * 2.2.26 release.
