@@ -30,6 +30,9 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbierror.hpp>
+#if defined(NCBI_OS_MSWIN)
+#  include <Winsock2.h>
+#endif
 
 #define NCBI_USE_ERRCODE_X   Corelib_Diag
 
@@ -77,7 +80,66 @@ const CNcbiError& CNcbiError::GetLast(void)
     return *NcbiError_GetOrCreate();
 }
 
-void  CNcbiError::Set(ECode code, const string& extra)
+CNcbiError::ECode CNcbiError::Code(void) const
+{
+#if defined(NCBI_OS_MSWIN)
+    if (m_Code == eNotSet) {
+//        if (e->m_Category == eMsWindows)
+        switch (m_Native) {
+        case ERROR_ACCESS_DENIED:       m_Code = ePermissionDenied;              break;
+        case ERROR_ALREADY_EXISTS:      m_Code = eFileExists;                    break;
+        case ERROR_BAD_ARGUMENTS:       m_Code = eInvalidArgument;               break;
+        case ERROR_BAD_EXE_FORMAT:      m_Code = eExecutableFormatError;         break;
+        case ERROR_BROKEN_PIPE:         m_Code = eBrokenPipe;                    break;
+        case ERROR_DIR_NOT_EMPTY:       m_Code = eDirectoryNotEmpty;             break;
+        case ERROR_DISK_FULL:           m_Code = eNoSpaceOnDevice;               break;
+        case ERROR_FILE_EXISTS:         m_Code = eFileExists;                    break;
+        case ERROR_FILE_NOT_FOUND:      m_Code = eNoSuchFileOrDirectory;         break;
+        case ERROR_NOT_ENOUGH_MEMORY:   m_Code = eNotEnoughMemory;               break;
+        case ERROR_NOT_SUPPORTED:       m_Code = eNotSupported;                  break;
+        case ERROR_PATH_NOT_FOUND:      m_Code = eNoSuchFileOrDirectory;         break;
+        case ERROR_TOO_MANY_OPEN_FILES: m_Code = eTooManyFilesOpen;              break;
+
+        case WSAEADDRINUSE:             m_Code = eAddressInUse;                  break; //EADDRINUSE
+        case WSAEADDRNOTAVAIL:          m_Code = eAddressNotAvailable;           break; //ADDRNOTAVAIL
+        case WSAEAFNOSUPPORT:           m_Code = eAddressFamilyNotSupported;     break; //EAFNOSUPPORT
+        case WSAEALREADY:               m_Code = eConnectionAlreadyInProgress;   break; //EALREADY
+        case WSAECONNABORTED:           m_Code = eConnectionAborted;             break; //ECONNABORTED
+        case WSAECONNREFUSED:           m_Code = eConnectionRefused;             break; //ECONNREFUSED
+        case WSAECONNRESET:             m_Code = eConnectionReset;               break; //ECONNRESET
+        case WSAEDESTADDRREQ:           m_Code = eDestinationAddressRequired;    break; //EDESTADDRREQ
+        case WSAEHOSTUNREACH:           m_Code = eHostUnreachable;               break; //EHOSTUNREACH
+        case WSAEINPROGRESS:            m_Code = eOperationInProgress;           break; //EINPROGRESS
+        case WSAEINTR:                  m_Code = eInterrupted;                   break; //EINTR
+        case WSAEISCONN:                m_Code = eAlreadyConnected;              break; //EISCONN
+        case WSAELOOP:                  m_Code = eTooManySymbolicLinkLevels;     break; //ELOOP 
+        case WSAEMSGSIZE:               m_Code = eMessageSize;                   break; //EMSGSIZE
+        case WSAENAMETOOLONG:           m_Code = eFilenameTooLong;               break; //ENAMETOOLONG
+        case WSAENETDOWN:               m_Code = eNetworkDown;                   break; //ENETDOWN
+        case WSAENETRESET:              m_Code = eNetworkReset;                  break; //ENETRESET
+        case WSAENETUNREACH:            m_Code = eNetworkUnreachable;            break; //ENETUNREACH
+        case WSAENOBUFS:                m_Code = eNoBufferSpace;                 break; //ENOBUFS
+        case WSAENOPROTOOPT:            m_Code = eNoProtocolOption;              break; //ENOPROTOOPT
+        case WSAENOTCONN:               m_Code = eNotConnected;                  break; //ENOTCONN
+        case WSAENOTEMPTY:              m_Code = eDirectoryNotEmpty;             break; //ENOTEMPTY
+        case WSAENOTSOCK:               m_Code = eNotASocket;                    break; //ENOTSOCK
+        case WSAEOPNOTSUPP:             m_Code = eOperationNotSupported;         break; //EOPNOTSUPP
+        case WSAEPROTONOSUPPORT:        m_Code = eProtocolNotSupported;          break; //EPROTONOSUPPORT
+        case WSAEPROTOTYPE:             m_Code = eWrongProtocolType;             break; //EPROTOTYPE
+        case WSAESHUTDOWN:              m_Code = eBrokenPipe;                    break; //     EPIPE ?
+        case WSAETIMEDOUT:              m_Code = eTimedOut;                      break; //ETIMEDOUT
+        case WSAEWOULDBLOCK:            m_Code = eOperationWouldBlock;           break; //EWOULDBLOCK 
+
+        default:
+            m_Code     = eUnknown;
+            break;
+        }
+    }
+#endif
+    return m_Code;
+}
+
+void  CNcbiError::Set(ECode code, const CTempString& extra)
 {
     CNcbiError* e = NcbiError_GetOrCreate();
     e->m_Code     = code;
@@ -86,58 +148,34 @@ void  CNcbiError::Set(ECode code, const string& extra)
     e->m_Extra    = extra;
 }
 
-void  CNcbiError::SetErrno(int native_err_code, const string& extra)
+void  CNcbiError::SetErrno(int native_err_code, const CTempString& extra)
 {
     CNcbiError* e = NcbiError_GetOrCreate();
-    e->m_Code     = (ECode)native_err_code;
+    e->m_Code     = ECode(native_err_code);
     e->m_Category = e->m_Code < eUnknown ? eGeneric : eNcbi;
     e->m_Native   = native_err_code;
     e->m_Extra    = extra;
 }
-void  CNcbiError::SetFromErrno(const string& extra)
+void  CNcbiError::SetFromErrno(const CTempString& extra)
 {
     SetErrno(errno,extra);
 }
-void  CNcbiError::SetWindowsError( int native_err_code, const string& extra)
+
+#if defined(NCBI_OS_MSWIN)
+void  CNcbiError::SetWindowsError( int native_err_code, const CTempString& extra)
 {
     CNcbiError* e = NcbiError_GetOrCreate();
-//TODO: make translation!
-#if NCBI_OS_MSWIN
-    switch (native_err_code) {
-    case ERROR_FILE_NOT_FOUND:      e->m_Code = no_such_file_or_directory; break;
-    case ERROR_PATH_NOT_FOUND:      e->m_Code = no_such_file_or_directory; break;
-    case ERROR_TOO_MANY_OPEN_FILES: e->m_Code = too_many_files_open;       break;
-    case ERROR_ACCESS_DENIED:       e->m_Code = permission_denied;         break;
-    case ERROR_NOT_ENOUGH_MEMORY:   e->m_Code = not_enough_memory;         break;
-    case ERROR_NOT_SUPPORTED:       e->m_Code = not_supported;             break;
-    case ERROR_FILE_EXISTS:         e->m_Code = file_exists;               break;
-    case ERROR_BROKEN_PIPE:         e->m_Code = broken_pipe;               break;
-    case ERROR_DISK_FULL:           e->m_Code = no_space_on_device;        break;
-    case ERROR_DIR_NOT_EMPTY:       e->m_Code = directory_not_empty;       break;
-    case ERROR_BAD_ARGUMENTS:       e->m_Code = invalid_argument;          break;
-    case ERROR_ALREADY_EXISTS:      e->m_Code = file_exists;               break;
-    case ERROR_BAD_EXE_FORMAT:      e->m_Code = executable_format_error;   break;
-    default:
-        e->m_Code     = eUnknown;
-        break;
-    }
-#else
-        e->m_Code     = eUnknown;
-#endif
-
+    e->m_Code     = eNotSet;
     e->m_Category = eMsWindows;
     e->m_Native   = native_err_code;
     e->m_Extra    = extra;
 }
-void  CNcbiError::SetFromWindowsError(                  const string& extra)
-{
-#if defined(NCBI_OS_MSWIN)
-    SetWindowsError(GetLastError(),extra);
-#else
-    Set(eUnknown,extra);
-#endif
-}
 
+void  CNcbiError::SetFromWindowsError( const CTempString& extra)
+{
+    SetWindowsError( GetLastError(), extra );
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

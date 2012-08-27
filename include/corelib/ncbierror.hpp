@@ -1,5 +1,5 @@
-#ifndef NCBIERROR__HPP
-#define NCBIERROR__HPP
+#ifndef CORELIB___NCBIERROR__HPP
+#define CORELIB___NCBIERROR__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -32,352 +32,151 @@
  */
 
 /// @file ncbierror.hpp
-/// Defines NCBI C++ error code.
+/// Defines NCBI C++ Toolkit portable error codes.
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <errno.h>
 #include <string>
+#include <corelib/impl/ncbierror_impl.hpp>
+
 
 /** @addtogroup Exception
  *
  * @{
  */
 
-
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-/*  errno codes:
-E2BIG
-EACCES
-EADDRINUSE
-EADDRNOTAVAIL
-EAFNOSUPPORT
-EAGAIN
-EALREADY
-EBADF
-EBADMSG
-EBUSY
-ECANCELED
-ECHILD
-ECONNABORTED
-ECONNREFUSED
-ECONNRESET
-EDEADLK
-EDESTADDRREQ
-EDOM
-EEXIST
-EFAULT
-EFBIG
-EHOSTUNREACH
-EIDRM
-EILSEQ
-EINPROGRESS
-EINTR
-EINVAL
-EIO
-EISCONN
-EISDIR
-ELOOP
-EMFILE
-EMLINK
-EMSGSIZE
-ENAMETOOLONG
-ENETDOWN
-ENETRESET
-ENETUNREACH
-ENFILE
-ENOBUFS
-ENODATA
-ENODEV
-ENOENT
-ENOEXEC
-ENOLCK
-ENOLINK
-ENOMEM
-ENOMSG
-ENOPROTOOPT
-ENOSPC
-ENOSR
-ENOSTR
-ENOSYS
-ENOTCONN
-ENOTDIR
-ENOTEMPTY
-ENOTRECOVERABLE
-ENOTSOCK
-ENOTSUP
-ENOTTY
-ENXIO
-EOPNOTSUPP
-EOVERFLOW
-EOWNERDEAD
-EPERM
-EPIPE
-EPROTO
-EPROTONOSUPPORT
-EPROTOTYPE
-ERANGE
-EROFS
-ESPIPE
-ESRCH
-ETIME
-ETIMEDOUT
-ETXTBSY
-EWOULDBLOCK
-EXDEV
-*/
-// define missing errno codes
-
-#define NCBI_ERRNO_BASE 1000
-
-#ifndef EADDRINUSE
-#    define EADDRINUSE      NCBI_ERRNO_BASE
-#endif
-#ifndef EADDRNOTAVAIL
-#    define EADDRNOTAVAIL   NCBI_ERRNO_BASE+1
-#endif
-#ifndef EAFNOSUPPORT
-#    define EAFNOSUPPORT    NCBI_ERRNO_BASE+2
-#endif
-#ifndef EALREADY
-#    define EALREADY        NCBI_ERRNO_BASE+3
-#endif
-#ifndef EBADMSG
-#    define EBADMSG         NCBI_ERRNO_BASE+4
-#endif
-#ifndef ECANCELED
-#    define ECANCELED       NCBI_ERRNO_BASE+5
-#endif
-#ifndef ECONNABORTED
-#    define ECONNABORTED    NCBI_ERRNO_BASE+6
-#endif
-#ifndef ECONNREFUSED
-#    define ECONNREFUSED    NCBI_ERRNO_BASE+7
-#endif
-#ifndef ECONNRESET
-#    define ECONNRESET      NCBI_ERRNO_BASE+8
-#endif
-#ifndef EDESTADDRREQ
-#    define EDESTADDRREQ    NCBI_ERRNO_BASE+9
-#endif
-#ifndef EHOSTUNREACH
-#    define EHOSTUNREACH    NCBI_ERRNO_BASE+10
-#endif
-#ifndef EIDRM
-#    define EIDRM           NCBI_ERRNO_BASE+11
-#endif
-#ifndef EINPROGRESS
-#    define EINPROGRESS     NCBI_ERRNO_BASE+12
-#endif
-#ifndef EISCONN
-#    define EISCONN         NCBI_ERRNO_BASE+13
-#endif
-#ifndef ELOOP
-#    define ELOOP           NCBI_ERRNO_BASE+14
-#endif
-#ifndef EMSGSIZE
-#    define EMSGSIZE        NCBI_ERRNO_BASE+15
-#endif
-#ifndef ENETDOWN
-#    define ENETDOWN        NCBI_ERRNO_BASE+16
-#endif
-#ifndef ENETRESET
-#    define ENETRESET       NCBI_ERRNO_BASE+17
-#endif
-#ifndef ENETUNREACH
-#    define ENETUNREACH     NCBI_ERRNO_BASE+18
-#endif
-#ifndef ENOBUFS
-#    define ENOBUFS         NCBI_ERRNO_BASE+19
-#endif
-#ifndef ENODATA
-#    define ENODATA         NCBI_ERRNO_BASE+20
-#endif
-#ifndef ENOLINK
-#    define ENOLINK         NCBI_ERRNO_BASE+21
-#endif
-#ifndef ENOMSG
-#    define ENOMSG          NCBI_ERRNO_BASE+22
-#endif
-#ifndef ENOPROTOOPT
-#    define ENOPROTOOPT     NCBI_ERRNO_BASE+23
-#endif
-#ifndef ENOSR
-#    define ENOSR           NCBI_ERRNO_BASE+24
-#endif
-#ifndef ENOSTR
-#    define ENOSTR          NCBI_ERRNO_BASE+25
-#endif
-#ifndef ENOTCONN
-#    define ENOTCONN        NCBI_ERRNO_BASE+26
-#endif
-#ifndef ENOTRECOVERABLE
-#    define ENOTRECOVERABLE NCBI_ERRNO_BASE+27
-#endif
-#ifndef ENOTSOCK
-#    define ENOTSOCK        NCBI_ERRNO_BASE+28
-#endif
-#ifndef ENOTSUP
-#    define ENOTSUP         NCBI_ERRNO_BASE+29
-#endif
-#ifndef EOPNOTSUPP
-#    define EOPNOTSUPP      NCBI_ERRNO_BASE+30
-#endif
-#ifndef EOTHER
-#    define EOTHER          NCBI_ERRNO_BASE+31
-#endif
-#ifndef EOVERFLOW
-#    define EOVERFLOW       NCBI_ERRNO_BASE+32
-#endif
-#ifndef EOWNERDEAD
-#    define EOWNERDEAD      NCBI_ERRNO_BASE+33
-#endif
-#ifndef EPROTO
-#    define EPROTO          NCBI_ERRNO_BASE+34
-#endif
-#ifndef EPROTONOSUPPORT
-#    define EPROTONOSUPPORT NCBI_ERRNO_BASE+35
-#endif
-#ifndef EPROTOTYPE
-#    define EPROTOTYPE      NCBI_ERRNO_BASE+36
-#endif
-#ifndef ETIME
-#    define ETIME           NCBI_ERRNO_BASE+37
-#endif
-#ifndef ETIMEDOUT
-#    define ETIMEDOUT       NCBI_ERRNO_BASE+38
-#endif
-#ifndef ETXTBSY
-#    define ETXTBSY         NCBI_ERRNO_BASE+39
-#endif
-#ifndef EWOULDBLOCK
-#    define EWOULDBLOCK     NCBI_ERRNO_BASE+40
-#endif
 
 class NCBI_XNCBI_EXPORT CNcbiError
 {
 public:
     enum ECode {
+        eNotSet                         = -1,
+        eSuccess                        = 0,
 
-        eSuccess                       = 0,
+        /// Generic error codes are set based on errno error codes.
+        eAddressFamilyNotSupported      = EAFNOSUPPORT,
+        eAddressInUse                   = EADDRINUSE,
+        eAddressNotAvailable            = EADDRNOTAVAIL,
+        eAlreadyConnected               = EISCONN,
+        eArgumentListTooLong            = E2BIG,
+        eArgumentOutOfDomain            = EDOM,
+        eBadAddress                     = EFAULT,
+        eBadFileDescriptor              = EBADF,
+        eBadMessage                     = EBADMSG,
+        eBrokenPipe                     = EPIPE,
+        eConnectionAborted              = ECONNABORTED,
+        eConnectionAlreadyInProgress    = EALREADY,
+        eConnectionRefused              = ECONNREFUSED,
+        eConnectionReset                = ECONNRESET,
+        eCrossDeviceLink                = EXDEV,
+        eDestinationAddressRequired     = EDESTADDRREQ,
+        eDeviceOrResourceBusy           = EBUSY,
+        eDirectoryNotEmpty              = ENOTEMPTY,
+        eExecutableFormatError          = ENOEXEC,
+        eFileExists                     = EEXIST,
+        eFileTooLarge                   = EFBIG,
+        eFilenameTooLong                = ENAMETOOLONG,
+        eFunctionNotSupported           = ENOSYS,
+        eHostUnreachable                = EHOSTUNREACH,
+        eIdentifierRemoved              = EIDRM,
+        eIllegalByteSequence            = EILSEQ,
+        eInappropriateIoControlOperation= ENOTTY,
+        eInterrupted                    = EINTR,
+        eInvalidArgument                = EINVAL,
+        eInvalidSeek                    = ESPIPE,
+        eIoError                        = EIO,
+        eIsADirectory                   = EISDIR,
+        eMessageSize                    = EMSGSIZE,
+        eNetworkDown                    = ENETDOWN,
+        eNetworkReset                   = ENETRESET,
+        eNetworkUnreachable             = ENETUNREACH,
+        eNoBufferSpace                  = ENOBUFS,
+        eNoChildProcess                 = ECHILD,
+        eNoLink                         = ENOLINK,
+        eNoLockAvailable                = ENOLCK,
+//        eNoMessageAvailable             = ENODATA,
+        eNoMessage                      = ENOMSG,
+        eNoProtocolOption               = ENOPROTOOPT,
+        eNoSpaceOnDevice                = ENOSPC,
+//        eNoStreamResources              = ENOSR,
+        eNoSuchDeviceOrAddress          = ENXIO,
+        eNoSuchDevice                   = ENODEV,
+        eNoSuchFileOrDirectory          = ENOENT,
+        eNoSuchProcess                  = ESRCH,
+        eNotADirectory                  = ENOTDIR,
+        eNotASocket                     = ENOTSOCK,
+//        eNotAStream                     = ENOSTR,
+        eNotConnected                   = ENOTCONN,
+        eNotEnoughMemory                = ENOMEM,
+        eNotSupported                   = ENOTSUP,
+        eOperationCanceled              = ECANCELED,
+        eOperationInProgress            = EINPROGRESS,
+        eOperationNotPermitted          = EPERM,
+        eOperationNotSupported          = EOPNOTSUPP,
+        eOperationWouldBlock            = EWOULDBLOCK,
+//        eOwnerDead                      = EOWNERDEAD,
+        ePermissionDenied               = EACCES,
+        eProtocolError                  = EPROTO,
+        eProtocolNotSupported           = EPROTONOSUPPORT,
+        eReadOnlyFileSystem             = EROFS,
+        eResourceDeadlockWouldOccur     = EDEADLK,
+        eResourceUnavailableTryAgain    = EAGAIN,
+        eResultOutOfRange               = ERANGE,
+//        eStateNotRecoverable            = ENOTRECOVERABLE,
+//        eStreamTimeout                  = ETIME,
+        eTextFileBusy                   = ETXTBSY,
+        eTimedOut                       = ETIMEDOUT,
+        eTooManyFilesOpenInSystem       = ENFILE,
+        eTooManyFilesOpen               = EMFILE,
+        eTooManyLinks                   = EMLINK,
+        eTooManySymbolicLinkLevels      = ELOOP,
+        eValueTooLarge                  = EOVERFLOW,
+        eWrongProtocolType              = EPROTOTYPE,
 
-// names of generic error codes
-        address_family_not_supported   = EAFNOSUPPORT,
-        address_in_use                 = EADDRINUSE,
-        address_not_available          = EADDRNOTAVAIL,
-        already_connected              = EISCONN,
-        argument_list_too_long         = E2BIG,
-        argument_out_of_domain         = EDOM,
-        bad_address                    = EFAULT,
-        bad_file_descriptor            = EBADF,
-        bad_message                    = EBADMSG,
-        broken_pipe                    = EPIPE,
-        connection_aborted             = ECONNABORTED,
-        connection_already_in_progress = EALREADY,
-        connection_refused             = ECONNREFUSED,
-        connection_reset               = ECONNRESET,
-        cross_device_link              = EXDEV,
-        destination_address_required   = EDESTADDRREQ,
-        device_or_resource_busy        = EBUSY,
-        directory_not_empty            = ENOTEMPTY,
-        executable_format_error        = ENOEXEC,
-        file_exists                    = EEXIST,
-        file_too_large                 = EFBIG,
-        filename_too_long              = ENAMETOOLONG,
-        function_not_supported         = ENOSYS,
-        host_unreachable               = EHOSTUNREACH,
-        identifier_removed             = EIDRM,
-        illegal_byte_sequence          = EILSEQ,
-        inappropriate_io_control_operation = ENOTTY,
-        interrupted                    = EINTR,
-        invalid_argument               = EINVAL,
-        invalid_seek                   = ESPIPE,
-        io_error                       = EIO,
-        is_a_directory                 = EISDIR,
-        message_size                   = EMSGSIZE,
-        network_down                   = ENETDOWN,
-        network_reset                  = ENETRESET,
-        network_unreachable            = ENETUNREACH,
-        no_buffer_space                = ENOBUFS,
-        no_child_process               = ECHILD,
-        no_link                        = ENOLINK,
-        no_lock_available              = ENOLCK,
-        no_message_available           = ENODATA,
-        no_message                     = ENOMSG,
-        no_protocol_option             = ENOPROTOOPT,
-        no_space_on_device             = ENOSPC,
-        no_stream_resources            = ENOSR,
-        no_such_device_or_address      = ENXIO,
-        no_such_device                 = ENODEV,
-        no_such_file_or_directory      = ENOENT,
-        no_such_process                = ESRCH,
-        not_a_directory                = ENOTDIR,
-        not_a_socket                   = ENOTSOCK,
-        not_a_stream                   = ENOSTR,
-        not_connected                  = ENOTCONN,
-        not_enough_memory              = ENOMEM,
-        not_supported                  = ENOTSUP,
-        operation_canceled             = ECANCELED,
-        operation_in_progress          = EINPROGRESS,
-        operation_not_permitted        = EPERM,
-        operation_not_supported        = EOPNOTSUPP,
-        operation_would_block          = EWOULDBLOCK,
-        owner_dead                     = EOWNERDEAD,
-        permission_denied              = EACCES,
-        protocol_error                 = EPROTO,
-        protocol_not_supported         = EPROTONOSUPPORT,
-        read_only_file_system          = EROFS,
-        resource_deadlock_would_occur  = EDEADLK,
-        resource_unavailable_try_again = EAGAIN,
-        result_out_of_range            = ERANGE,
-        state_not_recoverable          = ENOTRECOVERABLE,
-        stream_timeout                 = ETIME,
-        text_file_busy                 = ETXTBSY,
-        timed_out                      = ETIMEDOUT,
-        too_many_files_open_in_system  = ENFILE,
-        too_many_files_open            = EMFILE,
-        too_many_links                 = EMLINK,
-        too_many_symbolic_link_levels  = ELOOP,
-        value_too_large                = EOVERFLOW,
-        wrong_protocol_type            = EPROTOTYPE
+        /// Unknown error
+        eUnknown = 0x1000
 
-// Unknown error
-        , eUnknown             = 0x1000
-
-// NCBI-specific error codes
+        /// NCBI-specific error codes
     };
 
+    /// Error code category.
     enum ECategory {
-          eGeneric   = 0
-        , eNcbi      = 1
-        , eMsWindows = 2
+        eGeneric   = 0,
+        eNcbi      = 1,
+        eMsWindows = 2
     };
 
-    ECode Code(void) const {
-        return m_Code;
-    }    
+    /// Get error code.
+    ECode Code(void) const;
+
+    /// Get error code category.
     ECategory Category(void) const {
         return m_Category;
-    }    
+    } 
+   
+    /// Get native numeric value of the error.
     int Native(void) const {
         return m_Native;
     }    
+
+    /// Get string information provided when this error was set.
     const string& Extra(void) const {
         return m_Extra;
     }    
 
+    /// Copy constructor
     CNcbiError(const CNcbiError& err)
         : m_Code(err.m_Code), m_Category(err.m_Category)
-        , m_Native(err.m_Native), m_Extra(err.m_Extra) {
-    }
-    ~CNcbiError(void)
-    {
-    }
+        , m_Native(err.m_Native), m_Extra(err.m_Extra) {}
 
-    CNcbiError& operator=(const CNcbiError& err) {
+    ~CNcbiError(void){}
+
+    /// Assignment.
+    CNcbiError& operator= (const CNcbiError& err) {
         m_Code    = err.m_Code;
         m_Category= err.m_Category;
         m_Native  = err.m_Native;
@@ -385,109 +184,85 @@ public:
         return *this;
     }
 
-    bool operator==(const CNcbiError& err) const {
-        return 
-            m_Native  == err.m_Native &&
-            m_Category== err.m_Category;
+    /// Comparison.
+    bool operator== (ECode err) const {
+        return Code() == err;
     }
 
-    DECLARE_OPERATOR_BOOL(m_Code != eSuccess);
+    /// Operator bool: returns TRUE if error was not set to "success"
+    DECLARE_OPERATOR_BOOL(Code() != eSuccess);
 
+    /// Get the error that was last set (in the current thread)
+    /// @sa Set(), SetErrno(), SetFromErrno(), SetWindowsError()
+    /// @sa SetFromWindowsError()
     static const CNcbiError& GetLast(void);
 
-    static void  Set(                     ECode code,  const string& extra = kEmptyStr);
-    static void  SetErrno(        int native_err_code, const string& extra = kEmptyStr);
-    static void  SetFromErrno(                         const string& extra = kEmptyStr);
-    static void  SetWindowsError( int native_err_code, const string& extra = kEmptyStr);
-    static void  SetFromWindowsError(                  const string& extra = kEmptyStr);
+    /// Set last error using native error code enum
+    ///
+    /// @param code
+    ///   Error code
+    /// @param extra
+    ///   Additional information
+    static void Set(ECode code, const CTempString& extra = CTempString());
+
+    /// Set last error using errno code
+    ///
+    /// @param errno_code
+    ///   "errno" code
+    /// @param extra
+    ///   Additional information
+    static void SetErrno(int                errno_code,
+                         const CTempString& extra = CTempString());
+
+    /// Set last error using current "errno" code
+    ///
+    /// @param extra
+    ///   Additional information
+    static void SetFromErrno(const CTempString& extra = CTempString());
+
+#if defined(NCBI_OS_MSWIN)
+    /// Set last error using Windows-specific error code
+    ///
+    /// @param native_err_code
+    ///   Windows-specific error code
+    /// @param extra
+    ///   Additional information
+    /// @note
+    ///   Not all Windows errors can be translated into ECode enum.
+    ///   In this case, Code() will return 'eUnknown'
+    static void SetWindowsError(int                native_err_code,
+                                const CTempString& extra = CTempString());
+
+    /// Set last error on MS Windows using GetLastError()
+    ///
+    /// @param extra
+    ///   Additional information
+    /// @note
+    ///   Not all Windows errors can be translated into ECode enum.
+    ///   In this case, Code() will return 'eUnknown'
+    static void SetFromWindowsError(const CTempString& extra = CTempString());
+#endif  /* NCBI_OS_MSWIN */
 
 protected:
+    // Prohibit creation of 'empty' error object
     CNcbiError(void);
 
 private:
-    ECode     m_Code;
-    ECategory m_Category;
-    int       m_Native;
-    string    m_Extra;
+    mutable ECode m_Code;
+    ECategory     m_Category;
+    int           m_Native;
+    string        m_Extra;
 };
 
-NCBI_XNCBI_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CNcbiError& err);
 
+/// Serialize error code + description provided by OS + extra string data
+NCBI_XNCBI_EXPORT CNcbiOstream& operator<< (CNcbiOstream&     str,
+                                            const CNcbiError& err);
 
-/////////////////////////////////////////////////////////////////////////////
-// template CheckType
-
-template<typename _Type>
-class CheckType
-{
-public:
-    CheckType(_Type val)
-        : m_Value(val)
-        , m_Checked(false)
-    {
-    }
-    CheckType(const CheckType& t)
-        : m_Value(t.m_Value)
-        , m_Checked(t.m_Checked)
-    {
-        t.m_Checked = true;
-    }
-
-    ~CheckType(void)
-    {
-        if (!m_Checked) {
-            ERR_POST("CheckType value not checked");
-        }
-    }
-    CheckType& operator=(const CheckType& t)
-    {
-        m_Value = t.m_Value;
-        m_Checked = t.m_Checked;
-        t.m_Checked = true;
-        return *this;
-    }
-
-    bool operator==(const CheckType& t) const
-    {
-        m_Checked = true;
-        t.m_Checked = true;
-        return m_Value == t.m_Value;
-    }
-    bool operator!=(const CheckType& t) const
-    {
-        m_Checked = true;
-        t.m_Checked = true;
-        return m_Value != t.m_Value;
-    }
-    bool operator==(const _Type& t) const
-    {
-        m_Checked = true;
-        return m_Value == t;
-    }
-    bool operator!=(const _Type& t) const
-    {
-        m_Checked = true;
-        return m_Value != t;
-    }
-    operator _Type(void) const
-    {
-        m_Checked = true;
-        return m_Value;
-    }
-private:
-    _Type m_Value;
-    mutable bool m_Checked;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-typedef CheckType<bool> CheckBool;
-
-/////////////////////////////////////////////////////////////////////////////
 
 END_NCBI_SCOPE
 
 
 /* @} */
 
-#endif  /* NCBIERROR__HPP */
+#endif  /* CORELIB___NCBIERROR__HPP */
