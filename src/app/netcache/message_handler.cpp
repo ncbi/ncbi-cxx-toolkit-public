@@ -1070,7 +1070,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROLONG",
         {&CNCMessageHandler::x_DoCmd_Prolong,
             "PROLONG",
-            eClientBlobRead + fConfirmOnFinish,
+            eClientBlobRead,
             eNCRead,
             eProxyProlong},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -1969,7 +1969,7 @@ CNCMessageHandler::x_ProlongBlobDeadTime(int add_time)
 
     CSrvTime cur_srv_time = CSrvTime::Current();
     Uint8 cur_time = cur_srv_time.AsUSec();
-    int new_expire = int(cur_srv_time.Sec()) + m_BlobAccess->GetCurBlobTTL();
+    int new_expire = int(cur_srv_time.Sec()) + add_time;
     int old_expire = m_BlobAccess->GetCurBlobExpire();
     if (!CNCServer::IsDebugMode()  &&  new_expire - old_expire < m_AppSetup->ttl_unit)
         return;
@@ -2869,7 +2869,25 @@ CNCMessageHandler::x_DoCmd_GetSize(void)
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Prolong(void)
 {
+    bool ttl_overrun;
+    if (m_BlobTTL <= m_BlobAccess->GetCurBlobTTL())
+        ttl_overrun = false;
+    else {
+        m_BlobTTL = m_BlobAccess->GetCurBlobTTL();
+        ttl_overrun = true;
+    }
     x_ProlongBlobDeadTime(int(m_BlobTTL));
+    // Distinguish "PROLONG" vs "PROXY_PROLONG".
+    // The latter has the fConfirmOnFinish flag and
+    // doesn't require an explicit confirmation.
+    if (x_IsFlagSet(fComesFromClient)) {
+        if (!ttl_overrun)
+            WriteText("OK:\n");
+        else
+            WriteText("OK:WARNING:Capped the requested TTL for '").
+                    WriteText(m_RawKey).WriteText("' at ").
+                    WriteNumber(m_BlobTTL).WriteText(" seconds.\n");
+    }
     return &Me::x_FinishCommand;
 }
 
