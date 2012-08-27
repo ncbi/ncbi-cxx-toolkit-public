@@ -1412,6 +1412,9 @@ void CDataSource::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
 
 void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 {
+    if ( match_map.empty() ) {
+        return;
+    }
     if ( m_Loader ) {
         CDataLoader::TTSE_LockSets tse_sets;
         ITERATE(TSeqMatchMap, match, match_map) {

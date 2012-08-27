@@ -649,6 +649,9 @@ void CDataSource_ScopeInfo::GetBlobs(TSeqMatchMap& match_map)
         ds_match_map.insert(CDataSource::TSeqMatchMap::value_type(
             it->first, SSeqMatch_DS()));
     }
+    if ( match_map.empty() ) {
+        return;
+    }
     GetDataSource().GetBlobs(ds_match_map);
     ITERATE(CDataSource::TSeqMatchMap, ds_match, ds_match_map) {
         if ( !ds_match->second ) {
