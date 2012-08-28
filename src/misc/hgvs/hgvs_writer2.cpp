@@ -679,6 +679,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
          || inst.GetType() == CVariation_inst::eType_prot_neutral
          || inst.GetType() == CVariation_inst::eType_prot_other
          || inst.GetType() == CVariation_inst::eType_prot_silent;
+
     if(is_prot_inst && placement && placement->GetMol() != CVariantPlacement::eMol_protein) {
         NCBI_THROW(CException, eUnknown, "Can't make protein HGVS expression for nucleotide placement");
     }
@@ -727,7 +728,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
     string asserted_seq_str =
            !asserted_seq                   ? ""
-         : asserted_seq->GetLength() < 200 ? x_SeqLiteralToStr(*asserted_seq, is_prot)
+         : asserted_seq->GetLength() < 16  ? x_SeqLiteralToStr(*asserted_seq, is_prot)
          :                                   NStr::NumericToString(asserted_seq->GetLength());
 
 
@@ -767,7 +768,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
     } else if(inst.GetType() == CVariation_inst::eType_del) {
         if(placement && placement->GetLoc().IsWhole()) {
             inst_str = "0"; //whole-product deletion
-        } else if(is_prot_inst) {
+        } else if(is_prot) {
             inst_str = "del"; //do not generate asserted part for protein expressions: SNP-4623
         } else {
             inst_str = "del" + asserted_seq_str;
