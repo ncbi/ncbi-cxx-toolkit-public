@@ -650,7 +650,8 @@ Publication-field ::=  ENUMERATED {
     affil-fax (17) ,
     affil-phone (18) ,
     affil-zipcode (19),
-    authors-initials (20)
+    authors-initials (20),
+    pmid (21)
     }
   
 -- structured comment fields --
@@ -1408,7 +1409,8 @@ Macro-action-choice ::= CHOICE {
   autoapply-structured-comments NULL ,
   reorder-structured-comments NULL ,
   remove-duplicate-structured-comments NULL ,
-  lookup-taxonomy NULL }
+  lookup-taxonomy NULL ,
+  lookup-pubs NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
