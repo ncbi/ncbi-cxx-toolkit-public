@@ -127,6 +127,7 @@ class CMsvcSite
 public:
     CMsvcSite(const string& reg_path);
 
+    void InitializeLibChoices(void);
     // Is REQUIRES provided?
     bool IsProvided(const string& thing, bool deep=true) const;
     
@@ -220,6 +221,7 @@ public:
     bool IsCppflagDescribed(const string& value) const;
 
 private:
+    string m_RegPath;
     CPtbRegistry m_Registry;
     CSimpleMakeFileContents m_UnixMakeDef;
     

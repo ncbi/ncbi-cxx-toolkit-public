@@ -46,6 +46,7 @@ CMsvcSite::TDirectoryExistenceMap CMsvcSite::sm_DirExists;
 //-----------------------------------------------------------------------------
 CMsvcSite::CMsvcSite(const string& reg_path)
 {
+    m_RegPath = reg_path;
     CNcbiIfstream istr(reg_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     m_Registry.Read(istr);
 
@@ -76,24 +77,6 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         ITERATE (list<string>, it, not_provided) {
             m_NotProvidedThing.insert(*it);
         }
-        // special cases
-        str = x_GetConfigureEntry("ComponentChoices");
-        list<string> comp_choices;
-        NStr::Split(str, LIST_SEPARATOR, comp_choices);
-        ITERATE(list<string>, p, comp_choices) {
-            const string& choice_str = *p;
-            string lib_id;
-            string lib_3party_id;
-            if ( NStr::SplitInTwo(choice_str, "/", lib_id, lib_3party_id) ) {
-                if (IsProvided(lib_3party_id))
-                {
-                    m_NotProvidedThing.insert(lib_id);
-                }
-            } else {
-               PTB_ERROR_EX(reg_path, ePTB_ConfigurationError,
-                            "ComponentChoices: " << choice_str);
-            }
-        }
     } else {
         // unix
         string unix_cfg = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(),"MetaData");
@@ -117,10 +100,36 @@ CMsvcSite::CMsvcSite(const string& reg_path)
                 m_ProvidedThing.insert(name);
             }
         }
+    }
+}
+
+void CMsvcSite::InitializeLibChoices(void)
+{
+    string str;
+
+    str = x_GetConfigureEntry("ComponentChoices");
+    list<string> comp_choices;
+    NStr::Split(str, LIST_SEPARATOR, comp_choices);
+
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         // special cases
-        str = x_GetConfigureEntry("ComponentChoices");
-        list<string> comp_choices;
-        NStr::Split(str, LIST_SEPARATOR, comp_choices);
+        ITERATE(list<string>, p, comp_choices) {
+            const string& choice_str = *p;
+            string lib_id;
+            string lib_3party_id;
+            if ( NStr::SplitInTwo(choice_str, "/", lib_id, lib_3party_id) ) {
+                if (IsProvided(lib_3party_id))
+                {
+                    m_NotProvidedThing.insert(lib_id);
+                }
+            } else {
+               PTB_ERROR_EX(m_RegPath, ePTB_ConfigurationError,
+                            "ComponentChoices: " << choice_str);
+            }
+        }
+    } else {
+        // unix
+        // special cases
         ITERATE(list<string>, p, comp_choices) {
             const string& choice_str = *p;
             string lib_id;
@@ -131,7 +140,7 @@ CMsvcSite::CMsvcSite(const string& reg_path)
                     m_NotProvidedThing.insert(lib_3party_id);
                 }
             } else {
-               PTB_ERROR_EX(reg_path, ePTB_ConfigurationError,
+               PTB_ERROR_EX(m_RegPath, ePTB_ConfigurationError,
                             "ComponentChoices: " << choice_str);
             }
         }
@@ -148,13 +157,11 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         if ( NStr::SplitInTwo(choice_str, "/", lib_id, lib_3party_id) ) {
             m_LibChoices.push_back(SLibChoice(*this, lib_id, lib_3party_id));
         } else {
-           PTB_ERROR_EX(reg_path, ePTB_ConfigurationError,
+           PTB_ERROR_EX(m_RegPath, ePTB_ConfigurationError,
                         "Invalid LibChoices definition: " << choice_str);
         }
     }
-
 }
-
 
 bool CMsvcSite::IsProvided(const string& thing, bool deep) const
 {
@@ -518,6 +525,9 @@ void CMsvcSite::GetLibChoiceIncludes(
             bool b3;
             if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
                 b3 = choice.m_Choice == e3PartyLib;
+                if (lib_id == "lzo") {
+                    b3 = IsLibOk(lib_info, true);
+                }
             } else {
                 b3 = IsLibOk(lib_info, true);
             }

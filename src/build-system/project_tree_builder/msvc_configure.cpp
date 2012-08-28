@@ -132,6 +132,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
 {
     _TRACE("*** Analyzing 3rd party libraries availability ***");
     
+    site.InitializeLibChoices();
     InitializeFrom(site);
     site.ProcessMacros(configs);
 
