@@ -222,13 +222,21 @@ if test "$TERM" = "dumb"; then
 fi
 
 CANDIDATE=".candidate"
-if test -f "$SLN_PATH.xcodeproj/project.pbxproj$CANDIDATE"; then
-  cd "$SLN_PATH.xcodeproj"
-  for item in *; do
-    if test "$item" != "project.pbxproj$CANDIDATE" -a "$item" != "project.pbxproj"; then
-      rm -rf "$item"
-    fi
-  done
-  mv -f "project.pbxproj$CANDIDATE" "project.pbxproj"
-fi
+curdir=`pwd`
+slndir=`dirname $SLN_PATH`
+cd $slndir
+slndir=`pwd`
+for p in *.xcodeproj; do
+  if test -f "$p/project.pbxproj$CANDIDATE"; then
+    cd "$p"
+    for item in *; do
+      if test "$item" != "project.pbxproj$CANDIDATE" -a "$item" != "project.pbxproj"; then
+        rm -rf "$item"
+      fi
+    done
+    mv -f "project.pbxproj$CANDIDATE" "project.pbxproj"
+    cd $slndir
+  fi
+done
+cd $curdir
 exit 0
