@@ -955,12 +955,13 @@ int CGridCommandLineInterfaceApp::Run()
                     clparser.AddAssociation(i, *cmd_opt);
         }
 
+        if (!ParseLoginToken(GetEnvironment().Get(LOGIN_TOKEN_ENV).c_str()))
+            return 1;
+
         try {
             int cmd_id = clparser.Parse(m_ArgC, m_ArgV);
             if (cmd_id < 0)
                 return 0;
-
-            ParseLoginToken(GetEnvironment().Get(LOGIN_TOKEN_ENV).c_str());
 
             cmd_def = s_CommandDefinitions + cmd_id;
         }
@@ -991,7 +992,8 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.id = opt_value;
                 break;
             case eLoginToken:
-                ParseLoginToken(opt_value);
+                if (!ParseLoginToken(opt_value))
+                    return 1;
                 break;
             case eAuth:
                 m_Opts.auth = opt_value;
@@ -1244,10 +1246,10 @@ CNetScheduleAPI::EJobStatus CGridCommandLineInterfaceApp::StringToJobStatus(
 #define TRUE_VALUES '1': case 'E': case 'T': \
         case 'Y': case 'e': case 't': case 'y'
 
-void CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
+bool CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
 {
     if (*token == '\0')
-        return;
+        return true;
 
     const char* end;
 
@@ -1264,8 +1266,8 @@ void CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
 
         end = strchr(token, '_');
         if (end == NULL) {
-            NCBI_THROW(CArgException, eInvalidArg,
-                    "Invalid login token format.\n");
+            fprintf(stderr, GRID_APP_NAME ": invalid login token format.\n");
+            return false;
         }
 
         CTempString key(token, end - token);
@@ -1323,6 +1325,8 @@ void CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
 
     DefineClientNode(user, host);
     DefineClientSession(pid, timestamp, uid);
+
+    return true;
 }
 
 void CGridCommandLineInterfaceApp::DefineClientNode(
