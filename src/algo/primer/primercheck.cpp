@@ -570,52 +570,73 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
     //the backbone such as chromosome
     CRef<CSeq_loc> backbone_loc (0);
     CRef<CSeq_loc> component_loc (0);
-    
-    if ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome &&
-        ((hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
-         (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con || 
-         (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs)) {
+    int num_try = 0;
+    //try backbone and component on template or hit as we don't know which is which
+    //at least hit or template needs to be chr or contig
+    if ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome) {
+        //template as backbone
         backbone_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
                                     (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
                                     (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
-
         component_loc = new CSeq_loc((CSeq_loc::TId &) left_align.GetSeq_id(1),
-                                      (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), right_align.GetSeqRange(1).GetFrom()),
-                                      (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), right_align.GetSeqRange(1).GetTo())); 
-        
-    } else if ((hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome &&
-               ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
-                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con || 
-                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs)) {
+                                     (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), 
+                                                            right_align.GetSeqRange(1).GetFrom()),
+                                     (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), 
+                                                            right_align.GetSeqRange(1).GetTo())); 
+    } else if ((hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome) {
+        //hit as backbone
         backbone_loc =  new CSeq_loc((CSeq_loc::TId &)left_align.GetSeq_id(1),
-                                     (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), right_align.GetSeqRange(1).GetFrom()),
-                                     (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), right_align.GetSeqRange(1).GetTo())); 
+                                     (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), 
+                                                            right_align.GetSeqRange(1).GetFrom()),
+                                     (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), 
+                                                            right_align.GetSeqRange(1).GetTo())); 
         component_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
                                      (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
                                      (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
-      
-    } else {
-        return same_target;
-    }
+        
 
-
-    //  cerr << MSerial_AsnText << *backbone_loc << endl;
-    //    cerr << MSerial_AsnText << *component_loc << endl;
-    CSeq_id_Handle backbone_idh = sequence::GetIdHandle(*backbone_loc, m_FeatureScope);
-    CBioseq_Handle backbone_handle = m_FeatureScope->GetBioseqHandle(backbone_idh);
-    CSeq_loc_Mapper mapper(1, backbone_handle, CSeq_loc_Mapper::eSeqMap_Down);
-    CRef<CSeq_loc> backbone_component = mapper.Map(*backbone_loc);
-    
-    if (backbone_component) {
-        sequence::ECompare compare_result = 
-            sequence::Compare(*backbone_component, *component_loc, m_FeatureScope);
-        if ( compare_result == sequence::eContains ||
-             compare_result ==  sequence::eContained) {
-         
-            same_target = true;
-        } 
+    } else if ((hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con) {
+        //hit as backbone
+        backbone_loc =  new CSeq_loc((CSeq_loc::TId &)left_align.GetSeq_id(1),
+                                     (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), 
+                                                            right_align.GetSeqRange(1).GetFrom()),
+                                     (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), 
+                                                            right_align.GetSeqRange(1).GetTo())); 
+        component_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
+                                     (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
+                                     (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
+        
+        
+    } else if ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con) {
+        //template as backbone
+        backbone_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
+                                    (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
+                                    (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
+        component_loc = new CSeq_loc((CSeq_loc::TId &) left_align.GetSeq_id(1),
+                                     (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), 
+                                                            right_align.GetSeqRange(1).GetFrom()),
+                                     (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), 
+                                                            right_align.GetSeqRange(1).GetTo())); 
     }
     
+    if (backbone_loc && component_loc) {
+        CSeq_id_Handle backbone_idh = sequence::GetIdHandle(*backbone_loc, m_FeatureScope);
+        CBioseq_Handle backbone_handle = m_FeatureScope->GetBioseqHandle(backbone_idh);
+        CSeq_loc_Mapper mapper(1, backbone_handle, CSeq_loc_Mapper::eSeqMap_Down);
+        mapper.KeepNonmappingRanges(); 
+        CRef<CSeq_loc> backbone_component = mapper.Map(*backbone_loc);
+        
+        if (backbone_component) {
+            sequence::ECompare compare_result = 
+                sequence::Compare(*backbone_component, *component_loc, m_FeatureScope);
+            if ( compare_result == sequence::eContains ||
+                 compare_result ==  sequence::eContained) {
+                
+                same_target = true;
+            }
+        }
+    }
+   
     return same_target;
 }
 
@@ -698,14 +719,19 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
         
         m_SelfHit.push_back(info);
     } else if (m_TemplateHandle.GetSeqId()->Which() != CSeq_id::e_Local && 
-               ((hit_type & CSeq_id::eAcc_division_mask) == 
-                CSeq_id::eAcc_chromosome || 
-                (m_TemplateType & CSeq_id::eAcc_division_mask) == 
-                CSeq_id::eAcc_chromosome) &&
+               ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome ||
+                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
+                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con || 
+                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs ||
+                m_TemplateType == CSeq_id::eAcc_refseq_genomic) &&
+               ((hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome ||
+                (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
+                (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con || 
+                (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs) &&
                hit_type != m_TemplateType &&
                !template_hit_same_id &&
                x_SequencesMappedToSameTarget(hit_type, left_align, right_align)) {
-        
+        //try mapping the template
         m_SelfHit.push_back(info);
         cerr << "self hit by mapping" << endl;
     } else {
