@@ -274,12 +274,19 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     void SetCommunicationTimeout(const STimeout& to);
     STimeout  GetCommunicationTimeout() const;
 
+    /// Return a CNetServerMultilineCmdOutput object for reading
+    /// meta information about the specified blob.
+    CNetServerMultilineCmdOutput GetBlobInfo(const string& key,
+            int version, const string& subkey);
+
     /// Print meta information about the specified blob.
     void PrintBlobInfo(const string& key, int version, const string& subkey);
 
     /// Return the server that this object is
     /// currently using for blob access.
     CNetServer GetCurrentServer();
+
+    CNetService GetService();
 };
 
 class NCBI_NET_CACHE_EXPORT CNetICachePasswordGuard

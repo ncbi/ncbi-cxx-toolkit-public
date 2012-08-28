@@ -426,7 +426,7 @@ private:
     void PrintBlobMeta(const CNetCacheKey& key);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);
-    void PrintICacheServerUsed();
+    void PrintSelectedICacheServer();
     void SetUp_NetScheduleCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void JobInfo_PrintStatus(CNetScheduleAPI::EJobStatus status);

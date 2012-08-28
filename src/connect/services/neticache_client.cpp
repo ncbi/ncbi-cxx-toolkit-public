@@ -649,7 +649,7 @@ void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
     }
 }
 
-void CNetICacheClient::PrintBlobInfo(const string& key,
+CNetServerMultilineCmdOutput CNetICacheClient::GetBlobInfo(const string& key,
         int version, const string& subkey)
 {
     CNetServerMultilineCmdOutput output(m_Impl->StickToServerAndExec(
@@ -658,10 +658,22 @@ void CNetICacheClient::PrintBlobInfo(const string& key,
 
     output->SetNetCacheCompatMode();
 
+    return output;
+}
+
+void CNetICacheClient::PrintBlobInfo(const string& key,
+        int version, const string& subkey)
+{
+    CNetServerMultilineCmdOutput output(GetBlobInfo(key, version, subkey));
+
     string line;
 
-    while (output.ReadLine(line))
-        NcbiCout << line << NcbiEndl;
+    if (output.ReadLine(line)) {
+        if (!NStr::StartsWith(line, "SIZE="))
+            NcbiCout << line << NcbiEndl;
+        while (output.ReadLine(line))
+            NcbiCout << line << NcbiEndl;
+    }
 }
 
 CNetServer CNetICacheClient::GetCurrentServer()
@@ -669,6 +681,10 @@ CNetServer CNetICacheClient::GetCurrentServer()
     return m_Impl->m_SelectedServer;
 }
 
+CNetService CNetICacheClient::GetService()
+{
+    return m_Impl->m_Service;
+}
 
 string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
     const string& blob_id, const string& injection)

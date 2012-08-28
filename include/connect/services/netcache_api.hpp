@@ -327,6 +327,10 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// Remove BLOB by key
     void Remove(const string& blob_id);
 
+    /// Return a CNetServerMultilineCmdOutput object for reading
+    /// meta information about the specified blob.
+    CNetServerMultilineCmdOutput GetBlobInfo(const string& blob_id);
+
     /// Print meta information about the specified blob.
     void PrintBlobInfo(const string& blob_id);
 

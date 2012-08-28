@@ -495,7 +495,7 @@ void CNetCacheAPI::SetMirroringMode(CNetCacheAPI::EMirroringMode mirroring_mode)
     m_Impl->m_MirroringMode = mirroring_mode;
 }
 
-void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
+CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id)
 {
     string cmd("GETMETA " + blob_id);
     cmd.append(m_Impl->m_Service->m_ServerPool->m_EnforcedServerHost == 0 ?
@@ -507,13 +507,20 @@ void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
 
     output->SetNetCacheCompatMode();
 
+    return output;
+}
+
+void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
+{
+    CNetServerMultilineCmdOutput output(GetBlobInfo(blob_id));
+
     string line;
 
     if (output.ReadLine(line)) {
         if (!NStr::StartsWith(line, "SIZE="))
-            printf("%s\n", line.c_str());
+            NcbiCout << line << NcbiEndl;
         while (output.ReadLine(line))
-            printf("%s\n", line.c_str());
+            NcbiCout << line << NcbiEndl;
     }
 }
 
