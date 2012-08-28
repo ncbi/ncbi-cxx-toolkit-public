@@ -73,8 +73,10 @@ CBlastxAppArgs::CBlastxAppArgs()
     arg.Reset(new CGenericSearchArgs( !kQueryIsProtein ));
     m_Args.push_back(arg);
 
-    arg.Reset(new CFrameShiftArgs);
-    m_Args.push_back(arg);
+    //Disable until OOF is supported in align manager
+    //SB-1043
+    //arg.Reset(new CFrameShiftArgs);
+    //m_Args.push_back(arg);
 
     arg.Reset(new CLargestIntronSizeArgs);
     m_Args.push_back(arg);
