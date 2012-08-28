@@ -96,7 +96,8 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
 
 
-static string s_GetFastaTitle(const CBioseq& bs, TGetTitleFlags flags)
+static string s_GetFastaTitle(const CBioseq& bs,
+                              CDeflineGenerator::TUserFlags flags)
 {
     string title;
     bool has_molinfo = false;
@@ -122,7 +123,8 @@ static string s_GetFastaTitle(const CBioseq& bs, TGetTitleFlags flags)
     }
     else {
         CScope scope(*CObjectManager::GetInstance());
-        return GetTitle( scope.AddBioseq(bs), flags );
+        CDeflineGenerator gen;
+        return gen.GenerateDefline(bs, scope, flags);
     }
 }
 
@@ -2459,11 +2461,11 @@ END_SCOPE(sequence)
 
 CFastaOstream::CFastaOstream(CNcbiOstream& out)
     : m_Out(out),
-      m_Width(70),
       m_Flags(fInstantiateGaps | fAssembleParts),
       m_GapMode(eGM_letters)
 {
     m_Gen.reset(new sequence::CDeflineGenerator);
+    SetWidth(70);
 }
 
 CFastaOstream::~CFastaOstream()
@@ -2507,7 +2509,7 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
     bool have_range = (location != NULL  &&  !location->IsWhole()
                        &&  !(m_Flags & fSuppressRange) );
 
-    if ( !have_range ) {
+    if ( !have_range  &&  (m_Flags & fNoDupCheck) == 0) {
         ITERATE (CBioseq::TId, id, bioseq.GetId()) {
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(**id);
             pair<TSeq_id_HandleSet::iterator, bool> p
@@ -2638,23 +2640,28 @@ void CFastaOstream::x_WriteModifiers ( const CBioseq_Handle & handle )
     m_Out << '\n';
 }
 
+inline
+sequence::CDeflineGenerator::TUserFlags
+CFastaOstream::x_GetTitleFlags(void) const
+{
+    sequence::TGetTitleFlags title_flags = 0;
+    if ((m_Flags & fNoExpensiveOps) != 0) {
+        title_flags |= sequence::CDeflineGenerator::fNoExpensiveOps;
+    }
+    return title_flags;
+}
+
 void CFastaOstream::x_WriteSeqTitle(const CBioseq& bioseq,
                                     CScope* scope,
                                     const string& custom_title)
 {
-    sequence::TGetTitleFlags title_flags = 0;
-    if ((m_Flags & fNoExpensiveOps) != 0) {
-        title_flags |= sequence::fGetTitle_NoExpensive;
-    }
-
     string safe_title;
     if ( !custom_title.empty() ) {
         safe_title = custom_title;
     } else if (scope) {
-        CBioseq_Handle bsh = scope->GetBioseqHandle(bioseq);
-        safe_title = m_Gen->GenerateDefline(bsh);
+        safe_title = m_Gen->GenerateDefline(bioseq, *scope, x_GetTitleFlags());
     } else {
-        safe_title = sequence::s_GetFastaTitle(bioseq, title_flags);
+        safe_title = sequence::s_GetFastaTitle(bioseq, x_GetTitleFlags());
     }
 
     if ( !(m_Flags & fKeepGTSigns) ) {
@@ -2730,10 +2737,12 @@ void CFastaOstream::WriteTitle(const CBioseq_Handle& handle,
     if( (m_Flags & fShowModifiers) != 0 ) {
         x_WriteModifiers(handle);
     } else {
-        string safe_title = (custom_title.empty() ? m_Gen->GenerateDefline(handle)
-            : custom_title);
+        string safe_title = 
+            (custom_title.empty()
+             ? m_Gen->GenerateDefline(handle, x_GetTitleFlags())
+             : custom_title);
         if ((m_Flags & fKeepGTSigns) == 0) {
-            safe_title = NStr::Replace(safe_title, ">", "_");
+            NStr::ReplaceInPlace(safe_title, ">", "_");
         }
         m_Out << ' ' << safe_title << '\n';
     }
@@ -2778,7 +2787,6 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
 {
     CRef<CSeq_loc_Mapper> mapper;
     CBioseq_Handle        bsh;
-    masking_state[0] = 0;
 
     if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
         _ASSERT(base_seq_id);
@@ -2802,6 +2810,7 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
         CConstRef<CSeq_loc> mapped_mask = x_MapMask(*mapper, mask, base_seq_id,
                                                     scope);
 
+        masking_state[0] = 0;
         for (CSeq_loc_CI it(*mapped_mask);  it;  ++it) {
             CSeq_loc_CI::TRange loc_range = it.GetRange();
             masking_state[loc_range.GetFrom()]   = type;
@@ -2858,16 +2867,23 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
     TSeqPos                 rem_line      = m_Width;
     CSeqVector_CI           it(vec);
     TMSMap::const_iterator  ms_it         = masking_state.begin();
-    TSeqPos                 rem_state     = ms_it->first;
+    TSeqPos                 rem_state
+        = (ms_it == masking_state.end() ? numeric_limits<TSeqPos>::max()
+           : ms_it->first);
     int                     current_state = 0;
-    CSeqVector_CI::TResidue hard_mask_char = vec.IsProtein() ? 'X' : 'N';
-    string                  uc_hard_mask_str(m_Width, hard_mask_char);
-    string                  lc_hard_mask_str(m_Width, tolower(hard_mask_char));
+    CTempString             uc_hard_mask_str
+        (vec.IsProtein() ? m_UC_Xs.get() : m_UC_Ns.get(), m_Width);
+    CTempString             lc_hard_mask_str
+        (vec.IsProtein() ? m_LC_Xs.get() : m_LC_Ns.get(), m_Width);
     EGapMode                native_gap_mode
         = ((vec.GetGapChar() == '-') ? eGM_dashes : eGM_letters);
-    CSeqVector_CI::TResidue alt_gap_char
-        = ((vec.GetGapChar() == '-') ? hard_mask_char : '-');
-    string                  alt_gap_str(m_Width, alt_gap_char);
+    CTempString             alt_gap_str;
+
+    if (native_gap_mode == eGM_dashes) {
+        alt_gap_str = uc_hard_mask_str;
+    } else {
+        alt_gap_str.assign(m_Dashes.get(), m_Width);
+    }
 
     if ((m_Flags & fReverseStrand) != 0) {
         it.SetStrand(Reverse(it.GetStrand()));
@@ -3003,16 +3019,34 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
     }
 
     TMSMap masking_state;
-    x_GetMaskingStates(masking_state, handle.GetSeqId(), location, &scope);
+    if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
+        x_GetMaskingStates(masking_state, handle.GetSeqId(), location, &scope);
+    }
     x_WriteSequence(v, masking_state);
 }
 
 
-void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location)
+void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location,
+                          bool no_scope)
 {
-    CScope scope(*CObjectManager::GetInstance());
-
-    Write(scope.AddTopLevelSeqEntry(entry), location);
+    if (location || !no_scope) {
+        CScope scope(*CObjectManager::GetInstance());        
+        Write(scope.AddTopLevelSeqEntry(entry), location);
+    } else {
+        switch (entry.Which()) {
+        case CSeq_entry::e_Seq:
+            Write(entry.GetSeq(), location, no_scope);
+            break;
+        case CSeq_entry::e_Set:
+            ITERATE (CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set()) {
+                Write(**it, location, no_scope);
+            }
+            break;
+        default:
+            // throw
+            break;
+        }
+    }
 }
 
 
@@ -3081,6 +3115,16 @@ void CFastaOstream::SetMask(EMaskType type, CConstRef<CSeq_loc> location)
     ((type == eSoftMask) ? m_SoftMask : m_HardMask) = location;
 }
 
+
+void CFastaOstream::SetWidth(TSeqPos width)
+{
+    m_Width = width;
+    m_Dashes.reset(new char[width]);  memset(m_Dashes.get(), '-', width);
+    m_LC_Ns .reset(new char[width]);  memset(m_LC_Ns .get(), 'n', width);
+    m_LC_Xs .reset(new char[width]);  memset(m_LC_Xs .get(), 'x', width);
+    m_UC_Ns .reset(new char[width]);  memset(m_UC_Ns .get(), 'N', width);
+    m_UC_Xs .reset(new char[width]);  memset(m_UC_Xs .get(), 'X', width);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

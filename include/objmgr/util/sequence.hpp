@@ -732,6 +732,7 @@ public:
         fMapMasksDown    = 0x040, ///< honor masks specified at a higher level
         fNoExpensiveOps  = 0x080, ///< don't try too hard to find titles
         fShowModifiers   = 0x100, ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
+        fNoDupCheck      = 0x200, ///< skip check for duplicate sequence IDs
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
@@ -766,7 +767,8 @@ public:
 
     /// These versions may set up a temporary object manager scope
     /// In the common case of a raw bioseq, no scope is needed
-    void Write(const CSeq_entry& entry, const CSeq_loc* location = 0);
+    void Write(const CSeq_entry& entry, const CSeq_loc* location = 0,
+               bool no_scope = false);
     void Write(const CBioseq&    seq,   const CSeq_loc* location = 0,
                bool no_scope = false,   const string& custom_title = kEmptyStr);
     void WriteTitle(const CBioseq& seq, const CSeq_loc* location = 0,
@@ -792,7 +794,7 @@ public:
 
     /// Other parameters...
     TSeqPos GetWidth   (void) const    { return m_Width;   }
-    void    SetWidth   (TSeqPos width) { m_Width = width;  }
+    void    SetWidth   (TSeqPos width);
     TFlags  GetAllFlags(void) const    { return m_Flags;   }
     void    SetAllFlags(TFlags flags)  { m_Flags = flags;  }
     void    SetFlag    (EFlags flag)   { m_Flags |=  flag; }
@@ -809,6 +811,11 @@ private:
     TFlags              m_Flags;
     EGapMode            m_GapMode;
     TSeq_id_HandleSet   m_PreviousWholeIds;
+    // avoid recomputing for every sequence
+    typedef AutoPtr<char, ArrayDeleter<char> > TCharBuf;
+    TCharBuf            m_Dashes, m_LC_Ns, m_LC_Xs, m_UC_Ns, m_UC_Xs;
+
+    sequence::CDeflineGenerator::TUserFlags x_GetTitleFlags(void) const;
 
     void x_WriteSeqIds    ( const CBioseq& bioseq,
                             const CSeq_loc* location);
