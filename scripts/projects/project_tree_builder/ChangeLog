@@ -223,5 +223,8 @@ August 07, 2012
 version 3.8.1
 In MSVC2010 projects, corrected generation of output file name settings.
 
+August 28, 2012
+version 3.8.2
+Corrected to postpone initialization of LibChoices until after GUI validation of configuration paramaters.
 
 
