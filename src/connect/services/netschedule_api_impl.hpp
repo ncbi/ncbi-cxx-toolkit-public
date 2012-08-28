@@ -47,6 +47,8 @@ BEGIN_NCBI_SCOPE
 
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
+void g_AppendClientIPAndSessionID(string& cmd);
+
 template<typename T> struct ToStr { static string Convert(T t); };
 
 template<> struct ToStr<string> {
@@ -111,37 +113,37 @@ struct SNetScheduleAPIImpl : public CObject
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)
     {
-        return GetServer(job_key).ExecWithRetry(cmd + ' ' + job_key).response;
+        string tmp(cmd + ' ');
+        tmp += job_key;
+        g_AppendClientIPAndSessionID(tmp);
+        return GetServer(job_key).ExecWithRetry(tmp).response;
     }
     template<typename Arg1>
     string x_SendJobCmdWaitResponse(const string& cmd,
         const string& job_key, Arg1 arg1)
     {
-        string tmp = cmd;
-        if (!job_key.empty())
-            tmp += ' ' + job_key + ' ';
+        string tmp(cmd + ' ');
+        if (!job_key.empty()) {
+            tmp += job_key;
+            tmp += ' ';
+        }
         tmp += ToStr<Arg1>::Convert(arg1);
+        g_AppendClientIPAndSessionID(tmp);
         return GetServer(job_key).ExecWithRetry(tmp).response;
     }
     template<typename Arg1, typename Arg2>
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
                                     Arg1 arg1, Arg2 arg2)
     {
-        string tmp = cmd;
-        if (!job_key.empty())
-            tmp += ' ' + job_key + ' ';
-        tmp += ToStr<Arg1>::Convert(arg1) + ' ' + ToStr<Arg2>::Convert(arg2);
-        return GetServer(job_key).ExecWithRetry(tmp).response;
-    }
-    template<typename Arg1, typename Arg2, typename Arg3>
-    string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key,
-                                    Arg1 arg1, Arg2 arg2, Arg3 arg3)
-    {
-        string tmp = cmd;
-        if (!job_key.empty())
-            tmp += ' ' + job_key + ' ';
-        tmp += ToStr<Arg1>::Convert(arg1) + ' '
-            + ToStr<Arg2>::Convert(arg2) + ' ' + ToStr<Arg3>::Convert(arg3);
+        string tmp(cmd + ' ');
+        if (!job_key.empty()) {
+            tmp += job_key;
+            tmp += ' ';
+        }
+        tmp += ToStr<Arg1>::Convert(arg1);
+        tmp += ' ';
+        tmp += ToStr<Arg2>::Convert(arg2);
+        g_AppendClientIPAndSessionID(tmp);
         return GetServer(job_key).ExecWithRetry(tmp).response;
     }
 
@@ -254,7 +256,6 @@ inline SNetScheduleAdminImpl::SNetScheduleAdminImpl(
     m_API(ns_api_impl)
 {
 }
-
 
 END_NCBI_SCOPE
 

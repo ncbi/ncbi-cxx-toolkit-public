@@ -39,6 +39,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/request_control.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include <util/ncbi_url.hpp>
 
@@ -50,6 +51,23 @@
 
 
 BEGIN_NCBI_SCOPE
+
+void g_AppendClientIPAndSessionID(string& cmd)
+{
+    CRequestContext& req = CDiagContext::GetRequestContext();
+
+    if (req.IsSetClientIP()) {
+        cmd += " ip=\"";
+        cmd += req.GetClientIP();
+        cmd += '"';
+    }
+
+    if (req.IsSetSessionID()) {
+        cmd += " sid=\"";
+        cmd += NStr::PrintableString(req.GetSessionID());
+        cmd += '"';
+    }
+}
 
 CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
 {
@@ -585,8 +603,8 @@ const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)
 {
-    string resp = m_Impl->x_SendJobCmdWaitResponse("MGET", job.job_id);
-    job.progress_msg = NStr::ParseEscapes(resp);
+    job.progress_msg = NStr::ParseEscapes(
+            m_Impl->x_SendJobCmdWaitResponse("MGET", job.job_id));
 }
 
 static void s_VerifyClientCredentialString(const string& str,

@@ -37,8 +37,6 @@
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/util.hpp>
 
-#include <corelib/request_ctx.hpp>
-
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
@@ -73,23 +71,6 @@ static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
     }
 }
 
-static void s_AppendClientIPAndSessionID(string& cmd)
-{
-    CRequestContext& req = CDiagContext::GetRequestContext();
-
-    if (req.IsSetClientIP()) {
-        cmd += " ip=\"";
-        cmd += req.GetClientIP();
-        cmd += '"';
-    }
-
-    if (req.IsSetSessionID()) {
-        cmd += " sid=\"";
-        cmd += NStr::PrintableString(req.GetSessionID());
-        cmd += '"';
-    }
-}
-
 inline
 void static s_CheckInputSize(const string& input, size_t max_input_size)
 {
@@ -114,7 +95,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
 
     s_SerializeJob(cmd, job, udp_port, wait_time);
 
-    s_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPAndSessionID(cmd);
 
     if (!job.group.empty()) {
         SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job.group);
@@ -150,7 +131,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
     // Batch submit command.
     string cmd = "BSUB";
 
-    s_AppendClientIPAndSessionID(cmd);
+    g_AppendClientIPAndSessionID(cmd);
 
     if (!job_group.empty()) {
         SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
@@ -325,6 +306,8 @@ bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
         cmd += job_group;
     }
 
+    g_AppendClientIPAndSessionID(cmd);
+
     CReadCmdExecutor read_executor(cmd, *job_id, *auth_token, *job_status);
 
     return m_Impl->m_API->m_Service.FindServer(&read_executor,
@@ -347,6 +330,8 @@ void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
         cmd += NStr::PrintableString(error_message);
         cmd += '"';
     }
+
+    g_AppendClientIPAndSessionID(cmd);
 
     m_API->GetServer(job_id).ExecWithRetry(cmd);
 }
@@ -475,6 +460,8 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
     cmd += NStr::NumericToString(GetPort());
     cmd += " timeout=";
     cmd += NStr::NumericToString(s_GetRemainingSeconds(abs_timeout));
+
+    g_AppendClientIPAndSessionID(cmd);
 
     m_Message = ns_api->GetServer(job_id).ExecWithRetry(cmd).response;
 

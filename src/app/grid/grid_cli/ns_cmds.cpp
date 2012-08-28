@@ -794,7 +794,7 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         wait_job_handler.PrintPortNumber();
 
         if (wait_job_handler.RequestJob(m_NetScheduleExecutor, job,
-                wait_job_handler.CmdAppendTimeout(
+                wait_job_handler.CmdAppendTimeoutAndClientInfo(
                 CNetScheduleNotificationHandler::MkBaseGETCmd(
                 affinity_preference, m_Opts.affinity), &abs_timeout))) {
             fprintf(stderr, "%s\nA job has been returned; won't wait.\n",

@@ -852,7 +852,7 @@ public:
     static string MkBaseGETCmd(
         CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list);
-    string CmdAppendTimeout(const string& base_cmd, CAbsTimeout* timeout);
+    string CmdAppendTimeoutAndClientInfo(const string& base_cmd, CAbsTimeout* timeout);
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
             CNetScheduleJob& job,
             const string& cmd);
