@@ -2305,6 +2305,10 @@ public:
     ///   size is more that specified maximum length.
     /// @sa
     ///   EMemMapProtect, EMemMapShare, EOpenMode
+    /// @note
+    ///   MS Windows: If file is open in eMMP_Read mode with eMMS_Private
+    ///   protection, that memory pages will be mapped in exclusive mode,
+    ///   and any other process cannot access the same file for writing.
     CMemoryFileMap(const string&  file_name,
                    EMemMapProtect protect_attr = eMMP_Read,
                    EMemMapShare   share_attr   = eMMS_Shared,
@@ -2335,6 +2339,10 @@ public:
     ///   - NULL if mapped to a file of zero length, or if not mapped.
     /// @sa
     ///   Unmap, GetOffset, GetSize, GetRealOffset, GetRealSize
+    /// @note
+    ///   MS Windows: If file is open in eMMP_Read mode with eMMS_Private
+    ///   protection, that memory pages will be mapped in exclusive mode,
+    ///   and any other process cannot access the same file for writing.
     void* Map(off_t offset, size_t length);
 
     /// Unmap file segment.
@@ -2486,6 +2494,10 @@ public:
     ///   EMemMapProtect, EMemMapShare, EOpenMode
     /// @sa
     ///   EMemMapProtect, EMemMapShare, Map
+    /// @note
+    ///   MS Windows: If file is open in eMMP_Read mode with eMMS_Private
+    ///   protection, that memory pages will be mapped in exclusive mode,
+    ///   and any other process cannot access the same file for writing.
     CMemoryFile(const string&  file_name,
                 EMemMapProtect protect_attr = eMMP_Read,
                 EMemMapShare   share_attr   = eMMS_Shared,

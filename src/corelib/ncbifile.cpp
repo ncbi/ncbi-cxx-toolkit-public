@@ -4456,10 +4456,6 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
     switch (protect_attr) {
         case CMemoryFile_Base::eMMP_Read:
             attrs->map_access  = FILE_MAP_READ;
-            // Next two attributes can be redefined in the x_Open(),
-            // which try to open file in the READWRITE mod first.
-            // This allow do not lock a file/page and write into it from
-            // somewhere else.
             attrs->map_protect = PAGE_READONLY;
             attrs->file_access = GENERIC_READ;
             break;
@@ -4858,48 +4854,24 @@ void CMemoryFileMap::x_Open(void)
         HANDLE hMap = OpenFileMapping(m_Attrs->map_access, false,
                                       filename.c_str());
         if ( !hMap ) {
-
-            // NOTE:
-            //
-            // First, try to open file/mapping in the READWRITE mode,
-            // to prevent locking file by OS. If this fails, try to open
-            // it in the predefined mode (usually READONLY).
-
+            // Open file
             HANDLE hFile;
-            DWORD x_file_access = GENERIC_READ | GENERIC_WRITE;
-            DWORD x_map_protect = PAGE_READWRITE;
-
-            hFile = CreateFile(filename.c_str(), x_file_access, 
-                               m_Attrs->file_share, NULL,
-                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            if ( (hFile == INVALID_HANDLE_VALUE)  &&
-                 (m_Attrs->file_access != x_file_access) ) {
-                hFile = CreateFile(filename.c_str(), m_Attrs->file_access, 
-                                   m_Attrs->file_share, NULL,
-                                   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-                x_map_protect = m_Attrs->map_protect;
-            }
+            hFile = CreateFile(filename.c_str(), m_Attrs->file_access, 
+                                m_Attrs->file_share, NULL,
+                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
             if ( hFile == INVALID_HANDLE_VALUE ) {
                 errmsg += s_LastErrorMessage();
                 break;
             }
-
             // Create mapping
-
-            hMap = CreateFileMapping(hFile, NULL,
-                                     x_map_protect,
+            hMap = CreateFileMapping(hFile, NULL, m_Attrs->map_protect,
                                      0, 0, filename.c_str());
-            if ( !hMap  &&
-                 (m_Attrs->map_protect != x_map_protect) ) {
-                hMap = CreateFileMapping(hFile, NULL,
-                                         m_Attrs->map_protect,
-                                         0, 0, filename.c_str());
-            }
-            CloseHandle(hFile);
             if ( !hMap ) {
                 errmsg += s_LastErrorMessage();
+                CloseHandle(hFile);
                 break;
             }
+            CloseHandle(hFile);
         }
         m_Handle->hMap = hMap;
 
