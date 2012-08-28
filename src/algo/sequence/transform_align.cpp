@@ -618,8 +618,11 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount,
         } else {
             if (is_protein) {
                 CProt_pos& prot_pos = (*spl_exon_it)->SetProduct_end().SetProtpos();
-                _ASSERT( prot_pos.GetFrame() - trim_amount == 0 );
-                --prot_pos.SetAmin();
+                int frame = prot_pos.GetFrame();
+                if (frame == 0)
+                    frame = 1;
+                _ASSERT( (trim_amount - frame) % 3 == 0 );
+                prot_pos.SetAmin() -= (trim_amount - frame) / 3 + 1;
                 prot_pos.SetFrame(3);
             } else {
                 if (product_strand != eNa_strand_minus) {
@@ -723,8 +726,11 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount,
         } else {
             if (is_protein) {
                 CProt_pos& prot_pos = (*spl_exon_it)->SetProduct_start().SetProtpos();
-                _ASSERT( prot_pos.GetFrame() -1 + trim_amount == 3 );
-                ++prot_pos.SetAmin();
+                int frame = prot_pos.GetFrame();
+                if (frame != 0)
+                    frame -= 1;
+                _ASSERT( (frame + trim_amount) % 3 == 0 );
+                prot_pos.SetAmin() += (frame + trim_amount)/3;
                 prot_pos.SetFrame(1);
             } else {
                 if (product_strand != eNa_strand_minus) {
