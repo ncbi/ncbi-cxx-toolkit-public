@@ -81,7 +81,10 @@ public:
     /// User-settable flags for tuning behavior
     enum EUserFlags {
         fIgnoreExisting  = 0x1, ///< Generate fresh titles unconditionally.
-        fAllProteinNames = 0x2  ///< List all relevant proteins, not just one.
+        fAllProteinNames = 0x2, ///< List all relevant proteins, not just one.
+        fLocalAnnotsOnly = 0x4, ///< Never use related sequences' annotations.
+        /// Refrain from anything that could add substantial overhead.
+        fNoExpensiveOps  = fLocalAnnotsOnly
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
@@ -106,6 +109,8 @@ private:
 private:
     /// internal methods
 
+    void x_Init (void);
+
     void x_SetFlags (
         const CBioseq_Handle& bsh,
         TUserFlags flags
@@ -118,7 +123,10 @@ private:
         const CSeq_feat& sft
     );
 
-    string x_DescribeClones (void);
+    void x_DescribeClones (
+        vector<CTempString>& desc,
+        string& buf
+    );
     CConstRef<CSeq_feat> x_GetLongestProtein (
         const CBioseq_Handle& bsh
     );
@@ -126,30 +134,28 @@ private:
         const CMappedFeat& mapped_cds
     );
 
-    string x_TitleFromBioSrc (void);
-    string x_TitleFromNC (void);
-    string x_TitleFromNM (
+    void x_SetTitleFromBioSrc (void);
+    void x_SetTitleFromNC (void);
+    void x_SetTitleFromNM (
         const CBioseq_Handle& bsh
     );
-    string x_TitleFromNR (
+    void x_SetTitleFromNR (
         const CBioseq_Handle& bsh
     );
-    string x_TitleFromPatent (void);
-    string x_TitleFromPDB (void);
-    string x_TitleFromProtein (
+    void x_SetTitleFromPatent (void);
+    void x_SetTitleFromPDB (void);
+    void x_SetTitleFromProtein (
         const CBioseq_Handle& bsh
     );
-    string x_TitleFromSegSeq (
+    void x_SetTitleFromSegSeq (
         const CBioseq_Handle& bsh
     );
-    string x_TitleFromWGS (void);
+    void x_SetTitleFromWGS (void);
 
-    string x_SetPrefix (
-        const string& title
-    );
-    string x_SetSuffix (
-        const CBioseq_Handle& bsh,
-        const string& title
+    const char * x_SetPrefix (void);
+    void x_SetSuffix (
+        string& suffix,
+        const CBioseq_Handle& bsh
     );
 
 private:
@@ -162,6 +168,7 @@ private:
     /// ignore existing title is forced for certain types
     bool m_Reconstruct;
     bool m_AllProtNames;
+    bool m_LocalAnnotsOnly;
 
     /// seq-inst fields
     bool m_IsNA;
@@ -181,9 +188,10 @@ private:
     bool m_WGSMaster;
     bool m_TSAMaster;
 
-    string m_GeneralStr;
-    string m_PatentCountry;
-    string m_PatentNumber;
+    string m_MainTitle;
+    CTempString m_GeneralStr;
+    CTempString m_PatentCountry;
+    CTempString m_PatentNumber;
 
     int m_PatentSequence;
 
@@ -211,25 +219,26 @@ private:
     bool m_TPAReasm;
 
     /// pdb block fields
-    string m_PDBCompound;
+    CTempString m_PDBCompound;
 
     /// biosource fields
-    string m_Taxname;
+    CConstRef<CBioSource> m_Source;
+    CTempString m_Taxname;
     CBioSource::TGenome m_Genome;
 
     /// subsource fields
-    string m_Chromosome;
-    string m_Clone;
+    CTempString m_Chromosome;
+    CTempString m_Clone;
     bool m_has_clone;
-    string m_Map;
-    string m_Plasmid;
-    string m_Segment;
+    CTempString m_Map;
+    CTempString m_Plasmid;
+    CTempString m_Segment;
 
     /// orgmod fields
-    string m_Breed;
-    string m_Cultivar;
-    string m_Isolate;
-    string m_Strain;
+    CTempString m_Breed;
+    CTempString m_Cultivar;
+    CTempString m_Isolate;
+    CTempString m_Strain;
 
     /// user object fields
     bool m_IsUnverified;

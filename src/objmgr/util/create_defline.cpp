@@ -34,6 +34,7 @@
 
 #include <objmgr/util/create_defline.hpp>
 
+#include <util/text_joiner.hpp>
 #include <serial/iterator.hpp>
 
 #include <objects/misc/sequence_macros.hpp>
@@ -57,19 +58,14 @@ CDeflineGenerator::CDeflineGenerator (void)
 {
     m_ConstructedFeatTree = false;
     m_InitializedFeatTree = false;
-    m_Low_Quality_Fsa = 0;
-
-    m_Low_Quality_Fsa.AddWord ("heterogeneous population sequenced", 1);
-    m_Low_Quality_Fsa.AddWord ("low-quality sequence region", 2);
-    m_Low_Quality_Fsa.AddWord ("unextendable partial coding region", 3);
-    m_Low_Quality_Fsa.Prime ();
+    x_Init();
 }
 
 // constructor
 CDeflineGenerator::CDeflineGenerator (const CSeq_entry_Handle& tseh)
 {
-    // first call default constructor
-    CDeflineGenerator ();
+    // initialize common bits (FSA)
+    x_Init();
 
     // then store top SeqEntry Handle for building CFeatTree when first needed
     m_TopSEH = tseh;
@@ -81,6 +77,16 @@ CDeflineGenerator::CDeflineGenerator (const CSeq_entry_Handle& tseh)
 CDeflineGenerator::~CDeflineGenerator (void)
 
 {
+}
+
+void CDeflineGenerator::x_Init (void)
+{
+    m_Low_Quality_Fsa = 0;
+
+    m_Low_Quality_Fsa.AddWord ("heterogeneous population sequenced", 1);
+    m_Low_Quality_Fsa.AddWord ("low-quality sequence region", 2);
+    m_Low_Quality_Fsa.AddWord ("unextendable partial coding region", 3);
+    m_Low_Quality_Fsa.Prime ();
 }
 
 // macros
@@ -102,17 +108,6 @@ for (SEQENTRY_HANDLE_ON_SEQENTRY_HANDLE_ITERATOR(Itr, Var); Itr;  ++Itr)
 
 #define FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(Itr, Var) \
 ITERATE (CBioseq_Handle::TId, Itr, Var.GetId())
-
-// SEQDESC_ON_BIOSEQ_HANDLE_ITERATOR
-// FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE
-// CBioseq_Handle& as input,
-//  dereference with const C##Chs& sdc = Itr->Get##Chs();
-
-#define SEQDESC_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Chs) \
-CSeqdesc_CI Itr(Var, CSeqdesc::e_##Chs)
-
-#define FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE(Itr, Var, Chs) \
-for (SEQDESC_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Chs); Itr;  ++Itr)
 
 // SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR
 // FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE
@@ -158,6 +153,7 @@ void CDeflineGenerator::x_SetFlags (
     // set flags from record components
     m_Reconstruct = (flags & fIgnoreExisting) != 0;
     m_AllProtNames = (flags & fAllProteinNames) != 0;
+    m_LocalAnnotsOnly = (flags & fLocalAnnotsOnly) != 0;
 
     // reset member variables to cleared state
     m_IsNA = false;
@@ -175,6 +171,7 @@ void CDeflineGenerator::x_SetFlags (
     m_WGSMaster = false;
     m_TSAMaster = false;
 
+    m_MainTitle.clear();
     m_GeneralStr.clear();
     m_PatentCountry.clear();
     m_PatentNumber.clear();
@@ -204,6 +201,7 @@ void CDeflineGenerator::x_SetFlags (
 
     m_PDBCompound.clear();
 
+    m_Source.Reset();
     m_Taxname.clear();
     m_Genome = NCBI_GENOME(unknown);
 
@@ -322,9 +320,47 @@ void CDeflineGenerator::x_SetFlags (
         }
     }
 
-    // process MolInfo tech
-    {
-        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Molinfo) {
+    enum ENeededDescChoices {
+        fMolinfo = 1 << 0,
+        fUser    = 1 << 1,
+        fSource  = 1 << 2,
+        fGenbank = 1 << 3,
+        fEmbl    = 1 << 4,
+        fTitle   = 1 << 5,
+        fPdb     = 1 << 6
+    };
+    int needed_desc_choices = fMolinfo | fUser | fSource | fGenbank | fEmbl;
+
+    CSeqdesc_CI::TDescChoices desc_choices;
+    desc_choices.reserve(7);
+    desc_choices.push_back(CSeqdesc::e_Molinfo);
+    desc_choices.push_back(CSeqdesc::e_User);
+    desc_choices.push_back(CSeqdesc::e_Source);
+    // Only truly needed if (m_HTGTech || m_ThirdParty), but
+    // determining m_HTGTech requires a descriptor scan.
+    desc_choices.push_back(CSeqdesc::e_Genbank);
+    desc_choices.push_back(CSeqdesc::e_Embl);
+    if (! m_Reconstruct) {
+        needed_desc_choices |= fTitle;
+        desc_choices.push_back(CSeqdesc::e_Title);
+    }
+    if (m_IsPDB) {
+        needed_desc_choices |= fPdb;
+        desc_choices.push_back(CSeqdesc::e_Pdb);
+    }
+
+    const list <string> *keywords = NULL;
+
+    for (CSeqdesc_CI desc_it(bsh, desc_choices);
+         needed_desc_choices != 0  &&  desc_it;  ++desc_it) {
+        switch (desc_it->Which()) {
+        case CSeqdesc::e_Molinfo:
+        {
+            // process MolInfo tech
+            if ((needed_desc_choices & fMolinfo) == 0) {
+                continue; // already covered
+            }
+
             const CMolInfo& molinf = desc_it->GetMolinfo();
             m_MIBiomol = molinf.GetBiomol();
             m_MITech = molinf.GetTech();
@@ -336,6 +372,8 @@ void CDeflineGenerator::x_SetFlags (
                     m_HTGSUnfinished = true;
                     // manufacture all titles for unfinished HTG sequences
                     m_Reconstruct = true;
+                    needed_desc_choices &= ~fTitle;
+                    m_MainTitle.clear();
                     // fall through
                 case NCBI_TECH(htgs_3):
                     m_HTGTech = true;
@@ -359,82 +397,116 @@ void CDeflineGenerator::x_SetFlags (
                     break;
             }
 
-            // take first, then break to skip remainder
+            // take first, then skip remainder
+            needed_desc_choices &= ~fMolinfo;
             break;
         }
-    }
 
-    // process Unverified user object
-    {
-        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, User) {
-            const CUser_object& user_obj = desc_it->GetUser();
-            if (FIELD_IS_SET_AND_IS(user_obj, Type, Str) && user_obj.GetType().GetStr() == "Unverified" ) {
-                m_IsUnverified = true;
-                break;
+        case CSeqdesc::e_User:
+        {
+            // process Unverified user object
+            if ((needed_desc_choices & fUser) == 0) {
+                continue; // already covered
             }
+
+            const CUser_object& user_obj = desc_it->GetUser();
+            if (FIELD_IS_SET_AND_IS(user_obj, Type, Str)
+                &&  user_obj.GetType().GetStr() == "Unverified" ) {
+                m_IsUnverified = true;
+                needed_desc_choices &= ~fUser;
+            }
+            break;
         }
-    }
 
-    if (m_HTGTech || m_ThirdParty) {
+        case CSeqdesc::e_Source:
+            if ((needed_desc_choices & fSource) != 0) {
+                m_Source.Reset(&desc_it->GetSource());
+                // take first, then skip remainder
+                needed_desc_choices &= ~fSource;
+            }
+            break;
 
-        // process keywords
-        const list <string> *keywords = NULL;
+        case CSeqdesc::e_Title:
+            if ((needed_desc_choices & fTitle) != 0) {
+                // for non-PDB proteins, title must be packaged on Bioseq
+                if (m_IsNA  ||  m_IsPDB
+                    ||  desc_it.GetSeq_entry_Handle().IsSeq()) {
+                    m_MainTitle = desc_it->GetTitle();
+                }
+                // take first, then skip remainder
+                needed_desc_choices &= ~fTitle;
+            }
+            break;
 
-        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Genbank) {
+        case CSeqdesc::e_Genbank:
+        {
+            if ((needed_desc_choices & fGenbank) == 0) {
+                continue; // already covered
+            }
             const CGB_block& gbk = desc_it->GetGenbank();
             if (gbk.IsSetKeywords()) {
                 keywords = &gbk.GetKeywords();
             }
 
-            // take first, then break to skip remainder
+            // take first, then skip remainder along with any EMBL blocks
+            needed_desc_choices &= ~(fGenbank | fEmbl);
             break;
         }
-        if (keywords == NULL) {
-            FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Embl) {
-                const CEMBL_block& ebk = desc_it->GetEmbl();
-                if (ebk.IsSetKeywords()) {
-                    keywords = &ebk.GetKeywords();
-                }
 
-                // take first, then break to skip remainder
-                break;
+        case CSeqdesc::e_Embl:
+        {
+            if ((needed_desc_choices & fEmbl) == 0) {
+                continue; // already covered
             }
+            const CEMBL_block& ebk = desc_it->GetEmbl();
+            if (ebk.IsSetKeywords()) {
+                keywords = &ebk.GetKeywords();
+            }
+
+            // take first, then skip remainder
+            needed_desc_choices &= ~fEmbl;
+            break;
         }
-        if (keywords != NULL) {
-            FOR_EACH_STRING_IN_LIST (kw_itr, *keywords) {
-                const string& str = *kw_itr;
-                if (NStr::EqualNocase (str, "HTGS_DRAFT")) {
-                    m_HTGSDraft = true;
-                } else if (NStr::EqualNocase (str, "HTGS_CANCELLED")) {
-                    m_HTGSCancelled = true;
-                } else if (NStr::EqualNocase (str, "HTGS_POOLED_MULTICLONE")) {
-                    m_HTGSPooled = true;
-                } else if (NStr::EqualNocase (str, "TPA:experimental")) {
-                    m_TPAExp = true;
-                } else if (NStr::EqualNocase (str, "TPA:inferential")) {
-                    m_TPAInf = true;
-                } else if (NStr::EqualNocase (str, "TPA:reassembly")) {
-                    m_TPAReasm = true;
+
+        case CSeqdesc::e_Pdb:
+        {
+            if ((needed_desc_choices & fPdb) == 0) {
+                continue; // already covered
+            }
+            _ASSERT(m_IsPDB);
+            const CPDB_block& pbk = desc_it->GetPdb();
+            FOR_EACH_COMPOUND_ON_PDBBLOCK (cp_itr, pbk) {
+                if (m_PDBCompound.empty()) {
+                    m_PDBCompound = *cp_itr;
+
+                    // take first, then skip remainder
+                    needed_desc_choices &= ~fPdb;
                 }
             }
+            break;
+        }
+
+        default:
+            _TROUBLE;
         }
     }
 
-    if (m_IsPDB) {
-
-        // process PDB block
-        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Pdb) {
-            const CPDB_block& pbk = desc_it->GetPdb();
-            FOR_EACH_COMPOUND_ON_PDBBLOCK (cp_itr, pbk) {
-                const string& str = *cp_itr;
-                if (m_PDBCompound.empty()) {
-                    m_PDBCompound = str;
-
-                    // take first, then break to skip remainder
-                    break;
-                }
+    if (keywords != NULL  &&  (m_HTGTech || m_ThirdParty)) {
+        FOR_EACH_STRING_IN_LIST (kw_itr, *keywords) {
+            const string& str = *kw_itr;
+            if (NStr::EqualNocase (str, "HTGS_DRAFT")) {
+                m_HTGSDraft = true;
+            } else if (NStr::EqualNocase (str, "HTGS_CANCELLED")) {
+                m_HTGSCancelled = true;
+            } else if (NStr::EqualNocase (str, "HTGS_POOLED_MULTICLONE")) {
+                m_HTGSPooled = true;
+            } else if (NStr::EqualNocase (str, "TPA:experimental")) {
+                m_TPAExp = true;
+            } else if (NStr::EqualNocase (str, "TPA:inferential")) {
+                m_TPAInf = true;
+            } else if (NStr::EqualNocase (str, "TPA:reassembly")) {
+                m_TPAReasm = true;
             }
-            break;
         }
     }
 }
@@ -445,19 +517,17 @@ void CDeflineGenerator::x_SetBioSrc (
 )
 
 {
-    FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Source) {
-        const CBioSource& source = desc_it->GetSource();
-
+    if (m_Source.NotEmpty()) {
         // get organism name
-        if (source.IsSetTaxname()) {
-            m_Taxname = source.GetTaxname();
+        if (m_Source->IsSetTaxname()) {
+            m_Taxname = m_Source->GetTaxname();
         }
-        if (source.IsSetGenome()) {
-            m_Genome = source.GetGenome();
+        if (m_Source->IsSetGenome()) {
+            m_Genome = m_Source->GetGenome();
         }
 
         // process SubSource
-        FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, source) {
+        FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, *m_Source) {
             const CSubSource& sbs = **sbs_itr;
             if (! sbs.IsSetName()) continue;
             const string& str = sbs.GetName();
@@ -484,7 +554,7 @@ void CDeflineGenerator::x_SetBioSrc (
         }
 
         // process OrgMod
-        FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, source) {
+        FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, *m_Source) {
             const COrgMod& omd = **omd_itr;
             if (! omd.IsSetSubname()) continue;
             const string& str = omd.GetSubname();
@@ -513,9 +583,6 @@ void CDeflineGenerator::x_SetBioSrc (
                     break;
             }
         }
-
-        // take first, then break to skip remainder
-        break;
     }
 
     if (m_has_clone) return;
@@ -542,15 +609,19 @@ void CDeflineGenerator::x_SetBioSrc (
 }
 
 // generate title from BioSource fields
-string CDeflineGenerator::x_DescribeClones (void)
+void CDeflineGenerator::x_DescribeClones (
+    vector<CTempString>& desc,
+    string& buf
+)
 
 {
     if (m_HTGSUnfinished && m_HTGSPooled && m_has_clone) {
-        return ", pooled multiple clones";
+        desc.push_back(", pooled multiple clones");
+        return;
     }
 
     if( m_Clone.empty() ) {
-        return kEmptyStr;
+        return;
     }
 
     SIZE_TYPE count = 1;
@@ -559,15 +630,21 @@ string CDeflineGenerator::x_DescribeClones (void)
         ++count;
     }
     if (count > 3) {
-        return ", " + NStr::SizetToString(count) + " clones";
+        buf = NStr::NumericToString(count);
+        desc.reserve(3);
+        desc.push_back(", ");
+        desc.push_back(buf);
+        desc.push_back(" clones");
     } else {
-        return " clone " + m_Clone;
+        desc.reserve(2);
+        desc.push_back(" clone ");
+        desc.push_back(m_Clone);
     }
 }
 
 static bool x_EndsWithStrain (
-    string taxname,
-    string strain
+    const CTempString& taxname,
+    const CTempString& strain
 )
 
 {
@@ -599,44 +676,47 @@ static bool x_EndsWithStrain (
     return false;
 }
 
-string CDeflineGenerator::x_TitleFromBioSrc (void)
+void CDeflineGenerator::x_SetTitleFromBioSrc (void)
 
 {
-    string chr, cln, mp, pls, stn, sfx;
+    string clnbuf;
+    vector<CTempString> clnvec;
+    CTextJoiner<12, CTempString> joiner;
+
+    joiner.Add(m_Taxname);
 
     if (! m_Strain.empty()) {
-        string add = m_Strain.substr (0, m_Strain.find(';'));
+        CTempString add(m_Strain, 0, m_Strain.find(';'));
         if (! x_EndsWithStrain (m_Taxname, add)) {
-            stn = " strain " + add;
+            joiner.Add(" strain ").Add(add);
         }
     }
     if (! m_Chromosome.empty()) {
-        chr = " chromosome " + m_Chromosome;
+        joiner.Add(" chromosome ").Add(m_Chromosome);
     }
     if (m_has_clone) {
-        cln = x_DescribeClones ();
-    }
-    if (! m_Map.empty()) {
-        mp = " map " + m_Map;
-    }
-    if (! m_Plasmid.empty()) {
-        if (m_IsWGS) {
-            pls = " plasmid " + m_Plasmid;
+        x_DescribeClones (clnvec, clnbuf);
+        ITERATE (vector<CTempString>, it, clnvec) {
+            joiner.Add(*it);
         }
     }
-
-    string title = NStr::TruncateSpaces
-        (m_Taxname + stn + chr + cln + mp + pls + sfx);
-
-    if (!title.empty() && islower ((unsigned char) title[0])) {
-        title [0] = toupper ((unsigned char) title [0]);
+    if (! m_Map.empty()) {
+        joiner.Add(" map ").Add(m_Map);
+    }
+    if (m_IsWGS  &&  ! m_Plasmid.empty()) {
+        joiner.Add(" plasmid ").Add(m_Plasmid);
     }
 
-    return title;
+    joiner.Join(&m_MainTitle);
+    NStr::TruncateSpacesInPlace(m_MainTitle);
+
+    if (!m_MainTitle.empty() && islower ((unsigned char) m_MainTitle[0])) {
+        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
+    }
 }
 
 // generate title for NC
-static string x_OrganelleName (
+static const char* x_OrganelleName (
     TBIOSOURCE_GENOME genome,
     bool has_plasmid,
     bool virus_or_phage,
@@ -644,7 +724,7 @@ static string x_OrganelleName (
 )
 
 {
-    string result;
+    const char* result = kEmptyCStr;
 
     switch (genome) {
         case NCBI_GENOME(chloroplast):
@@ -742,35 +822,31 @@ static string x_OrganelleName (
     return result;
 }
 
-string CDeflineGenerator::x_TitleFromNC (void)
+void CDeflineGenerator::x_SetTitleFromNC (void)
 
 {
-    bool   has_plasmid = false, virus_or_phage = false, is_chromosome = false, is_plasmid = false;
-    string orgnl, pls, seq_tag, gen_tag;
-    string result;
-
-     if (m_MIBiomol != NCBI_BIOMOL(genomic) &&
-         m_MIBiomol != NCBI_BIOMOL(other_genetic)) return result;
+    if (m_MIBiomol != NCBI_BIOMOL(genomic) &&
+         m_MIBiomol != NCBI_BIOMOL(other_genetic)) return;
 
     // require taxname to be set
-    if (m_Taxname.empty()) return result;
+    if (m_Taxname.empty()) return;
 
-    string lc_name = m_Taxname;
-    NStr::ToLower (lc_name);
+    bool       has_plasmid = false, virus_or_phage = false,
+               is_chromosome = false, is_plasmid = false;
+    const char * orgnl, * seq_tag, * gen_tag, * pls_pfx = " ";
 
-    if (lc_name.find("virus") != NPOS || lc_name.find("phage") != NPOS) {
+    CTextJoiner<6, CTempString> joiner;
+
+    if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
+        NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
         virus_or_phage = true;
     }
 
     if (! m_Plasmid.empty()) {
         has_plasmid = true;
-        string lc_plasmid = m_Plasmid;
-        NStr::ToLower (lc_plasmid);
-        if (lc_plasmid.find("plasmid") == NPOS &&
-            lc_plasmid.find("element") == NPOS) {
-            pls = "plasmid " + m_Plasmid;
-        } else {
-            pls = m_Plasmid;
+        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+            pls_pfx = " plasmid ";
         }
     }
 
@@ -793,52 +869,51 @@ string CDeflineGenerator::x_TitleFromNC (void)
             break;
     }
 
-    if (lc_name.find ("plasmid") != NPOS) {
-        result = m_Taxname + seq_tag;        
+    joiner.Add(m_Taxname);
+
+    if (NStr::FindNoCase (m_Taxname, "plasmid") != NPOS) {
+        joiner.Add(seq_tag);
     } else if (is_plasmid) {
-        if (pls.empty()) {
-            result = m_Taxname + " unnamed plasmid" + seq_tag;
+        if (m_Plasmid.empty()) {
+            joiner.Add(" unnamed plasmid").Add(seq_tag);
         } else {
-            result = m_Taxname + " " + pls + seq_tag;
+            joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
         }
-    } else if (! pls.empty() ) {
-        if (orgnl.empty()) {
-            result = m_Taxname + " " + pls + seq_tag;
-        } else {
-            result = m_Taxname + " " + orgnl + " " + pls + seq_tag;
+    } else if (! m_Plasmid.empty() ) {
+        if (orgnl[0] != '\0') {
+            joiner.Add(" ").Add(orgnl);
         }
-    } else if (! orgnl.empty() ) {
+        joiner.Add(pls_pfx).Add(m_Plasmid).Add(seq_tag);
+    } else if ( orgnl[0] != 0 ) {
         if ( m_Chromosome.empty() ) {
-            result = m_Taxname + " " + orgnl + gen_tag;
+            joiner.Add(" ").Add(orgnl).Add(gen_tag);
         } else if (is_chromosome) {
-            result = m_Taxname + " chromosome " + m_Chromosome
-                + seq_tag;
+            joiner.Add(" chromosome ").Add(m_Chromosome).Add(seq_tag);
         } else {
-            result = m_Taxname + " " + orgnl + " chromosome " + m_Chromosome
-                + seq_tag;
+            joiner.Add(" ").Add(orgnl).Add(" chromosome ").Add(m_Chromosome)
+                .Add(seq_tag);
         }
     } else if (! m_Segment.empty()) {
         if (m_Segment.find ("DNA") == NPOS &&
             m_Segment.find ("RNA") == NPOS &&
             m_Segment.find ("segment") == NPOS &&
             m_Segment.find ("Segment") == NPOS) {
-            result = m_Taxname + " segment " + m_Segment + seq_tag;
+            joiner.Add(" segment ").Add(m_Segment).Add(seq_tag);
         } else {
-            result = m_Taxname + " " + m_Segment + seq_tag;
+            joiner.Add(" ").Add(m_Segment).Add(seq_tag);
         }
-    } else if (! m_Chromosome.empty() ) {
-        result = m_Taxname + " chromosome " + m_Chromosome + seq_tag;
+    } else if (! m_Chromosome.empty()) {
+        joiner.Add(" chromosome ").Add(m_Chromosome).Add(seq_tag);
     } else {
-        result = m_Taxname + gen_tag;
+        joiner.Add(gen_tag);
     }
+    joiner.Join(&m_MainTitle);
 
-    result = NStr::Replace (result, "Plasmid", "plasmid");
-    result = NStr::Replace (result, "Element", "element");
-    if (! result.empty()) {
-        result[0] = toupper ((unsigned char) result[0]);
+    NStr::ReplaceInPlace (m_MainTitle, "Plasmid", "plasmid");
+    NStr::ReplaceInPlace (m_MainTitle, "Element", "element");
+    if (! m_MainTitle.empty()) {
+        m_MainTitle[0] = toupper ((unsigned char) m_MainTitle[0]);
     }
-
-    return result;
 }
 
 // generate title for NM
@@ -865,7 +940,7 @@ static void x_FlyCG_PtoR (
     }
 }
 
-string CDeflineGenerator::x_TitleFromNM (
+void CDeflineGenerator::x_SetTitleFromNM (
     const CBioseq_Handle& bsh
 )
 
@@ -873,10 +948,9 @@ string CDeflineGenerator::x_TitleFromNM (
     unsigned int         genes = 0, cdregions = 0, prots = 0;
     CConstRef<CSeq_feat> gene(0);
     CConstRef<CSeq_feat> cdregion(0);
-    string result;
 
     // require taxname to be set
-    if (m_Taxname.empty()) return result;
+    if (m_Taxname.empty()) return;
 
     CScope& scope = bsh.GetScope();
 
@@ -906,70 +980,68 @@ string CDeflineGenerator::x_TitleFromNM (
     }
 
     if (genes == 1 && cdregions == 1 && (! m_Taxname.empty())) {
-        result = m_Taxname + " ";
-        string cds_label;
+        string cds_label, gene_label;
+        CTextJoiner<6, CTempString> joiner;
+
         feature::GetLabel(*cdregion, &cds_label, feature::fFGL_Content, &scope);
         if (NStr::EqualNocase (m_Taxname, "Drosophila melanogaster")) {
             x_FlyCG_PtoR (cds_label);
         }
-        result += NStr::Replace (cds_label, "isoform ", "transcript variant ");
-        result += " (";
-        feature::GetLabel(*gene, &result, feature::fFGL_Content, &scope);
-        result += "), mRNA";
+        NStr::ReplaceInPlace (cds_label, "isoform ", "transcript variant ");
+        feature::GetLabel(*gene, &gene_label, feature::fFGL_Content, &scope);
+        joiner.Add(m_Taxname).Add(" ").Add(cds_label).Add(" (")
+            .Add(gene_label).Add("), mRNA");
+        joiner.Join(&m_MainTitle);
     }
-
-    return result;
 }
 
 // generate title for NR
-string CDeflineGenerator::x_TitleFromNR (
+void CDeflineGenerator::x_SetTitleFromNR (
     const CBioseq_Handle& bsh
 )
 
 {
-    string result;
-
     // require taxname to be set
-    if (m_Taxname.empty()) return result;
+    if (m_Taxname.empty()) return;
 
     FOR_EACH_SEQFEAT_ON_BIOSEQ_HANDLE (feat_it, bsh, Gene) {
         const CSeq_feat& sft = feat_it->GetOriginalFeature();
-        result = m_Taxname + " ";
-        feature::GetLabel(sft, &result, feature::fFGL_Content);
-        result += ", ";
+        m_MainTitle = string(m_Taxname) + " ";
+        feature::GetLabel(sft, &m_MainTitle, feature::fFGL_Content);
+        m_MainTitle += ", ";
         switch (m_MIBiomol) {
             case NCBI_BIOMOL(pre_RNA):
-                result += "precursorRNA";
+                m_MainTitle += "precursorRNA";
                 break;
             case NCBI_BIOMOL(mRNA):
-                result += "mRNA";
+                m_MainTitle += "mRNA";
                 break;
             case NCBI_BIOMOL(rRNA):
-                result += "rRNA";
+                m_MainTitle += "rRNA";
                 break;
             case NCBI_BIOMOL(tRNA):
-                result += "tRNA";
+                m_MainTitle += "tRNA";
                 break;
             case NCBI_BIOMOL(snRNA):
-                result += "snRNA";
+                m_MainTitle += "snRNA";
                 break;
             case NCBI_BIOMOL(scRNA):
-                result += "scRNA";
+                m_MainTitle += "scRNA";
                 break;
             case NCBI_BIOMOL(cRNA):
-                result += "cRNA";
+                m_MainTitle += "cRNA";
                 break;
             case NCBI_BIOMOL(snoRNA):
-                result += "snoRNA";
+                m_MainTitle += "snoRNA";
                 break;
             case NCBI_BIOMOL(transcribed_RNA):
-                result+="miscRNA";
+                m_MainTitle += "miscRNA";
                 break;
             case NCBI_BIOMOL(ncRNA):
-                result += "ncRNA";
+                m_MainTitle += "ncRNA";
                 break;
             case NCBI_BIOMOL(tmRNA):
-                result += "tmRNA";
+                m_MainTitle += "tmRNA";
                 break;
             default:
                 break;
@@ -978,35 +1050,31 @@ string CDeflineGenerator::x_TitleFromNR (
         // take first, then break to skip remainder
         break;
     }
-
-    return result;
 }
 
 // generate title for Patent
-string CDeflineGenerator::x_TitleFromPatent (void)
+void CDeflineGenerator::x_SetTitleFromPatent (void)
 
 {
-    string result;
-
-    result = "Sequence " + NStr::IntToString(m_PatentSequence) +
-             " from Patent " + m_PatentCountry +
-             " " + m_PatentNumber;
-
-    return result;
+    string seqno = NStr::IntToString(m_PatentSequence);
+    CTextJoiner<6, CTempString> joiner;
+    joiner.Add("Sequence ").Add(seqno).Add(" from Patent ")
+        .Add(m_PatentCountry).Add(" ").Add(m_PatentNumber);
+    joiner.Join(&m_MainTitle);
 }
 
 // generate title for PDB
-string CDeflineGenerator::x_TitleFromPDB (void)
+void CDeflineGenerator::x_SetTitleFromPDB (void)
 
 {
-    string result;
-
     if (isprint ((unsigned char) m_PDBChain)) {
-        result = string("Chain ") + (char) m_PDBChain + ", ";
+        string chain(1, (char) m_PDBChain);
+        CTextJoiner<4, CTempString> joiner;
+        joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
+        joiner.Join(&m_MainTitle);
+    } else {
+        m_MainTitle = m_PDBCompound;
     }
-    result += m_PDBCompound;
-
-    return result;
 }
 
 // generate title for protein
@@ -1246,7 +1314,7 @@ static const char* s_proteinOrganellePrefix [] = {
   "",
 };
 
-string CDeflineGenerator::x_TitleFromProtein (
+void CDeflineGenerator::x_SetTitleFromProtein (
     const CBioseq_Handle& bsh
 )
 
@@ -1256,9 +1324,8 @@ string CDeflineGenerator::x_TitleFromProtein (
     CConstRef<CSeq_feat>  prot_feat;
     CConstRef<CGene_ref>  gene;
     CConstRef<CBioSource> src;
-    string                locus_tag;
+    CTempString           locus_tag;
     bool                  partial = false;
-    string                result;
 
     // gets longest protein on Bioseq, parts set, or seg set, even if not
     // full-length
@@ -1284,35 +1351,27 @@ string CDeflineGenerator::x_TitleFromProtein (
 
     if (prot) {
         const CProt_ref& prp = *prot;
-        string prefix = "";
+        const char* prefix = "";
         FOR_EACH_NAME_ON_PROT (prp_itr, prp) {
             const string& str = *prp_itr;
-            result += prefix;
-            result += str;
+            m_MainTitle += prefix;
+            m_MainTitle += str;
             if (! m_AllProtNames) {
                 break;
             }
             prefix = "; ";
         }
 
-        if (! result.empty()) {
+        if (! m_MainTitle.empty()) {
             // strip trailing periods, commas, and spaces
-            size_t pos = result.find_last_not_of (".,;~ ");
+            SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
             if (pos != string::npos) {
-                result.erase (pos + 1);
+                m_MainTitle.erase (pos + 1);
             }
-            /*
-            while (NStr::EndsWith (result, ".") ||
-                   NStr::EndsWith (result, ",") ||
-                   NStr::EndsWith (result, ";") ||
-                   NStr::EndsWith (result, "~") ||
-                   NStr::EndsWith (result, " ")) {
-                result.erase (result.end() - 1);
-            }
-            */
 
-            if (NStr::CompareNocase (result, "hypothetical protein") == 0 ||
-                NStr::CompareNocase (result, "uncharacterized protein") == 0) {
+            if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
+                 NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
+                &&  !m_LocalAnnotsOnly ) {
                 gene = x_GetGeneRefViaCDS (mapped_cds);
                 if (gene) {
                     const CGene_ref& grp = *gene;
@@ -1321,134 +1380,114 @@ string CDeflineGenerator::x_TitleFromProtein (
                     }
                 }
                 if (! locus_tag.empty()) {
-                    result += " " + locus_tag;
+                    m_MainTitle += " " + string(locus_tag);
                 }
             }
         }
-        if (result.empty()) {
+        if (m_MainTitle.empty()) {
             if (prp.IsSetDesc()) {
-                result = prp.GetDesc();
+                m_MainTitle = prp.GetDesc();
             }
         }
-        if (result.empty()) {
+        if (m_MainTitle.empty()) {
             FOR_EACH_ACTIVITY_ON_PROT (act_itr, prp) {
                 const string& str = *act_itr;
-                result = str;
+                m_MainTitle = str;
                 break;
             }
         }
     }
 
-    if (result.empty()) {
+    if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
         gene = x_GetGeneRefViaCDS (mapped_cds);
         if (gene) {
             const CGene_ref& grp = *gene;
             if (grp.IsSetLocus()) {
-                result = grp.GetLocus();
+                m_MainTitle = grp.GetLocus();
             }
-            if (result.empty()) {
+            if (m_MainTitle.empty()) {
                 FOR_EACH_SYNONYM_ON_GENE (syn_itr, grp) {
                     const string& str = *syn_itr;
-                    result = str;
+                    m_MainTitle = str;
                     break;
                 }
             }
-            if (result.empty()) {
+            if (m_MainTitle.empty()) {
                 if (grp.IsSetDesc()) {
-                    result = grp.GetDesc();
+                    m_MainTitle = grp.GetDesc();
                 }
             }
         }
-        if (! result.empty()) {
-            result += " gene product";
+        if (! m_MainTitle.empty()) {
+            m_MainTitle += " gene product";
         }
     }
 
-    if (result.empty()) {
-        result = "unnamed protein product";
+    if (m_MainTitle.empty()) {
+        m_MainTitle = "unnamed protein product";
     }
 
     if (mapped_cds) {
         const CSeq_feat& cds = mapped_cds.GetOriginalFeature();
         if (x_CDShasLowQualityException (cds)) {
           const string& low_qual = "LOW QUALITY PROTEIN: ";
-          if (NStr::FindNoCase (result, low_qual, 0) == NPOS) {
-              string tmp = result;
-              result = low_qual + tmp;
+          if (NStr::FindNoCase (m_MainTitle, low_qual, 0) == NPOS) {
+              string tmp = m_MainTitle;
+              m_MainTitle = low_qual + tmp;
           }
         }
     }
 
     // strip trailing periods, commas, and spaces
-    size_t pos = result.find_last_not_of (".,;~ ");
+    SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
     if (pos != string::npos) {
-        result.erase (pos + 1);
-    }
-    /*
-    while (NStr::EndsWith (result, ".") ||
-               NStr::EndsWith (result, ",") ||
-               NStr::EndsWith (result, ";") ||
-               NStr::EndsWith (result, "~") ||
-               NStr::EndsWith (result, " ")) {
-        result.erase (result.end() - 1);
-    }
-    */
-
-    if (partial /* && result.find(", partial") == NPOS */) {
-        result += ", partial";
+        m_MainTitle.erase (pos + 1);
     }
 
-    string taxname;
-    taxname = m_Taxname;
+    if (partial /* && m_MainTitle.find(", partial") == NPOS */) {
+        m_MainTitle += ", partial";
+    }
+
+    CTempString taxname = m_Taxname;
 
     if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
-        CTempString organelle(s_proteinOrganellePrefix [m_Genome]);
-        if (! organelle.empty() && ! taxname.empty() /* && taxname.find(organelle) == NPOS */) {
-            result += " (";
-            result += organelle;
-            result += ")";
+        const char * organelle = s_proteinOrganellePrefix [m_Genome];
+        if ( organelle[0] != '\0'  &&  ! taxname.empty()
+            /* &&  NStr::Find (taxname, organelle) == NPOS */) {
+            m_MainTitle += " (";
+            m_MainTitle += organelle;
+            m_MainTitle += ")";
         }
     }
 
     // check for special taxname, go to overlapping source feature
-    if (taxname.empty() ||
-        (NStr::CompareNocase (taxname, "synthetic construct") != 0 &&
-         NStr::CompareNocase (taxname, "artificial sequence") != 0 &&
-         taxname.find ("vector") == NPOS &&
-         taxname.find ("Vector") == NPOS)) {
-
+    if ((taxname.empty()  ||
+         (!NStr::EqualNocase (taxname, "synthetic construct")  &&
+          !NStr::EqualNocase (taxname, "artificial sequence")  &&
+          taxname.find ("vector") == NPOS  &&
+          taxname.find ("Vector") == NPOS))  &&
+        !m_LocalAnnotsOnly) {
         src = x_GetSourceFeatViaCDS (bsh);
-        if (src) {
-            const CBioSource& source = *src;
-            if (source.IsSetTaxname()) {
-                const string& str = source.GetTaxname();
-                taxname = str;
-            }
+        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+            taxname = src->GetTaxname();
         }
     }
 
-    if (! taxname.empty() /* && result.find(taxname) == NPOS */) {
-        result += " [" + taxname + "]";
+    if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
+        m_MainTitle += " [" + string(taxname) + "]";
     }
-
-    return result;
 }
 
 // generate title for segmented sequence
-string CDeflineGenerator::x_TitleFromSegSeq  (
+static bool x_GetSegSeqInfoViaCDS (
+    string& locus,
+    string& product,
+    const char*& completeness,
     const CBioseq_Handle& bsh
 )
 
 {
-    string completeness = "complete";
-    bool   cds_found    = false;
-    string locus, product, result;
-
     CScope& scope = bsh.GetScope();
-
-    if (m_Taxname.empty()) {
-        m_Taxname = "Unknown";
-    }
 
     // check C toolkit code to understand what is happening here ???
 
@@ -1459,8 +1498,6 @@ string CDeflineGenerator::x_TitleFromSegSeq  (
         const CSeq_feat& cds = it->GetOriginalFeature();
         if (! cds.IsSetLocation ()) continue;
         const CSeq_loc& cds_loc = cds.GetLocation();
-
-        cds_found = true;
 
         GetLabel (cds, &product, feature::fFGL_Content, &scope);
 
@@ -1504,87 +1541,119 @@ string CDeflineGenerator::x_TitleFromSegSeq  (
             }
         }
 
-        // take first, then break to skip remainder
-        break;
+        return true;
     }
 
-    result = m_Taxname;
+    return false;
+}
+
+void CDeflineGenerator::x_SetTitleFromSegSeq  (
+    const CBioseq_Handle& bsh
+)
+
+{
+    const char * completeness = "complete";
+    bool         cds_found    = false;
+    string       locus, product, clnbuf;
+    vector<CTempString> clnvec;
+    CTextJoiner<13, CTempString> joiner;
+
+    if (m_Taxname.empty()) {
+        m_Taxname = "Unknown";
+    }
+
+    if ( !m_LocalAnnotsOnly ) {
+        cds_found = x_GetSegSeqInfoViaCDS(locus, product, completeness, bsh);
+    }
+
+    joiner.Add(m_Taxname);
 
     if ( !cds_found) {
-        if ( (! m_Strain.empty()) && (! x_EndsWithStrain (m_Taxname, m_Strain))) {
-            result += " strain " + m_Strain;
-        } else if (! m_Clone.empty() /* && m_Clone.find(" clone ") != NPOS */) {
-            result += x_DescribeClones ();
+        if (! m_Strain.empty()
+            &&  ! x_EndsWithStrain (m_Taxname, m_Strain) ) {
+            joiner.Add(" strain ").Add(m_Strain);
+        } else if (! m_Clone.empty()
+                   /* && m_Clone.find(" clone ") != NPOS */) {
+            x_DescribeClones (clnvec, clnbuf);
+            ITERATE (vector<CTempString>, it, clnvec) {
+                joiner.Add(*it);
+            }
         } else if (! m_Isolate.empty() ) {
-            result += " isolate " + m_Isolate;
+            joiner.Add(" isolate ").Add(m_Isolate);
         }
     }
     if (! product.empty()) {
-        result += " " + product;
+        joiner.Add(" ").Add(product);
     }
     if (! locus.empty()) {
-        result += " (" + locus + ")";
+        joiner.Add(" (").Add(locus).Add(")");
     }
     if ((! product.empty()) || (! locus.empty())) {
-        result += " gene, " + completeness + " cds";
+        joiner.Add(" gene, ").Add(completeness).Add(" cds");
     }
-    return NStr::TruncateSpaces(result);
+    joiner.Join(&m_MainTitle);
+    NStr::TruncateSpacesInPlace(m_MainTitle);
 }
 
 // generate title for TSA or non-master WGS
-string CDeflineGenerator::x_TitleFromWGS (void)
+void CDeflineGenerator::x_SetTitleFromWGS (void)
 
 {
-    string chr, cln, mp, pls, mod, sfx;
+    string clnbuf;
+    vector<CTempString> clnvec;
+    CTextJoiner<14, CTempString> joiner;
+
+    joiner.Add(m_Taxname);
 
     if (! m_Strain.empty()) {
         if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
-            mod = " strain " + m_Strain.substr (0, m_Strain.find(';'));
+            joiner.Add(" strain ");
+            joiner.Add(m_Strain.substr (0, m_Strain.find(';')));
         }
     } else if (! m_Breed.empty()) {
-        mod = " breed " + m_Breed.substr (0, m_Breed.find(';'));
+        joiner.Add(" breed ").Add(m_Breed.substr (0, m_Breed.find(';')));
     } else if (! m_Cultivar.empty()) {
-        mod = " cultivar " + m_Cultivar.substr (0, m_Cultivar.find(';'));
+        joiner.Add(" cultivar ");
+        joiner.Add(m_Cultivar.substr (0, m_Cultivar.find(';')));
     }
     if (! m_Chromosome.empty()) {
-        chr = " chromosome " + m_Chromosome;
+        joiner.Add(" chromosome ").Add(m_Chromosome);
     }
     if (! m_Clone.empty()) {
-        cln = x_DescribeClones ();
+        x_DescribeClones (clnvec, clnbuf);
+        ITERATE (vector<CTempString>, it, clnvec) {
+            joiner.Add(*it);
+        }
     }
     if (! m_Map.empty()) {
-        mp = " map " + m_Map;
+        joiner.Add(" map ").Add(m_Map);
     }
     if (! m_Plasmid.empty()) {
         if (m_IsWGS) {
-            pls = " plasmid " + m_Plasmid;
+            joiner.Add(" plasmid ").Add(m_Plasmid);
         }
     }
     if (! m_GeneralStr.empty()  &&  m_GeneralStr != m_Chromosome
         &&  (! m_IsWGS  ||  m_GeneralStr != m_Plasmid)) {
-        sfx = " " + m_GeneralStr;
+        joiner.Add(" ").Add(m_GeneralStr);
     }
 
-    string title = NStr::TruncateSpaces
-        (m_Taxname + mod + chr + cln + mp + pls + sfx);
+    joiner.Join(&m_MainTitle);
+    NStr::TruncateSpacesInPlace(m_MainTitle);
 
-    if (islower ((unsigned char) title[0])) {
-        title [0] = toupper ((unsigned char) title [0]);
+    if (islower ((unsigned char) m_MainTitle[0])) {
+        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
     }
-
-    return title;
 }
 
 // generate TPA or TSA prefix
-string CDeflineGenerator::x_SetPrefix (
-    const string& title
-)
+const char * CDeflineGenerator::x_SetPrefix (void)
 
 {
-    string prefix;
+    const char * prefix = kEmptyCStr;
 
     if (m_IsUnverified) {
-        if (title.find ("UNVERIFIED") == NPOS) {
+        if (m_MainTitle.find ("UNVERIFIED") == NPOS) {
             prefix = "UNVERIFIED: ";
         }
     } else if (m_IsTSA) {
@@ -1605,27 +1674,25 @@ string CDeflineGenerator::x_SetPrefix (
 }
 
 // generate suffix if not already present
-string CDeflineGenerator::x_SetSuffix (
-    const CBioseq_Handle& bsh,
-    const string& title
+void CDeflineGenerator::x_SetSuffix (
+    string& suffix,
+    const CBioseq_Handle& bsh
 )
 
 {
-    string suffix;
-
     switch (m_MITech) {
         case NCBI_TECH(htgs_0):
-            if (title.find ("LOW-PASS") == NPOS) {
+            if (m_MainTitle.find ("LOW-PASS") == NPOS) {
                 suffix = ", LOW-PASS SEQUENCE SAMPLING";
             }
             break;
         case NCBI_TECH(htgs_1):
         case NCBI_TECH(htgs_2):
         {
-            if (m_HTGSDraft && title.find ("WORKING DRAFT") == NPOS) {
+            if (m_HTGSDraft && m_MainTitle.find ("WORKING DRAFT") == NPOS) {
                 suffix = ", WORKING DRAFT SEQUENCE";
             } else if ( !m_HTGSDraft && !m_HTGSCancelled &&
-                       title.find ("SEQUENCING IN") == NPOS) {
+                       m_MainTitle.find ("SEQUENCING IN") == NPOS) {
                 suffix = ", *** SEQUENCING IN PROGRESS ***";
             }
 
@@ -1650,34 +1717,35 @@ string CDeflineGenerator::x_SetSuffix (
             break;
         }
         case NCBI_TECH(htgs_3):
-            if (title.find ("complete sequence") == NPOS) {
+            if (m_MainTitle.find ("complete sequence") == NPOS) {
                 suffix = ", complete sequence";
             }
             break;
         case NCBI_TECH(est):
-            if (title.find ("mRNA sequence") == NPOS) {
+            if (m_MainTitle.find ("mRNA sequence") == NPOS) {
                 suffix = ", mRNA sequence";
             }
             break;
         case NCBI_TECH(sts):
-            if (title.find ("sequence tagged site") == NPOS) {
+            if (m_MainTitle.find ("sequence tagged site") == NPOS) {
                 suffix = ", sequence tagged site";
             }
             break;
         case NCBI_TECH(survey):
-            if (title.find ("genomic survey sequence") == NPOS) {
+            if (m_MainTitle.find ("genomic survey sequence") == NPOS) {
                 suffix = ", genomic survey sequence";
             }
             break;
         case NCBI_TECH(wgs):
             if (m_WGSMaster) {
-                if (title.find ("whole genome shotgun sequencing project")
+                if (m_MainTitle.find ("whole genome shotgun sequencing project")
                     == NPOS){
                     suffix = ", whole genome shotgun sequencing project";
                 }            
-            } else if (title.find ("whole genome shotgun sequence") == NPOS) {
+            } else if (m_MainTitle.find ("whole genome shotgun sequence")
+                       == NPOS) {
                 string orgnl = x_OrganelleName (m_Genome, false, false, true);
-                if (! orgnl.empty()  &&  title.find(orgnl) == NPOS) {
+                if (! orgnl.empty()  &&  m_MainTitle.find(orgnl) == NPOS) {
                     suffix = " " + orgnl;
                 }
                 suffix += ", whole genome shotgun sequence";
@@ -1686,12 +1754,13 @@ string CDeflineGenerator::x_SetSuffix (
         case NCBI_TECH(tsa):
             if (m_MIBiomol == NCBI_BIOMOL(mRNA)) {
                 if (m_TSAMaster) {
-                    if (title.find ("whole genome shotgun sequencing project")
-                        == NPOS){
+                    if (m_MainTitle.find
+                        ("whole genome shotgun sequencing project")
+                        == NPOS) {
                         suffix = ", whole genome shotgun sequencing project";
                     }            
                 } else {
-                    if (title.find ("mRNA sequence") == NPOS){
+                    if (m_MainTitle.find ("mRNA sequence") == NPOS) {
                         suffix = ", mRNA sequence";
                     }            
                 }
@@ -1700,8 +1769,6 @@ string CDeflineGenerator::x_SetSuffix (
         default:
             break;
     }
-
-    return suffix;
 }
 
 // main method
@@ -1711,123 +1778,110 @@ string CDeflineGenerator::GenerateDefline (
 )
 
 {
-    string prefix, title, suffix;
+    const char * prefix; // from a small set of compile-time constants
+    string suffix;
 
     // set flags from record components
     x_SetFlags (bsh, flags);
 
     if (! m_Reconstruct) {
-        // look for existing instantiated title
-        int level = 0;
-        FOR_EACH_SEQDESC_ON_BIOSEQ_HANDLE (desc_it, bsh, Title) {
-            const string& str = desc_it->GetTitle();
-            // for non-PDB proteins, title must be packaged on Bioseq
-            if (m_IsNA || m_IsPDB || level == 0) {
-                title = str;
-
-                // strip trailing periods, commas, semicolons, and spaces
-                size_t pos = title.find_last_not_of (".,;~ ");
-                if (pos != string::npos) {
-                    title.erase (pos + 1);
-                }
-                /*
-                while (NStr::EndsWith (title, ".") ||
-                           NStr::EndsWith (title, ",") ||
-                           NStr::EndsWith (title, ";") ||
-                           NStr::EndsWith (title, "~") ||
-                           NStr::EndsWith (title, " ")) {
-                    title.erase (title.end() - 1);
-                }
-                */
-            }
-
-            // take first, then break to skip remainder
-            break;
+        // x_SetFlags set m_MainTitle from a suitable descriptor, if any;
+        // now strip trailing periods, commas, semicolons, and spaces.
+        size_t pos = m_MainTitle.find_last_not_of (".,;~ ");
+        if (pos != string::npos) {
+            m_MainTitle.erase (pos + 1);
         }
     }
 
     // use appropriate algorithm if title needs to be generated
-    if (title.empty()) {
+    if (m_MainTitle.empty()) {
         // PDB and patent records do not normally need source data
         if (m_IsPDB) {
-            title = x_TitleFromPDB ();
+            x_SetTitleFromPDB ();
         } else if (m_IsPatent) {
-            title = x_TitleFromPatent ();
+            x_SetTitleFromPatent ();
         }
 
-        if (title.empty()) {
+        if (m_MainTitle.empty()) {
             // set fields from source information
             x_SetBioSrc (bsh);
 
             // several record types have specific methods
             if (m_IsNC) {
-                title = x_TitleFromNC ();
-            } else if (m_IsNM) {
-                title = x_TitleFromNM (bsh);
+                x_SetTitleFromNC ();
+            } else if (m_IsNM  &&  !m_LocalAnnotsOnly) {
+                x_SetTitleFromNM (bsh);
             } else if (m_IsNR) {
-                title = x_TitleFromNR (bsh);
+                x_SetTitleFromNR (bsh);
             } else if (m_IsAA) {
-                title = x_TitleFromProtein (bsh);
+                x_SetTitleFromProtein (bsh);
             } else if (m_IsSeg && (! m_IsEST_STS_GSS)) {
-                title = x_TitleFromSegSeq (bsh);
+                x_SetTitleFromSegSeq (bsh);
             } else if (m_IsTSA || (m_IsWGS && (! m_WGSMaster))) {
-                title = x_TitleFromWGS ();
+                x_SetTitleFromWGS ();
             }
         }
 
-        if (title.empty()) {
+        if (m_MainTitle.empty()) {
             // default title using source fields
-            title = x_TitleFromBioSrc ();
+            x_SetTitleFromBioSrc ();
         }
 
-        if (title.empty()) {
+        if (m_MainTitle.empty()) {
             // last resort title created here
-            //title = "No definition line found";
+            //m_MainTitle = "No definition line found";
         }
     }
 
     // remove TPA or TSA prefix, will rely on other data in record to set
-    if (NStr::StartsWith (title, "TPA:", NStr::eNocase)) {
-        title.erase (0, 4);
-    } else if (NStr::StartsWith (title, "TPA_exp:", NStr::eNocase)) {
-        title.erase (0, 8);
-    } else if (NStr::StartsWith (title, "TPA_inf:", NStr::eNocase)) {
-        title.erase (0, 8);
-    } else if (NStr::StartsWith (title, "TPA_reasm:", NStr::eNocase)) {
-        title.erase (0, 10);
-    } else if (NStr::StartsWith (title, "TSA:", NStr::eNocase)) {
-        title.erase (0, 4);
-    } else if (NStr::StartsWith (title, "UNVERIFIED:", NStr::eNocase)) {
-        title.erase (0, 11);
+    switch (CTempString (m_MainTitle, 0, 11).find (':')) {
+    case 3:
+        if (NStr::StartsWith (m_MainTitle, "TPA", NStr::eNocase)  ||
+            NStr::StartsWith (m_MainTitle, "TSA", NStr::eNocase)) {
+            m_MainTitle.erase (0, 4);
+        }
+        break;
+
+    case 7:
+        if (NStr::StartsWith (m_MainTitle, "TPA_exp", NStr::eNocase)  ||
+            NStr::StartsWith (m_MainTitle, "TPA_inf", NStr::eNocase)) {
+            m_MainTitle.erase (0, 8);
+        }
+        break;
+
+    case 9:
+        if (NStr::StartsWith (m_MainTitle, "TPA_reasm", NStr::eNocase)) {
+            m_MainTitle.erase (0, 10);
+        }
+        break;
+
+    case 10:
+        if (NStr::StartsWith (m_MainTitle, "UNVERIFIED", NStr::eNocase)) {
+            m_MainTitle.erase (0, 11);
+        }
+        break;
+
+    default:
+        break;
     }
 
     // strip leading spaces remaining after removal of old TPA or TSA prefixes
-    while (NStr::StartsWith (title, " ")) {
-        title.erase (0, 1);
-    }
+    m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
 
     // strip trailing commas, semicolons, and spaces (period may be an sp.
     // species)
-    size_t pos = title.find_last_not_of (",;~ ");
+    size_t pos = m_MainTitle.find_last_not_of (",;~ ");
     if (pos != string::npos) {
-        title.erase (pos + 1);
+        m_MainTitle.erase (pos + 1);
     }
-    /*
-    while (NStr::EndsWith (title, ",") ||
-               NStr::EndsWith (title, ";") ||
-               NStr::EndsWith (title, "~") ||
-               NStr::EndsWith (title, " ")) {
-        title.erase (title.end() - 1);
-    }
-    */
 
     // calculate prefix
-    prefix = x_SetPrefix (title);
+    prefix = x_SetPrefix();
 
     // calculate suffix
-    suffix = x_SetSuffix (bsh, title);
+    x_SetSuffix (suffix, bsh);
 
-    return prefix + title + suffix;
+    return prefix + m_MainTitle + suffix;
 }
 
 string CDeflineGenerator::GenerateDefline (
