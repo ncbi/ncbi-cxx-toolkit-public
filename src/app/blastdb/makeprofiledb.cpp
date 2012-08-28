@@ -392,7 +392,7 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
                             "Create Index Files",
                             CArgDescriptions::eBoolean, kDefaultOutIndexFile);
 
-    arg_desc->SetCurrentGroup("Scoremat w residue frequencies only options (for building pssm)");
+    arg_desc->SetCurrentGroup("Used only if scoremat files do not contain PSSM scores, ignored otherwise.");
     arg_desc->AddOptionalKey(kArgGapOpen, "gap_open_penalty",
                             "Cost to open a gap",
                             CArgDescriptions::eInteger);
