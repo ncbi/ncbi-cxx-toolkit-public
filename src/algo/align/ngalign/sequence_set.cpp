@@ -255,6 +255,7 @@ CRef<CSeq_loc> s_GetClipLoc(const CSeq_id& Id,
 
     while(AnnotIter) {
         if (AnnotIter->IsFtable() && 
+            AnnotIter->IsNamed()  &&
             AnnotIter->GetName() == "NCBI_GPIPE") {
             CConstRef<CSeq_annot> Annot = AnnotIter->GetCompleteSeq_annot();
             
