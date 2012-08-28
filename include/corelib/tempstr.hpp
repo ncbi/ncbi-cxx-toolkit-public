@@ -64,6 +64,7 @@ class CTempString
 public:
     /// @name std::basic_string<> compatibility typedefs and enums
     /// @{
+    typedef char            value_type;
     typedef size_t          size_type;
     typedef const char*     const_iterator;
     static const size_type  npos = static_cast<size_type>(-1);
