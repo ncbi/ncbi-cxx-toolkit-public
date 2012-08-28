@@ -56,6 +56,7 @@ NCBI_DEFINE_ERRCODE_X(Util_StaticArray,  212,  3);
 NCBI_DEFINE_ERRCODE_X(Util_Scheduler,    213,  1);
 NCBI_DEFINE_ERRCODE_X(Util_Unicode,      214,  3);
 NCBI_DEFINE_ERRCODE_X(Util_LineReader,   215,  1);
+NCBI_DEFINE_ERRCODE_X(Util_TextJoiner,   216,  1);
 
 
 END_NCBI_SCOPE
