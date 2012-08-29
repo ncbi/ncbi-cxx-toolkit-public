@@ -163,6 +163,7 @@ int main (void)
 
 	// result_Int8 = ConvertSafe(value_Uint8); // ERROR.
 	result_Int8 = ConvertSafe(value_Uint4); 
+        _ASSERT(result_Int8 == value_Uint4);
 	// result_Int4 = ConvertSafe(value_Uint8); // ERROR.
 	// result_Int4 = ConvertSafe(value_Uint4); // ERROR.
 	
@@ -209,6 +210,7 @@ int main (void)
 		result_Int8 = Convert(str_Uint4); 
 		result_Int4 = Convert(str_Uint8);
 		result_Int4 = Convert(str_Uint4);
+                _ASSERT(result_Int4 == static_cast<Int4>(value_Uint4));
 	} catch (const CException&) {
 		// Oops ...
 	}
