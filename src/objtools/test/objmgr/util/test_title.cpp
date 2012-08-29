@@ -41,7 +41,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/create_defline.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -63,10 +63,13 @@ void CTitleTester::Init(void)
 
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to examine",
                      CArgDescriptions::eInteger);
+    arg_desc->AddKey("in", "GIList", "File listing GIs to look up",
+                     CArgDescriptions::eInputFile);
+    arg_desc->SetDependency("gi", CArgDescriptions::eExcludes, "in");
     arg_desc->AddFlag("reconstruct", "Reconstruct title");
-    arg_desc->AddFlag("accession", "Prepend accession");
-    arg_desc->AddFlag("organism", "Append organism name");
     arg_desc->AddFlag("allproteins", "Name all proteins, not just the first");
+    arg_desc->AddFlag("localannots",
+                      "Never use related sequences' annotations");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -79,23 +82,38 @@ int CTitleTester::Run(void)
     CScope         scope(*objmgr);
     CSeq_id        id;
     
-    id.SetGi(args["gi"].AsInteger());
-
     CGBDataLoader::RegisterInObjectManager(*objmgr);
     scope.AddDefaults();
 
-    CBioseq_Handle handle = scope.GetBioseqHandle(id);
-    TGetTitleFlags flags  = 0;
+    CDeflineGenerator gen;
+    CDeflineGenerator::TUserFlags flags = 0;
     if (args["reconstruct"]) {
-        flags |= fGetTitle_Reconstruct;
-    }
-    if (args["organism"]) {
-        flags |= fGetTitle_Organism;
+        flags |= CDeflineGenerator::fIgnoreExisting;
     }
     if (args["allproteins"]) {
-        flags |= fGetTitle_AllProteins;
+        flags |= CDeflineGenerator::fAllProteinNames;
     }
-    NcbiCout << GetTitle(handle, flags) << NcbiEndl;
+    if (args["localannots"]) {
+        flags |= CDeflineGenerator::fLocalAnnotsOnly;
+    }
+
+    if (args["gi"]) {
+        id.SetGi(args["gi"].AsInteger());
+        CBioseq_Handle handle = scope.GetBioseqHandle(id);
+        NcbiCout << gen.GenerateDefline(handle, flags) << NcbiEndl;
+    } else {
+        CNcbiIstream& in(args["in"].AsInputFile());
+        while (in >> id.SetGi()) {
+            string s;
+            try {
+                CBioseq_Handle handle = scope.GetBioseqHandle(id);
+                s = gen.GenerateDefline(handle, flags);
+            } catch (exception& e) {
+                s = e.what();
+            }
+            NcbiCout << id.GetGi() << ": " << s << NcbiEndl;
+        }
+    }
     return 0;
 }
 
