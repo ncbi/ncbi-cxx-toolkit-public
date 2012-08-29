@@ -119,6 +119,7 @@ public:
         eDbtagType_ISFinder,
         eDbtagType_InterimID,
         eDbtagType_Interpro,
+        eDbtagType_IntrepidBio,
         eDbtagType_JCM,
         eDbtagType_JGIDB,
         eDbtagType_LRG,
