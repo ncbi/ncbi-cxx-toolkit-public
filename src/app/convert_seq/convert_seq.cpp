@@ -100,7 +100,8 @@ void CConversionApp::Init(void)
                      CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("infmt", &(*new CArgAllow_Strings,
-                    "ID", "asn", "asnb", "xml", "fasta", "gff", "tbl", "agp"));
+                    "ID", "IDs", "asn", "asnb", "xml", "fasta", "gff", "tbl",
+                    "agp"));
     arg_desc->AddOptionalKey
         ("infeat", "InputFile",
          "File from which to read an additional Sequin feature table",
@@ -129,6 +130,8 @@ void CConversionApp::Init(void)
     arg_desc->SetConstraint
         ("outflags",
          new CArgAllow_Regexp("^([1-9]\\d*|0[Xx][[:xdigit:]]*|0[0-7]*)$"));
+    arg_desc->AddFlag
+        ("no-objmgr", "Bypass the object manager for FASTA output");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -149,7 +152,9 @@ int CConversionApp::Run(void)
         CFeature_table_reader::ReadSequinFeatureTables
             (args["infeat"].AsInputFile(), *entry);
     }
-    if (args["infmt"].AsString() != "ID") {
+    if (!NStr::StartsWith(args["infmt"].AsString(), "ID")
+        &&  GetSerialFormat(args["outfmt"].AsString()) == eSerial_None
+        &&  (args["outfmt"].AsString() != "fasta"  ||  !args["no-objmgr"])) {
         try {
             m_Scope->AddTopLevelSeqEntry(const_cast<CSeq_entry&>(*entry));
         } STD_CATCH_ALL("loading into OM")
@@ -217,10 +222,22 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
         return CRef<CSeq_entry>
             (const_cast<CSeq_entry*>
              (h.GetTopLevelEntry().GetCompleteSeq_entry().GetPointer()));
+    } else if (infmt == "IDs") {
+        CNcbiIstream& in(args["in"].AsInputFile());
+        string s;
+        CRef<CSeq_entry> se(new CSeq_entry);
+        while (in >> s) {
+            CSeq_id id(s);
+            CBioseq_Handle h = m_Scope->GetBioseqHandle(id);
+            CConstRef<CSeq_entry> se2
+                (h.GetTopLevelEntry().GetCompleteSeq_entry());
+            se->SetSet().SetSeq_set().push_back
+                (CRef<CSeq_entry>(const_cast<CSeq_entry*>(se2.GetPointer())));
+        }
+        return se;
     } else if (infmt == "fasta") {
         // return ReadFasta(args["in"].AsInputFile());
-        CRef<ILineReader> line_reader(ILineReader::New(args["in"].AsString()));
-        CFastaReader fasta_reader(*line_reader, inflags);
+        CFastaReader fasta_reader(args["in"].AsString(), inflags);
         return fasta_reader.ReadSet();
     } else if (infmt == "gff") {
         return CGFFReader().Read(args["in"].AsInputFile(), inflags);
@@ -263,6 +280,11 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
         } else {
             *in >> *entry;
         }
+        if (inflags != 0) {
+            for (CTypeIterator<CBioseq> it(*entry);  it;  ++it) {
+                it->PackAsDeltaSeq(true);
+            }
+        }
         return entry;
     }
 }
@@ -279,13 +301,12 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
                               CFlatFileConfig::eMode_Entrez,
                               CFlatFileConfig::eStyle_Normal, 0,
                               CFlatFileConfig::fViewAll);
-        ff.Generate(m_Scope->GetSeq_entryHandle(entry), out);
+        CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(entry);
+        ff.Generate(seh, out);
         if (outfmt == "gff3") {
             out << "##FASTA" << endl;
             CFastaOstream fasta_out(out);
-            for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
-                fasta_out.Write(m_Scope->GetBioseqHandle(*it));
-            }
+            fasta_out.Write(seh);
         }
     } else if (outfmt == "fasta") {
         CFastaOstream out(args["out"].AsOutputFile());
@@ -296,8 +317,10 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
             out.SetFlag(CFastaOstream::fAssembleParts);
             out.SetFlag(CFastaOstream::fInstantiateGaps);
         }
-        for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
-            out.Write(m_Scope->GetBioseqHandle(*it));
+        if (args["no-objmgr"]) {
+            out.Write(entry, NULL /* location */, true /* no scope */);
+        } else {
+            out.Write(m_Scope->GetSeq_entryHandle(entry));
         }
     } else {
         auto_ptr<CObjectOStream> out
