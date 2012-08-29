@@ -373,6 +373,16 @@ EOF
 else
    echo "WARNING:  Cannot find path to the library dir."
 fi
+# Add additional path for imported projects to point to local /lib first
+if test "$x_import_prj" = "yes"; then
+    local_lib=`(cd "$x_compile_dir/../lib"; pwd | sed -e 's/\/$//g')`
+    if test -n "$local_lib"  -a  -d "$local_lib";  then
+   cat >> $x_out <<EOF
+COMMON_AddRunpath "$local_lib"
+EOF
+    fi
+fi
+
 
 cat >> $x_out <<EOF
 
