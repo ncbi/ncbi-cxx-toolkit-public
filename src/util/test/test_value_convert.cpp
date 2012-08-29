@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertSafe)
     const Int1 value_Int1 = -127;
     const Uint2 value_Uint2 = 64000;
     const Int2 value_Int2 = -32768;
-    const Uint4 value_Uint4 = 4000000000;
+    const Uint4 value_Uint4 = 4000000000U;
     const Int4 value_Int4 = -2147483520;
     const Uint8 value_Uint8 = 9223372036854775808ULL;
     const Int8 value_Int8 = -9223372036854775807LL;
@@ -1139,7 +1139,7 @@ BOOST_AUTO_TEST_CASE(ValueConvertRuntime)
     const Int1 value_Int1 = -127;
     const Uint2 value_Uint2 = 64000;
     const Int2 value_Int2 = -32768;
-    const Uint4 value_Uint4 = 4000000000;
+    const Uint4 value_Uint4 = 4000000000U;
     const Int4 value_Int4 = -2147483520;
     const Uint8 value_Uint8 = 9223372036854775809ULL;
     const Int8 value_Int8 = -9223372036854775807LL;
