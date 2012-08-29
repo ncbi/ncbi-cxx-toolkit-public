@@ -1485,7 +1485,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             BOOST_CHECK_EQUAL( bool_value, value_bool );
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_bool), string);
-            BOOST_CHECK_EQUAL( str_value, NStr::BoolToString(value_bool) );
+            BOOST_CHECK_EQUAL( str_value, NStr::IntToString(value_bool) );
         }
 
         {
