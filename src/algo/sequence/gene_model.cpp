@@ -563,46 +563,17 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     {
         /// This is a protein alignment; transform it into a fake transcript alignment
         /// so the rest of the processing can go on
-        bool found_stop_codon = false;
         bool found_start_codon = false;
+        bool found_stop_codon = false;
         ITERATE (CSpliced_seg::TModifiers, mod_it,
-                 input_align.GetSegs().GetSpliced().GetModifiers())
-        {
-            if ((*mod_it)->IsStop_codon_found() &&
-                (*mod_it)->GetStop_codon_found())
-            {
-                found_stop_codon = true;
+                 input_align.GetSegs().GetSpliced().GetModifiers()) {
+            if ((*mod_it)->IsStart_codon_found()) {
+                found_start_codon = (*mod_it)->GetStart_codon_found();
             }
-            if ((*mod_it)->IsStart_codon_found() &&
-                (*mod_it)->GetStart_codon_found())
-            {
-                found_start_codon = true;
+            if ((*mod_it)->IsStop_codon_found()) {
+                found_stop_codon = (*mod_it)->GetStop_codon_found();
             }
-
-
         }
-
-//         const CProt_pos &starting_pos =
-//             input_align.GetSegs().GetSpliced().GetExons().front()
-//                 -> GetProduct_start().GetProtpos();
-//         CCdregion_Base::EFrame starting_frame = CCdregion::eFrame_one;
-
-//         /// Set starting frame to reverse of what it intuitively seems it
-//         /// should be, to fit the way CSeqTranslator handles Seq-feat frames
-//         if (starting_pos.CanGetFrame()) {
-//             switch (starting_pos.GetFrame()) {
-//             case 2:
-//                 starting_frame = CCdregion::eFrame_three;
-//                 break;
-
-//             case 3:
-//                 starting_frame = CCdregion::eFrame_two;
-//                 break;
-
-//             default:
-//                 break;
-//             }
-//         }
 
         CSeq_align *fake_transcript_align = new CSeq_align;
         align.Reset(fake_transcript_align);
@@ -639,17 +610,6 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         fake_transcript_align->SetSegs().SetSpliced().SetProduct_length() = 
             fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()*3+3;
 
-//         TSeqPos offset = (fake_transcript_align->GetSeqStart(0)/3)*3;
-//         if (offset) {
-//             /// change all coordinates to start at 0
-//             NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
-//                      fake_transcript_align->SetSegs().SetSpliced().SetExons())
-//             {
-//                 (*exon_it)->SetProduct_start().SetNucpos() -= offset;
-//                 (*exon_it)->SetProduct_end().SetNucpos() -= offset;
-//             }
-//         }
-
         if (found_stop_codon) {
             /// Extend last exon to include stop codon
             CRef<CSpliced_exon> last_exon =
@@ -666,20 +626,21 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             } else {
                 last_exon->SetGenomic_end() += 3;
             }
-            CRef<CSpliced_exon_chunk> match_stop_codon(
-                new CSpliced_exon_chunk);
-            match_stop_codon->SetMatch(3);
-            last_exon->SetParts().push_back(match_stop_codon);
+            if (last_exon->IsSetParts()) {
+                CRef<CSpliced_exon_chunk> match_stop_codon
+                    (new CSpliced_exon_chunk);
+                match_stop_codon->SetMatch(3);
+                last_exon->SetParts().push_back(match_stop_codon);
+            }
         }
-
-        CRef<CSeq_loc> fake_prot_loc(new CSeq_loc(
-            fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(),
-            0, fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()-1));
-        fake_prot_loc->SetPartialStart(!found_start_codon,eExtreme_Biological);
-        fake_prot_loc->SetPartialStop (!found_stop_codon, eExtreme_Biological);
 
         cd_feat.Reset(new CSeq_feat);
         cd_feat->SetData().SetCdregion();
+
+        CRef<CSeq_loc> cds_on_fake_mrna_loc(new CSeq_loc(
+            fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(),
+            0, fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()-1));
+        cd_feat->SetLocation(*cds_on_fake_mrna_loc);
 
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(input_align.GetSeq_id(1));
         if (!bsh) {
@@ -694,8 +655,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             cd_feat->SetData().SetCdregion().SetCode().Set().push_back(code);
         }
 
-        cd_feat->SetLocation(*fake_prot_loc);
         cd_feat->SetProduct().SetWhole(*prot_id);
+
         cdregion = cd_feat.GetPointer();
     }
 
