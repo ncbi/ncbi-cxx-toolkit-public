@@ -80,7 +80,8 @@ struct SNSCommandArguments
     bool            drain;
 
     void AssignValues(const TNSProtoParams &  params,
-                      const string &          command = "");
+                      const string &          command,
+                      CSocket &               peer_socket);
 
     private:
         void x_Reset();

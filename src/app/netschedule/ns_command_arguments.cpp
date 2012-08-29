@@ -81,7 +81,8 @@ void SNSCommandArguments::x_Reset()
 
 
 void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
-                                       const string &          command)
+                                       const string &          command,
+                                       CSocket &               peer_socket)
 {
     x_Reset();
     cmd = command;
@@ -154,8 +155,12 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
         case 'i':
             if (key == "input")
                 input = val;
-            else if (key == "ip")
+            else if (key == "ip") {
                 ip = val;
+                if (val.empty())
+                    ip = peer_socket.GetPeerAddress(eSAF_IP);
+                GetDiagContext().SetDefaultClientIP(ip);
+            }
             break;
         case 'j':
             if (key == "job_key") {
@@ -207,8 +212,10 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
                 job_status = CNetScheduleAPI::StringToStatus(val);
                 job_status_string = val;
             }
-            else if (key == "sid")
+            else if (key == "sid") {
                 sid = val;
+                GetDiagContext().SetDefaultSessionID(NStr::URLDecode(val));
+            }
             else if (key == "start_after") {
                 start_after = val;
                 if (!val.empty())

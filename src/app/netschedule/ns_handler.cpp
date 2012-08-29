@@ -46,10 +46,8 @@ USING_NCBI_SCOPE;
 
 
 
-/// NetSchedule command parser
-///
-/// @internal
-///
+// NetSchedule command parser
+//
 
 CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_BatchHeaderMap[] = {
     { "BTCH", { &CNetScheduleHandler::x_ProcessBatchStart, 0 },
@@ -64,8 +62,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_BatchEndMap[] = {
 };
 
 SNSProtoArgument s_BatchArgs[] = {
-    { "input", eNSPT_Str, eNSPA_Required },
-    { "aff",   eNSPT_Str, eNSPA_Optional, "" },
+    { "input", eNSPT_Str, eNSPA_Required      },
+    { "aff",   eNSPT_Str, eNSPA_Optional, ""  },
     { "msk",   eNSPT_Int, eNSPA_Optional, "0" },
     { NULL }
 };
@@ -75,266 +73,329 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     /*** Admin role ***/
     { "SHUTDOWN",      { &CNetScheduleHandler::x_ProcessShutdown,
                          eNSCR_Admin },
-        { { "drain", eNSPT_Int, eNSPA_Optional, 0 } } },
+        { { "drain",             eNSPT_Int, eNSPA_Optional, 0   },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
-                         eNSCR_Admin } },
+                         eNSCR_Admin },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
                          eNSCR_Admin },
-        { { "mode", eNSPT_Int, eNSPA_Required } } },
+        { { "mode",              eNSPT_Int, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RECO",          { &CNetScheduleHandler::x_ProcessReloadConfig,
-                         eNSCR_Admin } },
+                         eNSCR_Admin },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     /*** Any role ***/
-    { "VERSION",  { &CNetScheduleHandler::x_ProcessVersion,
-                    eNSCR_Any } },
-    { "QUIT",     { &CNetScheduleHandler::x_ProcessQuitSession,
-                    eNSCR_Any } },
-    { "ACNT",     { &CNetScheduleHandler::x_ProcessActiveCount,
-                    eNSCR_Any } },
-    { "QLST",     { &CNetScheduleHandler::x_ProcessQList,
-                    eNSCR_Any } },
-    { "QINF",     { &CNetScheduleHandler::x_ProcessQueueInfo,
-                    eNSCR_Any },
-        { { "qname", eNSPT_Id, eNSPA_Required } } },
-    { "QINF2",    { &CNetScheduleHandler::x_ProcessQueueInfo,
-                    eNSCR_Any },
-        { { "qname", eNSPT_Id, eNSPA_Required } } },
-    { "SETQUEUE", { &CNetScheduleHandler::x_ProcessSetQueue,
-                    eNSCR_Any },
-        { { "qname", eNSPT_Id, eNSPA_Optional } } },
+    { "VERSION",       { &CNetScheduleHandler::x_ProcessVersion,
+                         eNSCR_Any },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "QUIT",          { &CNetScheduleHandler::x_ProcessQuitSession,
+                         eNSCR_Any },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "ACNT",          { &CNetScheduleHandler::x_ProcessActiveCount,
+                         eNSCR_Any },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "QLST",          { &CNetScheduleHandler::x_ProcessQList,
+                         eNSCR_Any },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "QINF",          { &CNetScheduleHandler::x_ProcessQueueInfo,
+                         eNSCR_Any },
+        { { "qname",             eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "QINF2",         { &CNetScheduleHandler::x_ProcessQueueInfo,
+                         eNSCR_Any },
+        { { "qname",             eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "SETQUEUE",      { &CNetScheduleHandler::x_ProcessSetQueue,
+                         eNSCR_Any },
+        { { "qname",             eNSPT_Id,  eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     /*** QueueAdmin role ***/
-    { "DROPQ",    { &CNetScheduleHandler::x_ProcessDropQueue,
-                    eNSCR_QueueAdmin } },
+    { "DROPQ",         { &CNetScheduleHandler::x_ProcessDropQueue,
+                         eNSCR_QueueAdmin },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     /*** DynClassAdmin role ***/
-    // QCRE qname : id  qclass : id [ description : str ]
-    { "QCRE",     { &CNetScheduleHandler::x_ProcessCreateDynamicQueue,
-                    eNSAC_DynClassAdmin },
-        { { "qname",       eNSPT_Id,  eNSPA_Required },
-          { "qclass",      eNSPT_Id,  eNSPA_Required },
-          { "description", eNSPT_Str, eNSPA_Optional } } },
-    // QDEL qname : id
-    { "QDEL",     { &CNetScheduleHandler::x_ProcessDeleteDynamicQueue,
-                    eNSAC_DynQueueAdmin },
-        { { "qname", eNSPT_Id, eNSPA_Required } } },
+    { "QCRE",          { &CNetScheduleHandler::x_ProcessCreateDynamicQueue,
+                         eNSAC_DynClassAdmin },
+        { { "qname",             eNSPT_Id,  eNSPA_Required      },
+          { "qclass",            eNSPT_Id,  eNSPA_Required      },
+          { "description",       eNSPT_Str, eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "QDEL",          { &CNetScheduleHandler::x_ProcessDeleteDynamicQueue,
+                         eNSAC_DynQueueAdmin },
+        { { "qname",             eNSPT_Id, eNSPA_Required       },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     /*** Queue role ***/
-    // STATUS job_key : id
-    { "STATUS",   { &CNetScheduleHandler::x_ProcessStatus,
-                    eNSCR_Queue },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    // STATUS2 job_key : id
-    { "STATUS2",  { &CNetScheduleHandler::x_ProcessStatus,
-                    eNSCR_Queue },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    // STAT [ option : id ] -- "ALL"
-    { "STAT",     { &CNetScheduleHandler::x_ProcessStatistics,
-                    eNSCR_Any },
-        { { "option",  eNSPT_Id,  eNSPA_Optional },
-          { "comment", eNSPT_Id,  eNSPA_Optional },
-          { "aff",     eNSPT_Str, eNSPA_Optional },
-          { "group",   eNSPT_Str, eNSPA_Optional } } },
-    // MPUT job_key : id  progress_msg : str
-    { "MPUT",     { &CNetScheduleHandler::x_ProcessPutMessage,
-                    eNSCR_Queue },
-        { { "job_key",      eNSPT_Id, eNSPA_Required },
-          { "progress_msg", eNSPT_Str, eNSPA_Required } } },
-    // MGET job_key : id
-    { "MGET",     { &CNetScheduleHandler::x_ProcessGetMessage,
-                    eNSCR_Queue },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    // DUMP [ job_key : id ]
-    { "DUMP",     { &CNetScheduleHandler::x_ProcessDump,
-                    eNSCR_Queue },
-        { { "job_key",     eNSPT_Id,  eNSPA_Optional      },
-          { "status",      eNSPT_Id,  eNSPA_Optional      },
-          { "start_after", eNSPT_Id,  eNSPA_Optional      },
-          { "count",       eNSPT_Int, eNSPA_Optional, "0" },
-          { "group",       eNSPT_Str, eNSPA_Optional } } },
-    // GETP [ client_info : id ]
-    { "GETP",     { &CNetScheduleHandler::x_ProcessGetParam,
-                    eNSCR_Queue } },
-    { "GETC",     { &CNetScheduleHandler::x_ProcessGetConfiguration,
-                    eNSCR_Queue } },
-    // CLRN
-    { "CLRN",     { &CNetScheduleHandler::x_ProcessClearWorkerNode,
-                    eNSCR_Queue } },
-    { "CANCELQ",  { &CNetScheduleHandler::x_ProcessCancelQueue,
-                    eNSCR_Queue } },
+    { "STATUS",        { &CNetScheduleHandler::x_ProcessStatus,
+                         eNSCR_Queue },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "STATUS2",       { &CNetScheduleHandler::x_ProcessStatus,
+                         eNSCR_Queue },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "STAT",          { &CNetScheduleHandler::x_ProcessStatistics,
+                         eNSCR_Any },
+        { { "option",            eNSPT_Id,  eNSPA_Optional      },
+          { "comment",           eNSPT_Id,  eNSPA_Optional      },
+          { "aff",               eNSPT_Str, eNSPA_Optional      },
+          { "group",             eNSPT_Str, eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "MPUT",          { &CNetScheduleHandler::x_ProcessPutMessage,
+                         eNSCR_Queue },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "progress_msg",      eNSPT_Str, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "MGET",          { &CNetScheduleHandler::x_ProcessGetMessage,
+                         eNSCR_Queue },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "DUMP",          { &CNetScheduleHandler::x_ProcessDump,
+                         eNSCR_Queue },
+        { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
+          { "status",            eNSPT_Id,  eNSPA_Optional      },
+          { "start_after",       eNSPT_Id,  eNSPA_Optional      },
+          { "count",             eNSPT_Int, eNSPA_Optional, "0" },
+          { "group",             eNSPT_Str, eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "GETP",          { &CNetScheduleHandler::x_ProcessGetParam,
+                         eNSCR_Queue },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "GETC",          { &CNetScheduleHandler::x_ProcessGetConfiguration,
+                         eNSCR_Queue },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CLRN",          { &CNetScheduleHandler::x_ProcessClearWorkerNode,
+                         eNSCR_Queue },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CANCELQ",       { &CNetScheduleHandler::x_ProcessCancelQueue,
+                         eNSCR_Queue },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     /*** Submitter role ***/
-    // SST job_key : id -- submitter fast status, changes timestamp
-    { "SST",      { &CNetScheduleHandler::x_ProcessFastStatusS,
-                    eNSCR_Submitter },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    // SST2 job_key : id -- submitter fast status, changes timestamp
-    { "SST2",     { &CNetScheduleHandler::x_ProcessFastStatusS,
-                    eNSCR_Submitter },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    // SUBMIT input : str [ progress_msg : str ] [ port : uint [ timeout : uint ]]
-    //        [ affinity_token : keystr(aff) ] [ job_mask : keyint(msk) ]
-    { "SUBMIT",   { &CNetScheduleHandler::x_ProcessSubmit,
-                    eNSCR_Submitter },
-        { { "input",        eNSPT_Str, eNSPA_Required },        // input
-          { "port",         eNSPT_Int, eNSPA_Optional },
-          { "timeout",      eNSPT_Int, eNSPA_Optional },
-          { "aff",          eNSPT_Str, eNSPA_Optional, "" },    // affinity_token
-          { "msk",          eNSPT_Int, eNSPA_Optional, "0" },
-          { "ip",           eNSPT_Str, eNSPA_Optional, "" },
-          { "sid",          eNSPT_Str, eNSPA_Optional, "" },
-          { "group",        eNSPT_Str, eNSPA_Optional, "" } } },
-    // CANCEL job_key : id
-    { "CANCEL",   { &CNetScheduleHandler::x_ProcessCancel,
-                    eNSCR_Submitter },
-        { { "job_key", eNSPT_Id,  eNSPA_Optional },
-          { "group",   eNSPT_Str, eNSPA_Optional } } },
-    // DROJ job_key : id
-    { "DROJ",     { &CNetScheduleHandler::x_ProcessDropJob,
-                    eNSCR_Submitter },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    { "LISTEN",   { &CNetScheduleHandler::x_ProcessListenJob,
-                    eNSCR_Submitter },
-        { { "job_key", eNSPT_Id,  eNSPA_Required },
-          { "port",    eNSPT_Int, eNSPA_Required },
-          { "timeout", eNSPT_Int, eNSPA_Required } } },
-    { "BSUB",     { &CNetScheduleHandler::x_ProcessSubmitBatch,
-                    eNSCR_Submitter },
-        { { "port",         eNSPT_Int, eNSPA_Optional },
-          { "timeout",      eNSPT_Int, eNSPA_Optional },
-          { "ip",           eNSPT_Str, eNSPA_Optional, "" },
-          { "sid",          eNSPT_Str, eNSPA_Optional, "" },
-          { "group",        eNSPT_Str, eNSPA_Optional, "" } } },
-    // READ [ timeout : int ] -> job key
-    { "READ",     { &CNetScheduleHandler::x_ProcessReading,
-                    eNSCR_Submitter },
-        { { "timeout", eNSPT_Int, eNSPA_Optional, "0" },
-          { "group",   eNSPT_Str, eNSPA_Optional, "" } } },
-    // CFRM group : int jobs : str
-    { "CFRM",     { &CNetScheduleHandler::x_ProcessConfirm,
-                    eNSCR_Submitter },
-        { { "job_key",    eNSPT_Id, eNSPA_Required },
-          { "auth_token", eNSPT_Id, eNSPA_Required } } },
-    // FRED group : int jobs : str [ message : str ]
-    { "FRED",     { &CNetScheduleHandler::x_ProcessReadFailed,
-                    eNSCR_Submitter },
-        { { "job_key",    eNSPT_Id, eNSPA_Required },
-          { "auth_token", eNSPT_Id, eNSPA_Required },
-          { "err_msg",      eNSPT_Str, eNSPA_Optional } } },
-    // RDRB group : int jobs : str
-    { "RDRB",     { &CNetScheduleHandler::x_ProcessReadRollback,
-                    eNSCR_Submitter },
-        { { "job_key",    eNSPT_Id, eNSPA_Required },
-          { "auth_token", eNSPT_Str, eNSPA_Required } } },
+    { "SST",           { &CNetScheduleHandler::x_ProcessFastStatusS,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "SST2",          { &CNetScheduleHandler::x_ProcessFastStatusS,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "SUBMIT",        { &CNetScheduleHandler::x_ProcessSubmit,
+                         eNSCR_Submitter },
+        { { "input",             eNSPT_Str, eNSPA_Required      },
+          { "port",              eNSPT_Int, eNSPA_Optional      },
+          { "timeout",           eNSPT_Int, eNSPA_Optional      },
+          { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "msk",               eNSPT_Int, eNSPA_Optional, "0" },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CANCEL",        { &CNetScheduleHandler::x_ProcessCancel,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
+          { "group",             eNSPT_Str, eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "DROJ",          { &CNetScheduleHandler::x_ProcessDropJob,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "LISTEN",        { &CNetScheduleHandler::x_ProcessListenJob,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "port",              eNSPT_Int, eNSPA_Required      },
+          { "timeout",           eNSPT_Int, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "BSUB",          { &CNetScheduleHandler::x_ProcessSubmitBatch,
+                         eNSCR_Submitter },
+        { { "port",              eNSPT_Int, eNSPA_Optional      },
+          { "timeout",           eNSPT_Int, eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "READ",          { &CNetScheduleHandler::x_ProcessReading,
+                         eNSCR_Submitter },
+        { { "timeout",           eNSPT_Int, eNSPA_Optional, "0" },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CFRM",          { &CNetScheduleHandler::x_ProcessConfirm,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "auth_token",        eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "FRED",          { &CNetScheduleHandler::x_ProcessReadFailed,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "auth_token",        eNSPT_Id,  eNSPA_Required      },
+          { "err_msg",           eNSPT_Str, eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "RDRB",          { &CNetScheduleHandler::x_ProcessReadRollback,
+                         eNSCR_Submitter },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "auth_token",        eNSPT_Str, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     /*** Worker node role ***/
-    // WST job_key : id -- worker node fast status, does not change timestamp
-    { "WST",      { &CNetScheduleHandler::x_ProcessFastStatusW,
-                    eNSCR_Worker },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    // WST2 job_key : id -- worker node fast status, does not change timestamp
-    { "WST2",     { &CNetScheduleHandler::x_ProcessFastStatusW,
-                    eNSCR_Worker },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    // CHAFF [add: string] [del: string] -- change affinity
-    { "CHAFF",    { &CNetScheduleHandler::x_ProcessChangeAffinity,
-                    eNSCR_Worker },
-        { { "add", eNSPT_Str, eNSPA_Optional, "" },
-          { "del", eNSPT_Str, eNSPA_Optional, "" } } },
-    // GET [ port : int ] [affinity_list : keystr(aff) ]
-    { "GET",      { &CNetScheduleHandler::x_ProcessGetJob,
-                    eNSCR_Worker },
-        { { "port",      eNSPT_Id,  eNSPA_Optional },
-          { "aff",       eNSPT_Str, eNSPA_Optional, "" } } },
-    { "GET2",     { &CNetScheduleHandler::x_ProcessGetJob,
-                    eNSCR_Worker },
-        { { "wnode_aff",         eNSPT_Int, eNSPA_Required, 0 },
-          { "any_aff",           eNSPT_Int, eNSPA_Required, 0 },
-          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, 0 },
-          { "aff",               eNSPT_Str, eNSPA_Optional, "" },
-          { "port",              eNSPT_Int, eNSPA_Optional },
-          { "timeout",           eNSPT_Int, eNSPA_Optional } } },
-    // PUT job_key : id  job_return_code : int  output : str
-    { "PUT",      { &CNetScheduleHandler::x_ProcessPut,
-                    eNSCR_Worker },
-        { { "job_key",         eNSPT_Id,  eNSPA_Required },
-          { "job_return_code", eNSPT_Id,  eNSPA_Required },
-          { "output",          eNSPT_Str, eNSPA_Required } } },
-    { "PUT2",     { &CNetScheduleHandler::x_ProcessPut,
-                    eNSCR_Worker },
-        { { "job_key",         eNSPT_Id,  eNSPA_Required },
-          { "auth_token",      eNSPT_Id,  eNSPA_Required },
-          { "job_return_code", eNSPT_Id,  eNSPA_Required },
-          { "output",          eNSPT_Str, eNSPA_Required } } },
-    // RETURN job_key : id
-    { "RETURN",   { &CNetScheduleHandler::x_ProcessReturn,
-                    eNSCR_Worker },
-        { { "job_key", eNSPT_Id, eNSPA_Required } } },
-    { "RETURN2",  { &CNetScheduleHandler::x_ProcessReturn,
-                    eNSCR_Worker },
-        { { "job_key",         eNSPT_Id,  eNSPA_Required },
-          { "auth_token",      eNSPT_Id,  eNSPA_Required } } },
-    // WGET port : uint  timeout : uint
-    //      [affinity_list : keystr(aff) ]
-    { "WGET",     { &CNetScheduleHandler::x_ProcessGetJob,
-                    eNSCR_Worker },
-        { { "port",      eNSPT_Int, eNSPA_Required },
-          { "timeout",   eNSPT_Int, eNSPA_Required },
-          { "aff",       eNSPT_Str, eNSPA_Optional, "" } } },
-    { "CWGET",    { &CNetScheduleHandler::x_ProcessCancelWaitGet,
-                    eNSCR_Worker } },
-    // FPUT job_key : id  err_msg : str  output : str  job_return_code : int
-    { "FPUT",     { &CNetScheduleHandler::x_ProcessPutFailure,
-                    eNSCR_Worker },
-        { { "job_key",         eNSPT_Id,  eNSPA_Required },
-          { "err_msg",         eNSPT_Str, eNSPA_Required },
-          { "output",          eNSPT_Str, eNSPA_Required },
-          { "job_return_code", eNSPT_Int, eNSPA_Required } } },
-    { "FPUT2",    { &CNetScheduleHandler::x_ProcessPutFailure,
-                    eNSCR_Worker },
-        { { "job_key",         eNSPT_Id,  eNSPA_Required },
-          { "auth_token",      eNSPT_Id,  eNSPA_Required },
-          { "err_msg",         eNSPT_Str, eNSPA_Required },
-          { "output",          eNSPT_Str, eNSPA_Required },
-          { "job_return_code", eNSPT_Int, eNSPA_Required } } },
-    // JXCG [ job_key : id [ job_return_code : int [ output : str ] ] ]
-    //      [affinity_list : keystr(aff) ]
-    { "JXCG",     { &CNetScheduleHandler::x_ProcessJobExchange,
-                    eNSCR_Worker },
-        { { "job_key",         eNSPT_Id,  eNSPA_Optchain },
-          { "job_return_code", eNSPT_Int, eNSPA_Optchain },
-          { "output",          eNSPT_Str, eNSPA_Optional },
-          { "aff",             eNSPT_Str, eNSPA_Optional, "" } } },
-    // JDEX job_key : id timeout : uint
-    { "JDEX",     { &CNetScheduleHandler::x_ProcessJobDelayExpiration,
-                    eNSCR_Worker },
-        { { "job_key", eNSPT_Id,  eNSPA_Required },
-          { "timeout", eNSPT_Int, eNSPA_Required } } },
-    // AFLS
-    { "AFLS",     { &CNetScheduleHandler::x_ProcessGetAffinityList,
-                    eNSCR_Worker } },
+    { "WST",           { &CNetScheduleHandler::x_ProcessFastStatusW,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "WST2",          { &CNetScheduleHandler::x_ProcessFastStatusW,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CHAFF",         { &CNetScheduleHandler::x_ProcessChangeAffinity,
+                         eNSCR_Worker },
+        { { "add",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "del",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "GET",           { &CNetScheduleHandler::x_ProcessGetJob,
+                         eNSCR_Worker },
+        { { "port",              eNSPT_Id,  eNSPA_Optional      },
+          { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "GET2",          { &CNetScheduleHandler::x_ProcessGetJob,
+                         eNSCR_Worker },
+        { { "wnode_aff",         eNSPT_Int, eNSPA_Required, 0   },
+          { "any_aff",           eNSPT_Int, eNSPA_Required, 0   },
+          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, 0   },
+          { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "port",              eNSPT_Int, eNSPA_Optional      },
+          { "timeout",           eNSPT_Int, eNSPA_Optional      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "PUT",           { &CNetScheduleHandler::x_ProcessPut,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "job_return_code",   eNSPT_Id,  eNSPA_Required      },
+          { "output",            eNSPT_Str, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "PUT2",          { &CNetScheduleHandler::x_ProcessPut,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "auth_token",        eNSPT_Id,  eNSPA_Required      },
+          { "job_return_code",   eNSPT_Id,  eNSPA_Required      },
+          { "output",            eNSPT_Str, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "RETURN",        { &CNetScheduleHandler::x_ProcessReturn,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "RETURN2",       { &CNetScheduleHandler::x_ProcessReturn,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "auth_token",        eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "WGET",          { &CNetScheduleHandler::x_ProcessGetJob,
+                         eNSCR_Worker },
+        { { "port",              eNSPT_Int, eNSPA_Required      },
+          { "timeout",           eNSPT_Int, eNSPA_Required      },
+          { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CWGET",         { &CNetScheduleHandler::x_ProcessCancelWaitGet,
+                         eNSCR_Worker },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "FPUT",          { &CNetScheduleHandler::x_ProcessPutFailure,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "err_msg",           eNSPT_Str, eNSPA_Required      },
+          { "output",            eNSPT_Str, eNSPA_Required      },
+          { "job_return_code",   eNSPT_Int, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "FPUT2",         { &CNetScheduleHandler::x_ProcessPutFailure,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "auth_token",        eNSPT_Id,  eNSPA_Required      },
+          { "err_msg",           eNSPT_Str, eNSPA_Required      },
+          { "output",            eNSPT_Str, eNSPA_Required      },
+          { "job_return_code",   eNSPT_Int, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "JXCG",          { &CNetScheduleHandler::x_ProcessJobExchange,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Optchain      },
+          { "job_return_code",   eNSPT_Int, eNSPA_Optchain      },
+          { "output",            eNSPT_Str, eNSPA_Optional      },
+          { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "JDEX",          { &CNetScheduleHandler::x_ProcessJobDelayExpiration,
+                         eNSCR_Worker },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "timeout",           eNSPT_Int, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "AFLS",          { &CNetScheduleHandler::x_ProcessGetAffinityList,
+                         eNSCR_Worker },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
 
     // Obsolete commands
-    { "REGC",     { &CNetScheduleHandler::x_CmdObsolete,
-                    eNSCR_Worker },
-        { { "port", eNSPT_Int, eNSPA_Optional } } },
-    { "URGC",     { &CNetScheduleHandler::x_CmdObsolete,
-                    eNSCR_Worker },
-        { { "port", eNSPT_Int, eNSPA_Optional } } },
-    { "INIT",     { &CNetScheduleHandler::x_CmdObsolete,
-                    eNSCR_Worker } },
-    { "JRTO",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Worker } },
-    { "FRES",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Submitter } },
-    { "QERY",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Queue } },
-    { "QSEL",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Queue } },
-    { "MONI",     { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Queue } },
-    { "LOG",      { &CNetScheduleHandler::x_CmdNotImplemented,
-                    eNSCR_Any } },
+    { "REGC",          { &CNetScheduleHandler::x_CmdObsolete,
+                         eNSCR_Worker } },
+    { "URGC",          { &CNetScheduleHandler::x_CmdObsolete,
+                         eNSCR_Worker } },
+    { "INIT",          { &CNetScheduleHandler::x_CmdObsolete,
+                         eNSCR_Worker } },
+    { "JRTO",          { &CNetScheduleHandler::x_CmdNotImplemented,
+                         eNSCR_Worker } },
+    { "FRES",          { &CNetScheduleHandler::x_CmdNotImplemented,
+                         eNSCR_Submitter } },
+    { "QERY",          { &CNetScheduleHandler::x_CmdNotImplemented,
+                         eNSCR_Queue } },
+    { "QSEL",          { &CNetScheduleHandler::x_CmdNotImplemented,
+                         eNSCR_Queue } },
+    { "MONI",          { &CNetScheduleHandler::x_CmdNotImplemented,
+                         eNSCR_Queue } },
+    { "LOG",           { &CNetScheduleHandler::x_CmdNotImplemented,
+                         eNSCR_Any } },
 
     { NULL },
 };
@@ -836,21 +897,31 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
     try {
         s_ReadBufToString(buffer, msg);
         cmd = m_SingleCmdParser.ParseCommand(msg);
+
+        // It throws an exception if the input is not valid
+        m_CommandArguments.AssignValues(cmd.params,
+                                        cmd.command->cmd,
+                                        GetSocket());
+
         x_PrintRequestStart(cmd);
     }
     catch (const CNSProtoParserException &  ex) {
+        // This is the exception from m_SingleCmdParser.ParseCommand(msg)
+
         // Parsing is done before PrintRequestStart(...) so a diag context is
         // not created here - create it just to provide an error output
         x_OnCmdParserError(true, ex.GetMsg(), "");
         return;
     }
+    catch (const CNetScheduleException &  ex) {
+        // This is an exception from AssignValues(...)
+
+        // That is, the print request has not been printed yet
+        x_PrintRequestStart(cmd);
+        throw;
+    }
 
     const SCommandExtra &   extra = cmd.command->extra;
-
-
-    // It throws an exception if the input is not valid
-    m_CommandArguments.AssignValues(cmd.params, cmd.command->cmd);
-
 
     if (extra.processor == &CNetScheduleHandler::x_ProcessQuitSession) {
         x_ProcessQuitSession(0);
@@ -972,7 +1043,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     TNSProtoParams  params;
     try {
         m_BatchEndParser.ParseArguments(msg, s_BatchArgs, &params);
-        m_CommandArguments.AssignValues(params);
+        m_CommandArguments.AssignValues(params, "", GetSocket());
     }
     catch (const CNSProtoParserException &  ex) {
         m_WithinBatchSubmit = false;
@@ -1261,11 +1332,6 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 
     CJob        job(m_CommandArguments);
 
-    // Never leave Client IP empty, if we're not provided with a real one,
-    // use peer address as a last resort. See also x_ProcessSubmitBatch.
-    if (m_CommandArguments.ip.empty())
-        job.SetClientIP(NS_FormatIPAddress(m_ClientId.GetAddress()));
-
     try {
         WriteMessage("OK:", q->MakeKey(q->Submit(m_ClientId, job,
                                              m_CommandArguments.affinity_token,
@@ -1304,10 +1370,7 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
 
         m_BatchSubmPort    = m_CommandArguments.port;
         m_BatchSubmTimeout = m_CommandArguments.timeout;
-        if (!m_CommandArguments.ip.empty())
-            m_BatchClientIP = m_CommandArguments.ip;
-        else
-            m_BatchClientIP = NS_FormatIPAddress(m_ClientId.GetAddress());
+        m_BatchClientIP    = m_CommandArguments.ip;
         m_BatchClientSID   = m_CommandArguments.sid;
         m_BatchGroup       = m_CommandArguments.group;
 
@@ -2536,6 +2599,8 @@ void CNetScheduleHandler::x_PrintRequestStart(const SParsedCmd& cmd)
         // be logged when a new job is actually submitted.
         if (cmd.command->extra.processor != &CNetScheduleHandler::x_ProcessSubmit) {
             ITERATE(TNSProtoParams, it, cmd.params) {
+                if (it->first == "ip")  continue;
+                if (it->first == "sid") continue;
                 ctxt_extra.Print(it->first, it->second);
             }
         }
@@ -2619,8 +2684,10 @@ void CNetScheduleHandler::x_OnCmdParserError(bool            need_request_start,
 {
     // Truncating is done to prevent output of an arbitrary long garbage
 
-    if (need_request_start)
+    if (need_request_start) {
+        GetDiagContext().SetDefaultClientIP(GetSocket().GetPeerAddress(eSAF_IP));
         x_PrintRequestStart("Invalid command");
+    }
 
     if (msg.size() < kMaxParserErrMsgLength * 2)
         ERR_POST("Error parsing command: " << msg + suffix);
