@@ -4233,7 +4233,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NMK	s	National Museums of Kenya",
 "NMKE	s	National Museum of Kenya",
 "NMKL	s	National Museum of Malaysia",
-"NML-HCCC	c	National Microbiology Laboratory Health Canada Culture Collections",
+"NML-HCCC	c	National Microbiology Laboratory, Public Health Agency of Canada",
 "NMLS	s	Natur-Museum Luzern",
 "NMLU	s	Natur-Museum Luzern, Botany Department",
 "NMMA	s	Nantucket Maria Mitchell Association, Natural Sciences Department",
