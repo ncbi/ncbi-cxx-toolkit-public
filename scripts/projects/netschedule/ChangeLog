@@ -1,3 +1,17 @@
+Release 4.14.0 based on SC-10 (2012-08-29)
+
+Improvements
+
+    * NetSchedule: log what was taken into account after the RECO command
+      (JIRA: CXX-2716)
+    * NetSchedule -- to log session ID and client IP (per command)
+      (JIRA: CXX-2732)
+    * NetSchedule: new command (LISTEN) to wait for job termination
+      (JIRA: CXX-3412)
+    * NetSchedule: changes in handling config files (JIRA: CXX-3446)
+    * SJobDB -- increase sizes of input/output fields; decrease sizes of
+      client_ip and client_sid fields (JIRA: CXX-3449)
+
 
 Release 4.13.0 based on SC-10 (2012-06-13)
 
