@@ -985,10 +985,11 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-            break;
+            return result;
         }
 
-        return result;
+        // return TO();
+        throw CInvalidConversionException();
     }
 
 private:
@@ -1039,10 +1040,11 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-            break;
+            return result;
         }
 
-        return result;
+        // return TO();
+        throw CInvalidConversionException();
     }
 
 private:
@@ -1094,10 +1096,11 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-            break;
+            return result;
         }
 
-        return result;
+        // return TO();
+        throw CInvalidConversionException();
     }
 
 private:
@@ -1148,10 +1151,11 @@ public:
 
             CConvertTO<CP, TO>::Convert(rs, result);
 
-            break;
+            return result;
         }
 
-        return result;
+        // return TO();
+        throw CInvalidConversionException();
     }
 
 private:
