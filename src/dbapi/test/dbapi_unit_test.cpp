@@ -1413,6 +1413,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             Int8_value  = ConvertSafe(variant_Int8);
             BOOST_CHECK_EQUAL( Int8_value, value_Int8 );
             Uint8_value = ConvertSafe(variant_Int8);
+            BOOST_CHECK_EQUAL( Uint8_value, value_Int8 );
             /*
             Int4_value  = ConvertSafe(variant_Int8);
             Uint4_value = ConvertSafe(variant_Int8);
@@ -1424,6 +1425,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             */
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Int8), string);
+            BOOST_CHECK_EQUAL( str_value, NStr::NumericToString(value_Int8) );
         }
 
         {
@@ -1433,6 +1435,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             BOOST_CHECK_EQUAL( Int4_value, value_Int4 );
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Int4), string);
+            BOOST_CHECK_EQUAL( str_value, NStr::NumericToString(value_Int4) );
         }
 
         {
@@ -1442,6 +1445,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             BOOST_CHECK_EQUAL( Int2_value, value_Int2 );
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Int2), string);
+            BOOST_CHECK_EQUAL( str_value, NStr::NumericToString(value_Int2) );
         }
 
         {
@@ -1451,6 +1455,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             BOOST_CHECK_EQUAL( Uint1_value, value_Uint1 );
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_Uint1), string);
+            BOOST_CHECK_EQUAL( str_value, NStr::NumericToString(value_Uint1) );
         }
 
         {
@@ -1460,6 +1465,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             BOOST_CHECK_EQUAL( float_value, value_float );
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_float), string);
+            BOOST_CHECK_EQUAL( str_value, NStr::NumericToString(value_float) );
         }
 
         {
@@ -1469,6 +1475,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             BOOST_CHECK_EQUAL( double_value, value_double );
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_double), string);
+            BOOST_CHECK_EQUAL( str_value, NStr::NumericToString(value_double) );
         }
 
         {
@@ -1478,6 +1485,7 @@ BOOST_AUTO_TEST_CASE(Test_CVariantConvertSafe)
             BOOST_CHECK_EQUAL( bool_value, value_bool );
 
             string str_value = NCBI_CONVERT_TO(ConvertSafe(variant_bool), string);
+            BOOST_CHECK_EQUAL( str_value, NStr::BoolToString(value_bool) );
         }
 
         {
