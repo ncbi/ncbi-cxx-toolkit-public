@@ -470,8 +470,30 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     if ( ctx.IsProt() ) {
         const CSeq_feat* cds = GetCDSForProduct(bsh);
         if ( cds ) {
-            CBioseq_Handle nuc = 
-                bsh.GetScope().GetBioseqHandle(cds->GetLocation());
+            const CSeq_loc & cds_loc = cds->GetLocation();
+            const CSeq_id *pSeqId = cds_loc.GetId();
+            CBioseq_Handle nuc;
+            if( pSeqId ) {
+                nuc = bsh.GetScope().GetBioseqHandle(*pSeqId);
+            } else {
+                // fall back on first Seq-id in location that is local to this Seq-entry
+                // (example where this code is needed to prevent a crash: AL772325.4 proteins)
+                ITERATE( CSeq_loc, cds_loc_iter, cds_loc ) {
+                    try {
+                        CSeq_id_Handle cds_loc_piece_id = cds_loc_iter.GetSeq_id_Handle();
+                        if( cds_loc_piece_id ) {
+                            nuc = bsh.GetScope().GetBioseqHandleFromTSE(
+                                cds_loc_piece_id, ctx.GetHandle() );
+                            if( nuc ) {
+                                break;
+                            }
+                        }
+                    } catch(...) {
+                        // ignore exceptions because it's common for us to fail
+                        // to find something since we're only looking locally
+                    }
+                }
+            }
             if( nuc ) {
                 ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
                     if (*iter  &&  iter->GetSeqId()->IsPatent()) {
