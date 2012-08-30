@@ -381,16 +381,15 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
 string CNetScheduleNotificationHandler::CmdAppendTimeoutAndClientInfo(
         const string& base_cmd, CAbsTimeout* timeout)
 {
-    if (timeout == NULL)
-        return base_cmd;
-
     string cmd(base_cmd);
 
-    cmd += " port=";
-    cmd += NStr::UIntToString(GetPort());
+    if (timeout != NULL) {
+        cmd += " port=";
+        cmd += NStr::UIntToString(GetPort());
 
-    cmd += " timeout=";
-    cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
+        cmd += " timeout=";
+        cmd += NStr::UIntToString(s_GetRemainingSeconds(*timeout));
+    }
 
     g_AppendClientIPAndSessionID(cmd);
 

@@ -1065,6 +1065,10 @@ int CGridWorkerNode::Run()
         m_NetScheduleAPI.SetClientSession(session);
     }
 
+    CRequestContext& request_context = CDiagContext::GetRequestContext();
+
+    request_context.SetSessionID(m_NetScheduleAPI->m_ClientSession);
+
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();
 
     m_NetScheduleAPI.SetProgramVersion(m_JobFactory->GetJobVersion());

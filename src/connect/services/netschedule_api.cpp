@@ -52,7 +52,7 @@
 
 BEGIN_NCBI_SCOPE
 
-void g_AppendClientIPAndSessionID(string& cmd)
+void g_AppendClientIPAndSessionID(string& cmd, const string* default_session)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
 
@@ -62,9 +62,10 @@ void g_AppendClientIPAndSessionID(string& cmd)
         cmd += '"';
     }
 
-    if (req.IsSetSessionID()) {
+    if (req.IsSetSessionID() || default_session != NULL) {
         cmd += " sid=\"";
-        cmd += NStr::PrintableString(req.GetSessionID());
+        cmd += NStr::PrintableString(default_session != NULL ?
+                *default_session : req.GetSessionID());
         cmd += '"';
     }
 }
@@ -199,8 +200,11 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
     // Make the auth token look like a command to be able to
     // check for potential authentication/initialization errors
     // like the "queue not found" error.
-    if (!m_WorkerNodeCompatMode)
+    if (!m_WorkerNodeCompatMode) {
         auth += "\r\nVERSION";
+        g_AppendClientIPAndSessionID(auth,
+                impl->m_ClientSession.empty() ? NULL : &impl->m_ClientSession);
+    }
 
     m_Auth = auth;
 }
@@ -388,7 +392,7 @@ void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
 
-    m_Impl->UpdateAuthString();
+    UpdateAuthString();
 }
 
 const string& CNetScheduleAPI::GetProgramVersion() const
@@ -549,7 +553,9 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 
         string resp;
         try {
-            resp = (*it).ExecWithRetry("GETP").response;
+            string cmd("GETP");
+            g_AppendClientIPAndSessionID(cmd);
+            resp = (*it).ExecWithRetry(cmd).response;
         } catch (CNetScheduleException& ex) {
             if (ex.GetErrCode() != CNetScheduleException::eProtocolSyntaxError)
                 throw;
@@ -615,7 +621,7 @@ void CNetScheduleAPI::SetClientNode(const string& client_node)
 
     m_Impl->m_ClientNode = client_node;
 
-    m_Impl->UpdateAuthString();
+    UpdateAuthString();
 }
 
 void CNetScheduleAPI::SetClientSession(const string& client_session)
@@ -624,22 +630,26 @@ void CNetScheduleAPI::SetClientSession(const string& client_session)
 
     m_Impl->m_ClientSession = client_session;
 
-    m_Impl->UpdateAuthString();
+    UpdateAuthString();
+}
+
+void CNetScheduleAPI::UpdateAuthString()
+{
+    m_Impl->GetListener()->SetAuthString(m_Impl);
 }
 
 void CNetScheduleAPI::EnableWorkerNodeCompatMode()
 {
-    CNetScheduleServerListener* listener = m_Impl->GetListener();
+    m_Impl->GetListener()->m_WorkerNodeCompatMode = true;
 
-    listener->m_WorkerNodeCompatMode = true;
-    listener->SetAuthString(m_Impl);
+    UpdateAuthString();
 }
 
 void CNetScheduleAPI::UseOldStyleAuth()
 {
     m_Impl->m_Service->m_ServerPool->m_UseOldStyleAuth = true;
 
-    m_Impl->UpdateAuthString();
+    UpdateAuthString();
 }
 
 CNetScheduleAPI CNetScheduleAPI::GetServer(CNetServer::TInstance server)
@@ -664,7 +674,7 @@ void CNetScheduleAPI::SetAuthParam(const string& param_name,
     } else
         m_Impl->m_AuthParams.erase(param_name);
 
-    m_Impl->UpdateAuthString();
+    UpdateAuthString();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -47,7 +47,8 @@ BEGIN_NCBI_SCOPE
 
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
-void g_AppendClientIPAndSessionID(string& cmd);
+void g_AppendClientIPAndSessionID(string& cmd,
+        const string* default_session = NULL);
 
 template<typename T> struct ToStr { static string Convert(T t); };
 
@@ -104,11 +105,6 @@ struct SNetScheduleAPIImpl : public CObject
     {
         return static_cast<CNetScheduleServerListener*>(
                 m_Service->m_Listener.GetPointer());
-    }
-
-    void UpdateAuthString()
-    {
-        GetListener()->SetAuthString(this);
     }
 
     string x_SendJobCmdWaitResponse(const string& cmd, const string& job_key)

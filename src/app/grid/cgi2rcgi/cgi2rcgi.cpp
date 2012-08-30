@@ -582,6 +582,9 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     grid_ctx.PullUpPersistentEntry("Cancel");
 
     grid_ctx.LoadQueryStringTags(m_TargetEncodeMode);
+
+    m_NetScheduleAPI.UpdateAuthString();
+
     try {
         EJobPhase phase = eTerminated;
 

@@ -245,6 +245,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     void SetClientSession(const string& client_session);
 
+    /// @internal
+    void UpdateAuthString();
+
     /// This method is for use by the grid_cli utility only.
     /// @internal
     void EnableWorkerNodeCompatMode();
