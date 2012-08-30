@@ -7670,7 +7670,7 @@ extern const char* SOCK_StringToHostPort(const char*     str,
         x_buf[len] = '\0';
         if (!(h = SOCK_gethostbyname(x_buf)))
             return str;
-        if (host)
+        if ( host )
             *host = h;
     }
     if (port  &&  p)
