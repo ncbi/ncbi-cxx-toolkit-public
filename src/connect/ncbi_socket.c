@@ -969,7 +969,6 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
 
 static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 {
-    CORE_DEBUG_ARG(char addr[40];)
     char buf[MAXHOSTNAMELEN + 1];
     unsigned int host;
 
@@ -1077,7 +1076,8 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
     }
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-    if (!SOCK_isipEx(hostname, 1))  ||  !host) {
+    if (!SOCK_isipEx(hostname, 1)  ||  !host) {
+        char addr[40];
         CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s", hostname,
                      SOCK_ntoa(host, addr, sizeof(addr)) == 0
                      ? addr : sprintf(addr, "0x%08X",
