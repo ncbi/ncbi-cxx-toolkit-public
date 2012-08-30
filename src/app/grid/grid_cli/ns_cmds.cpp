@@ -888,7 +888,7 @@ int CGridCommandLineInterfaceApp::Cmd_ClearNode()
 {
     SetUp_NetScheduleCmd(eNetScheduleExecutor);
 
-    m_NetScheduleExecutor.UnRegisterClient();
+    m_NetScheduleExecutor.ClearNode();
 
     return 0;
 }

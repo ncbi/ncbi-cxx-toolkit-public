@@ -637,7 +637,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// Unregister client-listener. After this call, the
     /// server will not try to send any notification messages or
     /// maintain job affinity for the client.
-    void UnRegisterClient();
+    void ClearNode();
 
     void ChangePreferredAffinities(const vector<string>* affs_to_add,
         const vector<string>* affs_to_delete);

@@ -1121,6 +1121,8 @@ int CGridWorkerNode::Run()
     }
 
     CNetScheduleJob job;
+    CAbsTimeout max_wait_for_servers(
+            TWorkerNode_MaxWaitForServers::GetDefault());
 
     unsigned try_count = 0;
     while (!CGridGlobals::GetInstance().IsShuttingDown()) {
@@ -1160,6 +1162,17 @@ int CGridWorkerNode::Run()
                     }
                 }
             }
+            max_wait_for_servers = CAbsTimeout(
+                    TWorkerNode_MaxWaitForServers::GetDefault());
+        } catch (CNetSrvConnException& e) {
+            SleepMilliSec(s_GetRetryDelay());
+            if (e.GetErrCode() == CNetSrvConnException::eConnectionFailure &&
+                    !max_wait_for_servers.GetRemainingTime().IsZero())
+                continue;
+            ERR_POST(Critical << "Could not connect to the "
+                    "configured servers, exiting...");
+            CGridGlobals::GetInstance().RequestShutdown(
+                    CNetScheduleAdmin::eShutdownImmediate);
         } catch (CNetServiceException& ex) {
             ERR_POST_X(40, ex.what());
             if (++try_count >= TServConn_ConnMaxRetries::GetDefault()) {
@@ -1193,7 +1206,7 @@ int CGridWorkerNode::Run()
         }
     }
     try {
-        GetNSExecutor().UnRegisterClient();
+        GetNSExecutor().ClearNode();
     }
     catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error

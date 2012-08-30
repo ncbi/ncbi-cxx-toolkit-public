@@ -125,6 +125,16 @@ typedef NCBI_PARAM_TYPE(netservice_api, max_connection_pool_size)
     TServConn_MaxConnPoolSize;
 
 // Worker node-specific parameters
+
+// Determine how long the worker node should wait for the
+// configured NetSchedule servers to appear before quitting.
+// When none of the servers are accessible, the worker node
+// will keep trying to connect until it succeeds, or the specified
+// timeout elapses.
+NCBI_PARAM_DECL(unsigned, server, max_wait_for_servers);
+typedef NCBI_PARAM_TYPE(server, max_wait_for_servers)
+    TWorkerNode_MaxWaitForServers;
+
 NCBI_PARAM_DECL(bool, server, stop_on_job_errors);
 typedef NCBI_PARAM_TYPE(server, stop_on_job_errors)
     TWorkerNode_StopOnJobErrors;
