@@ -110,7 +110,9 @@ gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&%s\
 
 ///Geo
 // .ncbirc alias: GEO
-static const char kGeoUrl[] =  "<a href=\"http://www.ncbi.nlm.nih.gov/geoprofiles/?term=<@gi@>[gi]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kGeoUrl[] =  "<a href=\"http://www/geoprofiles?LinkName=nuccore_geoprofiles&from_uid=<@gi@>&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+
+
 //substitues <@lnk_displ@>
 static const char kGeoImg[] = "<img border=0 height=16 width=16 src=\"images/E.gif\" alt=\"GEO profiles info linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
@@ -149,7 +151,8 @@ static const string kMapviwerDispl =  "<div><@lnk@>-<span class=\"rlLink\">align
 
 ///mapviewer linkout
 //for used for NT/NW/NC
-static const char kMapviewBlastHitUrl[] = "<a href=\"<@user_url@>&db=<@db@>&na=<@is_na@>&gnl=<@gnl@>&gi=<@gi@>&term=<@gi@>[gi]&taxid=<@taxid@>&RID=<@rid@>&QUERY_NUMBER=<@query_number@>&log$=nucl<@log@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const string kMapviewBlastHitUrl = "http://www.ncbi.nlm.nih.gov/mapview/maps.cgi?maps=blast_set";
+static const string kMapviewBlastHitParams = "<a href=\"<@user_url@>&db=<@db@>&na=<@is_na@>&gnl=<@gnl@>&gi=<@gi@>&term=<@gi@>[gi]&taxid=<@taxid@>&RID=<@rid@>&QUERY_NUMBER=<@query_number@>&log$=nucl<@log@>\"<@lnkTitle@>><@lnk_displ@></a>";
 
 ///dumpgnl
 static const char kDownloadUrl[] = "/blast/dumpgnl.cgi";

@@ -99,6 +99,7 @@ public:
     ///Data Representing each defline
     struct SDeflineInfo {
         CConstRef<objects::CSeq_id> id;         //best accession type id
+        string alnIDFasta;
         int gi;                        //gi 
         string defline;                //defline
         list<string> linkout_list;     //linkout urls
