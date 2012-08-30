@@ -525,7 +525,9 @@ void CNetScheduleSubmitter::CancelJob(const string& job_key)
 void CNetScheduleSubmitter::CancelJobGroup(const string& job_group)
 {
     SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job_group);
-    m_Impl->m_API->m_Service.ExecOnAllServers("CANCEL group=" + job_group);
+    string cmd("CANCEL group=" + job_group);
+    g_AppendClientIPAndSessionID(cmd);
+    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobStatus(

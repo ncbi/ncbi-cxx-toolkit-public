@@ -739,6 +739,9 @@ CNetServerInfo CNetServer::GetServerInfo()
 {
     string response(ExecWithRetry("VERSION").response);
 
+    // Keep these two lines separate to let the Exec method
+    // above succeed before constructing the object below.
+
     return new SNetServerInfoImpl(response);
 }
 
