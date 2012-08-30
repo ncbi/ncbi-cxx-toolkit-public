@@ -983,9 +983,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
         hostname = buf;
     }
 
-#if defined(_DEBUG)  &&  !defined(NDEBUG)
     CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
-#endif /*_DEBUG && !NDEBUG*/
 
     if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
         int x_error;
@@ -1078,7 +1076,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 #endif /*HAVE_GETADDR_INFO*/
     }
 
-#ifdef _DEBUG
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
     if (!SOCK_isipEx(hostname, 1))  ||  !host) {
         CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s", hostname,
                      SOCK_ntoa(host, addr, sizeof(addr)) == 0
@@ -1086,7 +1084,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
                                       (unsigned int) ntohl(host))
                      ? addr : "(unknown)"));
     }
-#endif /*_DEBUG*/
+#endif /*_DEBUG && !NDEBUG*/
     return host;
 }
 
