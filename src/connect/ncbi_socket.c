@@ -971,7 +971,6 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 {
     CORE_DEBUG_ARG(char addr[40];)
     char buf[MAXHOSTNAMELEN + 1];
-    CORE_DEBUG_ARG(int trace;)
     unsigned int host;
 
     /* initialize internals */
@@ -985,11 +984,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
     }
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-    if (!SOCK_isipEx(hostname, 1)) {
-        CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
-        trace = 1/*true*/;
-    } else
-        trace = 0/*false*/;
+    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
 #endif /*_DEBUG && !NDEBUG*/
 
     if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
@@ -1084,7 +1079,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
     }
 
 #ifdef _DEBUG
-    if (trace  ||  !host) {
+    if (!SOCK_isipEx(hostname, 1))  ||  !host) {
         CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s", hostname,
                      SOCK_ntoa(host, addr, sizeof(addr)) == 0
                      ? addr : sprintf(addr, "0x%08X",
