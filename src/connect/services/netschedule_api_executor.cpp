@@ -429,7 +429,8 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
 
     string attr_values[GET2_NOTIF_ATTR_COUNT];
 
-    if (ParseNotification(attr_names, attr_values, GET2_NOTIF_ATTR_COUNT) !=
+    if (ParseNSOutput(m_Message,
+            attr_names, attr_values, GET2_NOTIF_ATTR_COUNT) !=
                     GET2_NOTIF_ATTR_COUNT ||
             attr_values[1] != executor->m_API.GetQueueName())
         return false;
@@ -530,7 +531,17 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
 CNetScheduleAPI::EJobStatus
     CNetScheduleExecutor::GetJobStatus(const string& job_key)
 {
-    return m_Impl->m_API->x_GetJobStatus(job_key, false);
+    static const char* const s_WST2Attr[] = {"job_status"};
+
+#define NUMBER_OF_WST2_ATTRS (sizeof(s_WST2Attr) / sizeof(*s_WST2Attr))
+
+    string attr_values[NUMBER_OF_WST2_ATTRS];
+
+    CNetScheduleNotificationHandler::ParseNSOutput(m_Impl->m_API->
+            x_SendJobCmdWaitResponse("WST2", job_key),
+            s_WST2Attr, attr_values, NUMBER_OF_WST2_ATTRS);
+
+    return CNetScheduleAPI::StringToStatus(attr_values[0]);
 }
 
 void CNetScheduleExecutor::ReturnJob(const string& job_key,

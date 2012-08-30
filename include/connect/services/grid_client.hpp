@@ -293,6 +293,9 @@ private:
 
     auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
 
+    void x_ProlongBlobLifetime(const string& blob_key, unsigned ttl);
+    bool x_ProlongJobFieldLifetime(const string& job_field, unsigned ttl);
+    void x_RenewAllJobBlobs(time_t job_exptime);
     void x_GetJobDetails();
 
     size_t       m_BlobSize;

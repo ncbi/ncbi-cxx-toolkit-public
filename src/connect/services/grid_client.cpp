@@ -249,13 +249,14 @@ CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client)
 
 CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
 {
+    time_t job_exptime = 0;
+
     CNetScheduleAPI::EJobStatus status =
-        GetNetScheduleSubmitter().GetJobStatus(m_Job.job_id);
+        GetNetScheduleSubmitter().GetJobDetails(m_Job, &job_exptime);
 
     if (m_AutoCleanUp && (
               status == CNetScheduleAPI::eDone ||
               status == CNetScheduleAPI::eCanceled)) {
-        x_GetJobDetails();
         if (m_Job.input.length() > 1 &&
                 m_Job.input[0] == 'K' && m_Job.input[1] == ' ')
             RemoveDataBlob(m_Job.input.c_str() + 2);
@@ -268,6 +269,8 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
                     RemoveDataBlob(m_Job.progress_msg.c_str() + 2);
             }
         }
+    } else {
+        x_RenewAllJobBlobs(job_exptime);
     }
     return status;
 }
@@ -321,11 +324,50 @@ void CGridClient::SetJobKey(const string& job_key)
     m_JobDetailsRead = false;
 }
 
+void CGridClient::x_ProlongBlobLifetime(const string& blob_key, unsigned ttl)
+{
+    try {
+        m_NetCacheAPI.ProlongBlobLifetime(blob_key, ttl);
+    }
+    catch (CNetServiceException& e) {
+        LOG_POST(Warning << "Error while prolonging lifetime for " <<
+            blob_key << ": " << e.GetMsg());
+    }
+}
+
+bool CGridClient::x_ProlongJobFieldLifetime(
+        const string& job_field, unsigned ttl)
+{
+    if (!NStr::StartsWith(job_field, "K "))
+        return false;
+
+    x_ProlongBlobLifetime(string(job_field, 2), ttl);
+
+    return true;
+}
+
+void CGridClient::x_RenewAllJobBlobs(time_t job_exptime)
+{
+    time_t current_time = time(NULL);
+    unsigned ttl = 0;
+    if (job_exptime > current_time)
+        ttl = unsigned(job_exptime - current_time + 1);
+    x_ProlongJobFieldLifetime(m_Job.input, ttl);
+    x_ProlongJobFieldLifetime(m_Job.output, ttl);
+    if (!m_Job.progress_msg.empty() &&
+            !x_ProlongJobFieldLifetime(m_Job.progress_msg, ttl) &&
+            CNetCacheKey::ParseBlobKey(m_Job.progress_msg.data(),
+                    m_Job.progress_msg.length(), NULL))
+        x_ProlongBlobLifetime(m_Job.progress_msg, ttl);
+}
+
 void CGridClient::x_GetJobDetails()
 {
     if (m_JobDetailsRead)
         return;
-    GetNetScheduleSubmitter().GetJobDetails(m_Job);
+    time_t job_exptime = 0;
+    GetNetScheduleSubmitter().GetJobDetails(m_Job, &job_exptime);
+    x_RenewAllJobBlobs(job_exptime);
     m_JobDetailsRead = true;
 }
 

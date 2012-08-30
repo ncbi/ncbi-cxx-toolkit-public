@@ -510,9 +510,9 @@ CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id)
     return output;
 }
 
-void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
+void CNetCacheAPI::PrintBlobInfo(const string& blob_key)
 {
-    CNetServerMultilineCmdOutput output(GetBlobInfo(blob_id));
+    CNetServerMultilineCmdOutput output(GetBlobInfo(blob_key));
 
     string line;
 
@@ -524,6 +524,17 @@ void CNetCacheAPI::PrintBlobInfo(const string& blob_id)
     }
 }
 
+void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl)
+{
+    string cmd("PROLONG \"\" " + blob_key);
+
+    cmd += " \"\" ttl=";
+    cmd += NStr::NumericToString(ttl);
+
+    m_Impl->AppendClientIPSessionIDPassword(&cmd);
+
+    m_Impl->ExecMirrorAware(CNetCacheKey(blob_key), cmd);
+}
 
 string CNetCacheAPI::GetOwner(const string& blob_id)
 {

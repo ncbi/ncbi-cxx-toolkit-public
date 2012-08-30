@@ -332,7 +332,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     CNetServerMultilineCmdOutput GetBlobInfo(const string& blob_id);
 
     /// Print meta information about the specified blob.
-    void PrintBlobInfo(const string& blob_id);
+    void PrintBlobInfo(const string& blob_key);
+
+    void ProlongBlobLifetime(const string& blob_key, unsigned ttl);
 
     /// Mirroring modes. eIfKeyMirrored means unconditionally
     /// enable mirroring for blobs that were created in mirroring

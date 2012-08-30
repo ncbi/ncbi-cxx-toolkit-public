@@ -231,8 +231,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     const SServerParams& GetServerParams();
 
     /// Get job details
-    EJobStatus GetJobDetails(CNetScheduleJob& job);
+    EJobStatus GetJobDetails(CNetScheduleJob& job, time_t* job_exptime = NULL);
 
+    /// Update the progress_message field of the job structure.
+    /// Prior to calling this method, the caller must set the
+    /// id field of the job structure.
     void GetProgressMsg(CNetScheduleJob& job);
 
     void SetCommunicationTimeout(const STimeout& to)
@@ -468,9 +471,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// eJobNotFound is returned if job status cannot be found
     /// (job record timed out)
     ///
-    CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key);
+    CNetScheduleAPI::EJobStatus GetJobStatus(
+            const string& job_key, time_t* job_exptime = NULL);
 
-    CNetScheduleAPI::EJobStatus GetJobDetails(CNetScheduleJob& job);
+    CNetScheduleAPI::EJobStatus GetJobDetails(
+            CNetScheduleJob& job, time_t* job_exptime = NULL);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -807,8 +812,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleNotificationHandler
 public:
     CNetScheduleNotificationHandler();
 
-    int ParseNotification(const char* const* attr_names,
-            string* attr_values, int attr_count);
+    static int ParseNSOutput(const string& attr_string,
+            const char* const* attr_names,
+            string* attr_values,
+            int attr_count);
 
     bool WaitForNotification(CAbsTimeout& abs_timeout,
             string* server_host = NULL);

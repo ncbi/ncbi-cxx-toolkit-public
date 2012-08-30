@@ -171,10 +171,6 @@ struct SNetScheduleAPIImpl : public CObject
         g_VerifyAlphabet(affinity, "affinity token", eCC_BASE64_PI);
     }
 
-    CNetScheduleAPI::EJobStatus x_GetJobStatus(
-        const string& job_key,
-        bool submitter);
-
     CNetService m_Service;
 
     static CNetScheduleExceptionMap sm_ExceptionMap;

@@ -86,11 +86,14 @@ CNetScheduleNotificationHandler::CNetScheduleNotificationHandler()
     m_UDPPort = m_UDPSocket.GetLocalPort(eNH_HostByteOrder);
 }
 
-int CNetScheduleNotificationHandler::ParseNotification(
-        const char* const* attr_names, string* attr_values, int attr_count)
+int CNetScheduleNotificationHandler::ParseNSOutput(
+        const string& attr_string,
+        const char* const* attr_names,
+        string* attr_values,
+        int attr_count)
 {
     try {
-        CUrlArgs attr_parser(m_Message);
+        CUrlArgs attr_parser(attr_string);
         const CUrlArgs::TArgs& attr_list = attr_parser.GetArgs();
 
         int found_attrs = 0;
@@ -467,7 +470,7 @@ CNetService CNetScheduleAPI::GetService()
         ++ptr;
 
 CNetScheduleAPI::EJobStatus
-    CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job)
+    CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job, time_t* job_exptime)
 {
     job.input.erase();
     job.affinity.erase();
@@ -477,13 +480,29 @@ CNetScheduleAPI::EJobStatus
     job.error_msg.erase();
     job.progress_msg.erase();
 
-    string resp = m_Impl->x_SendJobCmdWaitResponse("STATUS" , job.job_id);
+    string resp = m_Impl->x_SendJobCmdWaitResponse("STATUS2" , job.job_id);
 
-    const char* str = resp.c_str();
+    static const char* const s_JobStatusAttrNames[] = {
+            "job_status",       // 0
+            "job_exptime",      // 1
+            "input",            // 2
+            "output",           // 3
+            "ret_code",         // 4
+            "err_msg"};         // 5
 
-    EJobStatus status = (EJobStatus) atoi(str);
+#define NUMBER_OF_STATUS_ATTRS (sizeof(s_JobStatusAttrNames) / \
+    sizeof(*s_JobStatusAttrNames))
 
-    size_t field_len;
+    string attr_values[NUMBER_OF_STATUS_ATTRS];
+
+    CNetScheduleNotificationHandler::ParseNSOutput(resp,
+            s_JobStatusAttrNames, attr_values, NUMBER_OF_STATUS_ATTRS);
+
+    EJobStatus status = StringToStatus(attr_values[0]);
+
+    if (job_exptime != NULL)
+        *job_exptime = (time_t) NStr::StringToUInt8(attr_values[1],
+                NStr::fConvErr_NoThrow);
 
     switch (status) {
     case ePending:
@@ -494,45 +513,17 @@ CNetScheduleAPI::EJobStatus
     case eReading:
     case eConfirmed:
     case eReadFailed:
-        while (*str && !isspace((unsigned char) *str))
-            ++str;
-        SKIP_SPACE(str);
-
-        job.ret_code = atoi(str);
-
-        while (*str && !isspace((unsigned char) *str))
-            ++str;
-        SKIP_SPACE(str);
-
-        if (*str) {
-            job.output = NStr::ParseQuoted(str, &field_len);
-
-            str += field_len;
-            SKIP_SPACE(str);
-
-            if (*str) {
-                job.error_msg = NStr::ParseQuoted(str, &field_len);
-
-                str += field_len;
-                SKIP_SPACE(str);
-
-                if (*str)
-                    job.input = NStr::ParseQuoted(str);
-            }
-        }
+        job.input = attr_values[2];
+        job.output = attr_values[3];
+        job.ret_code = NStr::StringToInt(attr_values[4],
+                NStr::fConvErr_NoThrow);
+        job.error_msg = attr_values[5];
 
         /* FALL THROUGH */
 
     default:
         return status;
     }
-}
-
-CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::x_GetJobStatus(
-    const string& job_key, bool submitter)
-{
-    return (CNetScheduleAPI::EJobStatus) atoi(
-        x_SendJobCmdWaitResponse(submitter ? "SST" : "WST", job_key).c_str());
 }
 
 const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()

@@ -377,9 +377,9 @@ bool CNetScheduleNotificationHandler::CheckJobStatusNotification(
     string attr_values[3];
 
     if (last_event_index == NULL)
-        ParseNotification(s_JobStatusAttrNames, attr_values, 2);
+        ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 2);
     else {
-        ParseNotification(s_JobStatusAttrNames, attr_values, 3);
+        ParseNSOutput(m_Message, s_JobStatusAttrNames, attr_values, 3);
 
         if (!attr_values[2].empty())
             *last_event_index = NStr::StringToInt(attr_values[2],
@@ -418,10 +418,8 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
     for (;;) {
         CNanoTimeout abs_timeout_remaining(abs_timeout.GetRemainingTime());
 
-        if (abs_timeout_remaining.IsZero()) {
-            status = ns_api->x_GetJobStatus(job.job_id, true);
-            break;
-        }
+        if (abs_timeout_remaining.IsZero())
+            return ns_api.GetJobDetails(job);
 
         CAbsTimeout timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
 
@@ -431,20 +429,19 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
         }
 
         if (WaitForNotification(timeout)) {
-            if (CheckJobStatusNotification(job.job_id, &status))
-                break;
+            if (CheckJobStatusNotification(job.job_id, &status)) {
+                if (status == CNetScheduleAPI::eDone)
+                    ns_api.GetJobDetails(job);
+
+                return status;
+            }
         } else {
-            status = ns_api->x_GetJobStatus(job.job_id, true);
+            status = ns_api.GetJobDetails(job);
             if ((status != CNetScheduleAPI::eRunning &&
                     status != CNetScheduleAPI::ePending) || last_timeout)
-                break;
+                return status;
         }
     }
-
-    if (status == CNetScheduleAPI::eDone)
-        ns_api.GetJobDetails(job);
-
-    return status;
 }
 
 bool CNetScheduleNotificationHandler::RequestJobWatching(
@@ -467,7 +464,7 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
 
     string attr_values[2];
 
-    ParseNotification(s_JobStatusAttrNames + 1, attr_values, 2);
+    ParseNSOutput(m_Message, s_JobStatusAttrNames + 1, attr_values, 2);
 
     if (!attr_values[1].empty())
         *last_event_index = NStr::StringToInt(attr_values[1],
@@ -531,16 +528,18 @@ void CNetScheduleSubmitter::CancelJobGroup(const string& job_group)
     m_Impl->m_API->m_Service.ExecOnAllServers("CANCEL group=" + job_group);
 }
 
-CNetScheduleAPI::EJobStatus
-    CNetScheduleSubmitter::GetJobStatus(const string& job_key)
+CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobStatus(
+        const string& job_key, time_t* job_exptime)
 {
-    return m_Impl->m_API->x_GetJobStatus(job_key, true);
+    CNetScheduleJob job;
+    job.job_id = job_key;
+    return m_Impl->m_API.GetJobDetails(job, job_exptime);
 }
 
-CNetScheduleAPI::EJobStatus
-    CNetScheduleSubmitter::GetJobDetails(CNetScheduleJob& job)
+CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobDetails(
+        CNetScheduleJob& job, time_t* job_exptime)
 {
-    return m_Impl->m_API.GetJobDetails(job);
+    return m_Impl->m_API.GetJobDetails(job, job_exptime);
 }
 
 void CNetScheduleSubmitter::GetProgressMsg(CNetScheduleJob& job)
