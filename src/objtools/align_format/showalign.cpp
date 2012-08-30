@@ -1106,7 +1106,7 @@ string CDisplaySeqalign::x_GetUrl(const CBioseq_Handle& bsp_handle,int giToUse,s
     string urlLink = NcbiEmptyString;
     CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = x_InitSeqUrl(giToUse,accession,linkout,taxid,ids);     
     seqUrlInfo->segs = (lnkDispParams & eDisplayDownloadLink) ?  x_GetSegs(1) : "";
-	seqUrlInfo->resourcesUrl = (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "RESOURCES_URL") : "";    
+	seqUrlInfo->resourcesUrl = (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "RESOURCE_URL") : "";    
     seqUrlInfo->advancedView = seqUrlInfo->useTemplates = m_AlignTemplates != NULL;
     
     urlLink = CAlignFormatUtil::GetIDUrl(seqUrlInfo,&ids);
