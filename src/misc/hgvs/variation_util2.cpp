@@ -392,17 +392,19 @@ bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
         invalid_location = true;
     }
 
-    if(sequence::GetStart(p.GetLoc(), NULL) > sequence::GetStop(p.GetLoc(), NULL)) {
-        out_of_order = true;    
-    }
+    if(p.GetLoc().GetId() && !p.GetLoc().IsEmpty()) {
+        if(sequence::GetStart(p.GetLoc(), NULL) > sequence::GetStop(p.GetLoc(), NULL)) {
+            out_of_order = true;    
+        }
 
-    if(p.IsSetStart_offset() && p.IsSetStop_offset() && sequence::GetLength(p.GetLoc(), NULL) == 1) {
-        if(sequence::GetStrand(p.GetLoc(), NULL) == eNa_strand_minus ? 
-              p.GetStart_offset() < p.GetStop_offset() 
-            : p.GetStart_offset() > p.GetStop_offset() )
-        {
-            out_of_order = true;
-            invalid_location = true;
+        if(p.IsSetStart_offset() && p.IsSetStop_offset() && sequence::GetLength(p.GetLoc(), NULL) == 1) {
+            if(sequence::GetStrand(p.GetLoc(), NULL) == eNa_strand_minus ? 
+                  p.GetStart_offset() < p.GetStop_offset() 
+                : p.GetStart_offset() > p.GetStop_offset() )
+            {
+                out_of_order = true;
+                invalid_location = true;
+            }
         }
     }
 
@@ -412,6 +414,7 @@ bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
         exception->SetMessage(out_of_order ? "Invalid location - start and stop are out of order" : "Invalid location");
         p.SetExceptions().push_back(exception);
     }
+
     return invalid_location;
 }
 
