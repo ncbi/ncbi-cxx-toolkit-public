@@ -313,6 +313,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     }        
     //get id (sdl->id, sdl-gi)    
     sdl->id = CAlignFormatUtil::GetDisplayIds(handle,aln_id,use_this_gi,sdl->gi);
+    sdl->alnIDFasta = aln_id.AsFastaString();
 
     //get linkout
     if((m_Option & eLinkout)){
@@ -386,7 +387,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         CAlignFormatUtil::SSeqURLInfo seqUrlInfo(user_url,m_BlastType,m_IsDbNa,m_Database,m_Rid,
                                                  m_QueryNumber,sdl->gi, accession, sdl->linkout,
                                                  blast_rank,false,(m_Option & eNewTargetWindow) ? true : false,seqRange,flip); 
-        seqUrlInfo.resourcesUrl = m_Reg.get() ? m_Reg->Get(m_BlastType, "RESOURCES_URL") : kEmptyStr;
+        seqUrlInfo.resourcesUrl = m_Reg.get() ? m_Reg->Get(m_BlastType, "RESOURCE_URL") : kEmptyStr;
         seqUrlInfo.useTemplates = useTemplates;        
         seqUrlInfo.advancedView = advancedView;
 
@@ -1504,8 +1505,9 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         deflFastaSeq = sdl->id->AsFastaString();        
     }
     else {        
-        deflFrmID = deflId = NStr::IntToString(sdl->gi);
+        deflFrmID = deflId = NStr::IntToString(sdl->gi);        
         deflFastaSeq = "gi|" + NStr::IntToString(sdl->gi);
+        deflFastaSeq = sdl->alnIDFasta;
         deflAccs = sdl->id->AsFastaString();
     }
     

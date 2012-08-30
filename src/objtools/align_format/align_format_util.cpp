@@ -1975,8 +1975,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         lnk_displ = textLink ? "GEO" : kGeoImg; 
         if(!disableLink) {        
             lnkTitleInfo = "Expression profiles";
-            //gilist contains comma separated gis, change it to the following
-            giList = NStr::Replace(giList,",","[gi] OR ");
+            //gilist contains comma separated gis            
             url_link = s_MapLinkoutGenParam(url_link,rid,giList,for_alignment, cur_align,labelList,lnk_displ,lnkTitleInfo);
         }
         else {
@@ -2016,7 +2015,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
     //if((linkout & eGenomicSeq) && !genomicSeqURL.empty()){  
     if((linkout & eGenomicSeq)){  //only for advanced view -> textlink = true
         if(textLink) {
-            url_link = kMapviewBlastHitUrl;        
+            url_link = kMapviewBlastHitParams;        
             lnk_displ = "Map Viewer";
             if(!disableLink) {        
                 lnkTitleInfo = "BLAST hits on the " + taxname + " genome";
@@ -2024,6 +2023,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
                 url_link = CAlignFormatUtil::MapTemplate(url_link,"gnl",NStr::URLEncode(gnl));
                 url_link = CAlignFormatUtil::MapTemplate(url_link,"db",database);
                 url_link = CAlignFormatUtil::MapTemplate(url_link,"is_na",is_na? "1" : "0");
+                user_url = (user_url.empty()) ? kMapviewBlastHitUrl : user_url;
                 url_link = CAlignFormatUtil::MapTemplate(url_link,"user_url",user_url);
 
                 string taxIDStr = (taxid > 0) ? NStr::IntToString(taxid) : "";
