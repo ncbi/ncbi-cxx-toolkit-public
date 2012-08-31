@@ -313,6 +313,27 @@ void CFeatureGenerator::ConvertLocToAnnot(
 
     m_impl->ConvertAlignToAnnot(fake_align, annot, seqs, 0, &cdregion, false);
 
+    if (!(old_flags & fForceTranscribeMrna) ||
+        !(old_flags & fForceTranslateCds))
+    {
+        /// We created Bioseqs the user didn't ask for,
+        /// so we need to now remove them
+        for (CBioseq_set::TSeq_set::iterator bioseq_it =
+                 seqs.SetSeq_set().begin();
+            bioseq_it != seqs.SetSeq_set().end(); )
+        {
+            if (((*bioseq_it)->GetSeq().GetFirstId()->Match(*rna_id) &&
+                    !(old_flags & fForceTranscribeMrna)) ||
+                ((*bioseq_it)->GetSeq().GetFirstId()->Match(*prot_id) &&
+                    !(old_flags & fForceTranslateCds)))
+            {
+                bioseq_it = seqs.SetSeq_set().erase(bioseq_it);
+            } else {
+                ++bioseq_it;
+            }
+        }
+    }
+
     /// Restore old flags
     SetFlags(old_flags);
 }
