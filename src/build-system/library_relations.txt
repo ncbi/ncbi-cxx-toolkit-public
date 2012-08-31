@@ -123,6 +123,7 @@ align-reader needs klib
 align-reader needs kproc
 align-reader needs krypto
 align-reader needs ksproc
+align-reader needs kurl
 align-reader needs srapath
 align-reader needs vdb
 align-reader needs vfs
@@ -135,6 +136,7 @@ align-writer needs klib
 align-writer needs kproc
 align-writer needs krypto
 align-writer needs ksproc
+align-writer needs kurl
 align-writer needs srapath
 align-writer needs vdb
 align-writer needs vfs
@@ -381,6 +383,7 @@ axf needs klib
 axf needs kproc
 axf needs krypto
 axf needs ksproc
+axf needs kurl
 axf needs srapath
 axf needs vdb
 axf needs vfs
@@ -408,6 +411,7 @@ bamread needs klib
 bamread needs kproc
 bamread needs krypto
 bamread needs ksproc
+bamread needs kurl
 bamread needs medline
 bamread needs ncbi-bam
 bamread needs pub
@@ -550,6 +554,7 @@ blast_sra needs kproc
 blast_sra needs krypto
 blast_sra needs ksproc
 blast_sra needs ksrch
+blast_sra needs kurl
 blast_sra needs medline
 blast_sra needs pub
 blast_sra needs scoremat
@@ -1086,6 +1091,7 @@ gc_load_utils needs kproc
 gc_load_utils needs krypto
 gc_load_utils needs ksproc
 gc_load_utils needs ksrch
+gc_load_utils needs kurl
 gc_load_utils needs lds
 gc_load_utils needs lds2
 gc_load_utils needs medline
@@ -1183,6 +1189,7 @@ gc_utils needs kproc
 gc_utils needs krypto
 gc_utils needs ksproc
 gc_utils needs ksrch
+gc_utils needs kurl
 gc_utils needs lds
 gc_utils needs lds2
 gc_utils needs medline
@@ -1277,6 +1284,7 @@ gcaccess_utils needs kproc
 gcaccess_utils needs krypto
 gcaccess_utils needs ksproc
 gcaccess_utils needs ksrch
+gcaccess_utils needs kurl
 gcaccess_utils needs lds
 gcaccess_utils needs lds2
 gcaccess_utils needs medline
@@ -1555,6 +1563,7 @@ gpinit needs kproc
 gpinit needs krypto
 gpinit needs ksproc
 gpinit needs ksrch
+gpinit needs kurl
 gpinit needs lds
 gpinit needs lds2
 gpinit needs medline
@@ -1665,6 +1674,7 @@ gpinit_admin needs kproc
 gpinit_admin needs krypto
 gpinit_admin needs ksproc
 gpinit_admin needs ksrch
+gpinit_admin needs kurl
 gpinit_admin needs lds
 gpinit_admin needs lds2
 gpinit_admin needs medline
@@ -1766,6 +1776,7 @@ gpinit_buildinfo needs kproc
 gpinit_buildinfo needs krypto
 gpinit_buildinfo needs ksproc
 gpinit_buildinfo needs ksrch
+gpinit_buildinfo needs kurl
 gpinit_buildinfo needs lds
 gpinit_buildinfo needs lds2
 gpinit_buildinfo needs medline
@@ -1850,6 +1861,7 @@ gpinit_utils needs kproc
 gpinit_utils needs krypto
 gpinit_utils needs ksproc
 gpinit_utils needs ksrch
+gpinit_utils needs kurl
 gpinit_utils needs medline
 gpinit_utils needs ncbi_xdbapi_ftds
 gpinit_utils needs pub
@@ -1913,6 +1925,7 @@ gpipe_alnutil needs kproc
 gpipe_alnutil needs krypto
 gpipe_alnutil needs ksproc
 gpipe_alnutil needs ksrch
+gpipe_alnutil needs kurl
 gpipe_alnutil needs lds
 gpipe_alnutil needs lds2
 gpipe_alnutil needs medline
@@ -1999,6 +2012,7 @@ gpipe_attr needs kproc
 gpipe_attr needs krypto
 gpipe_attr needs ksproc
 gpipe_attr needs ksrch
+gpipe_attr needs kurl
 gpipe_attr needs medline
 gpipe_attr needs ncbi_xdbapi_ftds
 gpipe_attr needs pub
@@ -2049,6 +2063,7 @@ gpipe_common needs kproc
 gpipe_common needs krypto
 gpipe_common needs ksproc
 gpipe_common needs ksrch
+gpipe_common needs kurl
 gpipe_common needs medline
 gpipe_common needs ncbi_xdbapi_ftds
 gpipe_common needs pub
@@ -2112,6 +2127,7 @@ gpipe_objutil needs kproc
 gpipe_objutil needs krypto
 gpipe_objutil needs ksproc
 gpipe_objutil needs ksrch
+gpipe_objutil needs kurl
 gpipe_objutil needs lds
 gpipe_objutil needs lds2
 gpipe_objutil needs medline
@@ -2194,6 +2210,7 @@ gpipe_property needs kproc
 gpipe_property needs krypto
 gpipe_property needs ksproc
 gpipe_property needs ksrch
+gpipe_property needs kurl
 gpipe_property needs medline
 gpipe_property needs ncbi_xdbapi_ftds
 gpipe_property needs pub
@@ -2253,6 +2270,7 @@ gpxlib needs kproc
 gpxlib needs krypto
 gpxlib needs ksproc
 gpxlib needs ksrch
+gpxlib needs kurl
 gpxlib needs medline
 gpxlib needs ncbi_xdbapi_ftds
 gpxlib needs pub
@@ -3981,6 +3999,7 @@ ncbi_xloader_bam needs klib
 ncbi_xloader_bam needs kproc
 ncbi_xloader_bam needs krypto
 ncbi_xloader_bam needs ksproc
+ncbi_xloader_bam needs kurl
 ncbi_xloader_bam needs medline
 ncbi_xloader_bam needs ncbi-bam
 ncbi_xloader_bam needs pub
@@ -4068,6 +4087,7 @@ ncbi_xloader_csra needs kproc
 ncbi_xloader_csra needs krypto
 ncbi_xloader_csra needs ksproc
 ncbi_xloader_csra needs ksrch
+ncbi_xloader_csra needs kurl
 ncbi_xloader_csra needs medline
 ncbi_xloader_csra needs pub
 ncbi_xloader_csra needs seq
@@ -4180,6 +4200,7 @@ ncbi_xloader_sra needs kproc
 ncbi_xloader_sra needs krypto
 ncbi_xloader_sra needs ksproc
 ncbi_xloader_sra needs ksrch
+ncbi_xloader_sra needs kurl
 ncbi_xloader_sra needs medline
 ncbi_xloader_sra needs pub
 ncbi_xloader_sra needs seq
@@ -4867,6 +4888,7 @@ sra-schema needs klib
 sra-schema needs kproc
 sra-schema needs krypto
 sra-schema needs ksproc
+sra-schema needs kurl
 sra-schema needs srapath
 sra-schema needs vdb
 sra-schema needs vfs
@@ -4878,6 +4900,7 @@ sradb needs klib
 sradb needs kproc
 sradb needs krypto
 sradb needs ksproc
+sradb needs kurl
 sradb needs srapath
 sradb needs sraschema
 sradb needs vdb
@@ -4898,6 +4921,7 @@ sraread needs kproc
 sraread needs krypto
 sraread needs ksproc
 sraread needs ksrch
+sraread needs kurl
 sraread needs medline
 sraread needs pub
 sraread needs seq
@@ -4924,6 +4948,7 @@ srareader needs klib
 srareader needs kproc
 srareader needs krypto
 srareader needs ksproc
+srareader needs kurl
 srareader needs sra-path
 srareader needs sra-schema
 srareader needs sradb
@@ -4943,6 +4968,7 @@ sraxf needs kproc
 sraxf needs krypto
 sraxf needs ksproc
 sraxf needs ksrch
+sraxf needs kurl
 sraxf needs srapath
 sraxf needs vdb
 sraxf needs vfs
@@ -5128,6 +5154,7 @@ validate_regions needs kproc
 validate_regions needs krypto
 validate_regions needs ksproc
 validate_regions needs ksrch
+validate_regions needs kurl
 validate_regions needs lds
 validate_regions needs lds2
 validate_regions needs medline
@@ -5220,6 +5247,7 @@ vdb-blast needs klib
 vdb-blast needs kproc
 vdb-blast needs krypto
 vdb-blast needs ksproc
+vdb-blast needs kurl
 vdb-blast needs srapath
 vdb-blast needs sraschema
 vdb-blast needs vdb
@@ -5240,6 +5268,7 @@ vxf needs klib
 vxf needs kproc
 vxf needs krypto
 vxf needs ksproc
+vxf needs kurl
 vxf needs srapath
 vxf needs vdb
 vxf needs vfs
@@ -6991,6 +7020,7 @@ waxf needs klib
 waxf needs kproc
 waxf needs krypto
 waxf needs ksproc
+waxf needs kurl
 waxf needs srapath
 waxf needs vdb
 waxf needs vfs
@@ -7036,6 +7066,7 @@ wsra-schema needs klib
 wsra-schema needs kproc
 wsra-schema needs krypto
 wsra-schema needs ksproc
+wsra-schema needs kurl
 wsra-schema needs srapath
 wsra-schema needs vdb
 wsra-schema needs vfs
@@ -7050,6 +7081,7 @@ wsradb needs klib
 wsradb needs kproc
 wsradb needs krypto
 wsradb needs ksproc
+wsradb needs kurl
 wsradb needs srapath
 wsradb needs sraschema
 wsradb needs vdb
@@ -7071,6 +7103,7 @@ wsraxf needs kproc
 wsraxf needs krypto
 wsraxf needs ksproc
 wsraxf needs ksrch
+wsraxf needs kurl
 wsraxf needs srapath
 wsraxf needs vdb
 wsraxf needs vfs
@@ -7097,6 +7130,7 @@ wvxf needs klib
 wvxf needs kproc
 wvxf needs krypto
 wvxf needs ksproc
+wvxf needs kurl
 wvxf needs srapath
 wvxf needs vdb
 wvxf needs vfs
@@ -7824,6 +7858,7 @@ xgencoll needs kproc
 xgencoll needs krypto
 xgencoll needs ksproc
 xgencoll needs ksrch
+xgencoll needs kurl
 xgencoll needs lds
 xgencoll needs lds2
 xgencoll needs medline
@@ -8060,6 +8095,7 @@ xid_mapper needs kproc
 xid_mapper needs krypto
 xid_mapper needs ksproc
 xid_mapper needs ksrch
+xid_mapper needs kurl
 xid_mapper needs lds
 xid_mapper needs lds2
 xid_mapper needs medline
