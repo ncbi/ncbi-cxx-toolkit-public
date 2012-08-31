@@ -376,15 +376,15 @@ void CBioseqContext::x_SetTaxname(void)
 void CBioseqContext::x_SetDataFromUserObjects(void)
 {
     // translate finishing status
-    typedef pair<const string, const string>  TFinStatElem;
+    typedef SStaticPair<const char *, const char *>  TFinStatElem;
     static const TFinStatElem sc_finstat_map[] = {
-        TFinStatElem("Annotation-directed-improvement", "ANNOTATION_DIRECTED_IMPROVEMENT"),
-        TFinStatElem("High-quality-draft",              "HIGH_QUALITY_DRAFT"),
-        TFinStatElem("Improved-high-quality-draft",     "IMPROVED_HIGH_QUALITY_DRAFT"),
-        TFinStatElem("Noncontiguous-finished",          "NONCONTIGUOUS_FINISHED"),
-        TFinStatElem("Standard-draft",                  "STANDARD_DRAFT")
+        { "Annotation-directed-improvement", "ANNOTATION_DIRECTED_IMPROVEMENT" },
+        { "High-quality-draft",              "HIGH_QUALITY_DRAFT" },
+        { "Improved-high-quality-draft",     "IMPROVED_HIGH_QUALITY_DRAFT" },
+        { "Noncontiguous-finished",          "NONCONTIGUOUS_FINISHED" },
+        { "Standard-draft",                  "STANDARD_DRAFT" }
     };
-    typedef CStaticArrayMap<const string, const string, PNocase> TFinStatMap;
+    typedef CStaticArrayMap<const char *, const char *, PNocase_CStr> TFinStatMap;
     DEFINE_STATIC_ARRAY_MAP(TFinStatMap, sc_FinStatMap, sc_finstat_map);
 
     for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
@@ -407,7 +407,7 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                         {
                             string asn_fin_stat = field.GetData().GetStr();
                             replace( asn_fin_stat.begin(), asn_fin_stat.end(), ' ', '-' ); 
-                            TFinStatMap::const_iterator new_fin_stat_iter = sc_FinStatMap.find(asn_fin_stat);
+                            TFinStatMap::const_iterator new_fin_stat_iter = sc_FinStatMap.find(asn_fin_stat.c_str());
                             if( new_fin_stat_iter != sc_FinStatMap.end() ) {
                                 m_FinishingStatus = new_fin_stat_iter->second;
                             }
