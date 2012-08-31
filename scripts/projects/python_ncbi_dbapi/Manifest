@@ -16,6 +16,9 @@ LIB: libdbapi.so libdbapi_driver.so libxconnext.so libxconnect.so libxutil.so li
 LIB: libncbi_xdbapi_ftds.so libct_ftds64.so libtds_ftds64.so
 LIB: libncbi_xdbapi_ctlib.so 
 
+# Use stable components (per components.link) rather than the trunk.
+USE_COMPONENTS
+
 POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.sh $installdir $version
 
 
