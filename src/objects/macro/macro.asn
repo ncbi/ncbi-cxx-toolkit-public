@@ -1410,7 +1410,8 @@ Macro-action-choice ::= CHOICE {
   reorder-structured-comments NULL ,
   remove-duplicate-structured-comments NULL ,
   lookup-taxonomy NULL ,
-  lookup-pubs NULL }
+  lookup-pubs NULL ,
+  trim-terminal-ns NULL }
 
 
 Macro-action-list ::= SET OF Macro-action-choice
