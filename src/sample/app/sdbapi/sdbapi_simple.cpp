@@ -233,7 +233,6 @@ void CSdbapiSimpleApp::DemoStoredProc(void)
 {
     // Pick a stored procedure.
     string proc_name("sdbapi_simple_sproc");
-    NcbiCout << "\nExecuting stored proc \"" << proc_name << "\":" << NcbiEndl;
 
     // Create an integer input parameter "@max_id", a float input
     // parameter "@max_fl", and an integer output parameter "@num_rows".
@@ -243,6 +242,7 @@ void CSdbapiSimpleApp::DemoStoredProc(void)
     query.SetParameter("@num_rows", 0, eSDB_Int4, eSP_InOut);
 
     // Execute the stored procedure.
+    NcbiCout << "\nExecuting stored proc \"" << proc_name << "\":" << NcbiEndl;
     query.ExecuteSP(proc_name);
 
     // Print the results.
@@ -278,9 +278,9 @@ void CSdbapiSimpleApp::DemoStaticSql(void)
 {
     // Create a static SQL statement.
     string sql("SELECT [title] FROM [Journal]");
-    NcbiCout << "\nExecuting static SQL \"" << sql << "\":" << NcbiEndl;
 
     // Execute the static SQL.
+    NcbiCout << "\nExecuting static SQL \"" << sql << "\":" << NcbiEndl;
     CQuery query = m_Db.NewQuery(sql);
     query.Execute();
 
@@ -320,7 +320,6 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
                " FROM [Employee] WHERE [last] LIKE @last"
                " AND [salary] > @salary"
                " AND [hiredate] > @hire");
-    NcbiCout << "\nExecuting parameterized SQL \"" << sql << "\":" << NcbiEndl;
 
     // Assign parameters.
     CQuery query = m_Db.NewQuery();
@@ -328,7 +327,8 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
     query.SetParameter("@salary", user_salary);
     query.SetParameter("@hire",   user_hire);
 
-    // Execute the parameterized procedure.
+    // Execute the parameterized SQL.
+    NcbiCout << "\nExecuting parameterized SQL \"" << sql << "\":" << NcbiEndl;
     query.SetSql(sql);
     query.Execute();
 
@@ -386,9 +386,9 @@ void CSdbapiSimpleApp::DemoDynamicSql(void)
                " FROM [Employee] WHERE [last] LIKE " + user_last +
                " AND [salary] > " + user_salary +
                " AND [hiredate] > " + user_hire);
-    NcbiCout << "\nExecuting dynamic SQL \"" << sql << "\":" << NcbiEndl;
 
     // Execute the dynamic SQL.
+    NcbiCout << "\nExecuting dynamic SQL \"" << sql << "\":" << NcbiEndl;
     CQuery query = m_Db.NewQuery();
     query.SetSql(sql);
     query.Execute();
