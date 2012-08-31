@@ -26,5 +26,5 @@ POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.s
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux32-Centos : 32  : GCC.sh 3.4.2 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
-Linux64-Centos : 64  : GCC.sh 4.0.1 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
+Linux32-Centos : 32  : GCC.sh 4.6.0 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
+Linux64-Centos : 64  : GCC.sh 4.4.2 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
