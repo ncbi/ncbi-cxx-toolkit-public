@@ -1652,9 +1652,13 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                             CSeqVector vec(rna_handle, CBioseq_Handle::eCoding_Iupac);
                             string mrna;
                             vec.GetSeqData(cds_start % 3, cds_start, mrna);
+                            const CGenetic_code *code = NULL;
+                            if (cdregion_on_mrna->GetData().GetCdregion().IsSetCode()) {
+                                code = &cdregion_on_mrna->GetData().GetCdregion().GetCode();
+                            }
                             CSeqTranslator::Translate
                                 (mrna, strprot,
-                                 CSeqTranslator::fIs5PrimePartial);
+                                 CSeqTranslator::fIs5PrimePartial, code);
                         }
                         SIZE_TYPE stop_5prime = strprot.rfind('*');
                         if (stop_5prime != NPOS) {
@@ -2450,18 +2454,21 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             }
         }
         seq.GetSeqData(frame, seq.size(), mrna);
-        CSeqTranslator::Translate(mrna, xlate, CSeqTranslator::fDefault);
+        const CGenetic_code *code = NULL;
+        if (feat.GetData().GetCdregion().IsSetCode()) {
+            code = &feat.GetData().GetCdregion().GetCode();
+        }
+        CSeqTranslator::Translate(mrna, xlate, CSeqTranslator::fDefault, code);
         if (xlate[0] == '-') {
             /// First codon couldn't be translated as initial codon; translate
             /// as mid-sequence codon instead
             string first_codon = mrna.substr(0,3);
             string first_aa;
             CSeqTranslator::Translate(first_codon, first_aa,
-                                      CSeqTranslator::fIs5PrimePartial);
+                                      CSeqTranslator::fIs5PrimePartial, code);
             xlate[0] = first_aa[0];
         }
     } else {
-        CSeqVector seq(feat.GetLocation(), *m_scope, CBioseq_Handle::eCoding_Iupac);
         CSeqTranslator::Translate(feat, *m_scope, xlate);
     }
 
