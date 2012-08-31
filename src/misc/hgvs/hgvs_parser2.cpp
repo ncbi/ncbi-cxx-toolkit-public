@@ -523,27 +523,34 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_general_pos(TIterator const& i, const C
     //where the coordinate extends beyond the range of sequence
     //e.g. NM_000518:c.-78A>G, where codon-start is at 51. In this case the resulting
     //coordinate will be negative; we'll convert it to offset-format (27 bases upstream of pos 0)
-    if(static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint()) < 0) {
-        ofpnt.offset.value += static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint());
-        ofpnt.pnt->SetPoint(0);
-    } else if(ofpnt.pnt->GetPoint() >= context.GetBioseqHandle().GetInst_Length()) {
-        //in case there's overrun past the end of the sequence, set the anchor as
-        //last position of the last point of the last exon (NOT last point of the sequence,
-        //as we could end up in polyA).
 
-        TSeqPos anchor_pos = 0;
-        SAnnotSelector sel;
-        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
-        for(CFeat_CI ci(context.GetBioseqHandle(), sel); ci; ++ci) {
-            const CMappedFeat& mf = *ci;
-            anchor_pos = max(anchor_pos, mf.GetLocation().GetStop(eExtreme_Positional));
+    if(context.GetPlacement().GetMol()== CVariantPlacement::eMol_cdna || context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna) {
+        if(static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint()) < 0) {
+            ofpnt.offset.value += static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint());
+            ofpnt.pnt->SetPoint(0);
+        } else if(ofpnt.pnt->GetPoint() >= context.GetBioseqHandle().GetInst_Length()) {
+            //in case there's overrun past the end of the sequence, set the anchor as
+            //last position of the last point of the last exon (NOT last point of the sequence,
+            //as we could end up in polyA).
+
+            TSeqPos anchor_pos = 0;
+            SAnnotSelector sel;
+            sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+            for(CFeat_CI ci(context.GetBioseqHandle(), sel); ci; ++ci) {
+                const CMappedFeat& mf = *ci;
+                anchor_pos = max(anchor_pos, mf.GetLocation().GetStop(eExtreme_Positional));
+            }
+
+            //didn't find any exons - so set the anchor point as last point in the sequence
+            if(anchor_pos == 0) {
+                anchor_pos = context.GetBioseqHandle().GetInst_Length() - 1;
+            }
+
+            TSeqPos overrun = ofpnt.pnt->GetPoint() - anchor_pos;
+            ofpnt.offset.value += overrun;
+            ofpnt.pnt->SetPoint(anchor_pos);
         }
-
-        TSeqPos overrun = ofpnt.pnt->GetPoint() - anchor_pos;
-        ofpnt.offset.value += overrun;
-        ofpnt.pnt->SetPoint(anchor_pos);
     }
-
 
     return ofpnt;
 }
