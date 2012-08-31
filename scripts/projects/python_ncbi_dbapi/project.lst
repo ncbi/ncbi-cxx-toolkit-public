@@ -6,10 +6,11 @@ dll
 dbapi$
 dbapi/driver$
 dbapi/driver/impl$
-dbapi/driver/samples$
+dbapi/driver/samples
 dbapi/driver/util$ update-only
 dbapi/driver/odbc/unix_odbc$ update-only
 dbapi/driver/ctlib$
+dbapi/driver/dblib$
 dbapi/driver/ftds64$
 dbapi/driver/ftds64/freetds$
 dbapi/driver/ftds64/freetds/tds$
