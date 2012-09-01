@@ -112,6 +112,7 @@ align-access needs klib
 align-access needs kproc
 align-access needs krypto
 align-access needs ksproc
+align-access needs kurl
 align-access needs ncbi-bam
 align-access needs srapath
 align-access needs vfs
@@ -1045,6 +1046,7 @@ fastqloader needs kproc
 fastqloader needs kq
 fastqloader needs krypto
 fastqloader needs ksproc
+fastqloader needs kurl
 fastqloader needs load
 fastqloader needs srapath
 fastqloader needs vfs
@@ -1135,6 +1137,7 @@ gc_load_utils needs tds_ftds64
 gc_load_utils needs vdb
 gc_load_utils needs vfs
 gc_load_utils needs vxf
+gc_load_utils needs wgsxf
 gc_load_utils needs xalgoblastdbindex
 gc_load_utils needs xalgodustmask
 gc_load_utils needs xalgowinmask
@@ -1233,6 +1236,7 @@ gc_utils needs tds_ftds64
 gc_utils needs vdb
 gc_utils needs vfs
 gc_utils needs vxf
+gc_utils needs wgsxf
 gc_utils needs xalgoblastdbindex
 gc_utils needs xalgodustmask
 gc_utils needs xalgowinmask
@@ -1328,6 +1332,7 @@ gcaccess_utils needs tds_ftds64
 gcaccess_utils needs vdb
 gcaccess_utils needs vfs
 gcaccess_utils needs vxf
+gcaccess_utils needs wgsxf
 gcaccess_utils needs xalgoblastdbindex
 gcaccess_utils needs xalgodustmask
 gcaccess_utils needs xalgowinmask
@@ -1607,6 +1612,7 @@ gpinit needs tds_ftds64
 gpinit needs vdb
 gpinit needs vfs
 gpinit needs vxf
+gpinit needs wgsxf
 gpinit needs xalgoblastdbindex
 gpinit needs xalgodustmask
 gpinit needs xalgowinmask
@@ -1718,6 +1724,7 @@ gpinit_admin needs tds_ftds64
 gpinit_admin needs vdb
 gpinit_admin needs vfs
 gpinit_admin needs vxf
+gpinit_admin needs wgsxf
 gpinit_admin needs xalgoblastdbindex
 gpinit_admin needs xalgodustmask
 gpinit_admin needs xalgowinmask
@@ -1820,6 +1827,7 @@ gpinit_buildinfo needs tds_ftds64
 gpinit_buildinfo needs vdb
 gpinit_buildinfo needs vfs
 gpinit_buildinfo needs vxf
+gpinit_buildinfo needs wgsxf
 gpinit_buildinfo needs xalgoblastdbindex
 gpinit_buildinfo needs xalgodustmask
 gpinit_buildinfo needs xalgowinmask
@@ -1882,6 +1890,7 @@ gpinit_utils needs tds_ftds64
 gpinit_utils needs vdb
 gpinit_utils needs vfs
 gpinit_utils needs vxf
+gpinit_utils needs wgsxf
 gpinit_utils needs xcgi
 gpinit_utils needs xcompress
 gpinit_utils needs xconnect
@@ -1969,6 +1978,7 @@ gpipe_alnutil needs tds_ftds64
 gpipe_alnutil needs vdb
 gpipe_alnutil needs vfs
 gpipe_alnutil needs vxf
+gpipe_alnutil needs wgsxf
 gpipe_alnutil needs xalgoalignutil
 gpipe_alnutil needs xalgoblastdbindex
 gpipe_alnutil needs xalgodustmask
@@ -2033,6 +2043,7 @@ gpipe_attr needs tds_ftds64
 gpipe_attr needs vdb
 gpipe_attr needs vfs
 gpipe_attr needs vxf
+gpipe_attr needs wgsxf
 gpipe_attr needs xcgi
 gpipe_attr needs xcompress
 gpipe_attr needs xconnect
@@ -2084,6 +2095,7 @@ gpipe_common needs tds_ftds64
 gpipe_common needs vdb
 gpipe_common needs vfs
 gpipe_common needs vxf
+gpipe_common needs wgsxf
 gpipe_common needs xcgi
 gpipe_common needs xcompress
 gpipe_common needs xconnect
@@ -2171,6 +2183,7 @@ gpipe_objutil needs tds_ftds64
 gpipe_objutil needs vdb
 gpipe_objutil needs vfs
 gpipe_objutil needs vxf
+gpipe_objutil needs wgsxf
 gpipe_objutil needs xalgoblastdbindex
 gpipe_objutil needs xalgodustmask
 gpipe_objutil needs xalgowinmask
@@ -2231,6 +2244,7 @@ gpipe_property needs tds_ftds64
 gpipe_property needs vdb
 gpipe_property needs vfs
 gpipe_property needs vxf
+gpipe_property needs wgsxf
 gpipe_property needs xcgi
 gpipe_property needs xcompress
 gpipe_property needs xconnect
@@ -2291,6 +2305,7 @@ gpxlib needs tds_ftds64
 gpxlib needs vdb
 gpxlib needs vfs
 gpxlib needs vxf
+gpxlib needs wgsxf
 gpxlib needs xcgi
 gpxlib needs xcompress
 gpxlib needs xconnect
@@ -3411,6 +3426,7 @@ kapp needs klib
 kapp needs kproc
 kapp needs krypto
 kapp needs ksproc
+kapp needs kurl
 kapp needs srapath
 kapp needs vfs
 kdb needs judy
@@ -3420,6 +3436,7 @@ kdb needs klib
 kdb needs kproc
 kdb needs krypto
 kdb needs ksproc
+kdb needs kurl
 kdb needs srapath
 kdb needs vfs
 kdf5 needs judy
@@ -3469,6 +3486,7 @@ kxfs needs klib
 kxfs needs kproc
 kxfs needs krypto
 kxfs needs ksproc
+kxfs needs kurl
 kxfs needs kxml
 kxfs needs srapath
 kxfs needs vfs
@@ -3557,6 +3575,7 @@ load needs kproc
 load needs kq
 load needs krypto
 load needs ksproc
+load needs kurl
 load needs srapath
 load needs vfs
 load needs wkdb
@@ -3934,6 +3953,7 @@ ncbi-bam needs klib
 ncbi-bam needs kproc
 ncbi-bam needs krypto
 ncbi-bam needs ksproc
+ncbi-bam needs kurl
 ncbi-bam needs srapath
 ncbi-bam needs vfs
 ncbi_xblobstorage_netcache needs connect
@@ -4105,6 +4125,7 @@ ncbi_xloader_csra needs sraxf
 ncbi_xloader_csra needs vdb
 ncbi_xloader_csra needs vfs
 ncbi_xloader_csra needs vxf
+ncbi_xloader_csra needs wgsxf
 ncbi_xloader_csra needs xncbi
 ncbi_xloader_csra needs xobjmgr
 ncbi_xloader_csra needs xser
@@ -4218,6 +4239,7 @@ ncbi_xloader_sra needs sraxf
 ncbi_xloader_sra needs vdb
 ncbi_xloader_sra needs vfs
 ncbi_xloader_sra needs vxf
+ncbi_xloader_sra needs wgsxf
 ncbi_xloader_sra needs xncbi
 ncbi_xloader_sra needs xobjmgr
 ncbi_xloader_sra needs xser
@@ -4937,6 +4959,7 @@ sraread needs sraxf
 sraread needs vdb
 sraread needs vfs
 sraread needs vxf
+sraread needs wgsxf
 sraread needs xncbi
 sraread needs xser
 sraread needs xutil
@@ -5199,6 +5222,7 @@ validate_regions needs valerr
 validate_regions needs vdb
 validate_regions needs vfs
 validate_regions needs vxf
+validate_regions needs wgsxf
 validate_regions needs xalgoblastdbindex
 validate_regions needs xalgodustmask
 validate_regions needs xalgowinmask
@@ -5237,6 +5261,7 @@ vdb needs klib
 vdb needs kproc
 vdb needs krypto
 vdb needs ksproc
+vdb needs kurl
 vdb needs srapath
 vdb needs vfs
 vdb-blast needs judy
@@ -5259,6 +5284,7 @@ vfs needs klib
 vfs needs kproc
 vfs needs krypto
 vfs needs ksproc
+vfs needs kurl
 vfs needs srapath
 vxf needs judy
 vxf needs kdb
@@ -7029,6 +7055,18 @@ waxf needs wvdb
 we_cpp needs xncbi
 we_cpp needs xser
 we_cpp needs xutil
+wgsxf needs judy
+wgsxf needs kdb
+wgsxf needs kfg
+wgsxf needs kfs
+wgsxf needs klib
+wgsxf needs kproc
+wgsxf needs krypto
+wgsxf needs ksproc
+wgsxf needs kurl
+wgsxf needs srapath
+wgsxf needs vdb
+wgsxf needs vfs
 wkdb includes kdb
 wkdb needs judy
 wkdb needs kfg
@@ -7037,6 +7075,7 @@ wkdb needs klib
 wkdb needs kproc
 wkdb needs krypto
 wkdb needs ksproc
+wkdb needs kurl
 wkdb needs srapath
 wkdb needs vfs
 writedb needs biblio
@@ -7118,6 +7157,7 @@ wvdb needs klib
 wvdb needs kproc
 wvdb needs krypto
 wvdb needs ksproc
+wvdb needs kurl
 wvdb needs srapath
 wvdb needs vfs
 wvdb needs wkdb
@@ -7136,6 +7176,19 @@ wvxf needs vdb
 wvxf needs vfs
 wvxf needs wkdb
 wvxf needs wvdb
+wwgsxf includes wgsxf
+wwgsxf needs judy
+wwgsxf needs kdb
+wwgsxf needs kfg
+wwgsxf needs kfs
+wwgsxf needs klib
+wwgsxf needs kproc
+wwgsxf needs krypto
+wwgsxf needs ksproc
+wwgsxf needs kurl
+wwgsxf needs srapath
+wwgsxf needs vdb
+wwgsxf needs vfs
 wx_tools needs xncbi
 xalgoalignnw needs biblio
 xalgoalignnw needs general
@@ -7902,6 +7955,7 @@ xgencoll needs tds_ftds64
 xgencoll needs vdb
 xgencoll needs vfs
 xgencoll needs vxf
+xgencoll needs wgsxf
 xgencoll needs xalgoblastdbindex
 xgencoll needs xalgodustmask
 xgencoll needs xalgowinmask
@@ -8139,6 +8193,7 @@ xid_mapper needs tds_ftds64
 xid_mapper needs vdb
 xid_mapper needs vfs
 xid_mapper needs vxf
+xid_mapper needs wgsxf
 xid_mapper needs xalgoblastdbindex
 xid_mapper needs xalgodustmask
 xid_mapper needs xalgowinmask
