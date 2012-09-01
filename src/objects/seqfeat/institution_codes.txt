@@ -4200,7 +4200,7 @@ NMID	s	National Museum of Ireland
 NMK	s	National Museums of Kenya
 NMKE	s	National Museum of Kenya
 NMKL	s	National Museum of Malaysia
-NML-HCCC	c	National Microbiology Laboratory, Public Health Agency of Canada
+NML	c	National Microbiology Laboratory, Public Health Agency of Canada
 NMLS	s	Natur-Museum Luzern
 NMLU	s	Natur-Museum Luzern, Botany Department
 NMMA	s	Nantucket Maria Mitchell Association, Natural Sciences Department
