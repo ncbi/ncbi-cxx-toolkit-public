@@ -31,14 +31,19 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_assert.h"
 #include "ncbi_server_infop.h"
-#include <assert.h>
 #include <ctype.h>
-#include <math.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
+
+#ifdef   fabs
+#  undef fabs
+#endif /*fabs*/
+#define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
 
 
 /*****************************************************************************
@@ -155,13 +160,14 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         }
 
         assert(info->flag < (int)(sizeof(k_FlagTag)/sizeof(k_FlagTag[0])));
-        if (k_FlagTag[info->flag] && *k_FlagTag[info->flag])
+        if (k_FlagTag[info->flag]  &&  *k_FlagTag[info->flag])
             s += sprintf(s, " %s", k_FlagTag[info->flag]);
-        s += sprintf(s, " B=%.2f", info->coef);
+        if (info->coef)
+            s  = NCBI_simple_ftoa(strcpy(s, " B=") + 3, info->coef, 2);
         if (*c_t)
             s += sprintf(s, " C=%s", c_t);
         s += sprintf(s, " L=%s", info->locl & 0x0F ? "yes" : "no");
-        if (info->type != fSERV_Dns && (info->locl & 0xF0))
+        if (info->type != fSERV_Dns  &&  (info->locl & 0xF0))
             s += sprintf(s, " P=yes");
         if (info->host && info->quorum) {
             if (info->quorum == (unsigned short)(-1))
@@ -169,10 +175,11 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
             else
                 s += sprintf(s, " Q=%hu", info->quorum);
         }
-        s += sprintf(s," R=%.*f", fabs(info->rate) < 0.01 ? 3 : 2, info->rate);
-        if (!(info->type & fSERV_Http) && info->type != fSERV_Dns)
+        s  = NCBI_simple_ftoa(strcpy(s," R=") + 3, info->rate,
+                              fabs(info->rate) < 0.01 ? 3 : 2);
+        if (!(info->type & fSERV_Http)  &&  info->type != fSERV_Dns)
             s += sprintf(s, " S=%s", info->sful ? "yes" : "no");
-        s += sprintf(s, " T=%lu", (unsigned long)info->time);
+        s += sprintf(s, " T=%lu", (unsigned long) info->time);
     }
     return str;
 }
@@ -181,7 +188,7 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
 SSERV_Info* SERV_ReadInfoEx(const char* str,
                             const char* name)
 {
-    int/*bool*/    coef, mime, locl, priv, quorum, rate, sful, time;
+    int/*bool*/    coef, mime, locl, priv, quor, rate, sful, time, flag;
     ESERV_Type     type;
     unsigned int   host;                /* network byte order       */
     unsigned short port;                /* host (native) byte order */
@@ -189,15 +196,15 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
 
     /* detect server type */
     str = SERV_ReadType(str, &type);
-    if (!str || (*str && !isspace((unsigned char)(*str))))
+    if (!str  ||  (*str  &&  !isspace((unsigned char)(*str))))
         return 0;
     /* NB: "str" guarantees there is non-NULL attr */
-    while (*str && isspace((unsigned char)(*str)))
+    while (*str  &&  isspace((unsigned char)(*str)))
         str++;
     if (!ispunct((unsigned char)(*str)) || *str == ':') {
         if (!(str = SOCK_StringToHostPort(str, &host, &port)))
             return 0;
-        while (*str && isspace((unsigned char)(*str)))
+        while (*str  &&  isspace((unsigned char)(*str)))
             str++;
     } else {
         host = 0;
@@ -210,12 +217,13 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
     info->host = host;
     if (port)
         info->port = port;
-    coef = mime = locl = priv = quorum = rate = sful = time = 0;/*unassigned*/
+    coef = mime = locl = priv = quor = rate = sful = time = flag = 0;/*false*/
     /* continue reading server info: optional parts: ... */
-    while (*str && isspace((unsigned char)(*str)))
+    while (*str  &&  isspace((unsigned char)(*str)))
         str++;
     while (*str) {
-        if (*(str + 1) == '=') {
+        if (str[1] == '='  &&  !isspace((unsigned char) str[2])) {
+            char*          e;
             int            n;
             double         d;
             unsigned short h;
@@ -227,109 +235,117 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             
             switch (toupper((unsigned char)(*str++))) {
             case 'B':
-                if (!coef && sscanf(str, "=%lf%n", &d, &n) >= 1) {
+                if (coef)
+                    break;
+                coef = 1;
+                d = NCBI_simple_atof(++str, &e);
+                if (!errno) {
                     if (fabs(d) < SERV_MINIMAL_BONUS)
                         d = 0.0;
                     else if (fabs(d) > SERV_MAXIMAL_BONUS)
                         d = d < 0.0 ? -SERV_MAXIMAL_BONUS : SERV_MAXIMAL_BONUS;
                     info->coef = d;
-                    str += n;
-                    coef = 1;
+                    str = e;
                 }
                 break;
             case 'C':
-                if (type == fSERV_Dns)
+                if (mime  ||  type == fSERV_Dns)
                     break;
-                if (!mime && MIME_ParseContentTypeEx(str + 1, &mime_t,
-                                                     &mime_s, &mime_e)) {
+                mime = 1;
+                if (MIME_ParseContentTypeEx(++str, &mime_t, &mime_s, &mime_e)){
                     info->mime_t = mime_t;
                     info->mime_s = mime_s;
                     info->mime_e = mime_e;
-                    mime = 1;
-                    while (*str && !isspace((unsigned char)(*str)))
+                    /* skip the entire token */
+                    while (*str  &&  !isspace((unsigned char)(*str)))
                         str++;
                 }
                 break;
             case 'L':
-                if (!locl && sscanf(str, "=%3s%n", s, &n) >= 1) {
+                if (locl)
+                    break;
+                locl = 1;
+                if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         info->locl |=  0x01/*true in low nibble*/;
                         str += n;
-                        locl = 1;
                     } else if (strcasecmp(s, "NO") == 0) {
                         info->locl &= ~0x0F/*false in low nibble*/;
                         str += n;
-                        locl = 1;
                     }
                 }
                 break;
             case 'P':
-                if (type == fSERV_Dns)
+                if (priv  ||  type == fSERV_Dns)
                     break;
-                if (!priv && sscanf(str, "=%3s%n", s, &n) >= 1) {
+                priv = 1;
+                if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         info->locl |=  0x10;/*true in high nibble*/
                         str += n;
-                        priv = 1;
                     } else if (strcasecmp(s, "NO") == 0) {
                         info->locl &= ~0xF0;/*false in high nibble*/
                         str += n;
-                        priv = 1;
                     }
                 }
                 break;
             case 'Q':
-                if (type == fSERV_Firewall || !info->host || quorum)
+                if (quor  ||  type == fSERV_Firewall  ||  !info->host)
                     break;
-                if (sscanf(str,"=%3s%n",s,&n) >= 1 && strcasecmp(s, "YES")==0){
+                quor = 1;
+                if (sscanf(++str, "%3s%n", s, &n) >= 1
+                    &&  strcasecmp(s, "YES") == 0) {
                     info->quorum = (unsigned short)(-1);
                     str += n;
-                    quorum = 1;
-                } else if (sscanf(str, "=%hu%n", &h, &n) >= 1) {
+                } else if (sscanf(str, "%hu%n", &h, &n) >= 1) {
                     info->quorum = h;
                     str += n;
-                    quorum = 1;
                 }
                 break;
             case 'R':
-                if (!rate && sscanf(str, "=%lf%n", &d, &n) >= 1) {
+                if (rate)
+                    break;
+                rate = 1;
+                d = NCBI_simple_atof(++str, &e);
+                if (!errno) {
                     if (fabs(d) < SERV_MINIMAL_RATE)
                         d = 0.0;
                     else if (fabs(d) > SERV_MAXIMAL_RATE)
                         d = d < 0.0 ? -SERV_MAXIMAL_RATE : SERV_MAXIMAL_RATE;
                     info->rate = d;
-                    str += n;
-                    rate = 1;
+                    str = e;
                 }
                 break;
             case 'S':
-                if ((type & fSERV_Http) != 0)
+                if (sful  ||  (type & fSERV_Http) != 0)
                     break;
-                if (!sful && sscanf(str, "=%3s%n", s, &n) >= 1) {
+                sful = 1;
+                if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         if (type == fSERV_Dns)
                             break; /*check only here for compatibility*/
-                        info->sful = 1/*true */;
+                        info->sful = 1/*true*/;
                         str += n;
-                        sful = 1;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->sful = 0/* false */;
+                        info->sful = 0/*false*/;
                         str += n;
-                        sful = 1;
                     }
                 }
                 break;
             case 'T':
-                if (!time && sscanf(str, "=%lu%n", &t, &n) >= 1) {
+                if (time)
+                    break;
+                time = 1;
+                if (sscanf(++str, "%lu%n", &t, &n) >= 1) {
                     info->time = (TNCBI_Time) t;
                     str += n;
-                    time = 1;
                 }
                 break;
             }
-        } else {
+        } else if (!flag) {
             size_t i;
-            for (i = 0; i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]); i++) {
+            flag = 1;
+            for (i = 0;  i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]);  i++) {
                 size_t n = strlen(k_FlagTag[i]);
                 if (strncasecmp(str, k_FlagTag[i], n) == 0) {
                     info->flag = (ESERV_Flag) i;
@@ -337,10 +353,11 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     break;
                 }
             }
-        }
-        if (*str && !isspace((unsigned char)(*str)))
+        } else
+              break;
+        if (*str  &&  !isspace((unsigned char)(*str)))
             break;
-        while (*str && isspace((unsigned char)(*str)))
+        while (*str  &&  isspace((unsigned char)(*str)))
             str++;
     }
     if (*str) {
