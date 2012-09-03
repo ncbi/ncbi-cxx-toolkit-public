@@ -31,7 +31,10 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_assert.h"
 #include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 
@@ -155,3 +158,57 @@ void* memrchr(const void* s, int c, size_t n)
     return 0;
 }
 #endif/*!HAVE_MEMRCHR*/
+
+
+static const double x_pow10[] = { 1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7 };
+
+
+char* NCBI_simple_ftoa(char* s, double f, int p)
+{
+    double v, w;
+    long   x, y;
+    if (p < 0)
+        p = 0;
+    else {
+        if (p >= (int)(sizeof(x_pow10)/sizeof(x_pow10[0])))
+            p  = (int)(sizeof(x_pow10)/sizeof(x_pow10[0]))-1;
+    }
+    w = x_pow10[p];
+    v = (f < 0.0 ? -f : f) + 0.5 / w;
+    x = (long)  v;
+    y = (long)((v - x) * w);
+    return s + sprintf(s, "-%ld.%0*lu" + !(f < 0.0), x, p, y);
+}
+
+
+double NCBI_simple_atof(const char* s, char** e)
+{
+    long x;
+    errno = 0;
+    x = strtol(s, e, 10);
+    if (**e == '.') {
+        if (isdigit((unsigned char)((*e)[1]))) {
+            double w;
+            long   y;
+            int    p;
+            errno = 0/*can be EINVAL here for ".NNN"*/;
+            y = strtoul(s = ++(*e), e, 10);
+            assert(*e > s);
+            p = (int)(*e - s);
+            if (p >= (int)(sizeof(x_pow10)/sizeof(x_pow10[0]))) {
+                w  = 10.0;
+                do {
+                    w *= x_pow10[(int)(sizeof(x_pow10)/sizeof(x_pow10[0]))-1];
+                    p -=         (int)(sizeof(x_pow10)/sizeof(x_pow10[0]))-1;
+                } while (p >=    (int)(sizeof(x_pow10)/sizeof(x_pow10[0])));
+                if (errno == ERANGE)
+                    errno  = 0;
+                w *= x_pow10[p];
+            } else
+                w  = x_pow10[p];
+            return x < 0 ? x - y / w : x + y / w;
+        } else if (*e > s)
+            ++(*e);
+    }
+    return x;
+}

@@ -149,6 +149,28 @@ void* memrchr(const void* s, int c, size_t n);
 #endif/*!HAVE_MEMRCHR*/
 
 
+/* Locale-independent double-to-ASCII conversion of value "f" into a character
+ * buffer pointed to by "s", with a specified precision (mantissa digits) "p".
+ * There is an internal limit on precision (so larger values of "p" will be
+ * silently truncated).  The maximal representable whole part corresponds to
+ * the maximal signed long integer.  Otherwise, the behavior is undefined.
+ * Return the pointer past the output string (points to the terminating '\0').
+ */
+char*  NCBI_simple_ftoa(char* s, double f, int p);
+
+
+/* Locale-independent ASCII-to-double conversion of string "s".  Does not work
+ * for scientific notation (values including exponent).  Sets "e" to point to
+ * the character that stopped conversion.  Clears "errno" but sets it non-zero
+ * in case of conversion errors.  Maximal value for the whole part may not
+ * exceed the maximal signed long integer, and for mantissa -- unsigned long
+ * integer.
+ * Returns the result of conversion (returns 0.0 on error, *e == s if nothing
+ * was consumed).
+ */
+double NCBI_simple_atof(const char* s, char** e);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
