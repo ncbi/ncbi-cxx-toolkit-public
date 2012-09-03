@@ -34,7 +34,7 @@
  */
 
 #include <connect/ncbi_memory_connector.h>
-#include <assert.h>
+#include "ncbi_assert.h"
 #include <stdlib.h>
 
 

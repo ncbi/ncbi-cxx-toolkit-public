@@ -30,18 +30,10 @@
  *
  */
 
+#include "ncbi_assert.h"
 #include <connect/ncbi_buffer.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#ifndef NDEBUG
-/* NOTE: this conditional inclusion is only needed by assert.h on Darwin!
- * We do not want to include "ncbi_config.h" to additionally branch on
- * NCBI_OS_DAWRIN here because in C toolkit it in turn pulls ncbilcl.h,
- * which includes <stdio.h>, thus making this conditional unnecessary.
- */
-#  include <stdio.h>
-#endif
 
 
 /* Buffer chunk
