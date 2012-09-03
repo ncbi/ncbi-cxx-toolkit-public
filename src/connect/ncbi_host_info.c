@@ -31,16 +31,15 @@
  */
 
 #include "ncbi_lbsmd.h"
-#include <math.h>
+#include <math.h>  /* NB: pull only M_PI */
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef M_PI
-/* Not defined on MacOS.9 :-( */
-#  define M_PI 3.14159265358979323846
-#endif
-
-#define HINFO_MAGIC M_PI
+#ifdef    M_PI
+#  define HINFO_MAGIC  M_PI
+#else /* Not defined on MacOS.9 :-( */
+#  define HINFO_MAGIC  3.14159265358979323846
+#endif /*!M_PI*/
 
 
 HOST_INFO HINFO_Create(unsigned int addr, const void* hinfo, size_t hinfo_size,
