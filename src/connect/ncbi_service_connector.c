@@ -42,9 +42,6 @@
 #define NCBI_USE_ERRCODE_X   Connect_Service
 
 
-typedef unsigned short TSERV_SafeType;
-
-
 typedef struct SServiceConnectorTag {
     const char*    type;                /* Verbal connector type             */
     const char*    descr;               /* Verbal connector description      */
@@ -55,7 +52,7 @@ typedef struct SServiceConnectorTag {
     unsigned int   host;                /* Parsed connection info... (n.b.o) */
     unsigned short port;                /*                       ... (h.b.o) */
     unsigned short retry;               /* Open retry count since last okay  */
-    TSERV_SafeType types;               /* Server types, abridged to 16 bits */
+    TSERV_TypeOnly types;               /* Server types w/o any specials     */
     unsigned       reset:1;             /* Non-zero if iter was just reset   */
     ticket_t       ticket;              /* Network byte order (none if zero) */
     EIO_Status     status;              /* Status of last op                 */
@@ -88,7 +85,10 @@ extern "C" {
 
 static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 {
-    if (!(uuu->iter = SERV_Open(uuu->service, uuu->types,
+    TSERV_Type types = uuu->types;
+    if (uuu->net_info->stateless)
+        types |= fSERV_Stateless;
+    if (!(uuu->iter = SERV_Open(uuu->service, types,
                                 SERV_LOCALHOST, uuu->net_info))) {
         CORE_LOGF_X(5, eLOG_Error,
                     ("[%s]  Service not found", uuu->service));
@@ -809,7 +809,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             break;
 
         if (uuu->net_info->firewall
-            &&  strcasecmp(uuu->iter->op->mapper, "local") == 0) {
+            &&  strcasecmp(uuu->iter->op->mapper, "local") != 0) {
             info = 0;
         } else if (!(info = s_GetNextInfo(uuu, 0/*any*/)))
             break;
