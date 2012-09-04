@@ -407,7 +407,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 
     /* Reset request method to be GET ('cause no HTTP body is ever used) */
     data->net_info->req_method = eReqMethod_Get;
-    if ( iter->stateless)
+    if (iter->stateless)
         data->net_info->stateless = 1/*true*/;
     if ((iter->types & fSERV_Firewall)  &&  !data->net_info->firewall)
         data->net_info->firewall = eFWMode_Adaptive;
