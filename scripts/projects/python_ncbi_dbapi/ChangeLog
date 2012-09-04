@@ -1,3 +1,7 @@
+Version 1.14.0 (2012-09-04):
+* Improve thread safety.
+* Build against stable C++ Toolkit components (version 10.1 at present).
+
 Version 1.13.3 (2012-03-16):
 * Make compatible with Python 2.7.
 
