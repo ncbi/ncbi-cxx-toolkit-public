@@ -342,6 +342,8 @@ s_SplitHsp(BlastHSPList* hsp_list,
 {
     Int4 index, hspcnt;
     hspcnt = hsp_list->hspcnt;
+    BlastHSPList* new_hsp_list = Blast_HSPListNew(hsp_list->hspcnt);
+
     for (index=0; index < hspcnt; index++) {
 
         Boolean found = FALSE;
@@ -395,7 +397,7 @@ s_SplitHsp(BlastHSPList* hsp_list,
                         Blast_HSPInit(qs, qe, ss, se, qs, ss,
                               hsp->context,  hsp->query.frame, 
                               hsp->subject.frame, 0, &new_esp, &new_hsp);
-                        Blast_HSPListSaveHSP(hsp_list, new_hsp);
+                        Blast_HSPListSaveHSP(new_hsp_list, new_hsp);
                         seek_start = TRUE;
                     } 
 
@@ -432,10 +434,16 @@ s_SplitHsp(BlastHSPList* hsp_list,
             Blast_HSPInit(qs, qe, ss, se, qs, ss,
                           hsp->context,  hsp->query.frame, 
                           hsp->subject.frame, 0, &new_esp, &new_hsp);
-            Blast_HSPListSaveHSP(hsp_list, new_hsp);
+            Blast_HSPListSaveHSP(new_hsp_list, new_hsp);
             hsp_list->hsp_array[index] = Blast_HSPFree(hsp);
         }
     }
+    Blast_HSPListPurgeNullHSPs(hsp_list);
+    for (index=0; index < new_hsp_list->hspcnt; index++) {
+        Blast_HSPListSaveHSP(hsp_list, new_hsp_list->hsp_array[index]);
+        new_hsp_list->hsp_array[index] = NULL;
+    }
+    Blast_HSPListFree(new_hsp_list);
 }
 
 /*
