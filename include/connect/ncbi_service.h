@@ -94,7 +94,7 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 
 /* Special "type" bit values that may be combined with server types.
  * NB:  Also, MSBs should be kept compatible with EMGHBN_Option */
-enum ESpecialType {
+enum ESERV_TypeSpecial {
     fSERV_Any               = 0,
     fSERV_All               = 0x0000FFFF,
     /* Only stateless servers should be returned */
@@ -110,7 +110,8 @@ enum ESpecialType {
     fSERV_IncludeSuppressed = 0x70000000,
     fSERV_Promiscuous       = 0x78000000
 };
-typedef unsigned int TSERV_Type;     /* Bitwise OR of ESERV_[Special]Type    */
+typedef unsigned int   TSERV_Type;      /* Bitwise OR of ESERV_Type[Special] */
+typedef unsigned short TSERV_TypeOnly;  /* Server type only, w/o specials    */
 
 
 /* Simplified (uncluttered) type to use in 'skip' parameter below */
