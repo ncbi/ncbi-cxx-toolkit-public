@@ -34,7 +34,6 @@
 #include "ncbi_assert.h"
 #include "ncbi_server_infop.h"
 #include <ctype.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -239,7 +238,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     break;
                 coef = 1;
                 d = NCBI_simple_atof(++str, &e);
-                if (!errno) {
+                if (e > str) {
                     if (fabs(d) < SERV_MINIMAL_BONUS)
                         d = 0.0;
                     else if (fabs(d) > SERV_MAXIMAL_BONUS)
@@ -307,7 +306,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     break;
                 rate = 1;
                 d = NCBI_simple_atof(++str, &e);
-                if (!errno) {
+                if (e > str) {
                     if (fabs(d) < SERV_MINIMAL_RATE)
                         d = 0.0;
                     else if (fabs(d) > SERV_MAXIMAL_RATE)
