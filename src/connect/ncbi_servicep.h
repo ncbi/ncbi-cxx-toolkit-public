@@ -67,6 +67,7 @@ typedef struct {
 } SSERV_VTable;
 
 
+/* enough to hold all types, currently */
 typedef unsigned char TBSERV_TypeOnly;
 
 
@@ -78,7 +79,7 @@ struct SSERV_IterTag {
     TNCBI_Time          time; /* time of call                                */
     unsigned int        host; /* preferred host to select, network b.o.      */
     unsigned short      port; /* preferred port to select, host b.o.         */
-    TBSERV_TypeOnly    types; /* requested server type(s), specials stripped */
+    TBSERV_TypeOnly    types; /* requested server types only, packed         */
     unsigned        ismask:1; /* whether the name is to be treated as a mask */
     unsigned       ok_down:1; /* ..as taken..                                */
     unsigned    ok_standby:1; /*         ..from..                            */
