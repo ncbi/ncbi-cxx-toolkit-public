@@ -917,8 +917,7 @@ Copy-action ::= SEQUENCE {
     existing-text ExistingTextOption }
 
 Swap-action ::= SEQUENCE {
-    fields Field-pair-type ,
-    field-to Field-type }
+    fields Field-pair-type }
 
 AECRParse-action ::= SEQUENCE {
     portion Text-portion ,
