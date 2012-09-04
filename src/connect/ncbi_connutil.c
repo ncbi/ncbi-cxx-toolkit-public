@@ -329,7 +329,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
     len = strlen(str);
     if (len < 3  ||  8 < len  ||  strncasecmp(str, "infinite", len) != 0) {
-        if (!*str  ||  (dbl = atof(str)) < 0.0)
+        if (!*str || (dbl = NCBI_simple_atof(str, &e)) < 0.0 || errno || *e)
             dbl = DEF_CONN_TIMEOUT;
         info->tmo.sec      = (unsigned int)  dbl;
         info->tmo.usec     = (unsigned int)((dbl - info->tmo.sec) * 1000000.0);
