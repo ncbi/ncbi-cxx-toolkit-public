@@ -44,6 +44,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <util/multi_writer.hpp>
 #include <iomanip>
+#include <locale.h>
 #if   defined(NCBI_OS_MSWIN)
 #  include <conio.h>
 #elif defined(NCBI_OS_UNIX)
@@ -250,6 +251,7 @@ int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
 
+    setlocale(LC_ALL, "");
     // Set error posting and tracing at what regular use would do.
     // If traces are needed, they can be enabled from the environment.
     //SetDiagTrace(eDT_Enable);
