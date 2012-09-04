@@ -4212,8 +4212,7 @@ void s_GetFileSystemInfo(const string&               path,
 #endif
     fs_name_ptr = st.f_basetype;
 
-#  elif (defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN))  && \
-         defined(HAVE_STATFS)
+#  elif defined(NCBI_OS_DARWIN)  &&  defined(HAVE_STATFS)
 
     GET_STATFS_INFO;
 #ifdef NEED_NAME_MAX
