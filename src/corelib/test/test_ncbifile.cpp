@@ -1422,7 +1422,7 @@ static void s_TEST_FileIO_LargeFiles(void)
     assert(getrlimit(RLIMIT_FSIZE, &rl) == 0);
     cout << "File size limits = (" << rl.rlim_cur << ", " 
                                    << rl.rlim_max << ")" << endl;
-    assert(rl.rlim_cur > kSize_6GB);
+    assert((Uint8)rl.rlim_cur > kSize_6GB);
 #endif
     cout << endl;
 
