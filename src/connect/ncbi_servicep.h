@@ -67,7 +67,7 @@ typedef struct {
 } SSERV_VTable;
 
 
-typedef unsigned char TBSERV_Type;
+typedef unsigned char TBSERV_TypeOnly;
 
 
 /* Iterator structure, fields "packed" to consume minimal space.
@@ -78,7 +78,7 @@ struct SSERV_IterTag {
     TNCBI_Time          time; /* time of call                                */
     unsigned int        host; /* preferred host to select, network b.o.      */
     unsigned short      port; /* preferred port to select, host b.o.         */
-    TBSERV_Type        types; /* requested server type(s), specials stripped */
+    TBSERV_TypeOnly    types; /* requested server type(s), specials stripped */
     unsigned        ismask:1; /* whether the name is to be treated as a mask */
     unsigned       ok_down:1; /* ..as taken..                                */
     unsigned    ok_standby:1; /*         ..from..                            */
