@@ -244,7 +244,7 @@ static SERV_ITER s_Open(const char*         service,
                                :  0.01 * (preference > 100.0
                                           ? 100.0
                                           : preference));
-    iter->types             = types & fSERV_All;
+    iter->types             = types;
     if (ismask)
         iter->ismask        = 1;
     if (types & fSERV_IncludeDown)
@@ -738,8 +738,8 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     static const char kSkipInfo[] = "Skip-Info-%u: ";
     static const char kAffinity[] = "Affinity: ";
     char buffer[128], *str;
+    TBSERV_TypeOnly t;
     size_t buflen, i;
-    TSERV_Type t;
     BUF buf = 0;
 
     /* Put client version number */
