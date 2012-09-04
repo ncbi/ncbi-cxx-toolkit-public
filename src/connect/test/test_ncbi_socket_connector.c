@@ -35,6 +35,7 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
+#include <errno.h>
 #include <stdlib.h>
 /* This header must go last */
 #include "test_assert.h"
@@ -82,24 +83,25 @@ int main(int argc, const char* argv[])
     /* parse cmd.-line args */
     switch ( argc ) {
     case 5: { /* timeout */
-        float fff = 0;
-        if (sscanf(argv[4], "%f", &fff) != 1  ||  fff < 0)
+        double v;
+        char*  e = (char*) argv[4];
+        if (!*e  ||  (v = NCBI_simple_atof(e, &e)) < 0.0  ||  errno  ||  *e)
             break;
-        net_info->tmo.sec  = (unsigned int) fff;
-        net_info->tmo.usec = (unsigned int)(fff - net_info->tmo.sec) * 1000000;
-        net_info->timeout = &net_info->tmo;
+        net_info->tmo.sec  = (unsigned int)  v;
+        net_info->tmo.usec = (unsigned int)((v - net_info->tmo.sec) * 1e6);
+        net_info->timeout  = &net_info->tmo;
     }
     case 4: { /* max_try  */
-        long lll;
-        if (sscanf(argv[3], "%ld", &lll) != 1  ||  lll <= 0)
+        long l;
+        if (sscanf(argv[3], "%ld", &l) != 1  ||  l <= 0)
             break;
-        net_info->max_try = (unsigned int) lll;
+        net_info->max_try = (unsigned int) l;
     }
     case 3: { /* host, port */
-        int iii;
-        if (sscanf(argv[2], "%d", &iii) != 1  ||  iii < 0  || 65535 < iii)
+        int i;
+        if (sscanf(argv[2], "%d", &i) != 1  ||  i < 0  ||  65535 < i)
             break;
-        net_info->port = (unsigned short) iii;
+        net_info->port = (unsigned short) i;
 
         if (!*argv[1])
             break;

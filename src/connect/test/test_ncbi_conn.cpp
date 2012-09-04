@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
@@ -43,7 +44,6 @@
 #include <connect/ncbi_socket.hpp>
 #include <util/multi_writer.hpp>
 #include <iomanip>
-#include <math.h>
 #if   defined(NCBI_OS_MSWIN)
 #  include <conio.h>
 #elif defined(NCBI_OS_UNIX)
@@ -183,14 +183,14 @@ int CTestApp::Run(void)
     double timeout;
 
     if (!n) {
-        char val[40];
-        ConnNetInfo_GetValue(0, REG_CONN_TIMEOUT, val, sizeof(val), "");
-        if (!*val)
+        char val[40], *e;
+        if (!ConnNetInfo_GetValue(0, REG_CONN_TIMEOUT, val, sizeof(val), "")
+            ||  !*val  ||  (timeout = NCBI_simple_atof(val, &e)) < 0.0
+            ||  errno  ||  *e) {
             timeout = DEF_CONN_TIMEOUT;
-        else
-            timeout = fabs(atof(val));
-    } else
-        timeout = fabs(args[1].AsDouble());
+        }
+    } else if ((timeout = args[1].AsDouble()) < 0.0)
+        timeout = DEF_CONN_TIMEOUT;
 
     m_Tee << NcbiEndl << "NCBI Connectivity Test (Timeout = "
           << setprecision(6) << timeout << "s, "

@@ -30,8 +30,10 @@
  *
  */
 
-#include <connect/ncbi_socket.h>
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <connect/ncbi_socket.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #if defined(NCBI_OS_UNIX)
@@ -878,7 +880,7 @@ static void TEST_SOCK_isip(void)
  * Parse command-line options, initialize and cleanup API internals;
  * run client or server test
  */
-extern int main(int argc, char** argv)
+extern int main(int argc, const char* argv[])
 {
     /* Setup log stream */
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
@@ -941,12 +943,13 @@ extern int main(int argc, char** argv)
 
         /* timeout */
         if (argc == 4) {
-            double val = atof(argv[3]);
-            if (val < 0)
+            double v;
+            char*  e = (char*) argv[3];
+            if (!*e  ||  (v = NCBI_simple_atof(e, &e)) < 0.0  ||  errno  || *e)
                 break;
-            x_tmo.sec  = (unsigned int)  val;
-            x_tmo.usec = (unsigned int)((val - x_tmo.sec) * 1000000);
-            tmo = &x_tmo;
+            x_tmo.sec  = (unsigned int)  v;
+            x_tmo.usec = (unsigned int)((v - x_tmo.sec) * 1000000.0);
+            tmo        = &x_tmo;
         } else
             tmo = 0/*infinite*/;
 
