@@ -64,6 +64,7 @@ noops="\
  --without-caution \
  --without-ccache \
  --with-distcc \
+ NCBI_C_PATH= \
  --without-ncbi-c \
  --without-sss \
  --without-utils \
