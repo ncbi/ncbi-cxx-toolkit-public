@@ -1,2 +1,69 @@
-Jan 08, 2009
-Initial release using a release procedure
+Version 1.13.3 (2012-03-16):
+* Make compatible with Python 2.7.
+
+Version 1.13.2 (2012-02-13):
+* Restore support for passing fractional seconds, accidentally lost earlier.
+
+Version 1.13.1 (2011-10-06):
+* Bug fixes for 1.13.0, notably addressing a memory leak.
+
+Version 1.13.0 (2011-10-04):
+* Allow cursor, connection, and transaction objects to work as "with"
+  statement context managers/guards.
+* Further extend cursors to support iteration and properly advertise
+  description and row count metadata.
+* Force use of compatible support libraries, regardless of LD_LIBRARY_PATH.
+
+Version 1.12.6 (2010-05-14):
+* Permit calling stored procedures whose names start with SQL verbs.
+
+Version 1.12.5 (2010-04-22):
+* Ensure correct output types even when filling in NULLs.
+* Properly report error text from stored procedures.
+
+Version 1.12.4 (2010-02-25):
+* Optionally return all strings as unicode objects.
+
+Version 1.12.3 (2010-02-12):
+* Support Python datetime and unicode objects.
+* Allow binding by position (to tuples and lists, not just dictionaries).
+* Support Sybase stored procedures with numeric output parameters.
+
+Version 1.12.2 (2009-02-27):
+* Support connecting to Sybase OpenServer instances.
+
+Version 1.12.1 (2009-02-25):
+* Support mirror pairs whose primary side can switch back and forth.
+
+Version 1.12.0 (2009-01-08):
+* Initial release using a release procedure.
+* Don't raise exceptions for info-level messages from the server.
+* Recognize stored procedures' return codes even when no row result sets
+  precede them.
+* Supply cursor.description metadata.
+
+Version 1.11.0 (2008-09-03):
+* Support passing driver-specific parameters, such as text encoding.
+* Handle server-side errors gracefully, and make specific details available.
+
+Version 1.10.0 (2008-08-06):
+* Update per changes to the C++ Toolkit's exception-handling framework.
+
+Version 1.9.0 (2008-06-10):
+* Map Python None objects to SQL NULLs.
+
+Version 1.8.0 (2008-06-04):
+* Introduce a dbapi.Binary constructor for IMAGE fields.
+
+Version 1.7.0 (2008-06-02):
+* Retrieve stored procedures' output parameters (caching row results to do so).
+* Translate C++ exceptions into Python errors.
+
+Version 1.6.0 (2008-02-08):
+* Describe SQL statement input and output parameters.
+
+Version 1.5.1 (2007-10-25):
+* Fix builds against Python 2.4 on 64-bit platforms.
+
+Version 1.5 (2007-10-17):
+* First internal production release.
