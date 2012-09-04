@@ -84,7 +84,7 @@ static int s_SockRead(SOCK sock, char* response, size_t max_response_len)
         assert(m == 4);
 
         if (buf[3] == '-'  ||  (done = isspace((unsigned char) buf[3]))) {
-            buf[3] = '\0';
+            buf[3]  = '\0';
             if (!code) {
                 char* e;
                 errno = 0;
@@ -214,16 +214,16 @@ static STimeout       s_MxTmo;
 
 static void x_Sendmail_InitEnv(void)
 {
-    char         buf[sizeof(s_MxHost)];
+    char         buf[sizeof(s_MxHost)], *e;
     unsigned int port;
     double       tmo;
 
     if (*s_MxHost)
         return;
 
-    if (!ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)
-        ||  (tmo = atof(buf)) < 0.000001) {
-        tmo = 120.0;
+    if (!ConnNetInfo_GetValue(0, "MX_TIMEOUT", buf, sizeof(buf), 0)  ||  !*buf
+        ||  (tmo = NCBI_simple_atof(buf, &e)) < 0.000001  ||  errno  ||  !*e) {
+        tmo = 120.0/*2 min*/;
     }
     if (!ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
         ||  !(port = atoi(buf))  ||  port > 65535) {
