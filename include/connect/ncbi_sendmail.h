@@ -29,6 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
+ * @file
  *   Send mail (in accordance with RFC821 [protocol] and RFC822 [headers])
  *
  */

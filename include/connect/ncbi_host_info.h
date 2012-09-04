@@ -29,6 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
+ * @file
  *   NCBI host info getters
  *
  *   Host information handle becomes available from SERV_Get[Next]InfoEx()
@@ -53,120 +54,211 @@ extern "C" {
 #endif
 
 
-struct SHostInfoTag;  /*forward declaration of an opaque private structure*/
-typedef struct SHostInfoTag* HOST_INFO; /*handle for the user code use*/
+/* Fwdecl of an opaque type */
+struct SHostInfoTag;
+/** Handle for the user code use */
+typedef struct SHostInfoTag* HOST_INFO;
 
 
-/* Return official host address or 0 if unknown.
+/** Get the official host address.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  Official host address, or 0 if unknown.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 unsigned int HINFO_HostAddr(const HOST_INFO host_info);
 
 
-/* Return CPU count or -1 if an error occurred.
+/** Get CPU count (number of logical cores, hyper-threaded included).
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  CPU count, or -1 if an error occurred.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 int HINFO_CpuCount(const HOST_INFO host_info);
 
 
-/* Return number of actual CPU units, 0 if the number cannot
- * be determined, or -1 if an error occurred.
+/** Get physical CPU count (number of physical cores, not packages).
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  The number of physical CPU units, 0 if the number cannot be determined,
+ *  or -1 if an error occurred.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 int HINFO_CpuUnits(const HOST_INFO host_info);
 
 
-/* Return CPU clock rate (in MHz) or 0 if an error occurred.
+/** Get CPU clock rate.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  CPU clock rate (in MHz), or 0 if an error occurred.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 double HINFO_CpuClock(const HOST_INFO host_info);
 
 
-/* Return task count or -1 if an error occurred.
+/** Get task count.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  Task count, or -1 if an error occurred.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 int HINFO_TaskCount(const HOST_INFO host_info);
 
 
-/* Return non-zero on success and store memory usage (in MB
- * at the provided array "memusage" in the following layout:
- * index 0 = total RAM, MB;
- * index 1 = discardable RAM (cached), MB;
- * index 2 = free RAM, MB;
- * index 3 = total swap, MB;
- * index 4 = free swap, MB.
- * Return 0 if an error occurred.
+/** Get memory usage data.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @param memusage
+ *  Memory usage in MB (filled in upon return):
+ *  - [0] = total RAM;
+ *  - [1] = discardable RAM (cached);
+ *  - [2] = free RAM;
+ *  - [3] = total swap;
+ *  - [4] = free swap.
+ * @return
+ *  Non-zero on success and store memory usage (MB, in the provided array
+ *  "memusage"), or 0 if an error occurred.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
 
 
+/** Host parameters */
 typedef struct {
-    unsigned int       arch;    /* Architecture ID, 0=unknown */
-    unsigned int       ostype;  /* OS type ID,      0=unknown */
+    unsigned int       arch;    /**< Architecture ID, 0=unknown              */
+    unsigned int       ostype;  /**< OS type ID,      0=unknown              */
     struct {
         unsigned short major;
         unsigned short minor;
         unsigned short patch;
-    } kernel;                   /* Kernel/OS version #, if available         */
-    unsigned short     bits;    /* Platform bitness, 32/64/0=unknown         */
-    size_t             pgsize;  /* Hardware page size in bytes, if available */
-    TNCBI_Time         bootup;  /* System boot time, time_t-compatible       */
-    TNCBI_Time         startup; /* LBSMD start time, time_t-compatible       */
+    } kernel;                   /**< Kernel/OS version #, if available       */
+    unsigned short     bits;    /**< Platform bitness, 32/64/0=unknown       */
+    size_t             pgsize;  /**< Hardware page size in bytes, if known   */
+    TNCBI_Time         bootup;  /**< System boot time, time_t-compatible     */
+    TNCBI_Time         startup; /**< LBSMD start time, time_t-compatible     */
     struct {
         unsigned short major;
         unsigned short minor;
         unsigned short patch;
-    } daemon;                   /* LBSMD daemon version                      */
-    unsigned short     svcpack; /* Kernel service pack (Hi=major, Lo=minor)  */
+    } daemon;                   /**< LBSMD daemon version                    */
+    unsigned short     svcpack; /**< Kernel service pack (Hi=major, Lo=minor)*/
 } SHINFO_Params;
 
+/** Get host parameters.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @param p
+ *  Host parameters to fill in upon return.
+ * @return
+ *  Non-zero on success, 0 on error.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
+ */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_MachineParams(const HOST_INFO host_info, SHINFO_Params* p);
 
 
-/* Return non-zero on success and store load averages in the
- * provided array "lavg", with the standard load average for last
- * minute stored at index [0], and instant load average
- * (aka BLAST) stored at index [1].  Return 0 on error.
+/** Obtain host load averages.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @param lavg
+ *  Load averages to fill in upon return:
+ *  - [0] = The standard 1-minute load average;
+ *  - [1] = Instant (a.k.a. Blast) load average (averaged over runnable count).
+ * @return
+ *  Non-zero on success and store load averages in the provided array "lavg",
+ *  or 0 on error.
+ * @sa
+ *  HINFO_Status, SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_LoadAverage(const HOST_INFO host_info, double lavg[2]);
 
 
-/* Return non-zero on success and store host status coefficients in
- * the provided array "status", with status based on the standard
- * load average stored at index [0], and that based on instant load
- * average stored at index [1]. Status may return as 0 if the host
- * does not provide such information.  Return 0 on error.
+/** Obtain LB host availability status.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @param status
+ *  Status values to fill in upon return:
+ *  - [0] = status based on the standard load average;
+ *  - [1] = status based on the instant load average.
+ * @return
+ *  Non-zero on success and store host status values in the provided array
+ *  "status", or 0 on error.
+ * @note  Status may get returned as 0.0 if either the host does not provide
+ *        such information, or if the host is overloaded (unavailable).
+ * @sa
+ *  HINFO_LoadAverage, SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/ HINFO_Status(const HOST_INFO host_info, double status[2]);
 
 
-/* Obtain and return host environment.  The host environment is the
- * sequence of lines (separated by \n), all having the form "name=value",
- * which are provided to load-balancing service mapping daemon (LBSMD)
- * in the configuration file on that host.  Return 0 if the host
- * environment cannot be obtained.  If completed successfully, the
- * host environment remains valid until the handle 'host_info' deleted
- * in the application program.
+/** Obtain and return LB host environment.
+ * LB host environment is a sequence of lines (separated by \\n), all having
+ * form of "name=value", which is provided to and stored by the Load-Balancing
+ * and Service Mapping Daemon (LBSMD) in the configuration file on that host.
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  NULL if the host environment cannot be obtained (or does not exist);
+ *  otherwise, a non-NULL pointer to a '\0'-terminated string that contains
+ *  the environment, which remains valid until the handle "host_info" gets
+ *  free()'d by the application.
+ * @sa
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 const char* HINFO_Environment(const HOST_INFO host_info);
 
 
-/* Obtain affinity argument and value that has keyed the service
- * selection (if affinities have been used at all).  NULL gets returned
- * as argument if no affinity has been found (in this case the value
- * will be returned NULL as well).  Otherwise, NULL gets returned as
- * the value if there was no particular value matched but the argument
- * played alone; "" is the value has been used empty, or any other
- * substring from the host environment that keyed the selection decision.
+/** Obtain the affinity argument that has keyed the service selection (if
+ * argument affinities have been used at all).
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  NULL if no affinity has been found/used (in this case
+ *  HINFO_AffinityArgvalue() would also return NULL);  otherwise, a non-NULL
+ *  pointer to a '\0'-terminated string that remains valid until the handle
+ *  "host_info" gets free()'d by the application.
+ * @sa
+ *  HINFO_AffinityArgvalue, SERV_GetInfoEx, SERV_GetNextInfoEx
  */
 extern NCBI_XCONNECT_EXPORT
 const char* HINFO_AffinityArgument(const HOST_INFO host_info);
 
+/** Obtain the affinity argument's value that has keyed the service selection
+ * (if argument affinities have been used at all).
+ * @param host_info
+ *  HOST_INFO as returned by the SERV API.
+ * @return
+ *  NULL if there was no particular value matched but the argument (as returned
+ *  by HINFO_AffinityArgument()) played alone;  "" if the value has been used
+ *  empty, or any other substring from the host environment that keyed the
+ *  selection decision.  The non-NULL pointer remains valid until the handle
+ *  "host_info" gets free()'d by the application.
+ * @sa
+ *  HINFO_AffinityArgument, HINFO_Environment,
+ *  SERV_GetInfoEx, SERV_GetNextInfoEx
+ */
 extern NCBI_XCONNECT_EXPORT
 const char* HINFO_AffinityArgvalue(const HOST_INFO host_info);
 

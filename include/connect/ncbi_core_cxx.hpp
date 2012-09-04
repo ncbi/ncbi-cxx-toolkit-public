@@ -29,10 +29,11 @@
  * Author:  Anton Lavrentiev
  *
  * File description:
+ * @file
  *   C++->C conversion functions for basic CORE connect stuff:
- *     Registry
- *     Logging
- *     Locking
+ *   - Registry,
+ *   - Logging,
+ *   - Locking.
  *
  */
 
@@ -49,31 +50,70 @@
 BEGIN_NCBI_SCOPE
 
 
-/// NB: now that registries are CObjects, any we "own" will be deleted
+/// Convert a C++ Toolkit registry object to a REG registry.
+/// @note  The C++ registries are CObjects, any we "own" will be deleted
 /// if and only if nothing else still holds a reference to them.
+/// @param reg
+///  A C++ toolkit registry, on top of which new REG registry is to be created
+/// @param pass_ownership
+///  True if the ownership of "reg" gets passed to new REG
+/// @return
+///  New REG registry (or NULL on error)
+/// @sa
+///  REG_Create, CONNECT_Init
 extern NCBI_XCONNECT_EXPORT REG     REG_cxx2c
 (IRWRegistry* reg,
  bool         pass_ownership = false
  );
 
 
+/// Create LOG on top of C++ Toolkit CNcbiDiag.
+/// @return
+///  New LOG log (or NULL on error)
+/// @sa
+///  LOG_Create, CONNECT_Init
 extern NCBI_XCONNECT_EXPORT LOG     LOG_cxx2c(void);
 
 
+/// Convert a C++ Toolkit lock object to an MT_LOCK lock.
+/// @param lock
+///  Existing lock to convert (if NULL a new CRWLock will be used)
+/// @param pass_ownership
+///  True if the ownership of non-NULL lock gets passed to new MT_LOCK
+/// @return
+///  New MT_LOCK lock (or NULL on error)
+/// @sa
+///  MT_LOCK_Create, CONNECT_Init
 extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_cxx2c
 (CRWLock*     lock = 0,
  bool         pass_ownership = false
  );
 
 
+/// CONNECT_Init flags:  which parameters to own.
+/// @sa
+///  CONNECT_Init
 enum EConnectInitFlag {
-    eConnectInit_OwnNothing  = 0,
-    eConnectInit_OwnRegistry = 1,
-    eConnectInit_OwnLock     = 2
+    eConnectInit_OwnNothing  = 0,  ///< Original ownership gets retained
+    eConnectInit_OwnRegistry = 1,  ///< Registry ownership gets passed
+    eConnectInit_OwnLock     = 2   ///< Lock ownership gets passed
 };
-typedef unsigned int TConnectInitFlags;  // bitwise OR of EConnectInitFlag
+typedef unsigned int TConnectInitFlags;  ///< Bitwise OR of EConnectInitFlag
 
 
+/// Init [X]CONNECT library with the specified "reg" and "lock" (ownerhsip
+/// for either or both can be detailed in the "flag" parameter).
+/// @note  MUST be called in MT applications to make CONNECT MT-safe, or
+///        CConnIniter must be used as a base-class.
+/// @param reg
+///  Registry to use (CNcbiApplication's registry if NULL)
+/// @param lock
+///  Lock to use (new lock will get created if NULL)
+/// @param flag
+///  Ownership control
+/// @note LOG will get created out of CNcbiDiag automatically.
+/// @sa
+///  REG_cxx2c, LOG_cxx2c, MT_LOCK_cxx2c, CConnIniter, CNcbiApplication
 extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 (IRWRegistry*      reg  = 0,
  CRWLock*          lock = 0,
@@ -82,14 +122,16 @@ extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// Helper hook-up class that installs default logging/registry/locking
-/// (but only if they have not yet been installed explicitly by user).
-///
-
+/// Helper hook-up class that installs default logging/registry/locking (but
+/// only if they have not yet been installed explicitly by user) as if by
+/// calling CONNECT_Init() automagically.
+/// @note  Derive your CONNECT-dependent classes from this class for MT safety.
+/// @sa
+///  CONNECT_Init
 class NCBI_XCONNECT_EXPORT CConnIniter
 {
 protected:
-    CConnIniter();
+    CConnIniter(void);
 };
 
 
