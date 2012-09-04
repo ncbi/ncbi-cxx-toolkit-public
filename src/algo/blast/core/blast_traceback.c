@@ -340,8 +340,7 @@ s_SplitHsp(BlastHSPList* hsp_list,
            BLAST_SequenceBlk* query_blk, 
            BlastQueryInfo* query_info)
 {
-    Int4 index, hspcnt;
-    hspcnt = hsp_list->hspcnt;
+    Int4 index, hspcnt = hsp_list->hspcnt;
     BlastHSPList* new_hsp_list = Blast_HSPListNew(hsp_list->hspcnt);
 
     for (index=0; index < hspcnt; index++) {
