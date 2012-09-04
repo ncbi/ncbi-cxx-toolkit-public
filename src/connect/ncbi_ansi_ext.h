@@ -156,6 +156,7 @@ void* memrchr(const void* s, int c, size_t n);
  * the maximal signed long integer.  Otherwise, the behavior is undefined.
  * Return the pointer past the output string (points to the terminating '\0').
  */
+NCBI_XCONNECT_EXPORT
 char*  NCBI_simple_ftoa(char* s, double f, int p);
 
 
@@ -165,9 +166,10 @@ char*  NCBI_simple_ftoa(char* s, double f, int p);
  * in case of conversion errors.  Maximal value for the whole part may not
  * exceed the maximal signed long integer, and for mantissa -- unsigned long
  * integer.
- * Returns the result of conversion (returns 0.0 on error, *e == s if nothing
- * was consumed).
+ * Returns the result of conversion (on error sets errno, returns 0.0).
+ * @note e == s upon return if no valid input was found and consumed.
  */
+NCBI_XCONNECT_EXPORT
 double NCBI_simple_atof(const char* s, char** e);
 
 
