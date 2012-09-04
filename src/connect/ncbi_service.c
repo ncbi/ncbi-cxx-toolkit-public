@@ -800,9 +800,12 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         }
         if (iter->pref  &&  (iter->host | iter->port)) {
             /* Preference */
-            buflen  = SOCK_HostPortToString(iter->host, iter->port,
-                                            buffer, sizeof(buffer));
-            buflen += sprintf(buffer + buflen, " %.2lf%%\r\n", iter->pref*1e2);
+            buflen = SOCK_HostPortToString(iter->host, iter->port,
+                                           buffer, sizeof(buffer));
+            buffer[buflen++] = ' ';
+            buflen = (size_t)(strcpy(NCBI_simple_ftoa(buffer + buflen,
+                                                      iter->pref * 100.0, 2),
+                                     "\r\n") - buffer) + 2/*"\r\n"*/;
             if (!BUF_Write(&buf, kPreference, sizeof(kPreference) - 1)  ||
                 !BUF_Write(&buf, buffer, buflen)) {
                 BUF_Destroy(buf);
