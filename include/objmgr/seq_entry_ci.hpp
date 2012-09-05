@@ -66,16 +66,29 @@ class CSeq_entry_I;
 class NCBI_XOBJMGR_EXPORT CSeq_entry_CI
 {
 public:
+    /// Recursion mode
+    enum ERecursionMode {
+        eNonRecursive, ///< Iterate single level
+        eRecursive     ///< Iterate recursively
+    };
+
     /// Create an empty iterator
     CSeq_entry_CI(void);
 
     /// Create an iterator that enumerates Seq-entries
     /// inside the given Seq-entry.
-    CSeq_entry_CI(const CSeq_entry_Handle& entry);
+    CSeq_entry_CI(const CSeq_entry_Handle& entry,
+                  ERecursionMode           recursive = eNonRecursive,
+                  CSeq_entry::E_Choice     type_filter = CSeq_entry::e_not_set);
 
     /// Create an iterator that enumerates Seq-entries
     /// inside the given Bioseq-set.
-    CSeq_entry_CI(const CBioseq_set_Handle& set);
+    CSeq_entry_CI(const CBioseq_set_Handle& set,
+                  ERecursionMode            recursive = eNonRecursive,
+                  CSeq_entry::E_Choice      type_filter = CSeq_entry::e_not_set);
+
+    CSeq_entry_CI(const CSeq_entry_CI& iter);
+    CSeq_entry_CI& operator =(const CSeq_entry_CI& iter);
 
     /// Check if iterator points to an object
     DECLARE_OPERATOR_BOOL(m_Current);
@@ -91,6 +104,10 @@ public:
 
     const CBioseq_set_Handle& GetParentBioseq_set(void) const;
 
+    /// Return current depth relative to the initial seq-entry, 0-based.
+    /// In non-recursive mode always returns 0.
+    int GetDepth(void) const;
+
 private:
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
     typedef TSeq_set::const_iterator  TIterator;
@@ -102,9 +119,15 @@ private:
 
     CSeq_entry_CI& operator ++(int);
 
-    CBioseq_set_Handle  m_Parent;
-    TIterator           m_Iterator;
-    CSeq_entry_Handle   m_Current;
+    bool x_ValidType(void) const;
+    void x_Next(void);
+
+    CBioseq_set_Handle      m_Parent;
+    TIterator               m_Iterator;
+    CSeq_entry_Handle       m_Current;
+    ERecursionMode          m_Recursive;
+    CSeq_entry::E_Choice    m_Filter;
+    auto_ptr<CSeq_entry_CI> m_SubIt;
 };
 
 
@@ -120,16 +143,29 @@ private:
 class NCBI_XOBJMGR_EXPORT CSeq_entry_I
 {
 public:
+    /// Recursion mode
+    enum ERecursionMode {
+        eNonRecursive, ///< Iterate single level
+        eRecursive     ///< Iterate recursively
+    };
+
     /// Create an empty iterator
     CSeq_entry_I(void);
 
     /// Create an iterator that enumerates seq-entries
     /// related to the given seq-entrie
-    CSeq_entry_I(const CSeq_entry_EditHandle& entry);
+    CSeq_entry_I(const CSeq_entry_EditHandle& entry,
+                 ERecursionMode               recursive = eNonRecursive,
+                 CSeq_entry::E_Choice         type_filter = CSeq_entry::e_not_set);
 
     /// Create an iterator that enumerates seq-entries
     /// related to the given seq-set
-    CSeq_entry_I(const CBioseq_set_EditHandle& set);
+    CSeq_entry_I(const CBioseq_set_EditHandle& set,
+                 ERecursionMode                recursive = eNonRecursive,
+                 CSeq_entry::E_Choice          type_filter = CSeq_entry::e_not_set);
+
+    CSeq_entry_I(const CSeq_entry_I& iter);
+    CSeq_entry_I& operator =(const CSeq_entry_I& iter);
 
     /// Check if iterator points to an object
     DECLARE_OPERATOR_BOOL(m_Current);
@@ -144,6 +180,10 @@ public:
 
     const CBioseq_set_EditHandle& GetParentBioseq_set(void) const;
 
+    /// Return current depth relative to the initial seq-entry, 0-based.
+    /// In non-recursive mode always returns 0.
+    int GetDepth(void) const;
+
 private:
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
     typedef TSeq_set::iterator  TIterator;
@@ -156,9 +196,15 @@ private:
     /// Move to the next object in iterated sequence
     CSeq_entry_I& operator ++(int);
 
+    bool x_ValidType(void) const;
+    void x_Next(void);
+
     CBioseq_set_EditHandle  m_Parent;
     TIterator               m_Iterator;
     CSeq_entry_EditHandle   m_Current;
+    ERecursionMode          m_Recursive;
+    CSeq_entry::E_Choice    m_Filter;
+    auto_ptr<CSeq_entry_I>  m_SubIt;
 };
 
 
@@ -168,6 +214,8 @@ private:
 
 inline
 CSeq_entry_CI::CSeq_entry_CI(void)
+    : m_Recursive(eNonRecursive),
+      m_Filter(CSeq_entry::e_not_set)
 {
 }
 
@@ -175,28 +223,32 @@ CSeq_entry_CI::CSeq_entry_CI(void)
 inline
 bool CSeq_entry_CI::operator ==(const CSeq_entry_CI& iter) const
 {
-    return m_Current == iter.m_Current;
+    if (m_Current != iter.m_Current) return false;
+    if (m_SubIt.get()  &&  iter.m_SubIt.get()) {
+        return *m_SubIt == *iter.m_SubIt;
+    }
+    return (!m_SubIt.get()  &&  !iter.m_SubIt.get());
 }
 
 
 inline
 bool CSeq_entry_CI::operator !=(const CSeq_entry_CI& iter) const
 {
-    return m_Current != iter.m_Current;
+    return !((*this) == iter);
 }
 
 
 inline
 const CSeq_entry_Handle& CSeq_entry_CI::operator*(void) const
 {
-    return m_Current;
+    return m_SubIt.get() ? **m_SubIt : m_Current;
 }
 
 
 inline
 const CSeq_entry_Handle* CSeq_entry_CI::operator->(void) const
 {
-    return &m_Current;
+    return m_SubIt.get() ? &(**m_SubIt) : &m_Current;
 }
 
 
@@ -213,6 +265,8 @@ const CBioseq_set_Handle& CSeq_entry_CI::GetParentBioseq_set(void) const
 
 inline
 CSeq_entry_I::CSeq_entry_I(void)
+    : m_Recursive(eNonRecursive),
+      m_Filter(CSeq_entry::e_not_set)
 {
 }
 
@@ -220,28 +274,32 @@ CSeq_entry_I::CSeq_entry_I(void)
 inline
 bool CSeq_entry_I::operator ==(const CSeq_entry_I& iter) const
 {
-    return m_Current == iter.m_Current;
+    if (m_Current != iter.m_Current) return false;
+    if (m_SubIt.get()  &&  iter.m_SubIt.get()) {
+        return *m_SubIt == *iter.m_SubIt;
+    }
+    return (!m_SubIt.get()  &&  !iter.m_SubIt.get());
 }
 
 
 inline
 bool CSeq_entry_I::operator !=(const CSeq_entry_I& iter) const
 {
-    return m_Current != iter.m_Current;
+    return !((*this) == iter);
 }
 
 
 inline
 const CSeq_entry_EditHandle& CSeq_entry_I::operator*(void) const
 {
-    return m_Current;
+    return m_SubIt.get() ? **m_SubIt : m_Current;
 }
 
 
 inline
 const CSeq_entry_EditHandle* CSeq_entry_I::operator->(void) const
 {
-    return &m_Current;
+    return m_SubIt.get() ? &(**m_SubIt) : &m_Current;
 }
 
 

@@ -49,15 +49,45 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeq_entry_CI::CSeq_entry_CI(const CSeq_entry_Handle& entry)
+CSeq_entry_CI::CSeq_entry_CI(const CSeq_entry_Handle& entry,
+                             ERecursionMode           recursive,
+                             CSeq_entry::E_Choice     type_filter)
+    : m_Recursive(recursive),
+      m_Filter(type_filter)
 {
     x_Initialize(entry.GetSet());
 }
 
 
-CSeq_entry_CI::CSeq_entry_CI(const CBioseq_set_Handle& seqset)
+CSeq_entry_CI::CSeq_entry_CI(const CBioseq_set_Handle& seqset,
+                             ERecursionMode            recursive,
+                             CSeq_entry::E_Choice      type_filter)
+    : m_Recursive(recursive),
+      m_Filter(type_filter)
 {
     x_Initialize(seqset);
+}
+
+
+CSeq_entry_CI::CSeq_entry_CI(const CSeq_entry_CI& iter)
+{
+    *this = iter;
+}
+
+
+CSeq_entry_CI& CSeq_entry_CI::operator =(const CSeq_entry_CI& iter)
+{
+    if (this != &iter) {
+        m_Parent = iter.m_Parent;
+        m_Iterator = iter.m_Iterator;
+        m_Current = iter.m_Current;
+        m_Recursive = iter.m_Recursive;
+        m_Filter = iter.m_Filter;
+        if ( iter.m_SubIt.get() ) {
+            m_SubIt.reset(new CSeq_entry_CI(*iter.m_SubIt));
+        }
+    }
+    return *this;
 }
 
 
@@ -67,6 +97,9 @@ void CSeq_entry_CI::x_Initialize(const CBioseq_set_Handle& seqset)
         m_Parent = seqset;
         m_Iterator = seqset.x_GetInfo().GetSeq_set().begin();
         x_SetCurrentEntry();
+        while ((*this)  &&  !x_ValidType()) {
+            x_Next();
+        }
     }
 }
 
@@ -85,11 +118,60 @@ void CSeq_entry_CI::x_SetCurrentEntry(void)
 
 CSeq_entry_CI& CSeq_entry_CI::operator ++(void)
 {
-    if ( *this ) {
-        ++m_Iterator;
-        x_SetCurrentEntry();
+    do {
+        x_Next();
     }
+    while ((*this)  &&  !x_ValidType());
     return *this;
+}
+
+
+bool CSeq_entry_CI::x_ValidType(void) const
+{
+    _ASSERT(*this);
+    switch ( m_Filter ) {
+    case CSeq_entry::e_Seq:
+        return (*this)->IsSeq();
+    case CSeq_entry::e_Set:
+        return (*this)->IsSet();
+    default:
+        break;
+    }
+    return true;
+}
+
+
+void CSeq_entry_CI::x_Next(void)
+{
+    if ( !(*this) ) {
+        return;
+    }
+
+    if (m_Recursive == eRecursive) {
+        if ( m_SubIt.get() ) {
+            // Already inside sub-entry - try to move forward.
+            ++(*m_SubIt);
+            if ( *m_SubIt ) {
+                return;
+            }
+            // End of sub-entry, continue to the next entry.
+            m_SubIt.reset();
+        }
+        else if ( m_Current.IsSet() ) {
+            // Current entry is a seq-set, iterate sub-entries.
+            m_SubIt.reset(new CSeq_entry_CI(m_Current, m_Recursive, m_Filter));
+            return;
+        }
+    }
+
+    ++m_Iterator;
+    x_SetCurrentEntry();
+}
+
+
+int CSeq_entry_CI::GetDepth(void) const
+{
+    return m_SubIt.get() ? m_SubIt->GetDepth() + 1 : 0;
 }
 
 
@@ -98,15 +180,45 @@ CSeq_entry_CI& CSeq_entry_CI::operator ++(void)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeq_entry_I::CSeq_entry_I(const CSeq_entry_EditHandle& entry)
+CSeq_entry_I::CSeq_entry_I(const CSeq_entry_EditHandle& entry,
+                           ERecursionMode               recursive,
+                           CSeq_entry::E_Choice         type_filter)
+    : m_Recursive(recursive),
+      m_Filter(type_filter)
 {
     x_Initialize(entry.SetSet());
 }
 
 
-CSeq_entry_I::CSeq_entry_I(const CBioseq_set_EditHandle& seqset)
+CSeq_entry_I::CSeq_entry_I(const CBioseq_set_EditHandle& seqset,
+                           ERecursionMode                recursive,
+                           CSeq_entry::E_Choice          type_filter)
+    : m_Recursive(recursive),
+      m_Filter(type_filter)
 {
     x_Initialize(seqset);
+}
+
+
+CSeq_entry_I::CSeq_entry_I(const CSeq_entry_I& iter)
+{
+    *this = iter;
+}
+
+
+CSeq_entry_I& CSeq_entry_I::operator =(const CSeq_entry_I& iter)
+{
+    if (this != &iter) {
+        m_Parent = iter.m_Parent;
+        m_Iterator = iter.m_Iterator;
+        m_Current = iter.m_Current;
+        m_Recursive = iter.m_Recursive;
+        m_Filter = iter.m_Filter;
+        if ( iter.m_SubIt.get() ) {
+            m_SubIt.reset(new CSeq_entry_I(*iter.m_SubIt));
+        }
+    }
+    return *this;
 }
 
 
@@ -116,6 +228,9 @@ void CSeq_entry_I::x_Initialize(const CBioseq_set_EditHandle& seqset)
         m_Parent = seqset;
         m_Iterator = seqset.x_GetInfo().SetSeq_set().begin();
         x_SetCurrentEntry();
+        while ((*this)  &&  !x_ValidType()) {
+            x_Next();
+        }
     }
 }
 
@@ -134,11 +249,60 @@ void CSeq_entry_I::x_SetCurrentEntry(void)
 
 CSeq_entry_I& CSeq_entry_I::operator ++(void)
 {
-    if ( *this ) {
-        ++m_Iterator;
-        x_SetCurrentEntry();
+    do {
+        x_Next();
     }
+    while ((*this)  &&  !x_ValidType());
     return *this;
+}
+
+
+bool CSeq_entry_I::x_ValidType(void) const
+{
+    _ASSERT(*this);
+    switch ( m_Filter ) {
+    case CSeq_entry::e_Seq:
+        return (*this)->IsSeq();
+    case CSeq_entry::e_Set:
+        return (*this)->IsSet();
+    default:
+        break;
+    }
+    return true;
+}
+
+
+void CSeq_entry_I::x_Next(void)
+{
+    if ( !(*this) ) {
+        return;
+    }
+
+    if (m_Recursive == eRecursive) {
+        if ( m_SubIt.get() ) {
+            // Already inside sub-entry - try to move forward.
+            ++(*m_SubIt);
+            if ( *m_SubIt ) {
+                return;
+            }
+            // End of sub-entry, continue to the next entry.
+            m_SubIt.reset();
+        }
+        else if ( m_Current.IsSet() ) {
+            // Current entry is a seq-set, iterate sub-entries.
+            m_SubIt.reset(new CSeq_entry_I(m_Current, m_Recursive, m_Filter));
+            return;
+        }
+    }
+
+    ++m_Iterator;
+    x_SetCurrentEntry();
+}
+
+
+int CSeq_entry_I::GetDepth(void) const
+{
+    return m_SubIt.get() ? m_SubIt->GetDepth() + 1 : 0;
 }
 
 
