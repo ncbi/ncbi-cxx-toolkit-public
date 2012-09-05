@@ -55,10 +55,16 @@ class NCBI_XUTIL_EXPORT ILineReader : public CObject
 public:
     /// Return a new ILineReader object corresponding to the given
     /// filename, taking "-" (but not "./-") to mean standard input.
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     static CRef<ILineReader> New(const string& filename);
 
     /// Return a new ILineReader object corresponding to the given
     /// input stream, optionally taking ownership thereof.
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     static CRef<ILineReader> New(CNcbiIstream& is,
                                  EOwnership ownership = eNoOwnership);
 
@@ -68,9 +74,10 @@ public:
     /// Return the next character to be read without consuming it.
     virtual char PeekChar(void) const = 0;
 
-    /// Advance to the next line.  Must also be called prior to
-    /// obtaining the first line.
+    /// Make a line available.  MUST be called even for the first line;
+    /// MAY trigger EOF conditions even when also retrieving data.
     virtual ILineReader& operator++(void) = 0;
+    void ReadLine(void) { ++*this; }
 
     /// Unget current line, which must be valid.
     /// After calling this method:
@@ -82,6 +89,7 @@ public:
 
     /// Return the current line, minus its terminator.
     virtual CTempString operator*(void) const = 0;
+    CTempString GetLine(void) const { return **this; }
 
     /// Return the current (absolute) position.
     virtual CT_POS_TYPE GetPosition(void) const = 0;
@@ -110,10 +118,22 @@ public:
         eEOL_mixed   = 4 ///< contains both bare CRs and bare LFs
     };
 
+    /// Open a line reader over a given stream, with the given
+    /// EOL-style and ownership settings (if specified).
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     explicit CStreamLineReader(CNcbiIstream& is,
                                EEOLStyle eol_style = eEOL_unknown,
                                EOwnership ownership = eNoOwnership);
+
+    /// Open a line reader over a given stream, with the given
+    /// ownership setting.
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     CStreamLineReader(CNcbiIstream& is, EOwnership ownership);
+
     ~CStreamLineReader();
 
     bool               AtEOF(void) const;
@@ -144,11 +164,26 @@ private:
 class NCBI_XUTIL_EXPORT CMemoryLineReader : public ILineReader
 {
 public:
-    /// Work with the half-open range [start, end).
+    /// Open a line reader over the half-open memory range [start, end).
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     CMemoryLineReader(const char* start, const char* end)
         : m_Start(start), m_End(end), m_Pos(start) { }
+
+    /// Open a line reader over the half-open memory range
+    /// [start, start+length).
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     CMemoryLineReader(const char* start, SIZE_TYPE length)
         : m_Start(start), m_End(start + length), m_Pos(start) { }
+
+    /// Open a line reader over a given memory-mapped file, with the
+    /// given ownership setting (if specified).
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     CMemoryLineReader(CMemoryFile* mem_file,
                       EOwnership ownership = eNoOwnership);
 
@@ -175,14 +210,23 @@ class NCBI_XUTIL_EXPORT CBufferedLineReader : public ILineReader
 {
 public:
     /// read from the IReader
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     CBufferedLineReader(IReader* reader,
                         EOwnership ownership = eNoOwnership);
 
     /// read from the istream
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     CBufferedLineReader(CNcbiIstream& is,
                         EOwnership ownership = eNoOwnership);
 
     /// read from the file, "-" (but not "./-") means standard input
+    ///
+    /// As always with ILineReader, an explicit call to operator++ or
+    /// ReadLine() will be necessary to fetch the first line.
     CBufferedLineReader(const string& filename);
 
     virtual ~CBufferedLineReader();
