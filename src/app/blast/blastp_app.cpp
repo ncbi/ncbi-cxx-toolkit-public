@@ -114,8 +114,11 @@ int CBlastpApp::Run(void)
                                      query_opts->GetParseDeflines(),
                                      query_opts->GetRange());
         iconfig.SetQueryLocalIdMode();
+        if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream()))
+           	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
+
 
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());

@@ -224,6 +224,10 @@ ExtractPssmAncillaryData(const objects::CPssmWithParameters& pssm);
 void
 CheckForFreqRatioFile(const string& rps_dbname, CRef<blast::CBlastOptionsHandle>  & opt_handle, bool isRpsblast);
 
+//Check for empty input stream
+// Note that if true, error/eof is set for the stream
+bool
+IsIStreamEmpty(CNcbiIstream & in);
 
 END_NCBI_SCOPE
 

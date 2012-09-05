@@ -765,4 +765,20 @@ CheckForFreqRatioFile(const string& rps_dbname, CRef<CBlastOptionsHandle>  & opt
     return;
 }
 
+bool
+IsIStreamEmpty(CNcbiIstream & in)
+{
+	char c;
+	CNcbiStreampos orig_p = in.tellg();
+	IOS_BASE::fmtflags orig_flags = in.setf(ios::skipws);
+
+	if(! (in >> c))
+		return true;
+
+	in.seekg(orig_p);
+	in.flags(orig_flags);
+
+	return false;
+}
+
 END_NCBI_SCOPE
