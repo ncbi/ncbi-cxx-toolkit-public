@@ -3020,7 +3020,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KYM	s	University of Helsinki, Kymenlaakso Society of Naturalists",
 "KYO	s	Kyoto University, Botany Department",
 "KYUM<JPN>	s	Kyushu University Museum",
-"L	sb	Nationaal Herbarium Nederland, Leiden University branch",
+"L	sb	National Herbarium of the Netherlands (NHN)",
 "LA	s	University of California",
 "LABCC	c	Lactic acid bacteria culture collection",
 "LAC	s	Xian Institute of Lacquer",
