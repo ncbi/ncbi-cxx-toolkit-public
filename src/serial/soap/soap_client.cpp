@@ -89,21 +89,15 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
 
     char content_type[MAX_CONTENT_TYPE_LEN + 1];
 
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
-    net_info->debug_printout = eDebugPrintout_Data;
-    ConnNetInfo_ParseURL(net_info, m_ServerUrl.c_str());
-    {
-        string s("SOAPAction: \"");
-        s += soap_action;
-        s += "\"\r\n";
-        ConnNetInfo_SetUserHeader(net_info,s.c_str());
-    }
+// SOAPAction:
+// http://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383528
+// "An HTTP client MUST use this header field when issuing a SOAP HTTP Request"
 
-    CConn_HttpStream http(net_info,
-        MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml, eENCOD_None,
-            content_type, sizeof(content_type) - 1)
-            ,0,0,0,0, fHTTP_AutoReconnect | fHTTP_KeepHeader
-            );
+    CConn_HttpStream http(m_ServerUrl, 0,
+        "SOAPAction: \"" + soap_action + "\"\r\n"
+        + string(MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml,
+        eENCOD_None, content_type, sizeof(content_type) - 1)),
+        fHTTP_AutoReconnect | fHTTP_KeepHeader);
 
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
     auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, http));
