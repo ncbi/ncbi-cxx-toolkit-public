@@ -35,7 +35,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <util/util_exception.hpp>
 
 #include <serial/soap/soap_client.hpp>
@@ -43,6 +42,10 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+// to see communication log, put the following into environment:
+//  CONN_DEBUG_PRINTOUT=data
+//  DIAG_POST_LEVEL=0
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -163,10 +166,6 @@ void CSampleSoapClientApplication::Init(void)
                               prog_description, false);
     // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());
-
-    // Enable the following two lines to see the communication log:
-//    SetDiagTrace(eDT_Enable);
-//    CONNECT_Init();
 }
 
 int CSampleSoapClientApplication::Run(void)
