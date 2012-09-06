@@ -1404,6 +1404,9 @@ SImplementation::x_CreateMrnaFeature(const CSeq_align& align,
                     RNA_class = info->GetGbmoltype();
                 }
                 break;
+            case CMolInfo::eBiomol_transcribed_RNA:
+                type = CRNA_ref::eType_miscRNA;
+                break;
             default:
                 type = CRNA_ref::eType_other;
                 break;
