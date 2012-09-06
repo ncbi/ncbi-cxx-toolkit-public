@@ -570,7 +570,6 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
     //the backbone such as chromosome
     CRef<CSeq_loc> backbone_loc (0);
     CRef<CSeq_loc> component_loc (0);
-    int num_try = 0;
     //try backbone and component on template or hit as we don't know which is which
     //at least hit or template needs to be chr or contig
     if ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome) {
