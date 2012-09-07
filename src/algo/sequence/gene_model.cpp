@@ -458,6 +458,7 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::x_GetLocFromSplicedE
     CRef<CSeq_interval> prev_int;
     
     const CSpliced_seg& spliced_seg = aln.GetSegs().GetSpliced();
+    TSeqPos genomic_size = m_scope.GetSequenceLength(spliced_seg.GetGenomic_id());
     ITERATE(CSpliced_seg::TExons, it, spliced_seg.GetExons()) {
         const CSpliced_exon& exon = **it;
         CRef<CSeq_interval> genomic_int(new CSeq_interval);
@@ -471,7 +472,12 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::SMapper::x_GetLocFromSplicedE
                                : eNa_strand_plus);
         
         // check for gaps between exons
-        if(!prev_exon.IsNull()) {
+        if(!prev_exon.IsNull() && 
+           !(prev_exon->GetProduct_end().GetNucpos() + 1 == exon.GetProduct_start().GetNucpos() &&
+             ((genomic_int->GetStrand()!=eNa_strand_minus && prev_exon->GetGenomic_end()==genomic_size-1 && exon.GetGenomic_start()==0) ||
+              (genomic_int->GetStrand()==eNa_strand_minus && exon.GetGenomic_end()==genomic_size-1 && prev_exon->GetGenomic_start()==0))
+             )) {
+
             bool donor_set = prev_exon->IsSetDonor_after_exon();
             bool acceptor_set = exon.IsSetAcceptor_before_exon();
             
@@ -566,28 +572,22 @@ string ExtractGnomonModelNum(const CSeq_id& seq_id)
     return model_num;
 }
 
-CRef<CSeq_feat>
-CFeatureGenerator::
-SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
-                                     CSeq_annot& annot,
-                                     CBioseq_set& seqs,
-                                     int gene_id,
-                                     const CSeq_feat* cdregion,
-                                     bool call_on_align_list)
+bool IsProteinAlign(const CSeq_align& align)
 {
-    CConstRef<CSeq_align> align(&input_align);
-    CRef<CSeq_feat> cd_feat;
-    bool is_protein_align = align->CanGetSegs() && align->GetSegs().IsSpliced()
-                          && align->GetSegs().GetSpliced().GetProduct_type()
-                             == CSpliced_seg::eProduct_type_protein;
-    if (is_protein_align)
-    {
+    return align.CanGetSegs() && align.GetSegs().IsSpliced()
+        && align.GetSegs().GetSpliced().GetProduct_type()
+        == CSpliced_seg::eProduct_type_protein;
+}
+
+void CFeatureGenerator::
+SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align, CRef<CSeq_feat>& cd_feat)
+{
         /// This is a protein alignment; transform it into a fake transcript alignment
         /// so the rest of the processing can go on
         bool found_start_codon = false;
         bool found_stop_codon = false;
         ITERATE (CSpliced_seg::TModifiers, mod_it,
-                 input_align.GetSegs().GetSpliced().GetModifiers()) {
+                 align->GetSegs().GetSpliced().GetModifiers()) {
             if ((*mod_it)->IsStart_codon_found()) {
                 found_start_codon = (*mod_it)->GetStart_codon_found();
             }
@@ -597,8 +597,8 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         }
 
         CSeq_align *fake_transcript_align = new CSeq_align;
+        fake_transcript_align->Assign(*align);
         align.Reset(fake_transcript_align);
-        fake_transcript_align->Assign(input_align);
 
         CRef<CSeq_id> prot_id(new CSeq_id);
         prot_id->Assign(fake_transcript_align->GetSeq_id(0));
@@ -663,11 +663,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
             0, fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()-1));
         cd_feat->SetLocation(*cds_on_fake_mrna_loc);
 
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(input_align.GetSeq_id(1));
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(align->GetSeq_id(1));
         if (!bsh) {
             NCBI_THROW(CException, eUnknown,
                 "Can't find genomic sequence " +
-                    input_align.GetSeq_id(1).AsFastaString());
+                    align->GetSeq_id(1).AsFastaString());
         }
         const COrg_ref &org = sequence::GetOrg_ref(bsh);
         if (org.IsSetGcode()) {
@@ -678,6 +678,22 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
 
         cd_feat->SetProduct().SetWhole(*prot_id);
 
+}
+
+CRef<CSeq_feat>
+CFeatureGenerator::
+SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
+                                     CSeq_annot& annot,
+                                     CBioseq_set& seqs,
+                                     int gene_id,
+                                     const CSeq_feat* cdregion,
+                                     bool call_on_align_list)
+{
+    CConstRef<CSeq_align> align(&input_align);
+    CRef<CSeq_feat> cd_feat;
+    bool is_protein_align = IsProteinAlign(*align);
+    if (is_protein_align) {
+        TransformProteinAlignToTranscript(align, cd_feat);
         cdregion = cd_feat.GetPointer();
     }
 
@@ -794,10 +810,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                 gene = genes.insert(make_pair(gene_id,gene_feat)).first;
             } else {
                 gene_feat = gene->second;
-                gene_feat->SetLocation
-                    (*gene_feat->GetLocation().Add(mrna_feat->GetLocation(),
-                                                   CSeq_loc::fMerge_SingleRange,
-                                                   NULL));
+                gene_feat->SetLocation(*MergeSeq_locs(&gene_feat->GetLocation(), &mrna_feat->GetLocation()));
             }
     
             CRef< CSeqFeatXref > genexref( new CSeqFeatXref() );
@@ -1483,16 +1496,9 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
         }
 
         if (gene_loc) {
-            gene_loc = gene_loc->Merge(CSeq_loc::fMerge_SingleRange, NULL);
-            if(update_existing_gene){
-                TSeqRange gene_range =
-                    gene_feat->GetLocation().GetTotalRange() +
-                    gene_loc->GetTotalRange();
-                gene_feat->SetLocation().SetInt().SetFrom(gene_range.GetFrom());
-                gene_feat->SetLocation().SetInt().SetTo(gene_range.GetTo());
-            } else {
-                gene_feat->SetLocation(*gene_loc);
-            }
+            gene_feat->SetLocation
+                (*MergeSeq_locs(gene_loc,
+                                update_existing_gene ? &gene_feat->GetLocation() : NULL));
         }
 
         if (feat_iter  &&  feat_iter.GetSize() == 1 && update_existing_gene) {
@@ -1894,12 +1900,10 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
     }
     if (mapped_loc) {
         mapped_loc->ChangeToPackedInt();
-    }
-    if (mapped_loc  && mapped_loc->Which() != CSeq_loc::e_not_set) {
         mapped_loc->SetId(*loc->GetId());
-        if (mapped_loc->IsMix() && mapped_loc->GetMix().Get().size()==1) {
-            mapped_loc = mapped_loc->SetMix().Set().front();
-        }
+    }
+    if (loc->GetStart(eExtreme_Positional) > loc->GetStop(eExtreme_Positional)) {
+        mapped_loc = FixOrderOfCrossTheOriginSeqloc(*mapped_loc);
     }
     return mapped_loc;
 }
@@ -2686,6 +2690,15 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
                                       CSeq_feat* cds_feat,
                                       const CSeq_feat* cds_feat_on_mrna)
 {
+    CConstRef<CSeq_align> align_ref;
+
+    if (align && IsProteinAlign(*align)) {
+        align_ref.Reset(align);
+        CRef<CSeq_feat> fake_cds_feat;
+        TransformProteinAlignToTranscript(align_ref, fake_cds_feat);
+        align = align_ref.GetPointer();
+    }
+
     // We're going to set the exception and add any needed inference qualifiers,
     // so if there's already an inference qualifer there, remove it.
     if (feat.IsSetQual()) {
@@ -2928,5 +2941,68 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
     }
 }
 
+CRef<CSeq_loc> CFeatureGenerator::SImplementation::MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2)
+{
+    CRef<CSeq_loc> merged_loc;
+    
+    _ASSERT(loc2 == NULL ||
+            (loc1->Intersect(*loc2, 0, NULL)->IsNull() == false &&
+             loc1->Intersect(*loc2, 0, NULL)->IsEmpty() == false));
+    
+    if (loc1->GetStart(eExtreme_Positional) < loc1->GetStop(eExtreme_Positional) &&
+        (loc2==NULL ||
+         loc2->GetStart(eExtreme_Positional) < loc2->GetStop(eExtreme_Positional))) {
+            
+        if (loc2==NULL)
+            merged_loc = loc1->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+        else
+            merged_loc = loc1->Add(*loc2, CSeq_loc::fMerge_SingleRange, NULL);
+    } else {
+        // cross the origin
+
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*loc1->GetId());
+        
+        TSeqPos genomic_size = m_scope->GetSequenceLength(*id);
+        CRef<CSeq_loc> left_loc(new CSeq_loc(*id, genomic_size-1, genomic_size-1, loc1->GetStrand()));
+        CRef<CSeq_loc> right_loc(new CSeq_loc(*id, 0, 0, loc1->GetStrand()));
+
+        merged_loc = left_loc;
+        merged_loc->Add(*right_loc);
+        merged_loc->Add(*loc1);
+        if (loc2 != NULL)
+        merged_loc->Add(*loc2);
+
+        merged_loc = FixOrderOfCrossTheOriginSeqloc(*merged_loc, CSeq_loc::fMerge_SingleRange);
+    }
+    return merged_loc;
+}
+
+CRef<CSeq_loc> CFeatureGenerator::SImplementation::FixOrderOfCrossTheOriginSeqloc(const CSeq_loc& loc, CSeq_loc::TOpFlags flags)
+{
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(*loc.GetId());
+
+    TSeqPos genomic_size = m_scope->GetSequenceLength(*id);
+    CRef<CSeq_loc> left_loc(new CSeq_loc);
+    CRef<CSeq_loc> right_loc(new CSeq_loc);
+                                                     
+    ITERATE(CSeq_loc, it, loc) {
+        if (it.GetRangeAsSeq_loc()->GetStart(eExtreme_Biological) > genomic_size/2) // assumes loc doesn't cross the middle
+            left_loc->Add(*it.GetRangeAsSeq_loc());
+        else
+            right_loc->Add(*it.GetRangeAsSeq_loc());
+    }
+
+    left_loc = left_loc->Merge(flags, NULL);
+    right_loc = right_loc->Merge(flags, NULL);
+
+    if (loc.IsReverseStrand()) {
+        swap(left_loc, right_loc);
+    }
+    left_loc->Add(*right_loc);
+
+    return left_loc;
+}
 
 END_NCBI_SCOPE

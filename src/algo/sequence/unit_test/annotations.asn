@@ -7864,3 +7864,259 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_2_28",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_2_28",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_3_29",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_3_29",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_4_30",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_4_30",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_5_31",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_5_31",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    }
+  }
+}

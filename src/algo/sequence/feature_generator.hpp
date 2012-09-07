@@ -78,6 +78,8 @@ struct CFeatureGenerator::SImplementation {
     void MaximizeTranslation(objects::CSeq_align& align);
 
     CConstRef<objects::CSeq_align> CleanAlignment(const objects::CSeq_align& align_in);
+    CConstRef<objects::CSeq_align>
+    AdjustAlignment(const objects::CSeq_align& align, TSeqRange range);
     CRef<CSeq_feat> ConvertAlignToAnnot(const objects::CSeq_align& align,
                              objects::CSeq_annot& annot,
                              objects::CBioseq_set& seqs,
@@ -144,6 +146,8 @@ private:
         CSeq_loc_Mapper::TMapOptions m_opts;
     };
 
+    void TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
+                                           CRef<CSeq_feat>& cd_feat);
     void x_CollectMrnaSequence(CSeq_inst& inst,
                                const CSeq_align& align,
                                const CSeq_loc& loc,
@@ -214,6 +218,11 @@ private:
     string x_ConstructRnaName(const CBioseq_Handle& handle);
 
     CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id);
+
+    // merge into single interval or, if cross the origin, into two intervals abutting at the origin
+    CRef<CSeq_loc> MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2 = NULL);
+
+    CRef<CSeq_loc> FixOrderOfCrossTheOriginSeqloc(const CSeq_loc& loc, CSeq_loc::TOpFlags flags = CSeq_loc::fSort);
 };
 
 END_NCBI_SCOPE
