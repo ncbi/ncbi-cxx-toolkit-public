@@ -826,12 +826,15 @@ case "$compiler:$ncbi_compiler_ver" in
     WorkShop*:?.?? )   ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\)/\1\20/' ;;
     WorkShop*:[6-9].?) ncbi_compiler_sed='s/\([0-9]\)\.\([0-9\)/\10\20/' ;;
     ICC:??.? )  ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)/\1\20/' ;;
+    ICC:??.?.? | \
+    ICC:??.?.?.* ) ncbi_compiler_sed='s/\([0-9][0-9]\)\.\([0-9]\)\.\([0-9]\).*/\1\2\3/' ;;
     *:?.?.?)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9]\)\.\([0-9]\)/\1\2\3/' ;;
     *:?.??*)    ncbi_compiler_sed='s/\([0-9]\)\.\([0-9][0-9]\).*/\1\2/' ;;
     *:?.?)      ncbi_compiler_sed='s/\([0-9]\).\([0-9]\)/\1\20/' ;;
     *:?)        ncbi_compiler_sed='s/\([0-9]\)/\100/' ;;
-esac
 changequote([, ])dnl
+    *)    AC_MSG_ERROR([Do not know how to parse $compiler version number $ncbi_compiler_ver]) ;;
+esac
 ncbi_compiler_ver=`echo $ncbi_compiler_ver | sed "$ncbi_compiler_sed"`
 compiler_version=$ncbi_compiler_ver
 
