@@ -320,7 +320,7 @@ int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
             }
 
             ITERATE(CNetScheduleAdmin::TStatusMap, it, st_map) {
-                if (it->second > 0) {
+                if (it->second > 0 || it->first == "Total") {
                     printf(format, it->first.c_str(), it->second);
                     format = format_cont;
                 }
