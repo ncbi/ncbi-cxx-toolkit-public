@@ -160,6 +160,19 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
                       CSeq_id::eAcc_gb_wgsm_nuc);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("AACN011000000"),
                       CSeq_id::eAcc_gb_wgs_nuc);
+
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA01S00009")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA0S1000093")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA01SS000093")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA01T000093")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA010S00093")));
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("BABA01S000093"),
+                      CSeq_id::eAcc_ddbj_wgs_nuc);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("BABA01S0000000"),
+                      CSeq_id::eAcc_ddbj_wgs_nuc);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("BABA01S00009300"),
+                      CSeq_id::eAcc_ddbj_wgs_nuc);
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BABA01S000093000")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromPRFAcc)

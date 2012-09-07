@@ -936,7 +936,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc)
         return eAcc_unknown; // non-numeric "version"
     }
 
-    static const SIZE_TYPE kMainAccBufSize = 16;
+    static const SIZE_TYPE kMainAccBufSize = 32;
     if (main_size <= kMainAccBufSize) {
         const unsigned char* ucdata = (const unsigned char*)acc.data();
         char main_acc_buf[kMainAccBufSize];
@@ -946,8 +946,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc)
         CTempString main_acc(main_acc_buf, main_size);
         return x_IdentifyAccession(main_acc, has_version);
     } else {
-        // Unlikely to prove recognizable (too long for any standard
-        // format as of June 2012), but try anyway.
+        // Unlikely to prove recognizable (far too long for any standard
+        // format as of September 2012), but try anyway.
         string main_acc(acc, 0, main_size);
         NStr::ToUpper(main_acc);
         return x_IdentifyAccession(main_acc, has_version);
@@ -958,7 +958,7 @@ CSeq_id::EAccessionInfo
 CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
 {
     SIZE_TYPE digit_pos = main_acc.find_first_of(kDigits),
-              main_size = main_acc.size();
+        main_size = main_acc.size(), scaffold_flag_len = 0;
     if (digit_pos == NPOS) {
         return eAcc_unknown;
     } else {
@@ -1008,6 +1008,12 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
                 // contain six or seven digits followed by one or two letters,
                 // followed in some rare cases by a tag such as :PDB=...
                 return eAcc_prf;
+            } else if (digit_pos >= 4  &&  non_dig_pos == digit_pos + 2
+                       &&  main_acc[non_dig_pos] == 'S'
+                       &&  main_size - non_dig_pos >= 6
+                       &&  (main_acc.find_first_not_of
+                            (kDigits, non_dig_pos + 1) == NPOS)) {
+                scaffold_flag_len = 1;
             } else {
                 return eAcc_unknown;
             }
@@ -1026,14 +1032,16 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
         s_LoadGuide();
     }
 
-    EAccessionInfo ai = s_Guide.Find
-        (SAccGuide::s_Key(digit_pos, main_size - digit_pos), main_acc);
+    SIZE_TYPE digit_count = main_size - digit_pos - scaffold_flag_len;
+    EAccessionInfo ai = s_Guide.Find(SAccGuide::s_Key(digit_pos, digit_count),
+                                     main_acc);
     switch (ai & eAcc_division_mask) {
     case eAcc_tsa:
     case eAcc_wgs:
     case eAcc_wgs_intermed:
         if (digit_pos >= 4
-            &&  main_acc.find_first_not_of("0", digit_pos + 2) == NPOS) {
+            &&  (main_acc.find_first_not_of
+                 ("0", digit_pos /* + scaffold_flag_len */ + 2) == NPOS)) {
             return EAccessionInfo(ai | fAcc_master);
         }
     default:
