@@ -1292,8 +1292,8 @@ DBKKU1	c	Department of Biology, Faculty of Science
 DBKKU2	c	Department of Biology, Faculty of Science
 DBKKU3	c	Department of Biology, Faculty of Science
 DBM	c	Department of Biochemistry and Microbiology
-DBMU	c	Department of Biotechnology, Faculty of Science, Mahidol University
-DBMU	c	Department of Biotechnology, Faculty of Science, Mahidol University
+DBMU	c	Boonchird lab, Department of Biotechnology, Mahidol University
+DBMU2	c	Panbangred lab, Department of Biotechnology, Mahidol University
 DBN	s	National Botanic Gardens
 DBS	c	Department of Biological Culture Collection
 DBSE	s	Universidade Federale Sergipe
