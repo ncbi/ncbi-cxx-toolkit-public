@@ -99,7 +99,7 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
 
     generation_time.SetTimeT((time_t) key.GetCreationTime());
 
-    printf("server_address: %s:%u\n"
+    printf("server_address: %s:%hu\n"
         "id: %u\n"
         "key_generation_time: %s\n"
         "random: %u\n",
@@ -141,9 +141,9 @@ void CGridCommandLineInterfaceApp::ParseICacheKey(
 void CGridCommandLineInterfaceApp::PrintSelectedICacheServer()
 {
     CNetServer selected_server(m_NetICacheClient.GetCurrentServer());
-    printf("Server: %s:%u\n",
+    printf("Server: %s:%hu\n",
         g_NetService_gethostnamebyaddr(selected_server.GetHost()).c_str(),
-        (unsigned) selected_server.GetPort());
+        selected_server.GetPort());
 }
 
 int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
