@@ -326,7 +326,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                 if(sdl->gi == cur_gi){                 
                     sdl->linkout = m_LinkoutDB
                         ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName)
-                        : 0;
+                        : 0;                    
                     if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView)            
                         sdl->linkout_list =
                             CAlignFormatUtil::GetLinkoutUrl(sdl->linkout,
@@ -1552,12 +1552,16 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
 string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
 {
     string defline = m_DeflineTemplates->defLineTmpl;
-    string show_new,show_checked,replaceBy;    
+    string show_new,psi_new,psi_new_accesible,show_checked,replaceBy;    
     if((m_Option & eShowNewSeqGif)) {         
         replaceBy = (sdl->is_new && first_new) ? m_DeflineTemplates->psiFirstNewAnchorTmpl : "";
         first_new = (sdl->is_new && first_new) ? false : first_new;
         if (!sdl->is_new) {                 
             show_new = "hidden";            
+        }
+        if (sdl->is_new && m_StepNumber > 1) {                 
+            psi_new = "psi_new";            
+            psi_new_accesible = "psiNw";
         }
         
         if(!sdl->was_checked) {
@@ -1566,6 +1570,8 @@ string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
 
         defline = CAlignFormatUtil::MapTemplate(defline,"first_new",replaceBy);            
         defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_gi",show_new);
+        defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_gi_hl",psi_new);
+        defline = CAlignFormatUtil::MapTemplate(defline,"psi_new_gi_accs",psi_new_accesible);//insert for accesibilty
         defline = CAlignFormatUtil::MapTemplate(defline,"psi_checked_gi",show_checked);            
     }
 
