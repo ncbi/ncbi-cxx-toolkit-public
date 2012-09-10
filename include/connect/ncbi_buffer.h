@@ -45,6 +45,7 @@
  *   BUF_PeekAtCB
  *   BUF_Read
  *   BUF_Erase
+ *   BUF_Splice
  *   BUF_Destroy
  *
  */
@@ -205,6 +206,15 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Read
  * NOTE: do nothing if "buf" == NULL.
  */
 extern NCBI_XCONNECT_EXPORT void BUF_Erase(BUF buf);
+
+
+/*!
+ * Append all contents of the source buffer "src" to the destination buffer
+ * "*dst", making the source buffer empty (as with BUF_Erase(src)).
+ * Return non-zero if successful; 0 in case of an error.
+ * NOTE: do nothing if "src" is either NULL or contains no data.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Splice(BUF* dst, BUF src);
 
 
 /*!

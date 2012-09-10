@@ -421,6 +421,25 @@ extern void BUF_Erase(BUF buf)
 }
 
 
+extern int/*bool*/ BUF_Splice(BUF* dst, BUF src)
+{
+    if (!src  ||  !src->size)
+        return 1/*success*/;
+    /* init the buffer internals, if not init'd yet */
+    if (!*dst  &&  !BUF_SetChunkSize(dst, 0))
+        return 0/*false*/;
+    if ((*dst)->last)
+        (*dst)->last->next = src->list;
+    else
+        (*dst)->list       = src->list;
+    (*dst)->last  = src->last;
+    (*dst)->size += src->size;
+    src->list = src->last = 0;
+    src->size = 0;
+    return 1/*success*/;
+}
+
+
 extern void BUF_Destroy(BUF buf)
 {
     if (buf) {
