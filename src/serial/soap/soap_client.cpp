@@ -96,7 +96,7 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
     CConn_HttpStream http(m_ServerUrl, 0,
         "SOAPAction: \"" + soap_action + "\"\r\n"
         + string(MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml,
-        eENCOD_None, content_type, sizeof(content_type) - 1)),
+        eENCOD_None, content_type, sizeof(content_type) - 1)), 0, 0, 0, 0,
         fHTTP_AutoReconnect | fHTTP_KeepHeader);
 
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
