@@ -157,18 +157,36 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 /** The extended version HTTP_CreateConnectorEx() is able to change the URL of
  * the server "on-the-fly":
  * - FHTTP_ParseHeader() is called every time a new HTTP response header is
- *   received from the server, and only if fHTTP_KeepHeader is NOT set;  a zero
- *   (false) return value is equivalent of having an error from the server.
- * - FHTTP_Adjust() is invoked every time before starting a new
- *   "HTTP micro-session" making a hit when a previous hit has failed; it is
- *   passed "net_info" stored in the connector, and the number of previously
+ *   received from the server, and only if fHTTP_KeepHeader is NOT set.
+ *   Return code from the parser adjusts the existing server error condition
+ *   (if any) as the following
+ *   + eHTTP_HeaderError:    unconditionally flag server error;
+ *   + eHTTP_HeaderSuccess:  header parse successful, retain existing condition
+ *                           (note that in case of an already existing server
+ *                           error condition the response body can be logged
+ *                           but will not be made available for the user code
+ *                           to read, and eIO_Unknown will result on read);
+ *   + eHTTP_HeaderContinue: if there was already a server error condition,
+ *                           the response body will be made available for the
+ *                           user code to read (if HTTP connector cannot post-
+ *                           process the request such as for redirects,
+ *                           authorization etc);  otherwise, this code has the
+ *                           same effect as eHTTP_ParseSuccess.
+ * - FHTTP_Adjust() is invoked every time before starting a new "HTTP
+ *   micro-session" making a hit when a previous hit has failed; it is passed
+ *   "net_info" stored in the connector, and the number of previously
  *   unsuccessful consecutive attempts since the connection was opened; a zero
- *    (false) return value ends the retries.
+ *   (false) return value ends the retries.
  * - FHTTP_Cleanup() is called when the connector is about to be destroyed;
  *   "user_data" is guaranteed not to be referenced anymore (so it is a good
  *   place to clean up "user_data" if necessary).
  */
-typedef int/*bool*/ (*FHTTP_ParseHeader)
+typedef enum {
+    eHTTP_HeaderError    = 0,  /**< Parse failed, treat as a server error */
+    eHTTP_HeaderSuccess  = 1,  /**< Parse succeeded, retain server status */
+    eHTTP_HeaderContinue = 2   /**< Parse succeeded, continue with body   */
+} EHTTP_HeaderParse;
+typedef EHTTP_HeaderParse (*FHTTP_ParseHeader)
 (const char*         http_header,   /**< HTTP header to parse                */
  void*               user_data,     /**< supplemental user data              */
  int                 server_error   /**< != 0 if HTTP error                  */
