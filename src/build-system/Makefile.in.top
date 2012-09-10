@@ -49,7 +49,7 @@ install-toolkit:
 ## set up appropriate build and status directories somewhere under $(libdir)?
 
 install-gbench:
-	$(top_srcdir)/src/gui/app/gbench_install/gbench_install.sh --copy \
+	$(top_srcdir)/src/app/gbench/gbench_install/gbench_install.sh --copy \
 	    $(build_root) $(exec_prefix)
 
 install:
