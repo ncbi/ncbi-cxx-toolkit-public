@@ -120,30 +120,31 @@ static void s_Reset(SMetaConnector *meta, CONNECTOR connector)
 }
 
 
-static int/*bool*/ s_ParseHeader(const char* header,
-                                 void*       user_data,
-                                 int         server_error,
-                                 int/*bool*/ user_callback_enabled)
+static EHTTP_HeaderParse s_ParseHeader(const char* header,
+                                       void*       user_data,
+                                       int         server_error,
+                                       int/*bool*/ user_callback_enabled)
 {
     static const char   kStateless[] = "TRY_STATELESS";
     static const size_t klen = sizeof(kStateless) - 1;
     SServiceConnector*  uuu = (SServiceConnector*) user_data;
+    EHTTP_HeaderParse   header_parse;
 
     SERV_Update(uuu->iter, header, server_error);
-    if (user_callback_enabled  &&  uuu->params.parse_header
-        &&  !uuu->params.parse_header(header, uuu->params.data, server_error)){
-        return 0/*failure*/;
+    if (user_callback_enabled  &&  uuu->params.parse_header) {
+        header_parse
+            = uuu->params.parse_header(header, uuu->params.data, server_error);
+        if (server_error  ||  !header_parse)
+            return header_parse;
+    } else {
+        if (server_error)
+            return eHTTP_HeaderSuccess;
+        header_parse = eHTTP_HeaderError;
     }
-    if (server_error)
-        return 1/*parsed okay*/;
 
     while (header  &&  *header) {
         if (strncasecmp(header, HTTP_CONNECTION_INFO,
                         sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
-            unsigned int  i1, i2, i3, i4, ticket;
-            unsigned char o1, o2, o3, o4;
-            char ipaddr[40];
-
             if (uuu->host)
                 break/*failed - duplicate connection info*/;
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
@@ -160,34 +161,42 @@ static int/*bool*/ s_ParseHeader(const char* header,
                 }
 #endif /*_DEBUG && !NDEBUG*/
             } else {
-                int n;
-                if (sscanf(header, "%u.%u.%u.%u %hu %x%n",
-                           &i1, &i2, &i3, &i4, &uuu->port, &ticket, &n) < 6  ||
-                    (header[n]  &&  !isspace((unsigned char) header[n]))) {
+                unsigned int  i1, i2, i3, i4, tkt, n, m;
+                unsigned char o1, o2, o3, o4;
+                char ipaddr[40];
+
+                if (sscanf(header, "%u.%u.%u.%u%n", &i1, &i2, &i3, &i4, &n) < 4
+                    ||  sscanf(header + n, "%hu%x%n", &uuu->port, &tkt, &m) < 2
+                    || (header[m += n] && !isspace((unsigned char)header[m]))){
                     break/*failed - unreadable connection info*/;
                 }
                 o1 = i1; o2 = i2; o3 = i3; o4 = i4;
                 sprintf(ipaddr, "%u.%u.%u.%u", o1, o2, o3, o4);
-                if (!(uuu->host = SOCK_gethostbyname(ipaddr))  ||  !uuu->port)
+                if (strncmp(header, ipaddr, n) != 0
+                    ||  !(uuu->host = SOCK_gethostbyname(ipaddr))
+                    ||  !uuu->port) {
                     break/*failed - bad host:port in connection info*/;
-                uuu->ticket = SOCK_HostToNetLong(ticket);
+                }
+                uuu->ticket = SOCK_HostToNetLong(tkt);
             }
         }
         if ((header = strchr(header, '\n')) != 0)
             header++;
     }
-    if (!header  ||  !*header)
-        return 1/*success*/;
 
-    uuu->host = 0;
-    return 0/*failure*/;
+    if (header  &&  *header)
+        uuu->host = 0;
+    else if (!header_parse)
+        header_parse = eHTTP_HeaderSuccess;
+    return header_parse;
 }
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-static int s_ParseHeaderUCB  (const char* header, void* data, int server_error)
+static EHTTP_HeaderParse
+s_ParseHeaderUCB  (const char* header, void* data, int server_error)
 {
     return s_ParseHeader(header, data, server_error, 1/*enable user CB*/);
 }
@@ -199,7 +208,8 @@ static int s_ParseHeaderUCB  (const char* header, void* data, int server_error)
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
-static int s_ParseHeaderNoUCB(const char* header, void* data, int server_error)
+static EHTTP_HeaderParse
+s_ParseHeaderNoUCB(const char* header, void* data, int server_error)
 {
     return s_ParseHeader(header, data, server_error, 0/*disable user CB*/);
 }

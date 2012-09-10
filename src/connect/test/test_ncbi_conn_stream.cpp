@@ -331,14 +331,16 @@ int main(int argc, const char* argv[])
                 speedstr += " and verified";
             if (!filetime.empty()) {
                 time_t stop = (time_t) NStr::StringToUInt(filetime);
-                time_t time = (time_t) udiff((long) stop, (long) start.GetTimeT());
+                time_t time = (time_t) udiff((long) stop,
+                                             (long) start.GetTimeT());
                 double rate = (val / 1024.0) / (time ? time : 1);
                 speedstr += (" in "
                              + NStr::ULongToString((unsigned long) time)
                              + " sec @ "
                              + NStr::DoubleToString(rate,2, NStr::fDoubleFixed)
                              + " KB/s");
-                delta = (time_t) udiff((long) stop, (long) CTime(CTime::eCurrent).GetTimeT());
+                delta = (time_t)udiff((long)stop,
+                                      (long)CTime(CTime::eCurrent).GetTimeT());
             }
             if (delta < 1800) {
                 LOG_POST("Test 3 passed: " <<
@@ -574,9 +576,9 @@ int main(int argc, const char* argv[])
     ofstream null(DEV_NULL);
     assert(null);
 
-    CConn_HttpStream http("http://www.ncbi.nlm.nih.gov"
-                          "/cpp/network/dispatcher.html", 0,
-                          "My-Header: Header\r\n", fHTTP_Flushable);
+    CConn_HttpStream http("www.ncbi.nlm.nih.gov",
+                          "/cpp/network/dispatcher.html", kEmptyStr/*args*/,
+                          "My-Header: Header", 0/*port*/, fHTTP_Flushable);
     http << "Sample input -- should be ignored";
 
     if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))

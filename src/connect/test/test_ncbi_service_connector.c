@@ -113,10 +113,10 @@ int main(int argc, const char* argv[])
         status = CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPersist);
         if (n) {
             char* descr = CONN_Description(conn);
-            CORE_DATAF_EX(eLOG_Note, ibuf, n,
-                          ("%lu bytes read from service (%s%s%s):",
-                           (unsigned long) n, CONN_GetType(conn),
-                           descr ? ", " : "", descr ? descr : ""));
+            CORE_DATAF(eLOG_Note, ibuf, n,
+                       ("%lu bytes read from service (%s%s%s):",
+                        (unsigned long) n, CONN_GetType(conn),
+                        descr ? ", " : "", descr ? descr : ""));
             if (descr)
                 free(descr);
         }

@@ -530,6 +530,10 @@ public:
     (const string&       url,
      const SConnNetInfo* net_info,
      const string&       user_header  = kEmptyStr,
+     FHTTP_ParseHeader   parse_header = 0,
+     void*               user_data    = 0,
+     FHTTP_Adjust        adjust       = 0,
+     FHTTP_Cleanup       cleanup      = 0,
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      size_t              buf_size     = kConn_DefaultBufSize

@@ -193,7 +193,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 : kEmptyStr);
     CConn_HttpStream http("http://" + host + port + "/Service/index.html",
                           net_info, kEmptyStr/*user_header*/,
-                          0/*flags*/, m_Timeout);
+                          0/*flags*/, 0, 0, 0, 0, m_Timeout);
     http.SetCanceledCallback(m_Canceled);
     string temp;
     http >> temp;
@@ -260,14 +260,15 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 
 
 extern "C" {
-static int s_ParseHeader(const char* header, void* data, int server_error)
+static EHTTP_HeaderParse
+s_ParseHeader(const char* header, void* data, int server_error)
 {
     _ASSERT(data);
     *((int*) data) =
         !server_error  &&  NStr::FindNoCase(header, "\nService: ") != NPOS
         ? 1
         : 2;
-    return 1/*always success*/;
+    return eHTTP_HeaderSuccess;
 }
 }
 
@@ -419,7 +420,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
     if (!ConnNetInfo_GetValue(0, "FWD_URL", fwdurl, sizeof(fwdurl), kFWDUrl))
         return eIO_InvalidArg;
     CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*user hdr*/,
-                            0/*flags*/, m_Timeout);
+                            0/*flags*/, 0, 0, 0, 0, m_Timeout);
     fwdcgi.SetCanceledCallback(m_Canceled);
     fwdcgi << "selftest" << NcbiEndl;
 
