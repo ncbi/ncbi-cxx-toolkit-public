@@ -238,6 +238,9 @@ bool CRequestContext::IsValidSessionID(const string& session_id)
         }
     case eSID_Standard:
         {
+            if ( session_id.empty() ) {
+                return false;
+            }
             string id_std = "_-.:@";
             ITERATE (string, c, session_id) {
                 if (!isalnum(*c)  &&  id_std.find(*c) == NPOS) {
