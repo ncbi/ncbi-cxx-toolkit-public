@@ -1081,25 +1081,42 @@ std::string DbIndexInit(
 
     if( !old_style ) {
         try {
+            ERR_POST( Info << "trying to load new style index at " 
+                           << indexname );
             CIndexedDb::Index_Set_Instance.Reset(
                     new CIndexedDb_New( indexname, partial ) );
 
-            if( CIndexedDb::Index_Set_Instance != 0 ) return "";
+            if( CIndexedDb::Index_Set_Instance != 0 ) {
+                ERR_POST( Info << "new style index loaded" );
+
+                if( partial ) {
+                    ERR_POST( Info << "some volumes are not resolved" );
+                }
+
+                return "";
+            }
             else return "index allocation error";
         }
         catch( CException & e ) {
+            ERR_POST( Info << "new style index failed to load" );
             result = e.what();
         }
     }
 
     try{
+        ERR_POST( Info << "trying to load old style index at "
+                       << indexname );
         CIndexedDb::Index_Set_Instance.Reset(
                 new CIndexedDb_Old( indexname ) );
 
-        if( CIndexedDb::Index_Set_Instance != 0 ) return "";
+        if( CIndexedDb::Index_Set_Instance != 0 ) {
+            ERR_POST( Info << "old style index loaded" );
+            return "";
+        }
         else return "index allocation error";
     }
     catch( CException & e ) {
+        ERR_POST( Info << "old style index failed to load" );
         result += '\n' + e.what();
     }
 
