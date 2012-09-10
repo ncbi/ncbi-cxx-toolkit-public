@@ -103,7 +103,7 @@ void CEUtils_Request::Connect(void)
         m_Stream.reset(new CConn_HttpStream(
             url,
             NULL,
-            "Content-type: application/x-www-form-urlencoded\n",
+            "Content-type: application/x-www-form-urlencoded",
             NULL, NULL, NULL, NULL,
             fHTTP_AutoReconnect,
             timeout));
