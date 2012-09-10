@@ -432,7 +432,7 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
 
 void CPrintJobInfo::ProcessJobMeta(const CNetScheduleKey& key)
 {
-    printf("server_address: %s:%u\nid: %u\n",
+    printf("server_address: %s:%hu\nid: %u\n",
         g_NetService_TryResolveHost(key.host).c_str(), key.port, key.id);
 
     if (!key.queue.empty())

@@ -269,7 +269,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         IIterationBeginner* iteration_beginner,
         EServerErrorHandling error_handling);
 
-    CNetServer GetServer(unsigned host, unsigned int port);
+    CNetServer GetServer(unsigned host, unsigned short port);
     CNetServer GetServer(const SServerAddress& server_address);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);

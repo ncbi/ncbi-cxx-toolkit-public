@@ -71,7 +71,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     } else {
         CNetScheduleKey key(m_Opts.id);
         key.host.push_back(':');
-        key.host.append(NStr::UIntToString(key.port));
+        key.host.append(NStr::NumericToString(key.port));
         m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
     }
 

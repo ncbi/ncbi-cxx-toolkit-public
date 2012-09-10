@@ -129,7 +129,7 @@ public:
     const string& GetKey() const;
     unsigned GetId() const;
     const string& GetHost() const;
-    unsigned GetPort() const;
+    unsigned short GetPort() const;
     unsigned GetVersion() const;
     time_t GetCreationTime() const;
     Uint4 GetRandomPart() const;
@@ -139,7 +139,7 @@ private:
     string m_Key;
     unsigned int m_Id; ///< BLOB id
     string m_Host; ///< server name
-    unsigned m_Port; ///< TCP/IP port number
+    unsigned short m_Port; ///< TCP/IP port number
     unsigned m_Version; ///< Key version
     time_t m_CreationTime;
     Uint4 m_Random;
@@ -179,7 +179,7 @@ CNetCacheKey::GetHost(void) const
     return m_Host;
 }
 
-inline unsigned int
+inline unsigned short
 CNetCacheKey::GetPort(void) const
 {
     return m_Port;

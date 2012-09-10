@@ -88,7 +88,7 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
         ++ch;
 
         // port
-        port = atoi(ch);
+        port = (unsigned short) atoi(ch);
         return;
     } else if (key_str.compare(0, 5, NS_KEY_V2_PREFIX) == 0) {
         version = 2;
@@ -100,7 +100,7 @@ CNetScheduleKey::CNetScheduleKey(const string& key_str)
             if (*ch == 0) break;
             ++ch;
             // port
-            port = atoi(ch);
+            port = (unsigned short) atoi(ch);
             while (*ch && *ch != '/') ++ch;
             if (*ch == 0) break;
             ++ch;

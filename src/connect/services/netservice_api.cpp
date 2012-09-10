@@ -632,7 +632,7 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer SNetServiceImpl::GetServer(unsigned host, unsigned int port)
+CNetServer SNetServiceImpl::GetServer(unsigned host, unsigned short port)
 {
     m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
 

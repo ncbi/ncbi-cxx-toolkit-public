@@ -63,12 +63,12 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 {
     explicit CNetScheduleKey(const string& str_key);
 
-    unsigned     version;   ///< Key version
-    string       host;      ///< Server name
-    unsigned     port;      ///< TCP/IP port number
-    string       queue;     ///< Queue name, optional
-    unsigned     id;        ///< Job id
-    int          run;       ///< Job run number, -1 - no run
+    unsigned version; ///< Key version
+    string host; ///< Server name
+    unsigned short port; ///< TCP/IP port number
+    string queue; ///< Queue name, optional
+    unsigned id; ///< Job id
+    int run; ///< Job run number, -1 - no run
 };
 
 class NCBI_XCONNECT_EXPORT CNetScheduleKeyGenerator

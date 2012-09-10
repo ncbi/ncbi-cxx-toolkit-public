@@ -101,7 +101,7 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
         ++ch;
 
     if (key_obj != NULL) {
-        key_obj->m_Port = atoi(port_str);
+        key_obj->m_Port = (unsigned short) atoi(port_str);
         key_obj->m_CreationTime = (time_t) strtoul(creation_time_str, NULL, 10);
         key_obj->m_Random = (Uint4) strtoul(random_str, NULL, 10);
         key_obj->m_PrimaryKeyLength = ch - key_str;
