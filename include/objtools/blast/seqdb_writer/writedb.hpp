@@ -579,8 +579,10 @@ private:
  * @brief Writes an alias file that restricts a database with a gi list. 
  * 
  * @param file_name alias file name to create, it will overwrite any existing
- * files of that name [in]
- * @param db_name database name to restrict [in]
+ * files of that name.  It can be specified as an absolute path, or a path
+ * relative to the current working directory [in]
+ * @param db_name database name to restrict.  Can be specified as an absolute path,
+ * or a path relative to the target directory or the default directory [in]
  * @param seq_type type of sequences stored in the database [in]
  * @param gi_file_name name of the file containing gis [in]
  * @param title title to use in this alias file [in]
@@ -597,8 +599,10 @@ void CWriteDB_CreateAliasFile(const string& file_name,
  * databases.
  * 
  * @param file_name alias file name to create, it will overwrite any existing
- * files of that name [in]
- * @param db_names database names to aggregate [in]
+ * files of that name.  It can be specified as an absolute path, or a path
+ * relative to the current working directory [in]
+ * @param db_names database names to aggregate.  Can be specified as absolute paths,
+ * or paths relative to the target directory or the default directory [in]
  * @param gi_file_name name of the file containing gis [in]
  * @param seq_type type of sequences stored in the database [in]
  * @param title title to use in this alias file [in]

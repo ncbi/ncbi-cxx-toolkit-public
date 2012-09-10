@@ -367,7 +367,7 @@ void CWriteDB_Impl::x_MakeAlias()
             if (dblist.size())
                 dblist += " ";
         
-            dblist += CWriteDB_File::MakeShortName(m_Dbname, i);
+            dblist += CDirEntry(CWriteDB_File::MakeShortName(m_Dbname, i)).GetName();
         }
     } else {
         dblist = m_Dbname;
