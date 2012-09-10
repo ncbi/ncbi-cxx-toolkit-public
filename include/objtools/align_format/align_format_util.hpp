@@ -91,7 +91,7 @@ static const char kUnigeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/
 //substitues <@lnk_displ@>
 static const char kUnigeneImg[] = "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
-static const string kUnigeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">clustered expressed sequence tags</span></div>";
+static const string kUnigeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">Clusters of transcribed sequences</span></div>";
 
 ///structure
 // .ncbirc alias: STRUCTURE_URL
@@ -100,7 +100,7 @@ static const char kStructureUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/Struc
 //substitues <@lnk_displ@>
 static const char kStructureImg[] = "<img border=0 height=16 width=16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
-static const string kStructureDispl =  "<div><@lnk@>-<span class=\"rlLink\">3D structure displays</span></div>";
+static const string kStructureDispl =  "<div><@lnk@>-<span class=\"rlLink\">3D macromolecular structures</span></div>";
 
 ///structure overview
 static const char kStructure_Overview[] = "<a href=\"http://www.ncbi.nlm.nih.\
@@ -116,7 +116,7 @@ static const char kGeoUrl[] =  "<a href=\"http://www/geoprofiles?LinkName=nuccor
 //substitues <@lnk_displ@>
 static const char kGeoImg[] = "<img border=0 height=16 width=16 src=\"images/E.gif\" alt=\"GEO profiles info linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
-static const string kGeoDispl =  "<div><@lnk@>-<span class=\"rlLink\">microarray expression data</span></div>";
+static const string kGeoDispl =  "<div><@lnk@>-<span class=\"rlLink\">Gene expression data</span></div>";
 
 ///Gene
 // .ncbirc alias: GENE
@@ -125,7 +125,7 @@ static const char kGeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/gene?term=
 //substitues <@lnk_displ@>
 static const char kGeneImg[] = "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
-static const string kGeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">associated gene details</span></div>";
+static const string kGeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">Integrated gene loci information</span></div>";
 
 ///Bioassay for proteins
 // .ncbirc alias: BIOASSAY_PROT
@@ -139,7 +139,7 @@ static const char kBioAssayNucURL[] = "<a href=\"http://www.ncbi.nlm.nih.gov/ent
 static const char kBioAssayNucImg[] = "<img border=0 height=16 width=16 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to <@label@>\">";
 
 //For text link <@lnk@> is substituted by formatted url for both BioAssay Nuc and Prot
-static const string kBioAssayDispl =  "<div><@lnk@>-<span class=\"rlLink\">bioactivity screening</span></div>";
+static const string kBioAssayDispl =  "<div><@lnk@>-<span class=\"rlLink\">Chemical screening assays</span></div>";
 
 ///mapviewer linkout
 // .ncbirc alias: MAPVIEWER
@@ -147,7 +147,7 @@ static const char kMapviwerUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/mapvie
 //substitues <@lnk_displ@>
 static const char kMapviwerImg[] = "<img border=0 height=16 width=16 src=\"images/M.gif\" alt=\"Genome view with mapviewer linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
-static const string kMapviwerDispl =  "<div><@lnk@>-<span class=\"rlLink\">aligned genomic context</span></div>";
+static const string kMapviwerDispl =  "<div><@lnk@>-<span class=\"rlLink\">Displays of genomic position</span></div>";
 
 ///mapviewer linkout
 //for used for NT/NW/NC
