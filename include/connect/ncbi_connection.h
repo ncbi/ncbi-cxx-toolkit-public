@@ -223,10 +223,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
 
 /** Push back "size" bytes from the buffer "buf" into connection.
  * Return eIO_Success on success, other code on error.
- * @note  The data pushed back may not necessarily be the same as
- *        previously obtained from the connection.
- * @note  Upon a following read operation, the pushed back data are
- *        taken out first.
+ * @note  The data pushed back may not necessarily be the same as previously
+ *        obtained from the connection.
+ * @note  Upon a following read operation, the pushed back data are taken out
+ *        first.
+ * @note  Pushback data can desynchronize underlying connector (so use wisely).
  * @sa
  *  CONN_Read, CONN_Write
  */
