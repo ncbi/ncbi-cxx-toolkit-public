@@ -113,13 +113,13 @@ static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
 
 #ifdef __cplusplus
 extern "C" {
-    static int s_ParseHeader(const char*, void*, int);
+    static EHTTP_HeaderParse s_ParseHeader(const char*, void*, int);
 }
 #endif /*__cplusplus*/
 
-static int/*bool*/ s_ParseHeader(const char* header,
-                                 void*       iter,
-                                 int         server_error)
+static EHTTP_HeaderParse s_ParseHeader(const char* header,
+                                       void*       iter,
+                                       int         server_error)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
     int code = 0/*success code if any*/;
@@ -128,12 +128,12 @@ static int/*bool*/ s_ParseHeader(const char* header,
             data->fail = 1/*true*/;
     } else if (sscanf(header, "%*s %d", &code) < 1) {
         data->eof = 1/*true*/;
-        return 0/*header parse error*/;
+        return eHTTP_HeaderError;
     }
     /* check for empty document */
     if (!SERV_Update((SERV_ITER) iter, header, server_error)  ||  code == 204)
         data->eof = 1/*true*/;
-    return 1/*header parsed okay*/;
+    return eHTTP_HeaderSuccess;
 }
 
 
