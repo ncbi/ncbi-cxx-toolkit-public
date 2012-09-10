@@ -500,15 +500,15 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                 *tail = '\0';
             }
 
-            CORE_DATAF_EXX(109, level, data, size,
-                           ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
-                            sock->type == eDatagram
-                            ? (event == eIO_Read ? " from " : " to ")
-                            : !size
-                            ? (event == eIO_Read
-                               ? " while reading" : " while writing")
-                            : "",
-                            head, tail));
+            CORE_DATAF_X(109, level, data, size,
+                         ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
+                          sock->type == eDatagram
+                          ? (event == eIO_Read ? " from " : " to ")
+                          : !size
+                          ? (event == eIO_Read
+                             ? " while reading" : " while writing")
+                          : "",
+                          head, tail));
 
             UTIL_ReleaseBuffer(strerr);
         }}
