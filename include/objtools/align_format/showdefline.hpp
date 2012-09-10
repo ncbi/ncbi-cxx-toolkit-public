@@ -179,6 +179,12 @@ public:
         m_QueryNumber = number;
     }
 
+    ///Set this for PSI blast iteartion number 
+    ///@param number: the iteration number
+    void SetPSIIteration(int number) {
+        m_StepNumber = number;
+    }
+
     ///Display top num seqalign
     ///@param num: number desired
     void SetNumAlignToShow(int num) {
@@ -388,6 +394,9 @@ protected:
 
     ///query number
     int m_QueryNumber;
+
+    //PSI BLAST iteartion number
+    int m_StepNumber;
 
     ///entrez term
     string m_EntrezTerm;
