@@ -240,7 +240,7 @@ private:
     bool x_ValidateCd(const list<double>& freqs, const list<double>& observ, unsigned int alphabet_size);
     void x_WrapUpDelta(CTmpFile & tmp_obsr_file, CTmpFile & tmp_freq_file);
     vector<string> x_CreateDeltaList(void);
-    void x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_size);
+    void x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_index, Int4 seq_size);
 
     // Data
     CNcbiOstream * m_LogFile;
@@ -635,18 +635,28 @@ void CMakeProfileDBApp::x_InitRPSDbInfo(Int4 num_files)
      if (!m_RpsDbInfo.aux_file.is_open())
     	 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .aux file");
 
+	 string freq_str = m_OutDbName + ".freq";
+	 m_RpsDbInfo.freq_file.open(freq_str.c_str(), IOS_BASE::out|IOS_BASE::binary);
+	 if (!m_RpsDbInfo.freq_file.is_open())
+		 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .freq file");
+
      /* Write the magic numbers to the PSSM file */
 
      Int4 version = RPS_DATABASE_VERSION;
       m_RpsDbInfo.pssm_file.write ((char *)&version , sizeof(Int4));
+      m_RpsDbInfo.freq_file.write ((char *)&version , sizeof(Int4));
 
      /* Fill in space for the sequence offsets. The PSSM
         data gets written after this list of integers. Also
         write the number of sequences to the PSSM file */
 
       m_RpsDbInfo.pssm_file.write((char *) &num_files, sizeof(Int4));
+      m_RpsDbInfo.freq_file.write((char *) &num_files, sizeof(Int4));
      for (Int4 i = 0; i <= num_files; i++)
+     {
     	 m_RpsDbInfo.pssm_file.write((char *)&i, sizeof(Int4));
+    	 m_RpsDbInfo.freq_file.write((char *)&i, sizeof(Int4));
+     }
 
      if(op_cobalt == m_op_mode)
      {
@@ -656,10 +666,6 @@ void CMakeProfileDBApp::x_InitRPSDbInfo(Int4 num_files)
     		 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .blocks file");
      }
 
-	 string freq_str = m_OutDbName + ".freq";
-	 m_RpsDbInfo.freq_file.open(freq_str.c_str(), IOS_BASE::out|IOS_BASE::binary);
-	 if (!m_RpsDbInfo.freq_file.is_open())
-		 NCBI_THROW(CSeqDBException, eFileErr,"Failed to open output .freq file");
 
      m_RpsDbInfo.curr_seq_offset = 0;
      //Init them to input arg values first , may change after reading in the first sequence
@@ -887,7 +893,7 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
 	 }
 	 return;
  }
-void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_size)
+void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, Int4 seq_index, Int4 seq_size)
  {
 	 const CPssm & pssm = pssm_p.GetPssm();
 	 // Update .freq file
@@ -898,6 +904,7 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 
 	 const list<double> & freq_ratios = pssm.GetIntermediateData().GetFreqRatios();
 	 list<double>::const_iterator itr_fr = freq_ratios.begin();
+    m_RpsDbInfo.freq_file.seekp(0, ios_base::end);
 
 	 if (pssm.GetByRow() == FALSE) {
 	    for (i = 0; i < seq_size; i++) {
@@ -927,6 +934,8 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 	memset(row, 0, sizeof(row));
 	m_RpsDbInfo.freq_file.write((const char *)row, sizeof(Int4)*BLASTAA_SIZE);
 
+    m_RpsDbInfo.freq_file.seekp( 8 + (seq_index) * sizeof(Int4), ios_base::beg);
+    m_RpsDbInfo.freq_file.write((const char *) &m_RpsDbInfo.curr_seq_offset, sizeof(Int4));
 	return;
  }
 
@@ -1064,6 +1073,8 @@ void CMakeProfileDBApp::x_RPS_DbClose(void)
 
     m_RpsDbInfo.pssm_file.seekp(8 + (m_RpsDbInfo.num_seqs) * sizeof(Int4), ios::beg);
     m_RpsDbInfo.pssm_file.write((const char *) &m_RpsDbInfo.curr_seq_offset, sizeof(Int4));
+    m_RpsDbInfo.freq_file.seekp(8 + (m_RpsDbInfo.num_seqs) * sizeof(Int4), ios::beg);
+    m_RpsDbInfo.freq_file.write((const char *) &m_RpsDbInfo.curr_seq_offset, sizeof(Int4));
 
     /* Pack the lookup table into its compressed form */
     if(NULL == m_RpsDbInfo.lookup)
@@ -1243,7 +1254,7 @@ int CMakeProfileDBApp::Run(void)
 
 		x_RPSUpdatePSSM(pssm, seq_index, seq_size);
 		x_RPSUpdateLookup(seq_size);
-		x_UpdateFreqRatios(pssm_w_parameters, seq_size);
+		x_UpdateFreqRatios(pssm_w_parameters, seq_index, seq_size);
 
 		m_RpsDbInfo.aux_file << seq_size << "\n";
 		m_RpsDbInfo.aux_file << scientific << pssm.GetFinalData().GetKappa() << "\n";

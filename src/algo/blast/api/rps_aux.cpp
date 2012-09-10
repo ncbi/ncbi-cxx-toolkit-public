@@ -473,10 +473,9 @@ public:
 
     /// Parametrized constructor
     /// @param filename_no_extn name of the file without extension
-    CRpsFreqRatiosFile(const string& filename_no_extn, Int4 num_profiles,
-                       Int4* offsets);
+    CRpsFreqRatiosFile(const string& filename_no_extn);
 
-    virtual ~CRpsFreqRatiosFile();
+    virtual ~CRpsFreqRatiosFile(){};
 
     /// Lend the caller the pointer to the data structure this object manages.
     /// Caller MUST NOT deallocate the return value.
@@ -488,28 +487,19 @@ private:
 
 const string CRpsFreqRatiosFile::kExtension(".freq");
 
-CRpsFreqRatiosFile::CRpsFreqRatiosFile(const string& filename_no_extn,
-                                       Int4 num_profiles,
-                                       Int4* offsets)
+CRpsFreqRatiosFile::CRpsFreqRatiosFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension), m_Data(NULL)
 {
-    _ASSERT(num_profiles > 0);
-    _ASSERT(offsets);
+    m_Data = (BlastRPSFreqRatiosHeader *) m_MmappedFile->GetPtr();
+    if (m_Data->magic_number != RPS_MAGIC_NUM &&
+            m_Data->magic_number != RPS_MAGIC_NUM_28) {
+            m_Data = NULL;
+            NCBI_THROW(CBlastException, eRpsInit,
+                   "RPS BLAST freq ratios file (" + filename_no_extn + kExtension +
+                   ") is either corrupt or constructed for an incompatible "
+                   "architecture");
+    }
 
-    m_Data = new BlastRPSFreqRatiosHeader;
-    m_Data->num_profiles = num_profiles;
-    m_Data->start_offsets = new Int4[num_profiles + 1];
-
-    memcpy(m_Data->start_offsets, offsets, (num_profiles + 1) * sizeof(Int4));
-
-    m_Data->data = (Int4 *)m_MmappedFile->GetPtr();
-
-}
-
-CRpsFreqRatiosFile::~CRpsFreqRatiosFile()
-{
-    delete [] m_Data->start_offsets;
-    delete m_Data;
 }
 
 const BlastRPSFreqRatiosHeader*
@@ -618,9 +608,7 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
         }
         try {
         // read frequency ratios data
-        m_FreqRatiosFile.Reset(new CRpsFreqRatiosFile(path,
-                                   m_RpsInfo->profile_header->num_profiles,
-                                   m_RpsInfo->profile_header->start_offsets));
+        m_FreqRatiosFile.Reset(new CRpsFreqRatiosFile(path));
         } catch (const CBlastException& e) {
         	string msg = rps_dbname + " contains no frequency ratios needed for composition-based statistics.\n" \
         			     "Please disable composition-based statistics when searching against " + rps_dbname + ".";

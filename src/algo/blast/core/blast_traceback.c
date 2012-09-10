@@ -998,7 +998,7 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
 
    if (freq_header) {
       *rps_freq = (Int4 **)malloc((num_pssm_rows+1) * sizeof(Int4 *));
-      freq_start = (Int4 *) freq_header->data;
+      freq_start = freq_header->start_offsets +num_profiles + 1;
    }
 
    for (index = 0; index < num_pssm_rows + 1; index++) {
