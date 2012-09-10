@@ -102,6 +102,7 @@ public:
     CleanAlignment(const objects::CSeq_align& align);
 
     /// Adjust alignment to the specified range
+    /// (cross-the-origin range on circular chromosome is indicated by range.from > range.to)
     /// Will add necessary 'diags' at ends.
     /// Will recalculate product positions to start at zero.
     /// Throws an exception on attempt to shink past an indel in CDS
