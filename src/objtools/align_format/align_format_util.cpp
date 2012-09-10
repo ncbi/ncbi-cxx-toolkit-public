@@ -2208,7 +2208,7 @@ CAlignFormatUtil::GetBdlLinkoutInfo(const list< CRef< CBlast_def_line > > &bdl,
             s_AddLinkoutInfo(linkout_map,eStructure,cur_id);            
         }   
         //eGenomicSeq and eMapviewer cannot combine together
-        if(linkout & eGenomicSeq){  
+        if((linkout & eGenomicSeq) && (linkout & eMapviewer)){             
             s_AddLinkoutInfo(linkout_map,eGenomicSeq,cur_id);            
         }
         else if(linkout & eMapviewer){  
@@ -2940,7 +2940,7 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
 {
     string url_link = NcbiEmptyString;
     CConstRef<CSeq_id> wid = FindBestChoice(*ids, CSeq_id::WorstRank);
-    //hit_not_in_mapviewer = true if DbisNa && not (genomic+mapviwer sequence)
+    //hit_not_in_mapviewer = true if DbisNa && not (genomic+mapviwer sequence)    
     bool hit_not_in_mapviewer = (seqUrlInfo->advancedView) ? true :
                                         (!seqUrlInfo->isDbNa || (seqUrlInfo->linkout != 0 && !( (seqUrlInfo->linkout & eGenomicSeq) && (seqUrlInfo->linkout & eMapviewer) )));
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
