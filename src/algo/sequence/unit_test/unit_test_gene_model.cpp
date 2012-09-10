@@ -1017,6 +1017,191 @@ BOOST_AUTO_TEST_CASE(TestCaseShrinkAlignment)
 //  delete ostr;
     }
 }
+
+BOOST_AUTO_TEST_CASE(TestCaseExpandAlignmentCrossOrigin)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+
+    for (int strand = -1 ; strand <= 1; strand +=2) {
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+
+    CSeq_align align;
+    {
+    align.SetType(CSeq_align::eType_partial);
+    CSpliced_seg& seg = align.SetSegs().SetSpliced();
+    seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    seg.SetProduct_length(101);
+    CRef<CSeq_id> seq_id;
+    seq_id.Reset(new CSeq_id("lcl|prot"));
+    seg.SetProduct_id(*seq_id);
+    seq_id.Reset(new CSeq_id("gi|17158061"));
+    seg.SetGenomic_id(*seq_id);
+    CSpliced_seg::TExons& exons = seg.SetExons();
+    CRef<CSpliced_exon> exon;
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(3);
+    exon->SetProduct_start().SetProtpos().SetFrame(3);
+    exon->SetProduct_end().SetProtpos().SetAmin(75);
+    exon->SetProduct_end().SetProtpos().SetFrame(1);
+    exon->SetGenomic_start(10);
+    exon->SetGenomic_end(225);
+    exon->SetGenomic_strand() = strand > 0 ? eNa_strand_plus : eNa_strand_minus;
+
+    CRef<CSpliced_exon_chunk> chunk;
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetGenomic_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(7);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetProduct_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(2);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetGenomic_ins(1);
+    exon->SetParts().push_back(chunk);
+
+    chunk.Reset(new CSpliced_exon_chunk);
+    chunk->SetDiag(204);
+    exon->SetParts().push_back(chunk);
+
+    exons.push_back(exon);
+    }
+//  CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
+//                                              cerr);
+//  *ostr << align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CConstRef<CSeq_align> modified_align;
+    TSeqRange range(5583, 248);
+    modified_align = feat_gen.AdjustAlignment(align, range);
+//  *ostr << *modified_align;
+
+    BOOST_CHECK_NO_THROW(modified_align->Validate(true));
+    BOOST_CHECK_EQUAL(modified_align->GetSegs().GetSpliced().GetExons().size(), size_t(2));
+
+    const CSpliced_exon* exon = modified_align->GetSegs().GetSpliced().GetExons().front().GetPointer();
+
+    BOOST_CHECK_EQUAL(exon->GetGenomic_start(), strand > 0 ? range.GetFrom() : 0 );
+    BOOST_CHECK_EQUAL(exon->GetGenomic_end(), strand > 0 ? range.GetFrom() : range.GetTo() );
+
+    exon = modified_align->GetSegs().GetSpliced().GetExons().back().GetPointer();
+
+    BOOST_CHECK_EQUAL(exon->GetGenomic_start(), strand > 0 ? 0 : range.GetFrom());
+    BOOST_CHECK_EQUAL(exon->GetGenomic_end(), strand > 0 ? range.GetTo() : range.GetFrom());
+    
+
+
+
+// CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
+//                                             cerr);
+// *ostr << *trimmed_align;
+//   delete ostr;
+    }
+}
+BOOST_AUTO_TEST_CASE(TestCaseShrinkAlignmentCrossOrigin)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+
+    for (int strand = -1 ; strand <= 1; strand +=2) {
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+
+    CSeq_align align;
+    {
+    align.SetType(CSeq_align::eType_partial);
+    CSpliced_seg& seg = align.SetSegs().SetSpliced();
+    seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+    seg.SetProduct_length(101);
+    CRef<CSeq_id> seq_id;
+    seq_id.Reset(new CSeq_id("lcl|prot"));
+    seg.SetProduct_id(*seq_id);
+    seq_id.Reset(new CSeq_id("gi|17158061"));
+    seg.SetGenomic_id(*seq_id);
+    CSpliced_seg::TExons& exons = seg.SetExons();
+    CRef<CSpliced_exon> exon;
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(strand > 0 ? 0 : 2);
+    exon->SetProduct_start().SetProtpos().SetFrame(strand > 0 ? 1 : 3);
+    exon->SetProduct_end().SetProtpos().SetAmin(strand > 0 ? 1 : 3);
+    exon->SetProduct_end().SetProtpos().SetFrame(strand > 0 ? 1 : 3);
+    exon->SetGenomic_start(5580);
+    exon->SetGenomic_end(5583);
+    exon->SetGenomic_strand() = strand > 0 ? eNa_strand_plus : eNa_strand_minus;
+
+    exons.push_back(exon);
+
+    exon.Reset(new CSpliced_exon);
+    exon->SetProduct_start().SetProtpos().SetAmin(strand > 0 ? 1 : 0);
+    exon->SetProduct_start().SetProtpos().SetFrame(strand > 0 ? 2 : 1);
+    exon->SetProduct_end().SetProtpos().SetAmin(strand > 0 ? 3 : 2);
+    exon->SetProduct_end().SetProtpos().SetFrame(strand > 0 ? 3 : 2);
+    exon->SetGenomic_start(0);
+    exon->SetGenomic_end(7);
+    exon->SetGenomic_strand() = strand > 0 ? eNa_strand_plus : eNa_strand_minus;
+
+    if (strand > 0)
+        exons.push_back(exon);
+    else 
+        exons.insert(exons.begin(), exon);
+    }
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+//  CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
+//                                              cerr);
+//  *ostr << align;
+
+    CConstRef<CSeq_align> modified_align;
+    TSeqRange range(5583, 4);
+    modified_align = feat_gen.AdjustAlignment(align, range);
+//  *ostr << *modified_align;
+
+    BOOST_CHECK_NO_THROW(modified_align->Validate(true));
+    BOOST_CHECK_EQUAL(modified_align->GetSegs().GetSpliced().GetExons().size(), size_t(2));
+
+    const CSpliced_exon* exon = modified_align->GetSegs().GetSpliced().GetExons().front().GetPointer();
+
+    BOOST_CHECK_EQUAL(exon->GetGenomic_start(), strand > 0 ? range.GetFrom() : 0 );
+    BOOST_CHECK_EQUAL(exon->GetGenomic_end(), strand > 0 ? range.GetFrom() : range.GetTo() );
+
+    exon = modified_align->GetSegs().GetSpliced().GetExons().back().GetPointer();
+
+    BOOST_CHECK_EQUAL(exon->GetGenomic_start(), strand > 0 ? 0 : range.GetFrom());
+    BOOST_CHECK_EQUAL(exon->GetGenomic_end(), strand > 0 ? range.GetTo() : range.GetFrom());
+
+
+// CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
+//                                             cerr);
+// *ostr << *trimmed_align;
+//   delete ostr;
+    }
+}
+
+
 BOOST_AUTO_TEST_SUITE_END();
 
 

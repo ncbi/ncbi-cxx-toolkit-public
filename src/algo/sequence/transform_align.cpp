@@ -189,7 +189,7 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
 
     CSpliced_seg::TExons::iterator it = spliced_seg.SetExons().begin();
     CRef<CSpliced_exon> prev_exon = *it;
-    int i = 1;
+    size_t i = 1;
     for (++it; it != spliced_seg.SetExons().end();  ++i, prev_exon = *it++) {
         CSpliced_exon& exon = **it;
 
@@ -566,6 +566,22 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
 
     CSpliced_seg& spliced_seg = align->SetSegs().SetSpliced();
 
+    bool cross_the_origin = range.GetFrom() > range.GetTo();
+    TSeqPos genomic_size = 0;
+    if (cross_the_origin) {
+        genomic_size = m_scope->GetSequenceLength(spliced_seg.GetGenomic_id());
+
+        range.SetTo(range.GetTo() + genomic_size);
+
+        NON_CONST_ITERATE(CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
+            CSpliced_exon& exon = **exon_it;
+            if (exon.GetGenomic_start() < genomic_size/2) // assume align does not cross the middle of chromosome
+                exon.SetGenomic_start() += genomic_size;
+            if (exon.GetGenomic_end() < genomic_size/2)
+                exon.SetGenomic_end() += genomic_size;
+        }
+    }
+
     vector<SExon> exons;
     GetExonStructure(spliced_seg, exons, *m_scope);
 
@@ -588,10 +604,10 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     vector<SExon>::iterator right_exon_it = exons.begin();
     CSpliced_seg::TExons::iterator right_spl_exon_it = spliced_seg.SetExons().begin();
 
-    int range_right = plus_strand ? int(range.GetFrom()) : -int(range.GetTo());
-    int range_left = plus_strand ? int(range.GetTo()) : -int(range.GetFrom());
+    int range_left = plus_strand ? int(range.GetFrom()) : -int(range.GetTo());
+    int range_right = plus_strand ? int(range.GetTo()) : -int(range.GetFrom());
 
-    TSignedSeqRange expected_genomic_range(max(range_right, exons.front().genomic_from), min(range_left, exons.back().genomic_to));
+    TSignedSeqRange expected_genomic_range(max(range_left, exons.front().genomic_from), min(range_right, exons.back().genomic_to));
 
     for(;;++right_exon_it, ++right_spl_exon_it) {
 
@@ -599,16 +615,16 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
         CSpliced_seg::TExons::reverse_iterator left_spl_exon_it(right_spl_exon_it);
 
         if (right_exon_it == exons.end() &&
-            left_exon_it->genomic_to > range_left
+            left_exon_it->genomic_to > range_right
             )
-            CFeatureGenerator::SImplementation::TrimLeftExon(left_exon_it->genomic_to - range_left,
+            CFeatureGenerator::SImplementation::TrimLeftExon(left_exon_it->genomic_to - range_right,
                          exons.rend(), left_exon_it, left_spl_exon_it,
                          product_strand, genomic_strand);
 
         if (right_exon_it == exons.begin() &&
-            right_exon_it->genomic_from < range_right
+            right_exon_it->genomic_from < range_left
             )
-            CFeatureGenerator::SImplementation::TrimRightExon(range_right - right_exon_it->genomic_from,
+            CFeatureGenerator::SImplementation::TrimRightExon(range_left - right_exon_it->genomic_from,
                           right_exon_it, exons.end(), right_spl_exon_it,
                           product_strand, genomic_strand);
         
@@ -634,36 +650,56 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     int last_exon_extension = 0;
 
     if (plus_strand) {
-        first_exon_extension = first_exon.GetGenomic_start() - range.GetFrom();
+
+        first_exon_extension =
+            first_exon.GetGenomic_start()
+            - ((range.GetFrom() < genomic_size && genomic_size < first_exon.GetGenomic_start())
+               ? genomic_size
+               : range.GetFrom());
+
         if (first_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
             chunk->SetDiag(first_exon.IsSetParts() ? first_exon_extension : (first_exon.GetGenomic_end() - range.GetFrom() + 1));
             first_exon.SetParts().insert(first_exon.SetParts().begin(), chunk);
-            first_exon.SetGenomic_start() = range.GetFrom();
+            first_exon.SetGenomic_start() -= first_exon_extension;
         }
 
-        last_exon_extension = range.GetTo() - last_exon.GetGenomic_end();
+        last_exon_extension =
+            ((last_exon.GetGenomic_end() < genomic_size-1 && genomic_size-1 < range.GetTo())
+             ? genomic_size-1
+             : range.GetTo())
+            - last_exon.GetGenomic_end();
+
         if (last_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
             chunk->SetDiag(last_exon.IsSetParts() ? last_exon_extension : (range.GetTo() - last_exon.GetGenomic_start() + 1));
             last_exon.SetParts().push_back(chunk);
-            last_exon.SetGenomic_end() = range.GetTo();
+            last_exon.SetGenomic_end() += last_exon_extension;
         }
     } else {
-        last_exon_extension = last_exon.GetGenomic_start() - range.GetFrom();
+        last_exon_extension =
+            last_exon.GetGenomic_start()
+            - ((range.GetFrom() < genomic_size && genomic_size < last_exon.GetGenomic_start())
+               ? genomic_size
+               : range.GetFrom());
+
         if (last_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
             chunk->SetDiag(last_exon.IsSetParts() ? last_exon_extension : (last_exon.GetGenomic_end() - range.GetFrom() + 1));
             last_exon.SetParts().push_back(chunk);
-            last_exon.SetGenomic_start() = range.GetFrom();
+            last_exon.SetGenomic_start() -= last_exon_extension;
         }
 
-        first_exon_extension = range.GetTo() - first_exon.GetGenomic_end();
+        first_exon_extension =
+            ((first_exon.GetGenomic_end() < genomic_size-1 && genomic_size-1 < range.GetTo())
+             ? genomic_size-1
+             : range.GetTo())
+            - first_exon.GetGenomic_end();
         if (first_exon_extension > 0) {
             CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
             chunk->SetDiag(first_exon.IsSetParts() ? first_exon_extension : (range.GetTo() - first_exon.GetGenomic_start() + 1));
             first_exon.SetParts().insert(first_exon.SetParts().begin(), chunk);
-            first_exon.SetGenomic_end() = range.GetTo();
+            first_exon.SetGenomic_end() += first_exon_extension;
         }
     }
 
@@ -673,8 +709,77 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     exons.back().genomic_to += last_exon_extension;
 
 
-    if ((plus_strand && ((int)range.GetFrom() != exons.front().genomic_from || (int)range.GetTo() != exons.back().genomic_to)) ||
-        (!plus_strand && ((int)range.GetFrom() != -exons.back().genomic_to || (int)range.GetTo() != -exons.front().genomic_from))) {
+    if (plus_strand) {
+        first_exon_extension = first_exon.GetGenomic_start() - range.GetFrom();
+
+        if (first_exon_extension > 0) {
+            CRef<CSpliced_exon> exon(new CSpliced_exon);
+            exon->SetGenomic_start() = range.GetFrom();
+            exon->SetGenomic_end() = genomic_size-1;
+            spliced_seg.SetExons().push_front(exon);
+
+            SExon exon_struct;
+            exon_struct.prod_from = exons.front().prod_from - first_exon_extension;
+            exon_struct.prod_to = exons.front().prod_from - 1;
+            exon_struct.genomic_from = exons.front().genomic_from - first_exon_extension;
+            exon_struct.genomic_to = exons.front().genomic_from - 1;
+
+            exons.insert(exons.begin(), exon_struct);
+        }
+
+        last_exon_extension = range.GetTo() - last_exon.GetGenomic_end();
+
+        if (last_exon_extension > 0) {
+            CRef<CSpliced_exon> exon(new CSpliced_exon);
+            exon->SetGenomic_start() = 0;
+            exon->SetGenomic_end() = last_exon_extension - 1;
+            spliced_seg.SetExons().push_back(exon);
+
+            SExon exon_struct;
+            exon_struct.prod_from = exons.back().prod_to + 1;
+            exon_struct.prod_to = exons.back().prod_to + last_exon_extension;
+            exon_struct.genomic_from = exons.back().genomic_to +1;
+            exon_struct.genomic_to = exons.back().genomic_to + last_exon_extension;
+
+            exons.push_back(exon_struct);
+        }
+    } else {
+        last_exon_extension = last_exon.GetGenomic_start() - range.GetFrom();
+
+        if (last_exon_extension > 0) {
+            CRef<CSpliced_exon> exon(new CSpliced_exon);
+            exon->SetGenomic_start() = range.GetFrom();
+            exon->SetGenomic_end() = genomic_size-1;
+            spliced_seg.SetExons().push_back(exon);
+
+            SExon exon_struct;
+            exon_struct.prod_from = exons.back().prod_to + 1;
+            exon_struct.prod_to = exons.back().prod_to + last_exon_extension;
+            exon_struct.genomic_from = exons.back().genomic_to +1;
+            exon_struct.genomic_to = exons.back().genomic_to + last_exon_extension;
+
+            exons.push_back(exon_struct);
+        }
+
+        first_exon_extension = range.GetTo() - first_exon.GetGenomic_end();
+
+        if (first_exon_extension > 0) {
+            CRef<CSpliced_exon> exon(new CSpliced_exon);
+            exon->SetGenomic_start() = 0;
+            exon->SetGenomic_end() = first_exon_extension - 1;
+            spliced_seg.SetExons().push_front(exon);
+
+            SExon exon_struct;
+            exon_struct.prod_from = exons.front().prod_from - first_exon_extension;
+            exon_struct.prod_to = exons.front().prod_from - 1;
+            exon_struct.genomic_from = exons.front().genomic_from - first_exon_extension;
+            exon_struct.genomic_to = exons.front().genomic_from - 1;
+
+            exons.insert(exons.begin(), exon_struct);
+        }
+    }
+
+    if (range_left != exons.front().genomic_from || range_right != exons.back().genomic_to) {
         NCBI_THROW(CException, eUnknown,
                    "AdjustAlignment(): "
                    "result's ends do not match the range. This is a bug in AdjustAlignment implementation");
@@ -708,6 +813,15 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
         spliced_seg.SetProduct_length(exons.back().prod_to - offset + 1);
     }
 
+    if (cross_the_origin) {
+        NON_CONST_ITERATE(CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
+            CSpliced_exon& exon = **exon_it;
+            if (exon.GetGenomic_start() >= genomic_size)
+                exon.SetGenomic_start() -= genomic_size;
+            if (exon.GetGenomic_end() >= genomic_size)
+                exon.SetGenomic_end() -= genomic_size;
+        }
+    }
     return align;
 }
 
