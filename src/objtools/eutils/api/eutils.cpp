@@ -104,6 +104,7 @@ void CEUtils_Request::Connect(void)
             url,
             NULL,
             "Content-type: application/x-www-form-urlencoded\n",
+            NULL, NULL, NULL, NULL,
             fHTTP_AutoReconnect,
             timeout));
         *m_Stream << body;
