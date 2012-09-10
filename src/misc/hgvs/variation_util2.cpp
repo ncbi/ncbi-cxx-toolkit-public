@@ -456,6 +456,24 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     }
 
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
+
+#if 0
+    if(mapped_loc->IsNull() && p.GetLoc().GetId() && !p.GetLoc().IsEmpty()) {
+        //If mapped to nothing, expand the loc and try again. The purpose is to know the seq-id of the 
+        //neighborhood that we couldn't map to, so we can produce and Empty seq-loc that contains
+        //a seq-id, reporting that we tried to map to this sequence, but there's no mapping
+        CRef<CSeq_loc> loc1 = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
+        loc1->SetInt().SetFrom() = loc1->GetInt().GetFrom() < 500 ? 0 : loc1->SetInt().GetFrom() - 500;
+        loc1->SetInt().SetTo() += 500;
+        CRef<CSeq_loc> tmp_mapped_loc = mapper.Map(*loc1);
+        if(tmp_mapped_loc->GetId()) {
+            mapped_loc->SetEmpty().Assign(*tmp_mapped_loc->GetId());
+
+            NcbiCerr << MSerial_AsnText << p << MSerial_AsnText << *mapped_loc << "\n\n";
+        }
+    }
+#endif
+
     p2->SetLoc(*mapped_loc);
     p2->SetPlacement_method(CVariantPlacement::ePlacement_method_projected);
 
@@ -1875,7 +1893,9 @@ CConstRef<CVariation> CVariationUtil::s_FindConsequenceForPlacement(const CVaria
                 }
             }
         }
-    } else if(v.GetData().IsSet()) {
+    }
+
+    if(!cons_v && v.GetData().IsSet()) {
         ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
             CConstRef<CVariation> cons_v1 = s_FindConsequenceForPlacement(**it, p);
             if(cons_v1) {
@@ -1884,6 +1904,7 @@ CConstRef<CVariation> CVariationUtil::s_FindConsequenceForPlacement(const CVaria
             }
         }
     }
+
     return cons_v;
 }
 
