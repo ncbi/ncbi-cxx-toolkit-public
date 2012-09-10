@@ -85,7 +85,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,    304,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  12);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  18);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  20);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,    308,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail, 309,  31);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  310,   9);
@@ -152,20 +152,20 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
     DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, error, 0,       \
                       g_CORE_Sprintf fmt_args, 1)
 
-#define CORE_LOG_ERRNO_EXX(subcode, level, error, descr, message)       \
-    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, error, descr,   \
-                      message, 0)
-
-#define CORE_LOGF_ERRNO_EXX(subcode, level, error, descr, fmt_args)     \
-    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, error, descr,   \
-                      g_CORE_Sprintf fmt_args, 1)
-
 #define CORE_LOG_ERRNO(level, error, message)                           \
     DO_CORE_LOG_ERRNO(0, 0, level, error, 0,                            \
                       message, 0)
 
 #define CORE_LOGF_ERRNO(level, error, fmt_args)                         \
     DO_CORE_LOG_ERRNO(0, 0, level, error, 0,                            \
+                      g_CORE_Sprintf fmt_args, 1)
+
+#define CORE_LOG_ERRNO_EXX(subcode, level, error, descr, message)       \
+    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, error, descr,   \
+                      message, 0)
+
+#define CORE_LOGF_ERRNO_EXX(subcode, level, error, descr, fmt_args)     \
+    DO_CORE_LOG_ERRNO(NCBI_C_ERRCODE_X, subcode, level, error, descr,   \
                       g_CORE_Sprintf fmt_args, 1)
 
 #define CORE_LOG_ERRNO_EX(level, error, descr, message)                 \
@@ -176,35 +176,19 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
     DO_CORE_LOG_ERRNO(0, 0, level, error, descr,                        \
                       g_CORE_Sprintf fmt_args, 1)
 
-#define CORE_DATA_X(subcode, data, size, message)                       \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
-                     message, 0)
-
-#define CORE_DATAF_X(subcode, data, size, fmt_args)                     \
-    DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, eLOG_Trace, data, size, \
-                     g_CORE_Sprintf fmt_args, 1)
-
-#define CORE_DATA_EXX(subcode, level, data, size, message)              \
+#define CORE_DATA_X(subcode, level, data, size, message)                \
     DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size,      \
                      message, 0)
-    
-#define CORE_DATAF_EXX(subcode, level, data, size, fmt_args)            \
+
+#define CORE_DATAF_X(subcode, level, data, size, fmt_args)              \
     DO_CORE_LOG_DATA(NCBI_C_ERRCODE_X, subcode, level, data, size,      \
                      g_CORE_Sprintf fmt_args, 1)
 
-#define CORE_DATA(data, size, message)                                  \
-    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size,                      \
-                     message, 0)
-    
-#define CORE_DATAF(data, size, fmt_args)                                \
-    DO_CORE_LOG_DATA(0, 0, eLOG_Trace, data, size,                      \
-                     g_CORE_Sprintf fmt_args, 1)
-
-#define CORE_DATA_EX(level, data, size, message)                        \
+#define CORE_DATA(level, data, size, message)                           \
     DO_CORE_LOG_DATA(0, 0, level, data, size,                           \
                      message, 0)
 
-#define CORE_DATAF_EX(level, data, size, fmt_args)                      \
+#define CORE_DATAF(level, data, size, fmt_args)                         \
     DO_CORE_LOG_DATA(0, 0, level, data, size,                           \
                      g_CORE_Sprintf fmt_args, 1)
 
