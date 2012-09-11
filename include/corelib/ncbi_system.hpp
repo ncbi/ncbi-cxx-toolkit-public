@@ -67,6 +67,11 @@ typedef void* TLimitsPrintParameter;
 
 /// Type of handler for printing a dump information after generating
 /// any limitation event.
+/// @attention
+///   If you use handlers together with SetCpuLimit(), be aware!
+///   See SetCpuLimit() for details.
+/// @sa 
+///   SetCpuTimeLimit, SetMemoryLimit
 typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrintParameter);
 
 
@@ -99,8 +104,8 @@ typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrin
 NCBI_DEPRECATED
 NCBI_XNCBI_EXPORT
 extern bool SetHeapLimit(size_t max_size, 
-                         TLimitsPrintHandler handler = 0, 
-                         TLimitsPrintParameter parameter = 0);
+                         TLimitsPrintHandler   handler   = NULL, 
+                         TLimitsPrintParameter parameter = NULL);
 
 
 /// [UNIX only]  Set memory limit.
@@ -128,8 +133,8 @@ extern bool SetHeapLimit(size_t max_size,
 /// @sa SetCpuTimeLimit, TLimitsPrintHandler
 NCBI_XNCBI_EXPORT
 extern bool SetMemoryLimit(size_t max_size, 
-                           TLimitsPrintHandler handler = 0, 
-                           TLimitsPrintParameter parameter = 0);
+                           TLimitsPrintHandler   handler   = NULL, 
+                           TLimitsPrintParameter parameter = NULL);
 
 
 /// [UNIX only]  Set CPU usage limit.
@@ -139,26 +144,42 @@ extern bool SetMemoryLimit(size_t max_size,
 /// @param max_cpu_time
 ///   The maximal amount of seconds of CPU time can be consumed by the process.
 ///   The 0 value lifts off the CPU time restrictions if allowed to do so.
-/// @param handler
-///   Pointer to a print handler used for dump output in the case of reaching
-///   CPU usage limit. Use default handler if passed as NULL.
-/// @param parameter
-///   Parameter carried into the print handler. Can be passed as NULL.
-/// @terminate_time
+/// @terminate_delay_time
 ///   The time in seconds that the process will have to terminate itself after
 ///   receiving a signal about exceeding CPU usage limit. After that it can
 ///   be killed by OS.
+/// @param handler
+///   Pointer to a print handler used for dump output in the case of reaching
+///   CPU usage limit. Use default handler if passed as NULL.
+///   Note, that default handler is not async-safe (see attention below),
+///   and can lead to coredump and application crash instead of program 
+///   termination, so use it on your own risk.         
+/// @param parameter
+///   Parameter carried into the print handler. Can be passed as NULL.
 /// @return 
 ///   Completion status.
 /// @note
 ///   Setting a low CPU time limit cannot be generally undone to a value
-///   higher than "max_cpu_time + terminate_time" at a later time.
+///   higher than "max_cpu_time + terminate_delay_time" at a later time.
+/// @attention
+///   Only async-safe library functions and system calls can be used in 
+///   the print handler. For example, you cannot use C++ streams (cout/cerr)
+///   and printf() calls here, but write() is allowed... You can find a list
+///   of such functions in the C++ documentation (see man, internet and etc).
+///   Also, avoid to alter any shared (global) variables, except that are
+///   declared to be of storage class and type "volatile sig_atomic_t".
 /// @sa SetMemoryLimit, TLimitsPrintHandler
 NCBI_XNCBI_EXPORT
+extern bool SetCpuTimeLimit(unsigned int          max_cpu_time,
+                            unsigned int          terminate_delay_time,
+                            TLimitsPrintHandler   handler, 
+                            TLimitsPrintParameter parameter);
+
+NCBI_XNCBI_EXPORT
 extern bool SetCpuTimeLimit(size_t                max_cpu_time,
-                            TLimitsPrintHandler   handler = 0, 
-                            TLimitsPrintParameter parameter = 0,
-                            size_t                terminate_time = 5);
+                            TLimitsPrintHandler   handler = NULL, 
+                            TLimitsPrintParameter parameter = NULL,
+                            size_t                terminate_delay_time = 5);
 
 
 /////////////////////////////////////////////////////////////////////////////

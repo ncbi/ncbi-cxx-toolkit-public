@@ -80,6 +80,8 @@ static void Test_General(void)
 
 int s_PrintParameter = 0;
 
+// This handler is not async-safe, and is good only for test purposes.
+//
 static void PrintHandler(ELimitsExitCode code, size_t limit,
                          CTime& time, TLimitsPrintParameter param) 
 {
@@ -124,7 +126,11 @@ static void Test_CpuLimit(void)
 {
     LOG_POST("\nCPU time limit test\n");
 
-    assert( SetCpuTimeLimit(1, PrintHandler) );
+    // Use our own handler
+    assert( SetCpuTimeLimit(1, 5, PrintHandler, NULL) );
+    
+    // To use default handler, use NULL instead PrintHandler, or uncomment next line:
+    //assert( SetCpuTimeLimit(1) );
 
     double a = 0.0;
     while (a <= get_limits(a).max()) {

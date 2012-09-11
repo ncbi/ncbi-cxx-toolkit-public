@@ -143,6 +143,8 @@ static TLimitsPrintParameter s_PrintHandlerParam = 0;
 
 
 // Routine to be called at the exit from application
+// It is not async-safe, so using it with SetCpuLimits() can lead to coredump
+// and program crash. Be aware.
 //
 static void s_ExitHandler(void)
 {
@@ -186,7 +188,7 @@ static void s_ExitHandler(void)
             break;
         }
         
-    case eLEC_Cpu: 
+    case eLEC_Cpu:
         {
             ERR_POST_X(2, "CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
             tms buffer;
@@ -375,18 +377,18 @@ static void s_SignalHandler(int _DEBUG_ARG(sig))
     _ASSERT(sig == SIGXCPU);
     _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
     s_ExitCode = eLEC_Cpu;
-    // if (s_ExitHandlerIsSet) {
-    //     s_ExitHandler();
-    // }
-    // NB: _exit() does not go over atexit() chain
+    // _exit() does not go over atexit() chain, so just call registered
+    // handler directly. Be aware that it should be async-safe!
+    if (s_ExitHandlerIsSet) {
+        s_ExitHandler();
+    }
     _exit(-1);
 }
 
-
-bool SetCpuTimeLimit(size_t                max_cpu_time,
+bool SetCpuTimeLimit(unsigned int          max_cpu_time,
+                     unsigned int          terminate_delay_time,
                      TLimitsPrintHandler   handler, 
-                     TLimitsPrintParameter parameter,
-                     size_t                terminate_time)
+                     TLimitsPrintParameter parameter)
 {
     if (s_CpuTimeLimit == max_cpu_time) 
         return true;
@@ -400,7 +402,7 @@ bool SetCpuTimeLimit(size_t                max_cpu_time,
     struct rlimit rl;
     if ( max_cpu_time ) {
         rl.rlim_cur = max_cpu_time;
-        rl.rlim_max = max_cpu_time + terminate_time;
+        rl.rlim_max = max_cpu_time + terminate_delay_time;
     }
     else {
         // Set off CPU time limit
@@ -422,16 +424,25 @@ bool SetCpuTimeLimit(size_t                max_cpu_time,
 
 #else
 
-bool SetCpuTimeLimit(size_t                max_cpu_time,
+bool SetCpuTimeLimit(unsigned int          max_cpu_time,
+                     unsigned int          terminate_delay_time,
                      TLimitsPrintHandler   handler, 
-                     TLimitsPrintParameter parameter,
-                     size_t                terminate_time)
-
+                     TLimitsPrintParameter parameter)
 {
     return false;
 }
 
 #endif //USE_SETCPULIMIT
+
+
+// @deprecated
+bool SetCpuTimeLimit(size_t                max_cpu_time,
+                     TLimitsPrintHandler   handler, 
+                     TLimitsPrintParameter parameter,
+                     size_t                terminate_delay_time)
+{
+    return SetCpuTimeLimit(max_cpu_time, terminate_delay_time, handler, parameter);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -872,8 +883,8 @@ void SleepSec(unsigned long sec, EInterruptOnSignal onsignal)
 
 #ifdef NCBI_OS_MSWIN
 
-static bool s_EnableSuppressSystemMessageBox = true;
-static bool s_DoneSuppressSystemMessageBox   = false;
+static bool s_EnableSuppressSystemMessageBox  = true;
+static bool s_DoneSuppressSystemMessageBox    = false;
 static bool s_SuppressedDebugSystemMessageBox = false;
 
 // Handler for "Unhandled" exceptions
