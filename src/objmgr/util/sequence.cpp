@@ -2693,7 +2693,18 @@ void CFastaOstream::x_PrintStringModIfNotDup(
         return;
     }
 
-    m_Out << " [" << key << '=' << value << ']';
+    m_Out << " [" << key << '=';
+    // The case of no quotes is much more common, so optimize for that
+    if( value.find_first_of("\"=") == string::npos ) {
+        // normal case: no weird characters in value name
+        m_Out << value ;
+    } else {
+        // rarer case: bad characters in value name, so
+        // we need surrounding double-quotes and we need to change
+        // double-quotes to single-quotes.
+        m_Out << '"' << NStr::Replace( value, "\"", "'") << '"';
+    }
+    m_Out << ']';
     *seen = true;
 }
 

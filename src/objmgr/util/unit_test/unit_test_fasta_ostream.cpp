@@ -525,7 +525,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
          static const char* sc_Expected = 
-">lcl|test-seq [organism=Sarcophilus harrisii] [strain=some strain] [gcode=1] [tech=physical map]\n"
+">lcl|test-seq [organism=\"Sarcophilus='harrisii\"] [strain=some strain] [gcode=1] [tech=physical map]\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
@@ -549,7 +549,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
         os.flush();
         string s = string(CNcbiOstrstreamToString(os));
         static const char* sc_Expected = 
-            ">lcl|test-seq [topology=circular] [organism=Sarcophilus harrisii] [strain=some strain] [gcode=1] [tech=physical map]\n"
+            ">lcl|test-seq [topology=circular] [organism=\"Sarcophilus='harrisii\"] [strain=some strain] [gcode=1] [tech=physical map]\n"
             "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
             "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
             "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
@@ -613,7 +613,7 @@ Seq-entry ::= seq {\
     title \"test sequence\" ,\
     source {\
       org {\
-        taxname \"Sarcophilus harrisii\" ,\
+        taxname \"Sarcophilus=\"\"harrisii\" ,\
         orgname {\
           mod {\
             { subtype pathovar, subname \"fake data\" } ,\
