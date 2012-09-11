@@ -76,6 +76,16 @@ void CSoapHttpClient::RegisterObjectType(TTypeInfoGetter type_getter)
     }
 }
 
+extern "C" {
+static EHTTP_HeaderParse x_ParseHttpHeader(const char* /*http_header*/,
+                                           void*       /*user_data*/,
+                                           int         /*server_error*/)
+{
+    return eHTTP_HeaderContinue;
+}
+}
+
+
 void CSoapHttpClient::Invoke(CSoapMessage& response,
                              const CSoapMessage& request,
                              CConstRef<CSoapFault>* fault /*=0*/,
@@ -96,8 +106,8 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
     CConn_HttpStream http(m_ServerUrl, 0,
         "SOAPAction: \"" + soap_action + "\"\r\n"
         + string(MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml,
-        eENCOD_None, content_type, sizeof(content_type) - 1)), 0, 0, 0, 0,
-        fHTTP_AutoReconnect | fHTTP_KeepHeader);
+        eENCOD_None, content_type, sizeof(content_type) - 1)),
+        x_ParseHttpHeader);
 
     auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_Xml, http));
     auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml, http));
