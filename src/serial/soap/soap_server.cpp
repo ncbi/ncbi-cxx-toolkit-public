@@ -210,6 +210,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
 #endif
 
     if (input_ok) {
+        input_ok = false;
         if (soap_in.GetFaultCode() == CSoapFault::eVersionMismatch) {
             x_FaultVersionMismatch(soap_out);
         } else if (soap_in.GetFaultCode() == CSoapFault::eMustUnderstand) {
@@ -219,6 +220,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
             const TListeners* listeners = x_FindListeners(soap_in);
 // process request
             if (listeners) {
+                input_ok = true;
                 TListeners::const_iterator it;
                 for (it = listeners->begin(); it != listeners->end(); ++it) {
                     const TWebMethod listener = *it;
@@ -235,6 +237,10 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     }
 
 // send it back
+    if (!input_ok) {
+        // http://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383529
+        response.SetStatus(500);
+    }
     response.WriteHeader();
     {
         auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_Xml,response.out()));
