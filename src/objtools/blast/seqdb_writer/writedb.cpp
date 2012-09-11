@@ -344,7 +344,7 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     };
     if (num_seqs == 0) {
         CDirEntry(fname).Remove();
-        string msg("No GIs in were found in BLAST database");
+        string msg("No GIs were found in BLAST database");
         NCBI_THROW(CSeqDBException, eArgErr, msg);
     }
 
@@ -393,7 +393,7 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     };
     if (num_seqs == 0) {
         CDirEntry(fname).Remove();
-        string msg("No GIs in were found in BLAST database");
+        string msg("No GIs were found in BLAST database");
         NCBI_THROW(CSeqDBException, eArgErr, msg);
     }
 
