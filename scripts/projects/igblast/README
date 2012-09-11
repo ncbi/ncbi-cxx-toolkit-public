@@ -29,13 +29,11 @@ c).  To query one or more human Ig sequences (contained in myseq) against custom
 Please be aware that you need to specify your own coding frame start and chain_type information (see details on optional files above) if your custom database has different sequence entries from NCBI database.  
 
 2).  Searching other databases in addition to germline database.
-Igblast allows you to search an additional database (such as NCBI IG V gene sequence database or NCBI nr database) as well as the germline database at the same time.  You'll get hits from germline sequences followed by hits from non-germline database.
+Igblast allows you to search an additional database (such as NCBI nr database) as well as the germline database at the same time.  You'll get hits from germline sequences followed by hits from non-germline database.
 You MUST use -db option to specify the non-germline database which may not contain any sequences identifiers that exist in germline databases.  Note this option is ONLY for non-germline database (germline databases MUST be used with -germline_db_V, -germline_db_D or -germline_db_J option).  
 
-a).  To query one or more human Ig sequences (contained in myseq) against NCBI  IG V gene sequence database:
-./igblastn -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query myseq -auxiliary_data optional_file/human_gl.aux  -show_translation -db database/igSeqNt -num_alignments 10 -outfmt 3
 
-b).  To query one or more human Ig sequences (contained in myseq) against NCBI  nr database:
+a).  To query one or more human Ig sequences (contained in myseq) against NCBI  nr database:
 ./igblastn -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query myseq -auxiliary_data optional_file/human_gl.aux  -show_translation -db nr -num_alignments 10 -remote -outfmt 3
 Note the -remote option used with this search...-remote option directs igblast to send nr database searching to NCBI server which typically is much faster.
  
@@ -51,4 +49,4 @@ Some examples:
  ./igblastp -germline_db_V database/human_gl_V -query myseq -outfmt 3
 
 2).  Searching other databases in addition to germline database.
- ./igblastp -germline_db_V database/human_gl_V -query myseq  -db database/igSeqProt -outfmt 3
+ ./igblastp -germline_db_V database/human_gl_V -query myseq  -db nr -outfmt 3
