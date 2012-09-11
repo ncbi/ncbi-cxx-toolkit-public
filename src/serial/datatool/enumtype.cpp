@@ -445,11 +445,15 @@ bool CIntEnumDataType::IsInteger(void) const
 
 string CIntEnumDataType::GetXmlValueName(const string& value) const
 {
-    TEnumValueType d = (TEnumValueType)NStr::StringToInt(value);
-    ITERATE(TValues, v, GetValues()) {
-        if (v->GetValue() == d) {
-            return v->GetName();
+    try {
+// in case of named integers, value can be a name, not an integer
+        TEnumValueType d = (TEnumValueType)NStr::StringToInt(value);
+        ITERATE(TValues, v, GetValues()) {
+            if (v->GetValue() == d) {
+                return v->GetName();
+            }
         }
+    } catch (...) {
     }
     return value;
 }
