@@ -66,6 +66,15 @@ private:
     void x_AddPDBBlock(CBioseqContext& ctx);
     string x_FormatDBSourceID(const CSeq_id_Handle& idh);
 
+    string x_FormatPDBSource(const CPDB_block& pdb);
+
+    // returns true if it was able to extract the info to create a link
+    bool x_ExtractLinkableSource(
+        const string & a_source,
+        string & out_prefix,
+        string & out_url,
+        string & out_url_suffix );
+
     // data
     TDBSource m_DBSource;
 };

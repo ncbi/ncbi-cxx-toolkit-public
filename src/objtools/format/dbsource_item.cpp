@@ -518,7 +518,7 @@ void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
     }}
     m_DBSource.push_back("class: " + pdb.GetClass());
     if (!pdb.GetSource().empty() ) {
-        m_DBSource.push_back("source: " + NStr::Join(pdb.GetSource(), ", "));
+        m_DBSource.push_back("source: " + x_FormatPDBSource(pdb));
     }
     if (pdb.CanGetExp_method()) {
         m_DBSource.push_back("Exp. method: " + pdb.GetExp_method());
@@ -527,7 +527,7 @@ void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
         const CPDB_replace& rep = pdb.GetReplace();
         if ( !rep.GetIds().empty() ) {
             m_DBSource.push_back
-                ("ids replaced: " + NStr::Join(pdb.GetSource(), ", "));
+                ("ids replaced: " + x_FormatPDBSource(pdb));
         }
         string s("replacement date: ");
         DateToString(rep.GetDate(), s);
@@ -630,6 +630,105 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
     }
 
     return kEmptyStr;
+}
+
+string CDBSourceItem::x_FormatPDBSource(const CPDB_block& pdb)
+{
+    if( ! pdb.IsSetSource() || pdb.GetSource().empty() ) {
+        return kEmptyStr;
+    }
+
+    const bool bIsHtml = ( GetContext() && GetContext()->Config().DoHTML() );
+
+    string answer;
+    const CPDB_block::TSource & source = pdb.GetSource();
+    ITERATE( CPDB_block::TSource, source_iter, source ) {
+        const string & a_source = *source_iter;
+        if( ! answer.empty() ) {
+            answer += ", ";
+        }
+
+        const static string kMmdbIdPrefix = "Mmdb_id:";
+        string prefix;
+        string url;
+        string url_suffix;
+        if( bIsHtml && x_ExtractLinkableSource(a_source, prefix, url, url_suffix) ) {
+            answer += prefix;
+            answer += " <a href=\"" + url + url_suffix + "\">";
+            answer += url_suffix;
+            answer += "</a>";
+        } else {
+            answer += a_source;
+        }
+    }
+
+    return answer;
+}
+
+bool CDBSourceItem::x_ExtractLinkableSource(
+    const string & a_source,
+    string & out_prefix,
+    string & out_url,
+    string & out_url_suffix )
+{
+    const static struct {
+        string m_prefix;
+        string m_url;
+        bool   m_must_be_all_digits;
+    } potentialPrefixes[] = {
+        { "Mmdb_id:", "http://www.ncbi.nlm.nih.gov/Structure/mmdb/mmdbsrv.cgi?uid=", true }
+    };
+
+    const static size_t numPotentialPrefixes = sizeof(potentialPrefixes)/sizeof(potentialPrefixes[0]);
+    
+    for( size_t idx = 0; idx < numPotentialPrefixes; ++idx ) {
+        const string & prefix = potentialPrefixes[idx].m_prefix;
+        const string & url = potentialPrefixes[idx].m_url;
+        const bool must_be_all_digits = potentialPrefixes[idx].m_must_be_all_digits;
+
+        if( a_source.length() <= prefix.length() ) {
+            continue;
+        }
+
+        if( ! NStr::StartsWith(a_source, prefix, NStr::eNocase) ) {
+            continue;
+        }
+
+        // first_non_space_pos points to first non-space character after the prefix.
+        string::size_type first_non_space_pos = prefix.length();
+        for( ; first_non_space_pos < a_source.length(); ++first_non_space_pos ) {
+            if( ! isspace(a_source[first_non_space_pos]) ) {
+                break;
+            }
+        }
+        if( first_non_space_pos >= a_source.length() ) {
+            continue;
+        }
+
+        // some require extra test to make sure they're all digits
+        if( must_be_all_digits ) {
+            bool non_digit_found = false;
+            string::size_type test_pos = first_non_space_pos;
+            for( ; test_pos < a_source.length(); ++test_pos ) {
+                if( ! isdigit(a_source[test_pos]) ) {
+                    non_digit_found = true;
+                    break;
+                }
+            }
+            if( non_digit_found ) {
+                continue;
+            }
+        }
+
+        // all tests passed, so prepare to give result to caller
+        out_prefix = prefix;
+        out_url = url;
+        out_url_suffix = NStr::TruncateSpaces(a_source.substr(first_non_space_pos));
+        return true;
+    }
+
+    // didn't find any matches
+    return false;
 }
 
 
