@@ -460,11 +460,13 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
         vector<SExon>::reverse_iterator left_exon_it(right_exon_it); 
         CSpliced_seg::TExons::reverse_iterator left_spl_exon_it(right_spl_exon_it);
 
-        bool donor_set = left_spl_exon_it != spliced_seg.SetExons().rend() && (*left_spl_exon_it)->IsSetDonor_after_exon();
-        bool acceptor_set = right_spl_exon_it != spliced_seg.SetExons().end() && (*right_spl_exon_it)->IsSetAcceptor_before_exon();
+        if (right_exon_it != exons.begin() && right_exon_it != exons.end()) {
+            bool donor_set = left_spl_exon_it != spliced_seg.SetExons().rend() && (*left_spl_exon_it)->IsSetDonor_after_exon();
+            bool acceptor_set = right_spl_exon_it != spliced_seg.SetExons().end() && (*right_spl_exon_it)->IsSetAcceptor_before_exon();
 
-        if(((donor_set && acceptor_set) || left_exon_it->genomic_to + 1 == right_exon_it->genomic_from) && left_exon_it->prod_to + 1 == right_exon_it->prod_from) {
-            continue;
+            if(((donor_set && acceptor_set) || left_exon_it->genomic_to + 1 == right_exon_it->genomic_from) && left_exon_it->prod_to + 1 == right_exon_it->prod_from) {
+                continue;
+            }
         }
 
         if (right_exon_it != exons.begin() && (right_exon_it != exons.end() || (m_flags & fTrimEnds)) &&
