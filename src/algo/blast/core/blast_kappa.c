@@ -1119,9 +1119,8 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
         seqData->length = translated_length;
 
         if ( !(KAPPA_TBLASTN_NO_SEG_SEQUENCE) ) {
-	  if ((!shouldTestIdentical) || 
-            (shouldTestIdentical && (compo_adjust_mode || !isSmithWaterman) &&
-	     (!s_TestNearIdentical(seqData, range->begin, queryData, q_range->begin, align)))) {
+          if (compo_adjust_mode)
+            if ( (!shouldTestIdentical) || (shouldTestIdentical && (!s_TestNearIdentical(seqData, range->begin, queryData, q_range->begin, align)))) {
             status = s_DoSegSequenceData(seqData, eBlastTypeTblastn);
             if (status != 0) {
                 free(seqData->buffer);
@@ -1198,10 +1197,10 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
                     (long) idx + 1);
         }
     }
+
     if ( !(KAPPA_BLASTP_NO_SEG_SEQUENCE) ) {
-      if ((!shouldTestIdentical) || 
-	  (shouldTestIdentical && (compo_adjust_mode || !isSmithWaterman) &&
-	   (!s_TestNearIdentical(seqData, 0, queryData, q_range->begin, align)))) {
+      if (compo_adjust_mode)
+        if ( (!shouldTestIdentical) || (shouldTestIdentical && (!s_TestNearIdentical(seqData, 0, queryData, q_range->begin, align)))) {
         status = s_DoSegSequenceData(seqData, eBlastTypeBlastp); 
       }
     }
