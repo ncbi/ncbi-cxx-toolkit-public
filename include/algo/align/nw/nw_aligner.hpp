@@ -101,6 +101,7 @@ public:
     void SetWs  (TScore value)  { m_Ws  = value; }   // gap extension
 
     // specify whether end gaps should be penalized
+    //'true' - do not penalize, 'false' - penalize
     void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
 
     // alignment pattern (guides)
