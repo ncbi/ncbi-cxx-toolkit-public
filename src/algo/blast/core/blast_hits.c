@@ -2946,6 +2946,10 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
       hit_list->low_score = 
          MIN(hsp_list->hsp_array[0]->score, hit_list->low_score);
    } else {
+      /* make sure the hsp_list is sorted.  We actually do not need to sort
+         the full list: all that we need is the best score.   However, the 
+         following code assumes hsp_list->hsp_array[0] has the best score. */
+      Blast_HSPListSortByEvalue(hsp_list);
       /* Compare e-values only with a certain precision */
       int evalue_order = s_FuzzyEvalueComp(hsp_list->best_evalue,
                                            hit_list->worst_evalue);
@@ -2960,6 +2964,11 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
          Blast_HSPListFree(hsp_list);
       } else {
          if (!hit_list->heapified) {
+            /* make sure all hsp_list is sorted */
+            int index;
+            for (index =0; index < hit_list->hsplist_count; index++) 
+                Blast_HSPListSortByEvalue(hit_list->hsplist_array[index]);
+     
             s_CreateHeap(hit_list->hsplist_array, hit_list->hsplist_count, 
                        sizeof(BlastHSPList*), s_EvalueCompareHSPLists);
             hit_list->heapified = TRUE;
