@@ -5492,7 +5492,10 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
                 str + " is not a legal exception explanation", feat);
         }
         if (feat.IsSetComment() && NStr::Find(feat.GetComment(), str) != string::npos) {
-            if (!NStr::EqualNocase(str, "ribosomal slippage") && !NStr::EqualNocase(str, "trans-splicing")) {
+            if (!NStr::EqualNocase(str, "ribosomal slippage") &&
+                !NStr::EqualNocase(str, "trans-splicing") &&
+                !NStr::EqualNocase(str, "RNA editing") &&
+                !NStr::EqualNocase(str, "artificial location")) {
                 redundant_with_comment = true;
             } else if (NStr::EqualNocase(feat.GetComment(), str)) {
                 redundant_with_comment = true;
