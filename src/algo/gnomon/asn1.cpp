@@ -522,6 +522,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
         vector<string> proteins;
         vector<string> mrnas;
         vector<string> ests;
+        vector<string> short_reads;
         vector<string> unknown;
 
         CSupportInfoSet support;
@@ -554,11 +555,13 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                 mrnas.push_back(accession);
             else if (type&CGeneModel::eEST)
                 ests.push_back(accession);
+            else if (type&CGeneModel::eSR)
+                short_reads.push_back(accession);
             else
                 unknown.push_back(accession);
         }
 
-        if (proteins.empty() && mrnas.empty() && ests.empty()) {
+        if (proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty()) {
             if ((model.Type()&CGeneModel::eChain)) {
                 support.clear();
                 support.insert(CSupportInfo(model.ID()));
@@ -577,10 +580,11 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                         CollectUserField(support_field, "Proteins", proteins);
                         CollectUserField(support_field, "mRNAs", mrnas);
                         CollectUserField(support_field, "ESTs", ests);
+                        CollectUserField(support_field, "RNASeq", short_reads);
                     }
                 }
             }
-            if (!(proteins.empty() && mrnas.empty() && ests.empty())) {
+            if (!(proteins.empty() && mrnas.empty() && ests.empty() && short_reads.empty())) {
                 cores = collected_cores;
                 unknown.clear();
             }
@@ -613,6 +617,12 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             support_field->AddField("ESTs",ests);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
             support_field->SetData().SetFields().back()->SetNum(ests.size());
+        }
+        if (!short_reads.empty()) {
+            sort(short_reads.begin(),short_reads.end());
+            support_field->AddField("RNASeq",short_reads);
+            // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
+            support_field->SetData().SetFields().back()->SetNum(short_reads.size());
         }
         if (!unknown.empty()) {
             support_field->AddField("unknown",unknown);
