@@ -377,7 +377,7 @@ static Uint1 x_MapData(SGiDataIndex* data_index)
 
 static void x_FlushData(SGiDataIndex* data_index)
 {
-    if (data_index->m_DataFile >= 0) {
+    if (data_index->m_DataFile >= 0 && !data_index->m_ReadOnlyMode) {
         if (data_index->m_DataCacheLen > 0)
             x_DumpDataCache(data_index);
         /* Synchronize memory mapped data with the file on disk. */
@@ -388,7 +388,7 @@ static void x_FlushData(SGiDataIndex* data_index)
 static void x_FlushIndex(SGiDataIndex* data_index)
 {
     /* Flush index file */
-    if (data_index->m_GiIndexFile >= 0) {
+    if (data_index->m_GiIndexFile >= 0 && !data_index->m_ReadOnlyMode) {
         if (data_index->m_IndexCacheLen > 0)
             x_DumpIndexCache(data_index);
         /* Synchronize memory mapped data with the file on disk. */
@@ -1181,15 +1181,20 @@ int s_Encode3Plus5Accession(char* buf, const char* accession, int suffix)
 }
 
 static INLINE
-void s_Decode3Plus5Accession(const char* buf, char* prefix, 
+int s_Decode3Plus5Accession(const char* buf, char* prefix, 
                              int* prefix_length, int* suffix)
 {
-    prefix[0] = ((buf[0]&0xff)>>3) + 'A' - 1;
-    prefix[1] = (((buf[0]&0x07)<<2) | ((buf[1]&0xff)>>6)) + 'A' - 1;
-    prefix[2] = (((buf[1]&0xff)>>1) & 0x1f) + 'A' - 1;
+    if ((prefix[0] = ((buf[0]&0xff)>>3) + 'A' - 1) > 'Z')
+        return -1;
+    if ((prefix[1] = (((buf[0]&0x07)<<2) | ((buf[1]&0xff)>>6)) + 'A' - 1) > 'Z')
+        return -1;
+    if ((prefix[2] = (((buf[1]&0xff)>>1) & 0x1f) + 'A' - 1) > 'Z')
+        return -1;
     *prefix_length = 3;
     *suffix = ((int)(buf[1] & 0x01)<<16) | (((int)(buf[2]&0xff)<<8) & 0xff00) |
                ((int)(buf[3] & 0xff));
+    if (*suffix >= 100000)
+        return -1;
 }
 
 static INLINE
@@ -1232,19 +1237,22 @@ int s_Encode2LetterAccession(char* buf, const char* accession, int suffix,
 }
 
 static INLINE
-void s_Decode2LetterAccession(const char* buf, Uint1 control_byte, char* prefix,
+int s_Decode2LetterAccession(const char* buf, Uint1 control_byte, char* prefix,
                              int* prefix_length, int* suffix)
 {
     Uint1 is_refseq = ((control_byte & (1<<5)) != 0);
     Uint1 large_suffix = ((control_byte & (1<<6)) != 0);
     Uint1 byte;
 
-    prefix[0] = ((buf[0]&0xff)>>3) + 'A' - 1;
+    if ((prefix[0] = ((buf[0]&0xff)>>3) + 'A' - 1) > 'Z')
+        return -1;
+
     byte = ((buf[0]&0x07)<<2) | ((buf[1]&0xff)>>6);
     if (byte == 0) {
         *prefix_length = 1;
     } else {
-        prefix[1] = byte + 'A' - 1;
+        if ((prefix[1] = byte + 'A' - 1) > 'Z')
+            return -1;
         if (is_refseq) {
             prefix[2] = '_';
             *prefix_length = 3;
@@ -1296,8 +1304,8 @@ int s_Encode4Plus9Accession(char* buf, const char* accession, int suffix)
 }
 
 static INLINE
-void s_Decode4Plus9Accession(const char* buf, Uint1 control_byte, char* prefix,
-                             int* prefix_length, int* suffix)
+int s_Decode4Plus9Accession(const char* buf, Uint1 control_byte, char* prefix,
+                            int* prefix_length, int* suffix)
 {
     int pos = 0;
     if ((control_byte & (1<<5)) != 0) {
@@ -1306,10 +1314,14 @@ void s_Decode4Plus9Accession(const char* buf, Uint1 control_byte, char* prefix,
         pos = 3;
     }
 
-    prefix[pos] = ((buf[0]&0xff)>>3) + 'A' - 1; 
-    prefix[pos+1] = (((buf[0]&0x07)<<2) | ((buf[1]&0xff)>>6)) + 'A' - 1;
-    prefix[pos+2] = (((buf[1]&0xff)>>1) & 0x1f) + 'A' - 1;
-    prefix[pos+3] = (((buf[1]&0x01)<<4) | ((buf[2]&0xff)>>4)) + 'A' - 1;
+    if ((prefix[pos] = ((buf[0]&0xff)>>3) + 'A' - 1) > 'Z')
+        return -1; 
+    if ((prefix[pos+1] = (((buf[0]&0x07)<<2) | ((buf[1]&0xff)>>6)) + 'A' - 1) > 'Z')
+        return -1;
+    if ((prefix[pos+2] = (((buf[1]&0xff)>>1) & 0x1f) + 'A' - 1) > 'Z')
+        return -1;
+    if ((prefix[pos+3] = (((buf[1]&0x01)<<4) | ((buf[2]&0xff)>>4)) + 'A' - 1) > 'Z')
+        return -1;
     *prefix_length = pos + 4;
     *suffix = ((int)(buf[2]&0x0f)<<24) | ((int)(buf[3] & 0xff)<<16) | 
         ((int)(buf[4]&0xff)<<8) | ((int)(buf[5]&0xff));
@@ -1472,29 +1484,40 @@ s_DecodeGiAccession(const char* inbuf, char* acc, int acc_len)
     }
 
     /* Retrieve version */
-    if (control_byte & (1<<3)) {
+    if (control_byte & (1<<3))
         buf += s_DecodeInt2(buf, &version);
-    }
 
     /* Retrieve integer accession suffix */
     if (suffix_length > 0) {
         int suffix = 0;
         int prefix_length = 0;
         if ((control_byte & (1<<4)) != 0) {
-            s_Decode2LetterAccession(buf, control_byte, acc_buf, &prefix_length,
-                                     &suffix); 
+            retval = s_Decode2LetterAccession(buf, control_byte, acc_buf,
+                                              &prefix_length, &suffix);
         } else if ((control_byte & 0xf0) == (1<<5)) {
-            s_Decode3Plus5Accession(buf, acc_buf, &prefix_length, &suffix);
+            retval = s_Decode3Plus5Accession(buf, acc_buf, &prefix_length,
+                                             &suffix);
         } else if ((control_byte & (1<<6)) != 0) {
-            s_Decode4Plus9Accession(buf, control_byte, acc_buf, &prefix_length,
-                                    &suffix);
+            retval = s_Decode4Plus9Accession(buf, control_byte, acc_buf,
+                                             &prefix_length, &suffix);
         } else {
-            prefix_length = strlen(buf);
-            strncpy(acc_buf, buf, prefix_length);
-            buf += prefix_length + 1;
-            buf += s_DecodeInt4(buf, &suffix);
+            int version_len = 0;
+            if (version > 0) {
+                char version_buf[6];
+                sprintf(version_buf, "%d", version);
+                version_len = strlen(version_buf) + 1; /* including '.' */
+            }
+            if ((prefix_length = strlen(buf)) <=
+                MAX_ACCESSION_LENGTH - suffix_length - version_len - 1) {
+                strncpy(acc_buf, buf, prefix_length);
+                buf += prefix_length + 1;
+                buf += s_DecodeInt4(buf, &suffix);
+            } else
+                retval = -1;
         }
 
+        if (retval < 0)
+            return retval;
         sprintf(acc_buf+prefix_length, "%.*d", suffix_length+2, suffix);
     } else {
         sprintf(acc_buf, "%s", buf);
@@ -1589,7 +1612,12 @@ int GICache_GetAccession(int gi, char* acc, int acc_len)
     if(!gi_cache) return 0;
     const char* gi_data = GiDataIndex_GetData(gi_cache, gi);
     if (gi_data) {
-        retval = s_DecodeGiAccession(gi_data, acc, acc_len);
+        if ((retval = s_DecodeGiAccession(gi_data, acc, acc_len)) < 0) {
+            /* If returned "accession" is invalid, force a remap and return empty
+               string */
+            acc[0] = NULLB;
+            gi_cache->m_NeedRemap = 1;
+        }
     } else {
         acc[0] = NULLB;
     }
