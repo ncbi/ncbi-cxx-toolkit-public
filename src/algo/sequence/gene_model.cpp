@@ -301,6 +301,12 @@ void CFeatureGenerator::ConvertLocToAnnot(
     fake_align.SetSegs().SetSpliced().SetProduct_length(product_pos);
 
     CSeq_loc cdregion_loc(*rna_id, 0, product_pos-1, eNa_strand_plus);
+    if (loc.IsPartialStart(eExtreme_Biological)) {
+        cdregion_loc.SetPartialStart(true, eExtreme_Biological);
+    }
+    if (loc.IsPartialStop(eExtreme_Biological)) {
+        cdregion_loc.SetPartialStop(true, eExtreme_Biological);
+    }
     CSeq_feat cdregion;
     cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
     if (org.IsSetGcode()) {
