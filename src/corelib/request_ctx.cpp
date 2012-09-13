@@ -230,7 +230,7 @@ bool CRequestContext::IsValidSessionID(const string& session_id)
             if (NStr::StringToUInt8(uid, NStr::fConvErr_NoThrow, 16) == 0  &&  errno !=0) {
                 return false;
             }
-            CTempString rqid(session_id, 18, session_id.size() - 20);
+            CTempString rqid(session_id, 17, session_id.size() - 20);
             if (NStr::StringToUInt(rqid, NStr::fConvErr_NoThrow) == 0  &&  errno != 0) {
                 return false;
             }

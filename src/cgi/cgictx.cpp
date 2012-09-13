@@ -170,7 +170,7 @@ void CCgiContext::x_InitSession(CCgiRequest::TFlags flags)
             ctx.SetSessionID(track_cookie_value);
             if (ctx.GetSessionID() != track_cookie_value) {
                 // Bad session-id was ignored
-                bad_tracking_cookie = true;
+                track_cookie_value = ctx.SetSessionID();
             }
         }
         catch (CRequestContextException& e) {
