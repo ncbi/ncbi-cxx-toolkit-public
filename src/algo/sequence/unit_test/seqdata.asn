@@ -3229,7 +3229,7 @@ B9B66B88D7A38E63A38E2FF179A6DE867A1DF6F7D279DEF330EBA237B967A2F5D2F12488B5348D
       inst {
         repr delta,
         mol aa,
-        length 564,
+        length 563,
         ext delta {
           literal {
             length 535,
@@ -3243,7 +3243,7 @@ DRLMELHFKYLEAVQLADKRIEGEKHDMVRRGEILDDAMDDEFYLRRLDAGLFVLQLLCYIMVEICAAGVPQLQQRVH
 QILNLRGGSVKVVRHIMRX"
           },
           literal {
-            length 29
+            length 28
           }
         }
       }
@@ -15351,7 +15351,7 @@ Bioseq-set ::= {
       inst {
         repr delta,
         mol aa,
-        length 189,
+        length 188,
         ext delta {
           literal {
             length 28
@@ -15362,7 +15362,7 @@ Bioseq-set ::= {
 VQGLTQRGVRMEFVKEGLKFTGEDSPMANLMLSVMGAFAEFERALIRERQREGIV"
           },
           literal {
-            length 58
+            length 57
           }
         }
       }

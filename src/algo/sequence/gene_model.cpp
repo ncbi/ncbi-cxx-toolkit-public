@@ -1277,11 +1277,20 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
     string strprot;
     CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, true, false);
+
+    CRef<CSeq_loc> cdsloc_on_mrna(new CSeq_loc);
+    cdsloc_on_mrna->Assign(cds_on_mrna.GetLocation());
+
     // Remove final stop codon from sequence
-    if (!cds_loc->IsPartialStop(eExtreme_Biological) &&
+    if (!cds_on_mrna.GetLocation().IsPartialStop(eExtreme_Biological) &&
         (strprot[strprot.size()-1] == '*' ||
          strprot[strprot.size()-1] == 'X')) {
         strprot.resize(strprot.size()-1);
+
+        CRef<CSeq_loc> stop_codon_on_mrna = cdsloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+        stop_codon_on_mrna->SetInt().SetFrom(stop_codon_on_mrna->GetStop(eExtreme_Biological)-2);
+
+        cdsloc_on_mrna = cdsloc_on_mrna->Subtract(*stop_codon_on_mrna, 0, NULL, NULL);
     }
 
     /// Repair any internal stops with Xs
@@ -1292,7 +1301,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     seq_inst.SetLength(strprot.size());
 
         seq_inst.SetRepr(CSeq_inst::eRepr_delta);
-        CSeqVector seqv(cds_on_mrna.GetLocation(), m_scope, CBioseq_Handle::eCoding_Ncbi);
+        CSeqVector seqv(*cdsloc_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
         CConstRef<CSeqMap> map;
         map.Reset(&seqv.GetSeqMap());
 
