@@ -1277,10 +1277,13 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
     string strprot;
     CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, true, false);
-    /// Remove final stop codon from sequence
-    if (strprot[strprot.size()-1] == '*') {
+    // Remove final stop codon from sequence
+    if (!cds_loc->IsPartialStop(eExtreme_Biological) &&
+        (strprot[strprot.size()-1] == '*' ||
+         strprot[strprot.size()-1] == 'X')) {
         strprot.resize(strprot.size()-1);
     }
+
     /// Repair any internal stops with Xs
     NStr::ReplaceInPlace(strprot, "*", "X");
 
