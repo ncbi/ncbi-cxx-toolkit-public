@@ -472,6 +472,10 @@ void CWig2tableApplication::Init(void)
                             "Assumed value in gaps",
                             CArgDescriptions::eDouble, "0");
 
+    arg_desc->AddOptionalKey("name", "Name",
+                             "Track name or graph title",
+                             CArgDescriptions::eString);
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -790,6 +794,9 @@ CRef<CSeq_annot> CWig2tableApplication::MakeAnnot(void)
         CRef<CAnnotdesc> desc(new CAnnotdesc);
         desc->SetName(m_TrackName);
         annot->SetDesc().Set().push_back(desc);
+    }
+    if ( true ) {
+        m_TrackParams["track type"] = "graph";
     }
     if ( !m_TrackParams.empty() ) {
         CRef<CAnnotdesc> desc(new CAnnotdesc);
@@ -1116,7 +1123,6 @@ void CWig2tableApplication::ReadTrack(void)
 {
     DumpAnnot();
 
-    m_TrackName = "User Track";
     m_TrackDescription.clear();
     m_TrackTypeValue.clear();
     m_TrackType = eTrackType_invalid;
@@ -1312,6 +1318,13 @@ int CWig2tableApplication::Run(void)
     m_Output.reset
         (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                               args["output"].AsOutputFile()));
+
+    if ( args["name"] ) {
+        m_TrackName = args["name"].AsString();
+    }
+    else if ( m_TrackName.empty() ) {
+        m_TrackName = "User Track";
+    }
 
     while ( x_GetLine() ) {
         if ( x_CommentLine() ) {
