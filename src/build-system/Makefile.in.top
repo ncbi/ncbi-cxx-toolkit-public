@@ -49,11 +49,11 @@ install-toolkit:
 ## set up appropriate build and status directories somewhere under $(libdir)?
 
 install-gbench:
-	$(top_srcdir)/src/app/gbench/gbench_install/gbench_install.sh --copy \
-	    $(build_root) $(exec_prefix)
+	cd $(builddir)/app/gbench/gbench_install  && \
+            make install_dir=$(exec_prefix)
 
 install:
-	if test -f $(lbindir)/gbench; then \
+	if test -d $(lbindir)/gbench; then \
 	    $(MAKE) $(MFLAGS) install-gbench; \
 	else \
 	    $(MAKE) $(MFLAGS) install-toolkit; \
