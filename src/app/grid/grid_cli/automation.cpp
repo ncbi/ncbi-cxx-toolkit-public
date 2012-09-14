@@ -318,6 +318,10 @@ struct SNetScheduleServerAutomationObject :
     {
     }
 
+    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
+            const string& service_name, const string& queue_name,
+            const string& client_name);
+
     virtual const string& GetType() const;
 
     virtual const void* GetImplPtr() const;
@@ -327,6 +331,28 @@ struct SNetScheduleServerAutomationObject :
 
     CNetServer m_NetServer;
 };
+
+SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
+        CAutomationProc* automation_proc,
+        const string& service_name,
+        const string& queue_name,
+        const string& client_name) :
+    SNetScheduleServiceAutomationObject(automation_proc,
+            CNetScheduleAPI(service_name, client_name, queue_name))
+{
+    CNetService service(m_NetScheduleAPI.GetService());
+
+    if (service.IsLoadBalanced()) {
+        NCBI_THROW(CAutomationException, eCommandProcessingError,
+                "NetScheduleServer constructor: "
+                "'server_address' must be a host:port combination");
+    }
+
+    m_NetServer = service.Iterate().GetServer();
+
+    m_NetScheduleAPI.SetEventHandler(
+            new CEventHandler(automation_proc, m_NetScheduleAPI));
+}
 
 const string& SNetScheduleServerAutomationObject::GetType() const
 {
@@ -537,7 +563,9 @@ void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
 bool SNetScheduleServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    if (method == "set_node_session") {
+    if (method == "get_name")
+        reply.PushString(m_NetScheduleAPI.GetService().GetServiceName());
+    else if (method == "set_node_session") {
         CJsonNode arg(arg_array.NextNode());
         if (!arg.IsNull())
             m_NetScheduleAPI.SetClientNode(arg_array.GetString(arg));
@@ -662,13 +690,16 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                             service_name, client_name);
             new_object.Reset(new_object_ptr);
             impl_ptr = new_object_ptr->m_NetCacheAPI;
-        } else if (class_name == "nssvc") {
-            string service_name(arg_array.NextString());
-            string queue_name(arg_array.NextString());
-            string client_name(arg_array.NextString());
+        } else if (class_name == "nssvc" || class_name == "nssrv") {
+            string service_name(arg_array.NextString(kEmptyStr));
+            string queue_name(arg_array.NextString(kEmptyStr));
+            string client_name(arg_array.NextString(kEmptyStr));
             SNetScheduleServiceAutomationObject* new_object_ptr =
-                new SNetScheduleServiceAutomationObject(this,
-                        service_name, queue_name, client_name);
+                    class_name == "nssvc" ?
+                            new SNetScheduleServiceAutomationObject(this,
+                                service_name, queue_name, client_name) :
+                            new SNetScheduleServerAutomationObject(this,
+                                service_name, queue_name, client_name);
             new_object.Reset(new_object_ptr);
             impl_ptr = new_object_ptr->m_NetScheduleAPI;
         } else {
