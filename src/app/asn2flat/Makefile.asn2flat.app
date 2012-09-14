@@ -8,7 +8,7 @@
 
 APP = asn2flat
 SRC = asn2flat
-LIB = xformat xobjutil submit gbseq xalnmgr xcleanup xregexp entrez2cli entrez2 tables $(OBJMGR_LIBS) $(PCRE_LIB)
+LIB = $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup xregexp entrez2cli entrez2 tables $(OBJMGR_LIBS) $(PCRE_LIB)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 

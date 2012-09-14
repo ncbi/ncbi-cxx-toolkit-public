@@ -8,7 +8,7 @@
 
 APP = asn2gff
 SRC = asn2gff
-LIB = xformat xobjutil submit gbseq xalnmgr entrez2cli entrez2 tables $(OBJMGR_LIBS)
+LIB = $(XFORMAT_LIBS) xobjutil xalnmgr entrez2cli entrez2 tables $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

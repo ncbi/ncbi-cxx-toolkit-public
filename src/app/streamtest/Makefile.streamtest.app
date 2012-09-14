@@ -8,7 +8,7 @@
 
 APP = streamtest
 SRC = streamtest
-LIB = prosplign xalgoalignutil xalgoseq xmlwrapp xvalidate xcleanup xobjwrite xformat xalnmgr \
+LIB = prosplign xalgoalignutil xalgoseq xmlwrapp xvalidate xcleanup xobjwrite $(XFORMAT_LIBS) xalnmgr \
       xobjutil valid valerr taxon1 gbseq submit taxon3 gbseq xqueryparse xregexp tables \
       $(PCRE_LIB) $(OBJMGR_LIBS)
 
