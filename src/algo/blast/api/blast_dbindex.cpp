@@ -825,7 +825,7 @@ void CIndexedDb_New::UpdateIndex( Int4 oid, Int4 * vol_idx_p )
     if( !find_volume ) return;
     TVolList::const_iterator vi( FindVolume( oid ) );
     new_vol_idx = vi - volumes_.begin();
-    if( !vi->has_index ) return;
+    if( !vi->has_index ) { vol_idx = new_vol_idx; return; }
     CFastMutexGuard lock( mtx_ );
     SVolResults & res( results_holder_[new_vol_idx] );
     Int4 min_vol_idx( vol_idx == -1 ? 0 : vol_idx );
