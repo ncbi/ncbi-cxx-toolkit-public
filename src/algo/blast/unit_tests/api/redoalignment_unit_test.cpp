@@ -401,6 +401,8 @@ void CRedoAlignmentTestFixture::
                 << actual_hsp->bit_score << endl;
         cout << index << ": evalue=" 
                 << actual_hsp->evalue << endl;
+        cout << index << ": num_ident=" 
+                << actual_hsp->num_ident << endl;
 #endif
         BOOST_REQUIRE_EQUAL(expected_hsp->query.offset, 
                                 actual_hsp->query.offset);
@@ -684,7 +686,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsBadlyBiasedSequence) {
 BOOST_AUTO_TEST_CASE(testRedoAlignmentWithSW) {
     const EBlastProgramType kProgram = eBlastTypeBlastp;
     const int k_num_hsps_start = 3;
-    const int k_num_hsps_end = 4;
+    const int k_num_hsps_end = 5;
     CSeq_id query_id("gi|3091");
     CSeq_id subj_id("gi|402871");
 
@@ -692,31 +694,31 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithSW) {
     // expected to be dropped (please note that the first 2 hsps we
     // constructed using blastall (thus filtering on), but the sequence
     // passed to RedoAlignmentCore was unfiltered (default for blastpgp)
-    const int query_offset[k_num_hsps_start] = { 28, 46, 463};
-    const int query_end[k_num_hsps_start] = { 485, 331, 488};
-    const int subject_offset[k_num_hsps_start] = { 36, 327, 320};
-    const int subject_end[k_num_hsps_start] = { 512, 604, 345};
-    const int score[k_num_hsps_start] = { 554, 280, 28};
-    const int query_gapped_start[k_num_hsps_start] = { 431, 186, 480};
-    const int subject_gapped_start[k_num_hsps_start] = { 458, 458, 337};
+    const int query_offset[k_num_hsps_start]         = { 28, 46, 463 };
+    const int query_end[k_num_hsps_start]            = { 485, 331, 488 };
+    const int subject_offset[k_num_hsps_start]       = { 36, 327, 320 };
+    const int subject_end[k_num_hsps_start]          = { 512, 604, 345 };
+    const int score[k_num_hsps_start]                = { 554, 280, 28 };
+    const int query_gapped_start[k_num_hsps_start]   = { 431, 186, 480 };
+    const int subject_gapped_start[k_num_hsps_start] = { 458, 458, 337 };
 
     // This is freed by the HSPStream interface
-    BlastHSPList* init_hsp_list = 
+    BlastHSPList* init_hsp_list =
         setUpHSPList(k_num_hsps_start,
                                                 query_offset, query_end,
                                                 subject_offset, subject_end,
-                                                query_gapped_start, 
+                                                query_gapped_start,
                                                 subject_gapped_start,
                                                 score);
 
-    const int query_offset_final[k_num_hsps_end] =   { 2, 250, 67, 2 };
-    const int query_end_final[k_num_hsps_end] =      { 485, 331, 86, 24};
-    const int subject_offset_final[k_num_hsps_end] = { 9, 523, 585, 570};
-    const int subject_end_final[k_num_hsps_end] =    { 512, 604, 604, 592};
-    const int score_final[k_num_hsps_end] =          { 583, 39, 33, 32};
-    const double evalue_final[k_num_hsps_end] =      { 3.2776e-70, 0.387, 
-                                                       1.9988, 2.6276};
-    const int num_idents_final[k_num_hsps_end] = { 171, 22, 8, 7 };
+    const int query_offset_final[k_num_hsps_end]   = { 2, 250, 494, 67, 2 };
+    const int query_end_final[k_num_hsps_end]      = { 485, 331, 530, 86, 24 };
+    const int subject_offset_final[k_num_hsps_end] = { 9, 523, 261, 585, 570 };
+    const int subject_end_final[k_num_hsps_end]    = { 512, 604, 297, 604, 592 };    
+    const int score_final[k_num_hsps_end]          = { 591, 39, 37, 33, 32 };
+    const double evalue_final[k_num_hsps_end]      = { 2.4581e-71, 0.387,      
+                                                       0.6692, 1.9988, 2.6256 };
+    const int num_idents_final[k_num_hsps_end]     = { 172, 22, 9, 8, 7 };
 
     BlastHSPList* ending_hsp_list = 
         setUpHSPList(k_num_hsps_end,
