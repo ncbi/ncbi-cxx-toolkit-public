@@ -337,9 +337,10 @@ SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
         const string& service_name,
         const string& queue_name,
         const string& client_name) :
-    SNetScheduleServiceAutomationObject(automation_proc,
-            CNetScheduleAPI(service_name, client_name, queue_name))
+    SNetScheduleServiceAutomationObject(automation_proc, NULL)
 {
+    m_NetScheduleAPI = CNetScheduleAPI(service_name, client_name, queue_name);
+
     CNetService service(m_NetScheduleAPI.GetService());
 
     if (service.IsLoadBalanced()) {
