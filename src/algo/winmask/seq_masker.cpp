@@ -143,11 +143,16 @@ CSeqMasker::DoMask(
     ustat->total_ = 0;
     auto_ptr<TMaskList> mask(new TMaskList);
 
+    /* This message is confusing. Particularly because DUST later
+       can still mask part of the sequence.
+    */
+    /*
     if( window_size > data.size() )
     {
         ERR_POST( Warning 
                   << "length of data is shorter than the window size" );
     }
+    */
 
     Uint4 cutoff_score = ustat->get_threshold();
     Uint4 textend = ustat->get_textend();
