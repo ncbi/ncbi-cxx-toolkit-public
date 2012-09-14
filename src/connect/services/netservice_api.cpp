@@ -248,6 +248,34 @@ void SNetServiceImpl::Construct()
     }
 }
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+void CNetService::AllowXSiteConnections()
+{
+    m_Impl->AllowXSiteConnections();
+}
+
+void SNetServiceImpl::AllowXSiteConnections()
+{
+    m_AllowXSiteConnections = true;
+
+    SConnNetInfo* net_info = ConnNetInfo_Create(SNetServerImpl::kXSiteFwd);
+
+    SSERV_Info* sinfo = SERV_GetInfo(SNetServerImpl::kXSiteFwd,
+            fSERV_Standalone, SERV_LOCALHOST, net_info);
+
+    ConnNetInfo_Destroy(net_info);
+
+    if (sinfo == NULL) {
+        NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
+            "Cannot find cross-site proxy");
+    }
+
+    m_ColoNetwork = SOCK_NetToHostLong(sinfo->host) >> 16;
+
+    free(sinfo);
+}
+#endif
+
 void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     CConfig* config, const string& config_section,
     const char* const* default_config_sections)
@@ -341,27 +369,9 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        m_AllowXSiteConnections = config->GetBool(section,
-                "allow_xsite_conn", CConfig::eErr_NoThrow, false);
-
-        if (m_AllowXSiteConnections) {
-            SConnNetInfo* net_info = ConnNetInfo_Create(
-                    SNetServerImpl::kXSiteFwd);
-
-            SSERV_Info* sinfo = SERV_GetInfo(SNetServerImpl::kXSiteFwd,
-                    fSERV_Standalone, SERV_LOCALHOST, net_info);
-
-            ConnNetInfo_Destroy(net_info);
-
-            if (sinfo == NULL) {
-                NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-                    "Cannot find cross-site proxy");
-            }
-
-            m_ColoNetwork = SOCK_NetToHostLong(sinfo->host) >> 16;
-
-            free(sinfo);
-        }
+        if (config->GetBool(section, "allow_xsite_conn",
+                CConfig::eErr_NoThrow, false))
+            AllowXSiteConnections();
 #endif
 
         m_UseSmartRetries = config->GetBool(section,

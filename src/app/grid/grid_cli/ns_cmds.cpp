@@ -44,12 +44,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionSet(eAllowXSiteConn))
-        CNcbiApplication::Instance()->GetConfig().Set(
-                "netschedule_api", "allow_xsite_conn", "true");
-#endif
-
     string queue(!m_Opts.queue.empty() ? m_Opts.queue : "noname");
 
     if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
@@ -74,6 +68,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         key.host.append(NStr::NumericToString(key.port));
         m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
     }
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    if (IsOptionSet(eAllowXSiteConn))
+        m_NetScheduleAPI.GetService().AllowXSiteConnections();
+#endif
 
     if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();

@@ -115,6 +115,10 @@ class NCBI_XCONNECT_EXPORT CNetService
     void PrintCmdOutput(const string& cmd,
         CNcbiOstream& output_stream,
         ECmdOutputStyle output_style);
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    void AllowXSiteConnections();
+#endif
 };
 
 END_NCBI_SCOPE

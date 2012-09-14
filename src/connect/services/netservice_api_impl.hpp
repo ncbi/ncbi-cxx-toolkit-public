@@ -275,6 +275,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    void AllowXSiteConnections();
+
     bool IsColoAddr(unsigned int ip) const
     {
         return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork;

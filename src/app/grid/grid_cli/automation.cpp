@@ -90,10 +90,9 @@ public:
     const CJsonNode::TArray& NextArray() {return GetArray(NextNode());}
 
     void UpdateLocation(const string& location);
-
-private:
     void Exception(const char* what);
 
+private:
     const CJsonNode::TArray& m_Args;
     CJsonNode::TArray::const_iterator m_Position;
     string m_Location;
@@ -209,7 +208,7 @@ public:
 
     virtual const void* GetImplPtr() const = 0;
 
-    virtual void Call(const string& method,
+    virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply) = 0;
 
 protected:
@@ -231,7 +230,7 @@ struct SNetCacheAutomationObject : public CAutomationObject
 
     virtual const void* GetImplPtr() const;
 
-    virtual void Call(const string& method,
+    virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
     CNetCacheAPI m_NetCacheAPI;
@@ -249,53 +248,7 @@ const void* SNetCacheAutomationObject::GetImplPtr() const
     return m_NetCacheAPI;
 }
 
-struct SNetScheduleBaseAutomationObject : public CAutomationObject
-{
-    SNetScheduleBaseAutomationObject(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api) :
-        CAutomationObject(automation_proc),
-        m_NetScheduleAPI(ns_api)
-    {
-    }
-
-    CNetScheduleAPI m_NetScheduleAPI;
-};
-
-struct SNetScheduleServerAutomationObject :
-        public SNetScheduleBaseAutomationObject
-{
-    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api, CNetServer::TInstance server) :
-        SNetScheduleBaseAutomationObject(automation_proc,
-                ns_api.GetServer(server)),
-        m_NetServer(server)
-    {
-    }
-
-    virtual const string& GetType() const;
-
-    virtual const void* GetImplPtr() const;
-
-    virtual void Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
-
-    CNetServer m_NetServer;
-};
-
-const string& SNetScheduleServerAutomationObject::GetType() const
-{
-    static const string object_type("nssrv");
-
-    return object_type;
-}
-
-const void* SNetScheduleServerAutomationObject::GetImplPtr() const
-{
-    return m_NetServer;
-}
-
-struct SNetScheduleServiceAutomationObject :
-        public SNetScheduleBaseAutomationObject
+struct SNetScheduleServiceAutomationObject : public CAutomationObject
 {
     class CEventHandler : public CNetScheduleAPI::IEventHandler
     {
@@ -317,8 +270,8 @@ struct SNetScheduleServiceAutomationObject :
     SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
             const string& service_name, const string& queue_name,
             const string& client_name) :
-        SNetScheduleBaseAutomationObject(automation_proc,
-                CNetScheduleAPI(service_name, client_name, queue_name))
+        CAutomationObject(automation_proc),
+        m_NetScheduleAPI(service_name, client_name, queue_name)
     {
         m_NetScheduleAPI.SetEventHandler(
                 new CEventHandler(automation_proc, m_NetScheduleAPI));
@@ -328,8 +281,18 @@ struct SNetScheduleServiceAutomationObject :
 
     virtual const void* GetImplPtr() const;
 
-    virtual void Call(const string& method,
+    virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
+
+    CNetScheduleAPI m_NetScheduleAPI;
+
+protected:
+    SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
+            CNetScheduleAPI ns_api) :
+        CAutomationObject(automation_proc),
+        m_NetScheduleAPI(ns_api)
+    {
+    }
 };
 
 const string& SNetScheduleServiceAutomationObject::GetType() const
@@ -342,6 +305,39 @@ const string& SNetScheduleServiceAutomationObject::GetType() const
 const void* SNetScheduleServiceAutomationObject::GetImplPtr() const
 {
     return m_NetScheduleAPI;
+}
+
+struct SNetScheduleServerAutomationObject :
+        public SNetScheduleServiceAutomationObject
+{
+    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
+            CNetScheduleAPI ns_api, CNetServer::TInstance server) :
+        SNetScheduleServiceAutomationObject(automation_proc,
+                ns_api.GetServer(server)),
+        m_NetServer(server)
+    {
+    }
+
+    virtual const string& GetType() const;
+
+    virtual const void* GetImplPtr() const;
+
+    virtual bool Call(const string& method,
+            CArgArray& arg_array, CJsonNode& reply);
+
+    CNetServer m_NetServer;
+};
+
+const string& SNetScheduleServerAutomationObject::GetType() const
+{
+    static const string object_type("nssrv");
+
+    return object_type;
+}
+
+const void* SNetScheduleServerAutomationObject::GetImplPtr() const
+{
+    return m_NetServer;
 }
 
 typedef CRef<CAutomationObject> TAutomationObjectRef;
@@ -417,10 +413,10 @@ TAutomationObjectRef CAutomationProc::ReturnNetScheduleServerObject(
     return object;
 }
 
-void SNetCacheAutomationObject::Call(const string& method,
+bool SNetCacheAutomationObject::Call(const string& method,
         CArgArray& /*arg_array*/, CJsonNode& reply)
 {
-    reply.PushString(method);
+    return false;
 }
 
 static void ExtractVectorOfStrings(CArgArray& arg_array,
@@ -433,7 +429,7 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
         }
 }
 
-void SNetScheduleServerAutomationObject::Call(const string& method,
+bool SNetScheduleServerAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "get_address") {
@@ -498,10 +494,11 @@ void SNetScheduleServerAutomationObject::Call(const string& method,
 
             reply.PushNode(lines);
         }
-    } else {
-        NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-            "Unknown NetScheduleServer method '" << method << "'");
-    }
+    } else
+        return SNetScheduleServiceAutomationObject::Call(
+                method, arg_array, reply);
+
+    return true;
 }
 
 void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
@@ -511,7 +508,7 @@ void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
             ReturnNetScheduleServerObject(m_NetScheduleAPI, server));
 }
 
-void SNetScheduleServiceAutomationObject::Call(const string& method,
+bool SNetScheduleServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "set_node_session") {
@@ -550,10 +547,15 @@ void SNetScheduleServiceAutomationObject::Call(const string& method,
                     ReturnNetScheduleServerObject(m_NetScheduleAPI, *it)->
                     GetID());
         reply.PushNode(object_ids);
-    } else {
-        NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
-                "Unknown NetScheduleService method '" << method << "'");
-    }
+    } else
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        if (method == "allow_xsite_connections")
+            m_NetScheduleAPI.GetService().AllowXSiteConnections();
+        else
+#endif
+            return false;
+
+    return true;
 }
 
 CAutomationProc::CAutomationProc(CPipe& pipe, FILE* protocol_dump) :
@@ -616,7 +618,11 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                 (TObjectID) arg_array.NextNumber()));
         string method(arg_array.NextString());
         arg_array.UpdateLocation(method);
-        object_ref->Call(method, arg_array, reply);
+        if (!object_ref->Call(method, arg_array, reply)) {
+            NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
+                    "Unknown " << object_ref->GetType() <<
+                            " method '" << method << "'");
+        }
     } else if (command == "new") {
         string class_name(arg_array.NextString());
         arg_array.UpdateLocation(class_name);
@@ -652,8 +658,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         m_ObjectByPointer.erase(object->GetImplPtr());
         object = NULL;
     } else {
-        NCBI_THROW_FMT(CAutomationException, eInvalidInput,
-                "Unknown command '" << command << "'");
+        arg_array.Exception("unknown command");
     }
 
     return reply;
