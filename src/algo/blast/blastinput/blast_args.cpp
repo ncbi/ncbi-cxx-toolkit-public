@@ -2169,10 +2169,10 @@ void
 CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
     arg_desc.SetCurrentGroup("General search options");
-    arg_desc.AddOptionalKey( 
+    arg_desc.AddDefaultKey( 
             kArgUseIndex, "boolean",
             "Use MegaBLAST database index",
-            CArgDescriptions::eBoolean );
+            CArgDescriptions::eBoolean, "false");
     arg_desc.AddOptionalKey(
             kArgIndexName, "string",
             "MegaBLAST database index name",
