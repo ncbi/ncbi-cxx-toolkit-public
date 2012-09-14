@@ -451,8 +451,34 @@ bool SNetScheduleServerAutomationObject::Call(const string& method,
 
         string attr_name, attr_value;
 
-        while (server_info.GetNextAttribute(attr_name, attr_value))
+        ESwitch old_format = eDefault;
+
+        while (server_info.GetNextAttribute(attr_name, attr_value)) {
+            switch (old_format) {
+            case eOn:
+                if (attr_name == "Build")
+                    attr_name = "build_date";
+                else
+                    NStr::ReplaceInPlace(NStr::ToLower(attr_name), " ", "_");
+                break;
+
+            case eDefault:
+                if (attr_name != "NCBI NetSchedule server version")
+                    old_format = eOff;
+                else {
+                    old_format = eOn;
+                    attr_name = "server_version";
+                    break;
+                }
+                /* FALL THROUGH */
+
+            case eOff:
+                if (attr_name == "version")
+                    attr_name = "server_version";
+            }
+
             server_info_node.SetString(attr_name, attr_value);
+        }
 
         reply.PushNode(server_info_node);
     } else if (method == "server_status")
