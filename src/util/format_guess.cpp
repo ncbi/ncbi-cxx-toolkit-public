@@ -1067,6 +1067,65 @@ CFormatGuess::TestFormatAlignment(
 }
 
 //  -----------------------------------------------------------------------------
+ bool 
+ CFormatGuess::x_TestTableDelimiter(const string& delims)
+ {
+    list<string>::const_iterator iter = m_TestLines.begin();
+    list<string> toks;
+
+    // Merge delims if > 1.  Do not merge single delims (since they could 
+    // more easily represent blank fields
+    NStr::EMergeDelims  merge_delims = NStr::eMergeDelims;
+    if (delims.size() == 1)
+        merge_delims = NStr::eNoMergeDelims;
+
+
+    // Skip initial lines since not all headers start with comments like # or ;:
+    // Don't skip though if file is very short - add up to 3, 1 for each line 
+    // over 5:
+    for (size_t i=5; i<7; ++i)
+        if (m_TestLines.size() > i) ++iter;
+
+    /// determine the number of observed columns
+    size_t ncols = 0;
+    bool found = false;
+    for ( ;  iter != m_TestLines.end()  &&  ! found;  ++iter) {
+        if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
+            continue;
+        }
+
+        toks.clear();
+        NStr::Split(*iter, delims, toks);
+        ncols = toks.size();
+        found = true;
+    }
+    if ( ncols < 2 ) {
+        return false;
+    }
+
+    size_t nlines = 1;
+    // verify that columns all have the same size
+    // we can add an exception for the last line
+    for ( ;  iter != m_TestLines.end();  ++iter) {
+        if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
+            continue;
+        } 
+
+        toks.clear();
+        NStr::Split(*iter, delims, toks);
+        if (toks.size() != ncols) {
+            list<string>::const_iterator it = iter;
+            ++it;
+            if (it != m_TestLines.end() || (m_iTestDataSize < s_iTestBufferSize) ) {
+                return false;
+            }
+        } else {
+            ++nlines;
+        }
+    }
+    return ( nlines >= 2 );
+ }
+
 bool
 CFormatGuess::TestFormatTable(
     EMode /* not used */ )
@@ -1093,47 +1152,19 @@ CFormatGuess::TestFormatTable(
     //  - the sample contains at least two non-comment lines.
     //
 
-    list<string>::const_iterator iter = m_TestLines.begin();
-    list<string> toks;
+    //' ' ' \t' '\t' ',' '|'
+    if (x_TestTableDelimiter(" "))
+        return true;
+    else if (x_TestTableDelimiter(" \t"))
+        return true;
+    else if (x_TestTableDelimiter("\t"))
+        return true;
+    else if (x_TestTableDelimiter(","))
+        return true;
+    else if (x_TestTableDelimiter("|"))
+        return true;
 
-    /// determine the number of observed columns
-    size_t ncols = 0;
-    bool found = false;
-    for ( ;  iter != m_TestLines.end()  &&  ! found;  ++iter) {
-        if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
-            continue;
-        }
-
-        toks.clear();
-        NStr::Split(*iter, " \t,", toks);
-        ncols = toks.size();
-        found = true;
-    }
-    if ( ncols < 2 ) {
-        return false;
-    }
-
-    size_t nlines = 1;
-    // verify that columns all have the same size
-    // we can add an exception for the last line
-    for ( ;  iter != m_TestLines.end();  ++iter) {
-        if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
-            continue;
-        }
-
-        toks.clear();
-        NStr::Split(*iter, " \t,", toks);
-        if (toks.size() != ncols) {
-            list<string>::const_iterator it = iter;
-            ++it;
-            if (it != m_TestLines.end() || (m_iTestDataSize < s_iTestBufferSize) ) {
-                return false;
-            }
-        } else {
-            ++nlines;
-        }
-    }
-    return ( nlines >= 2 );
+    return false;
 }
 
 //  -----------------------------------------------------------------------------
@@ -1338,6 +1369,17 @@ CFormatGuess::TestFormatBed15(
         if ( columns.size() != columncount ) {
             return false;
         } else {
+            if (!s_IsTokenPosInt(columns[1]) ||   //chr start
+                !s_IsTokenPosInt(columns[2]) ||   //chr end
+                !s_IsTokenPosInt(columns[4]) ||   //score
+                !s_IsTokenPosInt(columns[6]) ||   //thick draw start
+                !s_IsTokenPosInt(columns[7]))     //thick draw end
+                    return false;
+            string strand = NStr::TruncateSpaces(columns[5]);
+            
+            if (strand != "+" && strand != "-")
+                return false;
+
             LineFound = true;
         }
     }

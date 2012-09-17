@@ -316,12 +316,16 @@ private:
 
     bool x_TestFormat(EFormat format, EMode mode);
 
+    // to test for a table we check each of the most common delimiter combitions,
+    // ' ' ' \t' '\t' ',' '|'
+    bool x_TestTableDelimiter(const string& delims);
+
     // data:
     static const char* const sm_FormatNames[eFormat_max];
 protected:
     static int s_CheckOrder[];
     
-    static const streamsize s_iTestBufferSize = 1024;
+    static const streamsize s_iTestBufferSize = 4096;
 
     CNcbiIstream& m_Stream;
     bool m_bOwnsStream;
