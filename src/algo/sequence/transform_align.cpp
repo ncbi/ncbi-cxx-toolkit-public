@@ -655,7 +655,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
 
         first_exon_extension =
             first_exon.GetGenomic_start()
-            - ((range.GetFrom() < genomic_size && genomic_size < first_exon.GetGenomic_start())
+            - ((range.GetFrom() < genomic_size && genomic_size <= first_exon.GetGenomic_start())
                ? genomic_size
                : range.GetFrom());
 
@@ -667,7 +667,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
         }
 
         last_exon_extension =
-            ((last_exon.GetGenomic_end() < genomic_size-1 && genomic_size-1 < range.GetTo())
+            ((last_exon.GetGenomic_end() <= genomic_size-1 && genomic_size-1 < range.GetTo())
              ? genomic_size-1
              : range.GetTo())
             - last_exon.GetGenomic_end();
@@ -681,7 +681,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     } else {
         last_exon_extension =
             last_exon.GetGenomic_start()
-            - ((range.GetFrom() < genomic_size && genomic_size < last_exon.GetGenomic_start())
+            - ((range.GetFrom() < genomic_size && genomic_size <= last_exon.GetGenomic_start())
                ? genomic_size
                : range.GetFrom());
 
@@ -693,7 +693,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
         }
 
         first_exon_extension =
-            ((first_exon.GetGenomic_end() < genomic_size-1 && genomic_size-1 < range.GetTo())
+            ((first_exon.GetGenomic_end() <= genomic_size-1 && genomic_size-1 < range.GetTo())
              ? genomic_size-1
              : range.GetTo())
             - first_exon.GetGenomic_end();
