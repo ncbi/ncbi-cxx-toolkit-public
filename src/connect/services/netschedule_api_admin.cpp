@@ -344,14 +344,21 @@ void CNetScheduleAdmin::StatusSnapshot(
     string output_line;
     CTempString st_str, cnt_str;
 
-    for (CNetServiceIterator it =
-            m_Impl->m_API->m_Service.Iterate(); it; ++it) {
-        CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
+    try {
+        for (CNetServiceIterator it =
+                m_Impl->m_API->m_Service.Iterate(); it; ++it) {
+            CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
 
-        while (cmd_output.ReadLine(output_line))
-            if (NStr::SplitInTwo(output_line, ":", st_str, cnt_str))
-                status_map[st_str] += NStr::StringToUInt(
-                        NStr::TruncateSpaces(cnt_str, NStr::eTrunc_Begin));
+            while (cmd_output.ReadLine(output_line))
+                if (NStr::SplitInTwo(output_line, ":", st_str, cnt_str))
+                    status_map[st_str] += NStr::StringToUInt(
+                            NStr::TruncateSpaces(cnt_str, NStr::eTrunc_Begin));
+        }
+    }
+    catch (CStringException& ex)
+    {
+        NCBI_RETHROW(ex, CNetScheduleException, eProtocolSyntaxError,
+                "Error while parsing STAT JOBS response");
     }
 }
 
