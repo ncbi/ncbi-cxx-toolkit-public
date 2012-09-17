@@ -623,6 +623,9 @@ void CFastaReader::ParseDataLine(const TStr& s)
     }
         
     m_SeqData.resize(m_CurrentPos + len);
+    // this will stay empty unless there's an error
+    int bad_pos_line_num = -1;
+    vector<TSeqPos> bad_pos_vec; 
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
         if (c == '-'  &&  TestFlag(fParseGaps)) {
@@ -647,10 +650,10 @@ void CFastaReader::ParseDataLine(const TStr& s)
             ++m_CurrentPos;
         } else if ( !isspace(c) ) {
             if (TestFlag(fValidate)) {
-                NCBI_THROW2(CBadResiduesException, eBadResidues,
-                            string("CFastaReader: Invalid " + x_NucOrProt() + "residue ") + s[pos]
-                            + " at position " + NStr::UInt8ToString(pos+1), // "+1" because 1-based for user
-                                CBadResiduesException::SBadResiduePositions( m_BestID, pos, LineNumber() ) );
+                if( bad_pos_line_num < 0 ) {
+                    bad_pos_line_num = LineNumber();
+                }
+                bad_pos_vec.push_back(pos);
             } else {
                 ERR_POST_X(1, Warning
                            << "CFastaReader: Ignoring invalid " + x_NucOrProt() + "residue " << c
@@ -659,6 +662,13 @@ void CFastaReader::ParseDataLine(const TStr& s)
             }
         } 
     }
+
+    if( ! bad_pos_vec.empty() ) {
+        NCBI_THROW2(CBadResiduesException, eBadResidues,
+            "CFastaReader: There are invalid " + x_NucOrProt() + "residue(s) in input sequence",
+            CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
+    }
+
     m_SeqData.resize(m_CurrentPos);
 }
 
