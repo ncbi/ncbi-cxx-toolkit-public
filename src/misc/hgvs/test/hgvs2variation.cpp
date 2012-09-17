@@ -131,10 +131,13 @@ void CHgvs2variationApplication::Init(void)
     arg_desc->AddFlag("prot_effect", "attach effect on the protein");
     arg_desc->AddFlag("precursor", "calculate precursor variation");
     arg_desc->AddFlag("tr_precursor", "calculate precursor variation");
-    arg_desc->AddFlag("hgvs", "calculate hgvs expressions");
+    arg_desc->AddFlag("attach_hgvs", "calculate hgvs expressions");
     arg_desc->AddFlag("roundtrip_hgvs", "roundtrip hgvs expression");
     arg_desc->AddFlag("asn_in", "in is text-asn");
     arg_desc->AddFlag("feat", "asn is seq-feat");
+    arg_desc->AddFlag("o_hgvs", "Output HGVS expression instead of Variation");
+    arg_desc->AddFlag("o_annot", "Output as seq-annot instead of Variation");
+
 
     // Program description
     string prog_description = "Convert hgvs expression to a variation\n";
@@ -247,7 +250,7 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
         v.Assign(*v2);
 
     }
-    if(args["hgvs"]) {
+    if(args["attach_hgvs"] || args["o_hgvs"]) {
         parser.AttachHgvs(v);
     }
 }
@@ -355,7 +358,21 @@ int CHgvs2variationApplication::Run(void)
 
             try {
                 ProcessVariation(*v, args, *scope, aln, *variation_util);
-                ostr << MSerial_AsnText << *v;
+
+                if(args["o_hgvs"]) {
+                    for(CTypeConstIterator<CVariantPlacement> it(Begin(*v)); it; ++ it) {
+                        if(it->IsSetHgvs_name()) {
+                            ostr << v->GetName() << "\t" << it->GetHgvs_name() << "\n";
+                        } 
+                    }
+                } else if(args["o_annot"]) {
+                    CRef<CSeq_annot> annot(new CSeq_annot);
+                    variation_util->AsVariation_feats(*v, annot->SetData().SetFtable());
+                    ostr << MSerial_AsnText << *annot;
+                } else {
+                    ostr << MSerial_AsnText << *v;
+                }
+
             } catch(CException& e) {
                 NCBI_RETHROW_SAME(e, "Can't process " + line_str);
             }
