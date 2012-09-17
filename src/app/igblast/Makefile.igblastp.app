@@ -1,4 +1,4 @@
-WATCHERS = camacho madden maning
+# $Id$
 
 APP = igblastp
 SRC = igblastp_app
@@ -7,10 +7,11 @@ LIB = blast_app_util igblast $(LIB_:%=%$(STATIC))
 
 # De-universalize Mac builds to work around a PPC toolchain limitation
 CFLAGS   = $(FAST_CFLAGS:ppc=i386)
-CXXFLAGS = $(FAST_CXXFLAGS:ppc=i386) -g
-LDFLAGS  = -L../blast $(FAST_LDFLAGS:ppc=i386) -g
- 
-CPPFLAGS = $(ORIG_CPPFLAGS) -g
+CXXFLAGS = $(FAST_CXXFLAGS:ppc=i386)
+LDFLAGS  = $(FAST_LDFLAGS:ppc=i386)
+
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
+
+WATCHERS = camacho madden maning

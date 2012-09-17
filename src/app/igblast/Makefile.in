@@ -1,23 +1,8 @@
 # $Id$
 
-# Meta-makefile("APP" project)
-#################################
+APP_PROJ = igblastp igblastn
 
 REQUIRES = objects algo
 
-LIB_PROJ = blast_app_util
-
-APP_PROJ = igblastp igblastn
-
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-
-.PHONY: all $(APP_PROJ)
-
-lib:
-	(cd ../blast && make -f Makefile.blast_app_util_lib)
-igblastn: lib
-	make -f Makefile.igblastn_app
-igblastp: lib
-	make -f Makefile.igblastp_app
-
