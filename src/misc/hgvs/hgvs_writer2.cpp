@@ -732,7 +732,6 @@ string CHgvsParser::x_AsHgvsInstExpression(
          :                                   NStr::NumericToString(asserted_seq->GetLength());
 
 
-
     bool append_delta = false;
     if(inst.GetType() == CVariation_inst::eType_identity
        || inst.GetType() == CVariation_inst::eType_prot_silent)
@@ -758,7 +757,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
                   && placement->GetLoc().GetPnt().GetPoint() == bsh.GetInst_Length() - 1)
         {   
             inst_str = "ext*";
-        } else if(CVariation_inst::eType_prot_other) {
+        } else if(inst.GetType() == CVariation_inst::eType_prot_other) {
             inst_str = "delins";
         } else {
             inst_str = "del" + asserted_seq_str + "ins";
