@@ -378,8 +378,10 @@ protected:
     /// Mark leave nodes corresponding to sequences with given sequence ids
     /// @param btc BioTreeContainer [in|out]
     /// @param ids List of sequence ids (gis or accessions, ex. gi|129295) [in]
+    /// @param scope Scope
     ///
-    void x_MarkLeavesBySeqId(CBioTreeContainer& btc, vector<string>& ids);
+    void x_MarkLeavesBySeqId(CBioTreeContainer& btc, vector<string>& ids,
+                             CScope& scope);
 
 private:
     
@@ -586,13 +588,13 @@ private:
     };
 
 
-    /// Compare pairs (node, sequence id as string) by sequence id
+    /// Compare pairs (node, sequence id handle) by sequence id
     class compare_nodes_by_seqid {
     public:
-        bool operator()(const pair<CNode*, string>& a,
-                        const pair<CNode*, string>& b)
+        bool operator()(const pair<CNode*, CSeq_id_Handle>& a,
+                        const pair<CNode*, CSeq_id_Handle>& b)
         {
-            return a.second <  b.second;
+            return a.second.AsString() <  b.second.AsString();
         }
     };
 

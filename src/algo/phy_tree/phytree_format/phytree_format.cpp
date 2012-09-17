@@ -107,7 +107,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        label_type, mark_leaves,
                        m_BlastNameColorMap);
 
-    x_MarkLeavesBySeqId(*btc, seq_ids);
+    x_MarkLeavesBySeqId(*btc, seq_ids, *guide_tree_calc.GetScope());
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
 }
@@ -893,10 +893,11 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
 
 
 void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
-                                            vector<string>& ids)
+                                            vector<string>& ids,
+                                            CScope& scope)
 {
 
-    vector< pair< CNode*, string> > nodes;
+    vector< pair< CNode*, CSeq_id_Handle> > nodes;
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
         if ((*node)->CanGetFeatures()) {
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
@@ -905,9 +906,10 @@ void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
                 if ((*node_feature)->GetFeatureid() == eSeqIdId
                     || (*node_feature)->GetFeatureid() == eAccessionNbrId) {
 
-                    pair<CNode*, string> p;
+                    pair<CNode*, CSeq_id_Handle> p;
                     p.first = node->GetNonNullPointer();
-                    p.second = (*node_feature)->GetValue();
+                    CSeq_id sid((*node_feature)->GetValue());
+                    p.second = CSeq_id_Handle::GetHandle(sid);
                     nodes.push_back(p);
                 }
             }
@@ -916,12 +918,15 @@ void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
     sort(nodes.begin(), nodes.end(), compare_nodes_by_seqid());
 
     ITERATE (vector<string>, sid, ids) {
-        pair<CNode*, string> p(nullptr, *sid);
-        vector< pair<CNode*, string> >::iterator node
+        CSeq_id_Handle idhandle = CSeq_id_Handle::GetHandle(CSeq_id(*sid));
+        pair<CNode*, CSeq_id_Handle> p(nullptr, idhandle);
+        vector< pair<CNode*, CSeq_id_Handle> >::iterator node
             = lower_bound(nodes.begin(), nodes.end(), p,
                           compare_nodes_by_seqid());
 
-        if (node != nodes.end() && node->second == *sid) {
+        if (node != nodes.end() && scope.IsSameBioseq(idhandle,
+                                                      node->second,
+                                                      CScope::eGetBioseq_All)) {
 
             // set features
             // color for query node
