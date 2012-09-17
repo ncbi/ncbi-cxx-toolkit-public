@@ -531,6 +531,56 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
     return ret;
 }
 
+
+
+bool CVariationUtil::AttachSeq(CVariation& v, TSeqPos max_len)
+{
+    bool had_exceptions = false;
+    if(v.IsSetPlacements()) {
+
+        CConstRef<CSeq_literal> asserted_literal;
+        for(CTypeConstIterator<CVariation_inst> it2(Begin(v)); it2; ++it2) {
+            const CVariation_inst& inst = *it2;
+            if(   inst.IsSetObservation()
+               && inst.GetObservation() == CVariation_inst::eObservation_asserted
+               && inst.GetDelta().size() == 1
+               && inst.GetDelta().front()->IsSetSeq()
+               && inst.GetDelta().front()->GetSeq().IsLiteral())
+            {
+                asserted_literal = CConstRef<CSeq_literal>(&inst.GetDelta().front()->GetSeq().GetLiteral());
+            }
+        }
+
+        NON_CONST_ITERATE(CVariation::TPlacements, it, v.SetPlacements()) {
+            CVariantPlacement& p = **it;
+            bool attached = AttachSeq(p, max_len);
+
+            if(attached 
+               && asserted_literal
+               && (p.GetSeq().GetLength() != asserted_literal->GetLength()
+                   ||  (    p.GetSeq().IsSetSeq_data() && asserted_literal->IsSetSeq_data()
+                         && p.GetSeq().GetSeq_data().Which() == asserted_literal->GetSeq_data().Which()
+                         && !p.GetSeq().GetSeq_data().Equals(asserted_literal->GetSeq_data()))))
+            {
+                CRef<CVariationException> exception(new CVariationException);
+                exception->SetCode(CVariationException::eCode_inconsistent_asserted_allele);
+                exception->SetMessage("Asserted sequence is inconsistent with reference");
+                p.SetExceptions().push_back(exception);
+                had_exceptions = true;
+            }
+        }
+    }
+
+    if(v.GetData().IsSet()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+            CVariation& v2 = **it;
+            had_exceptions = had_exceptions || AttachSeq(v2, max_len);
+        }
+    }
+    return !had_exceptions;
+}
+
+
 CVariantPlacement::TMol CVariationUtil::GetMolType(const CSeq_id& id)
 {
     //Most of the time can figure out from seq-id. Must be careful not to

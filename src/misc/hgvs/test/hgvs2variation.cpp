@@ -219,9 +219,7 @@ void ProcessVariation(CVariation& v, const CArgs& args, CScope& scope, CConstRef
     }
 
     if(args["reference_seq"]) {
-        NON_CONST_ITERATE(CVariation::TPlacements, it, v.SetPlacements()) {
-            variation_util.AttachSeq(**it);
-        }
+        variation_util.AttachSeq(v);
     }
 
     if(args["prot_effect"]) {
@@ -362,7 +360,7 @@ int CHgvs2variationApplication::Run(void)
                 if(args["o_hgvs"]) {
                     for(CTypeConstIterator<CVariantPlacement> it(Begin(*v)); it; ++ it) {
                         if(it->IsSetHgvs_name()) {
-                            ostr << v->GetName() << "\t" << it->GetHgvs_name() << "\n";
+                            ostr << v->GetName() << "\t" << it->GetHgvs_name() << "\t" << it->IsSetExceptions() << "\n";
                         } 
                     }
                 } else if(args["o_annot"]) {

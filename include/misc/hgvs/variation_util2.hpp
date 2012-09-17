@@ -160,6 +160,11 @@ public:
     /// else set seq field on the placement and return true.
     bool AttachSeq(CVariantPlacement& p, TSeqPos max_len = 1000);
 
+    //Call AttachSeq on every placement; Try to find asserted-type subvariation.
+    //If the asserted sequence is different from the attached reference, add 
+    //corresponding exception object to the placement. Return true iff there were no exceptions added
+    bool AttachSeq(CVariation& v, TSeqPos max_len = 1000);
+
 
     CVariantPlacement::TMol GetMolType(const CSeq_id& id);
 
