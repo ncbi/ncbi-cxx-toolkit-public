@@ -579,7 +579,7 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
         ProcessJobInfo(m_NetScheduleAPI, job_key,
             &job_info_to_json, arg_array.NextBoolean(true));
         reply.PushNode(job_info_to_json.GetRootNode());
-    } else if (method == "jobs_by_status") {
+    } else if (method == "job_counters") {
         CNetScheduleAdmin::TStatusMap status_map;
         string affinity(arg_array.NextString(kEmptyStr));
         string job_group(arg_array.NextString(kEmptyStr));
