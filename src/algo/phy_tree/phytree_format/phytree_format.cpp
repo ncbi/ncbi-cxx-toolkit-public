@@ -918,7 +918,8 @@ void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
     sort(nodes.begin(), nodes.end(), compare_nodes_by_seqid());
 
     ITERATE (vector<string>, sid, ids) {
-        CSeq_id_Handle idhandle = CSeq_id_Handle::GetHandle(CSeq_id(*sid));
+        CSeq_id seqid(*sid);
+        CSeq_id_Handle idhandle = CSeq_id_Handle::GetHandle(seqid);
         pair<CNode*, CSeq_id_Handle> p(nullptr, idhandle);
         vector< pair<CNode*, CSeq_id_Handle> >::iterator node
             = lower_bound(nodes.begin(), nodes.end(), p,
