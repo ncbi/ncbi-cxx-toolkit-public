@@ -42,6 +42,7 @@
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/medline/Medline_entry.hpp>
+#include <objects/mla/mla_client.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub_set.hpp>
@@ -54,6 +55,7 @@
 #include <objects/biblio/Imprint.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -629,6 +631,62 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
         x_Init(**it, ctx);
     }
 
+    // if just pmid or just muid, we look it up, assuming the user has
+    // somehow given permission for remote lookups 
+    const static string kGbLoader = "GBLOADER";
+    if( IsJustUids() && 
+        ctx.GetScope().GetObjectManager().FindDataLoader(kGbLoader) ) 
+    {
+        // TODO: To avoid repeated connections, in the future we should have 
+        // one CMLAClient shared by the whole program
+        CMLAClient mlaClient;
+
+        vector< CRef<CPub> > new_pubs;
+
+        ITERATE( CPub_equiv::Tdata, it, pub.Get() ) {
+            const CPub & pub = **it;
+            CRef<CPub> new_pub;
+            switch(pub.Which()) {
+            case CPub::e_Pmid:
+                {
+                    const int pmid = pub.GetPmid().Get();
+
+                    CPubMedId req(pmid);
+                    CMLAClient::TReply reply;
+                    new_pub = mlaClient.AskGetpubpmid(req, &reply);
+                }
+                break;
+            case CPub::e_Muid:
+                {
+                    const int muid = pub.GetMuid();
+
+                    const int pmid = mlaClient.AskUidtopmid(muid);
+                    if( pmid > 0 ) {
+                        CPubMedId req(pmid);
+                        CMLAClient::TReply reply;
+                        new_pub = mlaClient.AskGetpubpmid(req, &reply);
+                    }
+                }
+                break;
+            default:
+                // ignore if type unknown
+                break;
+            }
+
+            if( new_pub ) {
+                // authors come back in a weird format that we need
+                // to convert to ISO
+                x_ChangeMedlineAuthorsToISO(new_pub);
+
+                new_pubs.push_back(new_pub);
+            }
+        }
+
+        ITERATE( vector< CRef<CPub> >, new_pub_iter, new_pubs ) {
+            x_Init( **new_pub_iter, ctx );
+        }
+    }
+
     // gather Genbank specific fields (formats: Genbank, GBSeq, DDBJ)
     if ( ctx.IsGenbankFormat() ) {
         x_GatherRemark(ctx);
@@ -1196,6 +1254,121 @@ void CReferenceItem::x_CapitalizeTitleIfNecessary()
                 break;
         }
     }
+}
+
+void CReferenceItem::x_ChangeMedlineAuthorsToISO( CRef<CPub> pub )
+{
+    // leave early if it doesn't need to be changed
+    if( ! pub || ! pub->IsArticle() || ! pub->IsSetAuthors() || ! pub->GetAuthors().IsSetNames() ||
+        ! pub->GetAuthors().GetNames().IsMl() )
+    {
+        return;
+    }
+
+    // build our new authors list in here
+    CAuth_list::C_Names::TStd new_authors;
+
+    const CAuth_list::C_Names::TMl & ml_names = pub->GetAuthors().GetNames().GetMl();
+    ITERATE( CAuth_list::C_Names::TMl, ml_name_iter, ml_names ) {
+        string author_name = *ml_name_iter;
+
+        // we will fill in these 3 as we go along
+        string lastname;
+        string initials;
+        string suffix;
+
+        // this scope fills in lastname, initials, and suffix
+        {
+            NStr::TruncateSpacesInPlace(author_name);
+            vector<string> tokens;
+            NStr::Tokenize(author_name, " ", tokens, NStr::eMergeDelims);
+
+            // get suffix if it exists, and remove it from the list
+            if( tokens.size() >= 3 && 
+                ! x_StringIsJustCapitalLetters(tokens.back()) && 
+                x_StringIsJustCapitalLetters(tokens[tokens.size() - 2]) ) 
+            {
+                suffix = tokens.back();
+                tokens.pop_back();
+            }
+
+            // get initials if they exist, and remove them from the list
+            if( tokens.size() >= 2 &&
+                x_StringIsJustCapitalLetters(tokens.back()) )
+            {
+                initials = tokens.back();
+                tokens.pop_back();
+            }
+
+            // remaining pieces belong to the last name
+            lastname = NStr::Join(tokens, " ");
+        }
+
+        // put period in initials. e.g. "MJ" -> "M.J."
+        {
+            string new_initials;
+            ITERATE( string, ch_iter, initials ) {
+                new_initials += *ch_iter;
+                new_initials += '.';
+            }
+            // swap is faster than assignment
+            initials.swap(new_initials);
+        }
+
+        // a couple of static transformations for the suffix
+        typedef SStaticPair<const char*, const char*> TSufElem;
+        static const TSufElem sc_suf_map[] = {
+            { "1d",  "I" },
+            { "1st", "I" },
+            { "2d",  "II" },
+            { "2nd", "II" },
+            { "3d",  "III" },
+            { "3rd", "III" },
+            { "4th", "IV" },
+            { "5th", "V" },
+            { "6th", "VI" },
+            { "Jr",  "Jr." },
+            { "Sr",  "Sr."}
+        };
+        typedef CStaticArrayMap<const char *, const char *, PCase_CStr> TSufMap;
+        DEFINE_STATIC_ARRAY_MAP(TSufMap, sc_SufMap, sc_suf_map);
+
+        TSufMap::const_iterator suf_find_iter = sc_SufMap.find(suffix.c_str());
+        if( suf_find_iter != sc_SufMap.end() ) {
+            suffix = suf_find_iter->second;
+        }
+
+        CRef<CAuthor> new_author( new CAuthor );
+        CPerson_id_Base::TName & name = new_author->SetName().SetName();
+        name.SetLast( lastname );
+        if( ! initials.empty() ) {
+            name.SetInitials( initials );
+        }
+        if( ! suffix.empty() ) {
+            name.SetSuffix( suffix );
+        }
+
+        new_authors.push_back( new_author );
+    }
+    
+    copy( new_authors.begin(), 
+        new_authors.end(),
+        back_inserter( pub->SetArticle().SetAuthors().SetNames().SetStd() ) );
+}
+
+bool CReferenceItem::x_StringIsJustCapitalLetters( const string & str )
+{
+    if( str.empty() ) {
+        return false;
+    }
+
+    ITERATE(string, ch_iter, str ) {
+        if( ! isupper(*ch_iter) ) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 

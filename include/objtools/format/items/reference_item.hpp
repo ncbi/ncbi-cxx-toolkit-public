@@ -192,6 +192,9 @@ private:
     void x_CleanData(void);
     void x_CapitalizeTitleIfNecessary(void);
 
+    void x_ChangeMedlineAuthorsToISO( CRef<CPub> pub );
+    bool x_StringIsJustCapitalLetters( const string & str );
+
     // data
     TPubType              m_PubType;
     TCategory             m_Category;
