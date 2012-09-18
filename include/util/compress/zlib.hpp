@@ -116,31 +116,37 @@ public:
         ///< decompressed data. By default this flag is OFF.
         ///< NOTE: zlib v1.1.4 and earlier have a bug in decoding. 
         ///< In some cases decompressor can produce output data on invalid 
-        ///< compressed data. So, this is not recommended to use this flag
+        ///< compressed data. So, it is not recommended to use this flag
         ///< with old zlib versions.
         fAllowTransparentRead  = (1<<0), 
-        ///< Check (and skip) file header for decompression stream
-        fCheckFileHeader       = (1<<1), 
+        ///< Allow to "compress/decompress" empty data. Buffer compression
+        ///< functions starts to return TRUE instead of FALSE for zero-length
+        ///< input. And, if this flag is used together with fWriteGZipFormat
+        ///< than the output will have gzip header and footer only.
+        fAllowEmptyData        = (1<<1),
+        ///< Check (and skip) gzip file header on decompression stage
+        fCheckFileHeader       = (1<<2), 
         ///< Use gzip (.gz) file format to write into compression stream
         ///< (the archive also can store file name and file modification
         ///< date in this format). Note: gzip file header and footer will be
-        ///< omitted if no input data is provided, and you will have empty
-        ///< output, that may not be acceptable to tools like gunzip and etc. 
-        fWriteGZipFormat       = (1<<2),
+        ///< omitted by default if no input data is provided, and you will
+        ///< have empty output, that may not be acceptable to tools like
+        ///< gunzip and etc -- in this case use fAllowEmptyData.
+        fWriteGZipFormat       = (1<<3),
         ///< Allow concatenated gzip files.
         ///< Multiple compressed files can be concatenated into one file.
         ///< In this case, decompressor will try to extract all members
         ///< at once. But note, that better compression can be usually
         ///< obtained if all members are decompressed and then recompressed
         ///< in a single step. 
-        fAllowConcatenatedGZip = (1<<3),
+        fAllowConcatenatedGZip = (1<<4),
         /// Set of flags for gzip file support. See each flag description above.
         fGZip = fCheckFileHeader | fWriteGZipFormat | fAllowConcatenatedGZip,
         ///< This flag can be used only with DecompressFile[IntoDir]().
         ///< It allow to restore the original file name and/or time stamp stored
         ///< in the file header, if present.
         ///< @sa DecompressFile, DecompressFileIntoDir
-        fRestoreFileAttr       = (1<<4)
+        fRestoreFileAttr       = (1<<5)
     };
     typedef CZipCompression::TFlags TZipFlags; ///< Bitwise OR of EFlags
 
@@ -576,10 +582,10 @@ public:
         CZipCompression::ELevel    level,
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
-        int                        window_bits,
-        int                        mem_level,
-        int                        strategy,
-        CZipCompression::TZipFlags flags = 0
+        int                        window_bits = kZlibDefaultWbits,
+        int                        mem_level   = kZlibDefaultMemLevel,
+        int                        strategy    = kZlibDefaultStrategy,
+        CZipCompression::TZipFlags flags       = 0
         ) 
         : CCompressionStreamProcessor(
               new CZipCompressor(level,window_bits,mem_level,strategy,flags),
@@ -616,9 +622,9 @@ public:
 /// See util/compress/stream.hpp for details of stream processing.
 /// @note
 ///   Compression/decompression flags (CZipCompression:EFlags) can greatly
-///   affect CZipStreamDecompressor behaviour. By default, decompressor
+///   affect CZipStreamDecompressor behavior. By default, decompressor
 ///   do not allow data in gzip format. Please use appropriate flags
-///   in constructor to change default behaviour.
+///   in constructor to change default behavior.
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CZipStreamDecompressor
@@ -629,8 +635,8 @@ public:
     CZipStreamDecompressor(
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
-        int                        window_bits,
-        CZipCompression::TZipFlags flags
+        int                        window_bits = kZlibDefaultWbits,
+        CZipCompression::TZipFlags flags       = 0
         )
         : CCompressionStreamProcessor( 
               new CZipDecompressor(window_bits, flags),

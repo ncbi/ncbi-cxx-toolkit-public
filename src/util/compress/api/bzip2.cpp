@@ -100,20 +100,26 @@ bool CBZip2Compression::CompressBuffer(
                         void*       dst_buf, size_t  dst_size,
                         /* out */            size_t* dst_len)
 {
+    *dst_len = 0;
+
     // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        SetError(BZ_OK);
-        return true;
+    if ( !src_len ) {
+        if ( !F_ISSET(fAllowEmptyData) ) {
+            src_buf = NULL;
+        }
+    }
+    if ( !src_buf ) {
+        SetError(BZ_PARAM_ERROR, "bad argument");
+        ERR_COMPRESS(15, FormatErrorMessage("CBZip2Compression::CompressBuffer"));
+        return false;
     }
     if ( !dst_buf || !dst_len ) {
         SetError(BZ_PARAM_ERROR, "bad argument");
-        ERR_COMPRESS(15,
-            FormatErrorMessage("CBZip2Compression::CompressBuffer"));
+        ERR_COMPRESS(15, FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
     if (src_len > kMax_UInt) {
-        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(16, FormatErrorMessage("CBZip2Compression::CompressBuffer"));
         return false;
     }
@@ -142,18 +148,28 @@ bool CBZip2Compression::DecompressBuffer(
                         void*       dst_buf, size_t  dst_size,
                         /* out */            size_t* dst_len)
 {
+    *dst_len = 0;
+
     // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        SetError(BZ_OK);
-        return true;
+    if ( !src_len ) {
+        if ( F_ISSET(fAllowEmptyData) ) {
+            SetError(BZ_OK);
+            return true;
+        }
+        src_buf = NULL;
+    }
+    if ( !src_buf ) {
+        SetError(BZ_PARAM_ERROR, "bad argument");
+        ERR_COMPRESS(84, FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
+        return false;
     }
     if ( !dst_buf || !dst_len ) {
         SetError(BZ_PARAM_ERROR, "bad argument");
+        ERR_COMPRESS(84, FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
         return false;
     }
     if (src_len > kMax_UInt) {
-        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(18, FormatErrorMessage("CBZip2Compression::DecompressBuffer"));
         return false;
     }
@@ -499,7 +515,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
 {
     *out_avail = 0;
     if (in_len > kMax_UInt) {
-        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(25, FormatErrorMessage("CBZip2Compressor::Process"));
         return eStatus_Error;
     }
@@ -567,7 +583,8 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    if (!GetProcessedSize()) {
+    // Default behavior on empty data -- don't write header/footer
+    if ( !GetProcessedSize()  &&  !F_ISSET(fAllowEmptyData) ) {
         return eStatus_EndOfData;
     }
     LIMIT_SIZE_PARAM_U(out_size);
@@ -657,7 +674,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
 {
     *out_avail = 0;
     if (in_len > kMax_UInt) {
-        SetError(BZ_PARAM_ERROR, "size of the source buffer is very big");
+        SetError(BZ_PARAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(31, FormatErrorMessage("CBZip2Decompressor::Process"));
         return eStatus_Error;
     }

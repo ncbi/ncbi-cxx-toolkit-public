@@ -37,7 +37,7 @@
            (allow_transparent_read_test ? "" : "not ") << "allowed.\n");
 
     //------------------------------------------------------------------------
-    // Compress/decomress buffer
+    // Compress/decompress buffer
     //------------------------------------------------------------------------
     {{
         _TRACE("Compress/decompress buffer test (default level)...");
@@ -109,7 +109,8 @@
     }}
 
     //------------------------------------------------------------------------
-    // Compress/decompress buffer: empty input
+    // Compress/decompress buffer: empty input -- default behavior
+    // see fAllowEmptyData flag test below.
     //------------------------------------------------------------------------
     {{
         _TRACE("Compress/decompress buffer (empty input)...");
@@ -117,11 +118,11 @@
         TCompression c;
         result = c.CompressBuffer(src_buf, 0, dst_buf, dst_len, &out_len);
         PrintResult(eCompress, c.GetErrorCode(), 0, dst_len, out_len);
-        assert(result);
+        assert(result == false);
         assert(out_len == 0);
         result = c.DecompressBuffer(src_buf, 0, dst_buf, dst_len, &out_len);
         PrintResult(eDecompress, c.GetErrorCode(), 0, dst_len, out_len);
-        assert(result);
+        assert(result == false);
         assert(out_len == 0);
         OK;
     }}
@@ -367,7 +368,7 @@
         ids_zip.read(cmp_buf, kReadMax);
         out_len = ids_zip.gcount();
         // We should have all packed data here, because compressor
-        // finalization for input streams accompishes automaticaly.
+        // finalization for input streams accomplishes automatically.
         PrintResult(eDecompress, kUnknownErr, dst_len, kBufLen, out_len);
         assert(ids_zip.GetProcessedSize() == dst_len);
         assert(ids_zip.GetOutputSize() == kDataLen);
@@ -502,97 +503,6 @@
         assert(out_len == kDataLen);
         assert(memcmp(src_buf, dst_buf, kDataLen) == 0);
         OK;
-    }}
-
-    //------------------------------------------------------------------------
-    // Stream tests for empty input data (CXX-1828, CXX-3365)
-    //------------------------------------------------------------------------
-    {{
-        _TRACE("Stream test for empty input data...");
-
-        CNcbiIstrstream is_str("");
-        CNcbiOstrstream os_str;
-
-        {{
-            // Compression input stream
-            CCompressionIStream ics(is_str, new TStreamCompressor(),
-                                            CCompressionStream::fOwnProcessor);
-            ics.read(dst_buf, kReadMax);
-            out_len = ics.gcount();
-            assert(out_len == 0);
-
-            // Decompression input stream
-            CCompressionIStream ids(is_str, new TStreamDecompressor(),
-                                            CCompressionStream::fOwnProcessor);
-            ids.read(dst_buf, kReadMax);
-            out_len = ids.gcount();
-            assert(out_len == 0);
-        }}
-
-        // Special test for gzip format
-        if (test_name == "zlib") {
-            // Compression input stream
-            CCompressionIStream ics(is_str, new CZipStreamCompressor(CZipCompression::fGZip),
-                                            CCompressionStream::fOwnProcessor);
-            ics.read(dst_buf, kReadMax);
-            out_len = ics.gcount();
-            assert(out_len == 0);
-
-            // Decompression input stream
-            CCompressionIStream ids(is_str, new CZipStreamDecompressor(CZipCompression::fGZip),
-                                            CCompressionStream::fOwnProcessor);
-            ids.read(dst_buf, kReadMax);
-            out_len = ids.gcount();
-            assert(out_len == 0);
-        }
-
-        for (int i=0; i <= 1; i++)
-        {
-            bool flush_test = (i > 0);
-            // Compression output stream
-            {{
-                CCompressionOStream os(os_str, new TStreamCompressor(),
-                                               CCompressionStream::fOwnProcessor);
-                if (flush_test) {
-                    os.flush();
-                }
-            }}
-            out_len = os_str.pcount();
-            assert(out_len == 0);
-
-            // Decompression output stream
-            {{
-                CCompressionOStream os(os_str, new TStreamDecompressor(),
-                                               CCompressionStream::fOwnProcessor);
-                if (flush_test) {
-                    os.flush();
-                }
-            }}
-            out_len = os_str.pcount();
-            assert(out_len == 0);
-
-            // Special test for gzip format
-            if (test_name == "zlib") {
-                {{
-                   CCompressionOStream os(os_str, new CZipStreamCompressor(CZipCompression::fGZip),
-                                                  CCompressionStream::fOwnProcessor);
-                   if (flush_test) {
-                       os.flush();
-                   }
-                }}
-                out_len = os_str.pcount();
-                assert(out_len == 0);
-                {{
-                   CCompressionOStream os(os_str, new CZipStreamDecompressor(CZipCompression::fGZip),
-                                                  CCompressionStream::fOwnProcessor);
-                   if (flush_test) {
-                       os.flush();
-                   }
-                }}
-                out_len = os_str.pcount();
-                assert(out_len == 0);
-            }
-        }
     }}
 
     //------------------------------------------------------------------------

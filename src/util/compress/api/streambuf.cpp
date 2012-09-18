@@ -121,7 +121,8 @@ CCompressionStreambuf::~CCompressionStreambuf()
     // Read processor
     sp = GetStreamProcessor(CCompressionStream::eRead);
     if ( sp ) {
-        sp->m_Processor->End();
+        bool abandon = IsStreamProcessorHaveData(CCompressionStream::eRead);
+        sp->m_Processor->End(abandon);
         sp->m_State = CSP::eDone;
     }
     // Write processor
@@ -216,14 +217,13 @@ int CCompressionStreambuf::Finish(CCompressionStream::EDirection dir)
     }
     // Check that we have some data to process, before calling 
     // any compression/decompression methods, or we can get 
-    // a garbage on the output.
-    if ( !IsStreamProcessorHaveData(dir) ) {
-        return 0;
-    }
-    // Process remaining data in the preprocessing buffer
-    Process(dir);
-    if ( sp->m_LastStatus == CP::eStatus_Error ) {
-        return -1;
+    // a garbage in the output.
+    if ( IsStreamProcessorHaveData(dir) ) {
+        // Process remaining data in the preprocessing buffer
+        Process(dir);
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
+            return -1;
+        }
     }
     // Finish. Change state to 'finalized'.
     sp->m_State = CSP::eFinalize;

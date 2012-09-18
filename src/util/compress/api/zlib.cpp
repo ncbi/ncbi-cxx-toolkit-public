@@ -276,20 +276,26 @@ bool CZipCompression::CompressBuffer(
                       void*       dst_buf, size_t  dst_size,
                       /* out */            size_t* dst_len)
 {
+    *dst_len = 0;
+
     // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        SetError(Z_OK);
-        return true;
+    if ( !src_len ) {
+        if (!F_ISSET(fAllowEmptyData)) {
+            src_buf = NULL;
+        }
+    }
+    if ( !src_buf ) {
+        SetError(Z_STREAM_ERROR, "bad argument");
+        ERR_COMPRESS(48, FormatErrorMessage("CZipCompression::CompressBuffer"));
+        return false;
     }
     if ( !dst_buf || !dst_len ) {
         SetError(Z_STREAM_ERROR, "bad argument");
         ERR_COMPRESS(48, FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
-    *dst_len = 0;
     if (src_len > kMax_UInt) {
-        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        SetError(Z_STREAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(49, FormatErrorMessage("CZipCompression::CompressBuffer"));
         return false;
     }
@@ -374,20 +380,28 @@ bool CZipCompression::DecompressBuffer(
                       void*       dst_buf, size_t  dst_size,
                       /* out */            size_t* dst_len)
 {
+    *dst_len = 0;
+
     // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        SetError(Z_OK);
-        return true;
+    if ( !src_len ) {
+        if ( F_ISSET(fAllowEmptyData) ) {
+            SetError(Z_OK);
+            return true;
+        }
+        src_buf = NULL;
+    }
+    if ( !src_buf ) {
+        SetError(Z_STREAM_ERROR, "bad argument");
+        ERR_COMPRESS(55, FormatErrorMessage("CZipCompression::DecompressBuffer"));
+        return false;
     }
     if ( !dst_buf || !dst_len ) {
         SetError(Z_STREAM_ERROR, "bad argument");
         ERR_COMPRESS(55, FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
-    *dst_len = 0;
     if (src_len > kMax_UInt) {
-        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        SetError(Z_STREAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(56, FormatErrorMessage("CZipCompression::DecompressBuffer"));
         return false;
     }
@@ -918,7 +932,7 @@ CCompressionProcessor::EStatus CZipCompressor::Process(
 {
     *out_avail = 0;
     if (in_len > kMax_UInt) {
-        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        SetError(Z_STREAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(61, FormatErrorMessage("CZipCompressor::Process", GetProcessedSize()));
         return eStatus_Error;
     }
@@ -1004,15 +1018,31 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    if (!GetProcessedSize()) {
-        return eStatus_EndOfData;
-    }
     LIMIT_SIZE_PARAM_U(out_size);
 
+    // Default behavior on empty data -- don't write header/footer
+    if ( !GetProcessedSize()  &&  !F_ISSET(fAllowEmptyData) ) {
+        return eStatus_EndOfData;
+    }
+
+    // Write gzip file header if not done yet
+    size_t header_len = 0;
+    if ( F_ISSET(fWriteGZipFormat)  &&  m_NeedWriteHeader ) {
+        header_len = s_WriteGZipHeader(out_buf, out_size, &m_FileInfo);
+        if (!header_len) {
+            SetError(-1, "Cannot write gzip header");
+            return eStatus_Overflow;
+        }
+        // IncreaseOutputSize()
+        // -- will be called below, and it will count 'header_len'
+        m_NeedWriteHeader = false;
+    }
+
+    // Finish compression
     STREAM->next_in   = 0;
     STREAM->avail_in  = 0;
-    STREAM->next_out  = (unsigned char*)out_buf;
-    STREAM->avail_out = (unsigned int)out_size;
+    STREAM->next_out  = (unsigned char*)out_buf + header_len;
+    STREAM->avail_out = (unsigned int)(out_size - header_len);
 
     int errcode = deflate(STREAM, Z_FINISH);
     SetError(errcode, zError(errcode));
@@ -1029,6 +1059,7 @@ CCompressionProcessor::EStatus CZipCompressor::Finish(
                 s_WriteGZipFooter(out_buf + *out_avail, STREAM->avail_out,
                                   GetProcessedSize(), m_CRC32);
             if ( !footer_len ) {
+                SetError(-1, "Cannot write gzip footer");
                 return eStatus_Overflow;
             }
             IncreaseOutputSize((unsigned long)footer_len);
@@ -1046,6 +1077,7 @@ CCompressionProcessor::EStatus CZipCompressor::End(int abandon)
     int errcode = deflateEnd(STREAM);
     SetBusy(false);
     if (abandon) {
+        // Ignore result of deflateEnd(), because it can return an error code for empty data
         return eStatus_Success;
     }
     SetError(errcode, zError(errcode));
@@ -1116,7 +1148,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
 {
     *out_avail = 0;
     if (in_len > kMax_UInt) {
-        SetError(Z_STREAM_ERROR, "size of the source buffer is very big");
+        SetError(Z_STREAM_ERROR, "size of the source buffer is too big");
         ERR_COMPRESS(69, FormatErrorMessage("CZipDecompressor::Process", GetProcessedSize()));
         return eStatus_Error;
     }
@@ -1350,7 +1382,11 @@ CCompressionProcessor::EStatus CZipDecompressor::Finish(
     }
     // Do not check here on eMode_Unknown. It will be processed below.
     size_t in_avail;
-    CCompressionProcessor::EStatus status = Process(0, 0, out_buf, out_size, &in_avail, out_avail);
+    // Process only if we have some data -- otherwise zlib return error
+    CCompressionProcessor::EStatus status = eStatus_Success;
+    if ( GetProcessedSize() || m_Cache.size() ) {
+        status = Process(0, 0, out_buf, out_size, &in_avail, out_avail);
+    }
     if (status == eStatus_Success  &&  *out_avail == 0) {
         // Possible case with .gz files only (check on concatenated files)
         return eStatus_EndOfData;

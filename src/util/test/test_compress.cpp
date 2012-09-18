@@ -138,6 +138,7 @@ class CTest : public CNcbiApplication
 public:
     void Init(void);
     int  Run(void);
+    void TestEmptyInputData(CCompressStream::EMethod);
 };
 
 
@@ -145,7 +146,7 @@ void CTest::Init(void)
 {
     SetDiagPostLevel(eDiag_Error);
     // To see all output, uncomment next line:
-    // SetDiagPostLevel(eDiag_Trace);
+    //SetDiagPostLevel(eDiag_Trace);
 
     // Create command-line argument descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -183,6 +184,22 @@ int CTest::Run(void)
     // to treat random text data as compressed data.
     memcpy(src_buf,"12345",5);
 
+    // Run separate test for empty input data
+     _TRACE("====================================\nData size = 0\n\n");
+    {{
+        if (test == "all"  ||  test == "bz2") {
+            TestEmptyInputData(CCompressStream::eBZip2);
+        }
+    #if defined(HAVE_LIBLZO)
+        if (test == "all"  ||  test == "lzo") {
+            TestEmptyInputData(CCompressStream::eLZO);
+        }
+    #endif
+        if (test== "all"  ||  test == "z") {
+            TestEmptyInputData(CCompressStream::eZip);
+        }
+    }}
+
     // Test compressors with different size of data
     for (size_t i = 0; i < kTestCount; i++) {
 
@@ -194,32 +211,194 @@ int CTest::Run(void)
         _TRACE("====================================\n" << 
                "Data size = " << len << "\n\n");
 
-        if (test== "all"  ||  test == "z") {
-            _TRACE("-------------- Zlib ----------------\n");
-            CTestCompressor<CZipCompression, CZipCompressionFile,
-                            CZipStreamCompressor, CZipStreamDecompressor>
-                ::Run(src_buf, len);
-        }
         if (test == "all"  ||  test == "bz2") {
             _TRACE("-------------- BZip2 ---------------\n");
             CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
                             CBZip2StreamCompressor, CBZip2StreamDecompressor>
                 ::Run(src_buf, len);
         }
-#if defined(HAVE_LIBLZO)
+    #if defined(HAVE_LIBLZO)
         if (test == "all"  ||  test == "lzo") {
             _TRACE("-------------- LZO -----------------\n");
             CTestCompressor<CLZOCompression, CLZOCompressionFile,
                             CLZOStreamCompressor, CLZOStreamDecompressor>
                 ::Run(src_buf, len);
         }
-#endif
+    #endif
+        if (test== "all"  ||  test == "z") {
+            _TRACE("-------------- Zlib ----------------\n");
+            CTestCompressor<CZipCompression, CZipCompressionFile,
+                            CZipStreamCompressor, CZipStreamDecompressor>
+                ::Run(src_buf, len);
+        }
         // Restore saved character
         src_buf[len] = saved;
     }
 
     _TRACE("\nTEST execution completed successfully!\n");
     return 0;
+}
+
+
+//------------------------------------------------------------------------
+// Tests for empty input data 
+//   - stream tests (CXX-1828, CXX-3365)
+//   - fAllowEmptyData flag test (CXX-3365)
+//------------------------------------------------------------------------
+
+struct SEmptyInputDataTest
+{
+    CCompressStream::EMethod method;
+    unsigned int flags;
+    // Result of CompressBuffer()/DecompressBuffer() methods for specified
+    // set of flags.
+    bool buffer_method_result;
+    // An expected output size for compression with specified set of 'flags'.
+    // Usually this is a sum of sizes for header and footer, if selected
+    // format have it. Decompression output size should be always 0.
+    unsigned int buffer_output_size;
+    unsigned int stream_output_size;
+};
+
+static const SEmptyInputDataTest s_EmptyInputDataTests[] = 
+{
+    { CCompressStream::eBZip2, 0 /* default flags */,              false,  0,  0 },
+    { CCompressStream::eBZip2, CBZip2Compression::fAllowEmptyData, true,  14, 14 },
+    // LZO's CompressBuffer() method do not use fStreamFormat that add header
+    //  and footer to the output, streams always use it.
+    { CCompressStream::eLZO,   0 /* default flags */,              false,  0,  0 },
+    { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData,   true,   0, 15 },
+    { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData |
+                               CLZOCompression::fStreamFormat,     true,  15, 15 },
+    { CCompressStream::eZip,   0 /* default flags */,              false,  0,  0 },
+    { CCompressStream::eZip,   CZipCompression::fGZip,             false,  0,  0 },
+    { CCompressStream::eZip,   CZipCompression::fAllowEmptyData,   true,   8,  8 },
+    { CCompressStream::eZip,   CZipCompression::fAllowEmptyData |
+                               CZipCompression::fGZip,             true,  20, 20 }
+};
+
+void CTest::TestEmptyInputData(CCompressStream::EMethod method)
+{
+    const size_t kBufLen = 1024;
+    char   src_buf[kBufLen];
+    char   dst_buf[kBufLen];
+    char   cmp_buf[kBufLen];
+    size_t n;
+
+    const int count = sizeof(s_EmptyInputDataTests) / sizeof(s_EmptyInputDataTests[0]);
+
+    for (int i = 0;  i < count;  ++i)
+    {
+        SEmptyInputDataTest test = s_EmptyInputDataTests[i];
+        if (test.method != method) {
+            continue;
+        }
+        _TRACE("Test # " << i+1);
+
+        CNcbiIstrstream is_str("");
+        auto_ptr<CCompression>                compression;
+        auto_ptr<CCompressionStreamProcessor> stream_compressor;
+        auto_ptr<CCompressionStreamProcessor> stream_decompressor;
+
+        if (method == CCompressStream::eBZip2) {
+            compression.reset(new CBZip2Compression());
+            compression->SetFlags(test.flags);
+            stream_compressor.reset(new CBZip2StreamCompressor(test.flags));
+            stream_decompressor.reset(new CBZip2StreamDecompressor(test.flags));
+        } else 
+#if defined(HAVE_LIBLZO)
+        if (method == CCompressStream::eLZO) {
+            compression.reset(new CLZOCompression());
+            compression->SetFlags(test.flags);
+            stream_compressor.reset(new CLZOStreamCompressor(test.flags));
+            stream_decompressor.reset(new CLZOStreamDecompressor(test.flags));
+        } else 
+#endif
+        if (method == CCompressStream::eZip) {
+            compression.reset(new CZipCompression());
+            compression->SetFlags(test.flags);
+            stream_compressor.reset(new CZipStreamCompressor(test.flags));
+            stream_decompressor.reset(new CZipStreamDecompressor(test.flags));
+        } else
+        {
+            _TROUBLE;
+        }
+
+        // ---- Run tests ----
+
+        // Buffer compression/decompression test
+        {{
+            bool res = compression->CompressBuffer(src_buf, 0, dst_buf, kBufLen, &n);
+            assert(res == test.buffer_method_result);
+            assert(n == test.buffer_output_size);
+            res = compression->DecompressBuffer(dst_buf, n, cmp_buf, kBufLen, &n);
+            assert(res == test.buffer_method_result);
+            assert(n == 0);
+        }}
+
+        // Input stream tests
+        {{
+            CCompressionIStream ics(is_str, stream_compressor.get());
+            ics.read(dst_buf, kBufLen);
+            n = ics.gcount();
+            assert(n == test.stream_output_size);
+            assert(ics.GetProcessedSize() == 0);
+            assert(ics.GetOutputSize() == n);
+
+            CCompressionIStream ids(is_str, stream_decompressor.get());
+            ids.read(dst_buf, kBufLen);
+            n = ids.gcount();
+            assert(n == 0);
+            assert(ids.GetProcessedSize() == 0);
+            assert(ids.GetOutputSize() == n);
+        }}
+
+        // Output stream tests
+        {{
+            {{
+                CNcbiOstrstream os_str;
+                CCompressionOStream ocs(os_str, stream_compressor.get());
+                ocs.Finalize();
+                n = os_str.pcount();
+                assert(n == test.stream_output_size);
+                assert(ocs.GetProcessedSize() == 0);
+                assert(ocs.GetOutputSize() == n);
+            }}
+            {{
+                CNcbiOstrstream os_str;
+                CCompressionOStream ods(os_str, stream_decompressor.get());
+                ods.Finalize();
+                n = os_str.pcount();
+                assert(n == 0);
+                assert(ods.GetProcessedSize() == 0);
+                assert(ods.GetOutputSize() == n);
+            }}
+        }}
+
+        // Output stream tests -- with flush()
+        {{
+            {{
+                CNcbiOstrstream os_str;
+                CCompressionOStream ocs(os_str, stream_compressor.get());
+                ocs.flush();
+                ocs.Finalize();
+                n = os_str.pcount();
+                assert(n == test.stream_output_size);
+                assert(ocs.GetProcessedSize() == 0);
+                assert(ocs.GetOutputSize() == n);
+            }}
+            {{
+                CNcbiOstrstream os_str;
+                CCompressionOStream ods(os_str, stream_decompressor.get());
+                ods.flush();
+                ods.Finalize();
+                n = os_str.pcount();
+                assert(n == 0);
+                assert(ods.GetProcessedSize() == 0);
+                assert(ods.GetOutputSize() == n);
+            }}
+        }}
+    }
 }
 
 

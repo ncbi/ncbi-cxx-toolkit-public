@@ -117,23 +117,28 @@ public:
         ///< it is compressed data, that you can get binary instead of
         ///< decompressed data. By default this flag is OFF.
         fAllowTransparentRead = (1<<0),
+        ///< Allow to "compress/decompress" empty data. Buffer compression
+        ///< functions starts to return TRUE instead of FALSE for zero-length
+        ///< input. And, if this flag is used together with fStreamFormat
+        ///< than the output will have header and footer only.
+        fAllowEmptyData       = (1<<1),
         ///< Add/check (accordingly to compression or decompression)
         ///< the compressed data checksum. A checksum is a form of
         ///< redundancy check. We use the safe decompressor, but this can be
         ///< not enough, because many data errors will not result in
         ///< a compressed data violation.
-        fChecksum             = (1<<1),
+        fChecksum             = (1<<2),
         ///< Use stream compatible format for data compression.
         ///< This flag have an effect only for CompressBuffer/DecompressBuffer.
         ///< File and stream based compressors always use it by default.
         ///< Use this flag with DecompressBuffer() to decompress data,
         ///< compressed using streams, or compress data with CompressBuffer(),
         ///< that can be decompressed using decompression stream.
-        fStreamFormat         = (1<<2),
+        fStreamFormat         = (1<<3),
         ///< Store file information like file name and file modification date
         ///< of the compressed file into the file/stream.
         ///< Works only with fStreamFormat flag.
-        fStoreFileInfo        = (1<<3) | fStreamFormat
+        fStoreFileInfo        = (1<<4) | fStreamFormat
     }; 
     typedef CLZOCompression::TFlags TLZOFlags; ///< Bitwise OR of EFlags
 
@@ -619,17 +624,34 @@ class NCBI_XUTIL_EXPORT CLZOStreamCompressor
     : public CCompressionStreamProcessor
 {
 public:
-    /// Constructor.
+    /// Full constructor
     CLZOStreamCompressor(
-        CLZOCompression::ELevel    level       = CCompression::eLevel_Default,
-        streamsize                 in_bufsize  = kCompressionDefaultBufSize,
-        streamsize                 out_bufsize = kCompressionDefaultBufSize,
-        size_t                     blocksize   = kLZODefaultBlockSize,
-        CLZOCompression::TLZOFlags flags       = 0
+        CLZOCompression::ELevel    level,
+        streamsize                 in_bufsize,
+        streamsize                 out_bufsize,
+        size_t                     blocksize = kLZODefaultBlockSize,
+        CLZOCompression::TLZOFlags flags = 0
         )
         : CCompressionStreamProcessor(
-              new CLZOCompressor(level, blocksize),
+              new CLZOCompressor(level, blocksize, flags),
               eDelete, in_bufsize, out_bufsize)
+    {}
+
+    /// Conventional constructor
+    CLZOStreamCompressor(
+        CLZOCompression::ELevel    level,
+        CLZOCompression::TLZOFlags flags = 0
+        )
+        : CCompressionStreamProcessor(
+              new CLZOCompressor(level, kLZODefaultBlockSize, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
+    {}
+
+    /// Conventional constructor
+    CLZOStreamCompressor(CLZOCompression::TLZOFlags flags = 0)
+        : CCompressionStreamProcessor(
+              new CLZOCompressor(CLZOCompression::eLevel_Default, kLZODefaultBlockSize, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 };
 
@@ -641,7 +663,7 @@ public:
 /// See util/compress/stream.hpp for details of stream processing.
 /// @note
 ///   The stream decompressor always suppose that data is in stream format
-///   and use fStreamFormat flag automaticaly.
+///   and use fStreamFormat flag automatically.
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CLZOStreamDecompressor

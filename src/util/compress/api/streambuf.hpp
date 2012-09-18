@@ -194,16 +194,14 @@ inline bool CCompressionStreambuf::IsStreamProcessorHaveData(
             CCompressionStream::EDirection dir) const
 {
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
-    if (sp->m_State == CCompressionStreamProcessor::eInit) {
-        if (dir == CCompressionStream::eRead) {
-            return false;
-        } else { // eWrite
-            // No data in the buffer
-            if ((pptr() - pbase()) == 0) {
-                return false;
-            } 
-        }
+    // eRead
+    if (dir == CCompressionStream::eRead) {
+        return sp->m_State != CCompressionStreamProcessor::eInit;
     }
+    // eWrite -- no data to process
+    if ((pptr() - pbase()) == 0) {
+        return false;
+    } 
     return true;
 }
 

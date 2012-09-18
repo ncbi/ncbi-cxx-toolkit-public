@@ -97,7 +97,10 @@ public:
         ///< if data source contains broken data and API cannot detect that
         ///< it is compressed data, that you can get binary instead of
         ///< decompressed data. By default this flag is OFF.
-        fAllowTransparentRead = (1<<0)
+        fAllowTransparentRead = (1<<0),
+        ///< Allow to "compress/decompress" empty data. 
+        ///< The output compressed data will have header and footer only.
+        fAllowEmptyData       = (1<<1)
     };
     typedef CBZip2Compression::TFlags TBZip2Flags; ///< Bitwise OR of EFlags
 
@@ -416,19 +419,35 @@ class NCBI_XUTIL_EXPORT CBZip2StreamCompressor
     : public CCompressionStreamProcessor
 {
 public:
-    /// Constructor.
+    /// Full constructor
     CBZip2StreamCompressor(
-        CBZip2Compression::ELevel level       = CCompression::eLevel_Default,
-        streamsize                in_bufsize  = kCompressionDefaultBufSize,
-        streamsize                out_bufsize = kCompressionDefaultBufSize,
+        CBZip2Compression::ELevel level,
+        streamsize                in_bufsize,
+        streamsize                out_bufsize,
         int                       verbosity   = 0,
         int                       work_factor = 0,
         CBZip2Compression::TBZip2Flags flags  = 0
         )
-
         : CCompressionStreamProcessor(
               new CBZip2Compressor(level, verbosity, work_factor, flags),
               eDelete, in_bufsize, out_bufsize)
+    {}
+
+    /// Conventional constructor
+    CBZip2StreamCompressor(
+        CBZip2Compression::ELevel level,
+        CBZip2Compression::TBZip2Flags flags = 0
+        )
+        : CCompressionStreamProcessor(
+              new CBZip2Compressor(level, 0, 0, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
+    {}
+
+    /// Conventional constructor
+    CBZip2StreamCompressor(CBZip2Compression::TBZip2Flags flags = 0)
+        : CCompressionStreamProcessor(
+              new CBZip2Compressor(CBZip2Compression::eLevel_Default, 0, 0, flags),
+              eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 };
 
@@ -444,20 +463,20 @@ class NCBI_XUTIL_EXPORT CBZip2StreamDecompressor
     : public CCompressionStreamProcessor
 {
 public:
-    /// Full constructor.
+    /// Full constructor
     CBZip2StreamDecompressor(
         streamsize                     in_bufsize,
         streamsize                     out_bufsize,
-        int                            verbosity,
-        int                            small_decompress,
-        CBZip2Compression::TBZip2Flags flags = 0
+        int                            verbosity        = 0,
+        int                            small_decompress = 0,
+        CBZip2Compression::TBZip2Flags flags            = 0
         )
         : CCompressionStreamProcessor(
              new CBZip2Decompressor(verbosity, small_decompress, flags),
              eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor.
+    /// Conventional constructor
     CBZip2StreamDecompressor(CBZip2Compression::TBZip2Flags flags = 0)
         : CCompressionStreamProcessor( 
               new CBZip2Decompressor(0, 0, flags),
