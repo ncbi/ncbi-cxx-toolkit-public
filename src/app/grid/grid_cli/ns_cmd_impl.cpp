@@ -87,8 +87,7 @@ static inline string UnquoteIfQuoted(const CTempString& str)
     }
 }
 
-static void DetectTypeAndSet(CJsonNode& node,
-        const string& key, const string& value)
+void DetectTypeAndSet(CJsonNode& node, const string& key, const string& value)
 {
     if (IsInteger(value))
         node.SetNumber(key, NStr::StringToInt8(value));

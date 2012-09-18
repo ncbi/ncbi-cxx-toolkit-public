@@ -156,9 +156,10 @@ void CNetScheduleAdmin::DumpQueue(
 }
 
 
-void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
+void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
+        TQueueInfo& queue_info)
 {
-    CTempString queue_info, dyn_queue, model_queue;
+    CTempString queue_details, dyn_queue, queue_class;
 
     string qinf_cmd("QINF " + m_Impl->m_API->m_Queue);
     g_AppendClientIPAndSessionID(qinf_cmd);
@@ -166,6 +167,39 @@ void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
     string getc_cmd("GETC");
     g_AppendClientIPAndSessionID(getc_cmd);
 
+    string cmd_output(server.ExecWithRetry(qinf_cmd).response);
+
+    NStr::SplitInTwo(cmd_output, "\t", queue_details, dyn_queue);
+    switch (queue_details[0]) {
+    case '0':
+        queue_info["kind"] = "static";
+        queue_info["qclass"] = kEmptyStr;
+        queue_info["description"] = kEmptyStr;
+        break;
+    case '1':
+        queue_info["kind"] = "dynamic";
+
+        if (NStr::SplitInTwo(dyn_queue, "\t", queue_class, queue_details)) {
+            queue_info["qclass"] = queue_class;
+            queue_info["description"] = NStr::ParseQuoted(queue_details);
+        }
+    }
+
+    CNetServer::SExecResult exec_result(server.ExecWithRetry(getc_cmd));
+
+    CNetServerMultilineCmdOutput output(exec_result);
+
+    string line;
+
+    while (output.ReadLine(line)) {
+        string key, value;
+        NStr::SplitInTwo(line, "=", key, value);
+        queue_info[key] = value;
+    }
+}
+
+void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
+{
     bool print_headers = m_Impl->m_API->m_Service.IsLoadBalanced();
 
     for (CNetServiceIterator it =
@@ -173,34 +207,12 @@ void CNetScheduleAdmin::PrintQueueInfo(CNcbiOstream& output_stream)
         if (print_headers)
             output_stream << '[' << (*it).GetServerAddress() << ']' << NcbiEndl;
 
-        string cmd_output((*it).ExecWithRetry(qinf_cmd).response);
+        TQueueInfo queue_info;
 
-        NStr::SplitInTwo(cmd_output, "\t", queue_info, dyn_queue);
-        switch (queue_info[0]) {
-        case '0':
-            output_stream << "queue type: static" << NcbiEndl;
-            break;
-        case '1':
-            output_stream << "queue_type: dynamic" << NcbiEndl;
+        GetQueueInfo(*it, queue_info);
 
-            if (NStr::SplitInTwo(dyn_queue, "\t", model_queue, queue_info))
-                output_stream <<
-                        "model_queue: " << model_queue << NcbiEndl <<
-                        "description: " <<
-                                NStr::ParseQuoted(queue_info) << NcbiEndl;
-        }
-
-        CNetServer::SExecResult exec_result((*it).ExecWithRetry(getc_cmd));
-
-        CNetServerMultilineCmdOutput output(exec_result);
-
-        string line;
-        static const string eq("=");
-        static const string field_sep(": ");
-
-        while (output.ReadLine(line)) {
-            NStr::ReplaceInPlace(line, eq, field_sep, 0, 1);
-            output_stream << line << NcbiEndl;
+        ITERATE(TQueueInfo, qi, queue_info) {
+            output_stream << qi->first << ": " << qi->second << NcbiEndl;
         }
 
         if (print_headers)

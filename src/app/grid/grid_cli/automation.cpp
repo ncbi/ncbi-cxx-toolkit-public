@@ -511,7 +511,28 @@ bool SNetScheduleServerAutomationObject::Call(const string& method,
     } else if (method == "server_status")
         reply.PushNode(LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
-    else if (method == "job_group_info")
+    else if (method == "queues") {
+        CNetScheduleAdmin::TQueueList qlist;
+        m_NetScheduleAPI.GetAdmin().GetQueueList(qlist);
+        if (!qlist.empty()) {
+            CJsonNode queues(CJsonNode::NewObjectNode());
+            ITERATE(list<string>, queue_name, qlist.front().queues) {
+                CNetScheduleAPI tmp_ns(qlist.front().server.GetServerAddress(),
+                        m_NetScheduleAPI.GetService().
+                                GetServerPool().GetClientName(),
+                                *queue_name);
+                CNetScheduleAdmin::TQueueInfo queue_info;
+                tmp_ns.GetAdmin().GetQueueInfo(*tmp_ns.GetService().Iterate(),
+                        queue_info);
+                CJsonNode queue_info_node(CJsonNode::NewObjectNode());
+                ITERATE(CNetScheduleAdmin::TQueueInfo, qi, queue_info) {
+                    DetectTypeAndSet(queue_info_node, qi->first, qi->second);
+                }
+                queues.SetNode(*queue_name, queue_info_node);
+            }
+            reply.PushNode(queues);
+        }
+    } else if (method == "job_group_info")
         reply.PushNode(GenericStatToJson(m_NetServer,
                 eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
     else if (method == "client_info")

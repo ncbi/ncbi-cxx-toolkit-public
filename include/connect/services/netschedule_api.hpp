@@ -780,6 +780,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
         CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::eJobNotFound,
         const string& job_group = kEmptyStr);
 
+    typedef map<string, string> TQueueInfo;
+    void GetQueueInfo(CNetServer server, TQueueInfo& queue_info);
     void PrintQueueInfo(CNcbiOstream& output_stream);
 
     struct SServerQueueList {

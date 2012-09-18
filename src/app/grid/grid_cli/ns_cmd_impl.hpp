@@ -42,6 +42,8 @@ BEGIN_NCBI_SCOPE
 
 #define TEMP_STRING_CTOR(str) CTempString(str, sizeof(str) - 1)
 
+void DetectTypeAndSet(CJsonNode& node, const string& key, const string& value);
+
 CJsonNode GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose);
 
