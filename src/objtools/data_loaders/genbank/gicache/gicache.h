@@ -45,6 +45,8 @@ int         GICache_LoadAdd(int gi, int len, const char* accession, int version)
 /* Finish load, flush modifications to disk */
 int         GICache_LoadEnd(void);
 
+void        GICache_SetLog(void (*logfunc)(char*)); 
+
 #ifdef __cplusplus
 }
 #endif

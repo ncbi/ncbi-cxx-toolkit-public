@@ -112,7 +112,12 @@ typedef struct {
     Uint4   m_OffsetHeaderSize; /* 0 for 32-bit version, 256 for 64-bit */
     char*   m_OldDataPtr;
     Int8    m_OldMappedDataLen;
+    ino_t   m_IndexInode;
+    ino_t   m_DataInode;
 } SGiDataIndex;
+
+static void (*LogFunc)(char*) = NULL;
+
 
 /****************************************************************************
  *
@@ -164,7 +169,7 @@ static void x_DumpDataCache(SGiDataIndex* data_index)
     }
 }
 
-static void x_CloseIndexFiles(SGiDataIndex* data_index)
+static void x_CloseIndexFile(SGiDataIndex* data_index)
 {
     if (data_index->m_GiIndexFile >= 0) {
         close(data_index->m_GiIndexFile);
@@ -174,7 +179,7 @@ static void x_CloseIndexFiles(SGiDataIndex* data_index)
     }
 }
 
-static void x_CloseDataFiles(SGiDataIndex* data_index)
+static void x_CloseDataFile(SGiDataIndex* data_index)
 {
     if (data_index->m_DataFile >= 0) {
         close(data_index->m_DataFile);
@@ -187,8 +192,8 @@ static void x_CloseDataFiles(SGiDataIndex* data_index)
 /* Closes all files */
 static void x_CloseFiles(SGiDataIndex* data_index)
 {
-    x_CloseIndexFiles(data_index);
-    x_CloseDataFiles(data_index);
+    x_CloseIndexFile(data_index);
+    x_CloseDataFile(data_index);
 }
 
 static void x_UnMapIndex(SGiDataIndex* data_index)
@@ -219,7 +224,7 @@ static void x_UnMap(SGiDataIndex* data_index)
     x_UnMapData(data_index);
 }
 
-static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
+static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
 {
     char buf[256];
     int flags;
@@ -230,7 +235,6 @@ static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
     flags = (data_index->m_ReadOnlyMode?O_RDONLY:O_RDWR|O_APPEND|O_CREAT);
     
     x_UnMapIndex(data_index);
-    x_CloseIndexFiles(data_index);
     
     strcpy(buf, data_index->m_FileNamePrefix);
 
@@ -239,6 +243,19 @@ static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
     data_index->m_GiIndexLen = 
         (data_index->m_GiIndexFile >= 0 ? 
          lseek(data_index->m_GiIndexFile, 0, SEEK_END)/sizeof(Uint4) : 0);
+
+    /* Save inode number */
+    struct stat stat_buf;
+    fstat(data_index->m_GiIndexFile, &stat_buf);
+    data_index->m_IndexInode = stat_buf.st_ino;
+
+    if (LogFunc) {
+        char logmsg[256];
+        sprintf(logmsg, "GI_CACHE: Opened index file %s; filedes %d, inode %d, length %ld",
+                buf, data_index->m_GiIndexFile, data_index->m_IndexInode,
+                data_index->m_GiIndexLen);
+        LogFunc(logmsg);
+    }
 
     if (data_index->m_GiIndexLen == 0 && !data_index->m_ReadOnlyMode &&
         data_index->m_GiIndexFile) {
@@ -267,8 +284,8 @@ static Uint1 x_OpenIndexFiles(SGiDataIndex* data_index)
     return (data_index->m_GiIndexFile >= 0);
 }
 
-/* Opens data and index files, including check if they are already open. */
-static Uint1 x_OpenDataFiles(SGiDataIndex* data_index)
+/* Opens data file, including check if they are already open. */
+static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
 {
     char buf[256];
     int flags;
@@ -283,6 +300,19 @@ static Uint1 x_OpenDataFiles(SGiDataIndex* data_index)
     data_index->m_DataFile = open(buf,flags,0644);
     data_index->m_DataLen = (data_index->m_DataFile >= 0 ? 
                              lseek(data_index->m_DataFile, 0, SEEK_END) : 0);
+    /* Save inode number */
+    struct stat stat_buf;
+    fstat(data_index->m_DataFile, &stat_buf);
+    data_index->m_DataInode = stat_buf.st_ino;
+
+    if (LogFunc) {
+        char logmsg[256];
+        sprintf(logmsg, "GI_CACHE: Opened data file %s; filedes %d, inode %d, length %ld",
+                buf, data_index->m_DataFile, data_index->m_DataInode,
+                data_index->m_DataLen);
+        LogFunc(logmsg);
+    }
+
     if (data_index->m_DataLen == 0 && !data_index->m_ReadOnlyMode &&
         data_index->m_DataFile) {
         /* Fill first 2*sizeof(int) bytes with 0: this guarantees that all 
@@ -316,7 +346,7 @@ static Uint1 x_MapIndex(SGiDataIndex* data_index)
     int prot;
     Uint4 map_size;
 
-    if (!x_OpenIndexFiles(data_index)) return 0;
+    if (!x_OpenIndexFile(data_index)) return 0;
 
     if (data_index->m_GiIndex != MAP_FAILED) return 1;
     
@@ -337,6 +367,13 @@ static Uint1 x_MapIndex(SGiDataIndex* data_index)
                      data_index->m_GiIndexFile, 0);
     data_index->m_MappedIndexLen = data_index->m_GiIndexLen;
 
+    if (LogFunc) {
+        char logmsg[256];
+        sprintf(logmsg, "GI_CACHE: Memory mapped index file, filedes %d, map length %ld",
+                data_index->m_GiIndexFile, data_index->m_MappedIndexLen);
+        LogFunc(logmsg);
+    }
+
     return (data_index->m_GiIndex != MAP_FAILED);
 }
 
@@ -344,7 +381,7 @@ static Uint1 x_MapIndex(SGiDataIndex* data_index)
 
 static Uint1 x_MapData(SGiDataIndex* data_index)
 {
-    if (!x_OpenDataFiles(data_index)) return 0;
+    if (!x_OpenDataFile(data_index)) return 0;
 
     if (data_index->m_Data == MAP_FAILED) {
         int prot;
@@ -370,6 +407,13 @@ static Uint1 x_MapData(SGiDataIndex* data_index)
             (char*) mmap(data_index->m_OldDataPtr, map_size, prot,
                          MAP_SHARED|MAP_NORESERVE, data_index->m_DataFile, 0);
         data_index->m_MappedDataLen = map_size;
+
+        if (LogFunc) {
+            char logmsg[256];
+            sprintf(logmsg, "GI_CACHE: Memory mapped data file, filedes %d, map length %ld",
+                    data_index->m_DataFile, data_index->m_MappedDataLen);
+            LogFunc(logmsg);
+        }
     }
 
     return (data_index->m_Data != MAP_FAILED);
@@ -437,7 +481,32 @@ static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
         data_index->m_Remapping--;
         return 0;
     }
+
     assert(data_index->m_Remapping == 1);
+
+    /* In read-only mode, check if inode numbers for underlying files have
+     * changed. If so, close and reopen the file descriptors.
+     * NB: both index and data file inodes must change before file descriptors
+     * are closed, otherwise it is possible to end up with mismatched files. 
+     */
+    if (data_index->m_ReadOnlyMode) {
+        int index_inode_changed = 0;
+        int data_inode_changed = 0;
+        struct stat stat_buf;
+        char buf[256];
+
+        sprintf(buf, "%sidx", data_index->m_FileNamePrefix);
+        stat(buf, &stat_buf);
+        if (stat_buf.st_ino != data_index->m_IndexInode)
+            index_inode_changed = 1;
+        sprintf(buf, "%sdat", data_index->m_FileNamePrefix);
+        stat(buf, &stat_buf);
+        if (stat_buf.st_ino != data_index->m_DataInode)
+            data_inode_changed = 1;
+        
+        if (index_inode_changed && data_inode_changed)
+            x_CloseFiles(data_index);
+    }
 
     if (!x_ReMapIndex(data_index))
         return 0;
@@ -648,6 +717,7 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
     if ((data_index->m_GiIndex == MAP_FAILED ||
          data_index->m_Data == MAP_FAILED)) {
         data_index->m_NeedRemap = 1;
+
         if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index, 0))
             return NULL;
     }
@@ -668,9 +738,14 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
          */
         base = x_GetIndexOffset(data_index, gi, page, level);
         
-        /* If base wasn't found, bail out */
-        if (base == -1)
+        /* 
+         * If base wasn't found, bail out, but set flag for remapping - maybe
+         * the data on disk has gone further...
+        */
+        if (base == -1) {
+            data_index->m_NeedRemap = 1;
             return NULL;
+        }
     }
     
     Int8 gi_offset = 0;
@@ -706,6 +781,7 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
             if (!data_index->m_RemapOnRead || !x_ReMapData(data_index))
                 return NULL;
         }
+
         return data_index->m_Data + gi_offset;
     }
 }
@@ -991,13 +1067,15 @@ static Uint1 GiDataIndex_DeleteData(SGiDataIndex* data_index, int gi)
                disk, but not yet remapped, remap now. */
             if (base >= (int)data_index->m_MappedDataLen) {
                 data_index->m_NeedRemap = 1;
-                GiDataIndex_ReMap(data_index, 0);
+                if (!GiDataIndex_ReMap(data_index, 0))
+                    return 0;
             }
             memset(data_index->m_Data + base, 0, data_index->m_DataUnitSize);
         }
     }
     return 1;
 }
+
 /* Returns pointer to the start of data in the data file. Needed when
  * the whole data file needs to be read sequentially.
  * NB: This may involve remapping, hence no 'const' qualifier
@@ -1153,18 +1231,14 @@ static INLINE int s_DecodeInt2(const char* buf, int* val)
 }
 
 static INLINE
-int s_Encode3Plus5Accession(char* buf, const char* accession, int suffix)
+int s_Encode3Plus5Accession(char* buf, const char* accession, int suffix,
+                            char* *buf_ptr)
 {
     if (!(accession[0] >= 'A' && accession[0] <= 'Z' &&
            accession[1] >= 'A' && accession[1] <= 'Z' &&
            accession[2] >= 'A' && accession[2] <= 'Z' &&
           ((suffix>>17) == 0))) {
-#if 0
-        ErrPostEx(SEV_FATAL, 0, 0, "Bad accession: %s", accession);
-#else
-        fprintf(stderr, "Bad accession: %s", accession);
-        exit(-1);
-#endif
+        return 0;
     }
     /* 1st prefix character + top 3 bits of 2nd prefix character */
     buf[0] = ((accession[0] - 'A' + 1)<<3) | ((accession[1] - 'A' + 1)>>2);
@@ -1177,7 +1251,9 @@ int s_Encode3Plus5Accession(char* buf, const char* accession, int suffix)
     /* Bits 0-7 of integer suffix */
     buf[3] = (suffix & 0xff); 
 
-    return 4;
+    *buf_ptr += 4;
+
+    return 1;
 }
 
 static INLINE
@@ -1195,13 +1271,16 @@ int s_Decode3Plus5Accession(const char* buf, char* prefix,
                ((int)(buf[3] & 0xff));
     if (*suffix >= 100000)
         return -1;
+
+    return 1;
 }
 
 static INLINE
 int s_Encode2LetterAccession(char* buf, const char* accession, int suffix,
-                             int prefix_length)
+                             int prefix_length, char* *buf_ptr)
 {
-    assert(accession[0] >= 'A' && accession[0] <= 'Z');
+    if (accession[0] < 'A' || accession[0] > 'Z')
+        return 0;
 
     /* 1st prefix character */
     buf[0] = (accession[0] - 'A' + 1)<<3;
@@ -1224,7 +1303,7 @@ int s_Encode2LetterAccession(char* buf, const char* accession, int suffix,
         buf[3] = (suffix>>8) & 0xff;
         /* Bits 0-7 of the integer suffix */
         buf[4] = (suffix & 0xff);
-        return 5;
+        *buf_ptr += 5;
     } else {
         /* Bits 16-21 of the integer suffix (and control bit = 0) */
         buf[1] |= ((suffix>>16) & 0x3f);
@@ -1232,8 +1311,10 @@ int s_Encode2LetterAccession(char* buf, const char* accession, int suffix,
         buf[2] = (suffix>>8) & 0xff;
         /* Bits 0-7 of the integer suffix */
         buf[3] = (suffix & 0xff);
-        return 4;
+        *buf_ptr += 4;
     }
+
+    return 1;
 }
 
 static INLINE
@@ -1268,23 +1349,20 @@ int s_Decode2LetterAccession(const char* buf, Uint1 control_byte, char* prefix,
         *suffix = (((int)(buf[1] & 0x3f)<<16) | (((int)(buf[2]) & 0xff)<<8) |
                   ((int)(buf[3] & 0xff)));
     }
+    return 1;
 }
 
 static INLINE
-int s_Encode4Plus9Accession(char* buf, const char* accession, int suffix)
+int s_Encode4Plus9Accession(char* buf, const char* accession, int suffix,
+                            char* *buf_ptr)
 {
     if (!(accession[0] >= 'A' && accession[0] <= 'Z' &&
            accession[1] >= 'A' && accession[1] <= 'Z' &&
            accession[2] >= 'A' && accession[2] <= 'Z' &&
            accession[3] >= 'A' && accession[3] <= '_' &&
-          ((suffix>>27) == 0))) {
-#if 0
-        ErrPostEx(SEV_FATAL, 0, 0, "Bad accession: %s", accession);
-#else
-        fprintf(stderr, "Bad accession: %s", accession);
-        exit(-1);
-#endif
-    }
+          ((suffix>>27) == 0)))
+        return 0;
+    
     /* 1st prefix character + top 3 bits of 2nd prefix character */
     buf[0] = ((accession[0] - 'A' + 1)<<3) | ((accession[1] - 'A' + 1)>>2);
     /* bottom 2 bits of 2nd prefix character + 3rd prefix character + top 1 bit
@@ -1300,7 +1378,9 @@ int s_Encode4Plus9Accession(char* buf, const char* accession, int suffix)
     /* Bits 0-7 of the integer suffix */
     buf[5] = (suffix & 0xff);
 
-    return 6;
+    *buf_ptr += 6;
+
+    return 1;
 }
 
 static INLINE
@@ -1325,11 +1405,13 @@ int s_Decode4Plus9Accession(const char* buf, Uint1 control_byte, char* prefix,
     *prefix_length = pos + 4;
     *suffix = ((int)(buf[2]&0x0f)<<24) | ((int)(buf[3] & 0xff)<<16) | 
         ((int)(buf[4]&0xff)<<8) | ((int)(buf[5]&0xff));
+
+    return 1;
 }
 
 static int
 s_EncodeGiData(const char* accession, int version, int seq_length,
-               char* outbuf)
+               char* outbuf, int* encoded_length)
 {
     int acc_length = strlen(accession);
     Uint1 suffix_length = 0;
@@ -1414,11 +1496,12 @@ s_EncodeGiData(const char* accession, int version, int seq_length,
             }
             if (suffix>>22 != 0)
                 outbuf[0] |= (1<<6);
-            buf_ptr +=
-                s_Encode2LetterAccession(buf_ptr, accession, suffix, acc_pos);
+            if (!s_Encode2LetterAccession(buf_ptr, accession, suffix, acc_pos, &buf_ptr))
+                return 0;
         } else if (suffix_length == 5 && acc_pos == 3) {
             outbuf[0] |= (1<<5);
-            buf_ptr += s_Encode3Plus5Accession(buf_ptr, accession, suffix);
+            if (!s_Encode3Plus5Accession(buf_ptr, accession, suffix, &buf_ptr))
+                return 0;
         } else if (suffix_length >= 8 && acc_pos >= 4) {
             const char* acc_ptr = accession;
             outbuf[0] |= (1<<6);
@@ -1426,7 +1509,8 @@ s_EncodeGiData(const char* accession, int version, int seq_length,
                 outbuf[0] |= (1<<5);
                 acc_ptr += 3;
             }
-            buf_ptr += s_Encode4Plus9Accession(buf_ptr, acc_ptr, suffix);
+            if (!s_Encode4Plus9Accession(buf_ptr, acc_ptr, suffix, &buf_ptr))
+                return 0;
         } else {
             /* Non-standard case - no prefix compression, end prefix with null
                byte. For suffix use 2 or 4 bytes depending on its value. */
@@ -1461,7 +1545,9 @@ s_EncodeGiData(const char* accession, int version, int seq_length,
         }
     }
 
-    return buf_ptr - outbuf;
+    *encoded_length = buf_ptr - outbuf;
+
+    return 1;
 }
 
 static int
@@ -1664,7 +1750,9 @@ int GICache_LoadAdd(int gi, int len, const char* acc, int version)
     static char buf[MAX_ACCESSION_LENGTH];
     if(!gi_cache) return 0;
     
-    acc_len = s_EncodeGiData(acc, version, len, buf);
+    if (!s_EncodeGiData(acc, version, len, buf, &acc_len))
+        return 0;
+
     /* Primary accession and length for a given gi never change, hence there
      * is never a need to overwrite gi data if it is already present in
      * cache.
@@ -1682,4 +1770,9 @@ int GICache_LoadEnd()
        would still be available. */
     gi_cache = GiDataIndex_Free(gi_cache);
     return 0;
+}
+
+void GICache_SetLog(void (*logfunc)(char*))
+{
+    LogFunc = logfunc;
 }
