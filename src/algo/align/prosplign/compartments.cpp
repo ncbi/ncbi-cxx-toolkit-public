@@ -151,10 +151,15 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
     TSeqPos subj_leftmost = hitrefs.front()->GetSubjMin();
     TSeqPos subj_rightmost = 0;
 
+    bool strand = true;
 
     ITERATE (THitRefs, h, hitrefs) {
-
-        bool strand = (*h)->GetSubjStrand();
+        if (!(*h)->GetSubjStrand()) {
+            strand = false;
+            break;
+        }
+    }
+    ITERATE (THitRefs, h, hitrefs) {
         TSeqPos subj_min = (*h)->GetSubjMin();
         TSeqPos subj_max = (*h)->GetSubjMax();
         TSeqPos qry_min = (*h)->GetQueryMin();
@@ -201,7 +206,7 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
 
     CRef<CSeq_id> subj_id(new CSeq_id);
     subj_id->Assign(*hitrefs.front()->GetSubjId());
-    CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id, subj_leftmost, subj_rightmost, hitrefs.front()->GetSubjStrand()?eNa_strand_plus:eNa_strand_minus));
+    CRef<CSeq_loc> subj_loc(new CSeq_loc(*subj_id, subj_leftmost, subj_rightmost, strand?eNa_strand_plus:eNa_strand_minus));
     CRef<CAnnotdesc> region(new CAnnotdesc);
     region->SetRegion(*subj_loc);
     result->SetDesc().Set().push_back(region);
