@@ -1692,21 +1692,17 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                         }
                     }
                 }
-                for (int j = frame_missing ? 1 : 0; j <= 1; ++j) {
-                    if (last_exon && (row < 0 || row == j)) {
-                        const CSpliced_exon &lower_exon = is_minus[j]
-                                                        ? exon : *last_exon;
-                        const CSpliced_exon &higher_exon = is_minus[j]
-                                                        ? *last_exon : exon;
-                        TSeqPos gap_start = (j == 0
-                            ? s_ProductPosAsSeqPos(lower_exon.GetProduct_end())
-                            : lower_exon.GetGenomic_end()) + 1;
-                        TSeqPos gap_end = j == 0
-                            ? s_ProductPosAsSeqPos(higher_exon.GetProduct_start())
-                            : higher_exon.GetGenomic_start();
-                        if ((gap_end - gap_start) % 3) {
-                            ++retval;
-                        }
+                if (last_exon && frame_missing && row <= 0) {
+                    const CSpliced_exon &lower_exon = is_minus[0]
+                                                    ? exon : *last_exon;
+                    const CSpliced_exon &higher_exon = is_minus[0]
+                                                    ? *last_exon : exon;
+                    TSeqPos gap_start =
+                        s_ProductPosAsSeqPos(lower_exon.GetProduct_end()) + 1;
+                    TSeqPos gap_end =
+                        s_ProductPosAsSeqPos(higher_exon.GetProduct_start());
+                    if ((gap_end - gap_start) % 3) {
+                        ++retval;
                     }
                 }
                 last_exon.Reset(&exon);
