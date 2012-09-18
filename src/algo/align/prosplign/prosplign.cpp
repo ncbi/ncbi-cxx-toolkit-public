@@ -904,6 +904,13 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
         genomic.SetInt().SetTo(sequence::GetLength(*nucid, &scope)-1);
     }
 
+    //check if from <=to
+    TSeqPos from = genomic.GetTotalRange().GetFrom();
+    TSeqPos to = genomic.GetTotalRange().GetTo();
+    if(from > to) {
+        NCBI_THROW(CProSplignException, eGenericError, "genomic seq-loc has from > to");
+    }
+
     CRef<CSeq_align> result;
 
     switch (genomic.GetStrand()) {
