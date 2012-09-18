@@ -667,6 +667,10 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
         CRef<CSeq_loc> cds_on_fake_mrna_loc(new CSeq_loc(
             fake_transcript_align->SetSegs().SetSpliced().SetProduct_id(),
             0, fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()-1));
+        if (!found_start_codon &&
+            fake_transcript_align->SetSegs().SetSpliced().SetExons().front()->GetProduct_start().GetNucpos()==0) {
+            cds_on_fake_mrna_loc->SetPartialStart(true, eExtreme_Biological);
+        }
         cd_feat->SetLocation(*cds_on_fake_mrna_loc);
 
         CBioseq_Handle bsh = m_scope->GetBioseqHandle(align->GetSeq_id(1));
