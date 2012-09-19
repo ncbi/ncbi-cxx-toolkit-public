@@ -53,7 +53,7 @@ void CBadResiduesException::ReportExtra(ostream& out) const
     }
     out << ", line number = " << m_BadResiduePositions.m_LineNo;
     out << ", positions: ";
-    x_ConvertBadIndexesToString( out, m_BadResiduePositions.m_BadIndexes, 20 );
+    x_ConvertBadIndexesToString( out, m_BadResiduePositions.m_BadIndexes, 1000 );
 }
 
 void CBadResiduesException::x_ConvertBadIndexesToString(

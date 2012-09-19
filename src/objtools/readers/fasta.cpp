@@ -663,13 +663,15 @@ void CFastaReader::ParseDataLine(const TStr& s)
         } 
     }
 
+    m_SeqData.resize(m_CurrentPos);
+
+    // before throwing, be sure that we're in a valid state so that callers can
+    // parse multiple lines and get the invalid residues in all of them.
     if( ! bad_pos_vec.empty() ) {
         NCBI_THROW2(CBadResiduesException, eBadResidues,
             "CFastaReader: There are invalid " + x_NucOrProt() + "residue(s) in input sequence",
             CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
     }
-
-    m_SeqData.resize(m_CurrentPos);
 }
 
 void CFastaReader::x_CloseGap(TSeqPos len)
