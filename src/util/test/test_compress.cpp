@@ -264,12 +264,14 @@ static const SEmptyInputDataTest s_EmptyInputDataTests[] =
 {
     { CCompressStream::eBZip2, 0 /* default flags */,              false,  0,  0 },
     { CCompressStream::eBZip2, CBZip2Compression::fAllowEmptyData, true,  14, 14 },
+#ifdef HAVE_LIBLZO
     // LZO's CompressBuffer() method do not use fStreamFormat that add header
     //  and footer to the output, streams always use it.
     { CCompressStream::eLZO,   0 /* default flags */,              false,  0,  0 },
     { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData,   true,   0, 15 },
     { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData |
                                CLZOCompression::fStreamFormat,     true,  15, 15 },
+#endif
     { CCompressStream::eZip,   0 /* default flags */,              false,  0,  0 },
     { CCompressStream::eZip,   CZipCompression::fGZip,             false,  0,  0 },
     { CCompressStream::eZip,   CZipCompression::fAllowEmptyData,   true,   8,  8 },
