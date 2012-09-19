@@ -538,6 +538,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CNcbiArguments    args(0, 0);  // no cmd.-line ars
 
             m_Context.reset(CreateContext(&args, &env, &istr, &ostr));
+            _ASSERT(m_Context.get());
+            m_Context->CheckStatus();
 
             CNcbiOstream* orig_stream = NULL;
             //int orig_fd = -1;
