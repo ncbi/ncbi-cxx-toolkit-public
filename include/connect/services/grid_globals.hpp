@@ -63,11 +63,11 @@ public:
     { m_MaxJobsAllowed = max_jobs_allowed; }
     void SetMaxFailuresAllowed(unsigned int max_failures_allowed)
     { m_MaxFailuresAllowed = max_failures_allowed; }
-    void SetInfinitLoopTime(unsigned int inifinit_loop_time)
-    { m_InfinitLoopTime = inifinit_loop_time; }
+    void SetInfiniteLoopTime(unsigned int infinite_loop_time)
+    { m_InfiniteLoopTime = infinite_loop_time; }
 
 
-    void CheckInfinitLoop();
+    void CheckForInfiniteLoop();
 
 private:
     unsigned int m_JobsStarted;
@@ -78,7 +78,7 @@ private:
     unsigned int m_JobsLost;
     unsigned int m_MaxJobsAllowed;
     unsigned int m_MaxFailuresAllowed;
-    unsigned int m_InfinitLoopTime;
+    unsigned int m_InfiniteLoopTime;
     struct SJobActivity {
         CStopWatch elasped_time;
         bool flag;

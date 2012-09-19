@@ -925,7 +925,7 @@ int CGridWorkerNode::Run()
     unsigned int infinite_loop_time =
         reg.HasEntry(kServerSec, "infinite_loop_time") ?
         reg.GetInt(kServerSec, "infinite_loop_time", 0, 0, IRegistry::eReturn) :
-        reg.GetInt(kServerSec, "infinit_loop_time", 0, 0, IRegistry::eReturn);
+        reg.GetInt(kServerSec, "infinite_loop_time", 0, 0, IRegistry::eReturn);
 
     bool reuse_job_object =
         reg.GetBool(kServerSec, "reuse_job_object", false, 0,
@@ -1076,7 +1076,7 @@ int CGridWorkerNode::Run()
     CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxJobsAllowed(max_total_jobs);
     CGridGlobals::GetInstance().GetJobsWatcher().SetMaxFailuresAllowed(max_failed_jobs);
-    CGridGlobals::GetInstance().GetJobsWatcher().SetInfinitLoopTime(infinite_loop_time);
+    CGridGlobals::GetInstance().GetJobsWatcher().SetInfiniteLoopTime(infinite_loop_time);
     CGridGlobals::GetInstance().SetWorker(*this);
 
     IWorkerNodeIdleTask* task = NULL;

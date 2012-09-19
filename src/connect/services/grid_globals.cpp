@@ -50,7 +50,7 @@ CWNJobsWatcher::CWNJobsWatcher()
     : m_JobsStarted(0), m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
       m_JobsCanceled(0), m_JobsLost(0),
       m_MaxJobsAllowed(0), m_MaxFailuresAllowed(0),
-      m_InfinitLoopTime(0)
+      m_InfiniteLoopTime(0)
 {
 }
 CWNJobsWatcher::~CWNJobsWatcher()
@@ -128,14 +128,14 @@ void CWNJobsWatcher::Print(CNcbiOstream& os) const
     }
 }
 
-void CWNJobsWatcher::CheckInfinitLoop()
+void CWNJobsWatcher::CheckForInfiniteLoop()
 {
-    if (m_InfinitLoopTime > 0) {
+    if (m_InfiniteLoopTime > 0) {
         size_t count = 0;
         CMutexGuard guard(m_ActiveJobsMutex);
         NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
             if (!it->second.flag) {
-                if ( it->second.elasped_time.Elapsed() > m_InfinitLoopTime) {
+                if ( it->second.elasped_time.Elapsed() > m_InfiniteLoopTime) {
                     ERR_POST_X(3, "An infinite loop is detected in job "
                                   << it->first->GetJobKey());
                     it->second.flag = true;

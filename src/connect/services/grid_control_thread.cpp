@@ -282,7 +282,7 @@ bool CWorkerNodeControlServer::ShutdownRequested(void)
 
 void CWorkerNodeControlServer::ProcessTimeout(void)
 {
-    CGridGlobals::GetInstance().GetJobsWatcher().CheckInfinitLoop();
+    CGridGlobals::GetInstance().GetJobsWatcher().CheckForInfiniteLoop();
 }
 
 
