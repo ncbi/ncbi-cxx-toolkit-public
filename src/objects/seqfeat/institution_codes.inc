@@ -4943,6 +4943,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RHMC	s	Red House Museum",
 "RHMD	s	National Institute of Science Communication",
 "RHMU	c	Department of Pathology, Faculty of Medical Science, Ramathibordi Hospital",
+"RHS	c	Plant Pathology, The Royal Horticultural Society",
 "RHT	s	St. Joseph's College",
 "RI	s	Rudjer Boskovic Institute",
 "RIA	c	The Russia Research Institute for Antibiotics Culture Collection",
