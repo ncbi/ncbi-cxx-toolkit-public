@@ -1330,7 +1330,6 @@ CVariation_inst::EType CalcInstTypeForAA(const string& prot_ref_str, const strin
 CVariantProperties::TEffect CalcEffectForProt(const string& prot_ref_str, const string& prot_delta_str)
 {
     CVariantProperties::TEffect effect = 0;
-
     for(size_t i = 0; i < prot_ref_str.size() && i < prot_delta_str.size(); i++) {
         if(prot_ref_str[i] == prot_delta_str[i]) {
             effect |= CVariantProperties::eEffect_synonymous;
@@ -1683,11 +1682,15 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     AttachSeq(*codons_p);
     prot_v->SetPlacements().push_back(codons_p);
 
-
-    prot_v->SetVariant_prop().SetEffect(CalcEffectForProt(prot_ref_str, prot_delta_str));
-    if(prot_v->SetVariant_prop().GetEffect() == 0) {
-        prot_v->SetVariant_prop().ResetEffect();
+   
+    if(frameshift_phase == 0 && prot_ref_str.size() == prot_delta_str.size()) { 
+        //VAR-267 - calculate missense/synonymous/stop-gain/loss for non-frameshifting and non-length-changing cases only
+        CVariantProperties::TEffect prop = CalcEffectForProt(prot_ref_str, prot_delta_str);
+        if(prop != 0) {
+            prot_v->SetVariant_prop().SetEffect(prop);
+        }
     }
+
 
     prot_v->SetData().SetInstance().SetType(CalcInstTypeForAA(prot_ref_str, prot_delta_str));
 
