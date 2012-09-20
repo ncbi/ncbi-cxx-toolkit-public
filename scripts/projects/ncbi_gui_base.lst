@@ -22,6 +22,7 @@ internal/gpipe/gencoll/src/gc_load_utils$
 internal/gpipe/gpinit/src/api$
 internal/gpipe/gpinit/src/gpinit_compare$
 internal/gpipe/objects/gencoll_load$
+internal/gpipe/objects/genomecoll$
 internal/txserver
 internal/ID/utils$
 internal/mapview/objects
