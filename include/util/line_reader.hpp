@@ -89,7 +89,7 @@ public:
 
     /// Return the current line, minus its terminator.
     virtual CTempString operator*(void) const = 0;
-    CTempString GetLine(void) const { return **this; }
+    CTempString GetCurrentLine(void) const { return **this; }
 
     /// Return the current (absolute) position.
     virtual CT_POS_TYPE GetPosition(void) const = 0;
