@@ -15327,11 +15327,11 @@ Bioseq-set ::= {
                   id 11
                 }
               },
-              product whole gi 29143757,
+              product whole local str "PROT_1_27",
               location int {
                 from 0,
                 to 566,
-                id local str "MRNA_1"
+                id local str "CDNA_1_27"
               }
             }
           }
@@ -15457,11 +15457,11 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
                   id 11
                 }
               },
-              product whole gi 251791817,
+              product whole local str "PROT_2_28",
               location int {
                 from 0,
                 to 1142,
-                id local str "MRNA_5"
+                id local str "CDNA_2_28"
               }
             }
           }
@@ -15588,11 +15588,11 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
                   id 11
                 }
               },
-              product whole local str "prot",
+              product whole local str "PROT_3_29",
               location int {
                 from 0,
                 to 2342,
-                id local str "MRNA_9"
+                id local str "CDNA_3_29"
               }
             }
           }
@@ -15718,11 +15718,11 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
                   id 11
                 }
               },
-              product whole gi 251791817,
+              product whole local str "PROT_4_30",
               location int {
                 from 0,
                 to 1142,
-                id local str "MRNA_13"
+                id local str "CDNA_4_30"
               }
             }
           }
@@ -15851,11 +15851,11 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
                   id 11
                 }
               },
-              product whole local str "prot",
+              product whole local str "PROT_5_31",
               location int {
                 from 0,
                 to 2342,
-                id local str "MRNA_17"
+                id local str "CDNA_5_31"
               }
             }
           }
@@ -15887,6 +15887,118 @@ YQWHTTPEEDAKVSINNAAYRGYDIFGEAVADAVKFPGSPHGLMEKTRIDYVWEKINAHKSPLPDLTQKDSRAIANAL
 KQLGYEQKNVWTDGSSKKFWVLTSPITSLPEFSDSGQGEVRHTQQELQPFLTSLPQIKLLKKNTKVAESIVDDNPYAH
 LDDEKESLKSGNEVMEASNVDTASLTSPLPDLVDSGNDAGNEVKIGDRVTLMVDHSFALAGTALEVVGINDRYIRCLR
 CDRKQNQPASLREIIVLADQVQLTNS"
+      }
+    }
+  }
+}
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_6_32"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 369,
+        seq-data ncbi4na '4844882284811481211484181284244884828821218214184214
+284481141184814818181118841181214211282211144284888884218442114811181181284881
+144111128884481884888814181214824811421121121144184184814824812114214244881281
+144444181184884114288184212484128128821214484214818181114214184811114184418814
+211288822184841114811281181181484481411284858849A14418441214154884825441221121
+88A110'H,
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_21",
+                genomic-id gi 385839642,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 368,
+                    genomic-start 60162,
+                    genomic-end 60530
+                  }
+                },
+                product-length 369,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 366,
+                      to 368,
+                      id local str "CDNA_6_32"
+                    },
+                    aa ncbieaa 42
+                  }
+                }
+              },
+              product whole local str "PROT_6_32",
+              location int {
+                from 0,
+                to 368,
+                id local str "CDNA_6_32"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_6_32"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 122,
+        seq-data iupacaa "MVPVSTSDTAVVFTSDAAGKNVVYKLNTATPKAVFAWQVNNTVKENFGIVLD
+TVVSNNKDDVVVQAAVTKGDNVEAYARDYFTGAVYKADVKDGLATFHVKVTNNSGRTVLXGWTEVVXTNI"
       }
     }
   }

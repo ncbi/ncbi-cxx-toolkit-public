@@ -8120,3 +8120,58 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location int {
+        from 60162,
+        to 60530,
+        strand plus,
+        id gi 385839642
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_6_32",
+      location packed-int {
+        {
+          from 60162,
+          to 60530,
+          strand plus,
+          id gi 385839642
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 60528,
+              to 60530,
+              strand plus,
+              id gi 385839642
+            },
+            aa ncbieaa 42
+          }
+        }
+      },
+      product whole local str "PROT_6_32",
+      location packed-int {
+        {
+          from 60162,
+          to 60530,
+          strand plus,
+          id gi 385839642
+        }
+      }
+    }
+  }
+}

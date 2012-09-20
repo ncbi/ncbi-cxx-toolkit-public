@@ -160,7 +160,7 @@ private:
                             size_t model_num,
                             CBioseq_set& seqs,
                             CSeq_id& rna_id,
-                            const CSeq_feat* cdregion);
+                            CRef<CSeq_feat> cdregion);
     const CBioseq& x_CreateProteinBioseq(CSeq_loc* cds_loc,
                                CSeq_feat& cds_on_mrna,
                                const CTime& time,
@@ -178,7 +178,7 @@ private:
                              CRef<CSeq_loc> loc,
                              const CSeq_id& genomic_id,
                              int gene_id = 0);
-    CRef<CSeq_feat> x_CreateCdsFeature(const objects::CSeq_feat* cdregion_on_mrna,
+    CRef<CSeq_feat> x_CreateCdsFeature(CRef<objects::CSeq_feat> cdregion_on_mrna,
                                        const CSeq_align& align,
                                        CRef<CSeq_loc> loc,
                                        const CTime& time,

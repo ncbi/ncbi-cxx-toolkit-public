@@ -700,11 +700,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                                      bool call_on_align_list)
 {
     CConstRef<CSeq_align> align(&input_align);
-    CRef<CSeq_feat> cd_feat;
+    CRef<CSeq_feat> cds_feat_on_mrna;
     bool is_protein_align = IsProteinAlign(*align);
     if (is_protein_align) {
-        TransformProteinAlignToTranscript(align, cd_feat);
-        cdregion = cd_feat.GetPointer();
+        TransformProteinAlignToTranscript(align, cds_feat_on_mrna);
+        cdregion = cds_feat_on_mrna.GetPointer();
     }
 
     CScopeTransaction tr = m_scope->GetTransaction(); // to rollback any changes at return
@@ -755,6 +755,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         }
     }
 
+    if (cdregion && !cds_feat_on_mrna) {
+        cds_feat_on_mrna.Reset(new CSeq_feat);
+        cds_feat_on_mrna->Assign(*cdregion);
+    }
+
     if (m_flags & fForceTranscribeMrna ||
         (is_protein_align && m_flags & fForceTranslateCds))
     {
@@ -762,10 +767,9 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         /// this is needed in order to translate the protein
         /// alignment, even if flag fForceTranscribeMrna wasn't set
         x_CreateMrnaBioseq(
-            *align, loc, time, model_num, seqs, rna_id, cdregion);
-        if (is_protein_align && m_flags & fGenerateLocalIds)
-        {
-            cd_feat->SetLocation().SetInt().SetId().Assign(rna_id);
+            *align, loc, time, model_num, seqs, rna_id, cds_feat_on_mrna);
+        if (is_protein_align && m_flags & fGenerateLocalIds) {
+            cds_feat_on_mrna->SetLocation().SetInt().SetId().Assign(rna_id);
         }
     }
 
@@ -851,11 +855,12 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
 
     CSeq_annot::C_Data::TFtable propagated_features;
 
-    CRef<CSeq_feat> cds_feat =
-        x_CreateCdsFeature(cdregion, *align, loc, time, model_num, seqs, opts);
+    CRef<CSeq_feat> cds_feat_on_genome =
+        x_CreateCdsFeature(cds_feat_on_mrna, *align, loc, time, model_num, seqs, opts);
 
-    if(cds_feat)
-        propagated_features.push_back(cds_feat);
+
+    if(cds_feat_on_genome.NotNull())
+        propagated_features.push_back(cds_feat_on_genome);
 
     ITERATE(vector<CMappedFeat>, it, ncRNAs){
         CRef<CSeq_feat> ncrna_feat =
@@ -899,13 +904,13 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
 
     if (mrna_feat) {
         SetFeatureExceptions(*mrna_feat, align,
-                             cds_feat.GetPointer(), cdregion);
+                             cds_feat_on_genome.GetPointer(), cds_feat_on_mrna.GetPointer());
     }
-    if (cds_feat) {
-        SetFeatureExceptions(*cds_feat, align);
+    if (cds_feat_on_genome) {
+        SetFeatureExceptions(*cds_feat_on_genome, align);
     }
 
-    return is_protein_align ? cds_feat : mrna_feat;
+    return is_protein_align ? cds_feat_on_genome : mrna_feat;
 }
 
 void
@@ -1146,7 +1151,7 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
                                     size_t model_num,
                                     CBioseq_set& seqs,
                                     CSeq_id& rna_id,
-                                    const CSeq_feat* cdregion)
+                                    CRef<CSeq_feat> cds_feat_on_mrna)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& bioseq = entry->SetSeq();
@@ -1173,20 +1178,20 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
     
     CRef<CSeqdesc> mdes(new CSeqdesc);
     entry->SetSeq().SetDescr().Set().push_back(mdes);
-    mdes->SetMolinfo().SetBiomol(cdregion==NULL ? CMolInfo::eBiomol_ncRNA : CMolInfo::eBiomol_mRNA);
+    mdes->SetMolinfo().SetBiomol(cds_feat_on_mrna.IsNull() ? CMolInfo::eBiomol_ncRNA : CMolInfo::eBiomol_mRNA);
 
     CMolInfo::ECompleteness completeness;
     if (!IsContinuous(*loc)) {
         completeness = CMolInfo::eCompleteness_partial;
-    } else if (cdregion==NULL) {
+    } else if (cds_feat_on_mrna.IsNull()) {
         completeness = CMolInfo::eCompleteness_unknown;
-    } else if (cdregion->GetLocation().IsPartialStart(eExtreme_Biological) &&
-               cdregion->GetLocation().IsPartialStop(eExtreme_Biological)
+    } else if (cds_feat_on_mrna->GetLocation().IsPartialStart(eExtreme_Biological) &&
+               cds_feat_on_mrna->GetLocation().IsPartialStop(eExtreme_Biological)
                ) {
         completeness = CMolInfo::eCompleteness_no_ends;
-    } else if (cdregion->GetLocation().IsPartialStart(eExtreme_Biological)) {
+    } else if (cds_feat_on_mrna->GetLocation().IsPartialStart(eExtreme_Biological)) {
         completeness = CMolInfo::eCompleteness_no_left;
-    } else if (cdregion->GetLocation().IsPartialStop(eExtreme_Biological)) {
+    } else if (cds_feat_on_mrna->GetLocation().IsPartialStop(eExtreme_Biological)) {
         completeness = CMolInfo::eCompleteness_no_right;
     } else {
         completeness = CMolInfo::eCompleteness_unknown;
@@ -1195,13 +1200,11 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
 
     x_CollectMrnaSequence(bioseq.SetInst(), align, *loc);
 
-    if (cdregion != NULL) {
+    if (cds_feat_on_mrna.NotNull()) {
         CRef<CSeq_annot> annot(new CSeq_annot);
         entry->SetSeq().SetAnnot().push_back(annot);
-        CRef<CSeq_feat> cdregion_ref(new CSeq_feat);
-        cdregion_ref->Assign(*cdregion);
-        _ASSERT(cdregion_ref->GetData().Which() != CSeqFeatData::e_not_set);
-        annot->SetData().SetFtable().push_back(cdregion_ref);
+        _ASSERT(cds_feat_on_mrna->GetData().Which() != CSeqFeatData::e_not_set);
+        annot->SetData().SetFtable().push_back(cds_feat_on_mrna);
     }
     
     if ((m_flags & fForceTranscribeMrna) && (m_flags & fForceTranslateCds)) {
@@ -1282,19 +1285,30 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     string strprot;
     CSeqTranslator::Translate(cds_on_mrna, *m_scope, strprot, true, false);
 
-    CRef<CSeq_loc> cdsloc_on_mrna(new CSeq_loc);
-    cdsloc_on_mrna->Assign(cds_on_mrna.GetLocation());
+    CRef<CSeq_loc> protloc_on_mrna(new CSeq_loc);
+    protloc_on_mrna->Assign(cds_on_mrna.GetLocation());
 
     // Remove final stop codon from sequence
-    if (!cds_on_mrna.GetLocation().IsPartialStop(eExtreme_Biological) &&
-        (strprot[strprot.size()-1] == '*' ||
-         strprot[strprot.size()-1] == 'X')) {
-        strprot.resize(strprot.size()-1);
+    if (!cds_on_mrna.GetLocation().IsPartialStop(eExtreme_Biological)) {
 
-        CRef<CSeq_loc> stop_codon_on_mrna = cdsloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+        CRef<CSeq_loc> stop_codon_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
         stop_codon_on_mrna->SetInt().SetFrom(stop_codon_on_mrna->GetStop(eExtreme_Biological)-2);
 
-        cdsloc_on_mrna = cdsloc_on_mrna->Subtract(*stop_codon_on_mrna, 0, NULL, NULL);
+        if (strprot[strprot.size()-1] != '*') {
+            CSeqVector stop_codon_seqvec(*stop_codon_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
+
+            if (!(stop_codon_seqvec.IsInGap(0) &&
+                  stop_codon_seqvec.IsInGap(1) &&
+                  stop_codon_seqvec.IsInGap(2))) {
+                CRef<CCode_break> code_break(new CCode_break);
+                code_break->SetLoc(*stop_codon_on_mrna);
+                code_break->SetAa().SetNcbieaa('*');
+                cds_on_mrna.SetData().SetCdregion().SetCode_break().push_back(code_break);
+            }
+        }
+
+        strprot.resize(strprot.size()-1);
+        protloc_on_mrna = protloc_on_mrna->Subtract(*stop_codon_on_mrna, 0, NULL, NULL);
     }
 
     /// Repair any internal stops with Xs
@@ -1305,7 +1319,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     seq_inst.SetLength(strprot.size());
 
         seq_inst.SetRepr(CSeq_inst::eRepr_delta);
-        CSeqVector seqv(*cdsloc_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
+        CSeqVector seqv(*protloc_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
         CConstRef<CSeqMap> map;
         map.Reset(&seqv.GetSeqMap());
 
@@ -1566,7 +1580,7 @@ SImplementation::x_CreateGeneFeature(CRef<CSeq_feat> &gene_feat,
 
 CRef<CSeq_feat>
 CFeatureGenerator::
-SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
+SImplementation::x_CreateCdsFeature(CRef<CSeq_feat> cds_feat_on_mrna,
                                     const CSeq_align& align,
                                     CRef<CSeq_loc> loc,
                                     const CTime& time,
@@ -1575,21 +1589,18 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                                     CSeq_loc_Mapper::TMapOptions opts)
 {
     CRef<CSeq_feat> cds_feat;
-    if (m_flags & fCreateCdregion && cdregion_on_mrna != NULL) {
+    if (m_flags & fCreateCdregion && cds_feat_on_mrna.NotNull()) {
 
             TSeqPos offset;
-            CRef<CSeq_loc> cds_loc = x_PropagateFeatureLocation(cdregion_on_mrna,
+            CRef<CSeq_loc> cds_loc = x_PropagateFeatureLocation(cds_feat_on_mrna.GetNonNullPointer(),
                                                                 align, loc, opts, offset);
             if (cds_loc  && cds_loc->Which() != CSeq_loc::e_not_set) {
-                cds_feat.Reset(new CSeq_feat());
-                cds_feat->Assign(*cdregion_on_mrna);
-                cds_feat->ResetId();
 
                 string gnomon_model_num;
 
-                if (cds_feat->CanGetProduct()) {
+                if (cds_feat_on_mrna->CanGetProduct()) {
                     gnomon_model_num = ExtractGnomonModelNum(
-                        *cds_feat->GetProduct().GetId());
+                        *cds_feat_on_mrna->GetProduct().GetId());
                 }
                 if (m_flags & fForceTranslateCds) {
                     /// create a new bioseq for the CDS
@@ -1598,11 +1609,15 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                         obj_id->SetStr("cds." + gnomon_model_num);
                         CRef<CFeat_id> feat_id( new CFeat_id() );
                         feat_id->SetLocal(*obj_id);
-                        cds_feat->SetIds().push_back(feat_id);
+                        cds_feat_on_mrna->SetIds().push_back(feat_id);
                     }
-                    x_CreateProteinBioseq(cds_loc, *cds_feat, time,
+                    x_CreateProteinBioseq(cds_loc, *cds_feat_on_mrna, time,
                                           model_num, seqs);
                 }
+
+                cds_feat.Reset(new CSeq_feat());
+                cds_feat->Assign(*cds_feat_on_mrna);
+                cds_feat->ResetId();
 
                 bool is_partial_5prime =
                     cds_loc->IsPartialStart(eExtreme_Biological);
@@ -1673,10 +1688,10 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                 }
 
                 if (!gnomon_model_num.empty() && !is_partial_5prime) {
-                    int cds_start = cdregion_on_mrna->GetLocation().GetTotalRange().GetFrom();
+                    int cds_start = cds_feat_on_mrna->GetLocation().GetTotalRange().GetFrom();
                     if (cds_start >= 3) {
                         CBioseq_Handle rna_handle =
-                            m_scope->GetBioseqHandle(*cdregion_on_mrna->GetLocation().GetId());
+                            m_scope->GetBioseqHandle(*cds_feat_on_mrna->GetLocation().GetId());
 
                         string strprot;
                         if (rna_handle) {
@@ -1684,8 +1699,8 @@ SImplementation::x_CreateCdsFeature(const CSeq_feat* cdregion_on_mrna,
                             string mrna;
                             vec.GetSeqData(cds_start % 3, cds_start, mrna);
                             const CGenetic_code *code = NULL;
-                            if (cdregion_on_mrna->GetData().GetCdregion().IsSetCode()) {
-                                code = &cdregion_on_mrna->GetData().GetCdregion().GetCode();
+                            if (cds_feat_on_mrna->GetData().GetCdregion().IsSetCode()) {
+                                code = &cds_feat_on_mrna->GetData().GetCdregion().GetCode();
                             }
                             CSeqTranslator::Translate
                                 (mrna, strprot,
