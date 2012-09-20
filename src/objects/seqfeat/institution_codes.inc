@@ -6573,6 +6573,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "WRSL	s	Wroclaw University, Botany Department",
 "WS	s	Washington State University",
 "WSBC	s	Wichita State University",
+"WSBC<DEU>	c	Research collection of Bacillus cereus group species",
 "WSC	s	Westfield State College, Museum and Herbarium",
 "WSCH	s	Westfield State College, Biology Department",
 "WSCO	s	Weber State University, Botany Department",
