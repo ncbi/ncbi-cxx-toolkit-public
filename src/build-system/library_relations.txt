@@ -172,6 +172,7 @@ align_format needs seqset
 align_format needs seqsplit
 align_format needs sequtil
 align_format needs tables
+align_format needs variation
 align_format needs xalnmgr
 align_format needs xcgi
 align_format needs xcompress
@@ -397,6 +398,7 @@ backendcommon needs ncbi_xdbapi_ftds
 backendcommon needs sdbapi
 backendcommon needs tds_ftds64
 backendcommon needs txxmldoc
+backendcommon needs xcompress
 backendcommon needs xconnect
 backendcommon needs xconnext
 backendcommon needs xncbi
@@ -502,6 +504,7 @@ blast_app_util needs seqsplit
 blast_app_util needs sequtil
 blast_app_util needs tables
 blast_app_util needs taxon1
+blast_app_util needs variation
 blast_app_util needs xalgoblastdbindex
 blast_app_util needs xalgodustmask
 blast_app_util needs xalgowinmask
@@ -573,6 +576,7 @@ blast_sra needs srapath
 blast_sra needs sraschema
 blast_sra needs sraxf
 blast_sra needs tables
+blast_sra needs variation
 blast_sra needs vdb
 blast_sra needs vfs
 blast_sra needs vxf
@@ -706,6 +710,7 @@ blastinput needs seqset
 blastinput needs seqsplit
 blastinput needs sequtil
 blastinput needs tables
+blastinput needs variation
 blastinput needs xalgoblastdbindex
 blastinput needs xalgodustmask
 blastinput needs xalgowinmask
@@ -807,6 +812,7 @@ cobalt needs seqmasks_io
 cobalt needs seqset
 cobalt needs sequtil
 cobalt needs tables
+cobalt needs variation
 cobalt needs xalgoalignnw
 cobalt needs xalgoblastdbindex
 cobalt needs xalgodustmask
@@ -917,6 +923,7 @@ edirect needs ncqhst
 edirect needs txserv
 edirect needs txservbase
 edirect needs txxmldoc
+edirect needs xcompress
 edirect needs xconnect
 edirect needs xconnserv
 edirect needs xncbi
@@ -1134,6 +1141,7 @@ gc_load_utils needs submit
 gc_load_utils needs tables
 gc_load_utils needs taxon1
 gc_load_utils needs tds_ftds64
+gc_load_utils needs variation
 gc_load_utils needs vdb
 gc_load_utils needs vfs
 gc_load_utils needs vxf
@@ -1233,6 +1241,7 @@ gc_utils needs submit
 gc_utils needs tables
 gc_utils needs taxon1
 gc_utils needs tds_ftds64
+gc_utils needs variation
 gc_utils needs vdb
 gc_utils needs vfs
 gc_utils needs vxf
@@ -1329,6 +1338,7 @@ gcaccess_utils needs submit
 gcaccess_utils needs tables
 gcaccess_utils needs taxon1
 gcaccess_utils needs tds_ftds64
+gcaccess_utils needs variation
 gcaccess_utils needs vdb
 gcaccess_utils needs vfs
 gcaccess_utils needs vxf
@@ -1523,6 +1533,7 @@ globalizer needs seqedit
 globalizer needs seqset
 globalizer needs sequtil
 globalizer needs tables
+globalizer needs variation
 globalizer needs xalnmgr
 globalizer needs xncbi
 globalizer needs xobjmgr
@@ -1609,6 +1620,7 @@ gpinit needs submit
 gpinit needs tables
 gpinit needs taxon1
 gpinit needs tds_ftds64
+gpinit needs variation
 gpinit needs vdb
 gpinit needs vfs
 gpinit needs vxf
@@ -1721,6 +1733,7 @@ gpinit_admin needs submit
 gpinit_admin needs tables
 gpinit_admin needs taxon1
 gpinit_admin needs tds_ftds64
+gpinit_admin needs variation
 gpinit_admin needs vdb
 gpinit_admin needs vfs
 gpinit_admin needs vxf
@@ -1824,6 +1837,7 @@ gpinit_buildinfo needs submit
 gpinit_buildinfo needs tables
 gpinit_buildinfo needs taxon1
 gpinit_buildinfo needs tds_ftds64
+gpinit_buildinfo needs variation
 gpinit_buildinfo needs vdb
 gpinit_buildinfo needs vfs
 gpinit_buildinfo needs vxf
@@ -1975,6 +1989,7 @@ gpipe_alnutil needs submit
 gpipe_alnutil needs tables
 gpipe_alnutil needs taxon1
 gpipe_alnutil needs tds_ftds64
+gpipe_alnutil needs variation
 gpipe_alnutil needs vdb
 gpipe_alnutil needs vfs
 gpipe_alnutil needs vxf
@@ -2180,6 +2195,7 @@ gpipe_objutil needs submit
 gpipe_objutil needs tables
 gpipe_objutil needs taxon1
 gpipe_objutil needs tds_ftds64
+gpipe_objutil needs variation
 gpipe_objutil needs vdb
 gpipe_objutil needs vfs
 gpipe_objutil needs vxf
@@ -2360,6 +2376,7 @@ gui_config needs tables
 gui_config needs taxon1
 gui_config needs uilist
 gui_config needs valerr
+gui_config needs variation
 gui_config needs xalgoalignutil
 gui_config needs xalgoblastdbindex
 gui_config needs xalgodustmask
@@ -2409,7 +2426,10 @@ gui_core needs gui_opengl
 gui_core needs gui_print
 gui_core needs gui_utils
 gui_core needs linkout
+gui_core needs medlars
 gui_core needs medline
+gui_core needs mla
+gui_core needs mlacli
 gui_core needs pub
 gui_core needs pubmed
 gui_core needs scoremat
@@ -2427,6 +2447,7 @@ gui_core needs taxon1
 gui_core needs uilist
 gui_core needs valerr
 gui_core needs valid
+gui_core needs variation
 gui_core needs w_data
 gui_core needs w_edit
 gui_core needs w_object_list
@@ -2485,7 +2506,10 @@ gui_framework needs gui_opengl
 gui_framework needs gui_print
 gui_framework needs gui_utils
 gui_framework needs linkout
+gui_framework needs medlars
 gui_framework needs medline
+gui_framework needs mla
+gui_framework needs mlacli
 gui_framework needs pub
 gui_framework needs pubmed
 gui_framework needs scoremat
@@ -2503,6 +2527,7 @@ gui_framework needs taxon1
 gui_framework needs uilist
 gui_framework needs valerr
 gui_framework needs valid
+gui_framework needs variation
 gui_framework needs w_data
 gui_framework needs w_edit
 gui_framework needs w_object_list
@@ -2587,6 +2612,7 @@ gui_objects needs tables
 gui_objects needs taxon1
 gui_objects needs uilist
 gui_objects needs valerr
+gui_objects needs variation
 gui_objects needs xalgoalignutil
 gui_objects needs xalgoblastdbindex
 gui_objects needs xalgodustmask
@@ -2647,6 +2673,7 @@ gui_objutils needs tables
 gui_objutils needs taxon1
 gui_objutils needs uilist
 gui_objutils needs valerr
+gui_objutils needs variation
 gui_objutils needs xalgoalignutil
 gui_objutils needs xalgoblastdbindex
 gui_objutils needs xalgodustmask
@@ -2733,6 +2760,7 @@ guide_tree needs tables
 guide_tree needs taxon1
 guide_tree needs uilist
 guide_tree needs valerr
+guide_tree needs variation
 guide_tree needs w_data
 guide_tree needs w_gl
 guide_tree needs w_phylo_tree
@@ -2840,6 +2868,7 @@ hgvs_name needs tables
 hgvs_name needs taxon1
 hgvs_name needs uilist
 hgvs_name needs valerr
+hgvs_name needs variation
 hgvs_name needs xalgoalignutil
 hgvs_name needs xalgoblastdbindex
 hgvs_name needs xalgodustmask
@@ -2873,6 +2902,7 @@ hit_analyzer needs seqedit
 hit_analyzer needs seqset
 hit_analyzer needs sequtil
 hit_analyzer needs tables
+hit_analyzer needs variation
 hit_analyzer needs xalnmgr
 hit_analyzer needs xncbi
 hit_analyzer needs xobjmgr
@@ -2891,22 +2921,28 @@ homologene needs xncbi
 homologene needs xser
 homologene needs xutil
 htbbase needs txxmldoc
+htbbase needs xcompress
 htbbase needs xncbi
+htbbase needs xutil
 htbcli includes htbbase
 htbcli includes htbcon
 htbcli needs connect
 htbcli needs txserv
 htbcli needs txservbase
 htbcli needs txxmldoc
+htbcli needs xcompress
 htbcli needs xconnect
 htbcli needs xncbi
+htbcli needs xutil
 htbcon needs connect
 htbcon needs htbbase
 htbcon needs txserv
 htbcon needs txservbase
 htbcon needs txxmldoc
+htbcon needs xcompress
 htbcon needs xconnect
 htbcon needs xncbi
+htbcon needs xutil
 id1 needs biblio
 id1 needs general
 id1 needs medline
@@ -3163,6 +3199,7 @@ idxlinkout2 needs ilink
 idxlinkout2 needs spellsrvbase
 idxlinkout2 needs txservbase
 idxlinkout2 needs txxmldoc
+idxlinkout2 needs xcompress
 idxlinkout2 needs xconnect
 idxlinkout2 needs xncbi
 idxlinkout2 needs xutil
@@ -3385,6 +3422,7 @@ igblast needs seqmasks_io
 igblast needs seqset
 igblast needs sequtil
 igblast needs tables
+igblast needs variation
 igblast needs xalgoblastdbindex
 igblast needs xalgodustmask
 igblast needs xalgowinmask
@@ -3506,6 +3544,7 @@ lds needs seqcode
 lds needs seqedit
 lds needs seqset
 lds needs sequtil
+lds needs variation
 lds needs xncbi
 lds needs xobjmgr
 lds needs xobjread
@@ -3523,6 +3562,7 @@ lds2 needs seqset
 lds2 needs sequtil
 lds2 needs sqlitewrapp
 lds2 needs submit
+lds2 needs variation
 lds2 needs xcompress
 lds2 needs xncbi
 lds2 needs xobjread
@@ -4029,6 +4069,7 @@ ncbi_xloader_bam needs seqedit
 ncbi_xloader_bam needs seqset
 ncbi_xloader_bam needs sequtil
 ncbi_xloader_bam needs srapath
+ncbi_xloader_bam needs variation
 ncbi_xloader_bam needs vdb
 ncbi_xloader_bam needs vfs
 ncbi_xloader_bam needs xncbi
@@ -4167,6 +4208,7 @@ ncbi_xloader_lds needs seqcode
 ncbi_xloader_lds needs seqedit
 ncbi_xloader_lds needs seqset
 ncbi_xloader_lds needs sequtil
+ncbi_xloader_lds needs variation
 ncbi_xloader_lds needs xncbi
 ncbi_xloader_lds needs xobjmgr
 ncbi_xloader_lds needs xobjread
@@ -4187,6 +4229,7 @@ ncbi_xloader_lds2 needs seqset
 ncbi_xloader_lds2 needs sequtil
 ncbi_xloader_lds2 needs sqlitewrapp
 ncbi_xloader_lds2 needs submit
+ncbi_xloader_lds2 needs variation
 ncbi_xloader_lds2 needs xcompress
 ncbi_xloader_lds2 needs xncbi
 ncbi_xloader_lds2 needs xobjmgr
@@ -4595,6 +4638,7 @@ prosplign needs seqset
 prosplign needs sequtil
 prosplign needs tables
 prosplign needs taxon1
+prosplign needs variation
 prosplign needs xalgoalignutil
 prosplign needs xalgoblastdbindex
 prosplign needs xalgodustmask
@@ -4737,7 +4781,8 @@ sdncbiauth needs splitdbasncpp_g
 sdncbiauth needs tables
 sdncbiauth needs tds_ftds64
 sdncbiauth needs tea_crypt
-sdncbiauth needs txservbase
+sdncbiauth needs txclient
+sdncbiauth needs txxmldoc
 sdncbiauth needs xcgi
 sdncbiauth needs xcompress
 sdncbiauth needs xconnect
@@ -4797,6 +4842,7 @@ seqmasks_io needs seqdb
 seqmasks_io needs seqedit
 seqmasks_io needs seqset
 seqmasks_io needs sequtil
+seqmasks_io needs variation
 seqmasks_io needs xncbi
 seqmasks_io needs xobjmgr
 seqmasks_io needs xobjread
@@ -5158,19 +5204,22 @@ trackmgrcli needs xconnect
 trackmgrcli needs xncbi
 trackmgrcli needs xser
 trackmgrcli needs xutil
+txclient needs connect
+txclient needs xconnect
+txclient needs xncbi
 txserv includes txservbase
 txserv needs connect
 txserv needs txxmldoc
+txserv needs xcompress
 txserv needs xconnect
 txserv needs xncbi
+txserv needs xutil
 txservbase needs connect
 txservbase needs xconnect
 txservbase needs xncbi
+txxmldoc needs xcompress
 txxmldoc needs xncbi
-txxmltrans needs txxmldoc
-txxmltrans needs xcompress
-txxmltrans needs xncbi
-txxmltrans needs xutil
+txxmldoc needs xutil
 uilist needs xncbi
 uilist needs xser
 uilist needs xutil
@@ -5256,6 +5305,7 @@ validate_regions needs tables
 validate_regions needs taxon1
 validate_regions needs tds_ftds64
 validate_regions needs valerr
+validate_regions needs variation
 validate_regions needs vdb
 validate_regions needs vfs
 validate_regions needs vxf
@@ -5383,6 +5433,7 @@ w_aln_crossaln needs tables
 w_aln_crossaln needs taxon1
 w_aln_crossaln needs uilist
 w_aln_crossaln needs valerr
+w_aln_crossaln needs variation
 w_aln_crossaln needs w_data
 w_aln_crossaln needs w_gl
 w_aln_crossaln needs w_hit_matrix
@@ -5451,6 +5502,7 @@ w_aln_multi needs tables
 w_aln_multi needs taxon1
 w_aln_multi needs uilist
 w_aln_multi needs valerr
+w_aln_multi needs variation
 w_aln_multi needs w_data
 w_aln_multi needs w_gl
 w_aln_multi needs w_wx
@@ -5518,6 +5570,7 @@ w_aln_table needs tables
 w_aln_table needs taxon1
 w_aln_table needs uilist
 w_aln_table needs valerr
+w_aln_table needs variation
 w_aln_table needs w_wx
 w_aln_table needs xalgoalignutil
 w_aln_table needs xalgoblastdbindex
@@ -5583,6 +5636,7 @@ w_data needs tables
 w_data needs taxon1
 w_data needs uilist
 w_data needs valerr
+w_data needs variation
 w_data needs w_wx
 w_data needs xalgoalignutil
 w_data needs xalgoblastdbindex
@@ -5649,6 +5703,7 @@ w_edit needs taxon1
 w_edit needs uilist
 w_edit needs valerr
 w_edit needs valid
+w_edit needs variation
 w_edit needs w_wx
 w_edit needs xalgoalignutil
 w_edit needs xalgoblastdbindex
@@ -5714,6 +5769,7 @@ w_feat_table needs tables
 w_feat_table needs taxon1
 w_feat_table needs uilist
 w_feat_table needs valerr
+w_feat_table needs variation
 w_feat_table needs w_wx
 w_feat_table needs xalgoalignutil
 w_feat_table needs xalgoblastdbindex
@@ -5767,8 +5823,12 @@ w_gap needs gui_opengl
 w_gap needs gui_print
 w_gap needs gui_utils
 w_gap needs linkout
+w_gap needs medlars
 w_gap needs medline
+w_gap needs mla
+w_gap needs mlacli
 w_gap needs pub
+w_gap needs pubmed
 w_gap needs scoremat
 w_gap needs seq
 w_gap needs seqcode
@@ -5783,6 +5843,7 @@ w_gap needs tables
 w_gap needs taxon1
 w_gap needs uilist
 w_gap needs valerr
+w_gap needs variation
 w_gap needs w_data
 w_gap needs w_gl
 w_gap needs w_seq
@@ -5855,6 +5916,7 @@ w_gl needs tables
 w_gl needs taxon1
 w_gl needs uilist
 w_gl needs valerr
+w_gl needs variation
 w_gl needs w_wx
 w_gl needs xalgoalignutil
 w_gl needs xalgoblastdbindex
@@ -5920,6 +5982,7 @@ w_grid_widget needs tables
 w_grid_widget needs taxon1
 w_grid_widget needs uilist
 w_grid_widget needs valerr
+w_grid_widget needs variation
 w_grid_widget needs w_data
 w_grid_widget needs w_wx
 w_grid_widget needs xalgoalignutil
@@ -5974,8 +6037,12 @@ w_hapmap needs gui_opengl
 w_hapmap needs gui_print
 w_hapmap needs gui_utils
 w_hapmap needs linkout
+w_hapmap needs medlars
 w_hapmap needs medline
+w_hapmap needs mla
+w_hapmap needs mlacli
 w_hapmap needs pub
+w_hapmap needs pubmed
 w_hapmap needs scoremat
 w_hapmap needs seq
 w_hapmap needs seqcode
@@ -5990,6 +6057,7 @@ w_hapmap needs tables
 w_hapmap needs taxon1
 w_hapmap needs uilist
 w_hapmap needs valerr
+w_hapmap needs variation
 w_hapmap needs w_data
 w_hapmap needs w_gl
 w_hapmap needs w_seq
@@ -6062,6 +6130,7 @@ w_hit_matrix needs tables
 w_hit_matrix needs taxon1
 w_hit_matrix needs uilist
 w_hit_matrix needs valerr
+w_hit_matrix needs variation
 w_hit_matrix needs w_data
 w_hit_matrix needs w_gl
 w_hit_matrix needs w_wx
@@ -6129,6 +6198,7 @@ w_macro_edit needs tables
 w_macro_edit needs taxon1
 w_macro_edit needs uilist
 w_macro_edit needs valerr
+w_macro_edit needs variation
 w_macro_edit needs w_wx
 w_macro_edit needs xalgoalignutil
 w_macro_edit needs xalgoblastdbindex
@@ -6179,8 +6249,12 @@ w_object_list needs gui_opengl
 w_object_list needs gui_print
 w_object_list needs gui_utils
 w_object_list needs linkout
+w_object_list needs medlars
 w_object_list needs medline
+w_object_list needs mla
+w_object_list needs mlacli
 w_object_list needs pub
+w_object_list needs pubmed
 w_object_list needs scoremat
 w_object_list needs seq
 w_object_list needs seqcode
@@ -6195,6 +6269,7 @@ w_object_list needs tables
 w_object_list needs taxon1
 w_object_list needs uilist
 w_object_list needs valerr
+w_object_list needs variation
 w_object_list needs w_data
 w_object_list needs w_text_widget
 w_object_list needs w_wx
@@ -6265,6 +6340,7 @@ w_phylo_tree needs tables
 w_phylo_tree needs taxon1
 w_phylo_tree needs uilist
 w_phylo_tree needs valerr
+w_phylo_tree needs variation
 w_phylo_tree needs w_data
 w_phylo_tree needs w_gl
 w_phylo_tree needs w_wx
@@ -6318,8 +6394,12 @@ w_seq needs gui_opengl
 w_seq needs gui_print
 w_seq needs gui_utils
 w_seq needs linkout
+w_seq needs medlars
 w_seq needs medline
+w_seq needs mla
+w_seq needs mlacli
 w_seq needs pub
+w_seq needs pubmed
 w_seq needs scoremat
 w_seq needs seq
 w_seq needs seqcode
@@ -6334,6 +6414,7 @@ w_seq needs tables
 w_seq needs taxon1
 w_seq needs uilist
 w_seq needs valerr
+w_seq needs variation
 w_seq needs w_text_widget
 w_seq needs w_wx
 w_seq needs xalgoalignutil
@@ -6389,8 +6470,12 @@ w_seq_graphic needs gui_opengl
 w_seq_graphic needs gui_print
 w_seq_graphic needs gui_utils
 w_seq_graphic needs linkout
+w_seq_graphic needs medlars
 w_seq_graphic needs medline
+w_seq_graphic needs mla
+w_seq_graphic needs mlacli
 w_seq_graphic needs pub
+w_seq_graphic needs pubmed
 w_seq_graphic needs scoremat
 w_seq_graphic needs seq
 w_seq_graphic needs seqcode
@@ -6405,6 +6490,7 @@ w_seq_graphic needs tables
 w_seq_graphic needs taxon1
 w_seq_graphic needs uilist
 w_seq_graphic needs valerr
+w_seq_graphic needs variation
 w_seq_graphic needs w_data
 w_seq_graphic needs w_gl
 w_seq_graphic needs w_seq
@@ -6476,6 +6562,7 @@ w_seq_text needs tables
 w_seq_text needs taxon1
 w_seq_text needs uilist
 w_seq_text needs valerr
+w_seq_text needs variation
 w_seq_text needs w_gl
 w_seq_text needs w_wx
 w_seq_text needs xalgoalignutil
@@ -6530,8 +6617,12 @@ w_snp_bins needs gui_opengl
 w_snp_bins needs gui_print
 w_snp_bins needs gui_utils
 w_snp_bins needs linkout
+w_snp_bins needs medlars
 w_snp_bins needs medline
+w_snp_bins needs mla
+w_snp_bins needs mlacli
 w_snp_bins needs pub
+w_snp_bins needs pubmed
 w_snp_bins needs scoremat
 w_snp_bins needs seq
 w_snp_bins needs seqcode
@@ -6546,6 +6637,7 @@ w_snp_bins needs tables
 w_snp_bins needs taxon1
 w_snp_bins needs uilist
 w_snp_bins needs valerr
+w_snp_bins needs variation
 w_snp_bins needs w_data
 w_snp_bins needs w_gl
 w_snp_bins needs w_seq
@@ -6618,6 +6710,7 @@ w_snp_filter needs tables
 w_snp_filter needs taxon1
 w_snp_filter needs uilist
 w_snp_filter needs valerr
+w_snp_filter needs variation
 w_snp_filter needs w_wx
 w_snp_filter needs xalgoalignutil
 w_snp_filter needs xalgoblastdbindex
@@ -6671,8 +6764,12 @@ w_snp_ld needs gui_opengl
 w_snp_ld needs gui_print
 w_snp_ld needs gui_utils
 w_snp_ld needs linkout
+w_snp_ld needs medlars
 w_snp_ld needs medline
+w_snp_ld needs mla
+w_snp_ld needs mlacli
 w_snp_ld needs pub
+w_snp_ld needs pubmed
 w_snp_ld needs scoremat
 w_snp_ld needs seq
 w_snp_ld needs seqcode
@@ -6687,6 +6784,7 @@ w_snp_ld needs tables
 w_snp_ld needs taxon1
 w_snp_ld needs uilist
 w_snp_ld needs valerr
+w_snp_ld needs variation
 w_snp_ld needs w_data
 w_snp_ld needs w_gl
 w_snp_ld needs w_seq
@@ -6747,7 +6845,10 @@ w_snp_table needs gui_opengl
 w_snp_table needs gui_print
 w_snp_table needs gui_utils
 w_snp_table needs linkout
+w_snp_table needs medlars
 w_snp_table needs medline
+w_snp_table needs mla
+w_snp_table needs mlacli
 w_snp_table needs pub
 w_snp_table needs pubmed
 w_snp_table needs scoremat
@@ -6765,6 +6866,7 @@ w_snp_table needs taxon1
 w_snp_table needs uilist
 w_snp_table needs valerr
 w_snp_table needs valid
+w_snp_table needs variation
 w_snp_table needs w_data
 w_snp_table needs w_edit
 w_snp_table needs w_object_list
@@ -6825,8 +6927,12 @@ w_snp_track needs gui_opengl
 w_snp_track needs gui_print
 w_snp_track needs gui_utils
 w_snp_track needs linkout
+w_snp_track needs medlars
 w_snp_track needs medline
+w_snp_track needs mla
+w_snp_track needs mlacli
 w_snp_track needs pub
+w_snp_track needs pubmed
 w_snp_track needs scoremat
 w_snp_track needs seq
 w_snp_track needs seqcode
@@ -6841,6 +6947,7 @@ w_snp_track needs tables
 w_snp_track needs taxon1
 w_snp_track needs uilist
 w_snp_track needs valerr
+w_snp_track needs variation
 w_snp_track needs w_data
 w_snp_track needs w_gl
 w_snp_track needs w_seq
@@ -6925,6 +7032,7 @@ w_taxtree needs tables
 w_taxtree needs taxon1
 w_taxtree needs uilist
 w_taxtree needs valerr
+w_taxtree needs variation
 w_taxtree needs xalgoalignutil
 w_taxtree needs xalgoblastdbindex
 w_taxtree needs xalgodustmask
@@ -6987,6 +7095,7 @@ w_text_widget needs tables
 w_text_widget needs taxon1
 w_text_widget needs uilist
 w_text_widget needs valerr
+w_text_widget needs variation
 w_text_widget needs w_wx
 w_text_widget needs xalgoalignutil
 w_text_widget needs xalgoblastdbindex
@@ -7052,6 +7161,7 @@ w_wx needs tables
 w_wx needs taxon1
 w_wx needs uilist
 w_wx needs valerr
+w_wx needs variation
 w_wx needs xalgoalignutil
 w_wx needs xalgoblastdbindex
 w_wx needs xalgodustmask
@@ -7128,6 +7238,7 @@ writedb needs seqdb
 writedb needs seqedit
 writedb needs seqset
 writedb needs sequtil
+writedb needs variation
 writedb needs xncbi
 writedb needs xobjmgr
 writedb needs xobjread
@@ -7259,6 +7370,7 @@ xalgoalignsplign needs seqset
 xalgoalignsplign needs sequtil
 xalgoalignsplign needs tables
 xalgoalignsplign needs taxon1
+xalgoalignsplign needs variation
 xalgoalignsplign needs xalgoalignnw
 xalgoalignsplign needs xalgoalignutil
 xalgoalignsplign needs xalgoblastdbindex
@@ -7299,6 +7411,7 @@ xalgoalignutil needs seqset
 xalgoalignutil needs sequtil
 xalgoalignutil needs tables
 xalgoalignutil needs taxon1
+xalgoalignutil needs variation
 xalgoalignutil needs xalgoblastdbindex
 xalgoalignutil needs xalgodustmask
 xalgoalignutil needs xalgoseq
@@ -7333,6 +7446,7 @@ xalgoblastdbindex needs seqedit
 xalgoblastdbindex needs seqset
 xalgoblastdbindex needs sequtil
 xalgoblastdbindex needs tables
+xalgoblastdbindex needs variation
 xalgoblastdbindex needs xncbi
 xalgoblastdbindex needs xobjmgr
 xalgoblastdbindex needs xobjread
@@ -7373,6 +7487,7 @@ xalgocontig_assembly needs seqmasks_io
 xalgocontig_assembly needs seqset
 xalgocontig_assembly needs sequtil
 xalgocontig_assembly needs tables
+xalgocontig_assembly needs variation
 xalgocontig_assembly needs xalgoalignnw
 xalgocontig_assembly needs xalgoblastdbindex
 xalgocontig_assembly needs xalgodustmask
@@ -7526,6 +7641,7 @@ xalgowinmask needs seqedit
 xalgowinmask needs seqmasks_io
 xalgowinmask needs seqset
 xalgowinmask needs sequtil
+xalgowinmask needs variation
 xalgowinmask needs xncbi
 xalgowinmask needs xobjmgr
 xalgowinmask needs xobjread
@@ -7555,6 +7671,7 @@ xaligndb needs seqset
 xaligndb needs sequtil
 xaligndb needs tables
 xaligndb needs taxon1
+xaligndb needs variation
 xaligndb needs xalgoalignnw
 xaligndb needs xalgoalignsplign
 xaligndb needs xalgoalignutil
@@ -7630,6 +7747,7 @@ xblast needs seqmasks_io
 xblast needs seqset
 xblast needs sequtil
 xblast needs tables
+xblast needs variation
 xblast needs xalgoblastdbindex
 xblast needs xalgodustmask
 xblast needs xalgowinmask
@@ -7676,6 +7794,7 @@ xblastformat needs seqset
 xblastformat needs seqsplit
 xblastformat needs sequtil
 xblastformat needs tables
+xblastformat needs variation
 xblastformat needs xalgoblastdbindex
 xblastformat needs xalgodustmask
 xblastformat needs xalgowinmask
@@ -7723,6 +7842,7 @@ xbma_refiner needs seqset
 xbma_refiner needs sequtil
 xbma_refiner needs tables
 xbma_refiner needs taxon1
+xbma_refiner needs variation
 xbma_refiner needs xalgoblastdbindex
 xbma_refiner needs xalgodustmask
 xbma_refiner needs xalgowinmask
@@ -7772,6 +7892,7 @@ xcd_utils needs seqset
 xcd_utils needs sequtil
 xcd_utils needs tables
 xcd_utils needs taxon1
+xcd_utils needs variation
 xcd_utils needs xalgoblastdbindex
 xcd_utils needs xalgodustmask
 xcd_utils needs xalgowinmask
@@ -7880,8 +8001,12 @@ xformat needs connect
 xformat needs gbseq
 xformat needs general
 xformat needs genome_collection
+xformat needs medlars
 xformat needs medline
+xformat needs mla
+xformat needs mlacli
 xformat needs pub
+xformat needs pubmed
 xformat needs seq
 xformat needs seqcode
 xformat needs seqedit
@@ -7989,6 +8114,7 @@ xgencoll needs submit
 xgencoll needs tables
 xgencoll needs taxon1
 xgencoll needs tds_ftds64
+xgencoll needs variation
 xgencoll needs vdb
 xgencoll needs vfs
 xgencoll needs vxf
@@ -8072,6 +8198,7 @@ xgraphiccgi needs tables
 xgraphiccgi needs taxon1
 xgraphiccgi needs uilist
 xgraphiccgi needs valerr
+xgraphiccgi needs variation
 xgraphiccgi needs xalgoalignutil
 xgraphiccgi needs xalgoblastdbindex
 xgraphiccgi needs xalgodustmask
@@ -8227,6 +8354,7 @@ xid_mapper needs submit
 xid_mapper needs tables
 xid_mapper needs taxon1
 xid_mapper needs tds_ftds64
+xid_mapper needs variation
 xid_mapper needs vdb
 xid_mapper needs vfs
 xid_mapper needs vxf
@@ -8282,6 +8410,7 @@ xid_utils_noncorelib needs txserv
 xid_utils_noncorelib needs txservbase
 xid_utils_noncorelib needs txxmldoc
 xid_utils_noncorelib needs xcgi
+xid_utils_noncorelib needs xcompress
 xid_utils_noncorelib needs xconnect
 xid_utils_noncorelib needs xid_utils
 xid_utils_noncorelib needs xncbi
@@ -8312,9 +8441,12 @@ xmvdatacache needs xncbi
 xmvdatacache needs xser
 xmvdatacache needs xutil
 xmyncbi needs connect
-xmyncbi needs txservbase
+xmyncbi needs txclient
+xmyncbi needs txxmldoc
+xmyncbi needs xcompress
 xmyncbi needs xconnect
 xmyncbi needs xncbi
+xmyncbi needs xutil
 xmyncbi_captcha needs connect
 xmyncbi_captcha needs connext
 xmyncbi_captcha needs xncbi
@@ -8384,6 +8516,7 @@ xngalign needs seqsplit
 xngalign needs sequtil
 xngalign needs tables
 xngalign needs taxon1
+xngalign needs variation
 xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xalgoblastdbindex
@@ -8463,6 +8596,7 @@ xobjreadex needs seqcode
 xobjreadex needs seqedit
 xobjreadex needs seqset
 xobjreadex needs sequtil
+xobjreadex needs variation
 xobjreadex needs xncbi
 xobjreadex needs xobjmgr
 xobjreadex needs xobjread
@@ -8561,6 +8695,7 @@ xportal_auth needs txserv
 xportal_auth needs txservbase
 xportal_auth needs txxmldoc
 xportal_auth needs xcgi
+xportal_auth needs xcompress
 xportal_auth needs xconnect
 xportal_auth needs xncbi
 xportal_auth needs xutil
@@ -8656,6 +8791,104 @@ xslt_xalan needs xid_utils
 xslt_xalan needs xncbi
 xslt_xalan needs xser
 xslt_xalan needs xutil
+xsmall_assembly needs align-reader
+xsmall_assembly needs asn_cache
+xsmall_assembly needs axf
+xsmall_assembly needs bdb
+xsmall_assembly needs biblio
+xsmall_assembly needs blast
+xsmall_assembly needs blast_services
+xsmall_assembly needs blastdb
+xsmall_assembly needs cache_blob
+xsmall_assembly needs composition_adjustment
+xsmall_assembly needs connect
+xsmall_assembly needs connext
+xsmall_assembly needs creaders
+xsmall_assembly needs ct_ftds64
+xsmall_assembly needs dbapi
+xsmall_assembly needs dbapi_driver
+xsmall_assembly needs gcaccess_utils
+xsmall_assembly needs general
+xsmall_assembly needs genome_collection
+xsmall_assembly needs gpipe_common
+xsmall_assembly needs gpipe_objutil
+xsmall_assembly needs id1
+xsmall_assembly needs id2
+xsmall_assembly needs id_dump
+xsmall_assembly needs judy
+xsmall_assembly needs kdb
+xsmall_assembly needs kfg
+xsmall_assembly needs kfs
+xsmall_assembly needs klib
+xsmall_assembly needs kproc
+xsmall_assembly needs krypto
+xsmall_assembly needs ksproc
+xsmall_assembly needs ksrch
+xsmall_assembly needs kurl
+xsmall_assembly needs lds
+xsmall_assembly needs lds2
+xsmall_assembly needs medline
+xsmall_assembly needs ncbi_xdbapi_ftds
+xsmall_assembly needs ncbi_xloader_asn_cache
+xsmall_assembly needs ncbi_xloader_blastdb
+xsmall_assembly needs ncbi_xloader_blastdb_rmt
+xsmall_assembly needs ncbi_xloader_genbank
+xsmall_assembly needs ncbi_xloader_lds
+xsmall_assembly needs ncbi_xloader_lds2
+xsmall_assembly needs ncbi_xreader
+xsmall_assembly needs ncbi_xreader_cache
+xsmall_assembly needs ncbi_xreader_id1
+xsmall_assembly needs ncbi_xreader_id2
+xsmall_assembly needs ncbi_xreader_pubseqos
+xsmall_assembly needs ncbi_xreader_pubseqos2
+xsmall_assembly needs pub
+xsmall_assembly needs pubmed
+xsmall_assembly needs scoremat
+xsmall_assembly needs sdbapi
+xsmall_assembly needs seq
+xsmall_assembly needs seqcode
+xsmall_assembly needs seqdb
+xsmall_assembly needs seqedit
+xsmall_assembly needs seqmasks_io
+xsmall_assembly needs seqset
+xsmall_assembly needs seqsplit
+xsmall_assembly needs sequtil
+xsmall_assembly needs sqlitewrapp
+xsmall_assembly needs sra-path
+xsmall_assembly needs sra-schema
+xsmall_assembly needs sradb
+xsmall_assembly needs srapath
+xsmall_assembly needs sraread
+xsmall_assembly needs sraschema
+xsmall_assembly needs sraxf
+xsmall_assembly needs submit
+xsmall_assembly needs tables
+xsmall_assembly needs taxon1
+xsmall_assembly needs tds_ftds64
+xsmall_assembly needs variation
+xsmall_assembly needs vdb
+xsmall_assembly needs vfs
+xsmall_assembly needs vxf
+xsmall_assembly needs wgsxf
+xsmall_assembly needs xalgoblastdbindex
+xsmall_assembly needs xalgodustmask
+xsmall_assembly needs xalgowinmask
+xsmall_assembly needs xalnmgr
+xsmall_assembly needs xblast
+xsmall_assembly needs xcgi
+xsmall_assembly needs xcompress
+xsmall_assembly needs xconnect
+xsmall_assembly needs xconnext
+xsmall_assembly needs xmlwrapp
+xsmall_assembly needs xncbi
+xsmall_assembly needs xnetblast
+xsmall_assembly needs xnetblastcli
+xsmall_assembly needs xobjmgr
+xsmall_assembly needs xobjread
+xsmall_assembly needs xobjutil
+xsmall_assembly needs xregexp
+xsmall_assembly needs xser
+xsmall_assembly needs xutil
 xsoap needs connect
 xsoap needs xconnect
 xsoap needs xncbi
@@ -8691,6 +8924,7 @@ xstruct_util needs seqmasks_io
 xstruct_util needs seqset
 xstruct_util needs sequtil
 xstruct_util needs tables
+xstruct_util needs variation
 xstruct_util needs xalgoblastdbindex
 xstruct_util needs xalgodustmask
 xstruct_util needs xalgowinmask
@@ -8762,6 +8996,7 @@ xsvcgi needs tables
 xsvcgi needs taxon1
 xsvcgi needs uilist
 xsvcgi needs valerr
+xsvcgi needs variation
 xsvcgi needs xalgoalignutil
 xsvcgi needs xalgoblastdbindex
 xsvcgi needs xalgodustmask
@@ -8832,6 +9067,7 @@ xsvdata needs tables
 xsvdata needs taxon1
 xsvdata needs uilist
 xsvdata needs valerr
+xsvdata needs variation
 xsvdata needs xalgoalignutil
 xsvdata needs xalgoblastdbindex
 xsvdata needs xalgodustmask
@@ -8898,6 +9134,7 @@ xsvlink needs tables
 xsvlink needs taxon1
 xsvlink needs uilist
 xsvlink needs valerr
+xsvlink needs variation
 xsvlink needs xalgoalignutil
 xsvlink needs xalgoblastdbindex
 xsvlink needs xalgodustmask
@@ -8958,6 +9195,7 @@ xsvnaa needs tables
 xsvnaa needs taxon1
 xsvnaa needs uilist
 xsvnaa needs valerr
+xsvnaa needs variation
 xsvnaa needs xalgoalignutil
 xsvnaa needs xalgoblastdbindex
 xsvnaa needs xalgodustmask
@@ -9019,6 +9257,7 @@ xsvnc needs tables
 xsvnc needs taxon1
 xsvnc needs uilist
 xsvnc needs valerr
+xsvnc needs variation
 xsvnc needs xalgoalignutil
 xsvnc needs xalgoblastdbindex
 xsvnc needs xalgodustmask
@@ -9098,6 +9337,7 @@ xsvsearchcgi needs tables
 xsvsearchcgi needs taxon1
 xsvsearchcgi needs uilist
 xsvsearchcgi needs valerr
+xsvsearchcgi needs variation
 xsvsearchcgi needs xalgoalignutil
 xsvsearchcgi needs xalgoblastdbindex
 xsvsearchcgi needs xalgodustmask
@@ -9165,6 +9405,7 @@ xsvsnp needs tables
 xsvsnp needs taxon1
 xsvsnp needs uilist
 xsvsnp needs valerr
+xsvsnp needs variation
 xsvsnp needs xalgoalignutil
 xsvsnp needs xalgoblastdbindex
 xsvsnp needs xalgodustmask
@@ -9195,8 +9436,12 @@ xvalidate needs connect
 xvalidate needs gbseq
 xvalidate needs general
 xvalidate needs genome_collection
+xvalidate needs medlars
 xvalidate needs medline
+xvalidate needs mla
+xvalidate needs mlacli
 xvalidate needs pub
+xvalidate needs pubmed
 xvalidate needs seq
 xvalidate needs seqcode
 xvalidate needs seqedit
