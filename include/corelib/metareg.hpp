@@ -108,6 +108,8 @@ public:
     ///   If NULL, yield a new CNcbiRegistry.  Otherwise, populate the
     ///   supplied registry (and don't try to share it if it didn't
     ///   start out empty).
+    /// @param path
+    ///   Optional directory to search ahead of the default list.
     /// @return
     ///   On success, .actual_name will contain the absolute path to
     ///   the file ultimately loaded, and .registry will point to an
@@ -119,7 +121,8 @@ public:
                        ENameStyle     style     = eName_AsIs,
                        TFlags         flags     = 0,
                        TRegFlags      reg_flags = 0,
-                       IRWRegistry*   reg       = 0);
+                       IRWRegistry*   reg       = 0,
+                       const string&  path      = kEmptyStr);
 
     /// Reload the configuration file "path".
     ///
@@ -175,7 +178,7 @@ private:
     const SEntry& x_Load(const string& name,  ENameStyle style,
                          TFlags flags, TRegFlags reg_flags, IRWRegistry* reg,
                          const string& name0, ENameStyle style0,
-                         SEntry& scratch_entry);
+                         SEntry& scratch_entry, const string& path);
 
     bool x_Reload(const string& path, IRWRegistry&  reg, TFlags flags,
                   TRegFlags reg_flags);
@@ -184,7 +187,8 @@ private:
     TSearchPath&       x_SetSearchPath(void)
         { CMutexGuard GUARD(m_Mutex); m_Index.clear(); return m_SearchPath; }
 
-    string x_FindRegistry(const string& name, ENameStyle style);
+    string x_FindRegistry(const string& name, ENameStyle style,
+                          const string& path = kEmptyStr);
 
     /// Members
     struct SKey {

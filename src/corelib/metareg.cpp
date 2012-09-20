@@ -105,12 +105,12 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
             dest = registry.GetPointer();
         }
     } else {
-        registry.Reset(new CNcbiRegistry(ifs, reg_flags));
+        registry.Reset(new CNcbiRegistry(ifs, reg_flags, file.GetDir()));
     }
 
     CCompoundRWRegistry* crwreg = dynamic_cast<CCompoundRWRegistry*>(dest);
     if (crwreg) {
-        crwreg->LoadBaseRegistries(reg_flags, reload_flags);
+        crwreg->LoadBaseRegistries(reg_flags, reload_flags, file.GetDir());
     }
 
     timestamp = new_timestamp;
@@ -135,14 +135,15 @@ CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
                                           CMetaRegistry::ENameStyle style,
                                           CMetaRegistry::TFlags flags,
                                           IRegistry::TFlags reg_flags,
-                                          IRWRegistry* reg)
+                                          IRWRegistry* reg,
+                                          const string& path)
 {
     SEntry scratch_entry;
     if ( reg  &&  !reg->Empty() ) { // shouldn't share
         flags |= fPrivate;
     }
-    const SEntry& entry = Instance().x_Load(name, style, flags, reg_flags,
-                                            reg, name, style, scratch_entry);
+    const SEntry& entry = Instance().x_Load(name, style, flags, reg_flags, reg,
+                                            name, style, scratch_entry, path);
     if (reg  &&  entry.registry  &&  reg != entry.registry.GetPointer()) {
         _ASSERT( !(flags & fPrivate) );
         // Copy the relevant data in
@@ -167,7 +168,9 @@ CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
         CCompoundRWRegistry* crwreg = dynamic_cast<CCompoundRWRegistry*>(reg);
         if (crwreg) {
             REG_GUARD.Release();
-            crwreg->LoadBaseRegistries(reg_flags, flags);
+            string dir;
+            CDirEntry::SplitPath(scratch_entry.actual_name, &dir);
+            crwreg->LoadBaseRegistries(reg_flags, flags, dir);
         }
         return scratch_entry;
     }
@@ -180,7 +183,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                       CMetaRegistry::TFlags flags,
                       IRegistry::TFlags reg_flags, IRWRegistry* reg,
                       const string& name0, CMetaRegistry::ENameStyle style0,
-                      CMetaRegistry::SEntry& scratch_entry)
+                      CMetaRegistry::SEntry& scratch_entry, const string& path)
 {
     _TRACE("CMetaRegistry::Load: looking for " << name);
 
@@ -212,7 +215,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
         }
     }
 
-    scratch_entry.actual_name = x_FindRegistry(name, style);
+    scratch_entry.actual_name = x_FindRegistry(name, style, path);
     scratch_entry.flags       = flags;
     scratch_entry.reg_flags   = reg_flags;
     scratch_entry.registry.Reset(reg);
@@ -231,9 +234,18 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
 }
 
 
-string CMetaRegistry::x_FindRegistry(const string& name, ENameStyle style)
+string CMetaRegistry::x_FindRegistry(const string& name, ENameStyle style,
+                                     const string& path)
 {
     _TRACE("CMetaRegistry::FindRegistry: looking for " << name);
+
+    if ( !path.empty()  &&   !CDirEntry::IsAbsolutePath(name) ) {
+        const string& result
+            = x_FindRegistry(CDirEntry::ConcatPath(path, name), style);
+        if ( !result.empty() ) {
+            return result;
+        }
+    }
 
     string dir;
     CDirEntry::SplitPath(name, &dir, 0, 0);

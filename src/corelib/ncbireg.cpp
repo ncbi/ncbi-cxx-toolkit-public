@@ -509,7 +509,8 @@ void IRWRegistry::Clear(TFlags flags)
 }
 
 
-IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
+IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags,
+                               const string& path)
 {
     x_CheckFlags("IRWRegistry::Read", flags,
                  fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces
@@ -525,14 +526,15 @@ IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
         CStringUTF8 s;
         ReadIntoUtf8(is, &s, ef);
         CNcbiIstrstream iss(s.c_str());
-        return x_Read(iss, flags);
+        return x_Read(iss, flags, path);
     } else {
-        return x_Read(is, flags);
+        return x_Read(is, flags, path);
     }
 }
 
 
-IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
+                                 const string& /* path */)
 {
     // Whether to consider this read to be (unconditionally) non-modifying
     TFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
@@ -1377,13 +1379,15 @@ CNcbiRegistry::CNcbiRegistry(TFlags flags)
 }
 
 
-CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
+CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags,
+                             const string& path)
     : m_RuntimeOverrideCount(0), m_Flags(flags)
 {
     x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags,
                  fTransient | fInternalSpaces | fWithNcbirc | fCaseFlags);
     x_Init();
     m_FileRegistry->Read(is, flags & ~(fWithNcbirc | fCaseFlags));
+    LoadBaseRegistries(flags, 0, path);
     IncludeNcbircIfAllowed(flags & ~fCaseFlags);
 }
 
@@ -1439,7 +1443,8 @@ void CNcbiRegistry::x_Clear(TFlags flags) // XXX - should this do more?
 }
 
 
-IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags,
+                                   const string& path)
 {
     // Normally, all settings should go to the main portion.  However,
     // loading an initial configuration file should instead go to the
@@ -1447,7 +1452,7 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     CConstRef<IRegistry> main_reg(FindByName(sm_MainRegName));
     if (main_reg->Empty()  &&  m_FileRegistry->Empty()) {
         m_FileRegistry->Read(is, flags);
-        LoadBaseRegistries(flags);
+        LoadBaseRegistries(flags, 0, path);
         IncludeNcbircIfAllowed(flags);
         return NULL;
     } else if ((flags & fNoOverride) == 0) { // ensure proper layering
@@ -1484,7 +1489,7 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     } else {
         // This will only affect the main registry, but still needs to
         // go through CCompoundRWRegistry::x_Set.
-        return CCompoundRWRegistry::x_Read(is, flags);
+        return CCompoundRWRegistry::x_Read(is, flags, path);
     }
 }
 
@@ -1566,7 +1571,8 @@ CConstRef<IRegistry> CCompoundRWRegistry::FindByContents(const string& section,
 }
 
 
-bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags)
+bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
+                                             const string& path)
 {
     if (flags & fJustCore) {
         return false;
@@ -1599,14 +1605,24 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags)
         if (m_BaseRegNames.find(*it) != m_BaseRegNames.end()) {
             continue;
         }
-        CMetaRegistry::ENameStyle style
-            = ((it->find('.') == NPOS)
-               ? CMetaRegistry::eName_Ini : CMetaRegistry::eName_AsIs);
         CRef<CCompoundRWRegistry> reg2
             (new CCompoundRWRegistry(m_Flags & fCaseFlags));
-        CMetaRegistry::SEntry entry2
-            = CMetaRegistry::Load(*it, style, metareg_flags, flags,
-                                  reg2.GetPointer());
+        // First try adding .ini unless it's already present; when a
+        // file with the unsuffixed name also exists, it is likely an
+        // executable that would be inappropriate to try to parse.
+        CMetaRegistry::SEntry entry2;
+        if (NStr::EndsWith(*it, ".ini")) {
+            entry2.registry = NULL;
+        } else {
+            entry2 = CMetaRegistry::Load(*it, CMetaRegistry::eName_Ini,
+                                         metareg_flags, flags,
+                                         reg2.GetPointer(), path);
+        }
+        if (entry2.registry == NULL) {
+            entry2 = CMetaRegistry::Load(*it, CMetaRegistry::eName_AsIs,
+                                         metareg_flags, flags,
+                                         reg2.GetPointer(), path);
+        }
         if (entry2.registry) {
             m_BaseRegNames.insert(*it);
             bases.push_back(TNewBase(*it, entry2.registry));
@@ -1773,7 +1789,8 @@ bool CCompoundRWRegistry::x_SetComment(const string& comment,
 }
 
 
-IRWRegistry* CCompoundRWRegistry::x_Read(CNcbiIstream& in, TFlags flags)
+IRWRegistry* CCompoundRWRegistry::x_Read(CNcbiIstream& in, TFlags flags,
+                                         const string& path)
 {
     TFlags lbr_flags = flags;
     if ((flags & fNoOverride) == 0  &&  !Empty(fPersistent) ) {
@@ -1781,8 +1798,8 @@ IRWRegistry* CCompoundRWRegistry::x_Read(CNcbiIstream& in, TFlags flags)
     } else {
         lbr_flags &= ~fOverride;
     }
-    IRWRegistry::x_Read(in, flags);
-    LoadBaseRegistries(lbr_flags);
+    IRWRegistry::x_Read(in, flags, path);
+    LoadBaseRegistries(lbr_flags, 0, path);
     return NULL;
 }
 
