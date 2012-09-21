@@ -562,8 +562,8 @@ void CValidError_bioseq::ValidateSeqIds
         }
     }
 
+    CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
     if (!SeqIsPatent(seq)) {
-        CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
         if ( is_wgs ) {
             if ( !mi  ||  !mi->IsSetTech()  ||  
                 mi->GetTech() != CMolInfo::eTech_wgs ) {
@@ -586,6 +586,28 @@ void CValidError_bioseq::ValidateSeqIds
             PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
                      "NC nucleotide should be genomic or cRNA",
                      seq);
+        }
+    }
+    if (seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
+        if (mi && mi->IsSetBiomol()) {
+            switch (mi->GetBiomol()) {
+                case CMolInfo::eBiomol_pre_RNA:
+                case CMolInfo::eBiomol_mRNA:
+                case CMolInfo::eBiomol_rRNA:
+                case CMolInfo::eBiomol_tRNA:
+                case CMolInfo::eBiomol_snRNA:
+                case CMolInfo::eBiomol_scRNA:
+                case CMolInfo::eBiomol_cRNA:
+                case CMolInfo::eBiomol_snoRNA:
+                case CMolInfo::eBiomol_transcribed_RNA:
+                case CMolInfo::eBiomol_ncRNA:
+                case CMolInfo::eBiomol_tmRNA:
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolTypeBiomol,
+                            "Molecule type (DNA) does not match biomol (RNA)", seq);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
