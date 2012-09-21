@@ -74,7 +74,7 @@ public:
                                  EVocabulary vocabulary = eVocabulary_raw);
 
 	static bool ParseStructuredVoucher(const string& str, string& inst, string& coll, string& id);
-    static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country);
+    static bool IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country);
 
     //e.g. "DMNS:Bird" to "Denver Museum of Nature and Science, Ornithology Collections"
     // returns empty string if not found

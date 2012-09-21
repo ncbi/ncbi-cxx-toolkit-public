@@ -3364,11 +3364,17 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
     string voucher_type;
     bool is_miscapitalized;
     bool needs_country;
+    bool erroneous_country;
     string correct_cap;
-    if (COrgMod::IsInstitutionCodeValid(inst_coll, voucher_type, is_miscapitalized, correct_cap, needs_country)) {
+    if (COrgMod::IsInstitutionCodeValid(inst_coll, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country)) {
         if (needs_country) {
             PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
                         "Institution code " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
+                        obj, ctx);
+            return;
+        } else if (erroneous_country) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, 
+                        "Institution code " + inst_coll + " should not be qualified with a <COUNTRY> designation",
                         obj, ctx);
             return;
         } else if (is_miscapitalized) {
@@ -3408,10 +3414,14 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
                     "Institution code " + inst_coll + " is not in list",
                     obj, ctx);
         return;
-    } else if (COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country)) {
+    } else if (COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country)) {
         if (needs_country) {
             PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
                         "Institution code in " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
+                        obj, ctx);
+        } else if (erroneous_country) {
+            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, 
+                        "Institution code " + inst_code + " should not be qualified with a <COUNTRY> designation",
                         obj, ctx);
         } else if (is_miscapitalized) {
             PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 

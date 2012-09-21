@@ -207,7 +207,7 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
 }
 
 
-bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country)
+bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_type, bool& is_miscapitalized, string& correct_cap, bool& needs_country, bool& erroneous_country)
 {
     bool rval = false;
 
@@ -227,7 +227,8 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
         correct_cap = it->first;
         rval = true;
     } else {
-        if (NStr::Find(inst_coll, "<") == string::npos) {
+        size_t pos = NStr::Find(inst_coll, "<");
+        if (pos == string::npos) {
             string check = inst_coll + "<";
             it = s_InstitutionCodeTypeMap.begin();
             while (!rval && it != s_InstitutionCodeTypeMap.end()) {
@@ -240,6 +241,13 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
                     correct_cap = it->first.substr(0, inst_coll.length());
                 }
                 ++it;
+            }
+        } else {
+            string inst_sub = inst_coll.substr(0, pos);
+            it = s_InstitutionCodeTypeMap.find(inst_sub);
+            if (it != s_InstitutionCodeTypeMap.end()) {
+                erroneous_country = true;
+                rval = true;
             }
         }
     }
