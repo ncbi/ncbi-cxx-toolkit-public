@@ -1,8 +1,8 @@
 # $Id$
 
 APP = test_ncbi_namedpipe_connector
-SRC = test_ncbi_namedpipe_connector
-LIB = conntest xconnect xncbi
+SRC = test_ncbi_namedpipe_connector ncbi_conntest
+LIB = xconnect xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS) 
 
