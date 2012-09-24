@@ -1125,8 +1125,13 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
                   if (IsGmtTime()) {
                       break;
                   }
-                  TSeconds tz = (out_tz == eCurrentTimeZone) ?
-                                TimeZone() : out_tz;
+                  TSeconds tz = out_tz;
+                  if (out_tz == eCurrentTimeZone) {
+                      tz = TimeZone();
+                      if ( Daylight() ) {
+                          tz -= 3600;  // DST in effect
+                      }
+                  }
                   str += (tz > 0) ? '-' : '+';
                   if (tz < 0) tz = -tz;
                   int tzh = int(tz / 3600);
