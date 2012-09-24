@@ -392,6 +392,12 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
     void SetBlastType(string type) {
         m_BlastType = type;
     }
+    ///Set subject seq index
+    ///@param alignSeqListIndex: subject seq index in descriptions table
+    ///
+    void SetAlignSeqListIndex(int alignSeqListIndex) {
+        m_currAlignSeqListIndex = alignSeqListIndex;
+    }
 
     /// Sets the masks and the masking algorithm used for the subject sequences
     /// @param masks subject masks [in]
@@ -624,6 +630,8 @@ protected:
 
     int     m_currAlignHsp;///< Current HSP number for single alignmnet
 
+    int     m_currAlignSeqListIndex;///< Current subject seq index in descriptions table
+
     string  m_PreComputedResID;///<CDD precomputed results ID
 
     /// Reference to LinkoutDB implementation. Not owned by this class
@@ -800,8 +808,8 @@ protected:
     ///@param aln_vec_info: alnvec list
     ///
     void x_DisplayAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,
-                             bool show_defline,
-                             bool showSortControls = false);
+                             bool show_defline);
+                             
 
     ///output dynamic feature url
     ///@param out: output stream
@@ -929,7 +937,7 @@ protected:
 	string x_FormatDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
     string x_InitDefLinesHeader(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
 	string	x_MapDefLine(SAlnDispParams *alnDispParams,bool isFisrt, bool linkout,bool hideDefline,int seqLength);
-	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline,bool showSortControls);
+	void x_ShowAlnvecInfoTemplate(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);
 	void x_ShowAlnvecInfo(CNcbiOstream& out, SAlnInfo* aln_vec_info,bool show_defline);    
 
     void x_GetDomainInfo(int row_num, int aln_stop,
