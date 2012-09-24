@@ -106,6 +106,10 @@ string CCgiCookie::x_EncodeCookie(const string& str,
                                   EFieldType ftype,
                                   NStr::EUrlEncode flag)
 {
+    if (flag == NStr::eUrlEnc_SkipMarkChars) {
+        // Force encoding of comma.
+        flag = NStr::eUrlEnc_Cookie;
+    }
     if (NStr::NeedsURLEncoding(str, flag)) {
         switch (TCookieEncoding::GetDefault()) {
         case eCookieEnc_Url:

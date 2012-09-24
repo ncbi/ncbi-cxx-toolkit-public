@@ -2391,6 +2391,8 @@ public:
         eUrlEnc_URIQueryValue,    ///< Encode query part of an URI, arg value.
         eUrlEnc_URIFragment,      ///< Encode fragment part of an URI.
 
+        eUrlEnc_Cookie,           ///< Same as SkipMarkChars with encoded ','
+
         eUrlEnc_None              ///< Do not encode
     };
     /// URL decode flags
