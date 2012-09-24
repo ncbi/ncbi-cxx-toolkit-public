@@ -1,6 +1,6 @@
 # $Id$
 
 SRC = ncbi_conntest
-LIB = xconntest
+LIB = conntest
 
 WATCHERS = lavr
