@@ -150,7 +150,7 @@ typedef unsigned NCBI_INT8_TYPE Uint8;
 /* BigScalar
  */
 
-#define NCBI_BIG_TYPE NCBI_INT8_TYPE
+#define NCBI_BIG_TYPE Int8
 #define SIZEOF_NCBI_BIG 8
 #if (SIZEOF_LONG_DOUBLE > SIZEOF_NCBI_BIG)
 #  undef  NCBI_BIG_TYPE
