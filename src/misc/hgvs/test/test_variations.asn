@@ -80,10 +80,6 @@ Variation ::= {
                 }
               }
             },
-            variant-prop {
-              version 5,
-              effect synonymous
-            },
             data instance {
               type prot-other,
               delta {
