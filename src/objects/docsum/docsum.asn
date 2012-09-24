@@ -1,12 +1,12 @@
 -- ============================================
--- ::DATATOOL:: Generated from "docsum_3.3.xsd"
+-- ::DATATOOL:: Generated from "docsum_3.4.xsd"
 -- ::DATATOOL:: by application DATATOOL version 2.1.0
--- ::DATATOOL:: on 03/03/2011 12:34:38
+-- ::DATATOOL:: on 08/14/2012 12:01:24
 -- ============================================
 
 -- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Michael Kholodov (National Library of Medicine) 
 -- edited with XMLSpy v2005 rel. 3 U (http://www.altova.com) by Michael Feolo (NCBI/NLM/NIH) 
-Docsum-3-3 DEFINITIONS AUTOMATIC TAGS ::=
+Docsum-3-4 DEFINITIONS AUTOMATIC TAGS ::=
 BEGIN
 
 Assay ::= SEQUENCE {
@@ -205,7 +205,7 @@ Component ::= SEQUENCE {
   mapLoc SEQUENCE OF MapLoc
 }
 
---Set of dbSNP refSNP docsums, version 3.2
+--Set of dbSNP refSNP docsums, version 3.4
 ExchangeSet ::= SEQUENCE {
   attlist SET {
     
@@ -241,7 +241,7 @@ ExchangeSet ::= SEQUENCE {
       gpipeOrgAbbr VisibleString OPTIONAL
     },
     sourceDatabase NULL
-  },
+  } OPTIONAL,
   rs SEQUENCE OF Rs OPTIONAL,
   assay Assay OPTIONAL,
   query SEQUENCE {
@@ -291,8 +291,8 @@ ExchangeSet ::= SEQUENCE {
       numUnigeneCids INTEGER OPTIONAL
     },
     summary NULL
-  },
-  baseURL SEQUENCE OF BaseURL
+  } OPTIONAL,
+  baseURL SEQUENCE OF BaseURL OPTIONAL
 }
 
 --functional relationship of SNP (and possibly alleles) to genes at
@@ -332,20 +332,23 @@ FxnSet ::= SEQUENCE {
       nc-transcript-variant (11),
       downstream-variant-500B (12),
       upstream-variant-2KB (13),
-      stop-gained (14),
+      nonsense (14),
       missense (15),
       frameshift-variant (16),
       utr-variant-3-prime (17),
-      upstream-variant-5KB (18),
+      utr-variant-5-prime (18),
       splice-acceptor-variant (19),
       splice-donor-variant (20),
       cds-indel (21),
-      downstream-variant-5KB (22),
-      complex-change-in-transcript (23),
-      stop-lost (24),
+      stop-gained (22),
+      stop-lost (23),
+      complex-change-in-transcript (24),
       incomplete-terminal-codon-variant (25),
       nmd-transcript-variant (26),
-      mature-miRNA-variant (27)
+      mature-miRNA-variant (27),
+      upstream-variant-5KB (28),
+      downstream-variant-5KB (29),
+      intergenic (30)
     } OPTIONAL,
     readingFrame INTEGER OPTIONAL,
     
@@ -357,7 +360,8 @@ FxnSet ::= SEQUENCE {
     --position of the variant residue in peptide
     --						sequence
     aaPosition INTEGER OPTIONAL,
-    mrnaPosition INTEGER OPTIONAL
+    mrnaPosition INTEGER OPTIONAL,
+    soTerm VisibleString OPTIONAL
   },
   
   --functional relationship of SNP (and possibly alleles) to genes at
@@ -419,7 +423,8 @@ MapLoc ::= SEQUENCE {
     --						alignment
     numberOfMismatches INTEGER OPTIONAL,
     numberOfDeletions INTEGER OPTIONAL, --number of deletions in this alignment
-    numberOfInsertions INTEGER OPTIONAL --number of insetions in this alignment
+    numberOfInsertions INTEGER OPTIONAL, --number of insetions in this alignment
+    refAllele VisibleString OPTIONAL
   },
   fxnSet SEQUENCE OF FxnSet OPTIONAL
 }
