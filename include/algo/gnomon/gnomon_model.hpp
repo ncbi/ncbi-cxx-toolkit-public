@@ -475,7 +475,7 @@ public:
     // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
     
     int isCompatible(const CGeneModel& a) const;  // returns 0 for notcompatible or (number of common splices)+1
-    bool IsSubAlignOf(const CGeneModel& a) const { return Include(a.Limits(),Limits()) && isCompatible(a); }
+    bool IsSubAlignOf(const CGeneModel& a) const;
     int MutualExtension(const CGeneModel& a) const;  // returns 0 for notcompatible or (number of introns) + 1
     
     bool IdenticalAlign(const CGeneModel& a) const

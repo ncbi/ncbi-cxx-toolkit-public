@@ -663,6 +663,26 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
     return firstcommonpoint >= 0 ? commonspl+1 : 0;
 }
 
+bool CGeneModel::IsSubAlignOf(const CGeneModel& a) const 
+{ 
+    if(!Include(a.Limits(),Limits()) || !isCompatible(a))
+        return false;
+
+    for(unsigned int i = 1; i < a.Exons().size(); ++i) {
+        if (!a.Exons()[i-1].m_ssplice || !a.Exons()[i].m_fsplice){
+            TSignedSeqRange hole(a.Exons()[i-1].GetTo()+1, a.Exons()[i].GetFrom()-1);
+            ITERATE(CGeneModel::TExons, k, Exons()) {
+                if(k->Limits().IntersectingWith(hole)) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+
 void CGeneModel::AddExon(TSignedSeqRange exon_range)
 {
     _ASSERT( (m_range & exon_range).Empty() );
