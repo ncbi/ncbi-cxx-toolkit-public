@@ -346,12 +346,10 @@ CInt_fuzz::ELim CMappingRange::x_ReverseFuzzLim(CInt_fuzz::ELim lim) const
         return CInt_fuzz::eLim_lt;
     case CInt_fuzz::eLim_lt:
         return CInt_fuzz::eLim_gt;
-    /*
     case CInt_fuzz::eLim_tr:
         return CInt_fuzz::eLim_tl;
     case CInt_fuzz::eLim_tl:
         return CInt_fuzz::eLim_tr;
-    */
     default:
         return lim;
     }
@@ -2511,15 +2509,17 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         if ( ((m_FuzzOption & fFuzzOption_CStyle) == 0) && !fuzz.first ) {
             if( (m_FuzzOption & fFuzzOption_RemoveLimTlOrTr) != 0 ) {
                 // we set lt or gt, as appropriate for strand
-                if( reverse && ! fuzz.second ) {
-                    fuzz.second.Reset( new CInt_fuzz );
+                if (reverse && !fuzz.second) {
+                    fuzz.second.Reset(new CInt_fuzz);
                     fuzz.second->SetLim(CInt_fuzz::eLim_gt);
-                } else if( ! reverse && ! fuzz.first ) {
-                    fuzz.first.Reset( new CInt_fuzz );
+                }
+                else if (!reverse && !fuzz.first) {
+                    fuzz.first.Reset(new CInt_fuzz);
                     fuzz.first->SetLim(CInt_fuzz::eLim_lt);
                 }
             } else {
-                // lim tl - always indicates left, regardless of the strand
+                // lim tl - always indicates left, regardless of the strand.
+                // This may be mapped to lim tr later.
                 fuzz.first.Reset(new CInt_fuzz);
                 fuzz.first->SetLim(CInt_fuzz::eLim_tl);
             }

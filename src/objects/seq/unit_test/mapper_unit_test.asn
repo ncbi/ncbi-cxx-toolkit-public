@@ -38773,7 +38773,7 @@ Seq-loc ::= int {
   to 189,
   strand minus,
   id gi 5,
-  fuzz-to lim tl
+  fuzz-to lim tr
 }
 
 -- Fuzz-from lim tr
@@ -38794,7 +38794,7 @@ Seq-loc ::= int {
   to 189,
   strand minus,
   id gi 5,
-  fuzz-to lim tr
+  fuzz-to lim tl
 }
 
 -- Fuzz-from alt #1
@@ -39009,7 +39009,7 @@ Seq-loc ::= int {
   to 189,
   strand minus,
   id gi 5,
-  fuzz-from lim tl
+  fuzz-from lim tr
 }
 
 -- Fuzz-to lim tr
@@ -39030,7 +39030,7 @@ Seq-loc ::= int {
   to 189,
   strand minus,
   id gi 5,
-  fuzz-from lim tr
+  fuzz-from lim tl
 }
 
 -- Fuzz-to alt #1
@@ -39837,5 +39837,420 @@ Seq-align ::= {
       }
     },
     product-length 580
+  }
+}
+
+
+-- =================
+-- ! Truncated mix !
+-- =================
+
+-- Source
+Seq-loc ::= int {
+  from 11,
+  to 97,
+  id gi 4
+}
+-- Destination on plus
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  id gi 5
+}
+-- Destination on minus
+Seq-loc ::= int {
+  from 113,
+  to 199,
+  strand minus,
+  id gi 5
+}
+
+-- Plus, unmapped ranges on the left
+Seq-loc ::= mix {
+  int {
+    from 1,
+    to 7,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5,
+    fuzz-from lim tl
+  },
+  {
+    from 183,
+    to 189,
+    id gi 5
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 197,
+    strand minus,
+    id gi 5,
+    fuzz-to lim tr
+  },
+  {
+    from 123,
+    to 129,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Plus, unmapped ranges on the right
+Seq-loc ::= mix {
+  int {
+    from 13,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    id gi 4
+  },
+  int {
+    from 103,
+    to 105,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5
+  },
+  {
+    from 183,
+    to 189,
+    id gi 5,
+    fuzz-to lim tr
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 197,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 123,
+    to 129,
+    strand minus,
+    id gi 5,
+    fuzz-from lim tl
+  }
+}
+
+-- Plus, range truncated on the left
+Seq-loc ::= mix {
+  int {
+    from 9,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 113,
+    to 119,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 183,
+    to 189,
+    id gi 5
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 199,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 123,
+    to 129,
+    strand minus,
+    id gi 5
+  }
+}
+
+-- Plus, range truncated on the right
+Seq-loc ::= mix {
+  int {
+    from 13,
+    to 17,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 99,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 115,
+    to 119,
+    id gi 5
+  },
+  {
+    from 183,
+    to 199,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 193,
+    to 197,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 113,
+    to 129,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+
+-- Minus, unmapped ranges on the left
+Seq-loc ::= mix {
+  int {
+    from 81,
+    to 87,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 1,
+    to 7,
+    strand minus,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 189,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 115,
+    to 119,
+    strand minus,
+    id gi 5,
+    fuzz-from lim tl
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 123,
+    to 129,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 193,
+    to 197,
+    strand plus,
+    id gi 5,
+    fuzz-to lim tr
+  }
+}
+
+-- Minus, unmapped ranges on the right
+Seq-loc ::= mix {
+  int {
+    from 103,
+    to 105,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 81,
+    to 87,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    strand minus,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 189,
+    strand minus,
+    id gi 5,
+    fuzz-from lim tl
+  },
+  {
+    from 115,
+    to 119,
+    strand minus,
+    id gi 5
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 123,
+    to 129,
+    strand plus,
+    id gi 5,
+    fuzz-to lim tr
+  },
+  {
+    from 193,
+    to 197,
+    strand plus,
+    id gi 5
+  }
+}
+
+-- Minus, range truncated on the left
+Seq-loc ::= mix {
+  int {
+    from 81,
+    to 87,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 9,
+    to 17,
+    strand minus,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 189,
+    strand minus,
+    id gi 5
+  },
+  {
+    from 113,
+    to 119,
+    strand minus,
+    id gi 5,
+    fuzz-from lim lt
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 123,
+    to 129,
+    strand plus,
+    id gi 5
+  },
+  {
+    from 193,
+    to 199,
+    strand plus,
+    id gi 5,
+    fuzz-to lim gt
+  }
+}
+
+-- Minus, range truncated on the right
+Seq-loc ::= mix {
+  int {
+    from 81,
+    to 99,
+    strand minus,
+    id gi 4
+  },
+  int {
+    from 13,
+    to 17,
+    strand minus,
+    id gi 4
+  }
+}
+-- Direct
+Seq-loc ::= packed-int {
+  {
+    from 183,
+    to 199,
+    strand minus,
+    id gi 5,
+    fuzz-to lim gt
+  },
+  {
+    from 115,
+    to 119,
+    strand minus,
+    id gi 5
+  }
+}
+-- Reversed strand
+Seq-loc ::= packed-int {
+  {
+    from 113,
+    to 129,
+    strand plus,
+    id gi 5,
+    fuzz-from lim lt
+  },
+  {
+    from 193,
+    to 197,
+    strand plus,
+    id gi 5
   }
 }

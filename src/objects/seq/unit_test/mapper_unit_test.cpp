@@ -955,6 +955,69 @@ void TestMapper_ExonPartsOrder(CNcbiIstream& in)
 }
 
 
+void TestMapper_TruncatedMix(CNcbiIstream& in)
+{
+    cout << "Testing truncation of mix parts" << endl;
+
+    CSeq_loc src, dst_plus, dst_minus;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst_plus;
+    in >> MSerial_AsnText >> dst_minus;
+    CSeq_loc_Mapper_Base mapper_plus(src, dst_plus);
+    CSeq_loc_Mapper_Base mapper_minus(src, dst_minus);
+
+    CSeq_loc orig;
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Plus, direct, unmapped ranges on the left" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Plus, reversed, unmapped ranges on the left" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Plus, direct, unmapped ranges on the right" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Plus, reversed, unmapped ranges on the right" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Plus, direct, range truncated on the left" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Plus, reversed, range truncated on the left" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Plus, direct, range truncated on the right" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Plus, reversed, range truncated on the right" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Minus, direct, unmapped ranges on the left" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Minus, reversed, unmapped ranges on the left" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Minus, direct, unmapped ranges on the right" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Minus, reversed, unmapped ranges on the right" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Minus, direct, range truncated on the left" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Minus, reversed, range truncated on the left" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Minus, direct, range truncated on the right" << endl;
+    TestMappingSeq_loc(mapper_plus, orig, in);
+    cout << "  Minus, reversed, range truncated on the right" << endl;
+    TestMappingSeq_loc(mapper_minus, orig, in);
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping)
 {
     CNcbiIfstream in("mapper_unit_test.asn");
@@ -974,4 +1037,5 @@ BOOST_AUTO_TEST_CASE(s_TestMapping)
     TestMapper_Sequence_Info(in);
     TestMapper_Fuzz(in);
     TestMapper_ExonPartsOrder(in);
+    TestMapper_TruncatedMix(in);
 }
