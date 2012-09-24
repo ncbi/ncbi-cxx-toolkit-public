@@ -17,16 +17,6 @@ ifeq "" "$(builddir)$(SKIP_PRELIMINARIES)"
   -include auto_flat_tuneups.mk
 endif
 
-ifneq "" "$(CC)"
-  MFLAGS    += CC=$(CC)
-  MFLAGS_NR += CC=$(CC)
-endif
-
-ifneq "" "$(CXX)"
-  MFLAGS    += CXX=$(CXX)
-  MFLAGS_NR += CXX=$(CXX)
-endif
-
 # Some projects cannot be built in parallel due to sharing object files.
 # The build system's locking mechanism keeps attempts to do so from
 # interfering with each other, but can introduce delays, so it would be
