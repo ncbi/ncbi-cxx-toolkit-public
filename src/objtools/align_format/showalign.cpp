@@ -191,6 +191,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_SeqPropertyLabel = new vector<string>;
     m_TranslatedFrameForLocalSeq = eFirst;
     m_ResultPositionIndex = -1;
+    m_currAlignSeqListIndex = 1;
     CNcbiMatrix<int> mtx;
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
                                        ? matrix_name 
@@ -1969,7 +1970,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     }
     //begin to display
     int num_align = 0;
-    m_cur_align = 0;
+    m_cur_align = m_currAlignSeqListIndex - 1;
     m_currAlignHsp = 0;    
     auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
     //*out2 << *m_SeqalignSetRef;     
@@ -3473,6 +3474,7 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
     //current segment number = m_currAlignHsp + 1
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_next_num",NStr::IntToString(m_currAlignHsp + 2));
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_prev_num",NStr::IntToString(m_currAlignHsp));
+    
 
     if (m_SeqalignSetRef->Get().front()->CanGetType() && 
            m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
@@ -3793,6 +3795,7 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
     
     string hideDndl = (m_BlastType == "sra")? "hidden":"";
     alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"hideDndl",hideDndl);
+    alignInfo = CAlignFormatUtil::MapTemplate(alignInfo,"aln_ord_pos",NStr::IntToString(m_cur_align));
     
     //The next two lines are not used for now
     //alignInfo  = CAlignFormatUtil::MapTemplate(alignInfo,"alnFASTA",m_FASTAlinkUrl);
@@ -3818,11 +3821,10 @@ CDisplaySeqalign::x_FormatDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnIn
 //3. Display Bl2Seq TBLASTX link
 void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out, 
                                            SAlnInfo* aln_vec_info,
-                                           bool show_defline,
-                                           bool showSortControls) 
+                                           bool show_defline)                                           
 {
     string alignHeader;
-    string sortOneAln = m_Ctx ? m_Ctx->GetRequestValue("SORT_ONE_ALN").GetValue() : kEmptyStr;    
+    string sortOneAln = m_Ctx ? m_Ctx->GetRequestValue("SORT_ONE_ALN").GetValue() : kEmptyStr;        
     if(show_defline) {        
         const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
 		//1. Display defline(s),Gene info
@@ -3840,7 +3842,7 @@ void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out,
 
         }
 		//start counting hsp
-		m_currAlignHsp = 0;
+		m_currAlignHsp = 0;        
     }    
     if (m_AlignOption&eShowBlastInfo) {
         //4. add id anchor for mapviewer link
@@ -3854,8 +3856,7 @@ void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out,
 
 void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out, 
                                            SAlnInfo* aln_vec_info,
-                                           bool show_defline,
-                                           bool showSortControls) 
+                                           bool show_defline)                                           
 {
 
     m_AV = aln_vec_info->alnvec;
@@ -3872,7 +3873,7 @@ void CDisplaySeqalign::x_DisplayAlnvecInfo(CNcbiOstream& out,
 		x_ShowAlnvecInfo(out,aln_vec_info,show_defline);
 	}
 	else {
-		x_ShowAlnvecInfoTemplate(out,aln_vec_info,show_defline,showSortControls);
+		x_ShowAlnvecInfoTemplate(out,aln_vec_info,show_defline);
 	}      
     
     delete aln_vec_info->alnRowInfo;
@@ -4668,7 +4669,7 @@ void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <strin
                  
                     alnvecInfo->alnvec = avRef;
          
-                    x_DisplayAlnvecInfo(out,alnvecInfo,showBlastDefline,showSortControls); 
+                    x_DisplayAlnvecInfo(out,alnvecInfo,showBlastDefline); 
                 }                
             } catch (const CException&){
                 out << "Sequence with id "
