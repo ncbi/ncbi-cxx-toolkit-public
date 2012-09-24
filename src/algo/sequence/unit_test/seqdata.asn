@@ -16003,3 +16003,118 @@ TVVSNNKDDVVVQAAVTKGDNVEAYARDYFTGAVYKADVKDGLATFHVKVTNNSGRTVLXGWTEVVXTNI"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_7_33"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 867,
+        seq-data ncbi2na '3B70205EFB504A03EC125F570C50A0BDBC630E0F016CF5CFABF3
+8380B8120CFF7D9CD70B4AF0201CB80808503CDFF1D03DB83C90BFD2087D01022F0D0B77E30CE1
+0401C977F03BD83530504103CF0BF15CF541FF40C8EA8D2407707BE7BC1823FD9CCDBC38FC940A
+3DB0707F84F820FC7DCD037033980127FDBF272204600E0B7F8EFB3C0A3FC081FF773D7037CD85
+068CD0C8F0FF0402F2C035C4A2CFF1EFFE03C45EC423800AC09D360F327C5BFC33E801B3FC2037
+E18146D03F4F3E8E1C0C00255C58502C289F201ECEE149312C0374B42C51421C2040C0'H,
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_25",
+                genomic-id gi 385839642,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 866,
+                    genomic-start 206,
+                    genomic-end 1072
+                  }
+                },
+                product-length 867,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 762,
+                      to 764,
+                      id local str "CDNA_7_33"
+                    },
+                    aa ncbieaa 88
+                  }
+                }
+              },
+              product whole local str "PROT_7_33",
+              location int {
+                from 0,
+                to 866,
+                id local str "CDNA_7_33"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_7_33"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 288,
+        seq-data iupacaa "MSKEPVVQQEIVTAFPNTKEVRYDNELNRIPIGFMNESEQNIFFAILSQVKE
+TSERKTKLSFTQIRELASFQKTSNKELIKSLDNMTTKLASLNVRIHNQQQIIKFTLFPTFQIDGDQQTLTVAVNEDFR
+YIVNDLAKGFVTNFDIEEFTSIKSKYAKTAFRLAREHENEVFDVVLKDFKELFSIPKSYRPTDINRLILTKVSKILQE
+YFTVFEITPVQDEKGKAHRIIAYRFNIGKRILRNLDEPRQISLLDDXIKKPLPTKVRSLETVCDQHTVKSQSSTTKTK
+NK"
+      }
+    }
+  }
+}

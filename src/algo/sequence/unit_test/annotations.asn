@@ -8175,3 +8175,58 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location int {
+        from 206,
+        to 1072,
+        strand plus,
+        id gi 385839642
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_7_33",
+      location packed-int {
+        {
+          from 206,
+          to 1072,
+          strand plus,
+          id gi 385839642
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 968,
+              to 970,
+              strand plus,
+              id gi 385839642
+            },
+            aa ncbieaa 88
+          }
+        }
+      },
+      product whole local str "PROT_7_33",
+      location packed-int {
+        {
+          from 206,
+          to 1072,
+          strand plus,
+          id gi 385839642
+        }
+      }
+    }
+  }
+}

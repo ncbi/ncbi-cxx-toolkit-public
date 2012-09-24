@@ -1228,6 +1228,18 @@ SImplementation::x_CreateMrnaBioseq(const CSeq_align& align,
     return bioseq;
 }
 
+void AddCodeBreak(CSeq_feat& feat, CSeq_loc& loc, char ncbieaa)
+{
+    CRef<CCode_break> code_break(new CCode_break);
+    code_break->SetLoc(loc);
+    code_break->SetAa().SetNcbieaa(ncbieaa);
+    if (feat.IsSetData() && feat.SetData().IsCdregion()) {
+        feat.SetData().SetCdregion().SetCode_break().push_back(code_break);
+    } else {
+        NCBI_THROW(CException, eUnknown, "Adding code break to non-cdregion feature");
+    }
+}
+
 const CBioseq& CFeatureGenerator::
 SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                                        CSeq_feat& cds_on_mrna,
@@ -1300,19 +1312,12 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             if (!(stop_codon_seqvec.IsInGap(0) &&
                   stop_codon_seqvec.IsInGap(1) &&
                   stop_codon_seqvec.IsInGap(2))) {
-                CRef<CCode_break> code_break(new CCode_break);
-                code_break->SetLoc(*stop_codon_on_mrna);
-                code_break->SetAa().SetNcbieaa('*');
-                cds_on_mrna.SetData().SetCdregion().SetCode_break().push_back(code_break);
+                AddCodeBreak(cds_on_mrna, *stop_codon_on_mrna, '*');
             }
         }
-
         strprot.resize(strprot.size()-1);
         protloc_on_mrna = protloc_on_mrna->Subtract(*stop_codon_on_mrna, 0, NULL, NULL);
     }
-
-    /// Repair any internal stops with Xs
-    NStr::ReplaceInPlace(strprot, "*", "X");
 
     CSeq_inst& seq_inst = bioseq.SetInst();
     seq_inst.SetMol(CSeq_inst::eMol_aa);
@@ -1355,9 +1360,23 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                     _ASSERT( len%3 != 0 || !cds_loc->IsPartialStop(eExtreme_Biological) );
                     --e;
                 }
-                if (b < e)
+                if (b < e) {
+
+                    // Repair any internal stops with Xs
+                    size_t stop_aa_pos = b;
+                    while ((stop_aa_pos = strprot.find('*', stop_aa_pos+1)) < e) {
+                        strprot[stop_aa_pos] = 'X';
+
+                        TSeqPos pos_on_mrna = ci.GetPosition() + (stop_aa_pos-b)*3;
+                        CRef<CSeq_loc> internal_stop_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+                        internal_stop_on_mrna->SetInt().SetFrom(pos_on_mrna);
+                        internal_stop_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
+                        AddCodeBreak(cds_on_mrna, *internal_stop_on_mrna, 'X');
+                    }
+
+
                     seq_inst.SetExt().SetDelta().AddLiteral(strprot.substr(b,e-b),CSeq_inst::eMol_aa);
-                
+                }
             }
             b = e;
 
@@ -2611,8 +2630,6 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             TSeqPos pos = it1 - actual.begin() + start_pos;
             CSeq_loc internal_stop_loc(*cds_id, pos, pos);
             CRef<CSeq_loc> mapped = mapper.Map(internal_stop_loc);
-            CRef<CCode_break> code_break(new CCode_break);
-            code_break->SetLoc(*mapped);
             char actual_aa = *it1;
             if (!(m_flags & fTrustProteinSeq)) {
                 actual_aa = 'X';
@@ -2620,8 +2637,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                     ++mismatch_count;
                 }
             }
-            code_break->SetAa().SetNcbieaa(actual_aa);
-            feat.SetData().SetCdregion().SetCode_break().push_back(code_break);
+            AddCodeBreak(feat, *mapped, actual_aa);
         } else if (*it2 == '-') {
             has_gap = true;
         } else if (*it1 != *it2) {
