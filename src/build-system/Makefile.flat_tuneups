@@ -17,6 +17,16 @@ ifeq "" "$(builddir)$(SKIP_PRELIMINARIES)"
   -include auto_flat_tuneups.mk
 endif
 
+ifneq "" "$(CC)"
+  MFLAGS    += CC=$(CC)
+  MFLAGS_NR += CC=$(CC)
+endif
+
+ifneq "" "$(CXX)"
+  MFLAGS    += CXX=$(CXX)
+  MFLAGS_NR += CXX=$(CXX)
+endif
+
 # Some projects cannot be built in parallel due to sharing object files.
 # The build system's locking mechanism keeps attempts to do so from
 # interfering with each other, but can introduce delays, so it would be
@@ -55,8 +65,8 @@ all_dirs ?= $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
 # Lists of directories in any branch which can benefit from the
 # aforementioned hints because some of their projects have files in common.
 
-main_hintees = algo/cobalt/demo app/grid/remote_app cgi \
-    connect connect/daemons connect/ext dbapi/driver/ctlib/samples \
+main_hintees = algo/cobalt/demo app/grid/remote_app cgi connect \
+    connect/daemons connect/ext connect/test dbapi/driver/ctlib/samples \
     dbapi/driver/ftds64/ctlib/samples dbapi/test dbapi/test/driver \
     objmgr/test sample/app/cgi sample/app/cgires
 
