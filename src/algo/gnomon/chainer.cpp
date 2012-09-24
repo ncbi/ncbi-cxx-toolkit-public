@@ -1465,7 +1465,8 @@ void CChainer::CChainerImpl::CombineCompatibleChains(list<CChain>& chains) {
                         itt->SetWeight(itt->Weight()+(*is)->Weight());
                     }
                 }
-                itt->m_members.assign(chain_alignments.begin(),chain_alignments.end());
+                itt->m_members = vector<CGeneModel*>(chain_alignments.begin(),chain_alignments.end());
+                //                itt->m_members.assign(chain_alignments.begin(),chain_alignments.end());
                 sort(itt->m_members.begin(),itt->m_members.end(),AlignSeqOrder());
                 chains.erase(jtt);
             }
