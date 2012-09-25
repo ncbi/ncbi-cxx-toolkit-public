@@ -2121,7 +2121,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         }
                     }
                 } catch (const CException& e){
-                    out << "Warning: " << e.what();
+                    _TRACE("Warning: " << e.what());
                     continue;
                 }
                 hasAln = true;
