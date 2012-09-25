@@ -49,7 +49,8 @@ CAliasTypeStrings::CAliasTypeStrings(const string& externalName,
     : TParent(comments),
       m_ExternalName(externalName),
       m_ClassName(className),
-      m_RefType(&ref_type)
+      m_RefType(&ref_type),
+      m_FullAlias(false)
 {
 }
 
@@ -295,7 +296,13 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             methods << "STD";
         }
         methods <<
-            "_ALIAS_DATA_PTR;\n"
+            "_ALIAS_DATA_PTR;\n";
+        if (this->IsFullAlias()) {
+            methods <<
+                "    SET_FULL_ALIAS;\n"
+                "\n";
+        }
+        methods <<
             "}\n"
             "END_ALIAS_INFO\n"
             "\n";

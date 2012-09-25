@@ -42,6 +42,7 @@
 #include "srcutil.hpp"
 #include <serial/impl/classinfo.hpp>
 #include <typeinfo>
+#include "aliasstr.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -599,7 +600,28 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
 
 AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 {
+#if 0
     return GetFullCType();
+#else
+    string alias = GetVar("_fullalias");
+    if (alias.empty()) {
+        return GetFullCType();
+    }
+    const CDataType* aliastype = ResolveGlobal(alias);
+    if (!aliastype) {
+        NCBI_THROW(CDatatoolException,eWrongInput,
+            "cannot create type info of _fullalias " + alias);
+    }
+    AutoPtr<CTypeStrings> dType = aliastype->GetRefCType();
+    dType->SetDataType(aliastype);
+    AutoPtr<CAliasTypeStrings> code(new CAliasTypeStrings(GlobalName(),
+                                                          ClassName(),
+                                                          *dType.release(),
+                                                          Comments()));
+    code->SetNamespaceName( GetNamespaceName());
+    code->SetFullAlias();
+    return AutoPtr<CTypeStrings>(code.release());
+#endif
 }
 
 AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const

@@ -78,11 +78,18 @@ public:
 
     string GetClassName(void) const;
     string GetExternalName(void) const;
-
+    
+    void SetFullAlias(bool set = true) {
+        m_FullAlias = set;
+    }
+    bool IsFullAlias(void) const {
+        return m_FullAlias;
+    }
 private:
     string m_ExternalName;
     string m_ClassName;
     AutoPtr<CTypeStrings> m_RefType;
+    bool m_FullAlias;
 };
 
 

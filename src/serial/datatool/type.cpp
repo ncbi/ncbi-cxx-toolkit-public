@@ -721,12 +721,14 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
         return AutoPtr<CTypeStrings>(code.release());
     }
     else {
+        string fullalias = GetVar("_fullalias");
         AutoPtr<CTypeStrings> dType = GetFullCType();
         AutoPtr<CAliasTypeStrings> code(new CAliasTypeStrings(GlobalName(),
                                                               ClassName(),
                                                               *dType.release(),
                                                               Comments()));
         code->SetNamespaceName( GetNamespaceName());
+        code->SetFullAlias(!fullalias.empty());
         return AutoPtr<CTypeStrings>(code.release());
     }
 }
