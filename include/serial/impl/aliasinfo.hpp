@@ -72,6 +72,12 @@ public:
             CParent::SetCreateFunction(func);
         }
 
+    void SetFullAlias(bool set=true) {
+        m_FullAlias = set;
+    }
+    bool IsFullAlias(void) const {
+        return m_FullAlias;
+    }
 protected:
     static TObjectPtr GetDataPointer(const CPointerTypeInfo* objectType,
                                      TObjectPtr objectPtr);
@@ -80,6 +86,7 @@ protected:
                                TObjectPtr dataPtr);
 
     TPointerOffsetType m_DataOffset;
+    bool m_FullAlias;
 
     friend class CAliasTypeInfoFunctions;
 private:
