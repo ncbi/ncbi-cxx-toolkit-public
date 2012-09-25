@@ -50,6 +50,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include <objtools/format/items/qualifiers.hpp>
 #include <objtools/format/context.hpp>
@@ -1542,9 +1543,26 @@ void CFlatAnticodonQVal::Format
     string locationString = CFlatSeqLoc(*m_Anticodon, ctx).GetString();
 
     CNcbiOstrstream text;
-    text << "(pos:" ;
-    text << locationString;
-    text << ",aa:" << m_Aa << ')' ;
+    text << "(pos:" << locationString;
+    text << ",aa:" << m_Aa;
+
+    CScope & scope = ctx.GetScope();
+    if( sequence::GetLength(*m_Anticodon, &scope) == 3 ) { // "3" because 3 nucleotides to an amino acid (and thus anticodon sequence)
+        
+        try {
+            CSeqVector seq_vector(*m_Anticodon, scope, CBioseq_Handle::eCoding_Iupac);
+            if( seq_vector.size() == 3 ) {
+                string seq("---");
+                seq_vector.GetSeqData(0, 3, seq);
+                // this is RNA, so convert T to U
+                NStr::ReplaceInPlace(seq, "T", "U");
+                text << ",seq:" << seq;
+            }
+        } catch(...) {
+            // ignore any sort of error that occurs in this process
+        }
+    }
+    text << ')' ;
 
     x_AddFQ(q, name, CNcbiOstrstreamToString(text), CFormatQual::eUnquoted);
 }
