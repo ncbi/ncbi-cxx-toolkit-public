@@ -75,10 +75,10 @@ public:
         return false;
     }
     
-    template <typename iterator>
-    void insert(iterator begin,iterator end)
+    template <typename TIterator>
+    void insert(TIterator begin, TIterator end)
     {
-        for (iterator i = begin; i != end; ++i)
+        for (TIterator i = begin; i != end; ++i)
             insert(*i);
     }
 
