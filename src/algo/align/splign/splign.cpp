@@ -1069,9 +1069,9 @@ bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
     return rv;
 }
 
-bool CSplign::IsPolyA(const char * seq, size_t polya_start, size_t dim, size_t cds_stop) {
+bool CSplign::IsPolyA(const char * seq, size_t polya_start, size_t dim) {
     const double kMinPercAInPolya (0.80);
-    if( ( polya_start + GetMinPolyaLen() > dim ) || ( polya_start <= cds_stop ) ) return false;
+    if( polya_start + GetMinPolyaLen() > dim ) return false;
     size_t cnt = 0;
     for(size_t i = polya_start; i<dim; ++i) {
         if(seq[i] == 'A') ++cnt;
@@ -1436,7 +1436,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         THit::TCoord coord = s.m_box[1] + 1;
         m_polya_start = kMax_UInt;
         if(coord < mrna_size ) {//there is unaligned flanking part of mRNA 
-            if(!m_nopolya && IsPolyA(&m_mrna.front(), coord, m_mrna.size(), m_cds_stop)) {//polya
+            if(!m_nopolya && IsPolyA(&m_mrna.front(), coord, m_mrna.size())) {//polya
                 m_polya_start = coord;
             } else {//gap
                 TSegment ss;
