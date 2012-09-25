@@ -112,8 +112,13 @@ TEnumValueType CEnumeratedTypeValues::FindValue(const CTempString& name) const
     const TNameToValue& m = NameToValue();
     TNameToValue::const_iterator i = m.find(name);
     if ( i == m.end() ) {
-        NCBI_THROW(CSerialException,eInvalidData,
-                   "invalid value of enumerated type");
+        string name_alt = string(name);
+        name_alt[0] = toupper((unsigned char)name_alt[0]);
+        i = m.find(name_alt);
+        if ( i == m.end() ) {
+            NCBI_THROW(CSerialException,eInvalidData,
+                       "invalid value of enumerated type");
+        }
     }
     return i->second;
 }

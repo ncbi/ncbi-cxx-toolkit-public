@@ -104,7 +104,10 @@ void CObjectOStreamAsn::WriteEnum(
     if (valueName.empty() || (m_WriteNamedIntegersByValue && values.IsInteger())) {
         m_Output.PutInt4(value);
     } else {
-        m_Output.PutString(valueName);
+// names coming from XML can begin with uppercase char;
+// in ASN, they must begin with lowercase one.
+        m_Output.PutChar(tolower((unsigned char)valueName[0]));
+        m_Output.PutString(valueName.data()+1, valueName.size()-1);
     }    
 }
 
