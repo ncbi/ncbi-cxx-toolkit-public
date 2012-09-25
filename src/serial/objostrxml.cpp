@@ -44,6 +44,7 @@
 #include <serial/impl/classinfo.hpp>
 #include <serial/impl/choice.hpp>
 #include <serial/impl/continfo.hpp>
+#include <serial/impl/aliasinfo.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/impl/ptrinfo.hpp>
 #include <serial/error_codes.hpp>
@@ -76,7 +77,7 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_Unknown ),
       m_UseXmlDecl(true),
       m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
-      m_SkipIndent( false )
+      m_SkipIndent( false ), m_SkipNextTag(false)
 {
     m_Output.SetBackLimit(1);
 }
@@ -393,7 +394,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
 {
     bool skipname = valueName.empty() ||
                   (m_WriteNamedIntegersByValue && values.IsInteger());
-    if ( !values.GetName().empty() ) {
+    if ( !m_SkipNextTag && !values.GetName().empty() ) {
         // global enum
         OpenTagStart();
         m_Output.PutString(values.GetName());
@@ -1166,25 +1167,45 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
 
 void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    const CClassTypeInfo* classType =
-        dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
-    if (classType) {
-        CheckStdXml(classType);
+    bool isclass = false;
+    if (m_SkipNextTag) {
+        TopFrame().SetNotag();
+        m_SkipNextTag = false;
+    } else {
+        const CClassTypeInfo* classType =
+            dynamic_cast<const CClassTypeInfo*>(namedTypeInfo);
+        if (classType) {
+            CheckStdXml(classType);
+            isclass = true;
+        }
+        bool needNs = x_ProcessTypeNamespace(namedTypeInfo);
+        OpenTag(namedTypeInfo);
+        if (needNs) {
+            x_WriteClassNamespace(namedTypeInfo);
+        }
     }
-    bool needNs = x_ProcessTypeNamespace(namedTypeInfo);
-    OpenTag(namedTypeInfo);
-    if (needNs) {
-        x_WriteClassNamespace(namedTypeInfo);
+    if (!isclass) {
+        const CAliasTypeInfo* aliasType = 
+            dynamic_cast<const CAliasTypeInfo*>(namedTypeInfo);
+        if (aliasType) {
+            m_SkipNextTag = aliasType->IsFullAlias();
+        }
     }
 }
 
 void CObjectOStreamXml::EndNamedType(void)
 {
+    m_SkipNextTag = false;
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+        return;
+    }
     CloseTag(TopFrame().GetTypeInfo());
     x_EndTypeNamespace();
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
+
 void CObjectOStreamXml::WriteNamedType(TTypeInfo namedTypeInfo,
                                        TTypeInfo typeInfo,
                                        TConstObjectPtr object)
@@ -1261,6 +1282,11 @@ ETypeFamily CObjectOStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
 
 void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
+    if (m_SkipNextTag) {
+        TopFrame().SetNotag();
+        m_SkipNextTag = false;
+        return;
+    }
     CheckStdXml(classInfo);
     bool needNs = x_ProcessTypeNamespace(classInfo);
     OpenTagIfNamed(classInfo);
@@ -1271,6 +1297,10 @@ void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 
 void CObjectOStreamXml::EndClass(void)
 {
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+        return;
+    }
     if (!m_Attlist && m_LastTagAction != eTagSelfClosed) {
         EolIfEmptyTag();
     }
@@ -1394,6 +1424,11 @@ bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
 
 void CObjectOStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 {
+    if (m_SkipNextTag) {
+        TopFrame().SetNotag();
+        m_SkipNextTag = false;
+        return;
+    }
     CheckStdXml(choiceType);
     bool needNs = x_ProcessTypeNamespace(choiceType);
     OpenTagIfNamed(choiceType);
@@ -1404,6 +1439,10 @@ void CObjectOStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 
 void CObjectOStreamXml::EndChoice(void)
 {
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+        return;
+    }
     CloseTagIfNamed(TopFrame().GetTypeInfo());
     x_EndTypeNamespace();
 }
