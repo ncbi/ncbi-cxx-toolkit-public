@@ -450,6 +450,7 @@ private:
     map<string,string> m_NsPrefixToName;
     deque<string> m_NsPrefixes;
     bool m_SkipIndent;
+    bool m_SkipNextTag;
 };
 
 

@@ -593,6 +593,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 #define SET_ALIAS_MODULE(ModuleName) \
     NCBI_NS_NCBI::SetModuleName(info, ModuleName)
 
+#define SET_FULL_ALIAS  info->SetFullAlias()
 
 
 NCBI_XSERIAL_EXPORT

@@ -297,6 +297,7 @@ private:
     map<string,string> m_NsNameToPrefix;
     CStringUTF8 m_Utf8Buf;
     CStringUTF8::const_iterator m_Utf8Pos;
+    bool m_SkipNextTag;
 };
 
 
