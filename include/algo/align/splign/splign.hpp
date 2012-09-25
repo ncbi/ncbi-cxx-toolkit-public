@@ -233,7 +233,7 @@ public:
     TOrfPair GetCds(const THit::TId & id, const vector<char> * seq_data = 0);
 
     static size_t s_TestPolyA(const char * seq, size_t dim, size_t cds_stop = 0);
-    bool IsPolyA(const char * seq, size_t polya_start, size_t dim, size_t cds_stop = 0);
+    bool IsPolyA(const char * seq, size_t polya_start, size_t dim);
 
     // alignment statistics
 
