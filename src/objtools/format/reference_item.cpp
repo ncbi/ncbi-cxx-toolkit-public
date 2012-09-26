@@ -646,31 +646,36 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
         ITERATE( CPub_equiv::Tdata, it, pub.Get() ) {
             const CPub & pub = **it;
             CRef<CPub> new_pub;
-            switch(pub.Which()) {
-            case CPub::e_Pmid:
-                {
-                    const int pmid = pub.GetPmid().Get();
 
-                    CPubMedId req(pmid);
-                    CMLAClient::TReply reply;
-                    new_pub = mlaClient.AskGetpubpmid(req, &reply);
-                }
-                break;
-            case CPub::e_Muid:
-                {
-                    const int muid = pub.GetMuid();
+            try {
+                switch(pub.Which()) {
+                case CPub::e_Pmid:
+                    {
+                        const int pmid = pub.GetPmid().Get();
 
-                    const int pmid = mlaClient.AskUidtopmid(muid);
-                    if( pmid > 0 ) {
                         CPubMedId req(pmid);
                         CMLAClient::TReply reply;
                         new_pub = mlaClient.AskGetpubpmid(req, &reply);
                     }
+                    break;
+                case CPub::e_Muid:
+                    {
+                        const int muid = pub.GetMuid();
+
+                        const int pmid = mlaClient.AskUidtopmid(muid);
+                        if( pmid > 0 ) {
+                            CPubMedId req(pmid);
+                            CMLAClient::TReply reply;
+                            new_pub = mlaClient.AskGetpubpmid(req, &reply);
+                        }
+                    }
+                    break;
+                default:
+                    // ignore if type unknown
+                    break;
                 }
-                break;
-            default:
-                // ignore if type unknown
-                break;
+            } catch(...) {
+                // don't worry if we can't look it up
             }
 
             if( new_pub ) {
