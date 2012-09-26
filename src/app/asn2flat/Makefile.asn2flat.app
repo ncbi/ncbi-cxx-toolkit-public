@@ -8,11 +8,9 @@
 
 APP = asn2flat
 SRC = asn2flat
-LIB = $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup xregexp entrez2cli entrez2 tables $(OBJMGR_LIBS) $(PCRE_LIB)
-
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
+LIB  = xcleanup xobjread $(XFORMAT_LIBS) xalnmgr xobjutil entrez2cli entrez2 creaders tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
-
 
 WATCHERS = ludwigf
