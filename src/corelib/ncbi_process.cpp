@@ -28,6 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbierror.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbifile.hpp>
@@ -434,6 +435,7 @@ bool CProcess::IsAlive(void) const
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
                                FALSE, (TPid)m_Process);
         if (!hProcess) {
+            CNcbiError::SetFromWindowsError();
             return GetLastError() == ERROR_ACCESS_DENIED;
         }
     } else {
@@ -529,6 +531,7 @@ bool CProcess::Kill(unsigned long timeout) const
             hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
             if (!hProcess) {
                 if (GetLastError() != ERROR_ACCESS_DENIED) {
+                    CNcbiError::SetFromWindowsError();
                     return false;
                 }
                 // If we have an administrative rights, that we can try
@@ -553,12 +556,14 @@ bool CProcess::Kill(unsigned long timeout) const
                                      TOKEN_QUERY|TOKEN_ADJUST_PRIVILEGES,
                                      FALSE, &hToken)) {
                     if (GetLastError() != ERROR_NO_TOKEN) {
+                        CNcbiError::SetFromWindowsError();
                         return false;
                     }
                     // Rrevert to the process token, if not impersonating
                     if (!OpenProcessToken(GetCurrentProcess(),
                                           TOKEN_QUERY|TOKEN_ADJUST_PRIVILEGES,
                                           &hToken)) {
+                        CNcbiError::SetFromWindowsError();
                         return false;
                     }
                 }
@@ -574,6 +579,7 @@ bool CProcess::Kill(unsigned long timeout) const
 
                 if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(tp),
                                            &tp_prev, &tp_prev_size)) {
+                    CNcbiError::SetFromWindowsError();
                     CloseHandle(hToken);
                     return false;
                 }
@@ -581,6 +587,7 @@ bool CProcess::Kill(unsigned long timeout) const
                     // The AdjustTokenPrivileges function cannot add new
                     // privileges to the access token. It can only enable or
                     // disable the token's existing privileges.
+                    CNcbiError::SetFromWindowsError();
                     CloseHandle(hToken);
                     return false;
                 }
@@ -630,6 +637,9 @@ bool CProcess::Kill(unsigned long timeout) const
             // If process "terminated" succesfuly or error occur but
             // process handle became invalid -- process has terminated
             terminated = true;
+        }
+        else {
+            CNcbiError::SetFromWindowsError();
         }
     }
     if (safe  &&  terminated) {
@@ -912,12 +922,14 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
             enable_sync = false;
             hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
             if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
+                CNcbiError::SetFromWindowsError();
                 return -1;
             }
         }
     } else {
         hProcess = (TProcessHandle)m_Process;
         if (!hProcess  ||  hProcess == INVALID_HANDLE_VALUE) {
+            CNcbiError::Set(CNcbiError::eBadAddress);
             return -1;
         }
     }

@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbierror.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
 #include "ncbi_os_mswin_p.hpp"
@@ -44,6 +45,7 @@ string CWinSecurity::GetUserName(void)
     DWORD name_size = UNLEN + 1;
 
     if ( !::GetUserName(name, &name_size) ) {
+        CNcbiError::SetFromWindowsError();
         return kEmptyStr;
     }
     return _T_STDSTRING(name);
@@ -70,6 +72,7 @@ PSID CWinSecurity::GetUserSID(const string& username)
                                      sid, &sid_size,
                                      domain, &domain_size, &use);
         if ( !ret  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
+            CNcbiError::SetFromWindowsError();
             return NULL;
         }
         // Allocate buffers
@@ -122,6 +125,7 @@ bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
                             account_name, (LPDWORD) &account_size,
                             domain_name,  (LPDWORD) &domain_size,
                             &use) ) {
+        CNcbiError::SetFromWindowsError();
         return false;
     }
     // Save account information
@@ -140,6 +144,7 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
     // Get priviledge unique identifier
     LUID luid;
     if ( !LookupPrivilegeValue(NULL, privilege, &luid) ) {
+        CNcbiError::SetFromWindowsError();
         return false;
     }
 
@@ -156,6 +161,7 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
     AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
                           &tp_prev, &tp_prev_size);
     if ( GetLastError() != ERROR_SUCCESS ) {
+        CNcbiError::SetFromWindowsError();
         return false;
     }
 
@@ -172,6 +178,7 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
     }
     AdjustTokenPrivileges(token, FALSE, &tp_prev, tp_prev_size, NULL, NULL);
     if ( GetLastError() != ERROR_SUCCESS ) {
+        CNcbiError::SetFromWindowsError();
         return false;
     }
     // Privilege settings changed
@@ -219,11 +226,13 @@ bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
     PSID sid_group;
     PSECURITY_DESCRIPTOR sd = NULL;
 
-    if ( GetSecurityInfo
+    DWORD res = GetSecurityInfo
          ( objhndl, objtype,
            OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-           &sid_owner, &sid_group, NULL, NULL, &sd )
-         != ERROR_SUCCESS ) {
+           &sid_owner, &sid_group, NULL, NULL, &sd );
+
+    if ( res != ERROR_SUCCESS ) {
+        CNcbiError::SetWindowsError(res);
         return false;
     }
 
@@ -243,11 +252,12 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
     PSID sid_group;
     PSECURITY_DESCRIPTOR sd = NULL;
 
-    if ( GetNamedSecurityInfo
+    DWORD res = GetNamedSecurityInfo
          ( (LPTSTR)(_T_XCSTRING(objname)), objtype,
            OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-           &sid_owner, &sid_group, NULL, NULL, &sd )
-         != ERROR_SUCCESS ) {
+           &sid_owner, &sid_group, NULL, NULL, &sd );
+    if (res != ERROR_SUCCESS ) {
+        CNcbiError::SetWindowsError(res);
         return false;
     }
 
@@ -265,6 +275,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
         *uid = 0;
     }
     if ( owner.empty() ) {
+        CNcbiError::Set(CNcbiError::eInvalidArgument);
         return false;
     }
 
@@ -273,6 +284,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
     if ( !OpenProcessToken(GetCurrentProcess(),
                            TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
                            &token) ) {
+        CNcbiError::SetFromWindowsError();
         return false;
     }
 
@@ -355,6 +367,9 @@ bool CWinSecurity::SetFileOwner(const string& filename,
     if ( domain ) free(domain);
     CloseHandle(token);
 
+    if (!success) {
+        CNcbiError::SetFromWindowsError();
+    }
     // Return result
     return success;
 }
@@ -368,6 +383,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
 PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)
 {
     if ( path.empty() ) {
+        CNcbiError::Set(CNcbiError::eInvalidArgument);
         return NULL;
     }
     PSECURITY_DESCRIPTOR sid = NULL;
@@ -377,16 +393,19 @@ PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)
     if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
                           sid, size, &size_need) ) {
         if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+            CNcbiError::SetFromWindowsError();
             return NULL;
         }
         // Allocate memory for the buffer
         sid = (PSECURITY_DESCRIPTOR) LocalAlloc(LMEM_FIXED, size_need);
         if ( !sid ) {
+            CNcbiError::SetFromWindowsError();
             return NULL;
         }
         size = size_need;
         if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
                               sid, size, &size_need) ) {
+            CNcbiError::SetFromWindowsError();
             return NULL;
         }
     }
@@ -398,6 +417,7 @@ bool CWinSecurity::GetFileDACL(const string& strPath,
                                PSECURITY_DESCRIPTOR* pFileSD, PACL* pDACL)
 {
     if ( strPath.empty() ) {
+        CNcbiError::Set(CNcbiError::eInvalidArgument);
         return false;
     }
     DWORD dwRet = 0;
@@ -407,6 +427,9 @@ bool CWinSecurity::GetFileDACL(const string& strPath,
     if (dwRet != ERROR_SUCCESS) {
         pFileSD = NULL;
         pDACL   = NULL;
+    }
+    if (dwRet != ERROR_SUCCESS) {
+        CNcbiError::SetWindowsError(dwRet);
     }
     return (dwRet == ERROR_SUCCESS);
 }
@@ -428,6 +451,7 @@ bool CWinSecurity::GetFilePermissions(const string& path,
                                       ACCESS_MASK*  permissions)
 {
     if ( !permissions ) {
+        CNcbiError::Set(CNcbiError::eBadAddress);
         return false;
     }
     // Get DACL for the file
@@ -435,6 +459,7 @@ bool CWinSecurity::GetFilePermissions(const string& path,
 
     if ( !sd ) {
         if ( GetLastError() == ERROR_ACCESS_DENIED ) {
+            CNcbiError::SetWindowsError(ERROR_ACCESS_DENIED);
             *permissions = 0;  
             return true;
         }
@@ -477,11 +502,13 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         *permissions = 0;
         success = false;
     }
-
     // Clean up
     CloseHandle(token);
     FreeFileSD(sd);
 
+    if (!success) {
+        CNcbiError::SetFromWindowsError();
+    }
     return success;
 }
 
