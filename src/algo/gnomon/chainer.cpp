@@ -1466,7 +1466,8 @@ void CChainer::CChainerImpl::CombineCompatibleChains(list<CChain>& chains) {
                     }
                 }
                 itt->m_members.resize(chain_alignments.size(),0);
-                copy(chain_alignments.begin(),chain_alignments.end(),itt->m_members.begin());
+                copy(chain_alignments.begin(), chain_alignments.end(),
+                     back_inserter(itt->m_members));
                 //                itt->m_members.assign(chain_alignments.begin(),chain_alignments.end());
                 sort(itt->m_members.begin(),itt->m_members.end(),AlignSeqOrder());
                 chains.erase(jtt);
