@@ -348,7 +348,7 @@ bool Cn3DApp::OnInit(void)
     else if (model != eModel_type_other) {  // -o present
         wxString id;
         if (commandLine.Found("d", &id)) {
-            CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model);
+            CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model, 0);
             if (mime)
                 structureWindow->LoadData(NULL, commandLine.Found("f"), commandLine.Found("n"), mime);
         } else {

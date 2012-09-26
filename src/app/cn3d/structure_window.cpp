@@ -1675,7 +1675,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
         if (id.size() == 0)
             return;
 
-        CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), GetModelTypeFromUser(this));
+        CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), GetModelTypeFromUser(this), 0);
         if (mime)
             LoadData(NULL, false, false, mime);
     }

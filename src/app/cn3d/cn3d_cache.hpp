@@ -61,10 +61,15 @@ BEGIN_SCOPE(Cn3D)
 typedef std::list < ncbi::CRef < ncbi::objects::CBioseq > > BioseqRefList;
 
 // uid can either be an integer MMDB ID or a 4-character PDB ID
-bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType,
+//  If assemblyId = -1, use the predefined 'default' assembly.
+//  Otherwise, get the specific assembly requested, where 
+//  assemblyId = 0 means the ASU, and PDB-defined assemblies
+//  are indexed sequentially from 1.  Prior to adding this parameter,
+//  Cn3D has historically always retrieved the ASU.
+bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType, int assemblyId, 
     ncbi::CRef < ncbi::objects::CBiostruc >& biostruc, BioseqRefList *sequences);
 ncbi::objects::CNcbi_mime_asn1 *
-    LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType);
+    LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType, int assemblyId);
 
 // utility function for mimes
 bool ExtractBiostrucAndBioseqs(ncbi::objects::CNcbi_mime_asn1& mime,

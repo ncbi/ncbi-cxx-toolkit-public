@@ -140,10 +140,15 @@ static CNcbi_mime_asn1 * GetStructureFromCacheFolder(int mmdbID, EModel_type mod
     return mime.Release();
 }
 
+//  If assemblyId = -1, use the predefined 'default' assembly.
+//  Otherwise, get the specific assembly requested, where 
+//  assemblyId = 0 means the ASU, and PDB-defined assemblies
+//  are indexed sequentially from 1.
 static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
-    const string& uid, int mmdbID, EModel_type modelType)
+    const string& uid, int mmdbID, EModel_type modelType, int assemblyId = -1)
 {
-    // construct URL
+    // construct URL [mmdbsrv.cgi]
+/*
     static const string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
     string args("save=Save&dopt=j&uid=");
     if (mmdbID > 0)
@@ -158,6 +163,26 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
         default:
             args += "2"; break;
     }
+*/
+    // construct URL [mmdb_strview.cgi]
+    static const string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdb_strview.cgi";
+    string args("program=cn3d&display=1&uid=");
+    if (mmdbID > 0)
+        args += NStr::IntToString(mmdbID);
+    else    // assume PDB id
+        args += uid;
+    args += "&complexity=";
+    switch (modelType) {
+        case eModel_type_ncbi_vector: args += "1"; break;
+        case eModel_type_ncbi_all_atom: args += "3"; break;
+        case eModel_type_pdb_model: args += "4"; break;
+        case eModel_type_ncbi_backbone:
+        default:
+            args += "2"; break;
+    }
+    if (assemblyId >= 0) 
+        args += "&buidx=" + NStr::IntToString(assemblyId);
+ 
 
     // load from network
     INFOMSG("Trying to load structure data from " << host << path << '?' << args);
@@ -200,7 +225,7 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
     return mime.Release();
 }
 
-CNcbi_mime_asn1 * LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType)
+CNcbi_mime_asn1 * LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType, int assemblyId)
 {
     // determine whether this is an integer MMDB ID or alphanumeric PDB ID
     int mmdbID = 0;
@@ -227,15 +252,15 @@ CNcbi_mime_asn1 * LoadStructureViaCache(const std::string& uid, ncbi::objects::E
 
     // otherwise, load via HTTP (and save in cache folder)
     if (!mime)
-        mime = GetStructureViaHTTPAndAddToCache(uid, mmdbID, modelType);
+        mime = GetStructureViaHTTPAndAddToCache(uid, mmdbID, modelType, assemblyId);
 
     return mime;
 }
 
-bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType,
+bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type modelType, int assemblyId,
     CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
-    CRef < CNcbi_mime_asn1 > mime(LoadStructureViaCache(uid, modelType));
+    CRef < CNcbi_mime_asn1 > mime(LoadStructureViaCache(uid, modelType, assemblyId));
     return (mime.NotEmpty() && ExtractBiostrucAndBioseqs(*mime, biostruc, sequences));
 }
 

@@ -195,7 +195,7 @@ bool StructureSet::LoadMaster(int masterMMDBID)
         CRef < CBiostruc > biostruc;
         wxString id;
         id.Printf("%i", masterMMDBID);
-        if (LoadStructureViaCache(id.c_str(), dataManager->GetBiostrucModelType(), biostruc, NULL))
+        if (LoadStructureViaCache(id.c_str(), dataManager->GetBiostrucModelType(), 0, biostruc, NULL))
             objects.push_back(new StructureObject(this, *biostruc, true));
     }
     return (objects.size() > 0);
@@ -491,7 +491,7 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
                         wxString id;
                         id.Printf("%i", (*l)->dependent->identifier->mmdbID);
                         if (!LoadStructureViaCache(id.c_str(),
-                                dataManager->GetBiostrucModelType(), biostruc, NULL)) {
+                                dataManager->GetBiostrucModelType(), 0, biostruc, NULL)) {
                             ERRORMSG("Failed to load MMDB #" << (*l)->dependent->identifier->mmdbID);
                             continue;
                         }

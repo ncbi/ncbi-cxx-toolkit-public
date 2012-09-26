@@ -606,6 +606,7 @@ void UpdateViewer::ImportStructure(void)
         biostruc.Reset(new CBiostruc());
         if (!LoadStructureViaCache(id.c_str(),
                 (master->parentSet->isAlphaOnly ? eModel_type_ncbi_backbone : eModel_type_ncbi_all_atom),
+                0,
                 biostruc, &bioseqs)) {
             ERRORMSG("Failed to load structure " << id.c_str());
             return;
