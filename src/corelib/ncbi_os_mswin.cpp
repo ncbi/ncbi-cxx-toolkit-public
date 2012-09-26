@@ -30,9 +30,9 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbierror.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbierror.hpp>
 #include "ncbi_os_mswin_p.hpp"
 
 

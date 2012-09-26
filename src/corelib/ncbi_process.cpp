@@ -28,7 +28,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbierror.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbifile.hpp>
@@ -36,6 +35,7 @@
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbierror.hpp>
 #include "ncbisys.hpp"
 
 #if   defined(NCBI_OS_UNIX)
