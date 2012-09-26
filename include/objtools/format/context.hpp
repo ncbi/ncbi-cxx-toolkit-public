@@ -132,6 +132,8 @@ public:
     // top-level Seq-entry info
     CTopLevelSeqEntryContext& GetTLSeqEntryCtx(void) { return *m_TLSeqEntryCtx; }
     bool CanGetTLSeqEntryCtx                  (void) const { return m_TLSeqEntryCtx.NotNull(); }
+    bool IsBioseqInSameTopLevelSeqEntry(const CBioseq_Handle & seq);
+    bool IsSeqIdInSameTopLevelSeqEntry(const CSeq_id & seq_id );
 
     // delta sequence
     bool IsDelta(void) const { return m_Repr == CSeq_inst::eRepr_delta; }
@@ -447,6 +449,18 @@ SIZE_TYPE CBioseqContext::GetTotalNumParts(void) const
 inline
 void CBioseqContext::SetMaster(CMasterContext& mctx) {
     m_Master.Reset(&mctx);
+}
+
+inline
+bool CBioseqContext::IsBioseqInSameTopLevelSeqEntry(const CBioseq_Handle & seq)
+{
+    return seq.GetTopLevelEntry() == m_Handle.GetTopLevelEntry();
+}
+
+inline
+bool CBioseqContext::IsSeqIdInSameTopLevelSeqEntry(const CSeq_id & seq_id)
+{
+    return GetScope().GetBioseqHandleFromTSE(seq_id, m_Handle);
 }
 
 inline
