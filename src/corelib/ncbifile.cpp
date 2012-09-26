@@ -1455,7 +1455,7 @@ static bool s_CheckAccessPath(const char* path, int amode)
         return false;
     }
     if (!*path) {
-        CNcbiError::Set(errno = ENOENT, path);
+        CNcbiError::SetErrno(errno = ENOENT, path);
         return false;
     }
     struct stat st;
@@ -1465,7 +1465,7 @@ static bool s_CheckAccessPath(const char* path, int amode)
     }
 
     if (!s_CheckAccessStat(&st, amode)) {
-        CNcbiError::Set(errno = EACCES, path);
+        CNcbiError::SetErrno(errno = EACCES, path);
         return false;
     }
     // Permissions granted
