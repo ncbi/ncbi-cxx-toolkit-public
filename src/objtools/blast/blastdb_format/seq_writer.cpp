@@ -160,6 +160,10 @@ void CSeqFormatter::x_Builder(vector<string>& data2write)
             data2write.push_back(m_DataExtractor.ExtractMembershipInteger());
             break;
 
+        case 'd':
+            data2write.push_back(m_DataExtractor.ExtractAsn1Defline());
+            break;
+
         default:
             CNcbiOstrstream os;
             os << "Unrecognized format specification: '%" << *fmt << "'";

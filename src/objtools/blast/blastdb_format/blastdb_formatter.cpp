@@ -60,6 +60,7 @@ CBlastDbFormatter::CBlastDbFormatter(const string& fmt_spec)
             m_ReplacementTypes.push_back(m_FmtSpec[i+1]);
         }
     }
+    // Handle %d defline in ASN.1 text format, can only be by itself
 
     if (m_ReplOffsets.empty() || 
         m_ReplacementTypes.size() != m_ReplOffsets.size()) {

@@ -89,7 +89,7 @@ public:
     string ExtractLinkoutInteger();
     string ExtractMembershipInteger();
     string ExtractLinkoutTokens();
-
+    string ExtractAsn1Defline();
     string ExtractFasta(const CBlastDBSeqId &seq_id);
 
 protected:

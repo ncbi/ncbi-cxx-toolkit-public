@@ -190,6 +190,14 @@ string CBlastDBExtractor::ExtractMembershipInteger()
     return NStr::IntToString(retval);
 }
 
+string CBlastDBExtractor::ExtractAsn1Defline()
+{
+    x_InitDefline();
+    CNcbiOstrstream oss;
+    oss << MSerial_AsnText << *m_Defline << endl;
+    return CNcbiOstrstreamToString(oss);
+}
+
 string CBlastDBExtractor::ExtractAccession() {
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
     if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {

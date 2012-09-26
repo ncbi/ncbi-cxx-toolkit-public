@@ -83,6 +83,8 @@ private:
     ENa_strand m_Strand;
     /// output is FASTA
     bool m_FASTA;
+    /// output is ASN.1 defline
+    bool m_Asn1DeflineOutput;
     /// should we find duplicate entries? 
     bool m_GetDuplicates;
     /// should we output target sequence only?
@@ -166,7 +168,7 @@ CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
     } 
 
     // FASTA output just need one id
-    if (m_FASTA) {
+    if (m_FASTA || m_Asn1DeflineOutput) {
         CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId());
         blastdb_seqid->SetOID(oid);
         retval.push_back(blastdb_seqid);
@@ -335,10 +337,23 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     if (args["outfmt"].HasValue()) {
         outfmt = args["outfmt"].AsString();
         m_FASTA = false;
+        m_Asn1DeflineOutput = false;
+
+        if (outfmt.find("%f") != string::npos && 
+            outfmt.find("%d") != string::npos) {
+            NCBI_THROW(CInputException, eInvalidInput, 
+                "The %d and %f output format options cannot be specified together.");
+        }
+
         // If "%f" is found within outfmt, discard everything else
         if (outfmt.find("%f") != string::npos) {
             outfmt = "%f";
             m_FASTA = true;
+        }
+        // If "%d" is found within outfmt, discard everything else
+        if (outfmt.find("%d") != string::npos) {
+            outfmt = "%d";
+            m_Asn1DeflineOutput = true;
         }
         if (outfmt.find("%m") != string::npos) {
             int algo_id = 0;
@@ -485,12 +500,20 @@ void CBlastDBCmdApp::Init()
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
             "\t\t%P means PIG\n"
+#if _BLAST_DEBUG
+            "\t\t%d means defline in text ASN.1 format\n"
+#endif /* _BLAST_DEBUG */
             "\t\t%m means sequence masking data.\n"
             "\t\t   Masking data will be displayed as a series of 'N-M' values\n"
             "\t\t   separated by ';' or the word 'none' if none are available.\n"
+#if _BLAST_DEBUG
+            "\tIf '%f' or '%d' are specified, all other format specifiers are ignored.\n"
+            "\tFor every format except '%f' and '%d', each line of output will "
+#else
             "\tIf '%f' is specified, all other format specifiers are ignored.\n"
             "\tFor every format except '%f', each line of output will "
-            "correspond to\n\ta sequence.\n",
+#endif /* _BLAST_DEBUG */
+            "correspond\n\tto a sequence.\n",
             CArgDescriptions::eString, "%f");
 
     //arg_desc->AddDefaultKey("target_only", "value",
