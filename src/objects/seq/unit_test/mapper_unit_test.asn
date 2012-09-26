@@ -40133,7 +40133,7 @@ Seq-loc ::= packed-int {
     to 189,
     strand minus,
     id gi 5,
-    fuzz-from lim tl
+    fuzz-to lim tr
   },
   {
     from 115,
@@ -40149,7 +40149,7 @@ Seq-loc ::= packed-int {
     to 129,
     strand plus,
     id gi 5,
-    fuzz-to lim tr
+    fuzz-from lim tl
   },
   {
     from 193,

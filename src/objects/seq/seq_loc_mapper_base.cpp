@@ -2518,10 +2518,16 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
                     fuzz.first->SetLim(CInt_fuzz::eLim_lt);
                 }
             } else {
-                // lim tl - always indicates left, regardless of the strand.
-                // This may be mapped to lim tr later.
-                fuzz.first.Reset(new CInt_fuzz);
-                fuzz.first->SetLim(CInt_fuzz::eLim_tl);
+                // Set fuzz for the original location.
+                // This may be reversed later while mapping.
+                if ( !reverse ) {
+                    fuzz.first.Reset(new CInt_fuzz);
+                    fuzz.first->SetLim(CInt_fuzz::eLim_tl);
+                }
+                else {
+                    fuzz.second.Reset(new CInt_fuzz);
+                    fuzz.second->SetLim(CInt_fuzz::eLim_tr);
+                }
             }
         }
         // Reset the flag - current range is mapped at least partially.
