@@ -213,6 +213,7 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
 
     is_miscapitalized = false;
     needs_country = false;
+    erroneous_country = false;
     correct_cap = "";
 
     s_InitializeInstitutionCollectionCodeMaps();

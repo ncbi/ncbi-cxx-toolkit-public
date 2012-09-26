@@ -116,7 +116,6 @@ BEGIN_SCOPE(objects)
 
 using namespace validator;
 
-// #define BAD_VALIDATOR
 
 CExpectedError::CExpectedError(string accession, EDiagSev severity, string err_code, string err_msg) 
 : m_Accession (accession), m_Severity (severity), m_ErrCode(err_code), m_ErrMsg(err_msg)
@@ -3538,10 +3537,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_MolNuclAcid)
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     CRef<CSeq_entry> entry = BuildGoodSeq();
 
     STANDARD_SETUP
@@ -3571,6 +3566,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
         entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
         SetTech (entry, i);
         SetBiomol (entry, CMolInfo::eBiomol_cRNA);
+        expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InconsistentMolTypeBiomol", "Molecule type (DNA) does not match biomol (RNA)"));
         if (i == CMolInfo::eTech_est) {
             expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "EST sequence should be mRNA"));
         }
@@ -3583,6 +3579,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
             CheckErrors (*eval, expected_errors);
             SetBiomol(entry, CMolInfo::eBiomol_genomic);
             entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+            delete expected_errors[0];
+            expected_errors[0] = NULL;
             expected_errors.back()->SetErrMsg("HTGS/STS/GSS/WGS sequence should not be RNA");
             eval = validator.Validate(seh, options);
             CheckErrors (*eval, expected_errors);
@@ -3603,6 +3601,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
 
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
     SetTech (entry, CMolInfo::eTech_tsa);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InconsistentMolTypeBiomol", "Molecule type (DNA) does not match biomol (RNA)"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));            
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5939,10 +5938,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoTaxonID)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
@@ -6249,10 +6244,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentProteinTitle)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     CRef<CSeqdesc> desc1(new CSeqdesc());
@@ -6519,6 +6510,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     SetBiomol(entry, CMolInfo::eBiomol_cRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     // no error expected
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7011,10 +7003,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingOnNonRefSeq)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 {
- #ifndef BAD_VALIDATOR
-    return;
-#endif
-
    // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetTaxname(entry, "Arabidopsis thaliana");
@@ -7185,8 +7173,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     // mating-type error for 3 plant lineages
     SetLineage(entry, "Eukaryota; Viridiplantae; Streptophyta; Embryophyta; foo");
     eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
     SetLineage(entry, "Eukaryota; Rhodophyta; foo");
     eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
     SetLineage(entry, "Eukaryota; stramenopiles; Phaeophyceae; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7441,6 +7431,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors (*eval, expected_errors);
     
     SetBiomol(entry, CMolInfo::eBiomol_cRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors[0]->SetErrMsg("cRNA note redundant with molecule type");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7450,6 +7441,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
     SetLineage (entry, "Viruses; no DNA stage");
     expected_errors[0]->SetErrMsg("Genomic DNA viral lineage indicates no DNA stage");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
 
     SetLineage (entry, "Bacteria; foo");
     SetSubSource (entry, CSubSource::eSubtype_other, "cRNA");
@@ -7458,6 +7451,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors (*eval, expected_errors);
     
     SetBiomol(entry, CMolInfo::eBiomol_cRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors[0]->SetErrMsg("cRNA note redundant with molecule type");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7474,6 +7468,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CLEAR_ERRORS
 
     SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
@@ -7525,10 +7520,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     // error if not genomic
     SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_mRNA);
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "CDSonMinusStrandMRNA",
+                                                "CDS should not be on minus strand of mRNA molecule"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BioSourceInconsistency",
                                                 "Negative-strand virus with minus strand CDS should be genomic")); 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodSeq();
@@ -7536,8 +7536,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CRef<CSeq_feat> misc_feat = AddMiscFeature (entry);
     misc_feat->SetComment("nonfunctional");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("good");
-    expected_errors[0]->SetErrMsg("Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                                                "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -7545,6 +7545,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CLEAR_ERRORS
 
     SetBiomol (entry, CMolInfo::eBiomol_mRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     SetBiomol (entry, CMolInfo::eBiomol_cRNA);
@@ -7573,6 +7574,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 
     // error if not genomic
     SetBiomol (entry, CMolInfo::eBiomol_mRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
                                                 "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic")); 
     eval = validator.Validate(seh, options);
@@ -8076,10 +8078,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     
@@ -8493,7 +8491,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
 
     expected_errors[0]->SetErrMsg("Institution code abrc exists, but correct capitalization is ABRC");
-    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "abrc:foo");
+    SetOrgMod(entry, COrgMod::eSubtype_bio_material, "abrc:x");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
@@ -8516,10 +8514,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionCode)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     
@@ -8819,10 +8813,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceVouchers)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     
@@ -8880,10 +8870,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCountryCapitalization)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_WrongVoucherType)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     
@@ -9228,10 +9214,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     // prepare entry
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetBiomol (entry, CMolInfo::eBiomol_genomic);
@@ -9255,6 +9237,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
 
     // if not genomic
     SetBiomol (entry, CMolInfo::eBiomol_mRNA);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     SetBiomol (entry, CMolInfo::eBiomol_genomic);
@@ -10927,28 +10910,29 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
 
 BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
 {
-#ifndef BAD_VALIDATOR
-    return;
-#endif
-
     CRef<CSeq_entry> entry = BuildGoodSegSet();
     CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
     SetBiomol(parts_set->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("part1", eDiag_Error, "InconsistentMolTypeBiomol",
+                                                 "Molecule type (DNA) does not match biomol (RNA)"));
     expected_errors.push_back(new CExpectedError("master", eDiag_Error, "InconsistentMolInfoBiomols",
                                                  "Segmented set contains inconsistent MolInfo biomols"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     scope.RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodEcoSet();
     SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("good1");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[0]->SetErrMsg("Pop/phy/mut/eco set contains inconsistent MolInfo biomols");
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "InconsistentMolTypeBiomol",
+                                                 "Molecule type (DNA) does not match biomol (RNA)"));
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "InconsistentMolInfoBiomols",
+                                                 "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
 
     TESTPOPPHYMUTECO (seh, entry)
 
