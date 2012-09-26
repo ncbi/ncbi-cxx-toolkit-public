@@ -34,6 +34,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
+#include <corelib/ncbierror.hpp>
 #include <stdio.h>
 #include <limits.h>
 
@@ -513,6 +514,20 @@ static void s_TEST_File(void)
         if ( f2.Exists() ) {
             f2.Remove();
         }
+
+        // errors
+        f2.GetLength();
+        CNcbiError err( CNcbiError::GetLast() );
+        assert( err );
+        cout << "Expected error " << err << endl;
+        if ( f3.Exists() ) {
+            f3.Remove();
+        }
+        f2.Copy(f3.GetPath());
+        err = CNcbiError::GetLast();
+        assert( err );
+        cout << "Expected error " << err << endl;
+
         s_CreateTestFile(f2.GetPath());
         assert( !f.IsNewer(f2.GetPath(), 0) );
         f2.Remove();
@@ -545,6 +560,8 @@ static void s_TEST_File(void)
         assert( f1.Rename(f.GetPath()) );
 
         assert( !f1.Rename(f2.GetPath()) );
+        assert( CNcbiError::GetLast() );
+        cout << "Expected error " << CNcbiError::GetLast() << endl;
         assert( CFile("file1").Exists() );
         assert( f2.Exists() );
 
@@ -673,6 +690,25 @@ static void s_TEST_Dir(void)
 {
     // Delete the directory if it exists before we start testing
     CDirEntry("dir1").Remove();
+
+    // errors
+    CDir::SetCwd("dir1");
+    assert ( CNcbiError::GetLast() );
+    cout << "Expected error " << CNcbiError::GetLast() << endl;
+    {
+        CDir::TEntries contents = CDir("dir1").GetEntries("*.*");
+        assert ( CNcbiError::GetLast() );
+        cout << "Expected error " << CNcbiError::GetLast() << endl;
+    }
+    CDir("???").Create();
+    assert ( CNcbiError::GetLast() );
+    cout << "Expected error " << CNcbiError::GetLast() << endl;
+    CDir("???").Remove();
+    assert ( CNcbiError::GetLast() );
+    cout << "Expected error " << CNcbiError::GetLast() << endl;
+    CDir("???").Copy("*");
+    assert ( CNcbiError::GetLast() );
+    cout << "Expected error " << CNcbiError::GetLast() << endl;
     
     // Create directory
     assert( CDir("dir1").Create() );
@@ -697,6 +733,8 @@ static void s_TEST_Dir(void)
     // Copy the directory
     assert( CDir("dir1").Copy("dir3") );
     assert( !CDir("dir1").Copy("dir3") );
+    assert ( CNcbiError::GetLast() );
+    cout << "Expected error " << CNcbiError::GetLast() << endl;
     assert( CDir("dir1").Copy("dir3", CDir::fCF_Overwrite) );
 
     assert( CDir("dir1").Copy("dir3", CDir::fCF_Backup) );
@@ -716,6 +754,8 @@ static void s_TEST_Dir(void)
 
     // Remove the directory
     assert( !CDirEntry("dir2").Remove(CDirEntry::eOnlyEmpty) );
+    assert ( CNcbiError::GetLast() );
+    cout << "Expected error " << CNcbiError::GetLast() << endl;
     assert( CFile("dir2/file1").Remove() );
     assert( CDir("dir2").Remove(CDir::eOnlyEmpty) );
     assert( CDir("dir3").Remove() );
@@ -786,9 +826,13 @@ static void s_TEST_Dir(void)
         // Delete dir
         dir.Reset("dir3");
         assert( !dir.Remove(CDir::eOnlyEmpty) );
+        assert ( CNcbiError::GetLast() );
+        cout << "Expected error " << CNcbiError::GetLast() << endl;
         assert( dir.Exists() );
 
         assert( !dir.Remove(CDir::eNonRecursive) );
+        assert ( CNcbiError::GetLast() );
+        cout << "Expected error " << CNcbiError::GetLast() << endl;
         assert( dir.Exists() );
         assert( CDir("dir3/subdir1").Exists() );
         assert( CFile("dir3/subdir1/file").Exists() );
@@ -898,6 +942,9 @@ static void s_TEST_Link(void)
         CSymLink link2("link2");
         assert( !link2.Exists() );
         assert( link.Copy("link2", CDirEntry::fCF_Overwrite) );
+        assert( !link.Copy("link2") );
+        assert( CNcbiError::GetLast());
+        cout << "Expected error " << CNcbiError::GetLast() << endl;
         assert( link2.Exists() );
         assert( link2.IsLink() );
         assert( link2.LookupLink() == "dir1");
@@ -1535,7 +1582,7 @@ void CTest::Init(void)
     SetupArgDescriptions(d.release());
 }
 
-    
+
 int CTest::Run(void)
 {
     // Process command line
