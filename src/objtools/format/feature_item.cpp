@@ -1624,14 +1624,16 @@ public:
     CGeneSearchPlugin( 
         const CSeq_loc &location, 
         CBioseqContext &ctx,
+        CScope & scope,
         const CGene_ref* filtering_gene_xref ) 
         : m_Loc_original_strand(eNa_strand_other),
-          m_Filtering_gene_xref(filtering_gene_xref)
+          m_Filtering_gene_xref(filtering_gene_xref),
+          m_Scope(&scope)
     {
         ITERATE( CSeq_loc, loc_iter, location ) {
             const CSeq_id *seq_id = loc_iter.GetRangeAsSeq_loc()->GetId();
             if( seq_id != NULL ) {
-                m_BioseqHandle = ctx.GetScope().GetBioseqHandle( *seq_id );
+                m_BioseqHandle = m_Scope->GetBioseqHandle( *seq_id );
                 if( m_BioseqHandle ) {
                     break;
                 }
@@ -1775,7 +1777,7 @@ public:
                 sequence::ECompare piece_comparison = sequence::Compare(
                     *candidate_feat_loc_iter.GetRangeAsSeq_loc(),
                     *cleaned_loc_this_iteration,
-                    &m_BioseqHandle.GetScope() );
+                    &*m_Scope );
                 if( piece_comparison != sequence::eNoOverlap ) 
                 {
                     if( x_StrandsMatch( m_Loc_original_strand, candidate_feat_loc_iter.GetStrand() ) ) {
@@ -1831,6 +1833,7 @@ private:
     ENa_strand m_Loc_original_strand;
     CBioseq_Handle m_BioseqHandle;
     CConstRef<CGene_ref> m_Filtering_gene_xref;
+    CRef<CScope> m_Scope;
 
     bool x_StrandsMatch( ENa_strand feat_strand, ENa_strand candidate_feat_original_strand )
     {
@@ -1843,12 +1846,13 @@ private:
 };
 
 
+// static
 CConstRef<CSeq_feat> 
 CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible( 
     CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
     CSeqFeatData::ESubtype feat_subtype,
     const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-    const CGene_ref* filtering_gene_xref ) const
+    const CGene_ref* filtering_gene_xref )
 {
     CRef<CSeq_loc> cleaned_location( new CSeq_loc );
     cleaned_location->Assign( location );
@@ -1869,7 +1873,7 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
         // try one strand first
         cleaned_location->SetStrand( first_strand_to_try );
         CConstRef<CSeq_feat> feat;
-        CGeneSearchPlugin plugin( *cleaned_location, ctx, filtering_gene_xref );
+        CGeneSearchPlugin plugin( *cleaned_location, ctx, *scope, filtering_gene_xref );
         feat = sequence::GetBestOverlappingFeat
             ( *cleaned_location,
             sought_type,
@@ -1887,7 +1891,7 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
         } else {
             cleaned_location->SetStrand( eNa_strand_plus );
         }
-        CGeneSearchPlugin plugin2( *cleaned_location, ctx, filtering_gene_xref );
+        CGeneSearchPlugin plugin2( *cleaned_location, ctx, *scope, filtering_gene_xref );
         return sequence::GetBestOverlappingFeat
             ( *cleaned_location,
             sought_type,
@@ -1901,18 +1905,34 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible(
     return x_GetFeatViaSubsetThenExtremesIfPossible_Helper( ctx, scope, *cleaned_location, sought_type, filtering_gene_xref );
 }
 
+// static
 CConstRef<CSeq_feat> 
 CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-    const CGene_ref* filtering_gene_xref) const
+    const CGene_ref* filtering_gene_xref)
 {
+    // holds reference to temporary scope if it's used
+    CRef<CScope> temp_scope;
+
     const static string kGbLoader = "GBLOADER";
     bool needToAddGbLoaderBack = false;
     if( scope && ( ctx.IsEMBL() || ctx.IsDDBJ() ) && 
         scope->GetObjectManager().FindDataLoader(kGbLoader) ) 
     {
-        scope->RemoveDataLoader(kGbLoader);
-        needToAddGbLoaderBack = true;
+        // try to remove the GBLOADER temporarily
+        try {
+            scope->RemoveDataLoader(kGbLoader);
+            needToAddGbLoaderBack = true;
+        } catch(...) {
+            // we couldn't remove the GBLOADER temporarily, so we make a temporary substitute CScope
+
+            // add copy of scope, but without the gbloader
+            // TODO: check if this call is fast
+            scope = new CScope(*CObjectManager::GetInstance());
+            scope->AddDefaults();
+            scope->RemoveDataLoader(kGbLoader);
+            temp_scope.Reset(scope);
+        }
     }
 
     CConstRef<CSeq_feat> feat;
@@ -1932,12 +1952,13 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
     return feat;
 }
 
+// static
 CConstRef<CSeq_feat> 
 CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-    const CGene_ref* filtering_gene_xref ) const
+    const CGene_ref* filtering_gene_xref )
 {
-    CGeneSearchPlugin plugin( location, ctx, filtering_gene_xref );
+    CGeneSearchPlugin plugin( location, ctx, *scope, filtering_gene_xref );
     return sequence::GetBestOverlappingFeat
                     ( location,
                      sought_type,
@@ -1947,12 +1968,13 @@ CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
                      &plugin );
 }
 
+// static
 CConstRef<CSeq_feat> 
 CFeatureItem::x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
     CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-    const CGene_ref* filtering_gene_xref ) const
+    const CGene_ref* filtering_gene_xref )
 {
-    CGeneSearchPlugin plugin( location, ctx, filtering_gene_xref );
+    CGeneSearchPlugin plugin( location, ctx, *scope, filtering_gene_xref );
     return sequence::GetBestOverlappingFeat
         ( location,
         sought_type,
@@ -2234,7 +2256,8 @@ CFeatureItem::x_ResolveGeneXref( const CGene_ref *xref_g_ref, CBioseqContext& ct
     return feat;
 }
 
-bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location ) const
+// static
+bool CFeatureItem::x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location )
 {
     // disallowed if mixed strand
     if( s_IsMixedStrand( CBioseq_Handle(), location) ) {

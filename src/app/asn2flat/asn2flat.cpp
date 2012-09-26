@@ -433,21 +433,39 @@ void CAsn2FlatApp::HandleSeqId(
     const string& strId )
 //  ============================================================================
 {
-    CSeq_id id(strId);
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    scope->AddDefaults();
-    CBioseq_Handle bsh = scope->GetBioseqHandle( id );
-    if ( ! bsh ) {
-       NCBI_THROW(
-            CException, eUnknown,
-            "Unable to retrieve data for the given ID"
-        );
+    CConstRef<CSeq_entry> entry;
+
+    // This C++-scope gets a raw CSeq_entry that has no attachment
+    // to any CScope and puts it into entry.
+    {
+        CSeq_id id(strId);
+        CRef<CScope> scope(new CScope(*m_Objmgr));
+        scope->AddDefaults();
+        CBioseq_Handle bsh = scope->GetBioseqHandle( id );
+        if ( ! bsh ) {
+            NCBI_THROW(
+                CException, eUnknown,
+                "Unable to retrieve data for the given ID"
+                );
+        }
+        CSeq_entry_Handle entry_h = bsh.GetParentEntry();
+
+        entry = entry_h.GetCompleteSeq_entry();
     }
+
+    // we have to remove the Genbank loader before we call AddTopLevelSeqEntry,
+    // or else we'll get an "already added to scope" exception.
+    // we add it back afterwards.
+    // The idea of this maneuver is so the GenBank loader isn't permanently
+    // locked by CAsn2FlatApp::HandleSeqId.
+    m_Scope->RemoveDataLoader("GBLOADER");
+    CSeq_entry_Handle new_entry_h = m_Scope->AddTopLevelSeqEntry(*entry);
+    m_Scope->AddDataLoader("GBLOADER");
 
     //
     //  ... and use that to generate the flat file:
     //
-    HandleSeqEntry(bsh.GetParentEntry() );
+    HandleSeqEntry( new_entry_h );
 }
 
 //  ============================================================================

@@ -176,28 +176,32 @@ protected:
     void x_GetAssociatedGeneInfo( CBioseqContext& ctx, const CGene_ref*&,
         CConstRef<CSeq_feat>&, CConstRef<CFeatureItem> parentFeatureItem ) const;
     CSeq_feat_Handle x_ResolveGeneXref( const CGene_ref *xref_g_ref, CBioseqContext& ctx ) const;
-    bool x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location ) const;
+    static bool x_CanUseExtremesToFindGene( CBioseqContext& ctx, const CSeq_loc &location );
+    static
     CConstRef<CSeq_feat> 
         x_GetFeatViaSubsetThenExtremesIfPossible( 
             CBioseqContext& ctx, CSeqFeatData::E_Choice feat_type,
             CSeqFeatData::ESubtype feat_subtype,
             const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref ) const ;
+            const CGene_ref* filtering_gene_xref ) ;
 
+    static
     CConstRef<CSeq_feat> 
         x_GetFeatViaSubsetThenExtremesIfPossible_Helper(
             CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref ) const;
+            const CGene_ref* filtering_gene_xref );
     // These 2 functions could just be folded into x_GetFeatViaSubsetThenExtremesIfPossible_Helper,
     // but they're separate to make it easier to profile the different paths.
+    static
     CConstRef<CSeq_feat> 
         x_GetFeatViaSubsetThenExtremesIfPossible_Helper_subset(
             CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref ) const;
+            const CGene_ref* filtering_gene_xref );
+    static
     CConstRef<CSeq_feat> 
         x_GetFeatViaSubsetThenExtremesIfPossible_Helper_extremes(
             CBioseqContext& ctx, CScope *scope, const CSeq_loc &location, CSeqFeatData::E_Choice sought_type,
-            const CGene_ref* filtering_gene_xref ) const;
+            const CGene_ref* filtering_gene_xref );
 
     void x_GetAssociatedProtInfo( CBioseqContext&, CBioseq_Handle&,
         const CProt_ref*&, CMappedFeat& protFeat, CConstRef<CSeq_id>& );
