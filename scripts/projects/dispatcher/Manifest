@@ -34,7 +34,7 @@ Linux32-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --wit
 Linux32-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : GCC   : GCC.sh 4.4.2   --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
-FreeBSD32       : GCC   : GCC.sh 4.2.1   --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
+FreeBSD32       : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
 SunOSx86        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSx86        : WS32  : WorkShop.sh 32 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc      : WS64  : WorkShop.sh 64 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
