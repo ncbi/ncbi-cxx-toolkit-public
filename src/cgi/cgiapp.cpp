@@ -558,6 +558,7 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
                                 CRWStreambuf::fOwnReader));
             }
             inp = m_InputStream.get();
+            ifd = 0;
         }
         if ( !out ) {
             if ( !m_OutputStream.get() ) {
@@ -566,6 +567,7 @@ CCgiContext* CCgiApplication::CreateContextWithFlags
                                 CRWStreambuf::fOwnWriter));
             }
             out = m_OutputStream.get();
+            ofd = 1;
             if ( m_InputStream.get() ) {
                 // If both streams are created by the application, tie them.
                 inp->tie(out);
