@@ -6285,6 +6285,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UTG	s	University of Tuebingen",
 "UTGD	s	Geology Department, The University of Tasmania",
 "UTHSC	c	University of Texas Health Science Center",
+"UTIM	s	University of Tennessee Insect Museum",
 "UTKI	s	University of Teheran",
 "UTLH	s	University of Technology, Human Sciences Department",
 "UTLPA	s	University of Texas at Austin, Laboratory of Physical Anthropology",
