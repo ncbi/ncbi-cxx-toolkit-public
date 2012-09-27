@@ -2192,6 +2192,9 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
                 case CLinkage_evidence::eType_unspecified:
                     sEvidence.push_back("unspecified");
                     break;
+                case CLinkage_evidence::eType_pcr:
+                    sEvidence.push_back("pcr");
+                    break;
                 case CLinkage_evidence::eType_other:
                     sEvidence.push_back("other");
                     break;
