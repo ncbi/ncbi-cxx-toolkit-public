@@ -712,20 +712,20 @@ void CAlignFormatUtil::GetScoreString(double evalue,
         snprintf(evalue_buf, sizeof(evalue_buf), "%5.0lf", evalue);
     }
     
-    if (bit_score > 9999){
-        snprintf(bit_score_buf, sizeof(bit_score_buf), "%4.3le", bit_score);
+    if (bit_score > 99999){
+        snprintf(bit_score_buf, sizeof(bit_score_buf), "%5.3le", bit_score);
     } else if (bit_score > 99.9){
-        snprintf(bit_score_buf, sizeof(bit_score_buf), "%4.0ld", 
+        snprintf(bit_score_buf, sizeof(bit_score_buf), "%5.0ld", 
             (long)bit_score);
     } else {
         snprintf(bit_score_buf, sizeof(bit_score_buf), kBitScoreFormat.c_str(),
             bit_score);
     }
-    if (total_bit_score > 9999){
-        snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.3le", 
+    if (total_bit_score > 99999){
+        snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%5.3le", 
             total_bit_score);
     } else if (total_bit_score > 99.9){
-        snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.0ld", 
+        snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%5.0ld", 
             (long)total_bit_score);
     } else {
         snprintf(total_bit_score_buf, sizeof(total_bit_score_buf), "%4.1lf",
