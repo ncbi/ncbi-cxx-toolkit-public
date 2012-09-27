@@ -63,6 +63,9 @@
 #include <vector>
 #include <map>
 
+// temporary
+#include <misc/xmlwrapp/impl/_raw_xslt.hpp>
+
 
 struct xslt::stylesheet::pimpl
 {
@@ -399,5 +402,11 @@ xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
 const std::string& xslt::stylesheet::get_error_message() const
 {
     return pimpl_->error_;
+}
+
+
+void *  xslt::impl::temporary_existing_get_raw_xslt_stylesheet(xslt::stylesheet &  s)
+{
+    return s.pimpl_->ss_;
 }
 

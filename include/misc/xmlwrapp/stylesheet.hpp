@@ -53,6 +53,9 @@
 #include <map>
 #include <string>
 
+
+#include <misc/xmlwrapp/impl/_raw_xslt.hpp>
+
 namespace xslt {
 
 /**
@@ -213,6 +216,9 @@ private:
     // an xslt::stylesheet cannot yet be copied or assigned to.
     stylesheet (const stylesheet&);
     stylesheet& operator= (const stylesheet&);
+
+    // temporary
+    friend void *  xslt::impl::temporary_existing_get_raw_xslt_stylesheet(stylesheet & s);
 }; // end xslt::stylesheet class
 
 } // end xslt namespace
