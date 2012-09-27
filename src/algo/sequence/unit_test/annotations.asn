@@ -1064,8 +1064,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 2 substitutions and 2 indels compared
- to this genomic sequence",
+      comment "The RefSeq transcript has 2 substitutions and 1 indel and
+ aligns at 56% coverage compared to this genomic sequence",
       product whole gi 219879766,
       location packed-int {
         {
@@ -1189,8 +1189,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 2 substitutions and 1 indel compared to
- this genomic sequence",
+      comment "The RefSeq protein has 2 substitutions and 1 indel and aligns
+ at 99% coverage compared to this genomic sequence",
       product whole gi 219879767,
       location packed-int {
         {
@@ -1352,8 +1352,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 1 indel compared to this genomic
- sequence",
+      comment "The RefSeq transcript aligns at 82% coverage compared to this
+ genomic sequence",
       product whole gi 41053665,
       location packed-int {
         {
@@ -1974,8 +1974,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 15 substitutions and 6 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 15 substitutions and 5 indels and
+ aligns at 11% coverage compared to this genomic sequence",
       product whole gi 47086060,
       location packed-int {
         {
@@ -2242,8 +2242,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 2 indels compared to this genomic
- sequence",
+      comment "The RefSeq transcript has 1 indel and aligns at 99% coverage
+ compared to this genomic sequence",
       product whole gi 110611232,
       location packed-int {
         {
@@ -7472,14 +7472,14 @@ Seq-annot ::= {
     },
     {
       data rna {
-        type other,
+        type miscRNA,
         ext name "transmembrane phosphoinositide 3-phosphatase and tensin
  homolog 2 pseudogene 2"
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 30 substitutions and 6 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 30 substitutions and 4 indels and
+ aligns at 6% coverage compared to this genomic sequence",
       product whole gi 302632519,
       location packed-int {
         {
@@ -7849,15 +7849,6 @@ Seq-annot ::= {
           id gi 18466424,
           fuzz-from lim lt,
           fuzz-to lim gt
-        }
-      },
-      xref {
-        {
-          data prot {
-            name {
-              "DNA-invertase"
-            }
-          }
         }
       },
       except-text "unclassified translation discrepancy"

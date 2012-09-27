@@ -44,6 +44,8 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#include <objtools/alnmgr/score_builder_base.hpp>
+
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
@@ -2277,6 +2279,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
     bool has_length_mismatch = false;
     bool has_polya_tail = false;
     bool has_incomplete_polya_tail = false;
+    bool partial_unaligned_edge = false;
     CRangeCollection<TSeqPos> mismatch_locs;
     CRangeCollection<TSeqPos> insert_locs;
     CRangeCollection<TSeqPos> delete_locs;
@@ -2306,9 +2309,11 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
                  al->GetSegs().GetSpliced().GetExons()) {
             const CSpliced_exon& exon = **exon_it;
             TSeqPos pos = exon.GetProduct_start().GetNucpos();
-            TSeqRange gap(prev_to+1, pos-1);
-            if (gap.NotEmpty()) {
-                insert_locs += gap;
+            if (exon_it != al->GetSegs().GetSpliced().GetExons().begin()) {
+                TSeqRange gap(prev_to+1, pos-1);
+                if (gap.NotEmpty()) {
+                    insert_locs += gap;
+                }
             }
             prev_to = exon.GetProduct_end().GetNucpos();
             if (exon.IsSetParts()) {
@@ -2345,7 +2350,11 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         /// discrepancy
         TSeqRange r = al->GetSeqRange(0);
         if (r.GetFrom() != 0) {
-            insert_locs += TSeqRange(0, r.GetFrom()-1);
+            if (feat.IsSetPartial()) {
+                partial_unaligned_edge = true;
+            } else {
+                insert_locs += TSeqRange(0, r.GetFrom()-1);
+            }
         }
 
         TSeqPos max_align_len = 0;
@@ -2359,7 +2368,11 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         }
 
         if (r.GetTo() + 1 < max_align_len) {
-            insert_locs += TSeqRange(r.GetTo()+1, max_align_len-1);
+            if (feat.IsSetPartial()) {
+                partial_unaligned_edge = true;
+            } else {
+                insert_locs += TSeqRange(r.GetTo()+1, max_align_len-1);
+            }
         }
 
         /// also note the poly-A
@@ -2407,8 +2420,12 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
             }
         }
         else if (tail_len) {
-            TSeqPos end_pos = feat.GetLocation().GetTotalRange().GetTo();
-            insert_locs += TSeqRange(end_pos-tail_len+1, end_pos);
+            if (feat.IsSetPartial()) {
+                partial_unaligned_edge = true;
+            } else {
+                TSeqPos end_pos = feat.GetLocation().GetTotalRange().GetTo();
+                insert_locs += TSeqRange(end_pos-tail_len+1, end_pos);
+            }
         }
     }
 
@@ -2416,7 +2433,8 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
     if (!insert_locs.empty() ||
         !delete_locs.empty() ||
         has_length_mismatch  ||
-        has_incomplete_polya_tail) {
+        has_incomplete_polya_tail ||
+        partial_unaligned_edge) {
         except_text = "unclassified transcription discrepancy";
     }
     else if (!mismatch_locs.empty()) {
@@ -2425,7 +2443,8 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
 
     x_SetExceptText(feat, except_text);
     x_SetComment(feat, cds_feat, cds_feat_on_mrna, align, mismatch_locs,
-                 insert_locs, delete_locs, delete_sizes);
+                 insert_locs, delete_locs, delete_sizes,
+                 partial_unaligned_edge);
 }
 
 
@@ -2819,9 +2838,11 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                       const CRangeCollection<TSeqPos> &mismatch_locs,
                       const CRangeCollection<TSeqPos> &insert_locs,
                       const CRangeCollection<TSeqPos> &delete_locs,
-                      const map<TSeqPos,TSeqPos> &delete_sizes)
+                      const map<TSeqPos,TSeqPos> &delete_sizes,
+                      bool partial_unaligned_edge)
 {
     if (mismatch_locs.empty() && insert_locs.empty() && delete_locs.empty() &&
+        !partial_unaligned_edge &&
         !(m_is_gnomon && cds_feat &&
           cds_feat->GetData().GetCdregion().IsSetCode_break()))
     {
@@ -2829,13 +2850,12 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
     }
     
     string rna_comment, cds_comment;
-    CRangeCollection<TSeqPos> inserts_in_cds, deletes_in_cds;
-    TSeqRange cds_range;
+    CRangeCollection<TSeqPos> inserts_in_cds, deletes_in_cds, cds_ranges;
     if (cds_feat) {
         CSeq_loc_Mapper to_mrna(*align, CSeq_loc_Mapper::eSplicedRow_Prod);
         for (CSeq_loc_CI loc_it(cds_feat->GetLocation()); loc_it;  ++loc_it) {
             CRef<CSeq_loc> cds_on_mrna = to_mrna.Map(*loc_it.GetRangeAsSeq_loc());
-            cds_range += cds_on_mrna->GetTotalRange();
+            cds_ranges += cds_on_mrna->GetTotalRange();
             inserts_in_cds += cds_on_mrna->GetTotalRange();
 	    deletes_in_cds += cds_on_mrna->GetTotalRange();
 	}
@@ -2845,18 +2865,34 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
 
     if (m_is_best_refseq) {
         size_t indel_count = insert_locs.size() + delete_locs.size();
-        rna_comment = "The RefSeq transcript has ";
+        unsigned pct_coverage = 100, cds_pct_coverage = 100;
+        rna_comment = "The RefSeq transcript";
         if (!mismatch_locs.empty()) {
-            rna_comment +=
+            rna_comment += " has " +
                 s_Count(mismatch_locs.GetCoveredLength(), "substitution");
         }
         if (indel_count) {
-            if (!mismatch_locs.empty()) {
-                rna_comment += " and ";
-            }
-            rna_comment += s_Count(indel_count, "indel");
+            rna_comment += (mismatch_locs.empty() ? " has " : " and ") +
+                           s_Count(indel_count, "indel");
         }
-        rna_comment += " compared to this genomic sequence";
+        if (partial_unaligned_edge) {
+            pct_coverage =
+                CScoreBuilderBase().GetPercentCoverage(*m_scope, *align);
+            cds_pct_coverage =
+                CScoreBuilderBase().GetPercentCoverage(*m_scope, *align,
+                                                       cds_ranges);
+            if (!mismatch_locs.empty() || indel_count) {
+                rna_comment += " and";
+            }
+            rna_comment += " aligns at "
+                         + NStr::NumericToString(pct_coverage)
+                         + "% coverage";
+        }
+        if (rna_comment == "The RefSeq transcript") {
+            rna_comment.clear();
+        } else {
+            rna_comment += " compared to this genomic sequence";
+        }
         if (cds_feat && cds_feat_on_mrna) {
             size_t cds_indel_count = inserts_in_cds.size()
                                    + deletes_in_cds.size();
@@ -2897,17 +2933,25 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                     }
                 }
             }
-            if (cds_mismatch_count || cds_indel_count) {
-                cds_comment = "The RefSeq protein has ";
+            if (cds_mismatch_count || cds_indel_count || cds_pct_coverage < 100)
+            {
+                cds_comment = "The RefSeq protein";
                 if (cds_mismatch_count) {
-                    cds_comment += s_Count(cds_mismatch_count, "substitution");
-                    if (cds_indel_count) {
-                        cds_comment += " and ";
-                    }
+                    cds_comment += " has "
+                                 + s_Count(cds_mismatch_count, "substitution");
                 }
                 if (cds_indel_count) {
-                    cds_comment += s_Count(cds_indel_count, "indel");
+                    cds_comment += (cds_mismatch_count ? " and " : " has ")
+                                 + s_Count(cds_indel_count, "indel");
                 }
+                if (cds_pct_coverage < 100) {
+                    if (cds_mismatch_count || cds_indel_count) {
+                        cds_comment += " and";
+                    }
+                    cds_comment += " aligns at "
+                                 + NStr::NumericToString(cds_pct_coverage)
+                                 + "% coverage";
+                    }
                 cds_comment += " compared to this genomic sequence";
             }
         }
@@ -2926,14 +2970,14 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
             for (TSeqPos pos = insert_it->GetFrom();
                  pos <= insert_it->GetTo(); ++pos)
             {
-                insert_codons.insert((pos - cds_range.GetFrom()) / 3);
+                insert_codons.insert((pos - cds_ranges.GetFrom()) / 3);
             }
         }
         ITERATE (CRangeCollection<TSeqPos>, delete_it, deletes_in_cds) {
             NCBI_ASSERT(delete_it->GetLength() == 1,
                         "Delete locations should always be one base");
             delete_codons.insert((delete_it->GetFrom() -
-                                  cds_range.GetFrom()) / 3);
+                                  cds_ranges.GetFrom()) / 3);
             cds_deleted_bases +=
                 delete_sizes.find(delete_it->GetFrom())->second;
         }

@@ -855,8 +855,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 2 substitutions and 2 indels compared
- to this genomic sequence",
+      comment "The RefSeq transcript has 2 substitutions and 1 indel and
+ aligns at 56% coverage compared to this genomic sequence",
       product whole gi 219879766,
       location packed-int {
         {
@@ -980,8 +980,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 2 substitutions and 1 indel compared to
- this genomic sequence",
+      comment "The RefSeq protein has 2 substitutions and 1 indel and aligns
+ at 99% coverage compared to this genomic sequence",
       product whole gi 219879767,
       location packed-int {
         {
@@ -1139,8 +1139,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 1 indel compared to this genomic
- sequence",
+      comment "The RefSeq transcript aligns at 82% coverage compared to this
+ genomic sequence",
       product whole gi 41053665,
       location packed-int {
         {
@@ -1749,8 +1749,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 15 substitutions and 6 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 15 substitutions and 5 indels and
+ aligns at 11% coverage compared to this genomic sequence",
       product whole gi 47086060,
       location packed-int {
         {
@@ -1972,8 +1972,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 2 indels compared to this genomic
- sequence",
+      comment "The RefSeq transcript has 1 indel and aligns at 99% coverage
+ compared to this genomic sequence",
       product whole gi 110611232,
       location packed-int {
         {
@@ -7002,14 +7002,14 @@ Seq-annot ::= {
     },
     {
       data rna {
-        type other,
+        type miscRNA,
         ext name "transmembrane phosphoinositide 3-phosphatase and tensin
  homolog 2 pseudogene 2"
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 30 substitutions and 6 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 30 substitutions and 4 indels and
+ aligns at 6% coverage compared to this genomic sequence",
       product whole gi 302632519,
       location packed-int {
         {
@@ -7302,6 +7302,355 @@ Seq-annot ::= {
             version 1
           },
           fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 122448,
+        to 122756,
+        strand plus,
+        id gi 18466424,
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "CDNA_1_27",
+      location packed-int {
+        {
+          from 122448,
+          to 122756,
+          strand plus,
+          id gi 18466424,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "PROT_1_27",
+      location packed-int {
+        {
+          from 122448,
+          to 122756,
+          strand plus,
+          id gi 18466424,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    },
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_2_28",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_2_28",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_3_29",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_3_29",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_4_30",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_4_30",
+      location packed-int {
+        {
+          from 0,
+          to 1018,
+          strand minus,
+          id gi 251791816
+        },
+        {
+          from 2312911,
+          to 2313034,
+          strand minus,
+          id gi 251791816
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_5_31",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_5_31",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 60162,
+        to 60530,
+        strand plus,
+        id gi 385839642
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_6_32",
+      location packed-int {
+        {
+          from 60162,
+          to 60530,
+          strand plus,
+          id gi 385839642
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 60528,
+              to 60530,
+              strand plus,
+              id gi 385839642
+            },
+            aa ncbieaa 42
+          }
+        }
+      },
+      product whole local str "PROT_6_32",
+      location packed-int {
+        {
+          from 60162,
+          to 60530,
+          strand plus,
+          id gi 385839642
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_7_33",
+      location packed-int {
+        {
+          from 206,
+          to 1072,
+          strand plus,
+          id gi 385839642
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 968,
+              to 970,
+              strand plus,
+              id gi 385839642
+            },
+            aa ncbieaa 88
+          }
+        }
+      },
+      product whole local str "PROT_7_33",
+      location packed-int {
+        {
+          from 206,
+          to 1072,
+          strand plus,
+          id gi 385839642
         }
       }
     }

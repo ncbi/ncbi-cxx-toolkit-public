@@ -214,7 +214,8 @@ private:
                       const CRangeCollection<TSeqPos> &mismatch_locs,
                       const CRangeCollection<TSeqPos> &insert_locs,
                       const CRangeCollection<TSeqPos> &delete_locs,
-                      const map<TSeqPos,TSeqPos> &delete_sizes);
+                      const map<TSeqPos,TSeqPos> &delete_sizes,
+                      bool partial_unaligned_edge);
     string x_ConstructRnaName(const CBioseq_Handle& handle);
 
     CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id);

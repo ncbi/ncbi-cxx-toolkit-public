@@ -40,8 +40,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
+        ext name "coatomer protein complex, subunit gamma 2"
       },
       partial TRUE,
       except TRUE,
@@ -185,8 +184,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
+        ext name "coatomer protein complex, subunit gamma 2"
       },
       partial TRUE,
       except TRUE,
@@ -400,8 +398,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "Homo sapiens coatomer protein complex, subunit gamma 2
- (COPG2), mRNA"
+        ext name "coatomer protein complex, subunit gamma 2"
       },
       partial TRUE,
       except TRUE,
@@ -750,6 +747,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -962,6 +968,15 @@ Seq-annot ::= {
           val "similar to AA sequence (same species):RefSeq:NP_036265.3"
         }
       },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
+        }
+      },
       except-text "annotated by transcript or proteomic data"
     },
     {
@@ -1172,6 +1187,15 @@ Seq-annot ::= {
         {
           qual "inference",
           val "similar to AA sequence (same species):RefSeq:NP_036265.3"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "coatomer subunit gamma-2"
+            }
+          }
         }
       },
       except-text "annotated by transcript or proteomic data"
