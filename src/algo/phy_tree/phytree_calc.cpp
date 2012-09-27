@@ -480,9 +480,28 @@ void CPhyTreeCalc::x_ComputeTree(bool correct)
                    "Tree was not created");
     }
 
+    // find the longest edge and make one of its nodes tree root
     m_Tree->GetValue().SetDist(0.0);
     m_Tree = CDistMethods::RerootTree(m_Tree);
+    _ASSERT(m_Tree);
 
+    // put the tree root in the middle of the longest edge
+    int num_children = 0;
+    double cumulative_length = 0.0;
+    for (TPhyTreeNode::TNodeList_CI it = m_Tree->SubNodeBegin();
+         it != m_Tree->SubNodeEnd(); ++it) {
+
+        cumulative_length += (*it)->GetValue().GetDist();
+        num_children++;
+    }
+
+    double new_len = cumulative_length / (double)num_children;
+    for (TPhyTreeNode::TNodeList_I it = m_Tree->SubNodeBegin();
+         it != m_Tree->SubNodeEnd(); ++it) {
+
+        (*it)->GetValue().SetDist(new_len);
+    }
+    
     // release memory used by full distance matrix
     m_FullDistMatrix.Resize(1, 1);
 
