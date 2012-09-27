@@ -3,7 +3,7 @@ query = AC144835.3
 subject = NT_011515.12
 1 2
 query >= subject
-
+10
 query < subject
 0 1 2 3 4 5 6 7 8 9
 coalesce(pct_coverage_hiqual,100) > 99.99
@@ -35,13 +35,13 @@ cds_pct_identity = 100
 is_seg_type(spliced) = 0
 0 1 5
 exon_count > 1
-2 4 9
+2 4 9 10
 not exon_count > 1
 0 1 3 5 6 7 8
 exon_count >= 1
-2 3 4 6 7 8 9
+2 3 4 6 7 8 9 10
 exon_count != 1
-2 4 9
+2 4 9 10
 exon_count <= 1
 3 6 7 8
 last_splice_site > 3000
@@ -57,7 +57,7 @@ cds_pct_coverage < 100 and (internal_unaligned > 2 or last_splice_site > 3000)
 longest_gap > 1000
 1
 max_intron_len > 10000
-2 9
+2 9 10
 min_exon_len < 30
 2
 pct_coverage > 97.5
@@ -69,7 +69,7 @@ symmetric_overlap > 2
 query_start > 50
 6 9
 subject_start < 50
-0
+0 10
 query_end < 500
 5 7 8
 subject_end > 10000000
@@ -83,21 +83,21 @@ product_length < 500
 query_length < 500
 5 7 8
 subject_length < 4000000
-0 5 6 9
+0 5 6 9 10
 gap_count = 0
-1 3 5
+1 3 5 10
 gap_basecount > 100
 0
 query_gap_length < 20
-1 2 3 6 7 8 9
+1 2 3 6 7 8 9 10
 subject_gap_length < 20
-1 2 3 4 6 8 9
+1 2 3 4 6 8 9 10
 product_gap_length < 20
-2 3 6 7 8 9
+2 3 6 7 8 9 10
 genomic_gap_length < 20
-2 3 4 6 8 9
+2 3 4 6 8 9 10
 MUL(subject_length,product_length) < 2000000000
-5
+5 10
 DIV(query_length,subject_length) < .0001
 3 7 8
 cds_internal_stops > 0
@@ -111,6 +111,6 @@ sframe > 5
 qframe > 5
 0
 start_codon = 1
-1 2 4 5
+1 2 4 5 10
 stop_codon = 1
-4 5
+1 2 4 5 9 10

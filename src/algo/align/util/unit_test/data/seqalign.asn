@@ -4066,3 +4066,149 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type partial,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 1593
+    },
+    {
+      id str "num_positives",
+      value int 1593
+    },
+    {
+      id str "num_negatives",
+      value int 0
+    },
+    {
+      id str "product_gap_length",
+      value int 0
+    },
+    {
+      id str "genomic_gap_length",
+      value int 0
+    },
+    {
+      id str "align_length",
+      value int 1593
+    },
+    {
+      id str "score",
+      value int 2552
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 1, 10, 2 }
+    },
+    {
+      id str "num_mismatch",
+      value int 0
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 1, 10, 2 }
+    },
+    {
+      id str "gap_count",
+      value int 0
+    },
+    {
+      id str "pct_coverage",
+      value real { 827102803738318, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 827102803738318, 10, -13 }
+    },
+    {
+      id str "weighted_identity",
+      value real { 1, 10, 0 }
+    },
+    {
+      id str "rank",
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id general {
+      db "GENEMARK",
+      tag id 4295
+    },
+    genomic-id gi 386018361,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 530,
+          frame 3
+        },
+        genomic-start 320151,
+        genomic-end 321743,
+        parts {
+          match 3,
+          diag 1590
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 531,
+          frame 1
+        },
+        product-end protpos {
+          amin 641,
+          frame 3
+        },
+        genomic-start 0,
+        genomic-end 332
+      }
+    },
+    product-length 642
+  },
+  bounds {
+    whole gi 386076534,
+    int {
+      from 319751,
+      to 321743,
+      strand plus,
+      id gi 386018361
+    }
+  },
+  id {
+    str "f99f177c-ceb5-49eb-9b6c-270e3770b307"
+  },
+  ext {
+    {
+      type str "placement_data",
+      data {
+        {
+          label str "gc_asm_id",
+          data str "GCF_000270125.1"
+        },
+        {
+          label str "gc_asm_chain_id",
+          data int 270135
+        },
+        {
+          label str "placement_id",
+          data str "f99f177c-ceb5-49eb-9b6c-270e3770b307"
+        },
+        {
+          label str "Cluster",
+          data str "133450"
+        },
+        {
+          label str "Annotation type",
+          data str "prot"
+        }
+      }
+    }
+  }
+} 

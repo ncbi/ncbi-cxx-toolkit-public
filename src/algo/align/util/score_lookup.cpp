@@ -702,52 +702,18 @@ public:
         // (wait for it...) that the stop codon or start codon was found.  This
         // here function is to be called to verify that the star/stop are
         // included, hence we have a circular logical relationship...
-        const CSeq_id& query_id = clean_align->GetSeq_id(0);
-        const CSeq_id& subject_id = clean_align->GetSeq_id(1);
+        CSeq_id &query_id = const_cast<CSeq_id &>(clean_align->GetSeq_id(0));
+        CSeq_id &subject_id = const_cast<CSeq_id &>(clean_align->GetSeq_id(1));
         CBioseq_Handle genomic_bsh = scope->GetBioseqHandle(subject_id);
+        TSeqPos genomic_len = genomic_bsh.GetBioseqLength();
 
         CSeq_loc_Mapper mapper(*clean_align, 1);
 
-        CRef<CSeq_loc> start_codon;
-        CRef<CSeq_loc> stop_codon;
-
-        ENa_strand s_strand = eNa_strand_plus;
         CRef<CSeq_loc> cds_loc;
         if (is_protein) {
             CSeq_loc loc;
             loc.SetWhole().Assign(query_id);
             cds_loc = mapper.Map(loc);
-            s_strand = sequence::GetStrand(*cds_loc, scope);
-            TSeqRange total_s_range = cds_loc->GetTotalRange();
-
-            if (s_strand == eNa_strand_minus) {
-                start_codon.Reset(new CSeq_loc);
-                start_codon->SetInt().SetFrom(total_s_range.GetTo() - 2);
-                start_codon->SetInt().SetTo(total_s_range.GetTo());
-                start_codon->SetInt().SetStrand(s_strand);
-                start_codon->SetId(subject_id);
-                if (total_s_range.GetFrom() > 2) {
-                    stop_codon.Reset(new CSeq_loc);
-                    stop_codon->SetInt().SetFrom(total_s_range.GetFrom() - 3);
-                    stop_codon->SetInt().SetTo(total_s_range.GetFrom() - 1);
-                    stop_codon->SetInt().SetStrand(s_strand);
-                    stop_codon->SetId(subject_id);
-                }
-            }
-            else {
-                start_codon.Reset(new CSeq_loc);
-                start_codon->SetInt().SetFrom(total_s_range.GetFrom());
-                start_codon->SetInt().SetTo(total_s_range.GetFrom() + 2);
-                start_codon->SetInt().SetStrand(s_strand);
-                start_codon->SetId(subject_id);
-                if (total_s_range.GetTo() + 3 < genomic_bsh.GetBioseqLength()) {
-                    stop_codon.Reset(new CSeq_loc);
-                    stop_codon->SetInt().SetFrom(total_s_range.GetTo() + 1);
-                    stop_codon->SetInt().SetTo(total_s_range.GetTo() + 3);
-                    stop_codon->SetInt().SetStrand(s_strand);
-                    stop_codon->SetId(subject_id);
-                }
-            }
         }
         else {
             CBioseq_Handle bsh = scope->GetBioseqHandle(query_id);
@@ -766,9 +732,18 @@ public:
                 return 0.0;
             }
 
-            const CSeq_loc& orig_loc = mf.GetLocation();
-            s_strand = sequence::GetStrand(orig_loc, scope);
-            TSeqRange total_s_range = orig_loc.GetTotalRange();
+            const CSeq_loc &orig_loc = mf.GetLocation();
+            ENa_strand q_strand = sequence::GetStrand(orig_loc, scope);
+            TSeqRange total_q_range = orig_loc.GetTotalRange();
+            if (!orig_loc.IsPartialStop(eExtreme_Biological)) {
+                /// Remove stop codon
+                if (q_strand == eNa_strand_minus) {
+                    total_q_range.SetFrom(total_q_range.GetFrom() + 3);
+                }
+                else {
+                    total_q_range.SetTo(total_q_range.GetTo() - 3);
+                }
+            }
 
             /**
             cerr << "orig loc: " << MSerial_AsnText << orig_loc;
@@ -776,51 +751,23 @@ public:
             cerr << "orig range: " << total_s_range << endl;
             **/
 
-            if (mf.GetData().GetCdregion().IsSetFrame()) {
-                TSeqPos offs = mf.GetData().GetCdregion().GetFrame();
-                if (offs) {
-                    offs -= 1;
-                }
-                if (s_strand == eNa_strand_minus) {
-                    total_s_range.SetFrom(total_s_range.GetFrom() - offs);
+            if (mf.GetData().GetCdregion().IsSetFrame() &&
+                mf.GetData().GetCdregion().GetFrame() > 1)
+            {
+                TSeqPos offs = mf.GetData().GetCdregion().GetFrame() - 1;
+                if (q_strand == eNa_strand_minus) {
+                    total_q_range.SetTo(total_q_range.GetTo() + offs);
                 }
                 else {
-                    total_s_range.SetTo(total_s_range.GetTo() + offs);
+                    total_q_range.SetFrom(total_q_range.GetFrom() - offs);
                 }
             }
+            CSeq_loc adjusted_loc(
+                query_id, total_q_range.GetFrom(),
+                total_q_range.GetTo(), q_strand);
 
-            if (s_strand == eNa_strand_minus) {
-                start_codon.Reset(new CSeq_loc);
-                start_codon->SetInt().SetFrom(total_s_range.GetTo() - 2);
-                start_codon->SetInt().SetTo(total_s_range.GetTo());
-                start_codon->SetInt().SetStrand(s_strand);
-                start_codon->SetId(query_id);
-                if (total_s_range.GetFrom() > 2) {
-                    stop_codon.Reset(new CSeq_loc);
-                    stop_codon->SetInt().SetFrom(total_s_range.GetFrom() - 3);
-                    stop_codon->SetInt().SetTo(total_s_range.GetFrom() - 1);
-                    stop_codon->SetInt().SetStrand(s_strand);
-                    stop_codon->SetId(query_id);
-                }
-            }
-            else {
-                start_codon.Reset(new CSeq_loc);
-                start_codon->SetInt().SetFrom(total_s_range.GetFrom());
-                start_codon->SetInt().SetTo(total_s_range.GetFrom() + 2);
-                start_codon->SetInt().SetStrand(s_strand);
-                start_codon->SetId(query_id);
-                if (total_s_range.GetTo() + 3 < genomic_bsh.GetBioseqLength()) {
-                    stop_codon.Reset(new CSeq_loc);
-                    stop_codon->SetInt().SetFrom(total_s_range.GetTo() + 1);
-                    stop_codon->SetInt().SetTo(total_s_range.GetTo() + 3);
-                    stop_codon->SetInt().SetStrand(s_strand);
-                    stop_codon->SetId(query_id);
-                }
-            }
-
-            // map the mRNA locations for start/stop to the genome
-            start_codon = mapper.Map(*start_codon);
-            stop_codon = mapper.Map(*stop_codon);
+            // map the mRNA locations to the genome
+            cds_loc = mapper.Map(adjusted_loc);
 
             /**
             if (start_codon) {
@@ -832,22 +779,44 @@ public:
             **/
         }
 
-        // basic sanity check
-        if (m_StartCodon) {
-            if ( !start_codon  ||  start_codon->IsEmpty()  ||
-                 start_codon->IsNull()  ||
-                 start_codon->GetTotalRange().GetLength() != 3) {
-                //cerr << "insane start codon..." << endl;
-                return 0.0;
+        ENa_strand s_strand = sequence::GetStrand(*cds_loc, scope);
+        int direction = s_strand == eNa_strand_minus ? -1 : 1;
+        int from =
+            m_StartCodon ? (int)cds_loc->GetStart(eExtreme_Biological)
+                      : (int)cds_loc->GetStop(eExtreme_Biological) + direction;
+        int to = from + 2 * direction;
+        CRef<CSeq_loc> codon;
+        if (to >= 0 && to < genomic_len) {
+            /// codon is simple interval
+            codon.Reset(new CSeq_loc(subject_id, min(from,to), max(from,to),
+                                     s_strand));
+        } else if (genomic_bsh.GetInst_Topology() ==
+                   CSeq_inst::eTopology_circular)
+        {
+            /// this is a circular genomic sequence, and codon crosses origin
+            CRef<CSeq_interval> int1, int2;
+            if (s_strand == eNa_strand_minus) {
+                int1.Reset(new CSeq_interval(subject_id, 0, from,
+                                             eNa_strand_minus));
+                int1->SetFuzz_from().SetLim(CInt_fuzz::eLim_circle);
+                int2.Reset(new CSeq_interval(subject_id, to + genomic_len,
+                                         genomic_len - 1, eNa_strand_minus));
+                int2->SetFuzz_to().SetLim(CInt_fuzz::eLim_circle);
+            } else {
+                int1.Reset(new CSeq_interval(subject_id, from,
+                                         genomic_len - 1, eNa_strand_plus));
+                int1->SetFuzz_to().SetLim(CInt_fuzz::eLim_circle);
+                int2.Reset(new CSeq_interval(subject_id, 0, to - genomic_len,
+                                             eNa_strand_plus));
+                int2->SetFuzz_from().SetLim(CInt_fuzz::eLim_circle);
             }
+            codon.Reset(new CSeq_loc);
+            codon->SetPacked_int().Set().push_back(int1);
+            codon->SetPacked_int().Set().push_back(int2);
         }
-        else {
-            if ( !stop_codon  ||  stop_codon->IsEmpty()  ||
-                 stop_codon->IsNull()  ||
-                 stop_codon->GetTotalRange().GetLength() != 3) {
-                //cerr << "insane stop codon..." << endl;
-                return 0.0;
-            }
+
+        if ( !codon ) {
+            return 0.0;
         }
 
         //
@@ -861,37 +830,18 @@ public:
         }
         const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
 
-        if (m_StartCodon) {
-            CSeqVector v(*start_codon, scope,
-                         CBioseq_Handle::eCoding_Iupac);
+        CSeqVector v(*codon, scope, CBioseq_Handle::eCoding_Iupac);
 
-            /**
-            cerr << MSerial_AsnText << *start_codon;
-            cerr << "gcode: " << gcode << endl;
-            cerr << "bases: "
-                << v[0] << v[1] << v[2] << endl;
-                **/
+        /**
+        cerr << MSerial_AsnText << *start_codon;
+        cerr << "gcode: " << gcode << endl;
+        cerr << "bases: "
+            << v[0] << v[1] << v[2] << endl;
+            **/
 
-            int state = tbl.SetCodonState(v[0], v[1], v[2]);
-            if (tbl.IsAnyStart(state)) {
-                return 1.0;
-            }
-        }
-        else {
-            CSeqVector v(*stop_codon, scope,
-                         CBioseq_Handle::eCoding_Iupac);
-
-            /**
-            cerr << MSerial_AsnText << *stop_codon;
-            cerr << "gcode: " << gcode << endl;
-            cerr << "bases: "
-                << v[0] << v[1] << v[2] << endl;
-                **/
-
-            int state = tbl.SetCodonState(v[0], v[1], v[2]);
-            if (tbl.IsOrfStop(state)) {
-                return 1.0;
-            }
+        int state = tbl.SetCodonState(v[0], v[1], v[2]);
+        if (m_StartCodon ? tbl.IsAnyStart(state) : tbl.IsOrfStop(state)) {
+            return 1.0;
         }
 
         return 0.0;
