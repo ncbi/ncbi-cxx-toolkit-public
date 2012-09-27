@@ -106,9 +106,6 @@ CWiggleReader::ReadSeqAnnot(
         return CRef<CSeq_annot>();
     }
     while ( xGetLine(lr) ) {
-        if ( xCommentLine() ) {
-            continue;
-        }
         CTempString s = xGetWord(pErrorContainer);
         if ( s == "browser" ) {
             xReadBrowser();
@@ -770,11 +767,13 @@ bool CWiggleReader::xGetLine(
     ILineReader& lr)
 //  =========================================================================
 {
-    if ( lr.AtEOF() ) {
-        return false;
+    while (!lr.AtEOF()) {
+        m_CurLine = *++lr;
+        if (!xCommentLine()) {
+            return true;
+        }
     }
-    m_CurLine = *++lr;
-    return true;
+	return false;
 }
 
 //  =========================================================================
