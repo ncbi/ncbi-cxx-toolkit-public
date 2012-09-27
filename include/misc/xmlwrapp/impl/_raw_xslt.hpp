@@ -16,8 +16,8 @@ namespace xslt
 namespace xslt {
 
     namespace impl {
-        // This function is temporary and created specifically for
-        // Ricardo Villamarin-Salomon
+        // This function is temporary and created specifically to cover
+        // a request described in CXX-3519.
         // The function will be removed as soon as C++ style support for
         // extension functions and elements is introduced.
         // Note: the provided pointer is of type xsltStylesheet *
