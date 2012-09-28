@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <objtools/readers/gff_reader.hpp>
 
-#include <corelib/ncbistr_util.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/stream_utils.hpp>
@@ -406,10 +405,7 @@ bool CGFFReader::x_ParseStructuredComment(const TStr& line)
         return false;
     }
     TStrVec v;
-    // NStr::Tokenize(line, "# \t", v, NStr::eMergeDelims);
-    typedef CStrTokenize<TStr, TStrVec> TTokenizer;
-    TTokenizer::TPosContainer pos_container;
-    TTokenizer::Do(line, "# \t", v, TTokenizer::eMergeDelims, pos_container);
+    NStr::Tokenize(line, "# \t", v, NStr::eMergeDelims);
     if (v.empty()) {
         return true;
     }
@@ -477,15 +473,13 @@ void CGFFReader::x_ReadFastaSequences(ILineReader& in)
 CRef<CGFFReader::SRecord>
 CGFFReader::x_ParseFeatureInterval(const TStr& line)
 {
-    typedef CStrTokenize<TStr, TStrVec> TTokenizer;
-    TTokenizer::TPosContainer           pos_container;
-    TStrVec                             v;
-    bool                                misdelimited = false;
+    TStrVec v;
+    bool    misdelimited = false;
 
-    TTokenizer::Do(line, "\t", v, TTokenizer::eNoMergeDelims, pos_container);
+    NStr::Tokenize(line, "\t", v, NStr::eNoMergeDelims);
     if (v.size() < 8) {
         v.clear();
-        TTokenizer::Do(line, " \t", v, TTokenizer::eMergeDelims, pos_container);
+        NStr::Tokenize(line, " \t", v, NStr::eMergeDelims);
         if (v.size() < 8) {
             x_Error("Skipping line due to insufficient fields",
                    x_GetLineNumber());
