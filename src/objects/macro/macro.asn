@@ -416,7 +416,8 @@ Source-qual ::= ENUMERATED {
     haplogroup (94),
     all-quals (95),
     dbxref (96) ,
-    taxid (97)
+    taxid (97) ,
+    all-primers (98)
 }
 
 Source-qual-pair ::= SEQUENCE {
