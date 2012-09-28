@@ -34,6 +34,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
+#include <corelib/ncbierror.hpp>
 #include "ncbisys.hpp"
 
 

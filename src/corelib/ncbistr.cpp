@@ -36,6 +36,7 @@
 #include <corelib/tempstr.hpp>
 #include <corelib/ncbistr_util.hpp>
 #include <corelib/error_codes.hpp>
+#include <corelib/ncbierror.hpp>
 #include <corelib/ncbifloat.h>
 #include <memory>
 #include <algorithm>
