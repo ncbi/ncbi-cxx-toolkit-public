@@ -1959,12 +1959,12 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                 if(start_frame > 0)
                     --start_frame;
                 TSeqPos end_frame =
-                    exon.GetProduct_start().GetProtpos().GetFrame();
+                    exon.GetProduct_end().GetProtpos().GetFrame();
                 if(end_frame > 0)
                     --end_frame;
                 product_span.Set(
                     exon.GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
-                    exon.GetProduct_end().GetProtpos().GetAmin()*3 + end_frame - 1);
+                    exon.GetProduct_end().GetProtpos().GetAmin()*3 + end_frame);
             } else {
                 NCBI_THROW(CException, eUnknown,
                            "Spliced-exon is neither nuc nor prot");
