@@ -71,10 +71,10 @@ enum EFTP_Feature {                /* NB: values must occupy 12 bits at most */
     fFtpFeature_SITE =  0x004,
     fFtpFeature_FEAT =  0x008,
     fFtpFeature_MDTM =  0x010,
-    fFtpFeature_REST =  0x020,
-    fFtpFeature_SIZE =  0x040,
-    fFtpFeature_EPRT =  0x080,
-    fFtpFeature_MLSx =  0x100,
+    fFtpFeature_SIZE =  0x020,
+    fFtpFeature_REST =  0x040,
+    fFtpFeature_MLSx =  0x080,
+    fFtpFeature_EPRT =  0x100,
     fFtpFeature_EPSV = 0x1000,
     fFtpFeature_APSV = 0x3000      /* EPSV ALL -- a la "APSV" from RFC 1579  */
 };
@@ -413,17 +413,29 @@ static EIO_Status x_FTPParseHelp(SFTPConnector* xxx, int code,
             else
                 xxx->feat &= ~fFtpFeature_MDTM;
         }
+        if ((s = x_4Word(line, "SIZE")) != 0) {  /* RFC 3659 */
+            if (s[4 + strspn(s + 4, " \t")] != '*')
+                xxx->feat |=  fFtpFeature_SIZE;
+            else
+                xxx->feat &= ~fFtpFeature_SIZE;
+        }
         if ((s = x_4Word(line, "REST")) != 0) {  /* RFC 3659, NB: FEAT */
             if (s[4 + strspn(s + 4, " \t")] != '*')
                 xxx->feat |=  fFtpFeature_REST;
             else
                 xxx->feat &= ~fFtpFeature_REST;
         }
-        if ((s = x_4Word(line, "SIZE")) != 0) {  /* RFC 3659 */
+        if ((s = x_4Word(line, "MLST")) != 0) {  /* RFC 3659 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_SIZE;
+                xxx->feat |=  fFtpFeature_MLSx;
             else
-                xxx->feat &= ~fFtpFeature_SIZE;
+                xxx->feat &= ~fFtpFeature_MLSx;
+        }
+        if ((s = x_4Word(line, "MLSD")) != 0) {  /* RFC 3659 */
+            if (s[4 + strspn(s + 4, " \t")] != '*')
+                xxx->feat |=  fFtpFeature_MLSx;
+            else
+                xxx->feat &= ~fFtpFeature_MLSx;
         }
         if ((s = x_4Word(line, "EPRT")) != 0) {  /* RFC 2428 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
@@ -471,12 +483,14 @@ static EIO_Status x_FTPParseFeat(SFTPConnector* xxx, int code,
             xxx->feat |= fFtpFeature_MDTM;
         else if (strncasecmp(line, "SIZE", 4) == 0)
             xxx->feat |= fFtpFeature_SIZE;
-        else if (strncasecmp(line, "EPSV", 4) == 0)
-            xxx->feat |= fFtpFeature_EPSV;
         else if (strncasecmp(line, "REST", 4) == 0)
             xxx->feat |= fFtpFeature_REST;  /* NB: "STREAM" must also follow */
         else if (strncasecmp(line, "MLST", 4) == 0)
             xxx->feat |= fFtpFeature_MLSx;
+        else if (strncasecmp(line, "EPRT", 4) == 0)
+            xxx->feat |= fFtpFeature_EPRT;
+        else if (strncasecmp(line, "EPSV", 4) == 0)
+            xxx->feat |= fFtpFeature_EPSV;
     }
     return eIO_Success;
 }
@@ -897,9 +911,9 @@ static EIO_Status x_FTPPassive(SFTPConnector*  xxx,
     if ((xxx->feat & fFtpFeature_APSV) == fFtpFeature_APSV) {
         /* first time here, try to set EPSV ALL */
         if (x_FTPEpsv(xxx, 0, 0) == eIO_Success)
-            xxx->feat &= ~fFtpFeature_EPSV;                    /* APSV mode */
+            xxx->feat &= ~fFtpFeature_EPSV;                     /* APSV mode */
         else
-            xxx->feat &= ~fFtpFeature_APSV | fFtpFeature_EPSV; /* EPSV mode */
+            xxx->feat &= ~fFtpFeature_APSV | fFtpFeature_EPSV;  /* EPSV mode */
     }
     if (xxx->feat & fFtpFeature_APSV) {
         status = x_FTPEpsv(xxx, &host, &port);
