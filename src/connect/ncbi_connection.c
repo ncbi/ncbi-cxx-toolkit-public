@@ -256,9 +256,14 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
             }
             if (status != eIO_Success
                 &&  (status != eIO_Closed  ||  connector)) {
-                CONN_LOG(3, close ? "Close" : "ReInit",
-                         connector ? eLOG_Error : eLOG_Warning,
-                         "Connection failed to close properly");
+                if (close) {
+                    CONN_LOG(3, Close,
+                             connector ? eLOG_Error : eLOG_Warning,
+                             "Connection failed to close properly");
+                } else {
+                    CONN_LOG(3, ReInit, eLOG_Error,
+                             "Connection failed to close properly");
+                }
             }
         }
 
