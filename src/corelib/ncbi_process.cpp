@@ -460,6 +460,7 @@ bool CProcess::Kill(unsigned long timeout) const
 
     // Try to kill the process with SIGTERM first
     if (kill(pid, SIGTERM) < 0  &&  errno == EPERM) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 
@@ -472,8 +473,10 @@ bool CProcess::Kill(unsigned long timeout) const
                 _ASSERT(reap == pid);
                 return true;
             }
-            if (errno != ECHILD)
+            if (errno != ECHILD) {
+                CNcbiError::SetFromErrno();
                 return false;
+            }
             if (kill(pid, 0) < 0)
                 return true;
         }
@@ -808,6 +811,7 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
 
     // Try to kill the process group with SIGTERM first
     if (kill(-pgid, SIGTERM) < 0  &&  errno == EPERM) {
+        CNcbiError::SetFromErrno();
         return false;
     }
 
@@ -821,8 +825,10 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
                 _ASSERT(reap == pgid);
                 return true;
             }
-            if (errno != ECHILD)
+            if (errno != ECHILD) {
+                CNcbiError::SetFromErrno();
                 return false;
+            }
             if (kill(-pgid, 0) < 0) {
                 return true;
             }
@@ -903,6 +909,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
             SleepMilliSec(x_sleep);
             timeout    -= x_sleep;
         } else if (errno != EINTR) {
+            CNcbiError::SetFromErrno();
             // error
             break;
         }

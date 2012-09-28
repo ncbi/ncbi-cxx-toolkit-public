@@ -737,6 +737,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
 {
     if ( !addr /*|| !len*/ ) {
         ERR_POST_X(11, "Memory address is not specified");
+        CNcbiError::Set(CNcbiError::eBadAddress);
         return false;
     }
     int adv;
@@ -757,6 +758,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
             break;
         #else
             ERR_POST_X_ONCE(12, Warning << "MADV_DONTFORK not supported");
+            CNcbiError::Set(CNcbiError::eNotSupported);
             return false;
         #endif        
     case eMADV_DoFork:
@@ -765,6 +767,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
             break;
         #else
             ERR_POST_X_ONCE(12, Warning << "MADV_DOTFORK not supported");
+            CNcbiError::Set(CNcbiError::eNotSupported);
             return false;
         #endif        
     case eMADV_Mergeable:
@@ -773,6 +776,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
             break;
         #else
             ERR_POST_X_ONCE(12, Warning << "MADV_MERGEABLE not supported");
+            CNcbiError::Set(CNcbiError::eNotSupported);
             return false;
         #endif        
     case eMADV_Unmergeable:
@@ -781,6 +785,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
             break;
         #else
             ERR_POST_X_ONCE(12, Warning << "MADV_UNMERGEABLE not supported");
+            CNcbiError::Set(CNcbiError::eNotSupported);
             return false;
         #endif        
     default:
@@ -792,7 +797,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
         int x_errno = errno; \
         ERR_POST_X(13, "madvise() failed: " << 
                    _T_STDSTRING(NcbiSys_strerror(x_errno)));
-        errno = x_errno;
+        CNcbiError::SetErrno(errno = x_errno);
         return false;
     }
     return true;

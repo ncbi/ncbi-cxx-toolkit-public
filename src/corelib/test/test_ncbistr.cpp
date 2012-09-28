@@ -345,6 +345,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 }
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
                 BOOST_CHECK(!test->IsGoodInt());
             }
@@ -395,6 +397,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 }
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
                 BOOST_CHECK(!test->IsGoodUInt());
             }
@@ -475,6 +479,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             #endif
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(!test->IsGoodInt());
@@ -560,6 +566,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
             #endif
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
             #if (SIZEOF_LONG == SIZEOF_INT)
                 BOOST_CHECK(!test->IsGoodUInt());
@@ -614,6 +622,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 }
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
                 BOOST_CHECK(!test->IsGoodInt8());
             }
@@ -664,6 +674,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 }
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
                 BOOST_CHECK(!test->IsGoodUInt8());
             }
@@ -724,6 +736,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
                 BOOST_CHECK(!test->IsGoodDouble());
             }
@@ -754,6 +768,8 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
                 BOOST_CHECK(value  >= test->d-test->delta && value  <= test->d+test->delta);
             }
             else {
+                BOOST_CHECK( CNcbiError::GetLast() );
+                NcbiCout << "Expected error " << CNcbiError::GetLast() << NcbiEndl;
                 BOOST_CHECK(err);
                 BOOST_CHECK(!test->IsGoodDouble());
             }

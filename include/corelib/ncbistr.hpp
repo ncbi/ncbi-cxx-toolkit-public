@@ -37,6 +37,7 @@
 
 #include <corelib/tempstr.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbierror.hpp>
 #ifdef NCBI_OS_OSF1
 #  include <strings.h>
 #endif
@@ -4097,7 +4098,7 @@ char NStr::StringToNumeric(const CTempString& str,
     int n = StringToInt(str, flags, base);
     if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4114,7 +4115,7 @@ unsigned char NStr::StringToNumeric(const CTempString& str,
     unsigned int n = StringToUInt(str, flags, base);
     if (n > numeric_limits<unsigned char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE,str);
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4135,7 +4136,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     }
     if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4157,7 +4158,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     }
     if (n > numeric_limits<unsigned char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE,str);
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4191,7 +4192,7 @@ wchar_t NStr::StringToNumeric(const CTempString& str,
     int n = StringToInt(str, flags, base);
     if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);;
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4212,7 +4213,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     }
     if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4260,7 +4261,7 @@ short NStr::StringToNumeric(const CTempString& str,
     int n = StringToInt(str, flags, base);
     if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4277,7 +4278,7 @@ unsigned short NStr::StringToNumeric(const CTempString& str,
     unsigned int n = StringToUInt(str, flags, base);
     if (n > numeric_limits<unsigned short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4298,7 +4299,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     }
     if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4320,7 +4321,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     }
     if (n > numeric_limits<unsigned short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4596,7 +4597,7 @@ float NStr::StringToNumeric(const CTempString& str,
     double n = StringToDouble(str, flags);
     if (n < numeric_limits<float>::min()  ||  n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4617,7 +4618,7 @@ bool NStr::StringToNumeric(const CTempString& str,
     }
     if (n < numeric_limits<float>::min()  ||  n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            errno = ERANGE;
+            CNcbiError::SetErrno(errno = ERANGE, str);
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 

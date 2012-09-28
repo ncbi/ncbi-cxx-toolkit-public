@@ -317,12 +317,12 @@ int NStr::StringToNonNegativeInt(const string& str)
 {
     int& errno_ref = errno;
     if ( str.empty() ) {
-        errno_ref = EINVAL;
+        CNcbiError::SetErrno(errno_ref = EINVAL, str);
         return -1;
     }
     char ch = str[0];
     if ( !isdigit((unsigned char)ch) &&  (ch != '+') ) {
-        errno_ref = EINVAL;
+        CNcbiError::SetErrno(errno_ref = EINVAL, str);
         return -1;
     }
     char* endptr = 0;
@@ -330,14 +330,15 @@ int NStr::StringToNonNegativeInt(const string& str)
     errno_ref = 0;
     unsigned long value = strtoul(begptr, &endptr, 10);
     if ( errno_ref ) {
+        CNcbiError::SetErrno(errno_ref, str);
         return -1;
     }
     else if ( !endptr  ||  endptr == begptr  ||  *endptr ) {
-        errno_ref = EINVAL;
+        CNcbiError::SetErrno(errno_ref = EINVAL, str);
         return -1;
     }
     else if ( value > (unsigned long) kMax_Int ) {
-        errno_ref = ERANGE;
+        CNcbiError::SetErrno(errno_ref = ERANGE, str);
         return -1;
     }
     errno_ref = 0;
@@ -366,6 +367,7 @@ public:
     }
     void Set(int errcode)    { m_Errno = errcode; }
     bool ToThrow(void) const { return !m_NoThrow; }
+    int  Errno(void) const   { return m_Errno;}
     // Auxiliary function to create a message about conversion error 
     // to specified type. It doesn't have any relation to the guard itself,
     // but can help to save on the amount of code in calling macro.
@@ -408,6 +410,8 @@ string CS2N_Guard::Message(const CTempString& str, const char* to_type, const CT
             NCBI_THROW2(CStringException, eConvert,                   \
                         err_guard.Message(str, #to_type, msg), pos);  \
         } else {                                                      \
+            CNcbiError::SetErrno(err_guard.Errno(),                   \
+                err_guard.Message(str, #to_type, msg));               \
             return 0;                                                 \
         }                                                             \
     } while (false)
@@ -1639,7 +1643,7 @@ void NStr::IntToString(string& out_str, int svalue,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
-        errno = EINVAL;
+        CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
     unsigned int value = static_cast<unsigned int>(svalue);
@@ -1657,7 +1661,7 @@ void NStr::LongToString(string& out_str, long svalue,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
-        errno = EINVAL;
+        CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
     unsigned long value = static_cast<unsigned long>(svalue);
@@ -1677,7 +1681,7 @@ void NStr::ULongToString(string&          out_str,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
-        errno = EINVAL;
+        CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
 
@@ -1838,7 +1842,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
-        errno = EINVAL;
+        CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
     Uint8 value;
@@ -1868,7 +1872,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value,
 {
     _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
-        errno = EINVAL;
+        CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
     const SIZE_TYPE kBufSize = CHAR_BIT  * sizeof(value);
@@ -2476,7 +2480,7 @@ SIZE_TYPE NStr::DoubleToStringPosix(double val, unsigned int precision,
     if (sign < 0) {
         *buffer_pos++ = '-';
     }
-// The 'e' format is used when the exponent of the value is less than –4
+// The 'e' format is used when the exponent of the value is less than -4
 //  or greater than or equal to the precision argument
     if ((exp_positive && exp >= precision) || (!exp_positive && exp > 4)) {
         *buffer_pos++ = *digits_pos++;
@@ -2569,7 +2573,7 @@ const void* NStr::StringToPtr(const CTempStringEx& str)
         res = ::sscanf(string(str).c_str(), "%p", &ptr);
     }
     if (res != 1) {
-        errno_ref = EINVAL;
+        CNcbiError::SetErrno(errno_ref = EINVAL, str);
         return NULL;
     }
     return ptr;
@@ -3660,7 +3664,7 @@ string NStr::ParseEscapes(const CTempString& str, EEscSeqRange mode, char user_c
                                 "' is out of range [0-255]", pos2);
                             break;
                         case eEscSeqRange_Errno:
-                            errno = ERANGE;
+                            CNcbiError::SetErrno(errno = ERANGE,str);
                             is_error = true;
                             continue;
                         case eEscSeqRange_User:
