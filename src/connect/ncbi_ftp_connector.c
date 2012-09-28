@@ -27,8 +27,9 @@
  *
  * File Description:
  *   FTP CONNECTOR
- *   See also:  RFCs 959 (STD 9), 1123 (4.1), 1635 (FYI 24), 2428,
- *   3659 ("Extensions to FTP"), 5797 (FTP Command Registry).
+ *   See also:  RFCs 959 (STD 9), 1123 (4.1), 1635 (FYI 24),
+ *   2389 (FTP Features), 2428 (Extended PORT commands),
+ *   3659 (Extensions to FTP), 5797 (FTP Command Registry).
  *
  *   Minimum FTP implementation: RFC 1123 (4.1.2.13)
  *
@@ -463,7 +464,8 @@ static EIO_Status x_FTPParseFeat(SFTPConnector* xxx, int code,
 {
     if (!lineno)
         return code == 211 ? eIO_Success : eIO_NotSupported;
-    if (code  &&  strlen(line) >= 4  &&  line[4] == ' ') {
+    if (code  &&  strlen(line) >= 4
+        &&  (!line[4]  ||  isspace((unsigned char) line[4]))) {
         assert(code == 211);
         if      (strncasecmp(line, "MDTM", 4) == 0)
             xxx->feat |= fFtpFeature_MDTM;
@@ -1525,9 +1527,9 @@ static EIO_Status x_FTPMlst(SFTPConnector* xxx, int code,
             xxx->feat & fFtpFeature_MLSx ? eIO_Closed : eIO_NotSupported;
     }
     if (code) {
-        if (*line++ != ' ' /*RFC3659 7.2*/  ||  !*line  ||
-            !BUF_Write(&xxx->rbuf, line, strlen(line))  ||
-            !BUF_Write(&xxx->rbuf, "\n", 1)) {
+        if (*line  && /* NB: RFC3659 7.2, the leading space has been skipped */
+            (!BUF_Write(&xxx->rbuf, line, strlen(line))  ||
+             !BUF_Write(&xxx->rbuf, "\n", 1))) {
             /* NB: must reset partial rbuf */
             return eIO_Unknown;
         }
@@ -1541,7 +1543,7 @@ static EIO_Status s_FTPMlsx(SFTPConnector*  xxx,
                             const char*     cmd,
                             const STimeout* timeout)
 {
-    if (cmd[4] == 'T') { /*MLST*/
+    if (cmd[3] == 'T') { /*MLST*/
         EIO_Status status = s_FTPCommand(xxx, cmd, 0);
         if (status != eIO_Success)
             return status;
@@ -1559,9 +1561,9 @@ static EIO_Status x_FTPNgcb(SFTPConnector* xxx, int code,
                             size_t lineno, const char* line)
 {
     if (lineno  &&  code / 100 == 2) {
-        if (*line++ != ' ' /*RFC2389 3.2 & 4*/ ||  !*line  ||
-            !BUF_Write(&xxx->rbuf, line, strlen(line))     ||
-            !BUF_Write(&xxx->rbuf, "\n", 1)) {
+        if (*line &&/*NB: RFC2389 3.2 & 4, the leading space has been skipped*/
+            (!BUF_Write(&xxx->rbuf, line, strlen(line))  ||
+             !BUF_Write(&xxx->rbuf, "\n", 1))) {
             /* NB: must reset partial rbuf */
             return eIO_Unknown;
         }
@@ -1581,12 +1583,12 @@ static EIO_Status s_FTPNegotiate(SFTPConnector* xxx,
     status = s_FTPReply(xxx, &code, 0, 0, x_FTPNgcb);
     if (status == eIO_Success) {
         if (*cmd == 'F') {
-            if (code != 200)
+            if (code != 211)
                 status = eIO_Closed;
         } else {
             if (code == 451)
                 status = eIO_Unknown;
-            else if (code != 211)
+            else if (code != 200)
                 status = eIO_Closed;
         }
     }
@@ -2044,7 +2046,7 @@ static EIO_Status s_VT_Read
         status = eIO_Success;
     if (xxx->data) {
         assert(!xxx->send  &&  !BUF_Size(xxx->rbuf));
-        /* NB:  Cannot use s_FTPPollCntl() here because a response about data
+        /* NB: Cannot use s_FTPPollCntl() here because a response about data
          * connection closure may be seen before the actual EOF in the
          * (heavily loaded) data connection. */
         SOCK_SetTimeout(xxx->data, eIO_Read, timeout);
