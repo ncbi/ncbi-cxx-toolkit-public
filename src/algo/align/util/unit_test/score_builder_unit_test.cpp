@@ -182,11 +182,11 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         alignment.GetNamedScore(CSeq_align::eScore_HighQualityPercentCoverage,
                                 kExpectedHighQualityPctCoverage);
 
-        int kExpectedPositiveCount = 0;
+        int kExpectedPositiveCount = -1;
         alignment.GetNamedScore(CSeq_align::eScore_PositiveCount,
                                 kExpectedPositiveCount);
 
-        int kExpectedNegativeCount = 0;
+        int kExpectedNegativeCount = -1;
         alignment.GetNamedScore(CSeq_align::eScore_NegativeCount,
                                 kExpectedNegativeCount);
 
@@ -366,10 +366,7 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
             BOOST_CHECK_EQUAL(kExpectedScore, actual);
         }
 
-        if (alignment.GetSegs().IsSpliced() &&
-            alignment.GetSegs().GetSpliced().GetProduct_type() ==
-                CSpliced_seg::eProduct_type_protein)
-        {
+        if (kExpectedPositiveCount >= 0) {
             int actual = 0.0;
             score_builder.AddScore(*scope, alignment,
                                    CSeq_align::eScore_PositiveCount);
@@ -510,6 +507,34 @@ Seq-entry ::= seq {\
         }\
       }\
     }\
+  }\
+}\
+Seq-entry ::= seq {\
+  id {\
+    general {\
+      db \"GENEMARK\",\
+      tag id 4295\
+    }\
+  },\
+  descr {\
+    molinfo {\
+      biomol peptide,\
+      completeness complete\
+    }\
+  },\
+  inst {\
+    repr raw,\
+    mol aa,\
+    length 642,\
+    seq-data iupacaa \"MFITRTFSDMKIGKKLGLSFGVLIVATLAIALLAFKGFQSIKENSAKQDVTV\
+NMVNTLSKARMNRLLYQYTKDEQYAQVNARALNELSAHFDTLKKFDWNAQGEQQLDVLGSALQSYQTLRQAFYLASKK\
+TFAASAVIQGNDLLTLGQSLDGVNIPAQPEAMLQVLRLASLLKEVAGDVERFIDKPTEASKVEIYGNITSIEQIRTQL\
+SALAIPEIQTVLNTQKTDLTQLKQAFTDYMTAVGAEAAASSQLSAVAEKLNTSVAELFDYQASESTSALLNAERQIAV\
+VAALCILLSLLVAWRITRAITVPLKETLSVAQRISEGDLTATLSTTRRDELGQLMQAVSVMNESLQNIITNVRDGVNS\
+VARASSEIAAGNMDLSSRTEQQSAAVVQTAASMEELTSTVKQNAENAHHASQLATEASANAGRGGDIIRNVVTTMQGI\
+TTSSGKIGEIISVINGISFQTNILALNAAVEAARAGEQGRGFAVVAGEVRNLAQRSSVAAKEIETLIRDSLHRVNEGS\
+TLVDQAGSTMDEIVLSVTQVKDIMSEIAAASDEQNRGISQIAQAMTEMDTTTQQNAALVEESSAAASSLESQAEELEK\
+TVAVFRLPANKSGMAVSHSTAKSVTKAPVSLRQPNPAEGNWETF\"\
   }\
 }\
 ";

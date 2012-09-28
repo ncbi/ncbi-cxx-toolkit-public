@@ -4071,16 +4071,12 @@ Seq-align ::= {
   dim 2,
   score {
     {
+      id str "length",
+      value int 1926
+    },
+    {
       id str "num_ident",
-      value int 1593
-    },
-    {
-      id str "num_positives",
-      value int 1593
-    },
-    {
-      id str "num_negatives",
-      value int 0
+      value int 1926
     },
     {
       id str "product_gap_length",
@@ -4116,11 +4112,15 @@ Seq-align ::= {
     },
     {
       id str "pct_coverage",
-      value real { 827102803738318, 10, -13 }
+      value real { 1, 10, 2 }
     },
     {
       id str "pct_coverage_hiqual",
-      value real { 827102803738318, 10, -13 }
+      value real { 1, 10, 2 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
+      value real { 1, 10, 2 }
     },
     {
       id str "weighted_identity",
