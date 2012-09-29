@@ -1269,6 +1269,7 @@ SubSource ::= SEQUENCE {
         haplogroup (40) ,
         whole-replicon (41) ,
         phenotype (42) ,
+        altitude (43) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
