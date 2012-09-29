@@ -2618,6 +2618,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IPHG	s	Institut fur Palaeontologie und Historische Geologie",
 "IPK	s	Institut fuer Pflanzenschutzforschung",
 "IPKUP	s	Paleontologiscsky Institute",
+"IPLA	c	Instituto de Productos Lacteos de Asturias",
 "IPMB<DEU>	s	Institut fur Pharmazie und Molekulare Biotechnologie",
 "IPMC	s	Institut Paleontologic Dr. M. Crusfafont Sabadell",
 "IPMGO	s	Institut fur Paleontologie und Museum, Gottingen Universitat",
