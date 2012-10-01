@@ -168,6 +168,13 @@ private:
 
 class CTSEAnnotObjectMapper;
 
+
+class CBioseqUpdater : public CObject {
+public:
+    virtual void Update(CBioseq_Info& seq) = 0;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
     typedef CSeq_entry_Info TParent;
@@ -332,6 +339,9 @@ public:
     // fill ids with all Annot Seq-ids from this TSE
     // the result will be sorted and contain no duplicates
     virtual void GetAnnotIds(TSeqIds& ids) const;
+
+    // patch loaded CBioseq objects now, and split CBioseq objects when loaded
+    void SetBioseqUpdater(CRef<CBioseqUpdater> updater);
     
     void UpdateAnnotIndex(const CSeq_id_Handle& id) const;
     void UpdateAnnotIndex(void) const;
@@ -697,6 +707,8 @@ private:
 
     mutable bool m_MasterSeqSegmentsLoaded;
     mutable CConstRef<CMasterSeqSegments> m_MasterSeqSegments;
+
+    CRef<CBioseqUpdater> m_BioseqUpdater;
 
 private:
     // Hide copy methods

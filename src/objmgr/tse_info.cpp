@@ -845,6 +845,9 @@ void CTSE_Info::x_SetBioseqIds(CBioseq_Info* info)
                            "\n  seq2: " + info->IdString());
             }
         }
+        if ( m_BioseqUpdater ) {
+            m_BioseqUpdater->Update(*info);
+        }
     }}
     // register this TSE in data source as containing the sequence
     if ( HasDataSource() ) {
@@ -1868,6 +1871,19 @@ CTSE_Info::x_FindSeq_feat(const CSeq_id_Handle& loc_id,
         */
     }
     return ret;
+}
+
+
+void CTSE_Info::SetBioseqUpdater(CRef<CBioseqUpdater> updater)
+{
+    CFastMutexGuard guard(m_BioseqsMutex);
+    m_BioseqUpdater = updater;
+    set<CBioseq_Info*> seen;
+    NON_CONST_ITERATE ( TBioseqs, it, m_Bioseqs ) {
+        if ( seen.insert(it->second).second ) {
+            m_BioseqUpdater->Update(*it->second);
+        }
+    }
 }
 
 
