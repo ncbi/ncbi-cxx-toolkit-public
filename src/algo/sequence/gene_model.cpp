@@ -302,21 +302,34 @@ void CFeatureGenerator::ConvertLocToAnnot(
     }
     fake_align.SetSegs().SetSpliced().SetProduct_length(product_pos);
 
+    CSeq_feat cdregion;
+    cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+
     CSeq_loc cdregion_loc(*rna_id, 0, product_pos-1, eNa_strand_plus);
     if (loc.IsPartialStart(eExtreme_Biological)) {
         cdregion_loc.SetPartialStart(true, eExtreme_Biological);
+        switch (product_pos % 3) {
+        case 0:
+            break;
+
+        case 1:
+            cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+            break;
+
+        case 2:
+            cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+            break;
+        }
     }
     if (loc.IsPartialStop(eExtreme_Biological)) {
         cdregion_loc.SetPartialStop(true, eExtreme_Biological);
     }
-    CSeq_feat cdregion;
-    cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
     if (org.IsSetGcode()) {
         CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);
         code->SetId(org.GetGcode());
         cdregion.SetData().SetCdregion().SetCode().Set().push_back(code);
     }
-    cdregion.SetLocation(cdregion_loc);
+    cdregion.SetLocation().Assign(cdregion_loc);
     cdregion.SetProduct().SetWhole(*prot_id);
 
     m_impl->ConvertAlignToAnnot(fake_align, annot, seqs, 0, &cdregion, false);
