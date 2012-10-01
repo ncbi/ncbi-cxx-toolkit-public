@@ -976,28 +976,15 @@ SImplementation::ConvertAlignToAnnot(
 
 bool IsContinuous(CSeq_loc& loc)
 {
-    for (CSeq_loc_CI loc_it(loc); loc_it;  ++loc_it) {
-        if ((loc_it.GetRange().GetFrom() != loc.GetTotalRange().GetFrom() && loc_it.GetFuzzFrom() != NULL) ||
-            (loc_it.GetRange().GetTo() != loc.GetTotalRange().GetTo() && loc_it.GetFuzzTo() != NULL)) {
+    ITERATE (CSeq_loc, loc_it, loc) {
+        if ((loc_it.GetRange().GetFrom() != loc.GetTotalRange().GetFrom() && loc_it.GetRangeAsSeq_loc()->IsPartialStart(eExtreme_Positional)) ||
+            (loc_it.GetRange().GetTo() != loc.GetTotalRange().GetTo() && loc_it.GetRangeAsSeq_loc()->IsPartialStop(eExtreme_Positional))) {
             return false;
         }
     }
     return true;
 }
     
-CConstRef<CSeq_loc> GetSeq_loc(CSeq_loc_CI& loc_it)
-{
-    CRef<CSeq_loc> this_loc(new CSeq_loc);
-    this_loc->SetInt().SetFrom(loc_it.GetRange().GetFrom());
-    this_loc->SetInt().SetTo(loc_it.GetRange().GetTo());
-    this_loc->SetInt().SetStrand(loc_it.GetStrand());
-    this_loc->SetInt().SetId().Assign
-        (*loc_it.GetSeq_id_Handle().GetSeqId());
-    this_loc->SetPartialStart(loc_it.GetFuzzFrom()!=NULL, eExtreme_Positional);
-    this_loc->SetPartialStop(loc_it.GetFuzzTo()!=NULL, eExtreme_Positional);
-    return this_loc;
-}
-
 void AddLiteral(CSeq_inst& inst, const string& seq, CSeq_inst::EMol mol_class)
 {
     if (inst.IsSetExt()) {
@@ -1066,12 +1053,11 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                             CSeq_loc_CI::eOrder_Biological);
          loc_it;  ++loc_it) {
 
-        CConstRef<CSeq_loc> exon = GetSeq_loc(loc_it);
+        CConstRef<CSeq_loc> exon = loc_it.GetRangeAsSeq_loc();
         CRef<CSeq_loc> mrna_loc = to_mrna.Map(*exon);
 
         if ((prev_product_to > -1  &&
-             (loc_it.GetStrand() != eNa_strand_minus ?
-              loc_it.GetFuzzFrom() : loc_it.GetFuzzTo()) != NULL)  ||
+             loc_it.GetRangeAsSeq_loc()->IsPartialStart(eExtreme_Biological))  ||
             prev_fuzz) {
             if (has_gap != NULL) {
                 *has_gap = true;
@@ -1110,7 +1096,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
                 seq_size += deletion.size();
             }
 
-            CConstRef<CSeq_loc> part = GetSeq_loc(part_it);
+            CConstRef<CSeq_loc> part = part_it.GetRangeAsSeq_loc();
             CRef<CSeq_loc> genomic_loc = to_genomic.Map(*part);
            CSeqVector vec(*genomic_loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
             string seq;
@@ -1126,8 +1112,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
             *has_indel = true;
         }
             
-        prev_fuzz = (loc_it.GetStrand() != eNa_strand_minus ?
-                     loc_it.GetFuzzTo() : loc_it.GetFuzzFrom()) != NULL;
+        prev_fuzz = loc_it.GetRangeAsSeq_loc()->IsPartialStop(eExtreme_Biological);
     }
 
     if (add_unaligned_parts && align.GetSegs().IsSpliced()) {
@@ -1386,7 +1371,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                     }
 
                     // Repair any internal stops with Xs
-                    size_t stop_aa_pos = b;
+                    size_t stop_aa_pos = b-1;
                     while ((stop_aa_pos = strprot.find('*', stop_aa_pos+1)) < e) {
                         strprot[stop_aa_pos] = 'X';
 
@@ -1887,7 +1872,7 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
     for (CSeq_loc_CI loc_it(feature_on_mrna->GetLocation());
          loc_it;  ++loc_it) {
         /// location for this interval
-        CConstRef<CSeq_loc> this_loc = GetSeq_loc(loc_it);
+        CConstRef<CSeq_loc> this_loc = loc_it.GetRangeAsSeq_loc();
 
         /// map it
         CRef<CSeq_loc> equiv = mapper.Map(*this_loc);
@@ -1994,7 +1979,7 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
 {
     if(propagated_feat){
         for (CSeq_loc_CI loc_it(propagated_feat->GetLocation());  loc_it;  ++loc_it) {
-            if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
+            if (loc_it.GetRangeAsSeq_loc()->IsPartialStart(eExtreme_Biological)  ||  loc_it.GetRangeAsSeq_loc()->IsPartialStop(eExtreme_Biological)) {
                 propagated_feat->SetPartial(true);
                 if(gene_feat)
                     gene_feat->SetPartial(true);
@@ -2028,7 +2013,7 @@ SImplementation::SetPartialFlags(CRef<CSeq_feat> gene_feat,
     /// set the partial flag for mrna_feat if it has any fuzzy intervals
     if(mrna_feat){
         for (CSeq_loc_CI loc_it(mrna_feat->GetLocation());  loc_it;  ++loc_it) {
-            if (loc_it.GetFuzzFrom()  ||  loc_it.GetFuzzTo()) {
+            if (loc_it.GetRangeAsSeq_loc()->IsPartialStart(eExtreme_Biological)  ||  loc_it.GetRangeAsSeq_loc()->IsPartialStop(eExtreme_Biological)) {
                 mrna_feat->SetPartial(true);
                 if(gene_feat)
                     gene_feat->SetPartial(true);
@@ -3118,10 +3103,26 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::FixOrderOfCrossTheOriginSeqlo
     left_loc = left_loc->Merge(flags, NULL);
     right_loc = right_loc->Merge(flags, NULL);
 
+    bool no_gap_at_origin = (left_loc->GetStop(eExtreme_Positional) == genomic_size-1 &&
+                             right_loc->GetStart(eExtreme_Positional) == 0);
+
     if (loc.IsReverseStrand()) {
         swap(left_loc, right_loc);
     }
     left_loc->Add(*right_loc);
+
+    if (no_gap_at_origin) {
+        left_loc->ChangeToPackedInt();
+        NON_CONST_ITERATE(CPacked_seqint::Tdata, it,left_loc->SetPacked_int().Set()) {
+            CSeq_interval& interval = **it;
+            if (interval.GetFrom() == 0) {
+                interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_circle);
+            }
+            if (interval.GetTo() == genomic_size-1) {
+                interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_circle);
+            }
+        }
+    }
 
     return left_loc;
 }

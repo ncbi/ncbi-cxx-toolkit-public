@@ -7366,13 +7366,15 @@ Seq-annot ::= {
           from 0,
           to 1018,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-from lim circle
         },
         {
           from 2312911,
           to 2313034,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-to lim circle
         }
       }
     },
@@ -7408,13 +7410,15 @@ Seq-annot ::= {
           from 0,
           to 1018,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-from lim circle
         },
         {
           from 2312911,
           to 2313034,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-to lim circle
         }
       }
     },
@@ -7426,13 +7430,15 @@ Seq-annot ::= {
           from 4690,
           to 5583,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-to lim circle
         },
         {
           from 0,
           to 1448,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-from lim circle
         }
       }
     },
@@ -7468,13 +7474,15 @@ Seq-annot ::= {
           from 4690,
           to 5583,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-to lim circle
         },
         {
           from 0,
           to 1448,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-from lim circle
         }
       }
     },
@@ -7510,13 +7518,15 @@ Seq-annot ::= {
           from 0,
           to 1018,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-from lim circle
         },
         {
           from 2312911,
           to 2313034,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-to lim circle
         }
       }
     },
@@ -7552,13 +7562,15 @@ Seq-annot ::= {
           from 4690,
           to 5583,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-to lim circle
         },
         {
           from 0,
           to 1448,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-from lim circle
         }
       }
     },
@@ -7651,6 +7663,57 @@ Seq-annot ::= {
           to 1072,
           strand plus,
           id gi 385839642
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 1160627,
+        to 1161043,
+        strand minus,
+        id gi 238801501
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_8_34",
+      location packed-int {
+        {
+          from 1160627,
+          to 1161043,
+          strand minus,
+          id gi 238801501
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 1161041,
+              to 1161043,
+              strand minus,
+              id gi 238801501
+            },
+            aa ncbieaa 77
+          }
+        }
+      },
+      product whole local str "PROT_8_34",
+      location packed-int {
+        {
+          from 1160627,
+          to 1161043,
+          strand minus,
+          id gi 238801501
         }
       }
     }

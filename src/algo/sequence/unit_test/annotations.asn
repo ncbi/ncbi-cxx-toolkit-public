@@ -7865,13 +7865,15 @@ Seq-annot ::= {
           from 0,
           to 1018,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-from lim circle
         },
         {
           from 2312911,
           to 2313034,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-to lim circle
         }
       }
     },
@@ -7907,13 +7909,15 @@ Seq-annot ::= {
           from 0,
           to 1018,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-from lim circle
         },
         {
           from 2312911,
           to 2313034,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-to lim circle
         }
       }
     }
@@ -7929,13 +7933,15 @@ Seq-annot ::= {
           from 4690,
           to 5583,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-to lim circle
         },
         {
           from 0,
           to 1448,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-from lim circle
         }
       }
     },
@@ -7971,13 +7977,15 @@ Seq-annot ::= {
           from 4690,
           to 5583,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-to lim circle
         },
         {
           from 0,
           to 1448,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-from lim circle
         }
       }
     }
@@ -7993,13 +8001,15 @@ Seq-annot ::= {
           from 0,
           to 1018,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-from lim circle
         },
         {
           from 2312911,
           to 2313034,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-to lim circle
         }
       }
     },
@@ -8035,13 +8045,15 @@ Seq-annot ::= {
           from 0,
           to 1018,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-from lim circle
         },
         {
           from 2312911,
           to 2313034,
           strand minus,
-          id gi 251791816
+          id gi 251791816,
+          fuzz-to lim circle
         }
       }
     }
@@ -8057,13 +8069,15 @@ Seq-annot ::= {
           from 4690,
           to 5583,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-to lim circle
         },
         {
           from 0,
           to 1448,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-from lim circle
         }
       }
     },
@@ -8099,13 +8113,15 @@ Seq-annot ::= {
           from 4690,
           to 5583,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-to lim circle
         },
         {
           from 0,
           to 1448,
           strand plus,
-          id gi 17158061
+          id gi 17158061,
+          fuzz-from lim circle
         }
       }
     }
