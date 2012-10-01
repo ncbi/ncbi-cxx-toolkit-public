@@ -717,7 +717,7 @@ private:
 
     struct STimeline;
 
-    struct STimelineEntry : public CObject {
+    struct STimelineEntry {
         CAbsTimeout m_NotificationExpiration;
 
         SServerAddress m_ServerAddress;
