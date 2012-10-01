@@ -50,6 +50,8 @@ BEGIN_NCBI_SCOPE
 void g_AppendClientIPAndSessionID(string& cmd,
         const string* default_session = NULL);
 
+bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response);
+
 template<typename T> struct ToStr { static string Convert(T t); };
 
 template<> struct ToStr<string> {

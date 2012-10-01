@@ -715,6 +715,112 @@ private:
     set<SServerAddress> m_Masters;
     set<unsigned int> m_AdminHosts;
 
+    struct STimeline;
+
+    struct STimelineEntry : public CObject {
+        CAbsTimeout m_NotificationExpiration;
+
+        SServerAddress m_ServerAddress;
+
+        unsigned m_DiscoveryIteration;
+
+        STimeline* m_Timeline;
+        STimelineEntry* m_Prev;
+        STimelineEntry* m_Next;
+
+        STimelineEntry(const SServerAddress& server_address,
+                unsigned timeout, unsigned discovery_iteration) :
+            m_NotificationExpiration(timeout, 0),
+            m_ServerAddress(server_address),
+            m_DiscoveryIteration(discovery_iteration),
+            m_Timeline(NULL)
+        {
+        }
+
+        STimelineEntry(unsigned h, unsigned short p,
+                unsigned timeout, unsigned discovery_iteration) :
+            m_NotificationExpiration(timeout, 0),
+            m_ServerAddress(h, p),
+            m_DiscoveryIteration(discovery_iteration),
+            m_Timeline(NULL)
+        {
+        }
+
+        void Cut()
+        {
+            if (m_Timeline != NULL) {
+                if (m_Prev == NULL)
+                    if ((m_Timeline->m_Head = m_Next) == NULL)
+                        m_Timeline->m_Tail = NULL;
+                    else
+                        m_Next->m_Prev = NULL;
+                else if (m_Next == NULL)
+                    (m_Timeline->m_Tail = m_Prev)->m_Next = NULL;
+                else
+                    (m_Prev->m_Next = m_Next)->m_Prev = m_Prev;
+                m_Timeline = NULL;
+            }
+        }
+
+        bool IsDiscoveryAction() const {return m_DiscoveryIteration == 0;}
+
+        struct SLess {
+            bool operator ()(const STimelineEntry* left,
+                    const STimelineEntry* right)
+            {
+                return left->m_ServerAddress < right->m_ServerAddress;
+            }
+        };
+    };
+
+    struct STimeline {
+        STimelineEntry* m_Head;
+        STimelineEntry* m_Tail;
+
+        STimeline() : m_Head(NULL), m_Tail(NULL)
+        {
+        }
+
+        bool IsEmpty() const {return m_Head == NULL;}
+
+        void Push(STimelineEntry* new_entry)
+        {
+            _ASSERT(new_entry->m_Timeline == NULL);
+            if (m_Tail != NULL)
+                (m_Tail->m_Next = new_entry)->m_Prev = m_Tail;
+            else
+                (m_Head = new_entry)->m_Prev = NULL;
+            new_entry->m_Next = NULL;
+            (m_Tail = new_entry)->m_Timeline = this;
+        }
+
+        STimelineEntry* Shift()
+        {
+            _ASSERT(m_Head != NULL);
+            STimelineEntry* old_head = m_Head;
+            if ((m_Head = old_head->m_Next) != NULL)
+                m_Head->m_Prev = NULL;
+            else
+                m_Tail = NULL;
+            old_head->m_Timeline = NULL;
+            return old_head;
+        }
+    };
+
+    unsigned m_DiscoveryIteration;
+
+    STimeline m_Timeline;
+    STimeline m_ImmediateActions;
+
+    typedef set<STimelineEntry*, STimelineEntry::SLess> TTimelineEntries;
+
+    TTimelineEntries m_TimelineEntryByAddress;
+
+    STimelineEntry m_TimelineSearchPattern;
+
+    bool x_PerformTimelineAction(STimelineEntry* action, CNetScheduleJob& job);
+    void x_ProcessRequestJobNotification();
+    bool x_WaitForNewJob(CNetScheduleJob& job);
     bool x_GetNextJob(CNetScheduleJob& job);
 
     friend class CWNJobsWatcher;

@@ -158,7 +158,7 @@ static bool s_DoParseGetJobResponse(
     return true;
 }
 
-static bool s_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
+bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 {
     if (response.empty())
         return false;
@@ -204,7 +204,7 @@ private:
 bool CGetJobCmdExecutor::Consider(CNetServer server)
 {
     try {
-        return s_ParseGetJobResponse(m_Job,
+        return g_ParseGetJobResponse(m_Job,
                 server.ExecWithRetry(m_Cmd).response);
     }
     catch (CNetScheduleException& e) {
@@ -285,7 +285,7 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
     while (m_Impl->m_NotificationHandler.WaitForNotification(*timeout)) {
         CNetServer server;
         if (m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl,
-                &server) && s_ParseGetJobResponse(job, server.ExecWithRetry(
+                &server) && g_ParseGetJobResponse(job, server.ExecWithRetry(
                     m_Impl->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
                         base_cmd, timeout)).response)) {
             // Notify the rest of NetSchedule servers that

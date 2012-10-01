@@ -822,6 +822,8 @@ public:
             string* attr_values,
             int attr_count);
 
+    bool ReceiveNotification(string* server_host = NULL);
+
     bool WaitForNotification(CAbsTimeout& abs_timeout,
             string* server_host = NULL);
 

@@ -119,11 +119,25 @@ int CNetScheduleNotificationHandler::ParseNSOutput(
     return -1;
 }
 
+bool CNetScheduleNotificationHandler::ReceiveNotification(string* server_host)
+{
+    size_t msg_len;
+
+    if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
+            server_host, NULL) != eIO_Success)
+        return false;
+
+    while (msg_len > 0 && m_Buffer[msg_len - 1] == '\0')
+        --msg_len;
+    m_Message.assign(m_Buffer, msg_len);
+
+    return true;
+}
+
 bool CNetScheduleNotificationHandler::WaitForNotification(
         CAbsTimeout& abs_timeout, string* server_host)
 {
     STimeout timeout;
-    size_t msg_len;
 
     for (;;) {
         abs_timeout.GetRemainingTime().Get(&timeout.sec, &timeout.usec);
@@ -136,14 +150,8 @@ bool CNetScheduleNotificationHandler::WaitForNotification(
             return false;
 
         case eIO_Success:
-            if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
-                    server_host, NULL) == eIO_Success) {
-                while (msg_len > 0 && m_Buffer[msg_len - 1] == '\0')
-                    --msg_len;
-                m_Message.assign(m_Buffer, msg_len);
-
+            if (ReceiveNotification(server_host))
                 return true;
-            }
             /* FALL THROUGH */
 
         default:

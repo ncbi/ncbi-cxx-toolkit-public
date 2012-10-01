@@ -61,6 +61,7 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
+#define DEFAULT_NS_TIMEOUT 30
 
 BEGIN_NCBI_SCOPE
 
@@ -828,7 +829,7 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
     m_JobFactory(job_factory),
     m_MaxThreads(1),
-    m_NSTimeout(30),
+    m_NSTimeout(DEFAULT_NS_TIMEOUT),
     m_CheckStatusPeriod(2),
     m_ExclusiveJobSemaphore(1, 1),
     m_IsProcessingExclusiveJob(false),
@@ -836,10 +837,14 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
     m_TotalTimeLimit(0),
     m_StartupTime(0),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
+    m_DiscoveryIteration(0),
+    m_TimelineSearchPattern(0, 0, 0, 0),
     m_Listener(new CGridWorkerNodeApp_Listener()),
     m_App(app),
     m_SingleThreadForced(false)
 {
+    m_ImmediateActions.Push(&m_TimelineSearchPattern);
+
     if (!m_JobFactory.get())
         NCBI_THROW(CGridWorkerNodeException,
                  eJobFactoryIsNotSet, "The JobFactory is not set.");
@@ -847,6 +852,9 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
 
 CGridWorkerNode::~CGridWorkerNode()
 {
+    ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
+        delete *it;
+    }
 }
 
 void CGridWorkerNode::Init(bool default_merge_lines_value)
@@ -898,7 +906,7 @@ int CGridWorkerNode::Run()
         init_threads = m_MaxThreads;
 
     m_NSTimeout = reg.GetInt(kServerSec,
-        "job_wait_timeout", 30, 0, IRegistry::eReturn);
+        "job_wait_timeout", DEFAULT_NS_TIMEOUT, 0, IRegistry::eReturn);
 
     unsigned thread_pool_timeout = reg.GetInt(kServerSec,
         "thread_pool_timeout", 30, 0, IRegistry::eReturn);
@@ -1289,6 +1297,133 @@ void CGridWorkerNode::x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
     }
 }
 
+// Action on a *detached* timeline entry.
+bool CGridWorkerNode::x_PerformTimelineAction(
+        CGridWorkerNode::STimelineEntry* timeline_entry,
+        CNetScheduleJob& job)
+{
+    if (timeline_entry->IsDiscoveryAction()) {
+        ++m_DiscoveryIteration;
+        for (CNetServiceIterator it =
+                m_NetScheduleAPI.GetService().Iterate(); it; ++it) {
+            m_TimelineSearchPattern.m_ServerAddress =
+                    (*it)->m_ServerInPool->m_Address;
+
+            TTimelineEntries::iterator existing_entry(
+                    m_TimelineEntryByAddress.find(&m_TimelineSearchPattern));
+
+            if (existing_entry != m_TimelineEntryByAddress.end())
+                (*existing_entry)->m_DiscoveryIteration = m_DiscoveryIteration;
+            else {
+                STimelineEntry* new_entry = new STimelineEntry(
+                        m_TimelineSearchPattern.m_ServerAddress, 0,
+                                m_DiscoveryIteration);
+
+                m_TimelineEntryByAddress.insert(new_entry);
+                m_ImmediateActions.Push(new_entry);
+            }
+        }
+
+        timeline_entry->m_NotificationExpiration = CAbsTimeout(m_NSTimeout, 0);
+        m_Timeline.Push(timeline_entry);
+        return false;
+    }
+
+    if (timeline_entry->m_DiscoveryIteration != m_DiscoveryIteration)
+        return false;
+
+    CNetServer server(m_NetScheduleAPI->m_Service->GetServer(
+            timeline_entry->m_ServerAddress));
+
+    timeline_entry->m_NotificationExpiration = CAbsTimeout(m_NSTimeout, 0);
+
+    string get_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
+            m_NSExecutor->m_AffinityPreference, kEmptyStr));
+
+    get_cmd = m_NSExecutor->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
+            get_cmd, &timeline_entry->m_NotificationExpiration);
+
+    if (!g_ParseGetJobResponse(job, server.ExecWithRetry(get_cmd).response)) {
+        m_Timeline.Push(timeline_entry);
+        return false;
+    }
+
+    // If a new preferred affinity is given by the server,
+    // register it with the rest of servers.
+    if (m_NSExecutor->m_AffinityPreference ==
+            CNetScheduleExecutor::eClaimNewPreferredAffs &&
+            !job.affinity.empty()) {
+        CFastMutexGuard guard(m_NSExecutor->m_PreferredAffMutex);
+
+        if (m_NSExecutor->m_PreferredAffinities.find(job.affinity) ==
+                m_NSExecutor->m_PreferredAffinities.end()) {
+            m_NSExecutor->m_PreferredAffinities.insert(job.affinity);
+            string new_preferred_aff_cmd("CHAFF add=" + job.affinity);
+            g_AppendClientIPAndSessionID(new_preferred_aff_cmd);
+            for (CNetServiceIterator it =
+                    m_NetScheduleAPI->m_Service.Iterate(server); ++it; )
+                (*it).ExecWithRetry(new_preferred_aff_cmd);
+        }
+    }
+
+    m_ImmediateActions.Push(timeline_entry);
+    return true;
+}
+
+void CGridWorkerNode::x_ProcessRequestJobNotification()
+{
+    CNetServer server;
+
+    if (m_NSExecutor->m_NotificationHandler.CheckRequestJobNotification(
+            m_NSExecutor, &server)) {
+        m_TimelineSearchPattern.m_ServerAddress =
+                server->m_ServerInPool->m_Address;
+
+        TTimelineEntries::iterator it(
+                m_TimelineEntryByAddress.find(&m_TimelineSearchPattern));
+
+        if (it == m_TimelineEntryByAddress.end()) {
+            STimelineEntry* new_entry = new STimelineEntry(
+                    m_TimelineSearchPattern.m_ServerAddress,
+                    0, m_DiscoveryIteration);
+
+            m_ImmediateActions.Push(new_entry);
+            m_TimelineEntryByAddress.insert(new_entry);
+        } else if ((*it)->m_Timeline != &m_ImmediateActions) {
+            (*it)->Cut();
+            m_ImmediateActions.Push(*it);
+        }
+    }
+}
+
+bool CGridWorkerNode::x_WaitForNewJob(CNetScheduleJob& job)
+{
+    while (!CGridGlobals::GetInstance().IsShuttingDown()) {
+        while (!m_ImmediateActions.IsEmpty()) {
+            if (x_PerformTimelineAction(m_ImmediateActions.Shift(), job))
+                return true;
+
+            while (!m_Timeline.IsEmpty() && m_Timeline.m_Head->
+                    m_NotificationExpiration.GetRemainingTime().IsZero()) {
+                m_ImmediateActions.Push(m_Timeline.Shift());
+            }
+
+            while (m_NSExecutor->m_NotificationHandler.ReceiveNotification())
+                x_ProcessRequestJobNotification();
+        }
+
+        if (!m_Timeline.IsEmpty()) {
+            if (m_NSExecutor->m_NotificationHandler.WaitForNotification(
+                    m_Timeline.m_Head->m_NotificationExpiration))
+                x_ProcessRequestJobNotification();
+            else if (x_PerformTimelineAction(m_Timeline.Shift(), job))
+                return true;
+        }
+    }
+
+    return false;
+}
+
 bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
 {
     bool job_exists = false;
@@ -1301,6 +1436,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         if (!job_exists) {
             CGridGlobals::GetInstance().
                 RequestShutdown(CNetScheduleAdmin::eNormalShutdown);
+            return false;
         }
     } else {
         if (!x_AreMastersBusy()) {
@@ -1311,7 +1447,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
         if (!WaitForExclusiveJobToFinish())
             return false;
 
-        job_exists = GetNSExecutor().GetJob(job, m_NSTimeout);
+        job_exists = x_WaitForNewJob(job);
 
         if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob) {
             if (EnterExclusiveMode())
