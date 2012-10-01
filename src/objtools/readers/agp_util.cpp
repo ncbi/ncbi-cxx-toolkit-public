@@ -348,13 +348,13 @@ int CAgpRow::FromString(const string& line)
     }
 
     // object_beg, object_end, part_number
-    object_beg = NStr::StringToNumeric( GetObjectBeg() );
+    object_beg = s2i( GetObjectBeg() );
     if(object_beg<=0) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "object_beg (column 2)");
-    object_end = NStr::StringToNumeric( GetObjectEnd() );
+    object_end = s2i( GetObjectEnd() );
     if(object_end<=0) {
         m_AgpErr->Msg(CAgpErr::E_MustBePositive, "object_end (column 3)");
     }
-    part_number = NStr::StringToNumeric( GetPartNumber() );
+    part_number = s2i( GetPartNumber() );
     if(part_number<=0) {
         m_AgpErr->Msg(CAgpErr::E_MustBePositive, "part_number (column 4)");
         return CAgpErr::E_MustBePositive;
@@ -467,11 +467,11 @@ int CAgpRow::FromString(const string& line)
 int CAgpRow::ParseComponentCols(bool log_errors)
 {
     // component_beg, component_end
-    component_beg = NStr::StringToNumeric( GetComponentBeg() );
+    component_beg = s2i( GetComponentBeg() );
     if(component_beg<=0 && log_errors) {
         m_AgpErr->Msg(CAgpErr::E_MustBePositive, "component_beg (column 7)" );
     }
-    component_end = NStr::StringToNumeric( GetComponentEnd() );
+    component_end = s2i( GetComponentEnd() );
     if(component_end<=0 && log_errors) {
         m_AgpErr->Msg(CAgpErr::E_MustBePositive, "component_end (column 8)" );
     }
@@ -538,7 +538,7 @@ int CAgpRow::str_to_le(const string& str)
 int CAgpRow::ParseGapCols(bool log_errors)
 {
     linkage_evidences.clear();
-    gap_length = NStr::StringToNumeric( GetGapLength() );
+    gap_length = s2i( GetGapLength() );
     if(gap_length<=0) {
         if(log_errors) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "gap_length (column 6)" );
         return CAgpErr::E_MustBePositive;
