@@ -898,7 +898,9 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
                     return "";
                 }
                 la_token = cpy.substr(0, sep_pos);
-                lo_token = cpy.substr(sep_pos + 1);  
+                lo_token = cpy.substr(sep_pos + 1);                 
+                NStr::TruncateSpacesInPlace (la_token);
+                NStr::TruncateSpacesInPlace (lo_token);
                 if (NStr::StartsWith (la_token, "-")) {
                   la_token = "S " + la_token.substr(1);
                 } else {
