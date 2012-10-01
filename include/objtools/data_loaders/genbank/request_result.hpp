@@ -59,6 +59,7 @@ class CBlob_id;
 class CTSE_Info;
 class CTimer;
 
+class CGBDataLoader;
 class CLoadInfo;
 class CLoadInfoLock;
 class CLoadLock_Base;
@@ -507,6 +508,7 @@ private:
 class NCBI_XREADER_EXPORT CLoadLockBlob : public CTSE_LoadLock
 {
 public:
+    CLoadLockBlob(void);
     CLoadLockBlob(CReaderRequestResult& src, const CBlob_id& blob_id);
 
     typedef int TBlobState;
@@ -579,6 +581,8 @@ public:
     typedef int TLevel;
     typedef int TBlobVersion;
     typedef int TBlobState;
+
+    virtual CGBDataLoader* GetLoaderPtr(void);
 
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id) = 0;
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id) = 0;
@@ -663,6 +667,15 @@ public:
     void AddRetryDelay(double delay) { m_RetryDelay += delay; }
     double GetRetryDelay(void) const { return m_RetryDelay; }
 
+    void SaveLoadedWGS(const CBlob_id& blob_id,
+                       int chunk_id,
+                       CLoadLockBlob& blob,
+                       const CSeq_id_Handle& master_idh);
+    bool GetLoadedWGS(CBlob_id& blob_id,
+                      int& chunk_id,
+                      CLoadLockBlob& blob,
+                      CSeq_id_Handle& master_idh);
+
 private:
     friend class CLoadInfoLock;
     friend class CReaderAllocatedConnection;
@@ -685,6 +698,14 @@ private:
     double          m_RecursiveTime;
     CReaderAllocatedConnection* m_AllocatedConnection;
     double          m_RetryDelay;
+
+    struct SLoadedWGSInfo {
+        int m_ChunkId;
+        CLoadLockBlob m_Blob;
+        CSeq_id_Handle m_MasterId;
+    };
+    typedef map<CBlob_id, SLoadedWGSInfo> TLoadedWGSSet;
+    TLoadedWGSSet   m_LoadedWGSSet;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);

@@ -69,7 +69,7 @@
 #define DEFAULT_NUM_CONN    2
 #define MAX_MT_CONN         5
 #define DEFAULT_ALLOW_GZIP  true
-#define DEFAULT_EXCL_WGS_MASTER false
+#define DEFAULT_EXCL_WGS_MASTER true
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq
 

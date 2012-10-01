@@ -1106,6 +1106,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
 {
     CheckReaders();
 
+    CProcessor::ProcessLoadedWGS(command.GetResult());
     if ( command.IsDone() ) {
         return;
     }
@@ -1173,6 +1174,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
                 LOG_POST_X(4, Warning <<
                            "CReadDispatcher: Exception: "<<exc.what());
             }
+            CProcessor::ProcessLoadedWGS(command.GetResult());
             if ( command.IsDone() ) {
                 return;
             }
@@ -1182,6 +1184,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
         }
     }
 
+    CProcessor::ProcessLoadedWGS(command.GetResult());
     if ( command.MayBeSkipped() ) {
         return;
     }

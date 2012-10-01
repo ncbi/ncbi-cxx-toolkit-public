@@ -794,7 +794,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     }
 
     CLoadLockBlob blob(result, blob_id);
-    if ( CProcessor::IsLoaded(blob_id, chunk_id, blob) ) {
+    if ( CProcessor::IsLoaded(result, blob_id, chunk_id, blob) ) {
         return true;
     }
 

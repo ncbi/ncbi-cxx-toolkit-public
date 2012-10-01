@@ -111,13 +111,19 @@ public:
     static void SetSeqEntryReadHooks(CObjectIStream& in);
     static void SetSNPReadHooks(CObjectIStream& in);
 
-    static bool IsLoaded(const TBlobId& blob_id,
+    static bool IsLoaded(CReaderRequestResult& result,
+                         const TBlobId& blob_id,
                          TChunkId chunk_id,
                          CLoadLockBlob& blob);
     static void SetLoaded(CReaderRequestResult& result,
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
+    static void SetLoadedWGS(CReaderRequestResult& result,
+                             const TBlobId& blob_id,
+                             TChunkId chunk_id,
+                             CLoadLockBlob& blob);
+    static void ProcessLoadedWGS(CReaderRequestResult& result);
 
     static void SetSeq_entry(CReaderRequestResult& /*result*/,
                              const TBlobId& /*blob_id*/,
@@ -157,6 +163,7 @@ NCBI_PARAM_DECL(bool, GENBANK, SNP_TABLE);
 NCBI_PARAM_DECL(bool, GENBANK, USE_MEMORY_POOL);
 NCBI_PARAM_DECL(int, GENBANK, READER_STATS);
 NCBI_PARAM_DECL(bool, GENBANK, CACHE_RECOMPRESS);
+NCBI_PARAM_DECL(bool, GENBANK, ADD_WGS_MASTER);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

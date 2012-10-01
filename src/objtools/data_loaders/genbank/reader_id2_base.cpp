@@ -847,12 +847,12 @@ bool CId2ReaderBase::LoadBlobs(CReaderRequestResult& result,
         if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
             const int chunk_id = CProcessor::kMain_ChunkId;
             CLoadLockBlob blob(result, blob_id);
-            if ( !CProcessor_ExtAnnot::IsLoaded(blob_id, chunk_id, blob) ) {
+            if ( !CProcessor::IsLoaded(result, blob_id, chunk_id, blob) ) {
                 dynamic_cast<const CProcessor_ExtAnnot&>
                     (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
                     .Process(result, blob_id, CProcessor::kMain_ChunkId);
             }
-            _ASSERT(CProcessor_ExtAnnot::IsLoaded(blob_id, chunk_id, blob));
+            _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
             continue;
         }
 
@@ -889,12 +889,12 @@ bool CId2ReaderBase::LoadBlob(CReaderRequestResult& result,
     if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
         conn.Release();
         const int chunk_id = CProcessor::kMain_ChunkId;
-        if ( !CProcessor_ExtAnnot::IsLoaded(blob_id, chunk_id, blob) ) {
+        if ( !CProcessor::IsLoaded(result, blob_id, chunk_id, blob) ) {
             dynamic_cast<const CProcessor_ExtAnnot&>
                 (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
                 .Process(result, blob_id, chunk_id);
         }
-        _ASSERT(CProcessor_ExtAnnot::IsLoaded(blob_id, chunk_id, blob));
+        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
         return true;
     }
 
@@ -1957,7 +1957,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         blob.SetBlobState(blob_state);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-        _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
         return;
     }
 
@@ -1981,7 +1981,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
         ERR_POST_X(6, "CId2ReaderBase: ID2-Reply-Get-Blob: "
                    "no data in reply: "<<blob_id);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-        _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
         return;
     }
 
@@ -2004,7 +2004,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
             (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))
             .ProcessData(result, blob_id, blob_state, chunk_id, data);
     }
-    _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+    _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
 }
 
 
@@ -2015,8 +2015,12 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
     const CID2S_Reply_Get_Split_Info& reply)
 {
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
-    TBlobId blob_id = GetBlobId(reply.GetBlob_id());
+    const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
+    TBlobId blob_id = GetBlobId(src_blob_id);
     CLoadLockBlob blob(result, blob_id);
+    if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {
+        SetAndSaveBlobVersion(result, blob_id, src_blob_id.GetVersion());
+    }
     if ( !blob ) {
         ERR_POST_X(9, "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
                       "no blob: " << blob_id);
@@ -2042,7 +2046,7 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         blob.SetBlobState(blob_state);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-        _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
         return;
     }
     {{
@@ -2071,7 +2075,7 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
         .ProcessData(result, blob_id, blob->GetBlobState(), chunk_id,
                      reply.GetData(), reply.GetSplit_version(), skel);
 
-    _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
+    _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
     loaded_set.m_Skeletons.erase(blob_id);
 }
 

@@ -109,6 +109,7 @@ public:
         {
             return *m_Loader;
         }
+    virtual CGBDataLoader* GetLoaderPtr(void);
 
     //virtual TConn GetConn(void);
     //virtual void ReleaseConn(void);
@@ -1442,6 +1443,12 @@ CGBReaderRequestResult(CGBDataLoader* loader,
 
 CGBReaderRequestResult::~CGBReaderRequestResult(void)
 {
+}
+
+
+CGBDataLoader* CGBReaderRequestResult::GetLoaderPtr(void)
+{
+    return m_Loader;
 }
 
 
