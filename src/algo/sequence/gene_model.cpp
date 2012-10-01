@@ -1303,22 +1303,11 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     protloc_on_mrna->Assign(cds_on_mrna.GetLocation());
 
     // Remove final stop codon from sequence
+    bool final_code_break = false;
     if (!cds_on_mrna.GetLocation().IsPartialStop(eExtreme_Biological)) {
-
-        CRef<CSeq_loc> stop_codon_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
-        stop_codon_on_mrna->SetInt().SetFrom(stop_codon_on_mrna->GetStop(eExtreme_Biological)-2);
-
-        if (strprot[strprot.size()-1] != '*') {
-            CSeqVector stop_codon_seqvec(*stop_codon_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
-
-            if (!(stop_codon_seqvec.IsInGap(0) &&
-                  stop_codon_seqvec.IsInGap(1) &&
-                  stop_codon_seqvec.IsInGap(2))) {
-                AddCodeBreak(cds_on_mrna, *stop_codon_on_mrna, '*');
-            }
-        }
+        final_code_break = (strprot[strprot.size()-1] != '*');
+            
         strprot.resize(strprot.size()-1);
-        protloc_on_mrna = protloc_on_mrna->Subtract(*stop_codon_on_mrna, 0, NULL, NULL);
     }
 
     CSeq_inst& seq_inst = bioseq.SetInst();
@@ -1352,17 +1341,36 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             TSeqPos len = ci.GetLength() - frame;
             frame = (2*len)%3;
             e = b + (len+2)/3;
+            bool stop_codon_included = e > strprot.size();
+            if (stop_codon_included) {
+                _ASSERT( len%3 != 0 || !cds_on_mrna.GetLocation().IsPartialStop(eExtreme_Biological) );
+                --e;
+                len = len >= 3 ? len-3 : 0;
+            }
             if (ci.IsUnknownLength()) {
                 seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
             } else if (!ci.IsSetData()) {
                 seq_inst.SetExt().SetDelta().AddLiteral(e-b);
             } else {
-                if (e > strprot.size()) {
-                    _ASSERT( len%3 != 0 || !cds_loc->IsPartialStop(eExtreme_Biological) );
-                    --e;
+                if (stop_codon_included && final_code_break) {
+                    TSeqPos pos_on_mrna = ci.GetPosition() + (e-b)*3;
+                    CRef<CSeq_loc> stop_codon_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+                    stop_codon_on_mrna->SetInt().SetFrom(pos_on_mrna);
+                    stop_codon_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
+                    AddCodeBreak(cds_on_mrna, *stop_codon_on_mrna, '*');
                 }
                 if (b < e) {
+
+                    if (b==0 && strprot[b] != 'M' &&
+                        !cds_on_mrna.GetLocation().IsPartialStart(eExtreme_Biological)) {
+                        strprot[b] = 'M';
+                        TSeqPos pos_on_mrna = ci.GetPosition();
+                        CRef<CSeq_loc> start_codon_on_mrna = protloc_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
+                        start_codon_on_mrna->SetInt().SetFrom(pos_on_mrna);
+                        start_codon_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
+                        AddCodeBreak(cds_on_mrna, *start_codon_on_mrna, 'M');
+                    }
 
                     // Repair any internal stops with Xs
                     size_t stop_aa_pos = b;

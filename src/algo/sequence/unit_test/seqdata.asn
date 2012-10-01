@@ -16118,3 +16118,116 @@ NK"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_8_34"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 417,
+        seq-data ncbi4na '8F48882488188881148881148811184181214812148884214111
+124184442181848182421884824488182448814111144418888182211114184118441282181821
+888184112812881414118884124448181241844184214144144114112884811144824882114814
+144184148188121111812114114818214488182488182214811111841112111112112114841841
+111814111441844124188818814184288121184188181111448844214188828881114188818248
+184112111114284114114818848814111841111442881414288410'H,
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_29",
+                genomic-id gi 238801501,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 416,
+                    genomic-start 1160627,
+                    genomic-end 1161043
+                  }
+                },
+                product-length 417,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 0,
+                      to 2,
+                      id local str "CDNA_8_34"
+                    },
+                    aa ncbieaa 77
+                  }
+                }
+              },
+              product whole local str "PROT_8_34",
+              location int {
+                from 0,
+                to 416,
+                id local str "CDNA_8_34"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_8_34"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 138,
+        seq-data iupacaa "MFRYFKFKLNDTVQFAENDGHMYRIVGYRLEKGFYPKDEWTHIIYELLREFD
+GYTMDAEEEELVKVVQVEDEYYKIQEVSGYRYPVKMKQKQQVMKIERMDDLLDAYNDYKRLADFFKDLSYEQKAEEVL
+LEMKRLRA"
+      }
+    }
+  }
+}

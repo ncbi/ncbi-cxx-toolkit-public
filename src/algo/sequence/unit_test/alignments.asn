@@ -13003,3 +13003,43 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type disc,
+  dim 2,
+  segs spliced {
+    product-id local str "ambiguous_start",
+    genomic-id gi 238801501,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 137,
+          frame 3
+        },
+        genomic-start 1160630,
+        genomic-end 1161043
+      }
+    },
+    product-length 138,
+    modifiers {
+      start-codon-found TRUE,
+      stop-codon-found TRUE
+    }
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
+        }
+      }
+    }
+  }
+}
