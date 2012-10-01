@@ -766,7 +766,7 @@ private:
 
         struct SLess {
             bool operator ()(const STimelineEntry* left,
-                    const STimelineEntry* right)
+                    const STimelineEntry* right) const
             {
                 return left->m_ServerAddress < right->m_ServerAddress;
             }
