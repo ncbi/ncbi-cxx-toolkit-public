@@ -4590,15 +4590,13 @@ void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <strin
     
     int idCount = 0;
 	m_currAlignHsp = 0;
-    bool showBlastDefline = false;
-    bool showSortControls = false;
+    bool showBlastDefline = false;    
     for (CSeq_align_set::Tdata::const_iterator 
          iter =  actual_aln_list.Get().begin(); 
          iter != actual_aln_list.Get().end();iter++) {
 
-         subid = &((*iter)->GetSeq_id(1));
-        
-         //int selectedGi = atoi(selectedID.c_str());         
+         subid = &((*iter)->GetSeq_id(1));       
+         
 
          string currID;
          if(subid->Which() == CSeq_id::e_Gi) {               
@@ -4623,20 +4621,11 @@ void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,hash_set <strin
             //Calculates m_HSPNum for showing sorting links
             //If getSegs = true calculates m_segs for showing download chicklet for large seqs
             x_PreProcessSingleAlign(iter,actual_aln_list,selectedIDs.size() > 1);
-
-
-            //if(selectedIDs.size() > 1)  {//dipslay seq align for multiple seqs - show deline info
-                //x_GetHSPNum(iter,actual_aln_list);
-                showBlastDefline = true;
-            //}
-            //else {
-                //x_GetHSPNum(iter,actual_aln_list);
-                //showSortControls = true;
-            //}
+            showBlastDefline = true;
+            
          }
          else {
              showBlastDefline = false;
-             showSortControls = false;
          }
 
          if(!previousId.Empty() && 
