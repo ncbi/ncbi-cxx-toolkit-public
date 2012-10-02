@@ -210,8 +210,8 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
         TSeqPos this_start = align.GetSeqStart(0);
         TSeqPos this_stop = align.GetSeqStop(0);
 
-        if ( ctx.IsRefSeq() && last_stop > -1 && (this_start - last_stop) > 1 ) {
-            if (this_start - last_stop < 15) {
+        if ( ctx.IsRefSeq() && last_stop > -1 &&  (this_start > (last_stop + 1)) ) {
+            if (this_start < (15 + last_stop) ) {
                 s += NStr::IntToString(last_stop + 2) + '-' +
                     NStr::IntToString(this_start);
                 s.resize(20, ' ');
@@ -233,11 +233,11 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
 
                 string ss;
                 CSeqVector v(seq, CBioseq_Handle::eCoding_Iupac);
-                v.GetSeqData(last_stop + 1, last_stop + 4, ss);
+                v.GetSeqData(last_stop + 1, last_stop + 5, ss);
                 s += ss;
                 s += "...";
 
-                v.GetSeqData(this_start - 3, this_start, ss);
+                v.GetSeqData(this_start - 4, this_start, ss);
                 s += ss;
                 s += '"';
                 s.resize(39, ' ');
