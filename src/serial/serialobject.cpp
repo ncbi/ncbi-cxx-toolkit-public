@@ -317,11 +317,6 @@ const string& CSerialObject::GetNamespaceName(void) const
     return GetThisTypeInfo()->GetNamespaceName();
 }
 
-void CSerialObject::SetNamespaceName(const string& ns_name)
-{
-    GetThisTypeInfo()->SetNamespaceName(ns_name);
-}
-
 bool CSerialObject::HasNamespacePrefix(void) const
 {
     return GetThisTypeInfo()->HasNamespacePrefix();
@@ -330,11 +325,6 @@ bool CSerialObject::HasNamespacePrefix(void) const
 const string& CSerialObject::GetNamespacePrefix(void) const
 {
     return GetThisTypeInfo()->GetNamespacePrefix();
-}
-
-void CSerialObject::SetNamespacePrefix(const string& ns_prefix)
-{
-    GetThisTypeInfo()->SetNamespacePrefix(ns_prefix);
 }
 
 

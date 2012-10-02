@@ -154,13 +154,13 @@ public:
     ///
     /// @param schema_ns
     ///   namespace name
-    static void   SetDefaultSchemaNamespace(const string& schema_ns);
+    void   SetDefaultSchemaNamespace(const string& schema_ns);
 
     /// Get default value of namespace name of generated DTD documents
     ///
     /// @return
     ///   namespace name
-    static string GetDefaultSchemaNamespace(void);
+    string GetDefaultSchemaNamespace(void);
 
     /// Set DTD or schema file prefix.
     /// Reference to DTD or schema in XML document has the form
@@ -444,7 +444,7 @@ private:
     bool m_UseSchemaRef;
     bool m_UseSchemaLoc;
     bool m_UseDTDRef;
-    static string sm_DefaultSchemaNamespace;
+    string m_DefaultSchemaNamespace;
     string m_CurrNsPrefix;
     map<string,string> m_NsNameToPrefix;
     map<string,string> m_NsPrefixToName;

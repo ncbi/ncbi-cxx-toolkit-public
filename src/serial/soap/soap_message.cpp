@@ -35,13 +35,14 @@
 #include <serial/objistr.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/soap/soap_message.hpp>
+#include <serial/serialimpl.hpp>
 #include "soap_writehook.hpp"
 #include "soap_readhook.hpp"
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
-const char*CSoapMessage::ms_SoapNamespace =
+const char* CSoapMessage::ms_SoapNamespace =
 //    "http://www.w3.org/2003/05/soap-envelope";
     "http://schemas.xmlsoap.org/soap/envelope/";   // v1.1
 
@@ -100,7 +101,8 @@ void CSoapMessage::AddObject(const CSerialObject& obj,
             }
         } else {
             if (!ser->HasNamespaceName()) {
-                ser->SetNamespaceName(m_DefNamespaceName);
+                CMutexGuard guard(GetTypeInfoMutex());
+                ser->GetThisTypeInfo()->SetNamespaceName(m_DefNamespaceName);
             }
         }
     }
@@ -134,8 +136,6 @@ void CSoapMessage::Write(CObjectOStream& out) const
     }
 
     CSoapEnvelope env;
-    env.SetNamespaceName(GetSoapNamespace());
-    env.SetNamespacePrefix(GetSoapNamespacePrefix());
 
     if (!m_Header.empty()) {
 // This is to make the stream think the Header was not empty.

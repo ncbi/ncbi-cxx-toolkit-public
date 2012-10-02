@@ -65,7 +65,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
 
 
 string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
-string CObjectOStreamXml::sm_DefaultSchemaNamespace = "http://www.ncbi.nlm.nih.gov";
+const char* sm_DefaultSchemaNamespace = "http://www.ncbi.nlm.nih.gov";
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(eSerial_Xml, out, deleteOut),
@@ -77,6 +77,7 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_Unknown ),
       m_UseXmlDecl(true),
       m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
+      m_DefaultSchemaNamespace( sm_DefaultSchemaNamespace ),
       m_SkipIndent( false ), m_SkipNextTag(false)
 {
     m_Output.SetBackLimit(1);

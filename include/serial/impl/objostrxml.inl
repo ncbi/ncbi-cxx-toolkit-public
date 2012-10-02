@@ -178,13 +178,13 @@ string CObjectOStreamXml::GetDTDPublicId(void) const
 inline
 void  CObjectOStreamXml::SetDefaultSchemaNamespace(const string& schema_ns)
 {
-    sm_DefaultSchemaNamespace = schema_ns;
+    m_DefaultSchemaNamespace = schema_ns;
 }
 
 inline
 string CObjectOStreamXml::GetDefaultSchemaNamespace(void)
 {
-    return sm_DefaultSchemaNamespace;
+    return m_DefaultSchemaNamespace;
 }
 
 #endif /* def OBJOSTRXML__HPP  &&  ndef OBJOSTRXML__INL */

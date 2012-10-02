@@ -175,15 +175,11 @@ public:
     bool HasNamespaceName(void) const;
     /// Get namespace name
     const string& GetNamespaceName(void) const;
-    /// Set namespace name
-    void SetNamespaceName(const string& ns_name);
 
     /// Check if data type has namespace prefix
     bool HasNamespacePrefix(void) const;
     /// Get namespace prefix
     const string& GetNamespacePrefix(void) const;
-    /// Set namespace prefix
-    void SetNamespacePrefix(const string& ns_prefix);
 
 private:
     static ESerialVerifyData x_GetVerifyData(void);
