@@ -832,6 +832,7 @@ bool CGff2Record::x_MigrateAttributesSubSource(
         sSubSourceMap["environmental_sample"] = CSubSource::eSubtype_environmental_sample;
         sSubSourceMap["isolation_source"] = CSubSource::eSubtype_isolation_source;
         sSubSourceMap["lat_lon"] = CSubSource::eSubtype_lat_lon;
+        sSubSourceMap["altitude"] = CSubSource::eSubtype_altitude;
         sSubSourceMap["collection_date"] = CSubSource::eSubtype_collection_date;
         sSubSourceMap["collected_by"] = CSubSource::eSubtype_collected_by;
         sSubSourceMap["identified_by"] = CSubSource::eSubtype_identified_by;

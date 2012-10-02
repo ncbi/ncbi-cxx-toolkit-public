@@ -276,6 +276,7 @@ void CAutoDefModifierCombo::GetAvailableModifiers (CAutoDefSourceDescription::TA
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_environmental_sample, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_isolation_source, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_lat_lon, false));
+    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_altitude, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_collection_date, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_collected_by, false));
     modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_identified_by, false));

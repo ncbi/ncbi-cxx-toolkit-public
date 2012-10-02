@@ -323,6 +323,9 @@ string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
         case CSubSource::eSubtype_lat_lon:
             label = "lat lon";
             break;
+        case CSubSource::eSubtype_altitude:
+            label = "altitude";
+            break;
         case CSubSource::eSubtype_collection_date:
             label = "collection date";
             break;

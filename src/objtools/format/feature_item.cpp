@@ -6183,6 +6183,7 @@ static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
         DO_SS(environmental_sample);
         DO_SS(isolation_source);
         DO_SS(lat_lon);
+        DO_SS(altitude);
         DO_SS(collection_date);
         DO_SS(collected_by);
         DO_SS(identified_by);
@@ -6335,6 +6336,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 
     DO_QUAL(focus);
     DO_QUAL(lat_lon);
+    DO_QUAL(altitude);
     DO_QUAL(collection_date);
     DO_QUAL(collected_by);
     DO_QUAL(identified_by);

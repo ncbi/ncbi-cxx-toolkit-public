@@ -586,6 +586,7 @@ DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 typedef SStaticPair<const char *, const CSubSource::ESubtype> TSubSrcKey;
 
 static const TSubSrcKey subsrc_key_to_subtype [] = {
+    {  "altitude",             CSubSource::eSubtype_altitude               },
     {  "cell_line",            CSubSource::eSubtype_cell_line              },
     {  "cell_type",            CSubSource::eSubtype_cell_type              },
     {  "chromosome",           CSubSource::eSubtype_chromosome             },

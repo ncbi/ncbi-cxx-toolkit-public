@@ -162,6 +162,7 @@ enum EFeatureQualifier {
 enum ESourceQualifier {
     eSQ_none,
     eSQ_acronym,
+    eSQ_altitude,
     eSQ_anamorph,
     eSQ_authority,
     eSQ_bio_material,
