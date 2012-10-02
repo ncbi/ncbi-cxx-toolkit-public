@@ -241,6 +241,31 @@ void RepackageAssertedSequence(CVariation& vr)
 }
 
 
+//HGVS distinguished between c. n. and r. molecules, while in 
+//VariantPlacement we have moltype cdna (which maps onto c.) and rna (which maps onto n.)
+//
+//If we have an HGVS expression like NM_123456.7:r. the VariantPlacement will have moltype rna
+//that would map-back onto NM_123456.7:n., which is what we don't want, as "n.' reserved
+//for non-coding RNAs, so we'll convert rna moltype to cdna based on accession here.
+//Note that this is a post-processing step, as in the midst of parsing we want to treat
+//NM_123456.7:r. as non-coding rna, since these have absolute coordinates rather than cds-relative.
+void AdjustMoltype(CVariation& vr)
+{
+    for(CTypeIterator<CVariantPlacement> it(Begin(vr)); it; ++it) {
+        CVariantPlacement& p = *it;
+
+        if(p.IsSetMol() 
+           && p.GetMol() == CVariantPlacement::eMol_rna
+           && p.GetLoc().GetId()
+           && (   p.GetLoc().GetId()->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna
+               || p.GetLoc().GetId()->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna_predicted))
+        {
+            p.SetMol(CVariantPlacement::eMol_cdna);
+        }
+    }
+}
+
+
 CHgvsParser::CContext::CContext(const CContext& other)
 {
     this->m_bsh = other.m_bsh;
@@ -1029,6 +1054,7 @@ bool CHgvsParser::s_hgvsaa2ncbieaa(const string& hgvsaa, bool uplow, string& out
         } else if(NStr::StartsWith(in, "*")) { out.push_back('*'); in = in.substr(1);
         } else if(NStr::StartsWith(in, "X")) { out.push_back('*'); in = in.substr(1);
         } else if(NStr::StartsWith(in, "?")) { out.push_back('X'); in = in.substr(1);
+        //} else if(NStr::StartsWith(in, "STOP", NStr::eNocase)) { out.push_back('X'); in = in.substr(4); //VAR-283
         } else {
             out = hgvsaa;
             return false;
@@ -1754,8 +1780,9 @@ CRef<CVariation> CHgvsParser::x_root(TIterator const& i, const CContext& context
     CRef<CVariation> vr = x_list(i, context);
 
     RepackageAssertedSequence(*vr);
+    AdjustMoltype(*vr);
     CVariationUtil::s_FactorOutPlacements(*vr);
-
+    
     vr->Index();
     return vr;
 }
