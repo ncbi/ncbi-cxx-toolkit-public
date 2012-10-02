@@ -67,8 +67,8 @@ case "$with_3psw" in
       m4_foreach(X, [sss, sssutils, sssdb, z, bz2, lzo, pcre,
                      gcrypt, gnutls, openssl, krb5,
                      sybase, ftds, mysql, fltk, opengl, mesa, glut, glew,
-                     wxwidgets, freetype, fastcgi, bdb, sp, orbacus, odbc,
-                     python, jni, boost, sqlite3, mimetic, sge, icu, expat,
+                     wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
+                     python, jni, boost, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
                      magic, curl],
@@ -313,6 +313,10 @@ AC_ARG_WITH(freetype,
    [ --without-freetype      do not use FreeType])
 AC_ARG_WITH(freetype_,
    [ --with-freetype=DIR     use FreeType installation in DIR])
+AC_ARG_WITH(ftgl,
+   [ --without-ftgl          do not use FTGL])
+AC_ARG_WITH(ftgl2,
+   [ --with-ftgl=DIR         use FTGL installation in DIR])
 AC_ARG_WITH(fastcgi,
    [ --without-fastcgi       do not use Fast-CGI library])
 AC_ARG_WITH(fastcgi2,
@@ -484,7 +488,7 @@ check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
-ftds mysql orbacus freetype fltk opengl mesa glut glew glew-mx \
+ftds mysql orbacus freetype ftgl fltk opengl mesa glut glew glew-mx \
 bdb python jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
@@ -536,8 +540,8 @@ for x_arg in "$@" ; do
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
       | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
-      | --with-bdb=* | --with-odbc | --with-odbc=* \
-      | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
+      | --with-bdb=* | --with-odbc=* | --with-python=* \
+      | --with-freetype=* | --with-ftgl=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-glew=* | --with-oechem=* \
       | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
@@ -6103,7 +6107,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
     $X_CFLAGS)
 # The use of X_CFLAGS is probably redundant, but shouldn't hurt.
 
-## FreeType
+## FreeType and FTGL
 if test "$with_freetype" != "no" ; then
    : ${FREETYPE_BINPATH=$FREETYPE_PATH/bin}
    AC_PATH_PROG(freetype_config, freetype-config, [],
@@ -6149,6 +6153,26 @@ else
    NCBI_PACKAGE(FreeType)
    AC_DEFINE(HAVE_FREETYPE, 1, [Define to 1 if FreeType is available.])
 fi
+
+case "$with_ftgl" in
+   yes | '' ) : ${FTGL_PATH=$NCBI/ftgl} ;;
+   *        ) FTGL_PATH=$with_ftgl ;;
+esac
+
+if test -d "$FTGL_PATH"; then
+   NCBI_FIX_DIR(FTGL_PATH)
+fi
+if test -d "$FTGL_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
+   FTGL_LIBDIR=$FTGL_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}/lib
+elif test -d "$FTGL_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
+   FTGL_LIBDIR=$FTGL_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib
+fi
+NCBI_FIX_DIR(FTGL_LIBDIR)
+FTGL_LIBPATH=-L$FTGL_LIBDIR
+
+NCBI_CHECK_THIRD_PARTY_LIB(ftgl,
+  [[AC_LANG_PROGRAM([[#include <FTGL/ftgl.h>]], [[FTSimpleLayout layout;]])]],
+  [$FREETYPE_LIBS], [], [$FREETYPE_INCLUDE])
 
 
 NCBI_CHECK_THIRD_PARTY_LIB(magic,

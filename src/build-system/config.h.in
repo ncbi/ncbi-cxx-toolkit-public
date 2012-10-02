@@ -218,6 +218,9 @@
 /* Define to 1 if FreeTDS libraries are available. */
 #undef HAVE_LIBFTDS
 
+/* Define to 1 if libftgl is available. */
+#undef HAVE_LIBFTGL
+
 /* Define to 1 if libgcrypt is available. */
 #undef HAVE_LIBGCRYPT
 

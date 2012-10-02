@@ -16,6 +16,7 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
         test -x "$d/bin/fltk-config"       &&  : ${FLTK_PATH=$d}
+        test -d "$d/include/FTGL"          &&  : ${FTGL_PATH=$d}
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
         test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
@@ -82,6 +83,11 @@ case "$ncbi_platform" in
 esac
 
 : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
+
+case "$ncbi_platform" in
+    SunOS* ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5-ncbi1} ;;
+    *      ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5}       ;;
+esac
 
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
 
