@@ -397,20 +397,20 @@ void* CObject::operator new(size_t size)
 #if USE_TLS_PTR
     // just remember pointer in TLS
     sx_PushLastNewPtr(ptr, eMagicCounterNew);
-#else
+#else// !USE_TLS_PTR
 #if USE_HEAPOBJ_LIST
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
         s_heap_obj->push_front(ptr);
     }}
-#else// USE_HEAPOBJ_LIST
+#else// !USE_HEAPOBJ_LIST
     sx_FillNewMemory(ptr, size);
 #  if USE_COMPLEX_MASK
     GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterNew);
 #  endif// USE_COMPLEX_MASK
 #endif// USE_HEAPOBJ_LIST
     static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterNew);
-#endif
+#endif// USE_TLS_PTR
     return ptr;
 #endif
 }
@@ -418,17 +418,28 @@ void* CObject::operator new(size_t size)
 
 void CObject::operator delete(void* ptr)
 {
-#ifdef _DEBUG
-    CObject* objectPtr = static_cast<CObject*>(ptr);
-    TCount magic = objectPtr->m_Counter.Get();
+    // Can be called either from regular destruction (with counter initialized)
+    // or before CObject constructor is called (counter is not set yet).
+#if USE_TLS_PTR
+# ifdef _DEBUG
+    TCount magic = sx_PopLastNewPtr(ptr);
+    if ( !magic ) { // counter already initialized
+        magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+    }
+# else// !_DEBUG
+    // Just remove saved operator new info.
+    sx_PopLastNewPtr(ptr);
+# endif// _DEBUG
+#else// !USE_TLS_PTR
+# ifdef _DEBUG
+    TCount magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+# endif// _DEBUG
+#endif// USE_TLS_PTR
+
     // magic can be equal to:
     // 1. eMagicCounterDeleted when memory is freed after CObject destructor.
     // 2. eMagicCounterNew when memory is freed before CObject constructor.
     _ASSERT(magic == eMagicCounterDeleted  || magic == eMagicCounterNew);
-#endif
-#if USE_TLS_PTR
-    sx_PopLastNewPtr(ptr);
-#endif
     ::operator delete(ptr);
 }
 
@@ -445,14 +456,18 @@ void* CObject::operator new(size_t size, void* place)
 // complement placement delete operator -> do nothing
 void CObject::operator delete(void* _DEBUG_ARG(ptr), void* /*place*/)
 {
-#ifdef _DEBUG
+    // Can be called either from regular destruction (with counter initialized)
+    // or before CObject constructor is called (counter is not set yet).
+#if !USE_TLS_PTR
+# ifdef _DEBUG
     CObject* objectPtr = static_cast<CObject*>(ptr);
     TCount magic = objectPtr->m_Counter.Get();
     // magic can be equal to:
     // 1. eMagicCounterDeleted when memory is freed after CObject destructor.
     // 2. 0 when memory is freed before CObject constructor.
     _ASSERT(magic == eMagicCounterDeleted  || magic == 0);
-#endif
+# endif// _DEBUG
+#endif// USE_TLS_PTR
 }
 
 
@@ -470,30 +485,41 @@ void* CObject::operator new(size_t size, CObjectMemoryPool* memory_pool)
 #if USE_TLS_PTR
     // just remember pointer in TLS
     sx_PushLastNewPtr(ptr, eMagicCounterPoolNew);
-#else
+#else// !USE_TLS_PTR
 #  if USE_COMPLEX_MASK
     GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterPoolNew);
 #  endif// USE_COMPLEX_MASK
     static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterPoolNew);
-#endif
+#endif// USE_TLS_PTR
     return ptr;
 }
 
 // complement pool delete operator
 void CObject::operator delete(void* ptr, CObjectMemoryPool* memory_pool)
 {
-#ifdef _DEBUG
-    CObject* objectPtr = static_cast<CObject*>(ptr);
-    TCount magic = objectPtr->m_Counter.Get();
+    // Can be called either from regular destruction (with counter initialized)
+    // or before CObject constructor is called (counter is not set yet).
+#if USE_TLS_PTR
+# ifdef _DEBUG
+    TCount magic = sx_PopLastNewPtr(ptr);
+    if ( !magic ) { // counter already initialized
+        magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+    }
+# else// !_DEBUG
+    // Just remove saved operator new info.
+    sx_PopLastNewPtr(ptr);
+# endif// _DEBUG
+#else// !USE_TLS_PTR
+# ifdef _DEBUG
+    TCount magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+# endif//_DEBUG
+#endif// USE_TLS_PTR
+
     // magic can be equal to:
     // 1. eMagicCounterPoolDeleted when freed after CObject destructor.
     // 2. eMagicCounterPoolNew when freed before CObject constructor.
     _ASSERT(magic == eMagicCounterPoolDeleted ||
             magic == eMagicCounterPoolNew);
-#endif
-#if USE_TLS_PTR
-    sx_PopLastNewPtr(ptr);
-#endif
     memory_pool->Deallocate(ptr);
 }
 
