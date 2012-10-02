@@ -631,7 +631,7 @@ void CLDS_Object::UpdateBinaryASNObjects(int file_id,
     types.push_back(CType<CSeq_align_set>());
     vector<CObjectTypeInfo> skip_types;
     skip_types.push_back(CType<CSeq_data>());
-    skip_types.push_back(CType<CSeq_ext>());
+    //skip_types.push_back(CType<CSeq_ext>());
     skip_types.push_back(CType<CSeq_hist>());
 
     LOG_POST_X(2, Info << CTime(CTime::eCurrent) <<
