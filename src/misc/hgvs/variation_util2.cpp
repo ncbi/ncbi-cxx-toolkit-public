@@ -397,15 +397,16 @@ bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
             out_of_order = true;    
         }
 
+#if 0
+        //Note: not comparing offsets, as it may be legitimately out-of-order. JIRA:SNP-5238
         if(p.IsSetStart_offset() && p.IsSetStop_offset() && sequence::GetLength(p.GetLoc(), NULL) == 1) {
-            if(sequence::GetStrand(p.GetLoc(), NULL) == eNa_strand_minus ? 
-                  p.GetStart_offset() < p.GetStop_offset() 
-                : p.GetStart_offset() > p.GetStop_offset() )
-            {
+            if(p.GetStart_offset() > p.GetStop_offset()) {
+                //note: not checking for strand, as offsets are always in the order of transcription
                 out_of_order = true;
                 invalid_location = true;
             }
         }
+#endif
     }
 
     if(invalid_location) {
