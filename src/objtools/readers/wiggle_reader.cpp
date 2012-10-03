@@ -269,8 +269,8 @@ void CWiggleReader::xPreprocessValues(SWiggleStat& stat)
 CRef<CSeq_id> CWiggleReader::xMakeChromId()
 //  =========================================================================
 {
-    CRef<CSeq_id> chrom_id(new CSeq_id(CSeq_id::e_Local, m_ChromId));
-    return chrom_id;
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(m_ChromId);
+    return id;
 }
 
 //  =========================================================================
