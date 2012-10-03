@@ -1266,6 +1266,7 @@ gc_utils needs xregexp
 gc_utils needs xser
 gc_utils needs xutil
 gcaccess_utils needs align-reader
+gcaccess_utils needs aligndb_reader
 gcaccess_utils needs asn_cache
 gcaccess_utils needs axf
 gcaccess_utils needs bdb
@@ -1352,6 +1353,7 @@ gcaccess_utils needs xcgi
 gcaccess_utils needs xcompress
 gcaccess_utils needs xconnect
 gcaccess_utils needs xconnext
+gcaccess_utils needs xgencoll
 gcaccess_utils needs xmlwrapp
 gcaccess_utils needs xncbi
 gcaccess_utils needs xnetblast
@@ -8154,6 +8156,7 @@ xgencollstats needs creaders
 xgencollstats needs ct_ftds64
 xgencollstats needs dbapi
 xgencollstats needs dbapi_driver
+xgencollstats needs gcaccess_utils
 xgencollstats needs gencoll_stats
 xgencollstats needs general
 xgencollstats needs genome_collection
