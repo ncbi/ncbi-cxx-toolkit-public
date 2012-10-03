@@ -3163,6 +3163,14 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
             feat.SetPseudo(true);
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
+
+        // lowercase pseudogene qual
+        string new_val = val;
+        NStr::ToLower(new_val);
+        if( new_val != val ) {
+            val = new_val;
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        }
     } else if ( FIELD_IS(data, Gene)  &&  x_GeneGBQualBC( GET_MUTABLE(data, Gene), gb_qual) == eAction_Erase) {
         return eAction_Erase;  // mark qual for deletion
     } else if ( FIELD_IS(data, Cdregion)  &&  x_SeqFeatCDSGBQualBC(feat, GET_MUTABLE(data, Cdregion), gb_qual) == eAction_Erase ) {
