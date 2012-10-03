@@ -4606,7 +4606,9 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     // DO_QUAL(cons_splice);
     DO_QUAL(direction);
     DO_QUAL(function);
-    DO_QUAL(frequency);
+    if( ! cfg.FrequencyToNote() ) {
+        DO_QUAL(frequency);
+    }
     DO_QUAL(EC_number);
     x_FormatQual(eFQ_gene_map, "map", qvec);
     // In certain modes, cyt_map, gen_map, and rad_map are 
@@ -6316,7 +6318,9 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(clone_lib);
     DO_QUAL(dev_stage);
     DO_QUAL(ecotype);
-    DO_QUAL(frequency);
+    if( ! GetContext()->Config().FrequencyToNote() ) {
+        DO_QUAL(frequency);
+    }
 
     DO_QUAL(germline);
     DO_QUAL(rearranged);
@@ -6388,6 +6392,9 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
     DO_QUAL(anamorph);
     DO_QUAL(teleomorph);
     DO_QUAL(breed);
+    if( GetContext()->Config().FrequencyToNote() ) {
+        DO_QUAL(frequency);
+    }
 
     DO_QUAL(metagenome_source),
 
@@ -6444,6 +6451,9 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(anamorph);
         DO_NOTE(teleomorph);
         DO_NOTE(breed);
+        if( GetContext()->Config().FrequencyToNote() ) {
+            DO_NOTE(frequency);
+        }
 
         x_FormatNoteQual(eSQ_metagenome_source, "derived from metagenome", qvec);
         

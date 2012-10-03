@@ -122,7 +122,7 @@ MODE_FLAG_GET(DropBadDbxref, 14);
 MODE_FLAG_GET(UseEmblMolType, 15);
 MODE_FLAG_GET(HideBankItComment, 16);
 MODE_FLAG_GET(CheckCDSProductId, 17);
-MODE_FLAG_GET(SuppressSegLoc, 18);
+MODE_FLAG_GET(FrequencyToNote, 18);
 //MODE_FLAG_GET(SrcQualsToNote, 19); // implementation below
 MODE_FLAG_GET(HideEmptySource, 20);
 // MODE_FLAG_GET(GoQualsToNote, 21); // implementation below

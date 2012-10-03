@@ -265,7 +265,7 @@ public:
     bool UseEmblMolType      (void) const;
     bool HideBankItComment   (void) const;
     bool CheckCDSProductId   (void) const;
-    bool SuppressSegLoc      (void) const;
+    bool FrequencyToNote      (void) const;
     bool SrcQualsToNote      (void) const;
     bool HideEmptySource     (void) const;
     bool GoQualsToNote       (void) const;
