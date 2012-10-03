@@ -722,8 +722,12 @@ static bool s_BadCharsInAuthorName (string str, string& badauthor, bool allowcom
 
 
     size_t stp = string::npos;
-    if (last && NStr::StartsWith (str, "St.")) {
-        stp = 2;
+    if (last) {
+        if (NStr::StartsWith (str, "St.")) {
+            stp = 2;
+        } else if (NStr::StartsWith (str, "de M.")) {
+            stp = 4;
+        }
     }
 
     size_t pos = 0;
