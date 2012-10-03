@@ -33,6 +33,16 @@
 ################################################################################
 
 {
+   MemCpy to itself in swap() in CObject  (ICC 10.1)
+   Memcheck:Overlap
+   fun:memcpy
+   fun:_ZSt4swapISt4pairIPvjEEvRT_S4_
+   fun:_ZN4ncbi24sx_PopLastNewPtrMultipleEPv
+   fun:_ZN4ncbi16sx_PopLastNewPtrEPv
+   fun:_ZN4ncbi7CObject11InitCounterEv
+}
+
+{
    Sybase DBLIB 12.5.1.10-ESD26-64bit (case 1)
    Memcheck:Param
    write(buf)
