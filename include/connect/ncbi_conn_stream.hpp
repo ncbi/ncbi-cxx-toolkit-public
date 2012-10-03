@@ -111,8 +111,8 @@ const size_t kConn_DefaultBufSize = 4096;
 /// @sa
 ///   CONN_SetCallback, eCONN_OnClose
 
-class NCBI_XCONNECT_EXPORT CConn_IOStream : public    CNcbiIostream,
-                                            protected CConnIniter
+class NCBI_XCONNECT_EXPORT CConn_IOStream : public            CNcbiIostream,
+                                            virtual protected CConnIniter
 {
 public:
     /// Must be compatible by values with TCONN_Flags.
