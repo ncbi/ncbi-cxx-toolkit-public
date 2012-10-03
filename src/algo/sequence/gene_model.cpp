@@ -227,6 +227,7 @@ void CFeatureGenerator::ConvertLocToAnnot(
         const objects::CSeq_loc &loc,
         objects::CSeq_annot& annot,
         objects::CBioseq_set& seqs,
+        CCdregion::EFrame frame,
         CRef<objects::CSeq_id> prot_id,
         CRef<objects::CSeq_id> rna_id)
 {
@@ -303,26 +304,37 @@ void CFeatureGenerator::ConvertLocToAnnot(
     fake_align.SetSegs().SetSpliced().SetProduct_length(product_pos);
 
     CSeq_feat cdregion;
-    cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    cdregion.SetData().SetCdregion().SetFrame(frame);
+    if (frame != CCdregion::eFrame_one &&
+        !loc.IsPartialStart(eExtreme_Biological))
+    {
+        NCBI_THROW(CException, eUnknown,
+            "Non-standard frame specified with 5'-complete location");
+    }
 
     CSeq_loc cdregion_loc(*rna_id, 0, product_pos-1, eNa_strand_plus);
     if (loc.IsPartialStart(eExtreme_Biological)) {
         cdregion_loc.SetPartialStart(true, eExtreme_Biological);
-        switch (product_pos % 3) {
-        case 0:
-            break;
-
-        case 1:
-            cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
-            break;
-
-        case 2:
-            cdregion.SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
-            break;
-        }
     }
     if (loc.IsPartialStop(eExtreme_Biological)) {
         cdregion_loc.SetPartialStop(true, eExtreme_Biological);
+    } else if (flags & fCreateCdregion) {
+        /// location is 3'-complete; verify we have a whole number of codons,
+        /// taking frame into account
+        switch (frame) {
+        case CCdregion::eFrame_two:
+            product_pos -= 1;
+            break;
+
+        case CCdregion::eFrame_three:
+            product_pos -= 2;
+            break;
+        }
+
+        if (product_pos % 3) {
+            NCBI_THROW(CException, eUnknown,
+                "Non-whole number of codons with 3'-complete location");
+        }
     }
     if (org.IsSetGcode()) {
         CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);

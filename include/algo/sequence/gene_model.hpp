@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <util/range.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -133,6 +134,7 @@ public:
         const objects::CSeq_loc &loc,
         objects::CSeq_annot& annot,
         objects::CBioseq_set& seqs,
+        objects::CCdregion::EFrame frame = objects::CCdregion::eFrame_one,
         CRef<objects::CSeq_id> prot_id = CRef<objects::CSeq_id>(),
         CRef<objects::CSeq_id> rna_id = CRef<objects::CSeq_id>());
 
