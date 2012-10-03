@@ -329,7 +329,10 @@ _blk_clean_desc(CS_BLKDESC * blkdesc)
     if (blkdesc->bindinfo) {
         /* In TDS 5.0 structure of row is different, so free it
            before entering tds_free_results */
-        if (IS_TDS50(blkdesc->con->tds_socket)  &&  blkdesc->bindinfo->current_row) {
+        /* Likewise for transfers in -- ucko */
+        if ((IS_TDS50(blkdesc->con->tds_socket)
+             || blkdesc->direction == CS_BLK_IN)
+            &&  blkdesc->bindinfo->current_row) {
             free(blkdesc->bindinfo->current_row);
             blkdesc->bindinfo->current_row = NULL;
         }
