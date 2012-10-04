@@ -8292,3 +8292,53 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 118805,
+        to 119227,
+        strand plus,
+        id gi 291482369,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      product whole local str "CDNA_9_35",
+      location packed-int {
+        {
+          from 118805,
+          to 119227,
+          strand plus,
+          id gi 291482369,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      product whole local str "PROT_9_35",
+      location packed-int {
+        {
+          from 118805,
+          to 119227,
+          strand plus,
+          id gi 291482369,
+          fuzz-to lim gt
+        }
+      }
+    }
+  }
+}

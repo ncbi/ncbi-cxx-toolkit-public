@@ -1361,7 +1361,8 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                 seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
             } else if (!ci.IsSetData()) {
-                seq_inst.SetExt().SetDelta().AddLiteral(e-b);
+                if (!(stop_codon_included && b==e)) // do not add zero length gap at the end
+                    seq_inst.SetExt().SetDelta().AddLiteral(e-b);
             } else {
                 if (stop_codon_included && final_code_break) {
                     TSeqPos pos_on_mrna = ci.GetPosition() + (e-b)*3;

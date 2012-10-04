@@ -16231,3 +16231,113 @@ LEMKRLRA"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_9_35"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 426,
+        ext delta {
+          literal {
+            length 423,
+            seq-data ncbi2na 'BA7000B2F02FB00F903D79E802705491452FA1791FAD096B
+BC134EA3DEC28BF0676C49E1427AFC34F5EF80FDAFC6085BD3F13F3C40075179E4B3E7C00249E8
+3E2DEBDEB81405B0C0BA416F0998C0B1980D9E018039787C064921BE09A43993AF82B1E564B3AB
+3EC3628C'H
+          },
+          literal {
+            length 3
+          }
+        },
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_33",
+                genomic-id gi 291482369,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 422,
+                    genomic-start 118805,
+                    genomic-end 119227,
+                    partial TRUE
+                  }
+                },
+                product-length 426,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found FALSE
+                }
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              product whole local str "PROT_9_35",
+              location int {
+                from 0,
+                to 425,
+                id local str "CDNA_9_35"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_9_35"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-right
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 141,
+        seq-data iupacaa "MAKKVVKVVKLQIPAGKANPAPPVGPALGQAGVNIMGFCKEFNARTADQAGL
+IIPVEISVYEDRSFTFITKTPPAAVLLKKAAGIESGSGEPNRNKVATVKRDKVREIAETKMPDLNAADVEAAMRMVEG
+TARSMGIVIED"
+      }
+    }
+  }
+}
