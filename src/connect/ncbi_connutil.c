@@ -551,11 +551,12 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         }
         memcpy(info->args, args, argslen);
         info->args[argslen + len] = '\0';
-    } else if (!(args = strchr(info->args, '#'))) {
+    } else if ((scheme == eURL_Https  ||  scheme == eURL_Http)
+               &&  (args = strchr(info->args, '#'))) {
         /* keep the old fragment, if any, but drop all args */
-        info->args[0] = '\0';
-    } else
         memmove(info->args, args, strlen(args) + 1);
+    } else
+        info->args[0] = '\0';
     if (path) {
         memcpy(p, path, pathlen);
         p[pathlen] = '\0';
