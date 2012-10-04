@@ -90,10 +90,15 @@ Blast4-request-body ::= CHOICE {
     -- Get version and info about some extended methods
     get-protocol-info	    Blast4-get-protocol-info-request,
     -- Get search info: status, title and etc.
-    get-search-info	    Blast4-get-search-info-request
+    get-search-info	    Blast4-get-search-info-request,
+    -- OLD OK get-databases-ex           NULL
+    get-databases-ex           Blast4-get-databases-ex-request
 
 }
-
+Blast4-get-databases-ex-request ::= SEQUENCE {
+    params                  Blast4-parameters OPTIONAL
+}	
+-- END ADD EXT INFO
 Blast4-finish-params-request ::= SEQUENCE {
     program                 VisibleString,
     service                 VisibleString,
@@ -266,7 +271,8 @@ Blast4-reply-body ::= CHOICE {
     get-sequence-parts      Blast4-get-seq-parts-reply,
     get-windowmasked-taxids Blast4-get-windowmasked-taxids-reply,
     get-protocol-info	    Blast4-get-protocol-info-reply,
-    get-search-info	    Blast4-get-search-info-reply
+    get-search-info	    Blast4-get-search-info-reply,
+    get-databases-ex        Blast4-get-databases-ex-reply
 }
 
 Blast4-finish-params-reply ::= Blast4-parameters
@@ -274,6 +280,7 @@ Blast4-finish-params-reply ::= Blast4-parameters
 Blast4-get-windowmasked-taxids-reply ::= SEQUENCE OF INTEGER
 
 Blast4-get-databases-reply ::= SEQUENCE OF Blast4-database-info
+Blast4-get-databases-ex-reply ::= SEQUENCE OF Blast4-database-info
 
 Blast4-get-matrices-reply ::= SEQUENCE OF Blast4-matrix-id
 
@@ -489,7 +496,8 @@ Blast4-database-info ::= SEQUENCE {
     total-length            BigInt,
     num-sequences           BigInt,
     seqtech                 Blast4-seqtech,
-    taxid                   INTEGER
+    taxid                   INTEGER,
+    extended                Blast4-parameters OPTIONAL
 }
 
 Blast4-frame-type ::= ENUMERATED {
