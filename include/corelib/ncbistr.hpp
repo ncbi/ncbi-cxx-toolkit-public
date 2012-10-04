@@ -2442,7 +2442,7 @@ public:
         fWrap_HTMLPre    = 0x2, ///< Wrap as preformatted HTML?
         fWrap_FlatFile   = 0x4  ///< Wrap for flat file use.
     };
-    typedef int TWrapFlags;     ///< Binary OR of "EWrapFlags"
+    typedef int TWrapFlags;     ///< Bitwise OR of "EWrapFlags"
 
     /// Wrap the specified string into lines of a specified width.
     ///
