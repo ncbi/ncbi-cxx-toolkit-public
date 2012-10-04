@@ -8311,6 +8311,7 @@ Seq-annot ::= {
         type mRNA
       },
       partial TRUE,
+      except TRUE,
       product whole local str "CDNA_9_35",
       location packed-int {
         {
@@ -8320,7 +8321,8 @@ Seq-annot ::= {
           id gi 291482369,
           fuzz-to lim gt
         }
-      }
+      },
+      except-text "unclassified transcription discrepancy"
     },
     {
       data cdregion {
