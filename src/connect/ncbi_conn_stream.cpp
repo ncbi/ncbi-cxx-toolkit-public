@@ -545,7 +545,7 @@ EHTTP_HeaderParse CConn_HttpStream::x_ParseHeader(const char* header,
                                                   void*       data,
                                                   int         code)
 {
-    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*> (data);
+    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
     int c, n;
     if (sscanf(header, "%*s %u%n", &c, &n) < 1)
         return eHTTP_HeaderError;
@@ -568,18 +568,18 @@ EHTTP_HeaderParse CConn_HttpStream::x_ParseHeader(const char* header,
 }
 
 
-int CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
-                               void*         data,
-                               unsigned int  count)
+int/*bool*/ CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
+                                       void*         data,
+                                       unsigned int  count)
 {
-    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*> (data);
+    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
     return http->m_UserAdjust(net_info, http->m_UserData, count);
 }
 
 
 void CConn_HttpStream::x_Cleanup(void* data)
 {
-    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*> (data);
+    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
     http->m_UserCleanup(http->m_UserData);
 }
 

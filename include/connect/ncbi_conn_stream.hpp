@@ -573,7 +573,7 @@ private:
     static EHTTP_HeaderParse x_ParseHeader(const char*   header,
                                            void*         data,
                                            int           code);
-    static int               x_Adjust     (SConnNetInfo* net_info,
+    static int/*bool*/       x_Adjust     (SConnNetInfo* net_info,
                                            void*         data,
                                            unsigned int  count);
     static void              x_Cleanup    (void*         data);
