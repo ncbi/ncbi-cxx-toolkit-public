@@ -42,6 +42,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,8 +59,8 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
     CONN conn = csb->GetCONN();
     if (conn) {
         SOCK s/*dummy*/;
-        // CONN_Write(0 bytes) could have done the same effect as GetSOCK
-        (void) CONN_GetSOCK(conn, &s);  // Prompt connection to actually open
+        // CONN_Write(0 bytes) could have caused the same effect as GetSOCK
+        (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
         if (CONN_Status(conn, eIO_Open) == eIO_Success) {
             init(csb.get());
             m_CSb = csb.release();
@@ -80,8 +81,8 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close, const STimeout* timeout,
                                 ptr, size));
     if (conn) {
         SOCK s/*dummy*/;
-        // CONN_Write(0 bytes) should have done the same effect as GetSOCK
-        (void) CONN_GetSOCK(conn, &s);  // Prompt connection to open (if not)
+        // CONN_Write(0 bytes) could have caused the same effect as GetSOCK
+        (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
         if (CONN_Status(conn, eIO_Open) == eIO_Success) {
             init(csb.get());
             m_CSb = csb.release();
@@ -417,7 +418,7 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
-        net_info->timeout = 0;
+        net_info->timeout = kInfiniteTimeout/*0*/;
     return HTTP_CreateConnectorEx(net_info.get(), flags,
                                   parse_header, user_data, adjust, cleanup);
 }
@@ -438,13 +439,15 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             path.c_str(),
                                             args.c_str(),
                                             user_header.c_str(),
-                                            0,
-                                            0,
+                                            x_ParseHeader,
+                                            this,
                                             0,
                                             0,
                                             flags,
                                             timeout),
-                     timeout, buf_size)
+                     timeout, buf_size),
+      m_UserParseHeader(0), m_UserData(0), m_UserAdjust(0), m_UserCleanup(0),
+      m_Code(0)
 {
     return;
 }
@@ -461,13 +464,15 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
                                             0,
                                             0,
                                             0,
-                                            0,
-                                            0,
+                                            x_ParseHeader,
+                                            this,
                                             0,
                                             0,
                                             flags,
                                             timeout),
-                     timeout, buf_size)
+                     timeout, buf_size),
+      m_UserParseHeader(0), m_UserData(0), m_UserAdjust(0), m_UserCleanup(0),
+      m_Code(0)
 {
     return;
 }
@@ -490,13 +495,16 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             0,
                                             0,
                                             user_header.c_str(),
-                                            parse_header,
-                                            user_data,
-                                            adjust,
-                                            cleanup,
+                                            x_ParseHeader,
+                                            this,
+                                            adjust  ? x_Adjust  : 0,
+                                            cleanup ? x_Cleanup : 0,
                                             flags,
                                             timeout),
-                     timeout, buf_size)
+                     timeout, buf_size),
+      m_UserParseHeader(parse_header), m_UserData(user_data),
+      m_UserAdjust(adjust), m_UserCleanup(cleanup),
+      m_Code(0)
 {
     return;
 }
@@ -518,15 +526,61 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                             0,
                                             0,
                                             user_header.c_str(),
-                                            parse_header,
-                                            user_data,
-                                            adjust,
-                                            cleanup,
+                                            x_ParseHeader,
+                                            this,
+                                            adjust  ? x_Adjust  : 0,
+                                            cleanup ? x_Cleanup : 0,
                                             flags,
                                             timeout),
-                     timeout, buf_size)
+                     timeout, buf_size),
+      m_UserParseHeader(parse_header), m_UserData(user_data),
+      m_UserAdjust(adjust), m_UserCleanup(cleanup),
+      m_Code(0)
 {
     return;
+}
+
+
+EHTTP_HeaderParse CConn_HttpStream::x_ParseHeader(const char* header,
+                                                  void*       data,
+                                                  int         code)
+{
+    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*> (data);
+    int c, n;
+    if (sscanf(header, "%*s %u%n", &c, &n) < 1)
+        return eHTTP_HeaderError;
+    _ASSERT(!code  ||  code == c);
+    const char* str = header + n;
+    str += strspn(str, " \t");
+    const char* eol = strchr(str, '\n');
+    if (!eol)
+        eol = str + strlen(str);
+    while (eol > str) {
+        if (!isspace((unsigned char) eol[-1]))
+            break;
+        --eol;
+    }
+    http->m_Code = c;
+    http->m_Text.assign(str, (size_t)(eol - str));
+    return http->m_UserParseHeader
+        ? http->m_UserParseHeader(header, http->m_UserData, code)
+        : eHTTP_HeaderSuccess;
+}
+
+
+int CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
+                               void*         data,
+                               unsigned int  count)
+{
+    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*> (data);
+    return http->m_UserAdjust(net_info, http->m_UserData, count);
+}
+
+
+void CConn_HttpStream::x_Cleanup(void* data)
+{
+    CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*> (data);
+    http->m_UserCleanup(http->m_UserData);
 }
 
 
@@ -552,7 +606,7 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
-        net_info->timeout = 0;
+        net_info->timeout = kInfiniteTimeout/*0*/;
     return SERVICE_CreateConnectorEx(service, types, net_info.get(), params);
 }
 
@@ -648,7 +702,7 @@ void CConn_MemoryStream::ToString(string* str)
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
     str->resize(size);
     if (sb) {
-        size_t s = (size_t)sb->sgetn(&(*str)[0], size);
+        size_t s = (size_t) sb->sgetn(&(*str)[0], size);
         _ASSERT(s == size);
 #ifdef NCBI_COMPILER_WORKSHOP
         if (s < 0) {
@@ -670,7 +724,7 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
     vec->resize(size);
     if (sb) {
-        size_t s = (size_t)sb->sgetn(&(*vec)[0], size);
+        size_t s = (size_t) sb->sgetn(&(*vec)[0], size);
         _ASSERT(s == size);
 #ifdef NCBI_COMPILER_WORKSHOP
         if (s < 0) {
@@ -752,8 +806,8 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
 
 EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
 {
-    const STimeout* r_timeout = 0;
-    const STimeout* w_timeout = 0;
+    const STimeout* r_timeout = kInfiniteTimeout/*0*/;
+    const STimeout* w_timeout = kInfiniteTimeout/*0*/;
     CONN conn = GetCONN();
     char block[1024];
     if (conn) {
@@ -895,13 +949,11 @@ extern
 NCBI_XCONNECT_EXPORT  // FIXME: To remove once the API is fully official
 CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
 {
-    class CPrivateIniter : public CConnIniter {
-    public:
-        CPrivateIniter(void)
-        { }
-    };
-    CPrivateIniter init;
-
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;
+    }
     bool svc = x_IsIdentifier(url);
 
     AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(svc ? url.c_str() : 0);
@@ -911,10 +963,13 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
 
     unsigned int   host;
     unsigned short port;
-    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port) && port)
-        net_info->req_method = eReqMethod_Connect;
+    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port) && port){
+        if (net_info.get())
+            net_info->req_method = eReqMethod_Connect;
+    }
 
     if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
+        _ASSERT(net_info);  // otherwise ConnNetInfo_ParseURL() would fail
         if (net_info->req_method == eReqMethod_Connect) {
             return new CConn_SocketStream(*net_info, 0, 0,
                                           fSOCK_LogDefault, net_info->timeout,
@@ -929,6 +984,7 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
         case eURL_File:
             if (*net_info->host  ||  net_info->port)
                 break; /*not supported*/
+            _ASSERT(!*net_info->args);
             if (net_info->debug_printout)
                 ConnNetInfo_Log(net_info.get(), eLOG_Note, CORE_GetLOG());
             return new CConn_FileStream(net_info->path);

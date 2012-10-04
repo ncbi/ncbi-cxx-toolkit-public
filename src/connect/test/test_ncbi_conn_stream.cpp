@@ -129,13 +129,13 @@ int main(int argc, const char* argv[])
     srand(g_NCBI_ConnectRandomSeed);
 
 
-    LOG_POST(Info << "Test 0 of 8: Checking error log setup");
+    LOG_POST(Info << "Test 0 of 9: Checking error log setup");
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
     LOG_POST(Info << "Test 0 passed\n");
 
 
-    LOG_POST("Test 1 of 8: Memory stream");
+    LOG_POST("Test 1 of 9: Memory stream");
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
     size = 0;
@@ -242,7 +242,7 @@ int main(int argc, const char* argv[])
              (int) size << " byte(s) transferred\n");
 
 
-    LOG_POST("Test 2 of 8: FTP download");
+    LOG_POST("Test 2 of 9: FTP download");
     if (!(net_info = ConnNetInfo_Create(0)))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
@@ -279,7 +279,7 @@ int main(int argc, const char* argv[])
              " byte(s) downloaded via FTP\n");
 
 
-    LOG_POST("Test 3 of 8: FTP upload");
+    LOG_POST("Test 3 of 9: FTP upload");
     string ftpuser, ftppass, ftpfile;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
         CTime start(CTime::eCurrent);
@@ -367,7 +367,7 @@ int main(int argc, const char* argv[])
         LOG_POST("Test 3 skipped\n");
 
 
-    LOG_POST("Test 4 of 8: FTP peculiarities");
+    LOG_POST("Test 4 of 9: FTP peculiarities");
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
         // Note that FTP streams are not buffered for the sake of command
@@ -438,7 +438,7 @@ int main(int argc, const char* argv[])
     }}
 
 
-    LOG_POST("Test 5 of 8: Big buffer bounce via HTTP");
+    LOG_POST("Test 5 of 9: Big buffer bounce via HTTP");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHTTP_AutoReconnect | fHTTP_Flushable |
                          fHTTP_UrlEncodeArgs);
@@ -487,7 +487,7 @@ int main(int argc, const char* argv[])
     ios.clear();
 
 
-    LOG_POST("Test 6 of 8: Random bounce");
+    LOG_POST("Test 6 of 9: Random bounce");
 
     if (!(ios << buf1))
         ERR_POST(Fatal << "Cannot send data");
@@ -536,7 +536,7 @@ int main(int argc, const char* argv[])
     ios.clear();
 
 
-    LOG_POST("Test 7 of 8: Truly binary bounce");
+    LOG_POST("Test 7 of 9: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
         buf1[i] = (char)(255/*rand()%256*/);
@@ -571,7 +571,7 @@ int main(int argc, const char* argv[])
     delete[] buf2;
 
 
-    LOG_POST("Test 8 of 8: NcbiStreamCopy()");
+    LOG_POST("Test 8 of 9: NcbiStreamCopy()");
 
     ofstream null(DEV_NULL);
     assert(null);
@@ -585,6 +585,30 @@ int main(int argc, const char* argv[])
         ERR_POST(Fatal << "Test 8 failed");
     else
         LOG_POST("Test 8 passed\n");
+
+
+    LOG_POST("Test 9 of 9: HTTP status code and text");
+
+    CConn_HttpStream bad_http("http://www.ncbi.nlm.nih.gov/blah");
+    bad_http >> ftpfile/*dummy*/;
+
+    int    code = bad_http.GetStatusCode();
+    string text = bad_http.GetStatusText();
+    NcbiCout << "Status(bad) = " << code << ' ' << text << NcbiEndl;
+    if (code != 404  ||  text.empty())
+        ERR_POST(Fatal << "Test 9 failed");
+    bad_http.Close();
+
+    CConn_HttpStream good_http("http://www.ncbi.nlm.nih.gov/index.html");
+    good_http >> ftpfile/*dummy*/;
+
+    code = good_http.GetStatusCode();
+    text = good_http.GetStatusText();
+    NcbiCout << "Status(good) = " << code << ' ' << text << NcbiEndl;
+    if (code != 200  ||  text.empty())
+        ERR_POST(Fatal << "Test 9 failed");
+
+    LOG_POST("Test 9 passed\n");
 
 
     CORE_SetREG(0);

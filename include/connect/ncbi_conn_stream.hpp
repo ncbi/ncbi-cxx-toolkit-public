@@ -551,6 +551,33 @@ public:
      size_t              buf_size     = kConn_DefaultBufSize
      );
 
+    /// Get the last seen HTTP status code
+    int           GetStatusCode(void) const { return m_Code; }
+
+    /// Get the last seen HTTP status text
+    const string& GetStatusText(void) const { return m_Text; }
+
+protected:
+    // Chained callbacks
+    FHTTP_ParseHeader m_UserParseHeader;
+    void*             m_UserData;
+    FHTTP_Adjust      m_UserAdjust;
+    FHTTP_Cleanup     m_UserCleanup;
+
+    // HTTP status & text seen last
+    int               m_Code;
+    string            m_Text;
+
+private:
+    // Interceptors
+    static EHTTP_HeaderParse x_ParseHeader(const char*   header,
+                                           void*         data,
+                                           int           code);
+    static int               x_Adjust     (SConnNetInfo* net_info,
+                                           void*         data,
+                                           unsigned int  count);
+    static void              x_Cleanup    (void*         data);
+
 private:
     // Disable copy constructor and assignment.
     CConn_HttpStream(const CConn_HttpStream&);
