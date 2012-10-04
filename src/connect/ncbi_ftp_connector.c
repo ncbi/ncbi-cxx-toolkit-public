@@ -1456,7 +1456,7 @@ static EIO_Status x_FTPSzcb(SFTPConnector* xxx, int code,
 {
     EIO_Status status = eIO_Success;
     if (!lineno  &&  (code == 125  ||  code == 150)) {
-        const char* comment = strrchr(line,  '(');
+        const char* comment = strrchr(line, '(');
         size_t n, m;
         if (comment  &&  strchr(++comment, ')')
             &&  (n = strspn(comment, kDigits)) > 0
