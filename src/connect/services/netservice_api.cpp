@@ -283,7 +283,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     // Initialize the connect library and LBSM structures
     // used in DiscoverServersIfNeeded().
     {
-        class CInPlaceConnIniter : public CConnIniter
+        class CInPlaceConnIniter : protected CConnIniter
         {
         } conn_initer;
     }

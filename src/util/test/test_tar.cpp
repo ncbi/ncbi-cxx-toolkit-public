@@ -163,14 +163,11 @@ CTarTest::CTarTest()
 void CTarTest::Init(void)
 {
 #ifdef TEST_CONN_TAR
-
-    class CPrivateIniter : public CConnIniter {
-    public:
-        CPrivateIniter(void)
-        { }
-    };
-    CPrivateIniter init;
-
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;
+    }
 #  if   defined(NCBI_OS_MSWIN)
     SetConsoleCtrlHandler(s_Interrupt, TRUE);
 #  elif defined(NCBI_OS_UNIX)
