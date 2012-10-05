@@ -36,9 +36,7 @@
 /// @file ncbistr_util.hpp
 /// Algorithms for string processing
 
-#include <corelib/ncbitype.h>
-
-#include <string>
+#include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -48,6 +46,7 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+class CStrTokenizeBase;
 
 /// Do-nothing token position container
 ///
@@ -57,27 +56,12 @@ struct CStrDummyTokenPos
     void reserve(string::size_type) {}
 };
 
-/// Base class for string splitting 
-///
-struct CStrTokenizeBase
-{
-    /// Whether to merge adjacent delimiters
-    enum EMergeDelims {
-        eNoMergeDelims,     ///< No merging of delimiters
-        eMergeDelims        ///< Merge the delimiters
-    };
-};
-
-
 /// Do nothing token counter 
 ///
-template<class TStr>
 struct CStrDummyTokenCount
 {
     static
-    size_t Count(const TStr&     /*str*/,
-                 const TStr&     /*delim*/,
-                 CStrTokenizeBase::EMergeDelims /*merge*/) 
+    size_t Count(CStrTokenizeBase& /*tokenizer*/)
     {
         return 0;
     }
@@ -89,18 +73,115 @@ struct CStrDummyTokenCount
 /// (may be the case if we use deque<> as a target container and tokenize 
 /// large text)
 ///
-template<class TStr, class TV, class TP, class TCount>
+template<class TV, class TP>
 struct CStrDummyTargetReserve
 {
     static
-    void Reserve(const TStr&     /*str*/, 
-                 const TStr&     /*delim*/,
-                 TV&             /*target*/,
-                 CStrTokenizeBase::EMergeDelims /*merge*/,
-                 TP&             /*token_pos*/)
+    void Reserve(CStrTokenizeBase& /*tokenizer*/, 
+                 TV&               /*target*/,
+                 TP&               /*token_pos*/)
     {}
 };
 
+
+/// Singly-linked list of substrings that will constitute a single
+/// Split/Tokenize piece, optimized for the typical one-node case.
+class CTempStringList
+{
+public:
+    CTempStringList() : m_LastNode(NULL) { }
+
+    void   Add(const CTempString& s);
+    void   Clear(void);
+    void   Join(string* s) const;
+    void   Join(CTempStringEx* s) const;
+    size_t GetSize(void) const;
+
+private:
+    struct SNode
+    {
+        SNode() { }
+        SNode(const CTempString& s) : str(s) { }
+
+        CTempString     str;
+        auto_ptr<SNode> next;
+    };
+
+    SNode  m_FirstNode;
+    SNode *m_LastNode;
+};
+
+inline
+void CTempStringList::Add(const CTempString& s)
+{
+    if (m_LastNode == NULL) {
+        m_FirstNode.str = s;
+        m_LastNode = &m_FirstNode;
+    } else {
+        m_LastNode->next.reset(new SNode(s));
+        m_LastNode = m_LastNode->next.get();
+    }
+}
+
+inline
+void CTempStringList::Clear(void)
+{
+    m_FirstNode.str.clear();
+    m_FirstNode.next.reset();
+    m_LastNode = NULL;
+}
+
+class CStrTokenizeBase
+{
+public:
+    typedef NStr::TSplitFlags TFlags;
+
+    CStrTokenizeBase(const CTempString& str, const CTempString& delim,
+                     TFlags flags);
+
+    SIZE_TYPE GetPos(void) const { return m_Pos; }
+    bool      AtEnd (void) const { return m_Pos == NPOS; }
+
+    bool Advance   (CTempStringList* part_collector);
+    void SkipDelims(void);
+
+    void SetDelim(const CTempString& delim);
+
+protected:
+    const CTempString& m_Str;
+    CTempString        m_Delim;
+    SIZE_TYPE          m_Pos;
+    TFlags             m_Flags;
+
+private:
+    void x_ExtendInternalDelim(void);
+
+    CTempStringEx m_InternalDelim;
+};
+
+inline
+CStrTokenizeBase::CStrTokenizeBase(const CTempString& str,
+                                   const CTempString& delim,
+                                   TFlags flags)
+    : m_Str(str), m_Pos(0), m_Flags(flags)
+{
+    SetDelim(delim);
+}
+
+inline
+void CStrTokenizeBase::SetDelim(const CTempString& delim)
+{
+    m_Delim = delim;
+    if ((m_Flags & NStr::fSplit_ByPattern) == 0) {
+        m_InternalDelim = m_Delim;
+    } else {
+        m_InternalDelim.assign(m_Delim, 0, 1);
+    }
+
+    if ((m_Flags & (NStr::fSplit_CanEscape | NStr::fSplit_CanQuote)) != 0) {
+        x_ExtendInternalDelim();
+    }
+}
 
 /// Main tokenization algorithm
 ///
@@ -113,8 +194,8 @@ struct CStrDummyTargetReserve
 template<class TStr, 
          class TV, 
          class TP = CStrDummyTokenPos, 
-         class TCount = CStrDummyTokenCount<TStr>,
-         class TReserve = CStrDummyTargetReserve<TStr, TV, TP, TCount> > 
+         class TCount = CStrDummyTokenCount,
+         class TReserve = CStrDummyTargetReserve<TV, TP> > 
 class CStrTokenize : public CStrTokenizeBase
 {
 public:
@@ -123,76 +204,69 @@ public:
     typedef TP       TPosContainer;
     typedef TCount   TCountTrait;
     typedef TReserve TReserveTrait;
-public:
 
-    /// Tokenize a string using the specified set of char delimiters.
+    /// Constructor
     ///
     /// @param str
     ///   String to be tokenized.
     /// @param delim
     ///   Set of char delimiters used to tokenize string "str".
     ///   If delimiter is empty, then input string is appended to "arr" as is.
+    /// @param flags
+    ///   Flags governing splitting.
+    ///   Without NStr::fSplit_MergeDelims, delimiters that immediately follow
+    ///   each other are treated as separate delimiters - empty string(s) 
+    ///   appear in the target output.
+    ///
+    CStrTokenize(const TString& str, const TString& delim, TFlags flags)
+        : CStrTokenizeBase(str, delim, flags) 
+        { }
+
+    /// Tokenize the string using the specified set of char delimiters.
+    ///
     /// @param target
     ///   Output container. 
     ///   Tokens defined in "str" by using symbols from "delim" are added
     ///   to the list "target".
-    /// @param merge
-    ///   Whether to merge the delimiters or not. 
-    ///   eNoMergeDelims means that delimiters that immediately follow each
-    ///    other are treated as separate delimiters - empty string(s) appear 
-    ///    in the target output.
     /// @param token_pos
     ///   Container for the tokens' positions in "str".
     /// @param empty_str
     ///   String added to target when there are no other characters between
     ///   delimiters
     ///
-    static
-    void Do(const TString&     str,
-            const TString&     delim,
-            TContainer&        target,
-            EMergeDelims       merge,
+    void Do(TContainer&        target,
             TPosContainer&     token_pos,
             const TString&     empty_str = TString())
     {
         // Special cases
-        if (str.empty()) {
+        if (m_Str.empty()) {
             return;
-        } else if (delim.empty()) {
-            target.push_back(str);
+        } else if (m_Delim.empty()) {
+            target.push_back(m_Str);
             token_pos.push_back(0);
             return;
         }
 
         // Do target space reservation (if applicable)
-        TReserveTrait::Reserve(str, delim, target, merge, token_pos);
+        TReserveTrait::Reserve(*this, target, token_pos);
+
+        // Reposition to just after any initial delimiters
+        m_Pos = 0;
+        SkipDelims();
 
         // Tokenization
         //
-        string::size_type pos, prev_pos;
-        for (pos = 0;;) {
-            prev_pos = (merge == eMergeDelims ? 
-                            str.find_first_not_of(delim, pos) : pos);
-            if (prev_pos == TString::npos) {
-                break;
-            }
-            pos = str.find_first_of(delim, prev_pos);
-            if (pos == TString::npos) {
-                // Avoid using temporary objects
-                // ~ arr.push_back(str.substr(prev_pos));
+        CTempStringList part_collector;
+        SIZE_TYPE       prev_pos;
+        do {
+            prev_pos = m_Pos;
+            if (Advance(&part_collector)) {
                 target.push_back(empty_str);
-                target.back().assign(str, prev_pos, str.length() - prev_pos);
+                part_collector.Join(&target.back());
+                part_collector.Clear();
                 token_pos.push_back(prev_pos);
-                break;
-            } else {
-                // Avoid using temporary objects
-                // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
-                target.push_back(empty_str);
-                target.back().assign(str, prev_pos, pos - prev_pos);
-                token_pos.push_back(prev_pos);
-                ++pos;
             }
-        } // for        
+        } while ( !AtEnd() );
     }
 };
 
@@ -202,27 +276,16 @@ public:
 struct CStringTokenCount
 {
     static
-    size_t Count(const string&                  str,
-                 const string&                  delim,
-                 CStrTokenizeBase::EMergeDelims merge) 
+    size_t Count(CStrTokenizeBase& tokenizer)
     {
-        string::size_type pos, prev_pos;
         size_t tokens = 0;
 
-        // Count number of tokens         
-        for (pos = 0;;) {
-            prev_pos = (merge == CStrTokenizeBase::eMergeDelims ? 
-                            str.find_first_not_of(delim, pos) : pos);
-            if (prev_pos == NPOS) {
-                break;
-            } 
-            pos = str.find_first_of(delim, prev_pos);
-            ++tokens;
-            if (pos == NPOS) {
-                break;
+        do {
+            if (tokenizer.Advance(NULL)) {
+                ++tokens;
             }
-            ++pos;
-        }
+        } while ( !tokenizer.AtEnd() );
+
         return tokens;
     }
 };
@@ -230,20 +293,18 @@ struct CStringTokenCount
 
 /// Target reservation trait (applies for vector<>)
 ///
-template<class TStr, class TV, class TP, class TCount>
+template<class TV, class TP, class TCount>
 struct CStrTargetReserve
 {
     static
-    void Reserve(const TStr&     str, 
-                 const TStr&     delim,
-                 TV&             target,
-                 CStrTokenizeBase::EMergeDelims  merge,
-                 TP&             token_pos)
+    void Reserve(CStrTokenizeBase& tokenizer,
+                 TV&               target,
+                 TP&               token_pos)
     {
-        // Reserve vector size only for empty vectors.
-        // For vectors which already have items this usualy works slower.
+        // Reserve vector size only for empty vectors.  For vectors which
+        // already have items this has been known to work more slowly.
         if ( target.empty() ) {
-            size_t tokens = TCount::Count(str, delim, merge);
+            size_t tokens = TCount::Count(tokenizer);
             if (tokens) { 
                 token_pos.reserve(tokens);
                 target.reserve(tokens);

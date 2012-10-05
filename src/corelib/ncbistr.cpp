@@ -2892,154 +2892,67 @@ string& NStr::ReplaceInPlace(string& src,
 
 template<typename TString, typename TContainer>
 TContainer& s_Split(const TString& str, const TString& delim,
-                    TContainer& arr, NStr::EMergeDelims merge,
+                    TContainer& arr, NStr::TSplitFlags flags,
                     vector<SIZE_TYPE>* token_pos)
 {
     typedef CStrTokenPosAdapter<vector<SIZE_TYPE> >         TPosArray;
-    typedef CStrDummyTargetReserve<TString, TContainer, 
-            TPosArray, CStrDummyTokenCount<TString > >      TReserve;
+    typedef CStrDummyTargetReserve<TContainer, TPosArray>   TReserve;
     typedef CStrTokenize<TString, TContainer, TPosArray,
-                         CStrDummyTokenCount<TString>,
-                         TReserve>                          TSplitter;
+                         CStrDummyTokenCount, TReserve>     TSplitter;
+
     TPosArray token_pos_proxy(token_pos);
-    TSplitter::Do(str, delim, arr, 
-                  (CStrTokenizeBase::EMergeDelims)merge, 
-                  token_pos_proxy,
-                  kEmptyStr);
+    TSplitter splitter(str, delim, flags);
+    splitter.Do(arr, token_pos_proxy, kEmptyStr);
     return arr;
 }
 
 
 list<string>& NStr::Split(const CTempString& str, const CTempString& delim,
-                          list<string>& arr, EMergeDelims merge,
+                          list<string>& arr, TSplitFlags flags,
                           vector<SIZE_TYPE>* token_pos)
 {
-    return s_Split(str, delim, arr, merge, token_pos);
-
-/*
-    // Special cases
-    if (str.empty()) {
-        return arr;
-    } else if (delim.empty()) {
-        arr.push_back(str);
-        if (token_pos)
-            token_pos->push_back(0);
-        return arr;
-    }
-
-    for (SIZE_TYPE pos = 0; ; ) {
-        SIZE_TYPE prev_pos = (merge == eMergeDelims
-                              ? str.find_first_not_of(delim, pos)
-                              : pos);
-        if (prev_pos == NPOS) {
-            break;
-        }
-        pos = str.find_first_of(delim, prev_pos);
-        if (pos == NPOS) {
-            // Avoid using temporary objects
-            // ~ arr.push_back(str.substr(prev_pos));
-            arr.push_back(kEmptyStr);
-            arr.back().assign(str, prev_pos, str.length() - prev_pos);
-            if (token_pos)
-                token_pos->push_back(prev_pos);
-            break;
-        } else {
-            // Avoid using temporary objects
-            // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
-            arr.push_back(kEmptyStr);
-            arr.back().assign(str, prev_pos, pos - prev_pos);
-            if (token_pos)
-                token_pos->push_back(prev_pos);
-            ++pos;
-        }
-    }
-    return arr;
-*/
+    return s_Split(str, delim, arr, flags, token_pos);
 }
 
+list<CTempStringEx>& NStr::Split(const CTempString& str,
+                                 const CTempString& delim,
+                                 list<CTempStringEx>& arr, TSplitFlags flags,
+                                 vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, flags, token_pos);
+}
 
-list<CTempString>& NStr::Split(const CTempString& str, const CTempString& delim,
+list<CTempString>& NStr::Split(const CTempString& str,
+                               const CTempString& delim,
                                list<CTempString>& arr, EMergeDelims merge,
                                vector<SIZE_TYPE>* token_pos)
 {
-    return s_Split(str, delim, arr, merge, token_pos);
+    vector<CTempStringEx> arr2;
+    Tokenize(str, delim, arr2,
+             (merge == eMergeDelims) ? fSplit_MergeDelims : 0, token_pos);
+    ITERATE (vector<CTempStringEx>, it, arr2) {
+        _ASSERT( !it->OwnsData() );
+        arr.push_back(*it);
+    }
+    return arr;
 }
 
 
 vector<string>& NStr::Tokenize(const CTempString& str, const CTempString& delim,
-                               vector<string>& arr, EMergeDelims merge,
+                               vector<string>& arr, TSplitFlags flags,
                                vector<SIZE_TYPE>* token_pos)
 {
-    return s_Split(str, delim, arr, merge, token_pos);
-
-/*
-    // Special cases
-    if (str.empty()) {
-        return arr;
-    } else if (delim.empty()) {
-        arr.push_back(str);
-        if (token_pos)
-            token_pos->push_back(0);
-        return arr;
-    }
-
-    SIZE_TYPE pos, prev_pos;
-
-    // Reserve vector size only for empty vectors.
-    // For vectors which already have items this usualy works slower.
-    if ( !arr.size() ) {
-        // Count number of tokens to determine the array size
-        size_t tokens = 0;
-        
-        for (pos = 0;;) {
-            prev_pos = (merge == NStr::eMergeDelims ? 
-                            str.find_first_not_of(delim, pos) : pos);
-            if (prev_pos == NPOS) {
-                break;
-            } 
-            pos = str.find_first_of(delim, prev_pos);
-            ++tokens;
-            if (pos == NPOS) {
-                break;
-            }
-            ++pos;
-        }
-        arr.reserve(tokens);
-        if (token_pos)
-            token_pos->reserve(tokens);
-
-    }
-
-    // Tokenization
-    for (pos = 0;;) {
-        prev_pos = (merge == eMergeDelims ? 
-                        str.find_first_not_of(delim, pos) : pos);
-        if (prev_pos == NPOS) {
-            break;
-        }
-        pos = str.find_first_of(delim, prev_pos);
-        if (pos == NPOS) {
-            // Avoid using temporary objects
-            // ~ arr.push_back(str.substr(prev_pos));
-            arr.push_back(kEmptyStr);
-            arr.back().assign(str, prev_pos, str.length() - prev_pos);
-            if (token_pos)
-                token_pos->push_back(prev_pos);
-            break;
-        } else {
-            // Avoid using temporary objects
-            // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
-            arr.push_back(kEmptyStr);
-            arr.back().assign(str, prev_pos, pos - prev_pos);
-            if (token_pos)
-                token_pos->push_back(prev_pos);
-            ++pos;
-        }
-    }
-    return arr;
-*/
+    return s_Split(str, delim, arr, flags, token_pos);
 }
 
+vector<CTempStringEx>& NStr::Tokenize(const CTempString& str,
+                                      const CTempString& delim,
+                                      vector<CTempStringEx>& arr,
+                                      TSplitFlags        flags,
+                                      vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, flags, token_pos);
+}
 
 vector<CTempString>& NStr::Tokenize(const CTempString& str,
                                     const CTempString& delim,
@@ -3047,94 +2960,33 @@ vector<CTempString>& NStr::Tokenize(const CTempString& str,
                                     EMergeDelims merge,
                                     vector<SIZE_TYPE>* token_pos)
 {
-    return s_Split(str, delim, arr, merge, token_pos);
-}
-
-vector<string>& NStr::TokenizePattern(const CTempString& str,
-                                      const CTempString& pattern,
-                                      vector<string>&    arr,
-                                      EMergeDelims       merge,
-                                      vector<SIZE_TYPE>* token_pos)
-{
-    vector<CTempString> tsa;
-    TokenizePattern(str, pattern, tsa, merge, token_pos);
-    if (arr.empty()) {
-        arr.reserve(tsa.size());
+    vector<CTempStringEx> arr2;
+    Tokenize(str, delim, arr2,
+             (merge == eMergeDelims) ? fSplit_MergeDelims : 0, token_pos);
+    arr.reserve(arr.size() + arr2.size());
+    ITERATE (vector<CTempStringEx>, it, arr2) {
+        _ASSERT( !it->OwnsData() );
+        arr.push_back(*it);
     }
-    copy(tsa.begin(), tsa.end(), back_inserter(arr));
     return arr;
 }
 
-vector<CTempString>& NStr::TokenizePattern(const CTempString&   str,
-                                           const CTempString&   pattern,
+
+vector<CTempString>& NStr::TokenizePattern(const CTempString& str,
+                                           const CTempString& delim,
                                            vector<CTempString>& arr,
-                                           EMergeDelims         merge,
-                                           vector<SIZE_TYPE>*   token_pos)
+                                           EMergeDelims merge,
+                                           vector<SIZE_TYPE>* token_pos)
 {
-    // Special cases
-    if (str.empty()) {
-        return arr;
-    } else if (pattern.empty()) {
-        // Avoid using temporary objects
-        //~ arr.push_back(str);
-        arr.push_back(kEmptyStr);
-        arr.back().assign(str.data(), str.length());
-        if (token_pos)
-            token_pos->push_back(0);
-        return arr;
-    }
-
-    SIZE_TYPE pos, prev_pos;
-
-    // Reserve vector size only for empty vectors.
-    // For vectors which already have items this usualy works slower.
-    if ( !arr.size() ) {
-        // Count number of tokens to determine the array size
-        size_t tokens = 0;
-        for (pos = 0, prev_pos = 0; ; ) {
-            pos = str.find(pattern, prev_pos);
-            if ( merge != eMergeDelims  ||  pos > prev_pos ) {
-                if (pos == NPOS) {
-                    if (merge != eMergeDelims  ||  
-                        prev_pos < str.length() ) {
-                        ++tokens;
-                    }
-                    break;
-                }
-                ++tokens;
-            }
-            prev_pos = pos + pattern.length();
-        }
-        arr.reserve(tokens);
-        if (token_pos)
-            token_pos->reserve(tokens);
-    }
-
-    // Tokenization
-    for (pos = 0, prev_pos = 0; ; ) {
-        pos = str.find(pattern, prev_pos);
-        if ( merge != eMergeDelims  ||  pos > prev_pos ) {
-            if (pos == NPOS) {
-                if (merge != eMergeDelims  ||  
-                    prev_pos < str.length() ) {
-                    // Avoid using temporary objects
-                    // ~ arr.push_back(str.substr(prev_pos));
-                    arr.push_back(kEmptyStr);
-                    arr.back().assign(str.data(), prev_pos,
-                                      str.length() - prev_pos);
-                    if (token_pos)
-                        token_pos->push_back(prev_pos);
-                }
-                break;
-            }
-            // Avoid using temporary objects
-            // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
-            arr.push_back(kEmptyStr);
-            arr.back().assign(str.data(), prev_pos, pos - prev_pos);
-            if (token_pos)
-                token_pos->push_back(prev_pos);
-        }
-        prev_pos = pos + pattern.length();
+    vector<CTempStringEx> arr2;
+    Tokenize(str, delim, arr2,
+             fSplit_ByPattern 
+             | ((merge == eMergeDelims) ? fSplit_MergeDelims : 0),
+             token_pos);
+    arr.reserve(arr.size() + arr2.size());
+    ITERATE (vector<CTempStringEx>, it, arr2) {
+        _ASSERT( !it->OwnsData() );
+        arr.push_back(*it);
     }
     return arr;
 }
@@ -3142,38 +2994,74 @@ vector<CTempString>& NStr::TokenizePattern(const CTempString&   str,
 
 bool NStr::SplitInTwo(const CTempString& str, 
                       const CTempString& delim,
-                      string& str1, string& str2, EMergeDelims merge)
+                      string& str1, string& str2, TSplitFlags flags)
 {
-    CTempString ts1, ts2;
-    bool result = SplitInTwo(str, delim, ts1, ts2, merge);
+    CTempStringEx ts1, ts2;
+    bool result = SplitInTwo(str, delim, ts1, ts2, flags);
     str1 = ts1;
     str2 = ts2;
     return result;
 }
 
-bool NStr::SplitInTwo(const CTempString& str, 
-                      const CTempString& delim,
+bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
                       CTempString& str1, CTempString& str2, EMergeDelims merge)
 {
-    SIZE_TYPE delim_pos = str.find_first_of(delim);
-    if (NPOS == delim_pos) {
-        // only one piece
-        str1 = str;
-        str2 = kEmptyStr;
-        return false;
-    }
-    str1.assign(str.data(), 0, delim_pos);
+    CTempStringEx tsx1, tsx2;
+    bool result = SplitInTwo(str, delim, tsx1, tsx2,
+                             (merge == eMergeDelims) ? fSplit_MergeDelims : 0);
+    _ASSERT( !tsx1.OwnsData() );
+    _ASSERT( !tsx2.OwnsData() );
+    str1 = tsx1;
+    str2 = tsx2;
+    return result;
+}
 
-    // Skip merged delimeters if needed
-    SIZE_TYPE next_pos = (merge == eMergeDelims
-                          ? str.find_first_not_of(delim, delim_pos + 1)
-                          : delim_pos + 1);
-    if (next_pos == NPOS) {
-        str2 = kEmptyStr;
+bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
+                      CTempStringEx& str1, CTempStringEx& str2,
+                      TSplitFlags flags)
+{
+    typedef CStrTokenize<CTempString, int, CStrDummyTokenPos,
+                         CStrDummyTokenCount,
+                         CStrDummyTargetReserve<int, int> > TSplitter;
+
+    CTempStringList part_collector;
+    TSplitter       splitter(str, delim, flags);
+    bool            found_delim;
+
+    splitter.SkipDelims();
+    if (splitter.GetPos() == 0) {
+        splitter.Advance(&part_collector);
+        part_collector.Join(&str1);
+        part_collector.Clear();
+        if (splitter.AtEnd()) {
+            // check for trailing delimiter
+            if ((flags & fSplit_ByPattern) != 0) {
+                found_delim = NStr::EndsWith(str, delim);
+            } else {
+                found_delim = ( !str.empty()
+                               &&  delim.find(str[str.size()-1]) != NPOS);
+            }
+            if (found_delim  &&  (flags & fSplit_CanEscape) != 0) {
+                SIZE_TYPE dsz = ((flags & fSplit_ByPattern) == 0 ? 1
+                                   : delim.size());
+                if (str.size() > dsz  &&  str[str.size() - dsz - 1] == '\\') {
+                    found_delim = false; // actually escaped
+                }
+            }
+        } else {
+            found_delim = true;
+        }
     } else {
-        str2.assign(str.data(), next_pos, str.length() - next_pos);
+        found_delim = true;
+        str1.clear();
     }
-    return true;
+
+    // don't need further splitting, just quote and escape parsing
+    splitter.SetDelim(kEmptyStr);
+    splitter.Advance(&part_collector);
+    part_collector.Join(&str2);        
+
+    return found_delim;
 }
 
 
@@ -5656,6 +5544,178 @@ CTempString::CTempString(const string& str, size_type len)
 {
 } // NCBI_FAKE_WARNING
 
+
+
+void CTempStringList::Join(string* s) const
+{
+    s->reserve(GetSize());
+    *s = m_FirstNode.str;
+    for (const SNode* node = m_FirstNode.next.get();  node != NULL;
+         node = node->next.get()) {
+        s->append(node->str.data(), node->str.size());
+    }
+}
+
+
+void CTempStringList::Join(CTempStringEx* s) const
+{
+    if (m_FirstNode.next.get() == NULL) {
+        *s = m_FirstNode.str;
+    } else {
+        SIZE_TYPE n = GetSize();
+        AutoPtr<char, ArrayDeleter<char> > buf(new char[n + 1]);
+        char* p = buf.get();
+        for (const SNode* node = &m_FirstNode;  node != NULL;
+             node = node->next.get()) {
+            memcpy(p, node->str.data(), node->str.size());
+            p += node->str.size();
+        }
+        _ASSERT(p == buf.get() + n);
+        *p = '\0';
+        s->assign(buf.release(), n,
+                  CTempStringEx::fHasZeroAtEnd | CTempStringEx::fOwnsData);
+    }
+}
+
+
+SIZE_TYPE CTempStringList::GetSize(void) const
+{
+    SIZE_TYPE total = m_FirstNode.str.size();
+    for (const SNode* node = m_FirstNode.next.get();  node != NULL;
+         node = node->next.get()) {
+        total += node->str.size();
+    }
+    return total;
+}
+
+
+bool CStrTokenizeBase::Advance(CTempStringList* part_collector)
+{
+    SIZE_TYPE pos = m_Pos, part_start = m_Pos, delim_pos = 0, quote_pos = 0;
+    bool      found_text = false, done = (pos == NPOS);
+    char      active_quote = '\0';
+
+    if (pos >= m_Str.size()) {
+        pos = NPOS;
+        done = true;
+    }
+
+    // Each chunk covers the half-open interval [part_start, delim_pos).
+
+    while ( !done
+           &&  ((delim_pos = m_Str.find_first_of(m_InternalDelim, pos))
+                != NPOS)) {
+        SIZE_TYPE next_start = pos = delim_pos + 1;
+        bool      handled    = false;
+        char      c          = m_Str[delim_pos];
+
+        if ((m_Flags & NStr::fSplit_CanEscape) != 0  &&  c == '\\') {
+            // treat the following character literally
+            if (++pos > m_Str.size()) {
+                NCBI_THROW2(CStringException, eFormat, "Unescaped trailing \\",
+                            delim_pos);
+            }
+            handled = true;
+        } else if ((m_Flags & NStr::fSplit_CanQuote) != 0) {
+            if (active_quote != '\0') {
+                if (c == active_quote) {
+                    if (pos < m_Str.size()  &&  m_Str[pos] == active_quote) {
+                        // count a doubled quote as one literal occurrence
+                        ++pos;
+                    } else {
+                        active_quote = '\0';
+                    }
+                } else {
+                    continue; // not actually a boundary
+                }
+                handled = true;
+            } else if (((m_Flags & NStr::fSplit_CanSingleQuote) != 0
+                        && c == '\'')
+                       ||  ((m_Flags & NStr::fSplit_CanDoubleQuote) != 0
+                            && c == '"')) {
+                active_quote = c;
+                quote_pos    = delim_pos;
+                handled = true;
+            }
+        }
+
+        if ( !handled ) {
+            if ((m_Flags & NStr::fSplit_ByPattern) != 0) {
+                if (delim_pos + m_Delim.size() <= m_Str.size()
+                    &&  (memcmp(m_Delim.data() + 1, m_Str.data() + pos,
+                                m_Delim.size() - 1) == 0)) {
+                    done = true;
+                    next_start = pos = delim_pos + m_Delim.size();
+                } else {
+                    continue;
+                }
+            } else {
+                done = true;
+            }
+        }
+
+        if (delim_pos > part_start) {
+            found_text = true;
+            if (part_collector != NULL) {
+                part_collector->Add
+                    (m_Str.substr(part_start, delim_pos - part_start));
+            }
+        }
+        part_start = next_start;
+    }
+
+    if (active_quote != '\0') {
+        NCBI_THROW2(CStringException, eFormat,
+                    string("Unbalanced ") + active_quote,
+                    quote_pos);
+    }
+
+    if (delim_pos == NPOS) {
+        found_text = true;
+        if (part_collector != NULL) {
+            part_collector->Add(m_Str.substr(part_start));
+        }
+        m_Pos = NPOS;
+    } else {
+        m_Pos = pos;
+        SkipDelims();
+    }
+
+    return found_text  ||  (m_Flags & NStr::fSplit_MergeDelims) == 0;
+}
+
+void CStrTokenizeBase::SkipDelims(void)
+{
+    if ((m_Flags & NStr::fSplit_MergeDelims) != 0) {
+        if ((m_Flags & NStr::fSplit_ByPattern) == 0) {
+            m_Pos = m_Str.find_first_not_of(m_Delim, m_Pos);
+        } else {
+            while (m_Pos + m_Delim.size() <= m_Str.size()
+                   &&  (memcmp(m_Delim.data(), m_Str.data() + m_Pos,
+                               m_Delim.size()) == 0)) {
+                m_Pos += m_Delim.size();
+            }
+        }
+    }
+}
+
+void CStrTokenizeBase::x_ExtendInternalDelim(void)
+{
+    SIZE_TYPE n = m_InternalDelim.size();
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[n + 3]);
+    char *s = buf.get();
+    memcpy(s, m_InternalDelim.data(), n);
+    if ((m_Flags & NStr::fSplit_CanEscape) != 0) {
+        s[n++] = '\\';
+    }
+    if ((m_Flags & NStr::fSplit_CanSingleQuote) != 0) {
+        s[n++] = '\'';
+    }
+    if ((m_Flags & NStr::fSplit_CanDoubleQuote) != 0) {
+        s[n++] = '"';
+    }
+    m_InternalDelim.assign(buf.release(), n, CTempStringEx::fOwnsData);
+}
 
 
 END_NCBI_NAMESPACE;
