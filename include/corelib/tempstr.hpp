@@ -85,6 +85,10 @@ public:
     CTempString(const CTempString& str, size_type pos);
     CTempString(const CTempString& str, size_type pos, size_type len);
 
+#ifdef NCBI_TEMPSTR_USE_A_COPY
+    ~CTempString(void) { x_DestroyCopy(); }
+#endif
+
     /// copy a substring into a string
     /// Somewhat similar to basic_string::assign()
     void Copy(string& dst, size_type pos, size_type length) const;
@@ -218,12 +222,12 @@ private:
     bool x_Equals(const_iterator it2, size_type len2) const;
     bool x_Less(const_iterator it2, size_type len2) const;
 
-    #if defined(NCBI_TEMPSTR_USE_A_COPY)
+protected:
     /// @attention This (making copy of the string) is turned off by default!
     void x_MakeCopy(void);
     /// @attention This (making copy of the string) is turned off by default!
     void x_DestroyCopy(void);
-    #endif
+    typedef AutoPtr<char, ArrayDeleter<char> > TDeferredCopyDestroyer;
 };
 
 
@@ -251,7 +255,7 @@ bool operator==(const string& str1, const CTempString& str2)
 // SWIG. Making copies in the CTempString allows using this class naturally in
 // the generated Python wrappers.
 #  define NCBI_TEMPSTR_MAKE_COPY()     x_MakeCopy()
-#  define NCBI_TEMPSTR_DESTROY_COPY()  x_DestroyCopy()
+#  define NCBI_TEMPSTR_DESTROY_COPY()  TDeferredCopyDestroyer GUARD(m_String)
 #else
 #  define NCBI_TEMPSTR_MAKE_COPY()
 #  define NCBI_TEMPSTR_DESTROY_COPY()
@@ -351,7 +355,6 @@ void CTempString::x_Init(const char* str, size_type str_len,
 }
 
 
-#if defined(NCBI_TEMPSTR_USE_A_COPY)
 inline
 void CTempString::x_MakeCopy()
 {
@@ -369,7 +372,6 @@ void CTempString::x_DestroyCopy(void)
     m_String = NULL;
     m_Length = 0;
 }
-#endif
 
 
 inline
@@ -839,73 +841,136 @@ bool CTempString::operator<(const CTempString& str) const
 class CTempStringEx : public CTempString
 {
 public:
-    enum EZeroAtEnd {
+    enum EFlags {
+        fHasZeroAtEnd = 1 << 0,
+        fOwnsData     = 1 << 1,
+        fMakeCopy     = 1 << 2
+    };
+    typedef int TFlags;
+
+    enum EZeroAtEnd { ///< For compatibility with older code
         eNoZeroAtEnd,
         eHasZeroAtEnd
     };
     CTempStringEx(void)
-        : m_ZeroAtEnd(eNoZeroAtEnd)
+        : m_Flags(0)
         {
         }
     CTempStringEx(const char* str)
         : CTempString(str),
-          m_ZeroAtEnd(eHasZeroAtEnd)
+          m_Flags(fHasZeroAtEnd)
         {
         }
     CTempStringEx(const char* str, size_type len)
         : CTempString(str, len),
-          m_ZeroAtEnd(eNoZeroAtEnd)
+          m_Flags(0)
         {
+        }
+    CTempStringEx(const char* str, size_type len, TFlags flags)
+        : CTempString(str, len),
+          m_Flags(flags)
+        {
+#ifdef NCBI_TEMPSTR_MAKE_COPY // avoid leaking first allocation
+            m_Flags = fHasZeroAtEnd | fOwnsData;
+#else
+            x_MakeCopy();
+#endif
         }
     CTempStringEx(const char* str, size_type len, EZeroAtEnd zero_at_end)
         : CTempString(str, len),
-          m_ZeroAtEnd(zero_at_end)
+          m_Flags(zero_at_end == eHasZeroAtEnd ? fHasZeroAtEnd : 0)
         {
         }
     CTempStringEx(const string& str)
         : CTempString(str.c_str(), str.size()),
-          m_ZeroAtEnd(eHasZeroAtEnd)
+          m_Flags(fHasZeroAtEnd)
         {
         }
     CTempStringEx(const string& str, size_type pos, size_type len)
         : CTempString(str, pos, len),
-          m_ZeroAtEnd(eNoZeroAtEnd)
+          m_Flags(0)
         {
         }
     CTempStringEx(const CTempString& str)
         : CTempString(str),
-          m_ZeroAtEnd(eNoZeroAtEnd)
+          m_Flags(0)
         {
         }
     CTempStringEx(const CTempString& str, size_type pos)
         : CTempString(str, pos),
-          m_ZeroAtEnd(eNoZeroAtEnd)
+          m_Flags(0)
         {
         }
     CTempStringEx(const CTempString& str, size_type pos, size_type len)
         : CTempString(str, pos, len),
-          m_ZeroAtEnd(eNoZeroAtEnd)
+          m_Flags(0)
         {
+        }
+
+    CTempStringEx& operator=(const CTempStringEx& str)
+        {
+            assign(static_cast<const CTempString&>(str));
+            m_Flags |= str.m_Flags & fHasZeroAtEnd;
+            return *this;
         }
 
     /// Assign new values to the content of the a string
     CTempStringEx& assign(const char* str, size_type len)
         {
-            m_ZeroAtEnd = eNoZeroAtEnd;
+            TDeferredCopyDestroyer GUARD(const_cast<char*>(data()),
+                                         GetOwnership());
+            if (OwnsData()  &&  str > data()  &&  str <= data() + size()) {
+                m_Flags = fMakeCopy;
+            } else {
+                m_Flags = 0;
+            }
             CTempString::assign(str, len);
+            return *this;
+        }
+    CTempStringEx& assign(const char* str, size_type len, TFlags flags)
+        {
+            TDeferredCopyDestroyer GUARD(const_cast<char*>(data()),
+                                         GetOwnership());
+            if (OwnsData()  &&  str > data()  &&  str <= data() + size()) {
+                m_Flags = flags | fMakeCopy;
+            } else {
+                m_Flags = flags;
+            }
+            CTempString::assign(str, len);
+            x_MakeCopy();
             return *this;
         }
     CTempStringEx& assign(const char* str, size_type len,
                           EZeroAtEnd zero_at_end)
         {
-            m_ZeroAtEnd = zero_at_end;
+            TDeferredCopyDestroyer GUARD(const_cast<char*>(data()),
+                                         GetOwnership());
+            if (OwnsData()  &&  str > data()  &&  str <= data() + size()) {
+                m_Flags = fMakeCopy;
+            } else {
+                m_Flags = 0;
+            }
+            if (zero_at_end == eHasZeroAtEnd) {
+                m_Flags |= fHasZeroAtEnd;
+            }
             CTempString::assign(str, len);
+            x_MakeCopy();
             return *this;
         }
     CTempStringEx& assign(const CTempString& str)
         {
-            m_ZeroAtEnd = eNoZeroAtEnd;
-            CTempString::assign(str);
+            if (&str != this) {
+                TDeferredCopyDestroyer GUARD(const_cast<char*>(data()),
+                                             GetOwnership());
+                if (OwnsData()  &&  str.data() > data()
+                    &&  str.data() <= data() + size()) {
+                    m_Flags = fMakeCopy;
+                } else {
+                    m_Flags = 0;
+                }
+                CTempString::assign(str);
+                x_MakeCopy();
+            }
             return *this;
         }
     CTempStringEx& assign(const CTempStringEx& str)
@@ -916,16 +981,39 @@ public:
                           size_type          off, 
                           size_type          count)
         {
-            m_ZeroAtEnd = eNoZeroAtEnd;
+            TDeferredCopyDestroyer GUARD(const_cast<char*>(data()),
+                                         GetOwnership());
+            if (OwnsData()  &&  str.data() > data()
+                &&  str.data() <= data() + size()) {
+                m_Flags = fMakeCopy;
+            } else {
+                m_Flags = 0;
+            }
             CTempString::assign(str, off, count);
+            x_MakeCopy();
             return *this;
         }
 
     /// Clear value to an empty string
     void clear(void)
         {
+            x_DestroyCopy();
             CTempString::clear();
-            m_ZeroAtEnd = eHasZeroAtEnd;
+            m_Flags = fHasZeroAtEnd;
+        }
+
+    /// Truncate the string at some specified position
+    void erase(size_type pos = 0)
+        {
+            if (pos <= 0) {
+                clear();
+            } else if (pos < size()) {
+                m_Flags &= ~fHasZeroAtEnd;
+                CTempString::erase(pos);
+                if (data()[pos] == '\0') {
+                    m_Flags |= fHasZeroAtEnd;
+                }
+            }
         }
 
     /// Obtain a substring from this string, beginning at a given offset
@@ -936,7 +1024,7 @@ public:
                 pos = max;
             }
             size_type rem = max - pos;
-            return CTempStringEx(data()+pos, rem, m_ZeroAtEnd);
+            return CTempStringEx(data() + pos, rem, m_Flags & fHasZeroAtEnd);
         }
     /// Obtain a substring from this string, beginning at a given offset
     /// and extending a specified length
@@ -947,21 +1035,55 @@ public:
                 pos = max;
             }
             size_type rem = max - pos;
-            EZeroAtEnd zero_at_end = eNoZeroAtEnd;
+            TFlags flags = 0;
             if ( len >= rem ) {
                 len = rem;
-                zero_at_end = m_ZeroAtEnd;
+                flags = m_Flags & fHasZeroAtEnd;
             }
-            return CTempStringEx(data()+pos, len, zero_at_end);
+            return CTempStringEx(data() + pos, len, flags);
         }
 
     bool HasZeroAtEnd(void) const
         {
-            return m_ZeroAtEnd != eNoZeroAtEnd;
+            return (m_Flags & fHasZeroAtEnd) != 0;
+        }
+
+    bool OwnsData(void) const
+        {
+            return (m_Flags & fOwnsData) != 0;
+        }
+
+    EOwnership GetOwnership(void) const
+        {
+            return OwnsData() ? eTakeOwnership : eNoOwnership;
+        }
+
+protected:
+    void x_MakeCopy(void)
+        {
+#ifdef NCBI_TEMPSTR_USE_A_COPY
+            m_Flags = fHasZeroAtEnd | fOwnsData;
+#else
+            if ((m_Flags & fMakeCopy) != 0) {
+                CTempString::x_MakeCopy();
+                m_Flags = fHasZeroAtEnd | fOwnsData;
+            }
+#endif
+        }
+    void x_DestroyCopy(void)
+        {
+#ifdef NCBI_TEMPSTR_USE_A_COPY
+            m_Flags = 0;
+#else
+            if ((m_Flags & fOwnsData) != 0) {
+                CTempString::x_DestroyCopy();
+                m_Flags = 0;
+            }
+#endif
         }
 
 private:
-    EZeroAtEnd m_ZeroAtEnd;
+    TFlags m_Flags;
 };
 
 END_NCBI_SCOPE
