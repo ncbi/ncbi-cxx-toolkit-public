@@ -3756,6 +3756,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MPE	s	F. R. Long Herbarium",
 "MPEF-PV	s	Muso Paleontologico Egidio Fergulio",
 "MPEG	s	Museu Paraense Emilio Goeldi",
+"MPEP	s	Musee de Paleontologie et de l'evolution",
 "MPGB	s	Museum of Portuguese Guinea",
 "MPKV	c	Biological Nitrogen Fixation Project College of Agriculture",
 "MPL	s	Musee de Port Louis",
