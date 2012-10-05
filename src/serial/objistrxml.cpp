@@ -1662,7 +1662,7 @@ TMemberIndex CObjectIStreamXml::FindDeep(TTypeInfo type,
 void CObjectIStreamXml::ReadContainer(const CContainerTypeInfo* containerType,
                                       TObjectPtr containerPtr)
 {
-    if ( containerType->GetName().empty() ) {
+    if ( m_StdXml || containerType->GetName().empty() ) {
         ReadContainerContents(containerType, containerPtr);
     }
     else {
@@ -1678,7 +1678,7 @@ void CObjectIStreamXml::ReadContainer(const CContainerTypeInfo* containerType,
 
 void CObjectIStreamXml::SkipContainer(const CContainerTypeInfo* containerType)
 {
-    if ( containerType->GetName().empty() ) {
+    if ( m_StdXml || containerType->GetName().empty() ) {
         SkipContainerContents(containerType);
     }
     else {
