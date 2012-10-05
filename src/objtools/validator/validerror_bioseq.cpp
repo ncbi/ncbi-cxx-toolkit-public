@@ -2931,6 +2931,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
 
+    bool is_circular = false;
+    if (inst.GetTopology() == CSeq_inst::eTopology_circular) {
+      is_circular = true;
+    }
+
     // Get CMolInfo and tech used for validating technique and gap positioning
     const CMolInfo* mi = 0;
     CSeqdesc_CI mi_desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Molinfo);
@@ -3135,8 +3140,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
                         sev = eDiag_Warning;
                     }
-                    PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
-                        "First delta seq component is a gap", seq);
+                    if (! is_circular) {
+                        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
+                            "First delta seq component is a gap", seq);
+                    }
                 }
                 if ( last_is_gap ) {
                     ++num_adjacent_gaps;
@@ -3206,8 +3213,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             || tech == CMolInfo::eTech_htgs_2 || tech == CMolInfo::eTech_htgs_3) {
             sev = eDiag_Warning;
         }
-        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
-            "Last delta seq component is a gap", seq);
+        if (! is_circular) {
+            PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
+                "Last delta seq component is a gap", seq);
+        }
     }
     
     // Validate technique
