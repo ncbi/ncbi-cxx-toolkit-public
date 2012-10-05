@@ -2051,8 +2051,8 @@ public:
 
     /// Flags for Split(InTwo) and Tokenize.  With quote support enabled,
     /// doubling a quote character suppresses its special meaning, as does
-    /// escaping it if that's enabled too; also, the effects of unbalanced
-    /// quotes are undefined.
+    /// escaping it if that's enabled too; unescaped trailing backslashes
+    /// and unbalanced quotes result in exceptions.
     enum ESplitFlags {
         fSplit_MergeDelims     = 1 << 0, ///< Merge adjacent delimiters
         fSplit_ByPattern       = 1 << 1, ///< Require full delimiter strings
