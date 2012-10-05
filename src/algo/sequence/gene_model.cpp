@@ -661,14 +661,25 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
             s_TransformToNucpos((*exon_it)->SetProduct_start());
             s_TransformToNucpos((*exon_it)->SetProduct_end());
         }
+
+        CRef<CSpliced_exon> last_exon =
+            fake_transcript_align->SetSegs().SetSpliced().SetExons().back(); 
+        bool aligned_to_the_end = 
+            last_exon->GetProduct_end().GetNucpos()+1==
+            fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()*3;
+        if (found_stop_codon && !aligned_to_the_end) {
+            NCBI_THROW(CException, eUnknown,
+                       "found_stop_codon && !aligned_to_the_end");
+        }
+
         fake_transcript_align->SetSegs().SetSpliced().SetProduct_length() = 
-            fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()*3+3;
+            fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()*3 +
+            ((found_stop_codon || !aligned_to_the_end)?3:0);
 
         if (found_stop_codon) {
             /// Extend last exon to include stop codon
-            CRef<CSpliced_exon> last_exon =
-                fake_transcript_align->SetSegs().SetSpliced().SetExons().back(); 
             last_exon->SetProduct_end().SetNucpos() += 3;
+
             if (last_exon->IsSetGenomic_strand() ?
                     last_exon->GetGenomic_strand() == eNa_strand_minus :
                     (fake_transcript_align->GetSegs().GetSpliced()
@@ -697,6 +708,9 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
         if (!found_start_codon &&
             fake_transcript_align->SetSegs().SetSpliced().SetExons().front()->GetProduct_start().GetNucpos()==0) {
             cds_on_fake_mrna_loc->SetPartialStart(true, eExtreme_Biological);
+        }
+        if (!found_stop_codon && aligned_to_the_end) {
+            cds_on_fake_mrna_loc->SetPartialStop(true, eExtreme_Biological);
         }
         cd_feat->SetLocation(*cds_on_fake_mrna_loc);
 
