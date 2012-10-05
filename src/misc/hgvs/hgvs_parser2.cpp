@@ -249,18 +249,18 @@ void RepackageAssertedSequence(CVariation& vr)
 //for non-coding RNAs, so we'll convert rna moltype to cdna based on accession here.
 //Note that this is a post-processing step, as in the midst of parsing we want to treat
 //NM_123456.7:r. as non-coding rna, since these have absolute coordinates rather than cds-relative.
-void AdjustMoltype(CVariation& vr)
+void AdjustMoltype(CVariation& vr, CScope& scope)
 {
+    CVariationUtil util(scope);
+
     for(CTypeIterator<CVariantPlacement> it(Begin(vr)); it; ++it) {
         CVariantPlacement& p = *it;
 
         if(p.IsSetMol() 
            && p.GetMol() == CVariantPlacement::eMol_rna
-           && p.GetLoc().GetId()
-           && (   p.GetLoc().GetId()->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna
-               || p.GetLoc().GetId()->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna_predicted))
+           && p.GetLoc().GetId())
         {
-            p.SetMol(CVariantPlacement::eMol_cdna);
+            p.SetMol(util.GetMolType(*p.GetLoc().GetId()));
         }
     }
 }
@@ -1780,7 +1780,7 @@ CRef<CVariation> CHgvsParser::x_root(TIterator const& i, const CContext& context
     CRef<CVariation> vr = x_list(i, context);
 
     RepackageAssertedSequence(*vr);
-    AdjustMoltype(*vr);
+    AdjustMoltype(*vr, context.GetScope());
     CVariationUtil::s_FactorOutPlacements(*vr);
     
     vr->Index();
