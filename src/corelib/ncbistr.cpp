@@ -5690,7 +5690,7 @@ void CStrTokenizeBase::SkipDelims(void)
         if ((m_Flags & NStr::fSplit_ByPattern) == 0) {
             m_Pos = m_Str.find_first_not_of(m_Delim, m_Pos);
         } else {
-            while (m_Pos + m_Delim.size() <= m_Str.size()
+            while (m_Pos + m_Delim.size() <= m_Str.size()  &&  m_Pos != NPOS
                    &&  (memcmp(m_Delim.data(), m_Str.data() + m_Pos,
                                m_Delim.size()) == 0)) {
                 m_Pos += m_Delim.size();
