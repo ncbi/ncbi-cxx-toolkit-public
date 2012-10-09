@@ -844,7 +844,7 @@ void CChainer::CChainerImpl::FindContainedAlignments(vector<SChainMember*>& poin
     }
 }
 
-#define START_BONUS 350
+#define START_BONUS 600
 
 void CChainer::CChainerImpl::LeftRight(vector<SChainMember*>& pointers)
 {
@@ -1147,9 +1147,12 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         m_gnomon->GetScore(chain);
         mi.MarkIncludedAllContainedAlignments(chain.Limits());
 
-        double ms = GoodCDNAScore(chain);
-        if(chain.Score() == BadScore() || (0.5*chain.Score() < ms && (chain.Type() & CGeneModel::eProt) == 0 && !chain.ConfirmedStart()))
+        if(chain.Score() == BadScore())
             continue;
+        if((chain.Type() & CGeneModel::eProt) == 0 && !chain.ConfirmedStart() && 
+           chain.Score() < 2*minscor.m_min && chain.FShiftedLen(chain.GetCdsInfo().Cds(),true) <  2*minscor.m_cds_len)
+            continue;
+
         TSignedSeqRange n_rf = chain.ReadingFrame();
         if(!i_rf.IntersectingWith(n_rf))
             continue;
@@ -1196,10 +1199,11 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         if ((chain.Type() & CGeneModel::eProt)==0 && !chain.ConfirmedStart()) 
             RemovePoorCds(chain,ms);
         if(chain.Score() != BadScore()) {
+            mi.MarkIncludedAllContainedAlignments(chain.Limits());
             chain.ClipToCompleteAlignment(CGeneModel::eCap);
             chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
             chain.ClipLowCoverageUTR();
-            mi.MarkIncludedAllContainedAlignments(chain.Limits());
+            //            mi.MarkIncludedAllContainedAlignments(chain.Limits());
             NON_CONST_ITERATE(vector<SChainMember*>, j, pointers) {
                 SChainMember& mj = **j;
                 const CGeneModel& align = *mj.m_align;
@@ -1249,12 +1253,13 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
             RemovePoorCds(chain,ms);
         }
 
+        mi.MarkIncludedAllContainedAlignments(chain.Limits());
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
         chain.ClipLowCoverageUTR();
 
         chains.push_back(chain);
-        mi.MarkIncludedAllContainedAlignments(chain.Limits());
+        //        mi.MarkIncludedAllContainedAlignments(chain.Limits());
     }
 
     CombineChainsForPartialProteins(chains, coding_pointers);
