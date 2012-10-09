@@ -320,6 +320,58 @@ void COrf::FindOrfs(const CSeqVector& orig_vec,
 }
 
 
+void COrf::FindStrongKozakUOrfs(
+                   const CSeqVector& seq,
+                   TSeqPos cds_start,
+                   TLocVec& overlap_results,
+                   TLocVec& non_overlap_results,
+                   unsigned int min_length_bp,
+                   unsigned int non_overlap_min_length_bp,
+                   int genetic_code)
+{
+    if (cds_start > seq.size()) {
+        NCBI_THROW(CException, eUnknown,
+                   "cds_start not within input CSeqVector");
+    }
+
+    if (cds_start <= 3) {
+        /// 5' UTR is too short for there to possihly be a uORF
+        return;
+    }
+
+    vector<string> start_codon(1, "ATG");
+    TLocVec ORFs;
+    FindOrfs(seq, ORFs, min_length_bp, genetic_code, start_codon, false);
+    ITERATE (TLocVec, it, ORFs) {
+        if ((*it)->GetStrand() == eNa_strand_minus) {
+            /// We're only intersted in ORFs on the plus strand
+            continue;
+        }
+        TSeqPos ORF_start = (*it)->GetStart(eExtreme_Biological),
+                ORF_end = (*it)->GetStop(eExtreme_Biological);
+        /// We're only intersted in uORFs, i.e. ORFs starting before CDS start;
+        /// and only if they start after at least 3 bases and at least 5 bases
+        /// before end, so there can be a Kozak signal
+        /// overlapping uORFs count only if they're in a different frame;
+        /// non-overlapping uORFs count only if long enough
+        if (ORF_start < 3 || ORF_start >= cds_start ||
+            ORF_start + 5 > seq.size() ||
+            (ORF_end >= cds_start ? (cds_start - ORF_start) % 3 == 0
+                           : ORF_end - ORF_start < non_overlap_min_length_bp))
+        {
+            continue;
+        }
+        string Kozak_signal;
+        seq.GetSeqData(ORF_start - 3, ORF_start + 5, Kozak_signal);
+        if ((Kozak_signal[0] == 'A' || Kozak_signal[0] == 'G') &&
+            Kozak_signal[6] == 'G' && Kozak_signal[7] != 'T')
+        {
+            (ORF_end >= cds_start ? overlap_results : non_overlap_results)
+                . push_back(*it);
+        }
+    }
+}
+
 // build an annot representing CDSs
 CRef<CSeq_annot>
 COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CSeq_id* id)

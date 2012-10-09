@@ -84,6 +84,18 @@ public:
                          const vector<string>& allowable_starts = vector<string>(),
                          bool longest_orfs = true);
 
+    /// Specifically find ORFS with a strong Kozak signal that are upstream of
+    /// cds_start. Separately report uORFS overlapping cds start and uORFs of
+    /// sufficiantly length that don't overlap cds start
+    static void FindStrongKozakUOrfs(
+                         const objects::CSeqVector& seq,
+                         TSeqPos cds_start,
+                         TLocVec& overlap_results,
+                         TLocVec& non_overlap_results,
+                         unsigned int min_length_bp = 3,
+                         unsigned int non_overlap_min_length_bp = 105,
+                         int genetic_code = 1);
+
     /**
     /// This version returns an annot full of CDS features.
     /// Optionally takes a CSeq_id (by CRef) for use in
