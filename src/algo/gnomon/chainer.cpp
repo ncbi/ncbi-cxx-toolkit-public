@@ -209,7 +209,7 @@ public:
     void RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns);
     void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns);
     void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
-    void ClipLowCoverageUTR();
+    void ClipLowCoverageUTR(double utr_clip_threshold);
     void CalculatedSupportAndWeightFromMembers();
     void RecalculateAfterClip();
 
@@ -1202,7 +1202,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
             mi.MarkIncludedAllContainedAlignments(chain.Limits());
             chain.ClipToCompleteAlignment(CGeneModel::eCap);
             chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
-            chain.ClipLowCoverageUTR();
+            chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
             //            mi.MarkIncludedAllContainedAlignments(chain.Limits());
             NON_CONST_ITERATE(vector<SChainMember*>, j, pointers) {
                 SChainMember& mj = **j;
@@ -1256,7 +1256,7 @@ void CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, list<CChain>& cha
         mi.MarkIncludedAllContainedAlignments(chain.Limits());
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
-        chain.ClipLowCoverageUTR();
+        chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
 
         chains.push_back(chain);
         //        mi.MarkIncludedAllContainedAlignments(chain.Limits());
@@ -1853,9 +1853,8 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
 #define SCAN_WINDOW 50
 #define MIN_UTR 20
 #define MIN_UTR_EXON 15
-#define SCAN_THRESHOLD 0.05
 
-void CChain::ClipLowCoverageUTR()
+void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
 {
     if(ReadingFrame().Empty() || (Type()&CGeneModel::eSR) == 0)   // not coding or don't have SR coverage
         return;
@@ -1924,7 +1923,7 @@ void CChain::ClipLowCoverageUTR()
 
         int len = right_limit-left_limit+1;
 
-        while(left_limit > 0 && window_wlen/SCAN_WINDOW > max(cds_coverage,wlen/len)*SCAN_THRESHOLD) {
+        while(left_limit > 0 && window_wlen/SCAN_WINDOW > max(cds_coverage,wlen/len)*utr_clip_threshold) {
 
             //            cerr << amap.MapEditedToOrig(left_limit) << ' ' << coverage[left_limit] << ' ' << window_wlen/SCAN_WINDOW << ' ' << max(cds_coverage,wlen/len) << endl;
 
@@ -1963,7 +1962,7 @@ void CChain::ClipLowCoverageUTR()
 
         int len = right_limit-left_limit+1;
             
-        while(right_limit < mrna_len-1 && window_wlen/SCAN_WINDOW > wlen/len*SCAN_THRESHOLD) {
+        while(right_limit < mrna_len-1 && window_wlen/SCAN_WINDOW > wlen/len*utr_clip_threshold) {
             ++len;
             ++right_limit;
             wlen += coverage[right_limit];
@@ -3207,6 +3206,10 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddDefaultKey("lenpen", "lenpen",
                             "Penalty for total length",
                             CArgDescriptions::eDouble, "0.005");
+    arg_desc->AddDefaultKey("utrclipthreshold", "utrclipthreshold",
+                            "Relative coverage for clipping low support UTRs",
+                            CArgDescriptions::eDouble, "0.01");
+
 }
 
 void CGnomonAnnotator_Base::SetHMMParameters(CHMMParameters* params)
@@ -3263,6 +3266,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     minscor.m_endprotfrac = args["endprotfrac"].AsDouble();
     minscor.m_prot_cds_len = args["protcdslen"].AsInteger();
     minscor.m_cds_len = args["longenoughcds"].AsInteger();
+    minscor.m_utr_clip_threshold = args["utrclipthreshold"].AsDouble();
 
     chainer->SetMinInframeFrac(args["mininframefrac"].AsDouble());
     

@@ -53,6 +53,7 @@ struct SMinScor {
     double m_endprotfrac;
     int m_prot_cds_len;
     int m_cds_len;
+    double m_utr_clip_threshold;
 };
 
 
