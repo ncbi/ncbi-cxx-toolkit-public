@@ -4948,10 +4948,12 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     // no more warnings if circular - changed to still show first/last delta component
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
     expected_errors[0]->SetAccession("USA1_1");
     expected_errors[1]->SetAccession("USA1_1");
+    */
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
