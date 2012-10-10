@@ -1570,7 +1570,10 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
         if(lim.Empty() || !Include(lim,alim)) {
 
             bool add_some_introns = false;
-            for(set<CGeneModel*,AlignSeqOrder>::const_reverse_iterator k = ca.rbegin(); k != ca.rend() && !add_some_introns; ++k) {
+            for(set<CGeneModel*,AlignSeqOrder>::const_iterator kk = ca.end(); kk != ca.begin() && !add_some_introns; --kk) {
+                set<CGeneModel*,AlignSeqOrder>::const_iterator k = kk;
+                --k;
+                //            for(set<CGeneModel*,AlignSeqOrder>::const_reverse_iterator k = ca.rbegin(); k != ca.rend() && !add_some_introns; ++k) {
                 const CGeneModel& align = **k;
                 for(int i = (int)align.Exons().size()-1; !add_some_introns && i > 0; --i) {
                     add_some_introns = align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice && 
