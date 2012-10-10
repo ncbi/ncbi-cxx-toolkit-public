@@ -1601,7 +1601,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
         const CCode_break& cbr = **it;
         const CSeq_loc& cbr_loc = cbr.GetLoc();
         ECompare comp = Compare(cbr_loc, feat_loc, m_Scope);
-        if ( (comp != eContained) && (comp != eSame)) {
+        if ( ((comp != eContained) && (comp != eSame)) || cbr_loc.IsNull() || cbr_loc.IsEmpty()) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
                 "Code-break location not in coding region", feat);
         } else if (feat.IsSetProduct()) {
