@@ -388,10 +388,6 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                 combined_aligns.push_back(align);
 
             NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, it, actual_features){
-                /// Call SetFeatureExceptions() again, to verify that multiple calls
-                /// are handled correctly
-                generator.SetFeatureExceptions(**it, clean_align.GetPointer());
-
                 /// Add to combined annot, unless this is a gene feature that
                 /// was already added. Also, don't add the RNA feature from the
                 /// very first alignment (to test recomputation of the partial flag

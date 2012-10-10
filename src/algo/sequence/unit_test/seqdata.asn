@@ -15400,7 +15400,7 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_5",
+                product-id local str "MRNA_2",
                 genomic-id gi 251791816,
                 genomic-strand minus,
                 product-type transcript,
@@ -15531,7 +15531,7 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_9",
+                product-id local str "MRNA_3",
                 genomic-id gi 17158061,
                 genomic-strand plus,
                 product-type transcript,
@@ -15659,7 +15659,7 @@ FE0587313BC3E37E3ACFCC388012BC5C8C32C3B545005E203F0030103C77340C5D27BE4FEF2630
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_13",
+                product-id local str "MRNA_4",
                 genomic-id gi 251791816,
                 genomic-strand minus,
                 product-type transcript,
@@ -15792,7 +15792,7 @@ BF5EBD1746A78E88015B363CECEA200D067442D16F9487C1500A32599CF9C19DC0107E9C604800
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_17",
+                product-id local str "MRNA_5",
                 genomic-id gi 17158061,
                 genomic-strand plus,
                 product-type transcript,
@@ -15920,7 +15920,7 @@ Bioseq-set ::= {
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_21",
+                product-id local str "MRNA_6",
                 genomic-id gi 385839642,
                 genomic-strand plus,
                 product-type transcript,
@@ -16032,7 +16032,7 @@ E18146D03F4F3E8E1C0C00255C58502C289F201ECEE149312C0374B42C51421C2040C0'H,
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_25",
+                product-id local str "MRNA_7",
                 genomic-id gi 385839642,
                 genomic-strand plus,
                 product-type transcript,
@@ -16147,7 +16147,7 @@ Bioseq-set ::= {
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_29",
+                product-id local str "MRNA_8",
                 genomic-id gi 238801501,
                 genomic-strand minus,
                 product-type transcript,
@@ -16258,7 +16258,7 @@ EBDEB81405B0C0BA416F0998C0B1980D9E018039787C064921BE09A43993AF82B1E564B3AB3EC3
               type disc,
               dim 2,
               segs spliced {
-                product-id local str "MRNA_33",
+                product-id local str "MRNA_9",
                 genomic-id gi 291482369,
                 genomic-strand plus,
                 product-type transcript,
