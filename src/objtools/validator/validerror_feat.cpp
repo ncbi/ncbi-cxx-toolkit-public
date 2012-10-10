@@ -6432,6 +6432,16 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                 if (!not_set) {
                     string except_char = "";
                     except_char += ex;
+                    if (prot_pos == 0 && ex != 'M') {
+                        if ((! feat.IsSetPartial()) || (! feat.GetPartial())) {
+                            string msg = "Suspicious transl_except ";
+                            msg += ex;
+                            msg += " at first codon of complete CDS";
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                                     msg,
+                                     feat);
+                        }
+                    }
                     if (prot_pos < transl_prot.length()) {
                         if (len - from < 2 && NStr::Equal (except_char, "*")) {
                             // this is a necessary terminal transl_except
