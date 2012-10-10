@@ -526,7 +526,8 @@ bool CBioseqContext::IsRSPredictedProtein(void)  const
 inline
 bool CBioseqContext::IsRSWGSNuc(void)  const
 {
-    return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_nuc;  // NZ_
+    // ignore "master" bit if it's there
+    return (m_RefseqInfo & ~CSeq_id::fAcc_master) == CSeq_id::eAcc_refseq_wgs_nuc;  // NZ_
 }
 
 inline
