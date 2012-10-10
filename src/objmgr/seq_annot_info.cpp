@@ -1030,6 +1030,9 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
         if ( info.IsRemoved() ) {
             continue;
         }
+        if ( m_Table_Info->RowIsDisabled(row) ) {
+            continue;
+        }
         size_t keys_begin = m_ObjectIndex.GetKeys().size();
         index.m_AnnotObject_Info = &info;
         bool partial = m_Table_Info->IsPartial(row);

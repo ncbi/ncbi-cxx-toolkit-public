@@ -85,6 +85,11 @@ public:
 
     bool IsSet(size_t row) const;
 
+    bool GetBool(size_t row) const
+        {
+            bool val = false;
+            return *this && m_Column->TryGetBool(row, val) && val;
+        }
     bool GetBool(size_t row, bool& v, bool force = false) const
         {
             return m_Column->TryGetBool(row, v) ||
@@ -243,7 +248,12 @@ public:
     const CSeqTableLocColumns& GetProduct(void) const {
         return m_Product;
     }
-    bool IsPartial(size_t row) const;
+    bool RowIsDisabled(size_t row) const {
+        return m_Disabled.GetBool(row);
+    }
+    bool IsPartial(size_t row) const {
+        return m_Partial.GetBool(row);
+    }
 
     // returns null if column not found
     const CSeqTableColumnInfo* FindColumn(int field_id) const;
@@ -262,6 +272,7 @@ private:
     void x_Initialize(const CSeq_table& table);
 
     bool m_IsFeatTable;
+    CSeqTableColumnInfo m_Disabled;
     CSeqTableLocColumns m_Location;
     CSeqTableLocColumns m_Product;
     CSeqTableColumnInfo m_Partial;

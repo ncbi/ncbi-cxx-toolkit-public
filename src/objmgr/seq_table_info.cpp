@@ -906,6 +906,14 @@ void CSeqTableInfo::x_Initialize(const CSeq_table& feat_table)
                 m_Partial = CSeqTableColumnInfo(col);
                 continue;
             }
+            else if ( name == "disabled" ) {
+                if ( m_Disabled ) {
+                    NCBI_THROW_FMT(CAnnotException, eOtherError,
+                                   "Duplicate disabled column");
+                }
+                m_Disabled = CSeqTableColumnInfo(col);
+                continue;
+            }
             if ( !setter ) {
                 try {
                     setter = new CSeqTableSetAnyFeatField(name);
@@ -929,13 +937,6 @@ void CSeqTableInfo::x_Initialize(const CSeq_table& feat_table)
 
 CSeqTableInfo::~CSeqTableInfo()
 {
-}
-
-
-bool CSeqTableInfo::IsPartial(size_t row) const
-{
-    bool val = false;
-    return m_Partial && m_Partial.GetBool(row, val) && val;
 }
 
 
