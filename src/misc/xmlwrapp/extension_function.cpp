@@ -153,7 +153,7 @@ namespace xslt {
     void extension_function::set_return_value (const xpath_object &  ret_val)
     {
         if (pimpl_->xpath_parser_ctxt == NULL)
-            throw xslt::exception("Reporting XSLT extension function error "
+            throw xslt::exception("Setting XSLT extension function return value "
                                   "out XSLT context.");
 
         xmlXPathObjectPtr   object = reinterpret_cast<xmlXPathObjectPtr>(
