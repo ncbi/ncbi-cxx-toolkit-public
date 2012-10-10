@@ -37,12 +37,12 @@
 #include "module.hpp"
 #include "srcutil.hpp"
 #include <serial/impl/enumerated.hpp>
+#include "stdstr.hpp"
 
 BEGIN_NCBI_SCOPE
 
 CEnumDataType::CEnumDataType(void)
 {
-    ForbidVar("_type", "string");
 }
 
 const char* CEnumDataType::GetASNKeyword(void) const
@@ -413,6 +413,22 @@ AutoPtr<CTypeStrings> CEnumDataType::GetRefCType(void) const
 
 AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
 {
+// in case client wants std type instead of enum.
+// I must be accurate here to not to mess with GetEnumCInfo()
+    string type = GetAndVerifyVar("_type");
+    if (!type.empty()) {
+        if (NStr::EndsWith(type, "string")) {
+            return AutoPtr<CTypeStrings>(
+                new CStringTypeStrings("NCBI_NS_STD::string",Comments(),true));
+        } else if (NStr::EndsWith(type, "CStringUTF8")) {
+            return AutoPtr<CTypeStrings>(
+                new CStringTypeStrings("ncbi::CStringUTF8",Comments(),true));
+        } else if (type == "double") {
+            return AutoPtr<CTypeStrings>(
+                new CStdTypeStrings(type,Comments(),true));
+        }
+    }
+
     SEnumCInfo enumInfo = GetEnumCInfo();
     AutoPtr<CEnumTypeStrings> 
         e(new CEnumTypeStrings(GlobalName(), enumInfo.enumName,
