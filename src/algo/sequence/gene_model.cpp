@@ -948,7 +948,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                              cds_feat_on_genome.GetPointer(), cds_feat_on_mrna.GetPointer());
     }
     if (cds_feat_on_genome) {
-        SetFeatureExceptions(*cds_feat_on_genome, align);
+        SetFeatureExceptions(*cds_feat_on_genome, align, NULL, cds_feat_on_mrna.GetPointer());
     }
 
     return is_protein_align ? cds_feat_on_genome : mrna_feat;
@@ -2482,7 +2482,8 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
 
 
 void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
-                                  const CSeq_align* align)
+                                  const CSeq_align* align,
+                                  const CSeq_feat* cds_feat_on_mrna)
 {
     if ( !feat.IsSetProduct() ) {
         ///
@@ -2593,10 +2594,24 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     // deal with code breaks
     // NB: these should be folded into the translation machinery instead...
     if (feat.GetData().GetCdregion().IsSetCode_break()) {
-        CSeq_loc_Mapper mapper(feat, CSeq_loc_Mapper::eLocationToProduct);
+        CRef<CSeq_loc_Mapper> to_mrna;
+        CRef<CSeq_loc_Mapper> to_prod;
+        if (cds_feat_on_mrna) {
+            to_mrna.Reset(
+                new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Prod));
+            to_prod.Reset(
+                new CSeq_loc_Mapper(*cds_feat_on_mrna,
+                                    CSeq_loc_Mapper::eLocationToProduct));
+        }
         ITERATE (CCdregion::TCode_break, it,
                  feat.GetData().GetCdregion().GetCode_break()) {
-            CRef<CSeq_loc> mapped = mapper.Map((*it)->GetLoc());
+            CRef<CSeq_loc> mrna_loc, mapped;
+            if (to_mrna) {
+               mrna_loc = to_mrna->Map((*it)->GetLoc());
+            }
+            if (mrna_loc) {
+               mapped = to_prod->Map(*mrna_loc);
+            }
             if (mapped) {
                 TSeqRange r = mapped->GetTotalRange();
                 if (r.GetLength() == 1  &&  r.GetFrom() < xlate.size()) {
@@ -2668,14 +2683,22 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it1_end = actual.end();
     string::const_iterator it2     = xlate.begin();
     string::const_iterator it2_end = xlate.end();
-    CSeq_loc_Mapper mapper(feat, CSeq_loc_Mapper::eProductToLocation);
+    CRef<CSeq_loc_Mapper> to_mrna;
+    CRef<CSeq_loc_Mapper> to_genomic;
+    if (cds_feat_on_mrna) {
+        to_mrna.Reset(
+            new CSeq_loc_Mapper(*cds_feat_on_mrna,
+                                CSeq_loc_Mapper::eProductToLocation));
+        to_genomic.Reset(
+            new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Gen));
+    }
     CRef<CSeq_id> cds_id(new CSeq_id);
     cds_id->Assign(*feat.GetProduct().GetId());
     TSeqPos start_pos = feat.GetProduct().GetStart(eExtreme_Positional);
     bool single_interval_product = ++feat.GetProduct().begin()
                                   == feat.GetProduct().end();
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
-        if (*it2 == '*') {
+        if (*it2 == '*' && to_mrna) {
             /// Inte5rnal stop codon; annotate with a code-break instead
             /// of an exception
             if (!single_interval_product) {
@@ -2684,7 +2707,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             }
             TSeqPos pos = it1 - actual.begin() + start_pos;
             CSeq_loc internal_stop_loc(*cds_id, pos, pos);
-            CRef<CSeq_loc> mapped = mapper.Map(internal_stop_loc);
+            CRef<CSeq_loc> mrna_loc = to_mrna->Map(internal_stop_loc);
+            CRef<CSeq_loc> mapped = to_genomic->Map(*mrna_loc);
             char actual_aa = *it1;
             if (!(m_flags & fTrustProteinSeq)) {
                 actual_aa = 'X';
@@ -2837,7 +2861,7 @@ void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
         break;
 
     case CSeqFeatData::e_Cdregion:
-        x_HandleCdsExceptions(feat, align);
+        x_HandleCdsExceptions(feat, align, cds_feat_on_mrna);
         break;
 
     case CSeqFeatData::e_Imp:
