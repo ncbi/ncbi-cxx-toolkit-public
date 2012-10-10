@@ -3234,6 +3234,10 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         ChangeMade(CCleanupChange::eCleanQualifiers);
     }
 
+    if( qual.empty() && val.empty() ) {
+        return eAction_Erase;
+    }
+
     return eAction_Nothing;
 }
 
