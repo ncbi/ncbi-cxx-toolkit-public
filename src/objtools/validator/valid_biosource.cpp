@@ -1341,6 +1341,10 @@ void CValidError_imp::ValidateSubSource
                                 "Bad country capitalization [" + countryname + "]",
                                 obj, ctx);
                 }
+                if (NStr::EndsWith (countryname, ":")) {
+                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                            "Colon at end of country name [" + countryname + "]", obj, ctx);
+               }
             } else {
                 if ( countryname.empty() ) {
                     countryname = "?";
