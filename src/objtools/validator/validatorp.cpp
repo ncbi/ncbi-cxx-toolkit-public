@@ -874,7 +874,7 @@ void CValidError_imp::PostErr
 }
 
 
-static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress_context)
+static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress_context, const string& accn)
 {
     // GetLabel for CBioseq_set does not follow C Toolkit conventions
     // AND is a horrible performance hit for sets with lots of sequences
@@ -906,7 +906,8 @@ static void s_AppendSetLabel(string& str, CValidError_imp::TSet st, bool supress
             str += ": ";
         }
         string content = "";
-        best->GetLabel(&content, CBioseq::eContent, supress_context);
+        content += accn;
+        // best->GetLabel(&content, CBioseq::eContent, supress_context);
         // fix problems with label
         s_FixBioseqLabelProblems(content);
         str += content;
@@ -928,9 +929,9 @@ void CValidError_imp::PostErr
 
     // Append Bioseq_set label
     string desc = "";
-    s_AppendSetLabel(desc, st, m_SuppressContext);
     int version = 0;
     const string& accession = GetAccessionFromObjects(&st, NULL, *m_Scope, &version);
+    s_AppendSetLabel(desc, st, m_SuppressContext, accession);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, accession, version);
 }
 
@@ -1023,13 +1024,13 @@ void CValidError_imp::PostErr
     desc += content;
 
     desc += " ";
-    if (ctx.IsSeq()) {
+   int version = 0;
+   const string& accession = GetAccessionFromObjects(&ds, &ctx, *m_Scope, &version);
+   if (ctx.IsSeq()) {
         AppendBioseqLabel(desc, ctx.GetSeq(), m_SuppressContext);
     } else {
-        s_AppendSetLabel(desc, ctx.GetSet(), m_SuppressContext);
+        s_AppendSetLabel(desc, ctx.GetSet(), m_SuppressContext, accession);
     }
-    int version = 0;
-    const string& accession = GetAccessionFromObjects(&ds, &ctx, *m_Scope, &version);
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, accession, version);
 }
 
