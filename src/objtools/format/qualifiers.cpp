@@ -266,6 +266,43 @@ static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recogni
     return size;
 }
 
+static bool s_AltitudeIsValid(const string & str )
+{
+    // this is the regex we're validating, but for speed and library dependency
+    // reasons, we're using a more raw approach:
+    //
+    // ^[+-]?[0-9]+(\.[0-9]+)?[ ]m\.$
+
+    // we use c-style strings so we don't have to worry about constantly
+    // checking if we're out of bounds: we get a '\0' which lets us be cleaner
+    const char *pch = str.c_str();
+    
+    // optional sign at start
+    if( *pch == '+' || *pch == '-' ) {
+        ++pch;
+    }
+
+    // then a number, maybe with one decimal point
+    if( ! isdigit(*pch) ) {
+        return false;
+    }
+    while( isdigit(*pch) ) {
+        ++pch;
+    }
+    if( *pch == '.' ) {
+        ++pch;
+        if( ! isdigit(*pch) ) {
+            return false;
+        }
+        while( isdigit(*pch) ) {
+            ++pch;
+        }
+    }
+
+    // should end with " m."
+    return NStr::Equal(pch, " m.");
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CFormatQual - low-level formatted qualifier
 
@@ -1223,6 +1260,15 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
             }
             ExpandTildes(subname, eTilde_space);
             x_AddFQ(q, name, subname);
+            break;
+
+        case CSubSource::eSubtype_altitude:
+            // skip invalid /altitudes
+            if( s_AltitudeIsValid(subname) || 
+                ( ! ctx.Config().IsModeRelease() && ! ctx.Config().IsModeEntrez() ) ) 
+            {
+                x_AddFQ(q, name, subname);
+            }
             break;
 
         default:
