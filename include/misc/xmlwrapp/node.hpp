@@ -65,6 +65,13 @@
 #include <string>
 #include <deque>
 
+// Forward declaration for a friend below
+extern "C" { void xslt_ext_func_cb(void *, int); }
+
+namespace xslt {
+class xpath_object;
+}
+
 namespace xml {
 
 // forward declarations
@@ -1220,11 +1227,12 @@ private:
     explicit node (int);
 
     void set_node_data (void *data);
-    void* get_node_data (void);
+    void* get_node_data (void) const;
     void* release_node_data (void);
     friend class tree_parser;
     friend class impl::node_iterator;
     friend class document;
+    friend class xslt::xpath_object;
     friend struct impl::doc_impl;
     friend struct impl::node_cmp;
 
@@ -1246,6 +1254,10 @@ private:
     void* create_xpath_context (const xml::xpath_expression& expr) const;
     void* evaluate_xpath_expression (const xml::xpath_expression& expr, void* context) const;
     ns_list_type get_effective_namespaces (bool excludeDefault = false) const;
+
+    // XSLT extensions support
+    friend void ::xslt_ext_func_cb(void *, int);
+
 }; // end xml::node class
 
 } // end xml namespace

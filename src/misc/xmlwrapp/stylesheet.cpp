@@ -46,15 +46,20 @@
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/tree_parser.hpp>
 #include <misc/xmlwrapp/exception.hpp>
+#include <misc/xmlwrapp/xslt_exception.hpp>
 
 #include "result.hpp"
 #include "utility.hpp"
+#include "document_impl.hpp"
 
 // libxslt includes
 #include <libxslt/xslt.h>
 #include <libxslt/xsltInternals.h>
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
+#include <libxslt/extensions.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
 
 // standard includes
 #include <stdexcept>
@@ -66,16 +71,109 @@
 // temporary
 #include <misc/xmlwrapp/impl/_raw_xslt.hpp>
 
+#include "extension_function_impl.hpp"
+
+
+// Typedefs to support extension functions
+// Key: func name + URI
+typedef std::pair<std::string,
+                  std::string>                  ext_func_key;
+// Properties: pointer to interface + ownership
+typedef std::pair<xslt::extension_function *,
+                  xml::ownership_type>          ext_func_props;
+// Container to store extension functions
+typedef std::map<ext_func_key,
+                 ext_func_props>                ext_funcs_map_type;
+
+
 
 struct xslt::stylesheet::pimpl
 {
     pimpl (void) : ss_(0), errors_occured_(false) { }
 
-    xsltStylesheetPtr ss_;
-    xml::document doc_;
-    std::string error_;
-    bool errors_occured_;
+    xsltStylesheetPtr       ss_;
+    xml::document           doc_;
+    std::string             error_;
+    bool                    errors_occured_;
+
+    // Extension functions support
+    ext_funcs_map_type      ext_functions_;
 };
+
+
+
+extern "C" {
+
+    // XSLT extension function callback
+    void xslt_ext_func_cb(void *c, int arg_num)
+    {
+        xmlXPathParserContext *     ctxt =
+                                reinterpret_cast<xmlXPathParserContext *>(c);
+        xsltTransformContextPtr     xslt_ctxt =
+                                xsltXPathGetTransformContext(ctxt);
+        xslt::stylesheet::pimpl *   impl =
+                                reinterpret_cast<xslt::stylesheet::pimpl *>(
+                                                        xslt_ctxt->_private);
+        xmlNodePtr                  current_node = ctxt->context->node;
+        xmlDocPtr                   current_doc = ctxt->context->doc;
+
+        // Search for a registered extension function
+        ext_func_key                key;
+        key.first = reinterpret_cast<const char *>(ctxt->context->function);
+        if (ctxt->context->functionURI != NULL)
+            key.second = reinterpret_cast<const char *>(
+                                        ctxt->context->functionURI);
+
+        ext_funcs_map_type::iterator  found = impl->ext_functions_.find(key);
+        if (found == impl->ext_functions_.end())
+            return; // No extension function were found
+
+        // The corresponding extension function has been found.
+        // Prepare parameters and call it
+        std::vector<xslt::xpath_object>     args;
+        xml::node                           node;
+        xml::document                       doc;
+
+        // Prepare arguments for the extension function call. Arguments are
+        // coming in the reverse order.
+        args.reserve( arg_num );
+        for (int  k = 0; k < arg_num; ++k) {
+            xmlXPathObjectPtr   current_arg = valuePop(ctxt);
+
+            args.insert(
+                    args.begin(),
+                    xslt::xpath_object(reinterpret_cast<void*>(current_arg)));
+        }
+
+        // Wrap libxml2 data with xmlwrapp and make sure that xmlwrapp does NOT
+        // have ownership on the node and the document.
+        node.set_node_data(current_node);
+        doc.set_doc_data(current_doc);
+        doc.pimpl_->set_ownership(false);
+
+        // Set the context to make error reporting and setting retval
+        // working properly
+        found->second.first->pimpl_->xpath_parser_ctxt = ctxt;
+
+        // Make a call
+        try {
+            found->second.first->execute(args, node, doc);
+        } catch (xslt::xpath_error  error) {
+            found->second.first->report_error(error);
+        } catch (const std::exception &  ex) {
+            found->second.first->report_error(xslt::xptr_resource_error);
+        } catch (...) {
+            found->second.first->report_error(xslt::xptr_resource_error);
+        }
+
+        // Clear the context
+        found->second.first->pimpl_->xpath_parser_ctxt = NULL;
+
+        return;
+    }
+
+} // extern "C"
+
 
 namespace
 {
@@ -97,7 +195,8 @@ public:
         xmlChar *xml_string;
         int xml_string_length;
 
-        if (xsltSaveResultToString(&xml_string, &xml_string_length, doc_, ss_) >= 0)
+        if (xsltSaveResultToString(&xml_string,
+                                   &xml_string_length, doc_, ss_) >= 0)
         {
             xml::impl::xmlchar_helper helper(xml_string);
             if (xml_string_length) s.assign(helper.get(), xml_string_length);
@@ -144,7 +243,8 @@ extern "C"
 static void error_cb(void *c, const char *message, ...)
 {
     xsltTransformContextPtr ctxt = static_cast<xsltTransformContextPtr>(c);
-    xslt::stylesheet::pimpl *impl = static_cast<xslt::stylesheet::pimpl*>(ctxt->_private);
+    xslt::stylesheet::pimpl *impl = static_cast<xslt::stylesheet::pimpl*>(
+                                                                ctxt->_private);
 
     impl->errors_occured_ = true;
 
@@ -168,6 +268,8 @@ static void error_cb(void *c, const char *message, ...)
 
 } // extern "C"
 
+
+
 xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
                            xmlDocPtr doc,
                            const xslt::stylesheet::param_type *p = NULL)
@@ -181,6 +283,20 @@ xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
     xsltTransformContextPtr ctxt = xsltNewTransformContext(style, doc);
     ctxt->_private = impl;
     xsltSetTransformErrorFunc(ctxt, ctxt, error_cb);
+
+    // Register extension functions
+    for (ext_funcs_map_type::iterator k = impl->ext_functions_.begin();
+         k != impl->ext_functions_.end(); ++k) {
+        if ( xsltRegisterExtFunction(
+                ctxt,
+                reinterpret_cast<const xmlChar*>(k->first.first.c_str()),
+                reinterpret_cast<const xmlChar*>(k->first.second.c_str()),
+                reinterpret_cast<xmlXPathFunction>(xslt_ext_func_cb)) != 0) {
+            xsltFreeTransformContext(ctxt);
+            throw xslt::exception("Error registering extension function " +
+                                  k->first.first);
+        }
+    }
 
     // clear the error flag before applying the stylesheet
     impl->errors_occured_ = false;
@@ -217,7 +333,7 @@ xslt::impl::result *  xslt::impl::make_copy (xslt::impl::result *  pattern)
     result_impl *   other_instance = dynamic_cast<result_impl *>(pattern);
 
     if (other_instance == NULL)
-        throw xml::exception("Design error: unexpected xslt result type");
+        throw xslt::exception("Design error: unexpected xslt result type");
 
     return new result_impl(*other_instance);
 }
@@ -236,8 +352,9 @@ xslt::stylesheet::stylesheet(const char *filename)
         if (pimpl_->error_.empty())
             pimpl_->error_ = "unknown XSLT parser error";
 
-        msgs.get_messages().push_back(xml::error_message(pimpl_->error_,
-                                                         xml::error_message::type_error));
+        msgs.get_messages().push_back(xml::error_message(
+                                            pimpl_->error_,
+                                            xml::error_message::type_error));
         throw xml::parser_exception(msgs);
     }
 
@@ -251,7 +368,8 @@ xslt::stylesheet::stylesheet(const char *filename)
 xslt::stylesheet::stylesheet(const xml::document &  doc)
 {
     xml::document           doc_copy(doc);  /* NCBI_FAKE_WARNING */
-    xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc_copy.get_doc_data());
+    xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(
+                                                doc_copy.get_doc_data());
     std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
@@ -261,8 +379,9 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
             pimpl_->error_ = "unknown XSLT parser error";
 
         xml::error_messages     messages;
-        messages.get_messages().push_back(xml::error_message(pimpl_->error_,
-                                                             xml::error_message::type_error));
+        messages.get_messages().push_back(xml::error_message(
+                                            pimpl_->error_,
+                                            xml::error_message::type_error));
         throw xml::parser_exception(messages);
     }
 
@@ -277,7 +396,8 @@ xslt::stylesheet::stylesheet (const char* data, size_t size)
 {
     std::auto_ptr<pimpl>    ap(pimpl_ = new pimpl);
     xml::error_messages     msgs;
-    xml::document           doc(data, size, &msgs, xml::type_warnings_not_errors);
+    xml::document           doc(data, size, &msgs,
+                                xml::type_warnings_not_errors);
     xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
@@ -286,8 +406,9 @@ xslt::stylesheet::stylesheet (const char* data, size_t size)
         if (pimpl_->error_.empty())
             pimpl_->error_ = "unknown XSLT parser error";
 
-        msgs.get_messages().push_back(xml::error_message(pimpl_->error_,
-                                                         xml::error_message::type_error));
+        msgs.get_messages().push_back(xml::error_message(
+                                            pimpl_->error_,
+                                            xml::error_message::type_error));
         throw xml::parser_exception(msgs);
     }
 
@@ -311,8 +432,9 @@ xslt::stylesheet::stylesheet (std::istream & stream)
         if (pimpl_->error_.empty())
             pimpl_->error_ = "unknown XSLT parser error";
 
-        msgs.get_messages().push_back(xml::error_message(pimpl_->error_,
-                                                         xml::error_message::type_error));
+        msgs.get_messages().push_back(xml::error_message(
+                                            pimpl_->error_,
+                                            xml::error_message::type_error));
         throw xml::parser_exception(msgs);
     }
 
@@ -323,8 +445,49 @@ xslt::stylesheet::stylesheet (std::istream & stream)
 }
 
 
+void
+xslt::stylesheet::register_extension_function (extension_function *  ef,
+                                               const char *          name,
+                                               const char *          uri,
+                                               xml::ownership_type   ownership)
+{
+    if (name == NULL) {
+        if (ownership == xml::type_own)
+            delete ef;
+        throw xslt::exception("Extension function name is uninitialised");
+    }
+
+    if (uri == NULL) {
+        if (ownership == xml::type_own)
+            delete ef;
+        throw xslt::exception("Extension function URI is uninitialised");
+    }
+
+    ext_func_key                    key = std::pair<std::string,
+                                                    std::string>(name, uri);
+    ext_funcs_map_type::iterator    found(pimpl_->ext_functions_.find(key));
+
+    if (found != pimpl_->ext_functions_.end()) {
+        if (found->second.second == xml::type_own)
+            delete found->second.first;
+    }
+
+    pimpl_->ext_functions_[ std::pair<std::string, std::string>(name, uri) ] =
+                            std::pair<extension_function *,
+                                      xml::ownership_type>(ef, ownership);
+    return;
+}
+
+
 xslt::stylesheet::~stylesheet()
 {
+    // Delete extension functions we owe
+    for (ext_funcs_map_type::iterator k = pimpl_->ext_functions_.begin();
+         k != pimpl_->ext_functions_.end(); ++k) {
+        if (k->second.second == xml::type_own)
+            delete k->second.first;
+    }
+
     if (pimpl_->ss_)
         xsltFreeStylesheet(pimpl_->ss_);
     delete pimpl_;
@@ -375,7 +538,7 @@ xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
 
     if ( !xmldoc )
-        throw xml::exception(pimpl_->error_);
+        throw xslt::exception(pimpl_->error_);
 
     xml::document_proxy     proxy(new result_impl(xmldoc, pimpl_->ss_),
                                   treat);
@@ -391,7 +554,7 @@ xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
     xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
 
     if ( !xmldoc )
-        throw xml::exception(pimpl_->error_);
+        throw xslt::exception(pimpl_->error_);
 
     xml::document_proxy     proxy(new result_impl(xmldoc, pimpl_->ss_),
                                   treat);
@@ -405,7 +568,8 @@ const std::string& xslt::stylesheet::get_error_message() const
 }
 
 
-void *  xslt::impl::temporary_existing_get_raw_xslt_stylesheet(xslt::stylesheet &  s)
+void *
+xslt::impl::temporary_existing_get_raw_xslt_stylesheet(xslt::stylesheet &  s)
 {
     return s.pimpl_->ss_;
 }

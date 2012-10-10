@@ -60,6 +60,9 @@
 #include <string>
 #include <cstddef>
 
+// Forward declaration for a friend below
+extern "C" { void xslt_ext_func_cb(void *, int); }
+
 // forward declaration
 namespace xslt {
     class stylesheet;
@@ -835,6 +838,7 @@ private:
     friend class schema;
     friend class dtd;
     friend class libxml2_document;
+    friend void ::xslt_ext_func_cb(void *, int);
 }; // end xml::document class
 
 } // end xml namespace

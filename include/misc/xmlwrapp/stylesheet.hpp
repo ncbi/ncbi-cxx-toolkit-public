@@ -45,9 +45,11 @@
 #define _xsltwrapp_stylesheet_h_
 
 // xmlwrapp includes
+#include <misc/xmlwrapp/ownership.hpp>
 #include <misc/xmlwrapp/xslt_init.hpp>
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/xslt_result_type.hpp>
+#include <misc/xmlwrapp/extension_function.hpp>
 
 // standard includes
 #include <map>
@@ -114,6 +116,27 @@ public:
      * @author Denis Vakatov
     **/
     stylesheet (std::istream & stream);
+
+    //####################################################################
+    /**
+     *
+     * Register an XSLT extension function.
+     *
+     * @param ef The extension function pointer.
+     * @param name Extension function name. It cannot be NULL.
+     * @param uri Extension function URI. It cannot be NULL.
+     * @param ownership If owned then xslt::stylesheet is responsible for
+     *                  deleting the extension function. The responsibility
+     *                  starts from the moment this member is called, i.e. even
+     *                  if the registration failed the extension function will
+     *                  be deleted.
+     * @exception Throw xslt::exception in case of problems
+     * @author Denis Vakatov, NCBI
+    **/
+    void register_extension_function (extension_function *  ef,
+                                      const char *          name,
+                                      const char *          uri,
+                                      xml::ownership_type   ownership = xml::type_not_own);
 
     //####################################################################
     /**

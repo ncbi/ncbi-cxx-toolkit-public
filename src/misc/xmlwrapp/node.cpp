@@ -336,7 +336,7 @@ void xml::node::set_node_data (void *data) {
     pimpl_->owner_ = false;
 }
 //####################################################################
-void* xml::node::get_node_data (void) {
+void* xml::node::get_node_data (void) const {
     return pimpl_->xmlnode_;
 }
 //####################################################################

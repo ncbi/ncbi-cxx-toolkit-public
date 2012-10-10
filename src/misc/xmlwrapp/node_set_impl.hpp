@@ -1,7 +1,4 @@
 /*
- * Copyright (C) 2001-2003 Peter J Jones (pjones@pmade.org)
- * All Rights Reserved
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -32,29 +29,51 @@
 
 /*
  * $Id$
- * NOTE: This file was modified from its original version 0.6.0
- *       to fit the NCBI C++ Toolkit build framework and
- *       API and functionality requirements.
  */
 
-#ifndef _xmlwrapp_xmlwrapp_h_
-#define _xmlwrapp_xmlwrapp_h_
+/** @file
+ * This file contains the definition of the xml::impl::nset_impl class.
+**/
 
-#include <misc/xmlwrapp/ownership.hpp>
-#include <misc/xmlwrapp/xml_init.hpp>
+
+#ifndef _xmlwrapp_node_set_impl_hpp_
+#define _xmlwrapp_node_set_impl_hpp_
+
+
+// xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
-#include <misc/xmlwrapp/attributes.hpp>
-#include <misc/xmlwrapp/document.hpp>
-#include <misc/xmlwrapp/tree_parser.hpp>
-#include <misc/xmlwrapp/event_parser.hpp>
-#include <misc/xmlwrapp/namespace.hpp>
-#include <misc/xmlwrapp/xpath_expression.hpp>
-#include <misc/xmlwrapp/node_set.hpp>
-#include <misc/xmlwrapp/schema.hpp>
-#include <misc/xmlwrapp/dtd.hpp>
-#include <misc/xmlwrapp/exception.hpp>
-#include <misc/xmlwrapp/errors.hpp>
-#include <misc/xmlwrapp/xml_save.hpp>
-#include <misc/xmlwrapp/document_proxy.hpp>
+
+// libxml2
+#include <libxml/xpath.h>
+
+namespace xml
+{
+    namespace impl
+    {
+        // Private implementation of the node_set class.
+        // It holds the libxml2 pointer to the XPath query results and provides
+        // the reference counting
+        struct nset_impl
+        {
+            // XPath query results
+            xmlXPathObjectPtr   results_;
+
+            nset_impl(void* results);
+            void inc_ref();
+            void dec_ref();
+            node &  get_reference(int  index);
+            void set_ownership(bool  owe);
+
+        protected:
+            ~nset_impl();
+
+        private:
+            size_t  refcnt_;    // reference counter
+            bool    owe_;
+        };
+    }
+
+} // namespace xml
 
 #endif
+

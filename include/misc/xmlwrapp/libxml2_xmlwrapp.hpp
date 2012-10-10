@@ -37,6 +37,7 @@
 #define _xmlwrapp_libxml2_xmlwrapp_hpp_
 
 
+#include <misc/xmlwrapp/ownership.hpp>
 #include <misc/xmlwrapp/document.hpp>
 
 // Forward declaration
@@ -44,16 +45,6 @@
 
 
 namespace xml {
-
-/// Used to specify if xmlwrapp should grab the ownership of a libxml2 object
-enum ownership_type {
-    type_own,       ///< Grab the ownership, i.e. the object
-                    ///< will be freed by xmlwrapp.
-    type_not_own    ///< Do not grab the ownership, i.e. the object
-                    ///< will not be freed by xmlwrapp.
-};
-
-
 
 /// Extension to the xml::document class which allows working with raw libxml2
 /// documents.

@@ -43,6 +43,10 @@
 // standard includes
 #include <cstddef>
 
+namespace xslt {
+    class xpath_object;
+}
+
 namespace xml {
 
 // forward declaration
@@ -425,6 +429,7 @@ private:
     friend class iterator;
     friend class const_iterator;
     friend struct impl::nset_impl;
+    friend class xslt::xpath_object;
 };
 
 

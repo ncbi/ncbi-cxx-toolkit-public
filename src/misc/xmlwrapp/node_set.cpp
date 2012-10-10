@@ -32,7 +32,7 @@
  */
 
 /** @file
- * This file contains the implementation of the xml::node_set cass.
+ * This file contains the implementation of the xml::node_set class.
 **/
 
 // xmlwrapp includes
@@ -40,6 +40,7 @@
 #include <misc/xmlwrapp/exception.hpp>
 
 #include "deref_impl.hpp"
+#include "node_set_impl.hpp"
 
 // standard includes
 #include <stdexcept>
@@ -51,40 +52,48 @@ namespace xml
 {
     namespace impl
     {
-        // Private implementation of the node_set class.
-        // It holds the libxml2 pointer to the XPath query results and provides
-        // the reference counting
-        struct nset_impl
+        //
+        // xml::impl::nset_impl implementation
+        //
+
+        nset_impl::nset_impl(void* results) :
+            results_(reinterpret_cast<xmlXPathObjectPtr>(results)),
+            refcnt_(1), owe_(true)
+        {}
+
+        void nset_impl::inc_ref()
         {
-            // XPath query results
-            xmlXPathObjectPtr   results_;
+            ++refcnt_;
+        }
 
-            nset_impl(void* results) :
-                results_(reinterpret_cast<xmlXPathObjectPtr>(results)),
-                refcnt_(1)
-            {}
-            void inc_ref() { ++refcnt_; }
-            void dec_ref() {
-                if (--refcnt_ == 0) {
-                    if (results_) xmlXPathFreeObject(results_);
-                    delete this;
-                }
+        void nset_impl::dec_ref()
+        {
+            if (--refcnt_ == 0) {
+                if (owe_ && results_)
+                    xmlXPathFreeObject(results_);
+                delete this;
             }
+        }
 
-            node &  get_reference( int  index ) {
-                /* The index range is checked by the caller */
+        node &  nset_impl::get_reference( int  index )
+        {
+            /* The index range is checked by the caller */
 
-                node_private_data *  node_data = attach_node_private_data(results_->nodesetval->nodeTab[index]);
-                return node_data->node_instance_;
-            }
+            node_private_data *  node_data = attach_node_private_data(
+                                        results_->nodesetval->nodeTab[index]);
+            return node_data->node_instance_;
+        }
 
-        protected:
-            ~nset_impl() {}
+        void nset_impl::set_ownership(bool  owe)
+        {
+            owe_ = owe;
+        }
 
-        private:
-            size_t  refcnt_;    // reference counter
-        };
-    }
+        nset_impl::~nset_impl()
+        {}
+
+    } // End of namespace impl
+
 
     //
     // node_set
