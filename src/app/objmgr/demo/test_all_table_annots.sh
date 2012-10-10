@@ -13,7 +13,7 @@ echo trna 51459255
 } | while read type gi; do
     for x in "" ".table"; do
         for cmd in echo "bash -c"; do
-            $cmd "./objmgr_demo -loader - -id \"gnl|Annot:${type%[0-9]}|$gi\" -file $d/annot.$type$x.asn -externals -count_types -count_subtypes -print_features -only_features > scan$x.txt" || exit 1
+            $cmd "./objmgr_demo -loader - -id \"gnl|Annot:${type%[0-9]}|$gi\" -file $d/annot.$type$x.asn -externals -count_types -count_subtypes -print_features -only_features | sed 's/ in [0-9][^ ]* secs$//' > scan$x.txt" || exit 1
         done
     done
     echo diff scan.txt scan.table.txt
