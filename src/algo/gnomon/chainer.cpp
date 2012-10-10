@@ -1552,7 +1552,7 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
     vector<CSupportInfo> support;
     support.reserve(m_members.size());
     int last_important_support = -1;
-    set<CGeneModel*,AlignSeqOrder>* last_important_align = 0;
+    const set<CGeneModel*,AlignSeqOrder>* last_important_align = 0;
     double weight = 0;
     set<Int8> sp;
     TSignedSeqRange lim;
@@ -1564,16 +1564,13 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
         weight += (*it)->Weight();
         support.push_back(CSupportInfo(id,false));
 
-        set<CGeneModel*,AlignSeqOrder>& ca = connected_aligns[id];
+        const set<CGeneModel*,AlignSeqOrder>& ca = connected_aligns[id];
         TSignedSeqRange alim((*ca.begin())->Limits().GetFrom(),(*ca.rbegin())->Limits().GetTo());
 
         if(lim.Empty() || !Include(lim,alim)) {
 
             bool add_some_introns = false;
-            for(set<CGeneModel*,AlignSeqOrder>::const_iterator kk = ca.end(); kk != ca.begin() && !add_some_introns; --kk) {
-                set<CGeneModel*,AlignSeqOrder>::const_iterator k = kk;
-                --k;
-                //            for(set<CGeneModel*,AlignSeqOrder>::const_reverse_iterator k = ca.rbegin(); k != ca.rend() && !add_some_introns; ++k) {
+            for(set<CGeneModel*,AlignSeqOrder>::const_reverse_iterator k = ca.rbegin(); k != ca.rend() && !add_some_introns; ++k) {
                 const CGeneModel& align = **k;
                 for(int i = (int)align.Exons().size()-1; !add_some_introns && i > 0; --i) {
                     add_some_introns = align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice && 
