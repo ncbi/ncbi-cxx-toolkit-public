@@ -62,6 +62,7 @@ BEGIN_SCOPE(objects)
 
 const string IFlatQVal::kSpace     = " ";
 const string IFlatQVal::kSemicolon = ";";
+const string IFlatQVal::kSemicolonEOL = ";\n";
 const string IFlatQVal::kComma     = ",";
 const string IFlatQVal::kEOL       = "\n";
 
@@ -831,7 +832,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
                     AddPeriod(subname);
                 }
                 m_Prefix = &kEOL;
-                m_Suffix = &kEOL;
+                m_Suffix = ( add_period ? &kEOL : &kSemicolonEOL );
                 qual = x_AddFQ(q, "note", subname);
             } else {
                 qual = x_AddFQ(q, "note", name + ": " + subname, 
@@ -1190,7 +1191,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
                 if (add_period) {
                     AddPeriod(subname);
                 }
-                m_Suffix = &kEOL;
+                m_Suffix = ( add_period ? &kEOL : &kSemicolonEOL );
                 qual = x_AddFQ(q, "note", subname);
             } else {
                 qual = x_AddFQ(q, "note", name + ": " + subname);        

@@ -144,6 +144,7 @@ public:
     typedef int TFlags; // binary OR of EFlags
 
     static const string kSemicolon;  // ";"
+    static const string kSemicolonEOL;  // ";\n"
     static const string kComma;      // ","
     static const string kEOL;        // "\n" - end of line
     static const string kSpace;      // " "
@@ -627,7 +628,7 @@ class NCBI_FORMAT_EXPORT CFlatAnticodonQVal : public IFlatQVal
 {
 public:
     CFlatAnticodonQVal(const CSeq_loc& ac, const string& aa) :
-        m_Anticodon(&ac), m_Aa(aa) { }
+        m_Anticodon(&ac), m_Aa(aa){ }
     void Format(TFlatQuals& q, const string& n, CBioseqContext& ctx,
                 TFlags) const;
 
