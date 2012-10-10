@@ -3743,6 +3743,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MOSP	s	Moscow State Pedagogical University, Botany Department",
 "MOT	s	Mote Marine Laboratory",
 "MOTH	s	Museum of the Hemispheres",
+"MOUFPE	s	Oceanographic Museum of the Federal University of Pernambuco",
 "MOVC	s	Cornell College, Biology Department",
 "MOVI	s	Museu Oceanografico do Vale do Itajai",
 "MP<CZE>	s	Vychodoceske muzeum Pardubice",
