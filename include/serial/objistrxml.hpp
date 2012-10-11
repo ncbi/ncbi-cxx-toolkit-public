@@ -109,7 +109,7 @@ public:
 
     virtual string ReadFileHeader(void);
     virtual string PeekNextTypeName(void);
-    void FindFileHeader(void);
+    void FindFileHeader(bool find_XMLDecl = true);
 
 protected:
     EPointerType ReadPointerType(void);

@@ -249,9 +249,13 @@ bool XSDParser::IsValue(const char* value) const
 
 bool XSDParser::DefineElementType(DTDElement& node)
 {
+    if (GetElementNamespace(m_ValuePrefix) != eSchemaNamespace) {
+        return false;
+    }
     if (IsValue("string") || IsValue("token") ||
         IsValue("normalizedString") ||
-        IsValue("anyURI") || IsValue("QName") ||
+        IsValue("duration") ||
+        IsValue("anyType") || IsValue("anyURI") || IsValue("QName") ||
         IsValue("dateTime") || IsValue("time") || IsValue("date") ||
         IsValue("anySimpleType")) {
         node.SetType(DTDElement::eString);
@@ -280,8 +284,11 @@ bool XSDParser::DefineElementType(DTDElement& node)
 
 bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
 {
+    if (GetElementNamespace(m_ValuePrefix) != eSchemaNamespace) {
+        return false;
+    }
     if (IsValue("string") || IsValue("token") || IsValue("QName") ||
-        IsValue("anyURI") ||
+        IsValue("anyType") || IsValue("anyURI") ||
         IsValue("dateTime") || IsValue("time") || IsValue("date")) {
         attrib.SetType(DTDAttribute::eString);
     } else if (IsValue("ID")) {

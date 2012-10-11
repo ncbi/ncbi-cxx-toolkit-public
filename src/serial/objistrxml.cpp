@@ -591,17 +591,21 @@ string CObjectIStreamXml::PeekNextTypeName(void)
     return typeName;
 }
 
-void CObjectIStreamXml::FindFileHeader(void)
+void CObjectIStreamXml::FindFileHeader(bool find_XMLDecl)
 {
     char c;
     for (;;) {
         c = m_Input.PeekChar();
-        if (c == '<' &&
-            m_Input.PeekChar(1) == '?' &&
-            m_Input.PeekChar(2) == 'x' &&
-            m_Input.PeekChar(3) == 'm' &&
-            m_Input.PeekChar(4) == 'l') {
-            return;
+        if (c == '<') {
+            if (!find_XMLDecl) {
+                return;
+            }
+            if (m_Input.PeekChar(1) == '?' &&
+                m_Input.PeekChar(2) == 'x' &&
+                m_Input.PeekChar(3) == 'm' &&
+                m_Input.PeekChar(4) == 'l') {
+                return;
+            }
         }
         m_Input.SkipChar();
     }

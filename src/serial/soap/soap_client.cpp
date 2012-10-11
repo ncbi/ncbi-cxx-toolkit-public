@@ -123,7 +123,7 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
     }
 
     *os << request;
-    dynamic_cast<CObjectIStreamXml*>(is.get())->FindFileHeader();
+    dynamic_cast<CObjectIStreamXml*>(is.get())->FindFileHeader(false);
     *is >> response;
     if (fault) {
         *fault = SOAP_GetKnownObject<CSoapFault>(response);
