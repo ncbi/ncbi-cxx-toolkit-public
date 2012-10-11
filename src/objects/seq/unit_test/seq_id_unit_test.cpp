@@ -268,7 +268,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromRefSeqAcc)
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_AABC0300051")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("NZ_AABC03000051")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("NZ_ABJB030000051")));
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_ABJB0300000510")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("NZ_ABJB0300000510")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("NZ_ABJB03000005100")));
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromGpipeAcc)

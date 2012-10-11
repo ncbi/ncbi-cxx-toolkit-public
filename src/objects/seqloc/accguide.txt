@@ -92,6 +92,7 @@ version  1 # of file format
 5+6  NZ_??    refseq_contig
 7+8  NZ_????  refseq_wgs_nuc
 7+9  NZ_????  refseq_wgs_nuc
+7+10 NZ_????  refseq_wgs_nuc
 3+6  XM_      refseq_mrna_predicted
 3+9  XM_      refseq_mrna_predicted
 3+6  XP_      refseq_prot_predicted
