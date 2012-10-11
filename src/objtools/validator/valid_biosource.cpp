@@ -2689,7 +2689,7 @@ void CValidError_imp::ValidateSpecificHost
                         err_str = (*reply_it)->GetError().GetMessage();
                     }
                     if(NStr::Find(err_str, "ambiguous") != string::npos) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+                        PostObjErr (eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
                                     "Specific host value is ambiguous: " + host,
                                     **desc_it, *ctx_it);
                     } else {
@@ -2733,7 +2733,7 @@ void CValidError_imp::ValidateSpecificHost
                         err_str = (*reply_it)->GetError().GetMessage();
                     }
                     if(NStr::Find(err_str, "ambiguous") != string::npos) {
-                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+                        PostErr (eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
                                     "Specific host value is ambiguous: " + host,
                                     **feat_it);
                     } else {
@@ -3083,7 +3083,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                         err_str = (*reply_it)->GetError().GetMessage();
                     }
                     if(NStr::Find(err_str, "ambiguous") != string::npos) {
-                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+                        PostErr (eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
                                     "Specific host value is ambiguous: " + host, org);
                     } else {
                         PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 

@@ -620,6 +620,10 @@ require a taxonomy consult." } },
    { eErr_SEQ_DESCR_BadInstitutionCountry,
    { "BadInstitutionCountry",
 "The institution (or institution: collection) code should not have a <country> modifier." } },
+   { eErr_SEQ_DESCR_AmbiguousSpecificHost,
+   { "AmbiguousSpecificHost",
+"A BioSource descriptor or feature has an ambiguous specific host value that may \
+require a taxonomy consult." } },
 
 /* SEQ_GENERIC */
 
