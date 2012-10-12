@@ -1210,7 +1210,7 @@ CTM<TUN>	c	Centre de Biotechnologie de Sfax culture collection
 CTN	s	Free Library and Museum
 CTS	s	Chongqing Teachers College
 CTY	s	Canterbury Literary and Philosophical Institution
-CU	s	Cornell University
+CU	sb	Cornell University
 CUAC	s	Clemson University
 CUBK	s	Department of Biology, Chonbuk National University
 CUC	c	Cepario de la Universidad de Concepcion de Chile
@@ -1298,6 +1298,7 @@ DBN	s	National Botanic Gardens
 DBS	c	Department of Biological Culture Collection
 DBSE	s	Universidade Federale Sergipe
 DBSNU	s	Department of Biology, Shaanxi Normal University
+DBUA	c	Zoological Collection of the Biology Department, University of the Azores
 DBUM-IPT	c	Department of Biochemistry, Faculty of Medicine, University of Malaya
 DBUP	c	Algal Culture Collection
 DBV	c	Division of Standardisation
@@ -2928,6 +2929,7 @@ KRF	s	V. N. Sukachev Institute of Forest and Wood
 KRG	s	Westfield Museum
 KRIB	s	Korea Research Institute of Bioscience and Biotechnology, Plant Diversity Research Center
 KRMS	s	Sternwarte Kremsmuenster, Stift
+KRP	s	Kebun Raya Purwodadi (Purwodadi Botanic Gardens, Indonesia)
 KRSF	s	Koronivia Research Station
 KRSU	s	Krasnoyarsk State University, Department of Biogeocoenology
 KSAN	s	South African National Parks
@@ -3658,6 +3660,7 @@ MNHM<USA-CO>	s	John May Museum of Natural History
 MNHN	s	Museum National d'Histoire Naturelle
 MNHN:IC	s	Museum National d'Histoire Naturelle, Ichtyologie collection
 MNHN:IM	s	Museum National d'Histoire Naturelle, Marine Invertebrate Collection
+MNHN:IU	s	Museum National d'Histoire Naturelle, Crustacean collection
 MNHN:P	s	Museum National d'Histoire Naturelle, Paleontology Collection
 MNHN<CUB>	s	Museo Nacional de Historia Natural, Departamento de Colecciones
 MNHNCH	s	Museo Nacional de Historia Natural de Chile
@@ -4386,7 +4389,7 @@ NVRW	s	Naturhistorisches Verein der Preussische Rheinland und Westfalens
 NWAU	s	North-West Agricultural University
 NWC	s	University of Northern Iowa, Nixon Wilson Collection
 NWC<GBR>	b	National Willows Collection
-NWFC	s	Northwest University of Agriculture Forestry Science & Technology
+NWFC	sb	Northwest University of Agriculture Forestry Science & Technology
 NWH	s	Norfolk Museums and Archaeology Service, Natural History Department
 NWK	s	Newark District Council Museum
 NWMSU	s	Northwest Missouri State University
@@ -6206,7 +6209,7 @@ USDA	sb	United States Department of Agriculture
 USDA:CFRA	b	United States Department of Agriculture, Corvallis Fragaria Catalog
 USDA:GRIN	b	United States Department of Agriculture, Germplasm Resources Information Network
 USDA:NCGR	b	United States Department of Agriculture, National Clonal Germplasm Repository
-USDA:PGRU	s	United States Department of Agriculture, Plant Genetic Resources Unit
+USDA:PGRU	sb	United States Department of Agriculture, Plant Genetic Resources Unit
 USDA:USNPC	s	United States Department of Agriculture, US National Parasite Collection
 USDAK	s	W. H. Over State Museum
 USF	s	University of South Florida, Biology Department
@@ -6329,7 +6332,7 @@ V	s	Royal British Columbia Museum - Herbarium
 VA	s	University of Virginia
 VAB	s	Universitat de Valencia, Departamento de Biologia Vegetal
 VAIC	s	Victorian Agricultural Insect Collection
-VAL	s	Universitat de Valencia
+VAL	s	Universitat de Valencia (Jardin Botanico de Valencia)
 VALA	s	Universidad Politecnica, Departamento de Botanica
 VALD	s	Universidad Austral de Chile, Instituto de Botanica
 VALLE	s	Universidad Nacional de Colombia, Departamento de Ciencias Basicas
