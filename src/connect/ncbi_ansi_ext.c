@@ -84,8 +84,8 @@ int strcasecmp(const char* s1, const char* s2)
     do {
         c1 = *p1++;
         c2 = *p2++;
-        c1 = c1 >= 'A' && c1 <= 'Z' ? c1 + ('a' - 'A') : tolower(c1);
-        c2 = c2 >= 'A' && c2 <= 'Z' ? c2 + ('a' - 'A') : tolower(c2);
+        c1 = 'A' <= c1  &&  c1 <= 'Z' ? c1 + ('a' - 'A') : tolower(c1);
+        c2 = 'A' <= c2  &&  c2 <= 'Z' ? c2 + ('a' - 'A') : tolower(c2);
     } while (c1  &&  c1 == c2);
 
     return c1 - c2;
@@ -104,8 +104,8 @@ int strncasecmp(const char* s1, const char* s2, size_t n)
     do {
         c1 = *p1++;
         c2 = *p2++;
-        c1 = c1 >= 'A' && c1 <= 'Z' ? c1 + ('a' - 'A') : tolower(c1);
-        c2 = c2 >= 'A' && c2 <= 'Z' ? c2 + ('a' - 'A') : tolower(c2);
+        c1 = 'A' <= c1  &&  c1 <= 'Z' ? c1 + ('a' - 'A') : tolower(c1);
+        c2 = 'A' <= c2  &&  c2 <= 'Z' ? c2 + ('a' - 'A') : tolower(c2);
     } while (--n > 0  &&  c1  &&  c1 == c2);
 
     return c1 - c2;
@@ -174,27 +174,42 @@ char* NCBI_simple_ftoa(char* s, double f, int p)
             p  = (int)(sizeof(x_pow10)/sizeof(x_pow10[0]))-1;
     }
     w = x_pow10[p];
-    v = (f < 0.0 ? -f : f) + 0.5 / w;
-    x = (long)  v;
-    y = (long)((v - x) * w);
-    return s + sprintf(s, "-%ld.%0*lu" + !(f < 0.0), x, p, y);
+    v = f < 0.0 ? -f : f;
+    x = (long)(v + 0.5 / w);
+    y = (long)(w * (v - x) + 0.5);
+    assert(p  ||  !y);
+    return s + sprintf(s, "-%ld%s%0.*lu" + !(f < 0.0), x, &"."[!p], p, y);
 }
 
 
-double NCBI_simple_atof(const char* s, char** e)
+double NCBI_simple_atof(const char* s, char** t)
 {
-    long x;
+    int/*bool*/ n;
+    char*       e;
+    long        x;
+
+    if (t)
+        *t = (char*) s;
+    while (isspace((unsigned char)(*s)))
+        s++;
+    if ((*s == '-'  ||  *s == '+')
+        &&  (s[1] == '.'  ||  isdigit((unsigned char) s[1]))) {
+        n = *s == '-' ? 1/*true*/ : 0/*false*/;
+        s++;
+    } else
+        n = 0/*false*/;
+
     errno = 0;
-    x = strtol(s, e, 10);
-    if (**e == '.') {
-        if (isdigit((unsigned char)((*e)[1]))) {
+    x = strtol(s, &e, 10);
+    if (*e == '.') {
+        if (isdigit((unsigned char)(e[1]))) {
             double w;
             long   y;
             int    p;
-            errno = 0/*can be EINVAL here for ".NNN"*/;
-            y = strtoul(s = ++(*e), e, 10);
-            assert(*e > s);
-            p = (int)(*e - s);
+            errno = 0/*maybe EINVAL here for ".NNN"*/;
+            y = strtoul(s = ++e, &e, 10);
+            assert(e > s);
+            p = (int)(e - s);
             if (p >= (int)(sizeof(x_pow10)/sizeof(x_pow10[0]))) {
                 w  = 10.0;
                 do {
@@ -206,9 +221,12 @@ double NCBI_simple_atof(const char* s, char** e)
                 w *= x_pow10[p];
             } else
                 w  = x_pow10[p];
-            return x < 0 ? x - y / w : x + y / w;
-        } else if (*e > s)
-            ++(*e);
-    }
-    return x;
+            if (t)
+                *t = e;
+            return n ? -x - y / w : x + y / w;
+        } else if (t  &&  e > s)
+            *t = ++e;
+    } else if (t  &&  e > s)
+        *t = e;
+    return n ? -x : x;
 }
