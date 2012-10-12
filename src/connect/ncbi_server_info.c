@@ -34,15 +34,11 @@
 #include "ncbi_assert.h"
 #include "ncbi_server_infop.h"
 #include <ctype.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
-
-#ifdef   fabs
-#  undef fabs
-#endif /*fabs*/
-#define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
 
 
 /*****************************************************************************
