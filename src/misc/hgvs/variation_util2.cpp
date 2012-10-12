@@ -3142,7 +3142,7 @@ void CVariationUtil::s_ConvertInstOffsetsToPlacementOffsets(CVariation& v, CVari
         NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
             s_ConvertInstOffsetsToPlacementOffsets(**it, p);
         }
-    } else if(v.GetData().IsInstance()) {
+    } else if(v.GetData().IsInstance() && v.GetData().GetInstance().GetDelta().size() > 0) {
         const CDelta_item& delta_first = *v.GetData().GetInstance().GetDelta().front();
 
         if(p.GetLoc().IsPnt() && delta_first.IsSetAction() && delta_first.GetAction() == CDelta_item::eAction_offset) {
