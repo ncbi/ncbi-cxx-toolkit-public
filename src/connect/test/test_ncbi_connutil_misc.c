@@ -33,6 +33,7 @@
 #include <connect/ncbi_connutil.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 /* This header must go last */
@@ -456,6 +457,84 @@ static void TEST_ConnNetInfo(void)
 }
 
 
+static void TEST_DoubleConv(void)
+{
+    static const char* good_tests[] = { "100.25", "-100.25",
+                                        "100.9876", "-100.9876",
+                                        "0.01", "-0.01",
+                                        "0.001", "-0.001",
+                                        "+1.0001", "-1.0001",
+                                        "0.2345", "-0.5432",
+                                        "1", "-1",
+                                        "+100", "-100"};
+    static const char* bad_tests[] = { "-", "+", "-.", "+.", "+-", "-+",
+                                       "-+3", "+-2", "+-1.2", "-+2.1",
+                                       "-a", "+a", ".a",
+                                       "-.a", "+.a" };
+    static const char* weird_tests[] = { "-0a", "+0a", "0a",
+                                         "-1a", "+2a", "3a",
+                                         "-0.a", "+0.a", "0.a",
+                                         "-1.a", "+2.a", "3.a",
+                                         "-0.1a", "+0.2a" , "0.3a",
+                                         "-.1a", "+.2a", ".3a" };
+    size_t i;
+
+    CORE_LOG(eLOG_Note, "Simple double conversion test started");
+
+    CORE_LOG(eLOG_Note, "Conversion checks");
+
+    for (i = 0;  i < sizeof(good_tests) / sizeof(good_tests[0]);  i++) {
+        int p, q;
+        char buf[80], *end = 0;
+        const char* str = good_tests[i];
+        double val = NCBI_simple_atof(str, &end);
+
+        assert(end  &&  !*end  &&  end == str + strlen(str));
+        if (!(end = strchr(str, '.')))
+            q = 0;
+        else
+            q = (int) strlen(str) - (int)(end - str) - 1;
+        printf("str = \"%s\", val =  %.*f\n", str, q, val);
+
+        for (p = 0;  p < 10;  p++) {
+            end = NCBI_simple_ftoa(buf, val, p);
+            printf("str = \"%s\", buf = \"%s\"%s\n", str, buf,
+                   p == q ? " *" : "");
+            assert(end  &&  (p != q  ||
+                             strcmp(buf, *str == '+' ? str + 1 : str) == 0));
+        }
+    }
+
+    CORE_LOG(eLOG_Note, "Illegal input checks");
+
+    for (i = 0;  i < sizeof(bad_tests) / sizeof (bad_tests[0]);  i++) {
+        char* end = 0;
+        const char* str = bad_tests[i];
+        double val = NCBI_simple_atof(str, &end);
+
+        printf("str = \"%s\", end = \"%s\", val = %f (%d%s%s)\n",
+               str, end, val, errno,
+               errno ? ", "            : "",
+               errno ? strerror(errno) : "");
+        assert(!val  &&  end  &&  end == str);
+    }
+ 
+    CORE_LOG(eLOG_Note, "Corner case checks");
+
+    for (i = 0;  i < sizeof(weird_tests) / sizeof (weird_tests[0]);  i++) {
+        char* end = 0;
+        const char* str = weird_tests[i];
+        double val = NCBI_simple_atof(str, &end);
+
+        printf("str = \"%s\", end = \"%s\", val = %f\n", str, end, val);
+        assert(end  &&  end != str);
+    }
+
+    CORE_LOG(eLOG_Note, "Simple double conversion test completed");
+}
+
+
+
 /***********************************************************************
  *  MAIN
  */
@@ -475,6 +554,7 @@ int main(void)
     TEST_URL_Encoding();
     TEST_MIME();
     TEST_ConnNetInfo();
+    TEST_DoubleConv();
 
     CORE_LOG(eLOG_Note, "All tests completed successfully");
     CORE_SetLOG(0);
