@@ -72,7 +72,7 @@ public:
 //  ============================================================================
 class CErrorContainerBase:
 //  ============================================================================
-    public IErrorContainer, public CObject
+    public CObject, public IErrorContainer
 {
 public:
     CErrorContainerBase() {};
