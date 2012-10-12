@@ -34,9 +34,13 @@
 #include "ncbi_assert.h"
 #include "ncbi_server_infop.h"
 #include <ctype.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef   fabs
+#  undef fabs
+#endif /*fabs*/
+#define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
 
 #define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
 
@@ -235,8 +239,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 coef = 1;
                 d = NCBI_simple_atof(++str, &e);
                 if (e > str) {
-                    if (fabs(d) < SERV_MINIMAL_BONUS)
+                    if      (fabs(d) < SERV_MINIMAL_BONUS / 2.0)
                         d = 0.0;
+                    else if (fabs(d) < SERV_MINIMAL_BONUS)
+                        d = d < 0.0 ? -SERV_MINIMAL_BONUS : SERV_MINIMAL_BONUS;
                     else if (fabs(d) > SERV_MAXIMAL_BONUS)
                         d = d < 0.0 ? -SERV_MAXIMAL_BONUS : SERV_MAXIMAL_BONUS;
                     info->coef = d;
@@ -303,8 +309,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 rate = 1;
                 d = NCBI_simple_atof(++str, &e);
                 if (e > str) {
-                    if (fabs(d) < SERV_MINIMAL_RATE)
+                    if      (fabs(d) < SERV_MINIMAL_RATE / 2.0)
                         d = 0.0;
+                    else if (fabs(d) < SERV_MINIMAL_RATE)
+                        d = d < 0.0 ? -SERV_MINIMAL_RATE : SERV_MINIMAL_RATE;
                     else if (fabs(d) > SERV_MAXIMAL_RATE)
                         d = d < 0.0 ? -SERV_MAXIMAL_RATE : SERV_MAXIMAL_RATE;
                     info->rate = d;
