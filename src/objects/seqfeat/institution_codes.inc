@@ -2962,7 +2962,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KRG	s	Westfield Museum",
 "KRIB	s	Korea Research Institute of Bioscience and Biotechnology, Plant Diversity Research Center",
 "KRMS	s	Sternwarte Kremsmuenster, Stift",
-"KRP	s	Kebun Raya Purwodadi (Purwodadi Botanic Gardens, Indonesia)",
+"KRP	sb	Kebun Raya Purwodadi (Purwodadi Botanic Gardens, Indonesia)",
 "KRSF	s	Koronivia Research Station",
 "KRSU	s	Krasnoyarsk State University, Department of Biogeocoenology",
 "KSAN	s	South African National Parks",
