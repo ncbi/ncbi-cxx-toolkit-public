@@ -43,6 +43,8 @@
 // libxml2
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
+#include <libxslt/extensions.h>
+#include <libxslt/xsltutils.h>
 
 #include "extension_function_impl.hpp"
 
@@ -56,55 +58,55 @@ namespace xslt {
 
 
     // Converts xmlwrapp error code to libxml2 one
-    static xmlXPathError  convert_error_code (xpath_error  error)
+    static std::string  convert_error_code (xpath_error  error)
     {
         switch (error) {
             case xpath_expression_ok:
-                return XPATH_EXPRESSION_OK;
+                return "XPATH_EXPRESSION_OK";
             case xpath_number_error:
-                return XPATH_NUMBER_ERROR;
+                return "XPATH_NUMBER_ERROR";
             case xpath_unfinished_literal_error:
-                return XPATH_UNFINISHED_LITERAL_ERROR;
+                return "XPATH_UNFINISHED_LITERAL_ERROR";
             case xpath_start_literal_error:
-                return XPATH_START_LITERAL_ERROR;
+                return "XPATH_START_LITERAL_ERROR";
             case xpath_variable_ref_error:
-                return XPATH_VARIABLE_REF_ERROR;
+                return "XPATH_VARIABLE_REF_ERROR";
             case xpath_undef_variable_error:
-                return XPATH_UNDEF_VARIABLE_ERROR;
+                return "XPATH_UNDEF_VARIABLE_ERROR";
             case xpath_invalid_predicate_error:
-                return XPATH_INVALID_PREDICATE_ERROR;
+                return "XPATH_INVALID_PREDICATE_ERROR";
             case xpath_expr_error:
-                return XPATH_EXPR_ERROR;
+                return "XPATH_EXPR_ERROR";
             case xpath_unclosed_error:
-                return XPATH_UNCLOSED_ERROR;
+                return "XPATH_UNCLOSED_ERROR";
             case xpath_unknown_func_error:
-                return XPATH_UNKNOWN_FUNC_ERROR;
+                return "XPATH_UNKNOWN_FUNC_ERROR";
             case xpath_invalid_operand:
-                return XPATH_INVALID_OPERAND;
+                return "XPATH_INVALID_OPERAND";
             case xpath_invalid_type:
-                return XPATH_INVALID_TYPE;
+                return "XPATH_INVALID_TYPE";
             case xpath_invalid_arity:
-                return XPATH_INVALID_ARITY;
+                return "XPATH_INVALID_ARITY";
             case xpath_invalid_ctxt_size:
-                return XPATH_INVALID_CTXT_SIZE;
+                return "XPATH_INVALID_CTXT_SIZE";
             case xpath_invalid_ctxt_position:
-                return XPATH_INVALID_CTXT_POSITION;
+                return "XPATH_INVALID_CTXT_POSITION";
             case xpath_memory_error:
-                return XPATH_MEMORY_ERROR;
+                return "XPATH_MEMORY_ERROR";
             case xptr_syntax_error:
-                return XPTR_SYNTAX_ERROR;
+                return "XPTR_SYNTAX_ERROR";
             case xptr_resource_error:
-                return XPTR_RESOURCE_ERROR;
+                return "XPTR_RESOURCE_ERROR";
             case xptr_sub_resource_error:
-                return XPTR_SUB_RESOURCE_ERROR;
+                return "XPTR_SUB_RESOURCE_ERROR";
             case xpath_undef_prefix_error:
-                return XPATH_UNDEF_PREFIX_ERROR;
+                return "XPATH_UNDEF_PREFIX_ERROR";
             case xpath_encoding_error:
-                return XPATH_ENCODING_ERROR;
+                return "XPATH_ENCODING_ERROR";
             case xpath_invalid_char_error:
-                return XPATH_INVALID_CHAR_ERROR;
+                return "XPATH_INVALID_CHAR_ERROR";
             case xpath_invalid_ctxt:
-                return XPATH_INVALID_CTXT;
+                return "XPATH_INVALID_CTXT";
             default:
                 ;
         }
@@ -143,10 +145,31 @@ namespace xslt {
     {
         if (pimpl_->xpath_parser_ctxt == NULL)
             throw xslt::exception("Reporting XSLT extension function error "
-                                  "out XSLT context.");
+                                  "out of XSLT context.");
 
-        xmlXPathErr(pimpl_->xpath_parser_ctxt,
-                    convert_error_code(error));
+        // The initial idea of reporting about errors was to use the
+        // xmlXPathErr(...) function which accepts an integer error code.
+        // Unfortunately this did not work as expected - the XSLT processor did
+        // not notice the error report and just skipped it. Another approach
+        // though - to use the xsltTransformError(...) function - worked quite
+        // well. So this member was re-implemented to user a string report
+        // version.
+        std::string     message("Extension function error: " +
+                                convert_error_code(error));
+
+        report_error(message.c_str());
+        return;
+    }
+
+    void extension_function::report_error (const char *  error)
+    {
+        if (pimpl_->xpath_parser_ctxt == NULL)
+            throw xslt::exception("Reporting XSLT extension function error "
+                                  "out of XSLT context.");
+
+        xsltTransformContextPtr     xslt_ctxt =
+                        xsltXPathGetTransformContext(pimpl_->xpath_parser_ctxt);
+        xsltTransformError(xslt_ctxt, xslt_ctxt->style, NULL, error);
         return;
     }
 
@@ -154,7 +177,7 @@ namespace xslt {
     {
         if (pimpl_->xpath_parser_ctxt == NULL)
             throw xslt::exception("Setting XSLT extension function return value "
-                                  "out XSLT context.");
+                                  "out of XSLT context.");
 
         xmlXPathObjectPtr   object = reinterpret_cast<xmlXPathObjectPtr>(
                                                         ret_val.get_object());

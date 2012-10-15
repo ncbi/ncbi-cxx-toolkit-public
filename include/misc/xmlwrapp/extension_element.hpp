@@ -30,11 +30,11 @@
 
 
 /** @file
- * XSLT extension function object
+ * XSLT extension element object
 **/
 
-#ifndef _xmlwrapp_extension_function_hpp_
-#define _xmlwrapp_extension_function_hpp_
+#ifndef _xmlwrapp_extension_element_hpp_
+#define _xmlwrapp_extension_element_hpp_
 
 // standard includes
 #include <vector>
@@ -44,7 +44,7 @@
 #include <misc/xmlwrapp/xpath_errors.hpp>
 
 // Forward declaration for a friend below
-extern "C" { void xslt_ext_func_cb(void *, int); }
+extern "C" { void xslt_ext_element_cb(void *, void *, void *, void *); }
 
 
 namespace xml {
@@ -56,74 +56,65 @@ namespace xml {
 namespace xslt {
 
     namespace impl {
-        struct extension_function_impl;
+        struct extension_element_impl;
     }
 
 /**
- * The XSLT extension function object is used to be a base class for the user
- * provided XSLT functions.
+ * The XSLT extension element object is used to be a base class for the user
+ * provided XSLT extension elements.
  *
 **/
-class extension_function
+class extension_element
 {
 public:
     /**
-     * Create a new extension function.
+     * Create a new extension element.
      * @author Sergey Satskiy, NCBI
     **/
-    extension_function ();
+    extension_element ();
 
     /**
-     * Destroy extension function object and clean the memory up.
+     * Destroy extension element object and clean the memory up.
      * @author Sergey Satskiy, NCBI
     **/
-    virtual ~extension_function ();
+    virtual ~extension_element ();
 
     /**
-     * Create a new extension function using another one as a template.
+     * Create a new extension element using another one as a template.
      *
      * @param other
-     *  Another xslt::extension_function object.
+     *  Another xslt::extension_element object.
      * @author Sergey satskiy, NCBI
     **/
-    extension_function (const extension_function &  other);
+    extension_element (const extension_element &  other);
 
     /**
-     * Create a copy of the extension function object.
+     * Create a copy of the extension element object.
      *
      * @param other
-     *  Another xslt::extension_function object.
+     *  Another xslt::extension_element object.
      * @author Sergey Satskiy, NCBI
     **/
-    extension_function &  operator= (const extension_function &  other);
+    extension_element &  operator= (const extension_element &  other);
 
 protected:
     /**
      * This member is called by the XSLT processor when it sees the
-     * corresponding extension function call.
+     * corresponding extension element.
      *
-     * @param args
-     *  Extension function arguments
-     * @param node
-     *  The current document node
+     * @param current_node
+     *  Extension element current node
+     * @param instruction_node
+     *  The stylesheet instruction node
+     * @param insert_point
+     *  The insertion point
      * @param doc
      *  The current document
     **/
-    virtual void execute (const std::vector<xpath_object> &  args,
-                          const xml::node &                  node,
-                          const xml::document &              doc) = 0;
-
-    /**
-     * Report an error to the XSLT processor. This is the recommended way to
-     * report errors.
-     *
-     * @note It can be called only within execute(...) member.
-     *
-     * @param error
-     *  Error message to be reported.
-     * @author Sergey Satskiy, NCBI
-    **/
-    void report_error (const char *  error);
+    virtual void process (xml::node &               input_node,
+                          const xml::node &         instruction_node,
+                          xml::node &               insert_point,
+                          const xml::document &     doc) = 0;
 
     /**
      * Report an error to the XSLT processor.
@@ -131,25 +122,14 @@ protected:
      * @note It can be called only within execute(...) member.
      *
      * @param error
-     *  Error code to be reported
+     *  Error message to be reported
      * @author Sergey Satskiy, NCBI
     **/
-    void report_error (xpath_error  error);
-
-    /**
-     * Set the extension function return value.
-     *
-     * @note It can be called only within execute(...) member.
-     *
-     * @param ret_val
-     *  The extension function return value
-     * @author Sergey Satskiy, NCBI
-    **/
-    void set_return_value (const xpath_object &  ret_val);
+    void report_error (const char *  error);
 
 private:
-    impl::extension_function_impl *     pimpl_;
-    friend void ::xslt_ext_func_cb(void *, int);
+    impl::extension_element_impl *      pimpl_;
+    friend void ::xslt_ext_element_cb(void *, void *, void *, void *);
 };
 
 

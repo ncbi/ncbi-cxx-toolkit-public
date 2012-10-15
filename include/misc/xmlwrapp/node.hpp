@@ -67,6 +67,7 @@
 
 // Forward declaration for a friend below
 extern "C" { void xslt_ext_func_cb(void *, int); }
+extern "C" { void xslt_ext_element_cb(void*, void*, void*, void*); }
 
 namespace xslt {
 class xpath_object;
@@ -1257,6 +1258,7 @@ private:
 
     // XSLT extensions support
     friend void ::xslt_ext_func_cb(void *, int);
+    friend void ::xslt_ext_element_cb(void*, void*, void*, void*);
 
 }; // end xml::node class
 

@@ -72,6 +72,7 @@
 #include <misc/xmlwrapp/impl/_raw_xslt.hpp>
 
 #include "extension_function_impl.hpp"
+#include "extension_element_impl.hpp"
 
 
 // Typedefs to support extension functions
@@ -84,6 +85,17 @@ typedef std::pair<xslt::extension_function *,
 // Container to store extension functions
 typedef std::map<ext_func_key,
                  ext_func_props>                ext_funcs_map_type;
+
+// Typedefs to support extension elements
+// Key: element name + URI
+typedef std::pair<std::string,
+                  std::string>                  ext_elem_key;
+// Properties: pointer to interface + ownership
+typedef std::pair<xslt::extension_element *,
+                  xml::ownership_type>          ext_elem_props;
+// Container to store extension elements
+typedef std::map<ext_elem_key,
+                 ext_elem_props>                ext_elems_map_type;
 
 
 
@@ -98,6 +110,7 @@ struct xslt::stylesheet::pimpl
 
     // Extension functions support
     ext_funcs_map_type      ext_functions_;
+    ext_elems_map_type      ext_elements_;
 };
 
 
@@ -158,16 +171,85 @@ extern "C" {
         // Make a call
         try {
             found->second.first->execute(args, node, doc);
-        } catch (xslt::xpath_error  error) {
-            found->second.first->report_error(error);
         } catch (const std::exception &  ex) {
-            found->second.first->report_error(xslt::xptr_resource_error);
+            std::string     error("Exception in the user extension function '" +
+                                  key.first + "': " + std::string(ex.what()));
+            found->second.first->report_error(error.c_str());
         } catch (...) {
-            found->second.first->report_error(xslt::xptr_resource_error);
+            std::string     error("Unknown exception in the user "
+                                  "extension function '" + key.first + "'");
+            found->second.first->report_error(error.c_str());
         }
 
         // Clear the context
         found->second.first->pimpl_->xpath_parser_ctxt = NULL;
+
+        return;
+    }
+
+    // XSLT extension element callback
+    void xslt_ext_element_cb(void *c, void *input_node_,
+                             void *instruction_node_,
+                             void *compiled_stylesheet_info)
+    {
+        xsltTransformContextPtr     xslt_ctxt =
+                                reinterpret_cast<xsltTransformContextPtr>(c);
+        xmlNodePtr                  instruction_node =
+                                reinterpret_cast<xmlNodePtr>(instruction_node_);
+        xslt::stylesheet::pimpl *   impl =
+                                reinterpret_cast<xslt::stylesheet::pimpl *>(
+                                                        xslt_ctxt->_private);
+
+        ext_elem_key                key;
+        key.first = reinterpret_cast<const char *>(instruction_node->name);
+        if (instruction_node->ns != NULL && instruction_node->ns->href != NULL)
+            key.second = reinterpret_cast<const char *>(instruction_node->ns->href);
+
+        ext_elems_map_type::iterator    found = impl->ext_elements_.find(key);
+        if (found == impl->ext_elements_.end())
+            return; // No extension element were found
+
+        // The corresponding extension element has been found.
+        // Prepare the parameters.
+        xmlNodePtr                  input_node =
+                                reinterpret_cast<xmlNodePtr>(input_node_);
+
+        xml::node                   inp_node;
+        xml::node                   instr_node;
+        xml::node                   insert_node;
+        xml::document               doc;
+
+        // Wrap libxml2 data with xmlwrapp and make sure that xmlwrapp does NOT
+        // have ownership on the nodes and the document.
+        inp_node.set_node_data(input_node);
+        instr_node.set_node_data(instruction_node);
+        insert_node.set_node_data(xslt_ctxt->insert);
+        doc.set_doc_data(xslt_ctxt->xpathCtxt->doc);
+        doc.pimpl_->set_ownership(false);
+
+        // Set the context to make error reporting working properly
+        found->second.first->pimpl_->xslt_ctxt = xslt_ctxt;
+        found->second.first->pimpl_->instruction_node = instruction_node;
+
+        // Make a call
+        try {
+            found->second.first->process(inp_node, instr_node,
+                                         insert_node, doc);
+        } catch (const std::exception &  ex) {
+            std::string     error("Exception in the user extension element '" +
+                                  key.first + "': " +
+                                  std::string(ex.what()));
+            found->second.first->report_error(error.c_str());
+        } catch (...) {
+            std::string     error("Unknown error in the user "
+                                  "extension element '" +
+                                  key.first + "'");
+            found->second.first->report_error(error.c_str());
+        }
+
+        // Clear the context
+        found->second.first->pimpl_->xslt_ctxt = NULL;
+        found->second.first->pimpl_->instruction_node = NULL;
 
         return;
     }
@@ -287,13 +369,27 @@ xmlDocPtr apply_stylesheet(xslt::stylesheet::pimpl *impl,
     // Register extension functions
     for (ext_funcs_map_type::iterator k = impl->ext_functions_.begin();
          k != impl->ext_functions_.end(); ++k) {
-        if ( xsltRegisterExtFunction(
+        if (xsltRegisterExtFunction(
                 ctxt,
                 reinterpret_cast<const xmlChar*>(k->first.first.c_str()),
                 reinterpret_cast<const xmlChar*>(k->first.second.c_str()),
                 reinterpret_cast<xmlXPathFunction>(xslt_ext_func_cb)) != 0) {
             xsltFreeTransformContext(ctxt);
             throw xslt::exception("Error registering extension function " +
+                                  k->first.first);
+        }
+    }
+
+    // Register extension elements
+    for (ext_elems_map_type::iterator k = impl->ext_elements_.begin();
+         k != impl->ext_elements_.end(); ++k) {
+        if (xsltRegisterExtElement(
+                ctxt,
+                reinterpret_cast<const xmlChar*>(k->first.first.c_str()),
+                reinterpret_cast<const xmlChar*>(k->first.second.c_str()),
+                reinterpret_cast<xsltTransformFunction>(xslt_ext_element_cb)) != 0) {
+            xsltFreeTransformContext(ctxt);
+            throw xslt::exception("Error registering extension element " +
                                   k->first.first);
         }
     }
@@ -472,9 +568,41 @@ xslt::stylesheet::register_extension_function (extension_function *  ef,
             delete found->second.first;
     }
 
-    pimpl_->ext_functions_[ std::pair<std::string, std::string>(name, uri) ] =
-                            std::pair<extension_function *,
-                                      xml::ownership_type>(ef, ownership);
+    pimpl_->ext_functions_[ key ] = std::pair<extension_function *,
+                                          xml::ownership_type>(ef, ownership);
+    return;
+}
+
+
+void
+xslt::stylesheet::register_extension_element (extension_element *  ee,
+                                              const char *          name,
+                                              const char *          uri,
+                                              xml::ownership_type   ownership)
+{
+    if (name == NULL) {
+        if (ownership == xml::type_own)
+            delete ee;
+        throw xslt::exception("Extension element name is uninitialised");
+    }
+
+    if (uri == NULL) {
+        if (ownership == xml::type_own)
+            delete ee;
+        throw xslt::exception("Extension element URI is uninitialised");
+    }
+
+    ext_elem_key                    key = std::pair<std::string,
+                                                    std::string>(name, uri);
+    ext_elems_map_type::iterator    found(pimpl_->ext_elements_.find(key));
+
+    if (found != pimpl_->ext_elements_.end()) {
+        if (found->second.second == xml::type_own)
+            delete found->second.first;
+    }
+
+    pimpl_->ext_elements_[ key ] = std::pair<extension_element *,
+                                        xml::ownership_type>(ee, ownership);
     return;
 }
 
@@ -484,6 +612,13 @@ xslt::stylesheet::~stylesheet()
     // Delete extension functions we owe
     for (ext_funcs_map_type::iterator k = pimpl_->ext_functions_.begin();
          k != pimpl_->ext_functions_.end(); ++k) {
+        if (k->second.second == xml::type_own)
+            delete k->second.first;
+    }
+
+    // Delete extension elements we owe
+    for (ext_elems_map_type::iterator k = pimpl_->ext_elements_.begin();
+         k != pimpl_->ext_elements_.end(); ++k) {
         if (k->second.second == xml::type_own)
             delete k->second.first;
     }

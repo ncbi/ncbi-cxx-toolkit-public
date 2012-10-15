@@ -50,6 +50,7 @@
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/xslt_result_type.hpp>
 #include <misc/xmlwrapp/extension_function.hpp>
+#include <misc/xmlwrapp/extension_element.hpp>
 
 // standard includes
 #include <map>
@@ -137,6 +138,27 @@ public:
                                       const char *          name,
                                       const char *          uri,
                                       xml::ownership_type   ownership = xml::type_not_own);
+
+    //####################################################################
+    /**
+     *
+     * Register an XSLT extension element.
+     *
+     * @param ef The extension element pointer.
+     * @param name Extension element name. It cannot be NULL.
+     * @param uri Extension element URI. It cannot be NULL.
+     * @param ownership If owned then xslt::stylesheet is responsible for
+     *                  deleting the extension element. The responsibility
+     *                  starts from the moment this member is called, i.e. even
+     *                  if the registration failed the extension element will
+     *                  be deleted.
+     * @exception Throw xslt::exception in case of problems
+     * @author Denis Vakatov, NCBI
+    **/
+    void register_extension_element (extension_element *  ee,
+                                     const char *         name,
+                                     const char *         uri,
+                                     xml::ownership_type  ownership = xml::type_not_own);
 
     //####################################################################
     /**

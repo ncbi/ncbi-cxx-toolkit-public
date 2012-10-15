@@ -62,6 +62,7 @@
 
 // Forward declaration for a friend below
 extern "C" { void xslt_ext_func_cb(void *, int); }
+extern "C" { void xslt_ext_element_cb(void*, void*, void*, void*); }
 
 // forward declaration
 namespace xslt {
@@ -839,6 +840,7 @@ private:
     friend class dtd;
     friend class libxml2_document;
     friend void ::xslt_ext_func_cb(void *, int);
+    friend void ::xslt_ext_element_cb(void*, void*, void*, void*);
 }; // end xml::document class
 
 } // end xml namespace
