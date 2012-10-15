@@ -290,6 +290,13 @@ private:
     // Prohibit copy constructor & assignment operator
     CDbtag(const CDbtag&);
     CDbtag& operator= (const CDbtag&);
+
+    // returns true if the given tag looks like an accession and
+    // it also gives the number of alpha, digit and underscores found in it
+    static bool x_LooksLikeAccession(const string &tag, 
+        int &out_num_alpha, 
+        int &out_num_digit, 
+        int &out_num_unscr);
 };
 
 

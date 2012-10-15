@@ -616,7 +616,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_VectorBase, "http://www.vectorbase.org/Genome/BRCGene/?feature=" },
     { CDbtag::eDbtagType_Vega, "http://vega.sanger.ac.uk/id/"  },
     { CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search=" },
-    { CDbtag::eDbtagType_WormBase, "http://www.wormbase.org/db/gene/gene?class=CDS;name=" },
+    { CDbtag::eDbtagType_WormBase, "http://www.wormbase.org/search/gene/" },
     { CDbtag::eDbtagType_Xenbase, "http://www.xenbase.org/gene/showgene.do?method=display&geneId=" },
     { CDbtag::eDbtagType_ZFIN, "http://zfin.org/cgi-bin/webdriver?MIval=aa-markerview.apg&OID=" },
     { CDbtag::eDbtagType_axeldb, "http://www.dkfz-heidelberg.de/tbi/services/axeldb/clone/xenopus?name=" },
@@ -808,6 +808,19 @@ string CDbtag::GetUrl(const string & genus,
             }
             break;
 
+        case CDbtag::eDbtagType_WormBase:
+            {
+                int num_alpha = 0;
+                int num_digit = 0;
+                int num_unscr = 0;
+                if( x_LooksLikeAccession (tag, num_alpha, num_digit, num_unscr) &&
+                    num_alpha == 3 && num_digit == 5 ) 
+                {
+                    prefix = "http://www.wormbase.org/search/protein/";
+                }
+            }
+            break;
+
         case CDbtag::eDbtagType_HOMD:
             if( NStr::StartsWith(tag, "tax_") ) {
                 prefix = kHomdTax;
@@ -847,6 +860,74 @@ string CDbtag::GetUrl(const string & genus,
     return string(prefix) + tag;
 }
 
+// static 
+bool CDbtag::x_LooksLikeAccession(const string &tag, 
+        int &out_num_alpha, 
+        int &out_num_digit, 
+        int &out_num_unscr)
+{
+    if ( tag.empty() ) return false;
+
+    if ( tag.length() >= 16) return false;
+
+    if ( ! isupper(tag[0]) ) return false;
+
+    int     numAlpha = 0;
+    int     numDigits = 0;
+    int     numUndersc = 0;
+
+    string::const_iterator tag_iter = tag.begin();
+    if ( NStr::StartsWith(tag, "NZ_") ) {
+        tag_iter += 3;
+    }
+    for ( ; tag_iter != tag.end() && isalpha(*tag_iter); ++tag_iter ) {
+        numAlpha++;
+    }
+    for ( ; tag_iter != tag.end() && *tag_iter == '_'; ++tag_iter ) {
+        numUndersc++;
+    }
+    for ( ; tag_iter != tag.end() && isdigit(*tag_iter) ; ++tag_iter ) {
+        numDigits++;
+    }
+    if ( tag_iter != tag.end() && *tag_iter != ' ' && *tag_iter != '.') {
+        return false;
+    }
+
+    if (numUndersc > 1) return false;
+
+    out_num_alpha = numAlpha;
+    out_num_digit = numDigits;
+    out_num_unscr = numUndersc;
+
+    if (numUndersc == 0) {
+        if (numAlpha == 1 && numDigits == 5) return true;
+        if (numAlpha == 2 && numDigits == 6) return true;
+        if (numAlpha == 3 && numDigits == 5) return true;
+        if (numAlpha == 4 && numDigits == 8) return true;
+        if (numAlpha == 4 && numDigits == 9) return true;
+        if (numAlpha == 5 && numDigits == 7) return true;
+    } else if (numUndersc == 1) {
+        if (numAlpha != 2 || (numDigits != 6 && numDigits != 8 && numDigits != 9)) return false;
+        if (tag[0] == 'N' || tag[0] == 'X' || tag[0] == 'Z') {
+            if (tag[1] == 'M' ||
+                tag[1] == 'C' ||
+                tag[1] == 'T' ||
+                tag[1] == 'P' ||
+                tag[1] == 'G' ||
+                tag[1] == 'R' ||
+                tag[1] == 'S' ||
+                tag[1] == 'W' ||
+                tag[1] == 'Z') {
+                    return true;
+            }
+        }
+        if (tag[0] == 'A' || tag[0] == 'Y') {
+            if (tag[1] == 'P') return true;
+        }
+    }
+
+    return false;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
