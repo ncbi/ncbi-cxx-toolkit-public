@@ -1601,8 +1601,7 @@ void CFlatAnticodonQVal::Format
             if( seq_vector.size() == 3 ) {
                 string seq("---");
                 seq_vector.GetSeqData(0, 3, seq);
-                // this is RNA, so convert T to U
-                NStr::ReplaceInPlace(seq, "T", "U");
+                NStr::ToLower(seq);
                 text << ",seq:" << seq;
             }
         } catch(...) {
