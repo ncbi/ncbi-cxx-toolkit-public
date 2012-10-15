@@ -1981,10 +1981,13 @@ enum EEndsOnBioseqOpt {
     eEndsOnBioseqOpt_AnyPartOfSeqLoc
 };
 
-static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx, EEndsOnBioseqOpt mode )
+static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx, 
+    EEndsOnBioseqOpt mode, CSeqFeatData::E_Choice feat_type )
 {
     const bool showOutOfBoundsFeats = ctx.Config().ShowOutOfBoundsFeats();
     const bool is_part = ctx.IsPart();
+    const bool is_small_genome_set = ( ctx.CanGetTLSeqEntryCtx() &&
+        ctx.GetTLSeqEntryCtx().GetHasSmallGenomeSet() );
 
     // check certain case(s) that let us skip some work
     if( showOutOfBoundsFeats && ! is_part ) {
@@ -1994,29 +1997,97 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx, EEnds
     const CBioseq_Handle& seq = ctx.GetHandle();
     const int seq_len = seq.GetBioseqLength();
 
+    CSeq_loc_CI first;
     CSeq_loc_CI last;
-    for ( CSeq_loc_CI it(loc); it; ++it ) {
-        if( mode == eEndsOnBioseqOpt_AnyPartOfSeqLoc ) {
+    CSeq_loc_CI first_non_far;
+    CSeq_loc_CI last_non_far;
+    bool any_piece_is_on_bioseq = false;
+    for ( CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); it; ++it ) {
+        if( ! any_piece_is_on_bioseq ) {
             if( seq.IsSynonym(it.GetSeq_id()) && (int)it.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) < seq_len ) {
-                return true;
+                any_piece_is_on_bioseq = true;
+                if( mode == eEndsOnBioseqOpt_AnyPartOfSeqLoc ) {
+                    return true;
+                }
             }
         }
+
+        if( ! first ) {
+            first = it;
+        }
         last = it;
+
+        if( ctx.IsSeqIdInSameTopLevelSeqEntry(it.GetSeq_id()) ) {
+            if( ! first_non_far ) {
+                first_non_far = it;
+            }
+            last_non_far = it;
+        }
+    }
+    if( ! first_non_far || ! any_piece_is_on_bioseq ) {
+        // no non-far pieces
+        return false;
     }
 
     if( mode == eEndsOnBioseqOpt_AnyPartOfSeqLoc ) {
         return false;
     }
 
-    const bool endsOnThisBioseq = ( last  &&  seq.IsSynonym(last.GetSeq_id()) );
-    if( is_part ) {
-        return endsOnThisBioseq;
-    } else {
-        if( endsOnThisBioseq ) {
-            // if we're not partial, we also check that we're within range
-            return seq_len > (int)last.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) ;
-        } else {
+    
+    if( is_small_genome_set ) {
+        // if first part is on this bioseq, we're already successful
+        const bool first_is_on_bioseq = (
+            first == first_non_far && 
+            seq.IsSynonym(first.GetSeq_id()) && 
+            seq_len > (int)first.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological) );
+        if( first_is_on_bioseq ) {
             return true;
+        }
+
+        // for genes (and only genes), we allow the following extra laxness:
+        // if first part is NOT on bioseq, but is on same TSE, then it's fine:
+        if( feat_type == CSeqFeatData::e_Gene &&
+            ctx.IsSeqIdInSameTopLevelSeqEntry(first.GetSeq_id()) ) 
+        {
+            return true;
+        }
+
+        // if first part is positive and far, last part must be on bioseq
+        // and first of non-far parts must be on this bioseq.
+        if( first != first_non_far && 
+            first.GetStrand() != eNa_strand_minus &&
+            seq.IsSynonym(last.GetSeq_id()) &&
+            seq.IsSynonym(first_non_far.GetSeq_id()) )
+        {
+            return true;
+        }
+
+        // no test passed
+        return false;
+    } else {
+        // first and last non-far parts must be on this bioseq
+        if( ! seq.IsSynonym(first_non_far.GetSeq_id()) ||
+            ! seq.IsSynonym(last_non_far.GetSeq_id()) )
+        {
+            return false;
+        }
+
+        // when first part is minus, then it must be on this bioseq
+        // when first part is plus, then *last* piece must be on this bioseq
+        const bool bMinus = (first.GetStrand() == eNa_strand_minus);
+        CSeq_loc_CI part_to_check = ( bMinus ? first : last );
+
+        const bool endsOnThisBioseq = ( part_to_check  &&  
+            seq.IsSynonym(part_to_check.GetSeq_id()) );
+        if( is_part ) {
+            return endsOnThisBioseq;
+        } else {
+            if( endsOnThisBioseq ) {
+                // if we're not partial, we also check that we're within range
+                return seq_len > (int)part_to_check.GetRangeAsSeq_loc()->GetStop(eExtreme_Biological);
+            } else {
+                return false;
+            }
         }
     }
 }
@@ -2376,6 +2447,9 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CScope& scope = ctx.GetScope();
     CFlatItemOStream& out = *m_ItemOS;
 
+    const bool is_small_genome_set = ( ctx.CanGetTLSeqEntryCtx() &&
+        ctx.GetTLSeqEntryCtx().GetHasSmallGenomeSet() );
+
     CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
 
     // logic to handle offsets that occur when user sets 
@@ -2482,7 +2556,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             feat_loc = s_NormalizeNullsBetween( feat_loc );
         
             // make sure location ends on the current bioseq
-            if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc ) ) {
+            if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
                     if (!ctx.Config().IsFormatFTable()) {
@@ -2947,14 +3021,14 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
                 x_GiveOneResidueIntervalsBogusFuzz(*loc);
 
                 loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);
-                // remove the extra fuzz we've added
+                // remove the bogus fuzz we've added
                 x_RemoveBogusFuzzFromIntervals(*loc);
             }
         }
         if (!loc  ||  loc->IsNull()) {
             continue;
         }
-        if ( !s_SeqLocEndsOnBioseq(*loc, ctx, eEndsOnBioseqOpt_AnyPartOfSeqLoc) ) {
+        if ( !s_SeqLocEndsOnBioseq(*loc, ctx, eEndsOnBioseqOpt_AnyPartOfSeqLoc, CSeqFeatData::e_Cdregion) ) {
             continue;
         }
 
