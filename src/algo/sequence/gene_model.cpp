@@ -2664,10 +2664,42 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         has_start = true;
     }
 
+    CRef<CSeq_loc_Mapper> to_prot;
+    CRef<CSeq_loc_Mapper> to_mrna;
+    CRef<CSeq_loc_Mapper> to_genomic;
+    if (cds_feat_on_mrna) {
+        to_prot.Reset(
+            new CSeq_loc_Mapper(*cds_feat_on_mrna,
+                                CSeq_loc_Mapper::eLocationToProduct));
+        to_mrna.Reset(
+            new CSeq_loc_Mapper(*cds_feat_on_mrna,
+                                CSeq_loc_Mapper::eProductToLocation));
+        to_genomic.Reset(
+            new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Gen));
+    }
+
+    CRef<CSeq_id> cds_id(new CSeq_id);
+    cds_id->Assign(*feat.GetProduct().GetId());
+
     string actual;
-    CSeqVector vec(feat.GetProduct(), *m_scope,
+    CRef<CSeq_loc> whole_product(new CSeq_loc);
+    whole_product->SetWhole(*cds_id);
+    CRef<CSeq_loc> product_loc = whole_product;
+    if (cds_feat_on_mrna && !(m_flags & fForceTranslateCds)) {
+        /// The product we're comparing to is an existing product, not our own
+        /// translation; make sure we're comparing to aligned part of product
+        CSeq_loc aligned_range(const_cast<CSeq_id &>(align->GetSeq_id(0)),
+                               align->GetSeqStart(0), align->GetSeqStop(0),
+                               align->GetSeqStrand(0));
+        product_loc = to_prot->Map(aligned_range);
+    }
+    CSeqVector vec(*whole_product, *m_scope,
                    CBioseq_Handle::eCoding_Iupac);
     vec.GetSeqData(0, vec.size(), actual);
+    if (!product_loc->IsWhole()) {
+        actual = actual.substr(product_loc->GetStart(eExtreme_Positional),
+                               product_loc->GetTotalRange().GetLength());
+    }
 
     ///
     /// now, compare the two
@@ -2683,18 +2715,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it1_end = actual.end();
     string::const_iterator it2     = xlate.begin();
     string::const_iterator it2_end = xlate.end();
-    CRef<CSeq_loc_Mapper> to_mrna;
-    CRef<CSeq_loc_Mapper> to_genomic;
-    if (cds_feat_on_mrna) {
-        to_mrna.Reset(
-            new CSeq_loc_Mapper(*cds_feat_on_mrna,
-                                CSeq_loc_Mapper::eProductToLocation));
-        to_genomic.Reset(
-            new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Gen));
-    }
-    CRef<CSeq_id> cds_id(new CSeq_id);
-    cds_id->Assign(*feat.GetProduct().GetId());
-    TSeqPos start_pos = feat.GetProduct().GetStart(eExtreme_Positional);
+
+    TSeqPos start_pos = product_loc->GetStart(eExtreme_Positional);
     bool single_interval_product = ++feat.GetProduct().begin()
                                   == feat.GetProduct().end();
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
@@ -2709,14 +2731,18 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             CSeq_loc internal_stop_loc(*cds_id, pos, pos);
             CRef<CSeq_loc> mrna_loc = to_mrna->Map(internal_stop_loc);
             CRef<CSeq_loc> mapped = to_genomic->Map(*mrna_loc);
-            char actual_aa = *it1;
-            if (!(m_flags & fTrustProteinSeq)) {
-                actual_aa = 'X';
-                if (*it1 != 'X') {
-                    ++mismatch_count;
+            if (mapped->IsInt() && mapped->GetTotalRange().GetLength() == 3) {
+                char actual_aa = *it1;
+                if (!(m_flags & fTrustProteinSeq)) {
+                    actual_aa = 'X';
+                    if (*it1 != 'X') {
+                        ++mismatch_count;
+                    }
                 }
+                AddCodeBreak(feat, *mapped, actual_aa);
+            } else {
+                has_gap = true;
             }
-            AddCodeBreak(feat, *mapped, actual_aa);
         } else if (*it2 == '-') {
             has_gap = true;
         } else if (*it1 != *it2) {
