@@ -9263,6 +9263,107 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
     }
 }
 
+static int s_PcrPrimerCompare( 
+    const CRef<CPCRPrimer> &p1, const CRef<CPCRPrimer> &p2 )
+{
+    if( p1.IsNull() || p2.IsNull() ) {
+        return p2.IsNull() - p1.IsNull();
+    }
+
+    const string & name1 = ( p1->IsSetName() ? p1->GetName().Get() : kEmptyStr );
+    const string & name2 = ( p2->IsSetName() ? p2->GetName().Get() : kEmptyStr );
+    const int name_comparison = NStr::CompareCase(name1, name2);
+    if( name_comparison != 0 ) {
+        return name_comparison;
+    }
+
+    const string & seq1 = ( p1->IsSetSeq() ? p1->GetSeq().Get() : kEmptyStr );
+    const string & seq2 = ( p2->IsSetSeq() ? p2->GetSeq().Get() : kEmptyStr );
+    const int seq_comparison = NStr::CompareCase(seq1, seq2);
+    return seq_comparison;
+}
+
+class CPcrPrimerRefLessThan {
+public:
+
+    bool operator()(
+        const CRef<CPCRPrimer> &p1, const CRef<CPCRPrimer> &p2 ) const
+    {
+        return ( s_PcrPrimerCompare(p1, p2) < 0 );
+    }
+};
+
+class CPCRPrimerRefEqual {
+public:
+    bool operator()( 
+        const CRef<CPCRPrimer> & p1, const CRef<CPCRPrimer> & p2 ) const
+    {
+        return (0 == s_PcrPrimerCompare(p1, p2) );
+    }
+};
+
+// neg for "<", 0 for "==", and pos for ">"
+static int s_PcrPrimerSetCompare( const CPCRPrimerSet &s1, const CPCRPrimerSet &s2 )
+{
+    // it's highly unlikely for this if-statement to trigger, but just in case...
+    if( ! s1.IsSet() || ! s2.IsSet() ) {
+        return int(s1.IsSet()) - int(s2.IsSet());
+    }
+
+    // put the primers into a set so that our comparison doesn't worry about order or dups
+    typedef set< CRef<CPCRPrimer>, CPcrPrimerRefLessThan > TPrimerContainer;
+    TPrimerContainer primer_set_1;
+    TPrimerContainer primer_set_2;
+
+    copy( s1.Get().begin(), s1.Get().end(), inserter(primer_set_1, primer_set_1.begin()) );
+    copy( s2.Get().begin(), s2.Get().end(), inserter(primer_set_2, primer_set_2.begin()) );
+
+    // smaller first
+    if( primer_set_1.size() != primer_set_2.size() ) {
+        return (primer_set_1.size() - primer_set_2.size());
+    }
+
+    // find so we can compare
+    pair<TPrimerContainer::const_iterator, TPrimerContainer::const_iterator> mismatch_iter = 
+        mismatch( primer_set_1.begin(), primer_set_1.end(), primer_set_2.begin(), CPCRPrimerRefEqual() );
+    if( mismatch_iter.first == primer_set_1.end() ) {
+        // no mismatch; they're equal
+        return 0;
+    }
+
+    const int mismatch_compare = s_PcrPrimerCompare(*mismatch_iter.first, *mismatch_iter.second);
+    return mismatch_compare;
+}
+
+class CPcrReactionLessThan {
+public:
+
+    bool operator()( 
+        const CRef<CPCRReaction> &r1, const CRef<CPCRReaction> &r2 ) const
+    {
+        if( r1.IsNull() || r2.IsNull() ) {
+            return r1.IsNull() && ! r2.IsNull();
+        }
+
+        // compare on forward, then reverse
+        if( ! r1->IsSetForward() || ! r2->IsSetForward() ) {
+            // note where the "!" operator is and isn't
+            return ! r1->IsSetForward() && r2->IsSetForward(); 
+        }
+        const int forward_comparison = s_PcrPrimerSetCompare( r1->GetForward(), r2->GetForward() );
+        if( forward_comparison != 0 ) {
+            return (forward_comparison < 0);
+        }
+
+        if( ! r1->IsSetReverse() && ! r2->IsSetReverse() ) {
+            // note where the "!" operator is and isn't
+            return ! r1->IsSetReverse() && r2->IsSetReverse();
+        }
+        return ( s_PcrPrimerSetCompare( r1->GetReverse(), r2->GetReverse() ) < 0 );
+    }
+
+};
+
 void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )
 {
     EDIT_EACH_PCRREACTION_IN_PCRREACTIONSET( reaction_iter, pcr_reaction_set ) {
@@ -9289,6 +9390,8 @@ void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )
             ChangeMade(CCleanupChange::eChangePCRPrimers);
         }
     }
+
+    UNIQUE_WITHOUT_SORT_PCRREACTION_IN_PCRREACTIONSET( pcr_reaction_set, CPcrReactionLessThan );
 
     REMOVE_IF_EMPTY_PCRREACTION_IN_PCRREACTIONSET( pcr_reaction_set );
 }

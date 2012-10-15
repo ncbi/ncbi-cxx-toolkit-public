@@ -728,6 +728,7 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
     it = Base##_Set(Var).erase(it, Base##_Set(Var).end()); \
 }
 
+// keeps only the first of all the ones that match
 #define UNIQUE_WITHOUT_SORT(Base, Var, FuncType, CleanupChangeType) \
 { \
     if( Base##_Test(Var) ) { \
@@ -4115,6 +4116,12 @@ DO_UNIQUE (CODON_ON_TRNAEXT, Var, Func)
 
 #define REMOVE_IF_EMPTY_PCRREACTION_IN_PCRREACTIONSET(Var) \
     REMOVE_IF_EMPTY_FIELD(PCRREACTION_IN_PCRREACTIONSET, Var)
+
+/// UNIQUE_WITHOUT_SORT_PCRREACTION_IN_PCRREACTIONSET
+
+#define UNIQUE_WITHOUT_SORT_PCRREACTION_IN_PCRREACTIONSET(Var, FuncType) \
+UNIQUE_WITHOUT_SORT( PCRREACTION_IN_PCRREACTIONSET, Var, FuncType, \
+    CCleanupChange::eChangePCRPrimers )
 
 ///
 /// CPCRReaction macros
