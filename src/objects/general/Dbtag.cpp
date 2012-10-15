@@ -600,7 +600,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/rgdweb/search/search.html?term=" },
     { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" },
     { CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id=" },
-    { CDbtag::eDbtagType_SGD, "http://db.yeastgenome.org/cgi-bin/SGD/locus.pl?locus=" },
+    { CDbtag::eDbtagType_SGD, "http://www.yeastgenome.org/cgi-bin/locus.fpl?locus=" },
     { CDbtag::eDbtagType_SGN, "http://www.sgn.cornell.edu/search/est.pl?request_type=7&request_id=" },
     { CDbtag::eDbtagType_SK_FST, "http://aafc-aac.usask.ca/fst/" },
     { CDbtag::eDbtagType_SubtiList, "http://genolist.pasteur.fr/SubtiList/genome.cgi?external_query+" },
