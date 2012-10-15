@@ -118,6 +118,9 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             if (frame != -1) {
                 m_FrameOffset[tokens[0]] = frame;
             }
+            if (tokens.size() == 3) { //just backward compatible as there was no such field
+                m_DJChainType[tokens[0]] = tokens[2];
+            }
         }
     }
 };
@@ -417,11 +420,42 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             CSeq_align_set::Tdata & align_list = align_D->Set();
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             /* chain type test */
-            if (q_ct!="VH" && q_ct!="N/A") {
+            if (q_ct!="VH" && q_ct!="VD" && q_ct!="VB" && q_ct!="N/A") {
                 while (it != align_list.end()) {
                     it = align_list.erase(it);
                 }
             }
+            //test compatability between V and D
+            it = align_list.begin();
+            while (it != align_list.end()) {
+                bool keep = true;
+                /* chain type test */
+                if (q_ct!="N/A") {
+                    char s_ct = q_ct[1];
+                    string d_id;
+                    (*it)->GetSeq_id(1).GetLabel(&d_id, CSeq_id::eContent);
+                    string d_chain_type = m_AnnotationInfo.GetDJChainType(d_id);
+                    if (d_chain_type != "N/A"){
+                        if (d_chain_type[1] != q_ct[1]) keep = false;
+                    } else { //assume D gene id style 
+                        string sid = (*it)->GetSeq_id(1).AsFastaString();
+                        sid = NStr::ToUpper(sid);
+                        if (sid.substr(0, 4) == "LCL|") sid = sid.substr(4, sid.length());
+                        if ((sid.substr(0, 2) == "IG" || sid.substr(0, 2) == "TR")
+                            && sid[3] == 'D') {
+                            s_ct = sid[2];
+                        }
+                        if (s_ct!='B' && s_ct!='D') s_ct = q_ct[1];
+                        if (s_ct != q_ct[1]) keep = false;
+                    }
+                }
+                
+                /* remove failed seq_align */
+                if (!keep) it = align_list.erase(it);
+                else ++it;
+            }
+
+
             /* strand test */
             bool strand_found = false;
             ITERATE(CSeq_align_set::Tdata, it, align_list) {
@@ -465,16 +499,25 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                 /* chain type test */
                 if (q_ct!="N/A") {
                     char s_ct = q_ct[1];
-                    string sid = (*it)->GetSeq_id(1).AsFastaString();
-                    sid = NStr::ToUpper(sid);
-                    if (sid.substr(0, 4) == "LCL|") sid = sid.substr(4, sid.length());
-                    if (sid.substr(0, 2) == "IG" && sid[3] == 'J') {
-                        s_ct = sid[2];
-                    } else if (sid[0] == 'J') {
-                        s_ct = sid[1];
+                    string j_id;
+                    (*it)->GetSeq_id(1).GetLabel(&j_id, CSeq_id::eContent);
+                    string j_chain_type = m_AnnotationInfo.GetDJChainType(j_id);
+                    if (j_chain_type != "N/A"){
+                        if (j_chain_type[1] != q_ct[1]) keep = false;
+                    } else { //assume J gene id style 
+                        string sid = (*it)->GetSeq_id(1).AsFastaString();
+                        sid = NStr::ToUpper(sid);
+                        if (sid.substr(0, 4) == "LCL|") sid = sid.substr(4, sid.length());
+                        if ((sid.substr(0, 2) == "IG" || sid.substr(0, 2) == "TR")
+                            && sid[3] == 'J') {
+                            s_ct = sid[2];
+                        } else if (sid[0] == 'J') {
+                            s_ct = sid[1];
+                        }
+                        if (s_ct!='H' && s_ct!='L' && s_ct!='K' &&
+                            s_ct!='A' && s_ct!='B' && s_ct!='D' && s_ct!='G') s_ct = q_ct[1];
+                        if (s_ct != q_ct[1]) keep = false;
                     }
-                    if (s_ct!='H' && s_ct!='L' && s_ct!='K') s_ct = q_ct[1];
-                    if (s_ct != q_ct[1]) keep = false;
                 }
                 /* strand test */
                 if ((*it)->GetSeqStrand(0) != q_st) keep = false;

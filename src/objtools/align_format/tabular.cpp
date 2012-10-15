@@ -1041,10 +1041,12 @@ void CIgBlastTabularInfo::PrintMasterAlign(const string &header) const
         }
         m_Ostream << header << "V(D)J rearrangement summary for query sequence ";
         m_Ostream << "(Top V gene match, ";
-        if (m_ChainType == "VH") m_Ostream << "Top D gene match, ";
+        if (m_ChainType == "VH" || m_ChainType == "VD" || 
+            m_ChainType == "VB") m_Ostream << "Top D gene match, ";
         m_Ostream << "Top J gene match, Chain type, V-J Frame, Strand):" << endl;
         m_Ostream << m_VGene.sid << m_FieldDelimiter;
-        if (m_ChainType == "VH") m_Ostream << m_DGene.sid << m_FieldDelimiter;
+        if (m_ChainType == "VH"|| m_ChainType == "VD" || 
+            m_ChainType == "VB") m_Ostream << m_DGene.sid << m_FieldDelimiter;
         m_Ostream << m_JGene.sid << m_FieldDelimiter;
         m_Ostream << m_ChainType << m_FieldDelimiter;
         if (m_FrameInfo == "IF") m_Ostream << "In-frame";
@@ -1100,7 +1102,8 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
         m_Ostream << "<br><br><br>V(D)J rearrangement summary for query sequence:\n";
         m_Ostream << "<pre><table border=1>\n";
         m_Ostream << "<tr><td>Top V gene match</td>";
-        if (m_ChainType == "VH") {  
+        if (m_ChainType == "VH" || m_ChainType == "VD" || 
+            m_ChainType == "VB") {  
             m_Ostream << "<td>Top D gene match</td>";
         }
         m_Ostream << "<td>Top J gene match</td>"
@@ -1109,7 +1112,8 @@ void CIgBlastTabularInfo::PrintHtmlSummary() const
                   << "<td>Strand</td></tr>\n";
 
         m_Ostream << "<tr><td>"  << m_VGene.sid;
-        if (m_ChainType == "VH") { 
+        if (m_ChainType == "VH" || m_ChainType == "VD" || 
+            m_ChainType == "VB") { 
             m_Ostream << "</td><td>" << m_DGene.sid;
         }
         m_Ostream << "</td><td>" << m_JGene.sid
@@ -1220,7 +1224,9 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
     if (b2 < 0) {
         b2 = b1;
         b3 = b1;
-        if (b3 > b4 && b4 > 0 && m_ChainType == "VH") {
+        if (b3 > b4 && b4 > 0 && (m_ChainType == "VH" || 
+                                  m_ChainType == "VD" || 
+                                  m_ChainType == "VB")) {
             b4 = b3;
         }
     }
@@ -1230,7 +1236,8 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         b5 = b3;
     }
 
-    if (m_ChainType == "VH") {
+    if (m_ChainType == "VH" || m_ChainType == "VD" || 
+            m_ChainType == "VB") {
         a1 = min(b1, b2);
         a2 = max(b1, b2);
         a3 = min(b3, b4);
@@ -1244,7 +1251,8 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         m_Ostream << "<br>Nucleotide details around V(D)J junctions:\n";
         m_Ostream << "<pre><table border=1>\n";
         m_Ostream << "<tr><td>V region end</td>";
-        if (m_ChainType == "VH") {
+        if (m_ChainType == "VH" || m_ChainType == "VD" || 
+            m_ChainType == "VB") {
             m_Ostream << "<td>V-D junction*</td>"
                       << "<td>D region</td>"
                       << "<td>D-J junction*</td>";
@@ -1254,14 +1262,16 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
         m_Ostream << "<td>J region start</td></tr>\n<tr>";
     } else {
         m_Ostream << header << "V(D)J junction details (V end, ";
-        if (m_ChainType == "VH")  m_Ostream << "V-D junction, D region, D-J junction, ";
+        if (m_ChainType == "VH" || m_ChainType == "VD" || 
+            m_ChainType == "VB")  m_Ostream << "V-D junction, D region, D-J junction, ";
         else m_Ostream << "V-J junction, ";
         m_Ostream << "J start).  Note that possible overlapping nucleotides at VDJ junction (i.e, nucleotides that could be assigned to either joining gene segment) are indicated in parentheses (i.e., (TACT)) but"
                   << " are not included under V, D, or J gene itself" << endl;
     }
 
     x_PrintPartialQuery(max(b0, a1 - 5), a1, isHtml); m_Ostream << m_FieldDelimiter;
-    if (m_ChainType == "VH") {
+    if (m_ChainType == "VH" || m_ChainType == "VD" || 
+            m_ChainType == "VB") {
         x_PrintPartialQuery(b1, b2, isHtml); m_Ostream << m_FieldDelimiter;
         x_PrintPartialQuery(a2, a3, isHtml); m_Ostream << m_FieldDelimiter;
         x_PrintPartialQuery(b3, b4, isHtml); m_Ostream << m_FieldDelimiter;

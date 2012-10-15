@@ -134,11 +134,19 @@ public:
         return -1;
     }
 
+    const string GetDJChainType(const string sid) {
+        if (m_DJChainType.find(sid) != m_DJChainType.end()) {
+            return m_DJChainType[sid];
+        }
+        return "N/A";
+    }
+
 private:
     map<string, int> m_DomainIndex;
     vector<int> m_DomainData;
     map<string, string> m_DomainChainType;
     map<string, int> m_FrameOffset;
+    map<string, string> m_DJChainType;
 };
 
 class CIgBlastResults : public CSearchResults 
