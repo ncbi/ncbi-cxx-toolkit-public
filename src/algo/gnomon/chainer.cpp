@@ -3358,7 +3358,7 @@ void MarkupCappedEst::transform_align(CAlignModel& align)
         align.Status() |= CGeneModel::eCap;
 }
 
-MarkupTrustedGenes::MarkupTrustedGenes(set<string> _trusted_genes) : trusted_genes(_trusted_genes) {}
+MarkupTrustedGenes::MarkupTrustedGenes(set<string>& _trusted_genes) : trusted_genes(_trusted_genes) {}
 
 void MarkupTrustedGenes::transform_align(CAlignModel& align)
 {
