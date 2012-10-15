@@ -469,7 +469,6 @@ void CSparseAln::TranslateNAToAA(const string& na,
     }
 
     if (&aa == &na) {
-        aa[aa_i] = 0;
         aa.resize(aa_i);
     }
 }
@@ -536,8 +535,6 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
 {
     _ASSERT(row >= 0  &&  row < GetDim());
 
-    bool translate = force_translation  ||  IsTranslated();
-
     TSignedRange aln_range(rq_aln_range);
     if ( aln_range.IsWhole() ) {
         aln_range = GetSeqAlnRange(row);
@@ -559,6 +556,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
     TSeqPos vec_size = seq_vector.size();
 
     const int base_width = pairwise_aln.GetSecondBaseWidth();
+    bool translate = force_translation  ||  pairwise_aln.GetSecondId()->IsProtein();
 
     // buffer holds sequence for "aln_range", 0 index corresonds to aln_range.GetFrom()
     size_t size = aln_range.GetLength();

@@ -152,7 +152,7 @@ private:
         }
     }
 
-
+    
     bool x_ValidNeighboursOnFirstDim(const CPairwiseAln::TAlnRng& left,
                                      const CPairwiseAln::TAlnRng& right) {
         if (left.GetFirstToOpen() > right.GetFirstFrom()) {
@@ -466,6 +466,80 @@ s_TranslateToAlnCoords(CAnchoredAln& anchored_aln,
 }    
 
 
+void x_AdjustAnchorDirection(TAnchoredAlnVec&          in_alns,
+                             AutoPtr<TAnchoredAlnVec>& out_alns)
+{
+    // By default use the original alignments.
+    out_alns.reset(&in_alns, eNoOwnership);
+
+    // Check if all anchor rows have the same direction.
+    bool have_direct = false;
+    bool have_reverse = false;
+    TAlnSeqIdIRef common_anchor_id;
+    ITERATE(TAnchoredAlnVec, it, in_alns) {
+        const CAnchoredAln& anchored = **it;
+        // All anlignments must have the same anchor id. If this is not true,
+        // don't try to adjust strands.
+        if ( !common_anchor_id ) {
+            common_anchor_id = anchored.GetAnchorId();
+        }
+        else if ( !common_anchor_id->GetSeqId().Equals(
+            anchored.GetAnchorId()->GetSeqId()) ) {
+            return;
+        }
+        ITERATE(CAnchoredAln::TPairwiseAlnVector, pw_it, anchored.GetPairwiseAlns()) {
+            const CPairwiseAln& pw = **pw_it;
+            ITERATE(CPairwiseAln, seg, pw) {
+                if ( seg->IsFirstDirect() ) {
+                    have_direct = true;
+                }
+                else {
+                    have_reverse = true;
+                }
+                if (have_direct  &&  have_reverse) {
+                    break;
+                }
+            }
+            if (have_direct  &&  have_reverse) {
+                break;
+            }
+        }
+        if (have_direct  &&  have_reverse) {
+            break;
+        }
+    }
+    if (!have_direct  ||  !have_reverse) {
+        return;
+    }
+
+    // Create new anchor with the same coordinates but on plus strand.
+    out_alns.reset(new TAnchoredAlnVec, eTakeOwnership);
+    ITERATE(TAnchoredAlnVec, it, in_alns) {
+        const CAnchoredAln& anchored = **it;
+        CAnchoredAln::TDim old_anchor_row = anchored.GetAnchorRow();
+        CRef<CAnchoredAln> anchored_copy(new CAnchoredAln);
+        anchored_copy->SetDim(anchored.GetDim());
+        anchored_copy->SetScore(anchored.GetScore());
+        anchored_copy->SetAnchorRow(old_anchor_row);
+        out_alns->push_back(anchored_copy);
+
+        for (int row = 0; row < anchored.GetDim(); ++row) {
+            const CPairwiseAln& pw = *anchored.GetPairwiseAlns()[row];
+            int flags = pw.GetFlags();
+            flags &= ~CPairwiseAln::fMixedDir;
+            CRef<CPairwiseAln> pw_copy(
+                new CPairwiseAln(common_anchor_id, pw.GetSecondId(), flags));
+            anchored_copy->SetPairwiseAlns()[row] = pw_copy;
+            ITERATE(CPairwiseAln, seg, pw) {
+                CPairwiseAln::TAlnRng seg_copy(*seg);
+                seg_copy.SetFirstDirect();
+                pw_copy->insert(seg_copy);
+            }
+        }
+    }
+}
+
+
 void 
 BuildAln(TAnchoredAlnVec& in_alns,
          CAnchoredAln& out_aln,
@@ -476,15 +550,20 @@ BuildAln(TAnchoredAlnVec& in_alns,
     typedef CAnchoredAln::TDim TDim;
     typedef CAnchoredAln::TPairwiseAlnVector TPairwiseAlnVector;
 
+    AutoPtr<TAnchoredAlnVec> adj_alns;
+
+    x_AdjustAnchorDirection(in_alns, adj_alns);
+    _ASSERT(adj_alns.get());
+
     /// 1. Build a single anchored_aln
     _ASSERT(out_aln.GetDim() == 0);
     bool anchor_first = (options.m_MergeFlags & CAlnUserOptions::fAnchorRowFirst) != 0;
 
     switch (options.m_MergeAlgo) {
     case CAlnUserOptions::eQuerySeqMergeOnly:
-        ITERATE(TAnchoredAlnVec, anchored_it, in_alns) {
+        ITERATE(TAnchoredAlnVec, anchored_it, *adj_alns) {
             const CAnchoredAln& anchored = **anchored_it;
-            if (anchored_it == in_alns.begin()) {
+            if (anchored_it == adj_alns->begin()) {
                 out_aln = anchored;
                 continue;
             }
@@ -505,14 +584,14 @@ BuildAln(TAnchoredAlnVec& in_alns,
         }
         break;
     case CAlnUserOptions::ePreserveRows:
-        if ( !in_alns.empty() ) {
+        if ( !adj_alns->empty() ) {
             if ( !(options.m_MergeFlags & CAlnUserOptions::fSkipSortByScore) ) {
-                SortAnchoredAlnVecByScore(in_alns);
+                SortAnchoredAlnVecByScore(*adj_alns);
             }
             TMergedVec merged_vec;
-            const CAnchoredAln& first_anchored = *in_alns.front();
+            const CAnchoredAln& first_anchored = *adj_alns->front();
             merged_vec.resize(first_anchored.GetDim());
-            ITERATE(TAnchoredAlnVec, anchored_it, in_alns) {
+            ITERATE(TAnchoredAlnVec, anchored_it, *adj_alns) {
                 const CAnchoredAln& anchored = **anchored_it;
                 _ASSERT(anchored.GetDim() == first_anchored.GetDim());
                 if (anchored.GetDim() != first_anchored.GetDim()) {
@@ -544,7 +623,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
     default: 
         {
             if ( !(options.m_MergeFlags & CAlnUserOptions::fSkipSortByScore) ) {
-                SortAnchoredAlnVecByScore(in_alns);
+                SortAnchoredAlnVecByScore(*adj_alns);
             }
             typedef map<TAlnSeqIdIRef, CRef<CMergedPairwiseAln>, SAlnSeqIdIRefComp> TIdMergedMap;
             TIdMergedMap id_merged_map;
@@ -559,7 +638,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
             if (anchor_first) {
                 merged_vec.push_back(merged_anchor);
             }
-            ITERATE(TAnchoredAlnVec, anchored_it, in_alns) {
+            ITERATE(TAnchoredAlnVec, anchored_it, *adj_alns) {
                 const CAnchoredAln&       anchored_aln = **anchored_it;
                 const CAnchoredAln::TDim& anchor_row   = anchored_aln.GetAnchorRow();
 
@@ -573,7 +652,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
                 cerr << *anchored_aln.GetPairwiseAlns()[anchor_row] << endl;
 #endif
                 merged_anchor->insert(anchored_aln.GetPairwiseAlns()[anchor_row]);
-                if (anchored_it == in_alns.begin()) {
+                if (anchored_it == adj_alns->begin()) {
                     id_merged_map[anchored_aln.GetId(anchor_row)].Reset(merged_anchor);
                 }
 
@@ -620,7 +699,6 @@ BuildAln(TAnchoredAlnVec& in_alns,
         }
         s_TranslateToAlnCoords(out_aln, pseudo_seqid);
     }
-
 
     /// 2. Sort the ids and alns according to score, how to collect score?
 }

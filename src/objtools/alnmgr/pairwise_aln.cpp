@@ -102,6 +102,9 @@ void CPairwise_CI::x_Init(void)
         TCheckedIterator it = m_Range.IsWhole() ?
             TCheckedIterator(last, true)
             : m_Aln->find_2(m_Range.GetTo());
+        if (it.first == m_Aln->end()) {
+            it.first = last;
+        }
         m_It = it.first;
         m_GapIt = it.first;
         if ( !it.second ) {
