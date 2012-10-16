@@ -9346,13 +9346,15 @@ public:
         }
 
         // compare on forward, then reverse
-        if( ! r1->IsSetForward() || ! r2->IsSetForward() ) {
+        if( r1->IsSetForward() != r2->IsSetForward() ) {
             // note where the "!" operator is and isn't
             return ! r1->IsSetForward() && r2->IsSetForward(); 
         }
-        const int forward_comparison = s_PcrPrimerSetCompare( r1->GetForward(), r2->GetForward() );
-        if( forward_comparison != 0 ) {
-            return (forward_comparison < 0);
+        if( r1->IsSetForward() && r2->IsSetForward() ) {
+            const int forward_comparison = s_PcrPrimerSetCompare( r1->GetForward(), r2->GetForward() );
+            if( forward_comparison != 0 ) {
+                return (forward_comparison < 0);
+            }
         }
 
         if( ! r1->IsSetReverse() && ! r2->IsSetReverse() ) {
