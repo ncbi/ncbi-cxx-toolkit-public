@@ -877,6 +877,7 @@ CFrameShiftArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                             CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgFrameShiftPenalty, 
                            new CArgAllowValuesGreaterThanOrEqual(1));
+    arg_desc.SetDependency(kArgFrameShiftPenalty, CArgDescriptions::eExcludes,kArgUngapped);
     arg_desc.SetCurrentGroup("");
 }
 
@@ -885,6 +886,16 @@ CFrameShiftArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
     if (args[kArgFrameShiftPenalty]) {
+        if (args[kArgCompBasedStats]) {
+            string cbs = args[kArgCompBasedStats].AsString();
+
+            if ((cbs[0] != '0' )&& (cbs[0] != 'F')  &&  (cbs[0] != 'f')) {
+            	NCBI_THROW(CInputException, eInvalidInput,
+                       "Composition-adjusted searches are not supported with "
+                       "Out-Of-Frame option, please add -comp_based_stats F ");
+            }
+        }
+
         opt.SetOutOfFrameMode();
         opt.SetFrameShiftPenalty(args[kArgFrameShiftPenalty].AsInteger());
     }
