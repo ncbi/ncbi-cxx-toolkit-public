@@ -737,7 +737,7 @@ void CValidError_desc::ValidateUser
         return;
     }
     const CObject_id& oi = usr.GetType();
-    if ( !oi.IsStr() ) {
+    if ( !oi.IsStr() && !oi.IsId() ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectProblem,
                 "User object with no type", *m_Ctx, desc);
         return;
