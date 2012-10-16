@@ -1385,6 +1385,15 @@ struct SSeqDBTaxInfo {
     
     /// A string of length 1 indicating the "Super Kingdom".
     string s_kingdom;
+
+    friend ostream& operator<<(ostream& out, const SSeqDBTaxInfo& rhs) {
+        out << "Taxid=" << rhs.taxid
+            << "\tSciName=" << rhs.scientific_name
+            << "\tCommonName=" << rhs.common_name
+            << "\tBlastName=" << rhs.blast_name
+            << "\tSuperKingdom=" << rhs.s_kingdom;
+        return out;
+    }
 };
 
 
