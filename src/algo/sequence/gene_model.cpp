@@ -1993,6 +1993,7 @@ SImplementation::x_PropagateFeatureLocation(const objects::CSeq_feat* feature_on
         mapped_loc->ChangeToPackedInt();
         mapped_loc->SetId(*loc->GetId());
     }
+
     if (loc->GetStart(eExtreme_Positional) > loc->GetStop(eExtreme_Positional)) {
         mapped_loc = FixOrderOfCrossTheOriginSeqloc(*mapped_loc);
     }
@@ -2414,7 +2415,8 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
         }
     }
 
-    if ( insert_locs.empty() && delete_locs.empty()) {
+    if ( insert_locs.empty() && delete_locs.empty() && !partial_unaligned_edge)
+    {
         /// only compare for mismatches and 3' unaligned
         /// we assume that the feature is otherwise aligned
 
@@ -2941,12 +2943,18 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
         CSeq_loc_Mapper to_mrna(*align, CSeq_loc_Mapper::eSplicedRow_Prod);
         for (CSeq_loc_CI loc_it(cds_feat->GetLocation()); loc_it;  ++loc_it) {
             CRef<CSeq_loc> cds_on_mrna = to_mrna.Map(*loc_it.GetRangeAsSeq_loc());
-            cds_ranges += cds_on_mrna->GetTotalRange();
             inserts_in_cds += cds_on_mrna->GetTotalRange();
 	    deletes_in_cds += cds_on_mrna->GetTotalRange();
 	}
         inserts_in_cds &= insert_locs;
         deletes_in_cds &= delete_locs;
+    }
+    if (cds_feat_on_mrna) {
+        for (CSeq_loc_CI loc_it(cds_feat_on_mrna->GetLocation());
+             loc_it;  ++loc_it)
+        {
+            cds_ranges += loc_it.GetRange();
+        }
     }
 
     if (m_is_best_refseq) {

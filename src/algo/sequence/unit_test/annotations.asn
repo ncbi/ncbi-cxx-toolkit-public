@@ -1190,7 +1190,7 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       comment "The RefSeq protein has 2 substitutions and 1 indel and aligns
- at 99% coverage compared to this genomic sequence",
+ at 52% coverage compared to this genomic sequence",
       product whole gi 219879767,
       location packed-int {
         {
@@ -1465,6 +1465,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
+      comment "The RefSeq protein aligns at 94% coverage compared to this
+ genomic sequence",
       product whole gi 41053666,
       location packed-int {
         {
@@ -2048,108 +2050,108 @@ Seq-annot ::= {
         code-break {
           {
             loc int {
-              from 196058,
-              to 196060,
-              strand minus,
+              from 195279,
+              to 195281,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195995,
-              to 195997,
-              strand minus,
+              from 195342,
+              to 195344,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195920,
-              to 195922,
-              strand minus,
+              from 195417,
+              to 195419,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195887,
-              to 195889,
-              strand minus,
+              from 195450,
+              to 195452,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195725,
-              to 195727,
-              strand minus,
+              from 195612,
+              to 195614,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195668,
-              to 195670,
-              strand minus,
+              from 195669,
+              to 195671,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195263,
-              to 195265,
-              strand minus,
+              from 196074,
+              to 196076,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195242,
-              to 195244,
-              strand minus,
+              from 196095,
+              to 196097,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195233,
-              to 195235,
-              strand minus,
+              from 196104,
+              to 196106,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195104,
-              to 195106,
-              strand minus,
+              from 196233,
+              to 196235,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195071,
-              to 195073,
-              strand minus,
+              from 196266,
+              to 196268,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
           },
           {
             loc int {
-              from 195044,
-              to 195046,
-              strand minus,
+              from 196293,
+              to 196295,
+              strand plus,
               id gi 258441149
             },
             aa ncbieaa 88
@@ -2518,7 +2520,8 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       comment "isoform 2 precursor is encoded by transcript variant 2; The
- RefSeq protein has 1 indel compared to this genomic sequence",
+ RefSeq protein has 1 indel and aligns at 99% coverage compared to this
+ genomic sequence",
       product whole gi 110611233,
       location packed-int {
         {
