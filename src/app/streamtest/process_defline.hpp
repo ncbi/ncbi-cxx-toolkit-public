@@ -30,6 +30,8 @@
 * ===========================================================================
 */
 
+#include <objmgr/util/create_defline.hpp>
+
 #ifndef __process_defline__hpp__
 #define __process_defline__hpp__
 
@@ -43,8 +45,22 @@ public:
     CDeflineProcess()
     //  ------------------------------------------------------------------------
         : CScopedProcess()
-        , m_out( 0 )
-        , m_flags( 0 )
+        , m_out (0)
+        , m_flags (0)
+        , m_skip_virtual (false)
+        , m_skip_segmented (false)
+        , m_do_indexed (false)
+    {};
+
+    //  ------------------------------------------------------------------------
+    CDeflineProcess(bool use_indexing)
+    //  ------------------------------------------------------------------------
+        : CScopedProcess()
+        , m_out (0)
+        , m_flags (0)
+        , m_skip_virtual (false)
+        , m_skip_segmented (false)
+        , m_do_indexed (use_indexing)
     {};
 
     //  ------------------------------------------------------------------------
@@ -60,14 +76,23 @@ public:
     {
         CScopedProcess::ProcessInitialize( args );
 
-        /*
-        m_out = new CFastaOstream( args["o"].AsOutputFile() );
-        */
         m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
 
         string options = args["options"].AsString();
         if ( options == "ignore_existing" ) {
-            m_flags |= fGetTitle_Reconstruct;
+            m_flags = CDeflineGenerator::fIgnoreExisting;
+        }
+
+        string skip = args["skip"].AsString();
+        if ( skip == "virtual" ) {
+            m_skip_virtual = true;
+        }
+        if ( skip == "segmented" ) {
+            m_skip_segmented = true;
+        }
+        if ( skip == "both" ) {
+            m_skip_virtual = true;
+            m_skip_segmented = true;
         }
     };
 
@@ -75,9 +100,6 @@ public:
     void ProcessFinalize()
     //  ------------------------------------------------------------------------
     {
-        /*
-        delete m_out;
-        */
     }
 
     //  ------------------------------------------------------------------------
@@ -89,7 +111,7 @@ public:
     };
 
     //  ------------------------------------------------------------------------
-    void x_DeflineSeqIdWrite(const CBioseq& bioseq)
+    void x_FastaSeqIdWrite(const CBioseq& bioseq)
     //  ------------------------------------------------------------------------
     {
         string gi_string;
@@ -139,23 +161,56 @@ public:
     }
 
     //  ------------------------------------------------------------------------
-    void SeqEntryProcess()
+    void IndexedProcess()
     //  ------------------------------------------------------------------------
     {
         try {
+            CDeflineGenerator gen (m_topseh);
+
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
-                // !!! NOTE CALL TO OBJECT MANAGER !!!
-                const CBioseq_Handle& hnd = m_scope->GetBioseqHandle (bioseq);
-                /*
-                m_out->WriteTitle( bioseq, 0, true );
-                */
-                string title = GetTitle (hnd, m_flags);
-                *m_out << ">";
-                x_DeflineSeqIdWrite (bioseq);
-                *m_out << " ";
-                *m_out << title << endl;
-                ++m_objectcount;
+
+                bool okay = true;
+                if (m_skip_virtual) {
+                    if (bioseq.IsSetInst()) {
+                        const CSeq_inst& inst = bioseq.GetInst();
+                        if (inst.IsSetRepr()) {
+                            TSEQ_REPR repr = inst.GetRepr();
+                            if (repr == CSeq_inst::eRepr_virtual) {
+                                okay = false;
+                            }
+                        }
+                    }
+                }
+                if (m_skip_segmented) {
+                    CSeq_entry* se;
+                    se = bioseq.GetParentEntry();
+                    if (se) {
+                        se = se->GetParentEntry();
+                        if (se) {
+                            if (se->IsSet()) {
+                                const CBioseq_set& seqset = se->GetSet();
+                                if (seqset.IsSetClass()) {
+                                    CBioseq_set::EClass mclass = seqset.GetClass();
+                                    if (mclass == CBioseq_set::eClass_segset ||
+                                        mclass == CBioseq_set::eClass_parts) {
+                                        okay = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+ 
+                if (okay) {
+                    const string& title = gen.GenerateDefline (bioseq, *m_scope, m_flags);
+
+                    *m_out << ">";
+                    x_FastaSeqIdWrite (bioseq);
+                    *m_out << " ";
+                    *m_out << title << endl;
+                    ++m_objectcount;
+                }
             }
         }
         catch (CException& e) {
@@ -163,12 +218,81 @@ public:
         }
     };
 
+    //  ------------------------------------------------------------------------
+    void UnindexedProcess()
+    //  ------------------------------------------------------------------------
+    {
+        try {
+            CDeflineGenerator gen;
+
+            VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
+                const CBioseq& bioseq = *bit;
+
+                bool okay = true;
+                if (m_skip_virtual) {
+                    if (bioseq.IsSetInst()) {
+                        const CSeq_inst& inst = bioseq.GetInst();
+                        if (inst.IsSetRepr()) {
+                            TSEQ_REPR repr = inst.GetRepr();
+                            if (repr == CSeq_inst::eRepr_virtual) {
+                                okay = false;
+                            }
+                        }
+                    }
+                }
+                if (m_skip_segmented) {
+                    CSeq_entry* se;
+                    se = bioseq.GetParentEntry();
+                    if (se) {
+                        se = se->GetParentEntry();
+                        if (se) {
+                            if (se->IsSet()) {
+                                const CBioseq_set& seqset = se->GetSet();
+                                if (seqset.IsSetClass()) {
+                                    CBioseq_set::EClass mclass = seqset.GetClass();
+                                    if (mclass == CBioseq_set::eClass_segset ||
+                                        mclass == CBioseq_set::eClass_parts) {
+                                        okay = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+ 
+                if (okay) {
+                    const string& title = gen.GenerateDefline (bioseq, *m_scope, m_flags);
+
+                    *m_out << ">";
+                    x_FastaSeqIdWrite (bioseq);
+                    *m_out << " ";
+                    *m_out << title << endl;
+                    ++m_objectcount;
+                }
+            }
+        }
+        catch (CException& e) {
+            LOG_POST(Error << "error processing seqentry: " << e.what());
+        }
+    };
+
+    //  ------------------------------------------------------------------------
+    void SeqEntryProcess()
+    //  ------------------------------------------------------------------------
+    {
+        if (m_do_indexed) {
+            IndexedProcess ();
+        } else {
+            UnindexedProcess ();
+        }
+    };
+
 protected:
-    /*
-    CFastaOstream* m_out;
-    */
     CNcbiOstream* m_out;
-    TGetTitleFlags m_flags;
+    CDeflineGenerator::TUserFlags m_flags;
+    bool m_skip_virtual;
+    bool m_skip_segmented;
+    bool m_do_indexed;
 };
 
 #endif

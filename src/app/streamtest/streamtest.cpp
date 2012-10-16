@@ -162,10 +162,10 @@ void CStreamTestApp::Init()
                                         "eutils",
                                         "fasta",
                                         "gene-overlap",
-                                        "indexed_title",
                                         "macrotest",
                                         "prosplign",
                                         "title",
+                                        "unindexed_defline",
                                         "validate"));
     
     arg_desc->AddDefaultKey( "options", 
@@ -262,7 +262,7 @@ CStreamTestApp::GetProcess(
         pProcess = new CCleanupProcess;
     }
     if ( testcase == "defline" ) {
-        pProcess = new CDeflineProcess;
+        pProcess = new CDeflineProcess (true);
     }
     if ( testcase == "eutils" ) {
         pProcess = new CEUtilsProcess;
@@ -273,9 +273,6 @@ CStreamTestApp::GetProcess(
     if ( testcase == "gene-overlap" ) {
         pProcess = new CGeneOverlapProcess;
     }
-    if ( testcase == "indexed_title" ) {
-        pProcess = new CTitleProcess (true);
-    }
     if ( testcase == "macrotest" ) {
         pProcess = new CMacroTestProcess;
     }
@@ -284,6 +281,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "title" ) {
         pProcess = new CTitleProcess;
+    }
+    if ( testcase == "unindexed_defline" ) {
+        pProcess = new CDeflineProcess;
     }
     if ( testcase == "validate" ) {
         pProcess = new CValidateProcess;
