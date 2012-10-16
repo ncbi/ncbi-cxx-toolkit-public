@@ -81,6 +81,15 @@ public:
     /// Add a qualifier to this feature
     void AddQualifier(const string& qual_name, const string& qual_val);
 
+    /// Add a qualifier to this feature, or replace the value for the first
+    /// one if it already exists.
+    void AddOrReplaceQualifier(const string& qual_name, const string& qual_val);
+
+    /// Remove all qualifiers with the given name; do nothing if
+    /// no such qualifier exists.  Complexity is linear in the number of quals,
+    /// which is the best that can be done since quals may not be sorted.
+    void RemoveQualifier(const string& qual_name);
+
     /// add a DB xref to this feature
     void AddDbxref(const string& db_name, const string& db_key);
     void AddDbxref(const string& db_name, int db_key);

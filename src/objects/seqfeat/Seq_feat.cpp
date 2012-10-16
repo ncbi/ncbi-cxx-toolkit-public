@@ -258,6 +258,44 @@ void CSeq_feat::AddQualifier(const string& qual_name, const string& qual_val)
     SetQual().push_back(qual);
 }
 
+void CSeq_feat::AddOrReplaceQualifier(
+    const string& qual_name, const string& qual_val)
+{
+    if (IsSetQual()) {
+        NON_CONST_ITERATE (TQual, iter, SetQual()) {
+            if ( (*iter)->GetQual() == qual_name ) {
+                (*iter)->SetVal(qual_val);
+                return;
+            }
+        }
+    }
+
+    // we didn't find an already-existing qual, so we add it
+    AddQualifier(qual_name, qual_val);
+}
+
+void CSeq_feat::RemoveQualifier(const string& qual_name)
+{
+    // qual is a vector so we have to be careful; carelessly
+    // removing all quals that match as we find them
+    // is a potentially quadratic-time operation.
+    // Instead we construct a new qual vector and do a swap (swap should
+    // be a constant-time operation)
+
+    TQual new_qual_vec;
+    new_qual_vec.reserve(GetQual().size());
+
+    ITERATE (TQual, iter, GetQual()) {
+        if ( (*iter)->GetQual() != qual_name ) {
+            new_qual_vec.push_back(*iter);
+        }
+    }
+
+    if( new_qual_vec.size() != GetQual().size() ) {
+        // swap should be a constant-time operation
+        SetQual().swap(new_qual_vec);
+    }
+}
 
 void CSeq_feat::AddDbxref(const string& db, const string& tag)
 {
