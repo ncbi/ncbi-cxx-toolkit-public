@@ -160,7 +160,7 @@ AMGS	s	Albany Museum
 AMH	s	Agharkar Research Institute, Mycology and Plant Pathology Department
 AMMRL	c	Australian National Reference Laboratory in Medical Mycology
 AMMS	s	Academy of Military Medical Sciences
-AMNH	s	American Museum of Natural History
+AMNH	sb	American Museum of Natural History
 AMNH:Fish	s	American Museum of Natural History, Ichthyology Collection
 AMNH:Herp	s	American Museum of Natural History, Herpetology collection
 AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division
@@ -1802,6 +1802,7 @@ FSU	s	Florida State University, Department of Biological Science
 FSU<DEU>	c	Jena Microbial Resource Collection
 FSUM	s	Florida State University Museum
 FSUMC	s	Frostburg State University, Mammal Collection
+FSUNS	c	Faculty of Science, The University of Novi Sad
 FT	s	Centro Studi Erbario Tropicale, Universita degli Studi di Firenze
 FTCC	c	Food Technology Culture Collection
 FTCMU	c	Department of Food Science and Technology, Faculty of Agriculture
@@ -5056,7 +5057,7 @@ SACT	s	California State University, Biological Sciences Department
 SAFB	s	University of Saskatchewan, Forestry Department
 SAFU	s	University of San Francisco
 SAG	c	Sammlung von Algenkulturen at Universitat Gottingen
-SAIAB	s	South African Institute of Aquatic Biodiversity
+SAIAB	sb	South African Institute of Aquatic Biodiversity
 SAIM	s	South African Institute for Medical Research
 SAIMR	s	South African Institute for Medical Research
 SAITP	c	School of Pharmacy and Medical Sciences, University of South Australia
@@ -5949,13 +5950,13 @@ UEC	s	Universidade Estadual de Campinas, Departamento de Botanica
 UEFS	s	Laboratorio de Ictiologia
 UESS	s	Universidad de El Salvador
 UEVH	s	Universidade de Evora, Departamento de Biologia
-UF	s	Florida Museum of Natural History
+UF	sb	University of Florida Museum of Natural History
 UF/FGS	s	Florida Geological Survey
-UF:Herpetology	s	Florida Museum of Natural History, Herpetology Collection
-UF:Ichthyology	s	Florida Museum of Natural History, Fish Collection
-UF:Invertebrate	s	Florida Museum of Natural History, Invertebrate Zoology and Malacology Collection
-UF:Mammalogy	s	Florida Museum of Natural History, Mammalogy Collection
-UF:Ornithology	s	Florida Museum of Natural History, Ornithology Skins and Skeletons Collection
+UF:Herpetology	s	University of Florida Museum of Natural History, Herpetology Collection
+UF:Ichthyology	s	University of Florida Museum of Natural History, Fish Collection
+UF:Invertebrate	s	University of Florida Museum of Natural History, Invertebrate Zoology and Malacology Collection
+UF:Mammalogy	s	University of Florida Museum of Natural History, Mammalogy Collection
+UF:Ornithology	s	University of Florida Museum of Natural History, Ornithology Skins and Skeletons Collection
 UFA	s	Ufa Scientific Centre, Russian Academy of Sciences
 UFC	s	Universidade Federal do Ceara, Departamento de Biologia
 UFES	s	Universidade Federal do Espirito Santo
@@ -6799,7 +6800,7 @@ ZSI-SRS	s	Zoological Survey of India, Southern Regional Station
 ZSI-WRS	s	Zoological Survey of India
 ZSIC	s	Zoological Survey of India
 ZSLC	s	Zoological Society of London
-ZSM	s	Zoologisches Staatssammlung Munchen
+ZSM	sb	Zoologisches Staatssammlung Munchen
 ZSM/CMK	s	Zoologische Museum Staatssammlung
 ZSM/LIPI	s	Zoologische Museum Staatssammlung
 ZSM:Lep	s	Zoologisches Staatssammlung Munchen, Lepidoptera
