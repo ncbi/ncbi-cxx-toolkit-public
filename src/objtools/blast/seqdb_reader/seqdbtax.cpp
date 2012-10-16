@@ -37,7 +37,7 @@ static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
 #include <objtools/error_codes.hpp>
-#include "seqdbtax.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbtax.hpp>
 
 /// Tell the error reporting framework what part of the code we're in.
 #define NCBI_USE_ERRCODE_X   Objtools_SeqDBTax

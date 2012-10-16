@@ -40,7 +40,7 @@
 
 #include <objtools/blast/seqdb_reader/impl/seqdbatlas.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
-#include "seqdbtax.hpp"
+#include <objtools/blast/seqdb_reader/impl/seqdbtax.hpp>
 #include "seqdbcol.hpp"
 #include <objects/seq/seq__.hpp>
 
