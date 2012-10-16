@@ -6168,7 +6168,7 @@ elif test -d "$FTGL_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
    FTGL_LIBDIR=$FTGL_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib
 fi
 NCBI_FIX_DIR(FTGL_LIBDIR)
-FTGL_LIBPATH=-L$FTGL_LIBDIR
+NCBI_RPATHIFY(FTGL_LIBPATH, $FTGL_LIBDIR)
 
 NCBI_CHECK_THIRD_PARTY_LIB(ftgl,
   [[AC_LANG_PROGRAM([[#include <FTGL/ftgl.h>]], [[FTSimpleLayout layout;]])]],

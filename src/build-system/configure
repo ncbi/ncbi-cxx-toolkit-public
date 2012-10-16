@@ -33400,7 +33400,26 @@ ncbi_fix_dir_tmp=`if cd $FTGL_LIBDIR; then $as_unset PWD || test "${PWD+set}" !=
          ;;
     /*) FTGL_LIBDIR=$ncbi_fix_dir_tmp ;;
  esac
-FTGL_LIBPATH=-L$FTGL_LIBDIR
+ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $FTGL_LIBDIR; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    FTGL_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $FTGL_LIBDIR; do
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    FTGL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
 
 if test "$with_ftgl" != "no"; then
     case "$with_ftgl" in
