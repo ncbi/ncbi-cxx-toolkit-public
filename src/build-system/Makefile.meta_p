@@ -66,6 +66,11 @@ endef
 RELEVANT_SUB_FILE = $(builddir)/relevant.prefixes
 $(RELEVANT_SUB_FILE): $(RELEVANT_FILE)
 	@while read path; do \
+	    case "$$path" in \
+	        build/*) ;; \
+	        *) echo "relevant.prefixes: Ignoring bad pattern $$path" >&2; \
+	           continue ;; \
+	    done; \
 	    echo $$path; \
 	    while [ "$$path" != build ]; do \
 	        path=`dirname $$path` ; \
