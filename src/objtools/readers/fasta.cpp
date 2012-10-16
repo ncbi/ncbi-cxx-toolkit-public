@@ -175,6 +175,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
     m_CurrentGapLength = m_TotalGapLength = 0;
 
     bool need_defline = true;
+    CBadResiduesException::SBadResiduePositions bad_residue_positions;
     while ( !GetLineReader().AtEOF() ) {
         char c = GetLineReader().PeekChar();
         if (GetLineReader().AtEOF()) {
@@ -233,8 +234,22 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(void)
         }
 
         if ( !TestFlag(fNoSeqData) ) {
-            ParseDataLine(line);
+            try {
+                ParseDataLine(line);
+            } catch(CBadResiduesException & e) {
+                // we have to catch this exception so we can build up
+                // information on all lines, not just the first line
+                // with a bad residue
+                bad_residue_positions.m_SeqId = e.GetBadResiduePositions().m_SeqId;
+                bad_residue_positions.AddBadIndexMap(e.GetBadResiduePositions().m_BadIndexMap);
+            }
         }
+    }
+
+    if( ! bad_residue_positions.m_BadIndexMap.empty() ) {
+        NCBI_THROW2(CBadResiduesException, eBadResidues,
+            "CFastaReader: There are invalid " + x_NucOrProt() + "residue(s) in input sequence",
+            bad_residue_positions );
     }
 
     if (need_defline  &&  GetLineReader().AtEOF()) {

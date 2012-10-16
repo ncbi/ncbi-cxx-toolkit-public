@@ -45,71 +45,106 @@ BEGIN_SCOPE(objects)
 
 void CBadResiduesException::ReportExtra(ostream& out) const
 {
+    if( empty() ) {
+        out << "No Bad Residues";
+        return;
+    }
+
     out << "Bad Residues = ";
     if( m_BadResiduePositions.m_SeqId ) {
         out << m_BadResiduePositions.m_SeqId->GetSeqIdString(true);
     } else {
         out << "Seq-id ::= NULL";
     }
-    out << ", line number = " << m_BadResiduePositions.m_LineNo;
     out << ", positions: ";
-    x_ConvertBadIndexesToString( out, m_BadResiduePositions.m_BadIndexes, 1000 );
+    x_ConvertBadIndexesToString( out, m_BadResiduePositions.m_BadIndexMap, 1000 );
+}
+
+void CBadResiduesException::SBadResiduePositions::AddBadIndexMap(const TBadIndexMap & additionalBadIndexMap)
+{
+    ITERATE(SBadResiduePositions::TBadIndexMap, new_line_iter, additionalBadIndexMap) {
+        const int lineNum = new_line_iter->first;
+        const vector<TSeqPos> & src_seqpos_vec = new_line_iter->second;
+
+        if( src_seqpos_vec.empty() ) {
+            continue;
+        }
+
+        vector<TSeqPos> & dest_seqpos_vec = 
+            m_BadIndexMap[lineNum];
+        copy( src_seqpos_vec.begin(), src_seqpos_vec.end(),
+              back_inserter(dest_seqpos_vec) );
+    }
 }
 
 void CBadResiduesException::x_ConvertBadIndexesToString(
         CNcbiOstream & out,
-        const vector<TSeqPos> &badIndexes, 
+        const SBadResiduePositions::TBadIndexMap &badIndexMap,
         unsigned int maxRanges )
 {
-    // assert that badIndexes is sorted in ascending order
-    _ASSERT(adjacent_find(badIndexes.begin(), badIndexes.end(), 
-        std::greater<int>()) == badIndexes.end() );
+    const char *line_prefix = "";
+    unsigned int iRangesFound = 0;
+    ITERATE( SBadResiduePositions::TBadIndexMap, index_map_iter, badIndexMap ) {
+        const int lineNum = index_map_iter->first;
+        const vector<TSeqPos> & badIndexesOnLine = index_map_iter->second;
 
-    typedef pair<TSeqPos, TSeqPos> TRange;
-    typedef vector<TRange> TRangeVec;
+        // assert that badIndexes is sorted in ascending order on every line
+        _ASSERT(adjacent_find(badIndexesOnLine.begin(), badIndexesOnLine.end(), 
+            std::greater<int>()) == badIndexesOnLine.end() );
 
-    TRangeVec rangesFound;
+        typedef pair<TSeqPos, TSeqPos> TRange;
+        typedef vector<TRange> TRangeVec;
 
-    ITERATE( vector<TSeqPos>, idx_iter, badIndexes ) {
-        const TSeqPos idx = *idx_iter;
+        TRangeVec rangesFound;
 
-        // first one
-        if( rangesFound.empty() ) {
-            rangesFound.push_back(TRange(idx, idx));
-            continue;
-        }
+        ITERATE( vector<TSeqPos>, idx_iter, badIndexesOnLine ) {
+            const TSeqPos idx = *idx_iter;
 
-        const TSeqPos last_idx = rangesFound.back().second;
-        if( idx == (last_idx+1) ) {
-            // extend previous range
-            ++rangesFound.back().second;
-        } else {
+            // first one
+            if( rangesFound.empty() ) {
+                rangesFound.push_back(TRange(idx, idx));
+                ++iRangesFound;
+                continue;
+            }
+
+            const TSeqPos last_idx = rangesFound.back().second;
+            if( idx == (last_idx+1) ) {
+                // extend previous range
+                ++rangesFound.back().second;
+                continue;
+            } 
+            
+            if( iRangesFound >= maxRanges ) {
+                break;
+            }
+            
             // create new range
             rangesFound.push_back(TRange(idx, idx));
+            ++iRangesFound;
         }
 
+        // turn the ranges found on this line into a string
+        out << line_prefix << "On line " << lineNum << ": ";
+        line_prefix = ", ";
+
+        const char *pos_prefix = "";
+        for( unsigned int rng_idx = 0; 
+            ( rng_idx < rangesFound.size() ); 
+            ++rng_idx ) 
+        {
+            out << pos_prefix;
+            const TRange &range = rangesFound[rng_idx];
+            out << (range.first + 1); // "+1" because 1-based for user
+            if( range.first != range.second ) {
+                out << "-" << (range.second + 1); // "+1" because 1-based for user
+            }
+
+            pos_prefix = ", ";
+        }
         if( rangesFound.size() > maxRanges ) {
-            break;
+            out << ", and more";
+            return;
         }
-    }
-
-    // turn the ranges found into a string
-    const char *prefix = "";
-    for( unsigned int rng_idx = 0; 
-        ( rng_idx < rangesFound.size() && rng_idx < maxRanges ); 
-        ++rng_idx ) 
-    {
-        out << prefix;
-        const TRange &range = rangesFound[rng_idx];
-        out << (range.first + 1); // "+1" because 1-based for user
-        if( range.first != range.second ) {
-            out << "-" << (range.second + 1); // "+1" because 1-based for user
-        }
-
-        prefix = ", ";
-    }
-    if( rangesFound.size() > maxRanges ) {
-        out << ", and more";
     }
 }
 

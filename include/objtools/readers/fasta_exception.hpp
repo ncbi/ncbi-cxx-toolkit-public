@@ -56,24 +56,35 @@ public:
     }
 
     struct SBadResiduePositions {
-        SBadResiduePositions(void)
-            : m_LineNo(-1) { }
+        // map lines to the index of bad residues on that line
+        typedef map<int, vector<TSeqPos> > TBadIndexMap;
+
+        SBadResiduePositions(void) { }
 
         SBadResiduePositions( 
             CConstRef<CSeq_id> seqId,
-            const vector<TSeqPos> & badIndexes,
-            int lineNo )
-            : m_SeqId(seqId), m_BadIndexes(badIndexes), m_LineNo(lineNo) { }
+            const TBadIndexMap & badIndexMap )
+            : m_SeqId(seqId), m_BadIndexMap(badIndexMap) { }
 
-        SBadResiduePositions( CConstRef<CSeq_id> seqId, TSeqPos badIndex, int lineNo )
-            : m_SeqId(seqId), m_LineNo(lineNo)
+        // convenience ctor for when all bad indexes are on the same line
+        SBadResiduePositions( 
+            CConstRef<CSeq_id> seqId,
+            const vector<TSeqPos> & badIndexesOnLine,
+            int lineNum ) 
+            : m_SeqId(seqId)
         {
-            m_BadIndexes.push_back(badIndex);
+            if( ! badIndexesOnLine.empty() ) {
+                m_BadIndexMap[lineNum] = badIndexesOnLine;
+            }
         }
 
+        // if we're trying to assemble a CBadResiduesException from multiple errors,
+        // we can use this.  This assumes that the newly added positions do NOT
+        // repeat any already in this CBadResiduesException.
+        void AddBadIndexMap(const TBadIndexMap & additionalBadIndexMap);
+
         CConstRef<CSeq_id> m_SeqId;
-        vector<TSeqPos> m_BadIndexes;
-        int m_LineNo;
+        TBadIndexMap m_BadIndexMap;
     };
 
     virtual void ReportExtra(ostream& out) const;
@@ -96,12 +107,17 @@ public:
         return m_BadResiduePositions;
     }
 
+    bool empty(void) const THROWS_NONE
+    {
+        return m_BadResiduePositions.m_BadIndexMap.empty();
+    }
+
 private:
     SBadResiduePositions m_BadResiduePositions;
 
     static void x_ConvertBadIndexesToString(
         CNcbiOstream & out,
-        const vector<TSeqPos> &badIndexes, 
+        const SBadResiduePositions::TBadIndexMap &badIndexMap, 
         unsigned int maxRanges );
 };
 
