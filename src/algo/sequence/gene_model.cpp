@@ -629,6 +629,14 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
             }
         }
 
+
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(align->GetSeq_id(1));
+        if (!bsh) {
+            NCBI_THROW(CException, eUnknown,
+                "Can't find genomic sequence " +
+                    align->GetSeq_id(1).AsFastaString());
+        }
+
         CSeq_align *fake_transcript_align = new CSeq_align;
         fake_transcript_align->Assign(*align);
         align.Reset(fake_transcript_align);
@@ -677,24 +685,52 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
             ((found_stop_codon || !aligned_to_the_end)?3:0);
 
         if (found_stop_codon) {
-            /// Extend last exon to include stop codon
-            last_exon->SetProduct_end().SetNucpos() += 3;
-
-            if (last_exon->IsSetGenomic_strand() ?
+            bool is_minus = last_exon->IsSetGenomic_strand() ?
                     last_exon->GetGenomic_strand() == eNa_strand_minus :
                     (fake_transcript_align->GetSegs().GetSpliced()
                         . IsSetGenomic_strand() &&
                      fake_transcript_align->GetSegs().GetSpliced()
-                        . GetGenomic_strand() == eNa_strand_minus))
-            {
-                last_exon->SetGenomic_start() -= 3;
-            } else {
-                last_exon->SetGenomic_end() += 3;
+                        . GetGenomic_strand() == eNa_strand_minus);
+
+            TSeqPos genomic_length = bsh.GetBioseqLength();
+            TSeqPos space_for_codon = min(3u, is_minus
+                ? last_exon->GetGenomic_start()
+                : genomic_length - last_exon->GetGenomic_end() - 1);
+            if (space_for_codon < 3) {
+                if (bsh.GetInst_Topology() != CSeq_inst::eTopology_circular) {
+                    NCBI_THROW(CException, eUnknown,
+                               "Stop codon goes outside genomic sequence");
+                }
+                CRef<CSpliced_exon> new_exon(new CSpliced_exon);
+                new_exon->SetProduct_start().SetNucpos(
+                    last_exon->GetProduct_end().GetNucpos() + space_for_codon + 1);
+                new_exon->SetProduct_end().SetNucpos(
+                    last_exon->GetProduct_end().GetNucpos() + 3);
+                new_exon->SetGenomic_start(
+                    is_minus ? genomic_length - 3 + space_for_codon : 0);
+                new_exon->SetGenomic_end(
+                    is_minus ? genomic_length - 1 : 2 - space_for_codon);
+                if (last_exon->IsSetProduct_strand()) {
+                    new_exon->SetProduct_strand(last_exon->GetProduct_strand());
+                }
+                if (last_exon->IsSetGenomic_strand()) {
+                    new_exon->SetGenomic_strand(last_exon->GetGenomic_strand());
+                }
+                fake_transcript_align->SetSegs().SetSpliced().SetExons()
+                    . push_back(new_exon);
             }
-            if (last_exon->IsSetParts()) {
+
+            /// Extend last exon to include whatever part of stop codon fits
+            last_exon->SetProduct_end().SetNucpos() += space_for_codon;
+            if (is_minus) {
+                last_exon->SetGenomic_start() -= space_for_codon;
+            } else {
+                last_exon->SetGenomic_end() += space_for_codon;
+            }
+            if (last_exon->IsSetParts() && space_for_codon) {
                 CRef<CSpliced_exon_chunk> match_stop_codon
                     (new CSpliced_exon_chunk);
-                match_stop_codon->SetMatch(3);
+                match_stop_codon->SetMatch(space_for_codon);
                 last_exon->SetParts().push_back(match_stop_codon);
             }
         }
@@ -714,12 +750,6 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
         }
         cd_feat->SetLocation(*cds_on_fake_mrna_loc);
 
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(align->GetSeq_id(1));
-        if (!bsh) {
-            NCBI_THROW(CException, eUnknown,
-                "Can't find genomic sequence " +
-                    align->GetSeq_id(1).AsFastaString());
-        }
         const COrg_ref &org = sequence::GetOrg_ref(bsh);
         if (org.IsSetGcode()) {
             CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);
