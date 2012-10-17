@@ -1180,6 +1180,25 @@ void CNewCleanup_imp::BiosourceBC (
                 }
             }
 
+            if( chs == NCBI_SUBSOURCE(altitude) ) {
+                string &altitude = GET_MUTABLE(sbs, Name);
+
+                // normalize units part (that is, the ending) if possible
+                // (e.g. "meters", etc. to "m.")
+                // Note that we do NOT count a match if it's just a number because 
+                // we can't be sure that the submitter wasn't thinking "feet" or whatever.
+                static CRegexp altitude_regex("^([+-]?[0-9]+(\\.[0-9]+)?) ?(m|meter[s]?|metre[s]?)\\.?$",
+                    CRegexp::fCompile_ignore_case );
+
+                if( altitude_regex.IsMatch(altitude) ) {
+                    const string new_altitude = altitude_regex.GetSub(altitude, 1) + " m.";
+                    if( altitude != new_altitude ) {
+                        altitude = new_altitude;
+                        ChangeMade(CCleanupChange::eCleanSubsource);
+                    }
+                }
+            }
+
             if( chs == NCBI_SUBSOURCE(lat_lon) ) {
                 string &lat_lon = GET_MUTABLE(sbs, Name);
 
@@ -6209,6 +6228,7 @@ void s_MatchesOfficialStructuredCommentDbname( string &tmp, string dbname )
         { "International Barcode of Life (iBOL)",  "International Barcode of Life (iBOL)Data" },
         { "MIENS", "MIENS-Data" },
         { "MIGS", "MIGS-Data" },
+        { "MIMARKS:3.0", "MIMARKS:3.0-Data" },
         { "MIMS", "MIMS-Data" }
     };
     typedef CStaticArrayMap<string, string, PNocase> TOfficialPrefixMap;
