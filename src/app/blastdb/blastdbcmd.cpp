@@ -499,6 +499,10 @@ void CBlastDBCmdApp::Init()
             "\t\t%e means membership integer\n"
             "\t\t%L means common taxonomic name\n"
             "\t\t%S means scientific name\n"
+#if _BLAST_DEBUG
+            "\t\t%B means BLAST name\n"     /* Is this useful outside NCBI? */
+#endif /* _BLAST_DEBUG */
+            "\t\t%K means taxonomic super kingdom\n"
             "\t\t%P means PIG\n"
 #if _BLAST_DEBUG
             "\t\t%d means defline in text ASN.1 format\n"

@@ -253,6 +253,30 @@ string CBlastDBExtractor::ExtractScientificName() {
     return retval;
 }
 
+string CBlastDBExtractor::ExtractBlastName() {
+    const int kTaxID = x_ExtractTaxId();
+    SSeqDBTaxInfo tax_info;
+    string retval(NOT_AVAILABLE);
+    try {
+        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+        _ASSERT(kTaxID == tax_info.taxid);
+        retval = tax_info.blast_name;
+    } catch (...) {}
+    return retval;
+}
+
+string CBlastDBExtractor::ExtractSuperKingdom() {
+    const int kTaxID = x_ExtractTaxId();
+    SSeqDBTaxInfo tax_info;
+    string retval(NOT_AVAILABLE);
+    try {
+        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+        _ASSERT(kTaxID == tax_info.taxid);
+        retval = tax_info.s_kingdom;
+    } catch (...) {}
+    return retval;
+}
+
 string CBlastDBExtractor::ExtractMaskingData() {
     static const string kNoMasksFound("none");
 #if ((defined(NCBI_COMPILER_WORKSHOP) && (NCBI_COMPILER_VERSION <= 550))  ||  \

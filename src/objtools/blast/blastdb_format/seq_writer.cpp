@@ -148,6 +148,14 @@ void CSeqFormatter::x_Builder(vector<string>& data2write)
             data2write.push_back(m_DataExtractor.ExtractCommonTaxonomicName());
             break;
 
+        case 'B':
+            data2write.push_back(m_DataExtractor.ExtractBlastName());
+            break;
+
+        case 'K':
+            data2write.push_back(m_DataExtractor.ExtractSuperKingdom());
+            break;
+
         case 'S':
             data2write.push_back(m_DataExtractor.ExtractScientificName());
             break;

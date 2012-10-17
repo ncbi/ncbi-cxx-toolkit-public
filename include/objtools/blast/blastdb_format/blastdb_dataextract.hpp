@@ -82,6 +82,8 @@ public:
     string ExtractTaxId();
     string ExtractCommonTaxonomicName();
     string ExtractScientificName();
+    string ExtractBlastName();
+    string ExtractSuperKingdom();
     string ExtractMaskingData();
     string ExtractSeqData();
     string ExtractSeqLen();
