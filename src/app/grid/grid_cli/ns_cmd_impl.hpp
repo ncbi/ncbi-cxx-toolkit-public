@@ -49,6 +49,8 @@ CJsonNode GenericStatToJson(CNetServer server,
 
 CJsonNode LegacyStatToJson(CNetServer server, bool verbose);
 
+CJsonNode QueueInfoToJson(CNetScheduleAPI ns_api, const string& queue_name);
+
 class CAttrListParser
 {
 public:

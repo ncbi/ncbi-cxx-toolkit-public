@@ -295,11 +295,17 @@ struct SOptionDefinition {
         FAIL_JOB_OPTION, "Report the job as failed "
             "and specify an error message.", {-1}},
 
-    {OPT_DEF(ePositionalArgument, eQueueArg), "QUEUE", NULL, {-1}},
+    {OPT_DEF(eOptionalPositional, eQueueArg), "QUEUE", NULL, {-1}},
+
+    {OPT_DEF(eSwitch, eAllQueues),
+        ALL_QUEUES_OPTION, "Print information on all queues.", {-1}},
+
+    {OPT_DEF(eSwitch, eQueueClasses),
+        QUEUE_CLASSES_OPTION, "Print information on queue classes.", {-1}},
 
     {OPT_DEF(ePositionalArgument, eTargetQueueArg), "QUEUE", NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eModelQueue), "MODEL_QUEUE", NULL, {-1}},
+    {OPT_DEF(ePositionalArgument, eQueueClass), "QUEUE_CLASS", NULL, {-1}},
 
     {OPT_DEF(eOptionWithParameter, eQueueDescription),
         "queue-description", "Optional queue description.", {-1}},
@@ -718,12 +724,23 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_QueueInfo,
-        "queueinfo|qi", "Get information about a NetSchedule queue.",
-        "Print queue configuration parameters, queue type (static or "
-        "dynamic), and, if the queue is dynamic, print its description "
-        "and the model queue name.",
-        {eQueueArg, eNetSchedule, eLoginToken, eAuth,
-            eClientNode, eClientSession,
+        "queueinfo|qi", "Get information about NetSchedule queues.",
+        "When neither '--" ALL_QUEUES_OPTION "' nor '--"
+        QUEUE_CLASSES_OPTION "' option is given, this command "
+        "prints the following information on the specified queue: "
+        "the queue configuration parameters, queue type (static or "
+        "dynamic), and, if the queue is dynamic, its description and "
+        "the queue class name. For newer NetSchedule versions, additional "
+        "queue parameters may be printed.\n\n"
+        "If the '--" ALL_QUEUES_OPTION "' option is given, this "
+        "command prints information about every queue on each server "
+        "specified by the '--" NETSCHEDULE_OPTION "' option.\n\n"
+        "The '--" QUEUE_CLASSES_OPTION "' switch provides an option "
+        "to get the information on queue classes instead of queues.\n\n"
+        "Valid output formats are \"" RAW_OUTPUT_FORMAT "\" and \""
+        JSON_OUTPUT_FORMAT "\". The default is \"" RAW_OUTPUT_FORMAT "\".",
+        {eQueueArg, eNetSchedule, eAllQueues, eQueueClasses,
+            eLoginToken, eAuth, eClientNode, eClientSession, eOutputFormat,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DumpQueue,
@@ -739,8 +756,8 @@ struct SCommandDefinition {
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,
         "createqueue", "Create a dynamic NetSchedule queue.",
         "This command creates a new NetSchedule queue using "
-        "a template known as a model queue.",
-        {eTargetQueueArg, eModelQueue, eNetSchedule, eQueueDescription,
+        "a template known as queue class.",
+        {eTargetQueueArg, eQueueClass, eNetSchedule, eQueueDescription,
             eLoginToken, eAuth, eClientNode, eClientSession,
            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -1039,7 +1056,7 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eQueue:
             case eQueueArg:
-            case eModelQueue:
+            case eQueueClass:
                 m_Opts.queue = opt_value;
                 break;
             case eAffinity:

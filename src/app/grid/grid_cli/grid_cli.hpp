@@ -85,6 +85,8 @@
 #define WAIT_FOR_JOB_EVENT_AFTER_OPTION "wait-for-job-event-after"
 #define WAIT_TIMEOUT_OPTION "wait-timeout"
 #define FAIL_JOB_OPTION "fail-job"
+#define ALL_QUEUES_OPTION "all-queues"
+#define QUEUE_CLASSES_OPTION "queue-classes"
 #define SWITCH_ARG "SWITCH"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
@@ -169,8 +171,10 @@ enum EOption {
     eWaitTimeout,
     eFailJob,
     eQueueArg,
+    eAllQueues,
+    eQueueClasses,
     eTargetQueueArg,
-    eModelQueue,
+    eQueueClass,
     eQueueDescription,
     eSwitchArg,
     eNow,
