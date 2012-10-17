@@ -70,7 +70,7 @@ $(RELEVANT_SUB_FILE): $(RELEVANT_FILE)
 	        build/*) ;; \
 	        *) echo "relevant.prefixes: Ignoring bad pattern $$path" >&2; \
 	           continue ;; \
-	    done; \
+	    esac; \
 	    echo $$path; \
 	    while [ "$$path" != build ]; do \
 	        path=`dirname $$path` ; \
