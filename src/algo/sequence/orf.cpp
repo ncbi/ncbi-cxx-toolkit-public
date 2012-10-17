@@ -327,6 +327,7 @@ void COrf::FindStrongKozakUOrfs(
                    TLocVec& non_overlap_results,
                    unsigned int min_length_bp,
                    unsigned int non_overlap_min_length_bp,
+                   double min_kozak_identity,
                    int genetic_code)
 {
     if (cds_start > seq.size()) {
@@ -357,18 +358,12 @@ void COrf::FindStrongKozakUOrfs(
         if (ORF_start < 3 || ORF_start >= cds_start ||
             ORF_start + 5 > seq.size() ||
             (ORF_end >= cds_start ? (cds_start - ORF_start) % 3 == 0
-                           : ORF_end - ORF_start < non_overlap_min_length_bp))
+                           : ORF_end - ORF_start < non_overlap_min_length_bp) ||
+            GetKozakIdentity(seq, seq.size(), ORF_start) < min_kozak_identity)
         {
             continue;
         }
-        string Kozak_signal;
-        seq.GetSeqData(ORF_start - 3, ORF_start + 5, Kozak_signal);
-        if ((Kozak_signal[0] == 'A' || Kozak_signal[0] == 'G') &&
-            Kozak_signal[6] == 'G' && Kozak_signal[7] != 'T')
-        {
-            (ORF_end >= cds_start ? overlap_results : non_overlap_results)
-                . push_back(*it);
-        }
+        (ORF_end >= cds_start ? overlap_results : non_overlap_results) . push_back(*it);
     }
 }
 

@@ -34,7 +34,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <vector>
+#include <math.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -94,6 +94,7 @@ public:
                          TLocVec& non_overlap_results,
                          unsigned int min_length_bp = 3,
                          unsigned int non_overlap_min_length_bp = 105,
+                         double min_kozak_identity = 0.8,
                          int genetic_code = 1);
 
     /**
@@ -120,9 +121,56 @@ public:
     static CRef<objects::CSeq_annot>
     MakeCDSAnnot(const TLocVec& orfs, int genetic_code = 1,
                  objects::CSeq_id* id = NULL);
+
+
+
+    /// Calculate identity to Kozak PWM for vertebrates
+    template<typename TSeqType> //must support operator[], yielding iupacna residue, 
+                                //e.g. CSeqVector, char*, or string
+    static double GetKozakIdentity(const TSeqType& iupacna_seq, size_t seq_len, size_t start_codon_pos)
+    {
+        //log-odds position-weight matrix for +/-6 positions around the putative start-codon
+        //The start-codon itself is "masked-out" with uniform distribution (will contribute 0 to log-odds),
+        //PWM is precomputed based set of refseq mRNAs, and will differ slightly depending on which set is used
+        //Note that the PWM for non-vertebrates is entirely different.
+        //This one based on 'srcdb_refseq_known[prop] AND biomol_mRNA[prop] AND "vertebrates"[porgn:__txid7742]'
+        //
+        //Each value is log(p1)-log(1-p1)-log(p2)+log(1-p2)
+        //where p1 is probability of finding this nucleotide at this position in TIS context and 
+        //p2 is probability of finding this nucleotide at this position in non-TIS context := 0.25
+        static const double pwm[15][4] = {  
+          // A     C     G     T
+             {-0.21, -0.23,  0.64, -0.36},
+             {-0.37,  0.33,  0.18, -0.22},
+             { 0.08,  0.60, -0.09, -0.87},
+             { 1.16, -1.35,  0.48, -1.76},
+             { 0.33,  0.51, -0.36, -0.72},
+             {-0.27,  0.86,  0.12, -1.30},
+             { 0.00,  0.00,  0.00,  0.00}, //
+             { 0.00,  0.00,  0.00,  0.00}, // start codon
+             { 0.00,  0.00,  0.00,  0.00}, //
+             {-0.16, -0.74,  1.08, -0.66},
+             { 0.09,  0.76, -0.46, -0.70},
+             {-0.59, -0.03,  0.56, -0.11},
+             {-0.04, -0.08,  0.48, -0.47},
+             { 0.12,  0.30, -0.26, -0.21},
+             {-0.44,  0.31,  0.35, -0.37}
+        };   
+        static const char* alphabet = "ACGT";
+        double log_odds(0);
+        for(size_t i = 0; i < 15; i++) {
+            TSignedSeqPos seq_pos = start_codon_pos - 6 + i; 
+            char nuc = (seq_pos >= 0 && seq_pos < static_cast<long>(seq_len)) 
+                     ? iupacna_seq[seq_pos] : 'N'; 
+            size_t nuc_ord = find(alphabet, alphabet + 4, nuc) - alphabet;
+            if(nuc_ord >= 4) { 
+                continue;
+            }    
+            log_odds += pwm[i][nuc_ord];
+        }    
+        double odds = exp(log_odds);
+        return odds / (1.0 + odds); 
+    }
 };
-
-
-
 
 END_NCBI_SCOPE
