@@ -1817,8 +1817,14 @@ const TDiagPostFlags kApplogDiagPostFlags =
 
 void CDiagContext_Extra::Flush(void)
 {
-    if ( !m_Args  ||  m_Args->empty()  ||
-        CDiagContext::IsSetOldPostFormat() ) {
+    if ( CDiagContext::IsSetOldPostFormat() ) {
+        return;
+    }
+
+    // Ignore extra messages without arguments. Allow start/stop,
+    // request-start/request-stop without arguments.
+    if (m_EventType == SDiagMessage::eEvent_Extra  &&
+        (!m_Args  ||  m_Args->empty()) ) {
         return;
     }
 
@@ -1846,7 +1852,9 @@ void CDiagContext_Extra::Flush(void)
                       NULL,
                       0, 0, 0); // module/class/function
     mess.m_Event = m_EventType;
-    mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), *m_Args);
+    if (m_Args  &&  !m_Args->empty()) {
+        mess.m_ExtraArgs.splice(mess.m_ExtraArgs.end(), *m_Args);
+    }
     mess.m_TypedExtra = m_Typed;
 
     GetDiagBuffer().DiagHandler(mess);
