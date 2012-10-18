@@ -1487,6 +1487,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     if (!dll_host.empty() && GetApp().GetBuildType().GetType() == CBuildType::eDll) {
         tree->m_Projects[proj_key].m_DllHost = dll_host;
         CProjKey proj_dll(CProjKey::eDll, dll_host);
+        if (tree->m_Projects.find(proj_dll) == tree->m_Projects.end()) {
         CProjItem item_dll = tree->m_Projects[proj_dll];
         item_dll.m_ProjType = CProjKey::eDll;
 #if 0
@@ -1507,6 +1508,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_ProjTags = tree->m_Projects[proj_key].m_ProjTags;
         item_dll.m_ProjTags.push_back("dll");
         tree->m_Projects[proj_dll] = item_dll;
+        }
     }
     ITERATE(list<CProjKey>, u,  unconditional_depends_ids) {
         (tree->m_Projects[proj_key]).m_UnconditionalDepends.insert( *u);
