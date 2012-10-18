@@ -12914,7 +12914,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
         }
         bad = MakeWrongCap(*sit);
         SetDbxref (entry, bad, 1234);
-        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + ", legal capitalization is " + *sit);
+        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + *sit);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         RemoveDbxref (entry, bad, 0);
@@ -12936,7 +12936,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
         }
         bad = MakeWrongCap(*sit);
         SetDbxref (entry, bad, 1234);
-        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + ", legal capitalization is " + *sit
+        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + *sit
                                       + ", but should not be used on an OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
@@ -12951,14 +12951,14 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
 
     ITERATE (vector<string>, sit, refseq_strings) {
         SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not be used on a non-RefSeq OrgRef");
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " (1234) should not be used on a non-RefSeq OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         RemoveDbxref (entry, *sit, 0);
     }
 
     SetDbxref (entry, "unrecognized", 1234);
-    expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized");
+    expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized (1234)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     RemoveDbxref (entry, "unrecognized", 0);
@@ -12969,7 +12969,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     expected_errors[0]->SetAccession("NC_123456");
     ITERATE (vector<string>, sit, refseq_strings) {
         SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not be used on an OrgRef");
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " (1234) should not be used on an OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         RemoveDbxref (entry, *sit, 0);
@@ -12985,9 +12985,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
         bad = MakeWrongCap(*sit);
         SetDbxref (feat, bad, 1234);
         if (NStr::Equal(*sit, "taxon")) {
-            expected_errors[0]->SetErrMsg("Illegal db_xref type TAXON, legal capitalization is taxon, but should only be used on an OrgRef");
+            expected_errors[0]->SetErrMsg("Illegal db_xref type TAXON (1234), legal capitalization is taxon, but should only be used on an OrgRef");
         } else {
-            expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + ", legal capitalization is " + *sit);
+            expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + *sit);
         }
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
@@ -12996,20 +12996,20 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     
     ITERATE (vector<string>, sit, refseq_strings) {
         SetDbxref (feat, *sit, 1234);
-        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " is only legal for RefSeq");
+        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " (1234) is only legal for RefSeq");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         RemoveDbxref (feat, *sit, 0);
     }
 
     SetDbxref(feat, "taxon", 1234);
-    expected_errors[0]->SetErrMsg("db_xref type taxon should only be used on an OrgRef");
+    expected_errors[0]->SetErrMsg("db_xref type taxon (1234) should only be used on an OrgRef");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     RemoveDbxref (feat, "taxon", 0);
 
     SetDbxref (feat, "unrecognized", 1234);
-    expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized");
+    expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized (1234)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     RemoveDbxref (feat, "unrecognized", 0);
