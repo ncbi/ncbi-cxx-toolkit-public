@@ -177,8 +177,8 @@ char* NCBI_simple_ftoa(char* s, double f, int p)
     v = f < 0.0 ? -f : f;
     x = (long)(v + 0.5 / w);
     y = (long)(w * (v - x) + 0.5);
-    assert(p  ||  !y);
-    return s + sprintf(s, "-%ld%s%0.*lu" + !(f < 0.0), x, &"."[!p], p, y);
+    assert(p  ||  !y);  /* with precision 0, output of "0" is empty */
+    return s + sprintf(s, "-%ld%s%.*lu" + !(f < 0.0), x, &"."[!p], p, y);
 }
 
 
@@ -206,8 +206,9 @@ double NCBI_simple_atof(const char* s, char** t)
             double w;
             long   y;
             int    p;
+            s = ++e;
             errno = 0/*maybe EINVAL here for ".NNN"*/;
-            y = strtoul(s = ++e, &e, 10);
+            y = strtoul(s, &e, 10);
             assert(e > s);
             p = (int)(e - s);
             if (p >= (int)(sizeof(x_pow10)/sizeof(x_pow10[0]))) {
