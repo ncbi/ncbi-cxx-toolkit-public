@@ -225,6 +225,8 @@ bool CRequestContext::IsValidSessionID(const string& session_id)
     switch ( GetAllowedSessionIDFormat() ) {
     case eSID_Ncbi:
         {
+            if (session_id.size() < 24) return false;
+            if (session_id[16] != '_') return false;
             if ( !NStr::EndsWith(session_id, "SID") ) return false;
             CTempString uid(session_id, 0, 16);
             if (NStr::StringToUInt8(uid, NStr::fConvErr_NoThrow, 16) == 0  &&  errno !=0) {

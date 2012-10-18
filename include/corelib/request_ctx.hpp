@@ -163,7 +163,7 @@ public:
 
     /// Session ID format
     enum ESessionIDFormat {
-        eSID_Ncbi,     ///< Strict NCBI format: (UID:16)_(RqID:4)SID
+        eSID_Ncbi,     ///< Strict NCBI format: (UID:16)_(RqID:4+)SID
         eSID_Standard, ///< Alpanum, underscore, -.:@, (default)
         eSID_Other     ///< Any other format
     };
