@@ -914,7 +914,7 @@ void CValidError_imp::ValidateBioSource
 
     int chrom_count = 0;
     bool chrom_conflict = false;
-    int country_count = 0, lat_lon_count = 0, collection_date_count = 0;
+    int country_count = 0, lat_lon_count = 0, altitude_count = 0, collection_date_count = 0;
     int fwd_primer_seq_count = 0, rev_primer_seq_count = 0;
     int fwd_primer_name_count = 0, rev_primer_name_count = 0;
     CPCRSetList pcr_set_list;
@@ -964,6 +964,10 @@ void CValidError_imp::ValidateBioSource
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonProblem, 
                            "Multiple lat_lon on BioSource", obj, ctx);
             }
+            break;
+
+        case CSubSource::eSubtype_altitude:
+            ++altitude_count;
             break;
 
         case CSubSource::eSubtype_chromosome:
@@ -1167,6 +1171,10 @@ void CValidError_imp::ValidateBioSource
     if (lat_lon_count > 1) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
                    "Multiple lat_lon qualifiers present", obj, ctx);
+    }
+    if (altitude_count > 1) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+                   "Multiple altitude qualifiers present", obj, ctx);
     }
     if (fwd_primer_seq_count > 1) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
