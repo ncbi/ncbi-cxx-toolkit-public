@@ -1225,7 +1225,7 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
     BlastInitialWordParameters* word_params = s_GetInitialWordParameters(kBlastProgram, query_blk,
           query_info, sbp, word_options, k_subject_length, hit_params);
 
-    BOOST_CHECK_EQUAL(14, word_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(12, word_params->cutoff_score_min);
     BOOST_CHECK_EQUAL(11, word_params->x_dropoff_max);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);

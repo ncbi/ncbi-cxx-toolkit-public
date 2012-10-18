@@ -778,10 +778,10 @@ BOOST_AUTO_TEST_CASE(GappedBlastnCutoffs)
     const Uint4 kDbNumSeqs[kNumDbs] = { 2000000, 20000000, 500, 200 };
     const Uint4 kSubjectLengths[kNumDbs] = { 2000, 400, 3000000, 60 };
     const AllCutoffScores kGoodCutoffs[kNumDbs] = { 
-        { 11, 15, 50, 0, 14, 20, false, 0, 0 },
-        { 11, 15, 50, 0, 11, 20, false, 0, 0 },
-        { 11, 15, 50, 0, 19, 19, false, 0, 0 },
-        { 11, 15, 50, 0,  8, 10, false, 0, 0 } };
+        { 11, 15, 50, 0, 12, 20, false, 0, 0 },
+        { 11, 15, 50, 0, 12, 20, false, 0, 0 },
+        { 11, 15, 50, 0, 12, 19, false, 0, 0 },
+        { 11, 15, 50, 0, 10, 10, false, 0, 0 } };
 
     AllCutoffScores* cutoffs = NULL;
     int index;

@@ -346,7 +346,8 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
          }
       }
 
-      if (!gapped_calculation || program_number == eBlastTypeBlastn) {
+      /* char* use_gap_trigger = getenv("USE_GAP_TRIGGER"); */
+      if (!gapped_calculation) {
          double cutoff_e = s_GetCutoffEvalue(program_number);
          Int4 query_length = query_info->contexts[context].query_length;
 
@@ -408,7 +409,7 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       /* Nucleotide searches first compute an approximate ungapped
          alignment and compare it to a reduced ungapped cutoff score */
       if (program_number == eBlastTypeBlastn) {
-         curr_cutoffs->reduced_nucl_cutoff_score = (Int4)(0.6 * new_cutoff);
+         curr_cutoffs->reduced_nucl_cutoff_score = (Int4)(0.9 * new_cutoff);
       }
    }
 
