@@ -193,7 +193,7 @@ namespace xslt {
     {
         // Do recursive copy
         xmlNodePtr      new_node = xmlCopyNode(
-                            reinterpret_cast<const xmlNodePtr>(
+                            reinterpret_cast<xmlNodePtr>(
                                                     node_.get_node_data()), 1);
         if (new_node == NULL)
             throw xslt::exception(kCouldNotCopyNode);
@@ -236,7 +236,7 @@ namespace xslt {
         for ( ; k != nset.end(); ++k) {
             void *      raw_node = k->get_node_data();
             xmlNodePtr  new_node = xmlCopyNode(
-                                        reinterpret_cast<const xmlNodePtr>(
+                                        reinterpret_cast<xmlNodePtr>(
                                             raw_node), 1);
             if (new_node == NULL) {
                 for (std::vector<xmlNodePtr>::iterator  j = node_copies.begin();
@@ -290,7 +290,7 @@ namespace xslt {
         for ( ; k != value.end(); ++k) {
             void *      raw_node = k->get_node_data();
             xmlNodePtr  new_node = xmlCopyNode(
-                                        reinterpret_cast<const xmlNodePtr>(
+                                        reinterpret_cast<xmlNodePtr>(
                                             raw_node), 1);
             if (new_node == NULL) {
                 for (std::vector<xmlNodePtr>::iterator  j = node_copies.begin();
