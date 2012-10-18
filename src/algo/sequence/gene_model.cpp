@@ -2728,9 +2728,12 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     CSeqVector vec(*whole_product, *m_scope,
                    CBioseq_Handle::eCoding_Iupac);
     vec.GetSeqData(0, vec.size(), actual);
-    if (!product_loc->IsWhole()) {
+    if (!product_loc->IsWhole() &&
+        product_loc->GetTotalRange().GetLength() < actual.size())
+    {
         actual = actual.substr(product_loc->GetStart(eExtreme_Positional),
                                product_loc->GetTotalRange().GetLength());
+        has_gap = true;
     }
 
     ///
