@@ -2447,9 +2447,6 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CScope& scope = ctx.GetScope();
     CFlatItemOStream& out = *m_ItemOS;
 
-    const bool is_small_genome_set = ( ctx.CanGetTLSeqEntryCtx() &&
-        ctx.GetTLSeqEntryCtx().GetHasSmallGenomeSet() );
-
     CSeqMap_CI gap_it = s_CreateGapMapIter(loc, ctx);
 
     // logic to handle offsets that occur when user sets 
