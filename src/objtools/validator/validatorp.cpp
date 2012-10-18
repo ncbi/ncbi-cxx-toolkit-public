@@ -1888,6 +1888,12 @@ void CValidError_imp::ValidateDbxref
         return;
     }
     const string& db = xref.GetDb();
+    string dbv = "";
+    if (xref.IsSetTag() && xref.GetTag().IsStr()) {
+        dbv = xref.GetTag().GetStr();
+    } else if (xref.IsSetTag() && xref.GetTag().IsId()) {
+        dbv = NStr::IntToString (xref.GetTag().GetId());
+    }
 
     if (ContainsSgml(db)) {
         PostObjErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
@@ -1909,16 +1915,16 @@ void CValidError_imp::ValidateDbxref
                 } else if (refseq_db) {
                     if (refseq || IsGPS()) {
                         PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref, 
-                                    "RefSeq-specific db_xref type " + db + " should not used on an OrgRef",
+                                    "RefSeq-specific db_xref type " + db + " should not be used on an OrgRef",
                                     obj, ctx);
                     } else {
                         PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                                    "RefSeq-specific db_xref type " + db + " should not used on a non-RefSeq OrgRef",
+                                    "RefSeq-specific db_xref type " + db + " should not be used on a non-RefSeq OrgRef",
                                     obj, ctx);
                     }
                 } else {
                     PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-                                "db_xref type " + db + " should not used on an OrgRef",
+                                "db_xref type " + db + " (" + dbv + ") should not be used on an OrgRef",
                                 obj, ctx);
                 }
             } else {

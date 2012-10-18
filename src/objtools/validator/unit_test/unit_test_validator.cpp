@@ -12905,7 +12905,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     refseq_strings.push_back ("VBRC");
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref", 
-                                         "db_xref type %s should not used on an OrgRef"));
+                                         "db_xref type %s (1234) should not be used on an OrgRef"));
 
     string bad;
     ITERATE (vector<string>, sit, src_strings) {
@@ -12943,7 +12943,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
         RemoveDbxref (entry, bad, 0);
 
         SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " should not used on an OrgRef");
+        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " (1234) should not be used on an OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         RemoveDbxref (entry, *sit, 0);
@@ -12951,7 +12951,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
 
     ITERATE (vector<string>, sit, refseq_strings) {
         SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not used on a non-RefSeq OrgRef");
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not be used on a non-RefSeq OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         RemoveDbxref (entry, *sit, 0);
@@ -12969,7 +12969,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     expected_errors[0]->SetAccession("NC_123456");
     ITERATE (vector<string>, sit, refseq_strings) {
         SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not used on an OrgRef");
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " should not be used on an OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         RemoveDbxref (entry, *sit, 0);
