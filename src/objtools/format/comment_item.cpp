@@ -943,7 +943,7 @@ string CCommentItem::GetStringForModelEvidance
         "Documentation" );
 
     text << ".~Also see:~"
-        << "    " << documentation_str << " of NCBI's Annotation Process~    ";
+        << "    " << documentation_str << " of NCBI's Annotation Process~";
 
     return CNcbiOstrstreamToString(text);
 }

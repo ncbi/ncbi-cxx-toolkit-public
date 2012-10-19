@@ -1127,11 +1127,6 @@ void CGenbankFormatter::FormatComment
 
     list<string> l;
     NON_CONST_ITERATE( list<string>, comment_it, strComment ) {
-        if( NStr::TruncateSpaces(*comment_it).empty() ) {
-            // skip if string is empty or all whitespace
-            continue;
-        }
-
         bool bHtml = GetContext().GetConfig().DoHTML();
         if ( bHtml ) {
             s_GenerateWeblinks( "http", *comment_it );
