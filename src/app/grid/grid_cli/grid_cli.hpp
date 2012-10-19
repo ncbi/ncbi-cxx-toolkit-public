@@ -87,6 +87,7 @@
 #define FAIL_JOB_OPTION "fail-job"
 #define ALL_QUEUES_OPTION "all-queues"
 #define QUEUE_CLASSES_OPTION "queue-classes"
+#define QUEUE_ARG "QUEUE"
 #define SWITCH_ARG "SWITCH"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
@@ -96,6 +97,7 @@
 #define JOBINFO_COMMAND "jobinfo"
 #define READJOB_COMMAND "readjob"
 #define WATCHJOB_COMMAND "watchjob"
+#define QUEUEINFO_COMMAND "queueinfo"
 
 #define HUMAN_READABLE_OUTPUT_FORMAT "human-readable"
 #define RAW_OUTPUT_FORMAT "raw"

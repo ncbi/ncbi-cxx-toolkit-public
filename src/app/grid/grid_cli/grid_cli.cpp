@@ -295,7 +295,7 @@ struct SOptionDefinition {
         FAIL_JOB_OPTION, "Report the job as failed "
             "and specify an error message.", {-1}},
 
-    {OPT_DEF(eOptionalPositional, eQueueArg), "QUEUE", NULL, {-1}},
+    {OPT_DEF(eOptionalPositional, eQueueArg), QUEUE_ARG, NULL, {-1}},
 
     {OPT_DEF(eSwitch, eAllQueues),
         ALL_QUEUES_OPTION, "Print information on all queues.", {-1}},
@@ -303,7 +303,7 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eQueueClasses),
         QUEUE_CLASSES_OPTION, "Print information on queue classes.", {-1}},
 
-    {OPT_DEF(ePositionalArgument, eTargetQueueArg), "QUEUE", NULL, {-1}},
+    {OPT_DEF(ePositionalArgument, eTargetQueueArg), QUEUE_ARG, NULL, {-1}},
 
     {OPT_DEF(ePositionalArgument, eQueueClass), "QUEUE_CLASS", NULL, {-1}},
 
@@ -724,7 +724,7 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_QueueInfo,
-        "queueinfo|qi", "Get information about NetSchedule queues.",
+        QUEUEINFO_COMMAND "|qi", "Get information about NetSchedule queues.",
         "When neither '--" ALL_QUEUES_OPTION "' nor '--"
         QUEUE_CLASSES_OPTION "' option is given, this command "
         "prints the following information on the specified queue: "

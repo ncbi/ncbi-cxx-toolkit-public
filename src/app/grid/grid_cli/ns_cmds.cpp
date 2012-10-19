@@ -919,7 +919,44 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin, eReadOnlyAdminCmd);
 
-    m_NetScheduleAdmin.PrintQueueInfo(NcbiCout);
+    if (!IsOptionSet(eQueueClasses)) {
+        if ((IsOptionSet(eQueueArg) ^ IsOptionSet(eAllQueues)) == 0) {
+            fprintf(stderr, GRID_APP_NAME " " QUEUEINFO_COMMAND
+                    ": either the '" QUEUE_ARG "' argument or the '--"
+                    ALL_QUEUES_OPTION "' option must be specified.\n");
+            return 1;
+        }
+        if (m_Opts.output_format == eJSON)
+            PrintJSON(stdout, QueueInfoToJson(m_NetScheduleAPI,
+                    IsOptionSet(eQueueArg) ? m_Opts.queue : kEmptyStr));
+        else if (!IsOptionSet(eAllQueues))
+            m_NetScheduleAdmin.PrintQueueInfo(NcbiCout);
+        else {
+            CNetService service(m_NetScheduleAPI.GetService());
+            string client_name(service.GetServerPool().GetClientName());
+            CNetScheduleAdmin::TQueueList qlist;
+            m_NetScheduleAdmin.GetQueueList(qlist);
+            bool load_balanced = service.IsLoadBalanced();
+            ITERATE(CNetScheduleAdmin::TQueueList,
+                    server_and_its_queues, qlist) {
+                string server_address(
+                        server_and_its_queues->server.GetServerAddress());
+                if (load_balanced)
+                    NcbiCout << "[server " << server_address << ']' << NcbiEndl;
+                ITERATE(list<string>, queue_name, server_and_its_queues->queues) {
+                    NcbiCout << '[' << *queue_name << ']' << NcbiEndl;
+                    CNetScheduleAPI(server_address, client_name,
+                            *queue_name).GetAdmin().PrintQueueInfo(NcbiCout);
+                    NcbiCout << NcbiEndl;
+                }
+                if (load_balanced)
+                    NcbiCout << NcbiEndl;
+            }
+        }
+    } else {
+        m_NetScheduleAPI.GetService().PrintCmdOutput("STAT QCLASSES",
+                NcbiCout, CNetService::eMultilineOutput);
+    }
 
     return 0;
 }
