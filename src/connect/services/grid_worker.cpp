@@ -1308,13 +1308,14 @@ bool CGridWorkerNode::x_PerformTimelineAction(
                 m_NetScheduleAPI.GetService().Iterate(); it; ++it) {
             m_TimelineSearchPattern.m_ServerAddress =
                     (*it)->m_ServerInPool->m_Address;
-
             TTimelineEntries::iterator existing_entry(
                     m_TimelineEntryByAddress.find(&m_TimelineSearchPattern));
 
-            if (existing_entry != m_TimelineEntryByAddress.end())
+            if (existing_entry != m_TimelineEntryByAddress.end()) {
                 (*existing_entry)->m_DiscoveryIteration = m_DiscoveryIteration;
-            else {
+                if ((*existing_entry)->m_Timeline == NULL)
+                    m_ImmediateActions.Push(*existing_entry);
+            } else {
                 STimelineEntry* new_entry = new STimelineEntry(
                         m_TimelineSearchPattern.m_ServerAddress, 0,
                                 m_DiscoveryIteration);
@@ -1343,7 +1344,17 @@ bool CGridWorkerNode::x_PerformTimelineAction(
     get_cmd = m_NSExecutor->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
             get_cmd, &timeline_entry->m_NotificationExpiration);
 
-    if (!g_ParseGetJobResponse(job, server.ExecWithRetry(get_cmd).response)) {
+    CNetServer::SExecResult exec_result;
+
+    try {
+        server->ConnectAndExec(get_cmd, exec_result);
+    }
+    catch (CNetSrvConnException& e) {
+        LOG_POST(Warning << e.GetMsg());
+        return false;
+    }
+
+    if (!g_ParseGetJobResponse(job, exec_result.response)) {
         m_Timeline.Push(timeline_entry);
         return false;
     }
