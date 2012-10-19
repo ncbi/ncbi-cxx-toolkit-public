@@ -10358,7 +10358,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SgmlPresentInText",
                               "dbxref database " + sgml_tags[tag_num] + " has SGML"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref",
-                              "Illegal db_xref type " + sgml_tags[tag_num]));
+                              "Illegal db_xref type " + sgml_tags[tag_num] + " (1234)"));
 
     SetDbxref (entry, sgml_tags[tag_num], 1234);
     eval = validator.Validate(seh, options);
@@ -10380,7 +10380,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetErrMsg("dbxref database " + sgml_tags[tag_num] + " has SGML");
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref",
-                              "Illegal db_xref type " + sgml_tags[tag_num]));
+                              "Illegal db_xref type " + sgml_tags[tag_num] + " (1234)"));
     SetDbxref(feat, sgml_tags[tag_num], 1234);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
