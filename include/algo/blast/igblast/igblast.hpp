@@ -66,6 +66,7 @@ public:
     bool m_IsProtein;                // search molecular type
     string m_Origin;                 // the origin of species
     string m_DomainSystem;           // domain system for annotation
+    string m_SequenceType;           //ig or tcr?
     string m_AuxFilename;            // auxulary file name
     string m_IgDataPath;             // internal data path
     CRef<CLocalDbAdapter> m_Db[4];   // user specified germline database
