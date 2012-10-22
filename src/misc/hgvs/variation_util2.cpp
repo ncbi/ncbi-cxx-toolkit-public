@@ -379,6 +379,8 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
             
         s_ResolveIntronicOffsets(*p3);
     }
+
+    CheckPlacement(*p3);
     return p3;
 }
 
@@ -434,7 +436,8 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_l
         //we need to use the seq-align-based mapping.
         NCBI_THROW(CException, eUnknown, "Cannot use Mapper-based method to remap intronic cases; must remap via spliced-seg alignment instead.");
     }
-
+ 
+    CheckPlacement(*p2);
     return p2;
 }
 
@@ -511,7 +514,6 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
 
     ChangeIdsInPlace(*p2, sequence::eGetId_ForceAcc, *m_scope);
 
-    CheckPlacement(*p2);
     return p2;
 }
 
