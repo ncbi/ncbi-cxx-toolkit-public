@@ -896,7 +896,7 @@ void CBDB_Env::PrintMemStat(CNcbiOstream & out)
         ;
 
         int max_write;
-#if (DB_VERSION_MAJOR == 4  &&  DB_VERSION_MINOR >= 6)
+#if (DB_VERSION_MAJOR == 4 && DB_VERSION_MINOR >= 6)  ||  DB_VERSION_MAJOR > 4
         db_timeout_t max_write_sleep;
 #else
         int max_write_sleep;
