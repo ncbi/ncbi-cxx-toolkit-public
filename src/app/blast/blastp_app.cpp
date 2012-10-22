@@ -104,11 +104,20 @@ int CBlastpApp::Run(void)
 
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
+        /*** Initialize the database/subject ***/
+        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
+        CRef<CLocalDbAdapter> db_adapter;
+        CRef<CScope> scope;
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         db_adapter, scope);
+        _ASSERT(db_adapter && scope);
+
         /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
-        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+        SDataLoaderConfig dlconfig =
+            InitializeQueryDataLoaderConfiguration(query_opts->QueryIsProtein(),
+                                                   db_adapter);
         CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
@@ -119,14 +128,6 @@ int CBlastpApp::Run(void)
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
-
-        /*** Initialize the database/subject ***/
-        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CLocalDbAdapter> db_adapter;
-        CRef<CScope> scope;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         db_adapter, scope);
-        _ASSERT(db_adapter && scope);
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());

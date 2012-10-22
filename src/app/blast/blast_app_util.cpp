@@ -124,6 +124,34 @@ static string s_FindBlastDbDataLoaderName(const string& dbname, bool is_protein)
     return kEmptyStr;
 }
 
+blast::SDataLoaderConfig 
+InitializeQueryDataLoaderConfiguration(bool query_is_protein, 
+                                       CRef<blast::CLocalDbAdapter> db_adapter)
+{
+    SDataLoaderConfig retval(query_is_protein);
+    retval.OptimizeForWholeLargeSequenceRetrieval();
+
+    /* Load the BLAST database into the data loader configuration for the query
+     * so that if the query sequence(s) are specified as seq-ids, these can be 
+     * fetched from the BLAST database being searched */
+    if (db_adapter->IsBlastDb() &&  /* this is a BLAST database search */
+        retval.m_UseBlastDbs &&   /* the BLAST database data loader is requested */
+        (query_is_protein == db_adapter->IsProtein())) { /* the same database type is used for both queries and subjects */
+        CNcbiOstrstream oss;
+        oss << db_adapter->GetDatabaseName() << " " << retval.m_BlastDbName;
+        retval.m_BlastDbName = CNcbiOstrstreamToString(oss);
+    }
+    if (retval.m_UseBlastDbs) {
+        _TRACE("Initializing query data loader to '" << retval.m_BlastDbName 
+               << "' (" << (query_is_protein ? "protein" : "nucleotide") 
+               << " BLAST database)");
+    }
+    if (retval.m_UseGenbank) {
+        _TRACE("Initializing query data loader to use GenBank data loader");
+    }
+    return retval;
+}
+
 void
 InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
                   CRef<blast::CBlastOptionsHandle> opts_hndl,
@@ -194,7 +222,8 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             scope->AddDataLoader(dbloader_name, 
                              CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
             _TRACE("Setting " << dbloader_name << " priority to "
-                   << (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+                   << (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority
+                   << " for subjects");
         }
     }
 }
@@ -210,7 +239,8 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle)
     CBlastDbDataLoader::SBlastDbParam param(db_handle);
     string retval(CBlastDbDataLoader::GetLoaderNameFromArgs(param));
     _TRACE("Registering " << retval << " at priority " <<
-           (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+           (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority 
+           << " for subjects");
     return retval;
 }
 

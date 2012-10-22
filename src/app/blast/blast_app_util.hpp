@@ -46,6 +46,7 @@
 #include <objtools/blast/blastdb_format/invalid_data_exception.hpp> // for CInvalidDataException
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <algo/blast/format/blastfmtutil.hpp>   // for CBlastFormatUtil
+#include <algo/blast/blastinput/blast_scope_src.hpp>    // for SDataLoaderConfig
 
 BEGIN_NCBI_SCOPE
 
@@ -83,6 +84,12 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
                   CRef<blast::CLocalDbAdapter>& db_adapter, 
                   CRef<objects::CScope>& scope);
 
+/// Initialize the data loader configuration for the query
+/// @param query_is_protein is/are the query sequence(s) protein? [in]
+/// @param db_adapter the database/subject information [in]
+blast::SDataLoaderConfig 
+InitializeQueryDataLoaderConfiguration(bool query_is_protein, 
+                                       CRef<blast::CLocalDbAdapter> db_adapter);
 /// Create a CSeqDB object from the command line arguments provided
 /// @param db_args BLAST database arguments [in]
 /// @throw CSeqDBException in case of not being able to properly build a CSeqDB

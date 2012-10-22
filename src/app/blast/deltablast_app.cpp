@@ -178,11 +178,20 @@ int CDeltaBlastApp::Run(void)
                 		               opts_hndl, false);
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
+        /*** Initialize the database/subject ***/
+        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
+        CRef<CLocalDbAdapter> db_adapter;
+        CRef<CScope> scope;
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         db_adapter, scope);
+        _ASSERT(db_adapter && scope);
+
         /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
-        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+        SDataLoaderConfig dlconfig =
+            InitializeQueryDataLoaderConfiguration(query_opts->QueryIsProtein(),
+                                                   db_adapter);
         CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
@@ -196,14 +205,6 @@ int CDeltaBlastApp::Run(void)
             query_batch_size = 1;
         }
         CBlastInput input(&fasta, query_batch_size);
-
-        /*** Initialize the database/subject ***/
-        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CLocalDbAdapter> db_adapter;
-        CRef<CScope> scope;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         db_adapter, scope);
-        _ASSERT(db_adapter && scope);
 
         /*** Initialize the domain database ***/
         CRef<CLocalDbAdapter> domain_db_adapter(new CLocalDbAdapter(

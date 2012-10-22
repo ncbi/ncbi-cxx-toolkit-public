@@ -101,15 +101,23 @@ int CTblastnApp::Run(void)
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
 
+        /*** Initialize the database/subject ***/
+        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
+        CRef<CLocalDbAdapter> db_adapter;
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         db_adapter, scope);
+        _ASSERT(db_adapter && scope);
+
         /*** Get the query sequence(s) or PSSM (these two options are mutually
          * exclusive) ***/
         CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();
         CRef<CBlastFastaInputSource> fasta;
         CRef<CBlastInput> input;
-        SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+        SDataLoaderConfig dlconfig =
+            InitializeQueryDataLoaderConfiguration(query_opts->QueryIsProtein(),
+                                                   db_adapter);
 
-        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
         CRef<CBlastQueryVector> query;
         CRef<IQueryFactory> query_factory;
 
@@ -139,13 +147,6 @@ int CTblastnApp::Run(void)
             query->AddQuery(q);
             _ASSERT(query.NotEmpty());
         }
-
-        /*** Initialize the database/subject ***/
-        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CLocalDbAdapter> db_adapter;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         db_adapter, scope);
-        _ASSERT(db_adapter && scope);
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());

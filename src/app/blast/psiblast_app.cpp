@@ -385,15 +385,23 @@ int CPsiBlastApp::Run(void)
         }
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
+        /*** Initialize the database ***/
+        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
+        CRef<CLocalDbAdapter> db_adapter;
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         db_adapter, scope);
+        _ASSERT(db_adapter && scope);
+
         /*** Get the query sequence(s) or PSSM (these two options are mutually
          * exclusive) ***/
         CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();
         CRef<CBlastInput> input;
-        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
 
         if (pssm.Empty()) {  // FASTA input
-      	    SDataLoaderConfig dlconfig(query_opts->QueryIsProtein());
-            dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+            SDataLoaderConfig dlconfig =
+                InitializeQueryDataLoaderConfiguration(query_opts->QueryIsProtein(),
+                                                       db_adapter);
             CBlastInputSourceConfig iconfig(dlconfig, query_opts->GetStrand(),
                                          query_opts->UseLowercaseMasks(),
                                          query_opts->GetParseDeflines(),
@@ -406,14 +414,6 @@ int CPsiBlastApp::Run(void)
                                          iconfig));
             input.Reset(new CBlastInput(&*fasta, 1));
         } 
-
-
-        /*** Initialize the database ***/
-        CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
-        CRef<CLocalDbAdapter> db_adapter;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         db_adapter, scope);
-        _ASSERT(db_adapter && scope);
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
