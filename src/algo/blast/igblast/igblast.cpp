@@ -242,6 +242,7 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
     opts.SetMismatchPenalty(-4);
     if (db_type == 2){ //J genes are longer so if can afford more reliable identification
         opts.SetWordSize(7);
+        opts.SetMismatchPenalty(-3);
     } else {
         opts.SetWordSize(5);
     }
