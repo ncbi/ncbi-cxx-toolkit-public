@@ -417,7 +417,8 @@ Source-qual ::= ENUMERATED {
     all-quals (95),
     dbxref (96) ,
     taxid (97) ,
-    all-primers (98)
+    all-primers (98) ,
+    altitude (99)
 }
 
 Source-qual-pair ::= SEQUENCE {
