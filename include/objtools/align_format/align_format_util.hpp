@@ -86,7 +86,7 @@ using the Entrez Genomes MapViewer</td></tr></table><p>";
 
 ///unigene
 // .ncbirc alias: UNIGEN
-static const char kUnigeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=<@db@>&cmd=Display&dopt=<@dopt@>_unigene&from_uid=<@gi@>&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kUnigeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=<@db@>&cmd=Display&dopt=<@dopt@>_unigene&from_uid=<@gi@>&RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
 //substitues <@lnk_displ@>
 static const char kUnigeneImg[] = "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">";
@@ -96,7 +96,7 @@ static const string kUnigeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">cluste
 ///structure
 // .ncbirc alias: STRUCTURE_URL
 static const char kStructureUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=<@rid@>&blast_rep_gi=<@blast_rep_gi@>&hit=<@gi@>&<@cdd_params@>\
-&blast_view=<@blast_view@>&hsp=0&taxname=<@taxname@>&client=blast&log$=structure<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+&blast_view=<@blast_view@>&hsp=0&taxname=<@taxname@>&client=blast&log$=structure<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kStructureImg[] = "<img border=0 height=16 width=16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
@@ -110,7 +110,7 @@ gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&%s\
 
 ///Geo
 // .ncbirc alias: GEO
-static const char kGeoUrl[] =  "<a href=\"http://www/geoprofiles?LinkName=nuccore_geoprofiles&from_uid=<@gi@>&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kGeoUrl[] =  "<a href=\"http://www/geoprofiles?LinkName=nuccore_geoprofiles&from_uid=<@gi@>&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
 
 //substitues <@lnk_displ@>
@@ -120,7 +120,7 @@ static const string kGeoDispl =  "<div><@lnk@>-<span class=\"rlLink\">microarray
 
 ///Gene
 // .ncbirc alias: GENE
-static const char kGeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/gene?term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kGeneUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/gene?term=<@gi@>[<@uid@>]&RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
 //substitues <@lnk_displ@>
 static const char kGeneImg[] = "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">";
@@ -129,13 +129,13 @@ static const string kGeneDispl =  "<div><@lnk@>-<span class=\"rlLink\">associate
 
 ///Bioassay for proteins
 // .ncbirc alias: BIOASSAY_PROT
-static const char kBioAssayProtURL[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[PigGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kBioAssayProtURL[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[PigGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kBioAssayProtImg[] = "<img border=0 height=16 width=16 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to <@label@>\">";
 
 ///Bioassay for nucleotides
 // .ncbirc alias: BIOASSAY_NUC
-static const char kBioAssayNucURL[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[RNATargetGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kBioAssayNucURL[] = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[RNATargetGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 static const char kBioAssayNucImg[] = "<img border=0 height=16 width=16 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to <@label@>\">";
 
 //For text link <@lnk@> is substituted by formatted url for both BioAssay Nuc and Prot
@@ -143,7 +143,7 @@ static const string kBioAssayDispl =  "<div><@lnk@>-<span class=\"rlLink\">bioac
 
 ///mapviewer linkout
 // .ncbirc alias: MAPVIEWER
-static const char kMapviwerUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=<@gi@>&THE_BLAST_RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const char kMapviwerUrl[] = "<a href=\"http://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=<@gi@>&THE_BLAST_RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kMapviwerImg[] = "<img border=0 height=16 width=16 src=\"images/M.gif\" alt=\"Genome view with mapviewer linked to <@label@>\">";
 //For text link <@lnk@> is substituted by formatted url
@@ -152,7 +152,7 @@ static const string kMapviwerDispl =  "<div><@lnk@>-<span class=\"rlLink\">align
 ///mapviewer linkout
 //for used for NT/NW/NC
 static const string kMapviewBlastHitUrl = "http://www.ncbi.nlm.nih.gov/mapview/maps.cgi?maps=blast_set";
-static const string kMapviewBlastHitParams = "<a href=\"<@user_url@>&db=<@db@>&na=<@is_na@>&gnl=<@gnl@>&gi=<@gi@>&term=<@gi@>[gi]&taxid=<@taxid@>&RID=<@rid@>&QUERY_NUMBER=<@query_number@>&log$=nucl<@log@>\"<@lnkTitle@>><@lnk_displ@></a>";
+static const string kMapviewBlastHitParams = "<a href=\"<@user_url@>&db=<@db@>&na=<@is_na@>&gnl=<@gnl@>&gi=<@gi@>&term=<@gi@>[gi]&taxid=<@taxid@>&RID=<@rid@>&QUERY_NUMBER=<@query_number@>&log$=nucl<@log@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 
 ///dumpgnl
 static const char kDownloadUrl[] = "/blast/dumpgnl.cgi";
