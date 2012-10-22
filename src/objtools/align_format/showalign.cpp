@@ -3468,6 +3468,13 @@ string CDisplaySeqalign::x_FormatAlnBlastInfo(SAlnInfo* aln_vec_info)
     if (m_currAlignHsp ==  m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber - 1) {
         hideNextNaviagtion = "disabled=\"disabled\"";
     }
+
+    const CRange<TSeqPos>& range = m_AV->GetSeqRange(1);	
+    TSeqPos from = (range.GetFrom()> range.GetTo()) ? range.GetTo() : range.GetFrom() + 1;
+    TSeqPos to =   (range.GetFrom()> range.GetTo()) ? range.GetFrom() : range.GetTo() + 1;
+    alignParams  = CAlignFormatUtil::MapTemplate(alignParams,"fromHSP",from);
+    alignParams  = CAlignFormatUtil::MapTemplate(alignParams,"toHSP",to);    
+
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_prev",hidePrevNaviagtion);
     alignParams = CAlignFormatUtil::MapTemplate(alignParams,"aln_hide_next",hideNextNaviagtion);
     alignParams  = CAlignFormatUtil::MapTemplate(alignParams,"firstSeqID",m_CurrAlnAccession);//displays the first accession if multiple    
@@ -3626,6 +3633,8 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 		string trgt = (m_AlignOption & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "";
 
 		seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"aln_target",trgt);
+        seqInfo = CAlignFormatUtil::MapTemplate(seqInfo,"aln_rid",m_Rid);
+
 		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"seq_info",seqInfo);        		
 		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"aln_gi",alnGi);    
 		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"aln_seqid",seqid);        		

@@ -1881,13 +1881,16 @@ static string s_MapLinkoutGenParam(string &url_link_tmpl,
                                    string lnk_title = "")
 {
     const string kLinkTitle=" title=\"View <@lnk_tl_info@> for <@label@>\" ";
-    string lnkTitle = (lnk_title.empty()) ? kLinkTitle : lnk_title;
+    const string kLinkTarget="target=\"lnk" + rid + "\"";
+    string lnkTitle = (lnk_title.empty()) ? kLinkTitle : lnk_title;    
     string url_link = CAlignFormatUtil::MapTemplate(url_link_tmpl,"gi",giList);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"log",for_alignment? "align" : "top");
     url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",NStr::IntToString(cur_align));
-    lnkTitle = NStr::StartsWith(lnk_displ,"<img") ? "" : lnkTitle;
+    lnkTitle = NStr::StartsWith(lnk_displ,"<img") ? "" : lnkTitle;    
+    string lnkTarget = NStr::StartsWith(lnk_displ,"<img") ? "" : kLinkTarget;
     url_link = CAlignFormatUtil::MapTemplate(url_link,"lnkTitle",lnkTitle);
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"lnkTarget",lnkTarget);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"lnk_displ",lnk_displ);        
     url_link = CAlignFormatUtil::MapTemplate(url_link,"lnk_tl_info",lnk_tl_info);        
     url_link = CAlignFormatUtil::MapTemplate(url_link,"label",label);    
@@ -3030,7 +3033,7 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
             linkUrl += "&from=<@fromHSP@>&to=<@toHSP@>";
             linkTiltle = "Aligned region spanning positions <@fromHSP@> to <@toHSP@> on <@seqid@>";
         }
-	    link = s_MapCustomLink(linkUrl,"genbank",seqUrlInfo->accession,linkText,"rp_" + seqUrlInfo->accession,linkTiltle);
+	    link = s_MapCustomLink(linkUrl,"genbank",seqUrlInfo->accession,linkText,"lnk" + seqUrlInfo->rid,linkTiltle);
         customLinksList.push_back(link);
         
         //seqviewer
@@ -3058,7 +3061,7 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         }        
         string title = (seqUrlInfo->isDbNa) ? "Nucleotide Graphics" : "Protein Graphics";
     
-        link = s_MapCustomLink(linkUrl,title,seqUrlInfo->accession, "Graphics","rp_" + seqUrlInfo->accession,linkTitle,"spr");
+        link = s_MapCustomLink(linkUrl,title,seqUrlInfo->accession, "Graphics","lnk" + seqUrlInfo->rid,linkTitle,"spr");
         customLinksList.push_back(link);
     }
     return customLinksList;
@@ -3104,29 +3107,29 @@ list<string>  CAlignFormatUtil::GetCustomLinksList(SSeqURLInfo *seqUrlInfo,
     }         
     else if(customLinkTypes & eLinkTypeTraceLinks) {    
         linkUrl = seqUrlInfo->seqUrl;
-	    link = s_MapCustomLink(linkUrl,"Trace Archive FASTA",seqUrlInfo->accession, "FASTA","rp_" + seqUrlInfo->accession);
+	    link = s_MapCustomLink(linkUrl,"Trace Archive FASTA",seqUrlInfo->accession, "FASTA","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
 
         linkUrl = NStr::Replace(seqUrlInfo->seqUrl,"fasta","trace");
-        link = s_MapCustomLink(linkUrl,"Trace Archive Trace",seqUrlInfo->accession, "Trace","rp_" + seqUrlInfo->accession);        
+        link = s_MapCustomLink(linkUrl,"Trace Archive Trace",seqUrlInfo->accession, "Trace","lnk" + seqUrlInfo->rid);        
         customLinksList.push_back(link);
 
         linkUrl = NStr::Replace(seqUrlInfo->seqUrl,"fasta","quality");
-        link = s_MapCustomLink(linkUrl,"Trace Archive Quality",seqUrlInfo->accession, "Quality","rp_" + seqUrlInfo->accession);        
+        link = s_MapCustomLink(linkUrl,"Trace Archive Quality",seqUrlInfo->accession, "Quality","lnk" + seqUrlInfo->rid);        
         customLinksList.push_back(link);
 
         linkUrl = NStr::Replace(seqUrlInfo->seqUrl,"fasta","info");
-        link = s_MapCustomLink(linkUrl,"Trace Archive Info",seqUrlInfo->accession, "Info","rp_" + seqUrlInfo->accession);        
+        link = s_MapCustomLink(linkUrl,"Trace Archive Info",seqUrlInfo->accession, "Info","lnk" + seqUrlInfo->rid);        
         customLinksList.push_back(link);
     }    
     else if(customLinkTypes & eLinkTypeSRALinks) {        
         linkUrl = seqUrlInfo->seqUrl;
-	    link = s_MapCustomLink(linkUrl,"SRA",seqUrlInfo->accession, "SRA","rp_" + seqUrlInfo->accession);
+	    link = s_MapCustomLink(linkUrl,"SRA",seqUrlInfo->accession, "SRA","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
     }    
     else if(customLinkTypes & eLinkTypeSNPLinks) {            
         linkUrl = seqUrlInfo->seqUrl;
-	    link = s_MapCustomLink(linkUrl,"SNP",seqUrlInfo->accession, "SNP","rp_" + seqUrlInfo->accession);
+	    link = s_MapCustomLink(linkUrl,"SNP",seqUrlInfo->accession, "SNP","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
 
         
@@ -3135,20 +3138,20 @@ list<string>  CAlignFormatUtil::GetCustomLinksList(SSeqURLInfo *seqUrlInfo,
 	    linkUrl = seqUrlInfo->resourcesUrl + rs + "?report=FLT";
         
 
-        link = s_MapCustomLink(linkUrl,"Flatfile",seqUrlInfo->accession, "Flatfile","rp_" + seqUrlInfo->accession);
+        link = s_MapCustomLink(linkUrl,"Flatfile",seqUrlInfo->accession, "Flatfile","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
 
         linkUrl = NStr::Replace(linkUrl,"FLT","fasta");
-        link = s_MapCustomLink(linkUrl,"FASTA",seqUrlInfo->accession, "FASTA","rp_" + seqUrlInfo->accession);
+        link = s_MapCustomLink(linkUrl,"FASTA",seqUrlInfo->accession, "FASTA","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
 
         linkUrl = NStr::Replace(linkUrl,"fasta","docsum");
-        link = s_MapCustomLink(linkUrl,"Graphic summary ",seqUrlInfo->accession, "Graphic summary ","rp_" + seqUrlInfo->accession);
+        link = s_MapCustomLink(linkUrl,"Graphic summary ",seqUrlInfo->accession, "Graphic summary ","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
     }    
     else if(customLinkTypes & eLinkTypeGSFastaLinks) {    
         linkUrl = seqUrlInfo->seqUrl;
-	    link = s_MapCustomLink(linkUrl,"GSFASTA",seqUrlInfo->accession, "GSFASTA","rp_" + seqUrlInfo->accession);
+	    link = s_MapCustomLink(linkUrl,"GSFASTA",seqUrlInfo->accession, "GSFASTA","lnk" + seqUrlInfo->rid);
 	    customLinksList.push_back(link);
     }        
     return customLinksList;    
