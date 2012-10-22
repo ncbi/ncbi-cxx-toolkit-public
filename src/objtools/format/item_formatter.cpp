@@ -430,8 +430,9 @@ static string s_DoSup(const string& issue, const string& part_sup, const string&
     string str;
 
     if (!NStr::IsBlank(part_sup)) {
-        str += ' ';
-        str +=part_sup;
+        str += " (";
+        str += part_sup;
+        str += ')';
     }
 
     if (NStr::IsBlank(issue)  &&  NStr::IsBlank(part_supi)) {
