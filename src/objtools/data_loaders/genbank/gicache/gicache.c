@@ -118,7 +118,6 @@ typedef struct {
 
 static void (*LogFunc)(char*) = NULL;
 
-
 /****************************************************************************
  *
  * gi_data_index.c
@@ -199,6 +198,14 @@ static void x_CloseFiles(SGiDataIndex* data_index)
 static void x_UnMapIndex(SGiDataIndex* data_index)
 {
     if (data_index->m_GiIndex != MAP_FAILED) {
+        if (LogFunc) {
+            char logmsg[256];
+            sprintf(logmsg,
+                    "GI_CACHE: Unmapping index file, filedes %d, map length %ld, path %s\n",
+                    data_index->m_GiIndexFile, data_index->m_MappedIndexLen,
+                    data_index->m_FileNamePrefix);
+            LogFunc(logmsg);
+        }
         munmap((char*)data_index->m_GiIndex,
                data_index->m_MappedIndexLen*sizeof(Uint4));
         data_index->m_GiIndex = (Uint4*)MAP_FAILED;
@@ -209,6 +216,14 @@ static void x_UnMapIndex(SGiDataIndex* data_index)
 static void x_UnMapData(SGiDataIndex* data_index)
 {
     if (data_index->m_Data != MAP_FAILED) {
+        if (LogFunc) {
+            char logmsg[256];
+            sprintf(logmsg,
+                    "GI_CACHE: Unmapping data file, filedes %d, map length %ld, path %s\n",
+                    data_index->m_DataFile, data_index->m_MappedDataLen,
+                    data_index->m_FileNamePrefix);
+            LogFunc(logmsg);
+        }
         data_index->m_OldDataPtr = data_index->m_Data;
         data_index->m_OldMappedDataLen = data_index->m_MappedDataLen;
         munmap((char*)data_index->m_Data, data_index->m_MappedDataLen);
@@ -251,9 +266,10 @@ static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
 
     if (LogFunc) {
         char logmsg[256];
-        sprintf(logmsg, "GI_CACHE: Opened index file %s; filedes %d, inode %d, length %ld",
+        sprintf(logmsg,
+                "GI_CACHE: Opened index file %s; filedes %d, inode %d, length %ld, path %s\n",
                 buf, data_index->m_GiIndexFile, data_index->m_IndexInode,
-                data_index->m_GiIndexLen);
+                data_index->m_GiIndexLen, data_index->m_FileNamePrefix);
         LogFunc(logmsg);
     }
 
@@ -307,9 +323,10 @@ static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
 
     if (LogFunc) {
         char logmsg[256];
-        sprintf(logmsg, "GI_CACHE: Opened data file %s; filedes %d, inode %d, length %ld",
+        sprintf(logmsg,
+                "GI_CACHE: Opened data file %s; filedes %d, inode %d, length %ld, path %s\n",
                 buf, data_index->m_DataFile, data_index->m_DataInode,
-                data_index->m_DataLen);
+                data_index->m_DataLen, data_index->m_FileNamePrefix);
         LogFunc(logmsg);
     }
 
@@ -369,8 +386,10 @@ static Uint1 x_MapIndex(SGiDataIndex* data_index)
 
     if (LogFunc) {
         char logmsg[256];
-        sprintf(logmsg, "GI_CACHE: Memory mapped index file, filedes %d, map length %ld",
-                data_index->m_GiIndexFile, data_index->m_MappedIndexLen);
+        sprintf(logmsg,
+                "GI_CACHE: Memory mapped index file, filedes %d, map length %ld, path %s\n",
+                data_index->m_GiIndexFile, data_index->m_MappedIndexLen,
+                data_index->m_FileNamePrefix);
         LogFunc(logmsg);
     }
 
@@ -410,8 +429,10 @@ static Uint1 x_MapData(SGiDataIndex* data_index)
 
         if (LogFunc) {
             char logmsg[256];
-            sprintf(logmsg, "GI_CACHE: Memory mapped data file, filedes %d, map length %ld",
-                    data_index->m_DataFile, data_index->m_MappedDataLen);
+            sprintf(logmsg,
+                    "GI_CACHE: Memory mapped data file, filedes %d, map length %ld, path %s\n",
+                    data_index->m_DataFile, data_index->m_MappedDataLen,
+                    data_index->m_FileNamePrefix);
             LogFunc(logmsg);
         }
     }
@@ -495,6 +516,7 @@ static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
         struct stat stat_buf;
         char buf[256];
 
+        memset(&stat_buf, 0, sizeof(stat_buf));
         sprintf(buf, "%sidx", data_index->m_FileNamePrefix);
         stat(buf, &stat_buf);
         if (stat_buf.st_ino != data_index->m_IndexInode)
@@ -1656,9 +1678,11 @@ static int x_GICacheInit(const char* prefix, Uint1 readonly, Uint1 is_64bit)
            map it right away. If local cache isn't found, use default path and
            try again. */
         Uint1 cache_found = GiDataIndex_ReMap(gi_cache, 0);
+
         if (!cache_found) {
-            sprintf(prefix_str, "%s/%s.", DEFAULT_GI_CACHE_PATH,
-                    DEFAULT_GI_CACHE_PREFIX);
+            const char* suffix = (is_64bit ? DEFAULT_64BIT_SUFFIX : "");
+            sprintf(prefix_str, "%s/%s%s.", DEFAULT_GI_CACHE_PATH,
+                    DEFAULT_GI_CACHE_PREFIX, suffix);
             gi_cache = GiDataIndex_Free(gi_cache);
             gi_cache = GiDataIndex_New(NULL, MAX_ACCESSION_LENGTH, prefix_str,
                                        readonly, 1, is_64bit);
