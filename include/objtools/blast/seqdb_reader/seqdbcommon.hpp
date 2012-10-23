@@ -1050,6 +1050,9 @@ public:
 
     /// Build a GI list from a file.
     CSeqDBFileGiList(const string & fname, EIdType idtype=eGiList);
+
+    /// Build a GI list from multiple files.  (only support eSiList)
+    CSeqDBFileGiList(vector<string> fnames, EIdType idtype=eGiList);
 };
 
 

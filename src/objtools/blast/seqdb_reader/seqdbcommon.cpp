@@ -1210,7 +1210,7 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
     // allocated, but this is preferable to letting the vector
     // double itself (which it still will do if needed).
         
-    sis.reserve(int(file_size / 7));
+    sis.reserve(sis.size() + int(file_size / 7));
        
     const char * p = fbeginp;
     const char * head;
@@ -1235,7 +1235,7 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
             } 
         }
     }
-    *in_order = false;
+    if (in_order) *in_order = false;
 }
 
 bool SeqDB_IsBinaryGiList(const string  & fname)
@@ -1418,6 +1418,23 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
     m_CurrentOrder = in_order ? eGi : eNone;
 }
 
+CSeqDBFileGiList::CSeqDBFileGiList(vector<string> fnames, EIdType idtype) 
+{
+    bool in_order = false;
+    switch(idtype) {
+        case eGiList:
+        case eTiList:
+            NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Only multiple seqid list is supported.");
+        case eSiList:
+            ITERATE(vector<string>, iter, fnames) {
+                SeqDB_ReadSiList(*iter, m_SisOids, & in_order);
+            }
+            break;
+    }
+    m_CurrentOrder = in_order ? eGi : eNone;
+}
 
 void SeqDB_CombineAndQuote(const vector<string> & dbs,
                            string               & dbname)
