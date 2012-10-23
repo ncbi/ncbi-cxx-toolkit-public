@@ -145,7 +145,7 @@ void CArgTestApplication::Init(void)
 int CArgTestApplication::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Do run
     cout << string(72, '=') << endl;

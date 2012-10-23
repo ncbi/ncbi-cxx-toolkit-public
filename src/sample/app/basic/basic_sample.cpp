@@ -143,7 +143,7 @@ void CSampleBasicApplication::Init(void)
 int CSampleBasicApplication::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     // Do run
     cout << string(72, '=') << endl;
