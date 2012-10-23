@@ -146,6 +146,7 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
     // 0. Initialize the megablast database index.
     if (options->GetUseIndex()) {
         CSetupFactory::InitializeMegablastDbIndex(options);
+        ClearDbIndexCallbacks();
     }
 
     // 1. Initialize the query data (borrow it from the factory)
@@ -186,6 +187,12 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                        "Multiple queries cannot be specified with a PSSM");
         }
         PsiBlastSetupScoreBlock(sbp, pssm, retval->m_Messages, options);
+    }
+
+    // Initialize callbacks needed for indexed search.
+    //
+    if (options->GetUseIndex()) {
+        SetUpDbIndexCallbacks();
     }
 
     // 5. Create the lookup table

@@ -795,13 +795,6 @@ CIndexedDb_New::CIndexedDb_New( const string & indexname, bool & partial )
     // Initialize the results contexts.
     //
     results_holder_.resize( volumes_.size() );
-
-    // Set up callback functions.
-    //
-    SetUsingThreadsFn = &IndexedDbSetUsingThreads;
-    SetNumThreadsFn = &IndexedDbSetNumThreads;
-    SetQueryInfoFn = &IndexedDbSetQueryInfo;
-    RunSearchFn = &IndexedDbRunSearch;
 }
 
 //------------------------------------------------------------------------------
@@ -1010,9 +1003,6 @@ CIndexedDb_Old::CIndexedDb_Old( const string & indexnames )
         msg += indexnames + "*' not found.";
         NCBI_THROW(CDbIndex_Exception, eBadOption, msg);
     }
-
-    SetQueryInfoFn = &IndexedDbSetQueryInfo;
-    RunSearchFn = &IndexedDbRunSearch;
 }
 
 //------------------------------------------------------------------------------
@@ -1121,6 +1111,24 @@ std::string DbIndexInit(
     }
 
     return result;
+}
+
+//------------------------------------------------------------------------------
+void SetUpDbIndexCallbacks( void )
+{
+    SetUsingThreadsFn = &IndexedDbSetUsingThreads;
+    SetNumThreadsFn = &IndexedDbSetNumThreads;
+    SetQueryInfoFn = &IndexedDbSetQueryInfo;
+    RunSearchFn = &IndexedDbRunSearch;
+}
+
+//------------------------------------------------------------------------------
+void ClearDbIndexCallbacks( void )
+{
+    SetUsingThreadsFn = NullSetUsingThreads;
+    SetNumThreadsFn = NullSetNumThreads;
+    SetQueryInfoFn = NullSetQueryInfo;
+    RunSearchFn = NullRunSearch;
 }
 
 //------------------------------------------------------------------------------
