@@ -5167,7 +5167,14 @@ SDNH<SWZ>	s	Malkerns Agricultural Research Station
 SDNHM	s	San Diego Natural History Museum
 SDNU	s	Shandong Normal University, Biology Department
 SDSM	s	South Dakota School of Mines and Technology
-SDSU<USA-CA>	s	San Diego State University, Department of Biology
+SDSU<USA-CA>	s	San Diego State University
+SDSU<USA-CA>:Arthropods	s	San Diego State University, Museum of Biodiversity Terrestrial Arthropod Collection
+SDSU<USA-CA>:Birds	s	San Diego State University, Museum of Biodiversity Birds Collection
+SDSU<USA-CA>:Fish	s	San Diego State University, Museum of Biodiversity Fish Collection
+SDSU<USA-CA>:Greenhouse	b	San Diego State University, Greenhouse
+SDSU<USA-CA>:Herbarium	s	San Diego State University, Herbarium
+SDSU<USA-CA>:Herps	s	San Diego State University, Museum of Biodiversity Amphibians & Reptiles Collection
+SDSU<USA-CA>:Mammals	s	San Diego State University, Museum of Biodiversity Mammal Collection
 SDSU<USA-SD>	s	Severin-McDaniel Insect Collection
 SDU	s	University of South Dakota, Department of Biology
 SEAC	s	Estacion Experimental de Agricolas de la Campara
