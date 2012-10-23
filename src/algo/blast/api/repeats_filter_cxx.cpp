@@ -325,6 +325,8 @@ CRef<CBlastOptionsHandle> s_CreateRepeatsSearchOptions()
     opts->SetGapExtensionCost(REPEATS_SEARCH_GAP_EXTEND);
     opts->SetDustFiltering(false);  // FIXME, is this correct?
     opts->SetWordSize(REPEATS_SEARCH_WORD_SIZE);
+    // just to be safe (SB-1067)
+    _ASSERT(opts->GetOptions().GetMBIndexLoaded() == false);
     return CRef<CBlastOptionsHandle>(opts);
 }
 
