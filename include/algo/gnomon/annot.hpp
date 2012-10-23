@@ -75,6 +75,10 @@ public:
 
 private:
 
+    void FindGeneSeeds(const TGeneModelList& cls, list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet); 
+    void FindAltsForGeneSeeds(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet);
+    void PlaceAllYouCan(list<CAltSplice>& alts, list<const CGeneModel*>& not_placed_yet, TGeneModelList& rejected);
+
     void FindGenesPass1(const TGeneModelList& cls, list<CAltSplice>& alts,
                         list<const CGeneModel*>& possibly_alternative, TGeneModelList& rejected);
     void FindGenesPass2(const list<const CGeneModel*>& possibly_alternative, list<CAltSplice>& alts,
