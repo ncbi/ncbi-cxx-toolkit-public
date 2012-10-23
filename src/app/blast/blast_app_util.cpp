@@ -800,6 +800,11 @@ IsIStreamEmpty(CNcbiIstream & in)
 {
 	char c;
 	CNcbiStreampos orig_p = in.tellg();
+	// Piped input
+	if(orig_p < 0)
+		return false;
+
+	IOS_BASE::iostate orig_state = in.rdstate();
 	IOS_BASE::fmtflags orig_flags = in.setf(ios::skipws);
 
 	if(! (in >> c))
@@ -807,6 +812,8 @@ IsIStreamEmpty(CNcbiIstream & in)
 
 	in.seekg(orig_p);
 	in.flags(orig_flags);
+	in.clear();
+	in.setstate(orig_state);
 
 	return false;
 }
