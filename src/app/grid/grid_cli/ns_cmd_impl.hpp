@@ -49,7 +49,11 @@ CJsonNode GenericStatToJson(CNetServer server,
 
 CJsonNode LegacyStatToJson(CNetServer server, bool verbose);
 
-CJsonNode QueueInfoToJson(CNetScheduleAPI ns_api, const string& queue_name);
+CJsonNode QueueInfoToJson(CNetScheduleAPI ns_api,
+        const string& queue_name, bool group_by_server_addr);
+
+CJsonNode QueueClassInfoToJson(CNetScheduleAPI ns_api,
+        bool group_by_server_addr);
 
 class CAttrListParser
 {

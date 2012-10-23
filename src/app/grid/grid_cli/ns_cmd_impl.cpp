@@ -371,57 +371,82 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
     }
 }
 
-static CJsonNode s_GetQueueInfo(CNetScheduleAPI ns_server_with_queue_set_up)
+static void s_GetQueueInfo(CNetScheduleAPI ns_server_with_queue_set_up,
+        CJsonNode& queue_info_node)
 {
     CNetScheduleAdmin::TQueueInfo queue_info;
     ns_server_with_queue_set_up.GetAdmin().GetQueueInfo(
             *ns_server_with_queue_set_up.GetService().Iterate(), queue_info);
-    CJsonNode queue_info_node(CJsonNode::NewObjectNode());
     ITERATE(CNetScheduleAdmin::TQueueInfo, qi, queue_info) {
         DetectTypeAndSet(queue_info_node, qi->first, qi->second);
     }
-    return queue_info_node;
 }
 
-static CJsonNode s_InfoOnOneOrAllQueues(const string& queue_name,
-        const string& server_address, const string& client_name,
-        const list<string>& queues)
+CJsonNode QueueInfoToJson(CNetScheduleAPI ns_api,
+        const string& queue_name, bool group_by_server_addr)
 {
-    if (!queue_name.empty())
-        return s_GetQueueInfo(CNetScheduleAPI(server_address,
-                client_name, queue_name));
+    CJsonNode result(CJsonNode::NewObjectNode());
+    CJsonNode target_map(result);
 
-    CJsonNode queue_map(CJsonNode::NewObjectNode());
-    ITERATE(list<string>, each_queue_name, queues) {
-        queue_map.SetNode(*each_queue_name,
-                s_GetQueueInfo(CNetScheduleAPI(server_address,
-                        client_name, *each_queue_name)));
-    }
-    return queue_map;
-}
+    string client_name(ns_api.GetService().GetServerPool().GetClientName());
 
-CJsonNode QueueInfoToJson(CNetScheduleAPI ns_api, const string& queue_name)
-{
-    CNetService service(ns_api.GetService());
-    string client_name(service.GetServerPool().GetClientName());
     CNetScheduleAdmin::TQueueList qlist;
     ns_api.GetAdmin().GetQueueList(qlist);
-    if (!service.IsLoadBalanced())
-        return s_InfoOnOneOrAllQueues(queue_name,
-                qlist.front().server.GetServerAddress(), client_name,
-                qlist.front().queues);
-    else {
-        CJsonNode server_to_queue_list_map(CJsonNode::NewObjectNode());
-        ITERATE(CNetScheduleAdmin::TQueueList,
-                server_and_its_queues, qlist) {
-            string server_address(
-                    server_and_its_queues->server.GetServerAddress());
-            server_to_queue_list_map.SetNode(server_address,
-                    s_InfoOnOneOrAllQueues(queue_name, server_address,
-                            client_name, server_and_its_queues->queues));
+
+    ITERATE(CNetScheduleAdmin::TQueueList, server_and_its_queues, qlist) {
+        string server_address(server_and_its_queues->server.GetServerAddress());
+        if (group_by_server_addr)
+            result.SetNode(server_address,
+                    target_map = CJsonNode::NewObjectNode());
+
+        if (!queue_name.empty())
+            s_GetQueueInfo(CNetScheduleAPI(server_address,
+                    client_name, queue_name), target_map);
+        else {
+            ITERATE(list<string>, each_queue_name,
+                    server_and_its_queues->queues) {
+                CJsonNode queue_info_node(CJsonNode::NewObjectNode());
+                s_GetQueueInfo(CNetScheduleAPI(server_address, client_name,
+                            *each_queue_name), queue_info_node);
+                target_map.SetNode(*each_queue_name, queue_info_node);
+            }
         }
-        return server_to_queue_list_map;
     }
+
+    return result;
+}
+
+CJsonNode QueueClassInfoToJson(CNetScheduleAPI ns_api,
+        bool group_by_server_addr)
+{
+    CJsonNode result(CJsonNode::NewObjectNode());
+    CJsonNode queue_class_map(result);
+
+    string cmd("STAT QCLASSES");
+
+    for (CNetServiceIterator it = ns_api.GetService().Iterate(); it; ++it) {
+        if (group_by_server_addr)
+            result.SetNode((*it).GetServerAddress(),
+                    queue_class_map = CJsonNode::NewObjectNode());
+
+        CNetServerMultilineCmdOutput output((*it).ExecWithRetry(cmd));
+
+        string line;
+        CJsonNode queue_class_params;
+        string param_name, param_value;
+
+        while (output.ReadLine(line))
+            if (NStr::StartsWith(line, "[qclass ") &&
+                    line.length() > sizeof("[qclass ") - 1)
+                queue_class_map.SetNode(line.substr(sizeof("[qclass ") - 1,
+                        line.length() - sizeof("[qclass ")),
+                        queue_class_params = CJsonNode::NewObjectNode());
+            else if (queue_class_params && NStr::SplitInTwo(line, ": ",
+                        param_name, param_value, NStr::eMergeDelims))
+                DetectTypeAndSet(queue_class_params, param_name, param_value);
+    }
+
+    return result;
 }
 
 CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(

@@ -928,7 +928,8 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
         }
         if (m_Opts.output_format == eJSON)
             PrintJSON(stdout, QueueInfoToJson(m_NetScheduleAPI,
-                    IsOptionSet(eQueueArg) ? m_Opts.queue : kEmptyStr));
+                    IsOptionSet(eQueueArg) ? m_Opts.queue : kEmptyStr,
+                    m_NetScheduleAPI.GetService().IsLoadBalanced()));
         else if (!IsOptionSet(eAllQueues))
             m_NetScheduleAdmin.PrintQueueInfo(NcbiCout);
         else {
@@ -953,10 +954,12 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
                     NcbiCout << NcbiEndl;
             }
         }
-    } else {
+    } else if (m_Opts.output_format == eJSON)
+        PrintJSON(stdout, QueueClassInfoToJson(m_NetScheduleAPI,
+                m_NetScheduleAPI.GetService().IsLoadBalanced()));
+    else
         m_NetScheduleAPI.GetService().PrintCmdOutput("STAT QCLASSES",
                 NcbiCout, CNetService::eMultilineOutput);
-    }
 
     return 0;
 }
