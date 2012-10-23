@@ -2053,7 +2053,7 @@ BOOST_AUTO_TEST_CASE(ExpertTaxInfo)
     BOOST_REQUIRE_EQUAL((string)info.scientific_name, string("Aotus vociferans"));
     BOOST_REQUIRE_EQUAL((string)info.common_name,     string("noisy night monkey"));
     BOOST_REQUIRE_EQUAL((string)info.blast_name,      string("primates"));
-    BOOST_REQUIRE_EQUAL((string)info.s_kingdom,       string("E"));
+    BOOST_REQUIRE_EQUAL((string)info.s_kingdom,       string("Eukaryota"));
 
     db.GetTaxInfo(562, info);
     BOOST_REQUIRE_EQUAL(info.taxid,           562);
