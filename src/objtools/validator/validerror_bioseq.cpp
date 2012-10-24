@@ -1189,6 +1189,18 @@ static bool s_BiosrcFullLengthIsOk (const CBioSource& src)
 }
 
 
+static bool s_SuppressMultipleEquivBioSources (const CBioSource& src)
+{
+    if (!src.IsSetOrg() || !src.GetOrg().IsSetTaxname()) {
+        return false;
+    }
+    if (NStr::EqualNocase(src.GetOrg().GetTaxname(), "unidentified phage")) {
+        return true;
+    }
+    return false;
+}
+
+
 void CValidError_bioseq::x_ValidateSourceFeatures(const CBioseq_Handle& bsh)
 {
     // don't bother if can't build all feature iterator
@@ -1239,7 +1251,7 @@ void CValidError_bioseq::x_ValidateSourceFeatures(const CBioseq_Handle& bsh)
                         are_identical = false;
                     }                    
                 }
-                if (are_identical) {
+                if (are_identical && !s_SuppressMultipleEquivBioSources(feat->GetData().GetBiosrc())) {
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleEquivBioSources, 
                              "Multiple equivalent source features should be combined into one multi-interval feature",
                              feat->GetOriginalFeature());
