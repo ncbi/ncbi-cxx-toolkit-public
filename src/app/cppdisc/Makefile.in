@@ -1,0 +1,9 @@
+# $Id$
+#
+# Makefile:  for C++ discrepancy report
+# Author: J. Chen
+#
+
+APP_PROJ = disc_report
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
