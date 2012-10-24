@@ -8790,6 +8790,45 @@ void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
     x_CleanStructuredComment( user_object );
 }
 
+static int s_PcrPrimerCompare( 
+    const CRef<CPCRPrimer> &p1, const CRef<CPCRPrimer> &p2 )
+{
+    if( p1.IsNull() || p2.IsNull() ) {
+        return p2.IsNull() - p1.IsNull();
+    }
+
+    const string & name1 = ( p1->IsSetName() ? p1->GetName().Get() : kEmptyStr );
+    const string & name2 = ( p2->IsSetName() ? p2->GetName().Get() : kEmptyStr );
+    const int name_comparison = NStr::CompareCase(name1, name2);
+    if( name_comparison != 0 ) {
+        return name_comparison;
+    }
+
+    const string & seq1 = ( p1->IsSetSeq() ? p1->GetSeq().Get() : kEmptyStr );
+    const string & seq2 = ( p2->IsSetSeq() ? p2->GetSeq().Get() : kEmptyStr );
+    const int seq_comparison = NStr::CompareCase(seq1, seq2);
+    return seq_comparison;
+}
+
+class CPcrPrimerRefLessThan {
+public:
+
+    bool operator()(
+        const CRef<CPCRPrimer> &p1, const CRef<CPCRPrimer> &p2 ) const
+    {
+        return ( s_PcrPrimerCompare(p1, p2) < 0 );
+    }
+};
+
+class CPCRPrimerRefEqual {
+public:
+    bool operator()( 
+        const CRef<CPCRPrimer> & p1, const CRef<CPCRPrimer> & p2 ) const
+    {
+        return (0 == s_PcrPrimerCompare(p1, p2) );
+    }
+};
+
 void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
 {
     EDIT_EACH_PCRPRIMER_IN_PCRPRIMERSET( primer_iter, primer_set ) {
@@ -8828,6 +8867,8 @@ void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
             ChangeMade(CCleanupChange::eChangePCRPrimers);
         }
     }
+
+    UNIQUE_WITHOUT_SORT_PCRPRIMER_IN_PCRPRIMERSET( primer_set, CPcrPrimerRefLessThan );
 
     REMOVE_IF_EMPTY_PCRPRIMER_IN_PCRPRIMERSET( primer_set );
 }
@@ -9396,45 +9437,6 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
         }
     }
 }
-
-static int s_PcrPrimerCompare( 
-    const CRef<CPCRPrimer> &p1, const CRef<CPCRPrimer> &p2 )
-{
-    if( p1.IsNull() || p2.IsNull() ) {
-        return p2.IsNull() - p1.IsNull();
-    }
-
-    const string & name1 = ( p1->IsSetName() ? p1->GetName().Get() : kEmptyStr );
-    const string & name2 = ( p2->IsSetName() ? p2->GetName().Get() : kEmptyStr );
-    const int name_comparison = NStr::CompareCase(name1, name2);
-    if( name_comparison != 0 ) {
-        return name_comparison;
-    }
-
-    const string & seq1 = ( p1->IsSetSeq() ? p1->GetSeq().Get() : kEmptyStr );
-    const string & seq2 = ( p2->IsSetSeq() ? p2->GetSeq().Get() : kEmptyStr );
-    const int seq_comparison = NStr::CompareCase(seq1, seq2);
-    return seq_comparison;
-}
-
-class CPcrPrimerRefLessThan {
-public:
-
-    bool operator()(
-        const CRef<CPCRPrimer> &p1, const CRef<CPCRPrimer> &p2 ) const
-    {
-        return ( s_PcrPrimerCompare(p1, p2) < 0 );
-    }
-};
-
-class CPCRPrimerRefEqual {
-public:
-    bool operator()( 
-        const CRef<CPCRPrimer> & p1, const CRef<CPCRPrimer> & p2 ) const
-    {
-        return (0 == s_PcrPrimerCompare(p1, p2) );
-    }
-};
 
 // neg for "<", 0 for "==", and pos for ">"
 static int s_PcrPrimerSetCompare( const CPCRPrimerSet &s1, const CPCRPrimerSet &s2 )
