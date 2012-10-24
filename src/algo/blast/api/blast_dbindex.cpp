@@ -590,6 +590,7 @@ static void IndexedDbSetUsingThreads( bool multiple_threads )
     CIndexedDb * idb( CIndexedDb::Index_Set_Instance.GetPointerOrNull() );
     if( idb == 0 ) return;
     CIndexedDb_New * idbn( dynamic_cast< CIndexedDb_New * >( idb ) );
+    if ( idbn == 0 ) return;
     ASSERT( idbn != 0 );
     idbn->SetMultipleThreads( multiple_threads );
 }
@@ -602,6 +603,7 @@ static void IndexedDbSetNumThreads( size_t n_threads )
     CIndexedDb * idb( CIndexedDb::Index_Set_Instance.GetPointerOrNull() );
     if( idb == 0 ) return;
     CIndexedDb_New * idbn( dynamic_cast< CIndexedDb_New * >( idb ) );
+    if ( idbn == 0 ) return;
     ASSERT( idbn != 0 );
     idbn->SetNumThreads( n_threads );
 }
