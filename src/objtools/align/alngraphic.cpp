@@ -305,8 +305,7 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
             aln_info->gi =  FindGi(ids);
             wid->GetLabel(&info, CSeq_id::eContent, 0);
             CDeflineGenerator defline_gen;
-            title = defline_gen.GenerateDefline(*(handle.GetCompleteObject()),
-                                                *m_Scope);
+            title = defline_gen.GenerateDefline(*(handle.GetObjectCore()), *m_Scope);
             
             if ((int)title.size() > kDeflineLength){
                 title = title.substr(0, kDeflineLength) + "..";
