@@ -161,19 +161,43 @@ namespace {
 
 size_t GetSplicePriority(const  char * dnr, const char* acc)
 {
-    // GA-AG, GT-TG, TT-AG, AT-AG, GG-AG
-    size_t rv (0);
-    if(acc[1] == 'G') {
-        if(acc[0] == 'T') {
-            rv = ( dnr[1] == 'T' && dnr[0] == 'G' );
-        }
-        else if(acc[0] == 'A') {
-            rv = ((dnr[1] == 'A' || dnr[1] == 'G') && dnr[0] == 'G') 
-                || (dnr[1] == 'T' && (dnr[0] == 'T' || dnr[0] == 'A' ));
+    static const char* splice_sites[] = {
+        "GT-TG", 
+        "AT-AG", 
+        "GA-AG", 
+        "GT-GG", 
+        "AT-AA", 
+        "AT-AT", 
+        "GG-AG", 
+        "GT-AT", 
+        "TT-AG", 
+        "GT-AA", 
+    };
+    static size_t weight[] = {
+	18  , //GT-TG
+	14  , //AT-AG
+	10  , //GA-AG
+	12  , //GT-GG
+	10  , //AT-AA -- artificially weighting this higher than AT-AT
+	8   , //AT-AT
+	7   , //GG-AG
+	6   , //GT-AT
+	6   , //TT-AG
+	2   , //GT-AA 
+        0
+    };
+
+    for (size_t i = 0; weight[i] > 0; ++i) {
+        if (splice_sites[i][0]==dnr[0] &&
+            splice_sites[i][1]==dnr[1] &&
+            splice_sites[i][3]==acc[0] &&
+            splice_sites[i][4]==acc[1]
+            ) {
+            return weight[i];
         }
     }
 
-    return rv;
+    return 0;
 }
 
 
