@@ -23,15 +23,8 @@ COPY: $srcdir/include/connect/ext/*.h        $installdir/include/connect/ext/
 COPY: $srcdir/include/connect/daemons/*.h    $installdir/include/connect/daemons/
 COPY: $srcdir/include/internal/webenv2/id.h  $installdir/include/internal/webenv2/
 
-COPY: /bin/cyggcc_s-1.dll		     $installdir/bin/
-COPY: /bin/cygrunsrv.exe		     $installdir/bin/
-COPY: /bin/cygwin1.dll			     $installdir/bin/
-COPY: /bin/cygz.dll			     $installdir/bin/
-
-COPY: /usr/cygcheck.exe			     $installdir/bin/
-COPY: /usr/ipcs.exe			     $installdir/bin/
-
-COPY: /usr/sbin/cygserver.exe		     $installdir/bin/
+POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -v /bin/{cyggcc_s-1.dll,cygrunsrv.exe,cygwin1.dll,cygz.dll} $installdir/bin/; }
+POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -v /usr/{bin/cygcheck.exe,bin/ipcs.exe,sbin/cygserver.exe} $installdir/bin/; }
 
 # Each line describes a single configuration
 # The format is as follows:
