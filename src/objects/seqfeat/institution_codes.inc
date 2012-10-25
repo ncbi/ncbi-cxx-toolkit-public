@@ -2615,6 +2615,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IPB<DEU>	s	Institut fuer Palaeontologie",
 "IPBIR	b	Integrated Primate Biomaterials and Information Resource",
 "IPCN	s	Instituto Patagonico de Ciencias Naturales",
+"IPEE RAS	s	A.N. Severtzov Institute of Ecology and Evolution, Russian Academy of Sciences",
 "IPEF	s	Institut fuer Pflanzenschutzforschung",
 "IPFUB	s	Institute for Paleontology of the Freie Universitat",
 "IPGR<BGR>	b	Institute for Plant Genetic Resources",
