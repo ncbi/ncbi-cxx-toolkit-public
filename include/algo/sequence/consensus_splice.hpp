@@ -58,6 +58,13 @@ inline bool IsStrictConsensusSplice(const string& splice5,
            NStr::EqualNocase(splice3, "AG");
 }
 
+/// GT-TG or {GA,TT,AT,GG}-AG
+inline bool IsKnownNonConsensusSplice(const string& splice5,
+                                      const string& splice3)
+{
+    return (splice5.size() == 2 && NStr::FindNoCase("GA TT AT GG", splice5) != NPOS && NStr::EqualNocase(splice3, "AG"))
+        || (NStr::EqualNocase(splice5, "GT") && NStr::EqualNocase(splice3, "TG"));
+}
 
 END_NCBI_SCOPE
 
