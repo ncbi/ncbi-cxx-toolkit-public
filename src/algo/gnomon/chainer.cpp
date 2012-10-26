@@ -1462,14 +1462,8 @@ void CChainer::CChainerImpl::CombineCompatibleChains(list<CChain>& chains) {
                && (itt->FShiftedLen(itt->GetCdsInfo().Cds().GetFrom(),jtt->GetCdsInfo().Cds().GetFrom(),false)-1)%3 == 0 ) {
                 
                 TGeneModelSet chain_alignments(itt->m_members.begin(),itt->m_members.end());
-                /*
-                for(vector<CGeneModel*>::iterator is = jtt->m_members.begin(); is != jtt->m_members.end(); ++is) {
-                    if(chain_alignments.insert(*is).second) {
-                        itt->AddSupport(CSupportInfo((*is)->ID()));
-                        itt->SetWeight(itt->Weight()+(*is)->Weight());
-                    }
-                }
-                */
+                ITERATE(vector<CGeneModel*>, is, jtt->m_members) 
+                    chain_alignments.insert(*is);
                 itt->m_members.resize(chain_alignments.size(),0);
                 copy(chain_alignments.begin(),chain_alignments.end(),itt->m_members.begin());
                 sort(itt->m_members.begin(),itt->m_members.end(),AlignSeqOrder());
