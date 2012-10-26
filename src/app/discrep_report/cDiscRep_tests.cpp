@@ -4559,7 +4559,6 @@ void CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: TestOnObj(const CSeq_entry& seq_ent
               && !(affil.GetStd().GetStreet().empty())
               && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
           thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
-          break;
        }
      }
    }
@@ -4575,7 +4574,6 @@ void CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: TestOnObj(const CSeq_entry& seq_ent
               && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
           thisInfo.test_item_list[GetName()].push_back(
                          GetDiscItemText(**it, *(pub_seqdesc_seqentry[i])));
-          break;
        }
      }
      i++;
@@ -4943,7 +4941,6 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: HasNaInSet(const CBioseq_set& bioseq_se
 
 CRef <GeneralDiscSubDt> CSeqEntry_INCONSISTENT_BIOSOURCE :: AddSeqEntry(const CSeqdesc& seqdesc, const CSeq_entry& seq_entry)
 {
-cerr << "seqdesc " << Blob2Str(seqdesc, eSerial_AsnText) << endl;
     CRef < GeneralDiscSubDt > new_biosrc_ls (new GeneralDiscSubDt (kEmptyStr, kEmptyStr));
     new_biosrc_ls->obj_text.clear();
 
