@@ -575,7 +575,7 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
 }
 
 
-bool s_IsDouble(const string& str)
+static bool s_IsDouble(const string& str)
 {
     ITERATE(string, iter, str) {
         if( !isdigit(*iter) &&
