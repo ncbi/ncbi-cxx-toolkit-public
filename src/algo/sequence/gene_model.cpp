@@ -2725,15 +2725,19 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                                align->GetSeqStrand(0));
         product_loc = to_prot->Map(aligned_range);
     }
-    CSeqVector vec(*whole_product, *m_scope,
-                   CBioseq_Handle::eCoding_Iupac);
-    vec.GetSeqData(0, vec.size(), actual);
-    if (!product_loc->IsWhole() &&
-        product_loc->GetTotalRange().GetLength() < actual.size())
-    {
-        actual = actual.substr(product_loc->GetStart(eExtreme_Positional),
-                               product_loc->GetTotalRange().GetLength());
+    if (product_loc->IsNull() || product_loc->IsEmpty()) {
         has_gap = true;
+    } else {
+        CSeqVector vec(*whole_product, *m_scope,
+                       CBioseq_Handle::eCoding_Iupac);
+        vec.GetSeqData(0, vec.size(), actual);
+        if (!product_loc->IsWhole() &&
+            product_loc->GetTotalRange().GetLength() < actual.size())
+        {
+            actual = actual.substr(product_loc->GetStart(eExtreme_Positional),
+                                   product_loc->GetTotalRange().GetLength());
+            has_gap = true;
+        }
     }
 
     ///
