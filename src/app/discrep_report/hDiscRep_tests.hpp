@@ -49,6 +49,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>      
+#include <objects/pub/Pub.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include "hDiscRep_app.hpp"
@@ -68,8 +69,8 @@ namespace DiscRepNmSpc {
       static bool   is_ANNOT_run;
       static bool   is_BASES_N_run;
       static bool   is_BIOSRC_run;
+      static bool   is_DESC_user_run;
       static bool   is_FEAT_DESC_biosrc_run;
-      static bool   is_FEAT_DESC_user_run;
       static bool   is_MOLINFO_run;
       static bool   is_MRNA_run;
       static bool   is_SHORT_run;
@@ -282,7 +283,7 @@ namespace DiscRepNmSpc {
                                  vector <string>& submit_text, bool check_mul_nm_only = false);
        void GetSubmitText(const CAuth_list& authors, vector <string>& submit_text);
        void FindSpecSubmitText(vector <string>& submit_text);
-       void TestOnFeatDesc_User();
+       void TestOnDesc_User();
        void AddBioseqsInSeqentryToReport(const unsigned& i, const string& setting_name);
        string GetName_missing() const {return string("MISSING_PROJECT");}
 
@@ -311,6 +312,11 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
+
+    protected:
+      CConstRef <CCit_sub> CitSubFromPubEquiv(const list <CRef <CPub> >& pubs);
+      bool AffilStreetContainsDuplicateText(const CAffil& affil);       
+      bool AffilStreetEndsWith(const string& street, const string& end_str);
   };
 
 
