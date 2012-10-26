@@ -900,10 +900,8 @@ public:
 
         if (cds) {
             string trans;
-            CSeqTranslator::Translate(cds->GetLocation(), *scope, trans,
-                                      s_GetGeneticCode(align.GetSeq_id(1),
-                                                       scope));
-            if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
+	    CSeqTranslator::Translate(*cds, *scope, trans);
+	    if ( !cds->GetLocation().IsPartialStop(eExtreme_Biological)  &&
                  NStr::EndsWith(trans, "*"))
             {
                 trans.resize(trans.size() - 1);
