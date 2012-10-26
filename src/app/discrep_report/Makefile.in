@@ -7,3 +7,6 @@
 APP_PROJ = disc_report
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+
+EXPENDABLE_APP_PROJ = disc_report
+WATCHERS = chenj
