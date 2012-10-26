@@ -113,7 +113,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      // ini.  
      thisTest.is_BIOSRC_run = false;
      thisTest.is_FEAT_DESC_biosrc_run = false;
-     thisTest.is_FEAT_DESC_user_run = false;
+     thisTest.is_DESC_user_run = false;
 
      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
 

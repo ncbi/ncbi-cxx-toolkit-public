@@ -75,7 +75,6 @@
 #include <objects/biblio/citation_base.hpp>
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Imprint.hpp>
-#include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/scope.hpp>
@@ -114,8 +113,8 @@ static CDiscTestInfo thisTest;
 bool CDiscTestInfo :: is_ANNOT_run = false;
 bool CDiscTestInfo :: is_BASES_N_run = false;
 bool CDiscTestInfo :: is_BIOSRC_run = false;
+bool CDiscTestInfo :: is_DESC_user_run = false;
 bool CDiscTestInfo :: is_FEAT_DESC_biosrc_run = false;
-bool CDiscTestInfo :: is_FEAT_DESC_user_run = false;
 bool CDiscTestInfo :: is_MOLINFO_run = false;
 bool CDiscTestInfo :: is_MRNA_run = false;
 bool CDiscTestInfo :: is_SHORT_run = false;
@@ -1164,48 +1163,7 @@ void CBioseq_SHORT_SEQUENCES_200 :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
-void CBioseqTestAndRepData :: TestOverlapping_ed_Feats(const vector <const CSeq_feat*>& feat, const string& setting_name, bool isGene, bool isOverlapped)
-{
-   string overlapping_ed_feats("|");
-   unsigned i, j;
-   for (i=0; (int)i< (int)(feat.size()-1); i++) {
-      if (isOverlapped && !IsUnknown(overlapping_ed_feats, i)) continue;
-      for (j=i+1; j< feat.size(); j++) {
-           if (!isOverlapped && !IsUnknown(overlapping_ed_feats, j)) continue;
-           const CSeq_loc& loc_i = feat[i]->GetLocation();
-           const CSeq_loc& loc_j = feat[j]->GetLocation();
 
-           // all feats more distant than the loc_j will have no chance of overlapping
-           if (loc_i.GetStop(eExtreme_Positional) < loc_j.GetStart(eExtreme_Positional)) break;
-
-           if (isGene && loc_i.GetStrand() != loc_j.GetStrand()) continue;
-           sequence::ECompare ovlp = Compare(loc_i, loc_j, thisInfo.scope);
-           if (isOverlapped) {
-               if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
-                  thisInfo.test_item_list[setting_name].push_back(GetDiscItemText(*feat[i]));
-                  overlapping_ed_feats += NStr::UIntToString(i) + "|";
-                  break;
-               }
-               else if (ovlp == sequence::eContains && IsUnknown(overlapping_ed_feats, j)) {
-                    thisInfo.test_item_list[setting_name].push_back(GetDiscItemText(*feat[j]));
-                    overlapping_ed_feats += NStr::UIntToString(j) + "|";
-               }
-           }
-           else if (ovlp != sequence :: eNoOverlap) {
-               if (IsUnknown(overlapping_ed_feats, i)) {
-                  thisInfo.test_item_list[setting_name].push_back(GetDiscItemText(*feat[i]));
-                  overlapping_ed_feats += NStr::UIntToString(i) + "|";
-               }
-               thisInfo.test_item_list[setting_name].push_back(GetDiscItemText(*feat[j]));
-               overlapping_ed_feats += NStr::UIntToString(j) + "|";
-           }
-      }
-   }
-};
-
-
-
-// 
 void CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: TestOnObj(const CBioseq& bioseq)
 {
   SAnnotSelector sel_seqfeat;
@@ -1249,14 +1207,63 @@ void CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: TestOnObj(const CBioseq& biose
 
 void CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description = GetHasComment(c_item->item_list.size(), "hypothetical coding region")
+   c_item->description 
+          = GetHasComment(c_item->item_list.size(), "hypothetical coding region")
                               + "a gene name";
 };
 
 
+
+void CBioseqTestAndRepData :: TestOverlapping_ed_Feats(const vector <const CSeq_feat*>& feat, const string& setting_name, bool isGene, bool isOverlapped)
+{
+   string overlapping_ed_feats("|");
+   unsigned i, j;
+   for (i=0; (int)i< (int)(feat.size()-1); i++) {
+      if (isOverlapped && !IsUnknown(overlapping_ed_feats, i)) continue;
+      for (j=i+1; j< feat.size(); j++) {
+           if (!isOverlapped && !IsUnknown(overlapping_ed_feats, j)) continue;
+           const CSeq_loc& loc_i = feat[i]->GetLocation();
+           const CSeq_loc& loc_j = feat[j]->GetLocation();
+
+           // all feats more distant than the loc_j will have no chance of overlapping
+           if (loc_i.GetStop(eExtreme_Positional) < loc_j.GetStart(eExtreme_Positional))
+               break;
+
+           if (isGene && loc_i.GetStrand() != loc_j.GetStrand()) continue;
+           sequence::ECompare ovlp = Compare(loc_i, loc_j, thisInfo.scope);
+           if (isOverlapped) {
+               if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
+                  thisInfo.test_item_list[setting_name].push_back(
+                                                            GetDiscItemText(*feat[i]));
+                  overlapping_ed_feats += NStr::UIntToString(i) + "|";
+                  break;
+               }
+               else if (ovlp == sequence::eContains 
+                                          && IsUnknown(overlapping_ed_feats, j)) {
+                    thisInfo.test_item_list[setting_name].push_back(
+                                                            GetDiscItemText(*feat[j]));
+                    overlapping_ed_feats += NStr::UIntToString(j) + "|";
+               }
+           }
+           else if (ovlp != sequence :: eNoOverlap) {
+               if (IsUnknown(overlapping_ed_feats, i)) {
+                  thisInfo.test_item_list[setting_name].push_back(
+                                                          GetDiscItemText(*feat[i]));
+                  overlapping_ed_feats += NStr::UIntToString(i) + "|";
+               }
+               thisInfo.test_item_list[setting_name].push_back(
+                                                            GetDiscItemText(*feat[j]));
+               overlapping_ed_feats += NStr::UIntToString(j) + "|";
+           }
+      }
+   }
+};
+
+
+
 void CBioseq_TEST_OVERLAPPING_RRNAS :: TestOnObj(const CBioseq& bioseq)
 {
-   TestOverlapping_ed_Feats(rrna_feat, GetName(), false, false);
+    TestOverlapping_ed_Feats(rrna_feat, GetName(), false, false);
 };
 
 
@@ -1268,6 +1275,34 @@ void CBioseq_TEST_OVERLAPPING_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
       + " another rRNA feature.";
 };
 
+
+void CBioseq_OVERLAPPING_GENES :: TestOnObj(const CBioseq& bioseq)
+{
+    TestOverlapping_ed_Feats(gene_feat, GetName(), true, false);
+};
+
+
+
+void CBioseq_OVERLAPPING_GENES :: GetReport(CRef <CClickableItem>& c_item)
+{
+    c_item->description 
+      = GetOtherComment(c_item->item_list.size(), "gene overlaps", "genes overlap")
+                           + " another gene on the same strand.";
+};
+
+
+void CBioseq_FIND_OVERLAPPED_GENES :: TestOnObj(const CBioseq& bioseq)
+{
+    TestOverlapping_ed_Feats(gene_feat, GetName());
+};
+
+
+
+void CBioseq_FIND_OVERLAPPED_GENES :: GetReport(CRef <CClickableItem>& c_item)
+{
+    c_item->description = GetOtherComment(c_item->item_list.size(), "gene", "genes")
+                           + " completely overlapped by other genes";
+};
 
 
 void CBioseq_TEST_LOW_QUALITY_REGION :: TestOnObj(const CBioseq& bioseq)
@@ -1414,7 +1449,6 @@ void CBioseq_TEST_BAD_GENE_NAME :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
-
 void CBioseq_DISC_SHORT_RRNA :: TestOnObj(const CBioseq& bioseq)
 {
   string rrna_name;
@@ -1436,8 +1470,10 @@ void CBioseq_DISC_SHORT_RRNA :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_SHORT_RRNA :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description = GetIsComment(c_item->item_list.size(), "rRNA feature") + "too short.";
+   c_item->description 
+      = GetIsComment(c_item->item_list.size(), "rRNA feature") + "too short.";
 };
+
 
 
 bool CBioseq_DISC_BAD_GENE_STRAND :: StrandOk(ENa_strand strand1, ENa_strand strand2)
@@ -1529,9 +1565,10 @@ void CBioseq_DISC_BAD_GENE_STRAND :: GetReport(CRef <CClickableItem>& c_item)
      rep_arr.clear(); 
    }
 
-   c_item->description = GetOtherComment(c_item->item_list.size()/2, 
-                                   "feature location conflicts", "feature locations conflict") 
-                          + "with gene location strands";
+   c_item->description 
+      = GetOtherComment(c_item->item_list.size()/2, 
+                           "feature location conflicts", "feature locations conflict") 
+          + "with gene location strands";
 };
 
 
@@ -1607,7 +1644,7 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
        partial3 = seq_loc.GetInt().IsPartialStop(eExtreme_Biological);
        //CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_loc, *thisInfo.scope);
        CConstRef <CBioseq> 
-           bioseq_new = GetBioseqFromSeqLoc(seq_loc, *thisInfo.scope).GetCompleteBioseq();
+         bioseq_new = GetBioseqFromSeqLoc(seq_loc, *thisInfo.scope).GetCompleteBioseq();
        if ( (*it)->CanGetExcept() && (*it)->GetExcept()) excpt = true;
        else excpt = false;
        desc_txt = (excpt)? GetDiscItemText(**it) : "except$" + GetDiscItemText(**it);      
@@ -1638,7 +1675,8 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
       last_start = start;
       last_stop = stop; 
     }
-    if (found_short) thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+    if (found_short) 
+         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
   }
 };
 
@@ -1868,7 +1906,7 @@ void CBioseq_TEST_UNUSUAL_NT :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description 
      = GetOtherComment(c_item->item_list.size(), "sequence contains", "sequences contain")
-          + "nucleotides that are not ATCG or N.";
+          + " nucleotides that are not ATCG or N.";
 };
 
 
@@ -2516,7 +2554,7 @@ void CBioseq_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
                 if (jjt != featnum_bioseqs.end())
                       jjt->second.push_back(DISC_FEATURE_COUNT_list[j]->str); 
                 else 
-                  featnum_bioseqs[jt->second].push_back(DISC_FEATURE_COUNT_list[j]->str);
+                 featnum_bioseqs[jt->second].push_back(DISC_FEATURE_COUNT_list[j]->str);
                 total_feat += jt->second;
                 if (jt->second >0) jt->second *= -1;
                 else jt->second = -1;
@@ -2633,6 +2671,8 @@ void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: TestOnObj(const CSeq_ent
 
 void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->description = GetHasComment(c_item->item_list.size(), "bacterial biosrouce")
+                           + "isolate.";
 };
 
 
@@ -2976,37 +3016,6 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeBioSourceDifferences(const CB
     return (diff_str);
 };
 
-
-
-void CBioseq_OVERLAPPING_GENES :: TestOnObj(const CBioseq& bioseq)
-{
-   TestOverlapping_ed_Feats(gene_feat, GetName(), true, false);
-};
-
-
-
-void CBioseq_OVERLAPPING_GENES :: GetReport(CRef <CClickableItem>& c_item)
-{
-    c_item->description 
-      = GetOtherComment(c_item->item_list.size(), "gene overlaps", "genes overlap")
-                           + " another gene on the same strand.";
-};
-
-
-
-
-void CBioseq_FIND_OVERLAPPED_GENES :: TestOnObj(const CBioseq& bioseq)
-{
-   TestOverlapping_ed_Feats(gene_feat, GetName());
-};
-
-
-
-void CBioseq_FIND_OVERLAPPED_GENES :: GetReport(CRef <CClickableItem>& c_item)
-{
-    c_item->description = GetOtherComment(c_item->item_list.size(), "gene", "genes")
-                           + " completely overlapped by other genes";
-};
 
 
 
@@ -4487,6 +4496,113 @@ void CBioseqSet_DISC_NONWGS_SETS_PRESENT :: GetReport(CRef <CClickableItem>& c_i
 
 
 // CSeqEntryTestAndRepData
+CConstRef <CCit_sub> CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: CitSubFromPubEquiv(const list <CRef <CPub> >& pubs)
+{
+   ITERATE (list <CRef <CPub> >, it, pubs) {
+      if ((*it)->IsSub())
+        return (CConstRef <CCit_sub> ( &( (*it)->GetSub() )));
+      else if ( (*it)->IsEquiv())
+        return (CitSubFromPubEquiv( (*it)->GetEquiv().Get()));
+   }
+   return (CConstRef <CCit_sub>());
+};
+
+static string uni_str("University of");
+bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetEndsWith(const string& street, const string& end_str)
+{
+  unsigned street_sz = street.size();
+  unsigned end_sz = end_str.size();
+  unsigned diff_sz = street_sz - end_sz;
+  unsigned uni_sz = uni_str.size();
+  if (!end_sz || street_sz < end_sz) return false;
+  else if (NStr::EqualNocase(street, diff_sz, street_sz-1, end_str)
+            && ( (street_sz == end_sz 
+                        || isspace(street[diff_sz-1]) || ispunct(street[diff_sz-1])))) {
+     if (diff_sz >= uni_sz 
+            && NStr::EqualNocase(street, diff_sz - uni_sz -1, diff_sz-1, uni_str))
+          return false;
+     else return true;
+  }
+  else return false;
+};
+
+
+bool CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: AffilStreetContainsDuplicateText(const CAffil& affil)
+{
+  if (affil.IsStd() && affil.GetStd().CanGetStreet() 
+                              && !(affil.GetStd().GetStreet().empty())) {
+    const CAffil :: C_Std& std = affil.GetStd();
+    const string& street = std.GetStreet();
+    if (std.CanGetCountry() && AffilStreetEndsWith(street, std.GetCountry()))
+         return true;
+    else if (std.CanGetPostal_code()
+                            && AffilStreetEndsWith (street, std.GetPostal_code()))
+            return true;
+    else if (std.CanGetSub() && AffilStreetEndsWith (street, std.GetSub()))
+            return true;
+    else if (std.CanGetCity() && AffilStreetEndsWith (street, std.GetCity()))
+           return true;
+    else return false;
+  }
+  else return false;
+};
+
+
+void CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: TestOnObj(const CSeq_entry& seq_entry)
+{
+   ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
+     CConstRef <CCit_sub> cit_sub (
+                   CitSubFromPubEquiv((*it)->GetData().GetPub().GetPub().Get()));
+     if (cit_sub.NotEmpty() && cit_sub->GetAuthors().CanGetAffil()) {
+       const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+       if (affil.IsStd() && affil.GetStd().CanGetStreet() 
+              && !(affil.GetStd().GetStreet().empty())
+              && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
+          thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+          break;
+       }
+     }
+   }
+
+   unsigned i=0;
+   ITERATE (vector <const CSeqdesc*>, it, pub_seqdesc) {
+     CConstRef <CCit_sub> cit_sub (
+                  CitSubFromPubEquiv( (*it)->GetPub().GetPub().Get()));
+     if (cit_sub.NotEmpty() && cit_sub->GetAuthors().CanGetAffil()) {
+       const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+       if (affil.IsStd() && affil.GetStd().CanGetStreet()
+              && !(affil.GetStd().GetStreet().empty())
+              && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
+          thisInfo.test_item_list[GetName()].push_back(
+                         GetDiscItemText(**it, *(pub_seqdesc_seqentry[i])));
+          break;
+       }
+     }
+     i++;
+   }
+  
+   CSubmit_block this_submit_blk;
+   string desc;
+   if (thisInfo.submit_block.NotEmpty()
+        && AffilStreetContainsDuplicateText(
+                   thisInfo.submit_block->GetCit().GetAuthors().GetAffil())) {
+        if (seq_entry.IsSeq()) 
+           desc = GetDiscItemText(seq_entry.GetSeq());
+        else desc = GetDiscItemText(seq_entry.GetSet());
+        size_t pos = desc.find(": ");
+        desc = desc.substr(0, pos + 2) + "Cit-sub for " + desc.substr(pos+3);
+        thisInfo.test_item_list[GetName()].push_back(desc);
+   }
+};
+
+void CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description
+     = GetHasComment(c_item->item_list.size(), "Cit-sub pub") + "duplicate affil text.";
+};
+
+
+
 void CSeqEntryTestAndRepData :: AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, bool be_na, bool be_aa)
 {
    ITERATE (list < CRef < CSeq_entry > >, it, bioseq_set.GetSeq_set()) {
@@ -4511,7 +4627,7 @@ void CSeqEntryTestAndRepData :: AddBioseqsInSeqentryToReport(const unsigned& i, 
 
 
 
-void CSeqEntryTestAndRepData :: TestOnFeatDesc_User()
+void CSeqEntryTestAndRepData :: TestOnDesc_User()
 {
   string type, desc;
   unsigned i=0;
@@ -4529,14 +4645,14 @@ void CSeqEntryTestAndRepData :: TestOnFeatDesc_User()
     i++;
   }
 
-  thisTest.is_FEAT_DESC_user_run = true;
+  thisTest.is_DESC_user_run = true;
 };
 
 
 
 void CSeqEntry_MISSING_PROJECT :: TestOnObj(const CSeq_entry& seq_entry)
 {
-  if (!thisTest.is_FEAT_DESC_user_run) TestOnFeatDesc_User();
+  if (!thisTest.is_DESC_user_run) TestOnDesc_User();
 };
 
 
