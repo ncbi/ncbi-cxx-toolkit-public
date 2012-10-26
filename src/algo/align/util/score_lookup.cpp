@@ -1043,8 +1043,12 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        return sequence::GetTaxId(
-                   scope->GetBioseqHandle(align.GetSeq_id(m_Row)));
+        return scope->GetTaxId(align.GetSeq_id(m_Row));
+
+        /**
+        return sequence::GetTaxId
+            (scope->GetBioseqHandle(align.GetSeq_id(m_Row)));
+            **/
     }
 
 private:
