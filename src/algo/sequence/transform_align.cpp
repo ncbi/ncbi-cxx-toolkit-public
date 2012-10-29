@@ -787,13 +787,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
                    "result's ends do not match the range. This is a bug in AdjustAlignment implementation");
     }
 
-    if (is_protein_align && (exons.front().prod_from %3 != 0 || exons.back().prod_to %3 != 2)) {
-        NCBI_THROW(CException, eUnknown,
-                   "AdjustAlignment(): "
-                   "result's ends not at codon boundaries");
-    }
-
-    int offset = exons.front().prod_from;
+    int offset = is_protein_align ? int(exons.front().prod_from/3)*3 : exons.front().prod_from;
 
     vector<SExon>::iterator exon_struct_it = exons.begin();
 
@@ -804,7 +798,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
             SetProtpos(exon.SetProduct_end(), exon_struct_it->prod_to - offset);
             ++exon_struct_it;
         }
-        spliced_seg.SetProduct_length((exons.back().prod_to - offset + 1)/3);
+        spliced_seg.SetProduct_length((exons.back().prod_to - offset + 3)/3);
     } else {
         NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
             CSpliced_exon& exon = **exon_it;

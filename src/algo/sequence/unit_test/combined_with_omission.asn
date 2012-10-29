@@ -7347,7 +7347,6 @@ Seq-annot ::= {
         }
       },
       partial TRUE,
-      except TRUE,
       product whole local str "PROT_1_27",
       location packed-int {
         {
@@ -7358,8 +7357,7 @@ Seq-annot ::= {
           fuzz-from lim lt,
           fuzz-to lim gt
         }
-      },
-      except-text "unclassified translation discrepancy"
+      }
     },
     {
       data gene {
@@ -7717,6 +7715,91 @@ Seq-annot ::= {
           to 1161043,
           strand minus,
           id gi 238801501
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 118805,
+        to 119227,
+        strand plus,
+        id gi 291482369,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      product whole local str "CDNA_9_35",
+      location packed-int {
+        {
+          from 118805,
+          to 119227,
+          strand plus,
+          id gi 291482369,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      product whole local str "PROT_9_35",
+      location packed-int {
+        {
+          from 118805,
+          to 119227,
+          strand plus,
+          id gi 291482369,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "CDNA_10_36",
+      location packed-int {
+        {
+          from 118806,
+          to 119228,
+          strand plus,
+          id gi 291482369,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        frame three,
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      product whole local str "PROT_10_36",
+      location packed-int {
+        {
+          from 118806,
+          to 119228,
+          strand plus,
+          id gi 291482369,
+          fuzz-from lim lt,
+          fuzz-to lim gt
         }
       }
     }

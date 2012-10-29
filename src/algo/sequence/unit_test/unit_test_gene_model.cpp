@@ -369,18 +369,28 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             actual_annot.SetData().SetFtable();
         {
             generator.SetFlags(default_flags);
+            TSeqRange adjust_range;
             ITERATE (CSeq_align::TExt, ext_it, align->GetExt()) {
                 if ((*ext_it)->GetType().IsStr() &&
-                    (*ext_it)->GetType().GetStr() == "CFeatureGenerator" &&
-                    (*ext_it)->HasField("Flags"))
-                    {
+                    (*ext_it)->GetType().GetStr() == "CFeatureGenerator") {
+                    if ((*ext_it)->HasField("Flags")) {
                         int flags = (*ext_it)->GetField("Flags").GetData().GetInt();
                         generator.SetFlags(flags);
-                        break;
                     }
+                    if ((*ext_it)->HasField("AdjustRange")) {
+                        const vector<int>& range_vec = (*ext_it)->GetField("AdjustRange").GetData().GetInts();
+                        adjust_range = TSeqRange(range_vec[0], range_vec[1]);
+                        generator.SetAllowedUnaligned(0);
+                    }
+                }
             }
 
             CConstRef<CSeq_align> clean_align = generator.CleanAlignment(*align);
+
+            if (adjust_range.NotEmpty()) {
+                clean_align = generator.AdjustAlignment(*clean_align, adjust_range);
+            }
+
             generator.ConvertAlignToAnnot(*clean_align, actual_annot, seqs);
 //            BOOST_CHECK( validator.Validate(*seq_entry, &scope)->FatalSize()==0 );
             CSeq_id_Handle id = CSeq_id_Handle::GetHandle(*actual_features.front()->GetLocation().GetId());

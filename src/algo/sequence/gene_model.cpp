@@ -329,6 +329,8 @@ void CFeatureGenerator::ConvertLocToAnnot(
         case CCdregion::eFrame_three:
             product_pos -= 2;
             break;
+        default:
+            break;
         }
 
         if (product_pos % 3) {
@@ -1366,7 +1368,6 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
     CSeq_inst& seq_inst = bioseq.SetInst();
     seq_inst.SetMol(CSeq_inst::eMol_aa);
-    seq_inst.SetLength(strprot.size());
 
         seq_inst.SetRepr(CSeq_inst::eRepr_delta);
         CSeqVector seqv(*protloc_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
@@ -1390,23 +1391,38 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
         size_t b = 0;
         size_t e = 0;
+        size_t skip_5_prime = 0;
+        size_t skip_3_prime = 0;
 
-        for( CSeqMap_CI ci = map->BeginResolved(m_scope.GetPointer()); ci; ) {
+        for( CSeqMap_CI ci = map->BeginResolved(m_scope.GetPointer()); ci; ci.Next()) {
             TSeqPos len = ci.GetLength() - frame;
-            frame = (2*len)%3;
-            e = b + (len+2)/3;
+            frame = -(len%3);
+            len += frame;
+            if (len==0) {
+                if (b==0) {
+                    skip_5_prime += 1;
+                    b += 1;
+                    frame += 3;
+                }
+                continue;
+            }
+            e = b + len/3;
             bool stop_codon_included = e > strprot.size();
             if (stop_codon_included) {
                 _ASSERT( len%3 != 0 || !cds_on_mrna.GetLocation().IsPartialStop(eExtreme_Biological) );
                 --e;
                 len = len >= 3 ? len-3 : 0;
             }
+
             if (ci.IsUnknownLength()) {
                 seq_inst.SetExt().SetDelta().AddLiteral(len);
                 seq_inst.SetExt().SetDelta().Set().back()->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
             } else if (!ci.IsSetData()) {
-                if (!(stop_codon_included && b==e)) // do not add zero length gap at the end
+                if (b==skip_5_prime) {
+                    skip_5_prime += e-b;
+                } else if (!(stop_codon_included && b==e)) {// do not add zero length gap at the end
                     seq_inst.SetExt().SetDelta().AddLiteral(e-b);
+                }
             } else {
                 if (stop_codon_included && final_code_break) {
                     TSeqPos pos_on_mrna = ci.GetPosition() + (e-b)*3;
@@ -1444,10 +1460,15 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                 }
             }
             b = e;
-
-            ci.Next();
         }
         _ASSERT( b == strprot.size() );
+
+    while (!seq_inst.GetExt().GetDelta().Get().back()->GetLiteral().IsSetSeq_data()) {
+        skip_3_prime += seq_inst.GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
+        seq_inst.SetExt().SetDelta().Set().pop_back();
+    }
+
+    seq_inst.SetLength(strprot.size()-skip_5_prime-skip_3_prime);
 
     if (seq_inst.SetExt().SetDelta().Set().size() == 1) {
         seq_inst.SetRepr(CSeq_inst::eRepr_raw);
@@ -1473,7 +1494,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     CSeqVector vec(prot_h, CBioseq_Handle::eCoding_Iupac);
     string result;
     vec.GetSeqData(0, vec.size(), result);
-    _ASSERT( strprot.size()==result.size() );
+    _ASSERT( strprot.size()-skip_5_prime-skip_3_prime==result.size() );
 #endif
     
     seqs.SetSeq_set().push_back(entry);
@@ -1680,6 +1701,9 @@ SImplementation::x_CreateCdsFeature(CRef<CSeq_feat> cds_feat_on_mrna,
                                                                 align, loc, opts, offset);
             if (cds_loc  && cds_loc->Which() != CSeq_loc::e_not_set) {
 
+                bool is_partial_5prime = offset > 0 || cds_loc->IsPartialStart(eExtreme_Biological);
+                cds_loc->SetPartialStart(is_partial_5prime, eExtreme_Biological);
+
                 string gnomon_model_num;
 
                 if (cds_feat_on_mrna->CanGetProduct()) {
@@ -1702,9 +1726,6 @@ SImplementation::x_CreateCdsFeature(CRef<CSeq_feat> cds_feat_on_mrna,
                 cds_feat.Reset(new CSeq_feat());
                 cds_feat->Assign(*cds_feat_on_mrna);
                 cds_feat->ResetId();
-
-                bool is_partial_5prime =
-                    cds_loc->IsPartialStart(eExtreme_Biological);
 
                 cds_feat->SetLocation(*cds_loc);
 
