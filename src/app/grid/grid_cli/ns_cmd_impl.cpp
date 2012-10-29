@@ -87,7 +87,7 @@ static inline string UnquoteIfQuoted(const CTempString& str)
     }
 }
 
-void DetectTypeAndSet(CJsonNode& node, const string& key, const string& value)
+void g_DetectTypeAndSet(CJsonNode& node, const string& key, const string& value)
 {
     if (IsInteger(value))
         node.SetNumber(key, NStr::StringToInt8(value));
@@ -99,6 +99,173 @@ void DetectTypeAndSet(CJsonNode& node, const string& key, const string& value)
         node.SetNull(key);
     else
         node.SetString(key, UnquoteIfQuoted(value));
+}
+
+class CStructuredNetScheduleOutputParser
+{
+public:
+    CStructuredNetScheduleOutputParser(const string& ns_output) :
+        m_NSOutput(ns_output), m_Ch(m_NSOutput.c_str())
+    {
+    }
+
+    CJsonNode ParseObject(bool root_object);
+
+private:
+    size_t GetRemainder() const
+    {
+        return m_NSOutput.length() - (m_Ch - m_NSOutput.data());
+    }
+
+    string ParseString()
+    {
+        size_t len;
+        string str(NStr::ParseQuoted(CTempString(m_Ch, GetRemainder()), &len));
+        m_Ch += len;
+        return str;
+    }
+
+    bool MoreNodes()
+    {
+        while (isspace(*m_Ch))
+            ++m_Ch;
+        if (*m_Ch != ',')
+            return false;
+        ++m_Ch;
+        return true;
+    }
+
+    CJsonNode ParseArray();
+    CJsonNode ParseNode();
+    void ThrowUnexpectedCharError();
+
+    const string m_NSOutput;
+    const char* m_Ch;
+};
+
+CJsonNode CStructuredNetScheduleOutputParser::ParseObject(bool root_object)
+{
+    CJsonNode result(CJsonNode::NewObjectNode());
+
+    CJsonNode new_node;
+
+    do {
+        while (isspace(*m_Ch))
+            ++m_Ch;
+
+        if (*m_Ch != '\'' && *m_Ch != '"')
+            break;
+
+        // New attribute/value pair
+        string attr_name(ParseString());
+
+        while (isspace(*m_Ch))
+            ++m_Ch;
+        if (*m_Ch == ':' || *m_Ch == '=')
+            while (isspace(*++m_Ch))
+                ;
+
+        if (new_node = ParseNode())
+            result.SetNode(attr_name, new_node);
+        else
+            ThrowUnexpectedCharError();
+    } while (MoreNodes());
+
+    if (root_object ? *m_Ch != '\0' : *m_Ch != '}')
+        ThrowUnexpectedCharError();
+
+    ++m_Ch;
+
+    return result;
+}
+
+CJsonNode CStructuredNetScheduleOutputParser::ParseArray()
+{
+    CJsonNode result(CJsonNode::NewArrayNode());
+
+    CJsonNode new_node;
+
+    do {
+        while (isspace(*m_Ch))
+            ++m_Ch;
+
+        if (new_node = ParseNode())
+            result.PushNode(new_node);
+        else
+            break;
+    } while (MoreNodes());
+
+    if (*m_Ch != ']')
+        ThrowUnexpectedCharError();
+
+    ++m_Ch;
+
+    return result;
+}
+
+CJsonNode CStructuredNetScheduleOutputParser::ParseNode()
+{
+    switch (*m_Ch) {
+    case '[':
+        ++m_Ch;
+        return ParseArray();
+
+    case '{':
+        ++m_Ch;
+        return ParseObject(false);
+
+    case '\'': case '"':
+        return CJsonNode::NewStringNode(ParseString());
+    }
+
+    size_t max_len = GetRemainder();
+    size_t len = 1;
+
+    switch (*m_Ch) {
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+        while (len <= max_len && isdigit(m_Ch[len]))
+            ++len;
+
+        {
+            CJsonNode::TNumber val(NStr::StringToInt8(CTempString(m_Ch, len)));
+            m_Ch += len;
+            return CJsonNode::NewNumberNode(val);
+        }
+
+    case 'F': case 'f': case 'N': case 'n':
+    case 'T': case 't': case 'Y': case 'y':
+        while (len <= max_len && isalpha(m_Ch[len]))
+            ++len;
+
+        {
+            bool val(NStr::StringToBool(CTempString(m_Ch, len)));
+            m_Ch += len;
+            return CJsonNode::NewBooleanNode(val);
+        }
+    }
+
+    return CJsonNode();
+}
+
+void CStructuredNetScheduleOutputParser::ThrowUnexpectedCharError()
+{
+    size_t position = m_Ch - m_NSOutput.data() + 1;
+
+    if (*m_Ch == '\0') {
+        NCBI_THROW2(CStringException, eFormat,
+                "Unexpected end of NetSchedule output", position);
+    } else {
+        NCBI_THROW2(CStringException, eFormat,
+                "Unexpected character in NetSchedule output", position);
+    }
+}
+
+CJsonNode g_StructuredNetScheduleOutputToJson(const string& ns_output)
+{
+    CStructuredNetScheduleOutputParser parser(ns_output);
+
+    return parser.ParseObject(true);
 }
 
 struct {
@@ -116,7 +283,7 @@ struct {
     {"STAT AFFINITIES", "AFFINITY: ", "affinity_token"}
 };
 
-CJsonNode GenericStatToJson(CNetServer server,
+CJsonNode g_GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose)
 {
     string stat_cmd(s_StatTopics[topic].command);
@@ -158,7 +325,7 @@ CJsonNode GenericStatToJson(CNetServer server,
                     entity_info.SetNode(key_norm, array_value =
                             CJsonNode::NewArrayNode());
                 else
-                    DetectTypeAndSet(entity_info, key_norm, value);
+                    g_DetectTypeAndSet(entity_info, key_norm, value);
             }
         }
     }
@@ -168,7 +335,7 @@ CJsonNode GenericStatToJson(CNetServer server,
     return entities;
 }
 
-CJsonNode LegacyStatToJson(CNetServer server, bool verbose)
+CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
 {
     const string stat_cmd(verbose ? "STAT ALL" : "STAT");
 
@@ -339,9 +506,9 @@ int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
             for (CNetServiceIterator it =
                     m_NetScheduleAPI.GetService().Iterate(); it; ++it)
                 result.SetNode((*it).GetServerAddress(),
-                        LegacyStatToJson(*it, !IsOptionSet(eBrief)));
+                        g_LegacyStatToJson(*it, !IsOptionSet(eBrief)));
 
-            PrintJSON(stdout, result);
+            g_PrintJSON(stdout, result);
         }
     }
 
@@ -357,9 +524,9 @@ void CGridCommandLineInterfaceApp::PrintNetScheduleStats_Generic(
         for (CNetServiceIterator it =
                 m_NetScheduleAPI.GetService().Iterate(); it; ++it)
             result.SetNode((*it).GetServerAddress(),
-                    GenericStatToJson(*it, topic, IsOptionSet(eVerbose)));
+                    g_GenericStatToJson(*it, topic, IsOptionSet(eVerbose)));
 
-        PrintJSON(stdout, result);
+        g_PrintJSON(stdout, result);
     } else {
         string cmd(s_StatTopics[topic].command);
 
@@ -378,11 +545,11 @@ static void s_GetQueueInfo(CNetScheduleAPI ns_server_with_queue_set_up,
     ns_server_with_queue_set_up.GetAdmin().GetQueueInfo(
             *ns_server_with_queue_set_up.GetService().Iterate(), queue_info);
     ITERATE(CNetScheduleAdmin::TQueueInfo, qi, queue_info) {
-        DetectTypeAndSet(queue_info_node, qi->first, qi->second);
+        g_DetectTypeAndSet(queue_info_node, qi->first, qi->second);
     }
 }
 
-CJsonNode QueueInfoToJson(CNetScheduleAPI ns_api,
+CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
         const string& queue_name, bool group_by_server_addr)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
@@ -416,7 +583,7 @@ CJsonNode QueueInfoToJson(CNetScheduleAPI ns_api,
     return result;
 }
 
-CJsonNode QueueClassInfoToJson(CNetScheduleAPI ns_api,
+CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
         bool group_by_server_addr)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
@@ -443,7 +610,7 @@ CJsonNode QueueClassInfoToJson(CNetScheduleAPI ns_api,
                         queue_class_params = CJsonNode::NewObjectNode());
             else if (queue_class_params && NStr::SplitInTwo(line, ": ",
                         param_name, param_value, NStr::eMergeDelims))
-                DetectTypeAndSet(queue_class_params, param_name, param_value);
+                g_DetectTypeAndSet(queue_class_params, param_name, param_value);
     }
 
     return result;
@@ -602,7 +769,7 @@ void CJobInfoToJSON::BeginJobEvent(const CTempString& event_header)
 void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name,
         const string& attr_value)
 {
-    DetectTypeAndSet(m_CurrentEvent, attr_name, attr_value);
+    g_DetectTypeAndSet(m_CurrentEvent, attr_name, attr_value);
 }
 
 void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name)
@@ -632,7 +799,7 @@ void CJobInfoToJSON::ProcessInputOutput(const string& data,
 void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
         const CTempString& field_value)
 {
-    DetectTypeAndSet(m_JobInfo, field_name, field_value);
+    g_DetectTypeAndSet(m_JobInfo, field_name, field_value);
 }
 
 void CJobInfoToJSON::ProcessRawLine(const string& line)

@@ -124,7 +124,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     if (!IsOptionSet(eClientNode)) {
         string user, host;
-        GetUserAndHost(&user, &host);
+        g_GetUserAndHost(&user, &host);
         DefineClientNode(user, host);
     }
 
@@ -197,7 +197,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
             CJobInfoToJSON job_info_to_json;
             ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
                     &job_info_to_json, !IsOptionSet(eBrief));
-            PrintJSON(stdout, job_info_to_json.GetRootNode());
+            g_PrintJSON(stdout, job_info_to_json.GetRootNode());
         }
         break;
 
@@ -927,7 +927,7 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
             return 1;
         }
         if (m_Opts.output_format == eJSON)
-            PrintJSON(stdout, QueueInfoToJson(m_NetScheduleAPI,
+            g_PrintJSON(stdout, g_QueueInfoToJson(m_NetScheduleAPI,
                     IsOptionSet(eQueueArg) ? m_Opts.queue : kEmptyStr,
                     m_NetScheduleAPI.GetService().IsLoadBalanced()));
         else if (!IsOptionSet(eAllQueues))
@@ -955,7 +955,7 @@ int CGridCommandLineInterfaceApp::Cmd_QueueInfo()
             }
         }
     } else if (m_Opts.output_format == eJSON)
-        PrintJSON(stdout, QueueClassInfoToJson(m_NetScheduleAPI,
+        g_PrintJSON(stdout, g_QueueClassInfoToJson(m_NetScheduleAPI,
                 m_NetScheduleAPI.GetService().IsLoadBalanced()));
     else
         m_NetScheduleAPI.GetService().PrintCmdOutput("STAT QCLASSES",

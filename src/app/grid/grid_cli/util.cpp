@@ -112,13 +112,14 @@ static void PrintJSONNode(FILE* output_stream, CJsonNode node,
     }
 }
 
-void PrintJSON(FILE* output_stream, CJsonNode node)
+void g_PrintJSON(FILE* output_stream, CJsonNode node)
 {
     PrintJSONNode(output_stream, node);
     putc('\n', output_stream);
 }
 
-CJsonNode ExecToJson(CNetService service, const string& command, bool multiline)
+CJsonNode g_ExecToJson(CNetService service,
+        const string& command, bool multiline)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
 
@@ -143,7 +144,7 @@ CJsonNode ExecToJson(CNetService service, const string& command, bool multiline)
     return result;
 }
 
-void GetUserAndHost(string* user, string* host)
+void g_GetUserAndHost(string* user, string* host)
 {
     char user_buf[64];
     if (CORE_GetUsername(user_buf, sizeof(user_buf)) != NULL)

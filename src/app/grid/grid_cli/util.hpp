@@ -38,12 +38,12 @@
 
 BEGIN_NCBI_SCOPE
 
-void PrintJSON(FILE* output_stream, CJsonNode node);
+void g_PrintJSON(FILE* output_stream, CJsonNode node);
 
-CJsonNode ExecToJson(CNetService service,
+CJsonNode g_ExecToJson(CNetService service,
         const string& command, bool multiline);
 
-void GetUserAndHost(string* user, string* host);
+void g_GetUserAndHost(string* user, string* host);
 
 END_NCBI_SCOPE
 

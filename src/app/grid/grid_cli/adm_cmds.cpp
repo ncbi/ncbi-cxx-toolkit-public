@@ -285,7 +285,7 @@ int CGridCommandLineInterfaceApp::Cmd_Exec()
                 IsOptionSet(eMultiline) ? CNetService::eMultilineOutput :
                 CNetService::eSingleLineOutput);
     else // Output format is eJSON.
-        PrintJSON(stdout, ExecToJson(service,
+        g_PrintJSON(stdout, g_ExecToJson(service,
                 m_Opts.command, IsOptionSet(eMultiline)));
 
     return 0;

@@ -805,6 +805,10 @@ NCBI_DECLARE_INTERFACE_VERSION(SNetScheduleAPIImpl, "xnetschedule_api", 1,0, 0);
 /// @internal
 extern NCBI_XCONNECT_EXPORT const char* const kNetScheduleAPIDriverName;
 
+/// @internal
+extern NCBI_XCONNECT_EXPORT
+void g_AppendClientIPAndSessionID(string& cmd,
+        const string* default_session = NULL);
 
 /// @internal
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetscheduleapi(

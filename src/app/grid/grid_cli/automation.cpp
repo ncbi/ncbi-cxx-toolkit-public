@@ -509,24 +509,24 @@ bool SNetScheduleServerAutomationObject::Call(const string& method,
 
         reply.PushNode(server_info_node);
     } else if (method == "server_status")
-        reply.PushNode(LegacyStatToJson(m_NetServer,
+        reply.PushNode(g_LegacyStatToJson(m_NetServer,
                 arg_array.NextBoolean(false)));
     else if (method == "queue_info")
-        reply.PushNode(QueueInfoToJson(m_NetScheduleAPI,
+        reply.PushNode(g_QueueInfoToJson(m_NetScheduleAPI,
                 arg_array.NextString(kEmptyStr), false));
     else if (method == "queue_class_info")
-        reply.PushNode(QueueClassInfoToJson(m_NetScheduleAPI, false));
+        reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI, false));
     else if (method == "job_group_info")
-        reply.PushNode(GenericStatToJson(m_NetServer,
+        reply.PushNode(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
     else if (method == "client_info")
-        reply.PushNode(GenericStatToJson(m_NetServer,
+        reply.PushNode(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatClients, arg_array.NextBoolean(false)));
     else if (method == "notification_info")
-        reply.PushNode(GenericStatToJson(m_NetServer,
+        reply.PushNode(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatNotifications, arg_array.NextBoolean(false)));
     else if (method == "affinity_info")
-        reply.PushNode(GenericStatToJson(m_NetServer,
+        reply.PushNode(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatAffinities, arg_array.NextBoolean(false)));
     else if (method == "change_preferred_affinities") {
         vector<string> affs_to_add;
@@ -579,10 +579,10 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
         if (!arg.IsNull())
             m_NetScheduleAPI.SetClientSession(arg_array.GetString(arg));
     } else if (method == "queue_info")
-        reply.PushNode(QueueInfoToJson(m_NetScheduleAPI,
+        reply.PushNode(g_QueueInfoToJson(m_NetScheduleAPI,
                 arg_array.NextString(kEmptyStr), true));
     else if (method == "queue_class_info")
-        reply.PushNode(QueueClassInfoToJson(m_NetScheduleAPI, true));
+        reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI, true));
     else if (method == "job_info") {
         CJobInfoToJSON job_info_to_json;
         string job_key(arg_array.NextString());
@@ -602,7 +602,7 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
         reply.PushNode(jobs_by_status);
     } else if (method == "exec") {
         string command(arg_array.NextString());
-        reply.PushNode(ExecToJson(m_NetScheduleAPI.GetService(),
+        reply.PushNode(g_ExecToJson(m_NetScheduleAPI.GetService(),
                 command, arg_array.NextBoolean(false)));
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
@@ -663,7 +663,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     if (m_ProtocolDumpFile != NULL) {
         fprintf(m_ProtocolDumpFile, m_DumpInputHeaderFormat.c_str(),
                 GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
-        PrintJSON(m_ProtocolDumpFile, message);
+        g_PrintJSON(m_ProtocolDumpFile, message);
     }
 
     CArgArray arg_array(message.GetArray());
@@ -737,7 +737,7 @@ void CAutomationProc::SendMessage(const CJsonNode& message)
     if (m_ProtocolDumpFile != NULL) {
         fprintf(m_ProtocolDumpFile, m_DumpOutputHeaderFormat.c_str(),
                 GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
-        PrintJSON(m_ProtocolDumpFile, message);
+        g_PrintJSON(m_ProtocolDumpFile, message);
     }
 
     m_JSONWriter.SendMessage(message);

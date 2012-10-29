@@ -47,9 +47,6 @@ BEGIN_NCBI_SCOPE
 
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
 
-void g_AppendClientIPAndSessionID(string& cmd,
-        const string* default_session = NULL);
-
 bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response);
 
 template<typename T> struct ToStr { static string Convert(T t); };

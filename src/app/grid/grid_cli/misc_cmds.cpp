@@ -116,7 +116,7 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
                 LOGIN_TOKEN_AUTH_FIELD, m_Opts.auth);
 
     string user, host;
-    GetUserAndHost(&user, &host);
+    g_GetUserAndHost(&user, &host);
     AppendLoginTokenField(&login_token, LOGIN_TOKEN_USER_FIELD, user);
     AppendLoginTokenField(&login_token, LOGIN_TOKEN_HOST_FIELD, host);
 
