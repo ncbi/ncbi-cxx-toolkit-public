@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include "util.hpp"
-#include "grid_cli.hpp"
+#include "ns_cmd_impl.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -202,7 +202,8 @@ int CGridCommandLineInterfaceApp::Cmd_Reconf()
         return 0;
 
     case eNetScheduleAdmin:
-        m_NetScheduleAdmin.ReloadServerConfig();
+        g_PrintJSON(stdout, g_ReconfAndReturnJson(m_NetScheduleAPI,
+                m_NetScheduleAPI.GetService().IsLoadBalanced()));
         return 0;
 
     default:

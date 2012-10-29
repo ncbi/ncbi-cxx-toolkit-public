@@ -58,6 +58,9 @@ CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
 CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
         bool group_by_server_addr);
 
+CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
+        bool group_by_server_addr);
+
 class CAttrListParser
 {
 public:

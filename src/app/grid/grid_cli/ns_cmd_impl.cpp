@@ -616,6 +616,28 @@ CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
     return result;
 }
 
+CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
+        bool group_by_server_addr)
+{
+    CJsonNode result(CJsonNode::NewObjectNode());
+
+    string cmd("RECO");
+    g_AppendClientIPAndSessionID(cmd);
+
+    for (CNetServiceIterator it = ns_api.GetService().
+            Iterate(CNetService::eIncludePenalized); it; ++it) {
+        CJsonNode reconf_results(g_StructuredNetScheduleOutputToJson(
+                    (*it).ExecWithRetry(cmd).response));
+
+        if (!group_by_server_addr)
+            return reconf_results;
+
+        result.SetNode((*it).GetServerAddress(), reconf_results);
+    }
+
+    return result;
+}
+
 CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
     CTempString& attr_name, string& attr_value)
 {
