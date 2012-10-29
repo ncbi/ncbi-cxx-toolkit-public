@@ -516,6 +516,8 @@ bool SNetScheduleServerAutomationObject::Call(const string& method,
                 arg_array.NextString(kEmptyStr), false));
     else if (method == "queue_class_info")
         reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI, false));
+    else if (method == "reconf")
+        reply.PushNode(g_ReconfAndReturnJson(m_NetScheduleAPI, false));
     else if (method == "job_group_info")
         reply.PushNode(g_GenericStatToJson(m_NetServer,
                 eNetScheduleStatJobGroups, arg_array.NextBoolean(false)));
@@ -583,6 +585,8 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
                 arg_array.NextString(kEmptyStr), true));
     else if (method == "queue_class_info")
         reply.PushNode(g_QueueClassInfoToJson(m_NetScheduleAPI, true));
+    else if (method == "reconf")
+        reply.PushNode(g_ReconfAndReturnJson(m_NetScheduleAPI, true));
     else if (method == "job_info") {
         CJobInfoToJSON job_info_to_json;
         string job_key(arg_array.NextString());
