@@ -111,6 +111,8 @@ public:
 
     void AddPeriod(void);
 
+    void RemoveExcessNewlines( const CCommentItem & next_comment );
+
     enum ECommentFormat
     {
         eFormat_Text,

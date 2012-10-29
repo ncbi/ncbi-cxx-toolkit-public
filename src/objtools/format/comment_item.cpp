@@ -172,6 +172,56 @@ void CCommentItem::AddPeriod(void)
     }
 }
 
+void CCommentItem::RemoveExcessNewlines(
+    const CCommentItem & next_comment )
+{
+    if(  m_Comment.empty() || next_comment.m_Comment.empty() ) {
+        return;
+    }
+
+    // check if next_comment starts with an empty line
+    const string & next_comment_first_string = next_comment.m_Comment.front();
+    bool next_comment_starts_with_empty_line = false;
+    ITERATE( string, next_com_line_it, next_comment_first_string ) {
+        const char ch = *next_com_line_it;
+        if( ch == '\n' ) {
+            next_comment_starts_with_empty_line = true;
+            break;
+        } else if( ! isspace(ch) ) {
+            break;
+        }
+    }
+
+    if( ! next_comment_starts_with_empty_line ) {
+        // we assume that this comment won't have excessive blank lines
+        return;
+    }
+
+    // see if we have too many newlines at the end (we assume we don't have more than
+    // one extra)
+    string & last_str_of_comment = m_Comment.back();
+    if( last_str_of_comment.empty() ) {
+        return;
+    }
+
+    string::size_type pos = (last_str_of_comment.length() - 1);
+    if( last_str_of_comment[pos] == '\n' ) {
+        // skip final newlines because lines without newline will get 
+        // a newline added, so we would assume it's there anyway
+        --pos;
+    }
+    for( ; pos < last_str_of_comment.length(); --pos ) {
+        const char ch = last_str_of_comment[pos];
+
+        if( ch == '\n' ) {
+            // extra newline found: remove it
+            last_str_of_comment.erase(pos);
+            return;
+        } else if( ! isspace(ch) ) {
+            return;
+        }
+    }
+}
 
 const string& CCommentItem::GetNsAreGapsStr(void)
 {
@@ -943,7 +993,7 @@ string CCommentItem::GetStringForModelEvidance
         "Documentation" );
 
     text << ".~Also see:~"
-        << "    " << documentation_str << " of NCBI's Annotation Process~";
+        << "    " << documentation_str << " of NCBI's Annotation Process~    ";
 
     return CNcbiOstrstreamToString(text);
 }
