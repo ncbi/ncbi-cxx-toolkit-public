@@ -874,6 +874,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         m_dblink_count = 0;
         m_taa_count = 0;
         m_bs_count = 0;
+        m_as_count = 0;
         m_pdb_count = 0;
         m_sra_count = 0;
         m_bp_count = 0;
@@ -895,6 +896,11 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         if (m_bs_count > 1) {
             PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
                 "BioSample entries appear in " + NStr::IntToString(m_bs_count) + " DBLink user objects", seq);
+        }
+
+        if (m_as_count > 1) {
+            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                "Assembly entries appear in " + NStr::IntToString(m_as_count) + " DBLink user objects", seq);
         }
 
         if (m_pdb_count > 1) {
@@ -7120,6 +7126,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                                 m_taa_count++;
                             } else if (NStr::EqualNocase(label_str, "BioSample")) {
                                 m_bs_count++;
+                            } else if (NStr::EqualNocase(label_str, "Assembly")) {
+                                m_as_count++;
                             } else if (NStr::EqualNocase(label_str, "ProbeDB")) {
                                 m_pdb_count++;
                             } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {

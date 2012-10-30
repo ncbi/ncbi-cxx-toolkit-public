@@ -1111,6 +1111,7 @@ public:
     int m_dblink_count;
     int m_taa_count;
     int m_bs_count;
+    int m_as_count;
     int m_pdb_count;
     int m_sra_count;
     int m_bp_count;
