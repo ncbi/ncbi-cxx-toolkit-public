@@ -788,6 +788,8 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     }
 
     int offset = is_protein_align ? int(exons.front().prod_from/3)*3 : exons.front().prod_from;
+    if (offset > exons.front().prod_from) // negative division rounds toward zero
+        offset -= 3;
 
     vector<SExon>::iterator exon_struct_it = exons.begin();
 

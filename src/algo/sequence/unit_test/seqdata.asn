@@ -16423,3 +16423,451 @@ ARSMGIVIED"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_11_37"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness no-right
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 2112,
+        ext delta {
+          literal {
+            length 1
+          },
+          literal {
+            length 2111,
+            seq-data ncbi2na '38BFE2A3B9000A3D628EFFDCADFBD43AEBA24070DAA206F7
+CE33F3D5BF9F0226CFBFFB47AD23E08D33A719F33B9527FEFDF824803590020337F333C3DD4A2A
+BAC167A0E98FCE31CE4BD3425D53F61FFECEA92927DCEAF5F9FFB792A800A8E67F93E5C391B35E
+793414DEAA3FDEB427DE33E06539D084FBC03426DBF0388CCEF003EEB084CE08AF80213C8DB8D1
+34ED27DA293B8FAAEFBE30AEF8EDD83E33E0802240C8C778BDFCDFFB2032E888FE3294BBA6C379
+BC3CDFF339BE78CD452E8CFF00FBB303188912BBFEBC2023B3FCEB0480B6CBBDB307800F3E337D
+CB73F80C7FF2C9F9C3C0AA8F738B0252C30EB2EDD020647F3EF5FF9AC22D2460B1903C3E4AD71E
+CF4CEE3839BE0FB93A33CF6E08810B7DCF142D1382B3D40D442231F6AF7E38B3B4FA10A909000A
+FFA4BE7B530D1CC023E993DF508B2C3B627E50370CD7FEBEB5C6A3BAC21F37A74067A66CD3E3BD
+7F443A78E6106F84827AF3BEB821BE00CF3DD0BCF909E48F30EC89B9D26EB32FCCF8E0BA300CDD
+A0368C35F73C66A3BF7A20A2F4909DFF823CE8281CF9F7BD6590A292804D741283DF90B231840C
+FFBD3FBA6893F928FA3F9B0DF8B6823F2E0BFABE3D483F32A6DF52E7A415F8237E3883DDE3CA3D
+CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
+031D7E31CEF60F173BC0A8B492EE3CDDE38EFB40AC09BB55F0EECC58C82238029C3BF794'H
+          }
+        },
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_11",
+                genomic-id gi 346722692,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 1,
+                    product-end nucpos 1694,
+                    genomic-start 154294,
+                    genomic-end 155987,
+                    parts {
+                      diag 1244,
+                      diag 150,
+                      diag 12,
+                      diag 30,
+                      diag 15,
+                      diag 18,
+                      diag 144,
+                      diag 18,
+                      diag 63
+                    },
+                    donor-after-exon {
+                      bases "CG"
+                    },
+                    partial TRUE
+                  },
+                  {
+                    product-start nucpos 1695,
+                    product-end nucpos 2111,
+                    genomic-start 153790,
+                    genomic-end 154206,
+                    parts {
+                      diag 12,
+                      diag 6,
+                      diag 105,
+                      diag 6,
+                      diag 36,
+                      diag 30,
+                      diag 123,
+                      diag 99
+                    },
+                    acceptor-before-exon {
+                      bases "TA"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  }
+                },
+                product-length 2112
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    },
+                    {
+                      label str "AdjustRange",
+                      data ints {
+                        153790,
+                        155987
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 7,
+                      to 9,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 76,
+                      to 78,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 97,
+                      to 99,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 118,
+                      to 120,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 151,
+                      to 153,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 196,
+                      to 198,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 235,
+                      to 237,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 277,
+                      to 279,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 391,
+                      to 393,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 445,
+                      to 447,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 451,
+                      to 453,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 475,
+                      to 477,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 496,
+                      to 498,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 508,
+                      to 510,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 520,
+                      to 522,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 529,
+                      to 531,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 538,
+                      to 540,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 556,
+                      to 558,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 586,
+                      to 588,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 601,
+                      to 603,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 604,
+                      to 606,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 625,
+                      to 627,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 631,
+                      to 633,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 721,
+                      to 723,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 766,
+                      to 768,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 778,
+                      to 780,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 805,
+                      to 807,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 826,
+                      to 828,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 850,
+                      to 852,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 865,
+                      to 867,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  },
+                  {
+                    loc int {
+                      from 907,
+                      to 909,
+                      id local str "CDNA_11_37",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  }
+                }
+              },
+              product whole local str "PROT_11_37",
+              location int {
+                from 0,
+                to 2111,
+                id local str "CDNA_11_37",
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_11_37"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 703,
+        seq-data iupacaa "EFXGMCKKGFRGCFSRSCSNGGGANXSGRTFLXYLFPFAXRAYCFCHWSDXR
+SYGYAYMCPAFVSXSRKSAKRNIFIYXFSRRGGNRWNGDLXYYAVHQASHFDFLYGAGSFYGFLAFVCRGKRDALCIA
+XCTYPAASTIWGIFWSSFXYXTPCSRHCXNQASFKXDICXKLWXDIXRGXKDIRSXSHHVSFGGMXLGCCXXGVDVSN
+XYXRKEQIDTLSSLSFVEIVERFDRPVWRNLRXLSFICVADIHQWIFXNCVXIREHRCFGXERCILWXQKVVVFVXLK
+NYXYLLVYLKYFLVACXLKGDSMSKASNNGSVSKNALYCSFCGKSQHEVRKLIAGPTVFICDECVELCMDIIREENKS
+SITKSHEGIPNPQEILRVLDEYVIGQGQAKKVLAVAVHNHYKRLAHSSKSSNVELAKSNILLVGPTGCGKTYLAQTLA
+RIIDVPFTMADATTLTEAGYVGEDVENIILKLLQAADYNVERAQRGIVYIDEVDKISRKSDNPSITRDVSGEGVQQAL
+LKIMEGTIASVPPQGGRKHPQQEFLQVDTTNILFICGGAFAGLDLRNLESEDLVKFGLIPEFIGRLPVLATLEDLDEN
+SLIRILSEPKNALIKQYQCLFDMEDVELVFHEDALREIARCAIAHKTGARGLRSILEKILLDTMFELPMLKGVSSVII
+SDDVVKGKACPLNVYTDRRDEKANVSA"
+      }
+    }
+  }
+}

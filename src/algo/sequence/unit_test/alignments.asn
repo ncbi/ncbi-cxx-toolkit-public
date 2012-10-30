@@ -13129,3 +13129,84 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type disc,
+  dim 2,
+  segs spliced {
+    product-id local str "GENEMARK_000154",
+    genomic-id gi 346722692,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 20,
+          frame 1
+        },
+        product-end protpos {
+          amin 169,
+          frame 3
+        },
+        genomic-start 154294,
+        genomic-end 154743,
+        parts {
+          diag 150,
+          diag 12,
+          diag 30,
+          diag 15,
+          diag 18,
+          diag 144,
+          diag 18,
+          diag 63
+        },
+        donor-after-exon {
+          bases "CG"
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 170,
+          frame 1
+        },
+        product-end protpos {
+          amin 275,
+          frame 3
+        },
+        genomic-start 153889,
+        genomic-end 154206,
+        parts {
+          diag 12,
+          diag 6,
+          diag 105,
+          diag 6,
+          diag 36,
+          diag 30,
+          diag 123
+        },
+        acceptor-before-exon {
+          bases "TA"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      }
+    },
+    product-length 280
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
+        },
+        {
+          label str "AdjustRange", 
+          data ints { 153790, 155987 }
+        }
+      }
+    }
+  }
+}
