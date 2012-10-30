@@ -8406,10 +8406,10 @@ Seq-annot ::= {
       },
       partial TRUE,
       location int {
-        from 118806,
-        to 119228,
-        strand plus,
-        id gi 291482369,
+        from 153790,
+        to 155987,
+        strand minus,
+        id gi 346722692,
         fuzz-from lim lt,
         fuzz-to lim gt
       }
@@ -8420,15 +8420,21 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      product whole local str "CDNA_10_36",
+      product whole local str "CDNA_11_37",
       location packed-int {
         {
-          from 118806,
-          to 119228,
-          strand plus,
-          id gi 291482369,
-          fuzz-from lim lt,
+          from 154294,
+          to 155987,
+          strand minus,
+          id gi 346722692,
           fuzz-to lim gt
+        },
+        {
+          from 153790,
+          to 154206,
+          strand minus,
+          id gi 346722692,
+          fuzz-from lim lt
         }
       },
       except-text "unclassified transcription discrepancy"
@@ -8438,18 +8444,615 @@ Seq-annot ::= {
         frame three,
         code {
           id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 155979,
+              to 155981,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155910,
+              to 155912,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155889,
+              to 155891,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155868,
+              to 155870,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155835,
+              to 155837,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155790,
+              to 155792,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155751,
+              to 155753,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155709,
+              to 155711,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155595,
+              to 155597,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155541,
+              to 155543,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155535,
+              to 155537,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155511,
+              to 155513,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155490,
+              to 155492,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155478,
+              to 155480,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155466,
+              to 155468,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155457,
+              to 155459,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155448,
+              to 155450,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155430,
+              to 155432,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155400,
+              to 155402,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155385,
+              to 155387,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155382,
+              to 155384,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155361,
+              to 155363,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155355,
+              to 155357,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155265,
+              to 155267,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155220,
+              to 155222,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155208,
+              to 155210,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155181,
+              to 155183,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155160,
+              to 155162,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155136,
+              to 155138,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155121,
+              to 155123,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155079,
+              to 155081,
+              strand minus,
+              id gi 346722692,
+              fuzz-from lim lt
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155980,
+              to 155982,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155911,
+              to 155913,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155890,
+              to 155892,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155869,
+              to 155871,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155836,
+              to 155838,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155791,
+              to 155793,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155752,
+              to 155754,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155710,
+              to 155712,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155596,
+              to 155598,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155542,
+              to 155544,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155536,
+              to 155538,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155512,
+              to 155514,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155491,
+              to 155493,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155479,
+              to 155481,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155467,
+              to 155469,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155458,
+              to 155460,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155449,
+              to 155451,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155431,
+              to 155433,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155401,
+              to 155403,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155386,
+              to 155388,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155383,
+              to 155385,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155362,
+              to 155364,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155356,
+              to 155358,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155266,
+              to 155268,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155221,
+              to 155223,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155209,
+              to 155211,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155182,
+              to 155184,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155161,
+              to 155163,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155137,
+              to 155139,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155122,
+              to 155124,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          },
+          {
+            loc int {
+              from 155080,
+              to 155082,
+              strand minus,
+              id gi 346722692
+            },
+            aa ncbieaa 88
+          }
         }
       },
       partial TRUE,
-      product whole local str "PROT_10_36",
+      product whole local str "PROT_11_37",
       location packed-int {
         {
-          from 118806,
-          to 119228,
-          strand plus,
-          id gi 291482369,
-          fuzz-from lim lt,
+          from 154294,
+          to 155987,
+          strand minus,
+          id gi 346722692,
           fuzz-to lim gt
+        },
+        {
+          from 153790,
+          to 154206,
+          strand minus,
+          id gi 346722692,
+          fuzz-from lim lt
         }
       }
     }
