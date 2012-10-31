@@ -28,7 +28,6 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
-        test -f "$d/include/sqlite.h"      &&  : ${SQLITE_PATH=$d}
         test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
         test -x "$d/bin/wx-config"         &&  : ${WXWIDGETS_PATH=$d}
         test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
@@ -180,13 +179,9 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    Linux32    ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.13} ;;
-    *MAC       ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.17} ;;
-    SunOSx86   ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.13} ;;
-    *          ) : ${SQLITE_PATH=$NCBI/sqlite-2.8.16} ;;
+    Linux64    ) : ${SQLITE3_PATH=$NCBI/sqlite-3.7.13-ncbi1}   ;;
+    *          ) : ${SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1} ;;
 esac
-
-: ${SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1}
 
 case "$ncbi_platform" in
     Linux32    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-32bit} ;;
