@@ -455,41 +455,42 @@ test -d $proj_name &&  makefile_name="$proj_name/$makefile_name"
 makefile_name=`pwd`/$makefile_name
 makefile_builddir=`dirname $makefile_name`/Makefile.builddir
 
-if test -f $makefile_builddir ; then
-  echo "\"$makefile_builddir\" already exists.  Do you want to override it?  [y/N]"
-  read answer
-  case "$answer" in
-    [Yy]*) CreateMakefile_Builddir $makefile_builddir ;;
-  esac
-else
-  CreateMakefile_Builddir $makefile_builddir
-fi
+MayWrite() {
+    if [ -f "$1" ]; then
+        echo "\"$1\" already exists.  Do you want to overwrite it?  [y/N]"
+        read answer
+        case "$answer" in
+            [Yy]*) return 0 ;;
+            *    ) return 1 ;;
+        esac
+    else
+        return 0
+    fi
+}
 
-
-if test -f $makefile_name ; then
-  echo "\"$makefile_name\" already exists.  Do you want to override it?  [y/N]"
-  read answer
-  case "$answer" in
-    [Yy]*) ;;
-    *    ) exit 2 ;;
-  esac
-fi
-
+MayWrite $makefile_builddir  &&  CreateMakefile_Builddir $makefile_builddir
 
 case "$proj_type" in
   lib )
     old_class_name=CSampleLibtestApplication
     old_proj_name=${proj_subtype}_sample_lib
-    CreateMakefile_Lib $makefile_name $proj_name '' "$proj_subtype" $proj_name ;;
+    ;;
   app )
     old_class_name=CSample`Capitalize ${proj_subtype}`Application
     old_proj_name=${proj_subtype}_sample
-    CreateMakefile_App $makefile_name $proj_name $proj_subdir $proj_subtype $proj_name $old_proj_name ;;
+    ;;
   * )
     Usage "Invalid project type:  \"$proj_type\"" ;;
 esac
 
-echo "Created a model makefile \"$makefile_name\"."
+if [ -r "$src/$stem/$proj_subdir/Makefile.$old_proj_name.$proj_type" ]; then
+    MayWrite $makefile_name  ||  exit 2
+    main_makefile_name=$makefile_name
+else
+    main_makefile_name=
+fi
+
+
 def_makefile=`dirname $makefile_name`/Makefile
 
 new_class_name=C`Capitalize ${proj_name}`Application
@@ -504,6 +505,10 @@ fi
 if test ! -d "$old_dir"; then
   echo "Warning: unable to locate sample code in $old_dir" >&2
   CreateMakefile_Meta $def_makefile $proj_name
+  if [ "$proj_type" = lib ]; then
+    CreateMakefile_Lib $makefile_name $proj_name '' "$proj_subtype" $proj_name
+    echo "Created a model makefile \"$makefile_name\"."
+  fi
   exit 0
 fi
 
@@ -513,7 +518,7 @@ CopySources()
   for input in $old_dir$1/*; do
     base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g"`
     case $base in
-      *~ | CVS | .svn | Makefile.${proj_name}.${proj_type})
+      *~ | CVS | .svn )
         continue ;; # skip
     esac
 
@@ -522,50 +527,53 @@ CopySources()
     fi
   
     output=$new_dir$1/$base
+    case "$output" in
+        */Makefile.*.app ) output2=`echo $output | sed -e 's/\.app$/_app/'` ;;
+        */Makefile.*.lib ) output2=`echo $output | sed -e 's/\.lib$/_lib/'` ;;
+        */Makefile.in    ) output2=`echo $output | sed -e 's/\.in$//'`      ;;
+        *                ) output2= ;;
+    esac
     if test -d $input; then
       mkdir $output
       CopySources $1/$base
       continue
-    elif test -f $output ; then
-      echo "\"$output\" already exists.  Do you want to override it?  [y/n]"
-      read answer
-      case "$answer" in
-        [Yy]*) ;;
-        *    ) continue ;;
-      esac
+    elif MayWrite $output  &&  \
+      ([ "${output2:-$main_makefile_name}" = "$main_makefile_name" ]  ||  \
+        MayWrite $output2); then
+      : # proceed
+    else
+      continue
     fi
   
     case $input in
         */Makefile.*.app)
             this_proj=`basename $input | sed -e 's/Makefile\.\(.*\)\.app$/\1/'`
             this_proj_name=`echo $this_proj | sed -e "s/$old_proj_name/$proj_name/g"` 
-            output=`echo $output | sed -e 's/\.app$/_app/'`
             case "$this_proj" in
                 sample_*)
                     this_subtype=`echo $this_proj | sed -e 's/^sample_//'` ;;
                 *)
                     this_subtype=$proj_subtype ;;
             esac
-            CreateMakefile_App $output $proj_name $proj_subdir$1 $this_subtype \
-                $this_proj_name $this_proj
+            CreateMakefile_App $output2 $proj_name $proj_subdir$1 \
+                $this_subtype $this_proj_name $this_proj
             ;;
         */Makefile.*.lib)
             this_proj=`basename $input | sed -e 's/Makefile\.\(.*\)\.lib$/\1/'`
             this_proj_name=`echo $this_proj | sed -e "s/$old_proj_name/$proj_name/g"` 
-            output=`echo $output | sed -e 's/\.lib$/_lib/'`
             case "$this_proj" in
                 sample_*)
                     this_subtype=`echo $this_proj | sed -e 's/^sample_//'` ;;
                 *)
                     this_subtype=$proj_subtype ;;
             esac
-            CreateMakefile_Lib $output $proj_name $proj_subdir$1 $this_subtype \
-                $this_proj_name
+            CreateMakefile_Lib $output2 $proj_name $proj_subdir$1 \
+                $this_subtype $this_proj_name
             ;;
         */Makefile.in)
             touch "$output"
-            output=$new_dir$1/Makefile
-            CreateMakefile_Meta $output $proj_name $proj_subdir$1 $old_proj_name
+            CreateMakefile_Meta $output2 $proj_name $proj_subdir$1 \
+                $old_proj_name
             test -r $new_dir$1/Makefile.builddir || \
                 ln -s ../Makefile.builddir $new_dir$1/Makefile.builddir
             ;;
@@ -577,8 +585,11 @@ CopySources()
     test -x $input  &&  chmod +x $output
     
     case $output in
-        */Makefile*) echo "Created a model makefile \"$output\"."    ;;
-        *)           echo "Created a model source file \"$output\"." ;;
+        */Makefile*)
+            echo "Created a model makefile \"$output\"."
+            [ -z "$output2" ] || echo "Created a model makefile \"$output2\"."
+            ;;
+        *)  echo "Created a model source file \"$output\"." ;;
     esac
   done
 }
