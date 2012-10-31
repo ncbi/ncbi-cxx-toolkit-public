@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Sergey Sikorskiy
+ * Author: Sergey Sikorskiy, Mikhail Zakharov
  *
  * File Description: 
  *      Unit tests for expresiion parsing and evaluation.
@@ -33,8 +33,12 @@
 
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbifile.hpp>
 #include <corelib/expr.hpp>
 #include <corelib/test_boost.hpp>
+
+//#include <corelib/ncbifile.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -254,5 +258,97 @@ BOOST_AUTO_TEST_CASE(AddSymbol)
 	// parser.AddSymbol("5", 1);
 	// 'void*' is not a pointer-to-object type
 	// parser.AddSymbol("4", (void*)0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Test string 2 bool function: checks if given directory exists
+bool DirectoryExists(const string& DirectoryName)
+{
+    CDir Directory(DirectoryName);
+
+    return Directory.Exists();
+}
+
+/// Boost test case checks parsing of string literals
+BOOST_AUTO_TEST_CASE(ParseString)
+{
+    CExprParser parser;
+
+    // String literal
+    parser.Parse("\"abc\"");
+    BOOST_CHECK_EQUAL(CExprValue::eSTRING, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL("abc", parser.GetResult().GetString());
+
+    // String literal concatenation by "+"
+    parser.Parse("\"abc\"+\"def\"");
+    BOOST_CHECK_EQUAL(CExprValue::eSTRING, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL("abcdef", parser.GetResult().GetString());
+
+    // All other operations on strings throw
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"-\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"*\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"/\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"\\\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"&&\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"||\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"^^\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("!\"abc\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("-\"abc\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("~\"abc\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"%\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"<\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\">\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"&\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"|\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"^\"def\""), CExprParserException);
+    BOOST_CHECK_THROW(parser.Parse("\"abc\"**\"def\""), CExprParserException);
+
+    // String to Bool function call
+    parser.AddSymbol("dir", DirectoryExists);
+    parser.Parse("dir(\"/var/log\")");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(true, parser.GetResult().GetBool());
+
+    parser.Parse("dir(\"/var/NotExistingDirectory\")");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(false, parser.GetResult().GetBool());
+
+    // String ==/!= check
+    string Dummy("SomeDummyString");
+
+    parser.AddSymbol("var1", Dummy);
+    parser.Parse("var1 == \"SomeDammyString\"");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(false, parser.GetResult().GetBool());
+
+    parser.Parse("var1 == \"SomeDummyString\"");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(true, parser.GetResult().GetBool());
+
+    parser.Parse("var1 != \"SomeDammyString\"");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(true, parser.GetResult().GetBool());
+
+    parser.Parse("var1 != \"SomeDummyString\"");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(false, parser.GetResult().GetBool());}
+
+/// Test special no-division mode
+BOOST_AUTO_TEST_CASE(NoDivisionMode)
+{
+    // Switch NoDivision mode
+    CExprParser parser(CExprParser::fNoDivision);
+
+    // String
+    parser.AddSymbol("/var/log", 2);
+    parser.Parse("/var/log");
+    BOOST_CHECK_EQUAL(CExprValue::eINT, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(2, parser.GetResult().GetInt());
+
+    // String
+    parser.AddSymbol("/var/log1", true);
+    parser.Parse("/var/log1");
+    BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
+    BOOST_CHECK_EQUAL(true, parser.GetResult().GetInt());
 }
 

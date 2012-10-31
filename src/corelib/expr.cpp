@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Sergey Sikorskiy
+ * Author: Sergey Sikorskiy, Mikhail Zakharov
  *
  * File Description: 
  *      Expression parsing and evaluation.
@@ -44,14 +44,26 @@ BEGIN_NCBI_SCOPE
 ////////////////////////////////////////////////////////////////////////////////
 CExprValue::CExprValue(void)
 : ival(0)
+, m_sval("")
 , m_Var(NULL)
 , m_Pos(0)
 , m_Tag()
 {
 }
 
+CExprValue::CExprValue(string value)
+: ival(0),
+m_sval(value),
+m_Var(NULL),
+m_Pos(0),
+m_Tag(eSTRING)
+{
+}
+
+
 CExprValue::CExprValue(const CExprValue& value)
 : ival(value.ival)
+, m_sval("")
 , m_Var(value.m_Var)
 , m_Pos(value.m_Pos)
 , m_Tag(value.m_Tag)
@@ -60,6 +72,7 @@ CExprValue::CExprValue(const CExprValue& value)
 
 CExprValue::CExprValue(Uint4 value)
 : ival(value)
+, m_sval("")
 , m_Var(NULL)
 , m_Pos(0)
 , m_Tag(eINT)
@@ -68,6 +81,7 @@ CExprValue::CExprValue(Uint4 value)
 
 CExprValue::CExprValue(Int4 value)
 : ival(value)
+, m_sval("")
 , m_Var(NULL)
 , m_Pos(0)
 , m_Tag(eINT)
@@ -76,6 +90,7 @@ CExprValue::CExprValue(Int4 value)
 
 CExprValue::CExprValue(Uint8 value)
 : ival(0)
+, m_sval("")
 , m_Var(NULL)
 , m_Pos(0)
 , m_Tag(eINT)
@@ -93,6 +108,7 @@ CExprValue::CExprValue(Uint8 value)
 
 CExprValue::CExprValue(Int8 value)
 : ival(value)
+, m_sval("")
 , m_Var(NULL)
 , m_Pos(0)
 , m_Tag(eINT)
@@ -101,6 +117,7 @@ CExprValue::CExprValue(Int8 value)
 
 CExprValue::CExprValue(double value)
 : fval(value)
+, m_sval("")
 , m_Var(NULL)
 , m_Pos(0)
 , m_Tag(eFLOAT)
@@ -109,6 +126,7 @@ CExprValue::CExprValue(double value)
 
 CExprValue::CExprValue(bool value)
 : bval(value)
+, m_sval("")
 , m_Var(NULL)
 , m_Pos(0)
 , m_Tag(eBOOL)
@@ -183,6 +201,15 @@ CExprSymbol::CExprSymbol(const char* name, double value)
 {
 }
 
+CExprSymbol::CExprSymbol(const char* name, string value)
+: m_Tag(eVARIABLE)
+, m_IntFunc1(NULL)
+, m_Val(value)
+, m_Name(name)
+, m_Next(NULL)
+{
+}
+
 CExprSymbol::CExprSymbol(const char* name, FIntFunc1 value)
 : m_Tag(eIFUNC1)
 , m_IntFunc1(value)
@@ -231,6 +258,15 @@ CExprSymbol::CExprSymbol(const char* name, FBoolFunc1 value)
 CExprSymbol::CExprSymbol(const char* name, FBoolFunc2 value)
 : m_Tag(eBFUNC2)
 , m_BoolFunc2(value)
+, m_Val((Int8)0)
+, m_Name(name)
+, m_Next(NULL)
+{
+}
+
+CExprSymbol::CExprSymbol(const char* name, FStringFunc1 value)
+: m_Tag(eSFUNC1)
+, m_StringFunc1(value)
 , m_Val((Int8)0)
 , m_Name(name)
 , m_Next(NULL)
@@ -374,11 +410,11 @@ void CExprParserException::x_Assign(const CException& src)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-CExprParser::CExprParser(CExprParser::EAutoVar auto_var)
+CExprParser::CExprParser(CExprParser::TParserFlags ParserFlags)
 : m_Buf(NULL)
 , m_Pos(0)
 , m_TmpVarCount(0)
-, m_AutoCreateVariable(auto_var)
+, m_ParserFlags(ParserFlags)
 {
     memset(hash_table, 0, sizeof(hash_table));
 
@@ -508,6 +544,8 @@ CExprParser::Scan(bool operand)
       case '*':
         return IfLongest2ElseChar('*', '=', eSETPOW, ePOW, eSETMUL, eMUL);
       case '/':
+        if(NoDivision())
+            goto l_SkipDivision;            // goto to default is justified - complete code refactoring otherwise (MZ)
         return IfChar('=', eSETDIV, eDIV);
       case '%':
         return IfChar('=', eSETMOD, eMOD);
@@ -568,7 +606,7 @@ CExprParser::Scan(bool operand)
 #if SIZEOF_LONG == 8
             ival = strtoul(m_Buf+m_Pos-1, &ipos, 0); 
 #else
-            ival = strtoull(m_Buf+m_Pos-1, &ipos, 0); 
+            ival = strtoull(m_Buf+m_Pos-1, &ipos, 0);
 #endif
             ierr = errno;
 #endif
@@ -602,11 +640,31 @@ CExprParser::Scan(bool operand)
             return eOPERAND;
         }
 
+      case '"':             // String literal case
+        {
+            string StringConstant(m_Buf+m_Pos);     // Not including the \"
+            size_t pos=StringConstant.find('"');
+
+            StringConstant = StringConstant.substr(0, pos);
+
+            m_VStack[m_v_sp].SetType(CExprValue::eSTRING);
+
+            m_VStack[m_v_sp].m_sval = StringConstant;     //assign string
+            m_Pos += pos+1;                               // move m_Pos
+
+            m_VStack[m_v_sp].m_Pos = m_Pos;
+            m_VStack[m_v_sp].m_Var = NULL;
+            m_v_sp++;
+
+            return eOPERAND;
+        }
+
       default:
+      l_SkipDivision:
         m_Pos -= 1;
         np = sym_name;
 
-        while (isalnum(m_Buf[m_Pos]) || m_Buf[m_Pos] == '$' || m_Buf[m_Pos] == '_') {
+        while (isalnum(m_Buf[m_Pos]) || m_Buf[m_Pos] == '$' || m_Buf[m_Pos] == '_' || (m_Buf[m_Pos]=='/' && NoDivision())) {
             *np++ = m_Buf[m_Pos++];
         }
 
@@ -757,7 +815,9 @@ void CExprParser::Parse(const char* str)
               case eSETADD:
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival += m_VStack[m_v_sp-1].ival;
-                } else { 
+                } else if(m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING && m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING) {
+                    m_VStack[m_v_sp-2].m_sval += m_VStack[m_v_sp-1].m_sval;     // string concatenation
+                } else {
                     m_VStack[m_v_sp-2].fval = 
                         m_VStack[m_v_sp-2].GetDouble() + m_VStack[m_v_sp-1].GetDouble();
                     m_VStack[m_v_sp-2].SetType(CExprValue::eFLOAT);
@@ -773,6 +833,8 @@ void CExprParser::Parse(const char* str)
                 break;
               case eSUB:
               case eSETSUB:
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Can not subtract string literals");
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival -= m_VStack[m_v_sp-1].ival;
                 } else { 
@@ -792,7 +854,10 @@ void CExprParser::Parse(const char* str)
                 break;
               case eMUL:
               case eSETMUL:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Can not mupltiply string literals");
+
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival *= m_VStack[m_v_sp-1].ival;
                 } else { 
                     m_VStack[m_v_sp-2].fval = 
@@ -810,13 +875,16 @@ void CExprParser::Parse(const char* str)
                 break;
               case eDIV:
               case eSETDIV:
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Can not divide string literals");
+
                 if (m_VStack[m_v_sp-1].GetDouble() == 0.0) {
                     ReportError(m_VStack[m_v_sp-2].m_Pos, "Division by zero");
                     return;
                 }
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival /= m_VStack[m_v_sp-1].ival;
-                } else { 
+                } else {
                     m_VStack[m_v_sp-2].fval = 
                         m_VStack[m_v_sp-2].GetDouble() / m_VStack[m_v_sp-1].GetDouble();
                     m_VStack[m_v_sp-2].SetType(CExprValue::eFLOAT);
@@ -829,6 +897,9 @@ void CExprParser::Parse(const char* str)
                 break;
               case eMOD:
               case eSETMOD:
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Can not divide string literals");
+
                 if (m_VStack[m_v_sp-1].GetDouble() == 0.0) {
                     ReportError(m_VStack[m_v_sp-2].m_Pos, "Division by zero");
                     return;
@@ -848,6 +919,9 @@ void CExprParser::Parse(const char* str)
                 break;
               case ePOW:
               case eSETPOW:
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival = 
                         (Int8)pow((double)m_VStack[m_v_sp-2].ival, 
@@ -865,7 +939,10 @@ void CExprParser::Parse(const char* str)
                 break;                
               case eAND:
               case eSETAND:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival &= m_VStack[m_v_sp-1].ival;
                 } else if (m_VStack[m_v_sp-2].GetType() == CExprValue::eBOOL) { 
                     m_VStack[m_v_sp-2].bval = 
@@ -883,7 +960,10 @@ void CExprParser::Parse(const char* str)
                 break;
               case eOR:
               case eSETOR:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival |= m_VStack[m_v_sp-1].ival;
                 } else if (m_VStack[m_v_sp-2].GetType() == CExprValue::eBOOL) { 
                     m_VStack[m_v_sp-2].bval = 
@@ -901,7 +981,10 @@ void CExprParser::Parse(const char* str)
                 break;
               case eXOR:
               case eSETXOR:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival ^= m_VStack[m_v_sp-1].ival;
                 } else if (m_VStack[m_v_sp-2].GetType() == CExprValue::eBOOL) { 
                     m_VStack[m_v_sp-2].bval = 
@@ -919,7 +1002,10 @@ void CExprParser::Parse(const char* str)
                 break;
               case eASL:
               case eSETASL:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival <<= m_VStack[m_v_sp-1].ival;
                 } else { 
                     m_VStack[m_v_sp-2].ival = 
@@ -934,7 +1020,10 @@ void CExprParser::Parse(const char* str)
                 break;
               case eASR:
               case eSETASR:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival >>= m_VStack[m_v_sp-1].ival;
                 } else { 
                     m_VStack[m_v_sp-2].ival = 
@@ -949,7 +1038,10 @@ void CExprParser::Parse(const char* str)
                 break;
               case eLSR:
               case eSETLSR:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].ival = 
                         (Uint8)m_VStack[m_v_sp-2].ival >> m_VStack[m_v_sp-1].ival;
                 } else { 
@@ -964,13 +1056,17 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;
               case eEQ:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].ival == m_VStack[m_v_sp-1].ival;
                     m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
                 } else if (m_VStack[m_v_sp-2].GetType() == CExprValue::eBOOL) { 
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].bval == m_VStack[m_v_sp-1].GetBool();
+                } else if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING && m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING) {
+                    m_VStack[m_v_sp-2].bval = 
+                        m_VStack[m_v_sp-2].m_sval == m_VStack[m_v_sp-1].GetString();
+                    m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
                 } else { 
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].GetDouble() == m_VStack[m_v_sp-1].GetDouble();
@@ -987,7 +1083,11 @@ void CExprParser::Parse(const char* str)
                 } else if (m_VStack[m_v_sp-2].GetType() == CExprValue::eBOOL) { 
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].bval != m_VStack[m_v_sp-1].GetBool();
-                } else { 
+                } else if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING && m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING) {
+                    m_VStack[m_v_sp-2].bval = 
+                        m_VStack[m_v_sp-2].m_sval != m_VStack[m_v_sp-1].GetString();
+                    m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
+                } else {
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].GetDouble() != m_VStack[m_v_sp-1].GetDouble();
                     m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
@@ -996,6 +1096,9 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;                
               case eGT:
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].ival > m_VStack[m_v_sp-1].ival;
@@ -1012,7 +1115,10 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;                
               case eGE:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].ival >= m_VStack[m_v_sp-1].ival;
                     m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
@@ -1028,6 +1134,9 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;                
               case eLT:
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].ival < m_VStack[m_v_sp-1].ival;
@@ -1044,7 +1153,10 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;                
               case eLE:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT && m_VStack[m_v_sp-2].GetType() == CExprValue::eINT) {
                     m_VStack[m_v_sp-2].bval = 
                         m_VStack[m_v_sp-2].ival <= m_VStack[m_v_sp-1].ival;
                     m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
@@ -1060,7 +1172,10 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;                
               case ePREINC:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT) { 
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT) { 
                     m_VStack[m_v_sp-1].ival += 1;
                 } else { 
                     m_VStack[m_v_sp-1].fval += 1;
@@ -1078,7 +1193,10 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;
               case ePOSTINC:
-                if (m_VStack[m_v_sp-1].m_Var == NULL) { 
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+               if (m_VStack[m_v_sp-1].m_Var == NULL) { 
                     ReportError(m_VStack[m_v_sp-1].m_Pos, "Varaibale expected");
                     return;
                 } 
@@ -1090,7 +1208,10 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;
               case ePOSTDEC:
-                if (m_VStack[m_v_sp-1].m_Var == NULL) { 
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+               if (m_VStack[m_v_sp-1].m_Var == NULL) { 
                     ReportError(m_VStack[m_v_sp-1].m_Pos, "Varaibale expected");
                     return;
                 } 
@@ -1103,7 +1224,7 @@ void CExprParser::Parse(const char* str)
                 break;
               case eSET:
                 if (m_VStack[m_v_sp-2].m_Var == NULL) { 
-                    ReportError(m_VStack[m_v_sp-2].m_Pos, "Variabale expected");
+                    ReportError(m_VStack[m_v_sp-2].m_Pos, "Variable expected");
                     return;
                 } else { 
                     m_VStack[m_v_sp-2]=m_VStack[m_v_sp-2].m_Var->m_Val=m_VStack[m_v_sp-1];
@@ -1112,7 +1233,10 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;
               case eNOT:
-                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT) { 
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT) { 
                     m_VStack[m_v_sp-1].ival = !m_VStack[m_v_sp-1].ival;
                 } else if (m_VStack[m_v_sp-1].GetType() == CExprValue::eBOOL) { 
                     m_VStack[m_v_sp-1].bval = !m_VStack[m_v_sp-1].bval;
@@ -1123,6 +1247,9 @@ void CExprParser::Parse(const char* str)
                 m_VStack[m_v_sp-1].m_Var = NULL;
                 break;
               case eMINUS:
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT) { 
                     m_VStack[m_v_sp-1].ival = -m_VStack[m_v_sp-1].ival;
                 } else { 
@@ -1130,9 +1257,15 @@ void CExprParser::Parse(const char* str)
                 }
                 // no break
               case ePLUS:
-                m_VStack[m_v_sp-1].m_Var = NULL;
+                if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
+               m_VStack[m_v_sp-1].m_Var = NULL;
                 break;
               case eCOM:
+               if (m_VStack[m_v_sp-1].GetType() == CExprValue::eSTRING || m_VStack[m_v_sp-2].GetType() == CExprValue::eSTRING)
+                    ReportError("Illegal operation on string literals");
+
                 if (m_VStack[m_v_sp-1].GetType() == CExprValue::eINT) { 
                     m_VStack[m_v_sp-1].ival = ~m_VStack[m_v_sp-1].ival;
                 } else { 
@@ -1225,6 +1358,18 @@ void CExprParser::Parse(const char* str)
                         m_VStack[m_v_sp-3].SetType(CExprValue::eBOOL);
                         m_v_sp -= 2;
                         break;
+                    case CExprSymbol::eSFUNC1:
+                        if (n_args != 1) { 
+                            ReportError(m_VStack[m_v_sp-n_args-1].m_Pos, 
+                                "Function should take one argument");
+                            return;
+                        }
+                        m_VStack[m_v_sp-2].bval =
+                        (*sym->m_StringFunc1)(m_VStack[m_v_sp-1].GetString());
+                        m_VStack[m_v_sp-2].SetType(CExprValue::eBOOL);
+                        m_v_sp -= 1;
+                        break;
+;
                     default: 
                         ReportError("Invalid expression");
                     }
@@ -1240,7 +1385,7 @@ void CExprParser::Parse(const char* str)
                 goto next_token;
 
               default:
-                ReportError("synctax ReportError");
+                ReportError("syntax ReportError");
             }
         }
 
