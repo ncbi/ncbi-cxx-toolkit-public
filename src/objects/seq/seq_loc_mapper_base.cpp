@@ -2411,6 +2411,7 @@ void CSeq_loc_Mapper_Base::x_OptimizeSeq_loc(CRef<CSeq_loc>& loc) const
 // Map a single range. Use mappings[cvt_idx] for mapping.
 // last_src_to indicates were the previous mapping has ended (this may
 // be left or right end depending on the source strand).
+// For the first mapping last_src_to must be set to kInvalidSeqPos.
 bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
                                           bool              is_set_strand,
                                           ENa_strand        src_strand,
@@ -2443,7 +2444,8 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         left = cvt.m_Src_from;
         if ( !reverse ) {
             // Partial if there's a gap between left and last_src_to.
-            partial_left = left != *last_src_to + 1;
+            partial_left = (*last_src_to == kInvalidSeqPos)  ||
+                (left != *last_src_to + 1);
         }
         else {
             // Partial if there's gap between left and next cvt. right end.
@@ -2461,7 +2463,8 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         }
         else {
             // Partial if there's gap between right and last_src_to.
-            partial_right = right + 1 != *last_src_to;
+            partial_right = (*last_src_to == kInvalidSeqPos)  ||
+                (right + 1 != *last_src_to);
         }
     }
     if (right < left) {
@@ -2643,7 +2646,7 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
     // The last mapped position (in biological order). Required to check
     // if some part of the source location did not match any mapping range
     // and was dropped.
-    TSeqPos last_src_to = 0;
+    TSeqPos last_src_to = kInvalidSeqPos;
     // Save offset from the graph start to restore it later.
     TSeqPos graph_offset = m_GraphRanges ? m_GraphRanges->GetOffset() : 0;
     // Map through each mapping. If some part of the original range matches
