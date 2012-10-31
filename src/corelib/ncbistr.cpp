@@ -3308,7 +3308,7 @@ string NStr::CParse(const CTempString& str, EQuoted quoted)
 }
 
 
-string NStr::XmlEncode(const CTempString& str)
+string NStr::XmlEncode(const CTempString& str, EXmlEncode flags)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-predefined-ent
 {
     string result;
@@ -3332,14 +3332,19 @@ string NStr::XmlEncode(const CTempString& str)
             result.append("&quot;");
             break;
         case '-':
-// translate also double hyphen - to allow to use the result in comments
+            if (flags == eXmlEnc_CommentSafe) {
+// translate double hyphen and ending hyphen
 // http://www.w3.org/TR/xml11/#sec-comments
-            if (i+1 < str.size() && str[i+1] == '-') {
-                ++i;
-                result.append("&#x2d;&#x2d;");
-            } else {
-                result.append(1, c);
+                if (i+1 == str.size()) {
+                    result.append("&#x2d;");
+                    break;
+                } else if (str[i+1] == '-') {
+                    ++i;
+                    result.append(1, c).append("&#x2d;");
+                    break;
+                }
             }
+            result.append(1, c);
             break;
         default:
             if ((unsigned int)(c) < 0x20) {
