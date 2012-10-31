@@ -1,6 +1,7 @@
 # $Id$
 
-ASN_DEP = xnetblast blastdb taxon1
+ASN_DEP = xnetblast blastdb scoremat taxon1
+DLL_LIB = seqdb gene_info
 
 ###  BASIC PROJECT SETTINGS
 LIB = align_format
