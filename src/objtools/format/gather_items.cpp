@@ -812,6 +812,10 @@ void CFlatGatherer::x_RemoveExcessNewlines(void) const
     // between each set of comments, we only want at most one line, so we compare the end
     // of one comment with the beginning of the next and trim the first as
     // necessary
+    if( m_Comments.empty() ) {
+        return;
+    }
+
     for( size_t idx = 0; idx < (m_Comments.size() - 1); ++idx ) { // The "-1" is because the last comment has no comment after it
         CCommentItem & comment = *m_Comments[idx];
         const CCommentItem & next_comment = *m_Comments[idx+1];
