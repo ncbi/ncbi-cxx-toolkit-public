@@ -1585,7 +1585,6 @@ START_SUBTYPE(modified_base)
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(experiment);
-    ADD_QUAL(frequency);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);

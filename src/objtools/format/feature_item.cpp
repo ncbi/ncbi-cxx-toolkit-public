@@ -4606,9 +4606,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     // DO_QUAL(cons_splice);
     DO_QUAL(direction);
     DO_QUAL(function);
-    if( ! cfg.FrequencyToNote() ) {
-        DO_QUAL(frequency);
-    }
+    DO_QUAL(frequency);
     DO_QUAL(EC_number);
     x_FormatQual(eFQ_gene_map, "map", qvec);
     // In certain modes, cyt_map, gen_map, and rad_map are 
@@ -6321,7 +6319,6 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     if( ! GetContext()->Config().FrequencyToNote() ) {
         DO_QUAL(frequency);
     }
-
     DO_QUAL(germline);
     DO_QUAL(rearranged);
     DO_QUAL(transgenic);
