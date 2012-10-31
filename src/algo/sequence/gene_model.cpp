@@ -1461,14 +1461,15 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             }
             b = e;
         }
-        _ASSERT( b == strprot.size() );
+        _ASSERT( -2 <= frame && frame <= 0 );
+        _ASSERT( b == strprot.size() - (frame==0?0:1) );
 
     while (!seq_inst.GetExt().GetDelta().Get().back()->GetLiteral().IsSetSeq_data()) {
         skip_3_prime += seq_inst.GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
         seq_inst.SetExt().SetDelta().Set().pop_back();
     }
 
-    seq_inst.SetLength(strprot.size()-skip_5_prime-skip_3_prime);
+    seq_inst.SetLength(b-skip_5_prime-skip_3_prime);
 
     if (seq_inst.SetExt().SetDelta().Set().size() == 1) {
         seq_inst.SetRepr(CSeq_inst::eRepr_raw);
@@ -1494,7 +1495,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
     CSeqVector vec(prot_h, CBioseq_Handle::eCoding_Iupac);
     string result;
     vec.GetSeqData(0, vec.size(), result);
-    _ASSERT( strprot.size()-skip_5_prime-skip_3_prime==result.size() );
+    _ASSERT( b-skip_5_prime-skip_3_prime==result.size() );
 #endif
     
     seqs.SetSeq_set().push_back(entry);

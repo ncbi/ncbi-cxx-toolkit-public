@@ -1290,6 +1290,82 @@ Seq-align ::= { \
     }}
 }
 
+BOOST_AUTO_TEST_CASE(TestCasePartialCDS)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id local id 386076534, \
+    genomic-id gi 183579259, \
+    genomic-strand minus, \
+    product-type transcript, \
+    exons { \
+      { \
+        product-start nucpos 0, \
+        product-end nucpos 150, \
+        genomic-start 132443, \
+        genomic-end 132593 \
+      }, \
+      { \
+        product-start nucpos 151, \
+        product-end nucpos 381, \
+        genomic-start 132090, \
+        genomic-end 132320, \
+        partial TRUE \
+      } \
+    }, \
+    product-length 382 \
+  } \
+} \
+Seq-feat ::= { \
+              data cdregion { \
+                code { \
+                  id 1 \
+                } \
+              }, \
+              product whole local str \"PROT_10_36\", \
+              location int { \
+                from 59, \
+                to 381, \
+                id local id 386076534, \
+                fuzz-to lim gt \
+              } \
+            } \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    CSeq_align align;
+    *istr >> align;
+    CSeq_feat feat;
+    *istr >> feat;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    CBioseq_set& seqs = seq_entry->SetSet();
+    seqs.SetSeq_set();
+    CSeq_annot annot;
+    annot.SetData().SetFtable();
+
+    int flags = (CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
+                       CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna;
+    feat_gen.SetFlags(flags);
+    feat_gen.ConvertAlignToAnnot(align, annot, seqs, 0, &feat);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
 
