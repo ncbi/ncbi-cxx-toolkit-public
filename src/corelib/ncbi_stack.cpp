@@ -56,6 +56,13 @@
 BEGIN_NCBI_SCOPE
 
 
+string CStackTrace::SStackFrameInfo::AsString(void) const
+{
+    return module + " " + file + ":" + NStr::UInt8ToString(line) + " " + func +
+        " offset=0x" + NStr::UInt8ToString(offs, 0, 16);
+}
+
+
 CStackTrace::CStackTrace(const string& prefix)
     : m_Impl(new CStackTraceImpl),
       m_Prefix(prefix)
@@ -105,13 +112,7 @@ void CStackTrace::Write(CNcbiOstream& os) const
     }
 
     ITERATE(TStack, it, m_Stack) {
-        os << m_Prefix
-           << it->module << " "
-           << it->file << ":"
-           << it->line << " "
-           << it->func << " offset=0x"
-           << NStr::UInt8ToString(it->offs, 0, 16)
-           << endl;
+        os << m_Prefix << it->AsString() << endl;
     }
 }
 

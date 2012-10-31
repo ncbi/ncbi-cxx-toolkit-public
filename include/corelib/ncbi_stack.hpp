@@ -57,6 +57,18 @@ public:
 
         SStackFrameInfo()
             : offs(0), line(0) {}
+
+        bool operator ==(const SStackFrameInfo& other) const
+        {
+            return func == other.func  &&
+                file == other.file  &&
+                module == other.module  &&
+                offs == other.offs  &&
+                line == other.line;
+        }
+
+        string AsString(void) const;
+
     };
     typedef list<SStackFrameInfo> TStack;
 
