@@ -110,6 +110,61 @@ s_JoinNumbers( const CUser_field_Base::C_Data::TInts & ints, const string & sepa
     return CNcbiOstrstreamToString( result );
 }
 
+namespace {
+    struct SDBLinkLineLessThan {
+        bool operator()(const string & line1, const string & line2 ) {
+            const int line1_prefix_order = x_GetPrefixOrder(line1);
+            const int line2_prefix_order = x_GetPrefixOrder(line2);
+            if( line1_prefix_order != line2_prefix_order ) {
+                return (line1_prefix_order < line2_prefix_order);
+            }
+
+            // fall back on traditional sorting
+            return line1 < line2;
+        }
+
+    private:
+
+        int x_GetPrefixOrder(const string & line)
+        {
+            // this is what's returned if we encounter any problems
+            const static int kDefaultPrefixOrder = kMax_Int; // last
+
+            // first, extract prefix
+            string::size_type colon_pos = line.find(':');
+            if( colon_pos == string::npos ) {
+                return kDefaultPrefixOrder;
+            }
+
+            const string sPrefix = line.substr(0, colon_pos);
+
+            // translate prefix to ordering
+            typedef SStaticPair<const char *, int>  TPrefixElem;
+            static const TPrefixElem sc_prefix_map[] = {
+                // we skip numbers just to make it easier to insert things in between.
+                // the exact number used and the amount skipped doesn't matter, as long
+                // as the smallest is first, largest is last, etc.
+                { "Assembly", 20 },
+                { "BioProject", 10 },
+                { "BioSample", 30 },
+                { "ProbeDB", 40 },
+                { "Sequence Read Archive", 50 },
+                { "Trace Assembly Archive", 60 }
+            };
+            typedef CStaticArrayMap<const char *, int, PNocase_CStr> TPrefixMap;
+            DEFINE_STATIC_ARRAY_MAP(TPrefixMap, sc_PrefixMap, sc_prefix_map);
+
+            TPrefixMap::const_iterator find_iter = sc_PrefixMap.find(sPrefix.c_str());
+            if( find_iter == sc_PrefixMap.end() ) {
+                // unknown prefix type
+                return kDefaultPrefixOrder;
+            }
+            
+            return find_iter->second;
+        }
+    };
+}
+
 void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 {
     const bool bHtml = ctx.Config().DoHTML();
@@ -147,6 +202,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 
     const static string kStrLinkBaseBioProj = "http://www.ncbi.nlm.nih.gov/bioproject?term=";
     const static string kStrLinkBaseBioSample = "http://www.ncbi.nlm.nih.gov/biosample?term=";
+    const static string kStrLinkBaseAssembly = "http://www.ncbi.nlm.nih.gov/assembly/";
     const static string kStrLinkBaseSRA = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=";
 
     // process DBLink
@@ -174,6 +230,12 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                         if( bHtml ) {
                             TryToSanitizeHtml( dblinkLines.back() );
                         }
+                    } else if( NStr::EqualNocase(label, "Assembly") ) {
+                        dblinkLines.push_back( "Assembly: " + 
+                            s_JoinLinkableStrs( strs, kStrLinkBaseAssembly, bHtml ) );
+                        if( bHtml ) {
+                            TryToSanitizeHtml( dblinkLines.back() );
+                        }
                     } else if( NStr::EqualNocase(label, "ProbeDB") ) {
                         dblinkLines.push_back( "ProbeDB: " + 
                             NStr::Join( strs, ", " ) );
@@ -198,7 +260,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                 }
             }
         }
-        sort( dblinkLines.begin(), dblinkLines.end() );
+        sort( dblinkLines.begin(), dblinkLines.end(), SDBLinkLineLessThan() );
         copy( dblinkLines.begin(), dblinkLines.end(), back_inserter(m_DBLinkLines) );
     }
 }
