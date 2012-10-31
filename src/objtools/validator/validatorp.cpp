@@ -586,7 +586,6 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_INST_TpaAssmeblyProblem,
     eErr_SEQ_INST_SeqLocLength,
     eErr_SEQ_INST_CompleteTitleProblem,
-    eErr_SEQ_INST_CompleteCircleProblem,
     eErr_SEQ_INST_BadHTGSeq,
     eErr_SEQ_INST_OverlappingDeltaRange,
     eErr_SEQ_INST_LeadingX,
