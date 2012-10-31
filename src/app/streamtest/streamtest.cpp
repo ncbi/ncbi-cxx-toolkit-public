@@ -159,12 +159,12 @@ void CStreamTestApp::Init()
                                         "agpwrite",
                                         "cleanup",
                                         "defline",
+                                        "deprecated-title",
                                         "eutils",
                                         "fasta",
                                         "gene-overlap",
                                         "macrotest",
                                         "prosplign",
-                                        "title",
                                         "unindexed-defline",
                                         "validate"));
     
@@ -264,6 +264,9 @@ CStreamTestApp::GetProcess(
     if ( testcase == "defline" ) {
         pProcess = new CDeflineProcess (true);
     }
+    if ( testcase == "deprecated-title" ) {
+        pProcess = new CTitleProcess;
+    }
     if ( testcase == "eutils" ) {
         pProcess = new CEUtilsProcess;
     }
@@ -278,9 +281,6 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "prosplign" ) {
         pProcess = new CProsplignProcess;
-    }
-    if ( testcase == "title" ) {
-        pProcess = new CTitleProcess;
     }
     if ( testcase == "unindexed-defline" ) {
         pProcess = new CDeflineProcess;
