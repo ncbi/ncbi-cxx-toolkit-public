@@ -104,7 +104,7 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     if (m_LogFlag != params.is_log) {
         s_AddSeparator(what_changed);
         what_changed += "\"log\" [" + NStr::BoolToString(m_LogFlag) +
-                        " " + NStr::BoolToString(params.is_log) + "]";
+                        ", " + NStr::BoolToString(params.is_log) + "]";
     }
     m_LogFlag = params.is_log;
 
@@ -113,7 +113,7 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         s_AddSeparator(what_changed);
         what_changed += "\"log_batch_each_job\" [" +
                         NStr::BoolToString(m_LogBatchEachJobFlag) +
-                        " " + NStr::BoolToString(new_val) + "]";
+                        ", " + NStr::BoolToString(new_val) + "]";
     }
     m_LogBatchEachJobFlag = new_val;
 
@@ -122,7 +122,7 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         s_AddSeparator(what_changed);
         what_changed += "\"log_notification_thread\" [" +
                         NStr::BoolToString(m_LogNotificationThreadFlag) +
-                        " " + NStr::BoolToString(new_val) + "]";
+                        ", " + NStr::BoolToString(new_val) + "]";
     }
     m_LogNotificationThreadFlag = new_val;
 
@@ -131,7 +131,7 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         s_AddSeparator(what_changed);
         what_changed += "\"log_cleaning_thread\" [" +
                         NStr::BoolToString(m_LogCleaningThreadFlag) +
-                        " " + NStr::BoolToString(new_val) + "]";
+                        ", " + NStr::BoolToString(new_val) + "]";
     }
     m_LogCleaningThreadFlag = new_val;
 
@@ -140,7 +140,7 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         s_AddSeparator(what_changed);
         what_changed += "\"log_execution_watcher_thread\" [" +
                         NStr::BoolToString(m_LogExecutionWatcherThreadFlag) +
-                        " " + NStr::BoolToString(new_val) + "]";
+                        ", " + NStr::BoolToString(new_val) + "]";
     }
     m_LogExecutionWatcherThreadFlag = new_val;
 
@@ -149,7 +149,7 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         s_AddSeparator(what_changed);
         what_changed += "\"log_statistics_thread\" [" +
                         NStr::BoolToString(m_LogStatisticsThreadFlag) +
-                        " " + NStr::BoolToString(new_val) + "]";
+                        ", " + NStr::BoolToString(new_val) + "]";
     }
     m_LogStatisticsThreadFlag = new_val;
 
