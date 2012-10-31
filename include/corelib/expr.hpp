@@ -27,7 +27,7 @@
  *
  * ===========================================================================
  *
- * Author: Sergey Sikorskiy
+ * Author: Sergey Sikorskiy, Mikhail Zakharov
  *
  * File Description: 
  *      Expression parsing and evaluation.
@@ -54,28 +54,31 @@ BEGIN_NCBI_SCOPE
 ////////////////////////////////////////////////////////////////////////////////
 class CExprSymbol;
 
-class NCBI_XNCBI_EXPORT CExprValue 
+class NCBI_XNCBI_EXPORT CExprValue
 { 
 public:
     CExprValue(void);
-	template <typename VT> CExprValue(VT* value)
-	{
-		// If you got here, you are using wrong data type.
-		value->please_use_Int8_double_bool_instead();
-	}
-	CExprValue(Uint4 value);
-	CExprValue(Int4 value);
-	CExprValue(Uint8 value);
-	CExprValue(Int8 value);
-	CExprValue(double value);
-	CExprValue(bool value);
+    template <typename VT> CExprValue(VT* value)
+    {
+        // If you got here, you are using wrong data type.
+        value->please_use_Int8_double_bool_instead();
+    }
+    CExprValue(Uint4 value);
+    CExprValue(Int4 value);
+    CExprValue(Uint8 value);
+    CExprValue(Int8 value);
+    CExprValue(double value);
+    CExprValue(bool value);
+    CExprValue(string value);
     CExprValue(const CExprValue& value);
 
 public:
-    enum EValue { 
-        eINT, 
+    /// Value type.
+    enum EValue {
+        eINT,
         eFLOAT,
-        eBOOL
+        eBOOL,
+        eSTRING
     };
 
 public:
@@ -88,6 +91,25 @@ public:
         m_Tag = type;
     }
 
+    string GetString(void) const
+    {
+        string str;
+
+        switch (m_Tag) {
+            case eINT:
+                NStr::NumericToString(str, ival);
+                return str;
+            case eBOOL:
+                return bval ? "true" : "false";
+            case eSTRING:
+                return m_sval;
+            default:
+                break;
+        }
+
+        return NStr::DoubleToString(fval); 
+    }
+
     double GetDouble(void) const
     { 
         switch (m_Tag) {
@@ -95,6 +117,8 @@ public:
                 return static_cast<double>(ival);
             case eBOOL:
                 return bval ? 1.0 : 0.0;
+            case eSTRING:
+                return 0;
             default:
                 break;
         }
@@ -109,6 +133,8 @@ public:
                 return static_cast<Int8>(fval);
             case eBOOL:
                 return bval ? 1 : 0;
+            case eSTRING:
+                return 0;
             default:
                 break;
         }
@@ -123,6 +149,8 @@ public:
                 return ival != 0;
             case eFLOAT:
                 return fval != 0.0;
+            case eSTRING:
+                return false;
             default:
                 break;
         }
@@ -136,6 +164,7 @@ public:
         double  fval;
         bool    bval;
     };
+    string m_sval;
 
     CExprSymbol*    m_Var;
     int             m_Pos;
@@ -154,25 +183,29 @@ public:
     typedef double  (*FFloatFunc2)  (double, double);
     typedef bool    (*FBoolFunc1)   (bool);
     typedef bool    (*FBoolFunc2)   (bool, bool);
+    typedef bool    (*FStringFunc1)  (const string&);
 
     CExprSymbol(void);
-	template <typename VT> CExprSymbol(const char* name, VT* value)
-	{
-		// If you got here, you are using wrong data type.
-		value->please_use_Int8_double_bool_instead();
-	}
+    template <typename VT> CExprSymbol(const char* name, VT* value)
+    {
+        // If you got here, you are using wrong data type.
+        value->please_use_Int8_double_bool_instead();
+    }
     CExprSymbol(const char* name, Uint4 value);
     CExprSymbol(const char* name, Int4 value);
     CExprSymbol(const char* name, Uint8 value);
     CExprSymbol(const char* name, Int8 value);
     CExprSymbol(const char* name, bool value);
     CExprSymbol(const char* name, double value);
-	CExprSymbol(const char* name, FIntFunc1 value);
-	CExprSymbol(const char* name, FIntFunc2 value);
-	CExprSymbol(const char* name, FFloatFunc1 value);
-	CExprSymbol(const char* name, FFloatFunc2 value);
-	CExprSymbol(const char* name, FBoolFunc1 value);
-	CExprSymbol(const char* name, FBoolFunc2 value);
+    CExprSymbol(const char* name, string value);
+    CExprSymbol(const char* name, FIntFunc1 value);
+    CExprSymbol(const char* name, FIntFunc2 value);
+    CExprSymbol(const char* name, FFloatFunc1 value);
+    CExprSymbol(const char* name, FFloatFunc2 value);
+    CExprSymbol(const char* name, FBoolFunc1 value);
+    CExprSymbol(const char* name, FBoolFunc2 value);
+    CExprSymbol(const char* name, FStringFunc1 value);
+
     ~CExprSymbol(void);
 
 
@@ -184,7 +217,8 @@ public:
         eFFUNC1, 
         eFFUNC2,
         eBFUNC1, 
-        eBFUNC2 
+        eBFUNC2,
+        eSFUNC1
     };
 
 public:
@@ -196,12 +230,13 @@ public:
         FFloatFunc2 m_FloatFunc2;
         FBoolFunc1  m_BoolFunc1;
         FBoolFunc2  m_BoolFunc2;
+        FStringFunc1 m_StringFunc1;
     };
     CExprValue      m_Val;
     string          m_Name;
     CExprSymbol*    m_Next;
 };
-	       
+           
 ////////////////////////////////////////////////////////////////////////////////
 class NCBI_XNCBI_EXPORT CExprParserException : EXCEPTION_VIRTUAL_BASE public CException
 {
@@ -242,11 +277,20 @@ private:
 class NCBI_XNCBI_EXPORT CExprParser
 {
 public:
-    /// eAllowAutoVar - means "create variables without previous declaration".
-    /// eDenyAutoVar - means "call AddSymbol() to register a variable".
-    enum EAutoVar {eAllowAutoVar, eDenyAutoVar};
+    /// Parser flags
+    enum EAutoVar {
+        fAllowAutoVar = 0,          //< create variables without previous declaration
+        fDenyAutoVar  = (1 << 0),   //< call AddSymbol() to register a variable
+        fNoDivision   = (1 << 1),   //< division is interpreted as a part of a symbol (to allow directories)
 
-    CExprParser(EAutoVar auto_var = eAllowAutoVar);
+        // Legacy
+        eAllowAutoVar = fAllowAutoVar,
+        eDenyAutoVar  = fDenyAutoVar
+    };
+
+    typedef int TParserFlags;
+
+    CExprParser(TParserFlags auto_var = 0);
     ~CExprParser(void);
 
 public:
@@ -309,10 +353,12 @@ private:
             EOperator val_false, 
             EOperator val_def);
 
-    EAutoVar AutoCreateVariable(void) const
+    TParserFlags AutoCreateVariable(void) const
     {
-        return m_AutoCreateVariable;
+        return m_ParserFlags & fDenyAutoVar;
     }
+
+    bool NoDivision(void) const { return m_ParserFlags&fNoDivision;}
 
 private:
     enum {hash_table_size = 1013};
@@ -331,7 +377,7 @@ private:
     const char* m_Buf;
     int         m_Pos;
     int         m_TmpVarCount;
-    EAutoVar    m_AutoCreateVariable;
+    TParserFlags    m_ParserFlags;
 };
 
 
@@ -404,7 +450,7 @@ CExprParser::IfLongest2ElseChar(
     if (m_Buf[m_Pos] == c1) { 
         m_Pos += 1;
         return IfChar(c2, val_true_longest, val_true);
-    } else if (m_Buf[m_Pos] == c2) { 
+    } else if (m_Buf[m_Pos] == c2) {
         m_Pos += 1;
         return val_false;
     }
