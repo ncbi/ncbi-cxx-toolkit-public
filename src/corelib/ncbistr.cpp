@@ -3331,6 +3331,14 @@ string NStr::XmlEncode(const CTempString& str)
         case '"':
             result.append("&quot;");
             break;
+        case '-':
+            if (i+1 < str.size() && str[i+1] == '-') {
+                ++i;
+                result.append("&#x2d;&#x2d;");
+            } else {
+                result.append(1, c);
+            }
+            break;
         default:
             if ((unsigned int)(c) < 0x20) {
                 const char* charmap = "0123456789abcdef";
