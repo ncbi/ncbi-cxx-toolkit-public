@@ -165,7 +165,7 @@ void CStreamTestApp::Init()
                                         "macrotest",
                                         "prosplign",
                                         "title",
-                                        "unindexed_defline",
+                                        "unindexed-defline",
                                         "validate"));
     
     arg_desc->AddDefaultKey( "options", 
@@ -282,7 +282,7 @@ CStreamTestApp::GetProcess(
     if ( testcase == "title" ) {
         pProcess = new CTitleProcess;
     }
-    if ( testcase == "unindexed_defline" ) {
+    if ( testcase == "unindexed-defline" ) {
         pProcess = new CDeflineProcess;
     }
     if ( testcase == "validate" ) {
