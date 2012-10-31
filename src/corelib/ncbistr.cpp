@@ -3332,6 +3332,8 @@ string NStr::XmlEncode(const CTempString& str)
             result.append("&quot;");
             break;
         case '-':
+// translate also double hyphen - to allow to use the result in comments
+// http://www.w3.org/TR/xml11/#sec-comments
             if (i+1 < str.size() && str[i+1] == '-') {
                 ++i;
                 result.append("&#x2d;&#x2d;");
