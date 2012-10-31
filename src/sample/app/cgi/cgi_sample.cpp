@@ -41,8 +41,6 @@
 #include <ncbi_pch.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
-#include <connect/email_diag_handler.hpp>
-#include <html/commentdiag.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
 
@@ -77,13 +75,6 @@ void CCgiSampleApplication::Init()
 {
     // Standard CGI framework initialization
     CCgiApplication::Init();
-
-    // Allows CGI client to put the diagnostics to:
-    //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
-    RegisterDiagFactory("comments", new CCommentDiagFactory);
-    //   E-mail -- using CGI arg "&diag-destination=email:user@host"
-    RegisterDiagFactory("email",    new CEmailDiagFactory);
-
 
     // Describe possible cmd-line and HTTP entries
     // (optional)
@@ -120,7 +111,13 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     } else {
         message = "<NONE>";
     }
-    
+
+    // NOTE:  While this sample uses the CHTML* classes for generating HTML,
+    // you are encouraged to use XML/XSLT and the NCBI port of XmlWrapp.
+    // For more info:
+    //  http://www.ncbi.nlm.nih.gov/books/NBK8829/
+    //  http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
+
     // Create a HTML page (using template HTML file "cgi_sample.html")
     auto_ptr<CHTMLPage> page;
     try {
@@ -129,15 +126,12 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
         return 2;
     }
-    SetDiagNode(page.get());
 
     // Register substitution for the template parameters <@MESSAGE@> and
     // <@SELF_URL@>
     try {
         CHTMLPlainText* text = new CHTMLPlainText(message);
         _TRACE("foo");
-        SetDiagNode(text);
-        _TRACE("bar");
         page->AddTagMap("MESSAGE", text);
 
         CHTMLPlainText* self_url = new CHTMLPlainText(ctx.GetSelfURL());
@@ -145,7 +139,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     }
     catch (exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
-        SetDiagNode(NULL);
         return 3;
     }
 
@@ -156,11 +149,9 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         page->Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
         ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
-        SetDiagNode(NULL);
         return 4;
     }
 
-    SetDiagNode(NULL);
     return 0;
 }
 
@@ -225,8 +216,5 @@ void CCgiSampleApplication::x_LookAtArgs()
 
 int main(int argc, const char* argv[])
 {
-    GetDiagContext().SetOldPostFormat(false); // Switch to the new log format
-    int result = CCgiSampleApplication().AppMain(argc, argv);
-    _TRACE("back to normal diags");
-    return result;
+    return CCgiSampleApplication().AppMain(argc, argv);
 }
