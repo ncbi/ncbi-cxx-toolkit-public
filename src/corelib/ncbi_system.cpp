@@ -131,7 +131,8 @@ DEFINE_STATIC_FAST_MUTEX(s_ExitHandler_Mutex);
 static bool                  s_ExitHandlerIsSet  = false;
 static ELimitsExitCode       s_ExitCode          = eLEC_None;
 static CSafeStaticPtr<CTime> s_TimeSet;
-static size_t                s_MemoryLimit       = 0;
+static size_t                s_MemoryLimitSoft   = 0;
+static size_t                s_MemoryLimitHard   = 0;
 static size_t                s_CpuTimeLimit      = 0;
 static char*                 s_ReserveMemory     = 0;
 static TLimitsPrintHandler   s_PrintHandler      = 0;
@@ -163,7 +164,7 @@ static void s_ExitHandler(void)
 
         switch ( s_ExitCode ) {
         case eLEC_Memory: {
-            limit_size = s_MemoryLimit;
+            limit_size = s_MemoryLimitSoft;
             break;
         }
         case eLEC_Cpu: {
@@ -185,7 +186,7 @@ static void s_ExitHandler(void)
     case eLEC_Memory:
         {
             ERR_POST_X(1, "Memory heap limit exceeded in allocating memory " \
-                          "by operator new (" << s_MemoryLimit << " bytes)");
+                          "by operator new (" << s_MemoryLimitSoft << " bytes)");
             break;
         }
         
@@ -249,12 +250,13 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
         }
         s_ExitHandlerIsSet = true;
         s_TimeSet->SetCurrent();
-
-        // Store print handler and parameter
+        
+        // Store new print handler and its parameter
         s_PrintHandler = handler;
         s_PrintHandlerParam = parameter;
-
-        // Reserve some memory (10Kb)
+        
+        // Reserve some memory (10Kb) to allow the diagnostic API
+        // print messages on exit if memory limit is set.
         s_ReserveMemory = new char[10*1024];
     }
     return true;
@@ -283,65 +285,178 @@ bool SetMemoryLimit(size_t max_size,
                     TLimitsPrintHandler handler, 
                     TLimitsPrintParameter parameter)
 {
-    if (s_MemoryLimit == max_size) 
+    if (s_MemoryLimitSoft == max_size) {
         return true;
-    
-    if ( !s_SetExitHandler(handler, parameter) )
+    }
+    if (!s_SetExitHandler(handler, parameter)) {
         return false;
-
-    // Set new heap limit
+    }
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
     
     rlimit rl;
     if ( max_size ) {
         set_new_handler(s_NewHandler);
         rl.rlim_cur = rl.rlim_max = max_size;
-    }
-    else {
-        // Set off heap limit
+    } else {
         set_new_handler(0);
         rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
     }
-    if (setrlimit(RLIMIT_DATA, &rl) != 0) 
+    if (setrlimit(RLIMIT_DATA, &rl) != 0) {
         return false;
+    }
 #  if !defined(NCBI_OS_SOLARIS)
-    if (setrlimit(RLIMIT_AS, &rl) != 0) 
+    if (setrlimit(RLIMIT_AS, &rl) != 0) {
         return false;
+    }
 #  endif //NCBI_OS_SOLARIS
 
-    s_MemoryLimit = max_size;
+    s_MemoryLimitSoft = max_size;
+    s_MemoryLimitHard = max_size;
+    if ( max_size ) {
+        set_new_handler(s_NewHandler);
+    } else {
+        set_new_handler(0);
+    }
     return true;
 }
 
 
-// deprecated
+bool SetMemoryLimitSoft(size_t max_size,
+                        TLimitsPrintHandler handler, 
+                        TLimitsPrintParameter parameter)
+{
+    if (s_MemoryLimitSoft == max_size) {
+        return true;
+    }
+    if (!s_SetExitHandler(handler, parameter)) {
+        return false;
+    }
+    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+
+    rlimit rl;
+    if (getrlimit(RLIMIT_DATA, &rl) != 0) {
+        return false;
+    }
+    if ( max_size ) {
+        rl.rlim_cur = max_size;
+    } else {
+        rl.rlim_cur = RLIM_INFINITY;
+    }
+    if (setrlimit(RLIMIT_DATA, &rl) != 0) {
+        return false;
+    }
+#  if !defined(NCBI_OS_SOLARIS)
+    rlimit rlas;
+    if (getrlimit(RLIMIT_AS, &rlas) != 0) {
+        return false;
+    }
+    rl.rlim_max = rlas.rlim_max;
+    if (setrlimit(RLIMIT_AS, &rl) != 0) {
+        return false;
+    }
+#  endif //NCBI_OS_SOLARIS
+
+    s_MemoryLimitSoft = max_size;
+    if ( max_size ) {
+        set_new_handler(s_NewHandler);
+    } else {
+        set_new_handler(0);
+    }
+    return true;
+}
+
+
+bool SetMemoryLimitHard(size_t max_size,
+                        TLimitsPrintHandler handler, 
+                        TLimitsPrintParameter parameter)
+{
+    if (s_MemoryLimitHard == max_size) {
+        return true;
+    }
+    if (!s_SetExitHandler(handler, parameter)) {
+        return false;
+    }
+    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+
+    size_t cur_soft_limit = 0;
+    rlimit rl;
+    if (getrlimit(RLIMIT_DATA, &rl) != 0) {
+        return false;
+    }
+    if ( max_size ) {
+        rl.rlim_max = max_size;
+        if (rl.rlim_cur > max_size) {
+            rl.rlim_cur = max_size;
+        }
+        cur_soft_limit = rl.rlim_cur;
+    } else {
+        rl.rlim_max = RLIM_INFINITY;
+    }
+    if (setrlimit(RLIMIT_DATA, &rl) != 0) {
+        return false;
+    }
+#  if !defined(NCBI_OS_SOLARIS)
+    rlimit rlas;
+    if (getrlimit(RLIMIT_AS, &rlas) != 0) {
+        return false;
+    }
+    if ( max_size ) {
+        rlas.rlim_max = max_size;
+        // Descrease current soft limit of the virtual memory
+        // to the size of data segment -- min(DATA,AS). 
+        if (rlas.rlim_cur > cur_soft_limit) {
+            rlas.rlim_cur = cur_soft_limit;
+        }
+        // And use this size as current value for the soft limit
+        // in the print handler 
+        cur_soft_limit = rlas.rlim_cur;
+    } else {
+        rlas.rlim_max = RLIM_INFINITY;
+    }
+    if (setrlimit(RLIMIT_AS, &rlas) != 0) {
+        return false;
+    }
+#  endif //NCBI_OS_SOLARIS
+
+    s_MemoryLimitSoft = cur_soft_limit;
+    s_MemoryLimitHard = max_size;
+    if ( max_size ) {
+        set_new_handler(s_NewHandler);
+    } else {
+        set_new_handler(0);
+    }
+    return true;
+}
+
+
+// @deprecated
 bool SetHeapLimit(size_t max_size,
                   TLimitsPrintHandler handler, 
                   TLimitsPrintParameter parameter)
 {
-    if (s_MemoryLimit == max_size) 
+    if (s_MemoryLimitSoft == max_size) { 
         return true;
-    
-    if ( !s_SetExitHandler(handler, parameter) )
+    }
+    if (!s_SetExitHandler(handler, parameter)) {
         return false;
-
-    // Set new heap limit
+    }
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
     
     rlimit rl;
     if ( max_size ) {
-        set_new_handler(s_NewHandler);
         rl.rlim_cur = rl.rlim_max = max_size;
-    }
-    else {
-        // Set off heap limit
-        set_new_handler(0);
+    } else {
         rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
     }
-    if (setrlimit(RLIMIT_DATA, &rl) != 0) 
+    if (setrlimit(RLIMIT_DATA, &rl) != 0) {
         return false;
-
-    s_MemoryLimit = max_size;
+    }
+    s_MemoryLimitSoft = max_size;
+    if ( max_size ) {
+        set_new_handler(s_NewHandler);
+    } else {
+        set_new_handler(0);
+    }
     return true;
 }
 
@@ -349,6 +464,20 @@ bool SetHeapLimit(size_t max_size,
 #else
 
 bool SetMemoryLimit(size_t max_size, 
+                    TLimitsPrintHandler handler, 
+                    TLimitsPrintParameter parameter)
+{
+  return false;
+}
+
+bool SetMemoryLimitSoft(size_t max_size, 
+                    TLimitsPrintHandler handler, 
+                    TLimitsPrintParameter parameter)
+{
+  return false;
+}
+
+bool SetMemoryLimitHard(size_t max_size, 
                     TLimitsPrintHandler handler, 
                     TLimitsPrintParameter parameter)
 {
@@ -391,25 +520,21 @@ bool SetCpuTimeLimit(unsigned int          max_cpu_time,
                      TLimitsPrintHandler   handler, 
                      TLimitsPrintParameter parameter)
 {
-    if (s_CpuTimeLimit == max_cpu_time) 
+    if (s_CpuTimeLimit == max_cpu_time) {
         return true;
-    
-    if ( !s_SetExitHandler(handler, parameter) )
+    }
+    if (!s_SetExitHandler(handler, parameter)) {
         return false;
-    
-    // Set new CPU time limit
+    }
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
 
-    struct rlimit rl;
+    rlimit rl;
     if ( max_cpu_time ) {
         rl.rlim_cur = max_cpu_time;
         rl.rlim_max = max_cpu_time + terminate_delay_time;
-    }
-    else {
-        // Set off CPU time limit
+    } else {
         rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
     }
-
     if (setrlimit(RLIMIT_CPU, &rl) != 0) {
         return false;
     }
@@ -464,7 +589,7 @@ unsigned int GetCpuCount(void)
     kern_return_t rc;
 
     rc = host_info(mach_host_self(), HOST_BASIC_INFO,
-                   (host_info_t)&hinfo, &hinfo_count);
+                  (host_info_t)&hinfo, &hinfo_count);
 
     if (rc != KERN_SUCCESS) {
         return 1;

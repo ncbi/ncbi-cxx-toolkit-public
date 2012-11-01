@@ -70,6 +70,11 @@ typedef void* TLimitsPrintParameter;
 /// @attention
 ///   If you use handlers together with SetCpuLimit(), be aware!
 ///   See SetCpuLimit() for details.
+/// @attention
+///   The exit print handler can be registered only once at first call to
+///   SetCpuTimeLimit() or SetMemoryLimit(), even if you don't specify handler
+///   directly and passed it as NULL! Be aware. All subsequent attempts to set
+///   new handler will be ignored, but limits will be changed anyway.
 /// @sa 
 ///   SetCpuTimeLimit, SetMemoryLimit
 typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrintParameter);
@@ -87,7 +92,6 @@ typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrin
 ///   don't work at all. Usually don't know about how exactly malloc()
 ///   is implemented. We added another function - SetMemoryLimit(), that
 ///   supports mmap()-based memory allocation, please use it instead.
-/// 
 /// @param max_heap_size
 ///   The maximal amount of dynamic memory can be allocated by the process.
 ///   (including heap)
@@ -99,6 +103,11 @@ typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrin
 ///   Parameter carried into the print handler. Can be passed as NULL.
 /// @return 
 ///   Completion status.
+/// @attention
+///   The exit print handler can be registered only once at first call to
+///   SetCpuTimeLimit() or SetMemoryLimit(), even if you don't specify handler
+///   directly and passed it as NULL! Be aware. All subsequent attempts to set
+///   new handler will be ignored, but limits will be changed anyway.
 /// @sa SetMemoryLimit
 /// @deprecated
 NCBI_DEPRECATED
@@ -118,6 +127,7 @@ extern bool SetHeapLimit(size_t max_size,
 ///   (including heap) and virtual memory (address space).
 ///   On 32-bit systems limit is at most 2 GiB, or this resource is unlimited.
 ///   The 0 value lift off the heap restrictions.
+///   This value cannot exceed current hard limit set for the process.
 /// @param handler
 ///   Pointer to a print handler used for dump output in the case of reaching
 ///   memory limit. Use default handler if passed as NULL.
@@ -127,12 +137,46 @@ extern bool SetHeapLimit(size_t max_size,
 ///   See also SetCpuTimeLimit().
 /// @return 
 ///   Completion status.
+///   It returns TRUE if both, the memory limits for the data segment and 
+///   virtual memory, limitations were set. It can return FALSE if the limits
+///   for the data segment has changed, but setting new values for
+///   the virtual memory fails.
 /// @note
-///   Setting limits may not work on some systems, depends on OS, compilation
+///   By default it sets soft and hard memory limits to the same value.
+/// @note
+///   Setting a limits may not work on some systems, depends on OS, compilation
 ///   options and etc. Some systems enforce memory limits, other didn't.
-/// @sa SetCpuTimeLimit, TLimitsPrintHandler
+///   Also, only privileged process can set hard memory limit.
+/// @note
+///   If the memory limit is reached, any subsequent memory allocations fails.
+/// @attention
+///   The exit print handler can be registered only once at first call to
+///   SetCpuTimeLimit() or SetMemoryLimit(), even if you don't specify handler
+///   directly and passed it as NULL! Be aware. All subsequent attempts to set
+///   new handler will be ignored, but limits will be changed anyway.
+/// @sa
+///   SetCpuTimeLimit, TLimitsPrintHandler, SetMemoryLimitSoft, SetMemoryLimitHard
 NCBI_XNCBI_EXPORT
 extern bool SetMemoryLimit(size_t max_size, 
+                           TLimitsPrintHandler   handler   = NULL, 
+                           TLimitsPrintParameter parameter = NULL);
+
+/// [UNIX only]  Set soft memory limit.
+/// @sa SetMemoryLimit
+NCBI_XNCBI_EXPORT
+extern bool SetMemoryLimitSoft(size_t max_size, 
+                           TLimitsPrintHandler   handler   = NULL, 
+                           TLimitsPrintParameter parameter = NULL);
+
+/// [UNIX only]  Set hard memory limit.
+/// @note
+///   Current soft memory limit will be automatically decreased,
+///   if it exceed new value for the hard memory limit.
+/// @note
+///   Only privileged process can increase current hard level limit.
+/// @sa SetMemoryLimit
+NCBI_XNCBI_EXPORT
+extern bool SetMemoryLimitHard(size_t max_size, 
                            TLimitsPrintHandler   handler   = NULL, 
                            TLimitsPrintParameter parameter = NULL);
 
@@ -161,6 +205,11 @@ extern bool SetMemoryLimit(size_t max_size,
 /// @note
 ///   Setting a low CPU time limit cannot be generally undone to a value
 ///   higher than "max_cpu_time + terminate_delay_time" at a later time.
+/// @attention
+///   The exit print handler can be registered only once at first call to
+///   SetCpuTimeLimit() or SetMemoryLimit(), even if you don't specify handler
+///   directly and passed it as NULL! Be aware. All subsequent attempts to set
+///   new handler will be ignored, but limits will be changed anyway.
 /// @attention
 ///   Only async-safe library functions and system calls can be used in 
 ///   the print handler. For example, you cannot use C++ streams (cout/cerr)
