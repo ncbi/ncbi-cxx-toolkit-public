@@ -24,7 +24,7 @@ SRC  = $(SRC_CXX)
 
 LIB = blastinput
 
-DLL_LIB = xblast $(OBJMGR_LIBS)
+DLL_LIB = xblast align_format ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb seqdb xobjread $(OBJMGR_LIBS) xutil
 
 # should be redundant, given the above :-/
 ASN_DEP = seqset xnetblast
