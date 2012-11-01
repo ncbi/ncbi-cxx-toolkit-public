@@ -36,9 +36,13 @@
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
+#include <algo/blast/api/phiblast_prot_options.hpp>
 #include <algo/blast/api/blast_advprot_options.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/scoremat/Pssm.hpp>
 
 #include "test_objmgr.hpp"
 #include <serial/serial.hpp>
@@ -144,6 +148,130 @@ BOOST_AUTO_TEST_CASE(testBlastnBl2seq)
     CBlastNucleotideOptionsHandle* blastn_opts = dynamic_cast<CBlastNucleotideOptionsHandle*> (&*opts_handle);
     BOOST_REQUIRE_EQUAL(blastn_opts->GetMatchReward(), 2); 
     BOOST_REQUIRE_EQUAL(blastn_opts->GetMismatchPenalty(), -3); 
+}
+
+BOOST_AUTO_TEST_CASE(LoadWebPsiBlastSearchStrategyAfterRound1) 
+{
+    const char* fname = "data/webpsi.1stround.ss.asn";
+    ifstream in(fname);
+    CRef<CBlast4_request> request = ExtractBlast4Request(in);
+    CImportStrategy import_strat(request);
+    BOOST_REQUIRE_EQUAL(import_strat.GetTask(), "psiblast");
+    BOOST_REQUIRE_EQUAL(import_strat.GetService(), "plain");
+    BOOST_REQUIRE_EQUAL(import_strat.GetProgram(), "blastp");
+
+    CRef<objects::CBlast4_queries> query = import_strat.GetQueries();
+    BOOST_REQUIRE(query->IsPssm() == false);
+    BOOST_REQUIRE(query->IsSeq_loc_list() == false);
+    const CBioseq_set& bss = query->GetBioseq_set();
+    list<CRef<CSeq_entry> > seq_entry = bss.GetSeq_set();
+    BOOST_REQUIRE(seq_entry.front()->GetSeq().GetLength() == 320);
+
+    CRef<objects::CBlast4_subject> subject = import_strat.GetSubject(); 
+    BOOST_REQUIRE_EQUAL(subject->IsDatabase(), true);
+    BOOST_REQUIRE_EQUAL(subject->GetDatabase(), "nr");
+
+    BOOST_REQUIRE(import_strat.GetAlgoOptions() != NULL);
+    BOOST_REQUIRE(import_strat.GetProgramOptions() == NULL);
+    BOOST_REQUIRE(import_strat.GetWebFormatOptions() != NULL);
+
+    CRef<blast::CBlastOptionsHandle> opts_handle = import_strat.GetOptionsHandle();
+    BOOST_REQUIRE_EQUAL(opts_handle->GetHitlistSize(), 500); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetWindowSize(), 40); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetMaskAtHash(), false); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetGappedMode(), true); 
+    CPSIBlastOptionsHandle* psi_opts = dynamic_cast<CPSIBlastOptionsHandle*> (&*opts_handle);
+    BOOST_REQUIRE(psi_opts != NULL);
+    BOOST_REQUIRE_EQUAL(psi_opts->GetGapExtensionCost(), 1); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetGapOpeningCost(), 11); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetMatrixName(), "BLOSUM62"); 
+    BOOST_REQUIRE_EQUAL(import_strat.GetPsiNumOfIterations(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(LoadWebPsiBlastSearchStrategyAfterRound2) 
+{
+    const char* fname = "data/webpsi.2ndround.ss.asn";
+    ifstream in(fname);
+    CRef<CBlast4_request> request = ExtractBlast4Request(in);
+    CImportStrategy import_strat(request);
+    BOOST_REQUIRE_EQUAL(import_strat.GetTask(), "psiblast");
+    BOOST_REQUIRE_EQUAL(import_strat.GetService(), "psi");
+    BOOST_REQUIRE_EQUAL(import_strat.GetProgram(), "blastp");
+
+    CRef<objects::CBlast4_queries> query = import_strat.GetQueries();
+    BOOST_REQUIRE(query->IsPssm() == true);
+    BOOST_REQUIRE(query->IsSeq_loc_list() == false);
+    BOOST_REQUIRE(query->IsBioseq_set() == false);
+    const CPssmWithParameters& pssm = query->GetPssm();
+    BOOST_REQUIRE_EQUAL(pssm.HasQuery(), true);
+    BOOST_REQUIRE_EQUAL(pssm.GetQuery().IsSeq(), true);
+    const TSeqPos kQueryLength(320);
+    BOOST_REQUIRE_EQUAL(pssm.GetQuery().GetSeq().GetLength(), kQueryLength);
+    BOOST_REQUIRE_EQUAL(pssm.GetPssm().GetQueryLength(), kQueryLength);
+
+    CRef<objects::CBlast4_subject> subject = import_strat.GetSubject(); 
+    BOOST_REQUIRE_EQUAL(subject->IsDatabase(), true);
+    BOOST_REQUIRE_EQUAL(subject->GetDatabase(), "nr");
+
+    BOOST_REQUIRE(import_strat.GetAlgoOptions() != NULL);
+    BOOST_REQUIRE(import_strat.GetProgramOptions() == NULL);
+    BOOST_REQUIRE(import_strat.GetWebFormatOptions() != NULL);
+
+    CRef<blast::CBlastOptionsHandle> opts_handle = import_strat.GetOptionsHandle();
+    BOOST_REQUIRE_EQUAL(opts_handle->GetHitlistSize(), 500); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetWindowSize(), 40); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetMaskAtHash(), false); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetGappedMode(), true); 
+    CPSIBlastOptionsHandle* psi_opts = dynamic_cast<CPSIBlastOptionsHandle*> (&*opts_handle);
+    BOOST_REQUIRE(psi_opts != NULL);
+    BOOST_REQUIRE_EQUAL(psi_opts->GetGapExtensionCost(), 1); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetGapOpeningCost(), 11); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetMatrixName(), "BLOSUM62"); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetInclusionThreshold(), 0.001); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetPseudoCount(), 0); 
+    BOOST_REQUIRE_EQUAL(import_strat.GetPsiNumOfIterations(), 2);
+}
+
+// Created with command line psiblast, one iteration
+BOOST_AUTO_TEST_CASE(LoadPhiBlastSearchStrategy) 
+{
+    const char* fname = "data/phi.ss.asn";
+    ifstream in(fname);
+    CRef<CBlast4_request> request = ExtractBlast4Request(in);
+    CImportStrategy import_strat(request);
+    BOOST_REQUIRE_EQUAL(import_strat.GetTask(), "phiblastp");
+    BOOST_REQUIRE_EQUAL(import_strat.GetService(), "plain");
+    BOOST_REQUIRE_EQUAL(import_strat.GetProgram(), "blastp");
+
+    CRef<objects::CBlast4_queries> query = import_strat.GetQueries();
+    BOOST_REQUIRE(query->IsPssm() == false);
+    BOOST_REQUIRE(query->IsSeq_loc_list() == false);
+    const CBioseq_set& bss = query->GetBioseq_set();
+    list<CRef<CSeq_entry> > seq_entry = bss.GetSeq_set();
+    BOOST_REQUIRE(seq_entry.front()->GetSeq().GetLength() == 549);
+
+    CRef<objects::CBlast4_subject> subject = import_strat.GetSubject(); 
+    BOOST_REQUIRE_EQUAL(subject->IsDatabase(), true);
+    BOOST_REQUIRE_EQUAL(subject->GetDatabase(), "ecoli");
+
+    BOOST_REQUIRE(import_strat.GetAlgoOptions() != NULL);
+    BOOST_REQUIRE(import_strat.GetProgramOptions() == NULL);
+    BOOST_REQUIRE(import_strat.GetWebFormatOptions() != NULL);
+
+    CRef<blast::CBlastOptionsHandle> opts_handle = import_strat.GetOptionsHandle();
+    BOOST_REQUIRE_EQUAL(opts_handle->GetHitlistSize(), 500); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetWindowSize(), 40); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetMaskAtHash(), false); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetGappedMode(), true); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetOptions().GetInclusionThreshold(), 0.002); 
+    BOOST_REQUIRE_EQUAL(opts_handle->GetOptions().GetPseudoCount(), 0); 
+    CPHIBlastProtOptionsHandle* psi_opts = dynamic_cast<CPHIBlastProtOptionsHandle*> (&*opts_handle);
+    BOOST_REQUIRE(psi_opts != NULL);
+    BOOST_REQUIRE_EQUAL(psi_opts->GetGapExtensionCost(), 1); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetGapOpeningCost(), 11); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetMatrixName(), "BLOSUM62"); 
+    BOOST_REQUIRE_EQUAL(psi_opts->GetPHIPattern(), "[GA]xxxxGK[ST]"); 
+    BOOST_REQUIRE_EQUAL(import_strat.GetPsiNumOfIterations(), 1);
 }
 
 /*

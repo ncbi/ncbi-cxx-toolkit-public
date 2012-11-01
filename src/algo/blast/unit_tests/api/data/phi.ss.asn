@@ -1,0 +1,101 @@
+Blast4-request ::= {
+  body queue-search {
+    program "blastp",
+    service "plain",
+    queries bioseq-set {
+      seq-set {
+        seq {
+          id {
+            local str "Query_1"
+          },
+          descr {
+            title "gi|231729|sp|P30429|CED4_CAEEL CELL DEATH PROTEIN 4
+ >gi|2146864|pir||S72566 cell death protein - Caenorhabditis elegans
+ >gi|6662|emb|CAA48781.1| (X69016) ced-4 [Caenorhabditis elegans]
+ >gi|687887|gb|AAA62564.1| (U21324) C. elegans cell death protein (SP:P30429)
+ [Caenorhabditis elegans]",
+            user {
+              type str "CFastaReader",
+              data {
+                {
+                  label str "DefLine",
+                  data str ">gi|231729|sp|P30429|CED4_CAEEL CELL DEATH PROTEIN
+ 4 >gi|2146864|pir||S72566 cell death protein - Caenorhabditis elegans
+ >gi|6662|emb|CAA48781.1| (X69016) ced-4 [Caenorhabditis elegans]
+ >gi|687887|gb|AAA62564.1| (U21324) C. elegans cell death protein (SP:P30429)
+ [Caenorhabditis elegans]"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 549,
+            seq-data ncbieaa "MLCEIECRALSTAHTRLIHDFEPRDALTYLEGKNIFTEDHSELISKMS
+TRLERIANFLRIYRRQASELGPLIDFFNYNNQSHLADFLEDYIDFAINEPDLLRPVVIAPQFSRQMLDRKLLLGNVPK
+QMTCYIREYHVDRVIKKLDEMCDLDSFFLFLHGRAGSGKSVIASQALSKSDQLIGINYDSIVWLKDSGTAPKSTFDLF
+TDILLMLKSEDDLLNFPSVEHVTSVVLKRMICNALIDRPNTLFVFDDVVQEETIRWAQELRLRCLVTTRDVEISNAAS
+QTCEFIEVTSLEIDECYDFLEAYGMPMPVGEKEEDVLNKTIELSSGNPATLMMFFKSCEPKTFEKMAQLNNKLESRGL
+VGVECITPYSYKSLAMALQRCVEVLSDEDRSALAFAVVMPPGVDIPVKLWSCVIPVDICSNEEEQLDDEVADRLKRLS
+KRGALLSGKRMPVLTFKIDHIIHMFLKHVVDAQTIANGISILEQRLLEIGNNNVSVPERHIPSHFQKFRRSSASEMYP
+KTTEETVIRPEDFPKFMQLHQKFYDSLKNFACC"
+          }
+        }
+      }
+    },
+    subject database "ecoli",
+    algorithm-options {
+      {
+        name "EvalueThreshold",
+        value cutoff e-value { 1, 10, 1 }
+      },
+      {
+        name "MaskAtHash",
+        value boolean FALSE
+      },
+      {
+        name "SegFiltering",
+        value boolean FALSE
+      },
+      {
+        name "WordThreshold",
+        value integer 11
+      },
+      {
+        name "WindowSize",
+        value integer 40
+      },
+      {
+        name "HitlistSize",
+        value integer 500
+      },
+      {
+        name "GapTrigger",
+        value real { 22, 10, 0 }
+      },
+      {
+        name "IgnoreMsaMaster",
+        value boolean FALSE
+      },
+      {
+        name "PseudoCountWeight",
+        value integer 0
+      },
+      {
+        name "InclusionThreshold",
+        value real { 2, 10, -3 }
+      },
+      {
+        name "PHIPattern",
+        value string "[GA]xxxxGK[ST]"
+      }
+    },
+    format-options {
+      {
+        name "Web_StepNumber",
+        value integer 1
+      }
+    }
+  }
+}

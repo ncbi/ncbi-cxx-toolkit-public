@@ -70,53 +70,58 @@ CImportStrategy::CImportStrategy(CRef<objects::CBlast4_request> request)
         NCBI_THROW(CBlastException, eInvalidArgument, "No body in CBlast4_request");
     }
     m_Data.reset(new CImportStrategyData);
-    m_Data->valid = false;
 }
 
 
 void 
-CImportStrategy::FetchData() const
+CImportStrategy::FetchData()
 {
-    if (m_Data->valid == false)
-    {
-        const CBlast4_queue_search_request& req(m_Request->GetBody().GetQueue_search());
+    if (m_Data->valid) {
+        return;
+    }
+    const CBlast4_queue_search_request& req(m_Request->GetBody().GetQueue_search());
+    m_OptionsBuilder.reset(new CBlastOptionsBuilder(req.GetProgram(),
+                                                    req.GetService(),
+                                  CBlastOptions::eBoth));
 
-        CBlastOptionsBuilder bob(req.GetProgram(), req.GetService(),
-                                      CBlastOptions::eBoth);
+    // Create the BLAST options
+    const CBlast4_parameters* algo_opts(0);
+    const CBlast4_parameters* prog_opts(0);
+    const CBlast4_parameters* format_opts(0);
 
-        // Create the BLAST options
-        const CBlast4_parameters* algo_opts(0);
-        const CBlast4_parameters* prog_opts(0);
-
-        if (req.CanGetAlgorithm_options()) {
-                algo_opts = &req.GetAlgorithm_options();
-        }
-        if (req.CanGetProgram_options()) {
-                prog_opts = &req.GetProgram_options();
-        }
-
-        // The option builder is invalid until the next call.
-        m_Data->m_OptionsHandle = bob.GetSearchOptions(algo_opts, prog_opts, &m_Data->m_Task);
-        m_Data->m_QueryRange = bob.GetRestrictedQueryRange();
-        m_Data->m_FilteringID = bob.GetDbFilteringAlgorithmId();
-
-        m_Data->m_PsiNumOfIterations = 0;
-        if(req.CanGetFormat_options())
-        {
+    if (req.CanGetAlgorithm_options()) {
+            algo_opts = &req.GetAlgorithm_options();
+    }
+    if (req.CanGetProgram_options()) {
+            prog_opts = &req.GetProgram_options();
+    }
+    if (req.CanGetFormat_options()) {
+        format_opts = &req.GetFormat_options();
         	const CBlast4_queue_search_request::TFormat_options	& format_options = req.GetFormat_options();
         	CRef<CBlast4_parameter> p = format_options.GetParamByName(CBlast4Field::GetName(eBlastOpt_Web_StepNumber));
-        	if(p.NotEmpty())
-        	{
-        		if(p->CanGetValue())
+        if(p.NotEmpty() && p->CanGetValue()) {
+            try {
         			m_Data->m_PsiNumOfIterations = p->GetValue().GetInteger();
+            } catch (const CInvalidChoiceSelection&) {
+                // this is needed because the web PSI-BLAST encodes
+                // this value as a string
+                m_Data->m_PsiNumOfIterations =
+                    NStr::StringToInt(p->GetValue().GetString(),
+                                      NStr::fConvErr_NoThrow);
         	}
         }
-        m_Data->valid = true;
     }
+
+    m_Data->m_OptionsHandle =
+        m_OptionsBuilder->GetSearchOptions(algo_opts, prog_opts, format_opts,
+                                           &m_Data->m_Task);
+    m_Data->m_QueryRange = m_OptionsBuilder->GetRestrictedQueryRange();
+    m_Data->m_FilteringID = m_OptionsBuilder->GetDbFilteringAlgorithmId();
+    m_Data->valid = true;
 }
 
 CRef<blast::CBlastOptionsHandle> 
-CImportStrategy::GetOptionsHandle() const
+CImportStrategy::GetOptionsHandle()
 {
     if (!m_Data->valid)
            FetchData();
@@ -134,7 +139,7 @@ CImportStrategy::GetPsiNumOfIterations()
 }
 
 string 
-CImportStrategy::GetTask() const
+CImportStrategy::GetTask()
 {
     if (!m_Data->valid)
            FetchData();
@@ -145,19 +150,17 @@ CImportStrategy::GetTask() const
 string 
 CImportStrategy::GetProgram() const
 {
-    const CBlast4_queue_search_request& req(m_Request->GetBody().GetQueue_search());
-    return req.GetProgram();
+    return m_Request->GetBody().GetQueue_search().GetProgram();
 }
 
 string 
 CImportStrategy::GetCreatedBy() const
 {
-    string ident(m_Request->GetIdent());
-    return ident;
+    return m_Request->GetIdent();
 }
 
 TSeqRange 
-CImportStrategy::GetQueryRange() const
+CImportStrategy::GetQueryRange()
 {
     if (!m_Data->valid)
            FetchData();
@@ -166,7 +169,7 @@ CImportStrategy::GetQueryRange() const
 }
 
 int 
-CImportStrategy::GetDBFilteringID() const
+CImportStrategy::GetDBFilteringID() 
 {
     if (!m_Data->valid)
            FetchData();
@@ -177,8 +180,7 @@ CImportStrategy::GetDBFilteringID() const
 string 
 CImportStrategy::GetService() const
 {
-    const CBlast4_queue_search_request& req(m_Request->GetBody().GetQueue_search());
-    return req.GetService();
+    return m_Request->GetBody().GetQueue_search().GetService();
 }
 
 CRef<objects::CBlast4_queries>
@@ -197,18 +199,37 @@ CImportStrategy::GetSubject()
     return retval;
 }
 
-objects::CBlast4_parameters&
+objects::CBlast4_parameters*
 CImportStrategy::GetAlgoOptions()
 {
+    CBlast4_parameters* retval = NULL;
     CBlast4_queue_search_request& req(m_Request->SetBody().SetQueue_search());
-    return req.SetAlgorithm_options();
+    if (req.CanGetAlgorithm_options()) {
+        retval = &req.SetAlgorithm_options();
+    }
+    return retval;
 }
 
-objects::CBlast4_parameters&
+objects::CBlast4_parameters*
 CImportStrategy::GetProgramOptions()
 {
+    CBlast4_parameters* retval = NULL;
     CBlast4_queue_search_request& req(m_Request->SetBody().SetQueue_search());
-    return req.SetProgram_options();
+    if (req.CanGetProgram_options()) {
+        retval = &req.SetProgram_options();
+    }
+    return retval;
+}
+
+objects::CBlast4_parameters*
+CImportStrategy::GetWebFormatOptions()
+{
+    CBlast4_parameters* retval = NULL;
+    CBlast4_queue_search_request& req(m_Request->SetBody().SetQueue_search());
+    if (req.CanGetFormat_options()) {
+        retval = &req.SetFormat_options();
+    }
+    return retval;
 }
 
 /*

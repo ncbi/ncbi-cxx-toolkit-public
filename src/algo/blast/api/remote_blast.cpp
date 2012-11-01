@@ -1619,8 +1619,8 @@ CRemoteBlast::x_GetRequestInfoFromFile()
         m_Service   = strategy.GetService();
         m_CreatedBy = strategy.GetCreatedBy();
         m_Queries    = strategy.GetQueries();
-        m_AlgoOpts.Reset( & strategy.GetAlgoOptions() );
-        m_ProgramOpts.Reset( & strategy.GetProgramOptions() );
+        m_AlgoOpts.Reset( strategy.GetAlgoOptions() );
+        m_ProgramOpts.Reset( strategy.GetProgramOptions() );
 
         if (strategy.GetSubject()->IsDatabase())
             x_SetDatabase(strategy.GetSubject()->GetDatabase());
@@ -1630,9 +1630,7 @@ CRemoteBlast::x_GetRequestInfoFromFile()
         if(m_Service == "psi")
         {
         	// Would have errored out in CImportStrategy if we can't get queue search
-        	 CBlast4_queue_search_request& qs = request->SetBody().SetQueue_search();
-        	 if(qs.CanGetFormat_options())
-        	        	m_FormatOpts.Reset(&qs.SetFormat_options());
+        	m_FormatOpts.Reset( strategy.GetWebFormatOptions());
         }
         // Ignore return value, want side effect of setting fields.
         GetSearchOptions();
@@ -1922,7 +1920,8 @@ CRef<CBlastOptionsHandle> CRemoteBlast::GetSearchOptions()
         
         CBlastOptionsBuilder bob(program_s, service_s, CBlastOptions::eRemote );
         
-        m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts, &m_Task);
+        m_CBOH = bob.GetSearchOptions(m_AlgoOpts, m_ProgramOpts, m_FormatOpts,
+                                      &m_Task);
         
         if (bob.HaveEntrezQuery()) {
             m_EntrezQuery = bob.GetEntrezQuery();

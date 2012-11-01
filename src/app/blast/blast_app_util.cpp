@@ -137,9 +137,16 @@ InitializeQueryDataLoaderConfiguration(bool query_is_protein,
     if (db_adapter->IsBlastDb() &&  /* this is a BLAST database search */
         retval.m_UseBlastDbs &&   /* the BLAST database data loader is requested */
         (query_is_protein == db_adapter->IsProtein())) { /* the same database type is used for both queries and subjects */
+        // Make sure we don't add the same database more than once
+        vector<string> default_dbs;
+        NStr::Tokenize(retval.m_BlastDbName, " ", default_dbs);
+        if (default_dbs.size() &&
+            (find(default_dbs.begin(), default_dbs.end(),
+                 db_adapter->GetDatabaseName()) == default_dbs.end())) {
         CNcbiOstrstream oss;
         oss << db_adapter->GetDatabaseName() << " " << retval.m_BlastDbName;
         retval.m_BlastDbName = CNcbiOstrstreamToString(oss);
+    }
     }
     if (retval.m_UseBlastDbs) {
         _TRACE("Initializing query data loader to '" << retval.m_BlastDbName 
@@ -509,6 +516,14 @@ s_ImportSearchStrategy(CNcbiIstream* in,
     cmdline_args->SetOptionsHandle(opts_hndl);
     const EBlastProgramType prog = opts_hndl->GetOptions().GetProgramType();
     cmdline_args->SetTask(strategy.GetTask());
+#if _DEBUG
+    {
+        char* program_string = 0;
+        BlastNumber2Program(prog, &program_string);
+        _TRACE("EBlastProgramType=" << program_string << " task=" << strategy.GetTask());
+        sfree(program_string);
+    }
+#endif
 
     // Get the subject
     if (override_subject) {
@@ -519,10 +534,8 @@ s_ImportSearchStrategy(CNcbiIstream* in,
         const bool subject_is_protein = Blast_SubjectIsProtein(prog) ? true : false;
 
         if (subj->IsDatabase()) {
-            CBlastOptionsBuilder bob(strategy.GetProgram(), strategy.GetService(), CBlastOptions::eBoth);
-            bob.GetSearchOptions(&strategy.GetAlgoOptions(), &strategy.GetProgramOptions());
-            db_args = s_ImportDatabase(*subj, bob, subject_is_protein,
-                                       is_remote_search);
+            db_args = s_ImportDatabase(*subj, strategy.GetOptionsBuilder(),
+                                       subject_is_protein, is_remote_search);
         } else {
             db_args = s_ImportSubjects(*subj, subject_is_protein);
         }

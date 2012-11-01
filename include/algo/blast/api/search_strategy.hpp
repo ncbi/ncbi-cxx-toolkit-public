@@ -75,6 +75,15 @@ struct CImportStrategyData {
     string m_Task;
 
     unsigned int m_PsiNumOfIterations;
+    
+    /// Constructor
+    CImportStrategyData() {
+        valid = false;
+        m_OptionsHandle.Reset(0);
+        m_FilteringID = -1; // means uninitialized/unknown
+        m_QueryRange = TSeqRange::GetEmpty();
+        m_PsiNumOfIterations = 0;
+    }
 };
 
 
@@ -87,10 +96,10 @@ public:
     CImportStrategy(CRef<objects::CBlast4_request> request);
 
     /// Builds and returns the OptionsHandle
-    CRef<blast::CBlastOptionsHandle> GetOptionsHandle() const;
+    CRef<blast::CBlastOptionsHandle> GetOptionsHandle() ;
 
     /// Fetches task, such as "megablast", "blastn", etc. 
-    string GetTask() const;
+    string GetTask() ;
 
     /// Fetches service, such as psiblast, plain, megablast
     string GetService() const;
@@ -102,10 +111,10 @@ public:
     string GetCreatedBy() const;
 
     /// The start and stop on the query (if applicable)
-    TSeqRange GetQueryRange() const;
+    TSeqRange GetQueryRange();
 
     /// The DB filter ID.
-    int GetDBFilteringID() const;
+    int GetDBFilteringID() ;
 
     /// The queries either as Bioseq, seqloc, or pssm.
     CRef<objects::CBlast4_queries> GetQueries();
@@ -116,23 +125,33 @@ public:
     CRef<objects::CBlast4_subject> GetSubject();
 
     /// Options specific to blast searches (e.g, threshold, expect value).
-    objects::CBlast4_parameters& GetAlgoOptions();
+    /// @return the algorithm options or NULL if unavailable
+    objects::CBlast4_parameters* GetAlgoOptions();
 
     /// Options for controlling program execution and database filtering.
-    objects::CBlast4_parameters& GetProgramOptions();
+    /// @return the program options or NULL if unavailable
+    objects::CBlast4_parameters* GetProgramOptions();
+    
+    /// Options for controlling formatting (psi blast iteration number also).
+    /// @return the web formatting options or NULL if unavailable
+    objects::CBlast4_parameters* GetWebFormatOptions();
 
-    // Get number of iteration for psi blast, return 0 if num of iterations not available
+    /// Get number of iteration for psi blast, return 0 if num of iterations not available
     unsigned int GetPsiNumOfIterations();
 
-private:
+    /// Return the BlastOptions builder used in this class
+    CBlastOptionsBuilder& GetOptionsBuilder() const {
+        return *m_OptionsBuilder.get();
+    }
 
-    void FetchData() const; /// Fills in CImportStrategyData;
+private:
+    /// Fills in CImportStrategyData and m_OptionsBuilder
+    void FetchData();
 
     auto_ptr<CImportStrategyData> m_Data;
-
     CRef<objects::CBlast4_request> m_Request;
-
     string m_Service;
+    auto_ptr<CBlastOptionsBuilder> m_OptionsBuilder;
 
     /// Prohibit copy constructor
     CImportStrategy(const CImportStrategy& rhs);

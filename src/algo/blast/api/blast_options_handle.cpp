@@ -211,7 +211,8 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
 
     if (choice == eAll) {
         retval.insert("psiblast");
-        retval.insert("phiblast");
+        //retval.insert("phiblastn"); // not supported yet
+        retval.insert("phiblastp");
         retval.insert("rpsblast");
         retval.insert("rpstblastn");
         retval.insert("blastx");
@@ -254,7 +255,7 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
     } else if (task == "megablast") {
         retval.assign("Traditional megablast used to find very similar ");
         retval += "(e.g., intraspecies or closely related species) sequences";
-    } else if (task == "phiblast") {
+    } else if (NStr::StartsWith(task, "phiblast")) {
         retval.assign("Limits BLASTP search to those subjects with a ");
         retval += "pattern matching one in the query";
     } else if (task == "psiblast") {
@@ -360,7 +361,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     {
          retval = CBlastOptionsFactory::Create(ePSITblastn, locality);
     }
-    else if (!NStr::CompareNocase(task, "phiblast"))
+    else if (!NStr::CompareNocase(task, "phiblastp"))
     {
          retval = CBlastOptionsFactory::Create(ePHIBlastp, locality);
     }

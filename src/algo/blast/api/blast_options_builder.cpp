@@ -471,16 +471,54 @@ void CBlastOptionsBuilder::x_ApplyInteractions(CBlastOptionsHandle & boh)
     }
 }
 
+/// Finder class for matching CBlast4_parameter
+struct SBlast4ParamFinder : public unary_function< CRef<CBlast4_parameter>, bool> {
+    SBlast4ParamFinder(EBlastOptIdx opt_idx)
+            : m_Target2Find(CBlast4Field::Get(opt_idx)) {}
+    result_type operator()(const argument_type& rhs) {
+        return rhs.NotEmpty() ? m_Target2Find.Match(*rhs) : false;
+    }
+private:
+    CBlast4Field& m_Target2Find;
+};
+
 EProgram
 CBlastOptionsBuilder::AdjustProgram(const TValueList * L,
                                     EProgram           program,
                                     const string     & program_string)
 {
-    bool problem = false;
-    string name;
-
     if ( !L ) {
         return program;
+    }
+
+    // PHI-BLAST pattern trumps all other options
+    if (find_if(L->begin(), L->end(), 
+                SBlast4ParamFinder(eBlastOpt_PHIPattern)) != L->end()) {
+        switch(program) {
+        case ePHIBlastn:
+        case eBlastn:
+            _TRACE("Adjusting program to phiblastn");
+            return ePHIBlastn;
+            
+        case ePHIBlastp:
+        case eBlastp:
+            _TRACE("Adjusting program to phiblastp");
+            return ePHIBlastp;
+            
+        default:
+            {
+                string msg = "Incorrect combination of option (";
+                msg += CBlast4Field::GetName(eBlastOpt_PHIPattern);
+                msg += ") and program (";
+                msg += program_string;
+                msg += ")";
+                
+                NCBI_THROW(CRemoteBlastException,
+                           eServiceNotAvailable,
+                           msg);
+            }
+            break;
+        }
     }
     
     ITERATE(TValueList, iter, *L) {
@@ -489,51 +527,53 @@ CBlastOptionsBuilder::AdjustProgram(const TValueList * L,
         
         if (CBlast4Field::Get(eBlastOpt_MBTemplateLength).Match(p)) {
             if (v.GetInteger() != 0) {
+                _TRACE("Adjusting program to discontiguous Megablast");
                 return eDiscMegablast;
             }
-        } else if (CBlast4Field::Get(eBlastOpt_PHIPattern).Match(p)) {
-            switch(program) {
-            case ePHIBlastn:
-            case eBlastn:
-                return ePHIBlastn;
-                
-            case ePHIBlastp:
-            case eBlastp:
-                return ePHIBlastp;
-                
-            default:
-                problem = true;
-                break;
-            }
-        }
-        
-        if (problem) {
-            name = (**iter).GetName();
-            
-            string msg = "Incorrect combination of option (";
-            msg += name;
-            msg += ") and program (";
-            msg += program_string;
-            msg += ")";
-            
-            NCBI_THROW(CRemoteBlastException,
-                       eServiceNotAvailable,
-                       msg);
+        } else if (CBlast4Field::Get(eBlastOpt_Web_StepNumber).Match(p) ||
+                   CBlast4Field::Get(eBlastOpt_Web_RunPsiBlast).Match(p) ||
+                   CBlast4Field::Get(eBlastOpt_PseudoCount).Match(p) ||
+                   CBlast4Field::Get(eBlastOpt_IgnoreMsaMaster).Match(p)
+                   ) {
+            // FIXME: should we handle DELTA-BLAST here too?
+            _TRACE("Adjusting program to psiblast");
+            return ePSIBlast;
         }
     }
     
     return program;
 }
 
+/// Convenience function to merge all lists into one object to facilitate
+/// invoking AdjustProgram
+static void
+s_MergeCBlast4_parameters(const objects::CBlast4_parameters* aopts,
+                          const objects::CBlast4_parameters* popts,
+                          const objects::CBlast4_parameters* fopts,
+                          objects::CBlast4_parameters& retval)
+{
+    retval.Set().clear();
+    if (aopts) {
+        retval.Set().insert(retval.Set().end(), aopts->Get().begin(), aopts->Get().end());
+    }
+    if (popts) {
+        retval.Set().insert(retval.Set().end(), popts->Get().begin(), popts->Get().end());
+    }
+    if (fopts) {
+        retval.Set().insert(retval.Set().end(), fopts->Get().begin(), fopts->Get().end());
+    }
+}
+
 CRef<CBlastOptionsHandle> CBlastOptionsBuilder::
 GetSearchOptions(const objects::CBlast4_parameters * aopts,
                  const objects::CBlast4_parameters * popts,
+                 const objects::CBlast4_parameters* fopts,
                  string *task_name)
 {
     EProgram program = ComputeProgram(m_Program, m_Service);
-    
-    program = AdjustProgram((aopts == NULL ? 0 : &aopts->Get()), 
-                            program, m_Program);
+    objects::CBlast4_parameters all_params;
+    s_MergeCBlast4_parameters(aopts, popts, fopts, all_params);
+    program = AdjustProgram(&all_params.Get(), program, m_Program);
     
     // Using eLocal allows more of the options to be returned to the user.
     

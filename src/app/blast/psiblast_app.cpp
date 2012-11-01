@@ -80,23 +80,30 @@ private:
     void SavePssmToFile(CRef<CPssmWithParameters> pssm, 
                         const CPsiBlastIterationState* itr = NULL);
 
-    /// Performs iteratiosn for either multiple queries or input PSSM
+    /// Performs iterations for either multiple queries or input PSSM
     ///@param opts_hndl BLAST options to use [in]
     ///@param query query sequence(s) [in]
     ///@param pssm PSSM saved from another psi-blast run [in]
     ///@param db_args database [in]
-    ///@param args args [in]
     ///@param db_adapter more db infor [in] 
     ///@param scope fetches sequences [in]
     ///@param formatter formats results [in]
+    /// @return true if the PSI-BLAST search converged, otherwise false
     bool DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
                            CRef<CBlastQueryVector> query,
                            CRef<CPssmWithParameters> pssm,
                            CRef<CBlastDatabaseArgs> db_args,
-                           const CArgs& args,
                            CRef<CLocalDbAdapter> db_adapter,
                            CRef<CScope> scope,
                            CBlastFormat& formatter);
+    bool
+    x_RunLocalPsiBlastIterations(CRef<CBlastQueryVector> query,
+                                CRef<CPssmWithParameters> pssm,
+                                CRef<CScope> scope,
+                                CRef<CLocalDbAdapter> db_adapter,
+                                CRef<CBlastOptionsHandle> opts_hndl,
+                                CBlastFormat& formatter,
+                                const size_t kNumIterations);
 
     CRef<CPssmWithParameters>
     ComputePssmForNextIteration(const CBioseq& bioseq,
@@ -166,62 +173,30 @@ CPsiBlastApp::ComputePssmForNextIteration(const CBioseq& bioseq,
                                             m_AncillaryData, diags);
 }
 
-bool 
-CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
-                           CRef<CBlastQueryVector> query,
-                           CRef<CPssmWithParameters> pssm,
-                           CRef<CBlastDatabaseArgs> db_args,
-                           const CArgs& args,
-                           CRef<CLocalDbAdapter> db_adapter,
-                           CRef<CScope> scope,
-                           CBlastFormat& formatter)
+/*** Convenience function to make a query factory object */
+static CRef<IQueryFactory>
+s_MakeQueryFactory(CRef<CPssmWithParameters> pssm,CRef<CBlastQueryVector> query)
 {
+    CRef<IQueryFactory> retval;
+    if (pssm.Empty() && !query.Empty()) {
+        retval.Reset(new CObjMgr_QueryFactory(*query));
+    }
+    return retval;
+}
 
+bool 
+CPsiBlastApp::x_RunLocalPsiBlastIterations(CRef<CBlastQueryVector> query,
+                           CRef<CPssmWithParameters> pssm,
+                           CRef<CScope> scope,
+                                           CRef<CLocalDbAdapter> db_adapter,
+                                           CRef<CBlastOptionsHandle> opts_hndl,
+                                           CBlastFormat& formatter,
+                                           const size_t kNumIterations)
+{
         bool converged = false;
-
-        CRef<IQueryFactory> query_factory;
-        if (pssm.Empty() && !query.Empty())
-       		query_factory.Reset(new CObjMgr_QueryFactory(*query));
-
-        const size_t kNumIterations = m_CmdLineArgs->GetNumberOfIterations();
-        SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm, kNumIterations);
-
-
-        if (m_CmdLineArgs->ExecuteRemotely()) {
-
-            CRef<CRemoteBlast> rmt_psiblast = 
-                InitializeRemoteBlast(query_factory, db_args, opts_hndl,
-                          m_CmdLineArgs->ProduceDebugRemoteOutput(),
-                          m_CmdLineArgs->GetClientId(), pssm);
-            // FIXME: determine if errors ocurred, if so, return appropriate
-            // exit code
-
-            CRef<CSearchResultSet> results = rmt_psiblast->GetResultSet();
-            if(CFormattingArgs::eArchiveFormat ==
-               m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice())
-            {
-            	if (pssm.Empty() && !query.Empty())
-            	{
-            		formatter.WriteArchive(*query_factory, *opts_hndl, *results );
-            	}
-            	else if (!pssm.Empty())
-            	{
-            		formatter.WriteArchive(*pssm, *opts_hndl, *results);
-            	}
-            }
-            else
-            {
-            	BlastFormatter_PreFetchSequenceData(*results, scope);
-            	ITERATE(CSearchResultSet, result, *results) {
-                	formatter.PrintOneResultSet(**result, query);
-            	}
-            }
-            SavePssmToFile(rmt_psiblast->GetPSSM());
-
-        } else {
+    CArgs& args = const_cast<CArgs&>(GetArgs());
 
             const CBlastOptions& opt = opts_hndl->GetOptions();
-
             CPsiBlastIterationState itr(kNumIterations);
 
             CRef<CPHIBlastProtOptionsHandle> phi_opts;
@@ -231,14 +206,14 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
                run_token += 1;
             if (kNumIterations != 1 || opt.GetPHIPattern() == NULL)
                run_token += 2;
-
+    _TRACE("Run_token=" << run_token);
             if (run_token & 1)
             {
                phi_opts.Reset(dynamic_cast<CPHIBlastProtOptionsHandle*>(&*opts_hndl));
                if (run_token & 2)
                {
                   // m_CmdLineArgs->ForcePSIBlast();
-                  ((CArgs&)args).Remove(kArgPHIPatternFile);
+            args.Remove(kArgPHIPatternFile);
                   CRef<CBlastOptionsHandle> opts_hndl_2(m_CmdLineArgs->SetOptions(args));
                   CBlastOptions& options = opts_hndl_2->SetOptions();
                   options.SetPHIPattern(NULL, false);
@@ -249,6 +224,7 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
             else if (run_token == 2)  // This branch means only psi-blast, NO phi-blast.
                 psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*opts_hndl));
 
+    CRef<IQueryFactory> query_factory(s_MakeQueryFactory(pssm, query));
             CRef<CPsiBlast> psiblast;
             if (run_token & 2)
             {
@@ -329,8 +305,61 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
             }
             if (itr.HasConverged())
               converged = true;
-       }
        return converged;
+}
+
+bool
+CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
+                           CRef<CBlastQueryVector> query,
+                           CRef<CPssmWithParameters> pssm,
+                           CRef<CBlastDatabaseArgs> db_args,
+                           CRef<CLocalDbAdapter> db_adapter,
+                           CRef<CScope> scope,
+                           CBlastFormat& formatter)
+{
+    const CArgs& args = GetArgs();
+    const size_t kNumIterations = m_CmdLineArgs->GetNumberOfIterations();
+    _TRACE("PSI-BLAST running " << kNumIterations << " iterations");
+    CRef<IQueryFactory> query_factory(s_MakeQueryFactory(pssm, query));
+
+    SaveSearchStrategy(args, m_CmdLineArgs, query_factory, opts_hndl, pssm, kNumIterations);
+
+    bool retval = false;
+    if (m_CmdLineArgs->ExecuteRemotely()) {
+
+        CRef<CRemoteBlast> rmt_psiblast =
+            InitializeRemoteBlast(query_factory, db_args, opts_hndl,
+                        m_CmdLineArgs->ProduceDebugRemoteOutput(),
+                        m_CmdLineArgs->GetClientId(), pssm);
+        // FIXME: determine if errors ocurred, if so, return appropriate
+        // exit code
+
+        CRef<CSearchResultSet> results = rmt_psiblast->GetResultSet();
+        if(CFormattingArgs::eArchiveFormat ==
+            m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice())
+        {
+            if (pssm.Empty() && !query.Empty())
+            {
+                formatter.WriteArchive(*query_factory, *opts_hndl, *results );
+            }
+            else if (!pssm.Empty())
+            {
+                formatter.WriteArchive(*pssm, *opts_hndl, *results);
+            }
+        }
+        else
+        {
+            BlastFormatter_PreFetchSequenceData(*results, scope);
+            ITERATE(CSearchResultSet, result, *results) {
+                formatter.PrintOneResultSet(**result, query);
+            }
+        }
+        SavePssmToFile(rmt_psiblast->GetPSSM());
+    } else {
+        retval = x_RunLocalPsiBlastIterations(query, pssm, scope, db_adapter,
+                                              opts_hndl, formatter, kNumIterations);
+    }
+    return retval;
 }
 
 void
@@ -371,19 +400,21 @@ int CPsiBlastApp::Run(void)
         SetDiagPostLevel(eDiag_Warning);
 
         const CArgs& args = GetArgs();
-        bool saved_search_strategy = RecoverSearchStrategy(args, m_CmdLineArgs);
+        const bool recovered_from_search_strategy =
+            RecoverSearchStrategy(args, m_CmdLineArgs);
 
         CRef<CQueryOptionsArgs> query_opts = 
             m_CmdLineArgs->GetQueryOptionsArgs();
 
         CRef<CBlastOptionsHandle> opts_hndl;
-        if(saved_search_strategy) {
+        if(recovered_from_search_strategy) {
            	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
         }
         else {
            	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
         }
         const CBlastOptions& opt = opts_hndl->GetOptions();
+        _TRACE("PSI-BLAST program = " << EProgramToTaskName(opt.GetProgram()));
 
         /*** Initialize the database ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
@@ -413,6 +444,9 @@ int CPsiBlastApp::Run(void)
                                          m_CmdLineArgs->GetInputStream(),
                                          iconfig));
             input.Reset(new CBlastInput(&*fasta, 1));
+            _TRACE("PSI-BLAST running with FASTA input");
+        } else {
+            _TRACE("PSI-BLAST running with PSSM input");
         } 
 
         /*** Get the formatting options ***/
@@ -437,6 +471,7 @@ int CPsiBlastApp::Run(void)
 
         formatter.PrintProlog();
 
+
         if (pssm.Empty())
         {   // Value may be modified for 2nd (PSSM) iteration, so save to reset for next query.
             ECompoAdjustModes comp_stats_original = opts_hndl->GetOptions().GetCompositionBasedStats();
@@ -445,16 +480,15 @@ int CPsiBlastApp::Run(void)
 
 		CRef<CBlastQueryVector> query_batch(input->GetNextSeqBatch(*scope));
 
-		bool retval = DoIterations(opts_hndl,
+                const bool converged = DoIterations(opts_hndl,
                            query_batch,
                            pssm,
                            db_args,
-                           args,
                            db_adapter,
                            scope,
                            formatter);
 
-                if (retval && !fmt_args->HasStructuredOutputFormat() &&
+                if (converged && !fmt_args->HasStructuredOutputFormat() &&
                 	fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eArchiveFormat) {
                 	out_stream << NcbiEndl << "Search has CONVERGED!" << NcbiEndl;
             	}
@@ -463,9 +497,7 @@ int CPsiBlastApp::Run(void)
             	pssm.Reset();
             	opts_hndl->SetOptions().SetCompositionBasedStats(comp_stats_original);
   	   }
-        }
-        else
-        {
+        } else {
 		_ASSERT(pssm->HasQuery());
 		_ASSERT(pssm->GetQuery().IsSeq());  // single query only!
 		scope->AddTopLevelSeqEntry(pssm->SetQuery());
@@ -479,16 +511,15 @@ int CPsiBlastApp::Run(void)
 
 
                 // Searches with PSSM, only one query though
-		bool retval = DoIterations(opts_hndl,
+            const bool converged = DoIterations(opts_hndl,
                            query,
                            pssm,
                            db_args,
-                           args,
                            db_adapter,
                            scope,
                            formatter);
 
-                if (retval && !fmt_args->HasStructuredOutputFormat() &&
+            if (converged && !fmt_args->HasStructuredOutputFormat() &&
                 	fmt_args->GetFormattedOutputChoice() != CFormattingArgs::eArchiveFormat)
                 	out_stream << NcbiEndl << "Search has CONVERGED!" << NcbiEndl;
         }

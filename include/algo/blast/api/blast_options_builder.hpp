@@ -80,10 +80,12 @@ public:
     ///
     /// @param aopts List of algorithm options [in].
     /// @param popts List of program options [in].
+    /// @param fopts List of formatting options [in].
     /// @param task_name name of the task deduced from the arguments [in|out]
     CRef<CBlastOptionsHandle>
     GetSearchOptions(const objects::CBlast4_parameters * aopts,
                      const objects::CBlast4_parameters * popts,
+                     const objects::CBlast4_parameters * fopts,
                      string *task_name=NULL);
 
     /// Check whether an Entrez query is specified.
