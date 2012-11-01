@@ -1747,9 +1747,11 @@ void CValidError_imp::ValidateOrgRef
         } else if (subtype == COrgMod::eSubtype_common) {
             if (orgref.IsSetCommon() 
                 && NStr::EqualNocase(subname, orgref.GetCommon())) {
+                /*
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
                            "OrgMod common is identical to Org-ref common",
                            obj, ctx);
+                */
             }
         }
     }
