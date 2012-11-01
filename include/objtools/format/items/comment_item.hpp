@@ -112,6 +112,7 @@ public:
     void AddPeriod(void);
 
     void RemoveExcessNewlines( const CCommentItem & next_comment );
+    void RemovePeriodAfterURL(void);
 
     enum ECommentFormat
     {

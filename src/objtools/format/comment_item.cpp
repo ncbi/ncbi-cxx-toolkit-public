@@ -223,6 +223,18 @@ void CCommentItem::RemoveExcessNewlines(
     }
 }
 
+void CCommentItem::RemovePeriodAfterURL(void)
+{
+    if( m_Comment.empty() ) {
+        return;
+    }
+
+    // remove period if it's after a '/', though.
+    if( NStr::EndsWith(m_Comment.back(), "/.") ) {
+        m_Comment.back().resize( m_Comment.back().length() - 1 );
+    }
+}
+
 const string& CCommentItem::GetNsAreGapsStr(void)
 {
     static const string kNsAreGaps = "The strings of n's in this record represent " \
