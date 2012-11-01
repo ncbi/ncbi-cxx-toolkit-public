@@ -133,6 +133,39 @@ public:
         fGffForFlybase         = 1 << 4, ///< Flybase flavour of GFF3.
     };
 
+    // These flags are used to select the GenBank sections to print or skip.
+    enum FGenbankBlocks {
+        // default is all sections
+        fGenbankBlocks_All        = (~0u),
+
+        // or, specify individual sections to print.
+        // or, specify individual sections to skip
+        // (via (fGenbankBlocks_All & ~fGenbankBlocks_Locus), for example)
+        fGenbankBlocks_Head       = (1u <<  0),
+        fGenbankBlocks_Locus      = (1u <<  1),
+        fGenbankBlocks_Defline    = (1u <<  2),
+        fGenbankBlocks_Accession  = (1u <<  3),
+        fGenbankBlocks_Version    = (1u <<  4),
+        fGenbankBlocks_Project    = (1u <<  5),
+        fGenbankBlocks_Dbsource   = (1u <<  6),
+        fGenbankBlocks_Keywords   = (1u <<  7),
+        fGenbankBlocks_Segment    = (1u <<  8),
+        fGenbankBlocks_Source     = (1u <<  9),
+        fGenbankBlocks_Reference  = (1u << 10),
+        fGenbankBlocks_Comment    = (1u << 11),
+        fGenbankBlocks_Primary    = (1u << 12), 
+        fGenbankBlocks_Featheader = (1u << 13),
+        fGenbankBlocks_Sourcefeat = (1u << 14),
+        fGenbankBlocks_Feature    = (1u << 15),
+        fGenbankBlocks_Basecount  = (1u << 16),
+        fGenbankBlocks_Origin     = (1u << 17),
+        fGenbankBlocks_Sequence   = (1u << 18),
+        fGenbankBlocks_Contig     = (1u << 19),
+        fGenbankBlocks_Wgs        = (1u << 20),
+        fGenbankBlocks_Genome     = (1u << 21),
+        fGenbankBlocks_Slash      = (1u << 22)
+    };
+
     // types
     typedef EFormat         TFormat;
     typedef EMode           TMode;
@@ -140,6 +173,7 @@ public:
     typedef unsigned int    TFlags; // binary OR of "EFlatFileFlags"
     typedef EView           TView;
     typedef unsigned int    TGffOptions;
+    typedef unsigned int    TGenbankBlocks;
 
     // constructors
     CFlatFileConfig(TFormat format = eFormat_GenBank,
@@ -147,7 +181,8 @@ public:
                     TStyle  style = eStyle_Normal,
                     TFlags  flags = 0,
                     TView   view = fViewNucleotides,
-                    TGffOptions gff_options = fGffGTFCompat );
+                    TGffOptions gff_options = fGffGTFCompat,
+                    TGenbankBlocks genbank_blocks = fGenbankBlocks_All );
     // destructor
     ~CFlatFileConfig(void);
 
@@ -367,6 +402,31 @@ public:
         m_GffOptions |= fGffForFlybase;
     };
 
+    // check if the given section is shown
+    bool IsShownGenbankBlock(FGenbankBlocks fTGenbankBlocksMask) const
+    {
+        return (m_fGenbankBlocks & fTGenbankBlocksMask) == fTGenbankBlocksMask;
+    }
+
+    // set the given section to be shown
+    void ShowGenbankBlock(FGenbankBlocks fTGenbankBlocksMask)
+    {
+        m_fGenbankBlocks |= (fTGenbankBlocksMask);
+    }
+
+    // set the given section to be skipped
+    // (that is, not shown or even processed)
+    void SkipGenbankBlock(FGenbankBlocks fTGenbankBlocksMask)
+    {
+        m_fGenbankBlocks &= (~fTGenbankBlocksMask);
+    }
+
+    // throws on error
+    static FGenbankBlocks StringToGenbankBlock(const string & str);
+    // returns the set of all possible genbank strings
+    // "head, "locus", etc.  Guaranteed to be sorted.
+    static const vector<string> & GetAllGenbankStrings(void);
+
 public:
     static const size_t SMARTFEATLIMIT = 1000000;
 
@@ -382,6 +442,7 @@ private:
     TFlags      m_Flags;  // custom flags
     bool        m_RefSeqConventions;
     TGffOptions m_GffOptions;
+    TGenbankBlocks m_fGenbankBlocks;
 
 };
 

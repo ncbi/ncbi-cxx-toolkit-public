@@ -96,98 +96,96 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     CConstRef<IFlatItem> item;
     const CFlatFileConfig& cfg = ctx.Config();
 
-    item.Reset( new CStartSectionItem(ctx) );
-    ItemOS() << item;
-    item.Reset( new CHtmlAnchorItem(ctx, "locus") );
-    ItemOS() << item;
-    item.Reset( new CLocusItem(ctx) );
-    ItemOS() << item;
-    item.Reset( new CDeflineItem(ctx) );
-    ItemOS() << item;
-    item.Reset( new CAccessionItem(ctx) );
-    ItemOS() << item;
-    item.Reset( new CVersionItem(ctx) );
-    ItemOS() << item;
-    item.Reset( new CGenomeProjectItem(ctx) );
-    ItemOS() << item;
+    // these macros make the code easier to read and less repetitive
+#define GATHER_BLOCK(BlockType, ItemClassName) \
+    if( cfg.IsShownGenbankBlock(CFlatFileConfig::fGenbankBlocks_##BlockType) ) { \
+        item.Reset( new ItemClassName(ctx) ); \
+        ItemOS() << item; \
+    }
+
+#define GATHER_ANCHOR(BlockType, block_str) \
+    if( cfg.IsShownGenbankBlock(CFlatFileConfig::fGenbankBlocks_##BlockType) ) { \
+        item.Reset( new CHtmlAnchorItem(ctx, (block_str) ) ); \
+        ItemOS() << item; \
+    }
+
+#define GATHER_VIA_FUNC(BlockType, FuncName) \
+    if( cfg.IsShownGenbankBlock(CFlatFileConfig::fGenbankBlocks_##BlockType) ) { \
+        FuncName(); \
+    }
+
+    GATHER_BLOCK(Head, CStartSectionItem);
+    GATHER_ANCHOR(Locus, "locus");
+    GATHER_BLOCK(Locus, CLocusItem);
+    GATHER_BLOCK(Defline, CDeflineItem);
+    GATHER_BLOCK(Accession, CAccessionItem);
+    GATHER_BLOCK(Version, CVersionItem);
+    GATHER_BLOCK(Project, CGenomeProjectItem);
+
     if ( ctx.IsProt() ) {
-        item.Reset( new CDBSourceItem(ctx) );
-        ItemOS() << item;
+        GATHER_BLOCK(Dbsource, CDBSourceItem);
     }
-    item.Reset( new CKeywordsItem(ctx) );
-    ItemOS() << item;
+    GATHER_BLOCK(Keywords, CKeywordsItem);
     if ( ctx.IsPart() ) {
-        item.Reset( new CSegmentItem(ctx) );
-        ItemOS() << item;
+        GATHER_BLOCK(Segment, CSegmentItem);
     }
-    item.Reset( new CSourceItem(ctx) );
-    ItemOS() << item;
-    x_GatherReferences();
-    item.Reset( new CHtmlAnchorItem(ctx, "comment") );
-    ItemOS() << item;
-    x_GatherComments();
-    item.Reset( new CPrimaryItem(ctx) );
-    ItemOS() << item;
-    item.Reset( new CHtmlAnchorItem(ctx, "feature") );
-    ItemOS() << item;
-    item.Reset( new CFeatHeaderItem(ctx) );
-    ItemOS() << item;
+    GATHER_BLOCK(Source, CSourceItem);
+    GATHER_VIA_FUNC(Reference, x_GatherReferences);
+    GATHER_ANCHOR(Comment, "comment");
+    GATHER_VIA_FUNC(Comment, x_GatherComments);
+    GATHER_BLOCK(Primary, CPrimaryItem);
+    GATHER_ANCHOR(Featheader, "feature");
+    GATHER_BLOCK(Featheader, CFeatHeaderItem);
     if ( !cfg.HideSourceFeatures() ) {
-        x_GatherSourceFeatures();
+        GATHER_VIA_FUNC(Sourcefeat, x_GatherSourceFeatures);
     }
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
-        x_GatherWGS(ctx);
+        GATHER_VIA_FUNC(Wgs, x_GatherWGS);
     } else if( ctx.IsTSAMaster()  &&
                ctx.GetTech() == CMolInfo::eTech_tsa &&
                ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) 
     {
-        x_GatherTSA(ctx);
+        // Yes, the TSA info is considered a kind of PRIMARY block
+        GATHER_VIA_FUNC(Primary, x_GatherTSA);
     } else if ( ctx.DoContigStyle() ) {
         if ( cfg.ShowContigFeatures() ) {
-            x_GatherFeatures();
+            GATHER_VIA_FUNC(Feature, x_GatherFeatures);
         }
         else if ( cfg.IsModeEntrez() ) {
             size_t size = sequence::GetLength( m_Current->GetLocation(), &m_Current->GetScope() );
             if ( size <= cfg.SMARTFEATLIMIT ) {
-                x_GatherFeatures();
+                GATHER_VIA_FUNC(Feature, x_GatherFeatures);
             }
         }
-        item.Reset( new CHtmlAnchorItem(ctx, "contig") );
-        ItemOS() << item;
-        item.Reset( new CContigItem(ctx) );
-        ItemOS() << item;
+        GATHER_ANCHOR(Contig, "contig");
+        GATHER_BLOCK(Contig, CContigItem);
         if ( cfg.ShowContigAndSeq() ) {
             if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
-                item.Reset( new CBaseCountItem(ctx) );
-                ItemOS() << item;
+                GATHER_BLOCK(Basecount, CBaseCountItem);
             }
-            item.Reset( new COriginItem(ctx) );
-            ItemOS() << item;
-            x_GatherSequence();
+            GATHER_BLOCK(Origin, COriginItem);
+            GATHER_VIA_FUNC(Sequence, x_GatherSequence);
         }
     } else {
-        x_GatherFeatures();
+        GATHER_VIA_FUNC(Feature, x_GatherFeatures);
         if ( cfg.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
-            item.Reset( new CHtmlAnchorItem(ctx, "contig") );
-            ItemOS() << item;
-            item.Reset( new CContigItem(ctx) );
-            ItemOS() << item;
+            GATHER_ANCHOR(Contig, "contig");
+            GATHER_BLOCK(Contig, CContigItem);
         }
         if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
-            item.Reset( new CBaseCountItem(ctx) );
-            ItemOS() << item;
+            GATHER_BLOCK(Basecount, CBaseCountItem);
         }
-        item.Reset( new COriginItem(ctx) );
-        ItemOS() << item;
-        x_GatherSequence();
+        GATHER_BLOCK(Origin, COriginItem);
+        GATHER_VIA_FUNC(Sequence, x_GatherSequence);
     }
-    item.Reset( new CEndSectionItem(ctx) );    
-    ItemOS() << item;
+    GATHER_BLOCK(Slash, CEndSectionItem);
 }
 
 
-void CGenbankGatherer::x_GatherWGS(CBioseqContext& ctx) const
+void CGenbankGatherer::x_GatherWGS(void) const
 {
+    CBioseqContext& ctx = *m_Current;
+
     const string* first = 0;
     const string* last  = 0;
 
@@ -232,8 +230,10 @@ void CGenbankGatherer::x_GatherWGS(CBioseqContext& ctx) const
     }    
 }
 
-void CGenbankGatherer::x_GatherTSA(CBioseqContext& ctx) const
+void CGenbankGatherer::x_GatherTSA(void) const
 {
+    CBioseqContext& ctx = *m_Current;
+
     const string* first = 0;
     const string* last  = 0;
 

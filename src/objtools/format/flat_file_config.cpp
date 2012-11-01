@@ -30,8 +30,8 @@
 *   
 */
 #include <ncbi_pch.hpp>
+#include <util/static_map.hpp>
 #include <corelib/ncbistd.hpp>
-
 #include <objtools/format/flat_file_config.hpp>
 
 
@@ -46,9 +46,11 @@ CFlatFileConfig::CFlatFileConfig(
     TStyle style,
     TFlags flags,
     TView view,
-    TGffOptions gff_options) :
+    TGffOptions gff_options,
+    TGenbankBlocks genbank_blocks ) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
-    m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options)
+    m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options),
+    m_fGenbankBlocks(genbank_blocks)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
@@ -154,6 +156,68 @@ bool CFlatFileConfig::SelenocysteineToNote(void) const
 bool CFlatFileConfig::CodonRecognizedToNote(void) const
 {
     return m_RefSeqConventions ? false : sm_ModeFlags[static_cast<size_t>(m_Mode)][26];
+}
+
+typedef SStaticPair<const char *, CFlatFileConfig::FGenbankBlocks>  TBlockElem;
+static const TBlockElem sc_block_map[] = {
+    { "accession",  CFlatFileConfig::fGenbankBlocks_Accession },
+    { "all",        CFlatFileConfig::fGenbankBlocks_All },
+    { "basecount",  CFlatFileConfig::fGenbankBlocks_Basecount },
+    { "comment",    CFlatFileConfig::fGenbankBlocks_Comment },
+    { "contig",     CFlatFileConfig::fGenbankBlocks_Contig },
+    { "dbsource",   CFlatFileConfig::fGenbankBlocks_Dbsource },
+    { "defline",    CFlatFileConfig::fGenbankBlocks_Defline },
+    { "featheader", CFlatFileConfig::fGenbankBlocks_Featheader },
+    { "feature",    CFlatFileConfig::fGenbankBlocks_Feature },
+    { "genome",     CFlatFileConfig::fGenbankBlocks_Genome },
+    { "head",       CFlatFileConfig::fGenbankBlocks_Head },
+    { "keywords",   CFlatFileConfig::fGenbankBlocks_Keywords },
+    { "locus",      CFlatFileConfig::fGenbankBlocks_Locus },
+    { "origin",     CFlatFileConfig::fGenbankBlocks_Origin },
+    { "primary",    CFlatFileConfig::fGenbankBlocks_Primary },
+    { "project",    CFlatFileConfig::fGenbankBlocks_Project },
+    { "reference",  CFlatFileConfig::fGenbankBlocks_Reference },
+    { "segment",    CFlatFileConfig::fGenbankBlocks_Segment },
+    { "sequence",   CFlatFileConfig::fGenbankBlocks_Sequence },
+    { "slash",      CFlatFileConfig::fGenbankBlocks_Slash },
+    { "source",     CFlatFileConfig::fGenbankBlocks_Source },
+    { "sourcefeat", CFlatFileConfig::fGenbankBlocks_Sourcefeat },
+    { "version",    CFlatFileConfig::fGenbankBlocks_Version },
+    { "wgs",        CFlatFileConfig::fGenbankBlocks_Wgs }
+};
+typedef CStaticArrayMap<const char *, CFlatFileConfig::FGenbankBlocks, PNocase_CStr> TBlockMap;
+DEFINE_STATIC_ARRAY_MAP(TBlockMap, sc_BlockMap, sc_block_map);
+
+// static
+CFlatFileConfig::FGenbankBlocks CFlatFileConfig::StringToGenbankBlock(const string & str)
+{
+    TBlockMap::const_iterator find_iter = sc_BlockMap.find(str.c_str());
+    if( find_iter == sc_BlockMap.end() ) {
+        throw runtime_error("Could not translate this string to a Genbank block type: " + str);
+    }
+    return find_iter->second;
+}
+
+// static 
+const vector<string> & 
+CFlatFileConfig::GetAllGenbankStrings(void)
+{
+    static vector<string> s_vecOfGenbankStrings;
+    static CFastMutex s_mutex;
+
+    CFastMutexGuard guard(s_mutex);
+    if( s_vecOfGenbankStrings.empty() ) {
+        // use "set" for sorting and uniquing
+        set<string> setOfGenbankStrings;
+        ITERATE(TBlockMap, map_iter, sc_BlockMap) {
+            setOfGenbankStrings.insert(map_iter->first);
+        }
+        copy( setOfGenbankStrings.begin(),
+            setOfGenbankStrings.end(), 
+            back_inserter(s_vecOfGenbankStrings) );
+    }
+
+    return s_vecOfGenbankStrings;
 }
 
 END_SCOPE(objects)

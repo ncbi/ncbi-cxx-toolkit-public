@@ -46,6 +46,7 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/readers/fasta.hpp>
 
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
@@ -78,11 +79,13 @@ protected:
 
 private:
     // types
-    typedef CFlatFileConfig::TFormat    TFormat;
-    typedef CFlatFileConfig::TMode      TMode;
-    typedef CFlatFileConfig::TStyle     TStyle;
-    typedef CFlatFileConfig::TFlags     TFlags;
-    typedef CFlatFileConfig::TView      TView;
+    typedef CFlatFileConfig::TFormat        TFormat;
+    typedef CFlatFileConfig::TMode          TMode;
+    typedef CFlatFileConfig::TStyle         TStyle;
+    typedef CFlatFileConfig::TFlags         TFlags;
+    typedef CFlatFileConfig::TView          TView;
+    typedef CFlatFileConfig::TGffOptions    TGffOptions;
+    typedef CFlatFileConfig::TGenbankBlocks TGenbankBlocks;
 
     CObjectIStream* x_OpenIStream(const CArgs& args);
 
@@ -92,6 +95,7 @@ private:
     TStyle          x_GetStyle(const CArgs& args);
     TFlags          x_GetFlags(const CArgs& args);
     TView           x_GetView(const CArgs& args);
+    TGenbankBlocks  x_GetGenbankBlocks(const CArgs& args);
     TSeqPos x_GetFrom(const CArgs& args);
     TSeqPos x_GetTo  (const CArgs& args);
     void x_GetLocation(const CSeq_entry_Handle& entry,
@@ -219,6 +223,17 @@ void CAsn2FlatApp::Init(void)
                                  "1073741824 - show javascript sequence spans",
 
                                  CArgDescriptions::eInteger, "0");
+
+         arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+             "Use this to only show certain parts of the flatfile (e.g. '-showblocks locus,defline').  "
+             "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
+             CArgDescriptions::eString );
+         arg_desc->AddOptionalKey("skipblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+             "Use this to skip certain parts of the flatfile (e.g. '-skipblocks sequence,origin').  "
+             "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
+             CArgDescriptions::eString );
+         // don't allow both because it's not really clear what the user intended.
+         arg_desc->SetDependency("showblocks", CArgDescriptions::eExcludes, "skipblocks");
 
          arg_desc->AddFlag("no-external",
                            "Disable all external annotation sources");
@@ -605,13 +620,15 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 
 CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
 {
-    TFormat    format = x_GetFormat(args);
-    TMode      mode   = x_GetMode(args);
-    TStyle     style  = x_GetStyle(args);
-    TFlags     flags  = x_GetFlags(args);
-    TView      view   = x_GetView(args);
+    TFormat        format         = x_GetFormat(args);
+    TMode          mode           = x_GetMode(args);
+    TStyle         style          = x_GetStyle(args);
+    TFlags         flags          = x_GetFlags(args);
+    TView          view           = x_GetView(args);
+    TGffOptions    gff_options    = CFlatFileConfig::fGffGTFCompat;
+    TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
 
-    CFlatFileConfig cfg(format, mode, style, flags, view);
+    CFlatFileConfig cfg(format, mode, style, flags, view, gff_options, genbank_blocks);
     return new CFlatFileGenerator(cfg);
 }
 
@@ -780,6 +797,38 @@ CAsn2FlatApp::TView CAsn2FlatApp::x_GetView(const CArgs& args)
     return CFlatFileConfig::fViewNucleotides;
 }
 
+CAsn2FlatApp::TGenbankBlocks CAsn2FlatApp::x_GetGenbankBlocks(const CArgs& args)
+{
+    const static CAsn2FlatApp::TGenbankBlocks kDefault = 
+        CFlatFileConfig::fGenbankBlocks_All;
+
+    string blocks_arg;
+    // set to true if we're hiding the blocks given instead of showing them
+    bool bInvertFlags = false; 
+    if( args["showblocks"] ) {
+        blocks_arg = args["showblocks"].AsString();
+    } else if( args["skipblocks"] ) {
+        blocks_arg = args["skipblocks"].AsString();
+        bInvertFlags = true;
+    } else {
+        return kDefault;
+    }
+
+    // turn the blocks into one mask
+    CAsn2FlatApp::TGenbankBlocks fBlocksGiven = 0;
+    vector<string> vecOfBlockNames;
+    NStr::Tokenize(blocks_arg, ",", vecOfBlockNames);
+    ITERATE(vector<string>, name_iter, vecOfBlockNames) {
+        // Note that StringToGenbankBlock throws an
+        // exception if it gets an illegal value.
+        CAsn2FlatApp::TGenbankBlocks fThisBlock =
+            CFlatFileConfig::StringToGenbankBlock(
+            NStr::TruncateSpaces(*name_iter));
+        fBlocksGiven |= fThisBlock;
+    }
+
+    return ( bInvertFlags ? ~fBlocksGiven : fBlocksGiven );
+}
 
 TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args)
 {
@@ -887,6 +936,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-//    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_ToStderr, "config.ini");
     return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }

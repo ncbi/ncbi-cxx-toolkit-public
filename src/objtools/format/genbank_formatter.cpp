@@ -169,8 +169,10 @@ void CGenbankFormatter::EndSection
  IFlatTextOStream& text_os)
 {
     // print the double-slashes
-    bool bHtml = GetContext().GetConfig().DoHTML();
+    const CFlatFileConfig& cfg = GetContext().GetConfig();
+    const bool bHtml = cfg.DoHTML();
     list<string> l;
+
     if ( bHtml ) {
         l.push_back( "//</pre>" );
     }

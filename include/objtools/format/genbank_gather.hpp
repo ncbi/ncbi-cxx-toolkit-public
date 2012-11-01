@@ -53,8 +53,8 @@ public:
     virtual void x_DoSingleSection(CBioseqContext& ctx) const;
 
 private:
-    void x_GatherWGS(CBioseqContext& ctx) const;
-    void x_GatherTSA(CBioseqContext& ctx) const;
+    void x_GatherWGS(void) const;
+    void x_GatherTSA(void) const;
 };
 
 
