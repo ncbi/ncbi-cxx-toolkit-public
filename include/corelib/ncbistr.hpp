@@ -2381,17 +2381,17 @@ public:
     /// XML-encode flags
     enum EXmlEncode {
         /// Encode predefined entities only
-        eXmlEnc_Contents = 0,
+        eXmlEnc_CommentSafe = 0,
         /// Also encode double hyphen and ending hyphen,
         /// making the result safe to put into XML comments.
-        eXmlEnc_CommentSafe = 1 << 0
+        eXmlEnc_Contents = 1 << 0
     };
 
     /// Encode a string for XML.
     ///
     /// Replace relevant characters by predefined entities.
     static string XmlEncode(const CTempString& str,
-                            EXmlEncode flags = eXmlEnc_Contents);
+                            EXmlEncode flags = eXmlEnc_CommentSafe);
 
     /// Encode a string for HTML.
     ///
