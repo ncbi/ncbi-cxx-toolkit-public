@@ -5635,7 +5635,9 @@ CNewCleanup_imp::x_OrgnameModBC( COrgName &orgname, const string &org_ref_common
         if ( (subtype == NCBI_ORGMOD(common)) && 
             NStr::EqualNocase(subname, org_ref_common) )
         {
-            unlink = true;
+            // if you find this code commented out for a long, long time, you can probably
+            // just remove it.  (originally commented-out under JIRA SQD-816)
+            //// unlink = true;
         } else if( prev != NULL ) {
             const TORGMOD_SUBTYPE prev_subtype = GET_FIELD(*prev, Subtype);
             const string &prev_subname = GET_FIELD(*prev, Subname);
