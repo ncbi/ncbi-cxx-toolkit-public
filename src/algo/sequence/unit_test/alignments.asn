@@ -3421,12 +3421,14 @@ Seq-align ::= {
     product-type transcript,
     exons {
       {
-        product-start nucpos 51,
+        product-start nucpos 48,
         product-end nucpos 59,
-        genomic-start 3819588,
+        genomic-start 3819582,
         genomic-end 3819596,
         parts {
-          match 9
+          match 6,
+          genomic-ins 3,
+          match 6
         },
         scores {
           {

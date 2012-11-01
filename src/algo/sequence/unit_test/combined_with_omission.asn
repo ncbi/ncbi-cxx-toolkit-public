@@ -1974,12 +1974,12 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 1 indel and aligns at 99% coverage
+      comment "The RefSeq transcript has 2 indels and aligns at 99% coverage
  compared to this genomic sequence",
       product whole gi 110611232,
       location packed-int {
         {
-          from 3819588,
+          from 3819582,
           to 3819596,
           strand plus,
           id gi 224514634,
@@ -2242,24 +2242,32 @@ Seq-annot ::= {
     },
     {
       data cdregion {
-        frame two,
         code {
           id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 3819583,
+              to 3819585,
+              strand plus,
+              id gi 224514634
+            },
+            aa ncbieaa 77
+          }
         }
       },
-      partial TRUE,
       except TRUE,
       comment "isoform 2 precursor is encoded by transcript variant 2; The
- RefSeq protein has 1 indel and aligns at 99% coverage compared to this
- genomic sequence",
+ RefSeq protein has 2 substitutions and 2 indels compared to this genomic
+ sequence",
       product whole gi 110611233,
       location packed-int {
         {
-          from 3819588,
+          from 3819583,
           to 3819596,
           strand plus,
-          id gi 224514634,
-          fuzz-from lim lt
+          id gi 224514634
         },
         {
           from 3819734,
