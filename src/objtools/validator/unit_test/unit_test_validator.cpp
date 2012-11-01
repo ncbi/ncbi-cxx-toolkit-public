@@ -4774,7 +4774,9 @@ BOOST_AUTO_TEST_CASE(Test_CompleteCircleProblem)
     SetTitle(entry, "This is just a title");
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     seh = scope.AddTopLevelSeqEntry(*entry);
+    /*
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "CompleteCircleProblem", "Circular topology has complete flag set, but title should say complete sequence or complete genome"));
+    */
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -6214,8 +6216,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
                               "Variety value specified is not found in taxname"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",
                               "Specific host is identical to taxname"));
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",
                               "OrgMod common is identical to Org-ref common"));
+    */
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
