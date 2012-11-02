@@ -80,6 +80,23 @@
 #include "../../corelib/ncbi_process.cpp"
 #undef NCBI_USE_ERRCODE_X
 
+#if 1
+
+void  ncbi::CNcbiError::Set(ncbi::CNcbiError::ECode, const ncbi::CTempString&) {}
+void  ncbi::CNcbiError::SetErrno(int, const ncbi::CTempString&)                {}
+void  ncbi::CNcbiError::SetFromErrno(const ncbi::CTempString& )                {}
+#if defined(NCBI_OS_MSWIN)
+void  ncbi::CNcbiError::SetWindowsError( int, const ncbi::CTempString&)        {}
+void  ncbi::CNcbiError::SetFromWindowsError( const ncbi::CTempString&)         {}
+#endif
+
+#else
+
+#include "../../corelib/ncbierror.cpp"
+#undef NCBI_USE_ERRCODE_X
+
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
