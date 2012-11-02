@@ -461,6 +461,13 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
 
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
 
+    if((p2->IsSetStart_offset() || p2->IsSetStop_offset()) && p.GetLoc().IsInt() && mapped_loc->IsPnt()) {
+        //If we have offsets, then the distinction betwen point and one-point interval is important, e.g.
+        //NM_000155.3:c.-116-3_-116 - the location is an interval, but the anchor point is the same; we need to 
+        //keep it as interval, as if we represent it as a point, then the corresponding HGVS is also a point: NM_000155.3:c.-116-3
+        mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fMerge_SingleRange, NULL);
+    }
+
 #if 0
     if(mapped_loc->IsNull() && p.GetLoc().GetId() && !p.GetLoc().IsEmpty()) {
         //If mapped to nothing, expand the loc and try again. The purpose is to know the seq-id of the 
