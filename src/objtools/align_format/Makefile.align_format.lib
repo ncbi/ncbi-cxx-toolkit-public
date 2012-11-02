@@ -9,7 +9,7 @@ SRC = format_flags align_format_util showdefline showalign tabular vectorscreen 
       aln_printer
 # OBJ =
 
-CPPFLAGS = $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
 # CFLAGS   = $(FAST_CFLAGS)

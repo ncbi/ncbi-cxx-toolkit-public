@@ -5,7 +5,7 @@ ASN_DEP = blastdb blastxml xnetblast
 LIB = xblastformat
 SRC = blastfmtutil blastxml_format blast_format data4xmlformat build_archive vecscreen_run
 
-CPPFLAGS = $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
 
 DLL_LIB = blastxml xhtml xcgi
 

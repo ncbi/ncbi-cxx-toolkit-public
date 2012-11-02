@@ -9,7 +9,7 @@ LIB = blastdb_format
 SRC = seq_writer blastdb_dataextract blastdb_formatter
 # OBJ =
 
-CPPFLAGS = $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST

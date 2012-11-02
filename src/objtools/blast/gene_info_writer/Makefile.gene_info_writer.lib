@@ -2,6 +2,7 @@
 
 WATCHERS = camacho
 
+CPPFLAGS = -DNCBI_MODULE=GENEINFO $(ORIG_CPPFLAGS)
 LIB = gene_info_writer
 SRC = gene_info_writer
 

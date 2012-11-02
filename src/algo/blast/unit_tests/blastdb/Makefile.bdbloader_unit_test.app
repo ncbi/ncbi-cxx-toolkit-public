@@ -3,7 +3,7 @@
 APP = bdbloader_unit_test
 SRC = bdbloader_unit_test
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I../
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -I../
 
 LIB_ = test_boost $(BLAST_INPUT_LIBS) ncbi_xloader_blastdb_rmt \
     $(BLAST_LIBS) $(OBJMGR_LIBS)
