@@ -61,7 +61,9 @@ BEGIN_NCBI_SCOPE
 
 namespace DiscRepNmSpc {
   typedef map <string, vector <int> > Str2Ints;
+  typedef map <string, int> Str2Int;
   typedef map <int, int> Int2Int;
+  typedef map <string, Str2Strs> Str2MapStr2Strs;
 
   class CDiscTestInfo 
   {
@@ -86,6 +88,12 @@ namespace DiscRepNmSpc {
          else return ((*x).str) <  ((*y).str) ;
      }
   };
+
+  struct qualvlu_distribute {
+         Str2Strs qual_vlu2src;
+         vector <string> missing_item, multi_same, multi_dup, multi_all_dif;
+  };
+  typedef map <string, qualvlu_distribute > Str2QualVlus;
 
   class GeneralDiscSubDt: public CObject
   {
@@ -188,7 +196,7 @@ namespace DiscRepNmSpc {
 
       void RmvChar (string& in_out_str, string rm_chars);
 
-      bool IsEukaryotic(const CBioseq& bioseq);
+      bool IsBioseqHasLineage(const CBioseq& bioseq, const string& type);
       bool HasLineage(const CBioSource& biosrc, const string& type);
 
       static vector <const CSeq_feat*> mix_feat, gene_feat, cd_feat, rna_feat, prot_feat;
@@ -196,6 +204,7 @@ namespace DiscRepNmSpc {
       static vector <const CSeq_feat*> rna_not_mrna_feat, intron_feat, all_feat, non_prot_feat;
       static vector <const CSeq_feat*> rrna_feat, miscfeat_feat, otherRna_feat;
       static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
+      static vector <const CSeq_feat*> mrna_feat;
 
       static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc, title_seqdesc;
       static vector <const CSeqdesc*>  biosrc_orgmod_seqdesc, bioseq_biosrc, bioseq_molinfo;
@@ -275,7 +284,7 @@ namespace DiscRepNmSpc {
        bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
                                 const COrgMod::ESubtype& check_type, const string& check_head);
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, const string& setting_name, 
-                                                     bool be_na = true, bool be_aa = true); //?
+                                                bool be_na = true, bool be_aa = true);
        void TestOnFeatDesc_Biosrc();
        string GetName_iden_nm() const {return ("MORE_OR_SPEC_NAMES_IDENTIFIED_BY"); } 
        string GetName_col_nm() const {return ("MORE_NAMES_COLLECTED_BY"); } 
@@ -284,7 +293,8 @@ namespace DiscRepNmSpc {
        void GetSubmitText(const CAuth_list& authors, vector <string>& submit_text);
        void FindSpecSubmitText(vector <string>& submit_text);
        void TestOnDesc_User();
-       void AddBioseqsInSeqentryToReport(const unsigned& i, const string& setting_name);
+       void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
+                              const string& setting_name, bool be_na = true, bool be_aa=true);
        string GetName_missing() const {return string("MISSING_PROJECT");}
 
        void TestOnBiosrc(const CSeq_entry& seq_entry);
@@ -301,6 +311,35 @@ namespace DiscRepNmSpc {
         e_same,
         e_dup,
         e_all_dif
+  };
+
+
+/*
+  class CSeqEntry_test_on_user : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_test_on_user () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const =0;
+  };
+
+*/
+  
+
+  class CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("ONCALLER_MISSING_STRUCTURED_COMMENTS");}
+
+    protected:
+      void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt,
+                                                                   Str2Int& bioseq2cnt);
   };
 
 
@@ -331,20 +370,19 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {
                                return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE");}
+      virtual void Check(const string& desc) {cerr << "check1 " << desc << endl;}
   };
 
 
   class CSeqEntry_ONCALLER_MULTISRC : public CSeqEntryTestAndRepData
   {
-      friend class CSeqEntryTestAndRepData;
     public:
       virtual ~CSeqEntry_ONCALLER_MULTISRC () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("ONCALLER_MULTISRC");}
-
-    protected:
+ 
       static bool HasMulSrc(const CBioSource& biosrc);
   };
 
@@ -493,16 +531,16 @@ namespace DiscRepNmSpc {
     protected:
       bool isOncaller;
 
+/*
       struct qualvlu_distribute {
          Str2Strs qual_vlu2src;
          vector <string> missing_item, multi_same, multi_dup, multi_all_dif;
       };
+      typedef map <string, qualvlu_distribute > Str2QualVlus;
+*/
 
-      typedef map <string, qualvlu_distribute >Str2QualVlus;
-      typedef map <string, Str2Strs> Str2MapStr2Strs;
-
-      Str2Ints qual2src_idx_feat, qual2src_idx_seqdesc;
-      Str2MapStr2Strs  biosrc2qualvlu_nm;
+      Str2Ints m_qual2src_idx_feat, m_qual2src_idx_seqdesc;
+      Str2MapStr2Strs  m_biosrc2qualvlu_nm;
 
       void GetQual2SrcIdx(const CBioSource& biosrc,Str2Ints& qual2src_idx,const unsigned& idx);
       string GetSrcQualValue(const string& qual_type, const int& cur_idx, bool is_subsrc);
@@ -520,7 +558,7 @@ namespace DiscRepNmSpc {
                                                       eMultiQual& multi_type, bool is_subsrc);
       void GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc, 
                                                   vector <string>& multi_vlus, bool is_subsrc);
-      Str2QualVlus qual_nm2qual_vlus;
+      Str2QualVlus m_qual_nm2qual_vlus;
       void GetQualDistribute(const Str2Ints& qual2src_idx, bool IsFromFeat = false);
   };
 
@@ -663,13 +701,13 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return string("DISC_CHECK_AUTH_CAPS");}
 
     protected:
-      static bool IsNameCapitalizationOk(const string& name);
-      static bool IsAuthorInitialsCapitalizationOk(const string& nm_init);
-      static bool NameIsBad(CRef <CAuthor> nm_std);
+      bool IsNameCapitalizationOk(const string& name);
+      bool IsAuthorInitialsCapitalizationOk(const string& nm_init);
+      bool NameIsBad(const CRef <CAuthor> nm_std);
 
-      bool HasBadAuthorName(CAuth_list& auths);
-      bool AreBadAuthCapsInPubdesc(CPubdesc& pubdesc);
-      bool AreAuthCapsOkInSubmitBlock(CSubmit_block& submit_block);
+      bool HasBadAuthorName(const CAuth_list& auths);
+      bool AreBadAuthCapsInPubdesc(const CPubdesc& pubdesc);
+      bool AreAuthCapsOkInSubmitBlock(const CSubmit_block& submit_block);
   };
 
 
@@ -742,6 +780,27 @@ namespace DiscRepNmSpc {
        bool IsMrnaSequence();
   }; // CBioseqTest:
 
+
+  class CBioseq_SHOW_TRANSL_EXCEPT : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_SHOW_TRANSL_EXCEPT () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("SHOW_TRANSL_EXCEPT");}
+  };
+
+
+  class CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA");}
+  };
 
 
   class CBioseq_DISC_GENE_PARTIAL_CONFLICT : public CBioseqTestAndRepData

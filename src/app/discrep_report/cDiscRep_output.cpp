@@ -208,7 +208,7 @@ void CRepConfig :: WriteDiscRepItems(CRef <CClickableItem> c_item, const string&
        oc.output_f << c_item->description << endl;
 ITERATE (vector <string>, it, c_item->item_list) {
   oc.output_f << *it << endl;
-cerr << c_item->setting_name << "  " << *it << endl;
+//cerr << c_item->setting_name << "  " << *it << endl;
 };
 /* unnecessary
     for (vnp = c_item->subcategories; vnp != NULL; vnp = vnp->next) {

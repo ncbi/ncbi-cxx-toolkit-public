@@ -90,10 +90,11 @@ vector <string>                         CDiscRepInfo :: strandsymbol;
 bool                                    CDiscRepInfo :: exclude_dirsub;
 string                                  CDiscRepInfo :: report;
 Str2UInt                                CDiscRepInfo :: rRNATerms;
-vector <string>                         CDiscRepInfo :: no_multi_qual;
 vector <string>                         CDiscRepInfo :: bad_gene_names_contained;
-vector <string>                         CDiscRepInfo :: suspicious_notes;
+vector <string>                         CDiscRepInfo :: no_multi_qual;
+vector <string>                         CDiscRepInfo :: short_auth_nms;
 vector <string>                         CDiscRepInfo :: spec_words_biosrc;
+vector <string>                         CDiscRepInfo :: suspicious_notes;
 vector <string>                         CDiscRepInfo :: trna_list;
 vector <string>                         CDiscRepInfo :: rrna_standard_name;
 
@@ -275,6 +276,22 @@ cerr << "222can get\n";
     thisInfo.rrna_standard_name.push_back("28S ribosomal RNA");
     thisInfo.rrna_standard_name.push_back("large subunit ribosomal RNA");
     thisInfo.rrna_standard_name.push_back("small subunit ribosomal RNA");
+
+    // ini. of short_auth_nms
+    thisInfo.short_auth_nms.reserve(13);
+    thisInfo.short_auth_nms.push_back("de la");
+    thisInfo.short_auth_nms.push_back("del");
+    thisInfo.short_auth_nms.push_back("de");
+    thisInfo.short_auth_nms.push_back("da");
+    thisInfo.short_auth_nms.push_back("du");
+    thisInfo.short_auth_nms.push_back("dos");
+    thisInfo.short_auth_nms.push_back("la");
+    thisInfo.short_auth_nms.push_back("le");
+    thisInfo.short_auth_nms.push_back("van");
+    thisInfo.short_auth_nms.push_back("von");
+    thisInfo.short_auth_nms.push_back("der");
+    thisInfo.short_auth_nms.push_back("den");
+    thisInfo.short_auth_nms.push_back("di");
 }
 
 

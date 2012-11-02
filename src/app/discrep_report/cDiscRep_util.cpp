@@ -111,6 +111,7 @@ vector <const CSeq_feat*> CTestAndRepData :: exon_feat;
 vector <const CSeq_feat*> CTestAndRepData :: utr5_feat;
 vector <const CSeq_feat*> CTestAndRepData :: utr3_feat;
 vector <const CSeq_feat*> CTestAndRepData :: promoter_feat;
+vector <const CSeq_feat*> CTestAndRepData :: mrna_feat;
 
 vector <const CSeqdesc*>  CTestAndRepData :: pub_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: comm_seqdesc;
@@ -147,12 +148,11 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
      CTSE_Handle tse_hl = thisInfo.scope->GetTSE_Handle(*(bioseq->GetParentEntry()));
      if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty()) ) {
          CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
-         return (seq_feat_hl.GetOriginalSeq_feat());
-
+         if (seq_feat_hl) return (seq_feat_hl.GetOriginalSeq_feat());
      }
      else if (gene->CanGetLocus() && !(gene->GetLocus().empty())) {
          CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus(), false);
-         return (seq_feat_hl.GetOriginalSeq_feat());
+         if (seq_feat_hl) return (seq_feat_hl.GetOriginalSeq_feat());
      }
      else return (CConstRef <CSeq_feat>());
   }
@@ -160,6 +160,8 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
     return( CConstRef <CSeq_feat> (GetBestOverlappingFeat(seq_feat.GetLocation(), 
                                   CSeqFeatData::e_Gene, eOverlap_Contained, *thisInfo.scope)));
   }
+
+  return (CConstRef <CSeq_feat>());
 };
 
 
@@ -203,21 +205,30 @@ bool CTestAndRepData :: HasLineage(const CBioSource& biosrc, const string& type)
 
 
 
-bool CTestAndRepData :: IsEukaryotic(const CBioseq& bioseq)
+bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& type)
 {
    CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
    CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source);
    if (!it) return false;
-   for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
-      CBioSource :: EGenome genome = (CBioSource::EGenome) it->GetSource().GetGenome();
-      if (genome == CBioSource :: eGenome_mitochondrion 
-                  || genome == CBioSource :: eGenome_chloroplast 
-                  || genome == CBioSource :: eGenome_plastid 
-                  || genome == CBioSource :: eGenome_apicoplast
-                  || !HasLineage(it->GetSource(), "Eukaryota"))
-           return false;
+   if (type == "Eukaryota") {
+      for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
+          CBioSource :: EGenome genome = (CBioSource::EGenome) it->GetSource().GetGenome();
+          if (genome != CBioSource :: eGenome_mitochondrion
+                  && genome != CBioSource :: eGenome_chloroplast
+                  && genome != CBioSource :: eGenome_plastid
+                  && genome != CBioSource :: eGenome_apicoplast
+                  && HasLineage(it->GetSource(), type))
+           return true;
+      }
+      return false;
+   } 
+   else if (type == "Bacteria") {
+      for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
+           if (HasLineage(it->GetSource(), type)) return true;
+      }
+      return false;
    }
-   return true;
+   else return false;
 };
 
 
@@ -416,15 +427,19 @@ string CTestAndRepData :: ListAuthNames(const CAuth_list& auths)
   string auth_nms(kEmptyStr);
 
   unsigned i = 0;
-  ITERATE(list < CRef <CAuthor> >, it, auths.GetNames().GetStd()) {
-     strtmp.clear();
-     (*it)->GetLabel(&strtmp, IAbstractCitation::fLabel_Unique);
-     if ( (*it)->GetName().GetName().CanGetFirst()) {
-         size_t pos = strtmp.find(",");
-         strtmp = strtmp.substr(0, pos+1) + (*it)->GetName().GetName().GetFirst()
+  if (auths.GetNames().IsStd()) {
+    ITERATE(list < CRef <CAuthor> >, it, auths.GetNames().GetStd()) {
+       strtmp.clear();
+       (*it)->GetLabel(&strtmp, IAbstractCitation::fLabel_Unique);
+       if ( (*it)->GetName().IsName()) {
+          if ( (*it)->GetName().GetName().CanGetFirst()) {
+            size_t pos = strtmp.find(",");
+            strtmp = strtmp.substr(0, pos+1) + (*it)->GetName().GetName().GetFirst()
                    + "," + strtmp.substr(pos+1);
-     }
-     auth_nms += (!(i++)) ? strtmp  : ( " & " + strtmp);
+          }
+          auth_nms += (!(i++)) ? strtmp  : ( " & " + strtmp);
+       }
+    }
   }
   return (auth_nms);
 };  // ListAuthNames
@@ -438,64 +453,8 @@ string CTestAndRepData :: ListAllAuths(const CPubdesc& pubdesc)
 
    ITERATE (list <CRef <CPub> > , it, pubdesc.GetPub().Get()) {
       if (!(auth_nms.empty())) auth_nms += " & ";
-      if ( (*it)->IsGen() ) {
-           auth_nms += ListAuthNames( (*it)->GetGen().GetAuthors() );
-           if ( (*it)->GetGen().CanGetCit() ) {
-              strtmp = (*it)->GetGen().GetCit();
-              if (!strtmp.empty()) auth_nms += " (" + strtmp + ")";
-           }
-      }
-      else if ( (*it)->IsSub() ) {
-                auth_nms += ListAuthNames( (*it)->GetSub().GetAuthors());
-                if ( (*it)->GetSub().CanGetDate()) {
-                    strtmp.clear();
-                    (*it)->GetSub().GetDate().GetDate(&strtmp);
-                    auth_nms += " (" + strtmp + ")";
-                }
-      }
-      else if ( (*it)->IsArticle() )  {
-         const CCit_art& cit_art = (*it)->GetArticle();
-         if ( cit_art.IsSetAuthors()) auth_nms += ListAuthNames(cit_art.GetAuthors());
-         if (cit_art.GetFrom().IsBook()) {
-             if (!(auth_nms.empty())) auth_nms += " & "; 
-             auth_nms += ListAuthNames(cit_art.GetFrom().GetBook().GetAuthors());
-             strtmp.clear();
-             cit_art.GetFrom().GetBook().GetLabel(&strtmp,2);
-             auth_nms += strtmp.substr(strtmp.find(" "));
-         }
-         else if (cit_art.GetFrom().IsProc()) {
-             if (!(auth_nms.empty())) auth_nms += " & "; 
-             auth_nms += ListAuthNames(cit_art.GetFrom().GetProc().GetBook().GetAuthors());
-             strtmp.clear();
-             cit_art.GetFrom().GetProc().GetLabel(&strtmp, 2);
-             auth_nms += strtmp.substr(strtmp.find(" "));
-         }
-     }
-     else if ( (*it)->IsBook()) {
-           auth_nms += ListAuthNames( (*it)->GetBook().GetAuthors());
-             strtmp.clear();
-             (*it)->GetBook().GetLabel(&strtmp,2);
-             auth_nms += strtmp.substr(strtmp.find(" "));
-     }
-     else if ( (*it)->IsMan()) {
-          auth_nms+=ListAuthNames( (*it)->GetMan().GetCit().GetAuthors());
-          strtmp.clear();
-          (*it)->GetMan().GetLabel(&strtmp, 2);
-          auth_nms += strtmp.substr(strtmp.find(" "));
-     }
-     else if ( (*it)->IsPatent()) {
-         const CCit_pat& patent = (*it)->GetPatent();
-         auth_nms += ListAuthNames( patent.GetAuthors());
-         strtmp.clear();
-         strtmp = ListAuthNames( patent.GetApplicants());
-         if (!strtmp.empty() && !(auth_nms.empty())) auth_nms += (" & " + strtmp);
-         strtmp.clear();
-         strtmp = ListAuthNames( patent.GetAssignees());
-         if (!strtmp.empty() && !(auth_nms.empty())) auth_nms += (" & " + strtmp);
-         strtmp.clear();
-         patent.GetLabel(&strtmp, 1);
-         auth_nms += strtmp.substr(strtmp.find(" "));
-    }
+      if ((*it)->IsSetAuthors() )
+           auth_nms += ListAuthNames( (*it)->GetAuthors() );
   }
 
   return (auth_nms);
@@ -532,7 +491,12 @@ string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CBioseq
 
     if (seqdesc.IsTitle()) row_text += seqdesc.GetTitle();
     else if (seqdesc.IsComment()) row_text += seqdesc.GetComment();
-    else if (seqdesc.IsPub())  row_text += ListAllAuths(seqdesc.GetPub());
+    else if (seqdesc.IsPub()) { 
+      //row_text += ListAllAuths(seqdesc.GetPub());
+      string pub_label;
+      if ( seqdesc.GetPub().GetPub().GetLabel(&pub_label) ) 
+           row_text += pub_label;
+    }
     else {
        strtmp.clear();
        seqdesc.GetLabel(&strtmp, CSeqdesc::eContent);
@@ -558,7 +522,11 @@ string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CSeq_en
   if (!bioseq) {
      if (seqdesc.IsTitle()) row_text = seqdesc.GetTitle();
      else if (seqdesc.IsComment()) row_text = seqdesc.GetComment();
-     else if (seqdesc.IsPub()) row_text = ListAllAuths(seqdesc.GetPub());
+     else if (seqdesc.IsPub()) {
+        string pub_label;
+        if ( seqdesc.GetPub().GetPub().GetLabel(&pub_label)) 
+            row_text += pub_label;
+     }
      else seqdesc.GetLabel(&row_text, CSeqdesc::eContent);
      return(thisInfo.infile + ": " + row_text);
   }
@@ -761,11 +729,12 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
       string label = seq_feat_p->GetData().GetKey();
       if (label.empty()) label = "Unknown label";
       string locus_tag = GetLocusTagForFeature (*seq_feat_p);
-      string context_label;
+      string context_label(kEmptyStr);
       if (seq_feat_p->GetData().IsCdregion()) context_label = GetProdNmForCD(*seq_feat_p);
       else {
-          if (seq_feat_p->GetData().IsPub())
-               context_label = ListAllAuths(seq_feat_p->GetData().GetPub());
+          if (seq_feat_p->GetData().IsPub()) {
+                 if ( seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label));
+          }
           else GetSeqFeatLabel(*seq_feat_p, &context_label);
       }
       if (context_label.empty()) context_label = "Unknown context label";

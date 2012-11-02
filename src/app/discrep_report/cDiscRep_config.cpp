@@ -138,7 +138,9 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 // tests_on_Bioseq_CFeat
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
-                                           new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
+                                         new CBioseq_SHOW_TRANSL_EXCEPT));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
+                                         new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RRNA_NAME_CONFLICTS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_CDS));
@@ -185,6 +187,8 @@ void CRepConfDiscrepancy :: ConfigRep()
                                      CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
 
 // tests_on_Bioseq_CFeat_CSeqdesc
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
+                                           new CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                                  CRef <CTestAndRepData> (new CBioseq_TEST_BAD_GENE_NAME));
    tests_on_Bioseq_CFeat_CSeqdesc.push_back(
@@ -203,6 +207,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
+   tests_on_SeqEntry_feat_desc.push_back( 
+                   CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS));
    tests_on_SeqEntry_feat_desc.push_back( 
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT));
    tests_on_SeqEntry_feat_desc.push_back( 

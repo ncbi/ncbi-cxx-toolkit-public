@@ -79,7 +79,7 @@ bool RmChar2Comma(string& str, const string& moved_ch);
 
 
 template <class AsnClass>
-string Blob2Str(const AsnClass& blob, ESerialDataFormat datafm)
+string Blob2Str(const AsnClass& blob, ESerialDataFormat datafm = eSerial_AsnText)
 {
 
         CNcbiOstrstream oss;
