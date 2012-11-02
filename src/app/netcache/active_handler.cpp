@@ -316,6 +316,23 @@ CNCActiveHandler::SearchMeta(CRequestContext* cmd_ctx, const string& raw_key)
 }
 
 void
+CNCActiveHandler::CopyPurge(CRequestContext* cmd_ctx,
+                             const string& cache_name,
+                             const CSrvTime& when)
+{
+    if (cmd_ctx)
+        SetDiagCtx(cmd_ctx);
+    m_CurCmd = eNeedOnlyConfirm;
+    m_CmdToSend.resize(0);
+    m_CmdToSend += "COPY_Purge";
+    m_CmdToSend += " \"";
+    m_CmdToSend += cache_name;
+    m_CmdToSend += "\" ";
+    m_CmdToSend += NStr::UInt8ToString(when.AsUSec());
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
+}
+
+void
 CNCActiveHandler::CopyPut(CRequestContext* cmd_ctx,
                           const string& key,
                           Uint2 slot,
@@ -1544,10 +1561,35 @@ CNCActiveHandler::x_ReadSyncStartAnswer(void)
 }
 
 CNCActiveHandler::State
+CNCActiveHandler::x_ReadSyncStartExtra(void)
+{
+    CTempString line;
+    if (!m_Proxy->HasError() && m_Proxy->CanHaveMoreRead() && m_Proxy->ReadLine(&line)) {
+        if (line == "PURGE:") {
+            string data;
+            while (m_Proxy->ReadLine(&line)) {
+                if (line.empty() || line == ";") {
+                    break;
+                }
+                data += line;
+                data += '\n';
+            }
+            if (CNCBlobAccessor::UpdatePurgeData(data)) {
+                CNCBlobStorage::SavePurgeData();
+            }
+        }
+    }
+    return &Me::x_FinishCommand;
+}
+
+CNCActiveHandler::State
 CNCActiveHandler::x_ReadEventsListKeySize(void)
 {
     if (m_SizeToRead == 0) {
         x_FinishSyncCmd(eSynOK);
+        if (m_CurCmd == eSyncStart) {
+            return &Me::x_ReadSyncStartExtra;
+        }
         return &Me::x_FinishCommand;
     }
     if (m_Proxy->NeedEarlyClose())
@@ -1605,6 +1647,9 @@ CNCActiveHandler::x_ReadBlobsListKeySize(void)
 {
     if (m_SizeToRead == 0) {
         x_FinishSyncCmd(eSynOK);
+        if (m_CurCmd == eSyncStart) {
+            return &Me::x_ReadSyncStartExtra;
+        }
         return &Me::x_FinishCommand;
     }
     if (m_Proxy->NeedEarlyClose())

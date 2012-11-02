@@ -335,6 +335,17 @@ CNCDistributionConf::GetPeers(void)
     return s_Peers;
 }
 
+TServersList
+CNCDistributionConf::GetPeerServers(void)
+{
+    TServersList result;
+    ITERATE(TNCPeerList, it_peer, s_Peers)  {
+        if (GetSelfID() != it_peer->first) {
+            result.push_back(it_peer->first);
+        }
+    }
+    return result;
+}
 
 void
 CNCDistributionConf::GenerateBlobKey(Uint2 local_port,

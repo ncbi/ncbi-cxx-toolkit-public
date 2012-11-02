@@ -163,6 +163,7 @@ static TBucketCacheMap s_BucketsCache;
 static EStopCause s_IsStopWrite = eNoStop;
 static bool s_CleanStart;
 static bool s_NeedSaveLogRecNo;
+static bool s_NeedSavePurgeData;
 static Uint1 s_WarnLimitOnPct;
 static Uint1 s_WarnLimitOffPct;
 static int s_MinRecNoSavePeriod;
@@ -1734,6 +1735,26 @@ CNCBlobStorage::SaveMaxSyncLogRecNo(void)
     s_NeedSaveLogRecNo = true;
 }
 
+string
+CNCBlobStorage::GetPurgeData(void)
+{
+    string result;
+    s_IndexLock.Lock();
+    try {
+        result = s_IndexDB->GetPurgeData();
+    }
+    catch (CSQLITE_Exception&) {
+    }
+    s_IndexLock.Unlock();
+    return result;
+}
+
+void CNCBlobStorage::SavePurgeData(void)
+{
+    s_NeedSavePurgeData = true;
+    s_RecNoSaver->SetRunnable();
+}
+
 Uint8
 CNCBlobStorage::GetDiskFree(void)
 {
@@ -3276,8 +3297,21 @@ CRecNoSaver::~CRecNoSaver(void)
 void
 CRecNoSaver::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
-// max record number used in sync logs
 
+    if (s_NeedSavePurgeData) {
+        s_NeedSavePurgeData = false;
+        s_IndexLock.Lock();
+        try {
+            string forget = CNCBlobAccessor::GetPurgeData(';');
+            INFO("Updated Purge data: " << forget);
+            s_IndexDB->UpdatePurgeData(forget);
+        }
+        catch (CSQLITE_Exception&) {
+        }
+        s_IndexLock.Unlock();
+    }
+
+// max record number used in sync logs
     int cur_time = CSrvTime::CurSecs();
     int next_save = s_LastRecNoSaveTime + s_MinRecNoSavePeriod;
     if (!s_NeedSaveLogRecNo)

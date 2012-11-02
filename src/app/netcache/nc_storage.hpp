@@ -120,6 +120,9 @@ public:
     static Uint8 GetMaxSyncLogRecNo(void);
     static void SaveMaxSyncLogRecNo(void);
 
+    static string GetPurgeData(void);
+    static void SavePurgeData(void);
+
 public:
     // For internal use only
 

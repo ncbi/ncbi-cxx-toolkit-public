@@ -178,6 +178,11 @@ public:
     CNCBlobAccessor(void);
     virtual ~CNCBlobAccessor(void);
 
+    bool IsPurged(const string& cache);
+    static bool Purge(const string& cache, Uint8 when);
+    static string GetPurgeData(char separator='\n');
+    static bool UpdatePurgeData(const string& data, char separator='\n');
+
     /// Prepare lock for the blob identified by key, subkey and version.
     /// Method only initializes necessary variables, actual acquiring of the
     /// lock happens in InitializeLock() method.

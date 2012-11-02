@@ -70,6 +70,10 @@ public:
 
     Uint8 GetMaxSyncLogRecNo(void);
     void SetMaxSyncLogRecNo(Uint8 rec_no);
+
+    string GetPurgeData(void);
+    void UpdatePurgeData(const string& data);
+
 private:
     CNCDBIndexFile(const CNCDBIndexFile&);
     CNCDBIndexFile& operator= (const CNCDBIndexFile&);

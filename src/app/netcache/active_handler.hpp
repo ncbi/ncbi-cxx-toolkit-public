@@ -126,6 +126,9 @@ public:
     bool IsBlobExists(void);
     const SNCBlobSummary& GetBlobSummary(void);
 
+    void CopyPurge(CRequestContext* cmd_ctx,
+                 const string& cache,
+                 const CSrvTime& when);
     /*
         request meta info, x_WaitForMetaInfo ->  x_SendCopyPutCmd -> 
         on error, goto  x_FinishCommand
@@ -301,6 +304,7 @@ private:
     State x_PrepareSyncProlongCmd(void);
     State x_ReadSyncStartHeader(void);
     State x_ReadSyncStartAnswer(void);
+    State x_ReadSyncStartExtra(void);
     State x_ReadEventsListKeySize(void);
     State x_ReadEventsListBody(void);
     State x_ReadBlobsListKeySize(void);

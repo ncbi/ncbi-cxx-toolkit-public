@@ -395,6 +395,9 @@ s_Initialize(bool do_reinit)
     s_HeartBeat = new CNCHeartBeat();
 
     Uint8 max_rec_no = CNCBlobStorage::GetMaxSyncLogRecNo();
+    string forget = CNCBlobStorage::GetPurgeData();
+    INFO("Initial Purge data: " << forget);
+    CNCBlobAccessor::UpdatePurgeData( forget, ';' );
     CNCSyncLog::Initialize(CNCBlobStorage::IsCleanStart(), max_rec_no);
 
     if (!CNCPeerControl::Initialize())

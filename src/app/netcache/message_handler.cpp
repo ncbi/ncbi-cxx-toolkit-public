@@ -1175,6 +1175,24 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
 
+
+    { "PURGE",
+        {&CNCMessageHandler::x_DoCmd_Purge,
+            "PURGE",
+            fConfirmOnFinish + fNeedsAdminClient},
+          // Cache name.
+        { { "cache",     eNSPT_Str, eNSPA_Required } } },
+    { "COPY_PURGE",
+        {&CNCMessageHandler::x_DoCmd_CopyPurge,
+            "COPY_PURGE",
+            fConfirmOnFinish /* + fNeedsAdminClient*/},
+          // Cache name.
+        { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // forget blobs created earlier than cr_time
+          { "cr_time", eNSPT_Int,  eNSPA_Required } } },
+
+
+
     // All commands below are not implemented and mostly old ones not needed
     // anymore. One exception is RECONF - it would be nice to have it but it
     // needs some thinking on how to implement it.
@@ -2399,6 +2417,17 @@ CNCMessageHandler::x_WriteSendBuff(void)
 
         m_SendPos += n_written;
     }
+    if (strcmp(m_ParsedCmd.command->cmd, "SYNC_START") == 0) {
+        return &Me::x_WriteSyncStartExtra;
+    }
+    return &Me::x_FinishCommand;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_WriteSyncStartExtra(void)
+{
+    WriteText("PURGE:\n");
+    WriteText(CNCBlobAccessor::GetPurgeData()). WriteText(";\n");
     return &Me::x_FinishCommand;
 }
 
@@ -2616,6 +2645,9 @@ meta_search_finished:
 CNCMessageHandler::State
 CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
 {
+    if (m_BlobAccess->IsPurged(m_ClientParams["cache"])) {
+        return &Me::x_ReportBlobNotFound;
+    }
     if (x_IsFlagSet(fPeerFindExistsOnly))
         return m_CmdProcessor;
     if (m_LatestSrvId == CNCDistributionConf::GetSelfID()) {
@@ -2690,6 +2722,57 @@ results_processed:
     m_ActiveHub = NULL;
     return &Me::x_PutToNextPeer;
 }
+
+CNCMessageHandler::State
+CNCMessageHandler::x_PurgeToNextPeer(void)
+{
+    if (m_SrvsIndex >= m_CheckSrvs.size()  ||  NeedEarlyClose())
+        return &Me::x_FinishCommand;
+
+    Uint8 srv_id = m_CheckSrvs[m_SrvsIndex++];
+    if (m_ActiveHub)
+        abort();
+    m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
+    return &Me::x_SendPurgeToPeerCmd;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_SendPurgeToPeerCmd(void)
+{
+    if (m_ActiveHub->GetStatus() == eNCHubWaitForConn)
+        return NULL;
+    if (m_ActiveHub->GetStatus() == eNCHubError) {
+        m_ActiveHub->Release();
+        m_ActiveHub = NULL;
+        return &Me::x_PurgeToNextPeer;
+    }
+    if (m_ActiveHub->GetStatus() != eNCHubConnReady)
+        abort();
+    if (NeedEarlyClose())
+        return &Me::x_FinishCommand;
+
+    m_ActiveHub->GetHandler()->CopyPurge(GetDiagCtx(), m_ClientParams["cache"], m_CmdStartTime);
+    return &Me::x_ReadPurgeResults;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_ReadPurgeResults(void)
+{
+    if (NeedEarlyClose())
+        return &Me::x_FinishCommand;
+    if (m_ActiveHub->GetStatus() == eNCHubCmdInProgress)
+        return NULL;
+    if (m_ActiveHub->GetStatus() == eNCHubError)
+        goto results_processed;
+    if (m_ActiveHub->GetStatus() != eNCHubSuccess)
+        abort();
+
+results_processed:
+    m_ActiveHub->Release();
+    m_ActiveHub = NULL;
+    return &Me::x_PurgeToNextPeer;
+}
+
 
 inline unsigned int
 CNCMessageHandler::x_GetBlobTTL(void)
@@ -3383,6 +3466,25 @@ CNCMessageHandler::x_DoCmd_NotImplemented(void)
 {
     GetDiagCtx()->SetRequestStatus(eStatus_NoImpl);
     WriteText(s_MsgForStatus[eStatus_NoImpl]).WriteText("\n");
+    return &Me::x_FinishCommand;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_DoCmd_Purge(void)
+{
+    if (CNCBlobAccessor::Purge( m_ClientParams["cache"], m_CmdStartTime.AsUSec())) {
+        CNCBlobStorage::SavePurgeData();
+    }
+    m_CheckSrvs = CNCDistributionConf::GetPeerServers();
+    return &Me::x_PurgeToNextPeer;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_DoCmd_CopyPurge(void)
+{
+    if (CNCBlobAccessor::Purge( m_ClientParams["cache"], m_CopyBlobInfo->create_time)) {
+        CNCBlobStorage::SavePurgeData();
+    }
     return &Me::x_FinishCommand;
 }
 

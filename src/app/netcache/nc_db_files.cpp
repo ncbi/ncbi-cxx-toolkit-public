@@ -160,4 +160,30 @@ CNCDBIndexFile::SetMaxSyncLogRecNo(Uint8 rec_no)
     stmt.Execute();
 }
 
+string
+CNCDBIndexFile::GetPurgeData(void)
+{
+    const char* sql;
+    sql = "select " SETTINGS_VALUE
+           " from " SETTINGS_TABLENAME
+          " where " SETTINGS_NAME "='purge'";
+
+    CSQLITE_Statement stmt(this, sql);
+    if (stmt.Step())
+        return stmt.GetString(0);
+    return "";
+}
+
+void
+CNCDBIndexFile::UpdatePurgeData(const string& data)
+{
+    const char* sql;
+    sql = "insert or replace into " SETTINGS_TABLENAME
+          " values('purge',?1)"; 
+
+    CSQLITE_Statement stmt(this, sql);
+    stmt.Bind(1, data);
+    stmt.Execute();
+}
+
 END_NCBI_SCOPE

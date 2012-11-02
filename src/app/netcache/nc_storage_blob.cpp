@@ -57,6 +57,8 @@ vector<SNCBlobVerData*> s_WBToDelList;
 static Uint8 s_CntMgrs = 0;
 static Uint8 s_CntVers = 0;
 */
+typedef map<string, Uint8> TForgets;
+static TForgets s_Forgets;
 
 static const size_t kVerManagerSize = sizeof(CNCBlobVerManager)
                                       + sizeof(CCurVerReader);
@@ -1410,6 +1412,103 @@ CNCBlobAccessor::GetCurPassword(void) const
         return m_CurData->password;
     else
         return CNCBlobStorage::PrintablePassword(m_CurData->password);
+}
+
+bool
+CNCBlobAccessor::IsPurged(const string& cache)
+{
+    if (cache.empty()) {
+        return false;
+    }
+    bool res = false;
+    s_ConsListLock.Lock();
+    map<string, Uint8>::const_iterator i = s_Forgets.find(cache);
+    if (i != s_Forgets.end()) {
+        res = GetCurBlobCreateTime() < i->second;
+    }
+    s_ConsListLock.Unlock();
+    return res;
+}
+
+bool
+CNCBlobAccessor::Purge(const string& cache, Uint8 when)
+{
+    bool res=false;
+    Uint8 lifespan = 9U * 24U * 3600U * (Uint8)kUSecsPerSecond; // 9 days
+    Uint8 now = CSrvTime::Current().AsUSec();
+    Uint8 longago = now > lifespan ? (now-lifespan) : 0;
+    
+    s_ConsListLock.Lock();
+    ERASE_ITERATE( TForgets, f, s_Forgets) {
+        if (f->second < longago) {
+            s_Forgets.erase(f);
+            res=true;
+        }
+    }
+    if (!cache.empty()) {
+        TForgets::const_iterator i = s_Forgets.find(cache);
+        if (i == s_Forgets.end() || i->second < when) {
+            s_Forgets[cache] = when;
+            res=true;
+        }
+    }
+    s_ConsListLock.Unlock();
+    return res;
+}
+
+string CNCBlobAccessor::GetPurgeData(char separator)
+{
+    string res;
+    Purge("",0);
+    s_ConsListLock.Lock();
+    ITERATE( TForgets, f, s_Forgets) {
+        res += NStr::NumericToString(f->second);
+        res += ' ';
+        res += f->first;
+        res += separator;
+    }
+    s_ConsListLock.Unlock();
+    return res;
+}
+
+bool CNCBlobAccessor::UpdatePurgeData(const string& data, char separator)
+{
+    bool res=false, error=false;;
+    const char *begin = data.data();
+    const char *end = begin + data.size();
+    if (end != begin) {
+        s_ConsListLock.Lock();
+        while (end != begin) {
+            Uint8 when = NStr::StringToUInt8(begin,
+                NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols);
+            if (when == 0) {
+                error=true;
+                break;
+            }
+            const char *blank = strchr(begin,' ');
+            if (!blank) {
+                error=true;
+                break;
+            }
+            const char *eol = strchr(blank,separator);
+            if (!eol) {
+                error=true;
+                break;
+            }
+            string cache(blank+1, eol-blank-1);
+            TForgets::const_iterator i = s_Forgets.find(cache);
+            if (i == s_Forgets.end() || i->second < when) {
+                s_Forgets[cache] = when;
+                res = true;
+            }
+            begin = eol + 1;
+        }
+        s_ConsListLock.Unlock();
+    }
+    if (error) {
+        SRV_LOG(Error, "Invalid PURGE data: " << data);
+    }
+    return res;
 }
 
 END_NCBI_SCOPE

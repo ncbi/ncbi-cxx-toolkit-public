@@ -188,6 +188,9 @@ public:
     /// Universal processor for all commands not implemented now.
     State x_DoCmd_NotImplemented(void);
 
+    State x_DoCmd_Purge(void);
+    State x_DoCmd_CopyPurge(void);
+
     State x_FinishCommand(void);
 
 private:
@@ -223,6 +226,7 @@ private:
     /// Write data from blob to socket
     State x_WriteBlobData(void);
     State x_WriteSendBuff(void);
+    State x_WriteSyncStartExtra(void);
     State x_ProxyToNextPeer(void);
     State x_SendCmdAsProxy(void);
     State x_WaitForPeerAnswer(void);
@@ -234,6 +238,9 @@ private:
     State x_PutToNextPeer(void);
     State x_SendPutToPeerCmd(void);
     State x_ReadPutResults(void);
+    State x_PurgeToNextPeer(void);
+    State x_SendPurgeToPeerCmd(void);
+    State x_ReadPurgeResults(void);
 
     /// Close connection (or at least make CServer believe that we closed it
     /// by ourselves)
