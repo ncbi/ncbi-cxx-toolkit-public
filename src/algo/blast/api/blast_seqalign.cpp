@@ -449,6 +449,10 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
     bool translate1, translate2;
     bool is_disc_align = false;
 
+    if (hsp->score == 0) {
+        return CRef<CSeq_align>();
+    }
+
     GapEditScript* t = hsp->gap_info;
     for (int i=0; i<t->size; i++) {
         if (t->op_type[i] == eGapAlignDecline)
@@ -1230,6 +1234,8 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
                 s_BlastHSP2SeqAlign(program, hsp, query_id, subject_id, 
                                     query_length, subject_length);
         }
+
+        if (seqalign.Empty()) continue;
         
         if(eBlastTypePsiBlast == program)
         {
