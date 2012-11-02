@@ -4774,11 +4774,13 @@ softparse needs affy
 softparse needs biblio
 softparse needs connect
 softparse needs connext
+softparse needs connssl
 softparse needs ct_ftds64
 softparse needs dbapi_driver
 softparse needs dbconnect
 softparse needs general
 softparse needs geoauth
+softparse needs geomyncbi
 softparse needs medline
 softparse needs ncbi_xdbapi_ftds
 softparse needs pub
@@ -4790,6 +4792,7 @@ softparse needs taxon1
 softparse needs tds_ftds64
 softparse needs xcompress
 softparse needs xconnect
+softparse needs xmlwrapp
 softparse needs xncbi
 softparse needs xser
 softparse needs xutil
