@@ -799,7 +799,7 @@ void TestStrongKozakUorfs(const CBioseq_Handle bsh, CSeq_test_result& result)
     }
 
     COrf::TLocVec overlapping_uorfs, upstream_uorfs;
-    COrf::FindStrongKozakUOrfs(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac), cds_start, overlapping_uorfs, upstream_uorfs, 3, 105, 0.85);
+    COrf::FindStrongKozakUOrfs(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac), cds_start, overlapping_uorfs, upstream_uorfs);
     result.SetOutput_data().AddField("overlapping_strong_uorfs", (int)overlapping_uorfs.size());
     result.SetOutput_data().AddField("upstream_strong_uorfs", (int)upstream_uorfs.size());
 }

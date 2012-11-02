@@ -94,7 +94,6 @@ public:
                          TLocVec& non_overlap_results,
                          unsigned int min_length_bp = 3,
                          unsigned int non_overlap_min_length_bp = 105,
-                         double min_kozak_identity = 0.8,
                          int genetic_code = 1);
 
     /**
@@ -138,8 +137,30 @@ public:
         //Each value is log(p1)-log(1-p1)-log(p2)+log(1-p2)
         //where p1 is probability of finding this nucleotide at this position in TIS context and 
         //p2 is probability of finding this nucleotide at this position in non-TIS context := 0.25
+
+#if 0
+        //based on ccds subset
+        static const double pwm[15][4] = {
+            {-0.22, -0.09, 0.45, -0.34},
+            {-0.31, 0.26, 0.18, -0.27},
+            {-0.02, 0.43, 0.00, -0.75},
+            {0.64, -0.98, 0.39, -1.38},
+            {0.14, 0.43, -0.22, -0.66},
+            {-0.33, 0.61, 0.12, -1.19},
+             { 0.00,  0.00,  0.00,  0.00}, //
+             { 0.00,  0.00,  0.00,  0.00}, // start codon
+             { 0.00,  0.00,  0.00,  0.00}, //
+            {-0.12, -0.56, 0.69, -0.60},
+            {0.10, 0.47, -0.34, -0.55},
+            {-0.50, 0.05, 0.40, -0.15},
+            {-0.05, 0.00, 0.32, -0.40},
+            {0.05, 0.23, -0.16, -0.18},
+            {-0.37, 0.25, 0.29, -0.36}
+        };
+
+#else
         static const double pwm[15][4] = {  
-          // A     C     G     T
+            // A      C      G      T
              {-0.21, -0.23,  0.64, -0.36},
              {-0.37,  0.33,  0.18, -0.22},
              { 0.08,  0.60, -0.09, -0.87},
@@ -156,6 +177,7 @@ public:
              { 0.12,  0.30, -0.26, -0.21},
              {-0.44,  0.31,  0.35, -0.37}
         };   
+#endif
         static const char* alphabet = "ACGT";
         double log_odds(0);
         for(size_t i = 0; i < 15; i++) {
