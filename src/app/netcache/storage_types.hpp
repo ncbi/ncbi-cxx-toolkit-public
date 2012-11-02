@@ -190,7 +190,7 @@ typedef map<Uint4, TRecNumsSet> TFileRecsMap;
         goto x_CreateInitialFile
     -> x_CreateInitialFile
         create 3 'current' files and 3 'next' files
-        if file creatino failed, goto x_DelFileAndRetryCreate
+        if file creation failed, goto x_DelFileAndRetryCreate
         when complete, goto x_StartCacheBlobs
     -> x_DelFileAndRetryCreate
         if cannot delete any files, request shutdown, goto x_CancelCaching
