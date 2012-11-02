@@ -443,8 +443,16 @@ BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_IncorrectBlastDbType) {
     s_RetrieveSequenceLength(7450545, "sts", false, 443);
 }
 
+struct SDiagRestorer {
+    SDiagRestorer() { m_OriginalValue = SetDiagPostLevel(); }
+    ~SDiagRestorer() { SetDiagPostLevel(m_OriginalValue); }
+private:
+    EDiagSev m_OriginalValue;
+};
+
 BOOST_AUTO_TEST_CASE(InvalidBlastDatabase) {
     try {
+        SDiagRestorer d;
         s_RetrieveSequenceLength(129295, "dummy", true, 232);
     } catch (const CException& e) {
         const string kExpectedMsg(" BLAST database 'dummy' does not exist in");
