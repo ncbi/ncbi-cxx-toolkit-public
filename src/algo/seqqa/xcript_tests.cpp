@@ -787,6 +787,23 @@ CTestTranscript_PolyA::RunTest(const CSerialObject& obj,
 }
 
 
+void TestStrongKozakUorfs(const CBioseq_Handle bsh, CSeq_test_result& result)
+{
+    TSeqPos cds_start(-1);
+    for(CFeat_CI ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion)); ci; ++ci) {
+        cds_start = ci->GetLocation().GetStart(eExtreme_Positional);
+        break;
+    } 
+    if(cds_start == static_cast<TSeqPos>(-1)) {
+        return;
+    }
+
+    COrf::TLocVec overlapping_uorfs, upstream_uorfs;
+    COrf::FindStrongKozakUOrfs(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac), cds_start, overlapping_uorfs, upstream_uorfs, 3, 105, 0.85);
+    result.SetOutput_data().AddField("overlapping_strong_uorfs", (int)overlapping_uorfs.size());
+    result.SetOutput_data().AddField("upstream_strong_uorfs", (int)upstream_uorfs.size());
+}
+
 CRef<CSeq_test_result_set>
 CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
                               const CSeqTestContext* ctx)
@@ -856,6 +873,8 @@ CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
                                       int(largest_forward_orf_end));
     result->SetOutput_data().AddField("max_atg_orf_length_either_strand",
                                       int(max_orf_length_either));
+
+    TestStrongKozakUorfs(xcript_hand, *result);
 
     return ref;
 }
