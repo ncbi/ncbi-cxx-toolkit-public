@@ -14,4 +14,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD =
 
 
-WATCHERS = vakatov
+WATCHERS = vakatov zakharov
