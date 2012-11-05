@@ -305,7 +305,12 @@ BOOST_AUTO_TEST_CASE(ParseString)
 
     // String to Bool function call
     parser.AddSymbol("dir", DirectoryExists);
+
+#ifndef NCBI_OS_MSWIN 
     parser.Parse("dir(\"/var/log\")");
+#else
+	parser.Parse("dir(\"c:\\\")");
+#endif
     BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
     BOOST_CHECK_EQUAL(true, parser.GetResult().GetBool());
 
