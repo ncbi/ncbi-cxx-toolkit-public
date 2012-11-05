@@ -1467,7 +1467,8 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             b = e;
         }
         _ASSERT( -2 <= frame && frame <= 0 );
-        _ASSERT( b == strprot.size() - (frame==0?0:1) );
+        _ASSERT( b <= strprot.size() &&
+                 strprot.size() <= b + (frame==0?0:1) );
 
     if (cds_loc->IsPartialStop(eExtreme_Biological)) {
         while (!seq_inst.GetExt().GetDelta().Get().back()->GetLiteral().IsSetSeq_data()) {

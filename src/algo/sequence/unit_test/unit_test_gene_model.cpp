@@ -1341,29 +1341,82 @@ Seq-feat ::= { \
                 fuzz-to lim gt \
               } \
             } \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id local id 386076534, \
+    genomic-id gi 183579259, \
+    genomic-strand minus, \
+    product-type transcript, \
+    exons { \
+      { \
+        product-start nucpos 0, \
+        product-end nucpos 132, \
+        genomic-start 127519, \
+        genomic-end 127651 \
+      }, \
+      { \
+        product-start nucpos 133, \
+        product-end nucpos 355, \
+        genomic-start 127174, \
+        genomic-end 127396 \
+      }, \
+      { \
+        product-start nucpos 356, \
+        product-end nucpos 359, \
+        genomic-start 110589, \
+        genomic-end 110592, \
+        partial TRUE \
+      } \
+    }, \
+    product-length 382 \
+  } \
+} \
+Seq-feat ::= { \
+              data cdregion { \
+                code { \
+                  id 1 \
+                } \
+              }, \
+              product whole local str \"PROT_10_36\", \
+              location int { \
+                from 41, \
+                to 359, \
+                id local id 386076534, \
+                fuzz-to lim gt \
+              } \
+            } \
 ";
 
     CNcbiIstrstream istrs(buf.c_str());
 
     CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
-    CSeq_align align;
-    *istr >> align;
-    CSeq_feat feat;
-    *istr >> feat;
 
-    BOOST_CHECK_NO_THROW(align.Validate(true));
+    for (;;) {
+        CSeq_align align;
+        CSeq_feat feat;
+        try {
+            *istr >> align;
+            *istr >> feat;
+        }
+        catch (CEofException&) {
+            break;
+        }
 
-    CRef<CSeq_entry> seq_entry(new CSeq_entry);
-    CBioseq_set& seqs = seq_entry->SetSet();
-    seqs.SetSeq_set();
-    CSeq_annot annot;
-    annot.SetData().SetFtable();
-
-    int flags = (CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
-                       CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna;
-    feat_gen.SetFlags(flags);
-    feat_gen.ConvertAlignToAnnot(align, annot, seqs, 0, &feat);
-
+        BOOST_CHECK_NO_THROW(align.Validate(true));
+        
+        CRef<CSeq_entry> seq_entry(new CSeq_entry);
+        CBioseq_set& seqs = seq_entry->SetSet();
+        seqs.SetSeq_set();
+        CSeq_annot annot;
+        annot.SetData().SetFtable();
+        
+        int flags = (CFeatureGenerator::fDefaults & ~CFeatureGenerator::fGenerateLocalIds) |
+            CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna;
+        feat_gen.SetFlags(flags);
+        BOOST_CHECK_NO_THROW(feat_gen.ConvertAlignToAnnot(align, annot, seqs, 0, &feat));
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END();
