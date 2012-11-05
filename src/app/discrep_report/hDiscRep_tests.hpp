@@ -68,10 +68,10 @@ namespace DiscRepNmSpc {
   class CDiscTestInfo 
   {
     public:
-      static bool   is_ANNOT_run;
+      static bool   is_AllAnnot_run;  // checked
       static bool   is_BASES_N_run;
       static bool   is_BIOSRC_run;
-      static bool   is_DESC_user_run;
+      static bool   is_DESC_user_run; // checked
       static bool   is_FEAT_DESC_biosrc_run;
       static bool   is_MOLINFO_run;
       static bool   is_MRNA_run;
@@ -292,10 +292,8 @@ namespace DiscRepNmSpc {
                                  vector <string>& submit_text, bool check_mul_nm_only = false);
        void GetSubmitText(const CAuth_list& authors, vector <string>& submit_text);
        void FindSpecSubmitText(vector <string>& submit_text);
-       void TestOnDesc_User();
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
                               const string& setting_name, bool be_na = true, bool be_aa=true);
-       string GetName_missing() const {return string("MISSING_PROJECT");}
 
        void TestOnBiosrc(const CSeq_entry& seq_entry);
        string GetName_multi() const {return string("ONCALLER_MULTISRC"); }
@@ -314,7 +312,7 @@ namespace DiscRepNmSpc {
   };
 
 
-/*
+//  revolution!!
   class CSeqEntry_test_on_user : public CSeqEntryTestAndRepData
   {
     public:
@@ -323,24 +321,69 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
       virtual string GetName() const =0;
+
+    protected:
+      string GetName_comm() const {return string("MISSING_GENOMEASSEMBLY_COMMENTS");}
+      string GetName_proj() const {return string("TEST_HAS_PROJECT_ID"); }
+      string GetName_scomm() const {return string("ONCALLER_MISSING_STRUCTURED_COMMENTS"); }
+      string GetName_mproj() const {return string("MISSING_PROJECT"); }
+      string GetName_bproj() const {return string("ONCALLER_BIOPROJECT_ID"); }
+      void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
+      void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, 
+                                                                        Str2Int& bioseq2cnt);
   };
 
-*/
-  
+  class CSeqEntry_ONCALLER_BIOPROJECT_ID : public CSeqEntry_test_on_user
+  {
+     public:
+      virtual ~CSeqEntry_ONCALLER_BIOPROJECT_ID () {};
 
-  class CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS : public CSeqEntryTestAndRepData
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_bproj();}
+  };
+
+
+  class CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS : public CSeqEntry_test_on_user
+  {
+     public:
+      virtual ~CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_comm();}
+  };
+
+  class CSeqEntry_TEST_HAS_PROJECT_ID : public CSeqEntry_test_on_user
+  {
+    public:
+      virtual ~CSeqEntry_TEST_HAS_PROJECT_ID () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_test_on_user::GetName_proj();}
+  };
+
+
+  class CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS : public CSeqEntry_test_on_user
   {
     public:
       virtual ~CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS () {};
 
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return string("ONCALLER_MISSING_STRUCTURED_COMMENTS");}
-
-    protected:
-      void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt,
-                                                                   Str2Int& bioseq2cnt);
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_scomm();}
   };
+
+
+  class CSeqEntry_MISSING_PROJECT : public CSeqEntry_test_on_user
+  {
+    public:
+      virtual ~CSeqEntry_MISSING_PROJECT () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_user::GetName_mproj();}
+  };
+
+
+  
+//
 
 
   class CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT : public CSeqEntryTestAndRepData
@@ -385,19 +428,6 @@ namespace DiscRepNmSpc {
  
       static bool HasMulSrc(const CBioSource& biosrc);
   };
-
-
-
-  class CSeqEntry_MISSING_PROJECT :  public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_MISSING_PROJECT () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MISSING_PROJECT");}
-  };
-
 
 
   class CSeqEntry_MORE_NAMES_COLLECTED_BY : public CSeqEntryTestAndRepData
@@ -449,45 +479,6 @@ namespace DiscRepNmSpc {
     protected:
       bool HasDivCode(const CBioSource& biosrc, string& div_code);
   };
-
-
-
-  class CSeqEntry_TEST_HAS_PROJECT_ID : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_TEST_HAS_PROJECT_ID () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("TEST_HAS_PROJECT_ID");}
-    
-    protected:
-      void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
-  };
-
-
-
-  class CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MISSING_GENOMEASSEMBLY_COMMENTS");}
-  };
-
-
-  class CSeqEntry_ONCALLER_BIOPROJECT_ID :  public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_ONCALLER_BIOPROJECT_ID () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("ONCALLER_BIOPROJECT_ID");}
-  };
-
 
 
   class CSeqEntry_INCONSISTENT_BIOSOURCE : public CSeqEntryTestAndRepData
@@ -761,10 +752,6 @@ namespace DiscRepNmSpc {
        string GetName_200seq() const {return string("SHORT_SEQUENCES_200"); }
        string GetName_50seq() const {return string("SHORT_SEQUENCES"); }
 
-       void TestOnAnnotation(const CBioseq& bioseq);
-       string GetName_no() const {return string("NO_ANNOTATION"); }
-       string GetName_long_na() const {return string("DISC_LONG_NO_ANNOTATION"); }
-
        void TestOnMRna(const CBioseq& bioseq);
        string GetName_no_mrna() const {return string("DISC_CDS_WITHOUT_MRNA");}
        string GetName_pid_tid() const {return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
@@ -780,6 +767,55 @@ namespace DiscRepNmSpc {
        bool IsMrnaSequence();
   }; // CBioseqTest:
 
+
+// new comb.
+   class CBioseq_test_on_all_annot : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_test_on_all_annot () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+    
+    protected:
+       string GetName_no() const {return string("NO_ANNOTATION");}
+       string GetName_long_no() const {return string("DISC_LONG_NO_ANNOTATION");}
+       string GetName_joined() const {return string("JOINED_FEATURES");}
+  };
+
+
+  class CBioseq_JOINED_FEATURES : public CBioseq_test_on_all_annot
+  {
+    public:
+      virtual ~CBioseq_JOINED_FEATURES () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_joined();}
+  };
+
+ 
+  class CBioseq_NO_ANNOTATION : public CBioseq_test_on_all_annot
+  {
+    public:
+      virtual ~CBioseq_NO_ANNOTATION () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_no();}
+  };
+
+  class CBioseq_DISC_LONG_NO_ANNOTATION: public CBioseq_test_on_all_annot
+  {
+    public:
+      virtual ~CBioseq_DISC_LONG_NO_ANNOTATION () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_long_no();}
+  };
+
+
+
+//
 
   class CBioseq_SHOW_TRANSL_EXCEPT : public CBioseqTestAndRepData
   {
@@ -936,29 +972,6 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("MOLTYPE_NOT_MRNA");}
   };
-
-
-  class CBioseq_NO_ANNOTATION :  public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_NO_ANNOTATION () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("NO_ANNOTATION");}
-  };
-
-
-  class CBioseq_DISC_LONG_NO_ANNOTATION : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_DISC_LONG_NO_ANNOTATION () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_LONG_NO_ANNOTATION");}
-  };
-
 
 
   class CBioseq_DISC_SUSPICIOUS_NOTE_TEXT : public CBioseqTestAndRepData
@@ -1194,18 +1207,6 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("EC_NUMBER_ON_HYPOTHETICAL_PROTEIN");}
-  };
-
-
-
-  class CBioseq_JOINED_FEATURES : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_JOINED_FEATURES () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("JOINED_FEATURES");}
   };
 
 

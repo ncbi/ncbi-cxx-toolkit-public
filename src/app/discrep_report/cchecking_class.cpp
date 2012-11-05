@@ -202,7 +202,7 @@ void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 {
 // ini.
-   thisTest.is_ANNOT_run = false;
+   thisTest.is_AllAnnot_run = false;
    thisTest.is_BASES_N_run = false;
    thisTest.is_MOLINFO_run = false;
    thisTest.is_MRNA_run = false;

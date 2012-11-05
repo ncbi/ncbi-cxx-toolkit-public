@@ -116,7 +116,6 @@ void CRepConfDiscrepancy :: ConfigRep()
 //tests_on_Bioseq
    tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_COUNT_NUCLEOTIDES));
    tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_QUALITY_SCORES));
-   tests_on_Bioseq.push_back(CRef <CTestAndRepData> (new CBioseq_JOINED_FEATURES));
    // oncaller tool version
    // tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_FEATURE_COUNT));
    thisInfo.test_item_list["DISC_QUALITY_SCORES"].clear();
@@ -137,8 +136,8 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
-   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
-                                         new CBioseq_SHOW_TRANSL_EXCEPT));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_JOINED_FEATURES));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>( new CBioseq_SHOW_TRANSL_EXCEPT));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
                                          new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RRNA_NAME_CONFLICTS));

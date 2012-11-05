@@ -112,7 +112,7 @@ static string strtmp(kEmptyStr);
 static CDiscTestInfo thisTest;
 
 // ini. CDiscTestInfo
-bool CDiscTestInfo :: is_ANNOT_run = false;
+bool CDiscTestInfo :: is_AllAnnot_run = false;
 bool CDiscTestInfo :: is_BASES_N_run = false;
 bool CDiscTestInfo :: is_BIOSRC_run = false;
 bool CDiscTestInfo :: is_DESC_user_run = false;
@@ -2026,55 +2026,6 @@ void CBioseq_EC_NUMBER_ON_HYPOTHETICAL_PROTEIN :: GetReport(CRef <CClickableItem
 
 
 
-void CBioseq_JOINED_FEATURES :: TestOnObj(const CBioseq& bioseq)
-{
-  bool excpt;
-  string excpt_txt(kEmptyStr);
-  string desc;
-  if (IsBioseqHasLineage(bioseq, "Eukaryota")) return;
-  CBioseq_Handle bioseq_h = thisInfo.scope->GetBioseqHandle(bioseq);
-  for (CFeat_CI it(bioseq_h); it; ++it) {    // use all_feat instead
-    if (it->GetLocation().IsMix() || it->GetLocation().IsPacked_int()) {
-       const CSeq_feat& seq_feat = it->GetOriginalFeature();
-       if (seq_feat.CanGetExcept()) {
-           if (seq_feat.GetExcept()) excpt = true;
-           else excpt = false;
-           if (seq_feat.CanGetExcept_text()) excpt_txt = seq_feat.GetExcept_text();
-           excpt_txt = excpt_txt.empty()? "blank" : excpt_txt; 
-       }
-       else excpt = false;     
-       desc = GetDiscItemText(seq_feat);
-       if (excpt) JOINED_FEATURES_sfs[excpt_txt].push_back(desc);
-       else JOINED_FEATURES_sfs["no"].push_back(desc);
-       thisInfo.test_item_list[GetName()].push_back(desc);
-    }
-  }
-};
-
-
-
-void CBioseq_JOINED_FEATURES :: GetReport(CRef <CClickableItem>& c_item)
-{
-   string cmt_txt;
-   ITERATE (Str2Strs, it, JOINED_FEATURES_sfs) {
-      CRef <CClickableItem> c_sub (new CClickableItem);
-      if (it->first == "no") cmt_txt = "but no exception";
-      else if (it->first == "empty") cmt_txt = "but a blank exception";
-      else cmt_txt = "but exception " + it->first;
-      c_sub->setting_name = GetName();
-      c_sub->item_list = it->second;
-      c_sub->description = GetHasComment(c_sub->item_list.size(), "feature") 
-                                + "joined location " + cmt_txt;
-      c_item->subcategories.push_back(c_sub);
-   }
-
-   c_item->description 
-        = GetHasComment(c_item->item_list.size(), "feature") + "joined location.";
-};
-
-
-
-
 bool CBioseq_FEATURE_LOCATION_CONFLICT :: IsMixStrand(const CSeq_feat* seq_feat)
 {
   CSeq_loc_CI loc_it(seq_feat->GetLocation());
@@ -3050,8 +3001,6 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeBioSourceDifferences(const CB
 };
 
 
-
-
 void CBioseqTestAndRepData :: TestProteinID(const CBioseq& bioseq)
 {
    bool has_pid;
@@ -3075,35 +3024,69 @@ void CBioseqTestAndRepData :: TestProteinID(const CBioseq& bioseq)
 };
 
 
-void CBioseqTestAndRepData :: TestOnAnnotation(const CBioseq& bioseq)
+
+// new comb.
+void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
 {
+  if (thisTest.is_AllAnnot_run) return;
+  
+  bool excpt;
+  string excpt_txt(kEmptyStr);
+  string desc( GetDiscItemText(bioseq));
+
   if (all_feat.empty()) {
-    string desc = GetDiscItemText(bioseq);
     thisInfo.test_item_list[GetName_no()].push_back(desc);
     if (bioseq.IsNa() && bioseq.GetLength() >= 5000)
-      thisInfo.test_item_list[GetName_long_na()].push_back(desc); 
+      thisInfo.test_item_list[GetName_long_no()].push_back(desc);
   }
-  thisTest.is_ANNOT_run = true;
+  else {
+
+    // JOINED_FEATURES
+    if (IsBioseqHasLineage(bioseq, "Eukaryota")) return;
+    ITERATE (vector <const CSeq_feat*>, it, all_feat) {
+       if ( (*it)->GetLocation().IsMix() || (*it)->GetLocation().IsPacked_int()) {
+          if ((*it)->CanGetExcept()) {
+              if ((*it)->GetExcept()) excpt = true;
+              else excpt = false;
+              if ((*it)->CanGetExcept_text()) excpt_txt = (*it)->GetExcept_text();
+              excpt_txt = excpt_txt.empty()? "blank" : excpt_txt;
+          }
+          else excpt = false;
+          desc = GetDiscItemText(**it);
+          if (excpt) JOINED_FEATURES_sfs[excpt_txt].push_back(desc);
+          else JOINED_FEATURES_sfs["no"].push_back(desc);
+          thisInfo.test_item_list[GetName_joined()].push_back(desc);
+       }
+    }
+  }
+  thisTest.is_AllAnnot_run = true;
 };
 
 
-void CBioseq_NO_ANNOTATION :: TestOnObj(const CBioseq& bioseq)
+void CBioseq_JOINED_FEATURES :: GetReport(CRef <CClickableItem>& c_item)
 {
-  if (!thisTest.is_ANNOT_run) TestOnAnnotation(bioseq);
-} ;
+   string cmt_txt;
+   ITERATE (Str2Strs, it, JOINED_FEATURES_sfs) {
+      CRef <CClickableItem> c_sub (new CClickableItem);
+      if (it->first == "no") cmt_txt = "but no exception";
+      else if (it->first == "empty") cmt_txt = "but a blank exception";
+      else cmt_txt = "but exception " + it->first;
+      c_sub->setting_name = GetName();
+      c_sub->item_list = it->second;
+      c_sub->description = GetHasComment(c_sub->item_list.size(), "feature")
+                                + "joined location " + cmt_txt;
+      c_item->subcategories.push_back(c_sub);
+   }
+
+   c_item->description
+        = GetHasComment(c_item->item_list.size(), "feature") + "joined location.";
+};
 
 
 void CBioseq_NO_ANNOTATION :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description = GetHasComment(c_item->item_list.size(), "bioseq") + "no features";
 };
-
-
-void CBioseq_DISC_LONG_NO_ANNOTATION :: TestOnObj(const CBioseq& bioseq) 
-{
-  if (!thisTest.is_ANNOT_run) TestOnAnnotation(bioseq);
-};
-
 
 void CBioseq_DISC_LONG_NO_ANNOTATION :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -3112,6 +3095,7 @@ void CBioseq_DISC_LONG_NO_ANNOTATION :: GetReport(CRef <CClickableItem>& c_item)
                                + ( (len == 1)? "has" : "have") + " no features.";
 };
 
+//
 
 
 void CBioseq_MISSING_PROTEIN_ID :: TestOnObj(const CBioseq& bioseq)
@@ -3190,145 +3174,6 @@ void CBioseq_TEST_DEFLINE_PRESENT :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description = "Bioseq has definition line";
 }
-
-
-
-void CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS :: TestOnObj(const CSeq_entry& seq_entry)
-{
-  unsigned i=0; 
-  ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
-    const CUser_object& user_obj = (*it)->GetUser();
-    if (user_obj.GetType().IsStr() 
-         && user_obj.GetType().GetStr() == "StructuredComment"
-         && user_obj.HasField("StructuredCommentPrefix")
-         && user_obj.GetField("StructuredCommentPrefix").GetData().IsStr()) {
-      if (user_obj.GetField("StructuredCommentPrefix").GetData().GetStr() 
-                                                        != "##Genome-Assembly-Data-START##") {
-           if (user_seqdesc_seqentry[i]->IsSeq() && user_seqdesc_seqentry[i]->GetSeq().IsNa())
-              thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(
-                                                          user_seqdesc_seqentry[i]->GetSeq()));
-           else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName(), 
-                                                                              true, false);
-      }
-    }
-    i++;
-  }
-}; 
-
-
-void CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->description = GetIsComment(c_item->item_list.size(), "bioseq")
-                            + "missing GenomeAssembly structured comments.";
-};
-
-
-
-void CSeqEntry_TEST_HAS_PROJECT_ID :: GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id)
-{
-  string desc;
-  ITERATE (list < CRef < CSeq_entry > >, it, bioseq_set.GetSeq_set()) {
-     if ((*it)->IsSeq()) {
-         const CBioseq& bioseq = (*it)->GetSeq();
-         desc = GetDiscItemText(bioseq);
-         if ( bioseq.IsAa() ) {
-              PROJECT_ID_prot[id].push_back(desc);
-              thisInfo.test_item_list[GetName()].push_back("prot$" + desc);
-         }
-         else {
-              PROJECT_ID_nuc[id].push_back(desc);
-              thisInfo.test_item_list[GetName()].push_back("nuc$" + desc);
-         }
-     }
-     else GroupAllBioseqs((*it)->GetSet(), id);
-  }
-};
-
-
-
-void CSeqEntry_TEST_HAS_PROJECT_ID :: TestOnObj(const CSeq_entry& seq_entry)
-{
-  unsigned i=0;
-  int id;
-  string desc;
-  ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
-    const CUser_object& user_obj = (*it)->GetUser();
-    if (user_obj.GetType().IsStr()
-         && user_obj.GetType().GetStr() == "GenomeProjectsDB"
-         && user_obj.HasField("ProjectID")
-         && user_obj.GetField("ProjectID").GetData().IsInt()) {
-      id = user_obj.GetField("ProjectID").GetData().GetInt();
-      if (user_seqdesc_seqentry[i]->IsSeq()) {
-          const CBioseq& bioseq = user_seqdesc_seqentry[i]->GetSeq();
-          desc = GetDiscItemText(bioseq);
-          if ( bioseq.IsAa() ) {
-              PROJECT_ID_prot[id].push_back(desc);
-              thisInfo.test_item_list[GetName()].push_back("prot$" + desc); 
-          }
-          else {
-              PROJECT_ID_nuc[id].push_back(desc);
-              thisInfo.test_item_list[GetName()].push_back("nuc$" + desc); 
-          }
-      }
-      else GroupAllBioseqs(user_seqdesc_seqentry[i]->GetSet(), id);
-    }     
-    i++; 
-  }   
-}; 
-
-
-
-void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
-{
-   unsigned prot_cnt = 0, nuc_cnt = 0, prot_id1 = 0, nuc_id1 = 0;
-   Str2Strs mol2list;
-   GetTestItemList(c_item->item_list, mol2list);
-   c_item->item_list.clear();
-   ITERATE (Str2Strs, it, mol2list) {
-     if (it->first == "prot") prot_cnt = it->second.size();
-     else nuc_cnt = it->second.size();
-   }
-
-   string tot_add_desc, prot_add_desc, nuc_add_desc;
-   if (PROJECT_ID_prot.size() <= 1 && PROJECT_ID_nuc.size() <= 1) {
-      if (prot_cnt)  prot_id1 = PROJECT_ID_prot.begin()->first;
-      if (nuc_cnt) nuc_id1 = PROJECT_ID_nuc.begin()->first;
-      if ( (prot_id1 == nuc_id1) ||  !(prot_id1 * nuc_id1)) tot_add_desc = "(all same)";
-      else tot_add_desc = " (some different)";
-   }
-
-   if (prot_cnt && PROJECT_ID_prot.size() > 1) prot_add_desc = "(some different)";
-   else prot_add_desc = "(all same)";
-
-   if (nuc_cnt && PROJECT_ID_nuc.size() > 1) nuc_add_desc = "(some different)";
-   else nuc_add_desc = "(all same)";
-
-   if (prot_cnt && !nuc_cnt) {
-       c_item->description = GetOtherComment(c_item->item_list.size(),
-                                 "protein sequence has project ID ",
-                                 "protein sequences have project IDs " + tot_add_desc);
-       c_item->item_list = mol2list.begin()->second;
-   }
-   else if (!prot_cnt && nuc_cnt) {
-       c_item->description = GetOtherComment(c_item->item_list.size(),
-                                 "nucleotide sequence has project ID ",
-                                 "nucleotide sequences have project IDs " + tot_add_desc);
-       c_item->item_list = mol2list.begin()->second;
-   }
-   else {
-       c_item->description = GetOtherComment(prot_cnt + nuc_cnt, "sequence has project ID ",
-                                "sequencs have project IDs " + tot_add_desc);
-       AddSubcategories(c_item, GetName(), mol2list["nuc"],
-               "nucleotide sequence has project ID", "nucleotide sequences have project IDs", 
-               false, e_OtherComment);
-       AddSubcategories(c_item, GetName(), mol2list["prot"], "protein sequence has project ID",
-                              "protein sequences have project IDs", false, e_OtherComment);
-
-       //c_item->expanded = true;  what does the expanded work for?
-   }
-
-   PROJECT_ID_prot.clear();
-};
 
 
 
@@ -4530,7 +4375,29 @@ void CBioseqSet_DISC_NONWGS_SETS_PRESENT :: GetReport(CRef <CClickableItem>& c_i
 
 
 // CSeqEntryTestAndRepData
-void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, Str2Int& bioseq2cnt)
+// new method
+void CSeqEntry_test_on_user :: GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id)
+{
+  string desc;
+  ITERATE (list < CRef < CSeq_entry > >, it, bioseq_set.GetSeq_set()) {
+     if ((*it)->IsSeq()) {
+         const CBioseq& bioseq = (*it)->GetSeq();
+         desc = GetDiscItemText(bioseq);
+         if ( bioseq.IsAa() ) {
+              PROJECT_ID_prot[id].push_back(desc);
+              thisInfo.test_item_list[GetName_proj()].push_back("prot$" + desc);
+         }
+         else {
+              PROJECT_ID_nuc[id].push_back(desc);
+              thisInfo.test_item_list[GetName_proj()].push_back("nuc$" + desc);
+         }
+     }
+     else GroupAllBioseqs((*it)->GetSet(), id);
+  }
+};
+
+
+void CSeqEntry_test_on_user :: CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, Str2Int& bioseq2cnt)
 {
    string desc;
    ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
@@ -4545,25 +4412,65 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: CheckCommentCountForSet(c
           }
      }
      else CheckCommentCountForSet((*it)->GetSet(), cnt, bioseq2cnt);
-   } 
+   }
 };
 
 
-
-void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: TestOnObj(const CSeq_entry& seq_entry)
+void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 {
+  if (thisTest.is_DESC_user_run) return;
+
   unsigned i=0, cnt;
-  string desc;
+  int id;
+  string desc, type_str;
   Str2Int bioseq2cnt;
+
   ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
     const CUser_object& user_obj = (*it)->GetUser();
-    if (user_obj.GetType().IsStr()
-         && user_obj.GetType().GetStr() == "StructuredComment") cnt = 1;
+    if ( !(user_obj.GetType().IsStr()) ) { 
+         i++; continue;
+    }
+    if (user_seqdesc_seqentry[i]->IsSeq()) 
+          desc = GetDiscItemText( user_seqdesc_seqentry[i]->GetSeq());
+    type_str = user_obj.GetType().GetStr();
+
+    // MISSING_GENOMEASSEMBLY_COMMENTS
+    if ( type_str == "StructuredComment"
+         && user_obj.HasField("StructuredCommentPrefix")
+         && user_obj.GetField("StructuredCommentPrefix").GetData().IsStr()) {
+      if (user_obj.GetField("StructuredCommentPrefix").GetData().GetStr()
+                                                        != "##Genome-Assembly-Data-START##") {
+           if (user_seqdesc_seqentry[i]->IsSeq() && user_seqdesc_seqentry[i]->GetSeq().IsNa())
+              thisInfo.test_item_list[GetName_comm()].push_back(desc);
+           else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName_comm(),
+                                                                              true, false);
+      }
+    }
+
+    // TEST_HAS_PROJECT_ID
+    if (type_str == "GenomeProjectsDB" && user_obj.HasField("ProjectID")
+         && user_obj.GetField("ProjectID").GetData().IsInt()) {
+      id = user_obj.GetField("ProjectID").GetData().GetInt();
+      if (user_seqdesc_seqentry[i]->IsSeq()) {
+          const CBioseq& bioseq = user_seqdesc_seqentry[i]->GetSeq();
+          if ( bioseq.IsAa() ) {
+              PROJECT_ID_prot[id].push_back(desc);
+              thisInfo.test_item_list[GetName_proj()].push_back("prot$" + desc);
+          }
+          else {
+              PROJECT_ID_nuc[id].push_back(desc);
+              thisInfo.test_item_list[GetName_proj()].push_back("nuc$" + desc);
+          }
+      }
+      else GroupAllBioseqs(user_seqdesc_seqentry[i]->GetSet(), id);
+    }
+
+    // ONCALLER_MISSING_STRUCTURED_COMMENTS
+    if (type_str == "StructuredComment")  cnt = 1;
     else cnt = 0;
     if (user_seqdesc_seqentry[i]->IsSeq()) {
       const CBioseq& bioseq = user_seqdesc_seqentry[i]->GetSeq();
       if (!bioseq.IsAa()) {
-         desc =  GetDiscItemText(bioseq);
          if (bioseq2cnt.find(desc) != bioseq2cnt.end()) {
               if (cnt) bioseq2cnt[desc] = bioseq2cnt[desc] ? bioseq2cnt[desc]++ : cnt;
          }
@@ -4571,19 +4478,61 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: TestOnObj(const CSeq_entr
       }
     }
     else CheckCommentCountForSet(user_seqdesc_seqentry[i]->GetSet(), cnt, bioseq2cnt);
+
+    // MISSING_PROJECT
+    if (type_str != "GenomeProjectsDB"
+                           && (type_str != "DBLink" || !user_obj.HasField("BioProject"))) 
+       AddBioseqsInSeqentryToReport(user_seqdesc_seqentry[i], GetName_mproj());
+
+    // ONCALLER_BIOPROJECT_ID
+    if (type_str == "DBLink" && user_obj.HasField("BioProject")
+         && user_obj.GetField("BioProject").GetData().IsStrs()) {
+         const vector <string>& ids = user_obj.GetField("BioProject").GetData().GetStrs();
+         if (!ids.empty() && !ids[0].empty()) {
+           if (user_seqdesc_seqentry[i]->IsSeq())
+              thisInfo.test_item_list[GetName_bproj()].push_back(desc);
+           else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName_bproj());
+         }
+    }
+
     i++;
   }
 
+// ONCALLER_MISSING_STRUCTURED_COMMENTS
   ITERATE (Str2Int, it, bioseq2cnt) {
-    thisInfo.test_item_list[GetName()].push_back(
+    thisInfo.test_item_list[GetName_scomm()].push_back(
                         NStr::IntToString( (it->second > 0)? it->second:0) + "$" + it->first);
   }
-  bioseq2cnt.clear();
+
+  thisTest.is_DESC_user_run = true;
 };
+
+
+void CSeqEntry_ONCALLER_BIOPROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
+{
+  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+
+  c_item->description
+     = GetOtherComment(c_item->item_list.size(), "sequence contains", "sequences contain")
+        + " BioProject IDs.";
+};
+
+
+void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
+{
+  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+
+  c_item->description
+    = GetOtherComment(c_item->item_list.size(), "sequence does", "sequences do")
+       + " not include project.";
+};
+
 
 
 void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
 {
+  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+
   Str2Strs bioseq2cnt;
   GetTestItemList(c_item->item_list, bioseq2cnt);
   c_item->item_list.clear();
@@ -4591,12 +4540,82 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickabl
   if (bioseq2cnt.size() > 1) {
     ITERATE (Str2Strs, it, bioseq2cnt) {
        desc=(it->first=="1" || it->first=="0")? " structured comment":" structured comments";
-       AddSubcategories(c_item,  GetName(), it->second, "sequence", it->first + desc, 
-                                                                        false, e_HasComment);  
-    } 
+       AddSubcategories(c_item,  GetName(), it->second, "sequence", it->first + desc,
+                                                                        false, e_HasComment);
+    }
     c_item->description = "Sequences have different numbers of structured comments.";
   }
 };
+
+
+
+void CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
+{
+  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+
+  c_item->description = GetIsComment(c_item->item_list.size(), "bioseq")
+                            + "missing GenomeAssembly structured comments.";
+};
+
+
+void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
+{
+   RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+
+   unsigned prot_cnt = 0, nuc_cnt = 0, prot_id1 = 0, nuc_id1 = 0;
+   Str2Strs mol2list;
+   GetTestItemList(c_item->item_list, mol2list);
+   c_item->item_list.clear();
+   ITERATE (Str2Strs, it, mol2list) {
+     if (it->first == "prot") prot_cnt = it->second.size();
+     else nuc_cnt = it->second.size();
+   }
+
+   string tot_add_desc, prot_add_desc, nuc_add_desc;
+   if (PROJECT_ID_prot.size() <= 1 && PROJECT_ID_nuc.size() <= 1) {
+      if (prot_cnt)  prot_id1 = PROJECT_ID_prot.begin()->first;
+      if (nuc_cnt) nuc_id1 = PROJECT_ID_nuc.begin()->first;
+      if ( (prot_id1 == nuc_id1) ||  !(prot_id1 * nuc_id1)) tot_add_desc = "(all same)";
+      else tot_add_desc = " (some different)";
+   }
+
+   if (prot_cnt && PROJECT_ID_prot.size() > 1) prot_add_desc = "(some different)";
+   else prot_add_desc = "(all same)";
+
+   if (nuc_cnt && PROJECT_ID_nuc.size() > 1) nuc_add_desc = "(some different)";
+   else nuc_add_desc = "(all same)";
+
+   if (prot_cnt && !nuc_cnt) {
+       c_item->item_list = mol2list.begin()->second;
+       c_item->description = GetOtherComment(c_item->item_list.size(),
+                                 "protein sequence has project ID ",
+                                 "protein sequences have project IDs " + tot_add_desc);
+   }
+   else if (!prot_cnt && nuc_cnt) {
+       c_item->item_list = mol2list.begin()->second;
+       c_item->description = GetOtherComment(c_item->item_list.size(),
+                                 "nucleotide sequence has project ID ",
+                                 "nucleotide sequences have project IDs " + tot_add_desc);
+   }
+   else {
+       c_item->description = GetOtherComment(prot_cnt + nuc_cnt, "sequence has project ID ",
+                                "sequencs have project IDs " + tot_add_desc);
+       AddSubcategories(c_item, GetName(), mol2list["nuc"],
+               "nucleotide sequence has project ID", "nucleotide sequences have project IDs",
+               false, e_OtherComment);
+       AddSubcategories(c_item, GetName(), mol2list["prot"], "protein sequence has project ID",
+                              "protein sequences have project IDs", false, e_OtherComment);
+
+       //c_item->expanded = true;  what does the expanded work for?
+   }
+
+   PROJECT_ID_prot.clear();
+   PROJECT_ID_nuc.clear();
+};
+
+// new method
+
+
 
 
 
@@ -4710,7 +4729,7 @@ void CSeqEntryTestAndRepData :: AddBioseqsOfSetToReport(const CBioseq_set& biose
    ITERATE (list < CRef < CSeq_entry > >, it, bioseq_set.GetSeq_set()) {
      if ((*it)->IsSeq()) {
          const CBioseq& bioseq = (*it)->GetSeq();
-         if ( (be_na && bioseq.IsNa()) || (be_aa && bioseq.IsAa()) )
+         if ( (be_na && bioseq.IsNa()) || (be_aa && bioseq.IsAa()) ) 
            thisInfo.test_item_list[setting_name].push_back(GetDiscItemText(bioseq));
      }
      else AddBioseqsOfSetToReport( (*it)->GetSet(), setting_name, be_na, be_aa);
@@ -4721,50 +4740,10 @@ void CSeqEntryTestAndRepData :: AddBioseqsOfSetToReport(const CBioseq_set& biose
 
 void CSeqEntryTestAndRepData :: AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, const string& setting_name, bool be_na, bool be_aa)
 {
-  if (seq_entry->IsSeq())
+  if (seq_entry->IsSeq()) 
     thisInfo.test_item_list[setting_name].push_back(
                             GetDiscItemText( seq_entry->GetSeq() ));
-  else AddBioseqsOfSetToReport(seq_entry->GetSet(), GetName(), be_na, be_aa);
-};
-
-
-
-void CSeqEntryTestAndRepData :: TestOnDesc_User()
-{
-  string type, desc;
-  unsigned i=0;
-  ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
-    const CUser_object& user_obj = (*it)->GetUser();
-
-    // MISSING_PROJECT
-    if (user_obj.GetType().IsStr()) {
-        type = user_obj.GetType().GetStr(); 
-        if (type != "GenomeProjectsDB" 
-             && (type != "DBLink" || !user_obj.HasField("BioProject"))) { 
-            AddBioseqsInSeqentryToReport(user_seqdesc_seqentry[i], GetName_missing());
-        }
-    }
-    i++;
-  }
-
-  thisTest.is_DESC_user_run = true;
-};
-
-
-
-void CSeqEntry_MISSING_PROJECT :: TestOnObj(const CSeq_entry& seq_entry)
-{
-  if (!thisTest.is_DESC_user_run) TestOnDesc_User();
-};
-
-
-void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
-{
-  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this. 
-
-  c_item->description
-    = GetOtherComment(c_item->item_list.size(), "sequence does", "sequences do")
-       + "not include project.";
+  else AddBioseqsOfSetToReport(seq_entry->GetSet(), setting_name, be_na, be_aa);
 };
 
 
@@ -4977,38 +4956,6 @@ void CSeqEntry_DIVISION_CODE_CONFLICTS  :: GetReport(CRef <CClickableItem>& c_it
      }
      c_item->description = "Division code conflicts found.";
    }
-};
-
-
-
-void CSeqEntry_ONCALLER_BIOPROJECT_ID :: TestOnObj(const CSeq_entry& seq_entry)
-{
-  unsigned i=0; 
-  ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
-    const CUser_object& user_obj = (*it)->GetUser();
-    if (user_obj.GetType().IsStr() 
-         && user_obj.GetType().GetStr() == "DBLink"
-         && user_obj.HasField("BioProject")
-         && user_obj.GetField("BioProject").GetData().IsStrs()) {
-         const vector <string>& ids = user_obj.GetField("BioProject").GetData().GetStrs();
-         if (!ids.empty() && !ids[0].empty()) {
-           if (user_seqdesc_seqentry[i]->IsSeq())
-              thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(
-                                                          user_seqdesc_seqentry[i]->GetSeq()));
-           else AddBioseqsOfSetToReport(user_seqdesc_seqentry[i]->GetSet(), GetName());
-         }
-    }
-    i++;
-  }
-};
-
-
-
-void CSeqEntry_ONCALLER_BIOPROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
-{
-  c_item->description 
-     = GetOtherComment(c_item->item_list.size(), "sequence contains", "sequences contain") 
-        + " BioProject IDs.";
 };
 
 
@@ -6073,7 +6020,7 @@ void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
    CSeq_entry_Handle seq_entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
    SAnnotSelector sel;
    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_prot);
-   for (CFeat_CI feat_it(seq_entry_hl, sel); feat_it; ++feat_it) { // rey non_prot_feat
+   for (CFeat_CI feat_it(seq_entry_hl, sel); feat_it; ++feat_it) { // try non_prot_feat
       const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
       const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
       strtmp = seq_feat_dt.GetKey(CSeqFeatData::eVocabulary_genbank);
