@@ -154,6 +154,7 @@ void CDeflineGenerator::x_SetFlags (
     m_Reconstruct = (flags & fIgnoreExisting) != 0;
     m_AllProtNames = (flags & fAllProteinNames) != 0;
     m_LocalAnnotsOnly = (flags & fLocalAnnotsOnly) != 0;
+    m_GpipeMode = (flags & fGpipeMode) != 0;
 
     // reset member variables to cleared state
     m_IsNA = false;
@@ -1077,6 +1078,70 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
     }
 }
 
+void CDeflineGenerator::x_SetTitleFromGPipe (void)
+
+{
+    string clnbuf;
+    vector<CTempString> clnvec;
+    CTextJoiner<12, CTempString> joiner;
+
+    joiner.Add(m_Taxname);
+
+    bool       has_plasmid = false, virus_or_phage = false;
+    const char * orgnl, * pls_pfx = " ";
+
+    if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
+        NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
+        virus_or_phage = true;
+    }
+
+    if (! m_Plasmid.empty()) {
+        has_plasmid = true;
+        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
+            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
+            pls_pfx = " plasmid ";
+        }
+    }
+
+    orgnl = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, false);
+
+    if ( orgnl[0] != 0 && NStr::FindNoCase (m_Taxname, "plasmid") != NPOS) {
+        joiner.Add(orgnl);
+    }
+
+    if (! m_Strain.empty()) {
+        CTempString add(m_Strain, 0, m_Strain.find(';'));
+        if (! x_EndsWithStrain (m_Taxname, add)) {
+            joiner.Add(" strain ").Add(add);
+        }
+    }
+    if (! m_Chromosome.empty()) {
+        joiner.Add(" chromosome ").Add(m_Chromosome);
+    }
+    if (m_has_clone) {
+        x_DescribeClones (clnvec, clnbuf);
+        ITERATE (vector<CTempString>, it, clnvec) {
+            joiner.Add(*it);
+        }
+    }
+    if (! m_Map.empty()) {
+        joiner.Add(" map ").Add(m_Map);
+    }
+    if (! m_Plasmid.empty()) {
+        joiner.Add(" plasmid ").Add(m_Plasmid);
+    }
+    if (m_MICompleteness ==  NCBI_COMPLETENESS(complete)) {
+        joiner.Add(", complete sequence");
+    }
+
+    joiner.Join(&m_MainTitle);
+    NStr::TruncateSpacesInPlace(m_MainTitle);
+
+    if (!m_MainTitle.empty() && islower ((unsigned char) m_MainTitle[0])) {
+        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
+    }
+}
+
 // generate title for protein
 CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
     const CBioseq_Handle& bsh
@@ -1820,6 +1885,10 @@ string CDeflineGenerator::GenerateDefline (
             } else if (m_IsTSA || (m_IsWGS && (! m_WGSMaster))) {
                 x_SetTitleFromWGS ();
             }
+        }
+
+        if (m_MainTitle.empty() && m_GpipeMode) {
+            x_SetTitleFromGPipe ();
         }
 
         if (m_MainTitle.empty()) {

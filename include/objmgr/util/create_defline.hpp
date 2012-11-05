@@ -84,7 +84,8 @@ public:
         fAllProteinNames = 0x2, ///< List all relevant proteins, not just one.
         fLocalAnnotsOnly = 0x4, ///< Never use related sequences' annotations.
         /// Refrain from anything that could add substantial overhead.
-        fNoExpensiveOps  = fLocalAnnotsOnly
+        fNoExpensiveOps  = fLocalAnnotsOnly,
+        fGpipeMode       = 0x8  ///< Use GPipe defaults.
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
@@ -144,6 +145,7 @@ private:
     );
     void x_SetTitleFromPatent (void);
     void x_SetTitleFromPDB (void);
+    void x_SetTitleFromGPipe (void);
     void x_SetTitleFromProtein (
         const CBioseq_Handle& bsh
     );
@@ -169,6 +171,7 @@ private:
     bool m_Reconstruct;
     bool m_AllProtNames;
     bool m_LocalAnnotsOnly;
+    bool m_GpipeMode;
 
     /// seq-inst fields
     bool m_IsNA;

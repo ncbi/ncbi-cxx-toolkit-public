@@ -163,6 +163,7 @@ void CStreamTestApp::Init()
                                         "eutils",
                                         "fasta",
                                         "gene-overlap",
+                                        "gpipe-defline",
                                         "macrotest",
                                         "prosplign",
                                         "unindexed-defline",
@@ -275,6 +276,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "gene-overlap" ) {
         pProcess = new CGeneOverlapProcess;
+    }
+    if ( testcase == "gpipe-defline" ) {
+        pProcess = new CDeflineProcess (true, true);
     }
     if ( testcase == "macrotest" ) {
         pProcess = new CMacroTestProcess;

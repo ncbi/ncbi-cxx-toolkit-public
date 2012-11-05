@@ -50,6 +50,7 @@ public:
         , m_skip_virtual (false)
         , m_skip_segmented (false)
         , m_do_indexed (false)
+        , m_gpipe_mode (false)
     {};
 
     //  ------------------------------------------------------------------------
@@ -61,6 +62,19 @@ public:
         , m_skip_virtual (false)
         , m_skip_segmented (false)
         , m_do_indexed (use_indexing)
+        , m_gpipe_mode (false)
+    {};
+
+    //  ------------------------------------------------------------------------
+    CDeflineProcess(bool use_indexing, bool gpipe_mode)
+    //  ------------------------------------------------------------------------
+        : CScopedProcess()
+        , m_out (0)
+        , m_flags (0)
+        , m_skip_virtual (false)
+        , m_skip_segmented (false)
+        , m_do_indexed (use_indexing)
+        , m_gpipe_mode (gpipe_mode)
     {};
 
     //  ------------------------------------------------------------------------
@@ -80,7 +94,11 @@ public:
 
         string options = args["options"].AsString();
         if ( options == "ignore_existing" ) {
-            m_flags = CDeflineGenerator::fIgnoreExisting;
+            m_flags |= CDeflineGenerator::fIgnoreExisting;
+        }
+        if (m_gpipe_mode) {
+            m_flags |= CDeflineGenerator::fIgnoreExisting;
+            m_flags |= CDeflineGenerator::fGpipeMode;
         }
 
         string skip = args["skip"].AsString();
@@ -293,6 +311,7 @@ protected:
     bool m_skip_virtual;
     bool m_skip_segmented;
     bool m_do_indexed;
+    bool m_gpipe_mode;
 };
 
 #endif
