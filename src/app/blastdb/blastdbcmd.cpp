@@ -600,6 +600,9 @@ int CBlastDBCmdApp::Run(void)
     int status = 0;
     const CArgs& args = GetArgs();
 
+    // Silences warning in CSeq_id for CSeq_id::fParse_PartialOK
+    SetDiagFilter(eDiagFilter_Post, "!(1306.10)");
+
     try {
         CNcbiOstream& out = args["out"].AsOutputFile();
         if (args["show_blastdb_search_path"]) {
