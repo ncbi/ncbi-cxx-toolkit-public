@@ -217,7 +217,10 @@ static const TDbxrefPair kApprovedProbeDbXrefs[] = {
     { "EMBL", CDbtag::eDbtagType_EMBL },
     { "GEO", CDbtag::eDbtagType_GEO },
     { "GenBank", CDbtag::eDbtagType_GenBank },
-    { "GrainGenes", CDbtag::eDbtagType_GrainGenes }
+    { "GrainGenes", CDbtag::eDbtagType_GrainGenes },
+    { "PubChem", CDbtag::eDbtagType_PubChem },
+    { "SRA", CDbtag::eDbtagType_SRA },
+    { "Trace", CDbtag::eDbtagType_Trace }
 };
 
 

@@ -189,7 +189,10 @@ public:
         eDbtagType_NASONIABASE,
         eDbtagType_BioProject,
         eDbtagType_IKMC,
-        eDbtagType_ViPR
+        eDbtagType_ViPR,
+        eDbtagType_PubChem,
+        eDbtagType_SRA,
+        eDbtagType_Trace
     };
 
     enum EDbtagGroup {
