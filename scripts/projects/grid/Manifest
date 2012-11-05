@@ -25,8 +25,8 @@ ETC: src/app/grid/test/test_grid_worker.ini
 APP: test_netschedule_client test_netschedule_node test_netschedule_stress
 ETC: src/app/grid/test/test_netschedule_node.ini
 
-APP: grid_cli netschedule_check netschedule_control
-APP: netcache_check netcache_control ncfetch.cgi$exe save_to_nc
+APP: grid_cli netschedule_control
+APP: netcache_control ncfetch.cgi$exe
 
 # Each line describes a single configuration
 # The format is as follows:
