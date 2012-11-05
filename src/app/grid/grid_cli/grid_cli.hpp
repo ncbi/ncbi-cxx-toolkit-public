@@ -87,6 +87,7 @@
 #define FAIL_JOB_OPTION "fail-job"
 #define ALL_QUEUES_OPTION "all-queues"
 #define QUEUE_CLASSES_OPTION "queue-classes"
+#define QUEUE_CLASS_OPTION "queue-class"
 #define QUEUE_ARG "QUEUE"
 #define SWITCH_ARG "SWITCH"
 #define NOW_OPTION "now"
@@ -102,6 +103,8 @@
 #define HUMAN_READABLE_OUTPUT_FORMAT "human-readable"
 #define RAW_OUTPUT_FORMAT "raw"
 #define JSON_OUTPUT_FORMAT "json"
+
+#define NETSCHEDULE_CHECK_QUEUE "netschedule_check_queue"
 
 BEGIN_NCBI_SCOPE
 
@@ -176,6 +179,7 @@ enum EOption {
     eAllQueues,
     eQueueClasses,
     eTargetQueueArg,
+    eQueueClassArg,
     eQueueClass,
     eQueueDescription,
     eSwitchArg,
@@ -264,6 +268,7 @@ private:
         string client_session;
         string progress_message;
         string job_group;
+        string queue_class;
         string queue_description;
         ESwitch on_off_switch;
         string error_message;
@@ -403,6 +408,7 @@ public:
     int Cmd_ServerInfo();
     int Cmd_Stats();
     int Cmd_Health();
+    int Cmd_SanityCheck();
     int Cmd_GetConf();
     int Cmd_Reconf();
     int Cmd_Drain();
@@ -427,6 +433,8 @@ private:
         eSevereAdminCmd
     };
     EAPIClass SetUp_AdminCmd(EAdminCmdSeverity cmd_severity);
+    int NetCacheSanityCheck();
+    int NetScheduleSanityCheck();
     void SetUp_NetCacheCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
     void PrintBlobMeta(const CNetCacheKey& key);

@@ -305,7 +305,10 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eTargetQueueArg), QUEUE_ARG, NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eQueueClass), "QUEUE_CLASS", NULL, {-1}},
+    {OPT_DEF(ePositionalArgument, eQueueClassArg), "QUEUE_CLASS", NULL, {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eQueueClass),
+        QUEUE_CLASS_OPTION, "NetSchedule queue class.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eQueueDescription),
         "queue-description", "Optional queue description.", {-1}},
@@ -751,15 +754,15 @@ struct SCommandDefinition {
         "and/or job group.",
         {eNetSchedule, eQueue, eStartAfterJob, eJobCount, eJobGroup,
             eSelectByStatus, eLoginToken, eAuth, eClientNode, eClientSession,
-           ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_CreateQueue,
         "createqueue", "Create a dynamic NetSchedule queue.",
         "This command creates a new NetSchedule queue using "
         "a template known as queue class.",
-        {eTargetQueueArg, eQueueClass, eNetSchedule, eQueueDescription,
+        {eTargetQueueArg, eQueueClassArg, eNetSchedule, eQueueDescription,
             eLoginToken, eAuth, eClientNode, eClientSession,
-           ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_GetQueueList,
         "getqueuelist", "Print the list of available NetSchedule queues.",
@@ -771,7 +774,7 @@ struct SCommandDefinition {
         "queue available only on a subset of servers, its servers "
         "are listed in parentheses after the queue name.",
         {eNetSchedule, eLoginToken, eAuth, eClientNode, eClientSession,
-           ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_DeleteQueue,
         "deletequeue", "Delete a dynamic NetSchedule queue.",
@@ -827,6 +830,21 @@ struct SCommandDefinition {
         "\"raw\""/ *, \"xml\", \"json\"* /".  If none specified, "
         "\"raw\" is assumed."*/,
         {eNetCache, /*eOutputFormat,*/ eLoginToken, eAuth,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_SanityCheck,
+        "sanitycheck", "Run basic functionality tests on a service.",
+        "Verify that the specified service is capable of performing "
+        "its primary tasks. For NetCache servers, it means writing and "
+        "reading blobs; for NetSchedule servers - submitting, returning, "
+        "failing, and completing jobs.\n\n"
+        "A queue name and/or a queue class name is required for NetSchedule "
+        "testing. If a queue class is specified, it will be used to create a "
+        "temporary queue (with the given name, if the '--" QUEUE_OPTION
+        "' option is also specified). The default value for '--" QUEUE_OPTION
+        "' is \"" NETSCHEDULE_CHECK_QUEUE "\".",
+        {eNetCache, eNetSchedule, eQueue, eQueueClass, eEnableMirroring,
+            eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_GetConf,
@@ -1056,7 +1074,6 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eQueue:
             case eQueueArg:
-            case eQueueClass:
                 m_Opts.queue = opt_value;
                 break;
             case eAffinity:
@@ -1133,6 +1150,10 @@ int CGridCommandLineInterfaceApp::Run()
             case eErrorMessage:
             case eFailJob:
                 m_Opts.error_message = opt_value;
+                break;
+            case eQueueClass:
+            case eQueueClassArg:
+                m_Opts.queue_class = opt_value;
                 break;
             case eQueueDescription:
                 m_Opts.queue_description = opt_value;

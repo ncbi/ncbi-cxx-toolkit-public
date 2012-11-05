@@ -978,8 +978,8 @@ int CGridCommandLineInterfaceApp::Cmd_CreateQueue()
 {
     SetUp_NetScheduleCmd(eNetScheduleAdmin, eSevereAdminCmd);
 
-    m_NetScheduleAdmin.CreateQueue(m_Opts.id, m_Opts.queue,
-        m_Opts.queue_description);
+    m_NetScheduleAdmin.CreateQueue(m_Opts.id,
+            m_Opts.queue_class, m_Opts.queue_description);
 
     return 0;
 }

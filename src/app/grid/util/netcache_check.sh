@@ -14,44 +14,6 @@ svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos
 test $? -eq 0 || exit 2
 hosts="`cat $res_file`"
 
-# For Nagios test
-
-lbsmc='/opt/machine/lbsm/bin/lbsmc'
-lbsm_feedback='/opt/machine/lbsm/sbin/lbsm_feedback'
-
-stable_client="./netcache_check"
-send_nsca="/home/ivanov/nagios/root/opt/machine/nagios/bin/send_nsca"
-send_nsca_cfg="/home/ivanov/nagios/root/opt/machine/nagios/bin/send_nsca.cfg"
-nagios_host="nagios"
-service_host="NC_netcache"
-
-# Send result to Nagios server
-
-if test "$1" = "--nagios"; then
-   if [ ! -x "$stable_client" ]; then
-      echo "$stable_client not found"
-      exit 1
-   fi
-   if [ ! -x "$send_nsca" ]; then
-      echo "$send_nsca not found"
-      exit 1
-   fi
-   for service in $services ; do
-      $stable_client -delay 0 $service > $res_file 2>&1
-      code=$?
-# Format of information:
-#    <host_name>[tab]<svc_descr>[tab]<ret_code>[tab]<output>[newline]
-# Usage:
-#    ./send_nsca -H <host> [-p port] [-to to_sec] [-d delim] [-c config_file]
-      echo -e "$service_host\t$service\t$code\tnone" | \
-         $send_nsca -H $nagios_host -c $send_nsca_cfg
-   done
-   rm -f $res_file
-   exit 0
-fi
-
-# Otherwise, general testsuite check
-
 n_ok=0
 n_err=0
 sum_list=''

@@ -42,7 +42,7 @@ CGridCommandLineInterfaceApp::EAPIClass
         CGridCommandLineInterfaceApp::SetUp_AdminCmd(
                 CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
-    const char* applicable_error;
+    const char* opt_error;
 
     switch (IsOptionAccepted(eNetCache, OPTION_N(0)) |
             IsOptionAccepted(eNetSchedule, OPTION_N(1)) |
@@ -60,19 +60,19 @@ CGridCommandLineInterfaceApp::EAPIClass
         return eWorkerNodeAdmin;
 
     case OPTION_N(0) | OPTION_N(1): // eNetCache or eNetSchedule
-        applicable_error = "either '--" NETCACHE_OPTION "' or '--"
+        opt_error = "either '--" NETCACHE_OPTION "' or '--"
                 NETSCHEDULE_OPTION "' must be explicitly specified.";
         break;
     case OPTION_N(0) | OPTION_N(2): // eNetCache or eWorkerNode
-        applicable_error = "either '--" NETCACHE_OPTION "' or '--"
+        opt_error = "either '--" NETCACHE_OPTION "' or '--"
                 WORKER_NODE_OPTION "' must be explicitly specified.";
         break;
     case OPTION_N(1) | OPTION_N(2): // eNetSchedule or eWorkerNode
-        applicable_error = "either '--" NETSCHEDULE_OPTION "' or '--"
+        opt_error = "either '--" NETSCHEDULE_OPTION "' or '--"
                 WORKER_NODE_OPTION "' must be explicitly specified.";
         break;
     default: // All three are accepted.
-        applicable_error = "exactly one of '--" NETCACHE_OPTION "', '--"
+        opt_error = "exactly one of '--" NETCACHE_OPTION "', '--"
                  NETSCHEDULE_OPTION "', or '--" WORKER_NODE_OPTION
                  "' must be explicitly specified.";
     }
@@ -93,7 +93,7 @@ CGridCommandLineInterfaceApp::EAPIClass
         return eWorkerNodeAdmin;
 
     default: // None or a combination of options
-        NCBI_THROW(CArgException, eNoValue, applicable_error);
+        NCBI_THROW(CArgException, eNoValue, opt_error);
     }
 }
 
@@ -178,6 +178,199 @@ int CGridCommandLineInterfaceApp::Cmd_Health()
     return 0;
 }
 
+#define CHECK_FAILED_RETVAL 10
+
+int CGridCommandLineInterfaceApp::NetCacheSanityCheck()
+{
+    // functionality test
+
+    const char test_data[] = "A quick brown fox, jumps over lazy dog.";
+    const char test_data2[] = "Test 2.";
+    string key = m_NetCacheAPI.PutData(test_data, sizeof(test_data));
+
+    if (key.empty()) {
+        NcbiCerr << "Failed to put data. " << NcbiEndl;
+        return CHECK_FAILED_RETVAL;
+    }
+    NcbiCout << key << NcbiEndl;
+
+    char data_buf[1024];
+
+    size_t blob_size = m_NetCacheAPI.GetBlobSize(key);
+
+    if (blob_size != sizeof(test_data)) {
+        NcbiCerr << "Failed to retrieve data size." << NcbiEndl;
+        return CHECK_FAILED_RETVAL;
+    }
+
+    auto_ptr<IReader> reader(m_NetCacheAPI.GetData(key, &blob_size,
+        CNetCacheAPI::eCaching_Disable));
+
+    if (reader.get() == 0) {
+        NcbiCerr << "Failed to read data." << NcbiEndl;
+        return CHECK_FAILED_RETVAL;
+    }
+
+    reader->Read(data_buf, 1024);
+    int res = strcmp(data_buf, test_data);
+    if (res != 0) {
+        NcbiCerr << "Could not read data." << NcbiEndl <<
+            "Server returned:" << NcbiEndl << data_buf << NcbiEndl <<
+            "Expected:" << NcbiEndl << test_data << NcbiEndl;
+
+        return CHECK_FAILED_RETVAL;
+    }
+    reader.reset(0);
+
+    {{
+        auto_ptr<IEmbeddedStreamWriter> wrt(m_NetCacheAPI.PutData(&key));
+        size_t bytes_written;
+        wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
+        wrt->Close();
+    }}
+
+    memset(data_buf, 0xff, sizeof(data_buf));
+    reader.reset(m_NetCacheAPI.GetReader(key, &blob_size,
+                CNetCacheAPI::eCaching_Disable));
+    reader->Read(data_buf, 1024);
+    res = strcmp(data_buf, test_data2);
+    if (res != 0) {
+        NcbiCerr << "Could not read updated data." << NcbiEndl <<
+            "Server returned:" << NcbiEndl << data_buf << NcbiEndl <<
+            "Expected:" << NcbiEndl << test_data2 << NcbiEndl;
+
+        return CHECK_FAILED_RETVAL;
+    }
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::NetScheduleSanityCheck()
+{
+    if (!IsOptionSet(eQueue)) {
+        if (!IsOptionSet(eQueueClass)) {
+            fprintf(stderr, GRID_APP_NAME ": '--" QUEUE_OPTION
+                    "' or '--" QUEUE_CLASS_OPTION
+                    "' (or both) must be specified.\n");
+            return 2;
+        }
+        m_Opts.queue = NETSCHEDULE_CHECK_QUEUE;
+    }
+    if (IsOptionSet(eQueueClass))
+        m_NetScheduleAdmin.CreateQueue(m_Opts.queue, m_Opts.queue_class);
+
+    CNetScheduleAdmin::TQueueList server_queues;
+
+    m_NetScheduleAdmin.GetQueueList(server_queues);
+
+    ITERATE(CNetScheduleAdmin::TQueueList, it, server_queues) {
+        list<string>::const_iterator queue(it->queues.begin());
+        for (;;) {
+            if (queue == it->queues.end()) {
+                fprintf(stderr, "The queue '%s' is not available on '%s'.\n",
+                        m_Opts.queue.c_str(),
+                        it->server.GetServerAddress().c_str());
+                return 4;
+            }
+            if (*queue == m_Opts.queue)
+                break;
+            ++queue;
+        }
+    }
+
+    SetUp_NetScheduleCmd(eNetScheduleExecutor);
+
+    const string input = "Hello ";
+    const string output = "DONE ";
+    CNetScheduleJob job(input);
+    m_NetScheduleSubmitter.SubmitJob(job);
+
+    for (;;) {
+        CNetScheduleJob job1;
+        bool job_exists = m_NetScheduleExecutor.GetJob(job1, 5);
+        if (job_exists) {
+            if (job1.job_id != job.job_id)
+                m_NetScheduleExecutor.ReturnJob(job1.job_id, job1.auth_token);
+            else {
+                if (job1.input != job.input) {
+                    job1.error_msg = "Job's (" + job1.job_id +
+                        ") input does not match.(" + job.input +
+                        ") ["+ job1.input +"]";
+                    m_NetScheduleExecutor.PutFailure(job1);
+                } else {
+                    job1.output = output;
+                    job1.ret_code = 0;
+                    m_NetScheduleExecutor.PutResult(job1);
+                }
+                break;
+            }
+        }
+    }
+
+    bool check_again = true;
+    int ret = 0;
+    string err;
+    while (check_again) {
+        check_again = false;
+
+        CNetScheduleAPI::EJobStatus status = m_NetScheduleSubmitter.GetJobDetails(job);
+        switch(status) {
+
+        case CNetScheduleAPI::eJobNotFound:
+            ret = 10;
+            err = "Job (" + job.job_id +") is lost.";
+            break;
+        case CNetScheduleAPI::eCanceled:
+            ret = 12;
+            err = "Job (" + job.job_id +") is canceled.";
+            break;
+        case CNetScheduleAPI::eFailed:
+            ret = 13;
+            break;
+        case CNetScheduleAPI::eDone:
+            if (job.ret_code != 0) {
+                ret = job.ret_code;
+                err = "Job (" + job.job_id +") is done, but retcode is not zero.";
+            } else if (job.output != output) {
+                err = "Job (" + job.job_id + ") is done, output does not match.("
+                    + output + ") ["+ job.output +"]";
+                ret = 14;
+            } else if (job.input != input) {
+                err = "Job (" + job.job_id +") is done, input does not match.("
+                    + input + ") ["+ job.input +"]";
+                ret = 15;
+            }
+            break;
+        case CNetScheduleAPI::ePending:
+        case CNetScheduleAPI::eRunning:
+        default:
+            check_again = true;
+        }
+    }
+
+    if (ret != 0)
+        ERR_POST(err);
+
+    if (IsOptionSet(eQueueClass))
+        m_NetScheduleAdmin.DeleteQueue(m_Opts.queue);
+
+    return ret;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_SanityCheck()
+{
+    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    case eNetCacheAdmin:
+        return NetCacheSanityCheck();
+
+    case eNetScheduleAdmin:
+        return NetScheduleSanityCheck();
+
+    default:
+        return 2;
+    }
+}
+
 int CGridCommandLineInterfaceApp::Cmd_GetConf()
 {
     switch (SetUp_AdminCmd(eReadOnlyAdminCmd)) {
@@ -254,8 +447,9 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
             return 0;
 
         default: // A combination of the above options.
-            fprintf(stderr, "Options '--" NOW_OPTION "', '--" DIE_OPTION
-                "', and '--" DRAIN_OPTION "' are mutually exclusive.\n");
+            fprintf(stderr, GRID_APP_NAME ": options '--" NOW_OPTION "', '--"
+                    DIE_OPTION "', and '--" DRAIN_OPTION
+                    "' are mutually exclusive.\n");
         }
         /* FALL THROUGH */
 
