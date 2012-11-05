@@ -70,8 +70,10 @@ class NCBI_SEQLOC_EXPORT CSeq_id : public CSeq_id_Base,
 
 public:
     enum EParseFlags {
-        /// When a FASTA-style ID set contains a mix of parsable and unparsable
-        /// IDs, noisily skip over the latter rather than throwing an exception.
+        /// Warn rather than throwing an exception when a FASTA-style ID set
+        /// contains unparsable portions, either from unsupported syntax or
+        /// because it is only possible to accept a single ID anyway (in the
+        /// string-based constructor and corresponding Set() variant).
         fParse_PartialOK  = 0x01,
         fParse_RawText    = 0x02, ///< Try to ID raw non-numeric accessions
         fParse_RawGI      = 0x04, ///< Treat raw numbers as GIs, not local IDs
@@ -104,7 +106,7 @@ public:
     /// @param the_id
     ///   Input ID, preferably FASTA-style.
     /// @param flags
-    ///   How to interpret non-FASTA-style IDs.
+    ///   How to interpret anything other than a single FASTA-style ID.
     explicit CSeq_id(const CTempString& the_id,
                      TParseFlags flags = fParse_AnyRaw);
 
@@ -482,10 +484,7 @@ public:
     /// @param s
     ///   Input string to parse.
     /// @param flags
-    ///   
-    ///   If s contains invalid IDs, warn about them and try to
-    ///   process the remainder of the string, rather than throwing
-    ///   any exceptions.
+    ///   How to interpret anything other than well-formed FASTA IDs.
     /// @return
     ///   The number of IDs successfully parsed.
     static SIZE_TYPE ParseIDs(CBioseq::TId& ids, const CTempString& s,
