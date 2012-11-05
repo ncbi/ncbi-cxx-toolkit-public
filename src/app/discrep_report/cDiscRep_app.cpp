@@ -185,10 +185,10 @@ cerr << "222can get\n";
     // ini. of rRNATerms
     thisInfo.rRNATerms["16S"] = 1000;
     thisInfo.rRNATerms["18S"] = 1000;
-    thisInfo.rRNATerms["23S"] = 1000;
+    thisInfo.rRNATerms["23S"] = 2000;
     thisInfo.rRNATerms["25s"] = 1000;
     thisInfo.rRNATerms["26S"] = 1000;
-    thisInfo.rRNATerms["28S"] = 1000;
+    thisInfo.rRNATerms["28S"] = 3300;
     thisInfo.rRNATerms["small"] = 1000;
     thisInfo.rRNATerms["large"] = 1000;
     thisInfo.rRNATerms["5.8S"] = 130;
