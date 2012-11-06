@@ -2243,11 +2243,11 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                         if (vec[i] == 'N') {
                             num_ns++;
                             this_stretch++;
-                            if (this_stretch >= 5) {
-                                if (i < 10) {
+                            if (this_stretch >= 10) {
+                                if (i < 20) {
                                     n5 = true;
                                 } 
-                                if (vec.size() < 10 || i > vec.size() - 10) {
+                                if (vec.size() > 20 || i > vec.size() - 20) {
                                     n3 = true;
                                 }
                             }
@@ -2274,11 +2274,11 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                     } else {
                         if (n5) {
                             PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                                     "Sequence has a stretch of at least 5 Ns within the first 10 bases", seq);
+                                     "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
                         }
                         if (n3) {
                             PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                                     "Sequence has a stretch of at least 5 Ns within the last 10 bases", seq);
+                                     "Sequence has a stretch of at least 10 Ns within the last 20 bases", seq);
                         }
                     }
                 } else {
