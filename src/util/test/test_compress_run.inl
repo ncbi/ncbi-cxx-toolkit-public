@@ -150,7 +150,7 @@
         dst_len = 5;
         result = c.DecompressBuffer(src_buf, kDataLen, dst_buf, dst_len,
                                     &out_len);
-        PrintResult(eDecompress, c.GetErrorCode(), kDataLen, dst_len,out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), kDataLen, dst_len, out_len);
         assert(!result);
         assert(dst_len == out_len);
 

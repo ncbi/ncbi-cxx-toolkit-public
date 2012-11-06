@@ -1320,7 +1320,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
             *out_avail = out_size - STREAM->avail_out;
             IncreaseOutputSize((unsigned long)(*out_avail));
 
-            // Analize decompressor status
+            // Analyze decompressor status
             switch (errcode) {
             case Z_OK:
                 if ( from_cache  &&  
