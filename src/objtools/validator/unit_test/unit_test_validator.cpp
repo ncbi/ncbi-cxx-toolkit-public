@@ -3282,8 +3282,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
                  expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 29 percent Ns"));
                  /*
                  expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 5 Ns within the first 10 bases"));
-                 expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 5 Ns within the last 10 bases"));
                  */
+                 expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
                  expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));
              }
              CheckErrors (*eval, expected_errors);
@@ -5195,10 +5195,11 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAAAANNNNNGGGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGTTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCCCCNNNNNAAAAA");
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AANNNNNNNNNNGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGTTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCNNNNNNNNNNAAA");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 5 Ns within the first 10 bases"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 5 Ns within the last 10 bases"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 20 percent Ns"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -18906,4 +18907,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ANNOT_AnnotLOCs)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
+{
+    string to_fix = "43.098333, -89.405278";
+    string fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "43.098333 N 89.405278 W");
+
+    to_fix = "43.098333, -91.00231";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "43.098333 N 91.00231 W");
 }

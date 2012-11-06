@@ -2247,7 +2247,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                                 if (i < 20) {
                                     n5 = true;
                                 } 
-                                if (vec.size() > 20 || i > vec.size() - 20) {
+                                if (vec.size() > 20 && i > vec.size() - 20) {
                                     n3 = true;
                                 }
                             }
