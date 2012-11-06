@@ -313,8 +313,8 @@ static void s_TestMisc(void)
         t1.SetTimeZone(CTime::eGmt);
         ts = CTimeSpan(long(t1.DiffSecond(t2)));
         LOG_POST("DiffSecond(TZ) = " + ts.AsString());
-        LOG_POST("TimeZoneDiff   = " + NStr::Int8ToString(t2.TimeZoneDiff()));
-        assert(ts.GetAsDouble() == double(t2.TimeZoneDiff()));
+        LOG_POST("TimeZoneOffset = " + NStr::Int8ToString(t2.TimeZoneOffset()));
+        assert(ts.GetAsDouble() == double(t2.TimeZoneOffset()));
     }}
 
     // Per CXX-195
@@ -325,19 +325,19 @@ static void s_TestMisc(void)
         CTime time4("1/1/2008", "M/D/Y");
         LOG_POST("time1=" << time1.AsString("M/D/Y h:m:s")
                  << "  time_t=" << time1.GetTimeT()
-                 << "  time-zone: " << time1.TimeZoneDiff());
+                 << "  time-zone: " << time1.TimeZoneOffset());
         LOG_POST("time2=" << time2.AsString("M/D/Y h:m:s")
                  << "  time_t=" << time2.GetTimeT()
-                 << "  time-zone: " << time2.TimeZoneDiff());
-        assert(time1.TimeZoneDiff() == time2.TimeZoneDiff());
+                 << "  time-zone: " << time2.TimeZoneOffset());
+        assert(time1.TimeZoneOffset() == time2.TimeZoneOffset());
         LOG_POST("time3=" << time3.AsString("M/D/Y h:m:s")
                  << "  time_t=" << time3.GetTimeT()
-                 << "  time-zone: " << time3.TimeZoneDiff());
-        assert(time2.TimeZoneDiff() == time3.TimeZoneDiff());
+                 << "  time-zone: " << time3.TimeZoneOffset());
+        assert(time2.TimeZoneOffset() == time3.TimeZoneOffset());
         LOG_POST("time4=" << time4.AsString("M/D/Y h:m:s")
                  << "  time_t=" << time4.GetTimeT()
-                 << "  time-zone: " << time4.TimeZoneDiff());
-        assert(time3.TimeZoneDiff() == time4.TimeZoneDiff());
+                 << "  time-zone: " << time4.TimeZoneOffset());
+        assert(time3.TimeZoneOffset() == time4.TimeZoneOffset());
     }}
 
     // Datebase formats conversion
@@ -945,21 +945,22 @@ static void s_TestGMT(void)
         assert(tgmt.AsString() != tloc.AsString());
     }}
     //------------------------------------------------------------------------
-    {{   
-        LOG_POST("\nTest TimeZoneDiff (1)");
+    {{  
+        // EST timezone only
+        LOG_POST("\nTest TimeZoneOffset (1)");
 
         CTime tw(2001, 1, 1, 12); 
         CTime ts(2001, 6, 1, 12);
 
-        LOG_POST(STR(tw) + " diff from GMT = " +
-                 NStr::Int8ToString(tw.TimeZoneDiff() / 3600));
-        assert(tw.TimeZoneDiff() / 3600 == -5);
-        LOG_POST(STR(ts) + " diff from GMT = " +
-                 NStr::Int8ToString(ts.TimeZoneDiff() / 3600));
-        assert(ts.TimeZoneDiff()/3600 == -4);
+        LOG_POST(STR(tw) + " offset from UTC = " +
+                 NStr::Int8ToString(tw.TimeZoneOffset() / 3600));
+        assert(tw.TimeZoneOffset() / 3600 == -5);
+        LOG_POST(STR(ts) + " offset from UTC = " +
+                 NStr::Int8ToString(ts.TimeZoneOffset() / 3600));
+        assert(ts.TimeZoneOffset()/3600 == -4);
 
         for (; tw < ts; tw.AddDay()) {
-            if ((tw.TimeZoneDiff() / 3600) == -4) {
+            if ((tw.TimeZoneOffset() / 3600) == -4) {
                 LOG_POST("First daylight saving day = " + STR(tw));
                 break;
             }
@@ -967,19 +968,20 @@ static void s_TestGMT(void)
     }}
     //------------------------------------------------------------------------
     {{   
-        LOG_POST("\nTest TimeZoneDiff (2)");
+        // EST timezone only
+        LOG_POST("\nTest TimeZoneOffset (2)");
 
         CTime tw(2001, 6, 1, 12); 
         CTime ts(2002, 1, 1, 12);
-        LOG_POST(STR(tw) + " diff from GMT = " +
-                 NStr::Int8ToString(tw.TimeZoneDiff() / 3600));
-        assert(tw.TimeZoneDiff() / 3600 == -4);
-        LOG_POST(STR(ts) + " diff from GMT = " +
-                 NStr::Int8ToString(ts.TimeZoneDiff() / 3600));
-        assert(ts.TimeZoneDiff() / 3600 == -5);
+        LOG_POST(STR(tw) + " offset from UTC = " +
+                 NStr::Int8ToString(tw.TimeZoneOffset() / 3600));
+        assert(tw.TimeZoneOffset() / 3600 == -4);
+        LOG_POST(STR(ts) + " offset from UTC = " +
+                 NStr::Int8ToString(ts.TimeZoneOffset() / 3600));
+        assert(ts.TimeZoneOffset() / 3600 == -5);
 
         for (; tw < ts; tw.AddDay()) {
-            if ((tw.TimeZoneDiff() / 3600) == -5) {
+            if ((tw.TimeZoneOffset() / 3600) == -5) {
                 LOG_POST("First non daylight saving day = " + STR(tw));
                 break;
              
@@ -988,6 +990,7 @@ static void s_TestGMT(void)
     }}
     //------------------------------------------------------------------------
     {{   
+        // EST timezone only
         LOG_POST("\nTest AdjustTime");
 
         CTime::SetFormat("M/D/Y h:m:s");
@@ -1063,12 +1066,12 @@ static void s_TestGMT(void)
         assert(th.AsString() == "03/13/2007 00:01:00");
 
         for (int i = 0;  i < 8;  i++,  tn.AddHour()) {
-            LOG_POST(string(((tn.TimeZoneDiff()/3600) == -4) ? "  " : "* ") +
+            LOG_POST(string(((tn.TimeZoneOffset()/3600) == -4) ? "  " : "* ") +
                      STR(tn));
         }
         tn.AddHour(-1);
         for (int i = 0;  i < 8;  i++,  tn.AddHour(-1)) {
-            LOG_POST(string(((tn.TimeZoneDiff()/3600) == -4) ? "  " : "* ") +
+            LOG_POST(string(((tn.TimeZoneOffset()/3600) == -4) ? "  " : "* ") +
                      STR(tn));
         }
         LOG_POST("");
@@ -1091,12 +1094,12 @@ static void s_TestGMT(void)
 
         tn.AddHour(+2);
         for (int i = 0;  i < 10;  i++,  tn.AddHour()) {
-            LOG_POST((((tn.TimeZoneDiff()/3600) == -4) ? "  ":"* ") +STR(tn));
+            LOG_POST((((tn.TimeZoneOffset()/3600) == -4) ? "  ":"* ") +STR(tn));
         }
         LOG_POST("");
         tn.AddHour(-1);
         for (int i = 0;  i < 10;  i++,  tn.AddHour(-1)) {
-            LOG_POST((((tn.TimeZoneDiff()/3600) == -4) ? "  ":"* ") +STR(tn));
+            LOG_POST((((tn.TimeZoneOffset()/3600) == -4) ? "  ":"* ") +STR(tn));
         }
         LOG_POST("");
 

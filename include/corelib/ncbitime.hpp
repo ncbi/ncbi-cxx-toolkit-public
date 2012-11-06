@@ -229,7 +229,7 @@ public:
 
 public:
     /// Return time format as string.
-    /// Note: This method added temporarely, and will be deleted soon.
+    /// Note: This method added temporarily, and will be deleted soon.
     /// @deprecated Use CTimeFormat::GetString()/GetFormat() methods instead.
     NCBI_DEPRECATED operator string(void) const;
 
@@ -1064,9 +1064,6 @@ public:
     /// Set time zone precision.
     ETimeZonePrecision SetTimeZonePrecision(ETimeZonePrecision val);
 
-    /// Get difference between local timezone and GMT in seconds.
-    TSeconds TimeZoneDiff(void) const;
-
     /// Get the time as local time.
     CTime GetLocalTime(void) const;
 
@@ -1081,6 +1078,27 @@ public:
 
     /// Convert the time into GMT time.
     CTime& ToGmtTime(void);
+
+    /// Get difference between local timezone for current time object and UTC in seconds.
+    /// @deprecated Use CTime::TimeZoneOffset() instead.
+    NCBI_DEPRECATED TSeconds TimeZoneDiff(void) const;
+
+    /// Get difference between local timezone for current time object and UTC in seconds.
+    TSeconds TimeZoneOffset(void) const;
+
+    /// Get time zone offset string in format [+/-]HHMM.
+    /// @sa TimeZoneName, TimeZoneOffset
+    string TimeZoneOffsetStr(void);
+
+    /// Get current time zone name.
+    ///
+    /// @return
+    ///   String with time zone name for current time, if supported by OS,
+    ///   or empty string otherwise. This name can be any one of 3-letter
+    ///   abbreviated code or some arbitrary string, depending on OS.
+    /// @sa
+    ///   TimeZoneOffset, TimeZoneOffsetStr
+    string TimeZoneName(void);
 
 private:
     /// Helper method to set time value from string "str" using "format".
@@ -2212,6 +2230,13 @@ CTime& CTime::ToGmtTime(void)
 {
     ToTime(eGmt);
     return *this;
+}
+
+// @deprecated
+inline
+TSeconds CTime::TimeZoneDiff(void) const
+{
+    return TimeZoneOffset();
 }
 
 inline

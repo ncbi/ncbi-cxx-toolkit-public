@@ -568,20 +568,20 @@ static void s_TestGMT(int idx)
         }
     }}
 
-    // Test TimeZoneDiff (1)
+    // Test TimeZoneOffset (1) -- EST timezone only
     {{   
         CTime tw(2001, 1, 1, 12); 
         CTime ts(2001, 6, 1, 12);
-        assert(tw.TimeZoneDiff() / 3600 == -5);
-        assert(ts.TimeZoneDiff()/3600 == -4);
+        assert(tw.TimeZoneOffset() / 3600 == -5);
+        assert(ts.TimeZoneOffset()/3600 == -4);
     }}
 
-    // Test TimeZoneDiff (2)
+    // Test TimeZoneOffset (2) -- EST timezone only
     {{   
         CTime tw(2001, 6, 1, 12); 
         CTime ts(2002, 1, 1, 12);
-        assert(tw.TimeZoneDiff() / 3600 == -4);
-        assert(ts.TimeZoneDiff() / 3600 == -5);
+        assert(tw.TimeZoneOffset() / 3600 == -4);
+        assert(ts.TimeZoneOffset() / 3600 == -5);
     }}
 
     // Test AdjustTime

@@ -1873,7 +1873,7 @@ bool CTime::IsLeap(void) const
 }
 
 
-TSeconds CTime::TimeZoneDiff(void) const
+TSeconds CTime::TimeZoneOffset(void) const
 {
     const CTime tl(GetLocalTime());
     const CTime tg(GetGmtTime());
@@ -1883,6 +1883,56 @@ TSeconds CTime::TimeZoneDiff(void) const
     int      dHours = tl.Hour()   - tg.Hour();
     int      dDays  = tl.DiffWholeDays(tg);
     return ((dDays * 24 + dHours) * 60 + dMins) * 60 + dSecs;
+}
+
+
+string CTime::TimeZoneOffsetStr(void)
+{
+    int tz = (int)(TimeZoneOffset() / 60);
+    string str;
+    str.reserve(5);
+    if (tz > 0) {
+        str = '+';
+    } else {
+        str = '-';
+        tz = -tz;
+    }
+    s_AddZeroPadInt2(str, tz / 60);
+    s_AddZeroPadInt2(str, tz % 60);
+    return str;
+}
+
+
+string CTime::TimeZoneName(void)
+{
+    time_t timer = GetTimeT();
+    if (timer == -1) {
+       return kEmptyStr;
+    }
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_TimeMutex);
+    
+    struct tm* t;
+#if defined(HAVE_LOCALTIME_R)
+    struct tm temp;
+    localtime_r(&timer, &temp);
+    t = &temp;
+#else
+    t = localtime(&timer);
+#endif
+    if ( !t ) {
+        return kEmptyStr;
+    }
+    string s;
+#if defined(__USE_BSD)
+    if (t->tm_zone) {
+        s = t->tm_zone;
+    }
+#endif
+    if (s.empty()) {
+        s = t->tm_isdst > 0 ? tzname[1] : tzname[0];
+    }
+    return s;    
 }
 
 
@@ -1991,8 +2041,8 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     // Primary procedure call
     if ( shift_time ) {
         sign = ( *this > from ) ? 1 : -1;
-        // !!! Run TimeZoneDiff() first for old time value
-        diff = -tmp.TimeZoneDiff() + TimeZoneDiff();
+        // !!! Run TimeZoneOffset() first for old time value
+        diff = -tmp.TimeZoneOffset() + TimeZoneOffset();
         // Correction need's if time already in identical timezone
         if (!diff  ||  diff == m_Data.adjTimeDiff) {
             return *this;
@@ -3097,10 +3147,11 @@ void TuneupFastLocalTime(void)
 const char* CTimeException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eConvert:   return "eConvert";
-    case eInvalid:   return "eInvalid";
-    case eFormat:    return "eFormat";
-    default:         return CException::GetErrCodeString();
+    case eArgument:    return "eArgument";
+    case eConvert:     return "eConvert";
+    case eInvalid:     return "eInvalid";
+    case eFormat:      return "eFormat";
+    default:           return CException::GetErrCodeString();
     }
 }
 
