@@ -136,6 +136,9 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
 
 // tests_on_Bioseq_CFeat
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_PSEUDO_MISMATCH));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_EC_NUMBER_NOTE));
+   tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_NON_GENE_LOCUS_TAG));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData> (new CBioseq_JOINED_FEATURES));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>( new CBioseq_SHOW_TRANSL_EXCEPT));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(
@@ -147,7 +150,7 @@ void CRepConfDiscrepancy :: ConfigRep()
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_FIND_OVERLAPPED_GENES));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_OVERLAPPING_GENES));
    tests_on_Bioseq_CFeat.push_back(
-                   CRef <CTestAndRepData>( new CBioseq_EC_NUMBER_ON_HYPOTHETICAL_PROTEIN));
+                   CRef <CTestAndRepData>( new CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_RNA_NO_PRODUCT));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_SHORT_INTRON));
    tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_BAD_GENE_STRAND));
@@ -202,6 +205,10 @@ void CRepConfDiscrepancy :: ConfigRep()
 
 
 // tests_on_SeqEntry
+   /* not yet ready to imple. 
+   tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(
+                                                new CSeqEntry_DISC_FLATFILE_FIND_ONCALLER));
+   */
    // asndisc version   
    tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
 

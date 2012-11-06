@@ -160,6 +160,88 @@ bool CRuleProperties :: IsSearchFuncEmpty (const CSearch_func& func)
 
 
 // CBioseq
+void CBioseq_PSEUDO_MISMATCH :: TestOnObj(const CBioseq& bioseq)
+{
+  ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+/*
+    CConstRef <CGene_ref> xref_gene (GetGeneXref(**it));
+    if (xref_gene.NotEmpty()) continue;
+*/
+  }
+
+  ITERATE (vector <const CSeq_feat*>, it, rna_feat) {
+  }
+};
+
+
+void CBioseq_PSEUDO_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
+{
+};
+
+
+void CBioseq_EC_NUMBER_NOTE :: TestOnObj(const CBioseq& bioseq) 
+{
+  string desc;
+  bool done;
+  ITERATE (vector <const CSeq_feat*>, it, all_feat) {
+    done = false;
+
+    if ( (*it)->CanGetComment() && !((*it)->GetComment().empty())) {
+      desc = GetDiscItemText(**it); 
+      if (CProt_ref::IsValidECNumberFormat((*it)->GetComment())) 
+         thisInfo.test_item_list[GetName()].push_back(desc);
+      else if ( (*it)->GetData().IsCdregion() && (*it)->CanGetProduct()) {
+        CConstRef <CProt_ref> prot_ref (GetProtRefForFeature(**it, false));
+        if (prot_ref.NotEmpty() && prot_ref->CanGetName() && !(prot_ref->GetName().empty())) {
+          ITERATE (list <string>, jt, prot_ref->GetName()) {
+            if (CProt_ref::IsValidECNumberFormat(*jt)) {
+               thisInfo.test_item_list[GetName()].push_back(desc);
+               done = true;
+               break;
+            }
+          }
+          if (!done && prot_ref->CanGetDesc() && !(prot_ref->GetDesc().empty())
+                 && CProt_ref::IsValidECNumberFormat(prot_ref->GetDesc())) {
+               thisInfo.test_item_list[GetName()].push_back(desc);
+          }
+        }
+      }
+    }
+  }
+};
+
+
+void CBioseq_EC_NUMBER_NOTE :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description 
+    = GetHasComment(c_item->item_list.size(), "feature") + "EC numbers in notes or products.";
+};
+
+
+void CBioseq_NON_GENE_LOCUS_TAG :: TestOnObj(const CBioseq& bioseq)
+{
+   ITERATE (vector <const CSeq_feat*>, it, all_feat) {
+     if (!(*it)->GetData().IsGene()) {
+       if ( (*it)->IsSetQual())
+         ITERATE (vector <CRef <CGb_qual> >, jt, (*it)->GetQual()) {
+            if ( NStr::EqualNocase((*jt)->GetQual(), "locus_tag")) {
+               thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+               break;
+            }
+         }
+     }
+   }
+};
+
+
+void CBioseq_NON_GENE_LOCUS_TAG :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+     = GetHasComment(c_item->item_list.size(), "non_gene feature") + "locus tags.";
+};
+
+
+
 void CBioseq_SHOW_TRANSL_EXCEPT :: TestOnObj(const CBioseq& bioseq)
 {
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
@@ -281,11 +363,11 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: ReportPartialConflictsForFeatureType(
   unsigned feat_start, feat_stop, gene_start, gene_stop;
   bool conflict5, conflict3, feat_partial5, feat_partial3, gene_partial5, gene_partial3;
   ITERATE (vector <const CSeq_feat*>, it, seq_feats) {
-    CConstRef <CSeq_feat> gene_feat (GetGeneForFeature(**it));
-    if (gene_feat.NotEmpty()) {
+    CConstRef <CSeq_feat> gene_feat_4_feat (GetGeneForFeature(**it));
+    if (gene_feat_4_feat.NotEmpty()) {
       feat_loc = Seq_loc_Merge((*it)->GetLocation(), 
                      CSeq_loc::fMerge_Overlapping | CSeq_loc::fSort, thisInfo.scope);
-      gene_loc = Seq_loc_Merge(gene_feat->GetLocation(),
+      gene_loc = Seq_loc_Merge(gene_feat_4_feat->GetLocation(),
                       CSeq_loc::fMerge_Overlapping | CSeq_loc::fSort, thisInfo.scope); 
       feat_strand = feat_loc->GetStrand();
       if (feat_strand == eNa_strand_minus) {
@@ -337,7 +419,8 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: ReportPartialConflictsForFeatureType(
 
         label += "$" + strtmp;
         thisInfo.test_item_list[GetName()].push_back(label + "#" + GetDiscItemText(**it));
-        thisInfo.test_item_list[GetName()].push_back(label + "#" +GetDiscItemText(*gene_feat));
+        thisInfo.test_item_list[GetName()].push_back(
+                                       label + "#" +GetDiscItemText(*gene_feat_4_feat));
       }
     }
   }
@@ -535,20 +618,22 @@ CConstRef <CSeq_feat> CBioseqTestAndRepData :: GetmRNAforCDS(const CSeq_feat& cd
 
 
 
-CConstRef <CProt_ref> CBioseqTestAndRepData :: GetProtRefForFeature(const CSeq_feat& seq_feat)
+CConstRef <CProt_ref> CBioseqTestAndRepData :: GetProtRefForFeature(const CSeq_feat& seq_feat, bool look_xref)
 {
   CConstRef <CProt_ref> prot_ref;
   if (seq_feat.GetData().IsProt()) 
        prot_ref = CConstRef <CProt_ref> (&(seq_feat.GetData().GetProt()));
   else if (seq_feat.GetData().IsCdregion()) {
-    if (seq_feat.CanGetXref()) {
-      ITERATE (vector <CRef <CSeqFeatXref> >, it, seq_feat.GetXref()) {
-        if ( (*it)->CanGetData() && (*it)->GetData().IsProt())
-          prot_ref = CConstRef <CProt_ref> (&( (*it)->GetData().GetProt() ));
+    if (look_xref) {
+      if (seq_feat.CanGetXref()) {
+        ITERATE (vector <CRef <CSeqFeatXref> >, it, seq_feat.GetXref()) {
+          if ( (*it)->CanGetData() && (*it)->GetData().IsProt())
+            prot_ref = CConstRef <CProt_ref> (&( (*it)->GetData().GetProt() ));
+        }
       }
     }
 
-    if (seq_feat.CanGetProduct()) {
+    if (prot_ref.Empty() && seq_feat.CanGetProduct()) {
         CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope);
         for (CFeat_CI prot_ci(bioseq_h, CSeqFeatData::e_Prot); prot_ci; ++prot_ci) {
           prot_ref 
@@ -1219,9 +1304,10 @@ void CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: TestOnObj(const CBioseq& biose
                  || gene_olp->GetData().GetGene().GetLocus().empty()) continue;
     }
 */
-    CConstRef <CSeq_feat> gene_feat (GetGeneForFeature(**it));
-    if (gene_feat.Empty() || !(gene_feat->GetData().GetGene().CanGetLocus())
-          || !(gene_feat->GetData().GetGene().GetLocus().empty()) ) continue;   // no gene name
+    CConstRef <CSeq_feat> gene_feat_4_feat (GetGeneForFeature(**it));
+    if (gene_feat_4_feat.Empty() || !(gene_feat_4_feat->GetData().GetGene().CanGetLocus())
+                || !(gene_feat_4_feat->GetData().GetGene().GetLocus().empty()) ) 
+        continue;  // no gene name
     if ((*it)->CanGetProduct()) {
       CBioseq_Handle bioseq_prot = GetBioseqFromSeqLoc((*it)->GetProduct(),*thisInfo.scope);
       CFeat_CI feat_it(bioseq_prot, sel_seqfeat);
@@ -2001,7 +2087,7 @@ void CBioseq_RNA_NO_PRODUCT :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
-void CBioseq_EC_NUMBER_ON_HYPOTHETICAL_PROTEIN :: TestOnObj(const CBioseq& bioseq)
+void CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN :: TestOnObj(const CBioseq& bioseq)
 {
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CProt_ref& prot = (*it)->GetData().GetProt();
@@ -2017,7 +2103,7 @@ void CBioseq_EC_NUMBER_ON_HYPOTHETICAL_PROTEIN :: TestOnObj(const CBioseq& biose
 
 
 
-void CBioseq_EC_NUMBER_ON_HYPOTHETICAL_PROTEIN :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->description 
      = GetHasComment(c_item->item_list.size(), "protein feature")
@@ -4375,6 +4461,26 @@ void CBioseqSet_DISC_NONWGS_SETS_PRESENT :: GetReport(CRef <CClickableItem>& c_i
 
 
 // CSeqEntryTestAndRepData
+/* not yet ready to imple.
+void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_entry)
+{
+  CFlatFileGenerator file_gen(CFlatFileConfig::eFormat_GenBank,
+                              CFlatFileConfig::eMode_GBench,
+                              CFlagFileConfig::eStyle_Normal,
+                              CFlagFileConfig::fShowContigFeatures,
+                              CFlagFileConfig::fViewAll);
+  CNcbiOstream os;
+  CSeq_entry_Handle seq_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
+  file_gen.Generate(
+};
+
+
+void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c_Item)
+{
+};
+*/
+
+
 // new method
 void CSeqEntry_test_on_user :: GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id)
 {

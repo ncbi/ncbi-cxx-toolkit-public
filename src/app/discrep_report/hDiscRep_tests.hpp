@@ -311,6 +311,18 @@ namespace DiscRepNmSpc {
         e_all_dif
   };
 
+/* not yet ready to imple.
+  class CSeqEntry_DISC_FLATFILE_FIND_ONCALLER : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_DISC_FLATFILE_FIND_ONCALLER () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return string("DISC_FLATFILE_FIND_ONCALLER");}
+  };
+*/
+
 
 //  revolution!!
   class CSeqEntry_test_on_user : public CSeqEntryTestAndRepData
@@ -759,7 +771,8 @@ namespace DiscRepNmSpc {
        CSeqFeatData::ESubtype GetFeatdefFromFeatureType(EMacro_feature_type feat_field_type);
        string GetQualFromFeature(const CSeq_feat& seq_feat, const CField_type& field_type);
        CConstRef <CSeq_feat> GetmRNAforCDS(const CSeq_feat& cd_feat, const CSeq_entry& seq_entry);
-       CConstRef <CProt_ref> GetProtRefForFeature(const CSeq_feat& seq_feat);
+       CConstRef <CProt_ref> GetProtRefForFeature(const CSeq_feat& seq_feat, 
+                                                                        bool look_xref=true);
        bool IsLocationOrganelle(const CBioSource::EGenome& genome);
        bool ProductsMatchForRefSeq(const string& feat_prod, const string& mRNA_prod);
        bool DoesStringContainPhrase(const string& str, const string& phrase, 
@@ -812,10 +825,41 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_long_no();}
   };
-
-
-
 //
+
+  class CBioseq_PSEUDO_MISMATCH : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_PSEUDO_MISMATCH () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("PSEUDO_MISMATCH"); }
+  };
+
+
+  class CBioseq_EC_NUMBER_NOTE : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_EC_NUMBER_NOTE () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("EC_NUMBER_NOTE"); }
+  };
+
+
+
+  class CBioseq_NON_GENE_LOCUS_TAG : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_NON_GENE_LOCUS_TAG () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("NON_GENE_LOCUS_TAG"); }
+  };
+
 
   class CBioseq_SHOW_TRANSL_EXCEPT : public CBioseqTestAndRepData
   {
@@ -1199,14 +1243,14 @@ namespace DiscRepNmSpc {
 
 
 
-  class CBioseq_EC_NUMBER_ON_HYPOTHETICAL_PROTEIN : public CBioseqTestAndRepData
+  class CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN : public CBioseqTestAndRepData
   {
     public:
-      virtual ~CBioseq_EC_NUMBER_ON_HYPOTHETICAL_PROTEIN () {};
+      virtual ~CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("EC_NUMBER_ON_HYPOTHETICAL_PROTEIN");}
+      virtual string GetName() const {return string("EC_NUMBER_ON_UNKNOWN_PROTEIN");}
   };
 
 
