@@ -192,7 +192,8 @@ public:
         eDbtagType_ViPR,
         eDbtagType_PubChem,
         eDbtagType_SRA,
-        eDbtagType_Trace
+        eDbtagType_Trace,
+        eDbtagType_RefSeq
     };
 
     enum EDbtagGroup {
