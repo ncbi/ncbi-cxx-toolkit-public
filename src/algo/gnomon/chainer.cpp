@@ -1539,67 +1539,80 @@ CChain::CChain(const TGeneModelSet& chain_alignments)
 
 
 void CChain::CalculatedSupportAndWeightFromMembers() {
-    map<Int8, set<CGeneModel*,AlignSeqOrder> > connected_aligns;
-    ITERATE (vector<CGeneModel*>, it, m_members)  // combine splitted aligns 
-        connected_aligns[(*it)->ID()].insert(*it);
 
     vector<CSupportInfo> support;
     support.reserve(m_members.size());
-    int last_important_support = -1;
-    const set<CGeneModel*,AlignSeqOrder>* last_important_align = 0;
+    const CGeneModel* last_important_align = 0;
     double weight = 0;
     set<Int8> sp;
+    set<Int8> sp_core;
+
+    map<Int8,int> intronnum;
+    ITERATE (vector<CGeneModel*>, it, m_members) {
+        const CGeneModel& align = **it;
+        for(int i = 1; i < (int)align.Exons().size(); ++i) {
+            if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice)
+                ++intronnum[align.ID()];
+        }
+    }
+
     TSignedSeqRange lim;
     ITERATE (vector<CGeneModel*>, it, m_members) {
-        Int8 id = (*it)->ID();
-        if(!sp.insert(id).second)     // avoid counting parts of splitted aligns
-            continue;
+        const CGeneModel& align = **it;
+        Int8 id = align.ID();
 
-        weight += (*it)->Weight();
-        support.push_back(CSupportInfo(id,false));
+        if(sp.insert(id).second) {   // avoid counting parts of splitted aligns
+            weight += (*it)->Weight();
+            support.push_back(CSupportInfo(id,false));
+        }
 
-        const set<CGeneModel*,AlignSeqOrder>& ca = connected_aligns[id];
-        TSignedSeqRange alim((*ca.begin())->Limits().GetFrom(),(*ca.rbegin())->Limits().GetTo());
-
-        if(lim.Empty() || !Include(lim,alim)) {
+        if(lim.Empty() || !Include(lim,align.Limits())) {
 
             bool add_some_introns = false;
-            for(set<CGeneModel*,AlignSeqOrder>::const_reverse_iterator k = ca.rbegin(); k != ca.rend() && !add_some_introns; ++k) {
-                const CGeneModel& align = **k;
-                for(int i = (int)align.Exons().size()-1; !add_some_introns && i > 0; --i) {
-                    add_some_introns = align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice && 
-                        (lim.Empty() || align.Exons()[i-1].GetTo() >= lim.GetTo());
-                }
-            }
+            for(int i = (int)align.Exons().size()-1; !add_some_introns && i > 0; --i) {
+                add_some_introns = align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice && 
+                    (lim.Empty() || align.Exons()[i-1].GetTo() >= lim.GetTo());
+           }
 
             bool pass_some_introns = false;
+            for(int i = 1; last_important_align != 0 && !pass_some_introns && i < (int)(last_important_align->Exons().size()); ++i) {
+                pass_some_introns = last_important_align->Exons()[i-1].m_ssplice && last_important_align->Exons()[i].m_fsplice && 
+                    align.Limits().GetFrom() >= last_important_align->Exons()[i].GetFrom();
+            }
+
+            bool miss_some_introns = false;
             if(last_important_align != 0) {
-                for(set<CGeneModel*,AlignSeqOrder>::const_iterator k = last_important_align->begin(); k != last_important_align->end() && !pass_some_introns; ++k) {
-                    const CGeneModel& lia = **k;
-                    for(int i = 1; !pass_some_introns && i < (int)(lia.Exons().size()); ++i) {
-                        pass_some_introns = lia.Exons()[i-1].m_ssplice && lia.Exons()[i].m_fsplice && alim.GetFrom() >= lia.Exons()[i].GetFrom();
-                    }
+                for(int i = (int)last_important_align->Exons().size()-1; !miss_some_introns && i > 0; --i) {
+                    miss_some_introns = last_important_align->Exons()[i-1].m_ssplice && last_important_align->Exons()[i].m_fsplice &&
+                        align.Limits().GetTo() < last_important_align->Exons()[i].GetFrom();
                 }
             }
 
             if(add_some_introns) {
                 if(pass_some_introns) {
-                    support[last_important_support].SetCore(true);
+                    sp_core.insert(last_important_align->ID());
                 }
-                last_important_support = support.size()-1;
-                last_important_align = &ca;
+                last_important_align = *it;
+            } else if(last_important_align != 0 && !pass_some_introns && !miss_some_introns && 
+                      (sp_core.find(id) != sp_core.end() || intronnum[id] > intronnum[last_important_align->ID()])) {
+                last_important_align = *it;
             }
-
-            lim += alim;            
         }
+
+        lim += align.Limits();            
     }
     SetWeight(weight);
-    if(last_important_align != 0) 
-       support[last_important_support].SetCore(true);
+    if(last_important_align != 0) {
+        sp_core.insert(last_important_align->ID());
+    }
 
     ReplaceSupport(CSupportInfoSet());
-    ITERATE(vector<CSupportInfo>, s, support)
+    NON_CONST_ITERATE(vector<CSupportInfo>, s, support) {
+        if(sp_core.find(s->GetId()) != sp_core.end()) {
+            s->SetCore(true);
+        }
         AddSupport(*s);
+    }
 }
 
 void CChain::RestoreTrimmedEnds(int trim)
