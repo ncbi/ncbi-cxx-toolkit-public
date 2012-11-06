@@ -1944,7 +1944,10 @@ static list<string> s_GetLinkoutUrl(int linkout,
         linkout_list.push_back(url_link);
     }
     if ((linkout & eStructure) && cdd_rid != "" && cdd_rid != "0"){
-        url_link = kStructureUrl;        
+        string struct_link = CAlignFormatUtil::GetURLFromRegistry(
+                                                             "STRUCTURE_URL");
+
+        url_link = struct_link.empty() ? kStructureUrl : struct_link;
         lnk_displ = textLink ? "Structure" : kStructureImg;  
         if(!disableLink) {
             string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";
