@@ -68,7 +68,7 @@ CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
     // Create internal signaling connection from m_ControlSocket to
     // m_ControlSocketForPoll
     CListeningSocket listener;
-    static const STimeout kTimeout = { 10, 500000 }; // 500 ms // DEBUG
+    static const STimeout kTimeout = { 10, 500000 }; // 10.5s // DEBUG
     CheckIOStatus(listener.Listen(0, 5, fSOCK_BindLocal), "Listen/Bind");
     CheckIOStatus(m_ControlSocket.Connect("127.0.0.1",
         listener.GetPort(eNH_HostByteOrder)), "Connect");
