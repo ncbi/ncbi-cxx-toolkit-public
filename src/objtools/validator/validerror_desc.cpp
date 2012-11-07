@@ -514,6 +514,44 @@ bool CValidError_desc::ValidateStructuredComment
 }
 
 
+static string s_OfficialPrefixList[] = {
+    "Assembly-Data",
+    "EpifluData",
+    "FluData",
+    "Genome-Annotation-Data",
+    "Genome-Assembly-Data",
+    "GISAID_EpiFlu(TM)Data",
+    "HCVDataBaseData",
+    "HIVDataBaseData",
+    "International Barcode of Life (iBOL)Data", 
+    "MIENS-Data",
+    "MIGS-Data",
+    "MIGS:3.0-Data",
+    "MIMARKS:3.0-Data",
+    "MIMS-Data",
+    "MIMS:3.0-Data",
+    "RefSeq-Attributes"
+};
+
+static bool s_PrefixOrSuffixInList (
+  const string& val,
+  const string& before,
+  const string& after
+)
+
+{
+    for ( size_t i = 0; 
+          i < sizeof(s_OfficialPrefixList) / sizeof(string); 
+          ++i ) {
+        const string str = before + s_OfficialPrefixList[i] + after;
+        if (NStr::EqualNocase (val, str)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CValidError_desc::ValidateStructuredComment
 (const CUser_object& usr,
  const CSeqdesc& desc,
@@ -538,6 +576,11 @@ bool CValidError_desc::ValidateStructuredComment
         if (!prefix.IsSetData() || !prefix.GetData().IsStr()) {
             return true;
         }
+        const string& pfx = prefix.GetData().GetStr();
+        if (! s_PrefixOrSuffixInList (pfx, "##", "-START##")) {
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
+                    pfx + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);   
+        }
         CRef<CComment_set> comment_rules = m_Imp.GetStructuredCommentRules();
         if (comment_rules) {
             try {
@@ -556,6 +599,15 @@ bool CValidError_desc::ValidateStructuredComment
                 // no rule for this prefix, no error
             }
         }            
+        const CUser_field& suffix = usr.GetField("StructuredCommentSuffix");
+        if (!suffix.IsSetData() || !suffix.GetData().IsStr()) {
+            return true;
+        }
+        const string& sfx = suffix.GetData().GetStr();
+        if (! s_PrefixOrSuffixInList (sfx, "##", "-END##")) {
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
+                    sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);   
+        }
     } catch (CException ) {
         // no prefix, in which case no rules
         // but it is still an error - should have prefix
